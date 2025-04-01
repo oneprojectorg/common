@@ -1,0 +1,28 @@
+{
+  "name": "@op/supabase",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./client": "./src/client.ts",
+    "./lib": "./src/lib.ts",
+    "./server": "./src/server.ts",
+    "./types": "./src/types.ts"
+  },
+  "scripts": {
+    "lint": "pnpm tsc --noEmit && pnpm eslint --fix .",
+    "typegen": "pnpx supabase gen types --workdir=\"../..\" --lang=typescript --local --schema public > ./src/types.ts && pnpm eslint --fix ./src/types.ts"
+  },
+  "dependencies": {
+    "@op/core": "workspace:*",
+    "@supabase/ssr": "0.5.2",
+    "@supabase/supabase-js": "^2.49.3",
+    "cookie": "^1.0.2",
+    "next": "^15.2.0"
+  },
+  "devDependencies": {
+    "@op/eslint-config": "workspace:*",
+    "@op/typescript-config": "workspace:*",
+    "typescript": "5.7.3"
+  }
+}

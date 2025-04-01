@@ -1,0 +1,46 @@
+{
+  "name": "app",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "next build",
+    "dev": "next dev -p 3100",
+    "lint": "pnpm tsc --noEmit && pnpm eslint --fix .",
+    "start": "next start -p 3100"
+  },
+  "dependencies": {
+    "@next/bundle-analyzer": "^15.2.0",
+    "@op/core": "workspace:*",
+    "@op/hooks": "workspace:*",
+    "@op/supabase": "workspace:*",
+    "@op/trpc": "workspace:*",
+    "@op/ui": "workspace:*",
+    "@uidotdev/usehooks": "^2.4.1",
+    "@xyflow/react": "^12.5.2",
+    "babel-plugin-react-compiler": "19.0.0-beta-e1e972c-20250221",
+    "dotenv": "^16.4.7",
+    "immer": "^10.1.1",
+    "lodash": "^4.17.21",
+    "next": "^15.2.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "sonner": "^1.7.1",
+    "spacetime": "^7.7.0",
+    "zod": "^3.24.2",
+    "zustand": "^5.0.3"
+  },
+  "devDependencies": {
+    "@iconify/json": "2.2.311",
+    "@op/eslint-config": "workspace:*",
+    "@op/typescript-config": "workspace:*",
+    "@types/lodash": "^4.17.15",
+    "@types/react": "19.0.10",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.5.3",
+    "sass": "^1.85.1",
+    "tailwindcss": "^3.4.17",
+    "typescript": "5.7.3",
+    "unplugin-icons": "22.1.0"
+  }
+}

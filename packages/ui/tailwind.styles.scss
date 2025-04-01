@@ -1,0 +1,244 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  touch-action: pan-x pan-y;
+  height: 100%;
+  overflow-x: hidden;
+}
+
+#gdx-bubble-host {
+  display: none !important;
+}
+
+@layer base {
+  body {
+    @apply bg-neutral-100 font-sans text-neutral-950;
+  }
+}
+
+// https://stackoverflow.com/a/56071966
+html,
+body {
+  overscroll-behavior-x: none;
+}
+
+@mixin backlight($spread, $size, $colorA, $colorB, $duration, $radius) {
+  &:after {
+    will-change: 'border, transform, background-position';
+    position: absolute;
+    content: '';
+    top: 0;
+    left: 0;
+    z-index: -20;
+    height: 100%;
+    width: 100%;
+    -webkit-filter: blur($spread);
+    -moz-filter: blur($spread);
+    -ms-filter: blur($spread);
+    filter: blur($spread);
+    background: linear-gradient(to bottom left, $colorA, $colorB);
+    background-size: 200% 200%;
+
+    transform: scale($size) rotateZ(-0);
+    background-position: 0% 50%;
+    border-top-left-radius: $radius;
+    border-top-right-radius: 0%;
+    border-bottom-left-radius: 0%;
+    border-bottom-right-radius: $radius;
+
+    @media (min-width: 640px) {
+      animation:
+        animateGlow $duration ease infinite,
+        animatePosition $duration * 1.7 ease-in-out infinite,
+        animateRotation $duration * 2.5 ease-in-out infinite,
+        animateBorder $duration * 4.9 ease-in-out infinite;
+    }
+
+    @keyframes animateBorder {
+      0% {
+        border-top-left-radius: $radius;
+        border-top-right-radius: 0%;
+        border-bottom-left-radius: 0%;
+        border-bottom-right-radius: $radius;
+      }
+      12% {
+        border-top-left-radius: $radius;
+        border-top-right-radius: 0%;
+        border-bottom-left-radius: $radius;
+        border-bottom-right-radius: 0%;
+      }
+      25% {
+        border-top-left-radius: 0%;
+        border-top-right-radius: 0%;
+        border-bottom-left-radius: $radius;
+        border-bottom-right-radius: $radius;
+      }
+      37% {
+        border-top-left-radius: 0%;
+        border-top-right-radius: $radius;
+        border-bottom-left-radius: $radius;
+        border-bottom-right-radius: 0%;
+      }
+      50% {
+        border-top-left-radius: 0%;
+        border-top-right-radius: $radius;
+        border-bottom-left-radius: 0%;
+        border-bottom-right-radius: $radius;
+      }
+      62% {
+        border-top-left-radius: $radius;
+        border-top-right-radius: $radius;
+        border-bottom-left-radius: 0%;
+        border-bottom-right-radius: 0%;
+      }
+      75% {
+        border-top-left-radius: $radius;
+        border-top-right-radius: 0%;
+        border-bottom-left-radius: $radius;
+        border-bottom-right-radius: 0%;
+      }
+      87% {
+        border-top-left-radius: 0%;
+        border-top-right-radius: $radius;
+        border-bottom-left-radius: 0%;
+        border-bottom-right-radius: $radius;
+      }
+      100% {
+        border-top-left-radius: $radius;
+        border-top-right-radius: 0%;
+        border-bottom-left-radius: 0%;
+        border-bottom-right-radius: $radius;
+      }
+    }
+
+    @keyframes animateRotation {
+      0% {
+        transform: scale($size) rotateZ(-0);
+      }
+
+      50% {
+        transform: scale($size) rotateZ(0);
+      }
+
+      100% {
+        transform: scale($size) rotateZ(-0);
+      }
+    }
+
+    @keyframes animatePosition {
+      0% {
+        transform: translate(-10%, -10%);
+      }
+      25% {
+        transform: translate(10%, 10%);
+      }
+      50% {
+        transform: translate(-10%, 10%);
+      }
+      75% {
+        transform: translate(10%, -10%);
+      }
+      100% {
+        transform: translate(-10%, -10%);
+      }
+    }
+
+    @keyframes animateGlow {
+      0% {
+        background-position: 0% 50%;
+      }
+      50% {
+        background-position: 100% 50%;
+      }
+      100% {
+        background-position: 0% 50%;
+      }
+    }
+  }
+}
+
+input::placeholder {
+  @apply text-neutral-500;
+}
+
+textarea::placeholder {
+  @apply text-neutral-500;
+}
+
+@layer utilities {
+  .backglow {
+    position: relative;
+    @include backlight(6rem, 1, #033ca6, #0396a6, 10s, 50%);
+  }
+
+  .better-scrollbar {
+    @apply overflow-y-scroll scrollbar scrollbar-track-transparent scrollbar-thumb-neutral-600 scrollbar-corner-transparent scrollbar-thumb-rounded-full scrollbar-w-2;
+  }
+
+  .scrollable-hidden-scrollbar {
+    @apply overflow-y-auto scrollbar scrollbar-track-transparent scrollbar-thumb-neutral-600 scrollbar-corner-transparent scrollbar-thumb-rounded-full scrollbar-w-0;
+  }
+
+  .inset-shadow {
+    box-shadow:
+      0px 1px 3px rgba(0, 0, 0, 0.4),
+      0px 0px 4px rgba(0, 0, 0, 0.5),
+      inset 0px 0px 2px rgba(255, 255, 255, 0.3),
+      inset 0px 1px 0px rgba(255, 255, 255, 0.1);
+  }
+
+  .border-glow {
+    @apply border border-neutral-500/50 bg-clip-padding backdrop-saturate-[3] backdrop-contrast-[1.5] backdrop-blur-2xl;
+    box-shadow:
+      0px 1px 3px rgba(0, 0, 0, 0.4),
+      0px 0px 8px rgba(0, 0, 0, 0.5);
+  }
+
+  .inset-shadow-sm {
+    box-shadow:
+      0px 1px 3px rgba(0, 0, 0, 0.4),
+      0px 0px 4px rgba(0, 0, 0, 0.5),
+      inset 0px 0px 2px rgba(255, 255, 255, 0.3),
+      inset 0px 0px 2px rgba(255, 255, 255, 0.1);
+  }
+}
+
+.op-ui-MenuItem {
+  grid-template-areas: 'label kbd' 'desc kbd';
+
+  [slot='label'] {
+    grid-area: label;
+  }
+
+  [slot='description'] {
+    grid-area: desc;
+  }
+
+  [slot='kbd'] {
+    grid-area: kbd;
+  }
+}
+
+.op-ui-Tooltip {
+  grid-template-areas: 'label kbd' 'desc kbd';
+
+  [slot='label'] {
+    grid-area: label;
+  }
+
+  [slot='description'] {
+    grid-area: desc;
+  }
+
+  [slot='kbd'] {
+    grid-area: kbd;
+    transform: translateY(0.135em);
+  }
+}
+
+// Hides the controls of "Video Speed Controller" Chrome extension from the video element
+.vsc-controller {
+  display: none !important;
+}

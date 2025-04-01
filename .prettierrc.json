@@ -1,0 +1,17 @@
+{
+  "singleQuote": true,
+  "tabWidth": 2,
+  "semi": true,
+  "arrowParens": "always",
+  "endOfLine": "auto",
+  "printWidth": 80,
+  "trailingComma": "all",
+  "plugins": [
+    "prettier-plugin-sql",
+    "prettier-plugin-tailwindcss",
+    "prettier-plugin-packagejson"
+  ],
+  "tailwindAttributes": ["className", "useClasses", ".*ClassName", "tw"],
+  "tailwindFunctions": ["twMerge", "clsx", "tw", "cva", "cn", "tv"],
+  "tailwindConfig": "./packages/ui/tailwind.shared.ts"
+}

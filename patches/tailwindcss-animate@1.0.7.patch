@@ -1,0 +1,55 @@
+diff --git a/index.js b/index.js
+index 1021698ad48bce3465905a6ee3b779ea43d6538f..8fb00aaa7e551c08274d0fa85c2093aec28592a3 100644
+--- a/index.js
++++ b/index.js
+@@ -13,7 +13,7 @@ module.exports = plugin(
+ 			"@keyframes exit": theme("keyframes.exit"),
+ 			".animate-in": {
+ 				animationName: "enter",
+-				animationDuration: theme("animationDuration.DEFAULT"),
++				animationDuration: theme("transitionDuration.DEFAULT"),
+ 				"--tw-enter-opacity": "initial",
+ 				"--tw-enter-scale": "initial",
+ 				"--tw-enter-rotate": "initial",
+@@ -22,7 +22,7 @@ module.exports = plugin(
+ 			},
+ 			".animate-out": {
+ 				animationName: "exit",
+-				animationDuration: theme("animationDuration.DEFAULT"),
++				animationDuration: theme("transitionDuration.DEFAULT"),
+ 				"--tw-exit-opacity": "initial",
+ 				"--tw-exit-scale": "initial",
+ 				"--tw-exit-rotate": "initial",
+@@ -86,13 +86,13 @@ module.exports = plugin(
+ 		)
+ 
+ 		matchUtilities(
+-			{ duration: (value) => ({ animationDuration: value }) },
+-			{ values: filterDefault(theme("animationDuration")) },
++			{ "duration-animate": (value) => ({ animationDuration: value }) },
++			{ values: theme("transitionDuration") },
+ 		)
+ 
+ 		matchUtilities(
+-			{ delay: (value) => ({ animationDelay: value }) },
+-			{ values: theme("animationDelay") },
++			{ "delay-animate": (value) => ({ animationDelay: value }) },
++			{ values: theme("transitionDelay") },
+ 		)
+ 
+ 		matchUtilities(
+@@ -126,10 +126,10 @@ module.exports = plugin(
+ 				animationDelay: ({ theme }) => ({
+ 					...theme("transitionDelay"),
+ 				}),
+-				animationDuration: ({ theme }) => ({
+-					0: "0ms",
+-					...theme("transitionDuration"),
+-				}),
++				// animationDuration: ({ theme }) => ({
++				// 	0: "0ms",
++				// 	...theme("transitionDuration"),
++				// }),
+ 				animationTimingFunction: ({ theme }) => ({
+ 					...theme("transitionTimingFunction"),
+ 				}),

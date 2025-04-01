@@ -1,0 +1,149 @@
+{
+//   "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.detectIndentation": false,
+
+  // Disable the default formatter, use eslint instead
+  //   "prettier.enable": false,
+  "editor.formatOnSave": false,
+
+  // Auto fix
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit",
+    "source.organizeImports": "never"
+  },
+  //   "eslint.codeActionsOnSave.mode": "problems",
+
+  "editor.wordWrap": "bounded",
+  "editor.wordWrapColumn": 120,
+
+  // Enable eslint for all supported languages
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact",
+    "vue",
+    "html",
+    "markdown",
+    "json",
+    "jsonc",
+    "yaml",
+    "toml",
+    "xml",
+    "gql",
+    "graphql",
+    "astro",
+    "svelte",
+    "css",
+    "less",
+    "scss",
+    "pcss",
+    "postcss"
+  ],
+
+  // https://github.com/microsoft/TypeScript/issues/58709
+  "typescript.preferences.includePackageJsonAutoImports": "on",
+  "typescript.preferences.importModuleSpecifier": "project-relative", // for ~/* or @/* aliasing
+
+  "files.exclude": {
+    "**/workshop": true,
+    "**/node_modules": true,
+    "node_modules/**": true,
+    "**/.husky": true,
+    "**/.vscode": false,
+    "**/.next": true,
+    "**/.turbo": true,
+    "**/.yarn": true,
+    "**/.yarnrc.*": true,
+    "**/yarn.lock": true,
+    "**/.prettierignore": true,
+    "**/.prettierrc.json": true,
+    "**/.lintstagedrc.js": true,
+    "**/.babelrc": true,
+    "**/.DS_Store": true,
+    "**/Thumbs.db": true,
+    "**/tsconfig.tsbuildinfo": true,
+    "**/build/**": true,
+    "**/dist/**": true
+  },
+
+  "search.exclude": {
+    "**/workshop": true,
+    "**/node_modules": true,
+    "node_modules/**": true,
+    "**/.husky": false,
+    "**/.vscode": false,
+    "**/.next": true,
+    "**/.turbo": true,
+    "**/.yarn": false,
+    "**/.yarnrc.*": false,
+    "**/yarn.lock": false,
+    "pnpm-lock.yaml": true,
+    "**/tsconfig.tsbuildinfo": true,
+    "**/.prettierignore": false,
+    "**/.prettierrc.json": false,
+    "**/.lintstagedrc.js": false,
+    "**/.babelrc": true,
+    "**/.DS_Store": true,
+    "**/Thumbs.db": true,
+    "**/build/**": true,
+    "**/dist": true,
+    "**/draco_*.js": true,
+    "**/draco_*.wasm": true
+  },
+
+  // File nesting allows cleaner file structure in the explorer,
+  // by nesting config files and root files under package.json
+  "explorer.fileNesting.enabled": true,
+  "explorer.fileNesting.expand": false,
+  "explorer.fileNesting.patterns": {
+    "package.json": "pnpm-workspace.yaml, pnpm-lock.yaml, turbo.json, tsconfig.json, next.config.mjs, postcss.config.*, tailwind.config.js, .eslintrc.*, .prettierrc.*, .lintstagedrc.js, .babelrc, .prettierignore, tailwind.config.*, next-env.d.ts, .gitignore, .eslintignore, README.*, vite.config.*, eslint.config.js"
+  },
+
+  "tailwindCSS.classAttributes": [
+    "className",
+    "useClasses",
+    ".*ClassName",
+    "tw"
+  ],
+  "tailwindCSS.experimental.classRegex": [
+    [
+      "tv\\(\\s*{([\\s\\S]*?)}\\s*\\)", // tailwind variants match group
+      "{?\\s?[\\w].*:\\s*?[\"'`]([^\"'`]*).*?,?\\s?}?" // tailwind variants refine group
+    ]
+  ],
+
+  "eslint.workingDirectories": [
+    {
+      "mode": "auto"
+    }
+  ],
+
+  "typescript.preferences.autoImportFileExcludePatterns": [
+    "drizzle-orm/mysql-core",
+    "drizzle-orm/sqlite-core"
+  ],
+
+  "[sql]": {
+    "editor.defaultFormatter": "adpyke.vscode-sql-formatter"
+  },
+
+  "Prettier-SQL.SQLFlavourOverride": "postgresql",
+  "Prettier-SQL.indentStyle": "standard",
+  "Prettier-SQL.newlineBeforeSemicolon": false,
+
+  "[dotenv]": {
+
+    "editor.defaultFormatter": "foxundermoon.shell-format"
+  },
+
+  "files.associations": {
+
+    "*.env.*": "shellscript"
+  },
+
+  "[shellscript]": {
+    "editor.defaultFormatter": "foxundermoon.shell-format"
+  },
+  "typescript.tsdk": "node_modules/typescript/lib"
+}

@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "tRPC",
+  "extends": "./base.json",
+  "compilerOptions": {
+    "composite": false,
+    "inlineSources": false,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "preserveWatchOutput": true,
+    "downlevelIteration": false
+  },
+  "exclude": ["node_modules"]
+}

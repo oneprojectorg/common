@@ -1,0 +1,34 @@
+{
+  "name": "api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "next build",
+    "dev": "next dev -p 3300",
+    "lint": "pnpm tsc --noEmit && pnpm eslint --fix .",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@op/core": "workspace:*",
+    "@op/supabase": "workspace:*",
+    "@op/trpc": "workspace:*",
+    "@op/ui": "workspace:*",
+    "@scalar/nextjs-api-reference": "^0.5.10",
+    "@trpc/server": "11.0.0-rc.700",
+    "dotenv": "^16.4.7",
+    "next": "^15.2.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "trpc-to-openapi": "2.1.3",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@op/eslint-config": "workspace:*",
+    "@op/typescript-config": "workspace:*",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^3.4.17",
+    "typescript": "5.7.3"
+  }
+}

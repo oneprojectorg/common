@@ -1,0 +1,39 @@
+{
+  "name": "@op/db",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./client": "./client.ts",
+    "./schema": "./schema/index.ts",
+    "./tables": "./tables.ts"
+  },
+  "scripts": {
+    "generate": "pnpm drizzle-kit generate && tsx scripts/extractIndexes.ts",
+    "lint": "pnpm tsc --noEmit && pnpm eslint --fix .",
+    "migrate": "cross-env DB_MIGRATING=true tsx ./migrate.ts",
+    "reset": "pnpx supabase db reset",
+    "seed": "cross-env DB_SEEDING=true tsx ./seed.ts",
+    "start": "pnpx supabase start",
+    "status": "pnpx supabase status",
+    "stop": "pnpx supabase stop",
+    "studio": "pnpm drizzle-kit studio"
+  },
+  "dependencies": {
+    "@op/core": "workspace:*",
+    "dotenv": "^16.4.7",
+    "drizzle-orm": "^0.40.0",
+    "postgres": "^3.4.5",
+    "server-only": "^0.0.1"
+  },
+  "devDependencies": {
+    "@op/eslint-config": "workspace:*",
+    "@op/typescript-config": "workspace:*",
+    "@supabase/ssr": "0.5.2",
+    "cross-env": "^7.0.3",
+    "dotenv": "^16.4.5",
+    "drizzle-kit": "^0.30.5",
+    "tsx": "^4.19.3",
+    "typescript": "5.7.3"
+  }
+}

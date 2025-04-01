@@ -1,0 +1,21 @@
+{
+  "extends": "@op/typescript-config/react-library.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "types": ["unplugin-icons/types/react"]
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    "**/*.js",
+    "**/*.jsx",
+    ".storybook/**/*.ts",
+    ".storybook/**/*.tsx",
+    ".",
+    "src",
+    "turbo"
+  ],
+  "exclude": ["dist", "build", "node_modules"]
+}

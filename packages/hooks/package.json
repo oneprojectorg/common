@@ -1,0 +1,31 @@
+{
+  "name": "@op/hooks",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./index.ts",
+    "./useMediaQuery": "./src/useMediaQuery.tsx",
+    "./utils": "./src/utils/index.ts"
+  },
+  "scripts": {
+    "lint": "pnpm tsc --noEmit && pnpm eslint --fix ."
+  },
+  "dependencies": {
+    "@op/core": "workspace:*",
+    "@op/supabase": "workspace:*",
+    "@op/trpc": "workspace:*",
+    "@tanstack/react-query": "5.66.11",
+    "js-cookie": "^3.0.5",
+    "next": "^15.2.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@op/eslint-config": "workspace:*",
+    "@op/typescript-config": "workspace:*",
+    "@types/js-cookie": "^3.0.6",
+    "@types/react": "19.0.10",
+    "typescript": "5.7.3"
+  }
+}

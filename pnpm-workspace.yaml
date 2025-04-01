@@ -1,0 +1,8 @@
+packages:
+  - 'apps/*'
+  - 'configs/*'
+  - 'packages/*'
+  - 'assets/*'
+  - 'services/*'
+  - 'backend/*'
+  - 'tools/*'

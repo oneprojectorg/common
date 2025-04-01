@@ -1,0 +1,6 @@
+# .estlintignore file
+.next
+dist
+node_modules/
+pnpm-lock.yaml
+draco*.js

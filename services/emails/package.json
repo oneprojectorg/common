@@ -1,0 +1,29 @@
+{
+  "name": "@op/emails",
+  "version": "0.0.19",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "email dev --port 3883",
+    "disable-build": "email build",
+    "export": "email export",
+    "lint": "pnpm tsc --noEmit && pnpm eslint --fix ."
+  },
+  "dependencies": {
+    "@op/core": "workspace:*",
+    "@react-email/components": "0.0.33",
+    "@react-email/render": "^1.0.5",
+    "@react-email/tailwind": "^1.0.4",
+    "nodemailer": "^6.10.0",
+    "react": "^19.0.0",
+    "react-email": "3.0.7",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@op/eslint-config": "workspace:*",
+    "@op/typescript-config": "workspace:*",
+    "@types/nodemailer": "^6.4.17",
+    "@types/react": "19.0.10",
+    "typescript": "5.7.3"
+  }
+}
