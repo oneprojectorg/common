@@ -7,19 +7,23 @@
       }
     ],
     "baseUrl": ".",
+    // "noErrorTruncation": true
+    "types": ["unplugin-icons/types/react"],
     "strict": true /* Enable all strict type-checking options. */,
     "strictNullChecks": true /* Enable strict null checks. */,
     "alwaysStrict": true /* Parse in strict mode and emit "use strict" for each source file. */,
     "noImplicitAny": true /* Raise error on expressions and declarations with an implied 'any' type. */,
     "noImplicitThis": true /* Raise error on 'this' expressions with an implied 'any' type. */,
     "esModuleInterop": true
-    // "noErrorTruncation": true
   },
   "include": [
+    "next-env.d.ts",
+    "next.config.mjs",
     "**/*.ts",
     "**/*.tsx",
     "**/*.js",
     "**/*.jsx",
+    ".next/types/**/*.ts",
     "./*.ts",
     "./*.tsx",
     "./*.js",
