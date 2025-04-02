@@ -76,3 +76,12 @@ This monorepo utilizes a shared Tailwind configuration strategy managed primaril
 - **App Consumption**: Applications (`apps/app`, `apps/api`) wrap their `tailwind.config.ts` with `withUITailwindPreset` and their `next.config.mjs` with `withTranspiledWorkspacesForNext`. This automatically includes the shared preset and ensures Next.js transpiles the necessary packages (`@op/ui` and any others listed in `@op/ui/tailwind-utils`) so Tailwind can scan their class usage directly from source.
 
 This setup allows components in `@op/ui` (and potentially other packages) to use Tailwind classes without having Tailwind as a direct dependency, centralizing the configuration and build process in the consuming applications. See the [`@op/ui` README](./packages/ui/README.md) and the utilities in `@op/ui/tailwind-utils` for more details if adding new Tailwind-dependent packages.
+
+## Dependency Management Scripts
+
+The root `package.json` includes several scripts prefixed with `deps:` to help manage dependencies across the monorepo:
+
+- **`pnpm deps:clean`**: Runs `depcheck` on all workspaces (`apps/*`, `packages/*`, `services/*`) and automatically removes any unused dependencies listed in their respective `package.json` files. It then formats all `package.json` files. **Important:** Ensure you have no uncommitted/staged changes before running, as it modifies `package.json` files directly.
+  - **Note**: This script incorrectly removes certain **Storybook** addons and plugins. Double check before committing.
+- **`pnpm deps:override`**: Identifies external dependencies used in two or more workspaces. If such a dependency is not already present in the root `package.json`, this script adds it to the root `devDependencies` and creates a corresponding entry in `pnpm.overrides`. This enforces version consistency for shared dependencies across the monorepo. It then formats all `package.json` files. **Important:** Ensure you have no uncommitted/staged changes before running.
+- **`pnpm deps:viz`**: Generates an interactive D3.js visualization of the Turborepo task dependency graph (based on the `build` task) and opens it automatically in your default browser. Useful for understanding the relationships and build order between workspaces.

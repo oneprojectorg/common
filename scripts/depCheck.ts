@@ -15,6 +15,7 @@ function checkGitStatus() {
       console.error('Error: There are uncommitted changes in the repository.');
       console.error(
         'Please commit or stash your changes before running depCheck.',
+        'This prevents accidental commits of partially updated dependency states.',
       );
       process.exit(1);
     }
@@ -28,6 +29,7 @@ function checkGitStatus() {
       console.error('Error: There are staged files in the repository.');
       console.error(
         'Please commit or unstage your changes before running depCheck.',
+        'This prevents accidental commits of partially updated dependency states.',
       );
       process.exit(1);
     }
@@ -71,15 +73,17 @@ function findPackageDirs(dir: string): string[] {
   return results;
 }
 
-// Updated runDepcheck function
+// Runs depcheck on a single package directory and removes unused dependencies.
 async function runDepcheck(packageDir: string): Promise<void> {
   const options = {
-    ignorePatterns: ['dist', 'build'],
+    ignorePatterns: ['dist', 'build'], // Ignore build artifacts
     ignoreMatches: [
-      // ignore dependencies that matches these globs
-      'postcss',
-      'autoprefixer',
-      '@iconify/json',
+      // Ignore dependencies that might be used indirectly (e.g., via config files)
+      // or are known false positives for depcheck.
+      'postcss', // Used via postcss.config.js
+      'autoprefixer', // Used via postcss.config.js
+      '@iconify/json', // Used by unplugin-icons
+      '@storybook/*', // Used by storybook
     ],
   };
 
@@ -125,7 +129,9 @@ async function runDepcheck(packageDir: string): Promise<void> {
   }
 }
 
-// Updated handleMultiuse function
+// Scans all workspaces, identifies dependencies used in multiple packages,
+// and hoists them to the root package.json devDependencies and pnpm.overrides
+// to ensure version consistency across the monorepo.
 function handleMultiuse() {
   // Read pnpm-workspace.yaml
   const workspaceConfig = yaml.load(
@@ -167,6 +173,7 @@ function handleMultiuse() {
 
     // Add each dependency to the dependencyUsage object
     for (const [dep, version] of Object.entries(allDependencies)) {
+      // Skip internal workspace packages
       if (dep.startsWith('@op')) {
         continue;
       }
@@ -180,7 +187,7 @@ function handleMultiuse() {
     }
   }
 
-  // Filter dependencies used in 2 or more packages
+  // Filter for dependencies used in 2 or more packages
   const multiuseDependencies = Object.entries(dependencyUsage)
 
     .filter(([_, { packages }]) => packages.size >= 2)
@@ -222,7 +229,7 @@ function handleMultiuse() {
 
   // Add missing dependencies to root package.json and pnpm.overrides
   missingInRoot.forEach(({ dep, versions }) => {
-    // Choose the most common version or the first one if there's a tie
+    // Choose the most common version found across workspaces, or the first one if tied.
     const mostCommonVersion = versions.reduce((a, b, _i, arr) =>
       arr.filter(v => v === a).length >= arr.filter(v => v === b).length
         ? a
@@ -234,10 +241,11 @@ function handleMultiuse() {
       rootPackageJson.devDependencies = {};
     }
 
-    // Add to devDependencies
+    // Add the dependency to root devDependencies with the chosen version.
     rootPackageJson.devDependencies[dep] = mostCommonVersion;
 
-    // Add to pnpm.overrides
+    // Add an override to ensure all workspaces use this root version.
+    // The `$dep` syntax tells pnpm to use the version of `dep` resolved at the root.
     rootPackageJson.pnpm.overrides[dep] = `$${dep}`;
   });
 
@@ -268,23 +276,29 @@ function handleMultiuse() {
   });
 }
 
-// Updated main function
+// Main script execution logic
 async function main() {
-  // Add this line at the beginning of the main function
+  // Perform a safety check to ensure no uncommitted/staged changes exist
   checkGitStatus();
 
   const args = process.argv.slice(2);
 
+  // Handle --multiuse: Hoist shared dependencies to root
   if (args.includes('--multiuse')) {
+    console.log('Running in --multiuse mode: Checking for shared dependencies...');
     handleMultiuse();
+    console.log('Finished checking shared dependencies.');
 
     return;
   }
 
+  // Handle --clean: Remove unused dependencies from workspaces
   if (!args.includes('--clean')) {
-    console.log('Please specify either --clean or --multiuse');
+    console.log('Please specify either --clean or --multiuse flag.');
     process.exit(1);
   }
+
+  console.log('Running in --clean mode: Checking for unused dependencies...');
 
   // Read pnpm-workspace.yaml
   const workspaceConfig = yaml.load(
@@ -311,10 +325,14 @@ async function main() {
   console.log('Found package directories:');
   packageDirs.forEach(dir => console.log(dir));
 
-  // Run depcheck on each package directory
+  // Run depcheck --clean operation on each package directory
+  console.log('\nRunning depcheck on each workspace...');
+
   for (const packageDir of packageDirs) {
     await runDepcheck(packageDir);
   }
+
+  console.log('\nFinished checking unused dependencies.');
 }
 
 main().catch((error) => {
