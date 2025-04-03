@@ -52,7 +52,7 @@ export async function middleware(request: NextRequest) {
 
   if (
     !user
-    && request.nextUrl.pathname.startsWith('/flow')
+    && request.nextUrl.pathname.startsWith('/protected')
   ) {
     // no user, potentially respond by redirecting the user to the login page
     const url = request.nextUrl.clone();
@@ -79,6 +79,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    '/protected/:path*',
     /*
      * Match all request paths except for the ones starting with:
      * - _next/static (static files)
@@ -86,6 +87,6 @@ export const config = {
      * - favicon.ico (favicon file)
      * Feel free to modify this pattern to include more paths.
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    // '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };
