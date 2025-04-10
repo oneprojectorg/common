@@ -9,7 +9,8 @@
     "./tables": "./tables.ts"
   },
   "scripts": {
-    "dev": "next dev",
+    "build": "next build",
+    "dev": "next dev -p 3700",
     "generate": "pnpm drizzle-kit generate && tsx scripts/extractIndexes.ts",
     "lint": "pnpm tsc --noEmit && pnpm eslint --fix .",
     "migrate": "cross-env DB_MIGRATING=true tsx ./migrate.ts",

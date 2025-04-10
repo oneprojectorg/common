@@ -6,6 +6,7 @@ export const APP_PORT = 3100;
 export const API_PORT = 3300;
 export const UI_WORKSHOP_PORT = 3600;
 export const EMAILS_PORT = 3883;
+export const ORM_VIZ_PORT = 3700;
 
 export const APP_NAME = 'Common';
 export const OP_EMAIL_NAME = 'OP Labs';
