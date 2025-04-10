@@ -1,13 +1,24 @@
+'use client';
 
-import MainLayout from '@/app/(main)/layout';
-import MainPage from '@/app/(main)/page';
+import LoginDialog from '@/components/LoginDialog';
 
-const AppPage = () => {
+import { useAuthUser } from '@op/hooks';
+
+const MainPage = () => {
+  const user = useAuthUser();
+
+  if (!user || user.isFetching || user.isPending)
+    return null;
+
+  if (user.isFetchedAfterMount && !user.isFetching && !user.data?.user) {
+    return <LoginDialog open />;
+  }
+
   return (
-    <MainLayout>
-      <MainPage />
-    </MainLayout>
+    <div className="container flex min-h-0 grow flex-col px-0 pt-4">
+      Hello world!
+    </div>
   );
 };
 
-export default AppPage;
+export default MainPage;
