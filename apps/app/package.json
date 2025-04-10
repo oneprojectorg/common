@@ -10,7 +10,7 @@
     "start": "next start -p 3100"
   },
   "dependencies": {
-    "@next/bundle-analyzer": "^15.2.0",
+    "@next/bundle-analyzer": "^15.3.0",
     "@op/core": "workspace:*",
     "@op/hooks": "workspace:*",
     "@op/supabase": "workspace:*",

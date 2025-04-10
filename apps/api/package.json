@@ -17,7 +17,7 @@
     "@scalar/nextjs-api-reference": "^0.5.10",
     "@trpc/server": "11.0.0-rc.700",
     "dotenv": "^16.4.7",
-    "next": "^15.2.0",
+    "next": "^15.3.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "trpc-to-openapi": "2.1.3",
