@@ -37,9 +37,7 @@ export const metadata: Metadata = {
   title: APP_NAME,
   description: 'A next-gen paradigm to co-create with AI.',
   icons: {
-    icon: [
-      { url: '/op.png', type: 'image/png' },
-    ],
+    icon: [{ url: '/op.png', type: 'image/png' }],
   },
   robots: {
     googleBot: {
@@ -99,7 +97,6 @@ const RootLayout = ({ children }: { children: React.ReactNode }) => {
             pauseWhenPageIsHidden
             visibleToasts={10}
             toastOptions={{
-
               classNames: {
                 toast:
                   'group toast bg-neutral-900/90 backdrop-blur-md border-none text-neutral-100 inset-shadow  mb-14',

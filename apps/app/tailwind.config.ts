@@ -29,6 +29,14 @@ const config: Pick<Config, 'content' | 'theme' | 'presets'> = {
           '50%': { backgroundPosition: '100% 100%' },
         },
       },
+      colors: {
+        teal: 'hsl(var(--op-teal-500))',
+        white: 'hsl(var(--op-marine-50))',
+      },
+      backgroundImage: {
+        'aside-gradient':
+          'radial-gradient(154% 99.31% at 0% 0%, #3EC300 0%, #0396A6 51.56%)',
+      },
     },
   },
   presets: [sharedConfig],
