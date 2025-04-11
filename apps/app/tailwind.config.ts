@@ -14,10 +14,21 @@ const config: Pick<Config, 'content' | 'theme' | 'presets'> = {
         sans: ['var(--font-sans)', ...defaultTheme.fontFamily.sans],
         mono: ['var(--font-mono)', ...defaultTheme.fontFamily.mono],
       },
+      fontSize: {
+        header: [
+          '1rem',
+          {
+            lineHeight: '1.6',
+            letterSpacing: '-0.01em',
+            fontWeight: '300',
+          },
+        ],
+      },
       borderRadius: {
         ...defaultTheme.borderRadius,
         xs: '0.125rem',
-        sm: '0.25rem',
+        sm: '0.1875rem',
+        lg: '0.5rem',
       },
       keyframes: {
         wiggle: {
@@ -32,6 +43,7 @@ const config: Pick<Config, 'content' | 'theme' | 'presets'> = {
       colors: {
         teal: 'hsl(var(--op-teal-500))',
         white: 'hsl(var(--op-marine-50))',
+        orange: 'hsl(var(--op-sunset-500))',
       },
       backgroundImage: {
         'aside-gradient':
