@@ -35,11 +35,11 @@ const config: Omit<Config, 'content'> = {
       },
       colors: {
         accent: commonColors,
-        primary: 'hsl(var(--color-op-teal))',
+        // primary: 'hsl(var(--color-op-teal))',
         // border: 'hsl(var(--border))',
         // input: 'hsl(var(--input))',
         // ring: 'hsl(var(--ring))',
-        background: 'hsl(var(--color-op-whiteish))',
+        // background: 'hsl(var(--color-op-whiteish))',
         // foreground: 'hsl(var(--foreground))',
         // primary: {
         //   DEFAULT: 'hsl(var(--primary))',
@@ -69,12 +69,6 @@ const config: Omit<Config, 'content'> = {
         //   DEFAULT: 'hsl(var(--card))',
         //   foreground: 'hsl(var(--card-foreground))',
         // },
-      },
-      backgroundImage: {
-        'stepper-gradient':
-          'radial-gradient(154% 99.31% at 0% 0%, #3EC300 0%, #0396A6 51.56%)',
-        'background-gradient':
-          'radial-gradient(85.55% 132.88% at 50% 100%, var(--color-op-teal) 0%, var(--color-op-whiteish) 100%);',
       },
       //   borderRadius: {
       //     lg: 'var(--radius)',

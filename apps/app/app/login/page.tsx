@@ -27,7 +27,7 @@ const LoginPageWithLayout = () => {
           />
         </header>
         <div className="flex size-full items-center justify-center">
-          <LoginDialog open />
+          <LoginDialog />
           <CreateAccount />
         </div>
       </FullScreenStepperMain>

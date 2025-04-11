@@ -4,7 +4,7 @@ export const FullScreenStepperAside = ({
   children?: React.ReactNode;
 }) => {
   return (
-    <aside className="absolute size-full flex-col bg-background-gradient sm:relative sm:flex sm:w-1/3 sm:min-w-96 sm:bg-stepper-gradient">
+    <aside className="bg-background-gradient sm:bg-primary sm:bg-aside-gradient absolute size-full flex-col sm:relative sm:flex sm:w-[40vw] sm:min-w-96">
       {children}
     </aside>
   );
