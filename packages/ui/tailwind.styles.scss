@@ -6,6 +6,13 @@
   touch-action: pan-x pan-y;
   height: 100%;
   overflow-x: hidden;
+
+  --color-op-teal: 186, 96%, 33%;
+  --color-op-black: 191, 32%, 11%;
+  --color-op-charcoal: 192, 11%, 26%;
+  --color-op-darkGray: 190, 6%, 40%;
+
+  --color-op-whiteish: 180, 11%, 98%;
 }
 
 #gdx-bubble-host {
@@ -63,48 +70,56 @@ body {
         border-bottom-left-radius: 0%;
         border-bottom-right-radius: $radius;
       }
+
       12% {
         border-top-left-radius: $radius;
         border-top-right-radius: 0%;
         border-bottom-left-radius: $radius;
         border-bottom-right-radius: 0%;
       }
+
       25% {
         border-top-left-radius: 0%;
         border-top-right-radius: 0%;
         border-bottom-left-radius: $radius;
         border-bottom-right-radius: $radius;
       }
+
       37% {
         border-top-left-radius: 0%;
         border-top-right-radius: $radius;
         border-bottom-left-radius: $radius;
         border-bottom-right-radius: 0%;
       }
+
       50% {
         border-top-left-radius: 0%;
         border-top-right-radius: $radius;
         border-bottom-left-radius: 0%;
         border-bottom-right-radius: $radius;
       }
+
       62% {
         border-top-left-radius: $radius;
         border-top-right-radius: $radius;
         border-bottom-left-radius: 0%;
         border-bottom-right-radius: 0%;
       }
+
       75% {
         border-top-left-radius: $radius;
         border-top-right-radius: 0%;
         border-bottom-left-radius: $radius;
         border-bottom-right-radius: 0%;
       }
+
       87% {
         border-top-left-radius: 0%;
         border-top-right-radius: $radius;
         border-bottom-left-radius: 0%;
         border-bottom-right-radius: $radius;
       }
+
       100% {
         border-top-left-radius: $radius;
         border-top-right-radius: 0%;
@@ -131,15 +146,19 @@ body {
       0% {
         transform: translate(-10%, -10%);
       }
+
       25% {
         transform: translate(10%, 10%);
       }
+
       50% {
         transform: translate(-10%, 10%);
       }
+
       75% {
         transform: translate(10%, -10%);
       }
+
       100% {
         transform: translate(-10%, -10%);
       }
@@ -149,9 +168,11 @@ body {
       0% {
         background-position: 0% 50%;
       }
+
       50% {
         background-position: 100% 50%;
       }
+
       100% {
         background-position: 0% 50%;
       }
@@ -190,7 +211,7 @@ textarea::placeholder {
   }
 
   .border-glow {
-    @apply border border-neutral-500/50 bg-clip-padding backdrop-saturate-[3] backdrop-contrast-[1.5] backdrop-blur-2xl;
+    @apply border border-neutral-500/50 bg-clip-padding backdrop-blur-2xl backdrop-contrast-[1.5] backdrop-saturate-[3];
     box-shadow:
       0px 1px 3px rgba(0, 0, 0, 0.4),
       0px 0px 8px rgba(0, 0, 0, 0.5);
