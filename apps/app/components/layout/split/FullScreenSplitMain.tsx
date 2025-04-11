@@ -1,4 +1,4 @@
-export const FullScreenStepperMain = ({
+export const FullScreenSplitMain = ({
   children,
 }: {
   children: React.ReactNode;

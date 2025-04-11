@@ -1,4 +1,4 @@
-export const FullScreenStepperAside = ({
+export const FullScreenSplitAside = ({
   children = null,
 }: {
   children?: React.ReactNode;

@@ -1,8 +1,8 @@
 'use client';
 
-import { FullScreenStepperLayout } from '@/components/layout/FullScreenStepperLayout';
-import { FullScreenStepperAside } from '@/components/layout/FullScreenStepperLayout/FullScreenStepperAside';
-import { FullScreenStepperMain } from '@/components/layout/FullScreenStepperLayout/FullScreenStepperMain';
+import { FullScreenSplitAside } from '@/components/layout/split/FullScreenSplitAside';
+import { FullScreenSplitLayout } from '@/components/layout/split/FullScreenSplitLayout';
+import { FullScreenSplitMain } from '@/components/layout/split/FullScreenSplitMain';
 import LoginDialog from '@/components/LoginDialog';
 import Image from 'next/image';
 import { redirect } from 'next/navigation';
@@ -15,8 +15,8 @@ const CreateAccount = () => {
 
 const LoginPageWithLayout = () => {
   return (
-    <FullScreenStepperLayout>
-      <FullScreenStepperMain>
+    <FullScreenSplitLayout>
+      <FullScreenSplitMain>
         <header>
           <Image
             src="/op.png"
@@ -30,9 +30,9 @@ const LoginPageWithLayout = () => {
           <LoginDialog />
           <CreateAccount />
         </div>
-      </FullScreenStepperMain>
-      <FullScreenStepperAside />
-    </FullScreenStepperLayout>
+      </FullScreenSplitMain>
+      <FullScreenSplitAside />
+    </FullScreenSplitLayout>
   );
 };
 
