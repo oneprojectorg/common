@@ -9,10 +9,6 @@ import { redirect } from 'next/navigation';
 
 import { useAuthUser } from '@op/hooks';
 
-const CreateAccount = () => {
-  return <div> Create your account</div>;
-};
-
 const LoginPageWithLayout = () => {
   return (
     <FullScreenSplitLayout>
@@ -27,8 +23,7 @@ const LoginPageWithLayout = () => {
           />
         </header>
         <div className="flex size-full items-center justify-center">
-          <LoginDialog />
-          <CreateAccount />
+          <LoginDialog open />
         </div>
       </FullScreenSplitMain>
       <FullScreenSplitAside />
