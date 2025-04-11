@@ -144,11 +144,7 @@ const LoginDialog = ({
   if (!mounted) return null;
 
   return (
-    <div
-      isOpen={open}
-      onOpenChange={(isOpen) => onOpenChange?.(isOpen)}
-      className="inset-shadow isolate z-[999999] max-h-full w-auto w-full max-w-md rounded-2xl border border-neutral-200 bg-neutral-100/95 bg-clip-padding text-left align-middle font-sans text-neutral-700 backdrop-blur-lg backdrop-brightness-50 backdrop-saturate-50 entering:duration-500 entering:ease-out entering:animate-in entering:fade-in exiting:duration-500 exiting:ease-in exiting:animate-out exiting:fade-out xs:w-96"
-    >
+    <div className="z-[999999] max-h-full w-auto w-full max-w-md rounded-2xl border border-white bg-white bg-clip-padding font-sans text-neutral-700 backdrop-blur-lg backdrop-brightness-50 backdrop-saturate-50 entering:duration-500 entering:ease-out entering:animate-in entering:fade-in exiting:duration-500 exiting:ease-in exiting:animate-out exiting:fade-out xs:w-96">
       <Dialog>
         <div className="flex flex-col items-center justify-center">
           <div className="flex items-center gap-2">
@@ -161,7 +157,7 @@ const LoginDialog = ({
             />
             One Project
             <div>
-              <span className="border-orange text-orange rounded border p-1 font-mono text-xs">
+              <span className="border-orange text-orange2 rounded border p-1 font-mono text-xs">
                 {APP_NAME}
               </span>
             </div>
@@ -333,8 +329,6 @@ const LoginDialog = ({
             <>
               {user?.error?.name === 'AuthRetryableFetchError' ? (
                 <Button
-                  type="button"
-                  color="gradient"
                   className="flex w-full items-center justify-center"
                   onPress={() => {
                     void refetchUser().then(({ data }) => {
@@ -353,7 +347,6 @@ const LoginDialog = ({
               ) : (
                 <Button
                   type="button"
-                  color="gradient"
                   className="flex w-full items-center justify-center"
                   isDisabled={
                     !emailIsValid ||
@@ -381,7 +374,7 @@ const LoginDialog = ({
                       'Login'
                     )
                   ) : (
-                    'Continue'
+                    'Sign in'
                   )}
                 </Button>
               )}
