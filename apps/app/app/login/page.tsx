@@ -13,7 +13,7 @@ const LoginPageWithLayout = () => {
   return (
     <FullScreenSplitLayout>
       <FullScreenSplitMain>
-        <header>
+        <section>
           <Image
             src="/op.png"
             alt="OP Logo"
@@ -21,10 +21,11 @@ const LoginPageWithLayout = () => {
             height={200}
             className="size-8"
           />
-        </header>
-        <div className="flex size-full items-center justify-center">
+        </section>
+        <section className="flex size-full items-center justify-center">
+          {/* TODO: replace with inline form */}
           <LoginDialog open />
-        </div>
+        </section>
       </FullScreenSplitMain>
       <FullScreenSplitAside />
     </FullScreenSplitLayout>
