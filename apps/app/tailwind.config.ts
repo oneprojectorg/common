@@ -30,8 +30,8 @@ const config: Pick<Config, 'content' | 'theme' | 'presets'> = {
         },
       },
       colors: {
-        primary: 'hsl(var(--color-op-teal))',
-        background: 'hsl(var(--color-op-whiteish))',
+        teal: 'hsl(var(--op-teal-500))',
+        white: 'hsl(var(--op-marine-50))',
       },
       backgroundImage: {
         'aside-gradient':

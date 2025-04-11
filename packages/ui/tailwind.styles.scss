@@ -7,12 +7,96 @@
   height: 100%;
   overflow-x: hidden;
 
-  --color-op-teal: 186, 96%, 33%;
-  --color-op-black: 191, 32%, 11%;
-  --color-op-charcoal: 192, 11%, 26%;
-  --color-op-darkGray: 190, 6%, 40%;
+  /* Neutral */
+  --op-neutral-50: 0 0% 95%;
+  --op-neutral-100: 0 0% 90%;
+  --op-neutral-200: 0 0% 80%;
+  --op-neutral-300: 0 0% 70%;
+  --op-neutral-400: 0 0% 60%;
+  --op-neutral-500: 0 0% 51%;
+  --op-neutral-600: 0 0% 42%;
+  --op-neutral-700: 0 0% 34%;
+  --op-neutral-800: 0 0% 25%;
+  --op-neutral-900: 0 0% 17%;
+  --op-neutral-950: 0 0% 10%;
 
-  --color-op-whiteish: 180, 11%, 98%;
+  /* Marine */
+  --op-marine-50: 180 7% 94%;
+  --op-marine-100: 195 7% 89%;
+  --op-marine-200: 187 8% 79%;
+  --op-marine-300: 185 8% 69%;
+  --op-marine-400: 191 8% 59%;
+  --op-marine-500: 191 8% 50%;
+  --op-marine-600: 191 8% 41%;
+  --op-marine-700: 189 8% 33%;
+  --op-marine-800: 187 7% 25%;
+  --op-marine-900: 180 8% 17%;
+  --op-marine-950: 195 8% 10%;
+
+  /* Meteor */
+  --op-meteor-50: 4 81% 96%;
+  --op-meteor-100: 0 84% 93%;
+  --op-meteor-200: 5 85% 85%;
+  --op-meteor-300: 6 85% 76%;
+  --op-meteor-400: 8 87% 67%;
+  --op-meteor-500: 16 96% 48%;
+  --op-meteor-600: 16 96% 40%;
+  --op-meteor-700: 16 96% 32%;
+  --op-meteor-800: 16 97% 24%;
+  --op-meteor-900: 16 95% 17%;
+  --op-meteor-950: 16 96% 10%;
+
+  /* Sunset */
+  --op-sunset-50: 15 83% 95%;
+  --op-sunset-100: 15 82% 91%;
+  --op-sunset-200: 16 85% 82%;
+  --op-sunset-300: 18 86% 71%;
+  --op-sunset-400: 25 89% 54%;
+  --op-sunset-500: 28 96% 42%;
+  --op-sunset-600: 28 95% 35%;
+  --op-sunset-700: 28 96% 27%;
+  --op-sunset-800: 28 96% 21%;
+  --op-sunset-900: 29 97% 14%;
+  --op-sunset-950: 28 95% 8%;
+
+  /* Citra */
+  --op-citra-50: 35 84% 93%;
+  --op-citra-100: 37 83% 86%;
+  --op-citra-200: 40 87% 68%;
+  --op-citra-300: 45 96% 45%;
+  --op-citra-400: 45 96% 39%;
+  --op-citra-500: 45 96% 33%;
+  --op-citra-600: 45 96% 27%;
+  --op-citra-700: 45 96% 22%;
+  --op-citra-800: 45 95% 16%;
+  --op-citra-900: 46 96% 11%;
+  --op-citra-950: 45 94% 7%;
+
+  /* Cheddar */
+  --op-cheddar-50: 26 81% 94%;
+  --op-cheddar-100: 28 82% 89%;
+  --op-cheddar-200: 30 85% 76%;
+  --op-cheddar-300: 36 89% 55%;
+  --op-cheddar-400: 39 96% 42%;
+  --op-cheddar-500: 39 96% 36%;
+  --op-cheddar-600: 39 96% 30%;
+  --op-cheddar-700: 39 97% 24%;
+  --op-cheddar-800: 39 96% 18%;
+  --op-cheddar-900: 38 97% 12%;
+  --op-cheddar-950: 39 95% 7%;
+
+  /* Teal */
+  --op-teal-50: 193 29% 94%;
+  --op-teal-100: 191 28% 89%;
+  --op-teal-200: 190 31% 77%;
+  --op-teal-300: 189 33% 65%;
+  --op-teal-400: 188 37% 52%;
+  --op-teal-500: 186 96% 32%;
+  --op-teal-600: 186 97% 26%;
+  --op-teal-700: 186 96% 21%;
+  --op-teal-800: 186 98% 16%;
+  --op-teal-900: 186 96% 11%;
+  --op-teal-950: 188 94% 7%;
 }
 
 #gdx-bubble-host {

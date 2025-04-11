@@ -3,5 +3,5 @@ export const FullScreenSplitLayout = ({
 }: {
   children: React.ReactNode;
 }) => {
-  return <div className="bg-background flex size-full">{children}</div>;
+  return <div className="flex size-full bg-white">{children}</div>;
 };
