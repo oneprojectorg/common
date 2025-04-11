@@ -35,7 +35,6 @@ const config: Omit<Config, 'content'> = {
       },
       colors: {
         accent: commonColors,
-        // primary: 'hsl(var(--color-op-teal))',
         // border: 'hsl(var(--border))',
         // input: 'hsl(var(--input))',
         // ring: 'hsl(var(--ring))',
