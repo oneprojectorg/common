@@ -38,7 +38,7 @@
   },
   "scripts": {
     "build": "storybook build",
-    "dev": "storybook dev -p 3600",
+    "dev": "storybook dev -p 3600 --no-open",
     "lint": "pnpm tsc --noEmit && pnpm eslint --fix ."
   },
   "dependencies": {
