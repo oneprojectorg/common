@@ -29,7 +29,7 @@ const robotoMono = Roboto_Mono({
 
 const robotoSerif = Roboto_Serif({
   subsets: ['latin'],
-  weight: 'variable',
+  weight: ['300', '400'],
   variable: '--font-serif',
 });
 
@@ -62,7 +62,7 @@ export const viewport: Viewport = {
 
 const RootLayout = ({ children }: { children: React.ReactNode }) => {
   return (
-    <html lang="en" className="dark overflow-hidden scrollbar-none">
+    <html lang="en" className="overflow-hidden scrollbar-none">
       <head>
         {/* {(IS_DEVELOPMENT || IS_PREVIEW) && (
           <script

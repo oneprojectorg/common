@@ -11,9 +11,7 @@ import {
   DialogHeader,
 } from './Dialog';
 
-import type {
-  DialogProps,
-} from './Dialog';
+import type { DialogProps } from './Dialog';
 import type { ReactNode } from 'react';
 
 interface AlertDialogProps extends Omit<DialogProps, 'children'> {
@@ -56,7 +54,6 @@ export const AlertDialog = ({
             <Button
               color="primary"
               surface="solid"
-              padding="medium"
               // eslint-disable-next-line jsx-a11y/no-autofocus
               autoFocus
               className="border-neutral-200 text-sm font-medium"
@@ -68,7 +65,6 @@ export const AlertDialog = ({
             <Button
               color={variant === 'destructive' ? 'destructive' : 'primary'}
               surface="solid"
-              padding="medium"
               className="text-sm font-medium"
               scaleOnPress
               onPress={chain(onAction, close)}

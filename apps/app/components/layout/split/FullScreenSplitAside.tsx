@@ -4,7 +4,7 @@ export const FullScreenSplitAside = ({
   children?: React.ReactNode;
 }) => {
   return (
-    <aside className="bg-background-gradient sm:bg-teal sm:bg-aside-gradient absolute size-full flex-col sm:relative sm:flex sm:w-[40vw] sm:min-w-96">
+    <aside className="bg-aside-gradient sm:bg-teal absolute size-full flex-col sm:relative sm:flex sm:w-[40vw] sm:min-w-96">
       {children}
     </aside>
   );

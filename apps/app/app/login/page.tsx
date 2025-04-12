@@ -1,10 +1,11 @@
 'use client';
 
+import { CommonLogo } from '@/components/CommonLogo';
 import { FullScreenSplitAside } from '@/components/layout/split/FullScreenSplitAside';
 import { FullScreenSplitLayout } from '@/components/layout/split/FullScreenSplitLayout';
 import { FullScreenSplitMain } from '@/components/layout/split/FullScreenSplitMain';
-import LoginDialog from '@/components/LoginDialog';
-import Image from 'next/image';
+import { LoginPanel } from '@/components/LoginPanel';
+import { OPLogo } from '@/components/OPLogo';
 import { redirect } from 'next/navigation';
 
 import { useAuthUser } from '@op/hooks';
@@ -14,17 +15,15 @@ const LoginPageWithLayout = () => {
     <FullScreenSplitLayout>
       <FullScreenSplitMain>
         <section>
-          <Image
-            src="/op.png"
-            alt="OP Logo"
-            width={200}
-            height={200}
-            className="size-8"
-          />
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
+              <OPLogo />
+              <CommonLogo />
+            </div>
+          </div>
         </section>
         <section className="flex size-full items-center justify-center">
-          {/* TODO: replace with inline form */}
-          <LoginDialog open />
+          <LoginPanel />
         </section>
       </FullScreenSplitMain>
       <FullScreenSplitAside />

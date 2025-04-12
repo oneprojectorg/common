@@ -54,28 +54,30 @@ export const TextField = ({
       {...props}
       className={composeTailwindRenderProps(
         props.className,
-        'flex flex-col gap-1',
+        'flex flex-col gap-2',
       )}
     >
       {label && <Label className={labelClassName}>{label}</Label>}
       <FieldGroup className={fieldClassName}>
-        {useTextArea
-          ? (
-              <TextArea
-                {...textareaProps}
-                ref={ref as React.RefObject<HTMLTextAreaElement>}
-              />
-            )
-          : (
-              <Input
-                {...inputProps}
-                ref={ref as React.RefObject<HTMLInputElement>}
-              />
-            )}
+        {useTextArea ? (
+          <TextArea
+            {...textareaProps}
+            ref={ref as React.RefObject<HTMLTextAreaElement>}
+          />
+        ) : (
+          <Input
+            {...inputProps}
+            ref={ref as React.RefObject<HTMLInputElement>}
+          />
+        )}
         {children}
       </FieldGroup>
 
-      {description && <Description className={descriptionClassName}>{description}</Description>}
+      {description && (
+        <Description className={descriptionClassName}>
+          {description}
+        </Description>
+      )}
       <FieldError>{errorMessage}</FieldError>
     </AriaTextField>
   );
