@@ -4,7 +4,7 @@ import { CommonLogo } from '@/components/CommonLogo';
 import { FullScreenSplitAside } from '@/components/layout/split/FullScreenSplitAside';
 import { FullScreenSplitLayout } from '@/components/layout/split/FullScreenSplitLayout';
 import { FullScreenSplitMain } from '@/components/layout/split/FullScreenSplitMain';
-import LoginDialog from '@/components/LoginDialog';
+import { LoginPanel } from '@/components/LoginPanel';
 import { OPLogo } from '@/components/OPLogo';
 import { redirect } from 'next/navigation';
 
@@ -23,7 +23,7 @@ const LoginPageWithLayout = () => {
           </div>
         </section>
         <section className="flex size-full items-center justify-center">
-          <LoginDialog />
+          <LoginPanel />
         </section>
       </FullScreenSplitMain>
       <FullScreenSplitAside />

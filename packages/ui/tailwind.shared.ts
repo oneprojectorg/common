@@ -1,7 +1,6 @@
 /* eslint-disable import/no-extraneous-dependencies */
 import tailwindContainerQueries from '@tailwindcss/container-queries';
 import tailwindTypography from '@tailwindcss/typography';
-import { size } from 'lodash';
 import tailwindScrollbar from 'tailwind-scrollbar';
 import tailwindAnimate from 'tailwindcss-animate';
 import tailwindReactAriaComponents from 'tailwindcss-react-aria-components';

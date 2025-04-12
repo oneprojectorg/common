@@ -19,7 +19,6 @@ import type {
   TextAreaProps,
   ValidationResult,
 } from 'react-aria-components';
-import { cn } from 'tailwind-variants';
 
 export interface TextFieldProps extends AriaTextFieldProps {
   label?: string;
