@@ -166,9 +166,10 @@ const LoginDialog = () => {
                   return 'Check your email!';
                 })()}
           </Header>
-          <div className="text-center text-darkGray">
-            Connect with aligned organizations and funders building a new
-            economy together
+          <div className="text-md text-center text-darkGray">
+            Connect with aligned organizations and funders
+            <br />
+            building a new economy together
           </div>
         </div>
 
@@ -209,10 +210,7 @@ const LoginDialog = () => {
                       void handleLogin();
                     }}
                   >
-                    <div className="absolute left-1/2 top-1/2 -z-10 -translate-x-1/2 -translate-y-1/2 opacity-50 blur-xl">
-                      <GoogleIcon className="size-8 scale-x-[10]" />
-                    </div>
-                    <GoogleIcon className="size-[0.9em]" />
+                    <GoogleIcon className="size-4" />
                     Continue with Google
                   </Button>
 
@@ -239,6 +237,7 @@ const LoginDialog = () => {
                   >
                     <TextField
                       aria-label="Email"
+                      label="Organization email"
                       inputProps={{
                         placeholder: OP_EMAIL_HELP,
                         spellCheck: false,

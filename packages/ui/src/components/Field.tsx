@@ -28,7 +28,7 @@ export const Label = (props: LabelProps) => {
     <RACLabel
       {...props}
       className={twMerge(
-        'w-fit cursor-default text-sm font-medium text-neutral-600',
+        'w-fit cursor-default text-xs font-normal text-black',
         props.className,
       )}
     />
@@ -60,11 +60,11 @@ export const FieldError = (props: FieldErrorProps) => {
 export const fieldBorderStyles = tv({
   variants: {
     isFocusWithin: {
-      false: 'border-neutral-500',
-      true: 'border-neutral-700',
+      false: '',
+      true: 'border-offWhite',
     },
     isInvalid: {
-      true: 'border-red-600',
+      true: 'border-red-300',
     },
     isDisabled: {
       true: 'border-neutral-300',
@@ -74,7 +74,7 @@ export const fieldBorderStyles = tv({
 
 export const fieldGroupStyles = tv({
   extend: focusRing,
-  base: 'group flex h-9 items-center overflow-hidden rounded-lg border-2 bg-neutral-100 placeholder:text-neutral-500 disabled:placeholder:text-neutral-400',
+  base: 'group flex items-center overflow-hidden rounded-md bg-white placeholder:text-teal disabled:placeholder:text-lightGray',
   variants: fieldBorderStyles.variants,
 });
 
@@ -83,25 +83,32 @@ export const FieldGroup = (props: GroupProps) => {
     <Group
       {...props}
       className={composeRenderProps(props.className, (className, renderProps) =>
-        fieldGroupStyles({ ...renderProps, className }))}
+        fieldGroupStyles({ ...renderProps, className }),
+      )}
     />
   );
 };
 
-export const Input = ({ ref, ...props }: InputProps & { ref?: React.RefObject<HTMLInputElement> }) => {
+export const Input = ({
+  ref,
+  ...props
+}: InputProps & { ref?: React.RefObject<HTMLInputElement> }) => {
   return (
     <RACInput
       ref={ref}
       {...props}
       className={composeTailwindRenderProps(
         props.className,
-        'min-w-0 flex-1 bg-neutral-100 px-2 py-1.5 text-sm text-neutral-900 outline outline-0 disabled:text-neutral-400',
+        'min-w-0 flex-1 rounded-md border border-offWhite p-4 text-sm text-black outline outline-0 placeholder:text-midGray disabled:text-lightGray',
       )}
     />
   );
 };
 
-export const TextArea = ({ ref, ...props }: TextAreaProps & { ref?: React.RefObject<HTMLTextAreaElement> }) => {
+export const TextArea = ({
+  ref,
+  ...props
+}: TextAreaProps & { ref?: React.RefObject<HTMLTextAreaElement> }) => {
   return (
     <RACTextArea
       ref={ref}

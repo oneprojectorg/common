@@ -20,7 +20,7 @@ const config: Pick<Config, 'content' | 'theme' | 'presets'> = {
           {
             lineHeight: '1.925rem',
             letterSpacing: '-0.02625rem',
-            fontWeight: '300',
+            fontWeight: 300,
           },
         ],
       },

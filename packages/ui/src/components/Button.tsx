@@ -9,7 +9,7 @@ import type { TooltipProps, TooltipTriggerProps } from './Tooltip';
 import type { VariantProps } from 'tailwind-variants';
 
 const buttonStyle = tv({
-  base: 'text-center text-sm leading-3',
+  base: 'text-md text-center font-normal leading-3',
   variants: {
     variant: {
       primary: '',
@@ -36,7 +36,7 @@ const buttonStyle = tv({
     unstyled: {
       true: '',
       false:
-        'appearance-none rounded-md shadow outline-none duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lightGray pressed:shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)]',
+        'appearance-none rounded-md outline-none duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lightGray pressed:shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)]',
     },
     padding: {
       default: 'p-4',
@@ -71,7 +71,7 @@ type ButtonVariants = VariantProps<typeof buttonStyle>;
 
 export interface ButtonProps
   extends React.ComponentProps<typeof RACButton>,
-    ButtonVariants {
+  ButtonVariants {
   className?: string;
 }
 
@@ -88,7 +88,7 @@ export const Button = (props: ButtonProps) => {
 
 export interface ButtonLinkProps
   extends React.ComponentProps<typeof RACLink>,
-    ButtonVariants {
+  ButtonVariants {
   className?: string;
 }
 

@@ -1,6 +1,7 @@
 /* eslint-disable import/no-extraneous-dependencies */
 import tailwindContainerQueries from '@tailwindcss/container-queries';
 import tailwindTypography from '@tailwindcss/typography';
+import { size } from 'lodash';
 import tailwindScrollbar from 'tailwind-scrollbar';
 import tailwindAnimate from 'tailwindcss-animate';
 import tailwindReactAriaComponents from 'tailwindcss-react-aria-components';
@@ -32,6 +33,12 @@ const config: Omit<Config, 'content'> = {
         serif: ['var(--font-serif)', ...defaultTheme.fontFamily.serif],
         sans: ['var(--font-sans)', ...defaultTheme.fontFamily.sans],
         mono: ['var(--font-mono)', ...defaultTheme.fontFamily.mono],
+      },
+      size: {
+        xs: {
+          height: '0.75rem',
+          lineHeight: '1.125rem',
+        },
       },
       colors: {
         accent: commonColors,
