@@ -12,6 +12,17 @@ export default {
       control: 'select',
       options: ['primary', 'secondary', 'destructive'],
     },
+    color: {
+      control: 'select',
+      options: ['primary', 'secondary', 'gradient', 'destructive'],
+    },
+    surface: {
+      control: 'select',
+      options: ['solid', 'outline', 'ghost'],
+    },
+    unstyled: {
+      control: 'boolean',
+    },
   },
   args: {
     isDisabled: false,
@@ -21,7 +32,7 @@ export default {
 
 export const Primary = {
   args: {
-    variant: 'primary',
+    variant: 'secondary',
   },
 };
 

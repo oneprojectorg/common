@@ -7,6 +7,7 @@ import LoginDialog from '@/components/LoginDialog';
 import Image from 'next/image';
 import { redirect } from 'next/navigation';
 
+import { APP_NAME } from '@op/core';
 import { useAuthUser } from '@op/hooks';
 
 const LoginPageWithLayout = () => {
@@ -14,13 +15,21 @@ const LoginPageWithLayout = () => {
     <FullScreenSplitLayout>
       <FullScreenSplitMain>
         <section>
-          <Image
-            src="/op.png"
-            alt="OP Logo"
-            width={200}
-            height={200}
-            className="size-8"
-          />
+          <div className="flex items-center gap-2">
+            <Image
+              src="/op.png"
+              alt="OP"
+              width={48}
+              height={48}
+              className="size-4"
+            />
+            One Project
+            <div>
+              <span className="border-orange text-orange2 rounded border p-1 font-mono text-xs">
+                {APP_NAME}
+              </span>
+            </div>
+          </div>
         </section>
         <section className="flex size-full items-center justify-center">
           {/* TODO: replace with inline form */}

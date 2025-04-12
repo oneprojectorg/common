@@ -2,7 +2,6 @@
 
 'use client';
 
-import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 import React, { useCallback } from 'react';
 import { z } from 'zod';
@@ -147,22 +146,7 @@ const LoginDialog = ({
     <div className="z-[999999] max-h-full w-auto w-full max-w-md rounded-2xl border border-white bg-white bg-clip-padding font-sans text-neutral-700 backdrop-blur-lg backdrop-brightness-50 backdrop-saturate-50 entering:duration-500 entering:ease-out entering:animate-in entering:fade-in exiting:duration-500 exiting:ease-in exiting:animate-out exiting:fade-out xs:w-96">
       <Dialog>
         <div className="flex flex-col items-center justify-center">
-          <div className="flex items-center gap-2">
-            <Image
-              src="/op.png"
-              alt="OP"
-              width={48}
-              height={48}
-              className="size-4"
-            />
-            One Project
-            <div>
-              <span className="border-orange text-orange2 rounded border p-1 font-mono text-xs">
-                {APP_NAME}
-              </span>
-            </div>
-          </div>
-          <DialogHeader className="mt-4 font-serif text-xl">
+          <header className="text-header mt-4 font-serif">
             {user?.error?.name === 'AuthRetryableFetchError'
               ? 'Connection Issue'
               : (() => {
@@ -182,12 +166,16 @@ const LoginDialog = ({
                       return `Sign up to ${APP_NAME}`;
                     }
 
-                    return 'Welcome';
+                    return 'Create your account';
                   }
 
                   return 'Check your email!';
                 })()}
-          </DialogHeader>
+          </header>
+          <div className="text-center text-darkGray">
+            Connect with aligned organizations and funders building a new
+            economy together
+          </div>
         </div>
 
         <DialogDescription className="text-center">
@@ -229,7 +217,7 @@ const LoginDialog = ({
               {!loginSuccess && (
                 <>
                   <Button
-                    className="relative z-0 flex w-full items-center justify-center gap-4 font-normal shadow-md"
+                    variant="secondary"
                     onPress={() => {
                       void handleLogin();
                     }}

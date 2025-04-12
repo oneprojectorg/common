@@ -8,29 +8,27 @@ import { Tooltip, TooltipTrigger } from './Tooltip';
 import type { TooltipProps, TooltipTriggerProps } from './Tooltip';
 import type { VariantProps } from 'tailwind-variants';
 
-export const buttonStyle = tv({
-  base: 'appearance-none rounded-md border border-neutral-200 text-center text-sm text-white outline-none duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 pressed:shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)]',
+const buttonStyle = tv({
+  base: 'text-center text-sm',
   variants: {
     variant: {
+      primary: '',
       icon: 'flex items-center justify-center border-0 p-1 text-neutral-600 hover:bg-white/10 pressed:bg-white/20 pressed:text-neutral-700 disabled:bg-transparent',
+      secondary:
+        'border-offWhite bg-white text-teal hover:bg-neutral-200 focus-visible:outline-neutral-400 pressed:border-neutral-400 pressed:bg-neutral-400 pressed:hover:bg-neutral-400',
     },
     color: {
       primary:
-        'bg-teal border-neutral-400 hover:bg-neutral-200 focus-visible:outline-neutral-400 pressed:border-neutral-400 pressed:bg-neutral-400 pressed:hover:bg-neutral-400',
-      gradient:
-        'border-neutral-400 bg-gradient-to-r from-neutral-100 to-neutral-400 transition-all hover:to-neutral-400 focus-visible:outline-neutral-400',
+        'bg-teal text-whiteish hover:bg-teal-400 pressed:border-teal pressed:bg-teal-200',
+      secondary: 'border-offWhite bg-white text-charcoal',
+      gradient: '',
       destructive:
-        'bg-red-800 hover:bg-red-700 focus-visible:outline-neutral-600 pressed:border-red-800 pressed:bg-red-800 pressed:hover:bg-red-800',
+        'bg-red text-whiteish hover:bg-red-400 pressed:border-red pressed:bg-red-200',
     },
     surface: {
       solid: '',
       outline: 'bg-transparent',
       ghost: 'border-transparent bg-transparent',
-    },
-    pressed: {
-      true: '',
-      false:
-        'pressed:border-neutral-100 pressed:bg-neutral-100 pressed:hover:border-neutral-100 pressed:hover:bg-neutral-100',
     },
     scaleOnPress: {
       true: 'pressed:scale-95',
@@ -38,20 +36,19 @@ export const buttonStyle = tv({
     },
     unstyled: {
       true: '',
-      false: '',
+      false:
+        'appearance-none rounded-md shadow outline-none duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lightGray pressed:shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)]',
     },
     padding: {
       default: 'p-4',
-      medium: 'px-4 py-2',
       none: 'p-0',
-      sm: 'p-1',
     },
     isDisabled: {
       true: 'pointer-events-none opacity-30',
       false: '',
     },
     insetShadow: {
-      true: 'inset-shadow border-transparent',
+      true: 'inset-shadow',
       false: '',
     },
     backglow: {
@@ -60,10 +57,12 @@ export const buttonStyle = tv({
     },
   },
   defaultVariants: {
+    variant: 'primary',
     color: 'primary',
-    pressed: true,
     padding: 'default',
     surface: 'solid',
+    insetShadow: false,
+    backglow: false,
   },
 });
 
