@@ -10,7 +10,7 @@ export default {
   argTypes: {
     variant: {
       control: 'select',
-      options: ['primary', 'secondary', 'destructive'],
+      options: ['primary', 'icon'],
     },
     color: {
       control: 'select',

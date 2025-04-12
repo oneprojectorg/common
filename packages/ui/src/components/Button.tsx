@@ -9,7 +9,7 @@ import type { TooltipProps, TooltipTriggerProps } from './Tooltip';
 import type { VariantProps } from 'tailwind-variants';
 
 const buttonStyle = tv({
-  base: 'text-center text-sm',
+  base: 'text-center text-sm leading-3',
   variants: {
     variant: {
       primary: '',

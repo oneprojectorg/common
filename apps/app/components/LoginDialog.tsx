@@ -12,13 +12,15 @@ import { useAuthUser, useMount } from '@op/hooks';
 import { createSBBrowserClient } from '@op/supabase/client';
 import { trpc } from '@op/trpc/client';
 import { Button, ButtonLink } from '@op/ui/Button';
-import { DialogContent, DialogDescription, DialogFooter } from '@op/ui/Dialog';
 import { Form } from '@op/ui/Form';
 import { SocialLinks } from '@op/ui/SocialLinks';
 import { TextField } from '@op/ui/TextField';
 import { cn } from '@op/ui/utils';
 
 import GoogleIcon from '~icons/logos/google-icon.jsx';
+import { OPLogo } from './OPLogo';
+import { CommonLogo } from './CommonLogo';
+import { Header } from './Header';
 
 interface LoginState {
   email: string;
@@ -131,10 +133,14 @@ const LoginDialog = () => {
   if (!mounted) return null;
 
   return (
-    <div className="z-[999999] max-h-full w-auto max-w-md rounded-2xl border-offWhite bg-white bg-clip-padding font-sans text-neutral-700 xs:w-96 sm:border-0">
-      <div className="flex flex-col gap-8 overflow-auto p-6">
+    <div className="z-[999999] max-h-full w-auto max-w-md rounded-2xl border-offWhite bg-white bg-clip-padding px-4 py-8 font-sans text-neutral-700 xs:w-96 sm:border-0">
+      <div className="flex flex-col gap-8 overflow-auto">
         <div className="flex flex-col items-center justify-center gap-2">
-          <header className="text-header font-serif">
+          <div className="flex items-center gap-2 pb-2 sm:hidden">
+            <OPLogo />
+            <CommonLogo />
+          </div>
+          <Header>
             {user?.error?.name === 'AuthRetryableFetchError'
               ? 'Connection Issue'
               : (() => {
@@ -159,7 +165,7 @@ const LoginDialog = () => {
 
                   return 'Check your email!';
                 })()}
-          </header>
+          </Header>
           <div className="text-center text-darkGray">
             Connect with aligned organizations and funders building a new
             economy together
@@ -185,9 +191,8 @@ const LoginDialog = () => {
 
               return (
                 <span>
-                  A code was sent to{' '}
-                  <span className="text-neutral-400">{email}</span>. Type the
-                  code below to sign in.
+                  A code was sent to <span>{email}</span>. Type the code below
+                  to sign in.
                 </span>
               );
             })()}
@@ -211,10 +216,10 @@ const LoginDialog = () => {
                     Continue with Google
                   </Button>
 
-                  <div className="flex w-full items-center justify-center gap-4">
-                    <div className="h-px grow rounded-full bg-gradient-to-r from-neutral-700/0 to-neutral-700/100" />
-                    <div className="text-neutral-500">or</div>
-                    <div className="h-px grow rounded-full bg-gradient-to-l from-neutral-700/0 to-neutral-700/100" />
+                  <div className="flex w-full items-center justify-center gap-4 text-midGray">
+                    <div className="h-px grow bg-current" />
+                    <span>or</span>
+                    <div className="h-px grow bg-current" />
                   </div>
                 </>
               )}
@@ -350,8 +355,6 @@ const LoginDialog = () => {
             </>
           ) : (
             <div className="flex flex-col items-center justify-center gap-4">
-              <div className="h-px w-full bg-gradient-to-r from-neutral-700/0 via-neutral-700/100 to-neutral-700/0" />
-
               <ButtonLink
                 href={`${OPURLConfig('APP').ENV_URL}`}
                 color="gradient"
@@ -359,8 +362,6 @@ const LoginDialog = () => {
               >
                 Back to home
               </ButtonLink>
-
-              <div className="h-px w-full bg-gradient-to-r from-neutral-700/0 via-neutral-700/100 to-neutral-700/0" />
 
               <SocialLinks iconClassName="size-5 text-neutral-500" />
             </div>
