@@ -12,13 +12,7 @@ import { useAuthUser, useMount } from '@op/hooks';
 import { createSBBrowserClient } from '@op/supabase/client';
 import { trpc } from '@op/trpc/client';
 import { Button, ButtonLink } from '@op/ui/Button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-} from '@op/ui/Dialog';
+import { DialogContent, DialogDescription, DialogFooter } from '@op/ui/Dialog';
 import { Form } from '@op/ui/Form';
 import { SocialLinks } from '@op/ui/SocialLinks';
 import { TextField } from '@op/ui/TextField';
@@ -61,13 +55,7 @@ const useLoginStore = create<LoginState>((set) => ({
     }),
 }));
 
-const LoginDialog = ({
-  open = false,
-  onOpenChange,
-}: {
-  open?: boolean;
-  onOpenChange?: (isOpen: boolean) => void;
-}) => {
+const LoginDialog = () => {
   const supabase = createSBBrowserClient();
 
   const { mounted } = useMount();
@@ -143,10 +131,10 @@ const LoginDialog = ({
   if (!mounted) return null;
 
   return (
-    <div className="z-[999999] max-h-full w-auto w-full max-w-md rounded-2xl border border-white bg-white bg-clip-padding font-sans text-neutral-700 backdrop-blur-lg backdrop-brightness-50 backdrop-saturate-50 entering:duration-500 entering:ease-out entering:animate-in entering:fade-in exiting:duration-500 exiting:ease-in exiting:animate-out exiting:fade-out xs:w-96">
-      <Dialog>
-        <div className="flex flex-col items-center justify-center">
-          <header className="text-header mt-4 font-serif">
+    <div className="z-[999999] max-h-full w-auto max-w-md rounded-2xl border-offWhite bg-white bg-clip-padding font-sans text-neutral-700 xs:w-96 sm:border-0">
+      <div className="flex flex-col gap-8 overflow-auto p-6">
+        <div className="flex flex-col items-center justify-center gap-2">
+          <header className="text-header font-serif">
             {user?.error?.name === 'AuthRetryableFetchError'
               ? 'Connection Issue'
               : (() => {
@@ -166,7 +154,7 @@ const LoginDialog = ({
                       return `Sign up to ${APP_NAME}`;
                     }
 
-                    return 'Create your account';
+                    return 'Welcome to Common.';
                   }
 
                   return 'Check your email!';
@@ -178,46 +166,40 @@ const LoginDialog = ({
           </div>
         </div>
 
-        <DialogDescription className="text-center">
-          {user?.error?.name === 'AuthRetryableFetchError'
-            ? `${APP_NAME} can\`t connect to the internet. Please check your internet connection and try again.`
-            : (() => {
-                if (combinedError || tokenError) {
-                  return (
-                    <span className={cn(tokenError && 'text-red-500')}>
-                      {combinedError ||
-                        tokenError ||
-                        'There was an error signing you in.'}
-                    </span>
-                  );
-                }
-
-                if (!loginSuccess) {
-                  return (
-                    <span>
-                      {isSignup ? 'Sign up' : 'Sign in'} using Google or your
-                      email.
-                    </span>
-                  );
-                }
-
+        {user?.error?.name === 'AuthRetryableFetchError'
+          ? `${APP_NAME} can\`t connect to the internet. Please check your internet connection and try again.`
+          : (() => {
+              if (combinedError || tokenError) {
                 return (
-                  <span>
-                    A code was sent to{' '}
-                    <span className="text-neutral-400">{email}</span>. Type the
-                    code below to sign in.
+                  <span className={cn(tokenError && 'text-red-500')}>
+                    {combinedError ||
+                      tokenError ||
+                      'There was an error signing you in.'}
                   </span>
                 );
-              })()}
-        </DialogDescription>
+              }
+
+              if (!loginSuccess) {
+                return null;
+              }
+
+              return (
+                <span>
+                  A code was sent to{' '}
+                  <span className="text-neutral-400">{email}</span>. Type the
+                  code below to sign in.
+                </span>
+              );
+            })()}
 
         {user?.error?.name !== 'AuthRetryableFetchError' &&
           !(login.isError || !!combinedError) && (
-            <DialogContent className="flex flex-col gap-4">
+            <div className="flex flex-col gap-4">
               {!loginSuccess && (
                 <>
                   <Button
-                    variant="secondary"
+                    color="secondary"
+                    variant="icon"
                     onPress={() => {
                       void handleLogin();
                     }}
@@ -309,15 +291,14 @@ const LoginDialog = ({
                   </Form>
                 </div>
               )}
-            </DialogContent>
+            </div>
           )}
 
-        <DialogFooter className="mt-4 flex flex-col gap-6">
+        <section className="flex flex-col gap-6">
           {!(login.isError || !!combinedError) ? (
             <>
               {user?.error?.name === 'AuthRetryableFetchError' ? (
                 <Button
-                  className="flex w-full items-center justify-center"
                   onPress={() => {
                     void refetchUser().then(({ data }) => {
                       if (data && data.user) {
@@ -388,24 +369,22 @@ const LoginDialog = ({
           {user?.error?.name === 'AuthRetryableFetchError' ||
           login.isError ||
           !!combinedError ? null : (
-            <>
+            <div className="flex flex-col items-center justify-center text-center text-sm text-midGray">
               {isSignup ? (
-                <div className="flex flex-col items-center justify-center px-4 text-center text-sm text-neutral-500">
-                  <span>
-                    You'll receive a code to confirm your account. Can't find
-                    it? Check your spam folder.
-                  </span>
-                </div>
+                <span>
+                  You'll receive a code to confirm your account. Can't find it?
+                  Check your spam folder.
+                </span>
               ) : (
-                <div className="flex flex-col items-center justify-center px-4 text-sm text-neutral-500">
+                <>
                   <span>Don&apos;t have an account?</span>
                   <span>We will automatically create one for you.</span>
-                </div>
+                </>
               )}
-            </>
+            </div>
           )}
-        </DialogFooter>
-      </Dialog>
+        </section>
+      </div>
     </div>
   );
 };

@@ -13,14 +13,13 @@ const buttonStyle = tv({
   variants: {
     variant: {
       primary: '',
-      icon: 'flex items-center justify-center border-0 p-1 text-neutral-600 hover:bg-white/10 pressed:bg-white/20 pressed:text-neutral-700 disabled:bg-transparent',
-      secondary:
-        'border-offWhite bg-white text-teal hover:bg-neutral-200 focus-visible:outline-neutral-400 pressed:border-neutral-400 pressed:bg-neutral-400 pressed:hover:bg-neutral-400',
+      icon: 'flex items-center justify-center gap-2',
     },
     color: {
       primary:
         'bg-teal text-whiteish hover:bg-teal-400 pressed:border-teal pressed:bg-teal-200',
-      secondary: 'border-offWhite bg-white text-charcoal',
+      secondary:
+        'border border-offWhite bg-white text-charcoal hover:bg-neutral-50 pressed:bg-white',
       gradient: '',
       destructive:
         'bg-red text-whiteish hover:bg-red-400 pressed:border-red pressed:bg-red-200',

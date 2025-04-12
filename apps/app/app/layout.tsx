@@ -62,7 +62,7 @@ export const viewport: Viewport = {
 
 const RootLayout = ({ children }: { children: React.ReactNode }) => {
   return (
-    <html lang="en" className="dark overflow-hidden scrollbar-none">
+    <html lang="en" className="overflow-hidden scrollbar-none">
       <head>
         {/* {(IS_DEVELOPMENT || IS_PREVIEW) && (
           <script

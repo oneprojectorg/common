@@ -25,7 +25,7 @@ const LoginPageWithLayout = () => {
             />
             One Project
             <div>
-              <span className="border-orange text-orange2 rounded border p-1 font-mono text-xs">
+              <span className="border-orange rounded border p-1 font-mono text-xs text-orange2">
                 {APP_NAME}
               </span>
             </div>
@@ -33,7 +33,7 @@ const LoginPageWithLayout = () => {
         </section>
         <section className="flex size-full items-center justify-center">
           {/* TODO: replace with inline form */}
-          <LoginDialog open />
+          <LoginDialog />
         </section>
       </FullScreenSplitMain>
       <FullScreenSplitAside />
