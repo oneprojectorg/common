@@ -5,6 +5,8 @@ import { authUsers } from 'drizzle-orm/supabase';
 import { serviceRolePolicies } from '../../helpers/policies';
 import { timestamps } from '../../helpers/timestamps';
 
+import { organizations } from './organizations.sql';
+
 export const profiles = pgTable(
   'profiles',
   {
@@ -20,6 +22,10 @@ export const profiles = pgTable(
     avatarUrl: text(),
     email: varchar().notNull().unique(),
     about: varchar({ length: 256 }),
+    organizationId: uuid().references(() => organizations.id, {
+      onDelete: 'set null',
+      onUpdate: 'cascade',
+    }),
     ...timestamps,
   },
   table => [
@@ -33,6 +39,7 @@ export const profiles = pgTable(
     index('profiles_username_gin_index')
       .using('gin', sql`to_tsvector('english', ${table.username})`)
       .concurrently(),
+    index('profiles_organizations_idx').on(table.organizationId).concurrently(),
   ],
 );
 
@@ -40,5 +47,9 @@ export const profilesRelations = relations(profiles, ({ one }) => ({
   user: one(authUsers, {
     fields: [profiles.id],
     references: [authUsers.id],
+  }),
+  organization: one(organizations, {
+    fields: [profiles.organizationId],
+    references: [organizations.id],
   }),
 }));
