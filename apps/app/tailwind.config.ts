@@ -23,6 +23,14 @@ const config: Pick<Config, 'content' | 'theme' | 'presets'> = {
             fontWeight: 300,
           },
         ],
+        headerMobile: [
+          '1.25rem',
+          {
+            lineHeight: '1.375rem',
+            letterSpacing: '-0.01875rem',
+            fontWeight: 300,
+          },
+        ],
       },
       borderRadius: {
         ...defaultTheme.borderRadius,

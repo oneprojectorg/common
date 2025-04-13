@@ -9,11 +9,11 @@ import type { TooltipProps, TooltipTriggerProps } from './Tooltip';
 import type { VariantProps } from 'tailwind-variants';
 
 const buttonStyle = tv({
-  base: 'text-md text-center font-normal leading-3',
+  base: 'h-11 text-center text-base font-normal leading-3 sm:text-base',
   variants: {
     variant: {
       primary: '',
-      icon: 'flex items-center justify-center gap-2',
+      icon: 'flex items-center justify-center gap-2 text-sm sm:text-base',
     },
     color: {
       primary:
@@ -71,7 +71,7 @@ type ButtonVariants = VariantProps<typeof buttonStyle>;
 
 export interface ButtonProps
   extends React.ComponentProps<typeof RACButton>,
-  ButtonVariants {
+    ButtonVariants {
   className?: string;
 }
 
@@ -88,7 +88,7 @@ export const Button = (props: ButtonProps) => {
 
 export interface ButtonLinkProps
   extends React.ComponentProps<typeof RACLink>,
-  ButtonVariants {
+    ButtonVariants {
   className?: string;
 }
 

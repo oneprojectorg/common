@@ -83,8 +83,7 @@ export const FieldGroup = (props: GroupProps) => {
     <Group
       {...props}
       className={composeRenderProps(props.className, (className, renderProps) =>
-        fieldGroupStyles({ ...renderProps, className }),
-      )}
+        fieldGroupStyles({ ...renderProps, className }))}
     />
   );
 };
@@ -99,7 +98,7 @@ export const Input = ({
       {...props}
       className={composeTailwindRenderProps(
         props.className,
-        'min-w-0 flex-1 rounded-md border border-offWhite p-4 text-sm text-black outline outline-0 placeholder:text-midGray disabled:text-lightGray',
+        'min-w-0 flex-1 rounded-md border border-offWhite p-4 text-sm leading-[0.5rem] text-black outline outline-0 placeholder:text-midGray disabled:text-lightGray',
       )}
     />
   );

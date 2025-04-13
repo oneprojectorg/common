@@ -10,6 +10,7 @@ export const OPLogo = () => {
         viewBox="0 0 69 13"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
+        className="relative top-[0.075rem] h-3 w-auto"
       >
         <g clip-path="url(#clip0_1130_4476)">
           <path

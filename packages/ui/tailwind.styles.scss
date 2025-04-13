@@ -86,11 +86,6 @@
 @layer base {
   body {
     @apply bg-white font-sans text-charcoal;
-    font-size: 14px;
-
-    @screen sm {
-      font-size: 16px;
-    }
   }
 }
 
