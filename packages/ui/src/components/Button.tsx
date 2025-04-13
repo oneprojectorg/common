@@ -71,7 +71,7 @@ type ButtonVariants = VariantProps<typeof buttonStyle>;
 
 export interface ButtonProps
   extends React.ComponentProps<typeof RACButton>,
-    ButtonVariants {
+  ButtonVariants {
   className?: string;
 }
 
@@ -88,7 +88,7 @@ export const Button = (props: ButtonProps) => {
 
 export interface ButtonLinkProps
   extends React.ComponentProps<typeof RACLink>,
-    ButtonVariants {
+  ButtonVariants {
   className?: string;
 }
 
