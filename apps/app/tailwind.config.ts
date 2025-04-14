@@ -14,10 +14,29 @@ const config: Pick<Config, 'content' | 'theme' | 'presets'> = {
         sans: ['var(--font-sans)', ...defaultTheme.fontFamily.sans],
         mono: ['var(--font-mono)', ...defaultTheme.fontFamily.mono],
       },
+      fontSize: {
+        header: [
+          '1.75rem',
+          {
+            lineHeight: '1.925rem',
+            letterSpacing: '-0.02625rem',
+            fontWeight: 300,
+          },
+        ],
+        headerMobile: [
+          '1.25rem',
+          {
+            lineHeight: '1.375rem',
+            letterSpacing: '-0.01875rem',
+            fontWeight: 300,
+          },
+        ],
+      },
       borderRadius: {
         ...defaultTheme.borderRadius,
         xs: '0.125rem',
-        sm: '0.25rem',
+        sm: '0.1875rem',
+        md: '0.5rem',
       },
       keyframes: {
         wiggle: {
@@ -29,9 +48,8 @@ const config: Pick<Config, 'content' | 'theme' | 'presets'> = {
           '50%': { backgroundPosition: '100% 100%' },
         },
       },
-      colors: {
-        teal: 'hsl(var(--op-teal-500))',
-        white: 'hsl(var(--op-marine-50))',
+      boxShadow: {
+        md: '0px 0px 16px 0px rgba(20, 35, 38, 0.04)',
       },
       backgroundImage: {
         'aside-gradient':

@@ -10,7 +10,18 @@ export default {
   argTypes: {
     variant: {
       control: 'select',
-      options: ['primary', 'secondary', 'destructive'],
+      options: ['primary', 'icon'],
+    },
+    color: {
+      control: 'select',
+      options: ['primary', 'secondary', 'gradient', 'destructive'],
+    },
+    surface: {
+      control: 'select',
+      options: ['solid', 'outline', 'ghost'],
+    },
+    unstyled: {
+      control: 'boolean',
     },
   },
   args: {
@@ -21,7 +32,7 @@ export default {
 
 export const Primary = {
   args: {
-    variant: 'primary',
+    variant: 'secondary',
   },
 };
 

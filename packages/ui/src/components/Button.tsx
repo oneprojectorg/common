@@ -3,40 +3,31 @@
 import { Button as RACButton, Link as RACLink } from 'react-aria-components';
 import { tv } from 'tailwind-variants';
 
-import {
-  Tooltip,
-  TooltipTrigger,
-} from './Tooltip';
+import { Tooltip, TooltipTrigger } from './Tooltip';
 
-import type {
-  TooltipProps,
-  TooltipTriggerProps,
-} from './Tooltip';
+import type { TooltipProps, TooltipTriggerProps } from './Tooltip';
 import type { VariantProps } from 'tailwind-variants';
 
-export const buttonStyle = tv({
-  base: 'appearance-none rounded-md border border-neutral-200 text-center text-base font-medium text-neutral-800 outline-none duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 pressed:shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)]',
+const buttonStyle = tv({
+  base: 'h-11 text-center text-base font-normal leading-3 sm:text-base',
   variants: {
     variant: {
-      icon: 'flex items-center justify-center border-0 p-1 text-neutral-600 hover:bg-white/10 pressed:bg-white/20 pressed:text-neutral-700 disabled:bg-transparent',
+      primary: '',
+      icon: 'flex items-center justify-center gap-2 text-sm sm:text-base',
     },
     color: {
       primary:
-        'border-neutral-400 bg-neutral-100 hover:bg-neutral-200 focus-visible:outline-neutral-400 pressed:border-neutral-400 pressed:bg-neutral-400 pressed:hover:bg-neutral-400',
-      gradient:
-        'border-neutral-400 bg-gradient-to-r from-neutral-100 to-neutral-400 transition-all hover:to-neutral-400 focus-visible:outline-neutral-400',
+        'bg-teal text-whiteish hover:bg-teal-400 pressed:border-teal pressed:bg-teal-200',
+      secondary:
+        'border border-offWhite bg-white text-charcoal hover:bg-neutral-50 pressed:bg-white',
+      gradient: '',
       destructive:
-        'bg-red-800 hover:bg-red-700 focus-visible:outline-neutral-600 pressed:border-red-800 pressed:bg-red-800 pressed:hover:bg-red-800',
+        'bg-red text-whiteish hover:bg-red-400 pressed:border-red pressed:bg-red-200',
     },
     surface: {
       solid: '',
       outline: 'bg-transparent',
       ghost: 'border-transparent bg-transparent',
-    },
-    pressed: {
-      true: '',
-      false:
-        'pressed:border-neutral-100 pressed:bg-neutral-100 pressed:hover:border-neutral-100 pressed:hover:bg-neutral-100',
     },
     scaleOnPress: {
       true: 'pressed:scale-95',
@@ -44,20 +35,19 @@ export const buttonStyle = tv({
     },
     unstyled: {
       true: '',
-      false: '',
+      false:
+        'appearance-none rounded-md outline-none duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lightGray pressed:shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)]',
     },
     padding: {
-      default: 'px-2.5 py-1.5',
-      medium: 'px-4 py-2',
+      default: 'p-4',
       none: 'p-0',
-      sm: 'p-1',
     },
     isDisabled: {
       true: 'pointer-events-none opacity-30',
       false: '',
     },
     insetShadow: {
-      true: 'inset-shadow border-transparent',
+      true: 'inset-shadow',
       false: '',
     },
     backglow: {
@@ -66,10 +56,12 @@ export const buttonStyle = tv({
     },
   },
   defaultVariants: {
+    variant: 'primary',
     color: 'primary',
-    pressed: true,
     padding: 'default',
     surface: 'solid',
+    insetShadow: false,
+    backglow: false,
   },
 });
 
@@ -86,7 +78,12 @@ export interface ButtonProps
 export const Button = (props: ButtonProps) => {
   const { unstyled, ...rest } = props;
 
-  return <RACButton {...rest} className={unstyled ? props.className : buttonStyle(props)} />;
+  return (
+    <RACButton
+      {...rest}
+      className={unstyled ? props.className : buttonStyle(props)}
+    />
+  );
 };
 
 export interface ButtonLinkProps
@@ -99,15 +96,12 @@ export const ButtonLink = (props: ButtonLinkProps) => {
   return <RACLink {...props} className={buttonStyle(props)} />;
 };
 
-export interface ButtonTooltipProps
-  extends ButtonProps {
+export interface ButtonTooltipProps extends ButtonProps {
   triggerProps?: Omit<TooltipTriggerProps, 'children'>;
   tooltipProps: TooltipProps;
 }
 
-export const ButtonTooltip = (
-  props: ButtonTooltipProps,
-) => {
+export const ButtonTooltip = (props: ButtonTooltipProps) => {
   const { triggerProps, tooltipProps, ...rest } = props;
 
   return (

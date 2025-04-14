@@ -29,7 +29,7 @@ const robotoMono = Roboto_Mono({
 
 const robotoSerif = Roboto_Serif({
   subsets: ['latin'],
-  weight: 'variable',
+  weight: ['300', '400'],
   variable: '--font-serif',
 });
 
@@ -37,9 +37,7 @@ export const metadata: Metadata = {
   title: APP_NAME,
   description: 'A next-gen paradigm to co-create with AI.',
   icons: {
-    icon: [
-      { url: '/op.png', type: 'image/png' },
-    ],
+    icon: [{ url: '/op.png', type: 'image/png' }],
   },
   robots: {
     googleBot: {
@@ -64,7 +62,7 @@ export const viewport: Viewport = {
 
 const RootLayout = ({ children }: { children: React.ReactNode }) => {
   return (
-    <html lang="en" className="dark overflow-hidden scrollbar-none">
+    <html lang="en" className="overflow-hidden scrollbar-none">
       <head>
         {/* {(IS_DEVELOPMENT || IS_PREVIEW) && (
           <script
@@ -99,7 +97,6 @@ const RootLayout = ({ children }: { children: React.ReactNode }) => {
             pauseWhenPageIsHidden
             visibleToasts={10}
             toastOptions={{
-
               classNames: {
                 toast:
                   'group toast bg-neutral-900/90 backdrop-blur-md border-none text-neutral-100 inset-shadow  mb-14',
