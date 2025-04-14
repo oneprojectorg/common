@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import { getTableName, sql } from 'drizzle-orm';
 import { PgTable } from 'drizzle-orm/pg-core';
 import { authUsers } from 'drizzle-orm/supabase';
+import { OrgType } from 'schema/tables/organizations.sql';
 
 import { adminEmails } from '@op/core';
 
@@ -77,5 +78,12 @@ for (const email of adminEmails) {
     throw new Error('Failed to create dev user');
   }
 }
+
+// setup a mock organization
+await db.insert(schema.organizations).values({
+  name: 'Test Organization',
+  slug: 'test-organization',
+  type: OrgType.COMMONS,
+});
 
 await db.$client.end();

@@ -9,8 +9,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { authUsers } from 'drizzle-orm/supabase';
 
-import { serviceRolePolicies } from '../../helpers/policies';
-import { timestamps } from '../../helpers/timestamps';
+import { serviceRolePolicies, timestamps } from '../../helpers';
 
 import { accessRoles } from './access.sql';
 import { organizations } from './organizations.sql';

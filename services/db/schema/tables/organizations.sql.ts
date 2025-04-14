@@ -8,32 +8,37 @@ import {
   pgEnum,
   pgTable,
   text,
-  uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
 
-import { serviceRolePolicies } from '../../helpers/policies';
-import { timestamps } from '../../helpers/timestamps';
+import {
+  autoId,
+  enumToPgEnum,
+  serviceRolePolicies,
+  timestamps,
+} from '../../helpers';
 
 import { projects } from './projects.sql';
 
+export enum OrgType {
+  COOPERATIVE = 'cooperative',
+  MUTUAL_AID = 'mutual_aid',
+  COMMUNITY_ORG = 'community_org',
+  SOCIAL_ENTERPRISE = 'social_enterprise',
+  COLLECTIVE = 'collective',
+  COMMONS = 'commons',
+  CREDIT_UNION = 'credit_union',
+  LAND_TRUST = 'land_trust',
+  OTHER = 'other',
+}
+
 // Enums for organization types and status
-export const orgTypeEnum = pgEnum('org_type', [
-  'cooperative',
-  'mutual_aid',
-  'community_org',
-  'social_enterprise',
-  'collective',
-  'commons',
-  'credit_union',
-  'land_trust',
-  'other',
-]);
+export const orgTypeEnum = pgEnum('org_type', enumToPgEnum(OrgType));
 
 export const organizations = pgTable(
   'organizations',
   {
-    id: uuid().primaryKey().notNull(),
+    id: autoId().primaryKey(),
     name: varchar({ length: 256 }).notNull(),
     slug: varchar({ length: 256 }).notNull().unique(),
     description: varchar({ length: 256 }),
@@ -49,8 +54,8 @@ export const organizations = pgTable(
     website: varchar({ length: 255 }),
     // Address
     address: varchar({ length: 255 }),
-    city: varchar({ length: 100 }).notNull(),
-    state: varchar({ length: 50 }).notNull(),
+    city: varchar({ length: 100 }),
+    state: varchar({ length: 50 }),
     postalCode: varchar({ length: 20 }),
     // Geography
     latitude: decimal(),
@@ -58,8 +63,11 @@ export const organizations = pgTable(
     isVerified: boolean().default(false),
     socialLinks: json(), // Store social media links
 
+    isOfferingFunds: boolean().default(false),
+    isReceivingFunds: boolean().default(false),
+
     // Organization Type
-    type: orgTypeEnum('org_type').notNull().default('other'),
+    type: orgTypeEnum('org_type').notNull().default(OrgType.OTHER),
     // Thematic Areas
     // Legal Structure
     ...timestamps,

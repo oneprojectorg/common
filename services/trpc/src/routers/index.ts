@@ -2,7 +2,7 @@ import { router } from '../trpcFactory';
 
 import accountRouter from './account';
 import llmRouter from './llm';
-import organizationRouter from './organization';
+import { organizationRouter } from './organization';
 
 export const appRouter = router({
   account: accountRouter,

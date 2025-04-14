@@ -1,15 +1,14 @@
 import { relations } from 'drizzle-orm';
 import { index, pgTable, uuid, varchar } from 'drizzle-orm/pg-core';
 
-import { serviceRolePolicies } from '../../helpers/policies';
-import { timestamps } from '../../helpers/timestamps';
+import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
 
 import { organizations } from './organizations.sql';
 
 export const projects = pgTable(
   'projects',
   {
-    id: uuid().primaryKey().notNull(),
+    id: autoId().primaryKey(),
     name: varchar({ length: 256 }).notNull(),
     slug: varchar({ length: 256 }).notNull().unique(),
     description: varchar({ length: 256 }),
@@ -19,7 +18,7 @@ export const projects = pgTable(
     }),
     ...timestamps,
   },
-  table => [
+  (table) => [
     ...serviceRolePolicies,
     index().on(table.id).concurrently(),
     index().on(table.slug).concurrently(),

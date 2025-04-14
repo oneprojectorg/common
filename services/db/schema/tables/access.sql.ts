@@ -1,13 +1,13 @@
-import { index, integer, pgTable, uuid, varchar } from 'drizzle-orm/pg-core';
+import { index, integer, pgTable, varchar } from 'drizzle-orm/pg-core';
 
-import { serviceRolePolicies } from '../../helpers/policies';
+import { autoId, serviceRolePolicies } from '../../helpers';
 
 export const accessRoles = pgTable(
   'access_roles',
   {
-    id: uuid().primaryKey().notNull(),
+    id: autoId().primaryKey(),
     name: varchar({ length: 255 }),
     access: integer(),
   },
-  table => [...serviceRolePolicies, index().on(table.id).concurrently()],
+  (table) => [...serviceRolePolicies, index().on(table.id).concurrently()],
 );
