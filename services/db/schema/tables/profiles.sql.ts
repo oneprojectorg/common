@@ -72,7 +72,10 @@ export const profilesToAccessRoles = pgTable(
       .notNull()
       .references(() => accessRoles.id),
   },
-  (table) => [primaryKey({ columns: [table.profileId, table.accessRoleId] })],
+  (table) => [
+    ...serviceRolePolicies,
+    primaryKey({ columns: [table.profileId, table.accessRoleId] }),
+  ],
 );
 
 export const profilesToAccessRolesRelations = relations(

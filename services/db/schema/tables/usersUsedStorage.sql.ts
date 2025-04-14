@@ -16,8 +16,13 @@ export const usersUsedStorage = pgView('users_used_storage')
   .as((qb) => {
     return qb
       .select({
-        userId: sql`(storage.foldername(${objectsInStorage.name}))[1]`.as('user_id'),
-        totalSize: sql`COALESCE(SUM((${objectsInStorage.metadata}->>'size')::bigint), 0)`.as('total_size'),
+        userId: sql`(storage.foldername(${objectsInStorage.name}))[1]`.as(
+          'user_id',
+        ),
+        totalSize:
+          sql`COALESCE(SUM((${objectsInStorage.metadata}->>'size')::bigint), 0)`.as(
+            'total_size',
+          ),
       })
       .from(objectsInStorage)
       .where(eq(objectsInStorage.bucketId, 'assets'))
