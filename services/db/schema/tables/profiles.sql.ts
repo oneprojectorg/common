@@ -3,6 +3,7 @@ import {
   index,
   integer,
   pgTable,
+  primaryKey,
   text,
   uuid,
   varchar,
@@ -36,7 +37,7 @@ export const profiles = pgTable(
     }),
     ...timestamps,
   },
-  (table) => [
+  table => [
     ...serviceRolePolicies,
     index().on(table.id).concurrently(),
     index().on(table.email).concurrently(),
@@ -73,7 +74,7 @@ export const profilesToAccessRoles = pgTable(
       .notNull()
       .references(() => accessRoles.id),
   },
-  (table) => [primaryKey({ columns: [table.profileId, table.accessRoleId] })],
+  table => [primaryKey({ columns: [table.profileId, table.accessRoleId] })],
 );
 
 export const profilesToAccessRolesRelations = relations(
