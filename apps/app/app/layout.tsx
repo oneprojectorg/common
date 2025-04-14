@@ -35,7 +35,7 @@ const robotoSerif = Roboto_Serif({
 
 export const metadata: Metadata = {
   title: APP_NAME,
-  description: 'A next-gen paradigm to co-create with AI.',
+  description: 'Common.',
   icons: {
     icon: [{ url: '/op.png', type: 'image/png' }],
   },
