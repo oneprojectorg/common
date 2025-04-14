@@ -1,7 +1,8 @@
 import { relations } from 'drizzle-orm';
 import { index, pgTable, uuid, varchar } from 'drizzle-orm/pg-core';
-import { serviceRolePolicies } from 'helpers/policies';
-import { timestamps } from 'helpers/timestamps';
+
+import { serviceRolePolicies } from '../../helpers/policies';
+import { timestamps } from '../../helpers/timestamps';
 
 import { organizations } from './organizations.sql';
 

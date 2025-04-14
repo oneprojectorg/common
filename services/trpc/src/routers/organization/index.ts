@@ -1,6 +1,6 @@
-import { organizationEncoder } from 'src/encoders/organization';
 import { z } from 'zod';
 
+import { organizationEncoder } from '../../encoders/organization';
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withDB from '../../middlewares/withDB';
 import withRateLimited from '../../middlewares/withRateLimited';

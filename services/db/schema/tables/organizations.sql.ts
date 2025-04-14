@@ -1,4 +1,4 @@
-import { relations, sql } from 'drizzle-orm';
+import { relations } from 'drizzle-orm';
 import {
   boolean,
   decimal,
@@ -18,7 +18,7 @@ import { timestamps } from '../../helpers/timestamps';
 import { projects } from './projects.sql';
 
 // Enums for organization types and status
-const orgTypeEnum = pgEnum('org_type', [
+export const orgTypeEnum = pgEnum('org_type', [
   'cooperative',
   'mutual_aid',
   'community_org',
@@ -59,21 +59,21 @@ export const organizations = pgTable(
     socialLinks: json(), // Store social media links
 
     // Organization Type
-    type: orgTypeEnum().notNull().default('other'),
+    type: orgTypeEnum('org_type').notNull().default('other'),
     // Thematic Areas
     // Legal Structure
     ...timestamps,
   },
-  table => [
+  (table) => [
     ...serviceRolePolicies,
     index().on(table.id).concurrently(),
     index().on(table.slug).concurrently(),
-    index('organizations_name_gin_index')
-      .using('gin', sql`to_tsvector('english', ${table.name})`)
-      .concurrently(),
-    index('organizations_values_gin_index')
-      .using('gin', sql`to_tsvector('english', ${table.values})`)
-      .concurrently(),
+    // index('organizations_name_gin_index')
+    // .using('gin', sql`to_tsvector('english', ${table.name})`)
+    // .concurrently(),
+    // index('organizations_values_gin_index')
+    // .using('gin', sql`to_tsvector('english', ${table.values})`)
+    // .concurrently(),
   ],
 );
 

@@ -1,5 +1,6 @@
 import { index, integer, pgTable, uuid, varchar } from 'drizzle-orm/pg-core';
-import { serviceRolePolicies } from 'helpers/policies';
+
+import { serviceRolePolicies } from '../../helpers/policies';
 
 export const accessRoles = pgTable(
   'access_roles',

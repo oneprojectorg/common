@@ -1,7 +1,6 @@
 import { relations, sql } from 'drizzle-orm';
 import {
   index,
-  integer,
   pgTable,
   primaryKey,
   text,
@@ -37,7 +36,7 @@ export const profiles = pgTable(
     }),
     ...timestamps,
   },
-  table => [
+  (table) => [
     ...serviceRolePolicies,
     index().on(table.id).concurrently(),
     index().on(table.email).concurrently(),
@@ -67,14 +66,14 @@ export const profilesRelations = relations(profiles, ({ one, many }) => ({
 export const profilesToAccessRoles = pgTable(
   'profiles_to_access_roles',
   {
-    profileId: integer()
+    profileId: uuid()
       .notNull()
       .references(() => profiles.id),
-    accessRoleId: integer()
+    accessRoleId: uuid()
       .notNull()
       .references(() => accessRoles.id),
   },
-  table => [primaryKey({ columns: [table.profileId, table.accessRoleId] })],
+  (table) => [primaryKey({ columns: [table.profileId, table.accessRoleId] })],
 );
 
 export const profilesToAccessRolesRelations = relations(

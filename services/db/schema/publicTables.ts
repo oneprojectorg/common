@@ -3,6 +3,7 @@ export { accessRoles } from './tables/access.sql';
 export {
   organizations,
   organizationsRelations,
+  orgTypeEnum,
 } from './tables/organizations.sql';
 export {
   profiles,
