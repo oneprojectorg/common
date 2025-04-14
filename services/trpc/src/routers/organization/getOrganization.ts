@@ -9,7 +9,7 @@ import { loggedProcedure, router } from '../../trpcFactory';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 
 const inputSchema = z.object({
-  slug: z.string(),
+  organizationId: z.string().uuid(),
 });
 
 const meta: OpenApiMeta = {
@@ -35,11 +35,11 @@ export const getOrganizationRouter = router({
     .output(organizationsEncoder)
     .query(async ({ ctx, input }) => {
       const { db } = ctx.database;
-      const { slug } = input;
+      const { organizationId } = input;
 
       // TODO: assert authorization, setup a common package
       const result = await db.query.organizations.findFirst({
-        where: (table, { eq }) => eq(table.slug, slug),
+        where: (table, { eq }) => eq(table.id, organizationId),
       });
 
       return result || null;
