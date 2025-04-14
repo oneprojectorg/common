@@ -83,8 +83,7 @@ export const FieldGroup = (props: GroupProps) => {
     <Group
       {...props}
       className={composeRenderProps(props.className, (className, renderProps) =>
-        fieldGroupStyles({ ...renderProps, className }),
-      )}
+        fieldGroupStyles({ ...renderProps, className }))}
     />
   );
 };

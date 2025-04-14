@@ -59,17 +59,19 @@ export const TextField = ({
     >
       {label && <Label className={labelClassName}>{label}</Label>}
       <FieldGroup className={fieldClassName}>
-        {useTextArea ? (
-          <TextArea
-            {...textareaProps}
-            ref={ref as React.RefObject<HTMLTextAreaElement>}
-          />
-        ) : (
-          <Input
-            {...inputProps}
-            ref={ref as React.RefObject<HTMLInputElement>}
-          />
-        )}
+        {useTextArea
+          ? (
+              <TextArea
+                {...textareaProps}
+                ref={ref as React.RefObject<HTMLTextAreaElement>}
+              />
+            )
+          : (
+              <Input
+                {...inputProps}
+                ref={ref as React.RefObject<HTMLInputElement>}
+              />
+            )}
         {children}
       </FieldGroup>
 

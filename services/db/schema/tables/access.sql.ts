@@ -8,5 +8,5 @@ export const accessRoles = pgTable(
     name: varchar({ length: 255 }),
     access: integer(),
   },
-  (table) => [...serviceRolePolicies, index().on(table.id).concurrently()],
+  table => [...serviceRolePolicies, index().on(table.id).concurrently()],
 );
