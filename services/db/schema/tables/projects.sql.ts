@@ -1,3 +1,4 @@
+import { relations } from 'drizzle-orm';
 import { index, pgTable, uuid, varchar } from 'drizzle-orm/pg-core';
 import { serviceRolePolicies } from 'helpers/policies';
 import { timestamps } from 'helpers/timestamps';
@@ -17,9 +18,16 @@ export const projects = pgTable(
     }),
     ...timestamps,
   },
-  (table) => [
+  table => [
     ...serviceRolePolicies,
     index().on(table.id).concurrently(),
     index().on(table.slug).concurrently(),
   ],
 );
+
+export const projectsRelations = relations(projects, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [projects.organizationId],
+    references: [organizations.id],
+  }),
+}));

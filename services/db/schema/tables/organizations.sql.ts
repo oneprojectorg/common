@@ -1,4 +1,4 @@
-import { sql } from 'drizzle-orm';
+import { relations, sql } from 'drizzle-orm';
 import {
   boolean,
   decimal,
@@ -14,6 +14,8 @@ import {
 
 import { serviceRolePolicies } from '../../helpers/policies';
 import { timestamps } from '../../helpers/timestamps';
+
+import { projects } from './projects.sql';
 
 // Enums for organization types and status
 const orgTypeEnum = pgEnum('org_type', [
@@ -74,3 +76,7 @@ export const organizations = pgTable(
       .concurrently(),
   ],
 );
+
+export const organizationsRelations = relations(organizations, ({ many }) => ({
+  projects: many(projects),
+}));
