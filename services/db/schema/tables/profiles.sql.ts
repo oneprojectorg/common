@@ -1,10 +1,18 @@
 import { relations, sql } from 'drizzle-orm';
-import { index, pgTable, text, uuid, varchar } from 'drizzle-orm/pg-core';
+import {
+  index,
+  integer,
+  pgTable,
+  text,
+  uuid,
+  varchar,
+} from 'drizzle-orm/pg-core';
 import { authUsers } from 'drizzle-orm/supabase';
 
 import { serviceRolePolicies } from '../../helpers/policies';
 import { timestamps } from '../../helpers/timestamps';
 
+import { accessRoles } from './access.sql';
 import { organizations } from './organizations.sql';
 
 export const profiles = pgTable(
@@ -28,7 +36,7 @@ export const profiles = pgTable(
     }),
     ...timestamps,
   },
-  table => [
+  (table) => [
     ...serviceRolePolicies,
     index().on(table.id).concurrently(),
     index().on(table.email).concurrently(),
@@ -43,7 +51,7 @@ export const profiles = pgTable(
   ],
 );
 
-export const profilesRelations = relations(profiles, ({ one }) => ({
+export const profilesRelations = relations(profiles, ({ one, many }) => ({
   user: one(authUsers, {
     fields: [profiles.id],
     references: [authUsers.id],
@@ -52,4 +60,32 @@ export const profilesRelations = relations(profiles, ({ one }) => ({
     fields: [profiles.organizationId],
     references: [organizations.id],
   }),
+  roles: many(accessRoles),
 }));
+
+export const profilesToAccessRoles = pgTable(
+  'profiles_to_access_roles',
+  {
+    profileId: integer()
+      .notNull()
+      .references(() => profiles.id),
+    accessRoleId: integer()
+      .notNull()
+      .references(() => accessRoles.id),
+  },
+  (table) => [primaryKey({ columns: [table.profileId, table.accessRoleId] })],
+);
+
+export const profilesToAccessRolesRelations = relations(
+  profilesToAccessRoles,
+  ({ one }) => ({
+    profile: one(profiles, {
+      fields: [profilesToAccessRoles.profileId],
+      references: [profiles.id],
+    }),
+    accessRole: one(accessRoles, {
+      fields: [profilesToAccessRoles.accessRoleId],
+      references: [accessRoles.id],
+    }),
+  }),
+);
