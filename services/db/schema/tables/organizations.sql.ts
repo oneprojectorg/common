@@ -1,4 +1,4 @@
-import { relations } from 'drizzle-orm';
+import { relations, sql } from 'drizzle-orm';
 import {
   boolean,
   decimal,
@@ -20,6 +20,7 @@ import {
 
 import { projects } from './projects.sql';
 
+// Enums for organization types and status
 export enum OrgType {
   COOPERATIVE = 'cooperative',
   MUTUAL_AID = 'mutual_aid',
@@ -32,9 +33,10 @@ export enum OrgType {
   OTHER = 'other',
 }
 
-// Enums for organization types and status
 export const orgTypeEnum = pgEnum('org_type', enumToPgEnum(OrgType));
 
+// An organization represents a tenant in the system
+// Org profiles should maybe be separated from organizations?
 export const organizations = pgTable(
   'organizations',
   {
@@ -72,16 +74,13 @@ export const organizations = pgTable(
     // Legal Structure
     ...timestamps,
   },
-  (table) => [
+  table => [
     ...serviceRolePolicies,
     index().on(table.id).concurrently(),
     index().on(table.slug).concurrently(),
-    // index('organizations_name_gin_index')
-    // .using('gin', sql`to_tsvector('english', ${table.name})`)
-    // .concurrently(),
-    // index('organizations_values_gin_index')
-    // .using('gin', sql`to_tsvector('english', ${table.values})`)
-    // .concurrently(),
+    index('organizations_name_gin_index')
+      .using('gin', sql`to_tsvector('english', ${table.name})`)
+      .concurrently(),
   ],
 );
 
