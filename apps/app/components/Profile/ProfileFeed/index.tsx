@@ -10,7 +10,7 @@ export const ProfileFeed = () => {
       <TabPanel id="updates">
         Arma virumque cano, Troiae qui primus ab oris.
       </TabPanel>
-      <TabPanel id="about">ABout content goes here!</TabPanel>
+      <TabPanel id="about">About content goes here!</TabPanel>
     </Tabs>
   );
 };

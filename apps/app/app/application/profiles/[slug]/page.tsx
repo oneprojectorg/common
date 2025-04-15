@@ -10,7 +10,7 @@ const OrganizationPage = async ({
   const { slug } = await params;
 
   return (
-    <div className="flex w-full flex-col gap-3">
+    <div className="flex w-full flex-col gap-3 outline outline-1 -outline-offset-1 outline-offWhite">
       <ImageHeader />
       <ProfileDetails />
       <ProfileFeed />
