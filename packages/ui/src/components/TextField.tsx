@@ -9,6 +9,7 @@ import {
   FieldError,
   FieldGroup,
   Input,
+  InputVariantsProps,
   Label,
   TextArea,
 } from './Field';
@@ -44,11 +45,14 @@ export const TextField = ({
   labelClassName,
   useTextArea,
   children,
+  color,
+  size,
   ...props
-}: TextFieldProps & {
-  ref?: React.RefObject<HTMLInputElement | HTMLTextAreaElement | null>;
-  children?: React.ReactNode;
-}) => {
+}: TextFieldProps &
+  InputVariantsProps & {
+    ref?: React.RefObject<HTMLInputElement | HTMLTextAreaElement | null>;
+    children?: React.ReactNode;
+  }) => {
   return (
     <AriaTextField
       {...props}
@@ -59,19 +63,19 @@ export const TextField = ({
     >
       {label && <Label className={labelClassName}>{label}</Label>}
       <FieldGroup className={fieldClassName}>
-        {useTextArea
-          ? (
-              <TextArea
-                {...textareaProps}
-                ref={ref as React.RefObject<HTMLTextAreaElement>}
-              />
-            )
-          : (
-              <Input
-                {...inputProps}
-                ref={ref as React.RefObject<HTMLInputElement>}
-              />
-            )}
+        {useTextArea ? (
+          <TextArea
+            {...textareaProps}
+            ref={ref as React.RefObject<HTMLTextAreaElement>}
+          />
+        ) : (
+          <Input
+            {...inputProps}
+            color={color}
+            size={size}
+            ref={ref as React.RefObject<HTMLInputElement>}
+          />
+        )}
         {children}
       </FieldGroup>
 

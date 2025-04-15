@@ -31,7 +31,7 @@ const OrganizationDetails = () => {
         ownership in Grove Hall, Boston.
       </div>
       <div className="flex gap-4">
-        <Button color="primary">Contribute</Button>
+        <Button>Contribute</Button>
         <Button color="secondary" variant="icon">
           Add relationship
         </Button>

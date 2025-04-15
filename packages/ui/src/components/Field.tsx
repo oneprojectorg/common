@@ -10,7 +10,7 @@ import {
   Text,
 } from 'react-aria-components';
 import { twMerge } from 'tailwind-merge';
-import { tv } from 'tailwind-variants';
+import { tv, VariantProps } from 'tailwind-variants';
 
 import { composeTailwindRenderProps, focusRing } from '../utils';
 
@@ -83,25 +83,38 @@ export const FieldGroup = (props: GroupProps) => {
     <Group
       {...props}
       className={composeRenderProps(props.className, (className, renderProps) =>
-        fieldGroupStyles({ ...renderProps, className }))}
+        fieldGroupStyles({ ...renderProps, className }),
+      )}
     />
   );
 };
 
+export const inputStyles = tv({
+  base: 'min-w-0 flex-1 rounded-md border border-offWhite p-4 text-sm leading-[0.5rem] text-black outline outline-0 placeholder:text-midGray disabled:text-lightGray',
+  variants: {
+    color: {
+      primary: '',
+      muted: 'bg-offWhite',
+    },
+    size: {
+      small: 'px-4 py-2',
+      medium: '',
+    },
+  },
+  defaultVariants: {
+    color: 'primary',
+    size: 'medium',
+  },
+});
+
+export type InputVariantsProps = VariantProps<typeof inputStyles>;
+export type InputWithVariantsProps = InputProps & InputVariantsProps;
+
 export const Input = ({
   ref,
   ...props
-}: InputProps & { ref?: React.RefObject<HTMLInputElement> }) => {
-  return (
-    <RACInput
-      ref={ref}
-      {...props}
-      className={composeTailwindRenderProps(
-        props.className,
-        'min-w-0 flex-1 rounded-md border border-offWhite p-4 text-sm leading-[0.5rem] text-black outline outline-0 placeholder:text-midGray disabled:text-lightGray',
-      )}
-    />
-  );
+}: InputWithVariantsProps & { ref?: React.RefObject<HTMLInputElement> }) => {
+  return <RACInput ref={ref} {...props} className={inputStyles(props)} />;
 };
 
 export const TextArea = ({
