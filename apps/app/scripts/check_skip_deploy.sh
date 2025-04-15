@@ -6,10 +6,10 @@ set -e
 current_branch=$(git symbolic-ref --short HEAD)
 
 # Execute the turbo-ignore command only if the current branch is "dev" or "main"
-if [[ "$current_branch" == "dev" || "$current_branch" == "main" ]]; then
+if [[ "$VERCEL_GIT_COMMIT_REF" == "dev" || "$VERCEL_GIT_COMMIT_REF" == "main" ]]; then
   npx turbo-ignore --fallback=HEAD^1
 else
-  echo "Error: This command should only be run on 'dev' or 'main'. Current branch: $current_branch"
+  echo "Error: This command should only be run on 'dev' or 'main'. Current branch: $VERCEL_GIT_COMMIT_REF"
   exit 0
 fi
 
