@@ -1,15 +1,16 @@
-import { Button } from '@op/ui/Button';
-import { ProfileSummary } from '../ProfileSummary';
 import { LuArrowUpRight, LuPlus } from 'react-icons/lu';
 
-export const ProfileDetails = () => {
+import { Button } from '@op/ui/Button';
+
+import { ProfileSummary } from '../ProfileSummary';
+
+import type { Organization } from '@op/trpc/encoders';
+
+export const ProfileDetails = ({ profile }: { profile: Organization }) => {
   return (
     <div className="flex w-full flex-col gap-3 px-4">
-      <ProfileSummary />
-      <div className="text-base">
-        Planting the seeds for the next economy through labor organizing
-        centered on food justice.
-      </div>
+      <ProfileSummary profile={profile} />
+      <div className="text-base">{profile.description}</div>
       <div className="flex gap-4">
         <Button>
           <LuArrowUpRight />

@@ -32,7 +32,7 @@ export const getOrganizationRouter = router({
     // Router
     .meta(meta)
     .input(inputSchema)
-    .output(organizationsEncoder)
+    .output(organizationsEncoder.nullish())
     .query(async ({ ctx, input }) => {
       const { db } = ctx.database;
       const { organizationId } = input;
