@@ -37,17 +37,17 @@ interface LoginState {
   reset: () => void;
 }
 
-const useLoginStore = create<LoginState>(set => ({
+const useLoginStore = create<LoginState>((set) => ({
   email: '',
-  setEmail: email => set({ email }),
+  setEmail: (email) => set({ email }),
   emailIsValid: false,
-  setEmailIsValid: emailIsValid => set({ emailIsValid }),
+  setEmailIsValid: (emailIsValid) => set({ emailIsValid }),
   token: undefined,
-  setToken: token => set({ token }),
+  setToken: (token) => set({ token }),
   tokenError: undefined,
-  setTokenError: tokenError => set({ tokenError }),
+  setTokenError: (tokenError) => set({ tokenError }),
   loginSuccess: false,
-  setLoginSuccess: loginSuccess => set({ loginSuccess }),
+  setLoginSuccess: (loginSuccess) => set({ loginSuccess }),
   reset: () =>
     set({
       email: '',
@@ -126,14 +126,12 @@ export const LoginPanel = () => {
 
     if (data.user && data.session && data.user.role === 'authenticated') {
       window.location.reload();
-    }
-    else {
+    } else {
       setTokenError(error?.message ?? 'Failed to verify code');
     }
   }, [email, token]);
 
-  if (!mounted)
-    return null;
+  if (!mounted) return null;
 
   // TODO: using a tailwind v4 class here "min-w-xs"
   return (
@@ -144,14 +142,14 @@ export const LoginPanel = () => {
             <OPLogo />
             <CommonLogo />
           </div>
-          <Header>
+          <Header className="text-center">
             {user?.error?.name === 'AuthRetryableFetchError'
               ? 'Connection Issue'
               : (() => {
                   if (login.isError || error || tokenError) {
                     if (
-                      combinedError?.includes('invite')
-                      || combinedError?.includes('waitlist')
+                      combinedError?.includes('invite') ||
+                      combinedError?.includes('waitlist')
                     ) {
                       return 'Stay tuned!';
                     }
@@ -177,9 +175,9 @@ export const LoginPanel = () => {
                   if (combinedError || tokenError) {
                     return (
                       <span className={cn(tokenError && 'text-red-500')}>
-                        {combinedError
-                          || tokenError
-                          || 'There was an error signing you in.'}
+                        {combinedError ||
+                          tokenError ||
+                          'There was an error signing you in.'}
                       </span>
                     );
                   }
@@ -190,10 +188,7 @@ export const LoginPanel = () => {
 
                   return (
                     <span>
-                      A code was sent to
-                      {' '}
-                      <span>{email}</span>
-                      . Type the code
+                      A code was sent to <span>{email}</span>. Type the code
                       below to sign in.
                     </span>
                   );
@@ -202,208 +197,191 @@ export const LoginPanel = () => {
         </section>
 
         <section className="flex flex-col gap-8">
-          {user?.error?.name !== 'AuthRetryableFetchError'
-            && !(login.isError || !!combinedError) && (
-            <div className="flex flex-col gap-8">
-              {!loginSuccess && (
-                <>
-                  <Button
-                    color="secondary"
-                    variant="icon"
-                    onPress={() => {
-                      void handleLogin();
-                    }}
-                  >
-                    <GoogleIcon className="size-4" />
-                    Continue with Google
-                  </Button>
+          {user?.error?.name !== 'AuthRetryableFetchError' &&
+            !(login.isError || !!combinedError) && (
+              <div className="flex flex-col gap-8">
+                {!loginSuccess && (
+                  <>
+                    <Button
+                      color="secondary"
+                      variant="icon"
+                      onPress={() => {
+                        void handleLogin();
+                      }}
+                    >
+                      <GoogleIcon className="size-4" />
+                      Continue with Google
+                    </Button>
 
-                  <div className="flex w-full items-center justify-center gap-4 text-midGray">
-                    <div className="h-px grow bg-current" />
-                    <span>or</span>
-                    <div className="h-px grow bg-current" />
+                    <div className="flex w-full items-center justify-center gap-4 text-midGray">
+                      <div className="h-px grow bg-current" />
+                      <span>or</span>
+                      <div className="h-px grow bg-current" />
+                    </div>
+                  </>
+                )}
+
+                {!loginSuccess && (
+                  <div className="flex flex-col">
+                    <Form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        void login.refetch().then(({ data }) => {
+                          if (data) {
+                            setLoginSuccess(true);
+                          }
+                        });
+                      }}
+                    >
+                      <TextField
+                        aria-label="Email"
+                        label="Organization email"
+                        inputProps={{
+                          placeholder: OP_EMAIL_HELP,
+                          spellCheck: false,
+                        }}
+                        // eslint-disable-next-line jsx-a11y/no-autofocus
+                        autoFocus
+                        defaultValue={undefined}
+                        isDisabled={
+                          login.isFetching || loginSuccess || !!combinedError
+                        }
+                        value={email}
+                        onChange={(val) => {
+                          const locEmail = val;
+
+                          setEmailIsValid(
+                            emailParser.safeParse(locEmail).success,
+                          );
+                          setEmail(locEmail);
+                        }}
+                      />
+                    </Form>
                   </div>
-                </>
-              )}
+                )}
 
-              {!loginSuccess && (
-                <div className="flex flex-col">
-                  <Form
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      void login.refetch().then(({ data }) => {
-                        if (data) {
-                          setLoginSuccess(true);
+                {loginSuccess && (
+                  <div className="flex flex-col">
+                    <Form
+                      onSubmit={async (e) => {
+                        if (token && token.length === 6) {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          await handleTokenSubmit();
+                        }
+                      }}
+                    >
+                      <TextField
+                        aria-label="Code"
+                        inputProps={{
+                          placeholder: '123456',
+                          spellCheck: false,
+                          className: 'text-center text-4xl',
+                        }}
+                        fieldClassName="h-auto"
+                        // eslint-disable-next-line jsx-a11y/no-autofocus
+                        autoFocus
+                        defaultValue={undefined}
+                        isDisabled={login.isFetching || !!combinedError}
+                        value={token}
+                        onChange={(val) => {
+                          const locToken = val;
+
+                          setToken(locToken.trim());
+                        }}
+                      />
+                    </Form>
+                  </div>
+                )}
+              </div>
+            )}
+
+          <section className="flex flex-col gap-6">
+            {!(login.isError || !!combinedError) ? (
+              <>
+                {user?.error?.name === 'AuthRetryableFetchError' ? (
+                  <Button
+                    onPress={() => {
+                      void refetchUser().then(({ data }) => {
+                        if (data && data.user) {
+                          window.location.reload();
                         }
                       });
                     }}
                   >
-                    <TextField
-                      aria-label="Email"
-                      label="Organization email"
-                      inputProps={{
-                        placeholder: OP_EMAIL_HELP,
-                        spellCheck: false,
-                      }}
-                      // eslint-disable-next-line jsx-a11y/no-autofocus
-                      autoFocus
-                      defaultValue={undefined}
-                      isDisabled={
-                        login.isFetching || loginSuccess || !!combinedError
-                      }
-                      value={email}
-                      onChange={(val) => {
-                        const locEmail = val;
-
-                        setEmailIsValid(
-                          emailParser.safeParse(locEmail).success,
-                        );
-                        setEmail(locEmail);
-                      }}
-                    />
-                  </Form>
-                </div>
-              )}
-
-              {loginSuccess && (
-                <div className="flex flex-col">
-                  <Form
-                    onSubmit={async (e) => {
-                      if (token && token.length === 6) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        await handleTokenSubmit();
+                    {isRefetchingUser ? (
+                      <div className="m-0.5 aspect-square w-5 animate-spin rounded-full border-2 border-b-0 border-neutral-500" />
+                    ) : (
+                      'Try again'
+                    )}
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    className="flex w-full items-center justify-center"
+                    isDisabled={
+                      !emailIsValid ||
+                      login.isFetching ||
+                      (!!token && token.length !== 6)
+                    }
+                    onPress={async () => {
+                      if (!loginSuccess) {
+                        void login.refetch().then(({ data }) => {
+                          if (data) {
+                            setLoginSuccess(true);
+                          }
+                        });
+                      } else if (loginSuccess && token && token.length === 6) {
+                        void handleTokenSubmit();
                       }
                     }}
                   >
-                    <TextField
-                      aria-label="Code"
-                      inputProps={{
-                        placeholder: '123456',
-                        spellCheck: false,
-                        className: 'text-center text-4xl',
-                      }}
-                      fieldClassName="h-auto"
-                      // eslint-disable-next-line jsx-a11y/no-autofocus
-                      autoFocus
-                      defaultValue={undefined}
-                      isDisabled={login.isFetching || !!combinedError}
-                      value={token}
-                      onChange={(val) => {
-                        const locToken = val;
+                    {login.isFetching ? (
+                      <div className="aspect-square w-4 animate-spin rounded-full" />
+                    ) : loginSuccess ? (
+                      isSignup ? (
+                        'Sign up'
+                      ) : (
+                        'Login'
+                      )
+                    ) : (
+                      'Sign in'
+                    )}
+                  </Button>
+                )}
+              </>
+            ) : (
+              <div className="flex flex-col items-center justify-center gap-4">
+                <ButtonLink
+                  href={`${OPURLConfig('APP').ENV_URL}`}
+                  color="gradient"
+                  className="flex w-full items-center justify-center"
+                >
+                  Back to home
+                </ButtonLink>
 
-                        setToken(locToken.trim());
-                      }}
-                    />
-                  </Form>
-                </div>
-              )}
-            </div>
-          )}
+                <SocialLinks iconClassName="size-5 text-neutral-500" />
+              </div>
+            )}
 
-          <section className="flex flex-col gap-6">
-            {!(login.isError || !!combinedError)
-              ? (
+            {user?.error?.name === 'AuthRetryableFetchError' ||
+            login.isError ||
+            !!combinedError ? null : (
+              <div className="flex flex-col items-center justify-center text-center text-xs text-midGray sm:text-sm">
+                {isSignup ? (
+                  <span>
+                    You'll receive a code to confirm your account. Can't find
+                    it? Check your spam folder.
+                  </span>
+                ) : (
                   <>
-                    {user?.error?.name === 'AuthRetryableFetchError'
-                      ? (
-                          <Button
-                            onPress={() => {
-                              void refetchUser().then(({ data }) => {
-                                if (data && data.user) {
-                                  window.location.reload();
-                                }
-                              });
-                            }}
-                          >
-                            {isRefetchingUser
-                              ? (
-                                  <div className="m-0.5 aspect-square w-5 animate-spin rounded-full border-2 border-b-0 border-neutral-500" />
-                                )
-                              : (
-                                  'Try again'
-                                )}
-                          </Button>
-                        )
-                      : (
-                          <Button
-                            type="button"
-                            className="flex w-full items-center justify-center"
-                            isDisabled={
-                              !emailIsValid
-                              || login.isFetching
-                              || (!!token && token.length !== 6)
-                            }
-                            onPress={async () => {
-                              if (!loginSuccess) {
-                                void login.refetch().then(({ data }) => {
-                                  if (data) {
-                                    setLoginSuccess(true);
-                                  }
-                                });
-                              }
-                              else if (loginSuccess && token && token.length === 6) {
-                                void handleTokenSubmit();
-                              }
-                            }}
-                          >
-                            {login.isFetching
-                              ? (
-                                  <div className="aspect-square w-4 animate-spin rounded-full" />
-                                )
-                              : loginSuccess
-                                ? (
-                                    isSignup
-                                      ? (
-                                          'Sign up'
-                                        )
-                                      : (
-                                          'Login'
-                                        )
-                                  )
-                                : (
-                                    'Sign in'
-                                  )}
-                          </Button>
-                        )}
+                    <span>Don&apos;t have an account?</span>
+                    <span>We will automatically create one for you.</span>
                   </>
-                )
-              : (
-                  <div className="flex flex-col items-center justify-center gap-4">
-                    <ButtonLink
-                      href={`${OPURLConfig('APP').ENV_URL}`}
-                      color="gradient"
-                      className="flex w-full items-center justify-center"
-                    >
-                      Back to home
-                    </ButtonLink>
-
-                    <SocialLinks iconClassName="size-5 text-neutral-500" />
-                  </div>
                 )}
-
-            {user?.error?.name === 'AuthRetryableFetchError'
-              || login.isError
-              || !!combinedError
-              ? null
-              : (
-                  <div className="flex flex-col items-center justify-center text-center text-xs text-midGray sm:text-sm">
-                    {isSignup
-                      ? (
-                          <span>
-                            You'll receive a code to confirm your account. Can't find
-                            it? Check your spam folder.
-                          </span>
-                        )
-                      : (
-                          <>
-                            <span>Don&apos;t have an account?</span>
-                            <span>We will automatically create one for you.</span>
-                          </>
-                        )}
-                  </div>
-                )}
+              </div>
+            )}
           </section>
         </section>
       </div>

@@ -1,6 +1,16 @@
-export const Header = ({ children }: { children: React.ReactNode }) => {
+import { cn } from '@op/ui/utils';
+
+export const Header = ({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) => {
   return (
-    <header className="text-center font-serif text-headerMobile sm:text-header">
+    <header
+      className={cn('text-headerMobile sm:text-header font-serif', className)}
+    >
       {children}
     </header>
   );
