@@ -31,6 +31,7 @@ export interface TextFieldProps extends AriaTextFieldProps {
   descriptionClassName?: string;
   labelClassName?: string;
   useTextArea?: boolean;
+  icon?: React.ReactNode;
 }
 
 export const TextField = ({

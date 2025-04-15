@@ -17,6 +17,7 @@ export const SiteHeader = () => {
         color="muted"
         size="small"
       />
+
       <div className="size-4 rounded-full bg-teal" />
     </header>
   );
