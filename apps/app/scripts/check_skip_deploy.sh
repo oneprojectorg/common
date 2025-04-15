@@ -2,9 +2,6 @@
 # Exit immediately if any command fails
 set -e
 
-# Get the current branch name
-current_branch=$(git symbolic-ref --short HEAD)
-
 # Execute the turbo-ignore command only if the current branch is "dev" or "main"
 if [[ "$VERCEL_GIT_COMMIT_REF" == "dev" || "$VERCEL_GIT_COMMIT_REF" == "main" ]]; then
   npx turbo-ignore --fallback=HEAD^1
