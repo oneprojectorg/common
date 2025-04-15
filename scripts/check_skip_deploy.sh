@@ -10,6 +10,6 @@ if [[ "$current_branch" == "dev" || "$current_branch" == "main" ]]; then
   npx turbo-ignore --fallback=HEAD^1
 else
   echo "Error: This command should only be run on 'dev' or 'main'. Current branch: $current_branch"
-  exit 1
+  exit 0
 fi
 
