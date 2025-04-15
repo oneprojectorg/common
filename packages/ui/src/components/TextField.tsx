@@ -9,14 +9,13 @@ import {
   FieldError,
   FieldGroup,
   Input,
-  InputVariantsProps,
+  InputWithVariantsProps,
   Label,
   TextArea,
 } from './Field';
 
 import type {
   TextFieldProps as AriaTextFieldProps,
-  InputProps,
   TextAreaProps,
   ValidationResult,
 } from 'react-aria-components';
@@ -25,13 +24,12 @@ export interface TextFieldProps extends AriaTextFieldProps {
   label?: string;
   description?: string;
   errorMessage?: string | ((validation: ValidationResult) => string);
-  inputProps?: InputProps & { className?: string };
+  inputProps?: InputWithVariantsProps & { className?: string };
   textareaProps?: TextAreaProps & { className?: string };
   fieldClassName?: string;
   descriptionClassName?: string;
   labelClassName?: string;
   useTextArea?: boolean;
-  icon?: React.ReactNode;
 }
 
 export const TextField = ({
@@ -46,14 +44,11 @@ export const TextField = ({
   labelClassName,
   useTextArea,
   children,
-  color,
-  size,
   ...props
-}: TextFieldProps &
-  InputVariantsProps & {
-    ref?: React.RefObject<HTMLInputElement | HTMLTextAreaElement | null>;
-    children?: React.ReactNode;
-  }) => {
+}: TextFieldProps & {
+  ref?: React.RefObject<HTMLInputElement | HTMLTextAreaElement | null>;
+  children?: React.ReactNode;
+}) => {
   return (
     <AriaTextField
       {...props}
@@ -72,8 +67,6 @@ export const TextField = ({
         ) : (
           <Input
             {...inputProps}
-            color={color}
-            size={size}
             ref={ref as React.RefObject<HTMLInputElement>}
           />
         )}

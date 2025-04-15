@@ -1,4 +1,5 @@
 import { TextField } from '@op/ui/TextField';
+import { LuSearch } from 'react-icons/lu';
 
 import { OPLogo } from '../OPLogo';
 import { CommonLogo } from '../CommonLogo';
@@ -11,11 +12,14 @@ export const SiteHeader = () => {
         <CommonLogo />
       </div>
       <TextField
-        placeholder="Search"
+        inputProps={{
+          placeholder: 'Search',
+          color: 'muted',
+          size: 'small',
+          icon: <LuSearch className="text-darkGray" />,
+        }}
         className="w-96"
         aria-label="Search"
-        color="muted"
-        size="small"
       />
 
       <div className="size-4 rounded-full bg-teal" />

@@ -22,6 +22,7 @@ import type {
   TextAreaProps,
   TextProps,
 } from 'react-aria-components';
+import { ReactNode } from 'react';
 
 export const Label = (props: LabelProps) => {
   return (
@@ -94,27 +95,68 @@ export const inputStyles = tv({
   variants: {
     color: {
       primary: '',
-      muted: 'bg-offWhite',
+      muted: 'bg-offWhite text-darkGray',
     },
     size: {
       small: 'px-4 py-2',
       medium: '',
     },
+    hasIcon: {
+      true: 'w-full pl-10',
+      false: '',
+    },
   },
   defaultVariants: {
     color: 'primary',
     size: 'medium',
+    hasIcon: false,
   },
 });
 
 export type InputVariantsProps = VariantProps<typeof inputStyles>;
-export type InputWithVariantsProps = InputProps & InputVariantsProps;
+export type InputWithVariantsProps = Omit<InputProps, 'size'> &
+  InputVariantsProps & { icon?: ReactNode };
 
 export const Input = ({
   ref,
+  icon,
+  size,
   ...props
 }: InputWithVariantsProps & { ref?: React.RefObject<HTMLInputElement> }) => {
-  return <RACInput ref={ref} {...props} className={inputStyles(props)} />;
+  if (icon) {
+    return <InputWithIcon icon={icon} ref={ref} size={size} {...props} />;
+  }
+
+  return (
+    <RACInput
+      ref={ref}
+      {...props}
+      className={inputStyles({ ...props, size } as InputVariantsProps)}
+    />
+  );
+};
+
+export const InputWithIcon = ({
+  ref,
+  size,
+  ...props
+}: InputWithVariantsProps & { ref?: React.RefObject<HTMLInputElement> }) => {
+  return (
+    <span className="relative w-full">
+      <span className="absolute left-4 top-1/2 -translate-y-1/2">
+        {props.icon}
+      </span>
+      <RACInput
+        ref={ref}
+        {...props}
+        className={inputStyles({
+          ...props,
+          size,
+          hasIcon: true,
+        } as InputVariantsProps)}
+      />
+    </span>
+  );
 };
 
 export const TextArea = ({
