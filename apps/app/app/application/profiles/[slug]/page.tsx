@@ -1,6 +1,6 @@
 import { ImageHeader } from '@/components/ImageHeader';
 import { ProfileDetails } from '@/components/Profile/ProfileDetails';
-import { ProfileFeed } from '@/components/Profile/ProfileFeed';
+import { ProfileTabs } from '@/components/Profile/ProfileTabs';
 
 const OrganizationPage = async ({
   params,
@@ -13,7 +13,7 @@ const OrganizationPage = async ({
     <div className="flex w-full flex-col gap-3 outline outline-1 -outline-offset-1 outline-offWhite">
       <ImageHeader />
       <ProfileDetails />
-      <ProfileFeed />
+      <ProfileTabs />
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import { cn } from '@op/ui/utils';
 
-export const Header = ({
+export const Header1 = ({
   children,
   className,
 }: {
@@ -8,10 +8,20 @@ export const Header = ({
   className?: string;
 }) => {
   return (
-    <header
+    <h1
       className={cn('text-headerMobile sm:text-header font-serif', className)}
     >
       {children}
-    </header>
+    </h1>
   );
+};
+
+export const Header3 = ({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) => {
+  return <h3 className={cn('text-base text-black', className)}>{children}</h3>;
 };

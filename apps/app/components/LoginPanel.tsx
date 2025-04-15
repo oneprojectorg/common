@@ -18,7 +18,7 @@ import { TextField } from '@op/ui/TextField';
 import { cn } from '@op/ui/utils';
 
 import { CommonLogo } from './CommonLogo';
-import { Header } from './Header';
+import { Header1 } from './Header';
 import { OPLogo } from './OPLogo';
 
 import GoogleIcon from '~icons/logos/google-icon.jsx';
@@ -142,7 +142,7 @@ export const LoginPanel = () => {
             <OPLogo />
             <CommonLogo />
           </div>
-          <Header className="text-center">
+          <Header1 className="text-center">
             {user?.error?.name === 'AuthRetryableFetchError'
               ? 'Connection Issue'
               : (() => {
@@ -167,7 +167,7 @@ export const LoginPanel = () => {
 
                   return 'Check your email!';
                 })()}
-          </Header>
+          </Header1>
           <div className="px-4 text-center text-xs leading-[130%] text-darkGray sm:text-base">
             {user?.error?.name === 'AuthRetryableFetchError'
               ? `${APP_NAME} can\`t connect to the internet. Please check your internet connection and try again.`
