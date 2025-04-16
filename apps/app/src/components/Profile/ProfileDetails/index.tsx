@@ -12,17 +12,17 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
 
   // split funding links up by type
   const receivingFundingLinks = links.filter(
-    (fundingLink) => fundingLink.type === 'receiving',
+    fundingLink => fundingLink.type === 'receiving',
   );
   const offeringFundingLinks = links.filter(
-    (fundingLink) => fundingLink.type === 'offering',
+    fundingLink => fundingLink.type === 'offering',
   );
 
   return (
     <div className="flex gap-4">
       {isReceivingFunds
-        ? receivingFundingLinks.map((link) => (
-            <ButtonLink href={link.href} className="min-w-44">
+        ? receivingFundingLinks.map(link => (
+            <ButtonLink key={link.id} href={link.href} className="min-w-44">
               <LuArrowUpRight />
               Contribute
             </ButtonLink>
@@ -30,8 +30,8 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
         : null}
 
       {isOfferingFunds
-        ? offeringFundingLinks.map((link) => (
-            <ButtonLink href={link.href} className="min-w-44">
+        ? offeringFundingLinks.map(link => (
+            <ButtonLink key={link.id} href={link.href} className="min-w-44">
               <LuInfo />
               Learn more
             </ButtonLink>

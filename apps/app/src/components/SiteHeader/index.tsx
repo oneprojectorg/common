@@ -1,8 +1,9 @@
-import { TextField } from '@op/ui/TextField';
 import { LuSearch } from 'react-icons/lu';
 
-import { OPLogo } from '../OPLogo';
+import { TextField } from '@op/ui/TextField';
+
 import { CommonLogo } from '../CommonLogo';
+import { OPLogo } from '../OPLogo';
 
 export const SiteHeader = () => {
   return (

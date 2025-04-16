@@ -1,12 +1,17 @@
 import { Header3 } from '@/components/Header';
-import type { Organization } from '@op/trpc/encoders';
-import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import Link from 'next/link';
 import { LuGlobe, LuMail } from 'react-icons/lu';
 
+import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
+
+import type { Organization } from '@op/trpc/encoders';
+
 const ProfileFeed = () => {
   return Array.from({ length: 5 }).map((_, i) => (
-    <div key={i}>Feed item {i}</div>
+    <div key={i}>
+      Feed item
+      {i}
+    </div>
   ));
 };
 
@@ -19,31 +24,39 @@ const ProfileAbout = ({ profile }: { profile: Organization }) => {
 
   return (
     <div className="flex flex-col gap-8">
-      {email || website ? (
-        <section className="gap flex flex-col gap-6">
-          <Header3>Contact</Header3>
-          <div className="flex flex-col gap-4 text-teal">
-            {website ? (
-              <ContactLink>
-                <LuGlobe />
-                <Link href={website}>{website}</Link>
-              </ContactLink>
-            ) : null}
-            {email ? (
-              <ContactLink>
-                <LuMail />
-                <span>info@solidarityseeds.org</span>
-              </ContactLink>
-            ) : null}
-          </div>
-        </section>
-      ) : null}
-      {mission ? (
-        <section className="gap flex flex-col gap-6">
-          <Header3>Mission Statement</Header3>
-          <p>{mission}</p>
-        </section>
-      ) : null}
+      {email || website
+        ? (
+            <section className="gap flex flex-col gap-6">
+              <Header3>Contact</Header3>
+              <div className="flex flex-col gap-4 text-teal">
+                {website
+                  ? (
+                      <ContactLink>
+                        <LuGlobe />
+                        <Link href={website}>{website}</Link>
+                      </ContactLink>
+                    )
+                  : null}
+                {email
+                  ? (
+                      <ContactLink>
+                        <LuMail />
+                        <span>info@solidarityseeds.org</span>
+                      </ContactLink>
+                    )
+                  : null}
+              </div>
+            </section>
+          )
+        : null}
+      {mission
+        ? (
+            <section className="gap flex flex-col gap-6">
+              <Header3>Mission Statement</Header3>
+              <p>{mission}</p>
+            </section>
+          )
+        : null}
     </div>
   );
 };
