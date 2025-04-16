@@ -6,21 +6,21 @@
         "name": "next"
       }
     ],
-    "baseUrl": ".",
+    "baseUrl": "./src", // Point baseUrl to the new src directory
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"] // Alias will now resolve relative to ./src
     },
     "types": ["unplugin-icons/types/react"]
     // "noErrorTruncation": true
   },
   "include": [
-    "next-env.d.ts",
-    "next.config.mjs",
-    "**/*.ts",
-    "**/*.tsx",
-    "**/*.js",
-    "**/*.jsx",
-    ".next/types/**/*.ts"
+    "next-env.d.ts", // Keep this at the root
+    "next.config.mjs", // Keep this at the root
+    "**/*.ts", // Include files within src
+    "**/*.tsx", // Include files within src
+    "**/*.js", // Include files within src
+    "**/*.jsx", // Include files within src
+    ".next/types/**/*.ts" // Keep this relative to the root
   ],
   "exclude": ["node_modules"]
 }
