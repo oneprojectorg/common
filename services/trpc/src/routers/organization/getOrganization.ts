@@ -1,3 +1,4 @@
+import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import { organizationsEncoder } from '../../encoders/organizations';
@@ -32,7 +33,7 @@ export const getOrganizationRouter = router({
     // Router
     .meta(meta)
     .input(inputSchema)
-    .output(organizationsEncoder.nullish())
+    .output(organizationsEncoder)
     .query(async ({ ctx, input }) => {
       const { db } = ctx.database;
       const { organizationId } = input;
@@ -40,8 +41,18 @@ export const getOrganizationRouter = router({
       // TODO: assert authorization, setup a common package
       const result = await db.query.organizations.findFirst({
         where: (table, { eq }) => eq(table.id, organizationId),
+        with: {
+          projects: true,
+        },
       });
 
-      return result || null;
+      if (!result) {
+        throw new TRPCError({
+          message: 'Organization not found',
+          code: 'NOT_FOUND',
+        });
+      }
+
+      return result;
     }),
 });

@@ -1,7 +1,4 @@
-import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
-
-import { profiles } from '@op/db/schema';
 
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withDB from '../../middlewares/withDB';
@@ -9,6 +6,8 @@ import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
 import type { OpenApiMeta } from 'trpc-to-openapi';
+import { TRPCError } from '@trpc/server';
+import { profilesEncoder } from '../../encoders';
 
 const endpoint = 'getUserProfile';
 
@@ -23,8 +22,6 @@ const meta: OpenApiMeta = {
   },
 };
 
-const outputSchema = createSelectSchema(profiles);
-
 const getUserProfile = router({
   getUserProfile: loggedProcedure
     // Middlewares
@@ -34,7 +31,7 @@ const getUserProfile = router({
     // Router
     .meta(meta)
     .input(z.undefined())
-    .output(outputSchema.nullable())
+    .output(profilesEncoder)
     .query(async ({ ctx }) => {
       const { db } = ctx.database;
       const { id } = ctx.user;
@@ -43,7 +40,14 @@ const getUserProfile = router({
         where: (table, { eq }) => eq(table.id, id),
       });
 
-      return result || null;
+      if (!result) {
+        throw new TRPCError({
+          message: 'Organization not found',
+          code: 'NOT_FOUND',
+        });
+      }
+
+      return result;
     }),
 });
 
