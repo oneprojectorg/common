@@ -78,11 +78,9 @@ export const organizations = pgTable(
 
     // Media items
     headerImageId: uuid().references(() => objectsInStorage.id, {
-      onDelete: 'cascade',
       onUpdate: 'cascade',
     }),
     avatarImageId: uuid().references(() => objectsInStorage.id, {
-      onDelete: 'cascade',
       onUpdate: 'cascade',
     }),
     ...timestamps,

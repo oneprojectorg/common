@@ -210,6 +210,7 @@ export const LoginPanel = () => {
                   <Button
                     color="secondary"
                     variant="icon"
+                    className="text-black"
                     onPress={() => {
                       void handleLogin();
                     }}

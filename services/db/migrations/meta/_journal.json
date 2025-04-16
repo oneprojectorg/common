@@ -15,6 +15,13 @@
       "when": 1744812471901,
       "tag": "0001_amused_alex_wilder",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1744839028006,
+      "tag": "0002_serious_patch",
+      "breakpoints": true
     }
   ]
 }
