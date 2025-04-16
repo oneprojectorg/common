@@ -1,22 +1,6 @@
 'use client';
 
-import { redirect } from 'next/navigation';
-
-import { useAuthUser } from '@op/hooks';
-
-const AuthWrapper = ({ children }: { children: React.ReactNode }) => {
-  const user = useAuthUser();
-
-  if (!user || user.isFetching || user.isPending) {
-    return null;
-  }
-
-  if (user.isFetchedAfterMount && !user.isFetching && !user.data?.user) {
-    redirect('/login');
-  }
-
-  return children;
-};
+import { AuthWrapper } from '@/utils/AuthWrapper';
 
 const MainPage = () => {
   return (

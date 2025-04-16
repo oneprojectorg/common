@@ -19,6 +19,8 @@ export const organizationsEncoder = createSelectSchema(organizations)
     state: true,
     description: true,
     mission: true,
+    email: true,
+    website: true,
     isOfferingFunds: true,
     isReceivingFunds: true,
   })

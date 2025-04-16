@@ -1,8 +1,54 @@
 import { Header3 } from '@/components/Header';
+import type { Organization } from '@op/trpc/encoders';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
+import Link from 'next/link';
 import { LuGlobe, LuMail } from 'react-icons/lu';
 
-export const ProfileTabs = () => {
+const ProfileFeed = () => {
+  return Array.from({ length: 5 }).map((_, i) => (
+    <div key={i}>Feed item {i}</div>
+  ));
+};
+
+const ContactLink = ({ children }: { children: React.ReactNode }) => {
+  return <div className="flex items-center gap-1">{children}</div>;
+};
+
+const ProfileAbout = ({ profile }: { profile: Organization }) => {
+  const { mission, email, website } = profile;
+
+  return (
+    <div className="flex flex-col gap-8">
+      {email || website ? (
+        <section className="gap flex flex-col gap-6">
+          <Header3>Contact</Header3>
+          <div className="flex flex-col gap-4 text-teal">
+            {website ? (
+              <ContactLink>
+                <LuGlobe />
+                <Link href={website}>{website}</Link>
+              </ContactLink>
+            ) : null}
+            {email ? (
+              <ContactLink>
+                <LuMail />
+                <span>info@solidarityseeds.org</span>
+              </ContactLink>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
+      {mission ? (
+        <section className="gap flex flex-col gap-6">
+          <Header3>Mission Statement</Header3>
+          <p>{mission}</p>
+        </section>
+      ) : null}
+    </div>
+  );
+};
+
+export const ProfileTabs = ({ profile }: { profile: Organization }) => {
   return (
     <Tabs className="pb-8">
       <TabList>
@@ -13,47 +59,8 @@ export const ProfileTabs = () => {
         <ProfileFeed />
       </TabPanel>
       <TabPanel id="about">
-        <ProfileAbout />
+        <ProfileAbout profile={profile} />
       </TabPanel>
     </Tabs>
   );
-};
-
-const ProfileFeed = () => {
-  return Array.from({ length: 5 }).map((_, i) => (
-    <div key={i}>Feed item {i}</div>
-  ));
-};
-
-const ProfileAbout = () => {
-  return (
-    <div className="flex flex-col gap-8">
-      <section className="gap flex flex-col gap-6">
-        <Header3>Contact</Header3>
-        <div className="flex flex-col gap-4 text-teal">
-          <ContactLink>
-            <LuGlobe />
-            <span>solidarityseeds.org</span>
-          </ContactLink>
-          <ContactLink>
-            <LuMail />
-            <span>info@solidarityseeds.org</span>
-          </ContactLink>
-        </div>
-      </section>
-      <section className="gap flex flex-col gap-6">
-        <Header3>Mission Statement</Header3>
-        <p>
-          At Solidarity Seeds, we nurture the ecosystem of economic justice
-          through community-rooted organizing and regenerative food systems. We
-          believe that transformative change grows from the ground up,
-          connecting labor rights with environmental stewardship. Read more…
-        </p>
-      </section>
-    </div>
-  );
-};
-
-const ContactLink = ({ children }: { children: React.ReactNode }) => {
-  return <div className="flex items-center gap-1">{children}</div>;
 };
