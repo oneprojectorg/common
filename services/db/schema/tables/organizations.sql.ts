@@ -19,7 +19,9 @@ import {
   timestamps,
 } from '../../helpers';
 
+import { links } from './links.sql';
 import { projects } from './projects.sql';
+import { objectsInStorage } from './storage.sql';
 
 // Enums for organization types and status
 export enum OrgType {
@@ -73,9 +75,19 @@ export const organizations = pgTable(
     type: orgTypeEnum('org_type').notNull().default(OrgType.OTHER),
     // Legal Structure
     // Thematic Areas
+
+    // Media items
+    headerImageId: uuid().references(() => objectsInStorage.id, {
+      onDelete: 'cascade',
+      onUpdate: 'cascade',
+    }),
+    avatarImageId: uuid().references(() => objectsInStorage.id, {
+      onDelete: 'cascade',
+      onUpdate: 'cascade',
+    }),
     ...timestamps,
   },
-  (table) => [
+  table => [
     ...serviceRolePolicies,
     index().on(table.id).concurrently(),
     index().on(table.slug).concurrently(),
@@ -85,36 +97,18 @@ export const organizations = pgTable(
   ],
 );
 
-export const organizationsRelations = relations(organizations, ({ many }) => ({
-  projects: many(projects),
-  fundingLinks: many(fundingLinks),
-}));
-
-enum LinkType {
-  OFFERING = 'offering',
-  RECEIVING = 'receiving',
-}
-
-export const linkTypeEnum = pgEnum('link_type', enumToPgEnum(LinkType));
-
-export const fundingLinks = pgTable(
-  'funding_links',
-  {
-    id: autoId().primaryKey(),
-    name: varchar({ length: 256 }),
-    href: varchar({ length: 256 }).notNull(),
-    type: linkTypeEnum('link_type').notNull().default(LinkType.OFFERING),
-    organizationId: uuid().references(() => organizations.id, {
-      onDelete: 'cascade',
-      onUpdate: 'cascade',
+export const organizationsRelations = relations(
+  organizations,
+  ({ many, one }) => ({
+    projects: many(projects),
+    links: many(links),
+    headerImage: one(objectsInStorage, {
+      fields: [organizations.headerImageId],
+      references: [objectsInStorage.id],
     }),
-  },
-  (table) => [...serviceRolePolicies, index().on(table.id).concurrently()],
-);
-
-export const fundingLinksRelations = relations(fundingLinks, ({ one }) => ({
-  organization: one(organizations, {
-    fields: [fundingLinks.organizationId],
-    references: [organizations.id],
+    avatarImage: one(objectsInStorage, {
+      fields: [organizations.avatarImageId],
+      references: [objectsInStorage.id],
+    }),
   }),
-}));
+);

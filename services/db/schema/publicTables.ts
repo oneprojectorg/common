@@ -1,13 +1,11 @@
 // Public tables are included in migrations
 export { accessRoles } from './tables/access.sql';
 export {
-  fundingLinks,
-  fundingLinksRelations,
-  linkTypeEnum,
   organizations,
   organizationsRelations,
   orgTypeEnum,
 } from './tables/organizations.sql';
+export { links, linksRelations, linkTypeEnum } from './tables/links.sql';
 export {
   profiles,
   profilesRelations,

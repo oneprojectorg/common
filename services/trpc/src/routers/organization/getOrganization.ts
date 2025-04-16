@@ -43,7 +43,42 @@ export const getOrganizationRouter = router({
         where: (table, { eq }) => eq(table.id, organizationId),
         with: {
           projects: true,
-          fundingLinks: true,
+          links: true,
+          headerImage: true,
+          avatarImage: true,
+        },
+      });
+
+      if (!result) {
+        throw new TRPCError({
+          message: 'Organization not found',
+          code: 'NOT_FOUND',
+        });
+      }
+
+      return result;
+    }),
+  getBySlug: loggedProcedure
+    // Middlewares
+    .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
+    .use(withAuthenticated)
+    .use(withDB)
+    // Router
+    .meta(meta)
+    .input(inputSchema)
+    .output(organizationsEncoder)
+    .query(async ({ ctx, input }) => {
+      const { db } = ctx.database;
+      const { organizationId } = input;
+
+      // TODO: assert authorization, setup a common package
+      const result = await db.query.organizations.findFirst({
+        where: (table, { eq }) => eq(table.slug, organizationId),
+        with: {
+          projects: true,
+          links: true,
+          headerImage: true,
+          avatarImage: true,
         },
       });
 
