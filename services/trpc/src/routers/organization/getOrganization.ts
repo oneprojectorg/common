@@ -17,7 +17,7 @@ const meta: OpenApiMeta = {
   openapi: {
     enabled: true,
     method: 'GET',
-    path: '/organization/{organizationId}',
+    path: '/organization/{slug}',
     protect: true,
     tags: ['organization'],
     summary: 'Get organization',
