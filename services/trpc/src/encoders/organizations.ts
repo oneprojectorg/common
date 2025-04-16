@@ -1,8 +1,9 @@
 import { createSelectSchema } from 'drizzle-zod';
+import { z } from 'zod';
 
 import { organizations } from '@op/db/schema';
 
-import { z } from 'zod';
+import { fundingLinksEncoder } from './fundingLinks';
 import { projectEncoder } from './projects';
 
 export const organizationsEncoder = createSelectSchema(organizations)
@@ -18,6 +19,7 @@ export const organizationsEncoder = createSelectSchema(organizations)
   })
   .extend({
     projects: z.array(projectEncoder),
+    fundingLinks: z.array(fundingLinksEncoder),
   });
 
 export type Organization = z.infer<typeof organizationsEncoder>;

@@ -43,6 +43,7 @@ export const getOrganizationRouter = router({
         where: (table, { eq }) => eq(table.id, organizationId),
         with: {
           projects: true,
+          fundingLinks: true,
         },
       });
 
