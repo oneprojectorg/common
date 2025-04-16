@@ -1,6 +1,7 @@
 import { Header3 } from '@/components/Header';
-import { Organization } from '@op/trpc/encoders';
 import Image from 'next/image';
+
+import type { Organization } from '@op/trpc/encoders';
 
 export const ProfileFeed = ({ profile }: { profile: Organization }) => {
   return (

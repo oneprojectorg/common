@@ -11,7 +11,7 @@ const MainPage = () => {
   return (
     <AuthWrapper>
       <div className="container flex min-h-0 grow flex-col px-0 pt-4">
-        {organizations?.map((org) => (
+        {organizations?.map(org => (
           <Link href={`/app/org/${org.slug}`} key={org.id}>
             <h2>{org.name}</h2>
             <p>{org.description}</p>
