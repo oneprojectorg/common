@@ -35,9 +35,9 @@ dotenv.config({
 
 /** @type {import('next').NextConfig} */
 const config = {
-//   experimental: {
-//     reactCompiler: true,
-//   },
+  //   experimental: {
+  //     reactCompiler: true,
+  //   },
 
   webpack: (cfg) => {
     // Grab the existing rule that handles SVG imports
@@ -72,6 +72,15 @@ const config = {
     fileLoaderRule.exclude = /\.svg$/i;
 
     return cfg;
+  },
+  async rewrites() {
+    return [
+      {
+        source: '/assets/:path*',
+        destination:
+          'http://127.0.0.1:54321/storage/v1/object/public/assets/:path*',
+      },
+    ];
   },
 };
 

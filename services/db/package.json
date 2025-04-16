@@ -14,6 +14,7 @@
     "generate": "pnpm drizzle-kit generate && tsx scripts/extractIndexes.ts",
     "lint": "pnpm tsc --noEmit && pnpm eslint --fix .",
     "migrate": "cross-env DB_MIGRATING=true tsx ./migrate.ts",
+    "push": "pnpm drizzle-kit push",
     "reset": "pnpx supabase db reset",
     "seed": "cross-env DB_SEEDING=true tsx ./seed.ts",
     "start": "pnpx supabase start",

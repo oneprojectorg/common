@@ -6,9 +6,9 @@
         "name": "next"
       }
     ],
-    "baseUrl": ".",
+    "baseUrl": "./src", // Point baseUrl to the new src directory
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"] // Alias will now resolve relative to ./src
     },
     "types": ["unplugin-icons/types/react"]
     // "noErrorTruncation": true

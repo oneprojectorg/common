@@ -52,3 +52,4 @@ __pycache__
 !.yarn/sdks
 !.yarn/versions
 .aider*
+.env*.local

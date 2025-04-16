@@ -41,7 +41,7 @@ const config: Omit<Config, 'content'> = {
       },
       colors: {
         accent: commonColors,
-        // border: 'hsl(var(--border))',
+        border: 'hsl(var(--op-offWhite))',
         // input: 'hsl(var(--input))',
         // ring: 'hsl(var(--ring))',
         // background: 'hsl(var(--background))',
@@ -158,6 +158,9 @@ const config: Omit<Config, 'content'> = {
         lg: 'var(--radius)',
         md: '0.5rem',
         sm: 'calc(var(--radius) - 0.25rem)',
+      },
+      boxShadow: {
+        DEFAULT: '0px 0px 16px 0px rgba(20, 35, 38, 0.04)',
       },
     },
   },

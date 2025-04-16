@@ -35,7 +35,7 @@ const robotoSerif = Roboto_Serif({
 
 export const metadata: Metadata = {
   title: APP_NAME,
-  description: 'A next-gen paradigm to co-create with AI.',
+  description: 'Common.',
   icons: {
     icon: [{ url: '/op.png', type: 'image/png' }],
   },
@@ -62,7 +62,7 @@ export const viewport: Viewport = {
 
 const RootLayout = ({ children }: { children: React.ReactNode }) => {
   return (
-    <html lang="en" className="overflow-hidden scrollbar-none">
+    <html lang="en" className="scrollbar-none">
       <head>
         {/* {(IS_DEVELOPMENT || IS_PREVIEW) && (
           <script
@@ -79,14 +79,8 @@ const RootLayout = ({ children }: { children: React.ReactNode }) => {
         <body
           className={`${roboto.variable} ${robotoMono.variable} ${robotoSerif.variable} ${inter.variable} overflow-x-hidden`}
         >
-          <div className="relative flex h-svh w-full flex-col items-center justify-center font-sans">
-            <div className="size-full">
-              <div className="flex size-full max-h-full flex-col overflow-hidden">
-                <div className="relative flex min-h-0 grow flex-col">
-                  {children}
-                </div>
-              </div>
-            </div>
+          <div className="flex size-full max-h-full flex-col overflow-hidden">
+            {children}
           </div>
           <Sonner
             theme="dark"

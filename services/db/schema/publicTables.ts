@@ -1,3 +1,17 @@
 // Public tables are included in migrations
-export { profiles, profilesRelations } from './tables/profiles.sql';
+export { accessRoles } from './tables/access.sql';
+export {
+  organizations,
+  organizationsRelations,
+  orgTypeEnum,
+} from './tables/organizations.sql';
+export { links, linksRelations, linkTypeEnum } from './tables/links.sql';
+export {
+  profiles,
+  profilesRelations,
+  profilesToAccessRoles,
+  profilesToAccessRolesRelations,
+} from './tables/profiles.sql';
+
+export { projects, projectsRelations } from './tables/projects.sql';
 export { usersUsedStorage } from './tables/usersUsedStorage.sql';

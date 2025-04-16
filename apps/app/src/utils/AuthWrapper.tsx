@@ -1,10 +1,9 @@
-'use client';
-
 import { redirect } from 'next/navigation';
 
 import { useAuthUser } from '@op/hooks';
 
-const AuthWrapper = ({ children }: { children: React.ReactNode }) => {
+// TODO: handle this in the middleware
+export const AuthWrapper = ({ children }: { children: React.ReactNode }) => {
   const user = useAuthUser();
 
   if (!user || user.isFetching || user.isPending) {
@@ -17,15 +16,3 @@ const AuthWrapper = ({ children }: { children: React.ReactNode }) => {
 
   return children;
 };
-
-const MainPage = () => {
-  return (
-    <AuthWrapper>
-      <div className="container flex min-h-0 grow flex-col px-0 pt-4">
-        Hello world!
-      </div>
-    </AuthWrapper>
-  );
-};
-
-export default MainPage;
