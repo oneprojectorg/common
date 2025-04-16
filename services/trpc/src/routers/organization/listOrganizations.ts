@@ -28,6 +28,7 @@ export const listOrganizationsRouter = router({
     .use(withDB)
     // Router
     .meta(meta)
+    .input(z.void())
     .output(z.array(organizationsEncoder))
     .query(async ({ ctx }) => {
       const { db } = ctx.database;
