@@ -10,7 +10,7 @@ import {
   Text,
 } from 'react-aria-components';
 import { twMerge } from 'tailwind-merge';
-import { tv } from 'tailwind-variants';
+import { tv, VariantProps } from 'tailwind-variants';
 
 import { composeTailwindRenderProps, focusRing } from '../utils';
 
@@ -22,6 +22,7 @@ import type {
   TextAreaProps,
   TextProps,
 } from 'react-aria-components';
+import { ReactNode } from 'react';
 
 export const Label = (props: LabelProps) => {
   return (
@@ -83,24 +84,78 @@ export const FieldGroup = (props: GroupProps) => {
     <Group
       {...props}
       className={composeRenderProps(props.className, (className, renderProps) =>
-        fieldGroupStyles({ ...renderProps, className }))}
+        fieldGroupStyles({ ...renderProps, className }),
+      )}
     />
   );
 };
 
+export const inputStyles = tv({
+  base: 'min-w-0 flex-1 rounded-md border border-offWhite p-4 text-sm leading-[0.5rem] text-black outline outline-0 placeholder:text-midGray disabled:text-lightGray',
+  variants: {
+    color: {
+      primary: '',
+      muted: 'bg-offWhite text-darkGray',
+    },
+    size: {
+      small: 'px-4 py-2',
+      medium: '',
+    },
+    hasIcon: {
+      true: 'w-full pl-10',
+      false: '',
+    },
+  },
+  defaultVariants: {
+    color: 'primary',
+    size: 'medium',
+    hasIcon: false,
+  },
+});
+
+export type InputVariantsProps = VariantProps<typeof inputStyles>;
+export type InputWithVariantsProps = Omit<InputProps, 'size'> &
+  InputVariantsProps & { icon?: ReactNode };
+
 export const Input = ({
   ref,
+  icon,
+  size,
   ...props
-}: InputProps & { ref?: React.RefObject<HTMLInputElement> }) => {
+}: InputWithVariantsProps & { ref?: React.RefObject<HTMLInputElement> }) => {
+  if (icon) {
+    return <InputWithIcon icon={icon} ref={ref} size={size} {...props} />;
+  }
+
   return (
     <RACInput
       ref={ref}
       {...props}
-      className={composeTailwindRenderProps(
-        props.className,
-        'min-w-0 flex-1 rounded-md border border-offWhite p-4 text-sm leading-[0.5rem] text-black outline outline-0 placeholder:text-midGray disabled:text-lightGray',
-      )}
+      className={inputStyles({ ...props, size } as InputVariantsProps)}
     />
+  );
+};
+
+export const InputWithIcon = ({
+  ref,
+  size,
+  ...props
+}: InputWithVariantsProps & { ref?: React.RefObject<HTMLInputElement> }) => {
+  return (
+    <span className="relative w-full">
+      <span className="absolute left-4 top-1/2 -translate-y-1/2">
+        {props.icon}
+      </span>
+      <RACInput
+        ref={ref}
+        {...props}
+        className={inputStyles({
+          ...props,
+          size,
+          hasIcon: true,
+        } as InputVariantsProps)}
+      />
+    </span>
   );
 };
 

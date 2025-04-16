@@ -66,8 +66,7 @@ const updateUserProfile = router({
           })
           .where(eq(profiles.id, id))
           .returning();
-      }
-      catch (error) {
+      } catch (error) {
         if (error instanceof Error && error.message.includes('duplicate')) {
           throw new ZodError([
             {

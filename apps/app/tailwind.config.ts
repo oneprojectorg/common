@@ -7,7 +7,11 @@ import { withUITailwindPreset } from '@op/ui/tailwind-utils';
 import type { Config } from 'tailwindcss';
 
 const config: Pick<Config, 'content' | 'theme' | 'presets'> = {
-  content: ['./app/**/*.tsx', './components/**/*.tsx', './flow/**/*.tsx'],
+  content: [
+    './src/app/**/*.tsx',
+    './src/components/**/*.tsx',
+    './src/flow/**/*.tsx',
+  ],
   theme: {
     extend: {
       fontFamily: {

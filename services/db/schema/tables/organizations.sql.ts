@@ -8,6 +8,7 @@ import {
   pgEnum,
   pgTable,
   text,
+  uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
 
@@ -18,7 +19,9 @@ import {
   timestamps,
 } from '../../helpers';
 
+import { links } from './links.sql';
 import { projects } from './projects.sql';
+import { objectsInStorage } from './storage.sql';
 
 // Enums for organization types and status
 export enum OrgType {
@@ -70,8 +73,18 @@ export const organizations = pgTable(
 
     // Organization Type
     type: orgTypeEnum('org_type').notNull().default(OrgType.OTHER),
-    // Thematic Areas
     // Legal Structure
+    // Thematic Areas
+
+    // Media items
+    headerImageId: uuid().references(() => objectsInStorage.id, {
+      onDelete: 'cascade',
+      onUpdate: 'cascade',
+    }),
+    avatarImageId: uuid().references(() => objectsInStorage.id, {
+      onDelete: 'cascade',
+      onUpdate: 'cascade',
+    }),
     ...timestamps,
   },
   table => [
@@ -84,6 +97,18 @@ export const organizations = pgTable(
   ],
 );
 
-export const organizationsRelations = relations(organizations, ({ many }) => ({
-  projects: many(projects),
-}));
+export const organizationsRelations = relations(
+  organizations,
+  ({ many, one }) => ({
+    projects: many(projects),
+    links: many(links),
+    headerImage: one(objectsInStorage, {
+      fields: [organizations.headerImageId],
+      references: [objectsInStorage.id],
+    }),
+    avatarImage: one(objectsInStorage, {
+      fields: [organizations.avatarImageId],
+      references: [objectsInStorage.id],
+    }),
+  }),
+);

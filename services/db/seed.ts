@@ -81,8 +81,16 @@ for (const email of adminEmails) {
 
 // setup a mock organization
 await db.insert(schema.organizations).values({
-  name: 'Test Organization',
-  slug: 'test-organization',
+  name: 'One Testing',
+  slug: 'one-testing',
+  description: 'A test organization with a some data',
+  mission:
+    'Our mission is to do lots of things for people and for other things and so forth and sometimes others perhaps there is a way in which we will offer others in a way of things (as such). Maybe in that scenario there is a basis for better understanding and supporting items in a way that makes the most sense potentially. ',
+  city: 'San Francisco',
+  state: 'CA',
+  isOfferingFunds: true,
+  email: 'info@oneproject.org',
+  website: 'https://oneproject.org',
   type: OrgType.COMMONS,
 });
 

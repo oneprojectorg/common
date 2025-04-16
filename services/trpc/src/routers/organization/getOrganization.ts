@@ -1,3 +1,4 @@
+import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import { organizationsEncoder } from '../../encoders/organizations';
@@ -9,22 +10,22 @@ import { loggedProcedure, router } from '../../trpcFactory';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 
 const inputSchema = z.object({
-  organizationId: z.string().uuid(),
+  slug: z.string(),
 });
 
 const meta: OpenApiMeta = {
   openapi: {
     enabled: true,
     method: 'GET',
-    path: '/organization/{organizationId}',
+    path: '/organization/{slug}',
     protect: true,
     tags: ['organization'],
-    summary: 'Get organization by slug',
+    summary: 'Get organization',
   },
 };
 
 export const getOrganizationRouter = router({
-  getById: loggedProcedure
+  getBySlug: loggedProcedure
     // Middlewares
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticated)
@@ -35,13 +36,26 @@ export const getOrganizationRouter = router({
     .output(organizationsEncoder)
     .query(async ({ ctx, input }) => {
       const { db } = ctx.database;
-      const { organizationId } = input;
+      const { slug } = input;
 
       // TODO: assert authorization, setup a common package
       const result = await db.query.organizations.findFirst({
-        where: (table, { eq }) => eq(table.id, organizationId),
+        where: (table, { eq }) => eq(table.slug, slug),
+        with: {
+          projects: true,
+          links: true,
+          headerImage: true,
+          avatarImage: true,
+        },
       });
 
-      return result || null;
+      if (!result) {
+        throw new TRPCError({
+          message: 'Organization not found',
+          code: 'NOT_FOUND',
+        });
+      }
+
+      return result;
     }),
 });

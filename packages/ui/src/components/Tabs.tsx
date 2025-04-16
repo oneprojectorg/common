@@ -23,7 +23,7 @@ const tabsStyles = tv({
   variants: {
     orientation: {
       horizontal: 'flex-col',
-      vertical: 'flex-row',
+      vertical: '',
     },
   },
 });
@@ -33,17 +33,18 @@ export const Tabs = (props: TabsProps) => {
     <RACTabs
       {...props}
       className={composeRenderProps(props.className, (className, renderProps) =>
-        tabsStyles({ ...renderProps, className }))}
+        tabsStyles({ ...renderProps, className }),
+      )}
     />
   );
 };
 
 const tabListStyles = tv({
-  base: 'flex gap-1',
+  base: 'flex gap-6',
   variants: {
     orientation: {
-      horizontal: 'flex-row',
-      vertical: 'flex-col items-start',
+      horizontal: 'flex-row border-b border-offWhite',
+      vertical: '',
     },
   },
 });
@@ -53,22 +54,22 @@ export const TabList = <T extends object>(props: TabListProps<T>) => {
     <RACTabList
       {...props}
       className={composeRenderProps(props.className, (className, renderProps) =>
-        tabListStyles({ ...renderProps, className }))}
+        tabListStyles({ ...renderProps, className }),
+      )}
     />
   );
 };
 
 const tabProps = tv({
   extend: focusRing,
-  base: 'flex cursor-default items-center rounded-full px-4 py-1.5 text-sm font-medium transition forced-color-adjust-none',
+  base: 'flex cursor-default items-center p-3 text-sm font-medium text-darkGray transition forced-color-adjust-none',
   variants: {
     isSelected: {
-      false:
-        'text-neutral-700 hover:bg-neutral-200 hover:text-neutral-800 pressed:bg-neutral-200 pressed:text-neutral-800',
-      true: 'bg-neutral-800 text-black',
+      false: '',
+      true: 'border-b border-charcoal text-charcoal',
     },
     isDisabled: {
-      true: 'text-neutral-400 selected:bg-neutral-400 selected:text-neutral-500',
+      true: 'text-lightGray',
     },
   },
 });
@@ -90,7 +91,7 @@ export const Tab = (props: TabProps & { unstyled?: boolean }) => {
 
 const tabPanelStyles = tv({
   extend: focusRing,
-  base: 'flex-1 p-4 text-sm text-neutral-900',
+  base: 'flex-1 p-4 text-sm',
 });
 
 export const TabPanel = (props: TabPanelProps) => {
@@ -98,7 +99,8 @@ export const TabPanel = (props: TabPanelProps) => {
     <RACTabPanel
       {...props}
       className={composeRenderProps(props.className, (className, renderProps) =>
-        tabPanelStyles({ ...renderProps, className }))}
+        tabPanelStyles({ ...renderProps, className }),
+      )}
     />
   );
 };
