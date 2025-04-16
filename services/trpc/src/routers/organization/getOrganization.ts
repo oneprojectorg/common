@@ -10,7 +10,7 @@ import { loggedProcedure, router } from '../../trpcFactory';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 
 const inputSchema = z.object({
-  organizationId: z.string().uuid(),
+  slug: z.string(),
 });
 
 const meta: OpenApiMeta = {
@@ -20,44 +20,11 @@ const meta: OpenApiMeta = {
     path: '/organization/{organizationId}',
     protect: true,
     tags: ['organization'],
-    summary: 'Get organization by slug',
+    summary: 'Get organization',
   },
 };
 
 export const getOrganizationRouter = router({
-  getById: loggedProcedure
-    // Middlewares
-    .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
-    .use(withAuthenticated)
-    .use(withDB)
-    // Router
-    .meta(meta)
-    .input(inputSchema)
-    .output(organizationsEncoder)
-    .query(async ({ ctx, input }) => {
-      const { db } = ctx.database;
-      const { organizationId } = input;
-
-      // TODO: assert authorization, setup a common package
-      const result = await db.query.organizations.findFirst({
-        where: (table, { eq }) => eq(table.id, organizationId),
-        with: {
-          projects: true,
-          links: true,
-          headerImage: true,
-          avatarImage: true,
-        },
-      });
-
-      if (!result) {
-        throw new TRPCError({
-          message: 'Organization not found',
-          code: 'NOT_FOUND',
-        });
-      }
-
-      return result;
-    }),
   getBySlug: loggedProcedure
     // Middlewares
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
@@ -69,11 +36,11 @@ export const getOrganizationRouter = router({
     .output(organizationsEncoder)
     .query(async ({ ctx, input }) => {
       const { db } = ctx.database;
-      const { organizationId } = input;
+      const { slug } = input;
 
       // TODO: assert authorization, setup a common package
       const result = await db.query.organizations.findFirst({
-        where: (table, { eq }) => eq(table.slug, organizationId),
+        where: (table, { eq }) => eq(table.slug, slug),
         with: {
           projects: true,
           links: true,

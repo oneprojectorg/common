@@ -17,9 +17,9 @@ const getPublicUrl = (key?: string | null) => {
   return `/assets/${key}`;
 };
 
-const OrganizationProfileSuspense = ({ id }: { id: string }) => {
-  const [organization] = trpc.organization.getById.useSuspenseQuery({
-    organizationId: id,
+const OrganizationProfileSuspense = ({ slug }: { slug: string }) => {
+  const [organization] = trpc.organization.getBySlug.useSuspenseQuery({
+    slug,
   });
 
   const { headerImage } = organization;
@@ -43,12 +43,12 @@ const OrganizationProfileSuspense = ({ id }: { id: string }) => {
   );
 };
 
-export const OrganizationProfile = ({ id }: { id: string }) => {
+export const OrganizationProfile = ({ slug }: { slug: string }) => {
   return (
     <div className="flex w-full flex-col gap-3 outline outline-1 -outline-offset-1 outline-offWhite">
       <ErrorBoundary errorComponent={() => <div>Could not load profile</div>}>
         <Suspense fallback={<div>Loading...</div>}>
-          <OrganizationProfileSuspense id={id} />
+          <OrganizationProfileSuspense slug={slug} />
         </Suspense>
       </ErrorBoundary>
     </div>

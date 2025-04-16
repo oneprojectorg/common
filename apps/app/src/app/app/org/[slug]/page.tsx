@@ -3,11 +3,11 @@ import { OrganizationProfile } from '@/components/screens/OrganizationProfile';
 const OrganizationPage = async ({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ slug: string }>;
 }) => {
-  const { id } = await params;
+  const { slug } = await params;
 
-  return <OrganizationProfile id={id} />;
+  return <OrganizationProfile slug={slug} />;
 };
 
 export default OrganizationPage;
