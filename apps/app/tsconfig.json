@@ -14,13 +14,13 @@
     // "noErrorTruncation": true
   },
   "include": [
-    "next-env.d.ts", // Keep this at the root
-    "next.config.mjs", // Keep this at the root
-    "**/*.ts", // Include files within src
-    "**/*.tsx", // Include files within src
-    "**/*.js", // Include files within src
-    "**/*.jsx", // Include files within src
-    ".next/types/**/*.ts" // Keep this relative to the root
+    "next-env.d.ts",
+    "next.config.mjs",
+    "**/*.ts",
+    "**/*.tsx",
+    "**/*.js",
+    "**/*.jsx",
+    ".next/types/**/*.ts"
   ],
   "exclude": ["node_modules"]
 }
