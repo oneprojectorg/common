@@ -14,6 +14,7 @@ export const storageItemEncoder = createSelectSchema(objectsInStorage).pick({
 export const organizationsEncoder = createSelectSchema(organizations)
   .pick({
     id: true,
+    slug: true,
     name: true,
     city: true,
     state: true,

@@ -1,3 +1,9 @@
-import { getOrganizationRouter } from './getOrganization';
+import { mergeRouters } from '../../trpcFactory';
 
-export const organizationRouter = getOrganizationRouter;
+import { getOrganizationRouter } from './getOrganization';
+import { listOrganizationsRouter } from './listOrganizations';
+
+export const organizationRouter = mergeRouters(
+  getOrganizationRouter,
+  listOrganizationsRouter,
+);

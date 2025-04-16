@@ -19,7 +19,7 @@ const buttonStyle = tv({
       primary:
         'bg-teal text-whiteish hover:bg-teal-400 pressed:border-teal pressed:bg-teal-200',
       secondary:
-        'border border-offWhite bg-white text-charcoal hover:bg-neutral-50 pressed:bg-white',
+        'border border-offWhite bg-white text-teal shadow hover:bg-neutral-50 pressed:bg-white',
       gradient: '',
       destructive:
         'bg-red text-whiteish hover:bg-red-400 pressed:border-red pressed:bg-red-200',
