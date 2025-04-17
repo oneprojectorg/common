@@ -8,6 +8,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 import { trpc } from '@op/trpc/client';
+import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 
 const MainPage = () => {
   const { data: organizations } = trpc.organization.list.useQuery();
@@ -25,54 +26,67 @@ const MainPage = () => {
             {' '}
           </span>
         </div>
-        <div className="flex flex-col gap-8">
-          <Header3 className="font-serif">New Organizations</Header3>
-          <div className="grid grid-cols-3 gap-8">
-            {organizations?.map((org) => {
-              const { headerImage, avatarImage } = org;
-              const headerUrl = getPublicUrl(headerImage?.name);
-              const avatarUrl = getPublicUrl(avatarImage?.name);
+        <Tabs>
+          <TabList>
+            <Tab id="discover">Discover</Tab>
+            <Tab id="recent">Recent</Tab>
+          </TabList>
 
-              return (
-                <div className="w-60 overflow-hidden rounded-md" key={org.id}>
-                  <Link href={`/app/org/${org.slug}`}>
-                    <ImageHeader
-                      headerClassName="h-32 "
-                      headerImage={
-                        headerUrl
-                          ? (
-                              <Image
-                                src={headerUrl}
-                                alt=""
-                                fill
-                                className="object-cover"
-                              />
-                            )
-                          : null
-                      }
-                      avatarImage={
-                        avatarUrl
-                          ? (
-                              <Image
-                                src={avatarUrl}
-                                alt=""
-                                fill
-                                className="object-cover"
-                              />
-                            )
-                          : null
-                      }
-                    />
-                    <div className="flex flex-col gap-3">
-                      <Header3>{org.name}</Header3>
-                      <p className="text-charcoal">{org.city}</p>
+          <TabPanel id="discover" className="px-0">
+            <div className="flex flex-col gap-8">
+              <Header3 className="font-serif">New Organizations</Header3>
+              <div className="grid grid-cols-3 gap-8">
+                {organizations?.map((org) => {
+                  const { headerImage, avatarImage } = org;
+                  const headerUrl = getPublicUrl(headerImage?.name);
+                  const avatarUrl = getPublicUrl(avatarImage?.name);
+
+                  return (
+                    <div
+                      className="w-60 overflow-hidden rounded-md"
+                      key={org.id}
+                    >
+                      <Link href={`/app/org/${org.slug}`}>
+                        <ImageHeader
+                          headerClassName="h-32 "
+                          headerImage={
+                            headerUrl
+                              ? (
+                                  <Image
+                                    src={headerUrl}
+                                    alt=""
+                                    fill
+                                    className="object-cover"
+                                  />
+                                )
+                              : null
+                          }
+                          avatarImage={
+                            avatarUrl
+                              ? (
+                                  <Image
+                                    src={avatarUrl}
+                                    alt=""
+                                    fill
+                                    className="object-cover"
+                                  />
+                                )
+                              : null
+                          }
+                        />
+                        <div className="flex flex-col gap-3">
+                          <Header3>{org.name}</Header3>
+                          <p className="text-charcoal">{org.city}</p>
+                        </div>
+                      </Link>
                     </div>
-                  </Link>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+                  );
+                })}
+              </div>
+            </div>
+          </TabPanel>
+          <TabPanel id="recent">Nothing here yet</TabPanel>
+        </Tabs>
       </div>
     </AuthWrapper>
   );
