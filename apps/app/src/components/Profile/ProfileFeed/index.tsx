@@ -112,7 +112,7 @@ export const ProfileFeed = ({ profile }: { profile: Organization }) => {
           <div className="flex w-full gap-4">
             <TextArea
               className="size-full"
-              placeholder={`Post an update from ${profile.name}`}
+              placeholder={`Post an update from ${profile.name}…`}
             />
             <Button color="secondary">Post</Button>
           </div>
