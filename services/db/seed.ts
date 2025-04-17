@@ -79,19 +79,105 @@ for (const email of adminEmails) {
   }
 }
 
-// setup a mock organization
-await db.insert(schema.organizations).values({
-  name: 'One Testing',
-  slug: 'one-testing',
-  description: 'A test organization with a some data',
-  mission:
-    'Our mission is to do lots of things for people and for other things and so forth and sometimes others perhaps there is a way in which we will offer others in a way of things (as such). Maybe in that scenario there is a basis for better understanding and supporting items in a way that makes the most sense potentially. ',
-  city: 'San Francisco',
-  state: 'CA',
-  isOfferingFunds: true,
-  email: 'info@oneproject.org',
-  website: 'https://oneproject.org',
-  type: OrgType.COMMONS,
-});
+const seedOrgs = [
+  {
+    name: 'One Project',
+    slug: 'one-project',
+    description:
+      'One Project collaborates with people to build tools, systems and support for the futures ahead. We build deep relationships with communities who share a vision for a new economy.We work alongside them to co- create social and digital infrastructure, and also offer material support to nurture a growing ecosystem of collective action.',
+    mission:
+      'To nurture a just transition to a regenerative democratic economy.',
+    city: 'San Francisco',
+    state: 'CA',
+    isOfferingFunds: true,
+    isReceivingFunds: true,
+    email: 'info@oneproject.org',
+    website: 'https://oneproject.org',
+    type: OrgType.COMMONS,
+  },
+  {
+    name: 'New Economy Coalition',
+    slug: 'new-economy-coalition',
+    description: 'A test organization for New Economy Coalition',
+    mission: 'Supporting sustainable economic reforms.',
+    city: 'New York',
+    state: 'NY',
+    isOfferingFunds: false,
+    isReceivingFunds: true,
+    email: 'contact@necoalition.org',
+    website: 'https://necoalition.org',
+    type: OrgType.COMMONS,
+  },
+  {
+    name: 'People Powered',
+    slug: 'people-powered',
+    description: 'A collaborative network for people empowerment.',
+    mission: 'Empowering communities through shared projects.',
+    city: 'Los Angeles',
+    state: 'CA',
+    isOfferingFunds: true,
+    isReceivingFunds: false,
+    email: 'contact@peoplepowered.org',
+    website: 'https://peoplepowered.org',
+    type: OrgType.COMMONS,
+  },
+  {
+    name: 'Maria Fund',
+    slug: 'maria-fund',
+    description: 'Funding grassroots initiatives.',
+    mission: 'Investing in community strengths.',
+    city: 'Chicago',
+    state: 'IL',
+    isOfferingFunds: false,
+    isReceivingFunds: true,
+    email: 'hello@mariafund.org',
+    website: 'https://mariafund.org',
+    type: OrgType.COMMONS,
+  },
+  {
+    name: 'Seed Commons',
+    slug: 'seed-commons',
+    description: 'A seed funding organization.',
+    mission: 'Growing sustainable projects from the ground up.',
+    city: 'Austin',
+    state: 'TX',
+    isOfferingFunds: false,
+    isReceivingFunds: true,
+    email: 'info@seedcommons.org',
+    website: 'https://seedcommons.org',
+    type: OrgType.COMMONS,
+  },
+  {
+    name: 'CED',
+    slug: 'ced',
+    description: 'Center for Economic Development.',
+    mission: 'Promoting equitable financial strategies.',
+    city: 'Seattle',
+    state: 'WA',
+    isOfferingFunds: false,
+    isReceivingFunds: true,
+    email: 'contact@ced.org',
+    website: 'https://ced.org',
+    type: OrgType.COMMONS,
+  },
+  {
+    name: 'Boston Ujima Project',
+    slug: 'boston-ujima-project',
+    description: 'A local Boston project for community involvement.',
+    mission: 'Driving neighborhood change through activism.',
+    city: 'Boston',
+    state: 'MA',
+    isOfferingFunds: false,
+    isReceivingFunds: true,
+    email: 'contact@bostonujima.org',
+    website: 'https://bostonujima.org',
+    type: OrgType.COMMONS,
+  },
+];
+
+// setup mock organizations
+await Promise.all(
+  seedOrgs.map(data => db.insert(schema.organizations).values(data)),
+);
 
 await db.$client.end();

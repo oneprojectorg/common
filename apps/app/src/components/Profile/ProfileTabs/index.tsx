@@ -1,5 +1,6 @@
 import { Header3 } from '@/components/Header';
 import Link from 'next/link';
+import { Suspense } from 'react';
 import { LuGlobe, LuMail } from 'react-icons/lu';
 
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
@@ -19,7 +20,7 @@ const ProfileAbout = ({ profile }: { profile: Organization }) => {
     <div className="flex flex-col gap-8">
       {email || website
         ? (
-            <section className="gap flex flex-col gap-6">
+            <section className="flex flex-col gap-6">
               <Header3>Contact</Header3>
               <div className="flex flex-col gap-4 text-teal">
                 {website
@@ -44,7 +45,7 @@ const ProfileAbout = ({ profile }: { profile: Organization }) => {
         : null}
       {mission
         ? (
-            <section className="gap flex flex-col gap-6">
+            <section className="flex flex-col gap-6">
               <Header3>Mission Statement</Header3>
               <p>{mission}</p>
             </section>
@@ -62,7 +63,9 @@ export const ProfileTabs = ({ profile }: { profile: Organization }) => {
         <Tab id="about">About</Tab>
       </TabList>
       <TabPanel id="updates" className="px-6">
-        <ProfileFeed profile={profile} />
+        <Suspense fallback={<div>Loading...</div>}>
+          <ProfileFeed profile={profile} />
+        </Suspense>
       </TabPanel>
       <TabPanel id="about">
         <ProfileAbout profile={profile} />

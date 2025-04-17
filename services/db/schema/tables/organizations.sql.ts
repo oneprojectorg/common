@@ -46,7 +46,7 @@ export const organizations = pgTable(
     id: autoId().primaryKey(),
     name: varchar({ length: 256 }).notNull(),
     slug: varchar({ length: 256 }).notNull().unique(),
-    description: varchar({ length: 256 }),
+    description: text(),
 
     // Mission
     mission: text(),
@@ -85,7 +85,7 @@ export const organizations = pgTable(
     }),
     ...timestamps,
   },
-  table => [
+  (table) => [
     ...serviceRolePolicies,
     index().on(table.id).concurrently(),
     index().on(table.slug).concurrently(),
@@ -100,6 +100,7 @@ export const organizationsRelations = relations(
   ({ many, one }) => ({
     projects: many(projects),
     links: many(links),
+    posts: many(posts),
     headerImage: one(objectsInStorage, {
       fields: [organizations.headerImageId],
       references: [objectsInStorage.id],
@@ -109,4 +110,13 @@ export const organizationsRelations = relations(
       references: [objectsInStorage.id],
     }),
   }),
+);
+
+export const posts = pgTable(
+  'posts',
+  {
+    id: autoId().primaryKey(),
+    content: text().notNull(),
+  },
+  (table) => [...serviceRolePolicies, index().on(table.id).concurrently()],
 );
