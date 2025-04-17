@@ -57,15 +57,21 @@ const FeedItem = ({
   return <div className={cn('flex gap-4', className)}>{children}</div>;
 };
 
-const FeedContent = ({ children }: { children: ReactNode }) => {
-  return <div className="leading-6">{children}</div>;
+const FeedContent = ({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) => {
+  return <div className={cn('leading-6', className)}>{children}</div>;
 };
 
 const FeedHeader = ({ children }: { children: ReactNode }) => {
   return <span className="flex items-baseline gap-2">{children}</span>;
 };
 
-const FeedAvatar = ({ children }: { children: ReactNode }) => {
+const FeedAvatar = ({ children }: { children?: ReactNode }) => {
   return <div className="relative w-16">{children}</div>;
 };
 
@@ -86,7 +92,7 @@ export const ProfileFeed = ({ profile }: { profile: Organization }) => {
 
   return (
     <div className="flex flex-col gap-8">
-      <FeedItem className="border-b pb-8">
+      <FeedItem className="pb-8">
         <FeedAvatar>
           {profileImageUrl
             ? (
@@ -111,6 +117,7 @@ export const ProfileFeed = ({ profile }: { profile: Organization }) => {
           </div>
         </FeedMain>
       </FeedItem>
+      <span className="-ml-6 w-[calc(100%+3rem)] border-b border-offWhite p-0" />
       {posts.length > 0
         ? (
             posts.map(({ content, createdAt }, i) => (
@@ -148,7 +155,12 @@ export const ProfileFeed = ({ profile }: { profile: Organization }) => {
             ))
           )
         : (
-            <>Nothing to see</>
+            <FeedItem>
+              <FeedAvatar />
+              <FeedMain>
+                <FeedContent className="text-lightGray">No posts yet</FeedContent>
+              </FeedMain>
+            </FeedItem>
           )}
     </div>
   );

@@ -20,7 +20,7 @@ const ProfileAbout = ({ profile }: { profile: Organization }) => {
     <div className="flex flex-col gap-8">
       {email || website
         ? (
-            <section className="gap flex flex-col gap-6">
+            <section className="flex flex-col gap-6">
               <Header3>Contact</Header3>
               <div className="flex flex-col gap-4 text-teal">
                 {website
@@ -45,7 +45,7 @@ const ProfileAbout = ({ profile }: { profile: Organization }) => {
         : null}
       {mission
         ? (
-            <section className="gap flex flex-col gap-6">
+            <section className="flex flex-col gap-6">
               <Header3>Mission Statement</Header3>
               <p>{mission}</p>
             </section>
