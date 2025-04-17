@@ -13,8 +13,7 @@ try {
     process.stdout.write(`\x1B]2;${'APP'}\x1B\x5C`);
     process.stdout.write(`\x1B];${'APP'}\x07`);
   }
-}
-catch (error) {
+} catch (error) {
   console.error(error);
   // Ignore error
 }
@@ -41,7 +40,7 @@ const config = {
 
   webpack: (cfg) => {
     // Grab the existing rule that handles SVG imports
-    const fileLoaderRule = cfg.module.rules.find(rule =>
+    const fileLoaderRule = cfg.module.rules.find((rule) =>
       rule.test?.test?.('.svg'),
     );
 
@@ -77,11 +76,11 @@ const config = {
     return [
       {
         source: '/assets/:path*',
-        destination:
-          'http://127.0.0.1:54321/storage/v1/object/public/assets/:path*',
+        destination: `${process.env.S3_ASSET_ROOT}/:path*`,
       },
     ];
   },
 };
 
 export default withBundleAnalyzer(withTranspiledWorkspacesForNext(config));
+// 'http://127.0.0.1:54321/storage/v1/object/public/assets
