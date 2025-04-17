@@ -72,7 +72,7 @@ const FeedHeader = ({ children }: { children: ReactNode }) => {
 };
 
 const FeedAvatar = ({ children }: { children?: ReactNode }) => {
-  return <div className="relative w-16">{children}</div>;
+  return <div className="relative w-16 min-w-16">{children}</div>;
 };
 
 const FeedMain = ({ children }: { children: ReactNode }) => {
