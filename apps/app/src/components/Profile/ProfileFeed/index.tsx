@@ -3,18 +3,18 @@ import { getPublicUrl } from '@/utils';
 import Image from 'next/image';
 
 import { trpc } from '@op/trpc/client';
+import { Button } from '@op/ui/Button';
+import { TextArea } from '@op/ui/Field';
+import { cn } from '@op/ui/utils';
 
 import type { Organization } from '@op/trpc/encoders';
-import { ReactNode } from 'react';
-import { cn } from '@op/ui/utils';
-import { TextArea } from '@op/ui/Field';
-import { Button } from '@op/ui/Button';
+import type { ReactNode } from 'react';
 
 // TODO: generated this quick with AI. refactor it!
 const formatRelativeTime = (timestamp: Date | string | number): string => {
   const now = new Date();
   const date = new Date(timestamp);
-  let diff = Math.floor((now.getTime() - date.getTime()) / 1000); // difference in seconds
+  const diff = Math.floor((now.getTime() - date.getTime()) / 1000); // difference in seconds
 
   // Future dates handling
   if (diff < 0) {
@@ -39,7 +39,8 @@ const formatRelativeTime = (timestamp: Date | string | number): string => {
   for (const interval of intervals) {
     if (diff >= interval.seconds) {
       const count = Math.floor(diff / interval.seconds);
-      return count + ' ' + interval.unit + (count !== 1 ? 's' : '');
+
+      return `${count} ${interval.unit}${count !== 1 ? 's' : ''}`;
     }
   }
 
@@ -87,60 +88,68 @@ export const ProfileFeed = ({ profile }: { profile: Organization }) => {
     <div className="flex flex-col gap-8">
       <FeedItem className="border-b pb-8">
         <FeedAvatar>
-          {profileImageUrl ? (
-            <Image
-              src={profileImageUrl}
-              alt=""
-              fill
-              className="!size-16 max-h-16 max-w-16"
-            />
-          ) : (
-            <div className="size-16 rounded-full border bg-white shadow" />
-          )}
-        </FeedAvatar>
-        <FeedMain>
-          <div className="flex w-full gap-4">
-            <TextArea
-              className="h-full w-full"
-              placeholder={`Post an update from ${profile.name}`}
-            />
-            <Button color="secondary">Post</Button>
-          </div>
-        </FeedMain>
-      </FeedItem>
-      {posts.length > 0 ? (
-        posts.map(({ content, createdAt }, i) => (
-          <FeedItem key={i}>
-            <FeedAvatar>
-              {profileImageUrl ? (
+          {profileImageUrl
+            ? (
                 <Image
                   src={profileImageUrl}
                   alt=""
                   fill
                   className="!size-16 max-h-16 max-w-16"
                 />
-              ) : (
+              )
+            : (
                 <div className="size-16 rounded-full border bg-white shadow" />
               )}
-            </FeedAvatar>
-            <FeedMain>
-              <FeedHeader>
-                <Header3 className="font-medium leading-5">
-                  {profile.name}
-                </Header3>
-                {createdAt ? (
-                  <span className="text-xs text-darkGray">
-                    {formatRelativeTime(createdAt)}
-                  </span>
-                ) : null}
-              </FeedHeader>
-              <FeedContent>{content}</FeedContent>
-            </FeedMain>
-          </FeedItem>
-        ))
-      ) : (
-        <>Nothing to see</>
-      )}
+        </FeedAvatar>
+        <FeedMain>
+          <div className="flex w-full gap-4">
+            <TextArea
+              className="size-full"
+              placeholder={`Post an update from ${profile.name}`}
+            />
+            <Button color="secondary">Post</Button>
+          </div>
+        </FeedMain>
+      </FeedItem>
+      {posts.length > 0
+        ? (
+            posts.map(({ content, createdAt }, i) => (
+              <FeedItem key={i}>
+                <FeedAvatar>
+                  {profileImageUrl
+                    ? (
+                        <Image
+                          src={profileImageUrl}
+                          alt=""
+                          fill
+                          className="!size-16 max-h-16 max-w-16"
+                        />
+                      )
+                    : (
+                        <div className="size-16 rounded-full border bg-white shadow" />
+                      )}
+                </FeedAvatar>
+                <FeedMain>
+                  <FeedHeader>
+                    <Header3 className="font-medium leading-5">
+                      {profile.name}
+                    </Header3>
+                    {createdAt
+                      ? (
+                          <span className="text-xs text-darkGray">
+                            {formatRelativeTime(createdAt)}
+                          </span>
+                        )
+                      : null}
+                  </FeedHeader>
+                  <FeedContent>{content}</FeedContent>
+                </FeedMain>
+              </FeedItem>
+            ))
+          )
+        : (
+            <>Nothing to see</>
+          )}
     </div>
   );
 };
