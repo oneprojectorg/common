@@ -169,7 +169,7 @@ export const TextArea = ({
       {...props}
       className={composeTailwindRenderProps(
         props.className,
-        'min-w-0 flex-1 bg-neutral-100 px-2 py-1.5 text-sm text-neutral-900 outline outline-0 disabled:text-neutral-400',
+        'min-w-0 flex-1 items-center bg-white px-2 py-1.5 text-sm text-darkGray outline outline-0 disabled:text-neutral-400',
       )}
     />
   );

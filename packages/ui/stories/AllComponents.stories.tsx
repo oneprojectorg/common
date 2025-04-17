@@ -1,60 +1,63 @@
-import {
-  BoldIcon,
-  ItalicIcon,
-  MoreHorizontal,
-  UnderlineIcon,
-} from 'lucide-react';
-import { DialogTrigger, Group, MenuTrigger } from 'react-aria-components';
+// @ts-nocheck
+// TODO: commenting for a demo
+// import {
+// BoldIcon,
+// ItalicIcon,
+// MoreHorizontal,
+// UnderlineIcon,
+// } from 'lucide-react';
+// import { DialogTrigger, Group, MenuTrigger } from 'react-aria-components';
+import { DialogTrigger } from 'react-aria-components';
 
 import { AlertDialog } from '../src/components/AlertDialog';
-import { Breadcrumb, Breadcrumbs } from '../src/components/Breadcrumbs';
+// import { Breadcrumb, Breadcrumbs } from '../src/components/Breadcrumbs';
 import { Button, ButtonLink } from '../src/components/Button';
-import { Calendar } from '../src/components/Calendar';
-import { Checkbox, CheckboxGroup } from '../src/components/Checkbox';
-import { ColorArea } from '../src/components/ColorArea';
-import { ColorField } from '../src/components/ColorField';
-import { ColorPicker } from '../src/components/ColorPicker';
-import { ColorSlider } from '../src/components/ColorSlider';
-import { ColorSwatch } from '../src/components/ColorSwatch';
-import {
-  ColorSwatchPicker,
-  ColorSwatchPickerItem,
-} from '../src/components/ColorSwatchPicker';
-import { ColorWheel } from '../src/components/ColorWheel';
-import {
-  ComboBox,
-  ComboBoxItem,
-  ComboBoxSection,
-} from '../src/components/ComboBox';
-import { DateField } from '../src/components/DateField';
-import { DatePicker } from '../src/components/DatePicker';
-import { DateRangePicker } from '../src/components/DateRangePicker';
-import {
-  Disclosure,
-  DisclosureGroup,
-  DisclosureHeader,
-  DisclosurePanel,
-} from '../src/components/Disclosure';
-import { Form } from '../src/components/Form';
-import { GridList, GridListItem } from '../src/components/GridList';
+// import { Calendar } from '../src/components/Calendar';
+// import { Checkbox, CheckboxGroup } from '../src/components/Checkbox';
+// import { ColorArea } from '../src/components/ColorArea';
+// import { ColorField } from '../src/components/ColorField';
+// import { ColorPicker } from '../src/components/ColorPicker';
+// import { ColorSlider } from '../src/components/ColorSlider';
+// import { ColorSwatch } from '../src/components/ColorSwatch';
+// import {
+// ColorSwatchPicker,
+// ColorSwatchPickerItem,
+// } from '../src/components/ColorSwatchPicker';
+// import { ColorWheel } from '../src/components/ColorWheel';
+// import {
+// ComboBox,
+// ComboBoxItem,
+// ComboBoxSection,
+// } from '../src/components/ComboBox';
+// import { DateField } from '../src/components/DateField';
+// import { DatePicker } from '../src/components/DatePicker';
+// import { DateRangePicker } from '../src/components/DateRangePicker';
+// import {
+// Disclosure,
+// DisclosureGroup,
+// DisclosureHeader,
+// DisclosurePanel,
+// } from '../src/components/Disclosure';
+// import { Form } from '../src/components/Form';
+// import { GridList, GridListItem } from '../src/components/GridList';
 import { Header1 } from '../src/components/Header';
-import { Link } from '../src/components/Link';
-import { ListBox, ListBoxItem } from '../src/components/ListBox';
-import { Menu, MenuItem } from '../src/components/Menu';
-import { Meter } from '../src/components/Meter';
+// import { Link } from '../src/components/Link';
+// import { ListBox, ListBoxItem } from '../src/components/ListBox';
+// import { Menu, MenuItem } from '../src/components/Menu';
+// import { Meter } from '../src/components/Meter';
 import { Modal } from '../src/components/Modal';
-import { Popover } from '../src/components/Popover';
-import { SearchField } from '../src/components/SearchField';
-import { Select, SelectItem } from '../src/components/Select';
-import { Separator } from '../src/components/Separator';
-import { Slider } from '../src/components/Slider';
-import { Cell, Column, Row, Table } from '../src/components/Table';
+// import { Popover } from '../src/components/Popover';
+// import { SearchField } from '../src/components/SearchField';
+// import { Select, SelectItem } from '../src/components/Select';
+// import { Separator } from '../src/components/Separator';
+// import { Slider } from '../src/components/Slider';
+// import { Cell, Column, Row, Table } from '../src/components/Table';
 import { Tab, TabList, TabPanel, Tabs } from '../src/components/Tabs';
 import { TextField } from '../src/components/TextField';
-import { TimeField } from '../src/components/TimeField';
-import { ToggleButton } from '../src/components/ToggleButton';
-import { Toolbar } from '../src/components/Toolbar';
-import { Tooltip, TooltipTrigger } from '../src/components/Tooltip';
+// import { TimeField } from '../src/components/TimeField';
+// import { ToggleButton } from '../src/components/ToggleButton';
+// import { Toolbar } from '../src/components/Toolbar';
+// import { Tooltip, TooltipTrigger } from '../src/components/Tooltip';
 
 import type { Meta } from '@storybook/react';
 

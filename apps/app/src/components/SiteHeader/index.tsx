@@ -23,7 +23,7 @@ export const SiteHeader = () => {
         aria-label="Search"
       />
 
-      <div className="size-8 rounded-full bg-darkGray" />
+      <div className="size-8 rounded-full border bg-white shadow" />
     </header>
   );
 };
