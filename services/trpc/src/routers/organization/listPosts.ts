@@ -16,7 +16,7 @@ const meta: OpenApiMeta = {
   openapi: {
     enabled: true,
     method: 'GET',
-    path: '/organization/{organization}/feed/posts',
+    path: '/organization/{slug}/feed/posts',
     protect: true,
     tags: ['organization'],
     summary: 'List posts for an organization',
