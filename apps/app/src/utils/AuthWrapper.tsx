@@ -6,7 +6,12 @@ import { useAuthUser } from '@op/hooks';
 export const AuthWrapper = ({ children }: { children: React.ReactNode }) => {
   const user = useAuthUser();
 
-  if (!user || user.isFetching || user.isPending) {
+  if (
+    !user
+    || user.isFetching
+    || user.isPending
+    || !user.data?.user?.email?.includes('@oneproject.org')
+  ) {
     return null;
   }
 
