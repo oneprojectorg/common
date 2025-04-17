@@ -46,7 +46,7 @@ export const organizations = pgTable(
     id: autoId().primaryKey(),
     name: varchar({ length: 256 }).notNull(),
     slug: varchar({ length: 256 }).notNull().unique(),
-    description: varchar({ length: 256 }),
+    description: text(),
 
     // Mission
     mission: text(),
