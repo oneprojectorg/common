@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { LuSearch } from 'react-icons/lu';
 
 import { TextField } from '@op/ui/TextField';
@@ -8,10 +9,10 @@ import { OPLogo } from '../OPLogo';
 export const SiteHeader = () => {
   return (
     <header className="flex h-14 w-full items-center justify-between border-b px-4 py-7 md:px-28">
-      <div className="flex gap-1">
+      <Link href="/" className="flex gap-1">
         <OPLogo />
         <CommonLogo />
-      </div>
+      </Link>
       <TextField
         inputProps={{
           placeholder: 'Search',
