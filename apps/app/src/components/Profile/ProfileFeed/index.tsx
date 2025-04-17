@@ -1,20 +1,22 @@
 import { Header3 } from '@/components/Header';
+import { getPublicUrl } from '@/utils';
 import Image from 'next/image';
 
 import type { Organization } from '@op/trpc/encoders';
 
 export const ProfileFeed = ({ profile }: { profile: Organization }) => {
+  const profileImageUrl = getPublicUrl(profile.avatarImage?.name);
+
   return (
     <div className="flex flex-col gap-8">
       {Array.from({ length: 5 }).map((_, i) => (
         <div key={i} className="flex gap-4">
-          <div className="w-16">
+          <div className="relative w-16">
             <Image
-              src="/op.png"
+              src={profileImageUrl}
               alt=""
-              width={96}
-              height={40}
-              className="size-16"
+              fill
+              className="h-16 max-h-16 w-full max-w-16"
             />
           </div>
           <div className="flex w-full flex-col items-start justify-start gap-3">

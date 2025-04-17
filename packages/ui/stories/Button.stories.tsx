@@ -8,17 +8,9 @@ export default {
   },
   tags: ['autodocs'],
   argTypes: {
-    variant: {
-      control: 'select',
-      options: ['primary', 'icon'],
-    },
     color: {
       control: 'select',
       options: ['primary', 'secondary', 'gradient', 'destructive'],
-    },
-    surface: {
-      control: 'select',
-      options: ['solid', 'outline', 'ghost'],
     },
     unstyled: {
       control: 'boolean',
@@ -32,18 +24,18 @@ export default {
 
 export const Primary = {
   args: {
-    variant: 'secondary',
+    color: 'primary',
   },
 };
 
 export const Secondary = {
   args: {
-    variant: 'secondary',
+    color: 'secondary',
   },
 };
 
 export const Destructive = {
   args: {
-    variant: 'destructive',
+    color: 'destructive',
   },
 };

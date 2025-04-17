@@ -8,7 +8,7 @@ import { DialogTrigger, Group, MenuTrigger } from 'react-aria-components';
 
 import { AlertDialog } from '../src/components/AlertDialog';
 import { Breadcrumb, Breadcrumbs } from '../src/components/Breadcrumbs';
-import { Button } from '../src/components/Button';
+import { Button, ButtonLink } from '../src/components/Button';
 import { Calendar } from '../src/components/Calendar';
 import { Checkbox, CheckboxGroup } from '../src/components/Checkbox';
 import { ColorArea } from '../src/components/ColorArea';
@@ -37,6 +37,7 @@ import {
 } from '../src/components/Disclosure';
 import { Form } from '../src/components/Form';
 import { GridList, GridListItem } from '../src/components/GridList';
+import { Header1 } from '../src/components/Header';
 import { Link } from '../src/components/Link';
 import { ListBox, ListBoxItem } from '../src/components/ListBox';
 import { Menu, MenuItem } from '../src/components/Menu';
@@ -49,6 +50,7 @@ import { Separator } from '../src/components/Separator';
 import { Slider } from '../src/components/Slider';
 import { Cell, Column, Row, Table } from '../src/components/Table';
 import { Tab, TabList, TabPanel, Tabs } from '../src/components/Tabs';
+import { TextField } from '../src/components/TextField';
 import { TimeField } from '../src/components/TimeField';
 import { ToggleButton } from '../src/components/ToggleButton';
 import { Toolbar } from '../src/components/Toolbar';
@@ -85,25 +87,48 @@ export const AllComponents = () => (
     </section>
 
     <section>
+      <h2 className="mb-4 text-xl font-bold">Buttons</h2>
+      <div className="flex gap-4">
+        <Button color="primary">Primary</Button>
+        <Button color="secondary">Secondary</Button>
+        <Button color="destructive">Destructive</Button>
+
+        <Button unstyled>Unstyled</Button>
+        <ButtonLink>Button Link</ButtonLink>
+      </div>
+    </section>
+
+    <section>
+      <h2 className="mb-4 text-xl font-bold">Tabs</h2>
+      <Tabs>
+        <TabList aria-label="History">
+          <Tab id="photos">Photos</Tab>
+          <Tab id="videos">Videos</Tab>
+          <Tab id="music">Music</Tab>
+        </TabList>
+        <TabPanel id="photos">Photos panel</TabPanel>
+        <TabPanel id="videos">Videos panel</TabPanel>
+        <TabPanel id="music">Music panel</TabPanel>
+      </Tabs>
+    </section>
+    <section>
+      <h2 className="mb-4 text-xl font-bold">Input</h2>
+
+      <TextField placeholder="Placeholder" label="Label" />
+    </section>
+    <section>
+      <h2 className="mb-4 text-xl font-bold">Typography</h2>
+      <Header1>Header Level 1</Header1>
+    </section>
+
+    {/*
+    <section>
       <h2 className="mb-4 text-xl font-bold">Breadcrumbs</h2>
       <Breadcrumbs>
         <Breadcrumb href="/">Home</Breadcrumb>
         <Breadcrumb href="/react-aria">React Aria</Breadcrumb>
         <Breadcrumb>Components</Breadcrumb>
       </Breadcrumbs>
-    </section>
-
-    <section>
-      <h2 className="mb-4 text-xl font-bold">Buttons</h2>
-      <div className="flex gap-4">
-        <Button color="primary">Primary</Button>
-        <Button color="gradient">Secondary</Button>
-        <Button color="destructive">Destructive</Button>
-
-        <Button surface="ghost">Ghost</Button>
-        <Button surface="outline">Outline</Button>
-        <Button surface="solid">Solid</Button>
-      </div>
     </section>
 
     <section>
@@ -325,20 +350,6 @@ export const AllComponents = () => (
     </section>
 
     <section>
-      <h2 className="mb-4 text-xl font-bold">Tabs</h2>
-      <Tabs>
-        <TabList aria-label="History">
-          <Tab id="photos">Photos</Tab>
-          <Tab id="videos">Videos</Tab>
-          <Tab id="music">Music</Tab>
-        </TabList>
-        <TabPanel id="photos">Photos panel</TabPanel>
-        <TabPanel id="videos">Videos panel</TabPanel>
-        <TabPanel id="music">Music panel</TabPanel>
-      </Tabs>
-    </section>
-
-    <section>
       <h2 className="mb-4 text-xl font-bold">Time Field</h2>
       <TimeField label="Appointment time" />
     </section>
@@ -395,5 +406,6 @@ export const AllComponents = () => (
         </Popover>
       </DialogTrigger>
     </section>
+    */}
   </div>
 );
