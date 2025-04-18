@@ -1,4 +1,3 @@
-
 import ImplPQueue from 'p-queue';
 import colors from 'tailwindcss/colors';
 
@@ -24,21 +23,21 @@ export const PQueue = (params?: ImplQueueConstructorParams) => {
   return new ImplPQueue({ concurrency, autoStart, ...rest });
 };
 
-const VERCEL_GIT_BRANCH
-    = process.env.VERCEL_GIT_COMMIT_REF
-      || process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_REF;
+const VERCEL_GIT_BRANCH =
+  process.env.VERCEL_GIT_COMMIT_REF ||
+  process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_REF;
 
 const isInStaging = VERCEL_GIT_BRANCH === 'staging';
 
-const isInVercelPreview
-    = process.env.VERCEL_ENV === 'preview'
-      || process.env.NEXT_PUBLIC_VERCEL_ENV === 'preview';
+const isInVercelPreview =
+  process.env.VERCEL_ENV === 'preview' ||
+  process.env.NEXT_PUBLIC_VERCEL_ENV === 'preview';
 
-const isInProductionOrStaging
-    = process.env.NODE_ENV === 'production'
-      && (process.env.VERCEL_ENV === 'production'
-        || process.env.NEXT_PUBLIC_VERCEL_ENV === 'production'
-        || isInStaging);
+const isInProductionOrStaging =
+  process.env.NODE_ENV === 'production' &&
+  (process.env.VERCEL_ENV === 'production' ||
+    process.env.NEXT_PUBLIC_VERCEL_ENV === 'production' ||
+    isInStaging);
 
 type TTarget = 'APP' | 'API' | 'WORKSHOP' | 'EMAILS';
 
@@ -140,15 +139,11 @@ export const cookieDomains = [
   'web-dev.oneproject.tech',
 ];
 
-export const allowedEmailDomains = [
-  'oneproject.org',
-];
+export const allowedEmailDomains = ['oneproject.org'];
 
 export const genericEmail = 'hello@oneproject.org';
 
-export const adminEmails = [
-  'hirad@oneproject.org',
-];
+export const adminEmails = ['hirad@oneproject.org', 'scott@oneproject.org'];
 
 export const commonColors = colors.neutral;
 

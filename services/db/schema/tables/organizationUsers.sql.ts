@@ -9,7 +9,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { authUsers } from 'drizzle-orm/supabase';
 
-import { serviceRolePolicies, timestamps } from '../../helpers';
+import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
 
 import { accessRoles } from './access.sql';
 import { organizations } from './organizations.sql';
@@ -17,8 +17,8 @@ import { organizations } from './organizations.sql';
 export const organizationUsers = pgTable(
   'organization_users',
   {
-    id: uuid()
-      .primaryKey()
+    id: autoId().primaryKey(),
+    authUserId: uuid()
       .notNull()
       .references(() => authUsers.id, {
         onDelete: 'cascade',
@@ -29,10 +29,12 @@ export const organizationUsers = pgTable(
     avatarUrl: text(),
     email: varchar().notNull().unique(),
     about: varchar({ length: 256 }),
-    organizationId: uuid().references(() => organizations.id, {
-      onDelete: 'set null',
-      onUpdate: 'cascade',
-    }),
+    organizationId: uuid()
+      .references(() => organizations.id, {
+        onDelete: 'cascade',
+        onUpdate: 'cascade',
+      })
+      .notNull(),
     ...timestamps,
   },
   (table) => [
@@ -76,6 +78,7 @@ export const organizationUserToAccessRoles = pgTable(
     accessRoleId: uuid()
       .notNull()
       .references(() => accessRoles.id),
+    ...timestamps,
   },
   (table) => [
     ...serviceRolePolicies,

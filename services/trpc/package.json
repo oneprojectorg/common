@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^1.2.1",
+    "@op/common": "workspace:*",
     "@op/core": "workspace:*",
     "@op/db": "workspace:*",
     "@op/supabase": "workspace:*",

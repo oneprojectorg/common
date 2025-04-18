@@ -7,19 +7,19 @@ export {
   orgTypeEnum,
 } from './tables/organizations.sql';
 export {
-  posts,
-  postsRelations,
-  postsToOrganizations,
-  postsToOrganizationsRelations,
-} from './tables/posts.sql';
-
-export {
   organizationUsers,
   organizationUsersRelations,
   organizationUserToAccessRoles,
   organizationUserToAccessRolesRelations,
 } from './tables/organizationUsers.sql';
 
+export {
+  posts,
+  postsRelations,
+  postsToOrganizations,
+  postsToOrganizationsRelations,
+} from './tables/posts.sql';
+
 export { projects, projectsRelations } from './tables/projects.sql';
 export { organizationRelationships } from './tables/relationships.sql';
-export { usersUsedStorage } from './tables/usersUsedStorage.sql';
+// export { usersUsedStorage } from './tables/usersUsedStorage.sql';

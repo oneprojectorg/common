@@ -1,6 +1,8 @@
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
+import { getOrganization } from '@op/common';
+
 import { organizationsEncoder } from '../../encoders/organizations';
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withDB from '../../middlewares/withDB';
@@ -35,19 +37,12 @@ export const getOrganizationRouter = router({
     .input(inputSchema)
     .output(organizationsEncoder)
     .query(async ({ ctx, input }) => {
-      const { db } = ctx.database;
       const { slug } = input;
+      const { user } = ctx;
 
-      // TODO: assert authorization, setup a common package
-      const result = await db.query.organizations.findFirst({
-        where: (table, { eq }) => eq(table.slug, slug),
-        with: {
-          projects: true,
-          links: true,
-          headerImage: true,
-          avatarImage: true,
-        },
-      });
+      const result = await getOrganization({ slug, user });
+
+      console.log('RETURNING', result);
 
       if (!result) {
         throw new TRPCError({

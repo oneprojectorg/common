@@ -24,18 +24,14 @@ const OrganizationProfileSuspense = ({ slug }: { slug: string }) => {
     <>
       <ImageHeader
         headerImage={
-          headerUrl
-            ? (
-                <Image src={headerUrl} alt="" fill className="object-cover" />
-              )
-            : null
+          headerUrl ? (
+            <Image src={headerUrl} alt="" fill className="object-cover" />
+          ) : null
         }
         avatarImage={
-          avatarUrl
-            ? (
-                <Image src={avatarUrl} alt="" fill className="object-cover" />
-              )
-            : null
+          avatarUrl ? (
+            <Image src={avatarUrl} alt="" fill className="object-cover" />
+          ) : null
         }
       />
 
