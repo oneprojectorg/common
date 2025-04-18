@@ -55,6 +55,14 @@ export const listOrganizationPostsRouter = router({
         },
       });
 
-      return result.map(res => res.post);
+      // TODO: fixing for demo but should be at the DB level
+      const sorted = result
+        .map(res => res.post)
+        .sort(
+          (a, b) =>
+            new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime(),
+        );
+
+      return sorted;
     }),
 });

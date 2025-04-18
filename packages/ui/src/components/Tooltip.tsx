@@ -36,7 +36,7 @@ const TooltipTrigger = ({
 };
 
 const styles = tv({
-  base: 'inset-shadow-sm group relative z-0 rounded-md bg-neutral-200 px-3 py-2 font-sans text-sm text-neutral-950 drop-shadow-lg backdrop-blur-md will-change-transform',
+  base: 'group relative z-0 rounded-md bg-charcoal px-3 py-2 font-sans text-xs text-offWhite will-change-transform',
   variants: {
     isEntering: {
       true: 'ease-out animate-in fade-in duration-animate-200 placement-left:slide-in-from-right-0.5 placement-right:slide-in-from-left-0.5 placement-top:slide-in-from-bottom-0.5 placement-bottom:slide-in-from-top-0.5',
@@ -52,7 +52,6 @@ const Tooltip = ({ children, ...props }: TooltipProps) => {
     <AriaTooltip
       {...props}
       offset={props.offset || 10}
-
       className={composeRenderProps(props.className, (className, renderProps) =>
         styles({
           ...renderProps,
@@ -64,7 +63,7 @@ const Tooltip = ({ children, ...props }: TooltipProps) => {
           width={12}
           height={12}
           viewBox="0 0 12 12"
-          className="fill-neutral-200 stroke-neutral-300 group-placement-left:-rotate-90 group-placement-right:rotate-90 group-placement-bottom:rotate-180"
+          className="fill-charcoal stroke-charcoal group-placement-left:-rotate-90 group-placement-right:rotate-90 group-placement-bottom:rotate-180"
           strokeWidth={1}
           style={{
             strokeLinejoin: 'round',

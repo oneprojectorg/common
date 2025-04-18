@@ -2,6 +2,7 @@ import { LuArrowUpRight, LuInfo, LuPlus } from 'react-icons/lu';
 
 import { Button, ButtonLink } from '@op/ui/Button';
 import { SkeletonLine } from '@op/ui/Skeleton';
+import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
 
 import { ProfileSummary } from '../ProfileSummary';
 
@@ -22,19 +23,25 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
     <div className="flex gap-4">
       {isReceivingFunds
         ? receivingFundingLinks.map(link => (
-            <ButtonLink key={link.id} href={link.href} className="min-w-44">
-              <LuArrowUpRight />
-              Contribute
-            </ButtonLink>
+            <TooltipTrigger key={link.id}>
+              <ButtonLink href={link.href} className="min-w-44">
+                <LuArrowUpRight />
+                Contribute
+              </ButtonLink>
+              <Tooltip>We accept applications on a rolling basis</Tooltip>
+            </TooltipTrigger>
           ))
         : null}
 
       {isOfferingFunds
         ? offeringFundingLinks.map(link => (
-            <ButtonLink key={link.id} href={link.href} className="min-w-44">
-              <LuInfo />
-              Learn more
-            </ButtonLink>
+            <TooltipTrigger key={link.id}>
+              <ButtonLink href={link.href} className="min-w-44">
+                <LuInfo />
+                Learn more
+              </ButtonLink>
+              <Tooltip>We’re an invite-only granting organization</Tooltip>
+            </TooltipTrigger>
           ))
         : null}
 
@@ -52,8 +59,6 @@ export const ProfileDetails = ({ profile }: { profile: Organization }) => {
       <ProfileSummary profile={profile} />
       <div className="text-base">{profile.description}</div>
       <ProfileInteractions profile={profile} />
-
-      <div className="text-xs text-darkGray">{profile.description}</div>
     </div>
   );
 };

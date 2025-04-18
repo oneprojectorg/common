@@ -77,11 +77,11 @@ const config = {
     return [
       {
         source: '/assets/:path*',
-        destination:
-          'http://127.0.0.1:54321/storage/v1/object/public/assets/:path*',
+        destination: `${process.env.S3_ASSET_ROOT}/:path*`,
       },
     ];
   },
 };
 
 export default withBundleAnalyzer(withTranspiledWorkspacesForNext(config));
+// 'http://127.0.0.1:54321/storage/v1/object/public/assets

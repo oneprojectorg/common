@@ -3,7 +3,7 @@ import { autoId, enumToPgEnum, serviceRolePolicies } from '../../helpers';
 import { organizations } from './organizations.sql';
 import { relations } from 'drizzle-orm';
 
-enum LinkType {
+export enum LinkType {
   OFFERING = 'offering',
   RECEIVING = 'receiving',
 }

@@ -1,6 +1,7 @@
 import { Header3 } from '@/components/Header';
 import { getPublicUrl } from '@/utils';
 import Image from 'next/image';
+import { LuImage, LuPaperclip } from 'react-icons/lu';
 
 import { trpc } from '@op/trpc/client';
 import { Button } from '@op/ui/Button';
@@ -72,7 +73,7 @@ const FeedHeader = ({ children }: { children: ReactNode }) => {
 };
 
 const FeedAvatar = ({ children }: { children?: ReactNode }) => {
-  return <div className="relative w-16">{children}</div>;
+  return <div className="relative w-16 min-w-16">{children}</div>;
 };
 
 const FeedMain = ({ children }: { children: ReactNode }) => {
@@ -92,7 +93,7 @@ export const ProfileFeed = ({ profile }: { profile: Organization }) => {
 
   return (
     <div className="flex flex-col gap-8">
-      <FeedItem className="pb-8">
+      <FeedItem>
         <FeedAvatar>
           {profileImageUrl
             ? (
@@ -111,9 +112,19 @@ export const ProfileFeed = ({ profile }: { profile: Organization }) => {
           <div className="flex w-full gap-4">
             <TextArea
               className="size-full"
-              placeholder={`Post an update from ${profile.name}`}
+              placeholder={`Post an update from ${profile.name}…`}
             />
             <Button color="secondary">Post</Button>
+          </div>
+          <div className="flex gap-6">
+            <div className="flex gap-1 text-charcoal">
+              <LuImage className="size-4" />
+              Media
+            </div>
+            <div className="flex gap-1 text-charcoal">
+              <LuPaperclip className="size-4" />
+              Resource
+            </div>
           </div>
         </FeedMain>
       </FeedItem>
