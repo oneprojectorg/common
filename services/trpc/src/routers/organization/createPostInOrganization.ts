@@ -24,8 +24,8 @@ const meta: OpenApiMeta = {
 
 const outputSchema = createSelectSchema(posts);
 
-export const addPostToOrganization = router({
-  addPostToOrganization: loggedProcedure
+export const createPostInOrganization = router({
+  createPost: loggedProcedure
     // Middlewares
     .use(withRateLimited({ windowSize: 10, maxRequests: 3 }))
     .use(withAuthenticated)

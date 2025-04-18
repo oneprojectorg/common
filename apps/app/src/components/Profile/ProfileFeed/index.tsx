@@ -7,6 +7,8 @@ import { trpc } from '@op/trpc/client';
 import { Button } from '@op/ui/Button';
 import { TextArea } from '@op/ui/Field';
 import { cn } from '@op/ui/utils';
+import { useState } from 'react';
+import { Form } from 'react-aria-components';
 
 import type { Organization } from '@op/trpc/encoders';
 import type { ReactNode } from 'react';
@@ -89,33 +91,45 @@ export const ProfileFeed = ({ profile }: { profile: Organization }) => {
     slug: profile.slug,
   });
 
+  const [content, setContent] = useState('');
+  const createPost = trpc.organization.addPostToOrganization.useMutation();
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (content.trim()) {
+      createPost.mutate({ id: profile.id, content });
+      setContent('');
+    }
+  };
+
   const profileImageUrl = getPublicUrl(profile.avatarImage?.name);
 
   return (
     <div className="flex flex-col gap-8">
       <FeedItem>
         <FeedAvatar>
-          {profileImageUrl
-            ? (
-                <Image
-                  src={profileImageUrl}
-                  alt=""
-                  fill
-                  className="!size-16 max-h-16 max-w-16"
-                />
-              )
-            : (
-                <div className="size-16 rounded-full border bg-white shadow" />
-              )}
+          {profileImageUrl ? (
+            <Image
+              src={profileImageUrl}
+              alt=""
+              fill
+              className="!size-16 max-h-16 max-w-16"
+            />
+          ) : (
+            <div className="size-16 rounded-full border bg-white shadow" />
+          )}
         </FeedAvatar>
         <FeedMain>
-          <div className="flex w-full gap-4">
+          <Form onSubmit={handleSubmit} className="flex w-full gap-4">
             <TextArea
               className="size-full"
               placeholder={`Post an update from ${profile.name}…`}
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
             />
-            <Button color="secondary">Post</Button>
-          </div>
+            <Button color="secondary" type="submit">
+              Post
+            </Button>
+          </Form>
           <div className="flex gap-6">
             <div className="flex gap-1 text-charcoal">
               <LuImage className="size-4" />
@@ -129,50 +143,44 @@ export const ProfileFeed = ({ profile }: { profile: Organization }) => {
         </FeedMain>
       </FeedItem>
       <span className="-ml-6 w-[calc(100%+3rem)] border-b border-offWhite p-0" />
-      {posts.length > 0
-        ? (
-            posts.map(({ content, createdAt }, i) => (
-              <FeedItem key={i}>
-                <FeedAvatar>
-                  {profileImageUrl
-                    ? (
-                        <Image
-                          src={profileImageUrl}
-                          alt=""
-                          fill
-                          className="!size-16 max-h-16 max-w-16"
-                        />
-                      )
-                    : (
-                        <div className="size-16 rounded-full border bg-white shadow" />
-                      )}
-                </FeedAvatar>
-                <FeedMain>
-                  <FeedHeader>
-                    <Header3 className="font-medium leading-5">
-                      {profile.name}
-                    </Header3>
-                    {createdAt
-                      ? (
-                          <span className="text-xs text-darkGray">
-                            {formatRelativeTime(createdAt)}
-                          </span>
-                        )
-                      : null}
-                  </FeedHeader>
-                  <FeedContent>{content}</FeedContent>
-                </FeedMain>
-              </FeedItem>
-            ))
-          )
-        : (
-            <FeedItem>
-              <FeedAvatar />
-              <FeedMain>
-                <FeedContent className="text-lightGray">No posts yet</FeedContent>
-              </FeedMain>
-            </FeedItem>
-          )}
+      {posts.length > 0 ? (
+        posts.map(({ content, createdAt }, i) => (
+          <FeedItem key={i}>
+            <FeedAvatar>
+              {profileImageUrl ? (
+                <Image
+                  src={profileImageUrl}
+                  alt=""
+                  fill
+                  className="!size-16 max-h-16 max-w-16"
+                />
+              ) : (
+                <div className="size-16 rounded-full border bg-white shadow" />
+              )}
+            </FeedAvatar>
+            <FeedMain>
+              <FeedHeader>
+                <Header3 className="font-medium leading-5">
+                  {profile.name}
+                </Header3>
+                {createdAt ? (
+                  <span className="text-xs text-darkGray">
+                    {formatRelativeTime(createdAt)}
+                  </span>
+                ) : null}
+              </FeedHeader>
+              <FeedContent>{content}</FeedContent>
+            </FeedMain>
+          </FeedItem>
+        ))
+      ) : (
+        <FeedItem>
+          <FeedAvatar />
+          <FeedMain>
+            <FeedContent className="text-lightGray">No posts yet</FeedContent>
+          </FeedMain>
+        </FeedItem>
+      )}
     </div>
   );
 };
