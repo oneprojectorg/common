@@ -20,7 +20,9 @@ import {
 } from '../../helpers';
 
 import { links } from './links.sql';
+import { posts } from './posts.sql';
 import { projects } from './projects.sql';
+import { organizationRelationships } from './relationships.sql';
 import { objectsInStorage } from './storage.sql';
 
 // Enums for organization types and status
@@ -109,14 +111,7 @@ export const organizationsRelations = relations(
       fields: [organizations.avatarImageId],
       references: [objectsInStorage.id],
     }),
+    outgoingRelationships: many(organizationRelationships),
+    incomingRelationships: many(organizationRelationships),
   }),
-);
-
-export const posts = pgTable(
-  'posts',
-  {
-    id: autoId().primaryKey(),
-    content: text().notNull(),
-  },
-  (table) => [...serviceRolePolicies, index().on(table.id).concurrently()],
 );

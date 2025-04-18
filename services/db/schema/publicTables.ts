@@ -21,4 +21,5 @@ export {
 } from './tables/profiles.sql';
 
 export { projects, projectsRelations } from './tables/projects.sql';
+export { organizationRelationships } from './tables/relationships.sql';
 export { usersUsedStorage } from './tables/usersUsedStorage.sql';
