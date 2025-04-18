@@ -1,4 +1,4 @@
-import { index, integer, pgTable, varchar } from 'drizzle-orm/pg-core';
+import { index, pgTable, uuid, varchar } from 'drizzle-orm/pg-core';
 
 import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
 
@@ -8,16 +8,16 @@ export const organizationRelationships = pgTable(
   'organization_relationships',
   {
     id: autoId().primaryKey(),
-    sourceOrganizationId: integer('source_organization_id')
+    sourceOrganizationId: uuid('source_organization_id')
       .notNull()
       .references(() => organizations.id),
-    targetOrganizationId: integer('target_organization_id')
+    targetOrganizationId: uuid('target_organization_id')
       .notNull()
       .references(() => organizations.id),
     relationshipType: varchar({ length: 255 }).notNull(),
     ...timestamps,
   },
-  table => [
+  (table) => [
     ...serviceRolePolicies,
     index().on(table.sourceOrganizationId).concurrently(),
     index().on(table.targetOrganizationId).concurrently(),
