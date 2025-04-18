@@ -153,7 +153,7 @@ export const ProfileFeed = ({ profile }: { profile: Organization }) => {
               )}
         </FeedAvatar>
         <FeedMain>
-          <Form onSubmit={handleSubmit} className="flex w-full gap-4">
+          <Form onSubmit={handleSubmit} className="flex w-full flex-row gap-4">
             <TextArea
               className="size-full"
               placeholder={`Post an update from ${profile.name}…`}
