@@ -41,7 +41,6 @@ export enum OrgType {
 export const orgTypeEnum = pgEnum('org_type', enumToPgEnum(OrgType));
 
 // An organization represents a tenant in the system
-// Org profiles should maybe be separated from organizations?
 export const organizations = pgTable(
   'organizations',
   {

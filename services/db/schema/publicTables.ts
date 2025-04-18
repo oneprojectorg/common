@@ -14,11 +14,11 @@ export {
 } from './tables/posts.sql';
 
 export {
-  profiles,
-  profilesRelations,
-  profilesToAccessRoles,
-  profilesToAccessRolesRelations,
-} from './tables/profiles.sql';
+  organizationUsers,
+  organizationUsersRelations,
+  organizationUserToAccessRoles,
+  organizationUserToAccessRolesRelations,
+} from './tables/organizationUsers.sql';
 
 export { projects, projectsRelations } from './tables/projects.sql';
 export { organizationRelationships } from './tables/relationships.sql';

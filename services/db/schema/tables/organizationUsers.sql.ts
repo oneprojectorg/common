@@ -14,8 +14,8 @@ import { serviceRolePolicies, timestamps } from '../../helpers';
 import { accessRoles } from './access.sql';
 import { organizations } from './organizations.sql';
 
-export const profiles = pgTable(
-  'profiles',
+export const organizationUsers = pgTable(
+  'organization_users',
   {
     id: uuid()
       .primaryKey()
@@ -40,53 +40,58 @@ export const profiles = pgTable(
     index().on(table.id).concurrently(),
     index().on(table.email).concurrently(),
     index().on(table.username).concurrently(),
-    index('profiles_email_gin_index')
+    index('organizationUsers_email_gin_index')
       .using('gin', sql`to_tsvector('english', ${table.email})`)
       .concurrently(),
-    index('profiles_username_gin_index')
+    index('organizationUsers_username_gin_index')
       .using('gin', sql`to_tsvector('english', ${table.username})`)
       .concurrently(),
-    index('profiles_organizations_idx').on(table.organizationId).concurrently(),
+    index('organizationUsers_organizations_idx')
+      .on(table.organizationId)
+      .concurrently(),
   ],
 );
 
-export const profilesRelations = relations(profiles, ({ one, many }) => ({
-  user: one(authUsers, {
-    fields: [profiles.id],
-    references: [authUsers.id],
+export const organizationUsersRelations = relations(
+  organizationUsers,
+  ({ one, many }) => ({
+    user: one(authUsers, {
+      fields: [organizationUsers.id],
+      references: [authUsers.id],
+    }),
+    organization: one(organizations, {
+      fields: [organizationUsers.organizationId],
+      references: [organizations.id],
+    }),
+    roles: many(accessRoles),
   }),
-  organization: one(organizations, {
-    fields: [profiles.organizationId],
-    references: [organizations.id],
-  }),
-  roles: many(accessRoles),
-}));
+);
 
-export const profilesToAccessRoles = pgTable(
-  'profiles_to_access_roles',
+export const organizationUserToAccessRoles = pgTable(
+  'organizationUser_to_access_roles',
   {
-    profileId: uuid()
+    organizationUserId: uuid()
       .notNull()
-      .references(() => profiles.id),
+      .references(() => organizationUsers.id),
     accessRoleId: uuid()
       .notNull()
       .references(() => accessRoles.id),
   },
   (table) => [
     ...serviceRolePolicies,
-    primaryKey({ columns: [table.profileId, table.accessRoleId] }),
+    primaryKey({ columns: [table.organizationUserId, table.accessRoleId] }),
   ],
 );
 
-export const profilesToAccessRolesRelations = relations(
-  profilesToAccessRoles,
+export const organizationUserToAccessRolesRelations = relations(
+  organizationUserToAccessRoles,
   ({ one }) => ({
-    profile: one(profiles, {
-      fields: [profilesToAccessRoles.profileId],
-      references: [profiles.id],
+    organizationUser: one(organizationUsers, {
+      fields: [organizationUserToAccessRoles.organizationUserId],
+      references: [organizationUsers.id],
     }),
     accessRole: one(accessRoles, {
-      fields: [profilesToAccessRoles.accessRoleId],
+      fields: [organizationUserToAccessRoles.accessRoleId],
       references: [accessRoles.id],
     }),
   }),
