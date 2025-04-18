@@ -91,7 +91,7 @@ export const Tab = (props: TabProps & { unstyled?: boolean }) => {
 
 const tabPanelStyles = tv({
   extend: focusRing,
-  base: 'flex-1 p-4 text-sm',
+  base: 'flex-1 p-4 text-base',
 });
 
 export const TabPanel = (props: TabPanelProps) => {

@@ -13,7 +13,8 @@ try {
     process.stdout.write(`\x1B]2;${'APP'}\x1B\x5C`);
     process.stdout.write(`\x1B];${'APP'}\x07`);
   }
-} catch (error) {
+}
+catch (error) {
   console.error(error);
   // Ignore error
 }
@@ -40,7 +41,7 @@ const config = {
 
   webpack: (cfg) => {
     // Grab the existing rule that handles SVG imports
-    const fileLoaderRule = cfg.module.rules.find((rule) =>
+    const fileLoaderRule = cfg.module.rules.find(rule =>
       rule.test?.test?.('.svg'),
     );
 
