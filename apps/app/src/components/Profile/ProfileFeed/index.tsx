@@ -1,14 +1,14 @@
 import { Header3 } from '@/components/Header';
 import { getPublicUrl } from '@/utils';
 import Image from 'next/image';
+import { useState } from 'react';
 import { LuImage, LuPaperclip } from 'react-icons/lu';
 
 import { trpc } from '@op/trpc/client';
 import { Button } from '@op/ui/Button';
 import { TextArea } from '@op/ui/Field';
+import { Form } from '@op/ui/Form';
 import { cn } from '@op/ui/utils';
-import { useState } from 'react';
-import { Form } from 'react-aria-components';
 
 import type { Organization } from '@op/trpc/encoders';
 import type { ReactNode } from 'react';
@@ -92,9 +92,42 @@ export const ProfileFeed = ({ profile }: { profile: Organization }) => {
   });
 
   const [content, setContent] = useState('');
-  const createPost = trpc.organization.addPostToOrganization.useMutation();
+  const utils = trpc.useContext();
+  const createPost = trpc.organization.createPost.useMutation({
+    onMutate: async (newPost) => {
+      // Cancel any outgoing refetches for the posts query
+      await utils.organization.listPosts.cancel();
+      // Snapshot the previous list of posts
+      const previousPosts = utils.organization.listPosts.getData({
+        slug: profile.slug,
+      });
+
+      // Optimistically update the cache with the new post
+      // @ts-expect-error - temporary
+      utils.organization.listPosts.setData({ slug: profile.slug }, (old) =>
+        old
+          ? [...old, { ...newPost, createdAt: new Date() }]
+          : [{ ...newPost, createdAt: new Date() }],
+      );
+
+      return { previousPosts };
+    },
+    onError: (_, __, context: any) => {
+      // Roll back to the previous posts on error
+      utils.organization.listPosts.setData(
+        { slug: profile.slug },
+        context?.previousPosts || [],
+      );
+    },
+    onSettled: () => {
+      // Invalidate the posts query to sync with the server
+      utils.organization.listPosts.invalidate({ slug: profile.slug });
+    },
+  });
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
     if (content.trim()) {
       createPost.mutate({ id: profile.id, content });
       setContent('');
@@ -126,9 +159,11 @@ export const ProfileFeed = ({ profile }: { profile: Organization }) => {
               value={content}
               onChange={(e) => setContent(e.target.value)}
             />
-            <Button color="secondary" type="submit">
-              Post
-            </Button>
+            {content.length > 0 && (
+              <Button color="secondary" type="submit">
+                Post
+              </Button>
+            )}
           </Form>
           <div className="flex gap-6">
             <div className="flex gap-1 text-charcoal">
