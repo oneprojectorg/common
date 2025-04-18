@@ -1,7 +1,7 @@
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
-import { getOrganization } from '@op/common';
+import { getOrganization, UnauthorizedError } from '@op/common';
 
 import { organizationsEncoder } from '../../encoders/organizations';
 import withAuthenticated from '../../middlewares/withAuthenticated';
@@ -40,17 +40,30 @@ export const getOrganizationRouter = router({
       const { slug } = input;
       const { user } = ctx;
 
-      const result = await getOrganization({ slug, user });
+      try {
+        const result = await getOrganization({ slug, user });
 
-      console.log('RETURNING', result);
+        if (!result) {
+          throw new TRPCError({
+            message: 'Organization not found',
+            code: 'NOT_FOUND',
+          });
+        }
 
-      if (!result) {
+        return result;
+      }
+      catch (error: unknown) {
+        if (error instanceof UnauthorizedError) {
+          throw new TRPCError({
+            message: 'You do not have acess to this organization',
+            code: 'UNAUTHORIZED',
+          });
+        }
+
         throw new TRPCError({
           message: 'Organization not found',
           code: 'NOT_FOUND',
         });
       }
-
-      return result;
     }),
 });

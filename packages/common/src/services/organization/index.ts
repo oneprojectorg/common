@@ -1,13 +1,27 @@
+import { UnauthorizedError } from '../../utils';
 import { db } from '@op/db/client';
+import { User } from '@op/supabase/lib';
 
 export const getOrganization = async ({
   slug,
   id,
-}:
-  | ({ user: any } & { id: string; slug?: undefined })
-  | { id?: undefined; slug: string }) => {
+  user,
+}: { user: User } & (
+  | { id: string; slug?: undefined }
+  | { id?: undefined; slug: string }
+)) => {
+  if (!user) {
+    throw new UnauthorizedError();
+  }
+
+  if (!slug && !id) {
+    return;
+  }
+
   const result = await db.query.organizations.findFirst({
-    where: (table, { eq }) => (slug ? eq(table.slug, slug) : eq(table.id, id)),
+    where: slug
+      ? (table, { eq }) => eq(table.slug, slug)
+      : (table, { eq }) => eq(table.id, id!),
     with: {
       projects: true,
       links: true,
