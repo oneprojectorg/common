@@ -18,6 +18,8 @@ export const getOrganization = async ({
     return;
   }
 
+  // assertAccess({ organization, permission: 'read' }, user.roles);
+
   const result = await db.query.organizations.findFirst({
     where: slug
       ? (table, { eq }) => eq(table.slug, slug)
