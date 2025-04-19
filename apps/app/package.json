@@ -16,6 +16,7 @@
     "@op/supabase": "workspace:*",
     "@op/trpc": "workspace:*",
     "@op/ui": "workspace:*",
+    "@tanstack/react-form": "^1.6.2",
     "babel-plugin-react-compiler": "19.0.0-beta-e1e972c-20250221",
     "dotenv": "^16.4.7",
     "immer": "^10.1.1",

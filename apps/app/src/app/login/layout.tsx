@@ -11,7 +11,7 @@ const LoginLayout = ({ children }: { children: React.ReactNode }) => {
         <div className="flex size-full max-h-full flex-col overflow-hidden">
           <div className="relative flex min-h-0 grow flex-col">
             <FullScreenSplitLayout>
-              <div id="top-slot" className="absolute top-0 w-full" />
+              <div id="top-slot" className="absolute top-0 w-2/3" />
               <FullScreenSplitMain>
                 <section>
                   <div className="flex items-center gap-2">

@@ -3,49 +3,135 @@
 import { Portal } from '@/components/Portal';
 
 import { Button } from '@op/ui/Button';
-import { Form } from '@op/ui/Form';
 import { StepItem, StepperProgressIndicator, useStepper } from '@op/ui/Stepper';
 import { TextField } from '@op/ui/TextField';
-
+import { createFormHook, createFormHookContexts } from '@tanstack/react-form';
 import type { StepperItem } from '@op/ui/Stepper';
+import { z } from 'zod';
+import { useMemo } from 'react';
+const { fieldContext, formContext } = createFormHookContexts();
 
-const stepperItems: Array<StepperItem> = [
-  {
-    key: 0,
-    label: 'Step 1',
-    component: (
-      <>
-        <TextField label="Full name" isRequired />
-        <TextField label="Professional title" />
-      </>
-    ),
+const { useAppForm } = createFormHook({
+  fieldComponents: {
+    TextField,
   },
-  {
-    key: 1,
-    label: 'Step 2',
-    component: (
-      <>
-        <TextField label="Organization name" />
-        <TextField label="Website" />
-      </>
-    ),
+  formComponents: {
+    Button,
+    SubmitButton: (props) => <Button {...props} type="submit" />,
   },
-  {
-    key: 2,
-    label: 'Step 3',
-    component: (
-      <>
-        <TextField label="Is your organization seeking funding?" />
-        <TextField label="Website" />
-      </>
-    ),
-  },
-];
+  fieldContext,
+  formContext,
+});
+
+const formValidator = z.object({
+  fullName: z.string().min(1, 'Full Name is required'),
+  title: z.string().min(1, 'Professional title is required'),
+  fullName2: z.string(),
+  title2: z.string(),
+});
 
 const OnboardingFlow = () => {
+  const form = useAppForm({
+    defaultValues: {
+      fullName: '',
+      title: '',
+      fullName2: '',
+      title2: '',
+    },
+    validators: {
+      onChange: formValidator,
+    },
+    onSubmit: ({ value }) => {
+      console.log('SUBMIT >>>>');
+      console.log(JSON.stringify(value, null, 2));
+    },
+  });
+
+  const stepperItems: Array<StepperItem> = useMemo(
+    () => [
+      {
+        key: 0,
+        label: 'Step 1',
+        validator: formValidator.pick({
+          fullName: true,
+          title: true,
+        }),
+        component: (
+          <>
+            <form.AppField
+              name="fullName"
+              children={(field) => (
+                <field.TextField
+                  label="Full Name"
+                  isRequired
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChange={field.handleChange}
+                />
+              )}
+            />
+            <form.AppField
+              name="title"
+              children={(field) => (
+                <field.TextField
+                  label="Professional title"
+                  isRequired
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChange={field.handleChange}
+                />
+              )}
+            />
+          </>
+        ),
+      },
+      {
+        key: 1,
+        label: 'Step 2',
+        validator: formValidator.pick({
+          fullName2: true,
+          title2: true,
+        }),
+        component: (
+          <>
+            <form.AppField
+              name="fullName2"
+              children={(field) => (
+                <field.TextField
+                  label="Full Name2"
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChange={field.handleChange}
+                />
+              )}
+            />
+            <form.AppField
+              name="title2"
+              children={(field) => (
+                <field.TextField
+                  label="Professional title2"
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChange={field.handleChange}
+                />
+              )}
+            />
+          </>
+        ),
+      },
+    ],
+    [],
+  );
+
   const { goToStep, nextStep, currentStep } = useStepper({
     items: stepperItems,
   });
+
+  const handleContinue = () => {
+    const { values } = form.state;
+
+    nextStep(values);
+  };
 
   return (
     <div className="flex w-full max-w-96 flex-col">
@@ -56,14 +142,24 @@ const OnboardingFlow = () => {
           goToStep={goToStep}
         />
       </Portal>
-      <Form>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          form.handleSubmit();
+        }}
+        className="flex flex-col gap-4"
+      >
         {stepperItems.map((item, i) => (
           <StepItem key={item.key} currentStep={currentStep} itemIndex={i}>
             {item.component}
-            <Button onPress={nextStep}>Continue</Button>
           </StepItem>
         ))}
-      </Form>
+        {currentStep === stepperItems.length - 1 ? (
+          <Button type="submit">Finish</Button>
+        ) : (
+          <Button onPress={handleContinue}>Continue</Button>
+        )}
+      </form>
     </div>
   );
 };
