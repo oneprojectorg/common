@@ -162,6 +162,10 @@ const config: Omit<Config, 'content'> = {
       boxShadow: {
         DEFAULT: '0px 0px 16px 0px rgba(20, 35, 38, 0.04)',
       },
+      backgroundImage: {
+        gradient:
+          'radial-gradient(154% 99.31% at 0% 0%, #3EC300 0%, #0396A6 51.56%)',
+      },
     },
   },
   plugins: [
