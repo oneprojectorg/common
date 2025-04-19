@@ -15,7 +15,7 @@ const stepperItems: Array<StepperItem> = [
     label: 'Step 1',
     component: (
       <>
-        <TextField label="Full name" />
+        <TextField label="Full name" isRequired />
         <TextField label="Professional title" />
       </>
     ),
