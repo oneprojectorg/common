@@ -25,7 +25,7 @@
     "./Select": "./src/components/Select.tsx",
     "./Skeleton": "./src/components/Skeleton.tsx",
     "./SocialLinks": "./src/components/SocialLinks.tsx",
-    "./Stepper": "./src/components/Stepper.tsx",
+    "./Stepper": "./src/components/Stepper/index.ts",
     "./Switch": "./src/components/Switch.tsx",
     "./Tabs": "./src/components/Tabs.tsx",
     "./TagGroup": "./src/components/TagGroup.tsx",
