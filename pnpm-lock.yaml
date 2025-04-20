@@ -381,6 +381,9 @@ importers:
 
   apps/app:
     dependencies:
+      '@formity/react':
+        specifier: ^1.0.0
+        version: 1.0.0(react@19.0.0)
       '@next/bundle-analyzer':
         specifier: ^15.3.0
         version: 15.3.0
@@ -2007,6 +2010,14 @@ packages:
 
   '@formatjs/intl-localematcher@0.5.10':
     resolution: {integrity: sha512-af3qATX+m4Rnd9+wHcjJ4w2ijq+rAVP3CCinJQvFv1kgSu1W6jypUmvleJxcewdxmutM8dmIRZFxO/IQBZmP2Q==}
+
+  '@formity/react@1.0.0':
+    resolution: {integrity: sha512-L/PMgit/K43VgIcBWsxx3lk17U6InyIdKuGo/TymFfpYnkk7iotCwYI5pxF3HRG+51NCBVr+sJiDtAmZgyackA==}
+    peerDependencies:
+      react: ^19.0.0
+
+  '@formity/system@1.0.0':
+    resolution: {integrity: sha512-BoKv2RvPm4WWir4Xmxb3cUyZtyXbnSqhxXvlScQUoXDbX57CUuveickpb+FqgdoIjzXed3FGZSES3o2rwsd3FQ==}
 
   '@hapi/bourne@3.0.0':
     resolution: {integrity: sha512-Waj1cwPXJDucOib4a3bAISsKJVb15MKi9IvmTI/7ssVEm6sywXGjVJDhl6/umt1pK1ZS7PacXU3A1PmFKHEZ2w==}
@@ -10147,6 +10158,13 @@ snapshots:
   '@formatjs/intl-localematcher@0.5.10':
     dependencies:
       tslib: 2.8.1
+
+  '@formity/react@1.0.0(react@19.0.0)':
+    dependencies:
+      '@formity/system': 1.0.0
+      react: 19.0.0
+
+  '@formity/system@1.0.0': {}
 
   '@hapi/bourne@3.0.0': {}
 

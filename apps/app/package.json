@@ -10,6 +10,7 @@
     "start": "next start -p 3100"
   },
   "dependencies": {
+    "@formity/react": "^1.0.0",
     "@next/bundle-analyzer": "^15.3.0",
     "@op/core": "workspace:*",
     "@op/hooks": "workspace:*",
