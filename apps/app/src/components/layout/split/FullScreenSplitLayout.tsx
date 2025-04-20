@@ -3,5 +3,5 @@ export const FullScreenSplitLayout = ({
 }: {
   children: React.ReactNode;
 }) => {
-  return <div className="grid size-full grid-cols-3">{children}</div>;
+  return <div className="size-full grid-cols-3 sm:grid">{children}</div>;
 };

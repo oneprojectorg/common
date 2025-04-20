@@ -1,14 +1,16 @@
 'use client';
 
 import { Portal } from '@/components/Portal';
+import { createFormHook, createFormHookContexts } from '@tanstack/react-form';
+import { useMemo } from 'react';
+import { z } from 'zod';
 
 import { Button } from '@op/ui/Button';
 import { StepItem, StepperProgressIndicator, useStepper } from '@op/ui/Stepper';
 import { TextField } from '@op/ui/TextField';
-import { createFormHook, createFormHookContexts } from '@tanstack/react-form';
+
 import type { StepperItem } from '@op/ui/Stepper';
-import { z } from 'zod';
-import { useMemo } from 'react';
+
 const { fieldContext, formContext } = createFormHookContexts();
 
 const { useAppForm } = createFormHook({
@@ -23,11 +25,17 @@ const { useAppForm } = createFormHook({
   formContext,
 });
 
+const getFieldErrorMessage = (field) => {
+  return field.state.meta.errors
+    .map((err: { message: string }) => err?.message)
+    .join(', ');
+};
+
 const formValidator = z.object({
   fullName: z.string().min(1, 'Full Name is required'),
   title: z.string().min(1, 'Professional title is required'),
-  fullName2: z.string(),
-  title2: z.string(),
+  fullName2: z.string().min(1, 'Full Name2 is required'),
+  title2: z.string().min(1, 'Professional title2 is required'),
 });
 
 const OnboardingFlow = () => {
@@ -67,6 +75,7 @@ const OnboardingFlow = () => {
                   value={field.state.value}
                   onBlur={field.handleBlur}
                   onChange={field.handleChange}
+                  errorMessage={getFieldErrorMessage(field)}
                 />
               )}
             />
@@ -79,6 +88,7 @@ const OnboardingFlow = () => {
                   value={field.state.value}
                   onBlur={field.handleBlur}
                   onChange={field.handleChange}
+                  errorMessage={getFieldErrorMessage(field)}
                 />
               )}
             />
@@ -102,6 +112,7 @@ const OnboardingFlow = () => {
                   value={field.state.value}
                   onBlur={field.handleBlur}
                   onChange={field.handleChange}
+                  errorMessage={getFieldErrorMessage(field)}
                 />
               )}
             />
@@ -109,10 +120,12 @@ const OnboardingFlow = () => {
               name="title2"
               children={(field) => (
                 <field.TextField
+                  isRequired
                   label="Professional title2"
                   value={field.state.value}
                   onBlur={field.handleBlur}
                   onChange={field.handleChange}
+                  errorMessage={getFieldErrorMessage(field)}
                 />
               )}
             />
