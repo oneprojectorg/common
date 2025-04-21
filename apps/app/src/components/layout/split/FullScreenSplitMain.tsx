@@ -16,7 +16,7 @@ export const FullScreenSplitMain = ({
           </div>
         </div>
       </section>
-      <section className="flex size-full items-center justify-center">
+      <section className="mt-20 flex size-full max-h-screen justify-center overflow-y-auto">
         {children}
       </section>
     </main>
