@@ -2,7 +2,6 @@ import { motion } from 'framer-motion';
 
 import { cn } from '../../lib/utils';
 
-import type { StepperItem } from './types';
 import type { ReactNode } from 'react';
 
 export const StepItem = ({
@@ -18,16 +17,14 @@ export const StepItem = ({
 );
 
 export const StepperProgressIndicator = ({
-  items,
+  numItems,
   currentStep = 0,
-  goToStep,
 }: {
-  items: Array<StepperItem>;
+  numItems: number;
   currentStep?: number;
-  goToStep?: (step: number) => void;
 }) => {
-  const segmentSize = 100 / items.length;
-  const progress = items.length > 1 ? (currentStep + 1) * segmentSize : 0;
+  const segmentSize = 100 / numItems;
+  const progress = numItems > 1 ? (currentStep + 1) * segmentSize : 0;
 
   return (
     <div className="relative flex h-1 w-full gap-0 bg-gradient">
@@ -36,16 +33,6 @@ export const StepperProgressIndicator = ({
         animate={{ width: `${progress}%` }}
         transition={{ duration: 0.5 }}
       />
-
-      {items.map((item, i) => (
-        <button
-          type="button"
-          key={item.key}
-          title={item.label}
-          className="z-10 size-full"
-          onClick={goToStep ? () => goToStep(i) : undefined}
-        />
-      ))}
     </div>
   );
 };

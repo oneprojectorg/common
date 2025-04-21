@@ -7,7 +7,7 @@ export const FormHeader = ({
   text: string;
   children?: ReactNode;
 }) => (
-  <div className="flex flex-col gap-4">
+  <div className="flex flex-col gap-4 px-6">
     <Header1 className="text-center">{text}</Header1>
 
     <p className="text-center text-midGray">{children}</p>

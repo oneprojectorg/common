@@ -5,7 +5,8 @@ import { Portal } from '../Portal';
 
 import {
   OrganizationDetailsForm,
-  validator as OrganizationDetailsFormFormValidator,
+  validator as OrganizationDetailsFormValidator,
+  validator as FundingInformationFormValidator,
 } from './OrganizationDetailsForm';
 import {
   PersonalDetailsForm,
@@ -15,10 +16,12 @@ import {
 import type { UnionToIntersection } from '../form/utils';
 import type { Form, Return, Schema } from '@formity/react';
 import type { z } from 'zod';
+import { FundingInformationForm } from './FundingInformationForm';
 
 const resolvers = {
   PersonalDetailsForm: PersonalDetailsFormValidator,
-  OrganizationDetailsForm: OrganizationDetailsFormFormValidator,
+  OrganizationDetailsForm: OrganizationDetailsFormValidator,
+  FundingInformationForm: FundingInformationFormValidator,
 } as const;
 
 type FormType = z.infer<
@@ -35,16 +38,7 @@ const ProgressIndicator = ({ currentStep = 0 }: { currentStep: number }) => (
   <Portal id="top-slot">
     <StepperProgressIndicator
       currentStep={currentStep}
-      items={[
-        {
-          key: 0,
-          label: 'Personal Details',
-        },
-        {
-          key: 1,
-          label: 'Organization Details',
-        },
-      ]}
+      numItems={schema.length}
     />
   </Portal>
 );
@@ -81,6 +75,26 @@ export const schema: Schema<Values> = [
           <ProgressIndicator currentStep={1} />
           <MultiStepProvider onNext={onNext} onBack={onBack}>
             <OrganizationDetailsForm
+              defaultValues={values}
+              resolver={resolvers.OrganizationDetailsForm}
+            />
+          </MultiStepProvider>
+        </>
+      ),
+    },
+  },
+  {
+    form: {
+      values: () => ({
+        organizationName: ['', []],
+        website: ['', []],
+        email: ['', []],
+      }),
+      render: ({ values, onNext, onBack }) => (
+        <>
+          <ProgressIndicator currentStep={2} />
+          <MultiStepProvider onNext={onNext} onBack={onBack}>
+            <FundingInformationForm
               defaultValues={values}
               resolver={resolvers.OrganizationDetailsForm}
             />

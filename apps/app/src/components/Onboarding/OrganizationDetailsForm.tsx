@@ -11,7 +11,6 @@ import type { StepProps } from '../form/utils';
 import { TextField } from '@op/ui/TextField';
 import { ToggleButton } from '@op/ui/ToggleButton';
 import { ListBox } from '@op/ui/ListBox';
-import { Button } from '@op/ui/Button';
 
 export const validator = z.object({
   organizationName: z
