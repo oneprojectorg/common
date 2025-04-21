@@ -83,7 +83,6 @@ export const schema: Schema<Values> = [
             <OrganizationDetailsForm
               defaultValues={values}
               resolver={resolvers.OrganizationDetailsForm}
-              onSubmit={onNext}
             />
           </MultiStepProvider>
         </>

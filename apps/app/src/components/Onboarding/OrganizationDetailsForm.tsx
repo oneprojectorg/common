@@ -1,7 +1,11 @@
 import { z } from 'zod';
+
 import { FormContainer } from '../form/FormContainer';
 import { FormHeader } from '../form/FormHeader';
-import { getFieldErrorMessage, StepProps, useAppForm } from '../form/utils';
+import { useMultiStep } from '../form/multiStep';
+import { getFieldErrorMessage, useAppForm } from '../form/utils';
+
+import type { StepProps } from '../form/utils';
 
 export const validator = z.object({
   organizationName: z
@@ -22,8 +26,8 @@ export const validator = z.object({
 export const OrganizationDetailsForm = ({
   defaultValues,
   resolver,
-  onSubmit,
 }: StepProps) => {
+  const { onNext } = useMultiStep();
   const form = useAppForm({
     defaultValues,
     validators: {
@@ -32,7 +36,7 @@ export const OrganizationDetailsForm = ({
     onSubmit: ({ value }) => {
       console.log('SUBMIT >>>>');
       console.log(JSON.stringify(value, null, 2));
-      onSubmit(value);
+      onNext(value);
     },
   });
 
@@ -81,6 +85,102 @@ export const OrganizationDetailsForm = ({
               label="Email"
               isRequired
               type="email"
+              value={field.state.value}
+              onBlur={field.handleBlur}
+              onChange={field.handleChange}
+              errorMessage={getFieldErrorMessage(field)}
+            />
+          )}
+        />
+
+        <form.AppField
+          name="whereWeWork"
+          children={(field) => (
+            <field.TextField
+              label="Where we work"
+              isRequired
+              value={field.state.value}
+              onBlur={field.handleBlur}
+              onChange={field.handleChange}
+              errorMessage={getFieldErrorMessage(field)}
+            />
+          )}
+        />
+        <form.AppField
+          name="organizationalStatus"
+          children={(field) => (
+            <field.TextField
+              label="Organizational Status"
+              isRequired
+              value={field.state.value}
+              onBlur={field.handleBlur}
+              onChange={field.handleChange}
+              errorMessage={getFieldErrorMessage(field)}
+            />
+          )}
+        />
+
+        <form.AppField
+          name="bio"
+          children={(field) => (
+            <field.TextField
+              label="Bio"
+              isRequired
+              value={field.state.value}
+              onBlur={field.handleBlur}
+              onChange={field.handleChange}
+              errorMessage={getFieldErrorMessage(field)}
+            />
+          )}
+        />
+
+        <form.AppField
+          name="mission"
+          children={(field) => (
+            <field.TextField
+              label="Mission statement"
+              isRequired
+              value={field.state.value}
+              onBlur={field.handleBlur}
+              onChange={field.handleChange}
+              errorMessage={getFieldErrorMessage(field)}
+            />
+          )}
+        />
+
+        <form.AppField
+          name="focusAreas"
+          children={(field) => (
+            <field.TextField
+              label="Focus Areas"
+              isRequired
+              value={field.state.value}
+              onBlur={field.handleBlur}
+              onChange={field.handleChange}
+              errorMessage={getFieldErrorMessage(field)}
+            />
+          )}
+        />
+
+        <form.AppField
+          name="communitesServed"
+          children={(field) => (
+            <field.TextField
+              label="Communities Served"
+              isRequired
+              value={field.state.value}
+              onBlur={field.handleBlur}
+              onChange={field.handleChange}
+              errorMessage={getFieldErrorMessage(field)}
+            />
+          )}
+        />
+        <form.AppField
+          name="strategies"
+          children={(field) => (
+            <field.TextField
+              label="Strategies/Tactics"
+              isRequired
               value={field.state.value}
               onBlur={field.handleBlur}
               onChange={field.handleChange}
