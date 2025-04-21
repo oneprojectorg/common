@@ -1,16 +1,35 @@
 import { createFormHook, createFormHookContexts } from '@tanstack/react-form';
 
 import { Button } from '@op/ui/Button';
+import { Select } from '@op/ui/Select';
 import { TextField } from '@op/ui/TextField';
+import { cn } from '@op/ui/utils';
+import { ReactNode } from 'react';
 
 const { fieldContext, formContext } = createFormHookContexts();
+
 export const { useAppForm } = createFormHook({
   fieldComponents: {
     TextField,
+    Select,
   },
   formComponents: {
-    Button,
-    SubmitButton: (props) => <Button {...props} type="submit" />,
+    Button: ({
+      className,
+      ...props
+    }: {
+      className?: string;
+      children: ReactNode;
+    }) => <Button {...props} className={cn('min-w-48', className)} />,
+    SubmitButton: ({
+      className,
+      ...props
+    }: {
+      className?: string;
+      children: ReactNode;
+    }) => (
+      <Button {...props} className={cn('min-w-48', className)} type="submit" />
+    ),
   },
   fieldContext,
   formContext,

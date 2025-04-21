@@ -1,11 +1,17 @@
 import { z } from 'zod';
 
+import { Select, SelectItem } from '@op/ui/Select';
+
 import { FormContainer } from '../form/FormContainer';
 import { FormHeader } from '../form/FormHeader';
 import { useMultiStep } from '../form/multiStep';
 import { getFieldErrorMessage, useAppForm } from '../form/utils';
 
 import type { StepProps } from '../form/utils';
+import { TextField } from '@op/ui/TextField';
+import { ToggleButton } from '@op/ui/ToggleButton';
+import { ListBox } from '@op/ui/ListBox';
+import { Button } from '@op/ui/Button';
 
 export const validator = z.object({
   organizationName: z
@@ -14,20 +20,23 @@ export const validator = z.object({
     .max(20, { message: 'Must be at most 20 characters' }),
   website: z
     .string()
-    .url({ message: 'Invalid website address' })
+    // .url({ message: 'Invalid website address' })
     .min(1, { message: 'Required' })
     .max(20, { message: 'Must be at most 20 characters' }),
   email: z
     .string()
     .email({ message: 'Invalid email' })
     .max(20, { message: 'Must be at most 20 characters' }),
+  type: z.string().max(20, { message: 'Must be at most 20 characters' }),
+  bio: z.string().max(200, { message: 'Must be at most 200 characters' }),
+  mission: z.string().max(200, { message: 'Must be at most 200 characters' }),
 });
 
 export const OrganizationDetailsForm = ({
   defaultValues,
   resolver,
 }: StepProps) => {
-  const { onNext } = useMultiStep();
+  const { onNext, onBack } = useMultiStep();
   const form = useAppForm({
     defaultValues,
     validators: {
@@ -96,36 +105,45 @@ export const OrganizationDetailsForm = ({
         <form.AppField
           name="whereWeWork"
           children={(field) => (
-            <field.TextField
+            <ListBox
               label="Where we work"
               isRequired
               value={field.state.value}
               onBlur={field.handleBlur}
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
-            />
+              selectionMode="multiple"
+            >
+              <SelectItem id="nonprofit">Nonprofit</SelectItem>
+              <SelectItem id="forprofit">Forprofit</SelectItem>
+              <SelectItem id="government">Government Entity</SelectItem>
+            </ListBox>
           )}
         />
         <form.AppField
-          name="organizationalStatus"
+          name="type"
           children={(field) => (
-            <field.TextField
+            <Select
               label="Organizational Status"
-              isRequired
-              value={field.state.value}
+              placeholder="Select"
+              selectedKey={field.state.value}
+              onSelectionChange={field.handleChange}
               onBlur={field.handleBlur}
-              onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
-            />
+            >
+              <SelectItem id="nonprofit">Nonprofit</SelectItem>
+              <SelectItem id="forprofit">Forprofit</SelectItem>
+              <SelectItem id="government">Government Entity</SelectItem>
+            </Select>
           )}
         />
 
         <form.AppField
           name="bio"
           children={(field) => (
-            <field.TextField
+            <TextField
+              useTextArea
               label="Bio"
-              isRequired
               value={field.state.value}
               onBlur={field.handleBlur}
               onChange={field.handleChange}
@@ -137,13 +155,14 @@ export const OrganizationDetailsForm = ({
         <form.AppField
           name="mission"
           children={(field) => (
-            <field.TextField
+            <TextField
+              useTextArea
               label="Mission statement"
-              isRequired
               value={field.state.value}
               onBlur={field.handleBlur}
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
+              className="min-h-24"
             />
           )}
         />
@@ -151,44 +170,72 @@ export const OrganizationDetailsForm = ({
         <form.AppField
           name="focusAreas"
           children={(field) => (
-            <field.TextField
+            <ListBox
               label="Focus Areas"
-              isRequired
-              value={field.state.value}
+              placeholder="Select one or more"
+              onSelectionChange={field.handleChange}
               onBlur={field.handleBlur}
-              onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
-            />
+              selectionMode="multiple"
+            >
+              <SelectItem id="nonprofit">Nonprofit</SelectItem>
+              <SelectItem id="forprofit">Forprofit</SelectItem>
+              <SelectItem id="government">Government Entity</SelectItem>
+            </ListBox>
           )}
         />
 
         <form.AppField
           name="communitesServed"
           children={(field) => (
-            <field.TextField
+            <ListBox
               label="Communities Served"
-              isRequired
               value={field.state.value}
               onBlur={field.handleBlur}
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
-            />
+              selectionMode="multiple"
+            >
+              <SelectItem id="nonprofit">Nonprofit</SelectItem>
+              <SelectItem id="forprofit">Forprofit</SelectItem>
+              <SelectItem id="government">Government Entity</SelectItem>
+            </ListBox>
           )}
         />
         <form.AppField
           name="strategies"
           children={(field) => (
-            <field.TextField
+            <ListBox
               label="Strategies/Tactics"
-              isRequired
               value={field.state.value}
               onBlur={field.handleBlur}
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
-            />
+              selectionMode="multiple"
+            >
+              <SelectItem id="nonprofit">Nonprofit</SelectItem>
+              <SelectItem id="forprofit">Forprofit</SelectItem>
+              <SelectItem id="government">Government Entity</SelectItem>
+            </ListBox>
           )}
         />
-        <form.SubmitButton>Finish</form.SubmitButton>
+
+        <form.AppField
+          name="networkOrganization"
+          children={(field) => (
+            <div className="flex gap-4">
+              Does your organization serve as a network or coalition with member
+              organizations?
+              <ToggleButton />
+            </div>
+          )}
+        />
+        <div className="flex justify-between">
+          <form.Button color="secondary" onPress={onBack}>
+            Back
+          </form.Button>
+          <form.SubmitButton>Finish</form.SubmitButton>
+        </div>
       </FormContainer>
     </form>
   );

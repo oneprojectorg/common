@@ -27,14 +27,9 @@ import { objectsInStorage } from './storage.sql';
 
 // Enums for organization types and status
 export enum OrgType {
-  COOPERATIVE = 'cooperative',
-  MUTUAL_AID = 'mutual_aid',
-  COMMUNITY_ORG = 'community_org',
-  SOCIAL_ENTERPRISE = 'social_enterprise',
-  COLLECTIVE = 'collective',
-  COMMONS = 'commons',
-  CREDIT_UNION = 'credit_union',
-  LAND_TRUST = 'land_trust',
+  NONPROFIT = 'nonprofit',
+  FORPROFIT = 'forprofit',
+  GOVERNMENT = 'government',
   OTHER = 'other',
 }
 

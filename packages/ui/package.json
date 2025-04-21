@@ -28,6 +28,7 @@
     "./Stepper": "./src/components/Stepper/index.ts",
     "./Switch": "./src/components/Switch.tsx",
     "./Tabs": "./src/components/Tabs.tsx",
+    "./ToggleButton": "./src/components/ToggleButton.tsx",
     "./TagGroup": "./src/components/TagGroup.tsx",
     "./TextField": "./src/components/TextField.tsx",
     "./Tooltip": "./src/components/Tooltip.tsx",
@@ -37,6 +38,7 @@
     "./useGesture": "./src/useGesture.ts",
     "./utils": "./src/lib/utils.ts"
   },
+  "module": "./src/index.ts",
   "scripts": {
     "build": "storybook build",
     "dev": "storybook dev -p 3600 --no-open",
