@@ -1,42 +1,25 @@
-import { z } from 'zod';
+import { StepperProgressIndicator } from '@op/ui/Stepper';
 
-import { OrganizationDetailsForm, PersonalDetailsForm } from './Steps';
+import { MultiStepProvider } from '../form/multiStep';
+import { Portal } from '../Portal';
 
+import {
+  OrganizationDetailsForm,
+  validator as OrganizationDetailsFormFormValidator,
+} from './OrganizationDetailsForm';
+import {
+  PersonalDetailsForm,
+  validator as PersonalDetailsFormValidator,
+} from './PersonalDetailsForm';
+
+import type { UnionToIntersection } from '../form/utils';
 import type { Form, Return, Schema } from '@formity/react';
+import type { z } from 'zod';
 
 const resolvers = {
-  PersonalDetailsForm: z.object({
-    fullName: z
-      .string()
-      .min(1, { message: 'Required' })
-      .max(20, { message: 'Must be at most 20 characters' }),
-    title: z
-      .string()
-      .min(1, { message: 'Required' })
-      .max(20, { message: 'Must be at most 20 characters' }),
-  }),
-  OrganizationDetailsForm: z.object({
-    organizationName: z
-      .string()
-      .min(1, { message: 'Required' })
-      .max(20, { message: 'Must be at most 20 characters' }),
-    website: z
-      .string()
-      .url({ message: 'Invalid website address' })
-      .min(1, { message: 'Required' })
-      .max(20, { message: 'Must be at most 20 characters' }),
-    email: z
-      .string()
-      .email({ message: 'Invalid email' })
-      .max(20, { message: 'Must be at most 20 characters' }),
-  }),
+  PersonalDetailsForm: PersonalDetailsFormValidator,
+  OrganizationDetailsForm: OrganizationDetailsFormFormValidator,
 } as const;
-
-type UnionToIntersection<U> = (U extends any ? (x: U) => any : never) extends (
-  x: infer I,
-) => any
-  ? I
-  : never;
 
 type FormType = z.infer<
   UnionToIntersection<(typeof resolvers)[keyof typeof resolvers]>
@@ -48,6 +31,24 @@ export type Values = [
   Return<FormType>,
 ];
 
+const ProgressIndicator = ({ currentStep = 0 }: { currentStep: number }) => (
+  <Portal id="top-slot">
+    <StepperProgressIndicator
+      currentStep={currentStep}
+      items={[
+        {
+          key: 0,
+          label: 'Personal Details',
+        },
+        {
+          key: 1,
+          label: 'Organization Details',
+        },
+      ]}
+    />
+  </Portal>
+);
+
 export const schema: Schema<Values> = [
   {
     form: {
@@ -55,13 +56,16 @@ export const schema: Schema<Values> = [
         fullName: ['', []],
         title: ['', []],
       }),
-      render: ({ values, onNext }) => (
-        <PersonalDetailsForm
-          key="main"
-          defaultValues={values}
-          resolver={resolvers.PersonalDetailsForm}
-          onSubmit={onNext}
-        />
+      render: ({ values, onNext, onBack }) => (
+        <>
+          <ProgressIndicator currentStep={0} />
+          <MultiStepProvider onNext={onNext} onBack={onBack}>
+            <PersonalDetailsForm
+              defaultValues={values}
+              resolver={resolvers.PersonalDetailsForm}
+            />
+          </MultiStepProvider>
+        </>
       ),
     },
   },
@@ -72,13 +76,17 @@ export const schema: Schema<Values> = [
         website: ['', []],
         email: ['', []],
       }),
-      render: ({ values, onNext }) => (
-        <OrganizationDetailsForm
-          key="main"
-          defaultValues={values}
-          resolver={resolvers.OrganizationDetailsForm}
-          onSubmit={onNext}
-        />
+      render: ({ values, onNext, onBack }) => (
+        <>
+          <ProgressIndicator currentStep={1} />
+          <MultiStepProvider onNext={onNext} onBack={onBack}>
+            <OrganizationDetailsForm
+              defaultValues={values}
+              resolver={resolvers.OrganizationDetailsForm}
+              onSubmit={onNext}
+            />
+          </MultiStepProvider>
+        </>
       ),
     },
   },
