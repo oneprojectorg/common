@@ -1,18 +1,51 @@
 import { z } from 'zod';
 
-import { Step, Step2 } from './Step';
+import { OrganizationDetailsForm, PersonalDetailsForm } from './Steps';
 
 import type { Form, Return, Schema } from '@formity/react';
 
+const resolvers = {
+  PersonalDetailsForm: z.object({
+    fullName: z
+      .string()
+      .min(1, { message: 'Required' })
+      .max(20, { message: 'Must be at most 20 characters' }),
+    title: z
+      .string()
+      .min(1, { message: 'Required' })
+      .max(20, { message: 'Must be at most 20 characters' }),
+  }),
+  OrganizationDetailsForm: z.object({
+    organizationName: z
+      .string()
+      .min(1, { message: 'Required' })
+      .max(20, { message: 'Must be at most 20 characters' }),
+    website: z
+      .string()
+      .url({ message: 'Invalid website address' })
+      .min(1, { message: 'Required' })
+      .max(20, { message: 'Must be at most 20 characters' }),
+    email: z
+      .string()
+      .email({ message: 'Invalid email' })
+      .max(20, { message: 'Must be at most 20 characters' }),
+  }),
+} as const;
+
+type UnionToIntersection<U> = (U extends any ? (x: U) => any : never) extends (
+  x: infer I,
+) => any
+  ? I
+  : never;
+
+type FormType = z.infer<
+  UnionToIntersection<(typeof resolvers)[keyof typeof resolvers]>
+>;
+
 export type Values = [
-  Form<{ fullName: string; title: string }>,
-  Form<{ dog: string; cat: string }>,
-  Return<{
-    fullName: string;
-    title: string;
-    dog: string;
-    cat: string;
-  }>,
+  Form<z.infer<typeof resolvers.PersonalDetailsForm>>,
+  Form<z.infer<typeof resolvers.OrganizationDetailsForm>>,
+  Return<FormType>,
 ];
 
 export const schema: Schema<Values> = [
@@ -23,19 +56,10 @@ export const schema: Schema<Values> = [
         title: ['', []],
       }),
       render: ({ values, onNext }) => (
-        <Step
+        <PersonalDetailsForm
           key="main"
           defaultValues={values}
-          resolver={z.object({
-            fullName: z
-              .string()
-              .min(1, { message: 'Required' })
-              .max(20, { message: 'Must be at most 20 characters' }),
-            title: z
-              .string()
-              .min(1, { message: 'Required' })
-              .max(20, { message: 'Must be at most 20 characters' }),
-          })}
+          resolver={resolvers.PersonalDetailsForm}
           onSubmit={onNext}
         />
       ),
@@ -44,34 +68,21 @@ export const schema: Schema<Values> = [
   {
     form: {
       values: () => ({
-        dog: ['', []],
-        cat: ['', []],
+        organizationName: ['', []],
+        website: ['', []],
+        email: ['', []],
       }),
       render: ({ values, onNext }) => (
-        <Step2
+        <OrganizationDetailsForm
           key="main"
           defaultValues={values}
-          resolver={z.object({
-            dog: z
-              .string()
-              .min(1, { message: 'Required' })
-              .max(20, { message: 'Must be at most 20 characters' }),
-            cat: z
-              .string()
-              .min(1, { message: 'Required' })
-              .max(20, { message: 'Must be at most 20 characters' }),
-          })}
+          resolver={resolvers.OrganizationDetailsForm}
           onSubmit={onNext}
         />
       ),
     },
   },
   {
-    return: ({ fullName, title, dog, cat }) => ({
-      fullName,
-      title,
-      dog,
-      cat,
-    }),
+    return: (props) => props,
   },
 ];

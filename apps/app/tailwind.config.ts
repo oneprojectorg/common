@@ -26,7 +26,7 @@ const config: Pick<Config, 'content' | 'theme' | 'presets'> = {
           },
         ],
         header: [
-          '1.75rem',
+          '2rem',
           {
             lineHeight: '1.925rem',
             letterSpacing: '-0.02625rem',
