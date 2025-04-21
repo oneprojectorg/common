@@ -1,6 +1,9 @@
 import { z } from 'zod';
 
+import { ListBox } from '@op/ui/ListBox';
 import { Select, SelectItem } from '@op/ui/Select';
+import { TextField } from '@op/ui/TextField';
+import { ToggleButton } from '@op/ui/ToggleButton';
 
 import { FormContainer } from '../form/FormContainer';
 import { FormHeader } from '../form/FormHeader';
@@ -8,9 +11,6 @@ import { useMultiStep } from '../form/multiStep';
 import { getFieldErrorMessage, useAppForm } from '../form/utils';
 
 import type { StepProps } from '../form/utils';
-import { TextField } from '@op/ui/TextField';
-import { ToggleButton } from '@op/ui/ToggleButton';
-import { ListBox } from '@op/ui/ListBox';
 
 export const validator = z.object({
   organizationName: z
@@ -147,6 +147,7 @@ export const OrganizationDetailsForm = ({
               onBlur={field.handleBlur}
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
+              textareaProps={{ className: 'min-h-28' }}
             />
           )}
         />

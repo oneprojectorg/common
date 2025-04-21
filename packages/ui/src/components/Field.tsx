@@ -10,10 +10,11 @@ import {
   Text,
 } from 'react-aria-components';
 import { twMerge } from 'tailwind-merge';
-import { tv, VariantProps } from 'tailwind-variants';
+import { tv } from 'tailwind-variants';
 
 import { composeTailwindRenderProps, focusRing } from '../utils';
 
+import type { ReactNode } from 'react';
 import type {
   FieldErrorProps,
   GroupProps,
@@ -22,7 +23,7 @@ import type {
   TextAreaProps,
   TextProps,
 } from 'react-aria-components';
-import { ReactNode } from 'react';
+import type { VariantProps } from 'tailwind-variants';
 
 export const Label = (props: LabelProps) => {
   return (
@@ -75,7 +76,7 @@ export const fieldBorderStyles = tv({
 
 export const fieldGroupStyles = tv({
   extend: focusRing,
-  base: 'group flex items-center overflow-hidden rounded-md bg-white placeholder:text-teal disabled:placeholder:text-lightGray',
+  base: 'group flex items-center overflow-hidden bg-white placeholder:text-teal disabled:placeholder:text-lightGray',
   variants: fieldBorderStyles.variants,
 });
 
@@ -169,7 +170,7 @@ export const TextArea = ({
       {...props}
       className={composeTailwindRenderProps(
         props.className,
-        'min-w-0 flex-1 items-center bg-white px-2 py-1.5 text-sm text-darkGray outline outline-0 disabled:text-neutral-400',
+        'min-w-0 flex-1 items-center rounded border border-offWhite bg-white p-4 text-sm text-darkGray disabled:text-neutral-400',
       )}
     />
   );

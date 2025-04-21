@@ -9,11 +9,11 @@ import {
   FieldError,
   FieldGroup,
   Input,
-  InputWithVariantsProps,
   Label,
   TextArea,
 } from './Field';
 
+import type { InputWithVariantsProps } from './Field';
 import type {
   TextFieldProps as AriaTextFieldProps,
   TextAreaProps,
