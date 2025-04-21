@@ -2,7 +2,7 @@ import { FullScreenSplitAside } from '@/components/layout/split/FullScreenSplitA
 import { FullScreenSplitLayout } from '@/components/layout/split/FullScreenSplitLayout';
 import { FullScreenSplitMain } from '@/components/layout/split/FullScreenSplitMain';
 
-const LoginLayout = ({ children }: { children: React.ReactNode }) => {
+const StartLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <FullScreenSplitLayout>
       <div id="top-slot" className="absolute top-0 w-2/3" />
@@ -12,4 +12,4 @@ const LoginLayout = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-export default LoginLayout;
+export default StartLayout;
