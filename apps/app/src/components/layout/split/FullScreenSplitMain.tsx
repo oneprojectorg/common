@@ -7,7 +7,7 @@ export const FullScreenSplitMain = ({
   children: React.ReactNode;
 }) => {
   return (
-    <main className="flex size-full flex-col overflow-y-auto p-4 sm:col-span-2 sm:p-8">
+    <main className="flex size-full flex-col p-4 sm:col-span-2 sm:p-8">
       <section>
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-2">
@@ -16,8 +16,8 @@ export const FullScreenSplitMain = ({
           </div>
         </div>
       </section>
-      <section className="mt-20 flex size-full max-h-screen justify-center overflow-y-auto">
-        {children}
+      <section className="flex size-full items-center justify-center">
+        <div className="py-20">{children}</div>
       </section>
     </main>
   );
