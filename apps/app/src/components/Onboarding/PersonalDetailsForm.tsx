@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { ImageUploader } from '@op/ui/ImageUploader';
+
 import { FormContainer } from '../form/FormContainer';
 import { FormHeader } from '../form/FormHeader';
 import { useMultiStep } from '../form/multiStep';
@@ -43,6 +45,7 @@ export const PersonalDetailsForm = ({ defaultValues, resolver }: StepProps) => {
         <FormHeader text="Add your personal details">
           Tell us about yourself so others can find you.
         </FormHeader>
+        <ImageUploader label="Profile Picture" />
         <div className="flex flex-col gap-4">
           <form.AppField
             name="fullName"

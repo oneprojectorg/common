@@ -13,6 +13,7 @@
     "./EditableText": "./src/components/EditableText.tsx",
     "./Field": "./src/components/Field.tsx",
     "./Form": "./src/components/Form.tsx",
+    "./ImageUploader": "./src/components/ImageUploader.tsx",
     "./Keyboard": "./src/components/Keyboard.tsx",
     "./ListBox": "./src/components/ListBox.tsx",
     "./Menu": "./src/components/Menu.tsx",

@@ -10,6 +10,6 @@ export const FormHeader = ({
   <div className="flex flex-col gap-4 px-6">
     <Header1 className="text-center">{text}</Header1>
 
-    <p className="text-center text-midGray">{children}</p>
+    <p className="text-center text-darkGray">{children}</p>
   </div>
 );

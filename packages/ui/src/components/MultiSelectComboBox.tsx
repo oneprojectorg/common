@@ -5,10 +5,10 @@ import { useEffect, useRef, useState } from 'react';
 
 import { Label } from './Field';
 
-type Option = {
+interface Option {
   id: string;
   label: string;
-};
+}
 
 export const MultiSelectComboBox = ({
   items = [],
@@ -148,7 +148,7 @@ export const MultiSelectComboBox = ({
               {selectedOptions.map((option) => (
                 <div
                   key={option.isOther ? 'other' : option.id}
-                  className="flex items-center rounded bg-black/5 p-2 text-base text-charcoal"
+                  className="flex items-center rounded bg-black/5 p-2 text-charcoal"
                 >
                   <span>{option.label}</span>
                   <button
