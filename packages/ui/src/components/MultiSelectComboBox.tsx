@@ -149,6 +149,17 @@ export const MultiSelectComboBox = ({
     setIsOpen(true);
   };
 
+  // Add inputValue as a new tag if not empty and not already selected
+  const addInputAsTag = () => {
+    const trimmed = inputValue.trim();
+
+    if (trimmed && !selectedOptions.some((item) => item.label === trimmed)) {
+      setSelectedOptions([...selectedOptions, { id: trimmed, label: trimmed }]);
+    }
+
+    setInputValue('');
+  };
+
   // Handle input keydown
   const handleInputKeyDown = (e) => {
     if (
@@ -161,7 +172,14 @@ export const MultiSelectComboBox = ({
       // Select the first filtered item
       handleOptionClick(filteredItems[0]);
       setInputValue('');
+    } else if (e.key === 'Tab') {
+      addInputAsTag();
     }
+  };
+
+  // Handle input blur
+  const handleInputBlur = () => {
+    addInputAsTag();
   };
 
   return (
@@ -174,7 +192,7 @@ export const MultiSelectComboBox = ({
       <div className="relative" ref={dropdownRef}>
         {/* Dropdown button / Selected options display */}
         <div
-          className="flex min-h-10 w-full cursor-pointer flex-wrap items-center rounded-md border border-offWhite bg-white px-3 py-2 text-sm"
+          className="flex min-h-10 w-full cursor-pointer flex-wrap items-center rounded-md border border-offWhite bg-white px-4 py-2 text-sm"
           onClick={toggleDropdown}
         >
           <div className="flex w-full flex-wrap items-center gap-1">
@@ -196,17 +214,14 @@ export const MultiSelectComboBox = ({
             <input
               ref={inputRef}
               type="text"
-              className="ml-1 min-w-[40px] flex-1 border-none bg-transparent py-1 text-sm outline-none"
+              className="ml-1 min-w-[40px] flex-1 border-none bg-transparent py-1 text-sm outline-none placeholder:text-midGray"
               value={inputValue}
               onChange={handleInputChange}
               onKeyDown={handleInputKeyDown}
+              onBlur={handleInputBlur}
               onFocus={() => setIsOpen(true)}
               placeholder={placeholder}
               style={{ minWidth: 40 }}
-            />
-            <ChevronDown
-              size={18}
-              className={`text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
             />
           </div>
         </div>
@@ -228,49 +243,9 @@ export const MultiSelectComboBox = ({
                     setInputValue('');
                   }}
                 >
-                  <div
-                    className={`mr-2 flex size-5 items-center justify-center rounded border ${
-                      selectedOptions.some((item) => item.id === option.id)
-                        ? 'border-blue-500 bg-blue-500 text-white'
-                        : 'border-gray-300'
-                    }`}
-                  >
-                    {selectedOptions.some((item) => item.id === option.id) && (
-                      <Check size={14} />
-                    )}
-                  </div>
                   {option.label}
                 </li>
               ))}
-
-              {/* "Other" option */}
-              {!showOtherInput && (
-                <li
-                  className="flex cursor-pointer items-center px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  onClick={handleOtherClick}
-                >
-                  <div className="mr-2 flex size-5 items-center justify-center text-gray-400">
-                    <Plus size={14} />
-                  </div>
-                  Add "Other" option
-                </li>
-              )}
-
-              {/* "Other" input field */}
-              {showOtherInput && (
-                <li className="px-3 py-2">
-                  <input
-                    ref={otherInputRef}
-                    type="text"
-                    className="w-full rounded border border-gray-300 p-1 text-sm"
-                    placeholder="Type and press Enter..."
-                    value={otherValue}
-                    onChange={handleOtherInputChange}
-                    onKeyDown={handleOtherInputKeyDown}
-                    onBlur={handleOtherInputBlur}
-                  />
-                </li>
-              )}
             </ul>
           </div>
         )}

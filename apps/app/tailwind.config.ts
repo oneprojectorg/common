@@ -22,7 +22,7 @@ const config: Pick<Config, 'content' | 'theme' | 'presets'> = {
         base: [
           '0.875rem',
           {
-            lineHeight: '1.5rem',
+            lineHeight: '1.1375rem',
           },
         ],
         header: [
