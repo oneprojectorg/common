@@ -1,9 +1,11 @@
 import { createFormHook, createFormHookContexts } from '@tanstack/react-form';
 
-import { Button, ButtonProps } from '@op/ui/Button';
+import { Button } from '@op/ui/Button';
 import { Select } from '@op/ui/Select';
 import { TextField } from '@op/ui/TextField';
 import { cn } from '@op/ui/utils';
+
+import type { ButtonProps } from '@op/ui/Button';
 
 const { fieldContext, formContext } = createFormHookContexts();
 
@@ -29,10 +31,10 @@ export interface StepProps {
   resolver?: any;
 }
 
-export const getFieldErrorMessage = (field) => {
-  return field.state.meta.errors
-    .map((err: { message: string }) => err?.message)
-    .join(', ');
+export const getFieldErrorMessage = (field: {
+  state: { meta: { errors: { message: string }[] } };
+}): string => {
+  return field.state.meta.errors.map((err) => err.message).join(', ');
 };
 
 export type UnionToIntersection<U> = (

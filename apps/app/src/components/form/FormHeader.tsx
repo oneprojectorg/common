@@ -1,5 +1,7 @@
 import { Header1 } from '../Header';
 
+import type { ReactNode } from 'react';
+
 export const FormHeader = ({
   text,
   children,

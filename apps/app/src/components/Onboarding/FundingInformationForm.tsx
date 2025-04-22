@@ -48,7 +48,7 @@ export const FundingInformationForm = ({
 
         <form.AppField
           name="isReceivingFunds"
-          children={(field) => (
+          children={() => (
             <ToggleRow>
               Is your organization seeking funding?
               <ToggleButton />
@@ -57,7 +57,7 @@ export const FundingInformationForm = ({
         />
         <form.AppField
           name="isOfferingFunds"
-          children={(field) => (
+          children={() => (
             <ToggleRow>
               Does your organization offer funding?
               <ToggleButton />
@@ -66,7 +66,7 @@ export const FundingInformationForm = ({
         />
         <form.AppField
           name="acceptingApplications"
-          children={(field) => (
+          children={() => (
             <ToggleRow>
               Are organizations currently able to apply for funding?
               <ToggleButton />

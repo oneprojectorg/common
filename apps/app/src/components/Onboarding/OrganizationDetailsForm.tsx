@@ -1,6 +1,5 @@
 import { z } from 'zod';
 
-import { ListBox } from '@op/ui/ListBox';
 import { MultiSelectComboBox } from '@op/ui/MultiSelectComboBox';
 import { Select, SelectItem } from '@op/ui/Select';
 import { TextField } from '@op/ui/TextField';
@@ -228,7 +227,7 @@ export const OrganizationDetailsForm = ({
 
         <form.AppField
           name="networkOrganization"
-          children={(field) => (
+          children={() => (
             <ToggleRow>
               Does your organization serve as a network or coalition with member
               organizations?

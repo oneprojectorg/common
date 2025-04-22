@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, ChevronDown, Plus, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 import { Label } from './Field';
@@ -8,6 +8,7 @@ import { Label } from './Field';
 interface Option {
   id: string;
   label: string;
+  isOther?: boolean;
 }
 
 export const MultiSelectComboBox = ({
@@ -24,16 +25,19 @@ export const MultiSelectComboBox = ({
   const [isOpen, setIsOpen] = useState(false);
   const [selectedOptions, setSelectedOptions] = useState<Array<Option>>([]);
   const [inputValue, setInputValue] = useState('');
-  const inputRef = useRef(null);
-  const [otherValue, setOtherValue] = useState('');
+  const inputRef = useRef<HTMLInputElement | null>(null);
   const [showOtherInput, setShowOtherInput] = useState(false);
-  const dropdownRef = useRef(null);
-  const otherInputRef = useRef(null);
+  const dropdownRef = useRef<HTMLDivElement | null>(null);
+  const otherInputRef = useRef<HTMLInputElement | null>(null);
 
   // Handle outside clicks to close dropdown
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        event.target instanceof Node &&
+        !dropdownRef.current.contains(event.target)
+      ) {
         setIsOpen(false);
       }
     };
@@ -45,7 +49,6 @@ export const MultiSelectComboBox = ({
     };
   }, []);
 
-  // Focus on the "Other" input field when it becomes visible
   useEffect(() => {
     if (showOtherInput && otherInputRef.current) {
       otherInputRef.current.focus();
@@ -60,94 +63,49 @@ export const MultiSelectComboBox = ({
     }
   };
 
-  const handleOptionClick = (option) => {
+  // Remove Plus import if not used
+
+  const handleOptionClick = (option: Option) => {
     // Check if option is already selected
-    const isSelected = selectedOptions.some(item => item.id === option.id);
+    const isSelected = selectedOptions.some((item) => item.id === option.id);
 
     if (isSelected) {
       // Remove option if already selected
       setSelectedOptions(
-        selectedOptions.filter(item => item.id !== option.id),
+        selectedOptions.filter((item) => item.id !== option.id),
       );
-    }
-    else {
+    } else {
       // Add option if not selected
       setSelectedOptions([...selectedOptions, option]);
     }
   };
 
-  const handleRemoveOption = (option, e) => {
+  const handleRemoveOption = (
+    option: Option,
+    e: React.MouseEvent<HTMLButtonElement>,
+  ) => {
     e.stopPropagation();
 
     if (option.isOther) {
       // If removing the "Other" option, also reset other-related states
-      setSelectedOptions(selectedOptions.filter(item => !item.isOther));
-      setOtherValue('');
+      setSelectedOptions(selectedOptions.filter((item) => !item.isOther));
       setShowOtherInput(false);
-    }
-    else {
+    } else {
       setSelectedOptions(
-        selectedOptions.filter(item => item.id !== option.id),
+        selectedOptions.filter((item) => item.id !== option.id),
       );
     }
   };
 
-  const handleOtherClick = () => {
-    setShowOtherInput(true);
-  };
-
-  const handleOtherInputChange = (e) => {
-    setOtherValue(e.target.value);
-  };
-
-  const handleOtherInputKeyDown = (e) => {
-    if (e.key === 'Enter' && otherValue.trim()) {
-      // Add the custom "Other" option
-      const otherOption = {
-        id: 'other',
-        label: otherValue,
-        isOther: true,
-      };
-
-      // Remove any existing "Other" option
-      const filteredOptions = selectedOptions.filter(item => !item.isOther);
-
-      setSelectedOptions([...filteredOptions, otherOption]);
-      setShowOtherInput(false);
-    }
-    else if (e.key === 'Escape') {
-      setShowOtherInput(false);
-      setOtherValue('');
-    }
-  };
-
-  const handleOtherInputBlur = () => {
-    if (otherValue.trim()) {
-      // Add the custom "Other" option on blur if there's a value
-      const otherOption = {
-        id: 'other',
-        label: otherValue,
-        isOther: true,
-      };
-
-      // Remove any existing "Other" option
-      const filteredOptions = selectedOptions.filter(item => !item.isOther);
-
-      setSelectedOptions([...filteredOptions, otherOption]);
-    }
-
-    setShowOtherInput(false);
-  };
-
   // Filter items based on inputValue and not already selected
   const filteredItems = items.filter(
-    option =>
-      option.label.toLowerCase().includes(inputValue.toLowerCase())
-      && !selectedOptions.some(item => item.id === option.id),
+    (option) =>
+      option.label.toLowerCase().includes(inputValue.toLowerCase()) &&
+      !selectedOptions.some((item) => item.id === option.id),
   );
 
   // Handle input change
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(e.target.value);
     setIsOpen(true);
   };
@@ -156,7 +114,7 @@ export const MultiSelectComboBox = ({
   const addInputAsTag = () => {
     const trimmed = inputValue.trim();
 
-    if (trimmed && !selectedOptions.some(item => item.label === trimmed)) {
+    if (trimmed && !selectedOptions.some((item) => item.label === trimmed)) {
       setSelectedOptions([...selectedOptions, { id: trimmed, label: trimmed }]);
     }
 
@@ -164,20 +122,22 @@ export const MultiSelectComboBox = ({
   };
 
   // Handle input keydown
-  const handleInputKeyDown = (e) => {
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (
-      e.key === 'Backspace'
-      && inputValue === ''
-      && selectedOptions.length > 0
+      e.key === 'Backspace' &&
+      inputValue === '' &&
+      selectedOptions.length > 0
     ) {
       setSelectedOptions(selectedOptions.slice(0, -1));
-    }
-    else if (e.key === 'Enter' && filteredItems.length > 0) {
+    } else if (
+      e.key === 'Enter' &&
+      filteredItems.length > 0 &&
+      filteredItems[0]
+    ) {
       // Select the first filtered item
       handleOptionClick(filteredItems[0]);
       setInputValue('');
-    }
-    else if (e.key === 'Tab') {
+    } else if (e.key === 'Tab') {
       addInputAsTag();
     }
   };
@@ -188,7 +148,7 @@ export const MultiSelectComboBox = ({
   };
 
   return (
-    <div className="w-full">
+    <div className="flex w-full flex-col gap-2">
       <Label>
         {label}
         {isRequired && <span className="text-red"> *</span>}
@@ -198,7 +158,7 @@ export const MultiSelectComboBox = ({
         {/* Dropdown button / Selected options display */}
         <div
           className="flex min-h-10 w-full cursor-pointer flex-wrap items-center rounded-md border border-offWhite bg-white px-4 py-2 text-sm"
-          onClick={(e) => {
+          onClick={() => {
             // Only toggle if input is NOT focused
             if (document.activeElement !== inputRef.current) {
               toggleDropdown();
@@ -206,7 +166,7 @@ export const MultiSelectComboBox = ({
           }}
         >
           <div className="flex w-full flex-wrap items-center gap-1">
-            {selectedOptions.map(option => (
+            {selectedOptions.map((option) => (
               <div
                 key={option.isOther ? 'other' : option.id}
                 className="flex items-center rounded bg-black/5 p-2 text-charcoal"
@@ -215,7 +175,7 @@ export const MultiSelectComboBox = ({
                 <button
                   type="button"
                   className="ml-1 text-blue-700 hover:text-blue-900"
-                  onClick={e => handleRemoveOption(option, e)}
+                  onClick={(e) => handleRemoveOption(option, e)}
                 >
                   <X size={14} />
                 </button>
@@ -230,13 +190,11 @@ export const MultiSelectComboBox = ({
               onKeyDown={handleInputKeyDown}
               onBlur={handleInputBlur}
               onFocus={() => {
-                if (filteredItems.length > 0)
-                  setIsOpen(true);
+                if (filteredItems.length > 0) setIsOpen(true);
               }}
               onMouseDown={() => {
                 // Open dropdown before focus event
-                if (filteredItems.length > 0)
-                  setIsOpen(true);
+                if (filteredItems.length > 0) setIsOpen(true);
               }}
               placeholder={placeholder}
               style={{ minWidth: 40 }}
@@ -248,11 +206,11 @@ export const MultiSelectComboBox = ({
         {isOpen && filteredItems.length > 0 && (
           <div className="absolute z-10 mt-1 w-full rounded-md border border-gray-200 bg-white shadow-lg">
             <ul className="max-h-60 overflow-auto py-1">
-              {filteredItems.map(option => (
+              {filteredItems.map((option) => (
                 <li
                   key={option.id}
                   className={`flex cursor-pointer items-center px-3 py-2 text-sm hover:bg-gray-100 ${
-                    selectedOptions.some(item => item.id === option.id)
+                    selectedOptions.some((item) => item.id === option.id)
                       ? 'bg-blue-50'
                       : ''
                   }`}

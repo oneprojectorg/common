@@ -4,9 +4,12 @@ import { MultiStepProvider } from '../form/multiStep';
 import { Portal } from '../Portal';
 
 import {
+  FundingInformationForm,
+  validator as FundingInformationFormValidator,
+} from './FundingInformationForm';
+import {
   OrganizationDetailsForm,
   validator as OrganizationDetailsFormValidator,
-  validator as FundingInformationFormValidator,
 } from './OrganizationDetailsForm';
 import {
   PersonalDetailsForm,
@@ -16,7 +19,6 @@ import {
 import type { UnionToIntersection } from '../form/utils';
 import type { Form, Return, Schema } from '@formity/react';
 import type { z } from 'zod';
-import { FundingInformationForm } from './FundingInformationForm';
 
 const resolvers = {
   PersonalDetailsForm: PersonalDetailsFormValidator,
@@ -31,17 +33,9 @@ type FormType = z.infer<
 export type Values = [
   Form<z.infer<typeof resolvers.PersonalDetailsForm>>,
   Form<z.infer<typeof resolvers.OrganizationDetailsForm>>,
+  Form<z.infer<typeof resolvers.FundingInformationForm>>,
   Return<FormType>,
 ];
-
-const ProgressIndicator = ({ currentStep = 0 }: { currentStep: number }) => (
-  <Portal id="top-slot">
-    <StepperProgressIndicator
-      currentStep={currentStep}
-      numItems={schema.length}
-    />
-  </Portal>
-);
 
 export const schema: Schema<Values> = [
   {
@@ -69,6 +63,9 @@ export const schema: Schema<Values> = [
         organizationName: ['', []],
         website: ['', []],
         email: ['', []],
+        type: ['', []],
+        bio: ['', []],
+        mission: ['', []],
       }),
       render: ({ values, onNext, onBack }) => (
         <>
@@ -86,9 +83,9 @@ export const schema: Schema<Values> = [
   {
     form: {
       values: () => ({
-        organizationName: ['', []],
-        website: ['', []],
-        email: ['', []],
+        isReceivingFunds: [false, []],
+        isOfferingFunds: [false, []],
+        acceptingApplications: [false, []],
       }),
       render: ({ values, onNext, onBack }) => (
         <>
@@ -107,3 +104,14 @@ export const schema: Schema<Values> = [
     return: (props) => props,
   },
 ];
+
+function ProgressIndicator({ currentStep = 0 }: { currentStep: number }) {
+  return (
+    <Portal id="top-slot">
+      <StepperProgressIndicator
+        currentStep={currentStep}
+        numItems={schema.length}
+      />
+    </Portal>
+  );
+}
