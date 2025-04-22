@@ -128,7 +128,10 @@ export const DropdownItem = (
       {...props}
       textValue={textValue}
       className={composeRenderProps(props.className, (className, renderProps) =>
-        dropdownItemStyles({ ...renderProps, className }),
+        dropdownItemStyles({
+          ...renderProps,
+          className: `px-3 py-2 text-sm hover:bg-gray-100 group-hover:bg-gray-100 group-selected:bg-blue-50 ${className || ''}`,
+        }),
       )}
     >
       {composeRenderProps(props.children, (children, { isSelected }) => (

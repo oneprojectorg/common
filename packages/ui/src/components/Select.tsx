@@ -26,12 +26,12 @@ import type {
 
 const styles = tv({
   extend: focusRing,
-  base: 'flex w-full min-w-[150px] cursor-default items-center gap-4 rounded-lg border-2 border-neutral-500 bg-neutral-100 px-2 py-1.5 text-start shadow-none transition',
+  base: 'flex w-full min-w-[150px] cursor-default items-center gap-2 rounded-md border border-offWhite bg-white p-4 text-sm text-black placeholder:text-midGray shadow-none transition text-start',
   variants: {
     isDisabled: {
       false:
-        'text-neutral-700 group-invalid:border-red-600 hover:bg-neutral-200 pressed:bg-neutral-200',
-      true: 'border-white/5 bg-neutral-200 text-neutral-400',
+        'text-black group-invalid:border-red-600 hover:bg-offWhite pressed:bg-offWhite',
+      true: 'border-neutral-300 bg-offWhite text-neutral-400',
     },
   },
 });
@@ -73,30 +73,29 @@ export const Select = <T extends object>({
       {props.customTrigger ? (
         props.customTrigger
       ) : (
-        <Button className={cn(styles(), props.buttonClassName)}>
+        <Button className={cn(styles(), 'justify-start', props.buttonClassName)}>
           <SelectValue
             className={cn(
-              'flex-1 truncate placeholder-shown:text-neutral-500',
+              'flex-1 truncate text-left placeholder-shown:text-neutral-500',
               props.selectValueClassName,
             )}
           />
-
           <ChevronDown
             aria-hidden
-            className="size-[1em] text-neutral-600 group-disabled:text-neutral-400"
+            className="size-4 text-charcoal group-disabled:text-neutral-400 ml-2"
           />
         </Button>
       )}
       {description && <Description>{description}</Description>}
       <FieldError>{errorMessage}</FieldError>
       <Popover
-        className="!max-h-96 min-w-[--trigger-width]"
+        className="absolute z-10 mt-1 min-w-[--trigger-width] w-[--trigger-width] rounded-md border border-gray-200 bg-white shadow-lg !max-h-60"
         {...props.popoverProps}
       >
         <ListBox
           items={items}
           className={cn(
-            'max-h-[inherit] overflow-auto p-1 outline-none [clip-path:inset(0_0_0_0_round_.75rem)]',
+            'max-h-60 overflow-auto py-1 outline-none',
             props.listBoxClassName,
           )}
           selectionMode={selectionMode}
