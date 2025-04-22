@@ -95,6 +95,10 @@ body {
   overscroll-behavior-x: none;
 }
 
+html {
+  font-size: 14px;
+}
+
 @mixin backlight($spread, $size, $colorA, $colorB, $duration, $radius) {
   &:after {
     will-change: 'border, transform, background-position';

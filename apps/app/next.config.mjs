@@ -84,4 +84,3 @@ const config = {
 };
 
 export default withBundleAnalyzer(withTranspiledWorkspacesForNext(config));
-// 'http://127.0.0.1:54321/storage/v1/object/public/assets

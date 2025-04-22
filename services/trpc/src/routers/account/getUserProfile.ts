@@ -1,13 +1,13 @@
+import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
+import { userEncoder } from '../../encoders';
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withDB from '../../middlewares/withDB';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
 import type { OpenApiMeta } from 'trpc-to-openapi';
-import { TRPCError } from '@trpc/server';
-import { profilesEncoder } from '../../encoders';
 
 const endpoint = 'getUserProfile';
 
@@ -31,12 +31,12 @@ const getUserProfile = router({
     // Router
     .meta(meta)
     .input(z.undefined())
-    .output(profilesEncoder)
+    .output(userEncoder)
     .query(async ({ ctx }) => {
       const { db } = ctx.database;
       const { id } = ctx.user;
 
-      const result = await db.query.profiles.findFirst({
+      const result = await db.query.organizationUsers.findFirst({
         where: (table, { eq }) => eq(table.id, id),
       });
 

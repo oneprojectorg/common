@@ -1,7 +1,14 @@
-import { index, pgEnum, pgTable, uuid, varchar } from 'drizzle-orm/pg-core';
-import { autoId, enumToPgEnum, serviceRolePolicies } from '../../helpers';
-import { organizations } from './organizations.sql';
 import { relations } from 'drizzle-orm';
+import { index, pgEnum, pgTable, uuid, varchar } from 'drizzle-orm/pg-core';
+
+import {
+  autoId,
+  enumToPgEnum,
+  serviceRolePolicies,
+  timestamps,
+} from '../../helpers';
+
+import { organizations } from './organizations.sql';
 
 export enum LinkType {
   OFFERING = 'offering',
@@ -23,6 +30,7 @@ export const links = pgTable(
         onDelete: 'cascade',
         onUpdate: 'cascade',
       }),
+    ...timestamps,
   },
   (table) => [...serviceRolePolicies, index().on(table.id).concurrently()],
 );

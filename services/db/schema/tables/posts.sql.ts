@@ -12,7 +12,7 @@ export const posts = pgTable(
     content: text().notNull(),
     ...timestamps,
   },
-  table => [...serviceRolePolicies, index().on(table.id).concurrently()],
+  (table) => [...serviceRolePolicies, index().on(table.id).concurrently()],
 );
 
 export const postsToOrganizations = pgTable(
@@ -24,8 +24,9 @@ export const postsToOrganizations = pgTable(
     organizationId: uuid()
       .notNull()
       .references(() => organizations.id),
+    ...timestamps,
   },
-  table => [
+  (table) => [
     ...serviceRolePolicies,
     primaryKey({ columns: [table.organizationId, table.postId] }),
   ],

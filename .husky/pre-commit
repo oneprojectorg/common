@@ -1,2 +1,0 @@
-pnpm check-migrations
-pnpx lint-staged

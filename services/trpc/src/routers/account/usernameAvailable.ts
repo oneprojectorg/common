@@ -1,7 +1,7 @@
 import { and, eq, ne, sql } from 'drizzle-orm';
 import { z } from 'zod';
 
-import { profiles } from '@op/db/schema';
+import { organizationUsers } from '@op/db/schema';
 
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withDB from '../../middlewares/withDB';
@@ -39,9 +39,11 @@ const usernameAvailable = router({
           .regex(/^$|^[a-z0-9_]+$/),
       }),
     )
-    .output(z.object({
-      available: z.boolean(),
-    }))
+    .output(
+      z.object({
+        available: z.boolean(),
+      }),
+    )
     .query(async ({ input, ctx }) => {
       const { db } = ctx.database;
       const { username } = input;
@@ -56,8 +58,13 @@ const usernameAvailable = router({
         .select({
           exists: sql<boolean>`true`,
         })
-        .from(profiles)
-        .where(and(eq(profiles.username, username), ne(profiles.id, ctx.user.id)))
+        .from(organizationUsers)
+        .where(
+          and(
+            eq(organizationUsers.username, username),
+            ne(organizationUsers.id, ctx.user.id),
+          ),
+        )
         .limit(1);
 
       if (!result.length || !result[0]) {

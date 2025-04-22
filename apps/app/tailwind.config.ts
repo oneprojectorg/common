@@ -19,6 +19,12 @@ const config: Pick<Config, 'content' | 'theme' | 'presets'> = {
         mono: ['var(--font-mono)', ...defaultTheme.fontFamily.mono],
       },
       fontSize: {
+        base: [
+          '1rem',
+          {
+            lineHeight: '1.5rem',
+          },
+        ],
         header: [
           '1.75rem',
           {

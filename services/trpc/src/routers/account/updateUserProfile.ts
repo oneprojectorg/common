@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm';
 import { createSelectSchema } from 'drizzle-zod';
 import { z, ZodError } from 'zod';
 
-import { profiles } from '@op/db/schema';
+import { organizationUsers } from '@op/db/schema';
 
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withDB from '../../middlewares/withDB';
@@ -25,7 +25,7 @@ const meta: OpenApiMeta = {
   },
 };
 
-const outputSchema = createSelectSchema(profiles);
+const outputSchema = createSelectSchema(organizationUsers);
 
 const updateUserProfile = router({
   updateUserProfile: loggedProcedure
@@ -60,11 +60,11 @@ const updateUserProfile = router({
 
       try {
         result = await db
-          .update(profiles)
+          .update(organizationUsers)
           .set({
             ...input,
           })
-          .where(eq(profiles.id, id))
+          .where(eq(organizationUsers.id, id))
           .returning();
       } catch (error) {
         if (error instanceof Error && error.message.includes('duplicate')) {
