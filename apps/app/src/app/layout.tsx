@@ -77,7 +77,7 @@ const RootLayout = ({ children }: { children: React.ReactNode }) => {
       </head>
       <TRPCProvider>
         <body
-          className={`${roboto.variable} ${robotoMono.variable} ${robotoSerif.variable} ${inter.variable} overflow-x-hidden`}
+          className={`${roboto.variable} ${robotoMono.variable} ${robotoSerif.variable} ${inter.variable} overflow-x-hidden text-base`}
         >
           <div className="flex size-full max-h-full flex-col overflow-hidden">
             {children}

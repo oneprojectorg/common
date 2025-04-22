@@ -4,6 +4,7 @@ import { ListBox } from '@op/ui/ListBox';
 import { Select, SelectItem } from '@op/ui/Select';
 import { TextField } from '@op/ui/TextField';
 import { ToggleButton } from '@op/ui/ToggleButton';
+import { MultiSelectComboBox } from '@op/ui/MultiSelectComboBox';
 
 import { FormContainer } from '../form/FormContainer';
 import { FormHeader } from '../form/FormHeader';
@@ -11,6 +12,7 @@ import { useMultiStep } from '../form/multiStep';
 import { getFieldErrorMessage, useAppForm } from '../form/utils';
 
 import type { StepProps } from '../form/utils';
+import { ToggleRow } from '../layout/split/form/ToggleRow';
 
 export const validator = z.object({
   organizationName: z
@@ -104,19 +106,17 @@ export const OrganizationDetailsForm = ({
         <form.AppField
           name="whereWeWork"
           children={(field) => (
-            <ListBox
+            <MultiSelectComboBox
               label="Where we work"
               isRequired
-              value={field.state.value}
-              onBlur={field.handleBlur}
               onChange={field.handleChange}
-              errorMessage={getFieldErrorMessage(field)}
-              selectionMode="multiple"
-            >
-              <SelectItem id="nonprofit">Nonprofit</SelectItem>
-              <SelectItem id="forprofit">Forprofit</SelectItem>
-              <SelectItem id="government">Government Entity</SelectItem>
-            </ListBox>
+              value={field.state.value ?? []}
+              items={[
+                { id: 'portland', label: 'Portland, Oregon' },
+                { id: 'forprofit', label: 'Forprofit' },
+                { id: 'government', label: 'Government Entity' },
+              ]}
+            />
           )}
         />
         <form.AppField
@@ -148,6 +148,7 @@ export const OrganizationDetailsForm = ({
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
               textareaProps={{ className: 'min-h-28' }}
+              placeholder="Enter a brief bio for your profile"
             />
           )}
         />
@@ -163,6 +164,7 @@ export const OrganizationDetailsForm = ({
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
               className="min-h-24"
+              placeholder="Enter your mission statement or a brief bio"
             />
           )}
         />
@@ -170,71 +172,74 @@ export const OrganizationDetailsForm = ({
         <form.AppField
           name="focusAreas"
           children={(field) => (
-            <ListBox
+            <MultiSelectComboBox
               label="Focus Areas"
               placeholder="Select one or more"
               onSelectionChange={field.handleChange}
               onBlur={field.handleBlur}
               errorMessage={getFieldErrorMessage(field)}
               selectionMode="multiple"
-            >
-              <SelectItem id="nonprofit">Nonprofit</SelectItem>
-              <SelectItem id="forprofit">Forprofit</SelectItem>
-              <SelectItem id="government">Government Entity</SelectItem>
-            </ListBox>
+              items={[
+                { id: 'nonprofit', label: 'Nonprofit' },
+                { id: 'forprofit', label: 'Forprofit' },
+                { id: 'government', label: 'Government Entity' },
+              ]}
+            />
           )}
         />
 
         <form.AppField
           name="communitesServed"
           children={(field) => (
-            <ListBox
+            <MultiSelectComboBox
               label="Communities Served"
               value={field.state.value}
               onBlur={field.handleBlur}
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
               selectionMode="multiple"
-            >
-              <SelectItem id="nonprofit">Nonprofit</SelectItem>
-              <SelectItem id="forprofit">Forprofit</SelectItem>
-              <SelectItem id="government">Government Entity</SelectItem>
-            </ListBox>
+              items={[
+                { id: 'nonprofit', label: 'Nonprofit' },
+                { id: 'forprofit', label: 'Forprofit' },
+                { id: 'government', label: 'Government Entity' },
+              ]}
+            />
           )}
         />
         <form.AppField
           name="strategies"
           children={(field) => (
-            <ListBox
+            <MultiSelectComboBox
               label="Strategies/Tactics"
               value={field.state.value}
               onBlur={field.handleBlur}
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
               selectionMode="multiple"
-            >
-              <SelectItem id="nonprofit">Nonprofit</SelectItem>
-              <SelectItem id="forprofit">Forprofit</SelectItem>
-              <SelectItem id="government">Government Entity</SelectItem>
-            </ListBox>
+              items={[
+                { id: 'nonprofit', label: 'Nonprofit' },
+                { id: 'forprofit', label: 'Forprofit' },
+                { id: 'government', label: 'Government Entity' },
+              ]}
+            />
           )}
         />
 
         <form.AppField
           name="networkOrganization"
           children={(field) => (
-            <div className="flex gap-4">
+            <ToggleRow>
               Does your organization serve as a network or coalition with member
               organizations?
               <ToggleButton />
-            </div>
+            </ToggleRow>
           )}
         />
         <div className="flex justify-between">
           <form.Button color="secondary" onPress={onBack}>
             Back
           </form.Button>
-          <form.SubmitButton>Finish</form.SubmitButton>
+          <form.SubmitButton>Continue</form.SubmitButton>
         </div>
       </FormContainer>
     </form>

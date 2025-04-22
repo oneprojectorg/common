@@ -7,6 +7,7 @@
     "./AlertDialog": "./src/components/AlertDialog.tsx",
     "./Button": "./src/components/Button.tsx",
     "./ComboBox": "./src/components/ComboBox.tsx",
+    "./MultiSelectComboBox": "./src/components/MultiSelectComboBox.tsx",
     "./Command": "./src/components/Command.tsx",
     "./Dialog": "./src/components/Dialog.tsx",
     "./EditableText": "./src/components/EditableText.tsx",

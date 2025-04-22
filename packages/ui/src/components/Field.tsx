@@ -170,7 +170,7 @@ export const TextArea = ({
       {...props}
       className={composeTailwindRenderProps(
         props.className,
-        'min-w-0 flex-1 items-center rounded border border-offWhite bg-white p-4 text-sm text-darkGray disabled:text-neutral-400',
+        'min-w-0 flex-1 items-center rounded border border-offWhite bg-white p-4 text-sm text-darkGray placeholder:text-midGray disabled:text-neutral-400',
       )}
     />
   );

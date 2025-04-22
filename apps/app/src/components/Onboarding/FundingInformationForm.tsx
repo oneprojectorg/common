@@ -1,12 +1,14 @@
 import { z } from 'zod';
 
+import { ToggleButton } from '@op/ui/ToggleButton';
+
 import { FormContainer } from '../form/FormContainer';
 import { FormHeader } from '../form/FormHeader';
 import { useMultiStep } from '../form/multiStep';
 import { useAppForm } from '../form/utils';
+import { ToggleRow } from '../layout/split/form/ToggleRow';
 
 import type { StepProps } from '../form/utils';
-import { ToggleButton } from '@op/ui/ToggleButton';
 
 export const validator = z.object({
   isReceivingFunds: z.boolean().default(false),
@@ -47,28 +49,28 @@ export const FundingInformationForm = ({
         <form.AppField
           name="isReceivingFunds"
           children={(field) => (
-            <div className="flex gap-4">
+            <ToggleRow>
               Is your organization seeking funding?
               <ToggleButton />
-            </div>
+            </ToggleRow>
           )}
         />
         <form.AppField
           name="isOfferingFunds"
           children={(field) => (
-            <div className="flex gap-4">
+            <ToggleRow>
               Does your organization offer funding?
               <ToggleButton />
-            </div>
+            </ToggleRow>
           )}
         />
         <form.AppField
           name="acceptingApplications"
           children={(field) => (
-            <div className="flex gap-4">
+            <ToggleRow>
               Are organizations currently able to apply for funding?
               <ToggleButton />
-            </div>
+            </ToggleRow>
           )}
         />
         <div className="flex justify-between">

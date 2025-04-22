@@ -20,7 +20,7 @@ const config: Pick<Config, 'content' | 'theme' | 'presets'> = {
       },
       fontSize: {
         base: [
-          '1rem',
+          '0.875rem',
           {
             lineHeight: '1.5rem',
           },
