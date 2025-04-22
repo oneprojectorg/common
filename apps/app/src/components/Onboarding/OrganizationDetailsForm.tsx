@@ -1,9 +1,6 @@
 import { z } from 'zod';
 
-import { MultiSelectComboBox } from '@op/ui/MultiSelectComboBox';
-import { Select, SelectItem } from '@op/ui/Select';
-import { TextField } from '@op/ui/TextField';
-import { ToggleButton } from '@op/ui/ToggleButton';
+import { SelectItem } from '@op/ui/Select';
 
 import { FormContainer } from '../form/FormContainer';
 import { FormHeader } from '../form/FormHeader';
@@ -12,12 +9,14 @@ import { getFieldErrorMessage, useAppForm } from '../form/utils';
 import { ToggleRow } from '../layout/split/form/ToggleRow';
 
 import type { StepProps } from '../form/utils';
+import type { Option } from '@op/ui/MultiSelectComboBox';
 
 export const validator = z.object({
   organizationName: z
     .string()
     .min(1, { message: 'Required' })
-    .max(20, { message: 'Must be at most 20 characters' }),
+    .max(20, { message: 'Must be at most 20 characters' })
+    .optional(),
   website: z
     .string()
     // .url({ message: 'Invalid website address' })
@@ -26,10 +25,24 @@ export const validator = z.object({
   email: z
     .string()
     .email({ message: 'Invalid email' })
-    .max(20, { message: 'Must be at most 20 characters' }),
-  type: z.string().max(20, { message: 'Must be at most 20 characters' }),
+    .max(20, { message: 'Must be at most 20 characters' })
+    .optional(),
+  orgType: z.string().max(20, { message: 'Must be at most 20 characters' }),
   bio: z.string().max(200, { message: 'Must be at most 200 characters' }),
-  mission: z.string().max(200, { message: 'Must be at most 200 characters' }),
+  mission: z
+    .string()
+    .max(200, { message: 'Must be at most 200 characters' })
+    .optional(),
+  whereWeWork: z
+    .array(
+      z.object({
+        id: z.string(),
+        label: z.string().max(20),
+        isNewValue: z.boolean().default(false).optional(),
+      }),
+    )
+    .optional(),
+  networkOrganization: z.boolean().default(false),
 });
 
 export const OrganizationDetailsForm = ({
@@ -74,6 +87,7 @@ export const OrganizationDetailsForm = ({
             />
           )}
         />
+
         <form.AppField
           name="website"
           children={(field) => (
@@ -105,12 +119,12 @@ export const OrganizationDetailsForm = ({
         <form.AppField
           name="whereWeWork"
           children={(field) => (
-            <MultiSelectComboBox
+            <field.MultiSelectComboBox
               placeholder="Select locations…"
               label="Where we work"
               isRequired
               onChange={field.handleChange}
-              value={field.state.value ?? []}
+              value={(field.state.value as Array<Option>) ?? []}
               items={[
                 { id: 'portland', label: 'Portland, Oregon' },
                 { id: 'forprofit', label: 'Forprofit' },
@@ -120,9 +134,9 @@ export const OrganizationDetailsForm = ({
           )}
         />
         <form.AppField
-          name="type"
+          name="orgType"
           children={(field) => (
-            <Select
+            <field.Select
               label="Organizational Status"
               placeholder="Select"
               selectedKey={field.state.value}
@@ -133,14 +147,14 @@ export const OrganizationDetailsForm = ({
               <SelectItem id="nonprofit">Nonprofit</SelectItem>
               <SelectItem id="forprofit">Forprofit</SelectItem>
               <SelectItem id="government">Government Entity</SelectItem>
-            </Select>
+            </field.Select>
           )}
         />
 
         <form.AppField
           name="bio"
           children={(field) => (
-            <TextField
+            <field.TextField
               useTextArea
               label="Bio"
               value={field.state.value}
@@ -156,7 +170,7 @@ export const OrganizationDetailsForm = ({
         <form.AppField
           name="mission"
           children={(field) => (
-            <TextField
+            <field.TextField
               useTextArea
               label="Mission statement"
               value={field.state.value}
@@ -172,10 +186,11 @@ export const OrganizationDetailsForm = ({
         <form.AppField
           name="focusAreas"
           children={(field) => (
-            <MultiSelectComboBox
+            <field.MultiSelectComboBox
               label="Focus Areas"
               placeholder="Select one or more"
-              onSelectionChange={field.handleChange}
+              value={(field.state.value as Array<Option>) ?? []}
+              onChange={field.handleChange}
               onBlur={field.handleBlur}
               errorMessage={getFieldErrorMessage(field)}
               selectionMode="multiple"
@@ -191,9 +206,9 @@ export const OrganizationDetailsForm = ({
         <form.AppField
           name="communitesServed"
           children={(field) => (
-            <MultiSelectComboBox
+            <field.MultiSelectComboBox
               label="Communities Served"
-              value={field.state.value}
+              value={(field.state.value as Array<Option>) ?? []}
               onBlur={field.handleBlur}
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
@@ -209,9 +224,9 @@ export const OrganizationDetailsForm = ({
         <form.AppField
           name="strategies"
           children={(field) => (
-            <MultiSelectComboBox
+            <field.MultiSelectComboBox
               label="Strategies/Tactics"
-              value={field.state.value}
+              value={(field.state.value as Array<Option>) ?? []}
               onBlur={field.handleBlur}
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
@@ -227,14 +242,19 @@ export const OrganizationDetailsForm = ({
 
         <form.AppField
           name="networkOrganization"
-          children={() => (
+          children={(field) => (
             <ToggleRow>
               Does your organization serve as a network or coalition with member
               organizations?
-              <ToggleButton />
+              <field.ToggleButton
+                isSelected={field.state.value}
+                onChange={field.handleChange}
+                aria-label="Does your organization serve as a network or coalition with member organizations?"
+              />
             </ToggleRow>
           )}
         />
+
         <div className="flex justify-between">
           <form.Button color="secondary" onPress={onBack}>
             Back

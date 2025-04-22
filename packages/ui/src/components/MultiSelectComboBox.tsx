@@ -5,10 +5,10 @@ import { useEffect, useRef, useState } from 'react';
 
 import { Label } from './Field';
 
-interface Option {
+export interface Option {
   id: string;
   label: string;
-  isOther?: boolean;
+  isNewValue?: boolean;
 }
 
 export const MultiSelectComboBox = ({
@@ -16,19 +16,25 @@ export const MultiSelectComboBox = ({
   label,
   placeholder,
   isRequired,
+  value,
+  onChange,
 }: {
   items: Array<Option>;
   label?: string;
   placeholder?: string;
   isRequired?: boolean;
+  value?: Array<Option>;
+  onChange?: (value: Array<Option>) => void;
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedOptions, setSelectedOptions] = useState<Array<Option>>([]);
   const [inputValue, setInputValue] = useState('');
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [showOtherInput, setShowOtherInput] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const otherInputRef = useRef<HTMLInputElement | null>(null);
+
+  const selectedOptions = value || [];
+  const setSelectedOptions = onChange;
 
   // Handle outside clicks to close dropdown
   useEffect(() => {
@@ -63,8 +69,6 @@ export const MultiSelectComboBox = ({
     }
   };
 
-  // Remove Plus import if not used
-
   const handleOptionClick = (option: Option) => {
     // Check if option is already selected
     const isSelected = selectedOptions.some((item) => item.id === option.id);
@@ -86,9 +90,9 @@ export const MultiSelectComboBox = ({
   ) => {
     e.stopPropagation();
 
-    if (option.isOther) {
+    if (option.isNewValue) {
       // If removing the "Other" option, also reset other-related states
-      setSelectedOptions(selectedOptions.filter((item) => !item.isOther));
+      setSelectedOptions(selectedOptions.filter((item) => !item.isNewValue));
       setShowOtherInput(false);
     } else {
       setSelectedOptions(
@@ -168,7 +172,7 @@ export const MultiSelectComboBox = ({
           <div className="flex w-full flex-wrap items-center gap-1">
             {selectedOptions.map((option) => (
               <div
-                key={option.isOther ? 'other' : option.id}
+                key={option.isNewValue ? 'other' : option.id}
                 className="flex items-center rounded bg-black/5 p-2 text-charcoal"
               >
                 <span>{option.label}</span>

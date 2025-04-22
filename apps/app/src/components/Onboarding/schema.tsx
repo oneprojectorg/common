@@ -63,9 +63,10 @@ export const schema: Schema<Values> = [
         organizationName: ['', []],
         website: ['', []],
         email: ['', []],
-        type: ['', []],
+        orgType: ['', []],
         bio: ['', []],
         mission: ['', []],
+        whereWeWork: [[], []],
       }),
       render: ({ values, onNext, onBack }) => (
         <>

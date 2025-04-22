@@ -1,8 +1,10 @@
 import { createFormHook, createFormHookContexts } from '@tanstack/react-form';
 
 import { Button } from '@op/ui/Button';
+import { MultiSelectComboBox } from '@op/ui/MultiSelectComboBox';
 import { Select } from '@op/ui/Select';
 import { TextField } from '@op/ui/TextField';
+import { ToggleButton } from '@op/ui/ToggleButton';
 import { cn } from '@op/ui/utils';
 
 import type { ButtonProps } from '@op/ui/Button';
@@ -13,6 +15,8 @@ export const { useAppForm } = createFormHook({
   fieldComponents: {
     TextField,
     Select,
+    MultiSelectComboBox,
+    ToggleButton,
   },
   formComponents: {
     Button: ({ className, ...props }: ButtonProps) => (
