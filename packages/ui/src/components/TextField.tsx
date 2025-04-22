@@ -9,11 +9,11 @@ import {
   FieldError,
   FieldGroup,
   Input,
-  InputWithVariantsProps,
   Label,
   TextArea,
 } from './Field';
 
+import type { InputWithVariantsProps } from './Field';
 import type {
   TextFieldProps as AriaTextFieldProps,
   TextAreaProps,
@@ -57,7 +57,12 @@ export const TextField = ({
         'flex flex-col gap-2',
       )}
     >
-      {label && <Label className={labelClassName}>{label}</Label>}
+      {label && (
+        <Label className={labelClassName}>
+          {label}
+          {props.isRequired && <span className="text-red"> *</span>}
+        </Label>
+      )}
       <FieldGroup className={fieldClassName}>
         {useTextArea ? (
           <TextArea

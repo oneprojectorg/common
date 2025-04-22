@@ -39,6 +39,9 @@ const config: Omit<Config, 'content'> = {
           lineHeight: '1.125rem',
         },
       },
+      spacing: {
+        '18': '4.5rem',
+      },
       colors: {
         accent: commonColors,
         border: 'hsl(var(--op-offWhite))',
@@ -145,6 +148,9 @@ const config: Omit<Config, 'content'> = {
           950: 'hsl(var(--op-red-950))',
         },
 
+        green: {
+          DEFAULT: 'hsl(var(--op-green-500))',
+        },
         black: 'hsl(var(--op-neutral-950))',
         charcoal: 'hsl(var(--op-neutral-900))',
         darkGray: 'hsl(var(--op-neutral-700))',
@@ -161,6 +167,10 @@ const config: Omit<Config, 'content'> = {
       },
       boxShadow: {
         DEFAULT: '0px 0px 16px 0px rgba(20, 35, 38, 0.04)',
+      },
+      backgroundImage: {
+        gradient:
+          'radial-gradient(154% 99.31% at 0% 0%, #3EC300 0%, #0396A6 51.56%)',
       },
     },
   },

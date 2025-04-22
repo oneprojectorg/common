@@ -19,24 +19,37 @@ import type {
   SectionProps,
 } from 'react-aria-components';
 import type { VariantProps } from 'tailwind-variants';
+import { Label } from './Field';
 
-interface ListBoxProps<T>
-  extends AriaListBoxProps<T> {}
+interface ListBoxProps<T> extends AriaListBoxProps<T> {
+  label?: string;
+  isRequired?: boolean;
+}
 
 export const ListBox = <T extends object>({
   children,
+  label,
+  isRequired = false,
   ...props
 }: ListBoxProps<T>) => {
   return (
-    <AriaListBox
-      {...props}
-      className={composeTailwindRenderProps(
-        props.className,
-        'rounded-lg border p-1 outline-0',
+    <>
+      {label && (
+        <Label>
+          {label}
+          {isRequired && <span className="text-red"> *</span>}
+        </Label>
       )}
-    >
-      {children}
-    </AriaListBox>
+      <AriaListBox
+        {...props}
+        className={composeTailwindRenderProps(
+          props.className,
+          'rounded-lg border p-1 outline-0',
+        )}
+      >
+        {children}
+      </AriaListBox>
+    </>
   );
 };
 
@@ -58,18 +71,22 @@ type ListBoxItemVariants = VariantProps<typeof itemStyles>;
 
 export interface ListBoxItemProps
   extends React.ComponentProps<typeof AriaListBoxItem>,
-  ListBoxItemVariants {
+    ListBoxItemVariants {
   className?: string;
 }
 
 export const ListBoxItem = (props: ListBoxItemProps) => {
-  const textValue
-    = props.textValue
-      || (typeof props.children === 'string' ? props.children : undefined);
+  const textValue =
+    props.textValue ||
+    (typeof props.children === 'string' ? props.children : undefined);
 
   return (
-    <AriaListBoxItem {...props} textValue={textValue} className={itemStyles(props)}>
-      {composeRenderProps(props.children, children => (
+    <AriaListBoxItem
+      {...props}
+      textValue={textValue}
+      className={itemStyles(props)}
+    >
+      {composeRenderProps(props.children, (children) => (
         <>
           {children}
           <div className="absolute inset-x-4 bottom-0 hidden h-px bg-white/20 [.group[data-selected]:has(+[data-selected])_&]:block" />
@@ -102,16 +119,17 @@ export const dropdownItemStyles = tv({
 export const DropdownItem = (
   props: RACListBoxItemProps & { className?: string },
 ) => {
-  const textValue
-    = props.textValue
-      || (typeof props.children === 'string' ? props.children : undefined);
+  const textValue =
+    props.textValue ||
+    (typeof props.children === 'string' ? props.children : undefined);
 
   return (
     <AriaListBoxItem
       {...props}
       textValue={textValue}
       className={composeRenderProps(props.className, (className, renderProps) =>
-        dropdownItemStyles({ ...renderProps, className }))}
+        dropdownItemStyles({ ...renderProps, className }),
+      )}
     >
       {composeRenderProps(props.children, (children, { isSelected }) => (
         <>

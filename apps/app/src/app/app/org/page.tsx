@@ -19,11 +19,8 @@ const MainPage = () => {
         <div className="flex flex-col gap-6">
           <Header1 className="text-center">Welcome back!</Header1>
           <span className="text-center">
-            <span className="font-bold">12 new organizations</span>
-            {' '}
-            have joined
-            Common this week. Find your collaborators to get started.
-            {' '}
+            <span className="font-bold">12 new organizations</span> have joined
+            Common this week. Find your collaborators to get started.{' '}
           </span>
         </div>
         <Tabs>
@@ -50,28 +47,24 @@ const MainPage = () => {
                         <ImageHeader
                           headerClassName="h-32 "
                           headerImage={
-                            headerUrl
-                              ? (
-                                  <Image
-                                    src={headerUrl}
-                                    alt=""
-                                    fill
-                                    className="object-cover"
-                                  />
-                                )
-                              : null
+                            headerUrl ? (
+                              <Image
+                                src={headerUrl}
+                                alt=""
+                                fill
+                                className="object-cover"
+                              />
+                            ) : null
                           }
                           avatarImage={
-                            avatarUrl
-                              ? (
-                                  <Image
-                                    src={avatarUrl}
-                                    alt=""
-                                    fill
-                                    className="object-cover"
-                                  />
-                                )
-                              : null
+                            avatarUrl ? (
+                              <Image
+                                src={avatarUrl}
+                                alt=""
+                                fill
+                                className="object-cover"
+                              />
+                            ) : null
                           }
                         />
                         <div className="flex flex-col gap-3">

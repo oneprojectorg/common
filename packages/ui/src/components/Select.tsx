@@ -49,6 +49,7 @@ export interface SelectProps<T extends object>
   selectValueClassName?: string;
   customTrigger?: React.ReactNode;
   popoverProps?: Omit<PopoverProps, 'children'>;
+  selectionMode?: 'single' | 'multiple';
 }
 
 export const Select = <T extends object>({
@@ -57,6 +58,7 @@ export const Select = <T extends object>({
   errorMessage,
   children,
   items,
+  selectionMode = 'single',
   ...props
 }: SelectProps<T>) => {
   return (
@@ -68,32 +70,36 @@ export const Select = <T extends object>({
       )}
     >
       {label && <Label>{label}</Label>}
-      {props.customTrigger
-        ? props.customTrigger
-        : (
-            <Button
-              className={cn(
-                styles(),
-                props.buttonClassName,
-              )}
-            >
-              <SelectValue className={cn('flex-1 truncate placeholder-shown:text-neutral-500', props.selectValueClassName)} />
+      {props.customTrigger ? (
+        props.customTrigger
+      ) : (
+        <Button className={cn(styles(), props.buttonClassName)}>
+          <SelectValue
+            className={cn(
+              'flex-1 truncate placeholder-shown:text-neutral-500',
+              props.selectValueClassName,
+            )}
+          />
 
-              <ChevronDown
-                aria-hidden
-                className="size-[1em] text-neutral-600 group-disabled:text-neutral-400"
-              />
-            </Button>
-          )}
+          <ChevronDown
+            aria-hidden
+            className="size-[1em] text-neutral-600 group-disabled:text-neutral-400"
+          />
+        </Button>
+      )}
       {description && <Description>{description}</Description>}
       <FieldError>{errorMessage}</FieldError>
-      <Popover className="!max-h-96 min-w-[--trigger-width]" {...props.popoverProps}>
+      <Popover
+        className="!max-h-96 min-w-[--trigger-width]"
+        {...props.popoverProps}
+      >
         <ListBox
           items={items}
           className={cn(
             'max-h-[inherit] overflow-auto p-1 outline-none [clip-path:inset(0_0_0_0_round_.75rem)]',
             props.listBoxClassName,
           )}
+          selectionMode={selectionMode}
         >
           {children}
         </ListBox>

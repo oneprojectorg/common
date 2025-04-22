@@ -20,13 +20,13 @@ const config: Pick<Config, 'content' | 'theme' | 'presets'> = {
       },
       fontSize: {
         base: [
-          '1rem',
+          '0.875rem',
           {
             lineHeight: '1.5rem',
           },
         ],
         header: [
-          '1.75rem',
+          '2rem',
           {
             lineHeight: '1.925rem',
             letterSpacing: '-0.02625rem',
@@ -60,10 +60,6 @@ const config: Pick<Config, 'content' | 'theme' | 'presets'> = {
       },
       boxShadow: {
         md: '0px 0px 16px 0px rgba(20, 35, 38, 0.04)',
-      },
-      backgroundImage: {
-        'aside-gradient':
-          'radial-gradient(154% 99.31% at 0% 0%, #3EC300 0%, #0396A6 51.56%)',
       },
     },
   },

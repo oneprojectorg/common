@@ -9,11 +9,11 @@
 
   --op-white: 0 0% 100%;
   --op-neutral-950: 191 32% 11%; // black
-  --op-neutral-900: 191 11% 26%; // charcoal
-  --op-neutral-700: 190 6% 40%; // darkGray
-  --op-neutral-500: 189 4% 68%; // midGray
-  --op-neutral-400: 195 4% 82%; // lightGray
-  --op-neutral-200: 180 3% 93%; // offWhite
+  --op-neutral-900: 191 11% 26%; // charcoal gray-5
+  --op-neutral-700: 190 6% 40%; // darkGray gray-4
+  --op-neutral-500: 189 4% 68%; // midGray gray-3
+  --op-neutral-400: 195 4% 82%; // lightGray gray-2
+  --op-neutral-200: 180 3% 93%; // offWhite gray-1
   --op-neutral-50: 180 11% 98%; // whiteish
 
   --op-teal-50: 185 48% 86%;
@@ -77,6 +77,8 @@
   --op-red-800: 16 94% 25%;
   --op-red-900: 16 96% 18%;
   --op-red-950: 16 96% 10%;
+
+  --op-green-500: 101 100% 38%;
 }
 
 #gdx-bubble-host {
@@ -96,7 +98,7 @@ body {
 }
 
 html {
-  font-size: 14px;
+  font-size: 16px;
 }
 
 @mixin backlight($spread, $size, $colorA, $colorB, $duration, $radius) {
