@@ -62,14 +62,15 @@ export const MultiSelectComboBox = ({
 
   const handleOptionClick = (option) => {
     // Check if option is already selected
-    const isSelected = selectedOptions.some((item) => item.id === option.id);
+    const isSelected = selectedOptions.some(item => item.id === option.id);
 
     if (isSelected) {
       // Remove option if already selected
       setSelectedOptions(
-        selectedOptions.filter((item) => item.id !== option.id),
+        selectedOptions.filter(item => item.id !== option.id),
       );
-    } else {
+    }
+    else {
       // Add option if not selected
       setSelectedOptions([...selectedOptions, option]);
     }
@@ -80,12 +81,13 @@ export const MultiSelectComboBox = ({
 
     if (option.isOther) {
       // If removing the "Other" option, also reset other-related states
-      setSelectedOptions(selectedOptions.filter((item) => !item.isOther));
+      setSelectedOptions(selectedOptions.filter(item => !item.isOther));
       setOtherValue('');
       setShowOtherInput(false);
-    } else {
+    }
+    else {
       setSelectedOptions(
-        selectedOptions.filter((item) => item.id !== option.id),
+        selectedOptions.filter(item => item.id !== option.id),
       );
     }
   };
@@ -108,11 +110,12 @@ export const MultiSelectComboBox = ({
       };
 
       // Remove any existing "Other" option
-      const filteredOptions = selectedOptions.filter((item) => !item.isOther);
+      const filteredOptions = selectedOptions.filter(item => !item.isOther);
 
       setSelectedOptions([...filteredOptions, otherOption]);
       setShowOtherInput(false);
-    } else if (e.key === 'Escape') {
+    }
+    else if (e.key === 'Escape') {
       setShowOtherInput(false);
       setOtherValue('');
     }
@@ -128,7 +131,7 @@ export const MultiSelectComboBox = ({
       };
 
       // Remove any existing "Other" option
-      const filteredOptions = selectedOptions.filter((item) => !item.isOther);
+      const filteredOptions = selectedOptions.filter(item => !item.isOther);
 
       setSelectedOptions([...filteredOptions, otherOption]);
     }
@@ -138,9 +141,9 @@ export const MultiSelectComboBox = ({
 
   // Filter items based on inputValue and not already selected
   const filteredItems = items.filter(
-    (option) =>
-      option.label.toLowerCase().includes(inputValue.toLowerCase()) &&
-      !selectedOptions.some((item) => item.id === option.id),
+    option =>
+      option.label.toLowerCase().includes(inputValue.toLowerCase())
+      && !selectedOptions.some(item => item.id === option.id),
   );
 
   // Handle input change
@@ -153,7 +156,7 @@ export const MultiSelectComboBox = ({
   const addInputAsTag = () => {
     const trimmed = inputValue.trim();
 
-    if (trimmed && !selectedOptions.some((item) => item.label === trimmed)) {
+    if (trimmed && !selectedOptions.some(item => item.label === trimmed)) {
       setSelectedOptions([...selectedOptions, { id: trimmed, label: trimmed }]);
     }
 
@@ -163,16 +166,18 @@ export const MultiSelectComboBox = ({
   // Handle input keydown
   const handleInputKeyDown = (e) => {
     if (
-      e.key === 'Backspace' &&
-      inputValue === '' &&
-      selectedOptions.length > 0
+      e.key === 'Backspace'
+      && inputValue === ''
+      && selectedOptions.length > 0
     ) {
       setSelectedOptions(selectedOptions.slice(0, -1));
-    } else if (e.key === 'Enter' && filteredItems.length > 0) {
+    }
+    else if (e.key === 'Enter' && filteredItems.length > 0) {
       // Select the first filtered item
       handleOptionClick(filteredItems[0]);
       setInputValue('');
-    } else if (e.key === 'Tab') {
+    }
+    else if (e.key === 'Tab') {
       addInputAsTag();
     }
   };
@@ -193,10 +198,15 @@ export const MultiSelectComboBox = ({
         {/* Dropdown button / Selected options display */}
         <div
           className="flex min-h-10 w-full cursor-pointer flex-wrap items-center rounded-md border border-offWhite bg-white px-4 py-2 text-sm"
-          onClick={toggleDropdown}
+          onClick={(e) => {
+            // Only toggle if input is NOT focused
+            if (document.activeElement !== inputRef.current) {
+              toggleDropdown();
+            }
+          }}
         >
           <div className="flex w-full flex-wrap items-center gap-1">
-            {selectedOptions.map((option) => (
+            {selectedOptions.map(option => (
               <div
                 key={option.isOther ? 'other' : option.id}
                 className="flex items-center rounded bg-black/5 p-2 text-charcoal"
@@ -205,7 +215,7 @@ export const MultiSelectComboBox = ({
                 <button
                   type="button"
                   className="ml-1 text-blue-700 hover:text-blue-900"
-                  onClick={(e) => handleRemoveOption(option, e)}
+                  onClick={e => handleRemoveOption(option, e)}
                 >
                   <X size={14} />
                 </button>
@@ -219,7 +229,15 @@ export const MultiSelectComboBox = ({
               onChange={handleInputChange}
               onKeyDown={handleInputKeyDown}
               onBlur={handleInputBlur}
-              onFocus={() => setIsOpen(true)}
+              onFocus={() => {
+                if (filteredItems.length > 0)
+                  setIsOpen(true);
+              }}
+              onMouseDown={() => {
+                // Open dropdown before focus event
+                if (filteredItems.length > 0)
+                  setIsOpen(true);
+              }}
               placeholder={placeholder}
               style={{ minWidth: 40 }}
             />
@@ -227,14 +245,14 @@ export const MultiSelectComboBox = ({
         </div>
 
         {/* Dropdown menu */}
-        {isOpen && (
+        {isOpen && filteredItems.length > 0 && (
           <div className="absolute z-10 mt-1 w-full rounded-md border border-gray-200 bg-white shadow-lg">
             <ul className="max-h-60 overflow-auto py-1">
-              {filteredItems.map((option) => (
+              {filteredItems.map(option => (
                 <li
                   key={option.id}
                   className={`flex cursor-pointer items-center px-3 py-2 text-sm hover:bg-gray-100 ${
-                    selectedOptions.some((item) => item.id === option.id)
+                    selectedOptions.some(item => item.id === option.id)
                       ? 'bg-blue-50'
                       : ''
                   }`}
