@@ -1,18 +1,18 @@
 import { z } from 'zod';
 
 import { ListBox } from '@op/ui/ListBox';
+import { MultiSelectComboBox } from '@op/ui/MultiSelectComboBox';
 import { Select, SelectItem } from '@op/ui/Select';
 import { TextField } from '@op/ui/TextField';
 import { ToggleButton } from '@op/ui/ToggleButton';
-import { MultiSelectComboBox } from '@op/ui/MultiSelectComboBox';
 
 import { FormContainer } from '../form/FormContainer';
 import { FormHeader } from '../form/FormHeader';
 import { useMultiStep } from '../form/multiStep';
 import { getFieldErrorMessage, useAppForm } from '../form/utils';
+import { ToggleRow } from '../layout/split/form/ToggleRow';
 
 import type { StepProps } from '../form/utils';
-import { ToggleRow } from '../layout/split/form/ToggleRow';
 
 export const validator = z.object({
   organizationName: z
@@ -107,6 +107,7 @@ export const OrganizationDetailsForm = ({
           name="whereWeWork"
           children={(field) => (
             <MultiSelectComboBox
+              placeholder="Select locations…"
               label="Where we work"
               isRequired
               onChange={field.handleChange}

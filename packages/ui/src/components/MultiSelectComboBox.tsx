@@ -13,14 +13,18 @@ interface Option {
 export const MultiSelectComboBox = ({
   items = [],
   label,
+  placeholder,
   isRequired,
 }: {
   items: Array<Option>;
   label?: string;
+  placeholder?: string;
   isRequired?: boolean;
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedOptions, setSelectedOptions] = useState<Array<Option>>([]);
+  const [inputValue, setInputValue] = useState('');
+  const inputRef = useRef(null);
   const [otherValue, setOtherValue] = useState('');
   const [showOtherInput, setShowOtherInput] = useState(false);
   const dropdownRef = useRef(null);
@@ -50,6 +54,10 @@ export const MultiSelectComboBox = ({
 
   const toggleDropdown = () => {
     setIsOpen(!isOpen);
+
+    if (!isOpen && inputRef.current) {
+      inputRef.current.focus();
+    }
   };
 
   const handleOptionClick = (option) => {
@@ -128,6 +136,34 @@ export const MultiSelectComboBox = ({
     setShowOtherInput(false);
   };
 
+  // Filter items based on inputValue and not already selected
+  const filteredItems = items.filter(
+    (option) =>
+      option.label.toLowerCase().includes(inputValue.toLowerCase()) &&
+      !selectedOptions.some((item) => item.id === option.id),
+  );
+
+  // Handle input change
+  const handleInputChange = (e) => {
+    setInputValue(e.target.value);
+    setIsOpen(true);
+  };
+
+  // Handle input keydown
+  const handleInputKeyDown = (e) => {
+    if (
+      e.key === 'Backspace' &&
+      inputValue === '' &&
+      selectedOptions.length > 0
+    ) {
+      setSelectedOptions(selectedOptions.slice(0, -1));
+    } else if (e.key === 'Enter' && filteredItems.length > 0) {
+      // Select the first filtered item
+      handleOptionClick(filteredItems[0]);
+      setInputValue('');
+    }
+  };
+
   return (
     <div className="w-full">
       <Label>
@@ -141,29 +177,33 @@ export const MultiSelectComboBox = ({
           className="flex min-h-10 w-full cursor-pointer flex-wrap items-center rounded-md border border-offWhite bg-white px-3 py-2 text-sm"
           onClick={toggleDropdown}
         >
-          {selectedOptions.length === 0 ? (
-            <span className="text-gray-500">Select options...</span>
-          ) : (
-            <div className="flex flex-wrap gap-1">
-              {selectedOptions.map((option) => (
-                <div
-                  key={option.isOther ? 'other' : option.id}
-                  className="flex items-center rounded bg-black/5 p-2 text-charcoal"
+          <div className="flex w-full flex-wrap items-center gap-1">
+            {selectedOptions.map((option) => (
+              <div
+                key={option.isOther ? 'other' : option.id}
+                className="flex items-center rounded bg-black/5 p-2 text-charcoal"
+              >
+                <span>{option.label}</span>
+                <button
+                  type="button"
+                  className="ml-1 text-blue-700 hover:text-blue-900"
+                  onClick={(e) => handleRemoveOption(option, e)}
                 >
-                  <span>{option.label}</span>
-                  <button
-                    type="button"
-                    className="ml-1 text-blue-700 hover:text-blue-900"
-                    onClick={(e) => handleRemoveOption(option, e)}
-                  >
-                    <X size={14} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <div className="ml-auto">
+                  <X size={14} />
+                </button>
+              </div>
+            ))}
+            <input
+              ref={inputRef}
+              type="text"
+              className="ml-1 min-w-[40px] flex-1 border-none bg-transparent py-1 text-sm outline-none"
+              value={inputValue}
+              onChange={handleInputChange}
+              onKeyDown={handleInputKeyDown}
+              onFocus={() => setIsOpen(true)}
+              placeholder={placeholder}
+              style={{ minWidth: 40 }}
+            />
             <ChevronDown
               size={18}
               className={`text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
@@ -175,7 +215,7 @@ export const MultiSelectComboBox = ({
         {isOpen && (
           <div className="absolute z-10 mt-1 w-full rounded-md border border-gray-200 bg-white shadow-lg">
             <ul className="max-h-60 overflow-auto py-1">
-              {items.map((option) => (
+              {filteredItems.map((option) => (
                 <li
                   key={option.id}
                   className={`flex cursor-pointer items-center px-3 py-2 text-sm hover:bg-gray-100 ${
@@ -183,7 +223,10 @@ export const MultiSelectComboBox = ({
                       ? 'bg-blue-50'
                       : ''
                   }`}
-                  onClick={() => handleOptionClick(option)}
+                  onClick={() => {
+                    handleOptionClick(option);
+                    setInputValue('');
+                  }}
                 >
                   <div
                     className={`mr-2 flex size-5 items-center justify-center rounded border ${
