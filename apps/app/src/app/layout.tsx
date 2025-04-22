@@ -6,6 +6,7 @@ import { Toaster as Sonner } from 'sonner';
 
 import { APP_NAME, printNFO } from '@op/core';
 import { TRPCProvider } from '@op/trpc/client';
+import { PostHogProvider } from '../components/PostHogProvider';
 
 import type { Metadata, Viewport } from 'next';
 
@@ -79,9 +80,11 @@ const RootLayout = ({ children }: { children: React.ReactNode }) => {
         <body
           className={`${roboto.variable} ${robotoMono.variable} ${robotoSerif.variable} ${inter.variable} overflow-x-hidden text-base`}
         >
-          <div className="flex size-full max-h-full flex-col overflow-hidden">
-            {children}
-          </div>
+          <PostHogProvider>
+            <div className="flex size-full max-h-full flex-col overflow-hidden">
+              {children}
+            </div>
+          </PostHogProvider>
           <Sonner
             theme="dark"
             position="bottom-center"
