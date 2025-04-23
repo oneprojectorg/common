@@ -9,7 +9,7 @@ import { useMultiStep } from '../form/multiStep';
 import { getFieldErrorMessage, useAppForm } from '../form/utils';
 
 import type { StepProps } from '../form/utils';
-import { LuLoaderCircle, LuLoaderPinwheel } from 'react-icons/lu';
+import { LuLoaderCircle } from 'react-icons/lu';
 
 export const validator = z.object({
   fullName: z
