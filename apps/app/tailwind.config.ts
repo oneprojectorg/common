@@ -60,6 +60,7 @@ const config: Pick<Config, 'content' | 'theme' | 'presets'> = {
       },
       boxShadow: {
         md: '0px 0px 16px 0px rgba(20, 35, 38, 0.04)',
+        green: '0px 0px 48px 0px rgba(193, 255, 173, 0.88)',
       },
     },
   },
