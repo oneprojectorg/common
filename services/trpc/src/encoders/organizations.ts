@@ -1,7 +1,11 @@
 import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
-import { objectsInStorage, organizations } from '@op/db/schema';
+import {
+  objectsInStorage,
+  organizations,
+  organizationUsers,
+} from '@op/db/schema';
 
 import { linksEncoder } from './links';
 import { projectEncoder } from './projects';
@@ -33,3 +37,5 @@ export const organizationsEncoder = createSelectSchema(organizations)
   });
 
 export type Organization = z.infer<typeof organizationsEncoder>;
+
+export const orgUserEncoder = createSelectSchema(organizationUsers);

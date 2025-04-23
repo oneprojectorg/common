@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { trpc } from '@op/trpc/client';
 import { ImageUploader } from '@op/ui/ImageUploader';
 
 import { FormContainer } from '../form/FormContainer';
@@ -18,12 +19,19 @@ export const validator = z.object({
     .string()
     .min(1, { message: 'Required' })
     .max(20, { message: 'Must be at most 20 characters' }),
+  profileImageUrl: z.string().optional(),
 });
 
 export const PersonalDetailsForm = ({ defaultValues, resolver }: StepProps) => {
+  // Ensure profileImageUrl is always present in defaultValues
+  const mergedDefaults = {
+    ...defaultValues,
+    profileImageUrl: defaultValues.profileImageUrl ?? '',
+  };
+
   const { onNext } = useMultiStep();
   const form = useAppForm({
-    defaultValues,
+    defaultValues: mergedDefaults,
     validators: {
       onChange: resolver,
     },
@@ -33,6 +41,8 @@ export const PersonalDetailsForm = ({ defaultValues, resolver }: StepProps) => {
       onNext(value);
     },
   });
+
+  const uploadImage = trpc.account.uploadImage.useMutation();
 
   return (
     <form
@@ -45,11 +55,34 @@ export const PersonalDetailsForm = ({ defaultValues, resolver }: StepProps) => {
         <FormHeader text="Add your personal details">
           Tell us about yourself so others can find you.
         </FormHeader>
-        <ImageUploader label="Profile Picture" />
+        <ImageUploader
+          label="Profile Picture"
+          value={(form.state.values as any).profileImageUrl}
+          onChange={async (file: File) => {
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+              const base64 = (e.target?.result as string)?.split(',')[1];
+              if (!base64) return;
+
+              const res = await uploadImage.mutateAsync({
+                file: base64,
+                fileName: file.name,
+                mimeType: file.type,
+              });
+
+              if (res?.url) {
+                form.setFieldValue('profileImageUrl', res.url);
+              }
+            };
+            reader.readAsDataURL(file);
+          }}
+          uploading={uploadImage.isLoading}
+          error={uploadImage.error?.message || undefined}
+        />
         <div className="flex flex-col gap-4">
           <form.AppField
             name="fullName"
-            children={field => (
+            children={(field) => (
               <field.TextField
                 label="Full Name"
                 isRequired
@@ -62,7 +95,7 @@ export const PersonalDetailsForm = ({ defaultValues, resolver }: StepProps) => {
           />
           <form.AppField
             name="title"
-            children={field => (
+            children={(field) => (
               <field.TextField
                 label="Professional title"
                 isRequired

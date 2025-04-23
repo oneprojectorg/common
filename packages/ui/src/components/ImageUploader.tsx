@@ -6,12 +6,17 @@ import { useButton } from 'react-aria';
 
 // const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-export const ImageUploader = ({ label }: { label?: string }) => {
-  const [imageUrl, setImageUrl] = useState(null);
-  const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState(null);
-  const fileInputRef = useRef(null);
-  const buttonRef = useRef(null);
+interface ImageUploaderProps {
+  label?: string;
+  value?: string | null;
+  onChange?: (file: File) => void;
+  uploading?: boolean;
+  error?: string | null;
+}
+
+export const ImageUploader = ({ label, value, onChange, uploading = false, error = null }: ImageUploaderProps) => {
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
 
   const { buttonProps } = useButton(
     {
@@ -20,48 +25,20 @@ export const ImageUploader = ({ label }: { label?: string }) => {
     buttonRef,
   );
 
-  const uploadImage = async (event) => {
-    try {
-      setUploading(true);
-      setError(null);
-
-      if (!event.target.files || event.target.files.length === 0) {
-        throw new Error('You must select an image to upload.');
-      }
-
-      const file = event.target.files[0];
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random()}.${fileExt}`;
-      const filePath = `${fileName}`;
-
-      // Upload the file to Supabase Storage
-      // const { data, error } = await supabase.storage
-      // .from('profile-pictures')
-      // .upload(filePath, file);
-
-      // if (error) {
-      // throw error;
-      // }
-
-      // Get the public URL
-      // const { data: urlData } = supabase.storage
-      // .from('profile-pictures')
-      // .getPublicUrl(filePath);
-
-      // setImageUrl(urlData.publicUrl);
-    } catch (error) {
-      setError(error.message);
-    } finally {
-      setUploading(false);
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!event.target.files || event.target.files.length === 0) return;
+    const file = event.target.files[0];
+    if (onChange) {
+      onChange(file);
     }
   };
 
   return (
     <div className="flex flex-col items-center justify-center gap-2">
       <div className="size-32">
-        {imageUrl ? (
+        {value ? (
           <img
-            src={imageUrl}
+            src={value}
             alt="Profile"
             className="size-full rounded-full border-4 border-gray-200 object-cover"
           />
@@ -76,12 +53,12 @@ export const ImageUploader = ({ label }: { label?: string }) => {
               <Camera className="stroke-offWhite stroke-1" />
             </button>
           </div>
-        )}
+        )} 
 
         <input
           type="file"
           ref={fileInputRef}
-          onChange={uploadImage}
+          onChange={handleFileChange}
           accept="image/*"
           className="hidden"
         />
