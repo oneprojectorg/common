@@ -80,7 +80,7 @@ export const OrganizationDetailsForm = ({
             <field.TextField
               label="Organization name"
               isRequired
-              value={field.state.value}
+              value={field.state.value as string}
               onBlur={field.handleBlur}
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
@@ -94,7 +94,7 @@ export const OrganizationDetailsForm = ({
             <field.TextField
               label="Website"
               isRequired
-              value={field.state.value}
+              value={field.state.value as string}
               onBlur={field.handleBlur}
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
@@ -108,7 +108,7 @@ export const OrganizationDetailsForm = ({
               label="Email"
               isRequired
               type="email"
-              value={field.state.value}
+              value={field.state.value as string}
               onBlur={field.handleBlur}
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
@@ -139,7 +139,7 @@ export const OrganizationDetailsForm = ({
             <field.Select
               label="Organizational Status"
               placeholder="Select"
-              selectedKey={field.state.value}
+              selectedKey={field.state.value as string}
               onSelectionChange={field.handleChange}
               onBlur={field.handleBlur}
               errorMessage={getFieldErrorMessage(field)}
@@ -157,12 +157,14 @@ export const OrganizationDetailsForm = ({
             <field.TextField
               useTextArea
               label="Bio"
-              value={field.state.value}
+              value={field.state.value as string}
               onBlur={field.handleBlur}
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
-              textareaProps={{ className: 'min-h-28' }}
-              placeholder="Enter a brief bio for your profile"
+              textareaProps={{
+                className: 'min-h-28',
+                placeholder: 'Enter a brief bio for your profile',
+              }}
             />
           )}
         />
@@ -173,12 +175,14 @@ export const OrganizationDetailsForm = ({
             <field.TextField
               useTextArea
               label="Mission statement"
-              value={field.state.value}
+              value={field.state.value as string}
               onBlur={field.handleBlur}
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
               className="min-h-24"
-              placeholder="Enter your mission statement or a brief bio"
+              textareaProps={{
+                placeholder: 'Enter your mission statement or a brief bio',
+              }}
             />
           )}
         />
@@ -191,7 +195,6 @@ export const OrganizationDetailsForm = ({
               placeholder="Select one or more"
               value={(field.state.value as Array<Option>) ?? []}
               onChange={field.handleChange}
-              onBlur={field.handleBlur}
               errorMessage={getFieldErrorMessage(field)}
               selectionMode="multiple"
               items={[
@@ -209,7 +212,6 @@ export const OrganizationDetailsForm = ({
             <field.MultiSelectComboBox
               label="Communities Served"
               value={(field.state.value as Array<Option>) ?? []}
-              onBlur={field.handleBlur}
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
               selectionMode="multiple"
@@ -227,7 +229,6 @@ export const OrganizationDetailsForm = ({
             <field.MultiSelectComboBox
               label="Strategies/Tactics"
               value={(field.state.value as Array<Option>) ?? []}
-              onBlur={field.handleBlur}
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
               selectionMode="multiple"
@@ -247,7 +248,7 @@ export const OrganizationDetailsForm = ({
               Does your organization serve as a network or coalition with member
               organizations?
               <field.ToggleButton
-                isSelected={field.state.value}
+                isSelected={field.state.value as boolean}
                 onChange={field.handleChange}
                 aria-label="Does your organization serve as a network or coalition with member organizations?"
               />

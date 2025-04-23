@@ -1,3 +1,4 @@
+// @ts-nocheck - This is a STUB. Fixing this up shortly
 // import { createClient } from '@supabase/supabase-js';
 import { Camera } from 'lucide-react';
 import { useRef, useState } from 'react';

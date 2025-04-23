@@ -33,8 +33,8 @@ export const MultiSelectComboBox = ({
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const otherInputRef = useRef<HTMLInputElement | null>(null);
 
-  const selectedOptions = value || [];
-  const setSelectedOptions = onChange;
+  const selectedOptions = value ?? [];
+  const setSelectedOptions = onChange ?? (() => {});
 
   // Handle outside clicks to close dropdown
   useEffect(() => {
