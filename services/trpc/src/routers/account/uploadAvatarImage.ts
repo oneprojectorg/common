@@ -1,6 +1,5 @@
 import { Buffer } from 'buffer';
 
-// import { createSBServerClient } from '@op/supabase/server';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
@@ -10,10 +9,10 @@ import { users } from '@op/db/schema';
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withDB from '../../middlewares/withDB';
 import withRateLimited from '../../middlewares/withRateLimited';
-import { createSBAdminClient } from '../../supabase/server';
 import { loggedProcedure, router } from '../../trpcFactory';
 
 import type { OpenApiMeta } from 'trpc-to-openapi';
+import { createServerClient } from '@op/supabase/lib';
 
 const ALLOWED_MIME_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
 
@@ -86,7 +85,17 @@ export const uploadAvatarImage = router({
         });
       }
 
-      const supabase = createSBAdminClient(ctx);
+      const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE!,
+        {
+          cookieOptions: {},
+          cookies: {
+            getAll: async () => [],
+            setAll: async () => {},
+          },
+        },
+      );
       const bucket = 'assets';
       const filePath = `${ctx.user.id}/${Date.now()}_${fileName}`;
 

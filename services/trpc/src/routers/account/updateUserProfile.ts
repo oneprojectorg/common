@@ -1,10 +1,10 @@
 import { TRPCError } from '@trpc/server';
 import { eq } from 'drizzle-orm';
-import { createSelectSchema } from 'drizzle-zod';
 import { z, ZodError } from 'zod';
 
-import { organizationUsers } from '@op/db/schema';
+import { users } from '@op/db/schema';
 
+import { userEncoder } from '../../encoders';
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withDB from '../../middlewares/withDB';
 import withRateLimited from '../../middlewares/withRateLimited';
@@ -25,8 +25,6 @@ const meta: OpenApiMeta = {
   },
 };
 
-const outputSchema = createSelectSchema(organizationUsers);
-
 const updateUserProfile = router({
   updateUserProfile: loggedProcedure
     // Middlewares
@@ -36,22 +34,23 @@ const updateUserProfile = router({
     // Router
     .meta(meta)
     .input(
-      z.object({
-        name: z.string().trim().min(1).max(255).optional(),
-        avatarUrl: z.string().trim().url().optional(),
-        about: z.string().trim().max(255).optional(),
-        // underscore, numbers, lowercase letters
-        username: z
-          .string()
-          .trim()
-          .min(4)
-          .max(255)
-          .toLowerCase()
-          .regex(/^[a-z0-9_]+$/)
-          .optional(),
-      }),
+      z
+        .object({
+          name: z.string().trim().min(1).max(255),
+          about: z.string().trim().max(255),
+          title: z.string().trim().min(1).max(255),
+          // underscore, numbers, lowercase letters
+          username: z
+            .string()
+            .trim()
+            .min(4)
+            .max(255)
+            .toLowerCase()
+            .regex(/^[a-z0-9_]+$/),
+        })
+        .partial(),
     )
-    .output(outputSchema)
+    .output(userEncoder)
     .mutation(async ({ input, ctx }) => {
       const { db } = ctx.database;
       const { id } = ctx.user;
@@ -60,11 +59,11 @@ const updateUserProfile = router({
 
       try {
         result = await db
-          .update(organizationUsers)
+          .update(users)
           .set({
             ...input,
           })
-          .where(eq(organizationUsers.id, id))
+          .where(eq(users.authUserId, id))
           .returning();
       } catch (error) {
         if (error instanceof Error && error.message.includes('duplicate')) {

@@ -22,12 +22,13 @@ export const users = pgTable(
     name: varchar({ length: 256 }),
     email: varchar().notNull().unique(),
     about: text(),
+    title: varchar({ length: 256 }),
     avatarImageId: uuid().references(() => objectsInStorage.id, {
       onUpdate: 'cascade',
     }),
     ...timestamps,
   },
-  table => [
+  (table) => [
     ...serviceRolePolicies,
     index().on(table.id).concurrently(),
     index().on(table.email).concurrently(),

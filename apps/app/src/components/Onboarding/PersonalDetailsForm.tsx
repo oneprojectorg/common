@@ -9,6 +9,7 @@ import { useMultiStep } from '../form/multiStep';
 import { getFieldErrorMessage, useAppForm } from '../form/utils';
 
 import type { StepProps } from '../form/utils';
+import { LuLoaderCircle, LuLoaderPinwheel } from 'react-icons/lu';
 
 export const validator = z.object({
   fullName: z
@@ -17,32 +18,30 @@ export const validator = z.object({
     .max(20, { message: 'Must be at most 20 characters' }),
   title: z
     .string()
-    .min(1, { message: 'Required' })
+    .min(1, { message: 'Enter a title' })
     .max(20, { message: 'Must be at most 20 characters' }),
   profileImageUrl: z.string().optional(),
 });
 
 export const PersonalDetailsForm = ({ defaultValues, resolver }: StepProps) => {
-  // Ensure profileImageUrl is always present in defaultValues
-  const mergedDefaults = {
-    ...defaultValues,
-    profileImageUrl: defaultValues.profileImageUrl ?? '',
-  };
+  const uploadImage = trpc.account.uploadImage.useMutation();
+  const updateProfile = trpc.account.updateUserProfile.useMutation();
 
   const { onNext } = useMultiStep();
   const form = useAppForm({
-    defaultValues: mergedDefaults,
+    defaultValues,
     validators: {
       onChange: resolver,
     },
-    onSubmit: ({ value }) => {
-      console.log('SUBMIT >>>>');
-      console.log(JSON.stringify(value, null, 2));
+    onSubmit: async ({ value }) => {
+      await updateProfile.mutateAsync({
+        name: value.fullName,
+        title: value.title,
+      });
+
       onNext(value);
     },
   });
-
-  const uploadImage = trpc.account.uploadImage.useMutation();
 
   return (
     <form
@@ -57,7 +56,7 @@ export const PersonalDetailsForm = ({ defaultValues, resolver }: StepProps) => {
         </FormHeader>
         <ImageUploader
           label="Profile Picture"
-          value={(form.state.values as any).profileImageUrl}
+          value={(form.state.values as any).profileImageUrl ?? undefined}
           onChange={async (file: File) => {
             const reader = new FileReader();
             reader.onload = async (e) => {
@@ -79,35 +78,64 @@ export const PersonalDetailsForm = ({ defaultValues, resolver }: StepProps) => {
           uploading={uploadImage.isLoading}
           error={uploadImage.error?.message || undefined}
         />
-        <div className="flex flex-col gap-4">
+        <form.AppField
+          name="fullName"
+          children={(field) => (
+            <field.TextField
+              label="Full Name"
+              isRequired
+              value={field.state.value as string}
+              onBlur={field.handleBlur}
+              onChange={field.handleChange}
+              errorMessage={getFieldErrorMessage(field)}
+              inputProps={{
+                placeholder: 'Enter your full name',
+              }}
+            />
+          )}
+        />
+        <form.AppField
+          name="title"
+          children={(field) => (
+            <field.TextField
+              label="Professional title"
+              isRequired
+              value={field.state.value as string}
+              onBlur={field.handleBlur}
+              onChange={field.handleChange}
+              errorMessage={getFieldErrorMessage(field)}
+              inputProps={{
+                placeholder: 'Enter your professional title',
+              }}
+            />
+          )}
+        />
+
+        {/*
           <form.AppField
-            name="fullName"
+            name="username"
             children={(field) => (
               <field.TextField
-                label="Full Name"
+                label="User name"
                 isRequired
                 value={field.state.value as string}
                 onBlur={field.handleBlur}
                 onChange={field.handleChange}
                 errorMessage={getFieldErrorMessage(field)}
+                inputProps={{
+                  placeholder: 'Enter a user name',
+                }}
               />
             )}
           />
-          <form.AppField
-            name="title"
-            children={(field) => (
-              <field.TextField
-                label="Professional title"
-                isRequired
-                value={field.state.value as string}
-                onBlur={field.handleBlur}
-                onChange={field.handleChange}
-                errorMessage={getFieldErrorMessage(field)}
-              />
-            )}
-          />
-        </div>
-        <form.SubmitButton>Continue</form.SubmitButton>
+      */}
+        <form.SubmitButton>
+          {updateProfile.isPending || uploadImage.isPending ? (
+            <LuLoaderCircle />
+          ) : (
+            'Continue'
+          )}
+        </form.SubmitButton>
       </FormContainer>
     </form>
   );
