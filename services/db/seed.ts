@@ -24,12 +24,12 @@ if (!process.env.DB_SEEDING) {
   throw new Error('You must set DB_SEEDING to "true" when truncating');
 }
 
-// if (
-// process.env.DATABASE_URL !==
-// 'postgresql://postgres:postgres@127.0.0.1:54322/postgres'
-// ) {
-// throw new Error('You are truncating in production');
-// }
+if (
+  process.env.DATABASE_URL
+  !== 'postgresql://postgres:postgres@127.0.0.1:54322/postgres'
+) {
+  throw new Error('You are truncating in production');
+}
 
 async function resetTable(
   database: typeof db,
@@ -94,7 +94,7 @@ const seedOrgs = [
     isReceivingFunds: true,
     email: 'info@oneproject.org',
     website: 'https://oneproject.org',
-    type: OrgType.COMMONS,
+    type: OrgType.NONPROFIT,
   },
   {
     name: 'New Economy Coalition',
@@ -107,7 +107,7 @@ const seedOrgs = [
     isReceivingFunds: true,
     email: 'contact@necoalition.org',
     website: 'https://necoalition.org',
-    type: OrgType.COMMONS,
+    type: OrgType.NONPROFIT,
   },
   {
     name: 'People Powered',
@@ -120,7 +120,7 @@ const seedOrgs = [
     isReceivingFunds: false,
     email: 'contact@peoplepowered.org',
     website: 'https://peoplepowered.org',
-    type: OrgType.COMMONS,
+    type: OrgType.NONPROFIT,
   },
   {
     name: 'Maria Fund',
@@ -133,7 +133,7 @@ const seedOrgs = [
     isReceivingFunds: true,
     email: 'hello@mariafund.org',
     website: 'https://mariafund.org',
-    type: OrgType.COMMONS,
+    type: OrgType.NONPROFIT,
   },
   {
     name: 'Seed Commons',
@@ -146,7 +146,7 @@ const seedOrgs = [
     isReceivingFunds: true,
     email: 'info@seedcommons.org',
     website: 'https://seedcommons.org',
-    type: OrgType.COMMONS,
+    type: OrgType.NONPROFIT,
   },
   {
     name: 'CED',
@@ -159,7 +159,7 @@ const seedOrgs = [
     isReceivingFunds: true,
     email: 'contact@ced.org',
     website: 'https://ced.org',
-    type: OrgType.COMMONS,
+    type: OrgType.NONPROFIT,
   },
   {
     name: 'Boston Ujima Project',
@@ -172,7 +172,7 @@ const seedOrgs = [
     isReceivingFunds: true,
     email: 'contact@bostonujima.org',
     website: 'https://bostonujima.org',
-    type: OrgType.COMMONS,
+    type: OrgType.NONPROFIT,
   },
 ];
 

@@ -11,7 +11,7 @@ export const legalStructures = pgTable(
     description: varchar({ length: 256 }),
     ...timestamps,
   },
-  (table) => [
+  table => [
     ...serviceRolePolicies,
     index().on(table.id).concurrently(),
     index().on(table.slug).concurrently(),

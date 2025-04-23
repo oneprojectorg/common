@@ -11,10 +11,10 @@ export const AuthWrapper = ({ children }: { children: React.ReactNode }) => {
   }
 
   if (
-    !user ||
-    user.isFetching ||
-    user.isPending ||
-    !user.data?.user?.email?.includes('@oneproject.org')
+    !user
+    || user.isFetching
+    || user.isPending
+    || !user.data?.user?.email?.includes('@oneproject.org')
   ) {
     return null;
   }

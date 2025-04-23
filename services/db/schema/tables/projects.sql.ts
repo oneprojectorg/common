@@ -18,7 +18,7 @@ export const projects = pgTable(
     }),
     ...timestamps,
   },
-  (table) => [
+  table => [
     ...serviceRolePolicies,
     index().on(table.id).concurrently(),
     index().on(table.slug).concurrently(),

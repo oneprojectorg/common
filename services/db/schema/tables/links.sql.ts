@@ -32,7 +32,7 @@ export const links = pgTable(
       }),
     ...timestamps,
   },
-  (table) => [...serviceRolePolicies, index().on(table.id).concurrently()],
+  table => [...serviceRolePolicies, index().on(table.id).concurrently()],
 );
 
 export const linksRelations = relations(links, ({ one }) => ({

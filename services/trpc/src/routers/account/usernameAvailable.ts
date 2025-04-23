@@ -1,7 +1,7 @@
-import { and, eq, ne, sql } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 
-import { organizationUsers } from '@op/db/schema';
+import { organizationUsers, users } from '@op/db/schema';
 
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withDB from '../../middlewares/withDB';
@@ -59,12 +59,7 @@ const usernameAvailable = router({
           exists: sql<boolean>`true`,
         })
         .from(organizationUsers)
-        .where(
-          and(
-            eq(organizationUsers.username, username),
-            ne(organizationUsers.id, ctx.user.id),
-          ),
-        )
+        .where(eq(users.username, username))
         .limit(1);
 
       if (!result.length || !result[0]) {

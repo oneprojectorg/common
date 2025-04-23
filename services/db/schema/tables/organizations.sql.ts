@@ -68,7 +68,7 @@ export const organizations = pgTable(
     isReceivingFunds: boolean().default(false),
 
     // Organization Type
-    type: orgTypeEnum('org_type').notNull().default(OrgType.OTHER),
+    orgType: orgTypeEnum('org_type').notNull().default(OrgType.OTHER),
     // Legal Structure
     // Thematic Areas
 
@@ -81,7 +81,7 @@ export const organizations = pgTable(
     }),
     ...timestamps,
   },
-  (table) => [
+  table => [
     ...serviceRolePolicies,
     index().on(table.id).concurrently(),
     index().on(table.slug).concurrently(),

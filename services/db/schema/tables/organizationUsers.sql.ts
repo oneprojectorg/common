@@ -24,11 +24,9 @@ export const organizationUsers = pgTable(
         onDelete: 'cascade',
         onUpdate: 'cascade',
       }),
-    username: varchar({ length: 256 }).unique(),
     name: varchar({ length: 256 }),
-    avatarUrl: text(),
     email: varchar().notNull().unique(),
-    about: varchar({ length: 256 }),
+    about: text(),
     organizationId: uuid()
       .references(() => organizations.id, {
         onDelete: 'cascade',
@@ -37,16 +35,12 @@ export const organizationUsers = pgTable(
       .notNull(),
     ...timestamps,
   },
-  (table) => [
+  table => [
     ...serviceRolePolicies,
     index().on(table.id).concurrently(),
     index().on(table.email).concurrently(),
-    index().on(table.username).concurrently(),
     index('organizationUsers_email_gin_index')
       .using('gin', sql`to_tsvector('english', ${table.email})`)
-      .concurrently(),
-    index('organizationUsers_username_gin_index')
-      .using('gin', sql`to_tsvector('english', ${table.username})`)
       .concurrently(),
     index('organizationUsers_organizations_idx')
       .on(table.organizationId)
@@ -57,6 +51,7 @@ export const organizationUsers = pgTable(
 export const organizationUsersRelations = relations(
   organizationUsers,
   ({ one, many }) => ({
+    // TODO: this should be the user not authuser
     user: one(authUsers, {
       fields: [organizationUsers.id],
       references: [authUsers.id],
@@ -80,7 +75,7 @@ export const organizationUserToAccessRoles = pgTable(
       .references(() => accessRoles.id),
     ...timestamps,
   },
-  (table) => [
+  table => [
     ...serviceRolePolicies,
     primaryKey({ columns: [table.organizationUserId, table.accessRoleId] }),
   ],
