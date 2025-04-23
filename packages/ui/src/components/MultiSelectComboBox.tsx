@@ -3,7 +3,8 @@
 import { X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
-import { Label } from './Field';
+import { FieldError, Label } from './Field';
+import { ValidationResult } from 'react-aria-components';
 
 export interface Option {
   id: string;
@@ -18,6 +19,7 @@ export const MultiSelectComboBox = ({
   isRequired,
   value,
   onChange,
+  errorMessage,
 }: {
   items: Array<Option>;
   label?: string;
@@ -25,6 +27,7 @@ export const MultiSelectComboBox = ({
   isRequired?: boolean;
   value?: Array<Option>;
   onChange?: (value: Array<Option>) => void;
+  errorMessage?: string | ((validation: ValidationResult) => string);
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
@@ -204,6 +207,7 @@ export const MultiSelectComboBox = ({
               style={{ minWidth: 40 }}
             />
           </div>
+          <FieldError>{errorMessage}</FieldError>
         </div>
 
         {/* Dropdown menu */}

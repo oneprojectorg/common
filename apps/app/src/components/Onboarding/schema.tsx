@@ -67,6 +67,7 @@ export const schema: Schema<Values> = [
         bio: ['', []],
         mission: ['', []],
         whereWeWork: [[], []],
+        networkOrganization: [false, []],
       }),
       render: ({ values, onNext, onBack }) => (
         <>
@@ -102,7 +103,7 @@ export const schema: Schema<Values> = [
     },
   },
   {
-    return: (props) => props,
+    return: props => props,
   },
 ];
 

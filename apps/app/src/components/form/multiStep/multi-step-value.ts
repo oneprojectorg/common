@@ -1,4 +1,4 @@
-import type { OnNext, OnBack } from '@formity/react';
+import type { OnBack, OnNext } from '@formity/react';
 
 export interface MultiStepValue {
   onNext: OnNext;

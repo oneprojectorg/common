@@ -76,7 +76,7 @@ export const OrganizationDetailsForm = ({
         </FormHeader>
         <form.AppField
           name="organizationName"
-          children={(field) => (
+          children={field => (
             <field.TextField
               label="Organization name"
               isRequired
@@ -90,7 +90,7 @@ export const OrganizationDetailsForm = ({
 
         <form.AppField
           name="website"
-          children={(field) => (
+          children={field => (
             <field.TextField
               label="Website"
               isRequired
@@ -103,7 +103,7 @@ export const OrganizationDetailsForm = ({
         />
         <form.AppField
           name="email"
-          children={(field) => (
+          children={field => (
             <field.TextField
               label="Email"
               isRequired
@@ -118,7 +118,7 @@ export const OrganizationDetailsForm = ({
 
         <form.AppField
           name="whereWeWork"
-          children={(field) => (
+          children={field => (
             <field.MultiSelectComboBox
               placeholder="Select locations…"
               label="Where we work"
@@ -135,7 +135,7 @@ export const OrganizationDetailsForm = ({
         />
         <form.AppField
           name="orgType"
-          children={(field) => (
+          children={field => (
             <field.Select
               label="Organizational Status"
               placeholder="Select"
@@ -153,7 +153,7 @@ export const OrganizationDetailsForm = ({
 
         <form.AppField
           name="bio"
-          children={(field) => (
+          children={field => (
             <field.TextField
               useTextArea
               label="Bio"
@@ -171,7 +171,7 @@ export const OrganizationDetailsForm = ({
 
         <form.AppField
           name="mission"
-          children={(field) => (
+          children={field => (
             <field.TextField
               useTextArea
               label="Mission statement"
@@ -189,14 +189,13 @@ export const OrganizationDetailsForm = ({
 
         <form.AppField
           name="focusAreas"
-          children={(field) => (
+          children={field => (
             <field.MultiSelectComboBox
               label="Focus Areas"
               placeholder="Select one or more"
               value={(field.state.value as Array<Option>) ?? []}
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
-              selectionMode="multiple"
               items={[
                 { id: 'nonprofit', label: 'Nonprofit' },
                 { id: 'forprofit', label: 'Forprofit' },
@@ -208,13 +207,12 @@ export const OrganizationDetailsForm = ({
 
         <form.AppField
           name="communitesServed"
-          children={(field) => (
+          children={field => (
             <field.MultiSelectComboBox
               label="Communities Served"
               value={(field.state.value as Array<Option>) ?? []}
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
-              selectionMode="multiple"
               items={[
                 { id: 'nonprofit', label: 'Nonprofit' },
                 { id: 'forprofit', label: 'Forprofit' },
@@ -225,13 +223,12 @@ export const OrganizationDetailsForm = ({
         />
         <form.AppField
           name="strategies"
-          children={(field) => (
+          children={field => (
             <field.MultiSelectComboBox
               label="Strategies/Tactics"
               value={(field.state.value as Array<Option>) ?? []}
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
-              selectionMode="multiple"
               items={[
                 { id: 'nonprofit', label: 'Nonprofit' },
                 { id: 'forprofit', label: 'Forprofit' },
@@ -243,7 +240,7 @@ export const OrganizationDetailsForm = ({
 
         <form.AppField
           name="networkOrganization"
-          children={(field) => (
+          children={field => (
             <ToggleRow>
               Does your organization serve as a network or coalition with member
               organizations?

@@ -49,11 +49,11 @@ export const PersonalDetailsForm = ({ defaultValues, resolver }: StepProps) => {
         <div className="flex flex-col gap-4">
           <form.AppField
             name="fullName"
-            children={(field) => (
+            children={field => (
               <field.TextField
                 label="Full Name"
                 isRequired
-                value={field.state.value}
+                value={field.state.value as string}
                 onBlur={field.handleBlur}
                 onChange={field.handleChange}
                 errorMessage={getFieldErrorMessage(field)}
@@ -62,11 +62,11 @@ export const PersonalDetailsForm = ({ defaultValues, resolver }: StepProps) => {
           />
           <form.AppField
             name="title"
-            children={(field) => (
+            children={field => (
               <field.TextField
                 label="Professional title"
                 isRequired
-                value={field.state.value}
+                value={field.state.value as string}
                 onBlur={field.handleBlur}
                 onChange={field.handleChange}
                 errorMessage={getFieldErrorMessage(field)}
