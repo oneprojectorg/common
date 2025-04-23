@@ -54,9 +54,9 @@ export const SiteHeader = () => {
       />
 
       <ErrorBoundary
-        fallback={
+        errorComponent={() => (
           <div className="size-8 rounded-full border bg-white shadow" />
-        }
+        )}
       >
         <Suspense
           fallback={
