@@ -10,6 +10,7 @@ import { getFieldErrorMessage, useAppForm } from '../form/utils';
 
 import type { StepProps } from '../form/utils';
 import { LuLoaderCircle } from 'react-icons/lu';
+import { useState } from 'react';
 
 export const validator = z.object({
   fullName: z
@@ -26,6 +27,7 @@ export const validator = z.object({
 export const PersonalDetailsForm = ({ defaultValues, resolver }: StepProps) => {
   const uploadImage = trpc.account.uploadImage.useMutation();
   const updateProfile = trpc.account.updateUserProfile.useMutation();
+  const [profileImageUrl, setProfileImageUrl] = useState<string | undefined>();
 
   const { onNext } = useMultiStep();
   const form = useAppForm({
@@ -56,12 +58,18 @@ export const PersonalDetailsForm = ({ defaultValues, resolver }: StepProps) => {
         </FormHeader>
         <ImageUploader
           label="Profile Picture"
-          value={(form.state.values as any).profileImageUrl ?? undefined}
+          value={profileImageUrl ?? undefined}
           onChange={async (file: File) => {
             const reader = new FileReader();
             reader.onload = async (e) => {
               const base64 = (e.target?.result as string)?.split(',')[1];
-              if (!base64) return;
+
+              if (!base64) {
+                return;
+              }
+
+              const dataUrl = `data:${file.type};base64,${base64}`;
+              setProfileImageUrl(dataUrl);
 
               const res = await uploadImage.mutateAsync({
                 file: base64,
@@ -70,12 +78,12 @@ export const PersonalDetailsForm = ({ defaultValues, resolver }: StepProps) => {
               });
 
               if (res?.url) {
-                form.setFieldValue('profileImageUrl', res.url);
+                setProfileImageUrl(res.url);
               }
             };
             reader.readAsDataURL(file);
           }}
-          uploading={uploadImage.isLoading}
+          uploading={uploadImage.isPending}
           error={uploadImage.error?.message || undefined}
         />
         <form.AppField
