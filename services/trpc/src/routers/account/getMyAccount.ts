@@ -36,6 +36,9 @@ export const getMyAccount = router({
 
       const result = await db.query.users.findFirst({
         where: (table, { eq }) => eq(table.authUserId, id),
+        with: {
+          avatarImage: true,
+        },
       });
 
       if (!result) {

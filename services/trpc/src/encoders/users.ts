@@ -1,5 +1,7 @@
 import { createSelectSchema } from 'drizzle-zod';
 
-import { users } from '@op/db/schema';
+import { objectsInStorage, users } from '@op/db/schema';
 
-export const userEncoder = createSelectSchema(users);
+export const userEncoder = createSelectSchema(users).extend({
+  avatarImage: createSelectSchema(objectsInStorage),
+});
