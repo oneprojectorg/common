@@ -11,6 +11,12 @@ import { ToggleRow } from '../layout/split/form/ToggleRow';
 import type { StepProps } from '../form/utils';
 import type { Option } from '@op/ui/MultiSelectComboBox';
 
+const multiSelectOptionValidator = z.object({
+  id: z.string(),
+  label: z.string().max(20),
+  isNewValue: z.boolean().default(false).optional(),
+});
+
 export const validator = z.object({
   organizationName: z
     .string()
@@ -33,15 +39,10 @@ export const validator = z.object({
     .string()
     .max(200, { message: 'Must be at most 200 characters' })
     .optional(),
-  whereWeWork: z
-    .array(
-      z.object({
-        id: z.string(),
-        label: z.string().max(20),
-        isNewValue: z.boolean().default(false).optional(),
-      }),
-    )
-    .optional(),
+  whereWeWork: z.array(multiSelectOptionValidator).optional(),
+  focusAreas: z.array(multiSelectOptionValidator).optional(),
+  communitiesServed: z.array(multiSelectOptionValidator).optional(),
+  strategies: z.array(multiSelectOptionValidator).optional(),
   networkOrganization: z.boolean().default(false),
 });
 
@@ -76,7 +77,7 @@ export const OrganizationDetailsForm = ({
         </FormHeader>
         <form.AppField
           name="organizationName"
-          children={field => (
+          children={(field) => (
             <field.TextField
               label="Organization name"
               isRequired
@@ -90,7 +91,7 @@ export const OrganizationDetailsForm = ({
 
         <form.AppField
           name="website"
-          children={field => (
+          children={(field) => (
             <field.TextField
               label="Website"
               isRequired
@@ -103,7 +104,7 @@ export const OrganizationDetailsForm = ({
         />
         <form.AppField
           name="email"
-          children={field => (
+          children={(field) => (
             <field.TextField
               label="Email"
               isRequired
@@ -118,7 +119,7 @@ export const OrganizationDetailsForm = ({
 
         <form.AppField
           name="whereWeWork"
-          children={field => (
+          children={(field) => (
             <field.MultiSelectComboBox
               placeholder="Select locations…"
               label="Where we work"
@@ -135,7 +136,7 @@ export const OrganizationDetailsForm = ({
         />
         <form.AppField
           name="orgType"
-          children={field => (
+          children={(field) => (
             <field.Select
               label="Organizational Status"
               placeholder="Select"
@@ -153,7 +154,7 @@ export const OrganizationDetailsForm = ({
 
         <form.AppField
           name="bio"
-          children={field => (
+          children={(field) => (
             <field.TextField
               useTextArea
               label="Bio"
@@ -171,7 +172,7 @@ export const OrganizationDetailsForm = ({
 
         <form.AppField
           name="mission"
-          children={field => (
+          children={(field) => (
             <field.TextField
               useTextArea
               label="Mission statement"
@@ -189,7 +190,7 @@ export const OrganizationDetailsForm = ({
 
         <form.AppField
           name="focusAreas"
-          children={field => (
+          children={(field) => (
             <field.MultiSelectComboBox
               label="Focus Areas"
               placeholder="Select one or more"
@@ -206,8 +207,8 @@ export const OrganizationDetailsForm = ({
         />
 
         <form.AppField
-          name="communitesServed"
-          children={field => (
+          name="communitiesServed"
+          children={(field) => (
             <field.MultiSelectComboBox
               label="Communities Served"
               value={(field.state.value as Array<Option>) ?? []}
@@ -223,7 +224,7 @@ export const OrganizationDetailsForm = ({
         />
         <form.AppField
           name="strategies"
-          children={field => (
+          children={(field) => (
             <field.MultiSelectComboBox
               label="Strategies/Tactics"
               value={(field.state.value as Array<Option>) ?? []}
@@ -240,7 +241,7 @@ export const OrganizationDetailsForm = ({
 
         <form.AppField
           name="networkOrganization"
-          children={field => (
+          children={(field) => (
             <ToggleRow>
               Does your organization serve as a network or coalition with member
               organizations?
