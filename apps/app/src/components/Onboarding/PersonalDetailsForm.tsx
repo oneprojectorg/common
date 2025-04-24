@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { LuLoaderCircle } from 'react-icons/lu';
 import { z } from 'zod';
 
 import { trpc } from '@op/trpc/client';
@@ -9,8 +11,6 @@ import { useMultiStep } from '../form/multiStep';
 import { getFieldErrorMessage, useAppForm } from '../form/utils';
 
 import type { StepProps } from '../form/utils';
-import { LuLoaderCircle } from 'react-icons/lu';
-import { useState } from 'react';
 
 export const validator = z.object({
   fullName: z
@@ -59,8 +59,9 @@ export const PersonalDetailsForm = ({ defaultValues, resolver }: StepProps) => {
         <ImageUploader
           label="Profile Picture"
           value={profileImageUrl ?? undefined}
-          onChange={async (file: File) => {
+          onChange={async (file: File): Promise<void> => {
             const reader = new FileReader();
+
             reader.onload = async (e) => {
               const base64 = (e.target?.result as string)?.split(',')[1];
 
@@ -69,6 +70,7 @@ export const PersonalDetailsForm = ({ defaultValues, resolver }: StepProps) => {
               }
 
               const dataUrl = `data:${file.type};base64,${base64}`;
+
               setProfileImageUrl(dataUrl);
 
               const res = await uploadImage.mutateAsync({
@@ -81,6 +83,7 @@ export const PersonalDetailsForm = ({ defaultValues, resolver }: StepProps) => {
                 setProfileImageUrl(res.url);
               }
             };
+
             reader.readAsDataURL(file);
           }}
           uploading={uploadImage.isPending}

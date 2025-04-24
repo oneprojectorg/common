@@ -31,7 +31,7 @@ export const organizationsEncoder = createSelectSchema(organizations)
   })
   .extend({
     projects: z.array(projectEncoder).optional(),
-    links: z.array(linksEncoder).optional(),
+    links: z.array(linksEncoder).default([]),
     headerImage: storageItemEncoder.nullish(),
     avatarImage: storageItemEncoder.nullish(),
   });

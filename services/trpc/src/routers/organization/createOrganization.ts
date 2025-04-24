@@ -31,6 +31,11 @@ const inputSchema = z.object({
   isReceivingFunds: z.boolean(),
   isOfferingFunds: z.boolean(),
   acceptingApplications: z.boolean(),
+
+  receivingFundsDescription: z.string().optional(),
+  receivingFundsLink: z.string().optional(),
+  offeringFundsDescription: z.string().optional(),
+  offeringFundsLink: z.string().optional(),
 });
 
 const meta: OpenApiMeta = {

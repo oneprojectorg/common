@@ -18,8 +18,8 @@ const UserAvatarMenu = () => {
   const [user] = trpc.account.getMyAccount.useSuspenseQuery();
 
   return (
-    <div className="size-8 overflow-clip rounded-full border bg-white shadow">
-      {user.avatarImage ? (
+    <div className="size-8 text-clip rounded-full border bg-white shadow">
+      {user.avatarImage?.name ? (
         <Image
           src={getPublicUrl(user.avatarImage.name)}
           alt="User avatar"

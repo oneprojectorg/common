@@ -32,7 +32,7 @@ export const OnboardingFlow = () => {
   );
 
   if (values) {
-    return <div>DONE!</div>;
+    return <div>Processing...</div>;
   }
 
   return (

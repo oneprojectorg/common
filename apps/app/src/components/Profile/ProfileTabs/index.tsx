@@ -16,41 +16,35 @@ const ContactLink = ({ children }: { children: React.ReactNode }) => {
 const ProfileAbout = ({ profile }: { profile: Organization }) => {
   const { mission, email, website } = profile;
 
+  console.log('+++', profile);
+
   return (
     <div className="flex flex-col gap-8">
-      {email || website
-        ? (
-            <section className="flex flex-col gap-6">
-              <Header3>Contact</Header3>
-              <div className="flex flex-col gap-4 text-teal">
-                {website
-                  ? (
-                      <ContactLink>
-                        <LuGlobe />
-                        <Link href={website}>{website}</Link>
-                      </ContactLink>
-                    )
-                  : null}
-                {email
-                  ? (
-                      <ContactLink>
-                        <LuMail />
-                        <span>info@solidarityseeds.org</span>
-                      </ContactLink>
-                    )
-                  : null}
-              </div>
-            </section>
-          )
-        : null}
-      {mission
-        ? (
-            <section className="flex flex-col gap-6">
-              <Header3>Mission Statement</Header3>
-              <p>{mission}</p>
-            </section>
-          )
-        : null}
+      {email || website ? (
+        <section className="flex flex-col gap-6">
+          <Header3>Contact</Header3>
+          <div className="flex flex-col gap-4 text-teal">
+            {website ? (
+              <ContactLink>
+                <LuGlobe />
+                <Link href={website}>{website}</Link>
+              </ContactLink>
+            ) : null}
+            {email ? (
+              <ContactLink>
+                <LuMail />
+                <Link href={`mailto:${email}`}>{email}</Link>
+              </ContactLink>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
+      {mission ? (
+        <section className="flex flex-col gap-6">
+          <Header3>Mission Statement</Header3>
+          <p>{mission}</p>
+        </section>
+      ) : null}
     </div>
   );
 };

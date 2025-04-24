@@ -6,6 +6,7 @@ import { FormContainer } from '../form/FormContainer';
 import { FormHeader } from '../form/FormHeader';
 import { useMultiStep } from '../form/multiStep';
 import { getFieldErrorMessage, useAppForm } from '../form/utils';
+import { ImageHeader } from '../ImageHeader';
 import { ToggleRow } from '../layout/split/form/ToggleRow';
 
 import type { StepProps } from '../form/utils';
@@ -72,9 +73,10 @@ export const OrganizationDetailsForm = ({
     >
       <FormContainer>
         <FormHeader text="Add your organization’s details">
-          We've pre-filled information about Solidarity Seeds. Please review and
+          We've pre-filled information about [ORGANIZATION]. Please review and
           make any necessary changes.
         </FormHeader>
+        <ImageHeader />
         <form.AppField
           name="organizationName"
           children={(field) => (

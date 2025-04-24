@@ -1,4 +1,9 @@
-import { Organization, organizations, organizationUsers } from '@op/db/schema';
+import {
+  links,
+  Organization,
+  organizations,
+  organizationUsers,
+} from '@op/db/schema';
 import { CommonError, UnauthorizedError } from '../../utils';
 import { db } from '@op/db/client';
 import { User } from '@op/supabase/lib';
@@ -95,6 +100,23 @@ export const createOrganizationWithUser = async ({
         email: user.email,
       })
       .returning();
+
+    // Add funding links
+    const receivingFundsLink = data.receivingFundsLink
+      ? await tx.insert(links).values({
+          organizationId: newOrg[0].id,
+          href: data.receivingFundsLink,
+          type: 'receiving',
+        })
+      : undefined;
+    const offeringFundsLink = data.offeringFundsLink
+      ? await tx.insert(links).values({
+          organizationId: newOrg[0].id,
+          href: data.offeringFundsLink,
+          type: 'offering',
+        })
+      : undefined;
+
     if (!newOrgUser || newOrgUser.length === 0) {
       throw new CommonError('Failed to associate organization with user');
     }
