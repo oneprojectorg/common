@@ -20,14 +20,14 @@ const multiSelectOptionValidator = z.object({
 export const validator = z.object({
   organizationName: z
     .string()
-    .min(1, { message: 'Required' })
+    .min(1, { message: 'Enter a name for your organization' })
     .max(20, { message: 'Must be at most 20 characters' })
     .optional(),
   website: z
     .string()
-    // .url({ message: 'Invalid website address' })
-    .min(1, { message: 'Required' })
-    .max(20, { message: 'Must be at most 20 characters' }),
+    .url({ message: 'Enter a valid website address' })
+    .min(1, { message: 'enter a ' })
+    .max(200, { message: 'Must be at most 200 characters' }),
   email: z
     .string()
     .email({ message: 'Invalid email' })
@@ -77,7 +77,7 @@ export const OrganizationDetailsForm = ({
         </FormHeader>
         <form.AppField
           name="organizationName"
-          children={field => (
+          children={(field) => (
             <field.TextField
               label="Organization name"
               isRequired
@@ -91,7 +91,7 @@ export const OrganizationDetailsForm = ({
 
         <form.AppField
           name="website"
-          children={field => (
+          children={(field) => (
             <field.TextField
               label="Website"
               isRequired
@@ -104,7 +104,7 @@ export const OrganizationDetailsForm = ({
         />
         <form.AppField
           name="email"
-          children={field => (
+          children={(field) => (
             <field.TextField
               label="Email"
               isRequired
@@ -119,7 +119,7 @@ export const OrganizationDetailsForm = ({
 
         <form.AppField
           name="whereWeWork"
-          children={field => (
+          children={(field) => (
             <field.MultiSelectComboBox
               placeholder="Select locations…"
               label="Where we work"
@@ -128,15 +128,15 @@ export const OrganizationDetailsForm = ({
               value={(field.state.value as Array<Option>) ?? []}
               items={[
                 { id: 'portland', label: 'Portland, Oregon' },
-                { id: 'forprofit', label: 'Forprofit' },
-                { id: 'government', label: 'Government Entity' },
+                { id: 'sanfrancisco', label: 'San Francisco, CA' },
+                { id: 'international', label: 'International' },
               ]}
             />
           )}
         />
         <form.AppField
           name="orgType"
-          children={field => (
+          children={(field) => (
             <field.Select
               label="Organizational Status"
               placeholder="Select"
@@ -154,7 +154,7 @@ export const OrganizationDetailsForm = ({
 
         <form.AppField
           name="bio"
-          children={field => (
+          children={(field) => (
             <field.TextField
               useTextArea
               label="Bio"
@@ -172,7 +172,7 @@ export const OrganizationDetailsForm = ({
 
         <form.AppField
           name="mission"
-          children={field => (
+          children={(field) => (
             <field.TextField
               useTextArea
               label="Mission statement"
@@ -191,7 +191,7 @@ export const OrganizationDetailsForm = ({
 
         <form.AppField
           name="focusAreas"
-          children={field => (
+          children={(field) => (
             <field.MultiSelectComboBox
               label="Focus Areas"
               placeholder="Select one or more"
@@ -199,9 +199,15 @@ export const OrganizationDetailsForm = ({
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
               items={[
-                { id: 'nonprofit', label: 'Nonprofit' },
-                { id: 'forprofit', label: 'Forprofit' },
-                { id: 'government', label: 'Government Entity' },
+                { id: 'placeholder1', label: 'Placeholder 1' },
+                { id: 'placeholder2', label: 'Placeholder 2' },
+                { id: 'placeholder3', label: 'Placeholder 3' },
+                { id: 'placeholder4', label: 'Placeholder 4' },
+                { id: 'placeholder5', label: 'Placeholder 5' },
+                { id: 'placeholder6', label: 'Placeholder 6' },
+                { id: 'placeholder7', label: 'Placeholder 7' },
+                { id: 'placeholder8', label: 'Placeholder 8' },
+                { id: 'placeholder9', label: 'Placeholder 9' },
               ]}
             />
           )}
@@ -209,32 +215,44 @@ export const OrganizationDetailsForm = ({
 
         <form.AppField
           name="communitiesServed"
-          children={field => (
+          children={(field) => (
             <field.MultiSelectComboBox
               label="Communities Served"
               value={(field.state.value as Array<Option>) ?? []}
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
               items={[
-                { id: 'nonprofit', label: 'Nonprofit' },
-                { id: 'forprofit', label: 'Forprofit' },
-                { id: 'government', label: 'Government Entity' },
+                { id: 'placeholder1', label: 'Placeholder 1' },
+                { id: 'placeholder2', label: 'Placeholder 2' },
+                { id: 'placeholder3', label: 'Placeholder 3' },
+                { id: 'placeholder4', label: 'Placeholder 4' },
+                { id: 'placeholder5', label: 'Placeholder 5' },
+                { id: 'placeholder6', label: 'Placeholder 6' },
+                { id: 'placeholder7', label: 'Placeholder 7' },
+                { id: 'placeholder8', label: 'Placeholder 8' },
+                { id: 'placeholder9', label: 'Placeholder 9' },
               ]}
             />
           )}
         />
         <form.AppField
           name="strategies"
-          children={field => (
+          children={(field) => (
             <field.MultiSelectComboBox
               label="Strategies/Tactics"
               value={(field.state.value as Array<Option>) ?? []}
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
               items={[
-                { id: 'nonprofit', label: 'Nonprofit' },
-                { id: 'forprofit', label: 'Forprofit' },
-                { id: 'government', label: 'Government Entity' },
+                { id: 'placeholder1', label: 'Placeholder 1' },
+                { id: 'placeholder2', label: 'Placeholder 2' },
+                { id: 'placeholder3', label: 'Placeholder 3' },
+                { id: 'placeholder4', label: 'Placeholder 4' },
+                { id: 'placeholder5', label: 'Placeholder 5' },
+                { id: 'placeholder6', label: 'Placeholder 6' },
+                { id: 'placeholder7', label: 'Placeholder 7' },
+                { id: 'placeholder8', label: 'Placeholder 8' },
+                { id: 'placeholder9', label: 'Placeholder 9' },
               ]}
             />
           )}
@@ -242,7 +260,7 @@ export const OrganizationDetailsForm = ({
 
         <form.AppField
           name="networkOrganization"
-          children={field => (
+          children={(field) => (
             <ToggleRow>
               Does your organization serve as a network or coalition with member
               organizations?
