@@ -25,7 +25,7 @@ export const organizationUsers = pgTable(
         onUpdate: 'cascade',
       }),
     name: varchar({ length: 256 }),
-    email: varchar().notNull().unique(),
+    email: varchar().notNull(),
     about: text(),
     organizationId: uuid()
       .references(() => organizations.id, {
@@ -35,7 +35,7 @@ export const organizationUsers = pgTable(
       .notNull(),
     ...timestamps,
   },
-  table => [
+  (table) => [
     ...serviceRolePolicies,
     index().on(table.id).concurrently(),
     index().on(table.email).concurrently(),
@@ -75,7 +75,7 @@ export const organizationUserToAccessRoles = pgTable(
       .references(() => accessRoles.id),
     ...timestamps,
   },
-  table => [
+  (table) => [
     ...serviceRolePolicies,
     primaryKey({ columns: [table.organizationUserId, table.accessRoleId] }),
   ],

@@ -2,6 +2,7 @@ import { Organization, organizations, organizationUsers } from '@op/db/schema';
 import { CommonError, UnauthorizedError } from '../../utils';
 import { db } from '@op/db/client';
 import { User } from '@op/supabase/lib';
+import { randomUUID } from 'crypto';
 
 export const getOrganization = async ({
   slug,
@@ -68,7 +69,19 @@ export const createOrganizationWithUser = async ({
   // Create organization and link user in a single transaction
   const result = await db.transaction(async (tx) => {
     // Insert organization record
-    const newOrg = await tx.insert(organizations).values(data).returning();
+    const newOrg = await tx
+      .insert(organizations)
+      .values({
+        email: user.email,
+        slug: randomUUID(),
+        name: data.organizationName,
+        isOfferingFunds: data.isOfferingFunds,
+        isReceivingFunds: data.isReceivingFunds,
+        website: data.website,
+        mission: data.mission,
+        values: data.values,
+      })
+      .returning();
     if (!newOrg || newOrg.length === 0) {
       throw new CommonError('Failed to create organization');
     }

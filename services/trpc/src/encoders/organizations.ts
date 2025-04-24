@@ -30,10 +30,10 @@ export const organizationsEncoder = createSelectSchema(organizations)
     isReceivingFunds: true,
   })
   .extend({
-    projects: z.array(projectEncoder),
-    links: z.array(linksEncoder),
-    headerImage: storageItemEncoder.nullable(),
-    avatarImage: storageItemEncoder.nullable(),
+    projects: z.array(projectEncoder).optional(),
+    links: z.array(linksEncoder).optional(),
+    headerImage: storageItemEncoder.nullish(),
+    avatarImage: storageItemEncoder.nullish(),
   });
 
 export const organizationsCreateInputEncoder = createSelectSchema(organizations)
