@@ -22,7 +22,6 @@ export const OnboardingFlow = () => {
       createOrganization
         .mutateAsync(values)
         .then((newOrg) => {
-          console.log('CREATED ORGANIZATION', newOrg);
           console.log('redirecting', newOrg.slug);
           router.push(`/app/org/${newOrg.slug}?new=1`);
         })
