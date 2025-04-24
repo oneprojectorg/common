@@ -4,7 +4,7 @@ import { authUsers } from 'drizzle-orm/supabase';
 
 import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
 
-import { organizations } from './organizations.sql';
+import { organizationUsers } from './organizationUsers.sql';
 import { objectsInStorage } from './storage.sql';
 
 export const users = pgTable(
@@ -42,7 +42,7 @@ export const users = pgTable(
 );
 
 export const usersRelations = relations(users, ({ many, one }) => ({
-  organizations: many(organizations),
+  organizationUsers: many(organizationUsers),
   avatarImage: one(objectsInStorage, {
     fields: [users.avatarImageId],
     references: [objectsInStorage.id],

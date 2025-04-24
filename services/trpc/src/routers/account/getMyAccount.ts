@@ -38,6 +38,7 @@ export const getMyAccount = router({
         where: (table, { eq }) => eq(table.authUserId, id),
         with: {
           avatarImage: true,
+          organizationUsers: true,
         },
       });
 

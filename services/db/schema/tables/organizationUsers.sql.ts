@@ -13,6 +13,7 @@ import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
 
 import { accessRoles } from './access.sql';
 import { organizations } from './organizations.sql';
+import { users } from './users.sql';
 
 export const organizationUsers = pgTable(
   'organization_users',
@@ -52,10 +53,14 @@ export const organizationUsersRelations = relations(
   organizationUsers,
   ({ one, many }) => ({
     // TODO: this should be the user not authuser
-    user: one(authUsers, {
-      fields: [organizationUsers.id],
-      references: [authUsers.id],
+    serviceUser: one(users, {
+      fields: [organizationUsers.authUserId],
+      references: [users.authUserId],
     }),
+    // user: one(authUsers, {
+    // fields: [organizationUsers.id],
+    // references: [authUsers.id],
+    // }),
     organization: one(organizations, {
       fields: [organizationUsers.organizationId],
       references: [organizations.id],
