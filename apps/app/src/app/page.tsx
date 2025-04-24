@@ -10,9 +10,7 @@ const MainPage = () => {
   const authUser = useAuthUser();
   const { data: account, isPending } = trpc.account.getMyAccount.useQuery();
 
-  console.log('AUTH USER >>>>', authUser);
   if (authUser?.data && !isPending) {
-    console.log('USER >>>>', isPending, account?.organizationUsers?.length);
     if (authUser.data.user == null) {
       router.push('/login');
       return;
