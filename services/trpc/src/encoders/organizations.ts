@@ -36,6 +36,44 @@ export const organizationsEncoder = createSelectSchema(organizations)
     avatarImage: storageItemEncoder.nullable(),
   });
 
+export const organizationsCreateInputEncoder = createSelectSchema(organizations)
+  .pick({
+    name: true,
+    slug: true,
+    description: true,
+
+    // Mission
+    mission: true,
+    // Year Founded
+    yearFounded: true,
+    values: true,
+    // Email
+    email: true,
+    phone: true,
+    website: true,
+    // Address
+    address: true,
+    city: true,
+    state: true,
+    postalCode: true,
+    // Geography
+    latitude: true,
+    longitude: true,
+    isVerified: true,
+    socialLinks: true,
+
+    isOfferingFunds: true,
+    isReceivingFunds: true,
+
+    // Organization Type
+    orgType: true,
+  })
+  .partial();
+
+export type OrganizationCreateInput = z.infer<
+  typeof organizationsCreateInputEncoder
+>;
+
 export type Organization = z.infer<typeof organizationsEncoder>;
 
 export const orgUserEncoder = createSelectSchema(organizationUsers);

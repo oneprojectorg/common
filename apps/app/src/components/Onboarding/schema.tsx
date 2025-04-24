@@ -91,6 +91,10 @@ export const schema: Schema<Values> = [
         isReceivingFunds: [false, []],
         isOfferingFunds: [false, []],
         acceptingApplications: [false, []],
+        // receivingFundsDescription: ['', []],
+        // receivingFundsLink: ['', []],
+        // offeringFundsDescription: ['', []],
+        // offeringFundsLink: ['', []],
       }),
       render: ({ values, onNext, onBack }) => (
         <>
@@ -98,7 +102,7 @@ export const schema: Schema<Values> = [
           <MultiStepProvider onNext={onNext} onBack={onBack}>
             <FundingInformationForm
               defaultValues={values}
-              resolver={resolvers.OrganizationDetailsForm}
+              resolver={resolvers.FundingInformationForm}
             />
           </MultiStepProvider>
         </>
@@ -106,7 +110,7 @@ export const schema: Schema<Values> = [
     },
   },
   {
-    return: props => props,
+    return: (props) => props,
   },
 ];
 

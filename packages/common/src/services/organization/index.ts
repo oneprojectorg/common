@@ -1,4 +1,5 @@
-import { UnauthorizedError } from '../../utils';
+import { Organization, organizations, organizationUsers } from '@op/db/schema';
+import { CommonError, UnauthorizedError } from '../../utils';
 import { db } from '@op/db/client';
 import { User } from '@op/supabase/lib';
 
@@ -30,6 +31,62 @@ export const getOrganization = async ({
       headerImage: true,
       avatarImage: true,
     },
+  });
+
+  return result;
+};
+
+export const createOrganization = async ({
+  data,
+  user,
+}: {
+  data: Partial<Organization>;
+  user: User;
+}) => {
+  if (!user) {
+    throw new UnauthorizedError();
+  }
+
+  // assertAccess({ organization, permission: 'create' }, user.roles);
+
+  const newOrg = await db.insert(organizations).values(data).returning();
+
+  return newOrg;
+};
+
+export const createOrganizationWithUser = async ({
+  data,
+  user,
+}: {
+  data: Partial<Organization>;
+  user: User;
+}) => {
+  if (!user) {
+    throw new UnauthorizedError();
+  }
+
+  // Create organization and link user in a single transaction
+  const result = await db.transaction(async (tx) => {
+    // Insert organization record
+    const newOrg = await tx.insert(organizations).values(data).returning();
+    if (!newOrg || newOrg.length === 0) {
+      throw new CommonError('Failed to create organization');
+    }
+
+    // Insert organizationUser linking the user to organization, with a default role of owner
+    const newOrgUser = await tx
+      .insert(organizationUsers)
+      .values({
+        organizationId: newOrg[0].id,
+        authUserId: user.id,
+        email: user.email,
+      })
+      .returning();
+    if (!newOrgUser || newOrgUser.length === 0) {
+      throw new CommonError('Failed to associate organization with user');
+    }
+
+    return newOrg[0];
   });
 
   return result;
