@@ -4,7 +4,7 @@ import {
   organizations,
   organizationUsers,
 } from '@op/db/schema';
-import { CommonError, UnauthorizedError } from '../../utils';
+import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { db } from '@op/db/client';
 import { User } from '@op/supabase/lib';
 import { randomUUID } from 'crypto';
@@ -53,33 +53,14 @@ export const createOrganization = async ({
     throw new UnauthorizedError();
   }
 
-  // assertAccess({ organization, permission: 'create' }, user.roles);
-
-  const newOrg = await db.insert(organizations).values(data).returning();
-
-  return newOrg;
-};
-
-export const createOrganizationWithUser = async ({
-  data,
-  user,
-}: {
-  data: Partial<Organization>;
-  user: User;
-}) => {
-  if (!user) {
-    throw new UnauthorizedError();
-  }
-
-  // Create organization and link user in a single transaction
+  // Create organization and link user
   const result = await db.transaction(async (tx) => {
-    // Insert organization record
-    const newOrg = await tx
+    const [newOrg] = await tx
       .insert(organizations)
       .values({
-        email: user.email,
         slug: randomUUID(),
-        name: data.organizationName,
+        email: user.email,
+        name: data.name,
         isOfferingFunds: data.isOfferingFunds,
         isReceivingFunds: data.isReceivingFunds,
         website: data.website,
@@ -87,41 +68,44 @@ export const createOrganizationWithUser = async ({
         values: data.values,
       })
       .returning();
-    if (!newOrg || newOrg.length === 0) {
-      throw new CommonError('Failed to create organization');
+
+    if (!newOrg) {
+      throw new NotFoundError('Failed to create organization');
     }
 
     // Insert organizationUser linking the user to organization, with a default role of owner
-    const newOrgUser = await tx
+    const [newOrgUser] = await tx
       .insert(organizationUsers)
       .values({
-        organizationId: newOrg[0].id,
+        organizationId: newOrg.id,
         authUserId: user.id,
         email: user.email,
       })
       .returning();
 
     // Add funding links
-    const receivingFundsLink = data.receivingFundsLink
-      ? await tx.insert(links).values({
-          organizationId: newOrg[0].id,
-          href: data.receivingFundsLink,
-          type: 'receiving',
-        })
-      : undefined;
-    const offeringFundsLink = data.offeringFundsLink
-      ? await tx.insert(links).values({
-          organizationId: newOrg[0].id,
-          href: data.offeringFundsLink,
-          type: 'offering',
-        })
-      : undefined;
+    await Promise.all([
+      ...(data.receivingFundsLink
+        ? tx.insert(links).values({
+            organizationId: newOrg.id,
+            href: data.receivingFundsLink,
+            type: 'receiving',
+          })
+        : []),
+      ...(data.offeringFundsLink
+        ? tx.insert(links).values({
+            organizationId: newOrg.id,
+            href: data.offeringFundsLink,
+            type: 'offering',
+          })
+        : []),
+    ]);
 
-    if (!newOrgUser || newOrgUser.length === 0) {
+    if (!newOrgUser) {
       throw new CommonError('Failed to associate organization with user');
     }
 
-    return newOrg[0];
+    return newOrg;
   });
 
   return result;

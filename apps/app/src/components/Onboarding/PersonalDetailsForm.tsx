@@ -24,7 +24,11 @@ export const validator = z.object({
   profileImageUrl: z.string().optional(),
 });
 
-export const PersonalDetailsForm = ({ defaultValues, resolver }: StepProps) => {
+export const PersonalDetailsForm = ({
+  defaultValues,
+  resolver,
+  className,
+}: StepProps & { className?: string }) => {
   const uploadImage = trpc.account.uploadImage.useMutation();
   const updateProfile = trpc.account.updateUserProfile.useMutation();
   const [profileImageUrl, setProfileImageUrl] = useState<string | undefined>();
@@ -51,6 +55,7 @@ export const PersonalDetailsForm = ({ defaultValues, resolver }: StepProps) => {
         e.preventDefault();
         void form.handleSubmit();
       }}
+      className={className}
     >
       <FormContainer>
         <FormHeader text="Add your personal details">

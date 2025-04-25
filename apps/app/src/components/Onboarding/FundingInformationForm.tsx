@@ -24,7 +24,8 @@ export const validator = z.object({
 export const FundingInformationForm = ({
   defaultValues,
   resolver,
-}: StepProps) => {
+  className,
+}: StepProps & { className?: string }) => {
   const { onNext, onBack } = useMultiStep();
 
   const form = useAppForm({
@@ -46,6 +47,7 @@ export const FundingInformationForm = ({
         console.log('hello', e);
         void form.handleSubmit();
       }}
+      className={className}
     >
       <FormContainer>
         <FormHeader text="Funding information">

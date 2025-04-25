@@ -1,10 +1,7 @@
 import { TRPCError } from '@trpc/server';
+import { z } from 'zod';
 
-import {
-  createOrganization,
-  createOrganizationWithUser,
-  UnauthorizedError,
-} from '@op/common';
+import { createOrganization, UnauthorizedError } from '@op/common';
 
 import {
   organizationsCreateInputEncoder,
@@ -16,7 +13,6 @@ import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
 import type { OpenApiMeta } from 'trpc-to-openapi';
-import { z } from 'zod';
 
 // const inputSchema = organizationsCreateInputEncoder;
 const inputSchema = z.object({
@@ -63,7 +59,7 @@ export const createOrganizationRouter = router({
       const { user } = ctx;
 
       try {
-        const org = await createOrganizationWithUser({ data: input, user });
+        const org = await createOrganization({ data: input, user });
 
         return org;
       } catch (error: unknown) {
@@ -74,7 +70,6 @@ export const createOrganizationRouter = router({
           });
         }
 
-        console.log('ERROR', error.message);
         throw new TRPCError({
           message: 'Failed to create organization',
           code: 'INTERNAL_SERVER_ERROR',

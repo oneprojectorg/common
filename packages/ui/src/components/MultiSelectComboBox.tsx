@@ -19,6 +19,7 @@ export const MultiSelectComboBox = ({
   isRequired,
   value,
   onChange,
+  onInputUpdate,
   errorMessage,
 }: {
   items: Array<Option>;
@@ -27,6 +28,7 @@ export const MultiSelectComboBox = ({
   isRequired?: boolean;
   value?: Array<Option>;
   onChange?: (value: Array<Option>) => void;
+  onInputUpdate?: (value: Array<Option>) => void;
   errorMessage?: string | ((validation: ValidationResult) => string);
 }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -35,6 +37,8 @@ export const MultiSelectComboBox = ({
   const [showOtherInput, setShowOtherInput] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const otherInputRef = useRef<HTMLInputElement | null>(null);
+
+  console.log('ITEMS', items);
 
   const selectedOptions = value ?? [];
   const setSelectedOptions = onChange ?? (() => {});
@@ -113,6 +117,7 @@ export const MultiSelectComboBox = ({
 
   // Handle input change
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onInputUpdate(e.target.value);
     setInputValue(e.target.value);
     setIsOpen(true);
   };

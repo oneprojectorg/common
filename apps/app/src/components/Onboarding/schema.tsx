@@ -51,6 +51,7 @@ export const schema: Schema<Values> = [
             <PersonalDetailsForm
               defaultValues={values}
               resolver={resolvers.PersonalDetailsForm}
+              className="w-[32rem]"
             />
           </MultiStepProvider>
         </>
@@ -60,7 +61,7 @@ export const schema: Schema<Values> = [
   {
     form: {
       values: () => ({
-        organizationName: ['', []],
+        name: ['', []],
         website: ['', []],
         email: ['', []],
         orgType: ['', []],
@@ -79,6 +80,7 @@ export const schema: Schema<Values> = [
             <OrganizationDetailsForm
               defaultValues={values}
               resolver={resolvers.OrganizationDetailsForm}
+              className="w-[32rem]"
             />
           </MultiStepProvider>
         </>
@@ -103,6 +105,7 @@ export const schema: Schema<Values> = [
             <FundingInformationForm
               defaultValues={values}
               resolver={resolvers.FundingInformationForm}
+              className="w-[32rem]"
             />
           </MultiStepProvider>
         </>

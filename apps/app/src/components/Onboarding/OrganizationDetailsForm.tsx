@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { trpc } from '@op/trpc/client';
 import { SelectItem } from '@op/ui/Select';
 
 import { FormContainer } from '../form/FormContainer';
@@ -11,6 +12,7 @@ import { ToggleRow } from '../layout/split/form/ToggleRow';
 
 import type { StepProps } from '../form/utils';
 import type { Option } from '@op/ui/MultiSelectComboBox';
+import { useState } from 'react';
 
 const multiSelectOptionValidator = z.object({
   id: z.string(),
@@ -19,7 +21,7 @@ const multiSelectOptionValidator = z.object({
 });
 
 export const validator = z.object({
-  organizationName: z
+  name: z
     .string()
     .min(1, { message: 'Enter a name for your organization' })
     .max(20, { message: 'Must be at most 20 characters' })
@@ -50,7 +52,8 @@ export const validator = z.object({
 export const OrganizationDetailsForm = ({
   defaultValues,
   resolver,
-}: StepProps) => {
+  className,
+}: StepProps & { className?: string }) => {
   const { onNext, onBack } = useMultiStep();
   const form = useAppForm({
     defaultValues,
@@ -64,12 +67,21 @@ export const OrganizationDetailsForm = ({
     },
   });
 
+  const [whereWeWorkQuery, setWhereWeWorkQuery] = useState('');
+  console.log('CHANGE', whereWeWorkQuery);
+  const { data: geoNames } = trpc.external.getGeoNames.useQuery({
+    q: whereWeWorkQuery,
+  });
+
+  console.log('geoNames', geoNames);
+
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
         void form.handleSubmit();
       }}
+      className={className}
     >
       <FormContainer>
         <FormHeader text="Add your organization’s details">
@@ -78,7 +90,7 @@ export const OrganizationDetailsForm = ({
         </FormHeader>
         <ImageHeader />
         <form.AppField
-          name="organizationName"
+          name="name"
           children={(field) => (
             <field.TextField
               label="Organization name"
@@ -126,13 +138,17 @@ export const OrganizationDetailsForm = ({
               placeholder="Select locations…"
               label="Where we work"
               isRequired
-              onChange={field.handleChange}
+              onChange={(value) => field.handleChange(value)}
+              onInputUpdate={(value) => {
+                setWhereWeWorkQuery(value);
+              }}
               value={(field.state.value as Array<Option>) ?? []}
-              items={[
-                { id: 'portland', label: 'Portland, Oregon' },
-                { id: 'sanfrancisco', label: 'San Francisco, CA' },
-                { id: 'international', label: 'International' },
-              ]}
+              items={
+                geoNames?.geoname.map((item) => ({
+                  id: item.geonameId.toString(),
+                  label: item.name,
+                })) ?? []
+              }
             />
           )}
         />
