@@ -1,6 +1,7 @@
 'use client';
 
 import { getPublicUrl } from '@/utils';
+import { ClientOnly } from '@/utils/ClientOnly';
 import { ErrorBoundary } from 'next/dist/client/components/error-boundary';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -70,19 +71,21 @@ export const SiteHeader = () => {
         aria-label="Search"
       />
 
-      <ErrorBoundary
-        errorComponent={() => (
-          <div className="size-8 rounded-full border bg-white shadow" />
-        )}
-      >
-        <Suspense
-          fallback={
-            <Skeleton className="size-8 rounded-full border bg-white shadow" />
-          }
+      <ClientOnly>
+        <ErrorBoundary
+          errorComponent={() => (
+            <div className="size-8 rounded-full border bg-white shadow" />
+          )}
         >
-          <UserAvatarMenu />
-        </Suspense>
-      </ErrorBoundary>
+          <Suspense
+            fallback={
+              <Skeleton className="size-8 rounded-full border bg-white shadow" />
+            }
+          >
+            <UserAvatarMenu />
+          </Suspense>
+        </ErrorBoundary>
+      </ClientOnly>
     </header>
   );
 };
