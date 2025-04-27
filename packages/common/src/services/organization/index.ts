@@ -53,6 +53,9 @@ export const organizationInputSchema = z
     website: z.string().url().optional(),
     mission: z.string().optional(),
     whereWeWork: z.any().optional(),
+
+    headerImageId: z.string().optional(),
+    avatarImageId: z.string().optional(),
   })
   .strip()
   .partial();
@@ -88,7 +91,11 @@ export const createOrganization = async ({
   data,
   user,
 }: {
-  data: OrganizationInput & FundingLinksInput;
+  data: OrganizationInput &
+    FundingLinksInput & {
+      orgAvatarImageId?: string;
+      orgBannerImageId?: string;
+    };
   user: User;
 }) => {
   if (!user) {
@@ -99,6 +106,8 @@ export const createOrganization = async ({
     slug: randomUUID(),
     email: user.email,
     ...data,
+    headerImageId: data.orgBannerImageId,
+    avatarImageId: data.orgAvatarImageId,
   });
 
   // Create organization and link user

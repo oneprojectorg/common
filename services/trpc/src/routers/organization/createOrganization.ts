@@ -53,6 +53,9 @@ const inputSchema = z.object({
   receivingFundsLink: z.string().optional(),
   offeringFundsDescription: z.string().optional(),
   offeringFundsLink: z.string().optional(),
+
+  orgAvatarImageId: z.string().optional(),
+  orgBannerImageId: z.string().optional(),
 });
 
 const meta: OpenApiMeta = {

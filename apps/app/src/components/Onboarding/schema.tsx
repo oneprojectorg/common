@@ -73,7 +73,8 @@ export const schema: Schema<Values> = [
         whereWeWork: [[], []],
         networkOrganization: [false, []],
 
-        // avatarImage
+        orgAvatarImageId: [undefined, []],
+        orgBannerImageId: [undefined, []],
       }),
       render: ({ values, onNext, onBack }) => (
         <>

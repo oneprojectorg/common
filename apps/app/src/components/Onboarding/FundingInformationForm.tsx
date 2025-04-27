@@ -48,7 +48,6 @@ export const FundingInformationForm = ({
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        console.log('hello', e);
         void form.handleSubmit();
       }}
       className={className}

@@ -50,6 +50,9 @@ export const validator = z.object({
   communitiesServed: z.array(multiSelectOptionValidator).optional(),
   strategies: z.array(multiSelectOptionValidator).optional(),
   networkOrganization: z.boolean().default(false),
+
+  orgAvatarImageId: z.string().optional(),
+  orgBannerImageId: z.string().optional(),
 });
 
 type ImageData = {
@@ -75,8 +78,11 @@ export const OrganizationDetailsForm = ({
       onChange: resolver,
     },
     onSubmit: ({ value }) => {
-      console.log('SUBMIT >>>>', JSON.stringify(value, null, 2));
-      onNext(value);
+      onNext({
+        ...value,
+        orgAvatarImageId: profileImage?.id,
+        orgBannerImageId: bannerImage?.id,
+      });
     },
   });
 
