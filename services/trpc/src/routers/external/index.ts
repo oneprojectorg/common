@@ -1,5 +1,5 @@
 import { mergeRouters } from '../../trpcFactory';
 
-import { getGeoNames } from './fetchProxy';
+import { getGeoNames } from './geoNames';
 
 export const externalRouter = mergeRouters(getGeoNames);

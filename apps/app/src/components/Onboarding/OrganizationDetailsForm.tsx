@@ -1,18 +1,17 @@
 import { z } from 'zod';
 
-import { trpc } from '@op/trpc/client';
 import { SelectItem } from '@op/ui/Select';
 
 import { FormContainer } from '../form/FormContainer';
 import { FormHeader } from '../form/FormHeader';
 import { useMultiStep } from '../form/multiStep';
 import { getFieldErrorMessage, useAppForm } from '../form/utils';
+import { GeoNamesMultiSelect } from '../GeoNamesMultiSelect';
 import { ImageHeader } from '../ImageHeader';
 import { ToggleRow } from '../layout/split/form/ToggleRow';
 
 import type { StepProps } from '../form/utils';
 import type { Option } from '@op/ui/MultiSelectComboBox';
-import { useState } from 'react';
 
 const multiSelectOptionValidator = z.object({
   id: z.string(),
@@ -66,14 +65,6 @@ export const OrganizationDetailsForm = ({
       onNext(value);
     },
   });
-
-  const [whereWeWorkQuery, setWhereWeWorkQuery] = useState('');
-  console.log('CHANGE', whereWeWorkQuery);
-  const { data: geoNames } = trpc.external.getGeoNames.useQuery({
-    q: whereWeWorkQuery,
-  });
-
-  console.log('geoNames', geoNames);
 
   return (
     <form
@@ -134,21 +125,11 @@ export const OrganizationDetailsForm = ({
         <form.AppField
           name="whereWeWork"
           children={(field) => (
-            <field.MultiSelectComboBox
-              placeholder="Select locations…"
+            <GeoNamesMultiSelect
               label="Where we work"
               isRequired
               onChange={(value) => field.handleChange(value)}
-              onInputUpdate={(value) => {
-                setWhereWeWorkQuery(value);
-              }}
               value={(field.state.value as Array<Option>) ?? []}
-              items={
-                geoNames?.geoname.map((item) => ({
-                  id: item.geonameId.toString(),
-                  label: item.name,
-                })) ?? []
-              }
             />
           )}
         />

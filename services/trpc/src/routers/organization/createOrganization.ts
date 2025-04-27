@@ -3,10 +3,7 @@ import { z } from 'zod';
 
 import { createOrganization, UnauthorizedError } from '@op/common';
 
-import {
-  organizationsCreateInputEncoder,
-  organizationsEncoder,
-} from '../../encoders/organizations';
+import { organizationsEncoder } from '../../encoders/organizations';
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withDB from '../../middlewares/withDB';
 import withRateLimited from '../../middlewares/withRateLimited';
