@@ -15,11 +15,11 @@ import type { StepProps } from '../form/utils';
 export const validator = z.object({
   fullName: z
     .string()
-    .min(1, { message: 'Required' })
+    .min(1, { message: 'Enter your full name' })
     .max(20, { message: 'Must be at most 20 characters' }),
   title: z
     .string()
-    .min(1, { message: 'Enter a title' })
+    .min(1, { message: 'Enter your professional title' })
     .max(20, { message: 'Must be at most 20 characters' }),
   profileImageUrl: z.string().optional(),
 });

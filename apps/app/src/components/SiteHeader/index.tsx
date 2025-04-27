@@ -7,7 +7,11 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 import { LuSearch } from 'react-icons/lu';
 
+import { useAuthLogout } from '@op/hooks';
 import { trpc } from '@op/trpc/client';
+import { Button } from '@op/ui/Button';
+import { Menu, MenuItem } from '@op/ui/Menu';
+import { MenuTrigger } from '@op/ui/RAC';
 import { Skeleton } from '@op/ui/Skeleton';
 import { TextField } from '@op/ui/TextField';
 
@@ -16,23 +20,34 @@ import { OPLogo } from '../OPLogo';
 
 const UserAvatarMenu = () => {
   const [user] = trpc.account.getMyAccount.useSuspenseQuery();
+  const logout = useAuthLogout();
 
   return (
     <div className="size-8 text-clip rounded-full border bg-white shadow">
-      {user.avatarImage?.name
-        ? (
-            <Image
-              src={getPublicUrl(user.avatarImage.name) ?? ''}
-              alt="User avatar"
-              width={48}
-              height={48}
-            />
-          )
-        : (
-            <div className="size-8 rounded-full border bg-white shadow">
-              {user.name?.slice(0, 1) ?? ''}
-            </div>
-          )}
+      <MenuTrigger>
+        <Button unstyled>
+          {user.avatarImage?.name
+            ? (
+                <Image
+                  src={getPublicUrl(user.avatarImage.name) ?? ''}
+                  alt="User avatar"
+                  width={48}
+                  height={48}
+                />
+              )
+            : (
+                <div className="size-8 rounded-full border bg-white shadow">
+                  {user.name?.slice(0, 1) ?? ''}
+                </div>
+              )}
+        </Button>
+
+        <Menu>
+          <MenuItem id="logout" onAction={() => void logout.refetch()}>
+            Logout
+          </MenuItem>
+        </Menu>
+      </MenuTrigger>
     </div>
   );
 };
