@@ -44,8 +44,6 @@ export const OnboardingFlow = () => {
   }
 
   return (
-    <>
-      <Formity<Values> schema={schema} onReturn={onReturn} onYield={onReturn} />
-    </>
+    <Formity<Values> schema={schema} onReturn={onReturn} onYield={onReturn} />
   );
 };
