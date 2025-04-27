@@ -1,6 +1,7 @@
 'use client';
 
 import { Formity } from '@formity/react';
+import { useRouter } from 'next/navigation';
 import { useCallback, useState } from 'react';
 
 import { trpc } from '@op/trpc/client';
@@ -9,7 +10,14 @@ import { schema } from './schema';
 
 import type { Values } from './schema';
 import type { OnReturn, ReturnOutput } from '@formity/react';
-import { useRouter } from 'next/navigation';
+
+const processInputs = (data: ReturnOutput<Values>) => {
+  const inputs = {
+    ...data,
+  };
+
+  return inputs;
+};
 
 export const OnboardingFlow = () => {
   const [values, setValues] = useState<ReturnOutput<Values> | null>(null);
@@ -20,7 +28,7 @@ export const OnboardingFlow = () => {
     (values) => {
       setValues(values);
       createOrganization
-        .mutateAsync(values)
+        .mutateAsync(processInputs(values))
         .then((newOrg) => {
           router.push(`/app/org/${newOrg.slug}?new=1`);
         })

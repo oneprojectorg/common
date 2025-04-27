@@ -11,20 +11,44 @@ import { loggedProcedure, router } from '../../trpcFactory';
 
 import type { OpenApiMeta } from 'trpc-to-openapi';
 
-// const inputSchema = organizationsCreateInputEncoder;
-const inputSchema = z.object({
-  fullName: z.string(),
-  title: z.string(),
-  organizationName: z.string(),
-  website: z.string(),
-  email: z.string(),
-  orgType: z.string(),
-  bio: z.string(),
-  mission: z.string(),
-  isReceivingFunds: z.boolean(),
-  isOfferingFunds: z.boolean(),
-  acceptingApplications: z.boolean(),
+const multiSelectOptionValidator = z.object({
+  id: z.string(),
+  label: z.string().max(20),
+  isNewValue: z.boolean().default(false).optional(),
+  data: z.any().optional(),
+});
 
+const inputSchema = z.object({
+  name: z
+    .string()
+    .min(1, { message: 'Enter a name for your organization' })
+    .max(20, { message: 'Must be at most 20 characters' })
+    .optional(),
+  website: z
+    .string()
+    .url({ message: 'Enter a valid website address' })
+    .min(1, { message: 'enter a ' })
+    .max(200, { message: 'Must be at most 200 characters' }),
+  email: z
+    .string()
+    .email({ message: 'Invalid email' })
+    .max(20, { message: 'Must be at most 20 characters' })
+    .optional(),
+  orgType: z.string().max(20, { message: 'Must be at most 20 characters' }),
+  bio: z.string().max(200, { message: 'Must be at most 200 characters' }),
+  mission: z
+    .string()
+    .max(200, { message: 'Must be at most 200 characters' })
+    .optional(),
+  whereWeWork: z.array(multiSelectOptionValidator).optional(),
+  focusAreas: z.array(multiSelectOptionValidator).optional(),
+  communitiesServed: z.array(multiSelectOptionValidator).optional(),
+  strategies: z.array(multiSelectOptionValidator).optional(),
+  networkOrganization: z.boolean().default(false),
+
+  isReceivingFunds: z.boolean().default(false).optional(),
+  isOfferingFunds: z.boolean().default(false).optional(),
+  acceptingApplications: z.boolean().default(false).optional(),
   receivingFundsDescription: z.string().optional(),
   receivingFundsLink: z.string().optional(),
   offeringFundsDescription: z.string().optional(),
@@ -60,6 +84,8 @@ export const createOrganizationRouter = router({
 
         return org;
       } catch (error: unknown) {
+        console.log('ERROR', error);
+
         if (error instanceof UnauthorizedError) {
           throw new TRPCError({
             message: 'You do not have permission to create organizations',

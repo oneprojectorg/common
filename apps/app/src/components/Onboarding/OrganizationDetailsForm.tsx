@@ -60,8 +60,7 @@ export const OrganizationDetailsForm = ({
       onChange: resolver,
     },
     onSubmit: ({ value }) => {
-      console.log('SUBMIT >>>>');
-      console.log(JSON.stringify(value, null, 2));
+      console.log('SUBMIT >>>>', JSON.stringify(value, null, 2));
       onNext(value);
     },
   });

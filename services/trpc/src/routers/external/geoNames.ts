@@ -38,7 +38,7 @@ export const getGeoNames = router({
     )
     .output(
       z.object({
-        geonames: z.array(z.string()).optional().default([]),
+        geonames: z.array(z.record(z.any())).optional().default([]),
       }),
     )
     .query(async ({ input }) => {
@@ -56,16 +56,20 @@ export const getGeoNames = router({
         };
       };
 
-      const geoNameSet = new Set();
+      const geoNameMap = new Map();
 
       if (jsonData?.geonames?.geoname) {
         for (const geoName of jsonData.geonames.geoname) {
-          geoNameSet.add(`${geoName.name}, ${geoName.countryCode}`);
+          geoNameMap.set(`${geoName.name}, ${geoName.countryCode}`, geoName);
         }
       }
 
+      const geonames =
+        Array.from(geoNameMap).map((item) => ({ [item[0]]: item[1] })) ?? [];
+
+      console.log('GEONAMES', geonames);
       return {
-        geonames: Array.from(geoNameSet) ?? [],
+        geonames,
       };
     }),
 });

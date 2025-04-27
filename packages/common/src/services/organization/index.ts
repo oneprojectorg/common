@@ -4,6 +4,7 @@ import {
   organizations,
   organizationUsers,
 } from '@op/db/schema';
+import { z } from 'zod';
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { db } from '@op/db/client';
 import { User } from '@op/supabase/lib';
@@ -42,31 +43,70 @@ export const getOrganization = async ({
   return result;
 };
 
+export const organizationInputSchema = z
+  .object({
+    slug: z.string(),
+    email: z.string().email(),
+    name: z.string().optional(),
+    isOfferingFunds: z.boolean().optional(),
+    isReceivingFunds: z.boolean().optional(),
+    website: z.string().url().optional(),
+    mission: z.string().optional(),
+    whereWeWork: z.any().optional(),
+  })
+  .strip()
+  .partial();
+
+type OrganizationInput = z.infer<typeof organizationInputSchema>;
+
+const OrganizationInputParser = organizationInputSchema.transform(
+  (data: OrganizationInput) => {
+    // Remove keys with undefined values
+    return Object.fromEntries(
+      Object.entries(data).filter(([_, value]) => value !== undefined),
+    ) as OrganizationInput;
+  },
+);
+
+export const fundingLinksnputSchema = z
+  .object({
+    receivingFundsLink: z
+      .string()
+      .url({ message: 'Enter a valid website address' })
+      .optional(),
+    offeringFundsDescription: z.string().optional(),
+    offeringFundsLink: z
+      .string()
+      .url({ message: 'Enter a valid website address' })
+      .optional(),
+  })
+  .strip()
+  .partial();
+type FundingLinksInput = z.infer<typeof fundingLinksnputSchema>;
+
 export const createOrganization = async ({
   data,
   user,
 }: {
-  data: Partial<Organization>;
+  data: OrganizationInput & FundingLinksInput;
   user: User;
 }) => {
   if (!user) {
     throw new UnauthorizedError();
   }
 
+  const orgInputs = OrganizationInputParser.parse({
+    slug: randomUUID(),
+    email: user.email,
+    ...data,
+  });
+
   // Create organization and link user
   const result = await db.transaction(async (tx) => {
     const [newOrg] = await tx
       .insert(organizations)
-      .values({
-        slug: randomUUID(),
-        email: user.email,
-        name: data.name,
-        isOfferingFunds: data.isOfferingFunds,
-        isReceivingFunds: data.isReceivingFunds,
-        website: data.website,
-        mission: data.mission,
-        values: data.values,
-      })
+      // @ts-expect-error - TODO: this is well defined with zod
+      .values(orgInputs)
       .returning();
 
     if (!newOrg) {
@@ -79,25 +119,29 @@ export const createOrganization = async ({
       .values({
         organizationId: newOrg.id,
         authUserId: user.id,
-        email: user.email,
+        email: user.email!,
       })
       .returning();
 
     // Add funding links
     await Promise.all([
       ...(data.receivingFundsLink
-        ? tx.insert(links).values({
-            organizationId: newOrg.id,
-            href: data.receivingFundsLink,
-            type: 'receiving',
-          })
+        ? [
+            tx.insert(links).values({
+              organizationId: newOrg.id,
+              href: data.receivingFundsLink,
+              type: 'receiving',
+            }),
+          ]
         : []),
       ...(data.offeringFundsLink
-        ? tx.insert(links).values({
-            organizationId: newOrg.id,
-            href: data.offeringFundsLink,
-            type: 'offering',
-          })
+        ? [
+            tx.insert(links).values({
+              organizationId: newOrg.id,
+              href: data.offeringFundsLink,
+              type: 'offering',
+            }),
+          ]
         : []),
     ]);
 

@@ -16,9 +16,15 @@ export const validator = z.object({
   isOfferingFunds: z.boolean().default(false).optional(),
   acceptingApplications: z.boolean().default(false).optional(),
   receivingFundsDescription: z.string().optional(),
-  receivingFundsLink: z.string().optional(),
+  receivingFundsLink: z
+    .string()
+    .url({ message: 'Enter a valid website address' })
+    .optional(),
   offeringFundsDescription: z.string().optional(),
-  offeringFundsLink: z.string().optional(),
+  offeringFundsLink: z
+    .string()
+    .url({ message: 'Enter a valid website address' })
+    .optional(),
 });
 
 export const FundingInformationForm = ({

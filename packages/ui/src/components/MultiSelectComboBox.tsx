@@ -29,7 +29,7 @@ export const MultiSelectComboBox = ({
   isRequired?: boolean;
   value?: Array<Option>;
   onChange?: (value: Array<Option>) => void;
-  onInputUpdate?: (value: Array<Option>) => void;
+  onInputUpdate?: (value: string) => void;
   errorMessage?: string | ((validation: ValidationResult) => string);
 }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -126,8 +126,8 @@ export const MultiSelectComboBox = ({
 
   // Handle input change
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onInputUpdate(e.target.value);
-    setInputValue(e.target.value);
+    onInputUpdate?.(e.target.value ?? '');
+    setInputValue(e.target.value ?? '');
     setIsOpen(true);
     setHighlightedIndex(0);
   };

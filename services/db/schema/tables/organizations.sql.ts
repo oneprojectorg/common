@@ -81,6 +81,9 @@ export const organizations = pgTable(
     avatarImageId: uuid().references(() => objectsInStorage.id, {
       onUpdate: 'cascade',
     }),
+
+    // where we work
+    whereWeWork: json(),
     ...timestamps,
   },
   (table) => [

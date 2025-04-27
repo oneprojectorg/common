@@ -39,10 +39,22 @@ export const GeoNamesMultiSelect = ({
       }}
       value={value ?? []}
       items={
-        geoNames?.geonames.map((item: string) => ({
-          id: item,
-          label: item,
-        })) ?? []
+        geoNames?.geonames
+          .map((item) => {
+            const entries = Object.entries(item)[0];
+            if (!entries?.length) {
+              return null;
+            }
+
+            const [name, data] = entries;
+
+            return {
+              id: name,
+              label: name,
+              data,
+            };
+          })
+          .filter((o) => !!o) ?? []
       }
     />
   );
