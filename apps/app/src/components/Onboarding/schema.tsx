@@ -96,10 +96,6 @@ export const schema: Schema<Values> = [
         isReceivingFunds: [false, []],
         isOfferingFunds: [false, []],
         acceptingApplications: [false, []],
-        // receivingFundsDescription: ['', []],
-        // receivingFundsLink: ['', []],
-        // offeringFundsDescription: ['', []],
-        // offeringFundsLink: ['', []],
       }),
       render: ({ values, onNext, onBack }) => (
         <>
