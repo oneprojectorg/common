@@ -4,7 +4,6 @@ import { authUsers } from 'drizzle-orm/supabase';
 
 import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
 
-import { organizations } from './organizations.sql';
 import { organizationUsers } from './organizationUsers.sql';
 import { objectsInStorage } from './storage.sql';
 
@@ -22,12 +21,13 @@ export const users = pgTable(
     name: varchar({ length: 256 }),
     email: varchar().notNull().unique(),
     about: text(),
+    title: varchar({ length: 256 }),
     avatarImageId: uuid().references(() => objectsInStorage.id, {
       onUpdate: 'cascade',
     }),
     ...timestamps,
   },
-  table => [
+  (table) => [
     ...serviceRolePolicies,
     index().on(table.id).concurrently(),
     index().on(table.email).concurrently(),
@@ -41,9 +41,10 @@ export const users = pgTable(
   ],
 );
 
-export const usersOrganizationsRelations = relations(
-  organizationUsers,
-  ({ many }) => ({
-    organizations: many(organizations),
+export const usersRelations = relations(users, ({ many, one }) => ({
+  organizationUsers: many(organizationUsers),
+  avatarImage: one(objectsInStorage, {
+    fields: [users.avatarImageId],
+    references: [objectsInStorage.id],
   }),
-);
+}));

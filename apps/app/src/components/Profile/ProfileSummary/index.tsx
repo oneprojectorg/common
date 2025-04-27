@@ -12,7 +12,7 @@ export const ProfileSummary = ({ profile }: { profile: Organization }) => {
           : null}
       </div>
       <div className="text-sm text-darkGray">
-        <span className="font-semibold">248</span>
+        <span className="font-semibold">0</span>
         {' '}
         relationships
       </div>

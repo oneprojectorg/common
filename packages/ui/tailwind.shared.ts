@@ -40,7 +40,7 @@ const config: Omit<Config, 'content'> = {
         },
       },
       spacing: {
-        '18': '4.5rem',
+        18: '4.5rem',
       },
       colors: {
         accent: commonColors,
@@ -171,6 +171,8 @@ const config: Omit<Config, 'content'> = {
       backgroundImage: {
         gradient:
           'radial-gradient(154% 99.31% at 0% 0%, #3EC300 0%, #0396A6 51.56%)',
+        redTeal:
+          'radial-gradient(96.92% 140.1% at 72.02% 100%, #0396A6 0%, #FF613D 92.19%, #FFFBFA 99.99%)',
       },
     },
   },

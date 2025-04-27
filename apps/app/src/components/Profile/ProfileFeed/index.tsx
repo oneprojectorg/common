@@ -75,7 +75,9 @@ const FeedHeader = ({ children }: { children: ReactNode }) => {
 };
 
 const FeedAvatar = ({ children }: { children?: ReactNode }) => {
-  return <div className="relative w-16 min-w-16">{children}</div>;
+  return (
+    <div className="relative w-16 min-w-16 overflow-hidden">{children}</div>
+  );
 };
 
 const FeedMain = ({ children }: { children: ReactNode }) => {
@@ -145,7 +147,7 @@ export const ProfileFeed = ({ profile }: { profile: Organization }) => {
                   src={profileImageUrl}
                   alt=""
                   fill
-                  className="!size-16 max-h-16 max-w-16"
+                  className="!size-16 max-h-16 max-w-16 rounded-full"
                 />
               )
             : (
@@ -190,7 +192,7 @@ export const ProfileFeed = ({ profile }: { profile: Organization }) => {
                           src={profileImageUrl}
                           alt=""
                           fill
-                          className="!size-16 max-h-16 max-w-16"
+                          className="!size-16 max-h-16 max-w-16 rounded-full"
                         />
                       )
                     : (

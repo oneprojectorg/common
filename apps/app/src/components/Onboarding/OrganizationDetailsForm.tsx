@@ -1,11 +1,16 @@
+import { useState } from 'react';
 import { z } from 'zod';
 
+import { trpc } from '@op/trpc/client';
+import { AvatarUploader } from '@op/ui/AvatarUploader';
+import { BannerUploader } from '@op/ui/BannerUploader';
 import { SelectItem } from '@op/ui/Select';
 
 import { FormContainer } from '../form/FormContainer';
 import { FormHeader } from '../form/FormHeader';
 import { useMultiStep } from '../form/multiStep';
 import { getFieldErrorMessage, useAppForm } from '../form/utils';
+import { GeoNamesMultiSelect } from '../GeoNamesMultiSelect';
 import { ToggleRow } from '../layout/split/form/ToggleRow';
 
 import type { StepProps } from '../form/utils';
@@ -15,19 +20,20 @@ const multiSelectOptionValidator = z.object({
   id: z.string(),
   label: z.string().max(20),
   isNewValue: z.boolean().default(false).optional(),
+  data: z.any().optional(),
 });
 
 export const validator = z.object({
-  organizationName: z
+  name: z
     .string()
-    .min(1, { message: 'Required' })
+    .min(1, { message: 'Enter a name for your organization' })
     .max(20, { message: 'Must be at most 20 characters' })
     .optional(),
   website: z
     .string()
-    // .url({ message: 'Invalid website address' })
-    .min(1, { message: 'Required' })
-    .max(20, { message: 'Must be at most 20 characters' }),
+    .url({ message: 'Enter a valid website address' })
+    .min(1, { message: 'enter a ' })
+    .max(200, { message: 'Must be at most 200 characters' }),
   email: z
     .string()
     .email({ message: 'Invalid email' })
@@ -44,22 +50,39 @@ export const validator = z.object({
   communitiesServed: z.array(multiSelectOptionValidator).optional(),
   strategies: z.array(multiSelectOptionValidator).optional(),
   networkOrganization: z.boolean().default(false),
+
+  orgAvatarImageId: z.string().optional(),
+  orgBannerImageId: z.string().optional(),
 });
+
+interface ImageData {
+  url: string;
+  path?: string;
+  id?: string;
+}
 
 export const OrganizationDetailsForm = ({
   defaultValues,
   resolver,
-}: StepProps) => {
+  className,
+}: StepProps & { className?: string }) => {
   const { onNext, onBack } = useMultiStep();
+  const [profileImage, setProfileImage] = useState<ImageData | undefined>();
+  const [bannerImage, setBannerImage] = useState<ImageData | undefined>();
+
+  const uploadImage = trpc.organization.uploadAvatarImage.useMutation();
+
   const form = useAppForm({
     defaultValues,
     validators: {
       onChange: resolver,
     },
     onSubmit: ({ value }) => {
-      console.log('SUBMIT >>>>');
-      console.log(JSON.stringify(value, null, 2));
-      onNext(value);
+      onNext({
+        ...value,
+        orgAvatarImageId: profileImage?.id,
+        orgBannerImageId: bannerImage?.id,
+      });
     },
   });
 
@@ -69,14 +92,79 @@ export const OrganizationDetailsForm = ({
         e.preventDefault();
         void form.handleSubmit();
       }}
+      className={className}
     >
       <FormContainer>
         <FormHeader text="Add your organization’s details">
-          We've pre-filled information about Solidarity Seeds. Please review and
+          We've pre-filled information about [ORGANIZATION]. Please review and
           make any necessary changes.
         </FormHeader>
+        <div className="relative w-full pb-20">
+          <BannerUploader
+            className="relative aspect-[128/55] w-full bg-offWhite"
+            value={bannerImage?.url ?? undefined}
+            onChange={async (file: File): Promise<void> => {
+              const reader = new FileReader();
+
+              reader.onload = async (e) => {
+                const base64 = (e.target?.result as string)?.split(',')[1];
+
+                if (!base64) {
+                  return;
+                }
+
+                const dataUrl = `data:${file.type};base64,${base64}`;
+
+                setBannerImage({ url: dataUrl });
+                const res = await uploadImage.mutateAsync({
+                  file: base64,
+                  fileName: file.name,
+                  mimeType: file.type,
+                });
+
+                if (res?.url) {
+                  setBannerImage(res);
+                }
+              };
+
+              reader.readAsDataURL(file);
+            }}
+          />
+          <AvatarUploader
+            className="absolute bottom-0 left-4 aspect-square size-28"
+            value={profileImage?.url ?? undefined}
+            onChange={async (file: File): Promise<void> => {
+              const reader = new FileReader();
+
+              reader.onload = async (e) => {
+                const base64 = (e.target?.result as string)?.split(',')[1];
+
+                if (!base64) {
+                  return;
+                }
+
+                const dataUrl = `data:${file.type};base64,${base64}`;
+
+                setProfileImage({ url: dataUrl });
+                const res = await uploadImage.mutateAsync({
+                  file: base64,
+                  fileName: file.name,
+                  mimeType: file.type,
+                });
+
+                if (res?.url) {
+                  setProfileImage(res);
+                }
+              };
+
+              reader.readAsDataURL(file);
+            }}
+            uploading={uploadImage.isPending}
+            error={uploadImage.error?.message || undefined}
+          />
+        </div>
         <form.AppField
-          name="organizationName"
+          name="name"
           children={field => (
             <field.TextField
               label="Organization name"
@@ -120,17 +208,11 @@ export const OrganizationDetailsForm = ({
         <form.AppField
           name="whereWeWork"
           children={field => (
-            <field.MultiSelectComboBox
-              placeholder="Select locations…"
+            <GeoNamesMultiSelect
               label="Where we work"
               isRequired
-              onChange={field.handleChange}
+              onChange={value => field.handleChange(value)}
               value={(field.state.value as Array<Option>) ?? []}
-              items={[
-                { id: 'portland', label: 'Portland, Oregon' },
-                { id: 'forprofit', label: 'Forprofit' },
-                { id: 'government', label: 'Government Entity' },
-              ]}
             />
           )}
         />
@@ -199,9 +281,15 @@ export const OrganizationDetailsForm = ({
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
               items={[
-                { id: 'nonprofit', label: 'Nonprofit' },
-                { id: 'forprofit', label: 'Forprofit' },
-                { id: 'government', label: 'Government Entity' },
+                { id: 'placeholder1', label: 'Placeholder 1' },
+                { id: 'placeholder2', label: 'Placeholder 2' },
+                { id: 'placeholder3', label: 'Placeholder 3' },
+                { id: 'placeholder4', label: 'Placeholder 4' },
+                { id: 'placeholder5', label: 'Placeholder 5' },
+                { id: 'placeholder6', label: 'Placeholder 6' },
+                { id: 'placeholder7', label: 'Placeholder 7' },
+                { id: 'placeholder8', label: 'Placeholder 8' },
+                { id: 'placeholder9', label: 'Placeholder 9' },
               ]}
             />
           )}
@@ -216,9 +304,15 @@ export const OrganizationDetailsForm = ({
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
               items={[
-                { id: 'nonprofit', label: 'Nonprofit' },
-                { id: 'forprofit', label: 'Forprofit' },
-                { id: 'government', label: 'Government Entity' },
+                { id: 'placeholder1', label: 'Placeholder 1' },
+                { id: 'placeholder2', label: 'Placeholder 2' },
+                { id: 'placeholder3', label: 'Placeholder 3' },
+                { id: 'placeholder4', label: 'Placeholder 4' },
+                { id: 'placeholder5', label: 'Placeholder 5' },
+                { id: 'placeholder6', label: 'Placeholder 6' },
+                { id: 'placeholder7', label: 'Placeholder 7' },
+                { id: 'placeholder8', label: 'Placeholder 8' },
+                { id: 'placeholder9', label: 'Placeholder 9' },
               ]}
             />
           )}
@@ -232,9 +326,15 @@ export const OrganizationDetailsForm = ({
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
               items={[
-                { id: 'nonprofit', label: 'Nonprofit' },
-                { id: 'forprofit', label: 'Forprofit' },
-                { id: 'government', label: 'Government Entity' },
+                { id: 'placeholder1', label: 'Placeholder 1' },
+                { id: 'placeholder2', label: 'Placeholder 2' },
+                { id: 'placeholder3', label: 'Placeholder 3' },
+                { id: 'placeholder4', label: 'Placeholder 4' },
+                { id: 'placeholder5', label: 'Placeholder 5' },
+                { id: 'placeholder6', label: 'Placeholder 6' },
+                { id: 'placeholder7', label: 'Placeholder 7' },
+                { id: 'placeholder8', label: 'Placeholder 8' },
+                { id: 'placeholder9', label: 'Placeholder 9' },
               ]}
             />
           )}

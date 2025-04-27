@@ -35,7 +35,7 @@ const ProfileAbout = ({ profile }: { profile: Organization }) => {
                   ? (
                       <ContactLink>
                         <LuMail />
-                        <span>info@solidarityseeds.org</span>
+                        <Link href={`mailto:${email}`}>{email}</Link>
                       </ContactLink>
                     )
                   : null}

@@ -13,6 +13,7 @@ import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
 
 import { accessRoles } from './access.sql';
 import { organizations } from './organizations.sql';
+import { users } from './users.sql';
 
 export const organizationUsers = pgTable(
   'organization_users',
@@ -25,7 +26,7 @@ export const organizationUsers = pgTable(
         onUpdate: 'cascade',
       }),
     name: varchar({ length: 256 }),
-    email: varchar().notNull().unique(),
+    email: varchar().notNull(),
     about: text(),
     organizationId: uuid()
       .references(() => organizations.id, {
@@ -35,7 +36,7 @@ export const organizationUsers = pgTable(
       .notNull(),
     ...timestamps,
   },
-  table => [
+  (table) => [
     ...serviceRolePolicies,
     index().on(table.id).concurrently(),
     index().on(table.email).concurrently(),
@@ -52,10 +53,14 @@ export const organizationUsersRelations = relations(
   organizationUsers,
   ({ one, many }) => ({
     // TODO: this should be the user not authuser
-    user: one(authUsers, {
-      fields: [organizationUsers.id],
-      references: [authUsers.id],
+    serviceUser: one(users, {
+      fields: [organizationUsers.authUserId],
+      references: [users.authUserId],
     }),
+    // user: one(authUsers, {
+    // fields: [organizationUsers.id],
+    // references: [authUsers.id],
+    // }),
     organization: one(organizations, {
       fields: [organizationUsers.organizationId],
       references: [organizations.id],
@@ -75,7 +80,7 @@ export const organizationUserToAccessRoles = pgTable(
       .references(() => accessRoles.id),
     ...timestamps,
   },
-  table => [
+  (table) => [
     ...serviceRolePolicies,
     primaryKey({ columns: [table.organizationUserId, table.accessRoleId] }),
   ],

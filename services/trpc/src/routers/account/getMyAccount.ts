@@ -9,21 +9,19 @@ import { loggedProcedure, router } from '../../trpcFactory';
 
 import type { OpenApiMeta } from 'trpc-to-openapi';
 
-const endpoint = 'getUserProfile';
-
 const meta: OpenApiMeta = {
   openapi: {
     enabled: true,
     method: 'GET',
-    path: `/account/${endpoint}`,
+    path: `/account`,
     protect: true,
     tags: ['account'],
     summary: 'Get user profile',
   },
 };
 
-const getUserProfile = router({
-  getUserProfile: loggedProcedure
+export const getMyAccount = router({
+  getMyAccount: loggedProcedure
     // Middlewares
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticated)
@@ -36,19 +34,21 @@ const getUserProfile = router({
       const { db } = ctx.database;
       const { id } = ctx.user;
 
-      const result = await db.query.organizationUsers.findFirst({
-        where: (table, { eq }) => eq(table.id, id),
+      const result = await db.query.users.findFirst({
+        where: (table, { eq }) => eq(table.authUserId, id),
+        with: {
+          avatarImage: true,
+          organizationUsers: true,
+        },
       });
 
       if (!result) {
         throw new TRPCError({
-          message: 'Organization not found',
+          message: 'User not found',
           code: 'NOT_FOUND',
         });
       }
 
-      return result;
+      return userEncoder.parse(result);
     }),
 });
-
-export default getUserProfile;

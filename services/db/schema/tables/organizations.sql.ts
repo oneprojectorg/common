@@ -25,6 +25,8 @@ import { projects } from './projects.sql';
 import { organizationRelationships } from './relationships.sql';
 import { objectsInStorage } from './storage.sql';
 
+import type { InferModel } from 'drizzle-orm';
+
 // Enums for organization types and status
 export enum OrgType {
   NONPROFIT = 'nonprofit',
@@ -79,9 +81,12 @@ export const organizations = pgTable(
     avatarImageId: uuid().references(() => objectsInStorage.id, {
       onUpdate: 'cascade',
     }),
+
+    // where we work
+    whereWeWork: json(),
     ...timestamps,
   },
-  table => [
+  (table) => [
     ...serviceRolePolicies,
     index().on(table.id).concurrently(),
     index().on(table.slug).concurrently(),
@@ -109,3 +114,5 @@ export const organizationsRelations = relations(
     incomingRelationships: many(organizationRelationships),
   }),
 );
+
+export type Organization = InferModel<typeof organizations>;

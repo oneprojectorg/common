@@ -4,7 +4,8 @@ import { X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 import { FieldError, Label } from './Field';
-import { ValidationResult } from 'react-aria-components';
+
+import type { ValidationResult } from 'react-aria-components';
 
 export interface Option {
   id: string;
@@ -19,6 +20,7 @@ export const MultiSelectComboBox = ({
   isRequired,
   value,
   onChange,
+  onInputUpdate,
   errorMessage,
 }: {
   items: Array<Option>;
@@ -27,6 +29,7 @@ export const MultiSelectComboBox = ({
   isRequired?: boolean;
   value?: Array<Option>;
   onChange?: (value: Array<Option>) => void;
+  onInputUpdate?: (value: string) => void;
   errorMessage?: string | ((validation: ValidationResult) => string);
 }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -35,6 +38,7 @@ export const MultiSelectComboBox = ({
   const [showOtherInput, setShowOtherInput] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const otherInputRef = useRef<HTMLInputElement | null>(null);
+  const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
 
   const selectedOptions = value ?? [];
   const setSelectedOptions = onChange ?? (() => {});
@@ -111,10 +115,21 @@ export const MultiSelectComboBox = ({
       !selectedOptions.some((item) => item.id === option.id),
   );
 
+  // Reset highlighted index if filteredItems changes
+  useEffect(() => {
+    if (!isOpen || filteredItems.length === 0) {
+      setHighlightedIndex(-1);
+    } else if (highlightedIndex >= filteredItems.length) {
+      setHighlightedIndex(0);
+    }
+  }, [filteredItems, isOpen]);
+
   // Handle input change
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(e.target.value);
+    onInputUpdate?.(e.target.value ?? '');
+    setInputValue(e.target.value ?? '');
     setIsOpen(true);
+    setHighlightedIndex(0);
   };
 
   // Add inputValue as a new tag if not empty and not already selected
@@ -136,16 +151,53 @@ export const MultiSelectComboBox = ({
       selectedOptions.length > 0
     ) {
       setSelectedOptions(selectedOptions.slice(0, -1));
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+
+      if (filteredItems.length > 0) {
+        setIsOpen(true);
+        setHighlightedIndex((prev) =>
+          prev < filteredItems.length - 1 ? prev + 1 : 0,
+        );
+      }
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+
+      if (filteredItems.length > 0) {
+        setIsOpen(true);
+        setHighlightedIndex((prev) =>
+          prev > 0 ? prev - 1 : filteredItems.length - 1,
+        );
+      }
     } else if (
-      e.key === 'Enter' &&
+      e.key === 'Tab' &&
+      isOpen &&
       filteredItems.length > 0 &&
-      filteredItems[0]
+      highlightedIndex >= 0 &&
+      highlightedIndex < filteredItems.length
     ) {
-      // Select the first filtered item
-      handleOptionClick(filteredItems[0]);
+      e.preventDefault();
+      const chosen = filteredItems[highlightedIndex];
+
+      if (chosen) {
+        handleOptionClick(chosen);
+      }
+
       setInputValue('');
+      setHighlightedIndex(-1);
+    } else if (e.key === 'Enter') {
+      // Add input as tag if not empty, even if dropdown is open.
+      e.preventDefault();
+      addInputAsTag();
     } else if (e.key === 'Tab') {
       addInputAsTag();
+    } else if (e.key === 'Escape') {
+      setIsOpen(false);
+      setHighlightedIndex(-1);
+
+      if (inputRef.current) {
+        inputRef.current.blur();
+      }
     }
   };
 
@@ -214,17 +266,21 @@ export const MultiSelectComboBox = ({
         {isOpen && filteredItems.length > 0 && (
           <div className="absolute z-10 mt-1 w-full rounded-md border border-gray-200 bg-white shadow-lg">
             <ul className="max-h-60 overflow-auto py-1">
-              {filteredItems.map((option) => (
+              {filteredItems.map((option, idx) => (
                 <li
                   key={option.id}
                   className={`flex cursor-pointer items-center px-3 py-2 text-sm hover:bg-gray-100 ${
                     selectedOptions.some((item) => item.id === option.id)
                       ? 'bg-blue-50'
                       : ''
-                  }`}
+                  } ${highlightedIndex === idx ? 'bg-blue-100' : ''}`}
+                  onMouseEnter={() => setHighlightedIndex(idx)}
+                  onMouseLeave={() => setHighlightedIndex(-1)}
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={() => {
                     handleOptionClick(option);
                     setInputValue('');
+                    setHighlightedIndex(-1);
                   }}
                 >
                   {option.label}
