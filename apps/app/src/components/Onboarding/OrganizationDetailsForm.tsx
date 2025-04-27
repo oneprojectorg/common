@@ -1,5 +1,9 @@
+import { useState } from 'react';
 import { z } from 'zod';
 
+import { trpc } from '@op/trpc/client';
+import { AvatarUploader } from '@op/ui/AvatarUploader';
+import { BannerUploader } from '@op/ui/BannerUploader';
 import { SelectItem } from '@op/ui/Select';
 
 import { FormContainer } from '../form/FormContainer';
@@ -7,7 +11,6 @@ import { FormHeader } from '../form/FormHeader';
 import { useMultiStep } from '../form/multiStep';
 import { getFieldErrorMessage, useAppForm } from '../form/utils';
 import { GeoNamesMultiSelect } from '../GeoNamesMultiSelect';
-import { ImageHeader } from '../ImageHeader';
 import { ToggleRow } from '../layout/split/form/ToggleRow';
 
 import type { StepProps } from '../form/utils';
@@ -17,6 +20,7 @@ const multiSelectOptionValidator = z.object({
   id: z.string(),
   label: z.string().max(20),
   isNewValue: z.boolean().default(false).optional(),
+  data: z.any().optional(),
 });
 
 export const validator = z.object({
@@ -48,12 +52,23 @@ export const validator = z.object({
   networkOrganization: z.boolean().default(false),
 });
 
+type ImageData = {
+  url: string;
+  path?: string;
+  id?: string;
+};
+
 export const OrganizationDetailsForm = ({
   defaultValues,
   resolver,
   className,
 }: StepProps & { className?: string }) => {
   const { onNext, onBack } = useMultiStep();
+  const [profileImage, setProfileImage] = useState<ImageData | undefined>();
+  const [bannerImage, setBannerImage] = useState<ImageData | undefined>();
+
+  const uploadImage = trpc.organization.uploadAvatarImage.useMutation();
+
   const form = useAppForm({
     defaultValues,
     validators: {
@@ -78,7 +93,70 @@ export const OrganizationDetailsForm = ({
           We've pre-filled information about [ORGANIZATION]. Please review and
           make any necessary changes.
         </FormHeader>
-        <ImageHeader />
+        <div className="relative w-full pb-20">
+          <BannerUploader
+            className="relative aspect-[128/55] w-full bg-offWhite"
+            value={bannerImage?.url ?? undefined}
+            onChange={async (file: File): Promise<void> => {
+              const reader = new FileReader();
+
+              reader.onload = async (e) => {
+                const base64 = (e.target?.result as string)?.split(',')[1];
+
+                if (!base64) {
+                  return;
+                }
+
+                const dataUrl = `data:${file.type};base64,${base64}`;
+
+                setBannerImage({ url: dataUrl });
+                const res = await uploadImage.mutateAsync({
+                  file: base64,
+                  fileName: file.name,
+                  mimeType: file.type,
+                });
+
+                if (res?.url) {
+                  setBannerImage(res);
+                }
+              };
+
+              reader.readAsDataURL(file);
+            }}
+          />
+          <AvatarUploader
+            className="absolute bottom-0 left-4 aspect-square size-28"
+            value={profileImage?.url ?? undefined}
+            onChange={async (file: File): Promise<void> => {
+              const reader = new FileReader();
+
+              reader.onload = async (e) => {
+                const base64 = (e.target?.result as string)?.split(',')[1];
+
+                if (!base64) {
+                  return;
+                }
+
+                const dataUrl = `data:${file.type};base64,${base64}`;
+
+                setProfileImage({ url: dataUrl });
+                const res = await uploadImage.mutateAsync({
+                  file: base64,
+                  fileName: file.name,
+                  mimeType: file.type,
+                });
+
+                if (res?.url) {
+                  setProfileImage(res);
+                }
+              };
+
+              reader.readAsDataURL(file);
+            }}
+            uploading={uploadImage.isPending}
+            error={uploadImage.error?.message || undefined}
+          />
+        </div>
         <form.AppField
           name="name"
           children={(field) => (

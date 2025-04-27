@@ -1,7 +1,7 @@
-// @ts-nocheck - This is a STUB. Fixing this up shortly
 import { Camera } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 import { useButton } from 'react-aria';
+
 import { cn } from '../lib/utils';
 
 interface ImageUploaderProps {
@@ -13,7 +13,7 @@ interface ImageUploaderProps {
   className?: string;
 }
 
-export const ImageUploader = ({
+export const BannerUploader = ({
   label,
   value,
   onChange,
@@ -34,7 +34,8 @@ export const ImageUploader = ({
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!event.target.files || event.target.files.length === 0) return;
     const file = event.target.files[0];
-    if (onChange) {
+
+    if (onChange && file) {
       onChange(file);
     }
   };
@@ -42,18 +43,18 @@ export const ImageUploader = ({
   return (
     <div
       className={cn(
-        'flex flex-col items-center justify-center gap-2',
+        'flex flex-col items-center justify-center',
         uploading && 'opacity-20',
         className,
       )}
     >
-      <div className="size-32">
-        <div className="relative flex size-full items-center justify-center rounded-full bg-lightGray">
+      <div className="size-full">
+        <div className="relative flex size-full items-center justify-center bg-redTeal bg-center">
           {value ? (
             <img
               src={value}
               alt="Profile"
-              className="absolute size-full rounded-full border-4 border-gray-200 object-cover"
+              className="absolute size-full object-cover"
             />
           ) : null}
           <button

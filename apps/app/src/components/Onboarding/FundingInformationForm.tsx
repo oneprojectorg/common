@@ -40,8 +40,6 @@ export const FundingInformationForm = ({
       onChange: resolver,
     },
     onSubmit: ({ value }) => {
-      console.log('SUBMIT >>>>');
-
       onNext(value);
     },
   });

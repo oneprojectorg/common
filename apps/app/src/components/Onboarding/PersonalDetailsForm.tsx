@@ -3,7 +3,7 @@ import { LuLoaderCircle } from 'react-icons/lu';
 import { z } from 'zod';
 
 import { trpc } from '@op/trpc/client';
-import { ImageUploader } from '@op/ui/ImageUploader';
+import { AvatarUploader } from '@op/ui/AvatarUploader';
 
 import { FormContainer } from '../form/FormContainer';
 import { FormHeader } from '../form/FormHeader';
@@ -61,7 +61,7 @@ export const PersonalDetailsForm = ({
         <FormHeader text="Add your personal details">
           Tell us about yourself so others can find you.
         </FormHeader>
-        <ImageUploader
+        <AvatarUploader
           label="Profile Picture"
           value={profileImageUrl ?? undefined}
           onChange={async (file: File): Promise<void> => {

@@ -72,6 +72,8 @@ export const schema: Schema<Values> = [
         strategies: [[], []],
         whereWeWork: [[], []],
         networkOrganization: [false, []],
+
+        // avatarImage
       }),
       render: ({ values, onNext, onBack }) => (
         <>

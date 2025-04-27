@@ -5,6 +5,7 @@ import { createPostInOrganization } from './createPostInOrganization';
 import { getOrganizationRouter } from './getOrganization';
 import { listOrganizationsRouter } from './listOrganizations';
 import { listOrganizationPostsRouter } from './listPosts';
+import { uploadAvatarImage } from './uploadAvatarImage';
 
 export const organizationRouter = mergeRouters(
   getOrganizationRouter,
@@ -12,4 +13,5 @@ export const organizationRouter = mergeRouters(
   listOrganizationPostsRouter,
   createPostInOrganization,
   createOrganizationRouter,
+  uploadAvatarImage,
 );
