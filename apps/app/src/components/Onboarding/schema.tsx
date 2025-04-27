@@ -116,7 +116,7 @@ export const schema: Schema<Values> = [
     },
   },
   {
-    return: (props) => props,
+    return: props => props,
   },
 ];
 

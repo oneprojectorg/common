@@ -19,18 +19,20 @@ const UserAvatarMenu = () => {
 
   return (
     <div className="size-8 text-clip rounded-full border bg-white shadow">
-      {user.avatarImage?.name ? (
-        <Image
-          src={getPublicUrl(user.avatarImage.name)}
-          alt="User avatar"
-          width={48}
-          height={48}
-        />
-      ) : (
-        <div className="size-8 rounded-full border bg-white shadow">
-          {user.name?.slice(0, 1) ?? ''}
-        </div>
-      )}
+      {user.avatarImage?.name
+        ? (
+            <Image
+              src={getPublicUrl(user.avatarImage.name) ?? ''}
+              alt="User avatar"
+              width={48}
+              height={48}
+            />
+          )
+        : (
+            <div className="size-8 rounded-full border bg-white shadow">
+              {user.name?.slice(0, 1) ?? ''}
+            </div>
+          )}
     </div>
   );
 };

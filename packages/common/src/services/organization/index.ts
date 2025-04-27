@@ -1,9 +1,4 @@
-import {
-  links,
-  Organization,
-  organizations,
-  organizationUsers,
-} from '@op/db/schema';
+import { links, organizations, organizationUsers } from '@op/db/schema';
 import { z } from 'zod';
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { db } from '@op/db/client';

@@ -33,7 +33,7 @@ export const GeoNamesMultiSelect = ({
       placeholder="Select locations…"
       label={label}
       isRequired={isRequired}
-      onChange={(value) => onChange(value)}
+      onChange={value => onChange(value)}
       onInputUpdate={(inputValue) => {
         setWhereWeWorkQuery(inputValue);
       }}
@@ -42,6 +42,7 @@ export const GeoNamesMultiSelect = ({
         geoNames?.geonames
           .map((item) => {
             const entries = Object.entries(item)[0];
+
             if (!entries?.length) {
               return null;
             }
@@ -54,7 +55,7 @@ export const GeoNamesMultiSelect = ({
               data,
             };
           })
-          .filter((o) => !!o) ?? []
+          .filter(o => !!o) ?? []
       }
     />
   );

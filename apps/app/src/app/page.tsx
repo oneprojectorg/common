@@ -2,8 +2,8 @@
 
 import { useRouter } from 'next/navigation';
 
-import { trpc } from '@op/trpc/client';
 import { useAuthUser } from '@op/hooks';
+import { trpc } from '@op/trpc/client';
 
 const MainPage = () => {
   const router = useRouter();
@@ -13,16 +13,19 @@ const MainPage = () => {
   if (authUser?.data && !isPending) {
     if (authUser.data.user == null) {
       router.push('/login');
+
       return;
     }
 
     if (account?.organizationUsers?.length) {
       router.push('/app/org');
+
       return;
     }
 
     router.push('/start');
   }
+
   return null;
 };
 

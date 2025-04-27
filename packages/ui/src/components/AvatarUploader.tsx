@@ -1,12 +1,13 @@
 import { Camera } from 'lucide-react';
 import { useRef } from 'react';
 import { useButton } from 'react-aria';
+
 import { cn } from '../lib/utils';
 
 interface ImageUploaderProps {
   label?: string;
   value?: string | null;
-  onChange?: (file: File) => void;
+  onChange?: (file: File) => Promise<void> | void;
   uploading?: boolean;
   error?: string | null;
   className?: string;
@@ -33,6 +34,7 @@ export const AvatarUploader = ({
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!event.target.files || event.target.files.length === 0) return;
     const file = event.target.files[0];
+
     if (onChange && file) {
       onChange(file);
     }

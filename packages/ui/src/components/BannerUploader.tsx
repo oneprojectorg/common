@@ -7,7 +7,7 @@ import { cn } from '../lib/utils';
 interface ImageUploaderProps {
   label?: string;
   value?: string | null;
-  onChange?: (file: File) => void;
+  onChange?: (file: File) => Promise<void> | void;
   uploading?: boolean;
   error?: string | null;
   className?: string;

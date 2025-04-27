@@ -55,11 +55,11 @@ export const validator = z.object({
   orgBannerImageId: z.string().optional(),
 });
 
-type ImageData = {
+interface ImageData {
   url: string;
   path?: string;
   id?: string;
-};
+}
 
 export const OrganizationDetailsForm = ({
   defaultValues,
@@ -165,7 +165,7 @@ export const OrganizationDetailsForm = ({
         </div>
         <form.AppField
           name="name"
-          children={(field) => (
+          children={field => (
             <field.TextField
               label="Organization name"
               isRequired
@@ -179,7 +179,7 @@ export const OrganizationDetailsForm = ({
 
         <form.AppField
           name="website"
-          children={(field) => (
+          children={field => (
             <field.TextField
               label="Website"
               isRequired
@@ -192,7 +192,7 @@ export const OrganizationDetailsForm = ({
         />
         <form.AppField
           name="email"
-          children={(field) => (
+          children={field => (
             <field.TextField
               label="Email"
               isRequired
@@ -207,18 +207,18 @@ export const OrganizationDetailsForm = ({
 
         <form.AppField
           name="whereWeWork"
-          children={(field) => (
+          children={field => (
             <GeoNamesMultiSelect
               label="Where we work"
               isRequired
-              onChange={(value) => field.handleChange(value)}
+              onChange={value => field.handleChange(value)}
               value={(field.state.value as Array<Option>) ?? []}
             />
           )}
         />
         <form.AppField
           name="orgType"
-          children={(field) => (
+          children={field => (
             <field.Select
               label="Organizational Status"
               placeholder="Select"
@@ -236,7 +236,7 @@ export const OrganizationDetailsForm = ({
 
         <form.AppField
           name="bio"
-          children={(field) => (
+          children={field => (
             <field.TextField
               useTextArea
               label="Bio"
@@ -254,7 +254,7 @@ export const OrganizationDetailsForm = ({
 
         <form.AppField
           name="mission"
-          children={(field) => (
+          children={field => (
             <field.TextField
               useTextArea
               label="Mission statement"
@@ -273,7 +273,7 @@ export const OrganizationDetailsForm = ({
 
         <form.AppField
           name="focusAreas"
-          children={(field) => (
+          children={field => (
             <field.MultiSelectComboBox
               label="Focus Areas"
               placeholder="Select one or more"
@@ -297,7 +297,7 @@ export const OrganizationDetailsForm = ({
 
         <form.AppField
           name="communitiesServed"
-          children={(field) => (
+          children={field => (
             <field.MultiSelectComboBox
               label="Communities Served"
               value={(field.state.value as Array<Option>) ?? []}
@@ -319,7 +319,7 @@ export const OrganizationDetailsForm = ({
         />
         <form.AppField
           name="strategies"
-          children={(field) => (
+          children={field => (
             <field.MultiSelectComboBox
               label="Strategies/Tactics"
               value={(field.state.value as Array<Option>) ?? []}
@@ -342,7 +342,7 @@ export const OrganizationDetailsForm = ({
 
         <form.AppField
           name="networkOrganization"
-          children={(field) => (
+          children={field => (
             <ToggleRow>
               Does your organization serve as a network or coalition with member
               organizations?

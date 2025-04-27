@@ -24,6 +24,8 @@ export const validator = z.object({
   profileImageUrl: z.string().optional(),
 });
 
+type FormFields = z.infer<typeof validator>;
+
 export const PersonalDetailsForm = ({
   defaultValues,
   resolver,
@@ -35,11 +37,11 @@ export const PersonalDetailsForm = ({
 
   const { onNext } = useMultiStep();
   const form = useAppForm({
-    defaultValues,
+    defaultValues: defaultValues as FormFields,
     validators: {
       onChange: resolver,
     },
-    onSubmit: async ({ value }) => {
+    onSubmit: async ({ value }: { value: FormFields }) => {
       await updateProfile.mutateAsync({
         name: value.fullName,
         title: value.title,
@@ -96,11 +98,11 @@ export const PersonalDetailsForm = ({
         />
         <form.AppField
           name="fullName"
-          children={(field) => (
+          children={field => (
             <field.TextField
               label="Full Name"
               isRequired
-              value={field.state.value as string}
+              value={field.state.value}
               onBlur={field.handleBlur}
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
@@ -112,11 +114,11 @@ export const PersonalDetailsForm = ({
         />
         <form.AppField
           name="title"
-          children={(field) => (
+          children={field => (
             <field.TextField
               label="Professional title"
               isRequired
-              value={field.state.value as string}
+              value={field.state.value}
               onBlur={field.handleBlur}
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
@@ -127,30 +129,14 @@ export const PersonalDetailsForm = ({
           )}
         />
 
-        {/*
-          <form.AppField
-            name="username"
-            children={(field) => (
-              <field.TextField
-                label="User name"
-                isRequired
-                value={field.state.value as string}
-                onBlur={field.handleBlur}
-                onChange={field.handleChange}
-                errorMessage={getFieldErrorMessage(field)}
-                inputProps={{
-                  placeholder: 'Enter a user name',
-                }}
-              />
-            )}
-          />
-      */}
         <form.SubmitButton>
-          {updateProfile.isPending || uploadImage.isPending ? (
-            <LuLoaderCircle />
-          ) : (
-            'Continue'
-          )}
+          {updateProfile.isPending || uploadImage.isPending
+            ? (
+                <LuLoaderCircle />
+              )
+            : (
+                'Continue'
+              )}
         </form.SubmitButton>
       </FormContainer>
     </form>

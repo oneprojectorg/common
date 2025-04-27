@@ -49,6 +49,6 @@ export const getMyAccount = router({
         });
       }
 
-      return result;
+      return userEncoder.parse(result);
     }),
 });

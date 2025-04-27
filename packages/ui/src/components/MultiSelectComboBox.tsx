@@ -177,7 +177,12 @@ export const MultiSelectComboBox = ({
       highlightedIndex < filteredItems.length
     ) {
       e.preventDefault();
-      handleOptionClick(filteredItems[highlightedIndex]);
+      const chosen = filteredItems[highlightedIndex];
+
+      if (chosen) {
+        handleOptionClick(chosen);
+      }
+
       setInputValue('');
       setHighlightedIndex(-1);
     } else if (e.key === 'Enter') {

@@ -106,11 +106,10 @@ export const ProfileFeed = ({ profile }: { profile: Organization }) => {
 
       // Optimistically update the cache with the new post
       // @ts-expect-error - temporary
-      utils.organization.listPosts.setData({ slug: profile.slug }, (old) =>
+      utils.organization.listPosts.setData({ slug: profile.slug }, old =>
         old
           ? [...old, { ...newPost, createdAt: new Date() }]
-          : [{ ...newPost, createdAt: new Date() }],
-      );
+          : [{ ...newPost, createdAt: new Date() }]);
 
       return { previousPosts };
     },
@@ -142,16 +141,18 @@ export const ProfileFeed = ({ profile }: { profile: Organization }) => {
     <div className="flex flex-col gap-8">
       <FeedItem>
         <FeedAvatar>
-          {profileImageUrl ? (
-            <Image
-              src={profileImageUrl}
-              alt=""
-              fill
-              className="!size-16 max-h-16 max-w-16 rounded-full"
-            />
-          ) : (
-            <div className="size-16 rounded-full border bg-white shadow" />
-          )}
+          {profileImageUrl
+            ? (
+                <Image
+                  src={profileImageUrl}
+                  alt=""
+                  fill
+                  className="!size-16 max-h-16 max-w-16 rounded-full"
+                />
+              )
+            : (
+                <div className="size-16 rounded-full border bg-white shadow" />
+              )}
         </FeedAvatar>
         <FeedMain>
           <Form onSubmit={handleSubmit} className="flex w-full flex-row gap-4">
@@ -159,7 +160,7 @@ export const ProfileFeed = ({ profile }: { profile: Organization }) => {
               className="size-full border-none"
               placeholder={`Post an update from ${profile.name}…`}
               value={content}
-              onChange={(e) => setContent(e.target.value)}
+              onChange={e => setContent(e.target.value)}
             />
             {content.length > 0 && (
               <Button color="secondary" type="submit">
@@ -180,44 +181,50 @@ export const ProfileFeed = ({ profile }: { profile: Organization }) => {
         </FeedMain>
       </FeedItem>
       <span className="-ml-6 w-[calc(100%+3rem)] border-b border-offWhite p-0" />
-      {posts.length > 0 ? (
-        posts.map(({ content, createdAt }, i) => (
-          <FeedItem key={i}>
-            <FeedAvatar>
-              {profileImageUrl ? (
-                <Image
-                  src={profileImageUrl}
-                  alt=""
-                  fill
-                  className="!size-16 max-h-16 max-w-16 rounded-full"
-                />
-              ) : (
-                <div className="size-16 rounded-full border bg-white shadow" />
-              )}
-            </FeedAvatar>
-            <FeedMain>
-              <FeedHeader>
-                <Header3 className="font-medium leading-5">
-                  {profile.name}
-                </Header3>
-                {createdAt ? (
-                  <span className="text-xs text-darkGray">
-                    {formatRelativeTime(createdAt)}
-                  </span>
-                ) : null}
-              </FeedHeader>
-              <FeedContent>{content}</FeedContent>
-            </FeedMain>
-          </FeedItem>
-        ))
-      ) : (
-        <FeedItem>
-          <FeedAvatar />
-          <FeedMain>
-            <FeedContent className="text-lightGray">No posts yet</FeedContent>
-          </FeedMain>
-        </FeedItem>
-      )}
+      {posts.length > 0
+        ? (
+            posts.map(({ content, createdAt }, i) => (
+              <FeedItem key={i}>
+                <FeedAvatar>
+                  {profileImageUrl
+                    ? (
+                        <Image
+                          src={profileImageUrl}
+                          alt=""
+                          fill
+                          className="!size-16 max-h-16 max-w-16 rounded-full"
+                        />
+                      )
+                    : (
+                        <div className="size-16 rounded-full border bg-white shadow" />
+                      )}
+                </FeedAvatar>
+                <FeedMain>
+                  <FeedHeader>
+                    <Header3 className="font-medium leading-5">
+                      {profile.name}
+                    </Header3>
+                    {createdAt
+                      ? (
+                          <span className="text-xs text-darkGray">
+                            {formatRelativeTime(createdAt)}
+                          </span>
+                        )
+                      : null}
+                  </FeedHeader>
+                  <FeedContent>{content}</FeedContent>
+                </FeedMain>
+              </FeedItem>
+            ))
+          )
+        : (
+            <FeedItem>
+              <FeedAvatar />
+              <FeedMain>
+                <FeedContent className="text-lightGray">No posts yet</FeedContent>
+              </FeedMain>
+            </FeedItem>
+          )}
     </div>
   );
 };

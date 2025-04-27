@@ -1,4 +1,5 @@
 import { Header2 } from '@/components/Header';
+
 import { SideImage } from './assets/SideImage';
 
 export const FullScreenSplitAside = ({

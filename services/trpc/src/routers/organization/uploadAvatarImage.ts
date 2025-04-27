@@ -3,8 +3,6 @@ import { Buffer } from 'buffer';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
-import { eq } from '@op/db/client';
-import { users } from '@op/db/schema';
 import { createServerClient } from '@op/supabase/lib';
 
 import withAuthenticated from '../../middlewares/withAuthenticated';

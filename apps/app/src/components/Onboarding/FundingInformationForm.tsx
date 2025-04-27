@@ -60,141 +60,156 @@ export const FundingInformationForm = ({
 
         <form.AppField
           name="isReceivingFunds"
-          children={(field) => (
+          children={field => (
             <>
               <ToggleRow>
-                Is your organization seeking funding?
+                <span>
+                  Is your organization
+                  {' '}
+                  <i>seeking</i>
+                  {' '}
+                  funding?
+                </span>
+
                 <ToggleButton
                   isSelected={field.state.value as boolean}
                   onChange={field.handleChange}
                 />
               </ToggleRow>
-              {field.state.value ? (
-                <div className="flex flex-col gap-4">
-                  <form.AppField
-                    name="receivingFundsDescription"
-                    children={(field) => (
-                      <field.TextField
-                        useTextArea
-                        label="What types of funding are you seeking?"
-                        value={field.state.value as string}
-                        onBlur={field.handleBlur}
-                        onChange={field.handleChange}
-                        errorMessage={getFieldErrorMessage(field)}
-                        textareaProps={{
-                          className: 'min-h-32',
-                          placeholder:
+              {field.state.value
+                ? (
+                    <div className="flex flex-col gap-4">
+                      <form.AppField
+                        name="receivingFundsDescription"
+                        children={field => (
+                          <field.TextField
+                            useTextArea
+                            label="What types of funding are you seeking?"
+                            value={field.state.value as string}
+                            onBlur={field.handleBlur}
+                            onChange={field.handleChange}
+                            errorMessage={getFieldErrorMessage(field)}
+                            textareaProps={{
+                              className: 'min-h-32',
+                              placeholder:
                             'Enter a description of the type of funding you’re seeking (e.g., grants, integrated capital, etc.',
-                        }}
+                            }}
+                          />
+                        )}
                       />
-                    )}
-                  />
 
-                  <form.AppField
-                    name="receivingFundsLink"
-                    children={(field) => (
-                      <div className="flex flex-col gap-2">
-                        <field.TextField
-                          label="Where can people contribute to your organization?"
-                          value={field.state.value as string}
-                          onBlur={field.handleBlur}
-                          onChange={field.handleChange}
-                          errorMessage={getFieldErrorMessage(field)}
-                          inputProps={{
-                            icon: <LuLink className="text-teal" />,
-                            placeholder: 'Add your contribution page here',
-                          }}
-                        />
-                        <span className="text-xs text-darkGray">
-                          Add a link to your donation page, Open Collective,
-                          GoFundMe or any platform where supporters can
-                          contribute or learn more about how.
-                        </span>
-                        <hr className="mt-6" />
-                      </div>
-                    )}
-                  />
-                </div>
-              ) : null}
+                      <form.AppField
+                        name="receivingFundsLink"
+                        children={field => (
+                          <div className="flex flex-col gap-2">
+                            <field.TextField
+                              label="Where can people contribute to your organization?"
+                              value={field.state.value as string}
+                              onBlur={field.handleBlur}
+                              onChange={field.handleChange}
+                              errorMessage={getFieldErrorMessage(field)}
+                              inputProps={{
+                                icon: <LuLink className="text-teal" />,
+                                placeholder: 'Add your contribution page here',
+                              }}
+                            />
+                            <span className="text-xs text-darkGray">
+                              Add a link to your donation page, Open Collective,
+                              GoFundMe or any platform where supporters can
+                              contribute or learn more about how.
+                            </span>
+                            <hr className="mt-6" />
+                          </div>
+                        )}
+                      />
+                    </div>
+                  )
+                : null}
             </>
           )}
         />
         <form.AppField
           name="isOfferingFunds"
-          children={(field) => (
+          children={field => (
             <>
               <ToggleRow>
-                Does your organization offer funding?
+                <span>
+                  Does your organization
+                  {' '}
+                  <i>offer</i>
+                  {' '}
+                  funding?
+                </span>
                 <ToggleButton
                   isSelected={field.state.value as boolean}
                   onChange={field.handleChange}
                 />
               </ToggleRow>
 
-              {field.state.value ? (
-                <form.AppField
-                  name="acceptingApplications"
-                  children={(field) => (
-                    <>
-                      <ToggleRow>
-                        Are organizations currently able to apply for funding?
-                        <ToggleButton
-                          isSelected={field.state.value as boolean}
-                          onChange={field.handleChange}
-                        />
-                      </ToggleRow>
-                      {field.state.value ? (
-                        <div className="flex flex-col gap-4">
-                          <form.AppField
-                            name="offeringFundsDescription"
-                            children={(field) => (
-                              <field.TextField
-                                useTextArea
-                                label="What is your funding process?"
-                                value={field.state.value as string}
-                                onBlur={field.handleBlur}
-                                onChange={field.handleChange}
-                                errorMessage={getFieldErrorMessage(field)}
-                                textareaProps={{
-                                  className: 'min-h-32',
-                                  placeholder:
-                                    'Enter a description of the type of funding you’re seeking (e.g., grants, integrated capital, etc.)',
-                                }}
-                              />
-                            )}
-                          />
-
-                          <form.AppField
-                            name="offeringFundsLink"
-                            children={(field) => (
-                              <div className="flex flex-col gap-2">
+              {field.state.value
+                ? (
+                    <form.AppField
+                      name="acceptingApplications"
+                      children={field => (
+                        <>
+                          <ToggleRow>
+                            Are organizations currently able to apply for funding?
+                            <ToggleButton
+                              isSelected={field.state.value as boolean}
+                              onChange={field.handleChange}
+                            />
+                          </ToggleRow>
+                          <div className="flex flex-col gap-4">
+                            <form.AppField
+                              name="offeringFundsDescription"
+                              children={field => (
                                 <field.TextField
-                                  label="Where can organizations learn more?"
+                                  useTextArea
+                                  label="What is your funding process?"
                                   value={field.state.value as string}
                                   onBlur={field.handleBlur}
                                   onChange={field.handleChange}
                                   errorMessage={getFieldErrorMessage(field)}
-                                  inputProps={{
+                                  textareaProps={{
+                                    className: 'min-h-32',
                                     placeholder:
-                                      'Add a link to learn more about your funding process',
-                                    icon: <LuLink className="text-teal" />,
+                                  'Enter a description of the type of funding you’re seeking (e.g., grants, integrated capital, etc.)',
                                   }}
                                 />
-                                <span className="text-xs text-darkGray">
-                                  Add a link where others can learn more about
-                                  how to they might receive funding from your
-                                  organization now or in the future.
-                                </span>
-                                <hr className="mt-6" />
-                              </div>
-                            )}
-                          />
-                        </div>
-                      ) : null}
-                    </>
-                  )}
-                />
-              ) : null}
+                              )}
+                            />
+
+                            <form.AppField
+                              name="offeringFundsLink"
+                              children={field => (
+                                <div className="flex flex-col gap-2">
+                                  <field.TextField
+                                    label="Where can organizations learn more?"
+                                    value={field.state.value as string}
+                                    onBlur={field.handleBlur}
+                                    onChange={field.handleChange}
+                                    errorMessage={getFieldErrorMessage(field)}
+                                    inputProps={{
+                                      placeholder:
+                                    'Add a link to learn more about your funding process',
+                                      icon: <LuLink className="text-teal" />,
+                                    }}
+                                  />
+                                  <span className="text-xs text-darkGray">
+                                    Add a link where others can learn more about how
+                                    to they might receive funding from your
+                                    organization now or in the future.
+                                  </span>
+                                  <hr className="mt-6" />
+                                </div>
+                              )}
+                            />
+                          </div>
+                        </>
+                      )}
+                    />
+                  )
+                : null}
             </>
           )}
         />
