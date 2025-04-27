@@ -16,8 +16,6 @@ const ContactLink = ({ children }: { children: React.ReactNode }) => {
 const ProfileAbout = ({ profile }: { profile: Organization }) => {
   const { mission, email, website } = profile;
 
-  console.log('+++', profile);
-
   return (
     <div className="flex flex-col gap-8">
       {email || website
