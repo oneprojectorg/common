@@ -1,11 +1,10 @@
+import { OPURLConfig, cookieOptionsDomain } from '@op/core';
 import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
-
-import { cookieOptionsDomain, OPURLConfig } from '@op/core';
-
-import type { Database } from './types';
 import type { CookieOptions } from '@supabase/ssr';
 import type { SerializeOptions } from 'cookie';
+import { cookies } from 'next/headers';
+
+import type { Database } from './types';
 
 const useUrl = OPURLConfig('APP');
 
@@ -39,10 +38,9 @@ export const createSBServerClient = async () => {
             cookiesToSet.forEach(({ name, value, options }) => {
               const opts = options as SerializeOptions;
 
-              cookieStore.set({ name, value, ...(opts) });
+              cookieStore.set({ name, value, ...opts });
             });
-          }
-          catch (error) {
+          } catch (error) {
             console.error(error);
             // The `set` method was called from a Server Component.
             // This can be ignored if you have middleware refreshing

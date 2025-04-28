@@ -5,18 +5,16 @@ import {
   DateInput as AriaDateInput,
   DateSegment,
 } from 'react-aria-components';
-import { tv } from 'tailwind-variants';
-
-import { composeTailwindRenderProps } from '../utils';
-
-import { Description, FieldError, fieldGroupStyles, Label } from './Field';
-
 import type {
   DateFieldProps as AriaDateFieldProps,
   DateInputProps,
   DateValue,
   ValidationResult,
 } from 'react-aria-components';
+import { tv } from 'tailwind-variants';
+
+import { composeTailwindRenderProps } from '../utils';
+import { Description, FieldError, Label, fieldGroupStyles } from './Field';
 
 const segmentStyles = tv({
   base: 'inline rounded p-0.5 text-neutral-800 caret-transparent outline outline-0 forced-color-adjust-none type-literal:px-0',
@@ -36,14 +34,15 @@ const segmentStyles = tv({
 export const DateInput = (props: Omit<DateInputProps, 'children'>) => {
   return (
     <AriaDateInput
-      className={renderProps =>
+      className={(renderProps) =>
         fieldGroupStyles({
           ...renderProps,
           class: 'block min-w-[150px] px-2 py-1.5 text-sm',
-        })}
+        })
+      }
       {...props}
     >
-      {segment => <DateSegment segment={segment} className={segmentStyles} />}
+      {(segment) => <DateSegment segment={segment} className={segmentStyles} />}
     </AriaDateInput>
   );
 };

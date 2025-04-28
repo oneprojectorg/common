@@ -7,20 +7,19 @@ import {
   DisclosureGroup as AriaDisclosureGroup,
   DisclosurePanel as AriaDisclosurePanel,
   Button,
-  composeRenderProps,
   DisclosureGroupStateContext,
   DisclosureStateContext,
   Heading,
+  composeRenderProps,
 } from 'react-aria-components';
-import { tv } from 'tailwind-variants';
-
-import { composeTailwindRenderProps, focusRing } from '../utils';
-
 import type {
   DisclosureGroupProps as AriaDisclosureGroupProps,
   DisclosurePanelProps as AriaDisclosurePanelProps,
   DisclosureProps as AriaDisclosureProps,
 } from 'react-aria-components';
+import { tv } from 'tailwind-variants';
+
+import { composeTailwindRenderProps, focusRing } from '../utils';
 
 const disclosure = tv({
   base: '-neutral-400 group min-w-64 rounded-lg border text-neutral-800',
@@ -67,7 +66,8 @@ export const Disclosure = ({ children, ...props }: DisclosureProps) => {
     <AriaDisclosure
       {...props}
       className={composeRenderProps(props.className, (className, renderProps) =>
-        disclosure({ ...renderProps, isInGroup, className }))}
+        disclosure({ ...renderProps, isInGroup, className }),
+      )}
     >
       {children}
     </AriaDisclosure>
@@ -86,8 +86,9 @@ export const DisclosureHeader = ({ children }: DisclosureHeaderProps) => {
     <Heading className="text-lg font-semibold">
       <Button
         slot="trigger"
-        className={renderProps =>
-          disclosureButton({ ...renderProps, isInGroup })}
+        className={(renderProps) =>
+          disclosureButton({ ...renderProps, isInGroup })
+        }
       >
         {({ isDisabled }) => (
           <>

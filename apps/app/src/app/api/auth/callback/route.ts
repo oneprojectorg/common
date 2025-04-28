@@ -1,16 +1,13 @@
 /*
  * This route is used to handle the callback from OAuth providers.
  */
-
-import { NextResponse } from 'next/server';
-
 import { OPURLConfig } from '@op/core';
 import { createSBServerClient } from '@op/supabase/server';
 import { trpcVanilla } from '@op/trpc/vanilla';
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
 import { createUserByEmail } from '../../../../../../../packages/common/src';
-
-import type { NextRequest } from 'next/server';
 
 export const GET = async (request: NextRequest) => {
   const { searchParams } = new URL(request.url);
@@ -24,8 +21,8 @@ export const GET = async (request: NextRequest) => {
   if (code) {
     const supabase = await createSBServerClient();
 
-    const { data: authData, error }
-      = await supabase.auth.exchangeCodeForSession(code);
+    const { data: authData, error } =
+      await supabase.auth.exchangeCodeForSession(code);
 
     if (error) {
       console.error(error);
@@ -51,8 +48,7 @@ export const GET = async (request: NextRequest) => {
             email: authData.user.email,
           });
         }
-      }
-      catch (error) {
+      } catch (error) {
         // If the user is not invited or not registered, sign them out
         await supabase.auth.signOut();
 
@@ -66,8 +62,7 @@ export const GET = async (request: NextRequest) => {
           `${errorRedirect}?error=${'Unable to verify your email address. Please try again.'}`,
         );
       }
-    }
-    else {
+    } else {
       await supabase.auth.signOut();
 
       return NextResponse.redirect(

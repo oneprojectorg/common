@@ -12,16 +12,14 @@ import {
   Text,
   useLocale,
 } from 'react-aria-components';
-import { tv } from 'tailwind-variants';
-
-import { focusRing } from '../utils';
-
-import { Button } from './Button';
-
 import type {
   CalendarProps as AriaCalendarProps,
   DateValue,
 } from 'react-aria-components';
+import { tv } from 'tailwind-variants';
+
+import { focusRing } from '../utils';
+import { Button } from './Button';
 
 const cellStyles = tv({
   extend: focusRing,
@@ -48,23 +46,19 @@ export const CalendarHeader = () => {
   return (
     <header className="flex w-full items-center justify-between gap-2 px-1 pb-4">
       <Button variant="icon" slot="previous">
-        {direction === 'rtl'
-          ? (
-              <ChevronRight aria-hidden />
-            )
-          : (
-              <ChevronLeft aria-hidden />
-            )}
+        {direction === 'rtl' ? (
+          <ChevronRight aria-hidden />
+        ) : (
+          <ChevronLeft aria-hidden />
+        )}
       </Button>
       <Heading className="text-center text-xl font-semibold text-neutral-800" />
       <Button variant="icon" slot="next">
-        {direction === 'rtl'
-          ? (
-              <ChevronLeft aria-hidden />
-            )
-          : (
-              <ChevronRight aria-hidden />
-            )}
+        {direction === 'rtl' ? (
+          <ChevronLeft aria-hidden />
+        ) : (
+          <ChevronRight aria-hidden />
+        )}
       </Button>
     </header>
   );
@@ -73,7 +67,7 @@ export const CalendarHeader = () => {
 export const CalendarGridHeader = () => {
   return (
     <AriaCalendarGridHeader>
-      {day => (
+      {(day) => (
         <CalendarHeaderCell className="text-xs font-semibold text-neutral-500">
           {day}
         </CalendarHeaderCell>
@@ -92,7 +86,7 @@ export const Calendar = <T extends DateValue>({
       <CalendarGrid>
         <CalendarGridHeader />
         <CalendarGridBody>
-          {date => <CalendarCell date={date} className={cellStyles} />}
+          {(date) => <CalendarCell date={date} className={cellStyles} />}
         </CalendarGridBody>
       </CalendarGrid>
       {errorMessage && (

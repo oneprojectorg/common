@@ -1,11 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-
 import { trpc } from '@op/trpc/client';
 import { MultiSelectComboBox } from '@op/ui/MultiSelectComboBox';
-
 import type { Option } from '@op/ui/MultiSelectComboBox';
+import { useState } from 'react';
 
 export const GeoNamesMultiSelect = ({
   label,
@@ -33,7 +31,7 @@ export const GeoNamesMultiSelect = ({
       placeholder="Select locations…"
       label={label}
       isRequired={isRequired}
-      onChange={value => onChange(value)}
+      onChange={(value) => onChange(value)}
       onInputUpdate={(inputValue) => {
         setWhereWeWorkQuery(inputValue);
       }}
@@ -55,7 +53,7 @@ export const GeoNamesMultiSelect = ({
               data,
             };
           })
-          .filter(o => !!o) ?? []
+          .filter((o) => !!o) ?? []
       }
     />
   );

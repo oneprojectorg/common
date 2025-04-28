@@ -1,22 +1,21 @@
 'use client';
 
 import {
-  composeRenderProps,
   Tab as RACTab,
   TabList as RACTabList,
   TabPanel as RACTabPanel,
   Tabs as RACTabs,
+  composeRenderProps,
 } from 'react-aria-components';
-import { tv } from 'tailwind-variants';
-
-import { focusRing } from '../utils';
-
 import type {
   TabListProps,
   TabPanelProps,
   TabProps,
   TabsProps,
 } from 'react-aria-components';
+import { tv } from 'tailwind-variants';
+
+import { focusRing } from '../utils';
 
 const tabsStyles = tv({
   base: 'flex gap-4',

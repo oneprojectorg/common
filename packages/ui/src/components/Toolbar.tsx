@@ -1,14 +1,11 @@
 'use client';
 
 import {
-  composeRenderProps,
   Toolbar as RACToolbar,
+  composeRenderProps,
 } from 'react-aria-components';
+import type { ToolbarProps } from 'react-aria-components';
 import { tv } from 'tailwind-variants';
-
-import type {
-  ToolbarProps,
-} from 'react-aria-components';
 
 const styles = tv({
   base: 'flex gap-2',
@@ -25,7 +22,8 @@ export const Toolbar = (props: ToolbarProps) => {
     <RACToolbar
       {...props}
       className={composeRenderProps(props.className, (className, renderProps) =>
-        styles({ ...renderProps, className }))}
+        styles({ ...renderProps, className }),
+      )}
     />
   );
 };

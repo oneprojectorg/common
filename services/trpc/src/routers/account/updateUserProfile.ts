@@ -1,16 +1,14 @@
+import { users } from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
 import { eq } from 'drizzle-orm';
-import { z, ZodError } from 'zod';
-
-import { users } from '@op/db/schema';
+import type { OpenApiMeta } from 'trpc-to-openapi';
+import { ZodError, z } from 'zod';
 
 import { userEncoder } from '../../encoders';
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withDB from '../../middlewares/withDB';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
-
-import type { OpenApiMeta } from 'trpc-to-openapi';
 
 const endpoint = 'updateUserProfile';
 

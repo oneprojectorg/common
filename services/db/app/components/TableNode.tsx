@@ -1,14 +1,5 @@
-import {
-  Handle,
-  Position,
-  useHandleConnections,
-} from '@xyflow/react';
-
-import type {
-  Node,
-  NodeProps,
-} from '@xyflow/react';
-
+import { Handle, Position, useHandleConnections } from '@xyflow/react';
+import type { Node, NodeProps } from '@xyflow/react';
 import FaFingerprint from '~icons/fa6-solid/fingerprint.jsx';
 import FaTable from '~icons/fa6-solid/table.jsx';
 import IoKey from '~icons/fluent/key-16-filled.jsx';
@@ -120,14 +111,12 @@ const TableColumn = ({
         </span>
       </span>
       <span className="flex items-center gap-1 text-neutral-900">
-        {col.constraints.map(c => (
+        {col.constraints.map((c) => (
           <span key={c}>{getConstraintIcon(c)}</span>
         ))}
-        {col.constraints.includes('NULL')
-          ? null
-          : (
-              <TbNorthStar className="cursor-help" />
-            )}
+        {col.constraints.includes('NULL') ? null : (
+          <TbNorthStar className="cursor-help" />
+        )}
       </span>
 
       <Handle
@@ -148,14 +137,14 @@ export function TableNode({ data }: NodeProps<TableNodeData>) {
       className="min-w-[250px] rounded-lg border-4 border-neutral-300 bg-neutral-300 text-neutral-900 shadow-lg"
       style={{ filter: 'drop-shadow(0 0 10px rgba(0,0,0,0.2))' }}
     >
-      <div className="flex items-center gap-2 px-4 py-2 font-bold ">
+      <div className="flex items-center gap-2 px-4 py-2 font-bold">
         <FaTable className="size-4 text-neutral-500" />
         {data.label}
       </div>
       <div className="space-y-1 rounded-lg bg-gradient-to-br from-neutral-50 to-neutral-50 py-3 text-sm">
         {data.columns
-          .filter(col => col.type !== 'unknown')
-          .map(col => (
+          .filter((col) => col.type !== 'unknown')
+          .map((col) => (
             <TableColumn key={col.name} col={col} tableName={data.label} />
           ))}
       </div>

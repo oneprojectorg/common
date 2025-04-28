@@ -5,27 +5,20 @@ import {
   Menu as AriaMenu,
   MenuItem as AriaMenuItem,
   MenuTrigger as AriaMenuTrigger,
-  composeRenderProps,
   Separator,
+  composeRenderProps,
 } from 'react-aria-components';
-
-import { cn } from '../lib/utils';
-
-import {
-  dropdownItemStyles,
-  DropdownSection,
-} from './ListBox';
-import { Popover } from './Popover';
-
-import type {
-  DropdownSectionProps,
-} from './ListBox';
-import type { PopoverProps } from './Popover';
 import type {
   MenuProps as AriaMenuProps,
   MenuItemProps,
   SeparatorProps,
 } from 'react-aria-components';
+
+import { cn } from '../lib/utils';
+import { DropdownSection, dropdownItemStyles } from './ListBox';
+import type { DropdownSectionProps } from './ListBox';
+import { Popover } from './Popover';
+import type { PopoverProps } from './Popover';
 
 export { AriaMenuTrigger as MenuTrigger };
 
@@ -53,8 +46,9 @@ export const MenuItem = (
   return (
     <AriaMenuItem
       {...props}
-      className={renderProps =>
-        dropdownItemStyles({ ...renderProps, className: props.className })}
+      className={(renderProps) =>
+        dropdownItemStyles({ ...renderProps, className: props.className })
+      }
     >
       {composeRenderProps(
         props.children,
@@ -84,8 +78,9 @@ export const MenuItemSimple = (
   return (
     <AriaMenuItem
       {...props}
-      className={renderProps =>
-        dropdownItemStyles({ ...renderProps, className: props.className })}
+      className={(renderProps) =>
+        dropdownItemStyles({ ...renderProps, className: props.className })
+      }
     />
   );
 };

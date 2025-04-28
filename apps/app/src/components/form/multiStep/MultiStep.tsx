@@ -1,9 +1,8 @@
+import type { OnBack, OnNext } from '@formity/react';
 import { useMemo } from 'react';
+import type { ReactNode } from 'react';
 
 import { MultiStepContext } from './multi-step-context';
-
-import type { OnBack, OnNext } from '@formity/react';
-import type { ReactNode } from 'react';
 
 interface MultiStepProps {
   onNext: OnNext;

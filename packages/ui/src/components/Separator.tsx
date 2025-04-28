@@ -1,13 +1,8 @@
 'use client';
 
-import {
-  Separator as RACSeparator,
-} from 'react-aria-components';
+import { Separator as RACSeparator } from 'react-aria-components';
+import type { SeparatorProps } from 'react-aria-components';
 import { tv } from 'tailwind-variants';
-
-import type {
-  SeparatorProps,
-} from 'react-aria-components';
 
 const styles = tv({
   base: 'bg-neutral-400',

@@ -5,16 +5,12 @@ import {
   SliderOutput,
   SliderTrack,
 } from 'react-aria-components';
+import type { ColorSliderProps as AriaColorSliderProps } from 'react-aria-components';
 import { tv } from 'tailwind-variants';
 
 import { composeTailwindRenderProps } from '../utils';
-
 import { ColorThumb } from './ColorThumb';
 import { Label } from './Field';
-
-import type {
-  ColorSliderProps as AriaColorSliderProps,
-} from 'react-aria-components';
 
 const trackStyles = tv({
   base: 'group col-span-2 rounded-lg orientation-horizontal:h-6',

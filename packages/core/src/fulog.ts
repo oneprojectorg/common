@@ -55,11 +55,16 @@ class fulog {
     level: LogLevel,
   ): [string, string, string] {
     const config = LOG_CONFIGS[level];
-    const isMessageObject = typeof messageArg === 'object' && messageArg !== null;
+    const isMessageObject =
+      typeof messageArg === 'object' && messageArg !== null;
 
     const message = isMessageObject ? messageArg.message : messageArg;
-    const badge = isMessageObject ? (messageArg.badge ?? config.badge) : config.badge;
-    const icon = isMessageObject ? (messageArg.icon ?? config.icon) : config.icon;
+    const badge = isMessageObject
+      ? (messageArg.badge ?? config.badge)
+      : config.badge;
+    const icon = isMessageObject
+      ? (messageArg.icon ?? config.icon)
+      : config.icon;
 
     const styles = [
       `border: 1px solid ${config.color}`,
@@ -69,11 +74,7 @@ class fulog {
       'font-weight: bold',
     ].join(';');
 
-    return [
-      `%c${badge} ${icon}%c ${message}`,
-      styles,
-      'color: inherit',
-    ];
+    return [`%c${badge} ${icon}%c ${message}`, styles, 'color: inherit'];
   }
 
   static info(messageArg: string | LogMessage, ...args: unknown[]) {
@@ -102,8 +103,7 @@ class fulog {
 
     if (collapsed) {
       console.groupCollapsed(header, ...styles);
-    }
-    else {
+    } else {
       console.group(header, ...styles);
     }
 

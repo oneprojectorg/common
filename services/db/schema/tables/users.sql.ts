@@ -3,7 +3,6 @@ import { index, pgTable, text, uuid, varchar } from 'drizzle-orm/pg-core';
 import { authUsers } from 'drizzle-orm/supabase';
 
 import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
-
 import { organizationUsers } from './organizationUsers.sql';
 import { objectsInStorage } from './storage.sql';
 

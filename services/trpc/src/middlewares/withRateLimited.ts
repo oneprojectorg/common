@@ -1,7 +1,6 @@
 import { TRPCError } from '@trpc/server';
 
 import rateLimited from '../lib/rateLimited';
-
 import type { MiddlewareBuilderBase } from '../types';
 
 const withRateLimited = (opts = { windowSize: 10, maxRequests: 10 }) => {

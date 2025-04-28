@@ -1,9 +1,10 @@
-import { links, organizations, organizationUsers } from '@op/db/schema';
-import { z } from 'zod';
-import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { db } from '@op/db/client';
+import { links, organizationUsers, organizations } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 import { randomUUID } from 'crypto';
+import { z } from 'zod';
+
+import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 
 export const getOrganization = async ({
   slug,

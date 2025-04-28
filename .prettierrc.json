@@ -7,10 +7,19 @@
   "printWidth": 80,
   "trailingComma": "all",
   "plugins": [
+    "@trivago/prettier-plugin-sort-imports",
     "prettier-plugin-sql",
     "prettier-plugin-tailwindcss",
     "prettier-plugin-packagejson"
   ],
+  "importOrder": [
+    "<THIRD_PARTY_MODULES>",
+    "^@/lib/(.*)$",
+    "^@/components/(.*)$",
+    "^[./]"
+  ],
+  "importOrderSeparation": true,
+  "importOrderSortSpecifiers": true,
   "tailwindAttributes": ["className", "useClasses", ".*ClassName", "tw"],
   "tailwindFunctions": ["twMerge", "clsx", "tw", "cva", "cn", "tv"],
   "tailwindConfig": "./packages/ui/tailwind.shared.ts"

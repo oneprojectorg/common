@@ -1,4 +1,5 @@
 import { TRPCError } from '@trpc/server';
+import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { postsEncoder } from '../../encoders/posts';
@@ -6,8 +7,6 @@ import withAuthenticated from '../../middlewares/withAuthenticated';
 import withDB from '../../middlewares/withDB';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
-
-import type { OpenApiMeta } from 'trpc-to-openapi';
 
 const inputSchema = z.object({
   slug: z.string(),
@@ -57,7 +56,7 @@ export const listOrganizationPostsRouter = router({
 
       // TODO: fixing for demo but should be at the DB level
       const sorted = result
-        .map(res => res.post)
+        .map((res) => res.post)
         .sort(
           (a, b) =>
             new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime(),

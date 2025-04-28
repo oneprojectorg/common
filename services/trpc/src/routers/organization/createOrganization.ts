@@ -1,15 +1,13 @@
+import { UnauthorizedError, createOrganization } from '@op/common';
 import { TRPCError } from '@trpc/server';
+import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
-
-import { createOrganization, UnauthorizedError } from '@op/common';
 
 import { organizationsEncoder } from '../../encoders/organizations';
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withDB from '../../middlewares/withDB';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
-
-import type { OpenApiMeta } from 'trpc-to-openapi';
 
 const multiSelectOptionValidator = z.object({
   id: z.string(),

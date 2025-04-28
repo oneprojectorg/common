@@ -1,6 +1,5 @@
-import { redirect } from 'next/navigation';
-
 import { useAuthUser } from '@op/hooks';
+import { redirect } from 'next/navigation';
 
 // TODO: handle this in the middleware
 export const AuthWrapper = ({ children }: { children: React.ReactNode }) => {
@@ -11,10 +10,10 @@ export const AuthWrapper = ({ children }: { children: React.ReactNode }) => {
   }
 
   if (
-    !user
-    || user.isFetching
-    || user.isPending
-    || !user.data?.user?.email?.includes('@oneproject.org')
+    !user ||
+    user.isFetching ||
+    user.isPending ||
+    !user.data?.user?.email?.includes('@oneproject.org')
   ) {
     return null;
   }

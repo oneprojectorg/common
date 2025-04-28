@@ -1,7 +1,5 @@
-import { NextResponse } from 'next/server';
-
 import { OPURLConfig, urlMatcher } from '@op/core';
-
+import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 const corsOptions = {

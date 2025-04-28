@@ -1,9 +1,8 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-
 import { useAuthUser } from '@op/hooks';
 import { trpc } from '@op/trpc/client';
+import { useRouter } from 'next/navigation';
 
 const MainPage = () => {
   const router = useRouter();

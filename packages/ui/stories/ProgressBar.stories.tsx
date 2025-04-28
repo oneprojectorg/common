@@ -1,6 +1,6 @@
-import { ProgressBar } from '../src/components/ProgressBar';
-
 import type { Meta } from '@storybook/react';
+
+import { ProgressBar } from '../src/components/ProgressBar';
 
 const meta: Meta<typeof ProgressBar> = {
   component: ProgressBar,

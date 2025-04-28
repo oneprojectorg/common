@@ -10,7 +10,7 @@
     "./encoders": "./src/encoders/index.ts"
   },
   "scripts": {
-    "lint": "pnpm tsc --noEmit && pnpm eslint --fix ."
+    "lint": "pnpm tsc --noEmit"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^1.2.1",
@@ -39,7 +39,6 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
-    "@op/eslint-config": "workspace:*",
     "@op/typescript-config": "workspace:*",
     "typescript": "5.7.3"
   }

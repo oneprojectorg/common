@@ -11,13 +11,12 @@
   "types": "./src/config.ts",
   "scripts": {
     "disable-build": "tsc",
-    "lint": "pnpm tsc --noEmit && pnpm eslint --fix ."
+    "lint": "pnpm tsc --noEmit"
   },
   "dependencies": {
     "p-queue": "^8.1.0"
   },
   "devDependencies": {
-    "@op/eslint-config": "workspace:*",
     "@op/typescript-config": "workspace:*",
     "@types/node": "^22.13.5",
     "tailwindcss": "^3.4.17",

@@ -1,5 +1,4 @@
 import { cn } from '@op/ui/utils';
-
 import type { ReactNode } from 'react';
 
 export const ImageHeader = ({

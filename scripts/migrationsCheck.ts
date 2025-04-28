@@ -12,8 +12,7 @@ try {
     );
     process.exit(1); // Exit with error code
   }
-}
-catch (error) {
+} catch (error) {
   console.error('Error executing git command:', (error as Error).message);
   process.exit(1); // Exit with error code if git command fails
 }

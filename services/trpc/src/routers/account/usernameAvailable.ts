@@ -1,14 +1,12 @@
-import { eq, sql } from 'drizzle-orm';
-import { z } from 'zod';
-
 import { organizationUsers, users } from '@op/db/schema';
+import { eq, sql } from 'drizzle-orm';
+import type { OpenApiMeta } from 'trpc-to-openapi';
+import { z } from 'zod';
 
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withDB from '../../middlewares/withDB';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
-
-import type { OpenApiMeta } from 'trpc-to-openapi';
 
 const endpoint = 'usernameAvailable';
 

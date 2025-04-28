@@ -10,7 +10,7 @@
     "./types": "./src/types.ts"
   },
   "scripts": {
-    "lint": "pnpm tsc --noEmit && pnpm eslint --fix .",
+    "lint": "pnpm tsc --noEmit",
     "typegen": "pnpx supabase gen types --workdir=\"../..\" --lang=typescript --local --schema public > ./src/types.ts && pnpm eslint --fix ./src/types.ts"
   },
   "dependencies": {
@@ -21,7 +21,6 @@
     "next": "^15.3.0"
   },
   "devDependencies": {
-    "@op/eslint-config": "workspace:*",
     "@op/typescript-config": "workspace:*",
     "typescript": "5.7.3"
   }

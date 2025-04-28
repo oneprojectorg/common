@@ -1,9 +1,13 @@
 'use client';
 
 import { TextField as AriaTextField } from 'react-aria-components';
+import type {
+  TextFieldProps as AriaTextFieldProps,
+  TextAreaProps,
+  ValidationResult,
+} from 'react-aria-components';
 
 import { composeTailwindRenderProps } from '../utils';
-
 import {
   Description,
   FieldError,
@@ -12,13 +16,7 @@ import {
   Label,
   TextArea,
 } from './Field';
-
 import type { InputWithVariantsProps } from './Field';
-import type {
-  TextFieldProps as AriaTextFieldProps,
-  TextAreaProps,
-  ValidationResult,
-} from 'react-aria-components';
 
 export interface TextFieldProps extends AriaTextFieldProps {
   label?: string;

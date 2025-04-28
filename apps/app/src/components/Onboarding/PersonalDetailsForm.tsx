@@ -1,15 +1,13 @@
+import { trpc } from '@op/trpc/client';
+import { AvatarUploader } from '@op/ui/AvatarUploader';
 import { useState } from 'react';
 import { LuLoaderCircle } from 'react-icons/lu';
 import { z } from 'zod';
-
-import { trpc } from '@op/trpc/client';
-import { AvatarUploader } from '@op/ui/AvatarUploader';
 
 import { FormContainer } from '../form/FormContainer';
 import { FormHeader } from '../form/FormHeader';
 import { useMultiStep } from '../form/multiStep';
 import { getFieldErrorMessage, useAppForm } from '../form/utils';
-
 import type { StepProps } from '../form/utils';
 
 export const validator = z.object({
@@ -98,7 +96,7 @@ export const PersonalDetailsForm = ({
         />
         <form.AppField
           name="fullName"
-          children={field => (
+          children={(field) => (
             <field.TextField
               label="Full Name"
               isRequired
@@ -114,7 +112,7 @@ export const PersonalDetailsForm = ({
         />
         <form.AppField
           name="title"
-          children={field => (
+          children={(field) => (
             <field.TextField
               label="Professional title"
               isRequired
@@ -130,13 +128,11 @@ export const PersonalDetailsForm = ({
         />
 
         <form.SubmitButton>
-          {updateProfile.isPending || uploadImage.isPending
-            ? (
-                <LuLoaderCircle />
-              )
-            : (
-                'Continue'
-              )}
+          {updateProfile.isPending || uploadImage.isPending ? (
+            <LuLoaderCircle />
+          ) : (
+            'Continue'
+          )}
         </form.SubmitButton>
       </FormContainer>
     </form>

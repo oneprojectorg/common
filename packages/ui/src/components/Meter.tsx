@@ -1,17 +1,11 @@
 'use client';
 
 import { AlertTriangle } from 'lucide-react';
-import {
-  Meter as AriaMeter,
-} from 'react-aria-components';
+import { Meter as AriaMeter } from 'react-aria-components';
+import type { MeterProps as AriaMeterProps } from 'react-aria-components';
 
 import { composeTailwindRenderProps } from '../utils';
-
 import { Label } from './Field';
-
-import type {
-  MeterProps as AriaMeterProps,
-} from 'react-aria-components';
 
 export interface MeterProps extends AriaMeterProps {
   label?: string;

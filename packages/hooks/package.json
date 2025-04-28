@@ -9,7 +9,7 @@
     "./utils": "./src/utils/index.ts"
   },
   "scripts": {
-    "lint": "pnpm tsc --noEmit && pnpm eslint --fix ."
+    "lint": "pnpm tsc --noEmit"
   },
   "dependencies": {
     "@op/core": "workspace:*",
@@ -19,7 +19,6 @@
     "react": "^19.0.0"
   },
   "devDependencies": {
-    "@op/eslint-config": "workspace:*",
     "@op/typescript-config": "workspace:*",
     "@types/js-cookie": "^3.0.6",
     "@types/react": "19.0.10",

@@ -1,20 +1,15 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import {
-  composeRenderProps,
   Group,
   FieldError as RACFieldError,
   Input as RACInput,
   Label as RACLabel,
   TextArea as RACTextArea,
   Text,
+  composeRenderProps,
 } from 'react-aria-components';
-import { twMerge } from 'tailwind-merge';
-import { tv } from 'tailwind-variants';
-
-import { composeTailwindRenderProps, focusRing } from '../utils';
-
-import type { ReactNode } from 'react';
 import type {
   FieldErrorProps,
   GroupProps,
@@ -23,7 +18,11 @@ import type {
   TextAreaProps,
   TextProps,
 } from 'react-aria-components';
+import { twMerge } from 'tailwind-merge';
+import { tv } from 'tailwind-variants';
 import type { VariantProps } from 'tailwind-variants';
+
+import { composeTailwindRenderProps, focusRing } from '../utils';
 
 export const Label = (props: LabelProps) => {
   return (

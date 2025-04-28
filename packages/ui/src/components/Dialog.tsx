@@ -1,15 +1,14 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import {
   DialogTrigger,
   Heading,
   Dialog as RACDialog,
 } from 'react-aria-components';
+import type { DialogProps, DialogTriggerProps } from 'react-aria-components';
 
 import { cn } from '../lib/utils';
-
-import type { ReactNode } from 'react';
-import type { DialogProps, DialogTriggerProps } from 'react-aria-components';
 
 const Dialog = ({ className, ...props }: DialogProps) => {
   return (

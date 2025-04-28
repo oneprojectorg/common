@@ -1,9 +1,6 @@
-
-import { NextResponse } from 'next/server';
-
-import { cookieOptionsDomain, OPURLConfig } from '@op/core';
+import { OPURLConfig, cookieOptionsDomain } from '@op/core';
 import { createServerClient } from '@op/supabase/lib';
-
+import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 const useUrl = OPURLConfig('APP');
@@ -29,8 +26,10 @@ export async function middleware(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-        //   cookiesToSet.forEach(({ name, value, _options }) => request.cookies.set(name, value));
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+          //   cookiesToSet.forEach(({ name, value, _options }) => request.cookies.set(name, value));
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value),
+          );
           supabaseResponse = NextResponse.next({
             request,
           });
@@ -50,10 +49,7 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (
-    !user
-    && request.nextUrl.pathname.startsWith('/protected')
-  ) {
+  if (!user && request.nextUrl.pathname.startsWith('/protected')) {
     // no user, potentially respond by redirecting the user to the login page
     const url = request.nextUrl.clone();
 

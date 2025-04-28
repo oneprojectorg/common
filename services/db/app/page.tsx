@@ -8,21 +8,14 @@ import {
   useEdgesState,
   useNodesState,
 } from '@xyflow/react';
+import type { Edge, Node } from '@xyflow/react';
+import '@xyflow/react/dist/base.css';
 import { PgTable } from 'drizzle-orm/pg-core';
+import type { ForeignKey, PgColumn } from 'drizzle-orm/pg-core';
 import React, { useEffect } from 'react';
 
 import * as schema from '../schema/publicTables';
-
 import { TableNode } from './components/TableNode';
-
-import type {
-  Edge,
-  Node,
-} from '@xyflow/react';
-
-import '@xyflow/react/dist/base.css';
-
-import type { ForeignKey, PgColumn } from 'drizzle-orm/pg-core';
 
 const nodeTypes = {
   tableNode: TableNode,
@@ -75,25 +68,25 @@ const generateSchemaFlow = () => {
           targetColumn: string;
         }> = [];
 
-        if (column.primary)
-          constraints.push('PK');
-        if (!column.notNull)
-          constraints.push('NULL');
-        if (column.isUnique)
-          constraints.push('UNIQUE');
-        if (column.dataType === 'array')
-          constraints.push('ARRAY');
+        if (column.primary) constraints.push('PK');
+        if (!column.notNull) constraints.push('NULL');
+        if (column.isUnique) constraints.push('UNIQUE');
+        if (column.dataType === 'array') constraints.push('ARRAY');
 
         // Check for foreign keys
         // eslint-disable-next-line ts/no-unsafe-member-access
-        const fks: ForeignKey[] = (table as any)[Symbol.for('drizzle:PgInlineForeignKeys')] ?? [];
+        const fks: ForeignKey[] =
+          (table as any)[Symbol.for('drizzle:PgInlineForeignKeys')] ?? [];
 
         fks.forEach((fk: ForeignKey) => {
           const ref = fk.reference();
           // eslint-disable-next-line ts/no-unsafe-member-access
           const ftname = (ref.foreignTable as any)[Symbol.for('drizzle:Name')];
 
-          if (ref.columns.map(col => col.name).includes(name) && ref.foreignColumns[0]) {
+          if (
+            ref.columns.map((col) => col.name).includes(name) &&
+            ref.foreignColumns[0]
+          ) {
             foreignKeys.push({
               sourceColumn: name,
               targetTable: ftname,
@@ -118,9 +111,9 @@ const generateSchemaFlow = () => {
           name,
           type:
             // eslint-disable-next-line ts/no-unsafe-member-access
-            (column as any).baseColumn?.dataType
-            || column.dataType
-            || 'unknown',
+            (column as any).baseColumn?.dataType ||
+            column.dataType ||
+            'unknown',
           constraints: constraints || [],
           foreignKeys,
         };

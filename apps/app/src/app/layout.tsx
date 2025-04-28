@@ -1,15 +1,12 @@
+import { APP_NAME, printNFO } from '@op/core';
+import { TRPCProvider } from '@op/trpc/client';
 import '@op/ui/tailwind-styles';
-
+import type { Metadata, Viewport } from 'next';
 import { Inter, Roboto, Roboto_Mono, Roboto_Serif } from 'next/font/google';
 import Script from 'next/script';
 import { Toaster as Sonner } from 'sonner';
 
-import { APP_NAME, printNFO } from '@op/core';
-import { TRPCProvider } from '@op/trpc/client';
-
 import { PostHogProvider } from '../components/PostHogProvider';
-
-import type { Metadata, Viewport } from 'next';
 
 const roboto = Roboto({
   subsets: ['latin'],

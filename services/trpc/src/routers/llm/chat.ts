@@ -1,13 +1,11 @@
-
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { TRPCError } from '@trpc/server';
 import { convertToCoreMessages, smoothStream, streamText } from 'ai';
+import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import { loggedProcedure, router } from '../../trpcFactory';
-
-import type { OpenApiMeta } from 'trpc-to-openapi';
 
 const endpoint = 'chat';
 
@@ -60,13 +58,13 @@ const chat = router({
       const { apiKey, provider } = input;
       const initialMessages = input.messages
         .slice(0, -1)
-        .filter(message => message.content && message.content !== '');
+        .filter((message) => message.content && message.content !== '');
       const currentMessage = input.messages[input.messages.length - 1];
 
       if (
-        !currentMessage
-        || !currentMessage.content
-        || currentMessage.content === ''
+        !currentMessage ||
+        !currentMessage.content ||
+        currentMessage.content === ''
       ) {
         throw new TRPCError({
           message: `currentMessage is undefined`,
@@ -93,9 +91,7 @@ const chat = router({
           ...convertToCoreMessages(initialMessages),
           {
             role: 'user',
-            content: [
-              { type: 'text', text: currentMessage.content },
-            ],
+            content: [{ type: 'text', text: currentMessage.content }],
           },
         ],
         temperature: input.temperature,

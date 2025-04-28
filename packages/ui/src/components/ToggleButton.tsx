@@ -1,14 +1,13 @@
 'use client';
 
 import {
-  composeRenderProps,
   ToggleButton as RACToggleButton,
+  composeRenderProps,
 } from 'react-aria-components';
+import type { ToggleButtonProps } from 'react-aria-components';
 
 import { cn, tv } from '../lib/utils';
 import { focusRing } from '../utils';
-
-import type { ToggleButtonProps } from 'react-aria-components';
 
 const styles = tv({
   extend: focusRing,

@@ -1,9 +1,8 @@
+import type { Meta } from '@storybook/react';
 import { useMemo, useState } from 'react';
 import { TableBody } from 'react-aria-components';
 
 import { Cell, Column, Row, Table, TableHeader } from '../src/components/Table';
-
-import type { Meta } from '@storybook/react';
 
 const meta: Meta<typeof Table> = {
   component: Table,
@@ -66,7 +65,7 @@ export const Example = (args: any) => {
         </Column>
       </TableHeader>
       <TableBody items={items}>
-        {row => (
+        {(row) => (
           <Row>
             <Cell>{row.name}</Cell>
             <Cell>{row.type}</Cell>

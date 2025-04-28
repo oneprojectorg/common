@@ -7,7 +7,6 @@ import {
   serviceRolePolicies,
   timestamps,
 } from '../../helpers';
-
 import { organizations } from './organizations.sql';
 
 export enum LinkType {
@@ -32,7 +31,7 @@ export const links = pgTable(
       }),
     ...timestamps,
   },
-  table => [...serviceRolePolicies, index().on(table.id).concurrently()],
+  (table) => [...serviceRolePolicies, index().on(table.id).concurrently()],
 );
 
 export const linksRelations = relations(links, ({ one }) => ({

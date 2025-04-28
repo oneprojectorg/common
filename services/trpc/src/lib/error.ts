@@ -1,9 +1,9 @@
 import { TRPCError } from '@trpc/server';
+import type { TRPCErrorShape, TRPC_ERROR_CODE_KEY } from '@trpc/server/rpc';
+import type { ErrorFormatter } from '@trpc/server/unstable-core-do-not-import';
 import { ZodError } from 'zod';
 
 import type { TContext } from '../types';
-import type { TRPC_ERROR_CODE_KEY, TRPCErrorShape } from '@trpc/server/rpc';
-import type { ErrorFormatter } from '@trpc/server/unstable-core-do-not-import';
 
 class BackendError extends TRPCError {
   public readonly clientMessage;
@@ -34,15 +34,14 @@ export const errorFormatter: ErrorFormatter<TContext, TRPCErrorShape> = ({
     ...shape,
 
     message:
-      error.cause
-      && error.cause instanceof ZodError
-      && error.cause.issues.length
+      error.cause &&
+      error.cause instanceof ZodError &&
+      error.cause.issues.length
         ? `${error.cause.issues.reduce((prev, curr) => {
-          if (prev === '')
-            return `${curr.message} [${String(curr.path)}]`;
+            if (prev === '') return `${curr.message} [${String(curr.path)}]`;
 
-          return `${prev} | ${String(curr.path)} : ${curr.message}`;
-        }, '')}`
+            return `${prev} | ${String(curr.path)} : ${curr.message}`;
+          }, '')}`
         : shape.message,
     data: {
       ...shape.data,

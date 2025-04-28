@@ -1,28 +1,26 @@
-import { LuArrowUpRight, LuInfo, LuPlus } from 'react-icons/lu';
-
+import type { Organization } from '@op/trpc/encoders';
 import { Button, ButtonLink } from '@op/ui/Button';
 import { SkeletonLine } from '@op/ui/Skeleton';
 import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
+import { LuArrowUpRight, LuInfo, LuPlus } from 'react-icons/lu';
 
 import { ProfileSummary } from '../ProfileSummary';
-
-import type { Organization } from '@op/trpc/encoders';
 
 const ProfileInteractions = ({ profile }: { profile: Organization }) => {
   const { isReceivingFunds, isOfferingFunds, links } = profile;
 
   // split funding links up by type
   const receivingFundingLinks = links.filter(
-    fundingLink => fundingLink.type === 'receiving',
+    (fundingLink) => fundingLink.type === 'receiving',
   );
   const offeringFundingLinks = links.filter(
-    fundingLink => fundingLink.type === 'offering',
+    (fundingLink) => fundingLink.type === 'offering',
   );
 
   return (
     <div className="flex gap-4">
       {isReceivingFunds
-        ? receivingFundingLinks.map(link => (
+        ? receivingFundingLinks.map((link) => (
             <TooltipTrigger key={link.id}>
               <ButtonLink href={link.href} className="min-w-44">
                 <LuArrowUpRight />
@@ -34,7 +32,7 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
         : null}
 
       {isOfferingFunds
-        ? offeringFundingLinks.map(link => (
+        ? offeringFundingLinks.map((link) => (
             <TooltipTrigger key={link.id}>
               <ButtonLink href={link.href} className="min-w-44">
                 <LuInfo />

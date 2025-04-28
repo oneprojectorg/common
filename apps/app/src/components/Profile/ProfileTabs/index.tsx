@@ -1,13 +1,12 @@
-import { Header3 } from '@/components/Header';
+import type { Organization } from '@op/trpc/encoders';
+import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { LuGlobe, LuMail } from 'react-icons/lu';
 
-import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
+import { Header3 } from '@/components/Header';
 
 import { ProfileFeed } from '../ProfileFeed';
-
-import type { Organization } from '@op/trpc/encoders';
 
 const ContactLink = ({ children }: { children: React.ReactNode }) => {
   return <div className="flex items-center gap-1">{children}</div>;
@@ -18,39 +17,31 @@ const ProfileAbout = ({ profile }: { profile: Organization }) => {
 
   return (
     <div className="flex flex-col gap-8">
-      {email || website
-        ? (
-            <section className="flex flex-col gap-6">
-              <Header3>Contact</Header3>
-              <div className="flex flex-col gap-4 text-teal">
-                {website
-                  ? (
-                      <ContactLink>
-                        <LuGlobe />
-                        <Link href={website}>{website}</Link>
-                      </ContactLink>
-                    )
-                  : null}
-                {email
-                  ? (
-                      <ContactLink>
-                        <LuMail />
-                        <Link href={`mailto:${email}`}>{email}</Link>
-                      </ContactLink>
-                    )
-                  : null}
-              </div>
-            </section>
-          )
-        : null}
-      {mission
-        ? (
-            <section className="flex flex-col gap-6">
-              <Header3>Mission Statement</Header3>
-              <p>{mission}</p>
-            </section>
-          )
-        : null}
+      {email || website ? (
+        <section className="flex flex-col gap-6">
+          <Header3>Contact</Header3>
+          <div className="flex flex-col gap-4 text-teal">
+            {website ? (
+              <ContactLink>
+                <LuGlobe />
+                <Link href={website}>{website}</Link>
+              </ContactLink>
+            ) : null}
+            {email ? (
+              <ContactLink>
+                <LuMail />
+                <Link href={`mailto:${email}`}>{email}</Link>
+              </ContactLink>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
+      {mission ? (
+        <section className="flex flex-col gap-6">
+          <Header3>Mission Statement</Header3>
+          <p>{mission}</p>
+        </section>
+      ) : null}
     </div>
   );
 };

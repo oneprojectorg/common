@@ -1,8 +1,8 @@
-import { cn } from '../lib/utils';
-
 import GithubIcon from '~icons/carbon/logo-github.jsx';
 import LinkedinIcon from '~icons/carbon/logo-linkedin.jsx';
 import TwitterIcon from '~icons/carbon/logo-x.jsx';
+
+import { cn } from '../lib/utils';
 
 export interface SocialLink {
   href: string;

@@ -37,7 +37,7 @@ export const bucketsInStorage = storageSchema.table(
     allowedMimeTypes: text('allowed_mime_types').array(),
     ownerId: text('owner_id'),
   },
-  table => [
+  (table) => [
     uniqueIndex('buckets_pkey').on(table.id),
     uniqueIndex('bname').on(table.name),
   ],
@@ -74,7 +74,7 @@ export const objectsInStorage = storageSchema.table(
     ownerId: text('owner_id'),
     userMetadata: jsonb('user_metadata'),
   },
-  table => [
+  (table) => [
     uniqueIndex('objects_pkey').on(table.id),
     uniqueIndex('bucketid_objname').on(table.bucketId, table.name),
     index('name_prefix_search').on(table.name),

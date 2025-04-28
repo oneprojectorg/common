@@ -6,7 +6,7 @@
   "scripts": {
     "build": "next build",
     "dev": "next dev -p 3100",
-    "lint": "pnpm tsc --noEmit && pnpm eslint --fix .",
+    "lint": "pnpm tsc --noEmit",
     "start": "next start -p 3100"
   },
   "dependencies": {
@@ -33,7 +33,6 @@
   },
   "devDependencies": {
     "@iconify/json": "2.2.311",
-    "@op/eslint-config": "workspace:*",
     "@op/typescript-config": "workspace:*",
     "@types/react": "19.0.10",
     "autoprefixer": "^10.4.20",

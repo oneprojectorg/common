@@ -1,7 +1,6 @@
 import { index, pgTable, uuid, varchar } from 'drizzle-orm/pg-core';
 
 import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
-
 import { organizations } from './organizations.sql';
 
 export const organizationRelationships = pgTable(
@@ -17,7 +16,7 @@ export const organizationRelationships = pgTable(
     relationshipType: varchar({ length: 255 }).notNull(),
     ...timestamps,
   },
-  table => [
+  (table) => [
     ...serviceRolePolicies,
     index().on(table.sourceOrganizationId).concurrently(),
     index().on(table.targetOrganizationId).concurrently(),

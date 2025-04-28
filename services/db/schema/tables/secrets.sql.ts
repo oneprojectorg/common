@@ -2,12 +2,7 @@
  * Drizzle definition for Supabase Vault functionality
  * THIS IS NOT INCLUDED IN MIGRATIONS
  */
-
-import {
-  pgSchema,
-  text,
-  uuid,
-} from 'drizzle-orm/pg-core';
+import { pgSchema, text, uuid } from 'drizzle-orm/pg-core';
 
 const vaultSchema = pgSchema('vault');
 

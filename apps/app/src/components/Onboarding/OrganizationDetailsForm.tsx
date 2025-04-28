@@ -1,20 +1,18 @@
-import { useState } from 'react';
-import { z } from 'zod';
-
 import { trpc } from '@op/trpc/client';
 import { AvatarUploader } from '@op/ui/AvatarUploader';
 import { BannerUploader } from '@op/ui/BannerUploader';
+import type { Option } from '@op/ui/MultiSelectComboBox';
 import { SelectItem } from '@op/ui/Select';
+import { useState } from 'react';
+import { z } from 'zod';
 
+import { GeoNamesMultiSelect } from '../GeoNamesMultiSelect';
 import { FormContainer } from '../form/FormContainer';
 import { FormHeader } from '../form/FormHeader';
 import { useMultiStep } from '../form/multiStep';
 import { getFieldErrorMessage, useAppForm } from '../form/utils';
-import { GeoNamesMultiSelect } from '../GeoNamesMultiSelect';
-import { ToggleRow } from '../layout/split/form/ToggleRow';
-
 import type { StepProps } from '../form/utils';
-import type { Option } from '@op/ui/MultiSelectComboBox';
+import { ToggleRow } from '../layout/split/form/ToggleRow';
 
 const multiSelectOptionValidator = z.object({
   id: z.string(),
@@ -165,7 +163,7 @@ export const OrganizationDetailsForm = ({
         </div>
         <form.AppField
           name="name"
-          children={field => (
+          children={(field) => (
             <field.TextField
               label="Organization name"
               isRequired
@@ -179,7 +177,7 @@ export const OrganizationDetailsForm = ({
 
         <form.AppField
           name="website"
-          children={field => (
+          children={(field) => (
             <field.TextField
               label="Website"
               isRequired
@@ -192,7 +190,7 @@ export const OrganizationDetailsForm = ({
         />
         <form.AppField
           name="email"
-          children={field => (
+          children={(field) => (
             <field.TextField
               label="Email"
               isRequired
@@ -207,18 +205,18 @@ export const OrganizationDetailsForm = ({
 
         <form.AppField
           name="whereWeWork"
-          children={field => (
+          children={(field) => (
             <GeoNamesMultiSelect
               label="Where we work"
               isRequired
-              onChange={value => field.handleChange(value)}
+              onChange={(value) => field.handleChange(value)}
               value={(field.state.value as Array<Option>) ?? []}
             />
           )}
         />
         <form.AppField
           name="orgType"
-          children={field => (
+          children={(field) => (
             <field.Select
               label="Organizational Status"
               placeholder="Select"
@@ -236,7 +234,7 @@ export const OrganizationDetailsForm = ({
 
         <form.AppField
           name="bio"
-          children={field => (
+          children={(field) => (
             <field.TextField
               useTextArea
               label="Bio"
@@ -254,7 +252,7 @@ export const OrganizationDetailsForm = ({
 
         <form.AppField
           name="mission"
-          children={field => (
+          children={(field) => (
             <field.TextField
               useTextArea
               label="Mission statement"
@@ -273,7 +271,7 @@ export const OrganizationDetailsForm = ({
 
         <form.AppField
           name="focusAreas"
-          children={field => (
+          children={(field) => (
             <field.MultiSelectComboBox
               label="Focus Areas"
               placeholder="Select one or more"
@@ -297,7 +295,7 @@ export const OrganizationDetailsForm = ({
 
         <form.AppField
           name="communitiesServed"
-          children={field => (
+          children={(field) => (
             <field.MultiSelectComboBox
               label="Communities Served"
               value={(field.state.value as Array<Option>) ?? []}
@@ -319,7 +317,7 @@ export const OrganizationDetailsForm = ({
         />
         <form.AppField
           name="strategies"
-          children={field => (
+          children={(field) => (
             <field.MultiSelectComboBox
               label="Strategies/Tactics"
               value={(field.state.value as Array<Option>) ?? []}
@@ -342,7 +340,7 @@ export const OrganizationDetailsForm = ({
 
         <form.AppField
           name="networkOrganization"
-          children={field => (
+          children={(field) => (
             <ToggleRow>
               Does your organization serve as a network or coalition with member
               organizations?

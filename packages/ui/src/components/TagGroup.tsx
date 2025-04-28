@@ -6,22 +6,20 @@ import {
   Tag as AriaTag,
   TagGroup as AriaTagGroup,
   Button,
-  composeRenderProps,
   TagList,
   Text,
+  composeRenderProps,
 } from 'react-aria-components';
-import { twMerge } from 'tailwind-merge';
-import { tv } from 'tailwind-variants';
-
-import { focusRing } from '../utils';
-
-import { Description, Label } from './Field';
-
 import type {
   TagGroupProps as AriaTagGroupProps,
   TagProps as AriaTagProps,
   TagListProps,
 } from 'react-aria-components';
+import { twMerge } from 'tailwind-merge';
+import { tv } from 'tailwind-variants';
+
+import { focusRing } from '../utils';
+import { Description, Label } from './Field';
 
 const colors = {
   transparent: 'bg-transparent border-neutral-400 text-neutral-600',
@@ -57,7 +55,7 @@ const tagStyles = tv({
       true: 'border-white/20 bg-transparent text-neutral-400',
     },
   },
-  compoundVariants: (Object.keys(colors) as Color[]).map(color => ({
+  compoundVariants: (Object.keys(colors) as Color[]).map((color) => ({
     isSelected: false,
     isDisabled: false,
     color,
@@ -67,7 +65,7 @@ const tagStyles = tv({
 
 export interface TagGroupProps<T>
   extends Omit<AriaTagGroupProps, 'children'>,
-  Pick<TagListProps<T>, 'items' | 'children' | 'renderEmptyState'> {
+    Pick<TagListProps<T>, 'items' | 'children' | 'renderEmptyState'> {
   color?: Color;
   label?: string;
   description?: string;
@@ -133,7 +131,8 @@ export const Tag = ({ children, color, ...props }: TagProps) => {
       textValue={textValue}
       {...props}
       className={composeRenderProps(props.className, (className, renderProps) =>
-        tagStyles({ ...renderProps, className, color: color || groupColor }))}
+        tagStyles({ ...renderProps, className, color: color || groupColor }),
+      )}
     >
       {({ allowsRemoving }) => (
         <>

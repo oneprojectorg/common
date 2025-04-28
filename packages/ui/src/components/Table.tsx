@@ -10,17 +10,11 @@ import {
   Button,
   Collection,
   ColumnResizer,
-  composeRenderProps,
   Group,
   ResizableTableContainer,
+  composeRenderProps,
   useTableOptions,
 } from 'react-aria-components';
-import { tv } from 'tailwind-variants';
-
-import { composeTailwindRenderProps, focusRing } from '../utils';
-
-import { Checkbox } from './Checkbox';
-
 import type {
   CellProps,
   ColumnProps,
@@ -28,6 +22,10 @@ import type {
   TableHeaderProps,
   TableProps,
 } from 'react-aria-components';
+import { tv } from 'tailwind-variants';
+
+import { composeTailwindRenderProps, focusRing } from '../utils';
+import { Checkbox } from './Checkbox';
 
 export const Table = (props: TableProps) => {
   return (
@@ -83,8 +81,8 @@ export const Column = (props: ColumnProps) => {
 };
 
 export const TableHeader = <T extends object>(props: TableHeaderProps<T>) => {
-  const { selectionBehavior, selectionMode, allowsDragging }
-    = useTableOptions();
+  const { selectionBehavior, selectionMode, allowsDragging } =
+    useTableOptions();
 
   return (
     <AriaTableHeader

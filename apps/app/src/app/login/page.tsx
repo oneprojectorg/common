@@ -1,9 +1,9 @@
 'use client';
 
-import { LoginPanel } from '@/components/LoginPanel';
+import { useAuthUser } from '@op/hooks';
 import { redirect } from 'next/navigation';
 
-import { useAuthUser } from '@op/hooks';
+import { LoginPanel } from '@/components/LoginPanel';
 
 const LoginPageWithLayout = () => {
   return <LoginPanel />;

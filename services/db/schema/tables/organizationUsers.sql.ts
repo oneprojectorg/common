@@ -10,7 +10,6 @@ import {
 import { authUsers } from 'drizzle-orm/supabase';
 
 import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
-
 import { accessRoles } from './access.sql';
 import { organizations } from './organizations.sql';
 import { users } from './users.sql';

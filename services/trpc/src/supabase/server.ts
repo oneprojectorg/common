@@ -1,13 +1,12 @@
 // This file is server-only to prevent the database from being imported in client components
 // and to prevent the database URL from being exposed to the client.
-import 'server-only';
-
-import { cookieOptionsDomain, OPURLConfig } from '@op/core';
+import { OPURLConfig, cookieOptionsDomain } from '@op/core';
 import { createServerClient } from '@op/supabase/lib';
-
-import type { TContext } from '../types';
 import type { CookieOptions } from '@op/supabase/lib';
 import type { Database } from '@op/supabase/types';
+import 'server-only';
+
+import type { TContext } from '../types';
 
 const useUrl = OPURLConfig('APP');
 
@@ -40,8 +39,7 @@ export const createSBAdminClient = (ctx: TContext) => {
             cookiesToSet.forEach(({ name, value, options }) => {
               ctx.setCookie({ name, value, options });
             });
-          }
-          catch (error) {
+          } catch (error) {
             console.error(error);
             // The `set` method was called from a Server Component.
             // This can be ignored if you have middleware refreshing

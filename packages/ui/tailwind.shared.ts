@@ -1,14 +1,12 @@
 /* eslint-disable import/no-extraneous-dependencies */
+import { commonColors } from '@op/core';
 import tailwindContainerQueries from '@tailwindcss/container-queries';
 import tailwindTypography from '@tailwindcss/typography';
 import tailwindScrollbar from 'tailwind-scrollbar';
+import type { Config } from 'tailwindcss';
 import tailwindAnimate from 'tailwindcss-animate';
 import tailwindReactAriaComponents from 'tailwindcss-react-aria-components';
 import defaultTheme from 'tailwindcss/defaultTheme';
-
-import { commonColors } from '@op/core';
-
-import type { Config } from 'tailwindcss';
 
 // This is the shared tailwind config that is used in packages, workshop, and web apps
 const config: Omit<Config, 'content'> = {

@@ -5,20 +5,19 @@ import {
   ListBox as AriaListBox,
   ListBoxItem as AriaListBoxItem,
   Collection,
-  composeRenderProps,
   Header,
   ListBoxSection,
+  composeRenderProps,
 } from 'react-aria-components';
-import { tv } from 'tailwind-variants';
-
-import { composeTailwindRenderProps, focusRing } from '../utils';
-
 import type {
   ListBoxProps as AriaListBoxProps,
   ListBoxItemProps as RACListBoxItemProps,
   SectionProps,
 } from 'react-aria-components';
+import { tv } from 'tailwind-variants';
 import type { VariantProps } from 'tailwind-variants';
+
+import { composeTailwindRenderProps, focusRing } from '../utils';
 import { Label } from './Field';
 
 interface ListBoxProps<T> extends AriaListBoxProps<T> {

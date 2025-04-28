@@ -1,6 +1,6 @@
-import { ColorArea } from '../src/components/ColorArea';
-
 import type { Meta } from '@storybook/react';
+
+import { ColorArea } from '../src/components/ColorArea';
 
 const meta: Meta<typeof ColorArea> = {
   component: ColorArea,

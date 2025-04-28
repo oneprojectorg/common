@@ -5,20 +5,16 @@ import {
   Button,
   DialogTrigger,
 } from 'react-aria-components';
+import type { ColorPickerProps as AriaColorPickerProps } from 'react-aria-components';
 import { tv } from 'tailwind-variants';
 
 import { focusRing } from '../utils';
-
 import { ColorArea } from './ColorArea';
 import { ColorField } from './ColorField';
 import { ColorSlider } from './ColorSlider';
 import { ColorSwatch } from './ColorSwatch';
 import { Dialog } from './Dialog';
 import { Popover } from './Popover';
-
-import type {
-  ColorPickerProps as AriaColorPickerProps,
-} from 'react-aria-components';
 
 const buttonStyles = tv({
   extend: focusRing,

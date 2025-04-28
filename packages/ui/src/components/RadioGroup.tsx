@@ -1,21 +1,19 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import {
   Radio as RACRadio,
   RadioGroup as RACRadioGroup,
 } from 'react-aria-components';
-import { tv } from 'tailwind-variants';
-
-import { composeTailwindRenderProps, focusRing } from '../utils';
-
-import { Description, FieldError, Label } from './Field';
-
-import type { ReactNode } from 'react';
 import type {
   RadioGroupProps as RACRadioGroupProps,
   RadioProps,
   ValidationResult,
 } from 'react-aria-components';
+import { tv } from 'tailwind-variants';
+
+import { composeTailwindRenderProps, focusRing } from '../utils';
+import { Description, FieldError, Label } from './Field';
 
 export interface RadioGroupProps extends Omit<RACRadioGroupProps, 'children'> {
   label?: string;
@@ -48,8 +46,8 @@ const styles = tv({
   base: 'size-5 rounded-full border-2 bg-neutral-100 transition-all',
   variants: {
     isSelected: {
-      false: ' border group-pressed:border',
-      true: ' border-[7px]  group-pressed:border',
+      false: 'border group-pressed:border',
+      true: 'border-[7px] group-pressed:border',
     },
     isInvalid: {
       true: 'border-red-600 group-pressed:border-red-700',
@@ -69,7 +67,7 @@ export const Radio = (props: RadioProps) => {
         'group flex items-center gap-2 text-sm text-neutral-800 transition disabled:text-neutral-400',
       )}
     >
-      {renderProps => (
+      {(renderProps) => (
         <>
           <div className={styles(renderProps)} />
           {props.children}

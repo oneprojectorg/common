@@ -2,7 +2,6 @@
  * Drizzle definition for the users_used_storage view
  * This view is used to track the total size of all objects in the assets bucket for each user
  */
-
 import { eq, sql } from 'drizzle-orm';
 import { pgView } from 'drizzle-orm/pg-core';
 

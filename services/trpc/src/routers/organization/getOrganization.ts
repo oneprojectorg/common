@@ -1,15 +1,13 @@
+import { UnauthorizedError, getOrganization } from '@op/common';
 import { TRPCError } from '@trpc/server';
+import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
-
-import { getOrganization, UnauthorizedError } from '@op/common';
 
 import { organizationsEncoder } from '../../encoders/organizations';
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withDB from '../../middlewares/withDB';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
-
-import type { OpenApiMeta } from 'trpc-to-openapi';
 
 const inputSchema = z.object({
   slug: z.string(),
@@ -51,8 +49,7 @@ export const getOrganizationRouter = router({
         }
 
         return result;
-      }
-      catch (error: unknown) {
+      } catch (error: unknown) {
         if (error instanceof UnauthorizedError) {
           throw new TRPCError({
             message: 'You do not have acess to this organization',

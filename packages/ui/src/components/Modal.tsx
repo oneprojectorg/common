@@ -1,11 +1,10 @@
 'use client';
 
 import { ModalOverlay, Modal as RACModal } from 'react-aria-components';
+import type { ModalOverlayProps } from 'react-aria-components';
 import { tv } from 'tailwind-variants';
 
 import { cn } from '../lib/utils';
-
-import type { ModalOverlayProps } from 'react-aria-components';
 
 const overlayStyles = tv({
   base: 'fixed left-0 top-0 z-[99999] flex h-[--visual-viewport-height] w-full items-center justify-center bg-neutral-50/50 p-4 text-center backdrop-blur-sm entering:duration-300 entering:ease-out entering:animate-in entering:fade-in exiting:duration-300 exiting:ease-in exiting:animate-out exiting:fade-out',

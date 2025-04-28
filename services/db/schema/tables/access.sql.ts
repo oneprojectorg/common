@@ -10,5 +10,5 @@ export const accessRoles = pgTable(
     access: integer(),
     ...timestamps,
   },
-  table => [...serviceRolePolicies, index().on(table.id).concurrently()],
+  (table) => [...serviceRolePolicies, index().on(table.id).concurrently()],
 );

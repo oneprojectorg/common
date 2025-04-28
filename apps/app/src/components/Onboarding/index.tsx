@@ -1,15 +1,13 @@
 'use client';
 
 import { Formity } from '@formity/react';
+import type { OnReturn, ReturnOutput } from '@formity/react';
+import { trpc } from '@op/trpc/client';
 import { useRouter } from 'next/navigation';
 import { useCallback, useState } from 'react';
 
-import { trpc } from '@op/trpc/client';
-
 import { schema } from './schema';
-
 import type { Values } from './schema';
-import type { OnReturn, ReturnOutput } from '@formity/react';
 
 const processInputs = (data: ReturnOutput<Values>) => {
   const inputs = {

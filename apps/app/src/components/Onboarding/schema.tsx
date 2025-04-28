@@ -1,8 +1,10 @@
+import type { Form, Return, Schema } from '@formity/react';
 import { StepperProgressIndicator } from '@op/ui/Stepper';
+import type { z } from 'zod';
 
-import { MultiStepProvider } from '../form/multiStep';
 import { Portal } from '../Portal';
-
+import { MultiStepProvider } from '../form/multiStep';
+import type { UnionToIntersection } from '../form/utils';
 import {
   FundingInformationForm,
   validator as FundingInformationFormValidator,
@@ -15,10 +17,6 @@ import {
   PersonalDetailsForm,
   validator as PersonalDetailsFormValidator,
 } from './PersonalDetailsForm';
-
-import type { UnionToIntersection } from '../form/utils';
-import type { Form, Return, Schema } from '@formity/react';
-import type { z } from 'zod';
 
 const resolvers = {
   PersonalDetailsForm: PersonalDetailsFormValidator,
@@ -112,7 +110,7 @@ export const schema: Schema<Values> = [
     },
   },
   {
-    return: props => props,
+    return: (props) => props,
   },
 ];
 

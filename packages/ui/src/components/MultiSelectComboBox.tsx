@@ -2,10 +2,9 @@
 
 import { X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import type { ValidationResult } from 'react-aria-components';
 
 import { FieldError, Label } from './Field';
-
-import type { ValidationResult } from 'react-aria-components';
 
 export interface Option {
   id: string;

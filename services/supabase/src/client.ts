@@ -1,7 +1,5 @@
-
+import { OPURLConfig, cookieOptionsDomain } from '@op/core';
 import { createBrowserClient } from '@supabase/ssr';
-
-import { cookieOptionsDomain, OPURLConfig } from '@op/core';
 
 import type { Database } from './types';
 

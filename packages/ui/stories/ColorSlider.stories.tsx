@@ -1,6 +1,6 @@
-import { ColorSlider } from '../src/components/ColorSlider';
-
 import type { Meta } from '@storybook/react';
+
+import { ColorSlider } from '../src/components/ColorSlider';
 
 const meta: Meta<typeof ColorSlider> = {
   component: ColorSlider,

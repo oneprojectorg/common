@@ -1,4 +1,5 @@
 import { relations, sql } from 'drizzle-orm';
+import type { InferModel } from 'drizzle-orm';
 import {
   boolean,
   decimal,
@@ -18,14 +19,11 @@ import {
   serviceRolePolicies,
   timestamps,
 } from '../../helpers';
-
 import { links } from './links.sql';
 import { posts } from './posts.sql';
 import { projects } from './projects.sql';
 import { organizationRelationships } from './relationships.sql';
 import { objectsInStorage } from './storage.sql';
-
-import type { InferModel } from 'drizzle-orm';
 
 // Enums for organization types and status
 export enum OrgType {

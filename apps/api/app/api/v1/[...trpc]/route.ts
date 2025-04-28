@@ -1,8 +1,7 @@
-import { createOpenApiFetchHandler } from 'trpc-to-openapi';
-
 import { API_OPENAPI_PATH } from '@op/core';
 import { createSBServerClient } from '@op/supabase/server';
 import { appRouter, createContext } from '@op/trpc';
+import { createOpenApiFetchHandler } from 'trpc-to-openapi';
 
 import { verifyAdminOnly } from '../../../route';
 

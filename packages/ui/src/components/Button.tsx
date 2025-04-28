@@ -2,11 +2,10 @@
 
 import { Button as RACButton, Link as RACLink } from 'react-aria-components';
 import { tv } from 'tailwind-variants';
+import type { VariantProps } from 'tailwind-variants';
 
 import { Tooltip, TooltipTrigger } from './Tooltip';
-
 import type { TooltipProps, TooltipTriggerProps } from './Tooltip';
-import type { VariantProps } from 'tailwind-variants';
 
 const buttonStyle = tv({
   base: 'flex h-11 items-center justify-center gap-2 text-center text-base font-normal leading-3 sm:text-base',

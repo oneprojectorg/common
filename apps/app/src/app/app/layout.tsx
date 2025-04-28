@@ -1,5 +1,5 @@
-import { AppLayout } from '@/components/layout/split/AppLayout';
 import { SiteHeader } from '@/components/SiteHeader';
+import { AppLayout } from '@/components/layout/split/AppLayout';
 
 const AppRoot = ({ children }: { children: React.ReactNode }) => {
   return (

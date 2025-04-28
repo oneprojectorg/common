@@ -8,12 +8,11 @@ import {
   createTRPCReact,
   getQueryKey as getQueryKeyTRPC,
 } from '@trpc/react-query';
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 import React, { useState } from 'react';
 
 import { links } from './links';
-
 import type { AppRouter } from './routers';
-import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -58,11 +57,13 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
           persister,
           dehydrateOptions: {
             shouldDehydrateQuery: (query) => {
-              const queryIsReadyForPersistance = query.state.status === 'success';
+              const queryIsReadyForPersistance =
+                query.state.status === 'success';
 
               if (queryIsReadyForPersistance) {
                 const { queryKey } = query;
-                const excludeFromPersisting = queryKey.includes('ogImageThumbnail');
+                const excludeFromPersisting =
+                  queryKey.includes('ogImageThumbnail');
 
                 return !excludeFromPersisting;
               }

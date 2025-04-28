@@ -1,10 +1,9 @@
 import { withThemeByClassName } from '@storybook/addon-themes';
+import type { Preview } from '@storybook/react';
 import { themes } from '@storybook/theming';
 
-import type { Preview } from '@storybook/react';
-
-import '../tailwind.styles.scss';
 import '../stories/index.css';
+import '../tailwind.styles.scss';
 
 const preview: Preview = {
   decorators: [
@@ -15,7 +14,7 @@ const preview: Preview = {
       },
       defaultTheme: 'light',
     }),
-    Story => (
+    (Story) => (
       <div className="font-sans">
         <Story />
       </div>

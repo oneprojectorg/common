@@ -1,11 +1,10 @@
 'use client';
 
+import type { AuthError, User } from '@op/supabase/lib';
 import { useQuery } from '@tanstack/react-query';
+import type { UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
 
 import nukeCookies from './utils/nukeCookies';
-
-import type { AuthError, User } from '@op/supabase/lib';
-import type { UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
 
 interface Response {
   user: User | null;
@@ -25,8 +24,8 @@ const useAuthUser: (
       const locData = await supabase.auth.getUser();
 
       if (
-        locData.error?.name !== 'AuthRetryableFetchError'
-        && (locData.error || !locData.data?.user)
+        locData.error?.name !== 'AuthRetryableFetchError' &&
+        (locData.error || !locData.data?.user)
       ) {
         await supabase.auth.signOut({ scope: 'local' });
         nukeCookies();
