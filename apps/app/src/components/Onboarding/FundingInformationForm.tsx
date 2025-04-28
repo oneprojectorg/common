@@ -214,7 +214,7 @@ export const FundingInformationForm = ({
           )}
         />
 
-        <div className="flex justify-between">
+        <div className="flex justify-between gap-2">
           <form.Button color="secondary" onPress={onBack}>
             Back
           </form.Button>
