@@ -8,7 +8,7 @@ export const FullScreenSplitMain = ({
 }) => {
   return (
     <main className="flex size-full flex-col p-4 sm:col-span-2 sm:p-8">
-      <section>
+      <section className="hidden sm:block">
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-2">
             <OPLogo />

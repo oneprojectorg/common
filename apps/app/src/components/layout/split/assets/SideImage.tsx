@@ -13,9 +13,9 @@ export const SideImage = ({ className }: { className?: string }) => (
         width="327"
         height="71"
         rx="7.5"
-        transform="rotate(-2 49.3609 60.4295)"
+        transform="rotate(2 49.3609 60.4295)"
         stroke="#D0D3D4"
-        shape-rendering="crispEdges"
+        shapeRendering="crispEdges"
       />
       <rect
         x="49.3609"
@@ -42,7 +42,7 @@ export const SideImage = ({ className }: { className?: string }) => (
           r="20"
           transform="rotate(-2 86.0784 94.6687)"
           fill="url(#pattern0_1824_1054)"
-          shape-rendering="crispEdges"
+          shapeRendering="crispEdges"
         />
       </g>
       <path
@@ -63,7 +63,7 @@ export const SideImage = ({ className }: { className?: string }) => (
         rx="7.5"
         transform="rotate(2 56.326 105.506)"
         stroke="#D0D3D4"
-        shape-rendering="crispEdges"
+        shapeRendering="crispEdges"
       />
       <rect
         x="56.326"
@@ -90,7 +90,7 @@ export const SideImage = ({ className }: { className?: string }) => (
           r="20"
           transform="rotate(2 90.5652 142.223)"
           fill="url(#pattern1_1824_1054)"
-          shape-rendering="crispEdges"
+          shapeRendering="crispEdges"
         />
       </g>
       <path
@@ -111,7 +111,7 @@ export const SideImage = ({ className }: { className?: string }) => (
         rx="7.5"
         transform="rotate(-2 53.3609 173.471)"
         stroke="#D0D3D4"
-        shape-rendering="crispEdges"
+        shapeRendering="crispEdges"
       />
       <rect
         x="53.3609"
@@ -138,7 +138,7 @@ export const SideImage = ({ className }: { className?: string }) => (
           r="20"
           transform="rotate(-2 90.0784 207.71)"
           fill="url(#pattern2_1824_1054)"
-          shape-rendering="crispEdges"
+          shapeRendering="crispEdges"
         />
       </g>
       <path
@@ -158,9 +158,9 @@ export const SideImage = ({ className }: { className?: string }) => (
         width="426.312"
         height="179.403"
         filterUnits="userSpaceOnUse"
-        color-interpolation-filters="sRGB"
+        colorInterpolationFilters="sRGB"
       >
-        <feFlood flood-opacity="0" result="BackgroundImageFix" />
+        <feFlood floodOpacity="0" result="BackgroundImageFix" />
         <feColorMatrix
           in="SourceAlpha"
           type="matrix"
@@ -193,9 +193,9 @@ export const SideImage = ({ className }: { className?: string }) => (
         width="80.001"
         height="80.0005"
         filterUnits="userSpaceOnUse"
-        color-interpolation-filters="sRGB"
+        colorInterpolationFilters="sRGB"
       >
-        <feFlood flood-opacity="0" result="BackgroundImageFix" />
+        <feFlood floodOpacity="0" result="BackgroundImageFix" />
         <feColorMatrix
           in="SourceAlpha"
           type="matrix"
@@ -236,9 +236,9 @@ export const SideImage = ({ className }: { className?: string }) => (
         width="418.317"
         height="179.124"
         filterUnits="userSpaceOnUse"
-        color-interpolation-filters="sRGB"
+        colorInterpolationFilters="sRGB"
       >
-        <feFlood flood-opacity="0" result="BackgroundImageFix" />
+        <feFlood floodOpacity="0" result="BackgroundImageFix" />
         <feColorMatrix
           in="SourceAlpha"
           type="matrix"
@@ -271,9 +271,9 @@ export const SideImage = ({ className }: { className?: string }) => (
         width="72"
         height="72.0005"
         filterUnits="userSpaceOnUse"
-        color-interpolation-filters="sRGB"
+        colorInterpolationFilters="sRGB"
       >
-        <feFlood flood-opacity="0" result="BackgroundImageFix" />
+        <feFlood floodOpacity="0" result="BackgroundImageFix" />
         <feColorMatrix
           in="SourceAlpha"
           type="matrix"
@@ -314,9 +314,9 @@ export const SideImage = ({ className }: { className?: string }) => (
         width="418.317"
         height="179.124"
         filterUnits="userSpaceOnUse"
-        color-interpolation-filters="sRGB"
+        colorInterpolationFilters="sRGB"
       >
-        <feFlood flood-opacity="0" result="BackgroundImageFix" />
+        <feFlood floodOpacity="0" result="BackgroundImageFix" />
         <feColorMatrix
           in="SourceAlpha"
           type="matrix"
@@ -349,9 +349,9 @@ export const SideImage = ({ className }: { className?: string }) => (
         width="72.001"
         height="72.0005"
         filterUnits="userSpaceOnUse"
-        color-interpolation-filters="sRGB"
+        colorInterpolationFilters="sRGB"
       >
-        <feFlood flood-opacity="0" result="BackgroundImageFix" />
+        <feFlood floodOpacity="0" result="BackgroundImageFix" />
         <feColorMatrix
           in="SourceAlpha"
           type="matrix"
