@@ -1,7 +1,7 @@
 import { trpc } from '@op/trpc/client';
 import { AvatarUploader } from '@op/ui/AvatarUploader';
+import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { useState } from 'react';
-import { LuLoaderCircle } from 'react-icons/lu';
 import { z } from 'zod';
 
 import { FormContainer } from '../form/FormContainer';
@@ -127,9 +127,9 @@ export const PersonalDetailsForm = ({
           )}
         />
 
-        <form.SubmitButton>
+        <form.SubmitButton className="sm:w-full">
           {updateProfile.isPending || uploadImage.isPending ? (
-            <LuLoaderCircle />
+            <LoadingSpinner />
           ) : (
             'Continue'
           )}

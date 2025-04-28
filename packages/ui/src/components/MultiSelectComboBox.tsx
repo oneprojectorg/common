@@ -232,7 +232,7 @@ export const MultiSelectComboBox = ({
                 <span>{option.label}</span>
                 <button
                   type="button"
-                  className="ml-1 text-blue-700 hover:text-blue-900"
+                  className="ml-1"
                   onClick={(e) => handleRemoveOption(option, e)}
                 >
                   <X size={14} />
