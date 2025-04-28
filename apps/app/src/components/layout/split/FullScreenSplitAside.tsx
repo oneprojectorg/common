@@ -8,7 +8,7 @@ export const FullScreenSplitAside = ({
   children?: React.ReactNode;
 }) => {
   return (
-    <aside className="absolute right-0 top-0 -z-10 hidden size-full h-screen flex-col items-center justify-center bg-gradient text-offWhite sm:fixed sm:z-10 sm:flex sm:w-1/3 sm:min-w-96 sm:bg-teal">
+    <aside className="absolute right-0 top-0 -z-10 hidden size-full h-screen flex-col items-center justify-center bg-gradient text-offWhite sm:fixed sm:z-10 sm:w-1/3 sm:min-w-96 sm:bg-teal lg:flex">
       <div className="flex flex-col items-center justify-center gap-4 px-12">
         <h1 className="min-w-96 text-center font-serif text-5xl font-light leading-[3.3rem] tracking-[-0.075rem]">
           A bridge to the

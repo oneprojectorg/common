@@ -7,8 +7,8 @@ export const FullScreenSplitMain = ({
   children: React.ReactNode;
 }) => {
   return (
-    <main className="flex size-full flex-col p-4 sm:col-span-2 sm:p-8">
-      <section className="hidden sm:block">
+    <main className="col-span-3 flex size-full flex-col p-4 sm:p-8 lg:col-span-2">
+      <section className="hidden lg:block">
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-2">
             <OPLogo />

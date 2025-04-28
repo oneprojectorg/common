@@ -49,7 +49,7 @@ export const schema: Schema<Values> = [
             <PersonalDetailsForm
               defaultValues={values}
               resolver={resolvers.PersonalDetailsForm}
-              className="sm:w-[32rem]"
+              className="lg:w-[48rem]"
             />
           </MultiStepProvider>
         </>
@@ -81,7 +81,7 @@ export const schema: Schema<Values> = [
             <OrganizationDetailsForm
               defaultValues={values}
               resolver={resolvers.OrganizationDetailsForm}
-              className="sm:w-[32rem]"
+              className="lg:w-[48rem]"
             />
           </MultiStepProvider>
         </>
@@ -102,7 +102,7 @@ export const schema: Schema<Values> = [
             <FundingInformationForm
               defaultValues={values}
               resolver={resolvers.FundingInformationForm}
-              className="sm:w-[32rem]"
+              className="lg:w-[48rem]"
             />
           </MultiStepProvider>
         </>
