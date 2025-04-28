@@ -1,6 +1,7 @@
 'use client';
 
 import { AlertCircleIcon, InfoIcon } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { chain } from 'react-aria';
 
 import { Button } from './Button';
@@ -10,9 +11,7 @@ import {
   DialogFooter,
   DialogHeader,
 } from './Dialog';
-
 import type { DialogProps } from './Dialog';
-import type { ReactNode } from 'react';
 
 interface AlertDialogProps extends Omit<DialogProps, 'children'> {
   title: string;
@@ -41,13 +40,11 @@ export const AlertDialog = ({
           <div
             className={`absolute right-6 top-6 size-6 stroke-2 ${variant === 'destructive' ? 'text-red-500' : 'text-neutral-500'}`}
           >
-            {variant === 'destructive'
-              ? (
-                  <AlertCircleIcon aria-hidden />
-                )
-              : (
-                  <InfoIcon aria-hidden />
-                )}
+            {variant === 'destructive' ? (
+              <AlertCircleIcon aria-hidden />
+            ) : (
+              <InfoIcon aria-hidden />
+            )}
           </div>
           <DialogDescription>{children}</DialogDescription>
           <DialogFooter>

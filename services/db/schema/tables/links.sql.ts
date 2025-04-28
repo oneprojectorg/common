@@ -7,7 +7,6 @@ import {
   serviceRolePolicies,
   timestamps,
 } from '../../helpers';
-
 import { organizations } from './organizations.sql';
 
 export enum LinkType {

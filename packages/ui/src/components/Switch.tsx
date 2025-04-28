@@ -1,16 +1,11 @@
 'use client';
 
-import {
-  Switch as AriaSwitch,
-} from 'react-aria-components';
+import { Switch as AriaSwitch } from 'react-aria-components';
+import type { SwitchProps as AriaSwitchProps } from 'react-aria-components';
 import { tv } from 'tailwind-variants';
 
 import { cn } from '../lib/utils';
 import { composeTailwindRenderProps, focusRing } from '../utils';
-
-import type {
-  SwitchProps as AriaSwitchProps,
-} from 'react-aria-components';
 
 export interface SwitchProps extends Omit<AriaSwitchProps, 'children'> {
   children?: React.ReactNode;
@@ -53,9 +48,14 @@ export const Switch = ({ children, trackClassName, ...props }: SwitchProps) => {
         'group flex items-center gap-2 text-sm text-neutral-800 transition disabled:text-neutral-400',
       )}
     >
-      {renderProps => (
+      {(renderProps) => (
         <>
-          <div className={track({ ...renderProps, className: cn('outline-offset-2', trackClassName) })}>
+          <div
+            className={track({
+              ...renderProps,
+              className: cn('outline-offset-2', trackClassName),
+            })}
+          >
             <span className={handle(renderProps)} />
           </div>
           {children}

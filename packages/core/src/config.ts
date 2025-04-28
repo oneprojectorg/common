@@ -143,7 +143,7 @@ export const allowedEmailDomains = ['oneproject.org'];
 
 export const genericEmail = 'hello@oneproject.org';
 
-export const adminEmails = ['hirad@oneproject.org', 'scott@oneproject.org'];
+export const adminEmails = ['scott@oneproject.org'];
 
 export const commonColors = colors.neutral;
 

@@ -1,14 +1,12 @@
-import { and, eq, ne, sql } from 'drizzle-orm';
+import { organizationUsers, users } from '@op/db/schema';
+import { eq, sql } from 'drizzle-orm';
+import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
-
-import { organizationUsers } from '@op/db/schema';
 
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withDB from '../../middlewares/withDB';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
-
-import type { OpenApiMeta } from 'trpc-to-openapi';
 
 const endpoint = 'usernameAvailable';
 
@@ -59,12 +57,7 @@ const usernameAvailable = router({
           exists: sql<boolean>`true`,
         })
         .from(organizationUsers)
-        .where(
-          and(
-            eq(organizationUsers.username, username),
-            ne(organizationUsers.id, ctx.user.id),
-          ),
-        )
+        .where(eq(users.username, username))
         .limit(1);
 
       if (!result.length || !result[0]) {

@@ -1,16 +1,17 @@
+import { OPURLConfig } from '@op/core';
 import { loggerLink, unstable_httpBatchStreamLink } from '@trpc/client';
 // import { unstable_httpBatchStreamLink } from '@trpc/client';
 import superjson from 'superjson';
-
-import { OPURLConfig } from '@op/core';
 
 const envURL = OPURLConfig('API');
 
 export const links = [
   ...(!envURL.IS_PRODUCTION
-    ? [loggerLink({
-        colorMode: 'none',
-      })]
+    ? [
+        loggerLink({
+          colorMode: 'none',
+        }),
+      ]
     : []),
   unstable_httpBatchStreamLink({
     /**

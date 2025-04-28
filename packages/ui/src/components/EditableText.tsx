@@ -2,10 +2,9 @@
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 import React, { useCallback, useRef, useState } from 'react';
+import type { InputHTMLAttributes } from 'react';
 
 import { cn } from '../lib/utils';
-
-import type { InputHTMLAttributes } from 'react';
 
 type EventType = React.MouseEvent<HTMLDivElement, MouseEvent>;
 
@@ -47,7 +46,10 @@ export const EditableText = ({
   proceedWithDoubleClick = () => true,
   inputClassName,
   ...props
-}: Omit<InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'onSubmit' | 'onClick'> & {
+}: Omit<
+  InputHTMLAttributes<HTMLInputElement>,
+  'onChange' | 'onSubmit' | 'onClick'
+> & {
   children: string | null;
   onClick: (e?: EventType) => void;
   onSubmit?: (v: string) => void;
@@ -97,16 +99,13 @@ export const EditableText = ({
   const myDoubleClickCallback = useDoubleClick(singleClick, doubleClick);
 
   const submit = useCallback(() => {
-    if (!onSubmit)
-      return;
+    if (!onSubmit) return;
 
     if (content && content.trim() !== '') {
       onSubmit(content);
-    }
-    else if (props.placeholder) {
+    } else if (props.placeholder) {
       onSubmit(props.placeholder);
-    }
-    else {
+    } else {
       setContent(children);
     }
 
@@ -117,7 +116,10 @@ export const EditableText = ({
     return (
       <input
         {...props}
-        className={cn('nopan nodrag bg-transparent p-0 leading-[inherit] text-[inherit] !outline-none !ring-0 !ring-offset-0 placeholder:text-neutral-500', inputClassName)}
+        className={cn(
+          'nopan nodrag bg-transparent p-0 leading-[inherit] text-[inherit] !outline-none !ring-0 !ring-offset-0 placeholder:text-neutral-500',
+          inputClassName,
+        )}
         value={content || ''}
         placeholder={props.placeholder || 'Untitled'}
         onClick={(e) => {
@@ -160,7 +162,10 @@ export const EditableText = ({
   if (isEditable && !disabled) {
     return (
       <textarea
-        className={cn('nopan nodrag w-full resize-none border-none bg-transparent p-0 !outline-none !ring-0 !ring-offset-0 placeholder:text-neutral-500', inputClassName)}
+        className={cn(
+          'nopan nodrag w-full resize-none border-none bg-transparent p-0 !outline-none !ring-0 !ring-offset-0 placeholder:text-neutral-500',
+          inputClassName,
+        )}
         value={content || undefined}
         placeholder={props.placeholder || 'Double click to edit...'}
         rows={rows}
@@ -202,10 +207,7 @@ export const EditableText = ({
 
   return (
     <div
-      className={cn(
-        'w-full break-words',
-        props.className,
-      )}
+      className={cn('w-full break-words', props.className)}
       onClick={(e) => {
         const canEdit = proceedWithDoubleClick();
 
@@ -219,4 +221,3 @@ export const EditableText = ({
     </div>
   );
 };
-

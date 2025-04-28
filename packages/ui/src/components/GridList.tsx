@@ -5,16 +5,11 @@ import {
   GridListItem as AriaGridListItem,
   Button,
 } from 'react-aria-components';
+import type { GridListItemProps, GridListProps } from 'react-aria-components';
 import { tv } from 'tailwind-variants';
 
 import { composeTailwindRenderProps, focusRing } from '../utils';
-
 import { Checkbox } from './Checkbox';
-
-import type {
-  GridListItemProps,
-  GridListProps,
-} from 'react-aria-components';
 
 export const GridList = <T extends object>({
   children,

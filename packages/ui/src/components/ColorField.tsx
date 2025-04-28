@@ -1,23 +1,19 @@
 'use client';
 
-import {
-  ColorField as AriaColorField,
-} from 'react-aria-components';
-
-import { composeTailwindRenderProps } from '../utils';
-
-import {
-  Description,
-  FieldError,
-  fieldGroupStyles,
-  Input,
-  Label,
-} from './Field';
-
+import { ColorField as AriaColorField } from 'react-aria-components';
 import type {
   ColorFieldProps as AriaColorFieldProps,
   ValidationResult,
 } from 'react-aria-components';
+
+import { composeTailwindRenderProps } from '../utils';
+import {
+  Description,
+  FieldError,
+  Input,
+  Label,
+  fieldGroupStyles,
+} from './Field';
 
 export interface ColorFieldProps extends AriaColorFieldProps {
   label?: string;
@@ -41,11 +37,12 @@ export const ColorField = ({
     >
       {label && <Label>{label}</Label>}
       <Input
-        className={renderProps =>
+        className={(renderProps) =>
           fieldGroupStyles({
             ...renderProps,
             isFocusWithin: renderProps.isFocused,
-          })}
+          })
+        }
       />
       {description && <Description>{description}</Description>}
       <FieldError>{errorMessage}</FieldError>

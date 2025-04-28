@@ -1,9 +1,9 @@
+import type { Meta } from '@storybook/react';
+
 import { Button } from '../src/components/Button';
 import { DateField } from '../src/components/DateField';
 import { Form } from '../src/components/Form';
 import { TextField } from '../src/components/TextField';
-
-import type { Meta } from '@storybook/react';
 
 const meta: Meta<typeof Form> = {
   component: Form,

@@ -1,17 +1,16 @@
 import {
   Tooltip as AriaTooltip,
   TooltipTrigger as AriaTooltipTrigger,
-  composeRenderProps,
   OverlayArrow,
+  composeRenderProps,
 } from 'react-aria-components';
-import { tv } from 'tailwind-variants';
-
-import { cn } from '../lib/utils';
-
 import type {
   TooltipProps as AriaTooltipProps,
   TooltipTriggerComponentProps,
 } from 'react-aria-components';
+import { tv } from 'tailwind-variants';
+
+import { cn } from '../lib/utils';
 
 export interface TooltipProps extends Omit<AriaTooltipProps, 'children'> {
   children: React.ReactNode;
@@ -56,7 +55,8 @@ const Tooltip = ({ children, ...props }: TooltipProps) => {
         styles({
           ...renderProps,
           className: cn('pointer-events-none z-0 select-none', className),
-        }))}
+        }),
+      )}
     >
       <OverlayArrow className="items-center justify-center group-placement-left:-ml-px group-placement-right:-mr-px group-placement-top:-mt-px group-placement-bottom:-mb-px">
         <svg

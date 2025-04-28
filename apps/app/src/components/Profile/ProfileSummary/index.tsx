@@ -1,6 +1,6 @@
-import { Header1 } from '@/components/Header';
-
 import type { Organization } from '@op/trpc/encoders';
+
+import { Header1 } from '@/components/Header';
 
 export const ProfileSummary = ({ profile }: { profile: Organization }) => {
   return (
@@ -12,9 +12,7 @@ export const ProfileSummary = ({ profile }: { profile: Organization }) => {
           : null}
       </div>
       <div className="text-sm text-darkGray">
-        <span className="font-semibold">248</span>
-        {' '}
-        relationships
+        <span className="font-semibold">0</span> relationships
       </div>
     </div>
   );

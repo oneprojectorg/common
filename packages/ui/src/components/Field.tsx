@@ -1,19 +1,15 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import {
-  composeRenderProps,
   Group,
   FieldError as RACFieldError,
   Input as RACInput,
   Label as RACLabel,
   TextArea as RACTextArea,
   Text,
+  composeRenderProps,
 } from 'react-aria-components';
-import { twMerge } from 'tailwind-merge';
-import { tv, VariantProps } from 'tailwind-variants';
-
-import { composeTailwindRenderProps, focusRing } from '../utils';
-
 import type {
   FieldErrorProps,
   GroupProps,
@@ -22,7 +18,11 @@ import type {
   TextAreaProps,
   TextProps,
 } from 'react-aria-components';
-import { ReactNode } from 'react';
+import { twMerge } from 'tailwind-merge';
+import { tv } from 'tailwind-variants';
+import type { VariantProps } from 'tailwind-variants';
+
+import { composeTailwindRenderProps, focusRing } from '../utils';
 
 export const Label = (props: LabelProps) => {
   return (
@@ -75,7 +75,7 @@ export const fieldBorderStyles = tv({
 
 export const fieldGroupStyles = tv({
   extend: focusRing,
-  base: 'group flex items-center overflow-hidden rounded-md bg-white placeholder:text-teal disabled:placeholder:text-lightGray',
+  base: 'group flex items-center overflow-hidden bg-white placeholder:text-teal disabled:placeholder:text-lightGray',
   variants: fieldBorderStyles.variants,
 });
 
@@ -169,7 +169,7 @@ export const TextArea = ({
       {...props}
       className={composeTailwindRenderProps(
         props.className,
-        'min-w-0 flex-1 items-center bg-white px-2 py-1.5 text-sm text-darkGray outline outline-0 disabled:text-neutral-400',
+        'min-h-28 min-w-0 flex-1 items-center rounded border border-offWhite bg-white p-4 text-sm text-darkGray placeholder:text-midGray disabled:text-neutral-400',
       )}
     />
   );

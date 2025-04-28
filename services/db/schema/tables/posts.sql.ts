@@ -2,7 +2,6 @@ import { relations } from 'drizzle-orm';
 import { index, pgTable, primaryKey, text, uuid } from 'drizzle-orm/pg-core';
 
 import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
-
 import { organizations } from './organizations.sql';
 
 export const posts = pgTable(

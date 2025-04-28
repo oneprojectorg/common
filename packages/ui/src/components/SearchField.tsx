@@ -1,19 +1,15 @@
 'use client';
 
 import { SearchIcon, XIcon } from 'lucide-react';
-import {
-  SearchField as AriaSearchField,
-} from 'react-aria-components';
-
-import { composeTailwindRenderProps } from '../utils';
-
-import { Button } from './Button';
-import { Description, FieldError, FieldGroup, Input, Label } from './Field';
-
+import { SearchField as AriaSearchField } from 'react-aria-components';
 import type {
   SearchFieldProps as AriaSearchFieldProps,
   ValidationResult,
 } from 'react-aria-components';
+
+import { composeTailwindRenderProps } from '../utils';
+import { Button } from './Button';
+import { Description, FieldError, FieldGroup, Input, Label } from './Field';
 
 export interface SearchFieldProps extends AriaSearchFieldProps {
   label?: string;

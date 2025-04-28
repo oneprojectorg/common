@@ -1,5 +1,4 @@
 import { cn } from '@op/ui/utils';
-
 import type { ReactNode } from 'react';
 
 export const ImageHeader = ({
@@ -21,7 +20,7 @@ export const ImageHeader = ({
       >
         {headerImage}
       </div>
-      <div className="absolute bottom-0 left-4 size-28 overflow-hidden rounded-full border-4 border-white bg-white shadow">
+      <div className="absolute bottom-0 left-4 aspect-square size-28 overflow-hidden rounded-full border-4 border-white bg-offWhite shadow">
         {avatarImage}
       </div>
     </div>

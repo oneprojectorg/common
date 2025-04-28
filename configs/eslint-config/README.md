@@ -58,6 +58,7 @@ In another workspace's ESLint configuration file (e.g., `eslint.config.js`):
 
 ```javascript
 import { nextJsConfig } from '@op/eslint-config/next';
+
 // or import { config as baseConfig } from '@op/eslint-config/base'; // Less common
 
 export default [

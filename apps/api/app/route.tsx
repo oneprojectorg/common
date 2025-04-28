@@ -1,10 +1,8 @@
+import { APP_NAME, OPURLConfig, adminEmails } from '@op/core';
+import type { UserResponse } from '@op/supabase/lib';
+import { createSBServerClient } from '@op/supabase/server';
 import { ApiReference } from '@scalar/nextjs-api-reference';
 import { NextResponse } from 'next/server';
-
-import { adminEmails, APP_NAME, OPURLConfig } from '@op/core';
-import { createSBServerClient } from '@op/supabase/server';
-
-import type { UserResponse } from '@op/supabase/lib';
 
 const useUrl = OPURLConfig('APP');
 
@@ -57,8 +55,7 @@ export const GET = async () => {
     });
 
     return await response();
-  }
-  catch {
+  } catch {
     return NextResponse.redirect(new URL('/', useUrl.ENV_URL));
   }
 };

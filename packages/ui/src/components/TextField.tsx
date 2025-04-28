@@ -1,24 +1,22 @@
 'use client';
 
 import { TextField as AriaTextField } from 'react-aria-components';
-
-import { composeTailwindRenderProps } from '../utils';
-
-import {
-  Description,
-  FieldError,
-  FieldGroup,
-  Input,
-  InputWithVariantsProps,
-  Label,
-  TextArea,
-} from './Field';
-
 import type {
   TextFieldProps as AriaTextFieldProps,
   TextAreaProps,
   ValidationResult,
 } from 'react-aria-components';
+
+import { composeTailwindRenderProps } from '../utils';
+import {
+  Description,
+  FieldError,
+  FieldGroup,
+  Input,
+  Label,
+  TextArea,
+} from './Field';
+import type { InputWithVariantsProps } from './Field';
 
 export interface TextFieldProps extends AriaTextFieldProps {
   label?: string;
@@ -57,7 +55,12 @@ export const TextField = ({
         'flex flex-col gap-2',
       )}
     >
-      {label && <Label className={labelClassName}>{label}</Label>}
+      {label && (
+        <Label className={labelClassName}>
+          {label}
+          {props.isRequired && <span className="text-red"> *</span>}
+        </Label>
+      )}
       <FieldGroup className={fieldClassName}>
         {useTextArea ? (
           <TextArea

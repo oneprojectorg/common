@@ -1,15 +1,13 @@
+import { posts, postsToOrganizations } from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
 import { createSelectSchema } from 'drizzle-zod';
+import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
-
-import { postsToOrganizations, posts } from '@op/db/schema';
 
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withDB from '../../middlewares/withDB';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
-
-import type { OpenApiMeta } from 'trpc-to-openapi';
 
 const meta: OpenApiMeta = {
   openapi: {

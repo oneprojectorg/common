@@ -1,8 +1,7 @@
+import { APP_NAME, genericEmail } from '@op/core';
 import { render } from '@react-email/render';
 import nodemailer from 'nodemailer';
 import z from 'zod';
-
-import { APP_NAME, genericEmail } from '@op/core';
 
 type RenderParameter = Parameters<typeof render>;
 

@@ -1,13 +1,12 @@
+import { APP_NAME, printNFO } from '@op/core';
+import { TRPCProvider } from '@op/trpc/client';
 import '@op/ui/tailwind-styles';
-
+import type { Metadata, Viewport } from 'next';
 import { Inter, Roboto, Roboto_Mono, Roboto_Serif } from 'next/font/google';
 import Script from 'next/script';
 import { Toaster as Sonner } from 'sonner';
 
-import { APP_NAME, printNFO } from '@op/core';
-import { TRPCProvider } from '@op/trpc/client';
-
-import type { Metadata, Viewport } from 'next';
+import { PostHogProvider } from '../components/PostHogProvider';
 
 const roboto = Roboto({
   subsets: ['latin'],
@@ -62,7 +61,7 @@ export const viewport: Viewport = {
 
 const RootLayout = ({ children }: { children: React.ReactNode }) => {
   return (
-    <html lang="en" className="scrollbar-none">
+    <html lang="en">
       <head>
         {/* {(IS_DEVELOPMENT || IS_PREVIEW) && (
           <script
@@ -77,11 +76,9 @@ const RootLayout = ({ children }: { children: React.ReactNode }) => {
       </head>
       <TRPCProvider>
         <body
-          className={`${roboto.variable} ${robotoMono.variable} ${robotoSerif.variable} ${inter.variable} overflow-x-hidden`}
+          className={`${roboto.variable} ${robotoMono.variable} ${robotoSerif.variable} ${inter.variable} overflow-x-hidden text-base`}
         >
-          <div className="flex size-full max-h-full flex-col overflow-hidden">
-            {children}
-          </div>
+          <PostHogProvider>{children}</PostHogProvider>
           <Sonner
             theme="dark"
             position="bottom-center"

@@ -1,12 +1,6 @@
-import {
-  Heading,
-  Link,
-  Section,
-  Text,
-} from '@react-email/components';
-import * as React from 'react';
-
 import { OP_EMAIL_HELP } from '@op/core';
+import { Heading, Link, Section, Text } from '@react-email/components';
+import * as React from 'react';
 
 import EmailTemplate from '../components/EmailTemplate';
 
@@ -17,7 +11,8 @@ const OPSignupEmail = () => {
         Confirm your email
       </Heading>
       <Text className="mt-4 text-lg">
-        Your confirmation code is below - enter it in your open browser window and we'll get you signed in.
+        Your confirmation code is below - enter it in your open browser window
+        and we'll get you signed in.
       </Text>
 
       <Section className="mb-6 mt-10 text-center">
@@ -29,11 +24,12 @@ const OPSignupEmail = () => {
             textAlign: 'right',
           }}
         >
-          <span style={{
-            letterSpacing: '0.25em',
-            marginRight: '-0.25em',
-            textAlign: 'right',
-          }}
+          <span
+            style={{
+              letterSpacing: '0.25em',
+              marginRight: '-0.25em',
+              textAlign: 'right',
+            }}
           >
             {'{{ .Token }}'}
           </span>
@@ -41,13 +37,8 @@ const OPSignupEmail = () => {
       </Section>
 
       <Text className="mt-8 text-center text-sm text-neutral-500">
-        This code will only be valid for the next 10 minutes.
-        {' '}
-        <br />
-        {' '}
-        If you’re
-        having problems, send us an
-        {' '}
+        This code will only be valid for the next 10 minutes. <br /> If you’re
+        having problems, send us an{' '}
         <Link href={`mailto:${OP_EMAIL_HELP}`} className="text-[#0396A6]/60">
           email
         </Link>

@@ -1,3 +1,4 @@
+import type { Meta } from '@storybook/react';
 import { MoreHorizontal } from 'lucide-react';
 import { MenuTrigger, SubmenuTrigger } from 'react-aria-components';
 
@@ -8,8 +9,6 @@ import {
   MenuSection,
   MenuSeparator,
 } from '../src/components/Menu';
-
-import type { Meta } from '@storybook/react';
 
 const meta: Meta<typeof Menu> = {
   component: Menu,

@@ -1,6 +1,5 @@
+import { and, db } from '@op/db/client';
 import type { User } from '@op/supabase/lib';
-
-import { db, and } from '@op/db/client';
 
 // gets a user assuming that the user is authenticated
 export const getOrgAccessUser = async ({

@@ -5,20 +5,25 @@ import * as React from 'react';
 
 import { cn } from '../lib/utils';
 
-const Command = ({ ref, className, ...props }: React.ComponentProps<typeof CommandPrimitive>) => (
+const Command = ({
+  ref,
+  className,
+  ...props
+}: React.ComponentProps<typeof CommandPrimitive>) => (
   <CommandPrimitive
     ref={ref}
-    className={cn(
-      'flex w-full flex-col overflow-hidden rounded-md',
-      className,
-    )}
+    className={cn('flex w-full flex-col overflow-hidden rounded-md', className)}
     {...props}
   />
 );
 
 Command.displayName = CommandPrimitive.displayName;
 
-const CommandInput = ({ ref, className, ...props }: React.ComponentProps<typeof CommandPrimitive.Input>) => (
+const CommandInput = ({
+  ref,
+  className,
+  ...props
+}: React.ComponentProps<typeof CommandPrimitive.Input>) => (
   <CommandPrimitive.Input
     ref={ref}
     className={cn(
@@ -31,7 +36,11 @@ const CommandInput = ({ ref, className, ...props }: React.ComponentProps<typeof 
 
 CommandInput.displayName = CommandPrimitive.Input.displayName;
 
-const CommandList = ({ ref, className, ...props }: React.ComponentProps<typeof CommandPrimitive.List>) => (
+const CommandList = ({
+  ref,
+  className,
+  ...props
+}: React.ComponentProps<typeof CommandPrimitive.List>) => (
   <CommandPrimitive.List
     ref={ref}
     className={cn(
@@ -44,7 +53,10 @@ const CommandList = ({ ref, className, ...props }: React.ComponentProps<typeof C
 
 CommandList.displayName = CommandPrimitive.List.displayName;
 
-const CommandEmpty = ({ ref, ...props }: React.ComponentProps<typeof CommandPrimitive.Empty>) => (
+const CommandEmpty = ({
+  ref,
+  ...props
+}: React.ComponentProps<typeof CommandPrimitive.Empty>) => (
   <CommandPrimitive.Empty
     ref={ref}
     className="py-6 text-center text-sm"
@@ -54,12 +66,16 @@ const CommandEmpty = ({ ref, ...props }: React.ComponentProps<typeof CommandPrim
 
 CommandEmpty.displayName = CommandPrimitive.Empty.displayName;
 
-const CommandGroup = ({ ref, className, hidden, children, ...props }: React.ComponentProps<typeof CommandPrimitive.Group> & {
+const CommandGroup = ({
+  ref,
+  className,
+  hidden,
+  children,
+  ...props
+}: React.ComponentProps<typeof CommandPrimitive.Group> & {
   hidden: boolean;
-
 }) => {
-  if (hidden)
-    return children;
+  if (hidden) return children;
 
   return (
     <CommandPrimitive.Group
@@ -77,7 +93,11 @@ const CommandGroup = ({ ref, className, hidden, children, ...props }: React.Comp
 
 CommandGroup.displayName = CommandPrimitive.Group.displayName;
 
-const CommandSeparator = ({ ref, className, ...props }: React.ComponentProps<typeof CommandPrimitive.Separator>) => (
+const CommandSeparator = ({
+  ref,
+  className,
+  ...props
+}: React.ComponentProps<typeof CommandPrimitive.Separator>) => (
   <CommandPrimitive.Separator
     ref={ref}
     className={cn('-mx-1 my-1 h-px bg-neutral-200', className)}
@@ -87,7 +107,11 @@ const CommandSeparator = ({ ref, className, ...props }: React.ComponentProps<typ
 
 CommandSeparator.displayName = CommandPrimitive.Separator.displayName;
 
-const CommandItem = ({ ref, className, ...props }: React.ComponentProps<typeof CommandPrimitive.Item>) => (
+const CommandItem = ({
+  ref,
+  className,
+  ...props
+}: React.ComponentProps<typeof CommandPrimitive.Item>) => (
   <CommandPrimitive.Item
     ref={ref}
     className={cn(

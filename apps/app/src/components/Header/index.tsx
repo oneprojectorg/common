@@ -9,11 +9,21 @@ export const Header1 = ({
 }) => {
   return (
     <h1
-      className={cn('font-serif text-headerMobile sm:text-header', className)}
+      className={cn('text-headerMobile sm:text-header font-serif', className)}
     >
       {children}
     </h1>
   );
+};
+
+export const Header2 = ({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) => {
+  return <h3 className={cn('text-lg text-black', className)}>{children}</h3>;
 };
 
 export const Header3 = ({

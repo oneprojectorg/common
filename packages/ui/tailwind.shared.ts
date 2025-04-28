@@ -1,14 +1,12 @@
 /* eslint-disable import/no-extraneous-dependencies */
+import { commonColors } from '@op/core';
 import tailwindContainerQueries from '@tailwindcss/container-queries';
 import tailwindTypography from '@tailwindcss/typography';
 import tailwindScrollbar from 'tailwind-scrollbar';
+import type { Config } from 'tailwindcss';
 import tailwindAnimate from 'tailwindcss-animate';
 import tailwindReactAriaComponents from 'tailwindcss-react-aria-components';
 import defaultTheme from 'tailwindcss/defaultTheme';
-
-import { commonColors } from '@op/core';
-
-import type { Config } from 'tailwindcss';
 
 // This is the shared tailwind config that is used in packages, workshop, and web apps
 const config: Omit<Config, 'content'> = {
@@ -38,6 +36,9 @@ const config: Omit<Config, 'content'> = {
           height: '0.75rem',
           lineHeight: '1.125rem',
         },
+      },
+      spacing: {
+        18: '4.5rem',
       },
       colors: {
         accent: commonColors,
@@ -145,6 +146,9 @@ const config: Omit<Config, 'content'> = {
           950: 'hsl(var(--op-red-950))',
         },
 
+        green: {
+          DEFAULT: 'hsl(var(--op-green-500))',
+        },
         black: 'hsl(var(--op-neutral-950))',
         charcoal: 'hsl(var(--op-neutral-900))',
         darkGray: 'hsl(var(--op-neutral-700))',
@@ -161,6 +165,12 @@ const config: Omit<Config, 'content'> = {
       },
       boxShadow: {
         DEFAULT: '0px 0px 16px 0px rgba(20, 35, 38, 0.04)',
+      },
+      backgroundImage: {
+        gradient:
+          'radial-gradient(154% 99.31% at 0% 0%, #3EC300 0%, #0396A6 51.56%)',
+        redTeal:
+          'radial-gradient(96.92% 140.1% at 72.02% 100%, #0396A6 0%, #FF613D 92.19%, #FFFBFA 99.99%)',
       },
     },
   },

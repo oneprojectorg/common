@@ -1,7 +1,5 @@
-
+import { OPURLConfig, SUPABASE_PROJECT_ID, cookieDomains } from '@op/core';
 import Cookies from 'js-cookie';
-
-import { cookieDomains, OPURLConfig, SUPABASE_PROJECT_ID } from '@op/core';
 
 const useURL = OPURLConfig('APP');
 
@@ -14,8 +12,7 @@ let domains: string[] = [];
 
 if (!useURL.IS_DEVELOPMENT) {
   domains = cookieDomains;
-}
-else {
+} else {
   domains = ['localhost'];
 }
 

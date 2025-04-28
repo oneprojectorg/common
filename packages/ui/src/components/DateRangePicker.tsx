@@ -1,24 +1,20 @@
 'use client';
 
 import { CalendarIcon } from 'lucide-react';
-import {
-  DateRangePicker as AriaDateRangePicker,
+import { DateRangePicker as AriaDateRangePicker } from 'react-aria-components';
+import type {
+  DateRangePickerProps as AriaDateRangePickerProps,
+  DateValue,
+  ValidationResult,
 } from 'react-aria-components';
 
 import { composeTailwindRenderProps } from '../utils';
-
 import { Button } from './Button';
 import { DateInput } from './DateField';
 import { Dialog } from './Dialog';
 import { Description, FieldError, FieldGroup, Label } from './Field';
 import { Popover } from './Popover';
 import { RangeCalendar } from './RangeCalendar';
-
-import type {
-  DateRangePickerProps as AriaDateRangePickerProps,
-  DateValue,
-  ValidationResult,
-} from 'react-aria-components';
 
 export interface DateRangePickerProps<T extends DateValue>
   extends AriaDateRangePickerProps<T> {

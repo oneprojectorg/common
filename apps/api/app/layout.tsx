@@ -1,15 +1,12 @@
-import { Inter } from 'next/font/google';
-
 import { APP_NAME } from '@op/core';
-
 import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
 
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: `${APP_NAME} API`,
-  description:
-    'An OpenAPI compliant REST API',
+  description: 'An OpenAPI compliant REST API',
 };
 
 const RootLayout = ({ children }: { children: React.ReactNode }) => {

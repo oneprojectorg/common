@@ -1,11 +1,9 @@
+import { adminEmails } from '@op/core';
+import type { UserResponse } from '@op/supabase/lib';
 import { TRPCError } from '@trpc/server';
 
-import { adminEmails } from '@op/core';
-
 import { createSBAdminClient } from '../supabase/server';
-
 import type { MiddlewareBuilderBase, TContextWithUser } from '../types';
-import type { UserResponse } from '@op/supabase/lib';
 
 const verifyAuthData = (data: UserResponse, adminOnly = false) => {
   if (!data) {
@@ -61,10 +59,9 @@ const withAuthenticated: MiddlewareBuilderBase<TContextWithUser> = async ({
   });
 };
 
-export const withAuthenticatedAdmin: MiddlewareBuilderBase<TContextWithUser> = async ({
-  ctx,
-  next,
-}) => {
+export const withAuthenticatedAdmin: MiddlewareBuilderBase<
+  TContextWithUser
+> = async ({ ctx, next }) => {
   const supabase = createSBAdminClient(ctx);
   const data = await supabase.auth.getUser();
 

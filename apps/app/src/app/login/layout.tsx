@@ -1,12 +1,14 @@
+import { FullScreenSplitAside } from '@/components/layout/split/FullScreenSplitAside';
+import { FullScreenSplitLayout } from '@/components/layout/split/FullScreenSplitLayout';
+import { FullScreenSplitMain } from '@/components/layout/split/FullScreenSplitMain';
+
 const LoginLayout = ({ children }: { children: React.ReactNode }) => {
   return (
-    <div className="relative flex h-svh w-full flex-col items-center justify-center font-sans">
-      <div className="size-full">
-        <div className="flex size-full max-h-full flex-col overflow-hidden">
-          <div className="relative flex min-h-0 grow flex-col">{children}</div>
-        </div>
-      </div>
-    </div>
+    <FullScreenSplitLayout>
+      <div id="top-slot" className="absolute top-0 w-full sm:w-2/3" />
+      <FullScreenSplitMain>{children}</FullScreenSplitMain>
+      <FullScreenSplitAside />
+    </FullScreenSplitLayout>
   );
 };
 

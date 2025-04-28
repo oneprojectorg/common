@@ -1,13 +1,8 @@
 'use client';
 
-import {
-  ColorThumb as AriaColorThumb,
-} from 'react-aria-components';
+import { ColorThumb as AriaColorThumb } from 'react-aria-components';
+import type { ColorThumbProps } from 'react-aria-components';
 import { tv } from 'tailwind-variants';
-
-import type {
-  ColorThumbProps,
-} from 'react-aria-components';
 
 const thumbStyles = tv({
   base: 'left-[50%] top-[50%] size-6 rounded-full border-2 border-white',

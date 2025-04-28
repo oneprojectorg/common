@@ -1,7 +1,7 @@
+import type { User } from '@op/supabase/lib';
 import spacetime from 'spacetime';
 
 import type { MiddlewareBuilderBase } from '../types';
-import type { User } from '@op/supabase/lib';
 
 const withLogger: MiddlewareBuilderBase = async ({
   ctx,
@@ -33,8 +33,7 @@ const withLogger: MiddlewareBuilderBase = async ({
 
     if (res.ok) {
       console.log({ path, type, rawInput, user, result: res }, '\n');
-    }
-    else {
+    } else {
       const { error } = res;
 
       console.log(
@@ -66,11 +65,9 @@ const withLogger: MiddlewareBuilderBase = async ({
 
   if (result.ok) {
     console.log(`✔ OK:\t${ctx.requestId}\n\t${logHeadline}\n\tIP: ${ctx.ip}`);
-  }
-  else if (result.error) {
+  } else if (result.error) {
     console.log(`X FAIL:\t${ctx.requestId}\n\t${logHeadline}\n\tIP: ${ctx.ip}`);
-  }
-  else {
+  } else {
     console.log(
       `? UNHANDLED ERROR:\t${ctx.requestId}\n\t${logHeadline}\n\tIP: ${ctx.ip}`,
     );

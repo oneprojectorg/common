@@ -7,31 +7,29 @@ import {
   ListBox,
   SelectValue,
 } from 'react-aria-components';
-import { tv } from 'tailwind-variants';
-
-import { cn } from '../lib/utils';
-import { composeTailwindRenderProps, focusRing } from '../utils';
-
-import { Description, FieldError, Label } from './Field';
-import { DropdownItem, DropdownSection } from './ListBox';
-import { Popover } from './Popover';
-
-import type { DropdownSectionProps } from './ListBox';
-import type { PopoverProps } from './Popover';
 import type {
   SelectProps as AriaSelectProps,
   ListBoxItemProps,
   ValidationResult,
 } from 'react-aria-components';
+import { tv } from 'tailwind-variants';
+
+import { cn } from '../lib/utils';
+import { composeTailwindRenderProps, focusRing } from '../utils';
+import { Description, FieldError, Label } from './Field';
+import { DropdownItem, DropdownSection } from './ListBox';
+import type { DropdownSectionProps } from './ListBox';
+import { Popover } from './Popover';
+import type { PopoverProps } from './Popover';
 
 const styles = tv({
   extend: focusRing,
-  base: 'flex w-full min-w-[150px] cursor-default items-center gap-4 rounded-lg border-2 border-neutral-500 bg-neutral-100 px-2 py-1.5 text-start shadow-none transition',
+  base: 'flex w-full min-w-[150px] cursor-default items-center gap-2 rounded-md border border-offWhite bg-white p-4 text-start text-sm text-black shadow-none transition placeholder:text-midGray',
   variants: {
     isDisabled: {
       false:
-        'text-neutral-700 group-invalid:border-red-600 hover:bg-neutral-200 pressed:bg-neutral-200',
-      true: 'border-white/5 bg-neutral-200 text-neutral-400',
+        'text-black group-invalid:border-red-600 hover:bg-offWhite pressed:bg-offWhite',
+      true: 'border-neutral-300 bg-offWhite text-neutral-400',
     },
   },
 });
@@ -49,6 +47,7 @@ export interface SelectProps<T extends object>
   selectValueClassName?: string;
   customTrigger?: React.ReactNode;
   popoverProps?: Omit<PopoverProps, 'children'>;
+  selectionMode?: 'single' | 'multiple';
 }
 
 export const Select = <T extends object>({
@@ -57,6 +56,7 @@ export const Select = <T extends object>({
   errorMessage,
   children,
   items,
+  selectionMode = 'single',
   ...props
 }: SelectProps<T>) => {
   return (
@@ -68,32 +68,37 @@ export const Select = <T extends object>({
       )}
     >
       {label && <Label>{label}</Label>}
-      {props.customTrigger
-        ? props.customTrigger
-        : (
-            <Button
-              className={cn(
-                styles(),
-                props.buttonClassName,
-              )}
-            >
-              <SelectValue className={cn('flex-1 truncate placeholder-shown:text-neutral-500', props.selectValueClassName)} />
-
-              <ChevronDown
-                aria-hidden
-                className="size-[1em] text-neutral-600 group-disabled:text-neutral-400"
-              />
-            </Button>
-          )}
+      {props.customTrigger ? (
+        props.customTrigger
+      ) : (
+        <Button
+          className={cn(styles(), 'justify-start', props.buttonClassName)}
+        >
+          <SelectValue
+            className={cn(
+              'flex-1 truncate text-left placeholder-shown:text-neutral-500',
+              props.selectValueClassName,
+            )}
+          />
+          <ChevronDown
+            aria-hidden
+            className="ml-2 size-4 text-charcoal group-disabled:text-neutral-400"
+          />
+        </Button>
+      )}
       {description && <Description>{description}</Description>}
       <FieldError>{errorMessage}</FieldError>
-      <Popover className="!max-h-96 min-w-[--trigger-width]" {...props.popoverProps}>
+      <Popover
+        className="absolute z-10 mt-1 !max-h-60 w-[--trigger-width] min-w-[--trigger-width] rounded-md border border-gray-200 bg-white shadow-lg"
+        {...props.popoverProps}
+      >
         <ListBox
           items={items}
           className={cn(
-            'max-h-[inherit] overflow-auto p-1 outline-none [clip-path:inset(0_0_0_0_round_.75rem)]',
+            'max-h-60 overflow-auto py-1 outline-none',
             props.listBoxClassName,
           )}
+          selectionMode={selectionMode}
         >
           {children}
         </ListBox>

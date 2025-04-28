@@ -1,6 +1,6 @@
-import { Slider } from '../src/components/Slider';
-
 import type { Meta } from '@storybook/react';
+
+import { Slider } from '../src/components/Slider';
 
 const meta: Meta<typeof Slider> = {
   component: Slider,

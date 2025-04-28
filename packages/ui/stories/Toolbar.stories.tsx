@@ -1,14 +1,13 @@
+import type { Meta } from '@storybook/react';
 import { BoldIcon, ItalicIcon, UnderlineIcon } from 'lucide-react';
 import { Group } from 'react-aria-components';
+import type { ToolbarProps } from 'react-aria-components';
 
 import { Button } from '../src/components/Button';
 import { Checkbox } from '../src/components/Checkbox';
 import { Separator } from '../src/components/Separator';
 import { ToggleButton } from '../src/components/ToggleButton';
 import { Toolbar } from '../src/components/Toolbar';
-
-import type { Meta } from '@storybook/react';
-import type { ToolbarProps } from 'react-aria-components';
 
 const meta: Meta<typeof Toolbar> = {
   component: Toolbar,

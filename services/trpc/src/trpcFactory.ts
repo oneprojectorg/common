@@ -1,6 +1,8 @@
 import { initTRPC } from '@trpc/server';
+import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
 import { customAlphabet } from 'nanoid';
 import superjson from 'superjson';
+import type { OpenApiMeta } from 'trpc-to-openapi';
 
 import {
   getCookie as _getCookie,
@@ -9,10 +11,7 @@ import {
 } from './lib/cookies';
 import { errorFormatter } from './lib/error';
 import withLogger from './middlewares/withLogger';
-
 import type { TContext } from './types';
-import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
-import type { OpenApiMeta } from 'trpc-to-openapi';
 
 export const createContext = async ({
   req,

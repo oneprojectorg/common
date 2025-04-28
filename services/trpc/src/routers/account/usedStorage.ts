@@ -1,14 +1,12 @@
-import { and, eq } from 'drizzle-orm';
-import { z } from 'zod';
-
 import { usersUsedStorage } from '@op/db/schema';
+import { and, eq } from 'drizzle-orm';
+import type { OpenApiMeta } from 'trpc-to-openapi';
+import { z } from 'zod';
 
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withDB from '../../middlewares/withDB';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
-
-import type { OpenApiMeta } from 'trpc-to-openapi';
 
 const endpoint = 'usedStorage';
 
@@ -32,10 +30,12 @@ const usedStorage = router({
     // Router
     .meta(meta)
     .input(z.undefined())
-    .output(z.object({
-      usedStorage: z.number(),
-      maxStorage: z.literal(4000000000),
-    }))
+    .output(
+      z.object({
+        usedStorage: z.number(),
+        maxStorage: z.literal(4000000000),
+      }),
+    )
     .query(async ({ ctx }) => {
       const { db } = ctx.database;
 

@@ -1,13 +1,11 @@
+import { APP_NAME, allowedEmailDomains, genericEmail } from '@op/core';
 import { TRPCError } from '@trpc/server';
+import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
-
-import { allowedEmailDomains, APP_NAME, genericEmail } from '@op/core';
 
 import withRateLimited from '../../middlewares/withRateLimited';
 import { createSBAdminClient } from '../../supabase/server';
 import { loggedProcedure, router } from '../../trpcFactory';
-
-import type { OpenApiMeta } from 'trpc-to-openapi';
 
 const endpoint = 'login';
 

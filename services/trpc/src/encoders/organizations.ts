@@ -1,7 +1,10 @@
+import {
+  objectsInStorage,
+  organizationUsers,
+  organizations,
+} from '@op/db/schema';
 import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
-
-import { objectsInStorage, organizations } from '@op/db/schema';
 
 import { linksEncoder } from './links';
 import { projectEncoder } from './projects';
@@ -26,10 +29,50 @@ export const organizationsEncoder = createSelectSchema(organizations)
     isReceivingFunds: true,
   })
   .extend({
-    projects: z.array(projectEncoder),
-    links: z.array(linksEncoder),
-    headerImage: storageItemEncoder.nullable(),
-    avatarImage: storageItemEncoder.nullable(),
+    projects: z.array(projectEncoder).optional(),
+    links: z.array(linksEncoder).default([]),
+    headerImage: storageItemEncoder.nullish(),
+    avatarImage: storageItemEncoder.nullish(),
   });
 
+export const organizationsCreateInputEncoder = createSelectSchema(organizations)
+  .pick({
+    name: true,
+    slug: true,
+    description: true,
+
+    // Mission
+    mission: true,
+    // Year Founded
+    yearFounded: true,
+    values: true,
+    // Email
+    email: true,
+    phone: true,
+    website: true,
+    // Address
+    address: true,
+    city: true,
+    state: true,
+    postalCode: true,
+    // Geography
+    latitude: true,
+    longitude: true,
+    isVerified: true,
+    socialLinks: true,
+
+    isOfferingFunds: true,
+    isReceivingFunds: true,
+
+    // Organization Type
+    orgType: true,
+  })
+  .partial();
+
+export type OrganizationCreateInput = z.infer<
+  typeof organizationsCreateInputEncoder
+>;
+
 export type Organization = z.infer<typeof organizationsEncoder>;
+
+export const orgUserEncoder = createSelectSchema(organizationUsers);

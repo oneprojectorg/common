@@ -16,15 +16,15 @@ for (const sqlFile of sqlFiles) {
   // Find all CREATE INDEX statements (case insensitive)
   const indexLines = sqlData
     .split('\n')
-    .filter(line => /^\s*create\s+index/i.test(line.trim()))
-    .map(line => line.trim());
+    .filter((line) => /^\s*create\s+index/i.test(line.trim()))
+    .map((line) => line.trim());
 
   if (indexLines.length > 0) {
     // Append the found CREATE INDEX statements to the custom indexes file
     fs.appendFileSync(
       indexesFile,
       `\n\n--> statement-breakpoint\n${indexLines
-        .map(line => line.replace('--> statement-breakpoint', ''))
+        .map((line) => line.replace('--> statement-breakpoint', ''))
         .join('\n\n--> statement-breakpoint\n')}`,
       'utf8',
     );
@@ -32,7 +32,7 @@ for (const sqlFile of sqlFiles) {
     // Remove the CREATE INDEX lines from the original file
     const updatedSqlData = sqlData
       .split('\n')
-      .filter(line => !indexLines.includes(line.trim()))
+      .filter((line) => !indexLines.includes(line.trim()))
       .join('\n');
 
     fs.writeFileSync(sqlFile, updatedSqlData, 'utf8');

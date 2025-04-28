@@ -10,7 +10,8 @@
     "paths": {
       "@/*": ["./*"] // Alias will now resolve relative to ./src
     },
-    "types": ["unplugin-icons/types/react"]
+    "types": ["unplugin-icons/types/react"],
+    "strict": true
     // "noErrorTruncation": true
   },
   "include": [

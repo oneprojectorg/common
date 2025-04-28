@@ -1,10 +1,10 @@
+import type { Meta } from '@storybook/react';
+
 import {
   Disclosure,
   DisclosureHeader,
   DisclosurePanel,
 } from '../src/components/Disclosure';
-
-import type { Meta } from '@storybook/react';
 
 const meta: Meta<typeof Disclosure> = {
   component: Disclosure,

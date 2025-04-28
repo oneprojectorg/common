@@ -1,4 +1,5 @@
 import { relations, sql } from 'drizzle-orm';
+import type { InferModel } from 'drizzle-orm';
 import {
   boolean,
   decimal,
@@ -18,7 +19,6 @@ import {
   serviceRolePolicies,
   timestamps,
 } from '../../helpers';
-
 import { links } from './links.sql';
 import { posts } from './posts.sql';
 import { projects } from './projects.sql';
@@ -27,14 +27,9 @@ import { objectsInStorage } from './storage.sql';
 
 // Enums for organization types and status
 export enum OrgType {
-  COOPERATIVE = 'cooperative',
-  MUTUAL_AID = 'mutual_aid',
-  COMMUNITY_ORG = 'community_org',
-  SOCIAL_ENTERPRISE = 'social_enterprise',
-  COLLECTIVE = 'collective',
-  COMMONS = 'commons',
-  CREDIT_UNION = 'credit_union',
-  LAND_TRUST = 'land_trust',
+  NONPROFIT = 'nonprofit',
+  FORPROFIT = 'forprofit',
+  GOVERNMENT = 'government',
   OTHER = 'other',
 }
 
@@ -73,7 +68,7 @@ export const organizations = pgTable(
     isReceivingFunds: boolean().default(false),
 
     // Organization Type
-    type: orgTypeEnum('org_type').notNull().default(OrgType.OTHER),
+    orgType: orgTypeEnum('org_type').notNull().default(OrgType.OTHER),
     // Legal Structure
     // Thematic Areas
 
@@ -84,6 +79,9 @@ export const organizations = pgTable(
     avatarImageId: uuid().references(() => objectsInStorage.id, {
       onUpdate: 'cascade',
     }),
+
+    // where we work
+    whereWeWork: json(),
     ...timestamps,
   },
   (table) => [
@@ -114,3 +112,5 @@ export const organizationsRelations = relations(
     incomingRelationships: many(organizationRelationships),
   }),
 );
+
+export type Organization = InferModel<typeof organizations>;

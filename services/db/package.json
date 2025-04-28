@@ -12,7 +12,7 @@
     "build": "next build",
     "dev": "next dev -p 3700",
     "generate": "pnpm drizzle-kit generate && tsx scripts/extractIndexes.ts",
-    "lint": "pnpm tsc --noEmit && pnpm eslint --fix .",
+    "lint": "pnpm tsc --noEmit",
     "migrate": "cross-env DB_MIGRATING=true tsx ./migrate.ts",
     "push": "pnpm drizzle-kit push",
     "reset": "pnpx supabase db reset",
@@ -37,7 +37,6 @@
     "server-only": "^0.0.1"
   },
   "devDependencies": {
-    "@op/eslint-config": "workspace:*",
     "@op/typescript-config": "workspace:*",
     "@supabase/ssr": "0.5.2",
     "@svgr/core": "^8.1.0",

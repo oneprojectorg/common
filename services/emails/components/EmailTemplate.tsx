@@ -94,14 +94,10 @@ const EmailTemplate = ({
             <Container className="mx-auto max-w-[600px]">
               {/* <Hr className="mx-0 w-full border border-solid border-neutral-300" /> */}
               <Text className="mb-0 mt-6 text-center text-[12px] font-bold leading-[12px] text-neutral-400">
-                One Project Org,
-                {' '}
-                {new Date().getFullYear()}
+                One Project Org, {new Date().getFullYear()}
               </Text>
               <Text className="mb-0 mt-2 text-center text-[12px] leading-[12px] text-neutral-400">
-                You’re receiving this email as part of our
-                {' '}
-                <br />
+                You’re receiving this email as part of our <br />
                 authentication and communication processes.
               </Text>
 

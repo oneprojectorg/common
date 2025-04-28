@@ -1,6 +1,6 @@
-import { ColorField } from '../src/components/ColorField';
-
 import type { Meta } from '@storybook/react';
+
+import { ColorField } from '../src/components/ColorField';
 
 const meta: Meta<typeof ColorField> = {
   component: ColorField,

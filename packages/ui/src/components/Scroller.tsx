@@ -1,6 +1,12 @@
 import { useGesture } from '@use-gesture/react';
 import { debounce } from 'lodash';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import { cn } from '../lib/utils';
 
@@ -34,49 +40,56 @@ export const Scroller = ({
 
   const isUserScrolling = useRef(false);
 
-  const debounceIsUserScrolling = useCallback(debounce((value: boolean) => {
-    isUserScrolling.current = value;
-  }, 200), []);
+  const debounceIsUserScrolling = useCallback(
+    debounce((value: boolean) => {
+      isUserScrolling.current = value;
+    }, 200),
+    [],
+  );
 
-  const handleScroll = useCallback((autoscroll = false) => {
-    if (scrollerRef.current) {
-      const { scrollTop, scrollHeight, clientHeight } = scrollerRef.current;
+  const handleScroll = useCallback(
+    (autoscroll = false) => {
+      if (scrollerRef.current) {
+        const { scrollTop, scrollHeight, clientHeight } = scrollerRef.current;
 
-      const shouldScroll = scrollHeight - scrollTop - clientHeight < 50;
+        const shouldScroll = scrollHeight - scrollTop - clientHeight < 50;
 
-      // Only update shouldAutoScroll when user is actually scrolling
-      if (autoscroll && !disableAutoScroll) {
-        if (!isUserScrolling.current) {
-          scrollerRef.current.scrollTop = scrollHeight;
-        //   scrollerRef.current.scrollTo({ top: scrollHeight, behavior: 'smooth' });
+        // Only update shouldAutoScroll when user is actually scrolling
+        if (autoscroll && !disableAutoScroll) {
+          if (!isUserScrolling.current) {
+            scrollerRef.current.scrollTop = scrollHeight;
+            //   scrollerRef.current.scrollTo({ top: scrollHeight, behavior: 'smooth' });
+          } else if (shouldScroll) {
+            debounceIsUserScrolling(false);
+            //   isUserScrolling.current = false;
+          }
         }
-        else if (shouldScroll) {
-          debounceIsUserScrolling(false);
-        //   isUserScrolling.current = false;
-        }
+
+        setShowShadowTop(scrollTop > 4);
+        setShowShadowBottom(scrollTop + clientHeight < scrollHeight - 4);
+
+        const maxScroll = scrollHeight - clientHeight;
+        const currentPercentage = (scrollTop / maxScroll) * 100;
+
+        setScrollPercentage(currentPercentage);
       }
-
-      setShowShadowTop(scrollTop > 4);
-      setShowShadowBottom(scrollTop + clientHeight < scrollHeight - 4);
-
-      const maxScroll = scrollHeight - clientHeight;
-      const currentPercentage = (scrollTop / maxScroll) * 100;
-
-      setScrollPercentage(currentPercentage);
-    }
-  }, [scrollerRef.current]);
+    },
+    [scrollerRef.current],
+  );
 
   const handleScrollDragMove = (e: MouseEvent) => {
     if (
-      !isDraggingRef.current
-      || !scrollerRef.current
-      || !scrollTrackRef.current
+      !isDraggingRef.current ||
+      !scrollerRef.current ||
+      !scrollTrackRef.current
     ) {
       return;
     }
 
-    const { top: trackTop, height: trackHeight } = scrollTrackRef.current.getBoundingClientRect();
-    const scrollableHeight = scrollerRef.current.scrollHeight - scrollerRef.current.clientHeight;
+    const { top: trackTop, height: trackHeight } =
+      scrollTrackRef.current.getBoundingClientRect();
+    const scrollableHeight =
+      scrollerRef.current.scrollHeight - scrollerRef.current.clientHeight;
 
     // Calculate relative position within the track
     const relativeY = Math.max(
@@ -118,9 +131,13 @@ export const Scroller = ({
 
         Array.from(images).forEach((img) => {
           if (!img.complete) {
-            img.addEventListener('load', () => {
-              handleScroll(true);
-            }, { once: true });
+            img.addEventListener(
+              'load',
+              () => {
+                handleScroll(true);
+              },
+              { once: true },
+            );
           }
         });
       }
@@ -160,33 +177,35 @@ export const Scroller = ({
     }
   }, [scrollerRef?.current, disableAutoScroll]);
 
-  useGesture({
-    onScroll: () => {
-      handleScroll();
+  useGesture(
+    {
+      onScroll: () => {
+        handleScroll();
+      },
+      onWheel: () => {
+        isUserScrolling.current = true;
+      },
+      onTouchStart: () => {
+        isUserScrolling.current = true;
+      },
+      onMouseDown: () => {
+        isUserScrolling.current = true;
+      },
+      onMouseUp: () => {
+        isUserScrolling.current = false;
+      },
+      onTouchEnd: () => {
+        isUserScrolling.current = false;
+      },
+      onPointerLeave: () => {
+        isUserScrolling.current = false;
+      },
+      onMouseLeave: () => (isUserScrolling.current = false),
     },
-    onWheel: () => {
-      isUserScrolling.current = true;
+    {
+      target: scrollerRef,
     },
-    onTouchStart: () => {
-      isUserScrolling.current = true;
-    },
-    onMouseDown: () => {
-      isUserScrolling.current = true;
-    },
-    onMouseUp: () => {
-      isUserScrolling.current = false;
-    },
-    onTouchEnd: () => {
-      isUserScrolling.current = false;
-    },
-    onPointerLeave: () => {
-      isUserScrolling.current = false;
-    },
-    onMouseLeave: () => (isUserScrolling.current = false),
-
-  }, {
-    target: scrollerRef,
-  });
+  );
 
   return (
     <div className="group/scroller-wrapper relative size-full">
@@ -197,12 +216,13 @@ export const Scroller = ({
         {...props}
         tabIndex={-1}
         role="presentation"
-        style={fadeMode === 'mask'
-          ? {
-              maskImage:
-            `linear-gradient(to bottom, rgba(0, 0, 0, ${showShadowTop ? '0' : '1'}) 0%, rgb(0, 0, 0) 24px, rgb(0, 0, 0) calc(100% - 24px), rgba(0, 0, 0, ${showShadowBottom ? '0' : '1'}) 100%)`,
-            }
-          : {}}
+        style={
+          fadeMode === 'mask'
+            ? {
+                maskImage: `linear-gradient(to bottom, rgba(0, 0, 0, ${showShadowTop ? '0' : '1'}) 0%, rgb(0, 0, 0) 24px, rgb(0, 0, 0) calc(100% - 24px), rgba(0, 0, 0, ${showShadowBottom ? '0' : '1'}) 100%)`,
+              }
+            : {}
+        }
       >
         {children}
       </div>
@@ -237,15 +257,13 @@ export const Scroller = ({
           aria-valuemax={100}
           tabIndex={-1}
           className={cn(
-            'absolute right-0 top-0 h-full w-2  opacity-0 outline-none transition-opacity duration-300 group-hover/scroller-wrapper:opacity-100',
+            'absolute right-0 top-0 h-full w-2 opacity-0 outline-none transition-opacity duration-300 group-hover/scroller-wrapper:opacity-100',
             isDragging && 'opacity-100',
           )}
           onMouseDown={handleScrollDragStart}
           onKeyDown={(e) => {
-            if (e.key === 'ArrowUp')
-              scrollerRef.current?.scrollBy(0, -50);
-            if (e.key === 'ArrowDown')
-              scrollerRef.current?.scrollBy(0, 50);
+            if (e.key === 'ArrowUp') scrollerRef.current?.scrollBy(0, -50);
+            if (e.key === 'ArrowDown') scrollerRef.current?.scrollBy(0, 50);
           }}
         >
           <div
@@ -263,7 +281,6 @@ export const Scroller = ({
           />
         </div>
       )}
-
     </div>
   );
 };

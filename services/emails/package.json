@@ -6,7 +6,7 @@
   "scripts": {
     "disable-build": "email build",
     "export": "email export",
-    "lint": "pnpm tsc --noEmit && pnpm eslint --fix ."
+    "lint": "pnpm tsc --noEmit"
   },
   "dependencies": {
     "@op/core": "workspace:*",
@@ -19,7 +19,6 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
-    "@op/eslint-config": "workspace:*",
     "@op/typescript-config": "workspace:*",
     "@types/nodemailer": "^6.4.17",
     "@types/react": "19.0.10",

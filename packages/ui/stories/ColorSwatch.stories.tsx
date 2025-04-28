@@ -1,6 +1,6 @@
-import { ColorSwatch } from '../src/components/ColorSwatch';
-
 import type { Meta } from '@storybook/react';
+
+import { ColorSwatch } from '../src/components/ColorSwatch';
 
 const meta: Meta<typeof ColorSwatch> = {
   component: ColorSwatch,

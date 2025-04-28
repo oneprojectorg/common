@@ -1,28 +1,23 @@
 'use client';
 
 import { ChevronDown, ChevronUp } from 'lucide-react';
-import {
-  NumberField as AriaNumberField,
-  Button,
-} from 'react-aria-components';
-
-import { cn } from '../lib/utils';
-import { composeTailwindRenderProps } from '../utils';
-
-import {
-  Description,
-  fieldBorderStyles,
-  FieldError,
-  FieldGroup,
-  Input,
-  Label,
-} from './Field';
-
+import { NumberField as AriaNumberField, Button } from 'react-aria-components';
 import type {
   NumberFieldProps as AriaNumberFieldProps,
   ButtonProps as RACButtonProps,
   ValidationResult,
 } from 'react-aria-components';
+
+import { cn } from '../lib/utils';
+import { composeTailwindRenderProps } from '../utils';
+import {
+  Description,
+  FieldError,
+  FieldGroup,
+  Input,
+  Label,
+  fieldBorderStyles,
+} from './Field';
 
 const StepperButton = (props: RACButtonProps) => {
   return (
@@ -66,7 +61,7 @@ export const NumberField = ({
     >
       <Label hidden>{label}</Label>
       <FieldGroup className={fieldClassName}>
-        {renderProps => (
+        {(renderProps) => (
           <>
             <Input
               className={cn('', props.inputClassName)}

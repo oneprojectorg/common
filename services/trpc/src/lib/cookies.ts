@@ -1,12 +1,10 @@
 import { parse, serialize } from 'cookie';
-
 import type { SerializeOptions } from 'cookie';
 
 export function getCookies(req: Request) {
   const cookieHeader = req.headers.get('cookie');
 
-  if (!cookieHeader)
-    return {};
+  if (!cookieHeader) return {};
 
   return parse(cookieHeader);
 }
@@ -14,8 +12,7 @@ export function getCookies(req: Request) {
 export function getCookie(req: Request, name: string) {
   const cookieHeader = req.headers.get('cookie');
 
-  if (!cookieHeader)
-    return undefined;
+  if (!cookieHeader) return undefined;
   const cookies = parse(cookieHeader);
 
   return cookies[name];

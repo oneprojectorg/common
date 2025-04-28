@@ -1,9 +1,8 @@
 import { execSync } from 'child_process';
-import * as fs from 'fs';
-import * as path from 'path';
-
 import depcheck from 'depcheck';
+import * as fs from 'fs';
 import * as yaml from 'js-yaml';
+import * as path from 'path';
 
 // Add this function at the beginning of the file
 function checkGitStatus() {
@@ -35,8 +34,7 @@ function checkGitStatus() {
     }
 
     console.log('Git status check passed. Proceeding with depCheck...');
-  }
-  catch (error) {
+  } catch (error) {
     console.error('Error checking Git status:', error);
     process.exit(1);
   }
@@ -90,7 +88,9 @@ async function runDepcheck(packageDir: string): Promise<void> {
   try {
     const results = await depcheck(packageDir, options);
     const packageJsonPath = path.join(packageDir, 'package.json');
-    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8')) as {
+    const packageJson = JSON.parse(
+      fs.readFileSync(packageJsonPath, 'utf8'),
+    ) as {
       dependencies: Record<string, string>;
       devDependencies: Record<string, string>;
     };
@@ -119,12 +119,10 @@ async function runDepcheck(packageDir: string): Promise<void> {
       // Write the updated package.json back to the file
       fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
       console.log(`Updated package.json in ${packageDir}`);
-    }
-    else {
+    } else {
       console.log(`No unused dependencies found in ${packageDir}`);
     }
-  }
-  catch (error) {
+  } catch (error) {
     console.error(`Error checking dependencies for ${packageDir}:`, error);
   }
 }
@@ -139,7 +137,7 @@ function handleMultiuse() {
   ) as { packages: string[] };
 
   // Get workspace roots
-  const workspaceRoots = workspaceConfig.packages.map(glob =>
+  const workspaceRoots = workspaceConfig.packages.map((glob) =>
     glob.replace('/*', ''),
   );
 
@@ -158,7 +156,9 @@ function handleMultiuse() {
   // Iterate through each package directory
   for (const packageDir of packageDirs) {
     const packageJsonPath = path.join(packageDir, 'package.json');
-    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8')) as {
+    const packageJson = JSON.parse(
+      fs.readFileSync(packageJsonPath, 'utf8'),
+    ) as {
       name: string;
       dependencies: Record<string, string>;
       devDependencies: Record<string, string>;
@@ -198,7 +198,11 @@ function handleMultiuse() {
     }));
 
   // Read the root package.json
-  const rootPackageJsonPath = path.resolve(import.meta.dirname, '..', 'package.json');
+  const rootPackageJsonPath = path.resolve(
+    import.meta.dirname,
+    '..',
+    'package.json',
+  );
   const rootPackageJson = JSON.parse(
     fs.readFileSync(rootPackageJsonPath, 'utf8'),
   ) as {
@@ -231,7 +235,7 @@ function handleMultiuse() {
   missingInRoot.forEach(({ dep, versions }) => {
     // Choose the most common version found across workspaces, or the first one if tied.
     const mostCommonVersion = versions.reduce((a, b, _i, arr) =>
-      arr.filter(v => v === a).length >= arr.filter(v => v === b).length
+      arr.filter((v) => v === a).length >= arr.filter((v) => v === b).length
         ? a
         : b,
     );
@@ -258,8 +262,8 @@ function handleMultiuse() {
   // Print results
   console.log('Multiuse dependencies:');
   multiuseDependencies.forEach(({ dep, packages, versions }) => {
-    const versionString
-      = versions.length === 1
+    const versionString =
+      versions.length === 1
         ? versions[0]
         : `Multiple versions: ${versions.join(', ')}`;
 
@@ -285,7 +289,9 @@ async function main() {
 
   // Handle --multiuse: Hoist shared dependencies to root
   if (args.includes('--multiuse')) {
-    console.log('Running in --multiuse mode: Checking for shared dependencies...');
+    console.log(
+      'Running in --multiuse mode: Checking for shared dependencies...',
+    );
     handleMultiuse();
     console.log('Finished checking shared dependencies.');
 
@@ -308,7 +314,7 @@ async function main() {
   console.log(workspaceConfig);
 
   // Get workspace roots
-  const workspaceRoots = workspaceConfig.packages.map(glob =>
+  const workspaceRoots = workspaceConfig.packages.map((glob) =>
     glob.replace('/*', ''),
   );
 
@@ -323,7 +329,7 @@ async function main() {
 
   // Print the paths of package directories
   console.log('Found package directories:');
-  packageDirs.forEach(dir => console.log(dir));
+  packageDirs.forEach((dir) => console.log(dir));
 
   // Run depcheck --clean operation on each package directory
   console.log('\nRunning depcheck on each workspace...');

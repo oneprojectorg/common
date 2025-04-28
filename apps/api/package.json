@@ -6,7 +6,7 @@
   "scripts": {
     "build": "next build",
     "dev": "next dev -p 3300",
-    "lint": "pnpm tsc --noEmit && pnpm eslint --fix .",
+    "lint": "pnpm tsc --noEmit",
     "start": "next start"
   },
   "dependencies": {
@@ -24,7 +24,6 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
-    "@op/eslint-config": "workspace:*",
     "@op/typescript-config": "workspace:*",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.5.3",

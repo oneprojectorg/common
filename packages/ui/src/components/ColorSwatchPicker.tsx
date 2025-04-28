@@ -4,16 +4,14 @@ import {
   ColorSwatchPicker as AriaColorSwatchPicker,
   ColorSwatchPickerItem as AriaColorSwatchPickerItem,
 } from 'react-aria-components';
-import { tv } from 'tailwind-variants';
-
-import { composeTailwindRenderProps, focusRing } from '../utils';
-
-import { ColorSwatch } from './ColorSwatch';
-
 import type {
   ColorSwatchPickerItemProps,
   ColorSwatchPickerProps,
 } from 'react-aria-components';
+import { tv } from 'tailwind-variants';
+
+import { composeTailwindRenderProps, focusRing } from '../utils';
+import { ColorSwatch } from './ColorSwatch';
 
 export const ColorSwatchPicker = ({
   children,

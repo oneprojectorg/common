@@ -1,15 +1,12 @@
 /* eslint-disable antfu/no-top-level-await */
-
-import fs from 'fs';
-import path from 'path';
-
 import { createServerClient } from '@supabase/ssr';
 import { sql } from 'drizzle-orm';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
-
-import config from './drizzle.config';
+import fs from 'fs';
+import path from 'path';
 
 import { db } from '.';
+import config from './drizzle.config';
 
 if (!process.env.DB_MIGRATING) {
   throw new Error(

@@ -20,8 +20,7 @@ const useMediaQuery = (query: string): boolean => {
 
   useEffect(() => {
     // Return early if window is not defined (server-side)
-    if (typeof window === 'undefined')
-      return () => {};
+    if (typeof window === 'undefined') return () => {};
 
     const mediaQuery = window.matchMedia(query);
 

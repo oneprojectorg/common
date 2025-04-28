@@ -1,9 +1,8 @@
-import { Bold, Italic, Underline } from 'lucide-react';
+import type { Meta } from '@storybook/react';
+import { Italic, Underline } from 'lucide-react';
 
 import { ToggleButton } from '../src/components/ToggleButton';
 import { ToggleButtonGroup } from '../src/components/ToggleButtonGroup';
-
-import type { Meta } from '@storybook/react';
 
 const meta: Meta<typeof ToggleButtonGroup> = {
   component: ToggleButtonGroup,
@@ -17,9 +16,7 @@ export default meta;
 
 export const Example = (args: any) => (
   <ToggleButtonGroup {...args}>
-    <ToggleButton id="bold" aria-label="Bold">
-      <Bold className="size-4" />
-    </ToggleButton>
+    <ToggleButton id="bold" aria-label="Bold" />
     <ToggleButton id="italic" aria-label="Italic">
       <Italic className="size-4" />
     </ToggleButton>

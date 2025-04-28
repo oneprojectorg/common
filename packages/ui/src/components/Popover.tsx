@@ -2,16 +2,13 @@
 
 import {
   Popover as AriaPopover,
-  composeRenderProps,
   OverlayArrow,
   PopoverContext,
+  composeRenderProps,
   useSlottedContext,
 } from 'react-aria-components';
+import type { PopoverProps as AriaPopoverProps } from 'react-aria-components';
 import { tv } from 'tailwind-variants';
-
-import type {
-  PopoverProps as AriaPopoverProps,
-} from 'react-aria-components';
 
 export interface PopoverProps extends Omit<AriaPopoverProps, 'children'> {
   showArrow?: boolean;
@@ -47,7 +44,8 @@ export const Popover = ({
       offset={offset}
       {...props}
       className={composeRenderProps(className, (className, renderProps) =>
-        styles({ ...renderProps, className }))}
+        styles({ ...renderProps, className }),
+      )}
     >
       {showArrow && (
         <OverlayArrow className="group">

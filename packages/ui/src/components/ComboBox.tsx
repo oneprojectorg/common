@@ -1,27 +1,22 @@
 'use client';
 
 import { ChevronDown } from 'lucide-react';
-import {
-  ComboBox as AriaComboBox,
-  ListBox,
-} from 'react-aria-components';
-
-import { cn } from '../lib/utils';
-import { composeTailwindRenderProps } from '../utils';
-
-import { Button } from './Button';
-import { Description, FieldError, FieldGroup, Input, Label } from './Field';
-import { DropdownItem, DropdownSection } from './ListBox';
-import { Popover } from './Popover';
-
-import type { ButtonProps } from './Button';
-import type { DropdownSectionProps } from './ListBox';
-import type { PopoverProps } from './Popover';
+import { ComboBox as AriaComboBox, ListBox } from 'react-aria-components';
 import type {
   ComboBoxProps as AriaComboBoxProps,
   ListBoxItemProps,
   ValidationResult,
 } from 'react-aria-components';
+
+import { cn } from '../lib/utils';
+import { composeTailwindRenderProps } from '../utils';
+import { Button } from './Button';
+import type { ButtonProps } from './Button';
+import { Description, FieldError, FieldGroup, Input, Label } from './Field';
+import { DropdownItem, DropdownSection } from './ListBox';
+import type { DropdownSectionProps } from './ListBox';
+import { Popover } from './Popover';
+import type { PopoverProps } from './Popover';
 
 export interface ComboBoxProps<T extends object>
   extends Omit<AriaComboBoxProps<T>, 'children'> {
@@ -60,7 +55,10 @@ export const ComboBox = <T extends object>({
           variant="icon"
           padding="none"
           {...props.buttonProps}
-          className={cn('mr-1 aspect-square w-6 rounded outline-offset-0', props.buttonProps?.className)}
+          className={cn(
+            'mr-1 aspect-square w-6 rounded outline-offset-0',
+            props.buttonProps?.className,
+          )}
         >
           <ChevronDown aria-hidden className="size-[1em]" />
         </Button>
@@ -70,7 +68,10 @@ export const ComboBox = <T extends object>({
       <Popover className="min-w-[--trigger-width]">
         <ListBox
           items={items}
-          className={cn('max-h-[inherit] overflow-auto p-1 outline-0 [clip-path:inset(0_0_0_0_round_.75rem)]', props.listBoxClassName)}
+          className={cn(
+            'max-h-[inherit] overflow-auto p-1 outline-0 [clip-path:inset(0_0_0_0_round_.75rem)]',
+            props.listBoxClassName,
+          )}
         >
           {children}
         </ListBox>

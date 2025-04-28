@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -8,16 +7,14 @@ import {
   CalendarGridBody,
   Text,
 } from 'react-aria-components';
-import { tv } from 'tailwind-variants';
-
-import { focusRing } from '../utils';
-
-import { CalendarGridHeader, CalendarHeader } from './Calendar';
-
 import type {
   RangeCalendarProps as AriaRangeCalendarProps,
   DateValue,
 } from 'react-aria-components';
+import { tv } from 'tailwind-variants';
+
+import { focusRing } from '../utils';
+import { CalendarGridHeader, CalendarHeader } from './Calendar';
 
 export interface RangeCalendarProps<T extends DateValue>
   extends Omit<AriaRangeCalendarProps<T>, 'visibleDuration'> {
@@ -54,7 +51,7 @@ export const RangeCalendar = <T extends DateValue>({
       <CalendarGrid className="[&_td]:px-0">
         <CalendarGridHeader />
         <CalendarGridBody>
-          {date => (
+          {(date) => (
             <CalendarCell
               date={date}
               className="group size-9 cursor-default text-sm outline outline-0 outside-month:text-neutral-700 selected:bg-neutral-300/30 invalid:selected:bg-red-700/30 selection-start:rounded-s-full selection-end:rounded-e-full [td:first-child_&]:rounded-s-full [td:last-child_&]:rounded-e-full"
