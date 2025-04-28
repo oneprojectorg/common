@@ -23,7 +23,7 @@ const UserAvatarMenu = () => {
   const logout = useAuthLogout();
 
   return (
-    <div className="size-8 text-clip rounded-full border bg-white shadow">
+    <div className="size-8 overflow-hidden text-clip rounded-full border bg-white shadow">
       <MenuTrigger>
         <Button unstyled>
           {user.avatarImage?.name ? (
