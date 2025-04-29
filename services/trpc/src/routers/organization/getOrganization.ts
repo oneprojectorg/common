@@ -48,7 +48,7 @@ export const getOrganizationRouter = router({
           });
         }
 
-        return result;
+        return organizationsEncoder.parse(result);
       } catch (error: unknown) {
         if (error instanceof UnauthorizedError) {
           throw new TRPCError({

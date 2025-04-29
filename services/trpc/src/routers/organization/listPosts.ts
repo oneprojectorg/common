@@ -62,6 +62,6 @@ export const listOrganizationPostsRouter = router({
             new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime(),
         );
 
-      return sorted;
+      return sorted.map((post) => postsEncoder.parse(post));
     }),
 });

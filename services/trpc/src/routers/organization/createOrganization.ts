@@ -83,7 +83,7 @@ export const createOrganizationRouter = router({
       try {
         const org = await createOrganization({ data: input, user });
 
-        return org;
+        return organizationsEncoder.parse(org);
       } catch (error: unknown) {
         console.log('ERROR', error);
 

@@ -8,6 +8,7 @@ import { z } from 'zod';
 
 import { linksEncoder } from './links';
 import { projectEncoder } from './projects';
+import { taxonomyTermsEncoder } from './taxonomyTerms';
 
 export const storageItemEncoder = createSelectSchema(objectsInStorage).pick({
   id: true,
@@ -31,6 +32,7 @@ export const organizationsEncoder = createSelectSchema(organizations)
   .extend({
     projects: z.array(projectEncoder).optional(),
     links: z.array(linksEncoder).default([]),
+    whereWeWork: z.array(taxonomyTermsEncoder).default([]),
     headerImage: storageItemEncoder.nullish(),
     avatarImage: storageItemEncoder.nullish(),
   });
@@ -45,7 +47,6 @@ export const organizationsCreateInputEncoder = createSelectSchema(organizations)
     mission: true,
     // Year Founded
     yearFounded: true,
-    values: true,
     // Email
     email: true,
     phone: true,
@@ -56,10 +57,7 @@ export const organizationsCreateInputEncoder = createSelectSchema(organizations)
     state: true,
     postalCode: true,
     // Geography
-    latitude: true,
-    longitude: true,
     isVerified: true,
-    socialLinks: true,
 
     isOfferingFunds: true,
     isReceivingFunds: true,

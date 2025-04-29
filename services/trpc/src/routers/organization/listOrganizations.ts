@@ -50,6 +50,6 @@ export const listOrganizationsRouter = router({
         });
       }
 
-      return result;
+      return result.map((org) => organizationsEncoder.parse(org));
     }),
 });
