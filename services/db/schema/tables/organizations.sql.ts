@@ -2,12 +2,8 @@ import { relations, sql } from 'drizzle-orm';
 import type { InferModel } from 'drizzle-orm';
 import {
   boolean,
-  decimal,
-  geometry,
   index,
   integer,
-  json,
-  jsonb,
   pgEnum,
   pgTable,
   text,

@@ -12,13 +12,14 @@ export const taxonomies = pgTable(
     namespaceUri: varchar('namespace_uri', { length: 255 }),
     ...timestamps,
   },
-  (table) => [...serviceRolePolicies],
+  () => [...serviceRolePolicies],
 );
 
 export const taxonomiesRelations = relations(taxonomies, ({ many }) => ({
   taxonomyTerms: many(taxonomyTerms),
 }));
 
+// @ts-expect-error - TODO: this recursion of the parentId causes inference to fail
 export const taxonomyTerms = pgTable(
   'taxonomyTerms',
   {
