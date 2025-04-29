@@ -6,6 +6,7 @@ import {
   index,
   integer,
   json,
+  jsonb,
   pgEnum,
   pgTable,
   text,
@@ -46,30 +47,32 @@ export const organizations = pgTable(
 
     // Mission
     mission: text(),
+
     // Year Founded
     yearFounded: integer(),
-    values: text().array(),
+
     // Email
     email: varchar({ length: 255 }),
     phone: varchar({ length: 50 }),
     website: varchar({ length: 255 }),
+
     // Address
     address: varchar({ length: 255 }),
     city: varchar({ length: 100 }),
     state: varchar({ length: 50 }),
     postalCode: varchar({ length: 20 }),
+
     // Geography
     latitude: decimal(),
     longitude: decimal(),
     isVerified: boolean().default(false),
-    socialLinks: json(), // Store social media links
 
     isOfferingFunds: boolean().default(false),
     isReceivingFunds: boolean().default(false),
 
     // Organization Type
     orgType: orgTypeEnum('org_type').notNull().default(OrgType.OTHER),
-    // Legal Structure
+
     // Thematic Areas
 
     // Media items
@@ -81,7 +84,7 @@ export const organizations = pgTable(
     }),
 
     // where we work
-    whereWeWork: json(),
+    whereWeWork: jsonb(),
     ...timestamps,
   },
   (table) => [
