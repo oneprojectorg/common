@@ -3,6 +3,7 @@ import type { InferModel } from 'drizzle-orm';
 import {
   boolean,
   decimal,
+  geometry,
   index,
   integer,
   json,
@@ -25,6 +26,7 @@ import { posts } from './posts.sql';
 import { projects } from './projects.sql';
 import { organizationRelationships } from './relationships.sql';
 import { objectsInStorage } from './storage.sql';
+import { taxonomyTerms } from './taxonomies.sql';
 
 // Enums for organization types and status
 export enum OrgType {
@@ -56,15 +58,13 @@ export const organizations = pgTable(
     phone: varchar({ length: 50 }),
     website: varchar({ length: 255 }),
 
-    // Address
     address: varchar({ length: 255 }),
     city: varchar({ length: 100 }),
     state: varchar({ length: 50 }),
     postalCode: varchar({ length: 20 }),
 
     // Geography
-    latitude: decimal(),
-    longitude: decimal(),
+    // location: geometry('location', { srid: 4326 }),
     isVerified: boolean().default(false),
 
     isOfferingFunds: boolean().default(false),
@@ -83,8 +83,9 @@ export const organizations = pgTable(
       onUpdate: 'cascade',
     }),
 
+    // whereWeWork: uuid().references(() => taxonomyTerms.id)
     // where we work
-    whereWeWork: jsonb(),
+    // whereWeWork: jsonb(),
     ...timestamps,
   },
   (table) => [
@@ -103,6 +104,7 @@ export const organizationsRelations = relations(
     projects: many(projects),
     links: many(links),
     posts: many(posts),
+    whereWeWork: many(taxonomyTerms),
     headerImage: one(objectsInStorage, {
       fields: [organizations.headerImageId],
       references: [objectsInStorage.id],
