@@ -11,9 +11,10 @@ import { Skeleton } from '@op/ui/Skeleton';
 import { TextField } from '@op/ui/TextField';
 import { ErrorBoundary } from 'next/dist/client/components/error-boundary';
 import Image from 'next/image';
-import Link from 'next/link';
 import { Suspense } from 'react';
 import { LuSearch } from 'react-icons/lu';
+
+import { Link } from '@/lib/i18n';
 
 import { CommonLogo } from '../CommonLogo';
 import { OPLogo } from '../OPLogo';

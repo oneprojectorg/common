@@ -2,6 +2,8 @@ import { APP_NAME, printNFO } from '@op/core';
 import { TRPCProvider } from '@op/trpc/client';
 import '@op/ui/tailwind-styles';
 import type { Metadata, Viewport } from 'next';
+import { NextIntlClientProvider } from 'next-intl';
+import { getMessages, getTranslations } from 'next-intl/server';
 import { Inter, Roboto, Roboto_Mono, Roboto_Serif } from 'next/font/google';
 import Script from 'next/script';
 import { Toaster as Sonner } from 'sonner';
@@ -59,7 +61,17 @@ export const viewport: Viewport = {
 
 // const { IS_DEVELOPMENT, IS_PREVIEW } = OPURLConfig('APP');
 
-const RootLayout = ({ children }: { children: React.ReactNode }) => {
+const RootLayout = async ({
+  children,
+  params,
+}: {
+  children: React.ReactNode;
+  params: Promise<{ locale: string }>;
+}) => {
+  const { locale } = await params;
+  const messages = await getMessages();
+  // const t = await getTranslations('events');
+
   return (
     <html lang="en">
       <head>
@@ -78,29 +90,31 @@ const RootLayout = ({ children }: { children: React.ReactNode }) => {
         <body
           className={`${roboto.variable} ${robotoMono.variable} ${robotoSerif.variable} ${inter.variable} overflow-x-hidden text-base text-neutral-black`}
         >
-          <PostHogProvider>{children}</PostHogProvider>
-          <Sonner
-            theme="dark"
-            position="bottom-center"
-            className="toaster group"
-            // closeButton
-            // richColors
-            pauseWhenPageIsHidden
-            visibleToasts={10}
-            toastOptions={{
-              classNames: {
-                toast:
-                  'group toast bg-neutral-900/90 backdrop-blur-md border-none text-neutral-100 inset-shadow  mb-14',
-                description: 'text-neutral-400',
-                actionButton:
-                  'group-[.toast]:bg-primary group-[.toast]:text-primary-foreground',
-                cancelButton:
-                  'group-[.toast]:bg-muted group-[.toast]:text-muted-foreground',
-                closeButton:
-                  'group-[.toast]:bg-neutral-900 group-[.toast]:hover:bg-neutral-600 group-[.toast]:duration-300 group-[.toast]:border-neutral-600 group-[.toast]:transition-all group-[.toast]:text-neutral-400 group-[.toast]:hover:text-neutral-950',
-              },
-            }}
-          />
+          <NextIntlClientProvider locale={locale} messages={messages}>
+            <PostHogProvider>{children}</PostHogProvider>
+            <Sonner
+              theme="dark"
+              position="bottom-center"
+              className="toaster group"
+              // closeButton
+              // richColors
+              pauseWhenPageIsHidden
+              visibleToasts={10}
+              toastOptions={{
+                classNames: {
+                  toast:
+                    'group toast bg-neutral-900/90 backdrop-blur-md border-none text-neutral-100 inset-shadow  mb-14',
+                  description: 'text-neutral-400',
+                  actionButton:
+                    'group-[.toast]:bg-primary group-[.toast]:text-primary-foreground',
+                  cancelButton:
+                    'group-[.toast]:bg-muted group-[.toast]:text-muted-foreground',
+                  closeButton:
+                    'group-[.toast]:bg-neutral-900 group-[.toast]:hover:bg-neutral-600 group-[.toast]:duration-300 group-[.toast]:border-neutral-600 group-[.toast]:transition-all group-[.toast]:text-neutral-400 group-[.toast]:hover:text-neutral-950',
+                },
+              }}
+            />
+          </NextIntlClientProvider>
         </body>
       </TRPCProvider>
     </html>

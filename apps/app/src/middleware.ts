@@ -1,11 +1,29 @@
 import { OPURLConfig, cookieOptionsDomain } from '@op/core';
 import { createServerClient } from '@op/supabase/lib';
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import createMiddleware from 'next-intl/middleware';
+import { NextRequest, NextResponse } from 'next/server';
+
+import { i18nConfig, routing } from './lib/i18n';
 
 const useUrl = OPURLConfig('APP');
 
 export async function middleware(request: NextRequest) {
+  // i18n ROUTING
+  const pathname = request.nextUrl.pathname;
+  const pathnameIsMissingLocale = i18nConfig.locales.every(
+    (locale) =>
+      !pathname.startsWith(`/${locale}/`) && pathname !== `/${locale}`,
+  );
+
+  // only reroute if locale is missing. Otherwise we want to use the domain routing
+  if (pathnameIsMissingLocale) {
+    const handleI18nRouting = createMiddleware(routing);
+
+    const response = handleI18nRouting(request);
+
+    return response;
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   });
@@ -83,6 +101,8 @@ export const config = {
      * - favicon.ico (favicon file)
      * Feel free to modify this pattern to include more paths.
      */
-    // '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|login|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    // '/(.*rss\\.xml)',
+    // '/((?!node/|auth/|_next/|_static/|_vercel|_axiom/|media/|[\\w-]+\\.\\w+|.*\\..*).*)',
   ],
 };

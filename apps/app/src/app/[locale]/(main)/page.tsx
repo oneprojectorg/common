@@ -5,7 +5,8 @@ import { AuthWrapper } from '@/utils/AuthWrapper';
 import { trpc } from '@op/trpc/client';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import Image from 'next/image';
-import Link from 'next/link';
+
+import { Link } from '@/lib/i18n';
 
 import { Header1, Header3 } from '@/components/Header';
 import { ImageHeader } from '@/components/ImageHeader';
@@ -43,7 +44,7 @@ const MainPage = () => {
                       className="w-60 overflow-hidden rounded-md"
                       key={org.id}
                     >
-                      <Link href={`/app/org/${org.slug}`}>
+                      <Link href={`/org/${org.slug}`}>
                         <ImageHeader
                           headerClassName="h-32 "
                           headerImage={
