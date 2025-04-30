@@ -1,1 +1,19 @@
-{}
+{
+  "onboarding": {
+    "personalDetails": {
+      "header": "Agrega tus datos personales",
+      "subheader": "Cuéntanos sobre ti para que otros puedan encontrarte.",
+      "profilePicture": "Foto de perfil",
+      "fullName": "Nombre completo",
+      "enterFullName": "Ingresa tu nombre completo",
+      "professionalTitle": "Título profesional",
+      "enterTitle": "Ingresa tu título profesional",
+      "continue": "Continuar",
+      "validation": {
+        "enterFullName": "Ingresa tu nombre completo",
+        "max20Chars": "Debe tener como máximo 20 caracteres",
+        "enterTitle": "Ingresa tu título profesional"
+      }
+    }
+  }
+}

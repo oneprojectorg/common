@@ -1,6 +1,7 @@
 import { trpc } from '@op/trpc/client';
 import { AvatarUploader } from '@op/ui/AvatarUploader';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
+import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { z } from 'zod';
 
@@ -10,42 +11,56 @@ import { useMultiStep } from '../form/multiStep';
 import { getFieldErrorMessage, useAppForm } from '../form/utils';
 import type { StepProps } from '../form/utils';
 
-export const validator = z.object({
-  fullName: z
-    .string()
-    .min(1, { message: 'Enter your full name' })
-    .max(20, { message: 'Must be at most 20 characters' }),
-  title: z
-    .string()
-    .min(1, { message: 'Enter your professional title' })
-    .max(20, { message: 'Must be at most 20 characters' }),
-  profileImageUrl: z.string().optional(),
-});
+export const getValidator = (t: ReturnType<typeof useTranslations>) =>
+  z.object({
+    fullName: z
+      .string()
+      .min(1, {
+        message: t('onboarding.personalDetails.validation.enterFullName'),
+      })
+      .max(20, {
+        message: t('onboarding.personalDetails.validation.max20Chars'),
+      }),
+    title: z
+      .string()
+      .min(1, {
+        message: t('onboarding.personalDetails.validation.enterTitle'),
+      })
+      .max(20, {
+        message: t('onboarding.personalDetails.validation.max20Chars'),
+      }),
+    profileImageUrl: z.string().optional(),
+  });
 
-type FormFields = z.infer<typeof validator>;
+type FormFields = z.infer<ReturnType<typeof getValidator>>;
 
 export const PersonalDetailsForm = ({
   defaultValues,
   resolver,
   className,
 }: StepProps & { className?: string }) => {
+  const t = useTranslations();
+  const locale = useLocale();
+  console.log('LOCLE', locale);
   const uploadImage = trpc.account.uploadImage.useMutation();
   const updateProfile = trpc.account.updateUserProfile.useMutation();
   const [profileImageUrl, setProfileImageUrl] = useState<string | undefined>();
 
   const { onNext } = useMultiStep();
+  // If a resolver is provided, use it; otherwise, use the localized validator
+  const validatorInstance = getValidator(t);
   const form = useAppForm({
     defaultValues: defaultValues as FormFields,
     validators: {
-      onChange: resolver,
+      onChange: resolver ? resolver : validatorInstance,
     },
     onSubmit: async ({ value }: { value: FormFields }) => {
       await updateProfile.mutateAsync({
-        name: value.fullName,
-        title: value.title,
+        name: (value as FormFields).fullName,
+        title: (value as FormFields).title,
       });
 
-      onNext(value);
+      onNext(value as FormFields);
     },
   });
 
@@ -58,11 +73,11 @@ export const PersonalDetailsForm = ({
       className={className}
     >
       <FormContainer>
-        <FormHeader text="Add your personal details">
-          Tell us about yourself so others can find you.
+        <FormHeader text={t('onboarding.personalDetails.header')}>
+          {t('onboarding.personalDetails.subheader')}
         </FormHeader>
         <AvatarUploader
-          label="Profile Picture"
+          label={t('onboarding.personalDetails.profilePicture')}
           value={profileImageUrl ?? undefined}
           onChange={async (file: File): Promise<void> => {
             const reader = new FileReader();
@@ -98,14 +113,14 @@ export const PersonalDetailsForm = ({
           name="fullName"
           children={(field) => (
             <field.TextField
-              label="Full Name"
+              label={t('onboarding.personalDetails.fullName')}
               isRequired
               value={field.state.value}
               onBlur={field.handleBlur}
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
               inputProps={{
-                placeholder: 'Enter your full name',
+                placeholder: t('onboarding.personalDetails.enterFullName'),
               }}
             />
           )}
@@ -114,14 +129,14 @@ export const PersonalDetailsForm = ({
           name="title"
           children={(field) => (
             <field.TextField
-              label="Professional title"
+              label={t('onboarding.personalDetails.professionalTitle')}
               isRequired
               value={field.state.value}
               onBlur={field.handleBlur}
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
               inputProps={{
-                placeholder: 'Enter your professional title',
+                placeholder: t('onboarding.personalDetails.enterTitle'),
               }}
             />
           )}
@@ -131,7 +146,7 @@ export const PersonalDetailsForm = ({
           {updateProfile.isPending || uploadImage.isPending ? (
             <LoadingSpinner />
           ) : (
-            'Continue'
+            t('onboarding.personalDetails.continue')
           )}
         </form.SubmitButton>
       </FormContainer>

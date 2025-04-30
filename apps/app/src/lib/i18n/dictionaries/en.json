@@ -1,1 +1,19 @@
-{}
+{
+"onboarding": {
+  "personalDetails": {
+    "header": "Add your personal details",
+    "subheader": "Tell us about yourself so others can find you.",
+    "profilePicture": "Profile Picture",
+    "fullName": "Full Name",
+    "enterFullName": "Enter your full name",
+    "professionalTitle": "Professional title",
+    "enterTitle": "Enter your professional title",
+    "continue": "Continue",
+    "validation": {
+      "enterFullName": "Enter your full name",
+      "max20Chars": "Must be at most 20 characters",
+      "enterTitle": "Enter your professional title"
+    }
+  }
+}
+}
