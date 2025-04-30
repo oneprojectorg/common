@@ -1,5 +1,6 @@
 import type { Organization } from '@op/trpc/encoders';
 import { Button } from '@op/ui/Button';
+import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { LuCopy, LuGlobe, LuMail } from 'react-icons/lu';
@@ -57,9 +58,9 @@ const ProfileAbout = ({ profile }: { profile: Organization }) => {
   );
 };
 
-export const ProfileTabs = ({ profile }: { profile: Organization }) => {
+export const ProfileGrid = ({ profile }: { profile: Organization }) => {
   return (
-    <div className="grid grid-cols-3 border-t">
+    <div className="hidden grid-cols-3 border-t sm:grid">
       <div className="col-span-2 flex flex-col gap-8">
         <ProfileFeedPost profile={profile} className="border-b px-4 py-6" />
         <Suspense fallback={<div>Loading...</div>}>
@@ -70,5 +71,25 @@ export const ProfileTabs = ({ profile }: { profile: Organization }) => {
         <ProfileAbout profile={profile} />
       </div>
     </div>
+  );
+};
+
+export const ProfileTabs = ({ profile }: { profile: Organization }) => {
+  return (
+    <Tabs className="pb-8 sm:hidden">
+      <TabList className="px-4">
+        <Tab id="updates">Updates</Tab>
+        <Tab id="about">About</Tab>
+      </TabList>
+      <TabPanel id="updates" className="px-6">
+        <ProfileFeedPost profile={profile} className="border-b px-4 py-6" />
+        <Suspense fallback={<div>Loading...</div>}>
+          <ProfileFeed profile={profile} className="px-4 py-6" />
+        </Suspense>
+      </TabPanel>
+      <TabPanel id="about">
+        <ProfileAbout profile={profile} />
+      </TabPanel>
+    </Tabs>
   );
 };

@@ -18,11 +18,11 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
   );
 
   return (
-    <div className="flex gap-4">
+    <div className="flex flex-wrap gap-3 sm:gap-4">
       {isReceivingFunds
         ? receivingFundingLinks.map((link) => (
             <TooltipTrigger key={link.id}>
-              <ButtonLink href={link.href} className="min-w-44">
+              <ButtonLink href={link.href} className="min-w-full sm:min-w-44">
                 <LuArrowUpRight />
                 Contribute
               </ButtonLink>
@@ -34,7 +34,7 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
       {isOfferingFunds
         ? offeringFundingLinks.map((link) => (
             <TooltipTrigger key={link.id}>
-              <ButtonLink href={link.href} className="min-w-44">
+              <ButtonLink href={link.href} className="min-w-full sm:min-w-44">
                 <LuInfo />
                 Learn more
               </ButtonLink>
@@ -43,7 +43,7 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
           ))
         : null}
 
-      <Button color="secondary" className="min-w-44">
+      <Button color="secondary" className="min-w-full sm:min-w-44">
         <LuPlus />
         Add relationship
       </Button>

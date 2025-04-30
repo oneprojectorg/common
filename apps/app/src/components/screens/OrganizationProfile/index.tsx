@@ -12,8 +12,8 @@ import React, { Suspense } from 'react';
 
 import { Header1 } from '@/components/Header';
 import { ImageHeader } from '@/components/ImageHeader';
+import { ProfileGrid, ProfileTabs } from '@/components/Profile/ProfileContent';
 import { ProfileDetails } from '@/components/Profile/ProfileDetails';
-import { ProfileTabs } from '@/components/Profile/ProfileTabs';
 
 const OrganizationProfileSuspense = ({ slug }: { slug: string }) => {
   const [organization] = trpc.organization.getBySlug.useSuspenseQuery({
@@ -40,6 +40,7 @@ const OrganizationProfileSuspense = ({ slug }: { slug: string }) => {
       />
 
       <ProfileDetails profile={organization} />
+      <ProfileGrid profile={organization} />
       <ProfileTabs profile={organization} />
     </>
   );

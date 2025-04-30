@@ -52,7 +52,7 @@ const UserAvatarMenu = () => {
 
 export const SiteHeader = () => {
   return (
-    <header className="flex h-14 w-full items-center justify-between border-b px-4 py-7 md:px-28">
+    <header className="hidden h-14 w-full items-center justify-between border-b px-4 py-7 sm:flex md:px-28">
       <Link href="/" className="flex gap-1">
         <OPLogo />
         <CommonLogo />
