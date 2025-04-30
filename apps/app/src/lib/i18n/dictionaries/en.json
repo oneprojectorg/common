@@ -1,19 +1,52 @@
 {
-"onboarding": {
-  "personalDetails": {
-    "header": "Add your personal details",
-    "subheader": "Tell us about yourself so others can find you.",
-    "profilePicture": "Profile Picture",
-    "fullName": "Full Name",
-    "enterFullName": "Enter your full name",
-    "professionalTitle": "Professional title",
-    "enterTitle": "Enter your professional title",
-    "continue": "Continue",
-    "validation": {
+  "onboarding": {
+    "personalDetails": {
+      "header": "Add your personal details",
+      "subheader": "Tell us about yourself so others can find you.",
+      "profilePicture": "Profile Picture",
+      "fullName": "Full Name",
       "enterFullName": "Enter your full name",
-      "max20Chars": "Must be at most 20 characters",
-      "enterTitle": "Enter your professional title"
+      "professionalTitle": "Professional title",
+      "enterTitle": "Enter your professional title",
+      "continue": "Continue",
+      "validation": {
+        "enterFullName": "Enter your full name",
+        "max20Chars": "Must be at most 20 characters",
+        "enterTitle": "Enter your professional title"
+      }
+    },
+    "organizationDetails": {
+      "header": "Add your organization’s details",
+      "prefillNotice": "We've pre-filled information about {organization}.",
+      "reviewNotice": "Please review and make any necessary changes.",
+      "orgName": "Organization name",
+      "website": "Website",
+      "email": "Email",
+      "whereWeWork": "Where we work",
+      "orgStatus": "Organizational Status",
+      "select": "Select",
+      "nonprofit": "Nonprofit",
+      "forprofit": "Forprofit",
+      "governmentEntity": "Government Entity",
+      "bio": "Bio",
+      "enterBio": "Enter a brief bio for your profile",
+      "missionStatement": "Mission statement",
+      "enterMission": "Enter your mission statement or a brief bio",
+      "focusAreas": "Focus Areas",
+      "selectOneOrMore": "Select one or more",
+      "communitiesServed": "Communities Served",
+      "strategiesTactics": "Strategies/Tactics",
+      "networkQuestion": "Does your organization serve as a network or coalition with member organizations?",
+      "back": "Back",
+      "continue": "Continue",
+      "validation": {
+        "enterName": "Enter a name for your organization",
+        "max20Chars": "Must be at most 20 characters",
+        "enterValidWebsite": "Enter a valid website address",
+        "min1Char": "Must be at least 1 character",
+        "max200Chars": "Must be at most 200 characters",
+        "invalidEmail": "Invalid email"
+      }
     }
   }
-}
 }
