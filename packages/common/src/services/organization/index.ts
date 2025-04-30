@@ -194,7 +194,7 @@ export const createOrganization = async ({
         geoNames.map(async (geoName) => {
           // make sure we have a valid ID
           if (geoName.geonameId) {
-            // add the terms
+            // upsert the terms
             const [term] = await tx
               .insert(taxonomyTerms)
               .values({

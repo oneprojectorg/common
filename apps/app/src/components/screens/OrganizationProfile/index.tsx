@@ -109,7 +109,10 @@ export const OrganizationProfile = ({ slug }: { slug: string }) => {
                       funders.
                     </div>
                   </div>
-                  <Button onPress={() => handleModalChange(false)}>
+                  <Button
+                    className="w-full"
+                    onPress={() => handleModalChange(false)}
+                  >
                     Take me to Common
                   </Button>
                 </div>

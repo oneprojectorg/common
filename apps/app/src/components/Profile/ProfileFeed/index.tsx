@@ -75,7 +75,9 @@ const FeedHeader = ({ children }: { children: ReactNode }) => {
 
 const FeedAvatar = ({ children }: { children?: ReactNode }) => {
   return (
-    <div className="relative w-16 min-w-16 overflow-hidden">{children}</div>
+    <div className="shadown relative w-16 min-w-16 overflow-hidden">
+      {children}
+    </div>
   );
 };
 
@@ -87,11 +89,13 @@ const FeedMain = ({ children }: { children: ReactNode }) => {
   );
 };
 
-export const ProfileFeed = ({ profile }: { profile: Organization }) => {
-  const [posts] = trpc.organization.listPosts.useSuspenseQuery({
-    slug: profile.slug,
-  });
-
+export const ProfileFeedPost = ({
+  profile,
+  className,
+}: {
+  profile: Organization;
+  className?: string;
+}) => {
   const [content, setContent] = useState('');
   const utils = trpc.useContext();
   const createPost = trpc.organization.createPost.useMutation({
@@ -142,7 +146,7 @@ export const ProfileFeed = ({ profile }: { profile: Organization }) => {
   const profileImageUrl = getPublicUrl(profile.avatarImage?.name);
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className={cn('flex flex-col gap-8', className)}>
       <FeedItem>
         <FeedAvatar>
           {profileImageUrl ? (
@@ -153,7 +157,7 @@ export const ProfileFeed = ({ profile }: { profile: Organization }) => {
               className="!size-16 max-h-16 max-w-16 rounded-full"
             />
           ) : (
-            <div className="size-16 rounded-full border bg-white shadow" />
+            <div className="size-16 rounded-full border bg-white" />
           )}
         </FeedAvatar>
         <FeedMain>
@@ -182,7 +186,25 @@ export const ProfileFeed = ({ profile }: { profile: Organization }) => {
           </div>
         </FeedMain>
       </FeedItem>
-      <span className="-ml-6 w-[calc(100%+3rem)] border-b border-offWhite p-0" />
+    </div>
+  );
+};
+
+export const ProfileFeed = ({
+  profile,
+  className,
+}: {
+  profile: Organization;
+  className?: string;
+}) => {
+  const [posts] = trpc.organization.listPosts.useSuspenseQuery({
+    slug: profile.slug,
+  });
+
+  const profileImageUrl = getPublicUrl(profile.avatarImage?.name);
+
+  return (
+    <div className={cn('flex flex-col gap-8 pb-8', className)}>
       {posts.length > 0 ? (
         posts.map(({ content, createdAt }, i) => (
           <FeedItem key={i}>
@@ -195,7 +217,7 @@ export const ProfileFeed = ({ profile }: { profile: Organization }) => {
                   className="!size-16 max-h-16 max-w-16 rounded-full"
                 />
               ) : (
-                <div className="size-16 rounded-full border bg-white shadow" />
+                <div className="size-16 rounded-full border bg-white" />
               )}
             </FeedAvatar>
             <FeedMain>

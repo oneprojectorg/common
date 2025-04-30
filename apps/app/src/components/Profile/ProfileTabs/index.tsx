@@ -1,12 +1,11 @@
 import type { Organization } from '@op/trpc/encoders';
-import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { LuGlobe, LuMail } from 'react-icons/lu';
 
 import { Header3 } from '@/components/Header';
 
-import { ProfileFeed } from '../ProfileFeed';
+import { ProfileFeed, ProfileFeedPost } from '../ProfileFeed';
 
 const ContactLink = ({ children }: { children: React.ReactNode }) => {
   return <div className="flex items-center gap-1">{children}</div>;
@@ -48,19 +47,16 @@ const ProfileAbout = ({ profile }: { profile: Organization }) => {
 
 export const ProfileTabs = ({ profile }: { profile: Organization }) => {
   return (
-    <Tabs className="pb-8">
-      <TabList className="px-4">
-        <Tab id="updates">Updates</Tab>
-        <Tab id="about">About</Tab>
-      </TabList>
-      <TabPanel id="updates" className="px-6">
+    <div className="grid grid-cols-3 border-t">
+      <div className="col-span-2 flex flex-col gap-8">
+        <ProfileFeedPost profile={profile} className="border-b px-4 py-6" />
         <Suspense fallback={<div>Loading...</div>}>
-          <ProfileFeed profile={profile} />
+          <ProfileFeed profile={profile} className="px-4 py-6" />
         </Suspense>
-      </TabPanel>
-      <TabPanel id="about">
+      </div>
+      <div className="border-l px-4 py-6">
         <ProfileAbout profile={profile} />
-      </TabPanel>
-    </Tabs>
+      </div>
+    </div>
   );
 };

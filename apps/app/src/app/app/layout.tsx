@@ -3,7 +3,7 @@ import { AppLayout } from '@/components/layout/split/AppLayout';
 
 const AppRoot = ({ children }: { children: React.ReactNode }) => {
   return (
-    <div className="flex size-full max-h-full flex-col overflow-hidden">
+    <div className="flex size-full max-h-full flex-col overflow-hidden pb-8">
       <SiteHeader />
       <AppLayout>{children}</AppLayout>
     </div>
