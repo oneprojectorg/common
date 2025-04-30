@@ -17,7 +17,7 @@ const meta: Meta<typeof TextField> = {
 
 export default meta;
 
-export const Example = (args: any) => (
+export const Example = () => (
   <div className="flex w-96 flex-col gap-8">
     <TextField
       inputProps={{ placeholder: 'Placeholder' }}

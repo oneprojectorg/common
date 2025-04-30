@@ -8,7 +8,7 @@ import { Tooltip, TooltipTrigger } from './Tooltip';
 import type { TooltipProps, TooltipTriggerProps } from './Tooltip';
 
 const buttonStyle = tv({
-  base: 'flex h-11 items-center justify-center gap-2 text-center text-base font-normal leading-3 sm:text-base',
+  base: 'flex w-fit items-center justify-center gap-2 text-center text-base font-normal leading-3 shadow-md sm:text-base',
   variants: {
     variant: {
       primary: '',
@@ -16,12 +16,16 @@ const buttonStyle = tv({
     },
     color: {
       primary:
-        'bg-teal text-whiteish hover:bg-teal-400 pressed:border-teal pressed:bg-teal-200',
+        'bg-primary-teal text-neutral-offWhite hover:bg-primary-tealBlack pressed:bg-primary-tealBlack pressed:text-neutral-gray2',
       secondary:
-        'border border-offWhite bg-white text-teal shadow hover:bg-neutral-50 pressed:bg-white',
+        'border border-offWhite bg-white text-teal hover:bg-neutral-50 pressed:bg-white',
       gradient: '',
       destructive:
-        'bg-red text-whiteish hover:bg-red-400 pressed:border-red pressed:bg-red-200',
+        'border-functional-red bg-functional-red text-neutral-offWhite hover:bg-functional-redBlack',
+    },
+    size: {
+      small: 'h-8 p-3',
+      medium: 'h-11 p-4',
     },
     surface: {
       solid: '',
@@ -37,16 +41,13 @@ const buttonStyle = tv({
       false:
         'appearance-none rounded-md outline-none duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lightGray pressed:shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)]',
     },
-    padding: {
-      default: 'p-4',
-      none: 'p-0',
-    },
+
     isDisabled: {
       true: 'pointer-events-none opacity-30',
       false: '',
     },
     insetShadow: {
-      true: 'inset-shadow',
+      true: '',
       false: '',
     },
     backglow: {
@@ -57,10 +58,10 @@ const buttonStyle = tv({
   defaultVariants: {
     variant: 'primary',
     color: 'primary',
-    padding: 'default',
     surface: 'solid',
     insetShadow: false,
     backglow: false,
+    size: 'medium',
   },
 });
 
