@@ -146,7 +146,7 @@ export const ProfileFeedPost = ({
   const profileImageUrl = getPublicUrl(profile.avatarImage?.name);
 
   return (
-    <div className={cn('flex flex-col gap-8', className)}>
+    <div className={cn('flex flex-col gap-8 pb-8', className)}>
       <FeedItem>
         <FeedAvatar>
           {profileImageUrl ? (
@@ -163,7 +163,7 @@ export const ProfileFeedPost = ({
         <FeedMain>
           <Form onSubmit={handleSubmit} className="flex w-full flex-row gap-4">
             <TextArea
-              className="size-full border-none"
+              className="size-full min-h-12 border-none"
               placeholder={`Post an update from ${profile.name}…`}
               value={content}
               onChange={(e) => setContent(e.target.value)}
