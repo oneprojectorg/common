@@ -76,7 +76,7 @@ const RootLayout = ({ children }: { children: React.ReactNode }) => {
       </head>
       <TRPCProvider>
         <body
-          className={`${roboto.variable} ${robotoMono.variable} ${robotoSerif.variable} ${inter.variable} overflow-x-hidden text-base`}
+          className={`${roboto.variable} ${robotoMono.variable} ${robotoSerif.variable} ${inter.variable} overflow-x-hidden text-base text-neutral-black`}
         >
           <PostHogProvider>{children}</PostHogProvider>
           <Sonner

@@ -29,7 +29,7 @@ export const Label = (props: LabelProps) => {
     <RACLabel
       {...props}
       className={twMerge(
-        'w-fit cursor-default text-xs font-normal text-black',
+        'w-fit cursor-default text-xs font-normal text-neutral-black',
         props.className,
       )}
     />
@@ -41,7 +41,7 @@ export const Description = (props: TextProps) => {
     <Text
       {...props}
       slot="description"
-      className={twMerge('text-sm text-neutral-400', props.className)}
+      className={twMerge('text-xs text-neutral-gray4', props.className)}
     />
   );
 };
@@ -62,7 +62,7 @@ export const fieldBorderStyles = tv({
   variants: {
     isFocusWithin: {
       false: '',
-      true: 'border-offWhite',
+      true: 'border-red',
     },
     isInvalid: {
       true: 'border-red-300',
@@ -75,7 +75,7 @@ export const fieldBorderStyles = tv({
 
 export const fieldGroupStyles = tv({
   extend: focusRing,
-  base: 'group flex items-center overflow-hidden bg-white placeholder:text-teal disabled:placeholder:text-lightGray',
+  base: 'group flex items-center bg-white placeholder:text-teal disabled:placeholder:text-lightGray',
   variants: fieldBorderStyles.variants,
 });
 
@@ -91,7 +91,7 @@ export const FieldGroup = (props: GroupProps) => {
 };
 
 export const inputStyles = tv({
-  base: 'min-w-0 flex-1 rounded-md border border-offWhite p-4 text-sm leading-[0.5rem] text-black outline outline-0 placeholder:text-midGray disabled:text-lightGray',
+  base: 'min-w-0 flex-1 rounded-md border border-neutral-gray1 p-4 text-sm leading-[0.5rem] text-neutral-black outline outline-0 placeholder:text-neutral-gray4 active:border-neutral-gray4 active:outline hover:border-neutral-gray2 focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-data-blue disabled:border-neutral-gray2 disabled:bg-neutral-gray1 disabled:text-lightGray',
   variants: {
     color: {
       primary: '',
