@@ -168,7 +168,8 @@ export const TextArea = ({
       {...props}
       className={composeTailwindRenderProps(
         props.className,
-        'min-h-28 min-w-0 flex-1 items-center rounded border border-offWhite bg-white p-4 text-sm text-darkGray placeholder:text-midGray disabled:text-neutral-400',
+        // 'min-h-28 min-w-0 flex-1 items-center rounded border border-offWhite bg-white p-4 text-sm text-darkGray placeholder:text-midGray disabled:text-neutral-400',
+        'min-h-28 w-full min-w-0 rounded-md border border-neutral-gray1 p-3 text-sm leading-[0.5rem] text-neutral-black outline outline-0 placeholder:text-neutral-gray4 active:border-neutral-gray4 active:outline hover:border-neutral-gray2 focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-data-blue disabled:border-neutral-gray2 disabled:bg-neutral-gray1 disabled:text-lightGray',
       )}
     />
   );

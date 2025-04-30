@@ -18,7 +18,7 @@ const meta: Meta<typeof TextField> = {
 export default meta;
 
 export const Example = (args: any) => (
-  <div className="flex flex-col gap-2">
+  <div className="flex w-96 flex-col gap-8">
     <TextField
       inputProps={{ placeholder: 'Placeholder' }}
       description="Helper text"
@@ -26,6 +26,22 @@ export const Example = (args: any) => (
     />
     <TextField
       isDisabled
+      label="Disabled state"
+      isRequired
+      inputProps={{ placeholder: 'Placeholder' }}
+    />
+
+    <TextField
+      useTextArea
+      label="Disabled state"
+      description="Helper text"
+      isRequired
+      inputProps={{ placeholder: 'Placeholder' }}
+    />
+
+    <TextField
+      isDisabled
+      useTextArea
       label="Disabled state"
       isRequired
       inputProps={{ placeholder: 'Placeholder' }}
