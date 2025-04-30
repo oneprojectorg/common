@@ -1,14 +1,16 @@
 import type { Organization } from '@op/trpc/encoders';
+import { Button } from '@op/ui/Button';
 import Link from 'next/link';
 import { Suspense } from 'react';
-import { LuGlobe, LuMail } from 'react-icons/lu';
+import { LuCopy, LuGlobe, LuMail } from 'react-icons/lu';
+import { toast } from 'sonner';
 
 import { Header3 } from '@/components/Header';
 
 import { ProfileFeed, ProfileFeedPost } from '../ProfileFeed';
 
 const ContactLink = ({ children }: { children: React.ReactNode }) => {
-  return <div className="flex items-center gap-1">{children}</div>;
+  return <div className="flex h-8 items-center gap-1">{children}</div>;
 };
 
 const ProfileAbout = ({ profile }: { profile: Organization }) => {
@@ -17,9 +19,9 @@ const ProfileAbout = ({ profile }: { profile: Organization }) => {
   return (
     <div className="flex flex-col gap-8">
       {email || website ? (
-        <section className="flex flex-col gap-6">
+        <section className="flex flex-col gap-2">
           <Header3>Contact</Header3>
-          <div className="flex flex-col gap-4 text-teal">
+          <div className="flex flex-col gap-2 text-teal">
             {website ? (
               <ContactLink>
                 <LuGlobe />
@@ -30,13 +32,23 @@ const ProfileAbout = ({ profile }: { profile: Organization }) => {
               <ContactLink>
                 <LuMail />
                 <Link href={`mailto:${email}`}>{email}</Link>
+                <Button
+                  color="secondary"
+                  size="small"
+                  onPress={() => {
+                    navigator.clipboard.writeText(email);
+                    toast.success('Copied to clipboard');
+                  }}
+                >
+                  <LuCopy /> Copy
+                </Button>
               </ContactLink>
             ) : null}
           </div>
         </section>
       ) : null}
       {mission ? (
-        <section className="flex flex-col gap-6">
+        <section className="flex flex-col gap-4 text-neutral-charcoal">
           <Header3>Mission Statement</Header3>
           <p>{mission}</p>
         </section>

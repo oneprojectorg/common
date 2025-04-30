@@ -34,7 +34,7 @@ const UserAvatarMenu = () => {
               height={48}
             />
           ) : (
-            <div className="size-8 rounded-full border bg-white shadow">
+            <div className="flex size-8 items-center justify-center text-neutral-gray3">
               {user.name?.slice(0, 1) ?? ''}
             </div>
           )}

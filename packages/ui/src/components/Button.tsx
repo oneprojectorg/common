@@ -8,7 +8,7 @@ import { Tooltip, TooltipTrigger } from './Tooltip';
 import type { TooltipProps, TooltipTriggerProps } from './Tooltip';
 
 const buttonStyle = tv({
-  base: 'flex w-fit items-center justify-center gap-2 text-center text-base font-normal leading-3 shadow-md sm:text-base',
+  base: 'flex w-fit items-center justify-center gap-1 text-center text-base font-normal leading-3 shadow-md sm:text-base',
   variants: {
     variant: {
       primary: '',
