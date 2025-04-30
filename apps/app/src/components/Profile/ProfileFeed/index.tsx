@@ -1,6 +1,6 @@
 import { getPublicUrl } from '@/utils';
 import { trpc } from '@op/trpc/client';
-import type { Organization, Post } from '@op/trpc/encoders';
+import type { Organization, PostToOrganization } from '@op/trpc/encoders';
 import { Button } from '@op/ui/Button';
 import { TextArea } from '@op/ui/Field';
 import { Form } from '@op/ui/Form';
@@ -95,9 +95,9 @@ export const ProfileFeed = ({ profile }: { profile: Organization }) => {
   const [content, setContent] = useState('');
   const utils = trpc.useContext();
   const createPost = trpc.organization.createPost.useMutation({
-    onMutate: async (newPost) => {
+    onMutate: (newPost) => {
       // Cancel any outgoing refetches for the posts query
-      await utils.organization.listPosts.cancel();
+      // await utils.organization.listPosts.cancel();
       // Snapshot the previous list of posts
       const previousPosts = utils.organization.listPosts.getData({
         slug: profile.slug,
@@ -113,7 +113,11 @@ export const ProfileFeed = ({ profile }: { profile: Organization }) => {
 
       return { previousPosts };
     },
-    onError: (_, __, context: { previousPosts?: Array<Post> } | undefined) => {
+    onError: (
+      _,
+      __,
+      context: { previousPosts?: Array<PostToOrganization> } | undefined,
+    ) => {
       // Roll back to the previous posts on error
       utils.organization.listPosts.setData(
         { slug: profile.slug },

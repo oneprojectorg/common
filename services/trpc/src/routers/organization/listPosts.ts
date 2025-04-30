@@ -2,7 +2,7 @@ import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
-import { postsEncoder } from '../../encoders/posts';
+import { Post, postsEncoder } from '../../encoders/posts';
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withDB from '../../middlewares/withDB';
 import withRateLimited from '../../middlewares/withRateLimited';
@@ -47,6 +47,7 @@ export const listOrganizationPostsRouter = router({
         });
       }
 
+      // type Result = z.infer<typeof >;
       const result = await db.query.postsToOrganizations.findMany({
         where: (table, { eq }) => eq(table.organizationId, org.id),
         with: {
@@ -56,7 +57,7 @@ export const listOrganizationPostsRouter = router({
 
       // TODO: fixing for demo but should be at the DB level
       const sorted = result
-        .map((res) => res.post)
+        .map((res) => res.post as Post)
         .sort(
           (a, b) =>
             new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime(),
