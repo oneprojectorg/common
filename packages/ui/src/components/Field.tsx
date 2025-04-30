@@ -52,7 +52,7 @@ export const FieldError = (props: FieldErrorProps) => {
       {...props}
       className={composeTailwindRenderProps(
         props.className,
-        'text-sm text-red-600',
+        'text-sm text-functional-red',
       )}
     />
   );
@@ -96,19 +96,18 @@ export const inputStyles = tv({
     color: {
       primary: '',
       muted: 'bg-offWhite text-darkGray',
+      error: 'border-functional-red outline-functional-red',
     },
     size: {
       small: 'px-4 py-2',
-      medium: '',
     },
     hasIcon: {
       true: 'w-full pl-10',
-      false: '',
+      false: 'outline-functional-red',
     },
   },
   defaultVariants: {
     color: 'primary',
-    size: 'medium',
     hasIcon: false,
   },
 });

@@ -7,6 +7,7 @@ import type {
   ValidationResult,
 } from 'react-aria-components';
 
+import { cn } from '../lib/utils';
 import { composeTailwindRenderProps } from '../utils';
 import {
   Description,
@@ -56,9 +57,14 @@ export const TextField = ({
       )}
     >
       {label && (
-        <Label className={labelClassName}>
+        <Label
+          className={cn(
+            labelClassName,
+            !!errorMessage && 'text-functional-red',
+          )}
+        >
           {label}
-          {props.isRequired && <span className="text-red"> *</span>}
+          {props.isRequired && <span className="text-functional-red"> *</span>}
         </Label>
       )}
       <FieldGroup className={fieldClassName}>
@@ -70,6 +76,7 @@ export const TextField = ({
         ) : (
           <Input
             {...inputProps}
+            color={errorMessage ? 'error' : inputProps?.color}
             ref={ref as React.RefObject<HTMLInputElement>}
           />
         )}
