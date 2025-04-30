@@ -1,4 +1,4 @@
-import { db } from '@op/db/client';
+import { db, sql } from '@op/db/client';
 import {
   links,
   organizationUsers,
@@ -203,8 +203,17 @@ export const createOrganization = async ({
                 termUri: geoName.geonameId.toString(),
                 data: geoName,
               })
-              .onConflictDoNothing()
+              // just update in case we have new info from the API
+              .onConflictDoUpdate({
+                target: [taxonomyTerms.termUri, taxonomyTerms.taxonomyId],
+                set: {
+                  // set the existing value. This is so we can get the value back without an extra call
+                  label: sql`excluded.label`,
+                },
+              })
               .returning();
+
+            console.log('TERMS', term);
 
             await tx
               .insert(organizationsWhereWeWork)

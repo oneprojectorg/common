@@ -91,7 +91,6 @@ export const createOrganizationRouter = router({
       const { user } = ctx;
 
       try {
-        console.log('DATA!', JSON.stringify(input.whereWeWork));
         const org = await createOrganization({ data: input, user });
 
         return organizationsEncoder.parse(org);
