@@ -1,5 +1,12 @@
 import { relations } from 'drizzle-orm';
-import { pgTable, text, unique, uuid, varchar } from 'drizzle-orm/pg-core';
+import {
+  jsonb,
+  pgTable,
+  text,
+  unique,
+  uuid,
+  varchar,
+} from 'drizzle-orm/pg-core';
 
 import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
 
@@ -31,6 +38,7 @@ export const taxonomyTerms = pgTable(
     // @ts-expect-error - circular reference somehow isn't inferring the correct type
     parentId: uuid('parent_id').references(() => taxonomyTerms.id),
     // path: sql`ltree`.type('path'), // We might need this if we have deep structures. For now we leave it off though until the need arises
+    data: jsonb('data'),
     ...timestamps,
   },
   (table) => {

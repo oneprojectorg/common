@@ -6,6 +6,7 @@ import {
   integer,
   pgEnum,
   pgTable,
+  primaryKey,
   text,
   uuid,
   varchar,
@@ -79,7 +80,6 @@ export const organizations = pgTable(
       onUpdate: 'cascade',
     }),
 
-    // whereWeWork: uuid().references(() => taxonomyTerms.id)
     // where we work
     // whereWeWork: jsonb(),
     ...timestamps,
@@ -111,6 +111,27 @@ export const organizationsRelations = relations(
     }),
     outgoingRelationships: many(organizationRelationships),
     incomingRelationships: many(organizationRelationships),
+  }),
+);
+
+export const organizationsWhereWeWork = pgTable(
+  'organizations_where_we_work',
+  {
+    organizationId: uuid('organization_id')
+      .notNull()
+      .references(() => organizations.id, {
+        onUpdate: 'cascade',
+        onDelete: 'cascade',
+      }),
+    taxonomyTermId: uuid('taxonomy_term_id')
+      .notNull()
+      .references(() => taxonomyTerms.id, {
+        onUpdate: 'cascade',
+        onDelete: 'cascade',
+      }),
+  },
+  (table) => ({
+    pk: primaryKey(table.organizationId, table.taxonomyTermId),
   }),
 );
 

@@ -5,6 +5,7 @@ export {
   organizations,
   organizationsRelations,
   orgTypeEnum,
+  organizationsWhereWeWork,
 } from './tables/organizations.sql';
 export type { Organization } from './tables/organizations.sql';
 export {

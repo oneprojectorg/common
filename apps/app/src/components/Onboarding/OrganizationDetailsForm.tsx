@@ -18,7 +18,7 @@ const multiSelectOptionValidator = z.object({
   id: z.string(),
   label: z.string().max(20),
   isNewValue: z.boolean().default(false).optional(),
-  data: z.any().optional(),
+  data: z.record(z.any()).default({}),
 });
 
 export const validator = z.object({
