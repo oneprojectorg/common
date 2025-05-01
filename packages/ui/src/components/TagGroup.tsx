@@ -34,7 +34,7 @@ const ColorContext = createContext<Color>('transparent');
 
 const tagStyles = tv({
   extend: focusRing,
-  base: 'flex max-w-fit cursor-default items-center gap-1 rounded bg-neutral-gray1 p-2',
+  base: 'flex max-w-fit cursor-default items-center gap-1 rounded bg-neutral-gray1 p-2 leading-none',
   variants: {
     color: {
       transparent: '',
@@ -62,7 +62,7 @@ const tagStyles = tv({
 
 export interface TagGroupProps<T>
   extends Omit<AriaTagGroupProps, 'children'>,
-  Pick<TagListProps<T>, 'items' | 'children' | 'renderEmptyState'> {
+    Pick<TagListProps<T>, 'items' | 'children' | 'renderEmptyState'> {
   color?: Color;
   label?: string;
   description?: string;
@@ -99,7 +99,7 @@ export const TagGroup = <T extends object>({
           items={items}
           renderEmptyState={renderEmptyState}
           {...tagListProps}
-          className={twMerge('flex flex-wrap gap-1', tagListProps?.className)}
+          className={twMerge('flex flex-wrap gap-2', tagListProps?.className)}
         >
           {children}
         </TagList>

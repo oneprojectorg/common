@@ -27,7 +27,7 @@ const ContactLink = ({
 };
 
 const ProfileAbout = ({ profile }: { profile: Organization }) => {
-  const { mission, email, website, orgType } = profile;
+  const { mission, email, website, orgType, whereWeWork, strategies } = profile;
 
   return (
     <div className="flex flex-col gap-8">
@@ -75,6 +75,17 @@ const ProfileAbout = ({ profile }: { profile: Organization }) => {
         <section className="flex flex-col gap-4 text-neutral-charcoal">
           <Header3>Mission Statement</Header3>
           <p>{mission}</p>
+        </section>
+      ) : null}
+
+      {strategies?.length > 0 ? (
+        <section className="flex flex-col gap-4 text-neutral-charcoal">
+          <Header3>Strategies</Header3>
+          <TagGroup>
+            {strategies.map((strategy) => (
+              <Tag>{strategy.label}</Tag>
+            ))}
+          </TagGroup>
         </section>
       ) : null}
     </div>

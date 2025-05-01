@@ -2,6 +2,7 @@ import {
   objectsInStorage,
   organizationUsers,
   organizations,
+  organizationsWhereWeWork,
 } from '@op/db/schema';
 import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
@@ -15,6 +16,7 @@ export const storageItemEncoder = createSelectSchema(objectsInStorage).pick({
   name: true,
   // TODO: add metadata but make sure TRPC can resolve the type properly
 });
+
 export const organizationsEncoder = createSelectSchema(organizations)
   .pick({
     id: true,
@@ -34,6 +36,7 @@ export const organizationsEncoder = createSelectSchema(organizations)
     projects: z.array(projectEncoder).optional(),
     links: z.array(linksEncoder).default([]),
     whereWeWork: z.array(taxonomyTermsEncoder).default([]),
+    strategies: z.array(taxonomyTermsEncoder).default([]),
     headerImage: storageItemEncoder.nullish(),
     avatarImage: storageItemEncoder.nullish(),
   });

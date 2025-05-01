@@ -6,6 +6,9 @@ export {
   organizationsRelations,
   orgTypeEnum,
   organizationsWhereWeWork,
+  organizationsWhereWeWorkRelations,
+  organizationsStrategies, // reconsider these tables as possible graphs and edges
+  organizationsStrategiesRelations,
 } from './tables/organizations.sql';
 export type { Organization } from './tables/organizations.sql';
 export {

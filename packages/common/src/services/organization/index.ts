@@ -3,6 +3,7 @@ import {
   links,
   organizationUsers,
   organizations,
+  organizationsStrategies,
   organizationsWhereWeWork,
   taxonomyTerms,
 } from '@op/db/schema';
@@ -30,19 +31,41 @@ export const getOrganization = async ({
 
   // assertAccess({ organization, permission: 'read' }, user.roles);
 
-  const result = await db.query.organizations.findFirst({
-    where: slug
-      ? (table, { eq }) => eq(table.slug, slug)
-      : (table, { eq }) => eq(table.id, id!),
-    with: {
-      projects: true,
-      links: true,
-      headerImage: true,
-      avatarImage: true,
-    },
-  });
+  try {
+    const result = await db.query.organizations.findFirst({
+      where: slug
+        ? (table, { eq }) => eq(table.slug, slug)
+        : (table, { eq }) => eq(table.id, id!),
+      with: {
+        projects: true,
+        links: true,
+        headerImage: true,
+        avatarImage: true,
+        whereWeWork: {
+          with: {
+            term: true,
+          },
+        },
+        strategies: {
+          with: {
+            term: true,
+          },
+        },
+      },
+    });
 
-  return result;
+    if (!result) {
+      return;
+    }
+
+    result.whereWeWork = result.whereWeWork.map((record) => record.term);
+    result.strategies = result.strategies.map((record) => record.term);
+
+    return result;
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
 };
 
 export const geoNamesDataSchema = z
@@ -78,6 +101,11 @@ export const organizationInputSchema = z
     headerImageId: z.string().optional(),
     avatarImageId: z.string().optional(),
     whereWeWork: z.array(whereWeWorkSchema),
+    strategies: z.array(
+      z.object({
+        id: z.string(),
+      }),
+    ),
   })
   .strip()
   .partial();
@@ -213,8 +241,6 @@ export const createOrganization = async ({
               })
               .returning();
 
-            console.log('TERMS', term);
-
             await tx
               .insert(organizationsWhereWeWork)
               .values({
@@ -224,6 +250,23 @@ export const createOrganization = async ({
               .onConflictDoNothing();
           }
         }),
+      );
+    }
+    // add all stategy terms to the org (strategy terms already exist in the DB)
+    // TODO: parallelize this
+    const { strategies } = data;
+
+    if (strategies) {
+      await Promise.all(
+        strategies.map((strategy) =>
+          tx
+            .insert(organizationsStrategies)
+            .values({
+              organizationId: newOrg.id,
+              taxonomyTermId: strategy.id,
+            })
+            .onConflictDoNothing(),
+        ),
       );
     }
 
