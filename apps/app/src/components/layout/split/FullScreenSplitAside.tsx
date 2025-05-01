@@ -1,3 +1,5 @@
+import Image from 'next/image';
+
 import { Header2 } from '@/components/Header';
 
 import { SideImage } from './assets/SideImage';
@@ -19,6 +21,10 @@ export const FullScreenSplitAside = ({
           src="/bottomRight.png"
           alt="Bottom Right Decoration"
           className="absolute bottom-0 right-0 z-0"
+        />
+        <div
+          className="h-full w-full bg-repeat opacity-25 mix-blend-screen"
+          style={{ backgroundImage: 'url(/noise.png)' }}
         />
       </div>
       <div className="absolute right-0 top-0 -z-10 hidden size-full h-screen flex-col items-center justify-center text-offWhite sm:fixed sm:z-10 sm:w-1/3 sm:min-w-96 lg:flex">
