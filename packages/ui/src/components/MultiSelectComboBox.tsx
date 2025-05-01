@@ -12,6 +12,18 @@ export interface Option {
   isNewValue?: boolean;
 }
 
+export type MultiSelectComboBoxProps = {
+  items: Array<Option>;
+  label?: string;
+  placeholder?: string;
+  isRequired?: boolean;
+  value?: Array<Option>;
+  onChange?: (value: Array<Option>) => void;
+  onInputUpdate?: (value: string) => void;
+  errorMessage?: string | ((validation: ValidationResult) => string);
+  allowAdditions?: boolean;
+};
+
 export const MultiSelectComboBox = ({
   items = [],
   label,
@@ -21,16 +33,8 @@ export const MultiSelectComboBox = ({
   onChange,
   onInputUpdate,
   errorMessage,
-}: {
-  items: Array<Option>;
-  label?: string;
-  placeholder?: string;
-  isRequired?: boolean;
-  value?: Array<Option>;
-  onChange?: (value: Array<Option>) => void;
-  onInputUpdate?: (value: string) => void;
-  errorMessage?: string | ((validation: ValidationResult) => string);
-}) => {
+  allowAdditions,
+}: MultiSelectComboBoxProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -133,6 +137,10 @@ export const MultiSelectComboBox = ({
 
   // Add inputValue as a new tag if not empty and not already selected
   const addInputAsTag = () => {
+    if (!allowAdditions) {
+      return;
+    }
+
     const trimmed = inputValue.trim();
 
     if (trimmed && !selectedOptions.some((item) => item.label === trimmed)) {

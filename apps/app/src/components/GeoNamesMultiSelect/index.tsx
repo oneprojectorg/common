@@ -29,6 +29,7 @@ export const GeoNamesMultiSelect = ({
   return (
     <MultiSelectComboBox
       placeholder="Select locations…"
+      allowAdditions
       label={label}
       isRequired={isRequired}
       onChange={(value) => onChange(value)}

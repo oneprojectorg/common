@@ -8,6 +8,7 @@ import { useState } from 'react';
 import { z } from 'zod';
 
 import { GeoNamesMultiSelect } from '../GeoNamesMultiSelect';
+import { TermsMultiSelect } from '../TermsMultiSelect';
 import { FormContainer } from '../form/FormContainer';
 import { FormHeader } from '../form/FormHeader';
 import { useMultiStep } from '../form/multiStep';
@@ -322,22 +323,12 @@ export const OrganizationDetailsForm = ({
         <form.AppField
           name="strategies"
           children={(field) => (
-            <field.MultiSelectComboBox
+            <TermsMultiSelect
               label={t('Strategies/Tactics')}
+              taxonomy="splcStrategies"
               value={(field.state.value as Array<Option>) ?? []}
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
-              items={[
-                { id: 'placeholder1', label: 'Placeholder 1' },
-                { id: 'placeholder2', label: 'Placeholder 2' },
-                { id: 'placeholder3', label: 'Placeholder 3' },
-                { id: 'placeholder4', label: 'Placeholder 4' },
-                { id: 'placeholder5', label: 'Placeholder 5' },
-                { id: 'placeholder6', label: 'Placeholder 6' },
-                { id: 'placeholder7', label: 'Placeholder 7' },
-                { id: 'placeholder8', label: 'Placeholder 8' },
-                { id: 'placeholder9', label: 'Placeholder 9' },
-              ]}
             />
           )}
         />

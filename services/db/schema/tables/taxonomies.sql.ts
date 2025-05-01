@@ -1,5 +1,6 @@
-import { relations } from 'drizzle-orm';
+import { relations, sql } from 'drizzle-orm';
 import {
+  index,
   jsonb,
   pgTable,
   text,
@@ -41,11 +42,13 @@ export const taxonomyTerms = pgTable(
     data: jsonb('data'),
     ...timestamps,
   },
-  (table) => {
-    return {
-      taxonomyTermUriUnique: unique().on(table.taxonomyId, table.termUri),
-    };
-  },
+  (table) => [
+    ...serviceRolePolicies,
+    unique().on(table.taxonomyId, table.termUri),
+    index('taxonomyTerms_data_gin_index')
+      .using('gin', sql`to_tsvector('english', ${table.label})`)
+      .concurrently(),
+  ],
 );
 
 export const taxonomyTermsRelations = relations(
