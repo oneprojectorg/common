@@ -5,10 +5,11 @@ import { Button } from '@op/ui/Button';
 import { TextArea } from '@op/ui/Field';
 import { Form } from '@op/ui/Form';
 import { cn } from '@op/ui/utils';
+import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { LuImage, LuPaperclip } from 'react-icons/lu';
+import { LuImage, LuLeaf, LuPaperclip } from 'react-icons/lu';
 
 import { Header3 } from '@/components/Header';
 
@@ -81,9 +82,20 @@ const FeedAvatar = ({ children }: { children?: ReactNode }) => {
   );
 };
 
-const FeedMain = ({ children }: { children: ReactNode }) => {
+const FeedMain = ({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) => {
   return (
-    <div className="flex min-h-16 w-full flex-col items-start justify-start gap-3">
+    <div
+      className={cn(
+        'flex min-h-16 w-full flex-col items-start justify-start gap-3',
+        className,
+      )}
+    >
       {children}
     </div>
   );
@@ -197,6 +209,7 @@ export const ProfileFeed = ({
   profile: Organization;
   className?: string;
 }) => {
+  const t = useTranslations();
   const [posts] = trpc.organization.listPosts.useSuspenseQuery({
     slug: profile.slug,
   });
@@ -237,9 +250,13 @@ export const ProfileFeed = ({
         ))
       ) : (
         <FeedItem>
-          <FeedAvatar />
-          <FeedMain>
-            <FeedContent className="text-lightGray">No posts yet</FeedContent>
+          <FeedMain className="flex w-full flex-col items-center justify-center py-6">
+            <FeedContent className="flex flex-col items-center justify-center text-neutral-gray4">
+              <div className="flex size-10 items-center justify-center gap-4 rounded-full bg-neutral-gray1">
+                <LuLeaf />
+              </div>
+              <span>{t('No posts yet.')}</span>
+            </FeedContent>
           </FeedMain>
         </FeedItem>
       )}

@@ -1,7 +1,7 @@
 import { trpc } from '@op/trpc/client';
 import { AvatarUploader } from '@op/ui/AvatarUploader';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { useLocale, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { z } from 'zod';
 
@@ -40,8 +40,6 @@ export const PersonalDetailsForm = ({
   className,
 }: StepProps & { className?: string }) => {
   const t = useTranslations();
-  const locale = useLocale();
-  console.log('LOCLE', locale);
   const uploadImage = trpc.account.uploadImage.useMutation();
   const updateProfile = trpc.account.updateUserProfile.useMutation();
   const [profileImageUrl, setProfileImageUrl] = useState<string | undefined>();
