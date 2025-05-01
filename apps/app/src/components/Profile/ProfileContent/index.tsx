@@ -10,8 +10,19 @@ import { Header3 } from '@/components/Header';
 
 import { ProfileFeed, ProfileFeedPost } from '../ProfileFeed';
 
-const ContactLink = ({ children }: { children: React.ReactNode }) => {
-  return <div className="flex h-8 items-center gap-1">{children}</div>;
+const ContactLink = ({
+  children,
+  button,
+}: {
+  children: React.ReactNode;
+  button?: React.ReactNode;
+}) => {
+  return (
+    <div className="flex h-8 items-center gap-2">
+      <div className="flex items-center gap-1">{children}</div>
+      {button}
+    </div>
+  );
 };
 
 const ProfileAbout = ({ profile }: { profile: Organization }) => {
@@ -30,19 +41,22 @@ const ProfileAbout = ({ profile }: { profile: Organization }) => {
               </ContactLink>
             ) : null}
             {email ? (
-              <ContactLink>
-                <LuMail />
+              <ContactLink
+                button={
+                  <Button
+                    color="secondary"
+                    size="small"
+                    onPress={() => {
+                      navigator.clipboard.writeText(email);
+                      toast.success('Copied to clipboard');
+                    }}
+                  >
+                    <LuCopy /> Copy
+                  </Button>
+                }
+              >
+                <LuMail className="min-w-4" />
                 <Link href={`mailto:${email}`}>{email}</Link>
-                <Button
-                  color="secondary"
-                  size="small"
-                  onPress={() => {
-                    navigator.clipboard.writeText(email);
-                    toast.success('Copied to clipboard');
-                  }}
-                >
-                  <LuCopy /> Copy
-                </Button>
               </ContactLink>
             ) : null}
           </div>

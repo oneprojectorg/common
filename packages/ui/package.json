@@ -33,6 +33,7 @@
     "./Tabs": "./src/components/Tabs.tsx",
     "./TagGroup": "./src/components/TagGroup.tsx",
     "./TextField": "./src/components/TextField.tsx",
+    "./Toast": "./src/components/Toast.tsx",
     "./ToggleButton": "./src/components/ToggleButton.tsx",
     "./Tooltip": "./src/components/Tooltip.tsx",
     "./LoadingSpinner": "./src/components/LoadingSpinner.tsx",
