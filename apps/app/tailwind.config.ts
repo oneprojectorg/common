@@ -42,9 +42,9 @@ const config: Pick<Config, 'content' | 'theme' | 'presets'> = {
       },
       borderRadius: {
         ...defaultTheme.borderRadius,
-        xs: '0.125rem',
-        sm: '0.1875rem',
-        md: '0.5rem',
+        // xs: '0.125rem',
+        // sm: '0.1875rem',
+        // md: '0.5rem',
       },
       keyframes: {
         wiggle: {

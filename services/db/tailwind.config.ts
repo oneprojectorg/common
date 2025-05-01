@@ -14,8 +14,6 @@ const config: Pick<Config, 'content' | 'theme' | 'presets'> = {
       },
       borderRadius: {
         ...defaultTheme.borderRadius,
-        xs: '0.125rem',
-        sm: '0.25rem',
       },
       keyframes: {
         wiggle: {

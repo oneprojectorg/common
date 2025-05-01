@@ -227,6 +227,7 @@ export const OrganizationDetailsForm = ({
               onSelectionChange={field.handleChange}
               onBlur={field.handleBlur}
               errorMessage={getFieldErrorMessage(field)}
+              className="w-full"
             >
               <SelectItem id="nonprofit">{t('Nonprofit')}</SelectItem>
               <SelectItem id="forprofit">{t('Forprofit')}</SelectItem>
@@ -359,7 +360,7 @@ export const OrganizationDetailsForm = ({
           )}
         />
 
-        <div className="flex justify-between gap-2">
+        <div className="flex flex-col-reverse justify-between gap-4 sm:flex-row sm:flex-col sm:gap-2">
           <form.Button color="secondary" onPress={onBack}>
             {t('Back')}
           </form.Button>

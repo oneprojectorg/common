@@ -188,9 +188,11 @@ const config: Omit<Config, 'content'> = {
         },
       },
       borderRadius: {
-        lg: 'var(--radius)',
+        DEFAULT: '0.5rem',
+        lg: '0.5rem',
         md: '0.5rem',
-        sm: 'calc(var(--radius) - 0.25rem)',
+        // sm: 'calc(var(--radius) - 0.25rem)',
+        sm: '0.5rem',
       },
       boxShadow: {
         DEFAULT: '0px 0px 48px 0px rgba(20, 35, 38, 0.08)',

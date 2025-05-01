@@ -21,18 +21,6 @@ import type { DropdownSectionProps } from './ListBox';
 import { Popover } from './Popover';
 import type { PopoverProps } from './Popover';
 
-// const styles = tv({
-// extend: focusRing,
-// base: 'flex w-full min-w-[150px] cursor-default items-center gap-2 rounded-md border border-offWhite bg-white p-4 text-start text-sm text-black shadow-none transition placeholder:text-midGray',
-// variants: {
-// isDisabled: {
-// false:
-// 'text-black group-invalid:border-red-600 hover:bg-offWhite pressed:bg-offWhite',
-// true: 'border-neutral-300 bg-offWhite text-neutral-400',
-// },
-// },
-// });
-
 const selectStyles = tv({
   base: 'flex min-w-0 flex-row justify-between rounded-md border border-neutral-gray1 p-3 text-sm text-neutral-black outline outline-0 placeholder:text-neutral-gray4 active:border-neutral-gray4 active:outline hover:border-neutral-gray2 focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-data-blue disabled:border-neutral-gray2',
   variants: {
@@ -46,7 +34,7 @@ export type SelectVariantsProps = VariantProps<typeof selectStyles>;
 
 export interface SelectProps<T extends object>
   extends Omit<AriaSelectProps<T>, 'children'>,
-  SelectVariantsProps {
+    SelectVariantsProps {
   label?: string;
   description?: string;
   errorMessage?: string | ((validation: ValidationResult) => string);
@@ -71,7 +59,10 @@ export const Select = <T extends object>({
   ...props
 }: SelectProps<T>) => {
   return (
-    <AriaSelect {...props}>
+    <AriaSelect
+      {...props}
+      className={cn('flex flex-col gap-2', props.className)}
+    >
       {label && <Label>{label}</Label>}
       {props.customTrigger ? (
         props.customTrigger
@@ -82,12 +73,7 @@ export const Select = <T extends object>({
             props.buttonClassName,
           )}
         >
-          <SelectValue
-            className={cn(
-              // 'flex-1 truncate text-left',
-              props.selectValueClassName,
-            )}
-          />
+          <SelectValue className={cn(props.selectValueClassName)} />
           <ChevronDown
             aria-hidden
             className="ml-2 size-4 text-neutral-charcoal group-disabled:text-neutral-gray4"
@@ -97,7 +83,7 @@ export const Select = <T extends object>({
       {description && <Description>{description}</Description>}
       <FieldError>{errorMessage}</FieldError>
       <Popover
-        className="absolute z-10 mt-1 !max-h-60 w-[--trigger-width] min-w-[--trigger-width] rounded-md border border-gray-200 bg-white shadow-lg"
+        className="absolute z-10 !max-h-60 w-[--trigger-width] min-w-[--trigger-width] rounded border border-neutral-gray1 bg-white p-2 shadow"
         {...props.popoverProps}
       >
         <ListBox
