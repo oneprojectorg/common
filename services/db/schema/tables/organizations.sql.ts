@@ -80,8 +80,6 @@ export const organizations = pgTable(
       onUpdate: 'cascade',
     }),
 
-    // where we work
-    // whereWeWork: jsonb(),
     ...timestamps,
   },
   (table) => [

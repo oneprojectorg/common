@@ -137,13 +137,15 @@ export const FundingInformationForm = ({
               {field.state.value ? (
                 <form.AppField
                   name="acceptingApplications"
-                  children={(field) => (
+                  children={(acceptingApplicationsField) => (
                     <>
                       <ToggleRow>
                         Are organizations currently able to apply for funding?
                         <ToggleButton
-                          isSelected={field.state.value as boolean}
-                          onChange={field.handleChange}
+                          isSelected={
+                            acceptingApplicationsField.state.value as boolean
+                          }
+                          onChange={acceptingApplicationsField.handleChange}
                         />
                       </ToggleRow>
                       <div className="flex flex-col gap-4">
@@ -171,21 +173,29 @@ export const FundingInformationForm = ({
                           children={(field) => (
                             <div className="flex flex-col gap-2">
                               <field.TextField
-                                label="Where can organizations learn more?"
+                                label={
+                                  acceptingApplicationsField.state.value
+                                    ? 'Where can organizations apply?'
+                                    : 'Where can organizations learn more?'
+                                }
                                 value={field.state.value as string}
                                 onBlur={field.handleBlur}
                                 onChange={field.handleChange}
                                 errorMessage={getFieldErrorMessage(field)}
                                 inputProps={{
-                                  placeholder:
-                                    'Add a link to learn more about your funding process',
+                                  placeholder: acceptingApplicationsField.state
+                                    .value
+                                    ? 'Add a link where organizations can apply for funding'
+                                    : 'Add a link to learn more about your funding process',
                                   icon: <LuLink className="text-teal" />,
                                 }}
                               />
                               <span className="text-xs text-darkGray">
-                                Add a link where others can learn more about how
+                                {acceptingApplicationsField.state.value
+                                  ? null
+                                  : `Add a link where others can learn more about how
                                 to they might receive funding from your
-                                organization now or in the future.
+                                organization now or in the future.`}
                               </span>
                               <hr className="mt-6" />
                             </div>
