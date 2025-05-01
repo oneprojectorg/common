@@ -28,6 +28,7 @@ export const organizationsEncoder = createSelectSchema(organizations)
     website: true,
     isOfferingFunds: true,
     isReceivingFunds: true,
+    orgType: true,
   })
   .extend({
     projects: z.array(projectEncoder).optional(),

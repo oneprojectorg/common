@@ -1,6 +1,7 @@
 import type { Organization } from '@op/trpc/encoders';
 import { Button } from '@op/ui/Button';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
+import { Tag, TagGroup } from '@op/ui/TagGroup';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { LuCopy, LuGlobe, LuMail } from 'react-icons/lu';
@@ -26,7 +27,7 @@ const ContactLink = ({
 };
 
 const ProfileAbout = ({ profile }: { profile: Organization }) => {
-  const { mission, email, website } = profile;
+  const { mission, email, website, orgType } = profile;
 
   return (
     <div className="flex flex-col gap-8">
@@ -62,6 +63,14 @@ const ProfileAbout = ({ profile }: { profile: Organization }) => {
           </div>
         </section>
       ) : null}
+
+      <section className="flex flex-col gap-4 text-neutral-charcoal">
+        <Header3>Organizational Status</Header3>
+        <TagGroup>
+          <Tag>{orgType}</Tag>
+        </TagGroup>
+      </section>
+
       {mission ? (
         <section className="flex flex-col gap-4 text-neutral-charcoal">
           <Header3>Mission Statement</Header3>

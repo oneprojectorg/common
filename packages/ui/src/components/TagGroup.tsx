@@ -22,13 +22,11 @@ import { focusRing } from '../utils';
 import { Description, Label } from './Field';
 
 const colors = {
-  transparent: 'bg-transparent border-neutral-400 text-neutral-600',
-  gray: '  bg-neutral-300  text-neutral-700  border-neutral-400  hover:border-neutral-500',
-  green:
-    '  bg-green-300/20  text-green-400  border-green-300/10  hover:border-green-300/20',
-  yellow:
-    '  bg-yellow-300/20  text-yellow-400  border-yellow-300/10  hover:border-yellow-300/20',
-  blue: '  bg-blue-400/20  text-blue-300  border-blue-400/10  hover:border-blue-400/20',
+  transparent: '',
+  gray: '',
+  green: '',
+  yellow: '',
+  blue: '',
 };
 
 type Color = keyof typeof colors;
@@ -36,7 +34,7 @@ const ColorContext = createContext<Color>('transparent');
 
 const tagStyles = tv({
   extend: focusRing,
-  base: 'flex max-w-fit cursor-default items-center gap-1 rounded-full border px-3 py-0.5 text-xs transition',
+  base: 'flex max-w-fit cursor-default items-center gap-1 rounded bg-neutral-gray1 p-2',
   variants: {
     color: {
       transparent: '',
@@ -46,26 +44,25 @@ const tagStyles = tv({
       blue: '',
     },
     allowsRemoving: {
-      true: 'pr-1',
+      true: '',
     },
     isSelected: {
-      true: 'border-transparent bg-neutral-200/80 text-white forced-color-adjust-none',
+      true: '',
     },
     isDisabled: {
-      true: 'border-white/20 bg-transparent text-neutral-400',
+      true: '',
     },
   },
   compoundVariants: (Object.keys(colors) as Color[]).map((color) => ({
     isSelected: false,
     isDisabled: false,
     color,
-    class: colors[color],
   })),
 });
 
 export interface TagGroupProps<T>
   extends Omit<AriaTagGroupProps, 'children'>,
-    Pick<TagListProps<T>, 'items' | 'children' | 'renderEmptyState'> {
+  Pick<TagListProps<T>, 'items' | 'children' | 'renderEmptyState'> {
   color?: Color;
   label?: string;
   description?: string;
