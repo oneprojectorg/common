@@ -132,7 +132,7 @@ export const LoginPanel = () => {
   // TODO: using a tailwind v4 class here "min-w-xs"
   return (
     <div className="min-w-xs z-[999999] max-h-full w-auto rounded-md border-offWhite bg-white bg-clip-padding px-4 py-8 font-sans text-neutral-700 xs:w-96 sm:border-0">
-      <div className="flex flex-col gap-4 overflow-auto sm:gap-8">
+      <div className="flex flex-col gap-4 sm:gap-8">
         <section className="flex flex-col items-center justify-center gap-2">
           <div className="flex items-center gap-2 pb-2 sm:hidden">
             <OPLogo />
@@ -142,53 +142,53 @@ export const LoginPanel = () => {
             {user?.error?.name === 'AuthRetryableFetchError'
               ? 'Connection Issue'
               : (() => {
-                  if (login.isError || error || tokenError) {
-                    if (
-                      combinedError?.includes('invite') ||
-                      combinedError?.includes('waitlist')
-                    ) {
-                      return 'Stay tuned!';
-                    }
-
-                    return 'Oops!';
+                if (login.isError || error || tokenError) {
+                  if (
+                    combinedError?.includes('invite') ||
+                    combinedError?.includes('waitlist')
+                  ) {
+                    return 'Stay tuned!';
                   }
 
-                  if (!loginSuccess) {
-                    if (isSignup) {
-                      return `Sign up to ${APP_NAME}`;
-                    }
+                  return 'Oops!';
+                }
 
-                    return 'Welcome to Common.';
+                if (!loginSuccess) {
+                  if (isSignup) {
+                    return `Sign up to ${APP_NAME}`;
                   }
 
-                  return 'Check your email!';
-                })()}
+                  return 'Welcome to Common.';
+                }
+
+                return 'Check your email!';
+              })()}
           </Header1>
           <div className="px-4 text-center text-xs leading-[130%] text-darkGray sm:text-base">
             {user?.error?.name === 'AuthRetryableFetchError'
               ? `${APP_NAME} can\`t connect to the internet. Please check your internet connection and try again.`
               : (() => {
-                  if (combinedError || tokenError) {
-                    return (
-                      <span className={cn(tokenError && 'text-red-500')}>
-                        {combinedError ||
-                          tokenError ||
-                          'There was an error signing you in.'}
-                      </span>
-                    );
-                  }
-
-                  if (!loginSuccess) {
-                    return 'Connect with aligned organizations and funders building a new economy together';
-                  }
-
+                if (combinedError || tokenError) {
                   return (
-                    <span>
-                      A code was sent to <span>{email}</span>. Type the code
-                      below to sign in.
+                    <span className={cn(tokenError && 'text-red-500')}>
+                      {combinedError ||
+                        tokenError ||
+                        'There was an error signing you in.'}
                     </span>
                   );
-                })()}
+                }
+
+                if (!loginSuccess) {
+                  return 'Connect with aligned organizations and funders building a new economy together';
+                }
+
+                return (
+                  <span>
+                    A code was sent to <span>{email}</span>. Type the code
+                    below to sign in.
+                  </span>
+                );
+              })()}
           </div>
         </section>
 
@@ -201,7 +201,7 @@ export const LoginPanel = () => {
                     <Button
                       color="secondary"
                       variant="icon"
-                      className="text-black"
+                      className="w-full text-black"
                       onPress={() => {
                         void handleLogin();
                       }}
@@ -363,8 +363,8 @@ export const LoginPanel = () => {
             )}
 
             {user?.error?.name === 'AuthRetryableFetchError' ||
-            login.isError ||
-            !!combinedError ? null : (
+              login.isError ||
+              !!combinedError ? null : (
               <div className="flex flex-col items-center justify-center text-center text-xs text-midGray sm:text-sm">
                 {isSignup ? (
                   <span>
