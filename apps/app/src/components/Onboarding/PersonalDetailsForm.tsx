@@ -11,28 +11,27 @@ import { useMultiStep } from '../form/multiStep';
 import { getFieldErrorMessage, useAppForm } from '../form/utils';
 import type { StepProps } from '../form/utils';
 
-export const getValidator = (t: ReturnType<typeof useTranslations>) =>
-  z.object({
-    fullName: z
-      .string()
-      .min(1, {
-        message: t('Enter your full name'),
-      })
-      .max(20, {
-        message: t('Must be at most 20 characters'),
-      }),
-    title: z
-      .string()
-      .min(1, {
-        message: t('Enter your professional title'),
-      })
-      .max(20, {
-        message: t('Must be at most 20 characters'),
-      }),
-    profileImageUrl: z.string().optional(),
-  });
+export const validator = z.object({
+  fullName: z
+    .string()
+    .min(1, {
+      message: 'Enter your full name',
+    })
+    .max(20, {
+      message: 'Must be at most 20 characters',
+    }),
+  title: z
+    .string()
+    .min(1, {
+      message: 'Enter your professional title',
+    })
+    .max(20, {
+      message: 'Must be at most 20 characters',
+    }),
+  profileImageUrl: z.string().optional(),
+});
 
-type FormFields = z.infer<ReturnType<typeof getValidator>>;
+type FormFields = z.infer<typeof validator>;
 
 export const PersonalDetailsForm = ({
   defaultValues,
@@ -46,11 +45,10 @@ export const PersonalDetailsForm = ({
 
   const { onNext } = useMultiStep();
   // If a resolver is provided, use it; otherwise, use the localized validator
-  const validatorInstance = getValidator(t);
   const form = useAppForm({
     defaultValues: defaultValues as FormFields,
     validators: {
-      onChange: resolver ? resolver : validatorInstance,
+      onChange: resolver ? resolver : validator,
     },
     onSubmit: async ({ value }: { value: FormFields }) => {
       await updateProfile.mutateAsync({

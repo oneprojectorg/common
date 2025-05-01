@@ -3,8 +3,8 @@ import { AvatarUploader } from '@op/ui/AvatarUploader';
 import { BannerUploader } from '@op/ui/BannerUploader';
 import type { Option } from '@op/ui/MultiSelectComboBox';
 import { SelectItem } from '@op/ui/Select';
-import { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 import { z } from 'zod';
 
 import { GeoNamesMultiSelect } from '../GeoNamesMultiSelect';
@@ -22,27 +22,27 @@ const multiSelectOptionValidator = z.object({
   data: z.record(z.any()).default({}),
 });
 
-export const validator = (t: ReturnType<typeof useTranslations>) => z.object({
+export const validator = z.object({
   name: z
     .string()
-    .min(1, { message: t('Enter a name for your organization') })
-    .max(20, { message: t('Must be at most 20 characters') })
+    .min(1, { message: 'Enter a name for your organization' })
+    .max(20, { message: 'Must be at most 20 characters' })
     .optional(),
   website: z
     .string()
-    .url({ message: t('Enter a valid website address') })
-    .min(1, { message: t('Must be at least 1 character') })
-    .max(200, { message: t('Must be at most 200 characters') }),
+    .url({ message: 'Enter a valid website address' })
+    .min(1, { message: 'Must be at least 1 character' })
+    .max(200, { message: 'Must be at most 200 characters' }),
   email: z
     .string()
-    .email({ message: t('Invalid email') })
-    .max(20, { message: t('Must be at most 20 characters') })
+    .email({ message: 'Invalid email' })
+    .max(20, { message: 'Must be at most 20 characters' })
     .optional(),
-  orgType: z.string().max(20, { message: t('Must be at most 20 characters') }),
-  bio: z.string().max(200, { message: t('Must be at most 200 characters') }),
+  orgType: z.string().max(20, { message: 'Must be at most 20 characters' }),
+  bio: z.string().max(200, { message: 'Must be at most 200 characters' }),
   mission: z
     .string()
-    .max(200, { message: t('Must be at most 200 characters') })
+    .max(200, { message: 'Must be at most 200 characters' })
     .optional(),
   whereWeWork: z.array(multiSelectOptionValidator).optional(),
   focusAreas: z.array(multiSelectOptionValidator).optional(),
@@ -96,7 +96,7 @@ export const OrganizationDetailsForm = ({
     >
       <FormContainer>
         <FormHeader text={t('Add your organization’s details')}>
-          {t('We\'ve pre-filled information about [ORGANIZATION].')}
+          {t("We've pre-filled information about [ORGANIZATION].")}
           <br />
           {t('Please review and make any necessary changes.')}
         </FormHeader>
@@ -345,11 +345,15 @@ export const OrganizationDetailsForm = ({
           name="networkOrganization"
           children={(field) => (
             <ToggleRow>
-              {t('Does your organization serve as a network or coalition with member organizations?')}
+              {t(
+                'Does your organization serve as a network or coalition with member organizations?',
+              )}
               <field.ToggleButton
                 isSelected={field.state.value as boolean}
                 onChange={field.handleChange}
-                aria-label={t('Does your organization serve as a network or coalition with member organizations?')}
+                aria-label={t(
+                  'Does your organization serve as a network or coalition with member organizations?',
+                )}
               />
             </ToggleRow>
           )}

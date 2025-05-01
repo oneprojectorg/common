@@ -15,7 +15,7 @@ import {
 } from './OrganizationDetailsForm';
 import {
   PersonalDetailsForm,
-  getValidator as PersonalDetailsFormValidator,
+  validator as PersonalDetailsFormValidator,
 } from './PersonalDetailsForm';
 
 const resolvers = {

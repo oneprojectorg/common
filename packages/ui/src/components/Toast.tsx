@@ -1,6 +1,5 @@
 'use client';
 
-import { ReactNode } from 'react';
 import { LuCircleAlert, LuCircleCheck, LuX } from 'react-icons/lu';
 import { Toaster as Sonner } from 'sonner';
 
