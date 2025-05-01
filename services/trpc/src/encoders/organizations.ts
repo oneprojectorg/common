@@ -2,7 +2,6 @@ import {
   objectsInStorage,
   organizationUsers,
   organizations,
-  organizationsWhereWeWork,
 } from '@op/db/schema';
 import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';

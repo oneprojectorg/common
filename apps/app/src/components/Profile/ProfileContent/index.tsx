@@ -27,7 +27,7 @@ const ContactLink = ({
 };
 
 const ProfileAbout = ({ profile }: { profile: Organization }) => {
-  const { mission, email, website, orgType, whereWeWork, strategies } = profile;
+  const { mission, email, website, orgType, strategies } = profile;
 
   return (
     <div className="flex flex-col gap-8">

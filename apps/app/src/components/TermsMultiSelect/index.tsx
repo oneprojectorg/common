@@ -22,8 +22,8 @@ export const TermsMultiSelect = ({
   taxonomy: string;
   value: Array<Option>;
   onChange: (value: Array<Option>) => void;
-  isRequired: boolean;
-} & MultiSelectComboBoxProps) => {
+  isRequired?: boolean;
+} & Omit<MultiSelectComboBoxProps, 'items'>) => {
   const [termsQuery, setTermsQuery] = useState('');
   const { data: terms } = trpc.taxonomy.getTerms.useQuery({
     name: taxonomy,
