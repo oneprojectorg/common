@@ -25,13 +25,14 @@ import { Header1 } from '../src/components/Header';
 import { Modal } from '../src/components/Modal';
 // import { Popover } from '../src/components/Popover';
 // import { SearchField } from '../src/components/SearchField';
-// import { Select, SelectItem } from '../src/components/Select';
+import { Select, SelectItem } from '../src/components/Select';
 // import { Separator } from '../src/components/Separator';
 // import { Slider } from '../src/components/Slider';
 // import { Cell, Column, Row, Table } from '../src/components/Table';
 import { Tab, TabList, TabPanel, Tabs } from '../src/components/Tabs';
 import { TextField } from '../src/components/TextField';
 import * as ButtonStories from './Button.stories';
+import * as SelectStories from './Select.stories';
 import * as TabsStories from './Tabs.stories';
 import * as TextFieldStories from './TextField.stories';
 
@@ -64,7 +65,10 @@ export const AllComponents = () => (
       </DialogTrigger>
     </section>
     */}
-
+    <section>
+      <h2 className="mb-4 text-xl font-bold">Select</h2>
+      <SelectStories.Example />
+    </section>
     <section>
       <h2 className="mb-4 text-xl font-bold">Buttons</h2>
       <ButtonStories.Example />
@@ -78,6 +82,7 @@ export const AllComponents = () => (
       <h2 className="mb-4 text-xl font-bold">Input</h2>
       <TextFieldStories.Example />
     </section>
+
     <section>
       <h2 className="mb-4 text-xl font-bold">Typography</h2>
       <Header1>Header Level 1</Header1>
