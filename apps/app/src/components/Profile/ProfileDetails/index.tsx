@@ -21,26 +21,26 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
     <div className="flex flex-wrap gap-3 sm:gap-4">
       {isReceivingFunds
         ? receivingFundingLinks.map((link) => (
-            <TooltipTrigger key={link.id}>
-              <ButtonLink href={link.href} className="min-w-full sm:min-w-44">
-                <LuArrowUpRight />
-                Contribute
-              </ButtonLink>
-              <Tooltip>We accept applications on a rolling basis</Tooltip>
-            </TooltipTrigger>
-          ))
+          <TooltipTrigger key={link.id}>
+            <ButtonLink href={link.href} className="min-w-full sm:min-w-44">
+              <LuArrowUpRight />
+              Contribute
+            </ButtonLink>
+            <Tooltip>We accept applications on a rolling basis</Tooltip>
+          </TooltipTrigger>
+        ))
         : null}
 
       {isOfferingFunds
         ? offeringFundingLinks.map((link) => (
-            <TooltipTrigger key={link.id}>
-              <ButtonLink href={link.href} className="min-w-full sm:min-w-44">
-                <LuInfo />
-                Learn more
-              </ButtonLink>
-              <Tooltip>We’re an invite-only granting organization</Tooltip>
-            </TooltipTrigger>
-          ))
+          <TooltipTrigger key={link.id}>
+            <ButtonLink href={link.href} className="min-w-full sm:min-w-44">
+              <LuInfo />
+              Learn more
+            </ButtonLink>
+            <Tooltip>We’re an invite-only granting organization</Tooltip>
+          </TooltipTrigger>
+        ))
         : null}
 
       <Button color="secondary" className="min-w-full sm:min-w-44">
@@ -55,7 +55,6 @@ export const ProfileDetails = ({ profile }: { profile: Organization }) => {
   return (
     <div className="flex w-full flex-col gap-3 px-4">
       <ProfileSummary profile={profile} />
-      <div className="text-base">{profile.description}</div>
       <ProfileInteractions profile={profile} />
     </div>
   );

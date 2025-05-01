@@ -9,6 +9,9 @@ import { ErrorBoundary } from 'next/dist/client/components/error-boundary';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import React, { Suspense } from 'react';
+import { LuArrowLeft } from 'react-icons/lu';
+
+import { Link } from '@/lib/i18n';
 
 import { Header1 } from '@/components/Header';
 import { ImageHeader } from '@/components/ImageHeader';
@@ -72,6 +75,12 @@ export const OrganizationProfile = ({ slug }: { slug: string }) => {
 
   return (
     <AuthWrapper>
+      {/* nav arrow */}
+      <header className="absolute left-0 top-0 z-50 px-4 py-3 sm:hidden">
+        <Link href="/">
+          <LuArrowLeft className="size-6 text-neutral-offWhite" />'
+        </Link>
+      </header>
       <div className="flex w-full flex-col gap-3 outline outline-1 -outline-offset-1 outline-offWhite">
         <ErrorBoundary errorComponent={() => <div>Could not load profile</div>}>
           <Suspense fallback={<div>Loading...</div>}>

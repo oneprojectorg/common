@@ -34,5 +34,9 @@
   "Enter a valid website address": "Enter a valid website address",
   "Must be at least 1 character": "Must be at least 1 character",
   "Must be at most 200 characters": "Must be at most 200 characters",
-  "Invalid email": "Invalid email"
+  "Invalid email": "Invalid email",
+  "No posts yet.": "No posts yet.",
+  "Post": "Post",
+  "Media": "Media",
+  "Resource": "Resource"
 }

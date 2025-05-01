@@ -109,6 +109,7 @@ export const ProfileFeedPost = ({
   className?: string;
 }) => {
   const [content, setContent] = useState('');
+  const t = useTranslations();
   const utils = trpc.useContext();
   const createPost = trpc.organization.createPost.useMutation({
     onMutate: (newPost) => {
@@ -182,18 +183,18 @@ export const ProfileFeedPost = ({
             />
             {content.length > 0 && (
               <Button color="secondary" type="submit">
-                Post
+                {t('Post')}
               </Button>
             )}
           </Form>
           <div className="flex gap-6">
             <div className="flex gap-1 text-charcoal">
               <LuImage className="size-4" />
-              Media
+              {t('Media')}
             </div>
             <div className="flex gap-1 text-charcoal">
               <LuPaperclip className="size-4" />
-              Resource
+              {t('Resource')}
             </div>
           </div>
         </FeedMain>

@@ -53,37 +53,39 @@ const UserAvatarMenu = () => {
 
 export const SiteHeader = () => {
   return (
-    <header className="hidden h-14 w-full items-center justify-between border-b px-4 py-7 sm:flex md:px-28">
-      <Link href="/" className="flex gap-1">
-        <OPLogo />
-        <CommonLogo />
-      </Link>
-      <TextField
-        inputProps={{
-          placeholder: 'Search',
-          color: 'muted',
-          size: 'small',
-          icon: <LuSearch className="text-darkGray" />,
-        }}
-        className="w-96"
-        aria-label="Search"
-      />
+    <>
+      <header className="hidden h-14 w-full items-center justify-between border-b px-4 py-7 sm:flex md:px-28">
+        <Link href="/" className="flex gap-1">
+          <OPLogo />
+          <CommonLogo />
+        </Link>
+        <TextField
+          inputProps={{
+            placeholder: 'Search',
+            color: 'muted',
+            size: 'small',
+            icon: <LuSearch className="text-darkGray" />,
+          }}
+          className="w-96"
+          aria-label="Search"
+        />
 
-      <ClientOnly>
-        <ErrorBoundary
-          errorComponent={() => (
-            <div className="size-8 rounded-full border bg-white shadow" />
-          )}
-        >
-          <Suspense
-            fallback={
-              <Skeleton className="size-8 rounded-full border bg-white shadow" />
-            }
+        <ClientOnly>
+          <ErrorBoundary
+            errorComponent={() => (
+              <div className="size-8 rounded-full border bg-white shadow" />
+            )}
           >
-            <UserAvatarMenu />
-          </Suspense>
-        </ErrorBoundary>
-      </ClientOnly>
-    </header>
+            <Suspense
+              fallback={
+                <Skeleton className="size-8 rounded-full border bg-white shadow" />
+              }
+            >
+              <UserAvatarMenu />
+            </Suspense>
+          </ErrorBoundary>
+        </ClientOnly>
+      </header>
+    </>
   );
 };
