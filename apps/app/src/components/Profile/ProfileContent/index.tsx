@@ -83,14 +83,14 @@ const ProfileAbout = ({ profile }: { profile: Organization }) => {
 
 export const ProfileGrid = ({ profile }: { profile: Organization }) => {
   return (
-    <div className="hidden grid-cols-3 border-t sm:grid">
-      <div className="col-span-2 flex flex-col gap-8">
+    <div className="hidden grid-cols-[repeat(15,minmax(0,1fr))] border-t sm:grid">
+      <div className="col-span-9 flex flex-col gap-8">
         <ProfileFeedPost profile={profile} className="border-b px-4 py-6" />
         <Suspense fallback={<div>Loading...</div>}>
           <ProfileFeed profile={profile} className="px-4 py-6" />
         </Suspense>
       </div>
-      <div className="border-l px-4 py-6">
+      <div className="col-span-6 border-l px-4 py-6">
         <ProfileAbout profile={profile} />
       </div>
     </div>
