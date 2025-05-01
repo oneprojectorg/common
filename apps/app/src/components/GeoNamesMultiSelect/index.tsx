@@ -17,7 +17,7 @@ export const GeoNamesMultiSelect = ({
   isRequired: boolean;
 }) => {
   const [whereWeWorkQuery, setWhereWeWorkQuery] = useState('');
-  const { data: geoNames } = trpc.external.getGeoNames.useQuery(
+  const { data: geoNames } = trpc.taxonomy.getGeoNames.useQuery(
     {
       q: whereWeWorkQuery,
     },

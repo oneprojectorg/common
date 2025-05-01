@@ -25,7 +25,7 @@ export const TermsMultiSelect = ({
   isRequired: boolean;
 } & MultiSelectComboBoxProps) => {
   const [termsQuery, setTermsQuery] = useState('');
-  const { data: terms } = trpc.external.getTerms.useQuery({
+  const { data: terms } = trpc.taxonomy.getTerms.useQuery({
     name: taxonomy,
     q: termsQuery.length >= 2 ? termsQuery : undefined,
   });
