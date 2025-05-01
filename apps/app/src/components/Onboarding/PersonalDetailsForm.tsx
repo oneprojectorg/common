@@ -72,39 +72,42 @@ export const PersonalDetailsForm = ({
         <FormHeader text={t('Add your personal details')}>
           {t('Tell us about yourself so others can find you.')}
         </FormHeader>
-        <AvatarUploader
-          label={t('Profile Picture')}
-          value={profileImageUrl ?? undefined}
-          onChange={async (file: File): Promise<void> => {
-            const reader = new FileReader();
+        <div className="flex items-center justify-center">
+          <AvatarUploader
+            label={t('Profile Picture')}
+            value={profileImageUrl ?? undefined}
+            className="size-32"
+            onChange={async (file: File): Promise<void> => {
+              const reader = new FileReader();
 
-            reader.onload = async (e) => {
-              const base64 = (e.target?.result as string)?.split(',')[1];
+              reader.onload = async (e) => {
+                const base64 = (e.target?.result as string)?.split(',')[1];
 
-              if (!base64) {
-                return;
-              }
+                if (!base64) {
+                  return;
+                }
 
-              const dataUrl = `data:${file.type};base64,${base64}`;
+                const dataUrl = `data:${file.type};base64,${base64}`;
 
-              setProfileImageUrl(dataUrl);
+                setProfileImageUrl(dataUrl);
 
-              const res = await uploadImage.mutateAsync({
-                file: base64,
-                fileName: file.name,
-                mimeType: file.type,
-              });
+                const res = await uploadImage.mutateAsync({
+                  file: base64,
+                  fileName: file.name,
+                  mimeType: file.type,
+                });
 
-              if (res?.url) {
-                setProfileImageUrl(res.url);
-              }
-            };
+                if (res?.url) {
+                  setProfileImageUrl(res.url);
+                }
+              };
 
-            reader.readAsDataURL(file);
-          }}
-          uploading={uploadImage.isPending}
-          error={uploadImage.error?.message || undefined}
-        />
+              reader.readAsDataURL(file);
+            }}
+            uploading={uploadImage.isPending}
+            error={uploadImage.error?.message || undefined}
+          />
+        </div>
         <form.AppField
           name="fullName"
           children={(field) => (

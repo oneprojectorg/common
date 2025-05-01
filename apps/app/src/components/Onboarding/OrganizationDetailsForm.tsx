@@ -100,7 +100,7 @@ export const OrganizationDetailsForm = ({
           <br />
           {t('Please review and make any necessary changes.')}
         </FormHeader>
-        <div className="relative w-full pb-20">
+        <div className="relative w-full pb-12 sm:pb-20">
           <BannerUploader
             className="relative aspect-[128/55] w-full bg-offWhite"
             value={bannerImage?.url ?? undefined}
@@ -132,7 +132,7 @@ export const OrganizationDetailsForm = ({
             }}
           />
           <AvatarUploader
-            className="absolute bottom-0 left-4 aspect-square size-28"
+            className="absolute bottom-0 left-4 aspect-square size-20 sm:size-28"
             value={profileImage?.url ?? undefined}
             onChange={async (file: File): Promise<void> => {
               const reader = new FileReader();
