@@ -27,8 +27,8 @@ export const OnboardingFlow = () => {
       setValues(values);
       createOrganization
         .mutateAsync(processInputs(values))
-        .then((newOrg) => {
-          router.push(`/app/org/${newOrg.slug}?new=1`);
+        .then(() => {
+          router.push(`/org/?new=1`);
         })
         .catch((err) => {
           console.error('ERROR', err);

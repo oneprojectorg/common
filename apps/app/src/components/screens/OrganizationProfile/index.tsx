@@ -78,7 +78,7 @@ export const OrganizationProfile = ({ slug }: { slug: string }) => {
       {/* nav arrow */}
       <header className="absolute left-0 top-0 z-50 px-4 py-3 sm:hidden">
         <Link href="/">
-          <LuArrowLeft className="size-6 text-neutral-offWhite" />'
+          <LuArrowLeft className="size-6 text-neutral-offWhite" />
         </Link>
       </header>
       <div className="flex w-full flex-col gap-3 outline outline-1 -outline-offset-1 outline-offWhite">

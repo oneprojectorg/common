@@ -1,4 +1,5 @@
 import { ToggleButton } from '@op/ui/ToggleButton';
+import { useTranslations } from 'next-intl';
 import { LuLink } from 'react-icons/lu';
 import { z } from 'zod';
 
@@ -31,6 +32,7 @@ export const FundingInformationForm = ({
   className,
 }: StepProps & { className?: string }) => {
   const { onNext, onBack } = useMultiStep();
+  const t = useTranslations();
 
   const form = useAppForm({
     defaultValues,
@@ -210,11 +212,11 @@ export const FundingInformationForm = ({
           )}
         />
 
-        <div className="flex justify-between gap-2">
+        <div className="flex flex-col-reverse justify-between gap-4 sm:flex-row sm:gap-2">
           <form.Button color="secondary" onPress={onBack}>
             Back
           </form.Button>
-          <form.SubmitButton>Finish</form.SubmitButton>
+          <form.SubmitButton>{t('Continue')}</form.SubmitButton>
         </div>
       </FormContainer>
     </form>

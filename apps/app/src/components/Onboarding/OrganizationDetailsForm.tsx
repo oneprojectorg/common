@@ -360,7 +360,7 @@ export const OrganizationDetailsForm = ({
           )}
         />
 
-        <div className="flex flex-col-reverse justify-between gap-4 sm:flex-row sm:flex-col sm:gap-2">
+        <div className="flex flex-col-reverse justify-between gap-4 sm:flex-row sm:gap-2">
           <form.Button color="secondary" onPress={onBack}>
             {t('Back')}
           </form.Button>

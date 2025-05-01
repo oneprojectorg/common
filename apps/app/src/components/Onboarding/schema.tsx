@@ -17,11 +17,18 @@ import {
   PersonalDetailsForm,
   validator as PersonalDetailsFormValidator,
 } from './PersonalDetailsForm';
+import {
+  PrivacyPolicyForm,
+  validator as PrivacyPolicyFormValidator,
+} from './PrivacyPolicyForm';
+import { ToSForm, validator as ToSFormValidator } from './ToSForm';
 
 const resolvers = {
   PersonalDetailsForm: PersonalDetailsFormValidator,
   OrganizationDetailsForm: OrganizationDetailsFormValidator,
   FundingInformationForm: FundingInformationFormValidator,
+  ToSForm: ToSFormValidator,
+  PrivacyPolicyForm: PrivacyPolicyFormValidator,
 } as const;
 
 type FormType = z.infer<
@@ -32,6 +39,8 @@ export type Values = [
   Form<z.infer<typeof resolvers.PersonalDetailsForm>>,
   Form<z.infer<typeof resolvers.OrganizationDetailsForm>>,
   Form<z.infer<typeof resolvers.FundingInformationForm>>,
+  Form<z.infer<typeof resolvers.ToSForm>>,
+  Form<z.infer<typeof resolvers.PrivacyPolicyForm>>,
   Return<FormType>,
 ];
 
@@ -103,6 +112,42 @@ export const schema: Schema<Values> = [
               defaultValues={values}
               resolver={resolvers.FundingInformationForm}
               className="lg:w-[48rem]"
+            />
+          </MultiStepProvider>
+        </>
+      ),
+    },
+  },
+  {
+    form: {
+      values: () => ({
+        tosAccept: [false, []],
+      }),
+      render: ({ values, onNext, onBack }) => (
+        <>
+          <ProgressIndicator currentStep={3} />
+          <MultiStepProvider onNext={onNext} onBack={onBack}>
+            <ToSForm
+              defaultValues={values}
+              resolver={resolvers.PrivacyPolicyForm}
+            />
+          </MultiStepProvider>
+        </>
+      ),
+    },
+  },
+  {
+    form: {
+      values: () => ({
+        privacyPolicyAccept: [false, []],
+      }),
+      render: ({ values, onNext, onBack }) => (
+        <>
+          <ProgressIndicator currentStep={4} />
+          <MultiStepProvider onNext={onNext} onBack={onBack}>
+            <PrivacyPolicyForm
+              defaultValues={values}
+              resolver={resolvers.PrivacyPolicyForm}
             />
           </MultiStepProvider>
         </>
