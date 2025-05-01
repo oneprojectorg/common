@@ -16,18 +16,18 @@ export const getValidator = (t: ReturnType<typeof useTranslations>) =>
     fullName: z
       .string()
       .min(1, {
-        message: t('onboarding.personalDetails.validation.enterFullName'),
+        message: t('Enter your full name'),
       })
       .max(20, {
-        message: t('onboarding.personalDetails.validation.max20Chars'),
+        message: t('Must be at most 20 characters'),
       }),
     title: z
       .string()
       .min(1, {
-        message: t('onboarding.personalDetails.validation.enterTitle'),
+        message: t('Enter your professional title'),
       })
       .max(20, {
-        message: t('onboarding.personalDetails.validation.max20Chars'),
+        message: t('Must be at most 20 characters'),
       }),
     profileImageUrl: z.string().optional(),
   });
@@ -73,11 +73,11 @@ export const PersonalDetailsForm = ({
       className={className}
     >
       <FormContainer>
-        <FormHeader text={t('onboarding.personalDetails.header')}>
-          {t('onboarding.personalDetails.subheader')}
+        <FormHeader text={t('Add your personal details')}>
+          {t('Tell us about yourself so others can find you.')}
         </FormHeader>
         <AvatarUploader
-          label={t('onboarding.personalDetails.profilePicture')}
+          label={t('Profile Picture')}
           value={profileImageUrl ?? undefined}
           onChange={async (file: File): Promise<void> => {
             const reader = new FileReader();
@@ -113,14 +113,14 @@ export const PersonalDetailsForm = ({
           name="fullName"
           children={(field) => (
             <field.TextField
-              label={t('onboarding.personalDetails.fullName')}
+              label={t('Full Name')}
               isRequired
               value={field.state.value}
               onBlur={field.handleBlur}
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
               inputProps={{
-                placeholder: t('onboarding.personalDetails.enterFullName'),
+                placeholder: t('Enter your full name'),
               }}
             />
           )}
@@ -129,14 +129,14 @@ export const PersonalDetailsForm = ({
           name="title"
           children={(field) => (
             <field.TextField
-              label={t('onboarding.personalDetails.professionalTitle')}
+              label={t('Professional title')}
               isRequired
               value={field.state.value}
               onBlur={field.handleBlur}
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
               inputProps={{
-                placeholder: t('onboarding.personalDetails.enterTitle'),
+                placeholder: t('Enter your professional title'),
               }}
             />
           )}
@@ -146,7 +146,7 @@ export const PersonalDetailsForm = ({
           {updateProfile.isPending || uploadImage.isPending ? (
             <LoadingSpinner />
           ) : (
-            t('onboarding.personalDetails.continue')
+            t('Continue')
           )}
         </form.SubmitButton>
       </FormContainer>

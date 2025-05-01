@@ -25,24 +25,24 @@ const multiSelectOptionValidator = z.object({
 export const validator = (t: ReturnType<typeof useTranslations>) => z.object({
   name: z
     .string()
-    .min(1, { message: t('onboarding.organizationDetails.validation.enterName') })
-    .max(20, { message: t('onboarding.organizationDetails.validation.max20Chars') })
+    .min(1, { message: t('Enter a name for your organization') })
+    .max(20, { message: t('Must be at most 20 characters') })
     .optional(),
   website: z
     .string()
-    .url({ message: t('onboarding.organizationDetails.validation.enterValidWebsite') })
-    .min(1, { message: t('onboarding.organizationDetails.validation.min1Char') })
-    .max(200, { message: t('onboarding.organizationDetails.validation.max200Chars') }),
+    .url({ message: t('Enter a valid website address') })
+    .min(1, { message: t('Must be at least 1 character') })
+    .max(200, { message: t('Must be at most 200 characters') }),
   email: z
     .string()
-    .email({ message: t('onboarding.organizationDetails.validation.invalidEmail') })
-    .max(20, { message: t('onboarding.organizationDetails.validation.max20Chars') })
+    .email({ message: t('Invalid email') })
+    .max(20, { message: t('Must be at most 20 characters') })
     .optional(),
-  orgType: z.string().max(20, { message: t('onboarding.organizationDetails.validation.max20Chars') }),
-  bio: z.string().max(200, { message: t('onboarding.organizationDetails.validation.max200Chars') }),
+  orgType: z.string().max(20, { message: t('Must be at most 20 characters') }),
+  bio: z.string().max(200, { message: t('Must be at most 200 characters') }),
   mission: z
     .string()
-    .max(200, { message: t('onboarding.organizationDetails.validation.max200Chars') })
+    .max(200, { message: t('Must be at most 200 characters') })
     .optional(),
   whereWeWork: z.array(multiSelectOptionValidator).optional(),
   focusAreas: z.array(multiSelectOptionValidator).optional(),
@@ -95,10 +95,10 @@ export const OrganizationDetailsForm = ({
       className={className}
     >
       <FormContainer>
-        <FormHeader text={t('onboarding.organizationDetails.header')}>
-          {t('onboarding.organizationDetails.prefillNotice', { organization: '[ORGANIZATION]' })}
+        <FormHeader text={t('Add your organization’s details')}>
+          {t('We\'ve pre-filled information about [ORGANIZATION].')}
           <br />
-          {t('onboarding.organizationDetails.reviewNotice')}
+          {t('Please review and make any necessary changes.')}
         </FormHeader>
         <div className="relative w-full pb-20">
           <BannerUploader
@@ -168,7 +168,7 @@ export const OrganizationDetailsForm = ({
           name="name"
           children={(field) => (
             <field.TextField
-              
+              label={t('Name')}
               isRequired
               value={field.state.value as string}
               onBlur={field.handleBlur}
@@ -182,7 +182,7 @@ export const OrganizationDetailsForm = ({
           name="website"
           children={(field) => (
             <field.TextField
-              label={t('onboarding.organizationDetails.website')}
+              label={t('Website')}
               isRequired
               value={field.state.value as string}
               onBlur={field.handleBlur}
@@ -195,7 +195,7 @@ export const OrganizationDetailsForm = ({
           name="email"
           children={(field) => (
             <field.TextField
-              label={t('onboarding.organizationDetails.email')}
+              label={t('Email')}
               isRequired
               type="email"
               value={field.state.value as string}
@@ -210,7 +210,7 @@ export const OrganizationDetailsForm = ({
           name="whereWeWork"
           children={(field) => (
             <GeoNamesMultiSelect
-              label={t('onboarding.organizationDetails.whereWeWork')}
+              label={t('Where we work')}
               isRequired
               onChange={(value) => field.handleChange(value)}
               value={(field.state.value as Array<Option>) ?? []}
@@ -221,16 +221,16 @@ export const OrganizationDetailsForm = ({
           name="orgType"
           children={(field) => (
             <field.Select
-              label={t('onboarding.organizationDetails.orgStatus')}
-              placeholder={t('onboarding.organizationDetails.select')}
+              label={t('Organizational Status')}
+              placeholder={t('Select')}
               selectedKey={field.state.value as string}
               onSelectionChange={field.handleChange}
               onBlur={field.handleBlur}
               errorMessage={getFieldErrorMessage(field)}
             >
-              <SelectItem id="nonprofit">{t('onboarding.organizationDetails.nonprofit')}</SelectItem>
-              <SelectItem id="forprofit">{t('onboarding.organizationDetails.forprofit')}</SelectItem>
-              <SelectItem id="government">{t('onboarding.organizationDetails.governmentEntity')}</SelectItem>
+              <SelectItem id="nonprofit">{t('Nonprofit')}</SelectItem>
+              <SelectItem id="forprofit">{t('Forprofit')}</SelectItem>
+              <SelectItem id="government">{t('Government Entity')}</SelectItem>
             </field.Select>
           )}
         />
@@ -240,14 +240,14 @@ export const OrganizationDetailsForm = ({
           children={(field) => (
             <field.TextField
               useTextArea
-              label={t('onboarding.organizationDetails.bio')}
+              label={t('Bio')}
               value={field.state.value as string}
               onBlur={field.handleBlur}
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
               textareaProps={{
                 className: 'min-h-28',
-                placeholder: t('onboarding.organizationDetails.enterBio'),
+                placeholder: t('Enter a brief bio for your profile'),
               }}
             />
           )}
@@ -258,7 +258,7 @@ export const OrganizationDetailsForm = ({
           children={(field) => (
             <field.TextField
               useTextArea
-              label={t('onboarding.organizationDetails.missionStatement')}
+              label={t('Mission statement')}
               value={field.state.value as string}
               onBlur={field.handleBlur}
               onChange={field.handleChange}
@@ -266,7 +266,7 @@ export const OrganizationDetailsForm = ({
               className="min-h-24"
               textareaProps={{
                 className: 'min-h-28',
-                placeholder: t('onboarding.organizationDetails.enterMission'),
+                placeholder: t('Enter your mission statement or a brief bio'),
               }}
             />
           )}
@@ -276,8 +276,8 @@ export const OrganizationDetailsForm = ({
           name="focusAreas"
           children={(field) => (
             <field.MultiSelectComboBox
-              label={t('onboarding.organizationDetails.focusAreas')}
-              placeholder={t('onboarding.organizationDetails.selectOneOrMore')}
+              label={t('Focus Areas')}
+              placeholder={t('Select one or more')}
               value={(field.state.value as Array<Option>) ?? []}
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
@@ -300,7 +300,7 @@ export const OrganizationDetailsForm = ({
           name="communitiesServed"
           children={(field) => (
             <field.MultiSelectComboBox
-              label={t('onboarding.organizationDetails.communitiesServed')}
+              label={t('Communities Served')}
               value={(field.state.value as Array<Option>) ?? []}
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
@@ -322,7 +322,7 @@ export const OrganizationDetailsForm = ({
           name="strategies"
           children={(field) => (
             <field.MultiSelectComboBox
-              label={t('onboarding.organizationDetails.strategiesTactics')}
+              label={t('Strategies/Tactics')}
               value={(field.state.value as Array<Option>) ?? []}
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
@@ -345,11 +345,11 @@ export const OrganizationDetailsForm = ({
           name="networkOrganization"
           children={(field) => (
             <ToggleRow>
-              {t('onboarding.organizationDetails.networkQuestion')}
+              {t('Does your organization serve as a network or coalition with member organizations?')}
               <field.ToggleButton
                 isSelected={field.state.value as boolean}
                 onChange={field.handleChange}
-                aria-label={t('onboarding.organizationDetails.networkQuestion')}
+                aria-label={t('Does your organization serve as a network or coalition with member organizations?')}
               />
             </ToggleRow>
           )}
@@ -357,9 +357,9 @@ export const OrganizationDetailsForm = ({
 
         <div className="flex justify-between gap-2">
           <form.Button color="secondary" onPress={onBack}>
-            {t('onboarding.organizationDetails.back')}
+            {t('Back')}
           </form.Button>
-          <form.SubmitButton>{t('onboarding.organizationDetails.continue')}</form.SubmitButton>
+          <form.SubmitButton>{t('Continue')}</form.SubmitButton>
         </div>
       </FormContainer>
     </form>
