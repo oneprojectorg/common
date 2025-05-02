@@ -19,6 +19,11 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
 
   return (
     <div className="flex flex-wrap gap-3 sm:gap-4">
+      <Button className="min-w-full sm:min-w-fit">
+        <LuPlus className="size-4" />
+        Add relationship
+      </Button>
+
       {isReceivingFunds
         ? receivingFundingLinks.map((link) => (
             <TooltipTrigger key={link.id}>
@@ -50,11 +55,6 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
             </TooltipTrigger>
           ))
         : null}
-
-      <Button className="min-w-full sm:min-w-fit">
-        <LuPlus className="size-4" />
-        Add relationship
-      </Button>
     </div>
   );
 };

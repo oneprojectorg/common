@@ -39,7 +39,7 @@ export const Tabs = (props: TabsProps) => {
 };
 
 const tabListStyles = tv({
-  base: 'flex gap-6',
+  base: 'flex gap-4',
   variants: {
     orientation: {
       horizontal: 'flex-row border-b border-offWhite',
@@ -61,7 +61,7 @@ export const TabList = <T extends object>(props: TabListProps<T>) => {
 
 const tabProps = tv({
   extend: focusRing,
-  base: 'flex cursor-default items-center p-3 text-sm font-medium text-darkGray transition forced-color-adjust-none',
+  base: 'flex cursor-default items-center px-2 py-3 text-sm font-medium text-neutral-gray4 transition forced-color-adjust-none',
   variants: {
     isSelected: {
       false: '',

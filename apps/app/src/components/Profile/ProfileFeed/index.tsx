@@ -190,7 +190,7 @@ export const ProfileFeedPost = ({
             <TextArea
               className="size-full h-10 min-h-10 overflow-y-hidden border-none"
               ref={textareaRef as RefObject<HTMLTextAreaElement>}
-              placeholder={`Post an update from ${profile.name}…`}
+              placeholder={`Post an update…`}
               value={content}
               onChange={(e) => setContent(e.target.value)}
             />
