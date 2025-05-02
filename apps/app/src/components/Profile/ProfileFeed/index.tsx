@@ -76,7 +76,7 @@ const FeedHeader = ({ children }: { children: ReactNode }) => {
 
 const FeedAvatar = ({ children }: { children?: ReactNode }) => {
   return (
-    <div className="shadown relative w-16 min-w-16 overflow-hidden">
+    <div className="shadown relative w-8 min-w-8 overflow-hidden">
       {children}
     </div>
   );
@@ -167,10 +167,10 @@ export const ProfileFeedPost = ({
               src={profileImageUrl}
               alt=""
               fill
-              className="!size-16 max-h-16 max-w-16 rounded-full"
+              className="!size-8 max-h-8 max-w-8 rounded-full"
             />
           ) : (
-            <div className="size-16 rounded-full border bg-white" />
+            <div className="size-8 rounded-full border bg-white" />
           )}
         </FeedAvatar>
         <FeedMain>
@@ -228,10 +228,10 @@ export const ProfileFeed = ({
                   src={profileImageUrl}
                   alt=""
                   fill
-                  className="!size-16 max-h-16 max-w-16 rounded-full"
+                  className="!size-8 max-h-8 max-w-8 rounded-full"
                 />
               ) : (
-                <div className="size-16 rounded-full border bg-white" />
+                <div className="size-8 rounded-full border bg-white" />
               )}
             </FeedAvatar>
             <FeedMain>

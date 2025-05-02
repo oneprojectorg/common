@@ -6,7 +6,7 @@ import { useTranslations } from '@/lib/i18n';
 export const ProfileSummary = ({ profile }: { profile: Organization }) => {
   const t = useTranslations();
   return (
-    <div className="flex flex-col gap-4 py-2">
+    <div className="flex flex-col gap-4">
       <Header1>{profile.name}</Header1>
       <div className="text-base text-neutral-gray4">
         {profile.city && profile.state
