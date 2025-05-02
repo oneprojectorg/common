@@ -7,8 +7,8 @@ import { Form } from '@op/ui/Form';
 import { Header3 } from '@op/ui/Header';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';
-import { useState } from 'react';
-import type { ReactNode } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import type { ReactNode, RefObject } from 'react';
 import { LuImage, LuLeaf, LuPaperclip } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -158,6 +158,18 @@ export const ProfileFeedPost = ({
 
   const profileImageUrl = getPublicUrl(profile.avatarImage?.name);
 
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.addEventListener('input', () => {
+        if (textareaRef.current) {
+          textareaRef.current.style.height = '2.5rem'; // Reset to min height
+          textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`; // Set to scrollHeight
+        }
+      });
+    }
+  }, [textareaRef]);
+
   return (
     <div className={cn('flex flex-col gap-8 pb-8', className)}>
       <FeedItem>
@@ -173,10 +185,11 @@ export const ProfileFeedPost = ({
             <div className="size-8 rounded-full border bg-white" />
           )}
         </FeedAvatar>
-        <FeedMain>
+        <FeedMain className="gap-2">
           <Form onSubmit={handleSubmit} className="flex w-full flex-row gap-4">
             <TextArea
-              className="size-full min-h-10 border-none"
+              className="size-full h-10 min-h-10 overflow-y-hidden border-none"
+              ref={textareaRef as RefObject<HTMLTextAreaElement>}
               placeholder={`Post an update from ${profile.name}…`}
               value={content}
               onChange={(e) => setContent(e.target.value)}
