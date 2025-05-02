@@ -65,7 +65,7 @@ export const SiteHeader = () => {
               placeholder: 'Search',
               color: 'muted',
               size: 'small',
-              icon: <LuSearch className="text-darkGray" />,
+              icon: <LuSearch className="size-4 text-neutral-gray4" />,
             }}
             className="w-96"
             aria-label="Search"

@@ -63,7 +63,7 @@ const ProfileAbout = ({ profile }: { profile: Organization }) => {
         </section>
       ) : null}
 
-      <section className="flex flex-col gap-4 text-neutral-charcoal">
+      <section className="flex flex-col gap-2 text-neutral-charcoal">
         <Header3>Organizational Status</Header3>
         <TagGroup>
           <Tag>{orgType}</Tag>
@@ -71,14 +71,14 @@ const ProfileAbout = ({ profile }: { profile: Organization }) => {
       </section>
 
       {mission ? (
-        <section className="flex flex-col gap-4 text-neutral-charcoal">
+        <section className="flex flex-col gap-2 text-neutral-charcoal">
           <Header3>Mission Statement</Header3>
           <p>{mission}</p>
         </section>
       ) : null}
 
       {strategies?.length > 0 ? (
-        <section className="flex flex-col gap-4 text-neutral-charcoal">
+        <section className="flex flex-col gap-2 text-neutral-charcoal">
           <Header3>Strategies</Header3>
           <TagGroup>
             {strategies.map((strategy) => (
@@ -95,9 +95,12 @@ export const ProfileGrid = ({ profile }: { profile: Organization }) => {
   return (
     <div className="hidden grid-cols-[repeat(15,minmax(0,1fr))] border-t sm:grid">
       <div className="col-span-9 flex flex-col gap-8">
-        <ProfileFeedPost profile={profile} className="border-b px-4 py-6" />
+        <ProfileFeedPost
+          profile={profile}
+          className="border-b px-4 pb-8 pt-6"
+        />
         <Suspense fallback={<div>Loading...</div>}>
-          <ProfileFeed profile={profile} className="px-4 py-6" />
+          <ProfileFeed profile={profile} className="px-4" />
         </Suspense>
       </div>
       <div className="col-span-6 border-l px-4 py-6">

@@ -176,7 +176,7 @@ export const ProfileFeedPost = ({
         <FeedMain>
           <Form onSubmit={handleSubmit} className="flex w-full flex-row gap-4">
             <TextArea
-              className="size-full min-h-12 border-none"
+              className="size-full min-h-10 border-none"
               placeholder={`Post an update from ${profile.name}…`}
               value={content}
               onChange={(e) => setContent(e.target.value)}

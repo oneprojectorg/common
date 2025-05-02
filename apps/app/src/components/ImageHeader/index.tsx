@@ -11,7 +11,7 @@ export const ImageHeader = ({
   headerClassName?: string;
 }) => {
   return (
-    <div className="relative w-full pb-8 sm:pb-[3.75rem]">
+    <div className="relative w-full pb-8 sm:pb-10">
       <div
         className={cn(
           'relative aspect-[72/31] w-full bg-offWhite sm:aspect-[4.6]',

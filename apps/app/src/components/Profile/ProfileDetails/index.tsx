@@ -25,7 +25,7 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
               <ButtonLink
                 color="secondary"
                 href={link.href}
-                className="min-w-full sm:min-w-44"
+                className="min-w-full sm:min-w-fit"
               >
                 <LuArrowUpRight className="size-4" />
                 Contribute
@@ -41,7 +41,7 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
               <ButtonLink
                 color="secondary"
                 href={link.href}
-                className="min-w-full sm:min-w-44"
+                className="min-w-full sm:min-w-fit"
               >
                 <LuInfo />
                 Learn more
@@ -51,9 +51,9 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
           ))
         : null}
 
-      <Button className="min-w-full sm:min-w-44">
+      <Button className="min-w-full sm:min-w-fit">
         <LuPlus className="size-4" />
-        Add relationship
+        Edit profile
       </Button>
     </div>
   );
@@ -63,6 +63,9 @@ export const ProfileDetails = ({ profile }: { profile: Organization }) => {
   return (
     <div className="flex w-full flex-col gap-3 px-4">
       <ProfileSummary profile={profile} />
+      <div className="text-base text-neutral-charcoal">
+        {profile.description}
+      </div>
       <ProfileInteractions profile={profile} />
     </div>
   );

@@ -6,7 +6,7 @@ import { useTranslations } from '@/lib/i18n';
 export const ProfileSummary = ({ profile }: { profile: Organization }) => {
   const t = useTranslations();
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-2 py-2">
       <Header1>{profile.name}</Header1>
       <div className="text-base text-neutral-gray4">
         {profile.city && profile.state
@@ -16,9 +16,6 @@ export const ProfileSummary = ({ profile }: { profile: Organization }) => {
       <div className="flex flex-col-reverse gap-6 sm:flex-col">
         <div className="flex gap-1 text-base text-neutral-gray4">
           <span className="font-semibold">482</span> {t('relationships')}
-        </div>
-        <div className="text-base text-neutral-charcoal">
-          {profile.description}
         </div>
       </div>
     </div>
