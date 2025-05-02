@@ -12,30 +12,29 @@ import type {
   ListBoxItemProps,
   ValidationResult,
 } from 'react-aria-components';
-import { tv } from 'tailwind-variants';
+import { VariantProps, tv } from 'tailwind-variants';
 
 import { cn } from '../lib/utils';
-import { composeTailwindRenderProps, focusRing } from '../utils';
 import { Description, FieldError, Label } from './Field';
 import { DropdownItem, DropdownSection } from './ListBox';
 import type { DropdownSectionProps } from './ListBox';
 import { Popover } from './Popover';
 import type { PopoverProps } from './Popover';
 
-const styles = tv({
-  extend: focusRing,
-  base: 'flex w-full min-w-[150px] cursor-default items-center gap-2 rounded-md border border-offWhite bg-white p-4 text-start text-sm text-black shadow-none transition placeholder:text-midGray',
+const selectStyles = tv({
+  base: 'flex min-w-0 flex-row justify-between rounded-md border border-neutral-gray1 p-3 text-sm text-neutral-black outline outline-0 placeholder:text-neutral-gray4 active:border-neutral-gray4 active:outline hover:border-neutral-gray2 focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-data-blue disabled:border-neutral-gray2',
   variants: {
     isDisabled: {
-      false:
-        'text-black group-invalid:border-red-600 hover:bg-offWhite pressed:bg-offWhite',
-      true: 'border-neutral-300 bg-offWhite text-neutral-400',
+      true: 'bg-neutral-gray1 text-neutral-gray4',
+      false: '',
     },
   },
 });
+export type SelectVariantsProps = VariantProps<typeof selectStyles>;
 
 export interface SelectProps<T extends object>
-  extends Omit<AriaSelectProps<T>, 'children'> {
+  extends Omit<AriaSelectProps<T>, 'children'>,
+    SelectVariantsProps {
   label?: string;
   description?: string;
   errorMessage?: string | ((validation: ValidationResult) => string);
@@ -62,34 +61,29 @@ export const Select = <T extends object>({
   return (
     <AriaSelect
       {...props}
-      className={composeTailwindRenderProps(
-        props.className,
-        'group flex flex-col gap-1 text-neutral-950',
-      )}
+      className={cn('flex flex-col gap-2', props.className)}
     >
       {label && <Label>{label}</Label>}
       {props.customTrigger ? (
         props.customTrigger
       ) : (
         <Button
-          className={cn(styles(), 'justify-start', props.buttonClassName)}
+          className={cn(
+            selectStyles({ ...props } as SelectVariantsProps),
+            props.buttonClassName,
+          )}
         >
-          <SelectValue
-            className={cn(
-              'flex-1 truncate text-left placeholder-shown:text-neutral-500',
-              props.selectValueClassName,
-            )}
-          />
+          <SelectValue className={cn(props.selectValueClassName)} />
           <ChevronDown
             aria-hidden
-            className="ml-2 size-4 text-charcoal group-disabled:text-neutral-400"
+            className="ml-2 size-4 text-neutral-charcoal group-disabled:text-neutral-gray4"
           />
         </Button>
       )}
       {description && <Description>{description}</Description>}
       <FieldError>{errorMessage}</FieldError>
       <Popover
-        className="absolute z-10 mt-1 !max-h-60 w-[--trigger-width] min-w-[--trigger-width] rounded-md border border-gray-200 bg-white shadow-lg"
+        className="absolute z-10 !max-h-60 w-[--trigger-width] min-w-[--trigger-width] rounded border border-neutral-gray1 bg-white p-2 shadow"
         {...props.popoverProps}
       >
         <ListBox

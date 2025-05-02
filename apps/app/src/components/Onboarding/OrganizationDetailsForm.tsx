@@ -6,7 +6,10 @@ import { SelectItem } from '@op/ui/Select';
 import { useState } from 'react';
 import { z } from 'zod';
 
+import { useTranslations } from '@/lib/i18n';
+
 import { GeoNamesMultiSelect } from '../GeoNamesMultiSelect';
+import { TermsMultiSelect } from '../TermsMultiSelect';
 import { FormContainer } from '../form/FormContainer';
 import { FormHeader } from '../form/FormHeader';
 import { useMultiStep } from '../form/multiStep';
@@ -18,7 +21,7 @@ const multiSelectOptionValidator = z.object({
   id: z.string(),
   label: z.string().max(20),
   isNewValue: z.boolean().default(false).optional(),
-  data: z.any().optional(),
+  data: z.record(z.any()).default({}),
 });
 
 export const validator = z.object({
@@ -64,6 +67,7 @@ export const OrganizationDetailsForm = ({
   resolver,
   className,
 }: StepProps & { className?: string }) => {
+  const t = useTranslations();
   const { onNext, onBack } = useMultiStep();
   const [profileImage, setProfileImage] = useState<ImageData | undefined>();
   const [bannerImage, setBannerImage] = useState<ImageData | undefined>();
@@ -93,11 +97,12 @@ export const OrganizationDetailsForm = ({
       className={className}
     >
       <FormContainer>
-        <FormHeader text="Add your organization’s details">
-          We've pre-filled information about [ORGANIZATION]. Please review and
-          make any necessary changes.
+        <FormHeader text={t('Add your organization’s details')}>
+          {t("We've pre-filled information about [ORGANIZATION].")}
+          <br />
+          {t('Please review and make any necessary changes.')}
         </FormHeader>
-        <div className="relative w-full pb-20">
+        <div className="relative w-full pb-12 sm:pb-20">
           <BannerUploader
             className="relative aspect-[128/55] w-full bg-offWhite"
             value={bannerImage?.url ?? undefined}
@@ -129,7 +134,7 @@ export const OrganizationDetailsForm = ({
             }}
           />
           <AvatarUploader
-            className="absolute bottom-0 left-4 aspect-square size-28"
+            className="absolute bottom-0 left-4 aspect-square size-20 sm:size-28"
             value={profileImage?.url ?? undefined}
             onChange={async (file: File): Promise<void> => {
               const reader = new FileReader();
@@ -165,7 +170,7 @@ export const OrganizationDetailsForm = ({
           name="name"
           children={(field) => (
             <field.TextField
-              label="Organization name"
+              label={t('Name')}
               isRequired
               value={field.state.value as string}
               onBlur={field.handleBlur}
@@ -179,7 +184,7 @@ export const OrganizationDetailsForm = ({
           name="website"
           children={(field) => (
             <field.TextField
-              label="Website"
+              label={t('Website')}
               isRequired
               value={field.state.value as string}
               onBlur={field.handleBlur}
@@ -192,7 +197,7 @@ export const OrganizationDetailsForm = ({
           name="email"
           children={(field) => (
             <field.TextField
-              label="Email"
+              label={t('Email')}
               isRequired
               type="email"
               value={field.state.value as string}
@@ -207,7 +212,7 @@ export const OrganizationDetailsForm = ({
           name="whereWeWork"
           children={(field) => (
             <GeoNamesMultiSelect
-              label="Where we work"
+              label={t('Where we work')}
               isRequired
               onChange={(value) => field.handleChange(value)}
               value={(field.state.value as Array<Option>) ?? []}
@@ -218,16 +223,17 @@ export const OrganizationDetailsForm = ({
           name="orgType"
           children={(field) => (
             <field.Select
-              label="Organizational Status"
-              placeholder="Select"
+              label={t('Organizational Status')}
+              placeholder={t('Select')}
               selectedKey={field.state.value as string}
               onSelectionChange={field.handleChange}
               onBlur={field.handleBlur}
               errorMessage={getFieldErrorMessage(field)}
+              className="w-full"
             >
-              <SelectItem id="nonprofit">Nonprofit</SelectItem>
-              <SelectItem id="forprofit">Forprofit</SelectItem>
-              <SelectItem id="government">Government Entity</SelectItem>
+              <SelectItem id="nonprofit">{t('Nonprofit')}</SelectItem>
+              <SelectItem id="forprofit">{t('Forprofit')}</SelectItem>
+              <SelectItem id="government">{t('Government Entity')}</SelectItem>
             </field.Select>
           )}
         />
@@ -237,14 +243,14 @@ export const OrganizationDetailsForm = ({
           children={(field) => (
             <field.TextField
               useTextArea
-              label="Bio"
+              label={t('Bio')}
               value={field.state.value as string}
               onBlur={field.handleBlur}
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
               textareaProps={{
                 className: 'min-h-28',
-                placeholder: 'Enter a brief bio for your profile',
+                placeholder: t('Enter a brief bio for your profile'),
               }}
             />
           )}
@@ -255,7 +261,7 @@ export const OrganizationDetailsForm = ({
           children={(field) => (
             <field.TextField
               useTextArea
-              label="Mission statement"
+              label={t('Mission statement')}
               value={field.state.value as string}
               onBlur={field.handleBlur}
               onChange={field.handleChange}
@@ -263,7 +269,7 @@ export const OrganizationDetailsForm = ({
               className="min-h-24"
               textareaProps={{
                 className: 'min-h-28',
-                placeholder: 'Enter your mission statement or a brief bio',
+                placeholder: t('Enter your mission statement or a brief bio'),
               }}
             />
           )}
@@ -273,8 +279,8 @@ export const OrganizationDetailsForm = ({
           name="focusAreas"
           children={(field) => (
             <field.MultiSelectComboBox
-              label="Focus Areas"
-              placeholder="Select one or more"
+              label={t('Focus Areas')}
+              placeholder={t('Select one or more')}
               value={(field.state.value as Array<Option>) ?? []}
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
@@ -297,7 +303,7 @@ export const OrganizationDetailsForm = ({
           name="communitiesServed"
           children={(field) => (
             <field.MultiSelectComboBox
-              label="Communities Served"
+              label={t('Communities Served')}
               value={(field.state.value as Array<Option>) ?? []}
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
@@ -318,22 +324,12 @@ export const OrganizationDetailsForm = ({
         <form.AppField
           name="strategies"
           children={(field) => (
-            <field.MultiSelectComboBox
-              label="Strategies/Tactics"
+            <TermsMultiSelect
+              label={t('Strategies/Tactics')}
+              taxonomy="splcStrategies"
               value={(field.state.value as Array<Option>) ?? []}
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
-              items={[
-                { id: 'placeholder1', label: 'Placeholder 1' },
-                { id: 'placeholder2', label: 'Placeholder 2' },
-                { id: 'placeholder3', label: 'Placeholder 3' },
-                { id: 'placeholder4', label: 'Placeholder 4' },
-                { id: 'placeholder5', label: 'Placeholder 5' },
-                { id: 'placeholder6', label: 'Placeholder 6' },
-                { id: 'placeholder7', label: 'Placeholder 7' },
-                { id: 'placeholder8', label: 'Placeholder 8' },
-                { id: 'placeholder9', label: 'Placeholder 9' },
-              ]}
             />
           )}
         />
@@ -342,22 +338,25 @@ export const OrganizationDetailsForm = ({
           name="networkOrganization"
           children={(field) => (
             <ToggleRow>
-              Does your organization serve as a network or coalition with member
-              organizations?
+              {t(
+                'Does your organization serve as a network or coalition with member organizations?',
+              )}
               <field.ToggleButton
                 isSelected={field.state.value as boolean}
                 onChange={field.handleChange}
-                aria-label="Does your organization serve as a network or coalition with member organizations?"
+                aria-label={t(
+                  'Does your organization serve as a network or coalition with member organizations?',
+                )}
               />
             </ToggleRow>
           )}
         />
 
-        <div className="flex justify-between gap-2">
+        <div className="flex flex-col-reverse justify-between gap-4 sm:flex-row sm:gap-2">
           <form.Button color="secondary" onPress={onBack}>
-            Back
+            {t('Back')}
           </form.Button>
-          <form.SubmitButton>Continue</form.SubmitButton>
+          <form.SubmitButton>{t('Continue')}</form.SubmitButton>
         </div>
       </FormContainer>
     </form>

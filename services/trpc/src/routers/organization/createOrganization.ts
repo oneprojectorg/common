@@ -1,4 +1,8 @@
-import { UnauthorizedError, createOrganization } from '@op/common';
+import {
+  UnauthorizedError,
+  createOrganization,
+  geoNamesDataSchema,
+} from '@op/common';
 import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
@@ -38,7 +42,13 @@ const inputSchema = z.object({
     .string()
     .max(200, { message: 'Must be at most 200 characters' })
     .optional(),
-  whereWeWork: z.array(multiSelectOptionValidator).optional(),
+  whereWeWork: z
+    .array(
+      multiSelectOptionValidator.extend({
+        data: geoNamesDataSchema,
+      }),
+    )
+    .optional(),
   focusAreas: z.array(multiSelectOptionValidator).optional(),
   communitiesServed: z.array(multiSelectOptionValidator).optional(),
   strategies: z.array(multiSelectOptionValidator).optional(),
@@ -83,7 +93,7 @@ export const createOrganizationRouter = router({
       try {
         const org = await createOrganization({ data: input, user });
 
-        return org;
+        return organizationsEncoder.parse(org);
       } catch (error: unknown) {
         console.log('ERROR', error);
 

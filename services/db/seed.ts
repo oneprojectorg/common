@@ -276,4 +276,74 @@ await Promise.all(
   ),
 );
 
+// Insert some taxonomies we will need
+const taxonomy = 'splcStrategies';
+const terms = [
+  {
+    taxonomy_id: 'c5f79be7-3a3a-4bfe-8438-7ade5c26ccb9',
+    label: 'Base/Power Building',
+    term_uri: 'splc:BasePowerBuilding',
+  },
+  {
+    taxonomy_id: 'c5f79be7-3a3a-4bfe-8438-7ade5c26ccb9',
+    label: 'Advocacy and Policy',
+    term_uri: 'splc:AdvocacyAndPolicy',
+  },
+  {
+    taxonomy_id: 'c5f79be7-3a3a-4bfe-8438-7ade5c26ccb9',
+    label: 'Community Building',
+    term_uri: 'splc:CommunityBuilding',
+  },
+  {
+    taxonomy_id: 'c5f79be7-3a3a-4bfe-8438-7ade5c26ccb9',
+    label: 'Movement Infrastructure',
+    term_uri: 'splc:MovementInfrastructure',
+  },
+  {
+    taxonomy_id: 'c5f79be7-3a3a-4bfe-8438-7ade5c26ccb9',
+    label: 'Alternatives',
+    term_uri: 'splc:Alternatives',
+  },
+  {
+    taxonomy_id: 'c5f79be7-3a3a-4bfe-8438-7ade5c26ccb9',
+    label: 'Direct Services',
+    term_uri: 'splc:DirectServices',
+  },
+  {
+    taxonomy_id: 'c5f79be7-3a3a-4bfe-8438-7ade5c26ccb9',
+    label: 'Mass Mobilization',
+    term_uri: 'splc:MassMobilization',
+  },
+  {
+    taxonomy_id: 'c5f79be7-3a3a-4bfe-8438-7ade5c26ccb9',
+    label: 'Direct Action',
+    term_uri: 'splc:DirectAction',
+  },
+  {
+    taxonomy_id: 'c5f79be7-3a3a-4bfe-8438-7ade5c26ccb9',
+    label: 'Mutual Aid',
+    term_uri: 'splc:MutualAid',
+  },
+  {
+    taxonomy_id: 'c5f79be7-3a3a-4bfe-8438-7ade5c26ccb9',
+    label: 'Inside Game',
+    term_uri: 'splc:InsideGame',
+  },
+  {
+    taxonomy_id: 'c5f79be7-3a3a-4bfe-8438-7ade5c26ccb9',
+    label: 'Personal Transformation',
+    term_uri: 'splc:PersonalTransformation',
+  },
+  {
+    taxonomy_id: 'c5f79be7-3a3a-4bfe-8438-7ade5c26ccb9',
+    label: 'Other',
+    term_uri: 'splc:Other',
+  },
+  {
+    taxonomy_id: 'c5f79be7-3a3a-4bfe-8438-7ade5c26ccb9',
+    label: 'Research',
+    term_uri: 'splc:Research',
+  },
+];
+
 await db.$client.end();

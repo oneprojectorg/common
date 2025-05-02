@@ -1,5 +1,12 @@
 import { relations } from 'drizzle-orm';
-import { index, pgEnum, pgTable, uuid, varchar } from 'drizzle-orm/pg-core';
+import {
+  index,
+  jsonb,
+  pgEnum,
+  pgTable,
+  uuid,
+  varchar,
+} from 'drizzle-orm/pg-core';
 
 import {
   autoId,
@@ -12,6 +19,8 @@ import { organizations } from './organizations.sql';
 export enum LinkType {
   OFFERING = 'offering',
   RECEIVING = 'receiving',
+  WEBSITE = 'website',
+  SOCIAL = 'social',
 }
 
 export const linkTypeEnum = pgEnum('link_type', enumToPgEnum(LinkType));
@@ -23,6 +32,7 @@ export const links = pgTable(
     name: varchar({ length: 256 }),
     href: varchar({ length: 256 }).notNull(),
     type: linkTypeEnum('link_type').notNull().default(LinkType.OFFERING),
+    metadata: jsonb(),
     organizationId: uuid()
       .notNull()
       .references(() => organizations.id, {

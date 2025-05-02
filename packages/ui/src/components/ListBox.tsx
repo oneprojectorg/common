@@ -43,7 +43,7 @@ export const ListBox = <T extends object>({
         {...props}
         className={composeTailwindRenderProps(
           props.className,
-          'rounded-lg border p-1 outline-0',
+          'rounded border p-1 outline-0',
         )}
       >
         {children}
@@ -54,7 +54,7 @@ export const ListBox = <T extends object>({
 
 export const itemStyles = tv({
   extend: focusRing,
-  base: 'group relative flex cursor-default select-none items-center gap-8 rounded-md px-2.5 py-1.5 text-sm will-change-transform forced-color-adjust-none',
+  base: 'group relative flex cursor-default select-none items-center gap-8 rounded px-2.5 py-1.5 text-sm will-change-transform forced-color-adjust-none',
   variants: {
     isSelected: {
       false: 'text-neutral-700 -outline-offset-2 hover:bg-neutral-300',
@@ -70,7 +70,7 @@ type ListBoxItemVariants = VariantProps<typeof itemStyles>;
 
 export interface ListBoxItemProps
   extends React.ComponentProps<typeof AriaListBoxItem>,
-    ListBoxItemVariants {
+  ListBoxItemVariants {
   className?: string;
 }
 
@@ -96,21 +96,21 @@ export const ListBoxItem = (props: ListBoxItemProps) => {
 };
 
 export const dropdownItemStyles = tv({
-  base: 'group flex cursor-default select-none items-center gap-4 rounded-md py-2 pl-3 pr-1.5 outline outline-0 forced-color-adjust-none',
+  base: 'group flex cursor-default select-none items-center gap-4 rounded py-2 pl-3 pr-1.5 outline outline-0 forced-color-adjust-none',
   variants: {
     isDisabled: {
       false: 'text-neutral-900',
       true: 'text-neutral-400',
     },
     isFocused: {
-      true: 'bg-neutral-400 text-white',
+      true: 'bg-neutral-gray1 text-white',
     },
   },
   compoundVariants: [
     {
       isFocused: false,
       isOpen: true,
-      className: 'bg-neutral-300/60',
+      className: 'bg-neutral-gray1',
     },
   ],
 });
@@ -129,13 +129,13 @@ export const DropdownItem = (
       className={composeRenderProps(props.className, (className, renderProps) =>
         dropdownItemStyles({
           ...renderProps,
-          className: `px-3 py-2 text-sm hover:bg-gray-100 group-hover:bg-gray-100 group-selected:bg-blue-50 ${className || ''}`,
+          className: `px-3 py-2 text-sm ${className || ''}`,
         }),
       )}
     >
       {composeRenderProps(props.children, (children, { isSelected }) => (
         <>
-          <span className="flex flex-1 items-center gap-2 truncate font-normal text-neutral-600 group-data-[focused]:text-neutral-800 group-hover:text-neutral-800 group-selected:text-neutral-800">
+          <span className="group-hover:bgt-neutral-gray1 flex flex-1 items-center gap-2 truncate font-normal text-neutral-black">
             {children}
           </span>
           <span className="flex w-5 items-center">

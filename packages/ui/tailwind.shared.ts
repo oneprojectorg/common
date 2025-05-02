@@ -31,6 +31,100 @@ const config: Omit<Config, 'content'> = {
         sans: ['var(--font-sans)', ...defaultTheme.fontFamily.sans],
         mono: ['var(--font-mono)', ...defaultTheme.fontFamily.mono],
       },
+      fontSize: {
+        'title-xxl': [
+          '3rem',
+          { lineHeight: '110%', fontWeight: '300', letterSpacing: '-0.075rem' },
+        ],
+        'title-xl': [
+          '2.5rem',
+          {
+            lineHeight: '110%',
+            fontWeight: '300',
+            letterSpacing: '-0.0625rem',
+          },
+        ],
+        'title-lg': [
+          '1.75rem',
+          {
+            lineHeight: '110%',
+            fontWeight: '300',
+            letterSpacing: '-0.02625rem',
+          },
+        ],
+        'title-md': [
+          '1.5rem',
+          {
+            lineHeight: '110%',
+            fontWeight: '300',
+            letterSpacing: '-0.0225rem',
+          },
+        ],
+        'title-base': [
+          '1.25rem',
+          {
+            lineHeight: '110%',
+            fontWeight: '300',
+            letterSpacing: '-0.01875rem',
+          },
+        ],
+        'title-sm': [
+          '1rem',
+          { lineHeight: '130%', fontWeight: '300', letterSpacing: '-0.015rem' },
+        ],
+        'title-xs': [
+          '0.875rem',
+          {
+            lineHeight: '130%',
+            fontWeight: '300',
+            letterSpacing: '-0.01313rem',
+          },
+        ],
+        'title-xxs': [
+          '0.75rem',
+          {
+            lineHeight: '130%',
+            fontWeight: '300',
+            letterSpacing: '-0.01125rem',
+          },
+        ],
+        'title-sm12': [
+          '0.75rem',
+          {
+            lineHeight: '130%',
+            fontWeight: '300',
+            letterSpacing: '-0.01125rem',
+          },
+        ],
+        xs: [
+          '0.625rem',
+          {
+            lineHeight: '150%',
+            fontWeight: '400',
+          },
+        ],
+        sm: [
+          '0.75rem',
+          {
+            lineHeight: '150%',
+            fontWeight: '400',
+          },
+        ],
+        base: [
+          '0.875rem',
+          {
+            lineHeight: '150%',
+            fontWeight: '400',
+          },
+        ],
+        lg: [
+          '1rem',
+          {
+            lineHeight: '150%',
+            fontWeight: '400',
+          },
+        ],
+      },
       size: {
         xs: {
           height: '0.75rem',
@@ -157,20 +251,65 @@ const config: Omit<Config, 'content'> = {
         offWhite: 'hsl(var(--op-neutral-200))',
         whiteish: 'hsl(var(--op-neutral-50))',
         white: 'hsl(var(--op-white))',
+
+        primary: {
+          DEFAULT: 'hsl(var(--op-teal-500))',
+          teal: 'hsl(var(--op-teal-500))',
+          tealWhite: 'hsl(var(--op-teal-white))',
+          tealBlack: 'hsl(var(--op-teal-600))',
+          yellow: 'hsl(var(--op-yellow-500))',
+          orange1: 'hsl(var(--op-orange1-500))',
+          orange2: 'hsl(var(--op-orange2-500))',
+        },
+        neutral: {
+          offWhite: 'hsl(var(--op-neutral-50))',
+          gray1: 'hsl(var(--op-neutral-200))',
+          gray2: 'hsl(var(--op-neutral-400))',
+          gray3: 'hsl(var(--op-neutral-500))',
+          gray4: 'hsl(var(--op-neutral-700))',
+          charcoal: 'hsl(var(--op-neutral-900))',
+          black: 'hsl(var(--op-neutral-950))',
+        },
+        functional: {
+          red: 'hsl(var(--op-red-500))',
+          redBlack: 'hsl(var(--op-red-600))',
+          redWhite: 'hsl(var(--op-red-50))',
+          green: 'hsl(var(--op-green-500))',
+        },
+        data: {
+          purple: 'hsl(var(--op-purple-500))',
+          blue: 'hsl(var(--op-blue-500))',
+        },
       },
       borderRadius: {
-        lg: 'var(--radius)',
+        DEFAULT: '0.5rem',
+        lg: '0.5rem',
         md: '0.5rem',
-        sm: 'calc(var(--radius) - 0.25rem)',
+        // sm: 'calc(var(--radius) - 0.25rem)',
+        sm: '0.5rem',
       },
       boxShadow: {
-        DEFAULT: '0px 0px 16px 0px rgba(20, 35, 38, 0.04)',
+        DEFAULT: '0px 0px 48px 0px rgba(20, 35, 38, 0.08)',
+        light: '0px 0px 16px 0px rgba(20, 35, 38, 0.04)',
+        md: '0px 0px 48px 0px rgba(20, 35, 38, 0.08)',
+        green: '0px 0px 48px 0px rgba(193, 255, 173, 0.88)',
+        orange: '0px 0px 48px 0px rgba(242, 183, 5, 0.64)',
       },
       backgroundImage: {
         gradient:
           'radial-gradient(154% 99.31% at 0% 0%, #3EC300 0%, #0396A6 51.56%)',
+        tealGreen:
+          'radial-gradient(154% 99.31% at 0% 0%, #3EC300 0%, #0396A6 51.56%)',
         redTeal:
           'radial-gradient(96.92% 140.1% at 72.02% 100%, #0396A6 0%, #FF613D 92.19%, #FFFBFA 99.99%)',
+        orange:
+          'radial-gradient(96.92% 140.1% at 72.02% 100%, #E35F00 0%, #DE8D00 48.44%, #FF9739 99.99%)',
+        blueGreen:
+          'radial-gradient(91.78% 91.78% at 89.17% 4.38%, #3EC300 0%, #0046C2 100%)',
+        orangePurple:
+          'radial-gradient(70.56% 70.56% at 72.75% 33.21%, #6200C3 0%, #FF613D 100%)',
+        yellowOrange:
+          'radial-gradient(74.88% 74.88% at 42.58% 76.89%, #F29F05 0%, #F2B705 100%))',
       },
     },
   },

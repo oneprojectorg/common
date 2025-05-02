@@ -48,8 +48,9 @@ export const getOrganizationRouter = router({
           });
         }
 
-        return result;
+        return organizationsEncoder.parse(result);
       } catch (error: unknown) {
+        console.log(error);
         if (error instanceof UnauthorizedError) {
           throw new TRPCError({
             message: 'You do not have acess to this organization',

@@ -17,13 +17,22 @@ const meta: Meta<typeof Select> = {
 
 export default meta;
 
-export const Example = (args: any) => (
-  <Select {...args}>
-    <SelectItem>Chocolate</SelectItem>
-    <SelectItem id="mint">Mint</SelectItem>
-    <SelectItem>Strawberry</SelectItem>
-    <SelectItem>Vanilla</SelectItem>
-  </Select>
+export const Example = () => (
+  <>
+    <Select className="w-full">
+      <SelectItem>Chocolate</SelectItem>
+      <SelectItem id="mint">Mint</SelectItem>
+      <SelectItem>Strawberry</SelectItem>
+      <SelectItem>Vanilla</SelectItem>
+    </Select>
+    Disabled
+    <Select className="w-full" isDisabled>
+      <SelectItem>Chocolate</SelectItem>
+      <SelectItem id="mint">Mint</SelectItem>
+      <SelectItem>Strawberry</SelectItem>
+      <SelectItem>Vanilla</SelectItem>
+    </Select>
+  </>
 );
 
 export const DisabledItems = (args: any) => <Example {...args} />;

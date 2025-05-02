@@ -48,7 +48,7 @@ export const AvatarUploader = ({
         className,
       )}
     >
-      <div className="size-32">
+      <div className="size-full">
         <div className="relative flex aspect-square size-full items-center justify-center rounded-full border-4 border-white bg-lightGray">
           {value ? (
             <img

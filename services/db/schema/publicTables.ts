@@ -5,6 +5,10 @@ export {
   organizations,
   organizationsRelations,
   orgTypeEnum,
+  organizationsWhereWeWork,
+  organizationsWhereWeWorkRelations,
+  organizationsStrategies, // reconsider these tables as possible graphs and edges
+  organizationsStrategiesRelations,
 } from './tables/organizations.sql';
 export type { Organization } from './tables/organizations.sql';
 export {
@@ -20,6 +24,13 @@ export {
   postsToOrganizations,
   postsToOrganizationsRelations,
 } from './tables/posts.sql';
+
+export {
+  taxonomies,
+  taxonomyTerms,
+  taxonomyTermsRelations,
+  taxonomiesRelations,
+} from './tables/taxonomies.sql';
 
 export { projects, projectsRelations } from './tables/projects.sql';
 export { organizationRelationships } from './tables/relationships.sql';

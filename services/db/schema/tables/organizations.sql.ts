@@ -2,12 +2,11 @@ import { relations, sql } from 'drizzle-orm';
 import type { InferModel } from 'drizzle-orm';
 import {
   boolean,
-  decimal,
   index,
   integer,
-  json,
   pgEnum,
   pgTable,
+  primaryKey,
   text,
   uuid,
   varchar,
@@ -24,6 +23,7 @@ import { posts } from './posts.sql';
 import { projects } from './projects.sql';
 import { organizationRelationships } from './relationships.sql';
 import { objectsInStorage } from './storage.sql';
+import { taxonomyTerms } from './taxonomies.sql';
 
 // Enums for organization types and status
 export enum OrgType {
@@ -46,30 +46,30 @@ export const organizations = pgTable(
 
     // Mission
     mission: text(),
+
     // Year Founded
     yearFounded: integer(),
-    values: text().array(),
+
     // Email
     email: varchar({ length: 255 }),
     phone: varchar({ length: 50 }),
     website: varchar({ length: 255 }),
-    // Address
+
     address: varchar({ length: 255 }),
     city: varchar({ length: 100 }),
     state: varchar({ length: 50 }),
     postalCode: varchar({ length: 20 }),
+
     // Geography
-    latitude: decimal(),
-    longitude: decimal(),
+    // location: geometry('location', { srid: 4326 }),
     isVerified: boolean().default(false),
-    socialLinks: json(), // Store social media links
 
     isOfferingFunds: boolean().default(false),
     isReceivingFunds: boolean().default(false),
 
     // Organization Type
     orgType: orgTypeEnum('org_type').notNull().default(OrgType.OTHER),
-    // Legal Structure
+
     // Thematic Areas
 
     // Media items
@@ -80,8 +80,6 @@ export const organizations = pgTable(
       onUpdate: 'cascade',
     }),
 
-    // where we work
-    whereWeWork: json(),
     ...timestamps,
   },
   (table) => [
@@ -100,6 +98,8 @@ export const organizationsRelations = relations(
     projects: many(projects),
     links: many(links),
     posts: many(posts),
+    whereWeWork: many(organizationsWhereWeWork),
+    strategies: many(organizationsStrategies),
     headerImage: one(objectsInStorage, {
       fields: [organizations.headerImageId],
       references: [objectsInStorage.id],
@@ -110,6 +110,76 @@ export const organizationsRelations = relations(
     }),
     outgoingRelationships: many(organizationRelationships),
     incomingRelationships: many(organizationRelationships),
+  }),
+);
+
+export const organizationsWhereWeWork = pgTable(
+  'organizations_where_we_work',
+  {
+    organizationId: uuid('organization_id')
+      .notNull()
+      .references(() => organizations.id, {
+        onUpdate: 'cascade',
+        onDelete: 'cascade',
+      }),
+    taxonomyTermId: uuid('taxonomy_term_id')
+      .notNull()
+      .references(() => taxonomyTerms.id, {
+        onUpdate: 'cascade',
+        onDelete: 'cascade',
+      }),
+  },
+  (table) => ({
+    pk: primaryKey(table.organizationId, table.taxonomyTermId),
+  }),
+);
+
+export const organizationsWhereWeWorkRelations = relations(
+  organizationsWhereWeWork,
+  ({ one }) => ({
+    organization: one(organizations, {
+      fields: [organizationsWhereWeWork.organizationId],
+      references: [organizations.id],
+    }),
+    term: one(taxonomyTerms, {
+      fields: [organizationsWhereWeWork.taxonomyTermId],
+      references: [taxonomyTerms.id],
+    }),
+  }),
+);
+
+export const organizationsStrategies = pgTable(
+  'organizations_strategies',
+  {
+    organizationId: uuid('organization_id')
+      .notNull()
+      .references(() => organizations.id, {
+        onUpdate: 'cascade',
+        onDelete: 'cascade',
+      }),
+    taxonomyTermId: uuid('taxonomy_term_id')
+      .notNull()
+      .references(() => taxonomyTerms.id, {
+        onUpdate: 'cascade',
+        onDelete: 'cascade',
+      }),
+  },
+  (table) => ({
+    pk: primaryKey(table.organizationId, table.taxonomyTermId),
+  }),
+);
+
+export const organizationsStrategiesRelations = relations(
+  organizationsStrategies,
+  ({ one }) => ({
+    organization: one(organizations, {
+      fields: [organizationsStrategies.organizationId],
+      references: [organizations.id],
+    }),
+    term: one(taxonomyTerms, {
+      fields: [organizationsStrategies.taxonomyTermId],
+      references: [taxonomyTerms.id],
+    }),
   }),
 );
 

@@ -1,5 +1,14 @@
+import { cn } from '@op/ui/utils';
 import type { ReactNode } from 'react';
 
-export const FormContainer = ({ children }: { children: ReactNode }) => {
-  return <div className="flex flex-col gap-8">{children}</div>;
+export const FormContainer = ({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) => {
+  return (
+    <div className={cn('flex flex-col gap-8 pb-8', className)}>{children}</div>
+  );
 };

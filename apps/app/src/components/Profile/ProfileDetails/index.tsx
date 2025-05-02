@@ -18,12 +18,16 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
   );
 
   return (
-    <div className="flex gap-4">
+    <div className="flex flex-wrap gap-3 sm:gap-4">
       {isReceivingFunds
         ? receivingFundingLinks.map((link) => (
             <TooltipTrigger key={link.id}>
-              <ButtonLink href={link.href} className="min-w-44">
-                <LuArrowUpRight />
+              <ButtonLink
+                color="secondary"
+                href={link.href}
+                className="min-w-full sm:min-w-fit"
+              >
+                <LuArrowUpRight className="size-4" />
                 Contribute
               </ButtonLink>
               <Tooltip>We accept applications on a rolling basis</Tooltip>
@@ -34,7 +38,11 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
       {isOfferingFunds
         ? offeringFundingLinks.map((link) => (
             <TooltipTrigger key={link.id}>
-              <ButtonLink href={link.href} className="min-w-44">
+              <ButtonLink
+                color="secondary"
+                href={link.href}
+                className="min-w-full sm:min-w-fit"
+              >
                 <LuInfo />
                 Learn more
               </ButtonLink>
@@ -43,8 +51,8 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
           ))
         : null}
 
-      <Button color="secondary" className="min-w-44">
-        <LuPlus />
+      <Button className="min-w-full sm:min-w-fit">
+        <LuPlus className="size-4" />
         Add relationship
       </Button>
     </div>
@@ -55,7 +63,9 @@ export const ProfileDetails = ({ profile }: { profile: Organization }) => {
   return (
     <div className="flex w-full flex-col gap-3 px-4">
       <ProfileSummary profile={profile} />
-      <div className="text-base">{profile.description}</div>
+      <div className="text-base text-neutral-charcoal">
+        {profile.description}
+      </div>
       <ProfileInteractions profile={profile} />
     </div>
   );

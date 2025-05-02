@@ -16,7 +16,7 @@ export interface PopoverProps extends Omit<AriaPopoverProps, 'children'> {
 }
 
 const styles = tv({
-  base: 'border-glow rounded-lg bg-neutral-100/90 text-neutral-700',
+  base: 'rounded bg-neutral-gray1 text-neutral-black',
   variants: {
     isEntering: {
       true: 'transition-opacity duration-200 ease-out animate-in fade-in',

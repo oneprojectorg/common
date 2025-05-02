@@ -17,34 +17,6 @@ import { DialogTrigger } from 'react-aria-components';
 import { AlertDialog } from '../src/components/AlertDialog';
 // import { Breadcrumb, Breadcrumbs } from '../src/components/Breadcrumbs';
 import { Button, ButtonLink } from '../src/components/Button';
-// import { Calendar } from '../src/components/Calendar';
-// import { Checkbox, CheckboxGroup } from '../src/components/Checkbox';
-// import { ColorArea } from '../src/components/ColorArea';
-// import { ColorField } from '../src/components/ColorField';
-// import { ColorPicker } from '../src/components/ColorPicker';
-// import { ColorSlider } from '../src/components/ColorSlider';
-// import { ColorSwatch } from '../src/components/ColorSwatch';
-// import {
-// ColorSwatchPicker,
-// ColorSwatchPickerItem,
-// } from '../src/components/ColorSwatchPicker';
-// import { ColorWheel } from '../src/components/ColorWheel';
-// import {
-// ComboBox,
-// ComboBoxItem,
-// ComboBoxSection,
-// } from '../src/components/ComboBox';
-// import { DateField } from '../src/components/DateField';
-// import { DatePicker } from '../src/components/DatePicker';
-// import { DateRangePicker } from '../src/components/DateRangePicker';
-// import {
-// Disclosure,
-// DisclosureGroup,
-// DisclosureHeader,
-// DisclosurePanel,
-// } from '../src/components/Disclosure';
-// import { Form } from '../src/components/Form';
-// import { GridList, GridListItem } from '../src/components/GridList';
 import { Header1 } from '../src/components/Header';
 // import { Link } from '../src/components/Link';
 // import { ListBox, ListBoxItem } from '../src/components/ListBox';
@@ -53,12 +25,16 @@ import { Header1 } from '../src/components/Header';
 import { Modal } from '../src/components/Modal';
 // import { Popover } from '../src/components/Popover';
 // import { SearchField } from '../src/components/SearchField';
-// import { Select, SelectItem } from '../src/components/Select';
+import { Select, SelectItem } from '../src/components/Select';
 // import { Separator } from '../src/components/Separator';
 // import { Slider } from '../src/components/Slider';
 // import { Cell, Column, Row, Table } from '../src/components/Table';
 import { Tab, TabList, TabPanel, Tabs } from '../src/components/Tabs';
 import { TextField } from '../src/components/TextField';
+import * as ButtonStories from './Button.stories';
+import * as SelectStories from './Select.stories';
+import * as TabsStories from './Tabs.stories';
+import * as TextFieldStories from './TextField.stories';
 
 const meta: Meta = {
   title: 'All Components',
@@ -71,6 +47,7 @@ export default meta;
 
 export const AllComponents = () => (
   <div className="flex flex-col gap-8 p-8">
+    {/*
     <section>
       <h2 className="mb-4 text-xl font-bold">Alert Dialog</h2>
       <DialogTrigger>
@@ -87,37 +64,25 @@ export const AllComponents = () => (
         </Modal>
       </DialogTrigger>
     </section>
-
+    */}
+    <section>
+      <h2 className="mb-4 text-xl font-bold">Select</h2>
+      <SelectStories.Example />
+    </section>
     <section>
       <h2 className="mb-4 text-xl font-bold">Buttons</h2>
-      <div className="flex gap-4">
-        <Button color="primary">Primary</Button>
-        <Button color="secondary">Secondary</Button>
-        <Button color="destructive">Destructive</Button>
-
-        <Button unstyled>Unstyled</Button>
-        <ButtonLink>Button Link</ButtonLink>
-      </div>
+      <ButtonStories.Example />
     </section>
 
     <section>
       <h2 className="mb-4 text-xl font-bold">Tabs</h2>
-      <Tabs>
-        <TabList aria-label="History">
-          <Tab id="photos">Photos</Tab>
-          <Tab id="videos">Videos</Tab>
-          <Tab id="music">Music</Tab>
-        </TabList>
-        <TabPanel id="photos">Photos panel</TabPanel>
-        <TabPanel id="videos">Videos panel</TabPanel>
-        <TabPanel id="music">Music panel</TabPanel>
-      </Tabs>
+      <TabsStories.Example />
     </section>
     <section>
       <h2 className="mb-4 text-xl font-bold">Input</h2>
-
-      <TextField placeholder="Placeholder" label="Label" />
+      <TextFieldStories.Example />
     </section>
+
     <section>
       <h2 className="mb-4 text-xl font-bold">Typography</h2>
       <Header1>Header Level 1</Header1>

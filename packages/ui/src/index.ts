@@ -54,6 +54,7 @@ export * from './components/ToggleButtonGroup';
 export * from './components/Toolbar';
 export * from './components/Tooltip';
 export * from './components/LoadingSpinner';
+export * from './components/Toast';
 
 // Export everything from lib and utils
 export * from './lib/utils';

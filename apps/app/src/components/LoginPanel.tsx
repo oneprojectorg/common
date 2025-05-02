@@ -6,6 +6,7 @@ import { createSBBrowserClient } from '@op/supabase/client';
 import { trpc } from '@op/trpc/client';
 import { Button, ButtonLink } from '@op/ui/Button';
 import { Form } from '@op/ui/Form';
+import { Header1 } from '@op/ui/Header';
 import { SocialLinks } from '@op/ui/SocialLinks';
 import { TextField } from '@op/ui/TextField';
 import { cn } from '@op/ui/utils';
@@ -16,7 +17,6 @@ import { create } from 'zustand';
 import GoogleIcon from '~icons/logos/google-icon.jsx';
 
 import { CommonLogo } from './CommonLogo';
-import { Header1 } from './Header';
 import { OPLogo } from './OPLogo';
 
 interface LoginState {
@@ -132,7 +132,7 @@ export const LoginPanel = () => {
   // TODO: using a tailwind v4 class here "min-w-xs"
   return (
     <div className="min-w-xs z-[999999] max-h-full w-auto rounded-md border-offWhite bg-white bg-clip-padding px-4 py-8 font-sans text-neutral-700 xs:w-96 sm:border-0">
-      <div className="flex flex-col gap-4 overflow-auto sm:gap-8">
+      <div className="flex flex-col gap-4 sm:gap-8">
         <section className="flex flex-col items-center justify-center gap-2">
           <div className="flex items-center gap-2 pb-2 sm:hidden">
             <OPLogo />
@@ -201,7 +201,7 @@ export const LoginPanel = () => {
                     <Button
                       color="secondary"
                       variant="icon"
-                      className="text-black"
+                      className="w-full text-black"
                       onPress={() => {
                         void handleLogin();
                       }}

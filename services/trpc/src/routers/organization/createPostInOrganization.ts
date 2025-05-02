@@ -1,9 +1,9 @@
 import { posts, postsToOrganizations } from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
-import { createSelectSchema } from 'drizzle-zod';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
+import { postsEncoder } from '../../encoders';
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withDB from '../../middlewares/withDB';
 import withRateLimited from '../../middlewares/withRateLimited';
@@ -20,7 +20,7 @@ const meta: OpenApiMeta = {
   },
 };
 
-const outputSchema = createSelectSchema(posts);
+const outputSchema = postsEncoder.strip();
 
 export const createPostInOrganization = router({
   createPost: loggedProcedure
@@ -68,7 +68,8 @@ export const createPostInOrganization = router({
           return post;
         });
 
-        return newPost;
+        const output = outputSchema.parse(newPost);
+        return output;
       } catch (error) {
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',

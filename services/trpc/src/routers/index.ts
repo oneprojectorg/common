@@ -1,14 +1,14 @@
 import { router } from '../trpcFactory';
 import accountRouter from './account';
-import { externalRouter } from './external';
 import llmRouter from './llm';
 import { organizationRouter } from './organization';
+import { taxonomyRouter } from './taxonomy';
 
 export const appRouter = router({
   account: accountRouter,
   organization: organizationRouter,
   llm: llmRouter,
-  external: externalRouter,
+  taxonomy: taxonomyRouter,
 });
 
 export type AppRouter = typeof appRouter;

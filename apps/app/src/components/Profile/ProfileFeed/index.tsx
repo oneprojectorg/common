@@ -1,16 +1,17 @@
 import { getPublicUrl } from '@/utils';
 import { trpc } from '@op/trpc/client';
-import type { Organization, Post } from '@op/trpc/encoders';
+import type { Organization, PostToOrganization } from '@op/trpc/encoders';
 import { Button } from '@op/ui/Button';
 import { TextArea } from '@op/ui/Field';
 import { Form } from '@op/ui/Form';
+import { Header3 } from '@op/ui/Header';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';
-import { useState } from 'react';
-import type { ReactNode } from 'react';
-import { LuImage, LuPaperclip } from 'react-icons/lu';
+import { useEffect, useRef, useState } from 'react';
+import type { ReactNode, RefObject } from 'react';
+import { LuImage, LuLeaf, LuPaperclip } from 'react-icons/lu';
 
-import { Header3 } from '@/components/Header';
+import { useTranslations } from '@/lib/i18n';
 
 // TODO: generated this quick with AI. refactor it!
 const formatRelativeTime = (timestamp: Date | string | number): string => {
@@ -75,29 +76,45 @@ const FeedHeader = ({ children }: { children: ReactNode }) => {
 
 const FeedAvatar = ({ children }: { children?: ReactNode }) => {
   return (
-    <div className="relative w-16 min-w-16 overflow-hidden">{children}</div>
-  );
-};
-
-const FeedMain = ({ children }: { children: ReactNode }) => {
-  return (
-    <div className="flex min-h-16 w-full flex-col items-start justify-start gap-3">
+    <div className="shadown relative w-8 min-w-8 overflow-hidden">
       {children}
     </div>
   );
 };
 
-export const ProfileFeed = ({ profile }: { profile: Organization }) => {
-  const [posts] = trpc.organization.listPosts.useSuspenseQuery({
-    slug: profile.slug,
-  });
+const FeedMain = ({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) => {
+  return (
+    <div
+      className={cn(
+        'flex min-h-16 w-full flex-col items-start justify-start gap-2',
+        className,
+      )}
+    >
+      {children}
+    </div>
+  );
+};
 
+export const ProfileFeedPost = ({
+  profile,
+  className,
+}: {
+  profile: Organization;
+  className?: string;
+}) => {
   const [content, setContent] = useState('');
+  const t = useTranslations();
   const utils = trpc.useContext();
   const createPost = trpc.organization.createPost.useMutation({
-    onMutate: async (newPost) => {
+    onMutate: (newPost) => {
       // Cancel any outgoing refetches for the posts query
-      await utils.organization.listPosts.cancel();
+      // await utils.organization.listPosts.cancel();
       // Snapshot the previous list of posts
       const previousPosts = utils.organization.listPosts.getData({
         slug: profile.slug,
@@ -113,7 +130,11 @@ export const ProfileFeed = ({ profile }: { profile: Organization }) => {
 
       return { previousPosts };
     },
-    onError: (_, __, context: { previousPosts?: Array<Post> } | undefined) => {
+    onError: (
+      _,
+      __,
+      context: { previousPosts?: Array<PostToOrganization> } | undefined,
+    ) => {
       // Roll back to the previous posts on error
       utils.organization.listPosts.setData(
         { slug: profile.slug },
@@ -137,8 +158,20 @@ export const ProfileFeed = ({ profile }: { profile: Organization }) => {
 
   const profileImageUrl = getPublicUrl(profile.avatarImage?.name);
 
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.addEventListener('input', () => {
+        if (textareaRef.current) {
+          textareaRef.current.style.height = '2.5rem'; // Reset to min height
+          textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`; // Set to scrollHeight
+        }
+      });
+    }
+  }, [textareaRef]);
+
   return (
-    <div className="flex flex-col gap-8">
+    <div className={cn('flex flex-col gap-8 pb-8', className)}>
       <FeedItem>
         <FeedAvatar>
           {profileImageUrl ? (
@@ -146,39 +179,59 @@ export const ProfileFeed = ({ profile }: { profile: Organization }) => {
               src={profileImageUrl}
               alt=""
               fill
-              className="!size-16 max-h-16 max-w-16 rounded-full"
+              className="!size-8 max-h-8 max-w-8 rounded-full"
             />
           ) : (
-            <div className="size-16 rounded-full border bg-white shadow" />
+            <div className="size-8 rounded-full border bg-white" />
           )}
         </FeedAvatar>
         <FeedMain>
           <Form onSubmit={handleSubmit} className="flex w-full flex-row gap-4">
             <TextArea
-              className="size-full border-none"
+              className="size-full h-10 min-h-10 overflow-y-hidden border-none"
+              ref={textareaRef as RefObject<HTMLTextAreaElement>}
               placeholder={`Post an update from ${profile.name}…`}
               value={content}
               onChange={(e) => setContent(e.target.value)}
             />
             {content.length > 0 && (
               <Button color="secondary" type="submit">
-                Post
+                {t('Post')}
               </Button>
             )}
           </Form>
           <div className="flex gap-6">
-            <div className="flex gap-1 text-charcoal">
+            <div className="flex items-center gap-1 text-charcoal">
               <LuImage className="size-4" />
-              Media
+              {t('Media')}
             </div>
-            <div className="flex gap-1 text-charcoal">
+            <div className="flex items-center gap-1 text-charcoal">
               <LuPaperclip className="size-4" />
-              Resource
+              {t('Resource')}
             </div>
           </div>
         </FeedMain>
       </FeedItem>
-      <span className="-ml-6 w-[calc(100%+3rem)] border-b border-offWhite p-0" />
+    </div>
+  );
+};
+
+export const ProfileFeed = ({
+  profile,
+  className,
+}: {
+  profile: Organization;
+  className?: string;
+}) => {
+  const t = useTranslations();
+  const [posts] = trpc.organization.listPosts.useSuspenseQuery({
+    slug: profile.slug,
+  });
+
+  const profileImageUrl = getPublicUrl(profile.avatarImage?.name);
+
+  return (
+    <div className={cn('flex flex-col gap-8 pb-8', className)}>
       {posts.length > 0 ? (
         posts.map(({ content, createdAt }, i) => (
           <FeedItem key={i}>
@@ -188,10 +241,10 @@ export const ProfileFeed = ({ profile }: { profile: Organization }) => {
                   src={profileImageUrl}
                   alt=""
                   fill
-                  className="!size-16 max-h-16 max-w-16 rounded-full"
+                  className="!size-8 max-h-8 max-w-8 rounded-full"
                 />
               ) : (
-                <div className="size-16 rounded-full border bg-white shadow" />
+                <div className="size-8 rounded-full border bg-white" />
               )}
             </FeedAvatar>
             <FeedMain>
@@ -211,9 +264,13 @@ export const ProfileFeed = ({ profile }: { profile: Organization }) => {
         ))
       ) : (
         <FeedItem>
-          <FeedAvatar />
-          <FeedMain>
-            <FeedContent className="text-lightGray">No posts yet</FeedContent>
+          <FeedMain className="flex w-full flex-col items-center justify-center py-6">
+            <FeedContent className="flex flex-col items-center justify-center text-neutral-gray4">
+              <div className="flex size-10 items-center justify-center gap-4 rounded-full bg-neutral-gray1">
+                <LuLeaf />
+              </div>
+              <span>{t('No posts yet.')}</span>
+            </FeedContent>
           </FeedMain>
         </FeedItem>
       )}

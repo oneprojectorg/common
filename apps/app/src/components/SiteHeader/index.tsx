@@ -11,9 +11,10 @@ import { Skeleton } from '@op/ui/Skeleton';
 import { TextField } from '@op/ui/TextField';
 import { ErrorBoundary } from 'next/dist/client/components/error-boundary';
 import Image from 'next/image';
-import Link from 'next/link';
 import { Suspense } from 'react';
 import { LuSearch } from 'react-icons/lu';
+
+import { Link } from '@/lib/i18n';
 
 import { CommonLogo } from '../CommonLogo';
 import { OPLogo } from '../OPLogo';
@@ -23,7 +24,7 @@ const UserAvatarMenu = () => {
   const logout = useAuthLogout();
 
   return (
-    <div className="size-8 text-clip rounded-full border bg-white shadow">
+    <div className="size-8 overflow-hidden text-clip rounded-full border bg-white shadow">
       <MenuTrigger>
         <Button unstyled>
           {user.avatarImage?.name ? (
@@ -34,7 +35,7 @@ const UserAvatarMenu = () => {
               height={48}
             />
           ) : (
-            <div className="size-8 rounded-full border bg-white shadow">
+            <div className="flex size-8 items-center justify-center text-neutral-gray3">
               {user.name?.slice(0, 1) ?? ''}
             </div>
           )}
@@ -52,37 +53,41 @@ const UserAvatarMenu = () => {
 
 export const SiteHeader = () => {
   return (
-    <header className="flex h-14 w-full items-center justify-between border-b px-4 py-7 md:px-28">
-      <Link href="/" className="flex gap-1">
-        <OPLogo />
-        <CommonLogo />
-      </Link>
-      <TextField
-        inputProps={{
-          placeholder: 'Search',
-          color: 'muted',
-          size: 'small',
-          icon: <LuSearch className="text-darkGray" />,
-        }}
-        className="w-96"
-        aria-label="Search"
-      />
+    <>
+      <header className="gridCentered hidden h-auto w-full items-center justify-between px-4 py-3 sm:grid md:px-28">
+        <Link href="/" className="flex gap-1">
+          <OPLogo />
+          <CommonLogo />
+        </Link>
+        <span className="flex items-center justify-center">
+          <TextField
+            inputProps={{
+              placeholder: 'Search',
+              color: 'muted',
+              size: 'small',
+              icon: <LuSearch className="size-4 text-neutral-gray4" />,
+            }}
+            className="w-96"
+            aria-label="Search"
+          />
+        </span>
 
-      <ClientOnly>
-        <ErrorBoundary
-          errorComponent={() => (
-            <div className="size-8 rounded-full border bg-white shadow" />
-          )}
-        >
-          <Suspense
-            fallback={
-              <Skeleton className="size-8 rounded-full border bg-white shadow" />
-            }
+        <ClientOnly>
+          <ErrorBoundary
+            errorComponent={() => (
+              <div className="size-8 rounded-full border bg-white shadow" />
+            )}
           >
-            <UserAvatarMenu />
-          </Suspense>
-        </ErrorBoundary>
-      </ClientOnly>
-    </header>
+            <Suspense
+              fallback={
+                <Skeleton className="size-8 rounded-full border bg-white shadow" />
+              }
+            >
+              <UserAvatarMenu />
+            </Suspense>
+          </ErrorBoundary>
+        </ClientOnly>
+      </header>
+    </>
   );
 };
