@@ -53,7 +53,7 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
 
       <Button className="min-w-full sm:min-w-fit">
         <LuPlus className="size-4" />
-        Edit profile
+        Add relationship
       </Button>
     </div>
   );

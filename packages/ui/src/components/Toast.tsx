@@ -9,8 +9,7 @@ export const Toast = () => {
       position="bottom-center"
       className="toaster group"
       pauseWhenPageIsHidden
-      duration={5 * 60 * 1000}
-      visibleToasts={10}
+      visibleToasts={5}
       icons={{
         success: <LuCircleCheck className="size-6 text-functional-green" />,
         close: <LuX className="size-6 text-neutral-black" />,
