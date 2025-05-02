@@ -3,9 +3,10 @@ import { AvatarUploader } from '@op/ui/AvatarUploader';
 import { BannerUploader } from '@op/ui/BannerUploader';
 import type { Option } from '@op/ui/MultiSelectComboBox';
 import { SelectItem } from '@op/ui/Select';
-import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { z } from 'zod';
+
+import { useTranslations } from '@/lib/i18n';
 
 import { GeoNamesMultiSelect } from '../GeoNamesMultiSelect';
 import { TermsMultiSelect } from '../TermsMultiSelect';

@@ -21,30 +21,38 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
     <div className="flex flex-wrap gap-3 sm:gap-4">
       {isReceivingFunds
         ? receivingFundingLinks.map((link) => (
-          <TooltipTrigger key={link.id}>
-            <ButtonLink href={link.href} className="min-w-full sm:min-w-44">
-              <LuArrowUpRight />
-              Contribute
-            </ButtonLink>
-            <Tooltip>We accept applications on a rolling basis</Tooltip>
-          </TooltipTrigger>
-        ))
+            <TooltipTrigger key={link.id}>
+              <ButtonLink
+                color="secondary"
+                href={link.href}
+                className="min-w-full sm:min-w-44"
+              >
+                <LuArrowUpRight className="size-4" />
+                Contribute
+              </ButtonLink>
+              <Tooltip>We accept applications on a rolling basis</Tooltip>
+            </TooltipTrigger>
+          ))
         : null}
 
       {isOfferingFunds
         ? offeringFundingLinks.map((link) => (
-          <TooltipTrigger key={link.id}>
-            <ButtonLink href={link.href} className="min-w-full sm:min-w-44">
-              <LuInfo />
-              Learn more
-            </ButtonLink>
-            <Tooltip>We’re an invite-only granting organization</Tooltip>
-          </TooltipTrigger>
-        ))
+            <TooltipTrigger key={link.id}>
+              <ButtonLink
+                color="secondary"
+                href={link.href}
+                className="min-w-full sm:min-w-44"
+              >
+                <LuInfo />
+                Learn more
+              </ButtonLink>
+              <Tooltip>We’re an invite-only granting organization</Tooltip>
+            </TooltipTrigger>
+          ))
         : null}
 
-      <Button color="secondary" className="min-w-full sm:min-w-44">
-        <LuPlus />
+      <Button className="min-w-full sm:min-w-44">
+        <LuPlus className="size-4" />
         Add relationship
       </Button>
     </div>

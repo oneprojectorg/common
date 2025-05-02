@@ -1,7 +1,8 @@
 import { ToggleButton } from '@op/ui/ToggleButton';
-import { useTranslations } from 'next-intl';
 import { LuLink } from 'react-icons/lu';
 import { z } from 'zod';
+
+import { useTranslations } from '@/lib/i18n';
 
 import { FormContainer } from '../form/FormContainer';
 import { FormHeader } from '../form/FormHeader';

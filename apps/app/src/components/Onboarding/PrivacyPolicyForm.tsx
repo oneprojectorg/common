@@ -1,7 +1,8 @@
-import { useTranslations } from 'next-intl';
+import { Header3 } from '@op/ui/Header';
 import { z } from 'zod';
 
-import { Header3 } from '../Header';
+import { useTranslations } from '@/lib/i18n';
+
 import { FormContainer } from '../form/FormContainer';
 import { FormHeader } from '../form/FormHeader';
 import { useMultiStep } from '../form/multiStep';

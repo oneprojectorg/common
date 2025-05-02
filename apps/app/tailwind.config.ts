@@ -16,30 +16,6 @@ const config: Pick<Config, 'content' | 'theme' | 'presets'> = {
         sans: ['var(--font-sans)', ...defaultTheme.fontFamily.sans],
         mono: ['var(--font-mono)', ...defaultTheme.fontFamily.mono],
       },
-      fontSize: {
-        base: [
-          '0.875rem',
-          {
-            lineHeight: '1.1375rem',
-          },
-        ],
-        header: [
-          '2rem',
-          {
-            lineHeight: '1.925rem',
-            letterSpacing: '-0.02625rem',
-            fontWeight: 300,
-          },
-        ],
-        headerMobile: [
-          '1.25rem',
-          {
-            lineHeight: '1.375rem',
-            letterSpacing: '-0.01875rem',
-            fontWeight: 300,
-          },
-        ],
-      },
       borderRadius: {
         ...defaultTheme.borderRadius,
         // xs: '0.125rem',

@@ -1,13 +1,12 @@
 import type { Organization } from '@op/trpc/encoders';
 import { Button } from '@op/ui/Button';
+import { Header3 } from '@op/ui/Header';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { LuCopy, LuGlobe, LuMail } from 'react-icons/lu';
 import { toast } from 'sonner';
-
-import { Header3 } from '@/components/Header';
 
 import { ProfileFeed, ProfileFeedPost } from '../ProfileFeed';
 

@@ -6,6 +6,7 @@ import { createSBBrowserClient } from '@op/supabase/client';
 import { trpc } from '@op/trpc/client';
 import { Button, ButtonLink } from '@op/ui/Button';
 import { Form } from '@op/ui/Form';
+import { Header1 } from '@op/ui/Header';
 import { SocialLinks } from '@op/ui/SocialLinks';
 import { TextField } from '@op/ui/TextField';
 import { cn } from '@op/ui/utils';
@@ -16,7 +17,6 @@ import { create } from 'zustand';
 import GoogleIcon from '~icons/logos/google-icon.jsx';
 
 import { CommonLogo } from './CommonLogo';
-import { Header1 } from './Header';
 import { OPLogo } from './OPLogo';
 
 interface LoginState {
@@ -142,53 +142,53 @@ export const LoginPanel = () => {
             {user?.error?.name === 'AuthRetryableFetchError'
               ? 'Connection Issue'
               : (() => {
-                if (login.isError || error || tokenError) {
-                  if (
-                    combinedError?.includes('invite') ||
-                    combinedError?.includes('waitlist')
-                  ) {
-                    return 'Stay tuned!';
+                  if (login.isError || error || tokenError) {
+                    if (
+                      combinedError?.includes('invite') ||
+                      combinedError?.includes('waitlist')
+                    ) {
+                      return 'Stay tuned!';
+                    }
+
+                    return 'Oops!';
                   }
 
-                  return 'Oops!';
-                }
+                  if (!loginSuccess) {
+                    if (isSignup) {
+                      return `Sign up to ${APP_NAME}`;
+                    }
 
-                if (!loginSuccess) {
-                  if (isSignup) {
-                    return `Sign up to ${APP_NAME}`;
+                    return 'Welcome to Common.';
                   }
 
-                  return 'Welcome to Common.';
-                }
-
-                return 'Check your email!';
-              })()}
+                  return 'Check your email!';
+                })()}
           </Header1>
           <div className="px-4 text-center text-xs leading-[130%] text-darkGray sm:text-base">
             {user?.error?.name === 'AuthRetryableFetchError'
               ? `${APP_NAME} can\`t connect to the internet. Please check your internet connection and try again.`
               : (() => {
-                if (combinedError || tokenError) {
+                  if (combinedError || tokenError) {
+                    return (
+                      <span className={cn(tokenError && 'text-red-500')}>
+                        {combinedError ||
+                          tokenError ||
+                          'There was an error signing you in.'}
+                      </span>
+                    );
+                  }
+
+                  if (!loginSuccess) {
+                    return 'Connect with aligned organizations and funders building a new economy together';
+                  }
+
                   return (
-                    <span className={cn(tokenError && 'text-red-500')}>
-                      {combinedError ||
-                        tokenError ||
-                        'There was an error signing you in.'}
+                    <span>
+                      A code was sent to <span>{email}</span>. Type the code
+                      below to sign in.
                     </span>
                   );
-                }
-
-                if (!loginSuccess) {
-                  return 'Connect with aligned organizations and funders building a new economy together';
-                }
-
-                return (
-                  <span>
-                    A code was sent to <span>{email}</span>. Type the code
-                    below to sign in.
-                  </span>
-                );
-              })()}
+                })()}
           </div>
         </section>
 
@@ -363,8 +363,8 @@ export const LoginPanel = () => {
             )}
 
             {user?.error?.name === 'AuthRetryableFetchError' ||
-              login.isError ||
-              !!combinedError ? null : (
+            login.isError ||
+            !!combinedError ? null : (
               <div className="flex flex-col items-center justify-center text-center text-xs text-midGray sm:text-sm">
                 {isSignup ? (
                   <span>

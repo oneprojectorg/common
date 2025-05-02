@@ -67,7 +67,6 @@ export const getGeoNames = router({
       const geonames =
         Array.from(geoNameMap).map((item) => ({ [item[0]]: item[1] })) ?? [];
 
-      console.log('GEONAMES', geonames);
       return {
         geonames,
       };

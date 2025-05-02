@@ -4,14 +4,14 @@ import type { Organization, PostToOrganization } from '@op/trpc/encoders';
 import { Button } from '@op/ui/Button';
 import { TextArea } from '@op/ui/Field';
 import { Form } from '@op/ui/Form';
+import { Header3 } from '@op/ui/Header';
 import { cn } from '@op/ui/utils';
-import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { LuImage, LuLeaf, LuPaperclip } from 'react-icons/lu';
 
-import { Header3 } from '@/components/Header';
+import { useTranslations } from '@/lib/i18n';
 
 // TODO: generated this quick with AI. refactor it!
 const formatRelativeTime = (timestamp: Date | string | number): string => {

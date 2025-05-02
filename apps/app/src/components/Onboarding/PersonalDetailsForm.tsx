@@ -1,9 +1,10 @@
 import { trpc } from '@op/trpc/client';
 import { AvatarUploader } from '@op/ui/AvatarUploader';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { z } from 'zod';
+
+import { useTranslations } from '@/lib/i18n';
 
 import { FormContainer } from '../form/FormContainer';
 import { FormHeader } from '../form/FormHeader';

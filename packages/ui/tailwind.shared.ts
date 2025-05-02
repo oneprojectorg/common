@@ -31,6 +31,100 @@ const config: Omit<Config, 'content'> = {
         sans: ['var(--font-sans)', ...defaultTheme.fontFamily.sans],
         mono: ['var(--font-mono)', ...defaultTheme.fontFamily.mono],
       },
+      fontSize: {
+        'title-xxl': [
+          '3rem',
+          { lineHeight: '110%', fontWeight: '300', letterSpacing: '-0.075rem' },
+        ],
+        'title-xl': [
+          '2.5rem',
+          {
+            lineHeight: '110%',
+            fontWeight: '300',
+            letterSpacing: '-0.0625rem',
+          },
+        ],
+        'title-lg': [
+          '1.75rem',
+          {
+            lineHeight: '110%',
+            fontWeight: '300',
+            letterSpacing: '-0.02625rem',
+          },
+        ],
+        'title-md': [
+          '1.5rem',
+          {
+            lineHeight: '110%',
+            fontWeight: '300',
+            letterSpacing: '-0.0225rem',
+          },
+        ],
+        'title-base': [
+          '1.25rem',
+          {
+            lineHeight: '110%',
+            fontWeight: '300',
+            letterSpacing: '-0.01875rem',
+          },
+        ],
+        'title-sm': [
+          '1rem',
+          { lineHeight: '130%', fontWeight: '300', letterSpacing: '-0.015rem' },
+        ],
+        'title-xs': [
+          '0.875rem',
+          {
+            lineHeight: '130%',
+            fontWeight: '300',
+            letterSpacing: '-0.01313rem',
+          },
+        ],
+        'title-xxs': [
+          '0.75rem',
+          {
+            lineHeight: '130%',
+            fontWeight: '300',
+            letterSpacing: '-0.01125rem',
+          },
+        ],
+        'title-sm12': [
+          '0.75rem',
+          {
+            lineHeight: '130%',
+            fontWeight: '300',
+            letterSpacing: '-0.01125rem',
+          },
+        ],
+        xs: [
+          '0.625rem',
+          {
+            lineHeight: '150%',
+            fontWeight: '400',
+          },
+        ],
+        sm: [
+          '0.75rem',
+          {
+            lineHeight: '150%',
+            fontWeight: '400',
+          },
+        ],
+        base: [
+          '0.875rem',
+          {
+            lineHeight: '150%',
+            fontWeight: '400',
+          },
+        ],
+        lg: [
+          '1rem',
+          {
+            lineHeight: '150%',
+            fontWeight: '400',
+          },
+        ],
+      },
       size: {
         xs: {
           height: '0.75rem',
