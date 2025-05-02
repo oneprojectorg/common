@@ -188,11 +188,11 @@ export const ProfileFeedPost = ({
             )}
           </Form>
           <div className="flex gap-6">
-            <div className="flex gap-1 text-charcoal">
+            <div className="flex items-center gap-1 text-charcoal">
               <LuImage className="size-4" />
               {t('Media')}
             </div>
-            <div className="flex gap-1 text-charcoal">
+            <div className="flex items-center gap-1 text-charcoal">
               <LuPaperclip className="size-4" />
               {t('Resource')}
             </div>

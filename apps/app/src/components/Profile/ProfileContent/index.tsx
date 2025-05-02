@@ -33,7 +33,7 @@ const ProfileAbout = ({ profile }: { profile: Organization }) => {
       {email || website ? (
         <section className="flex flex-col gap-2">
           <Header3>Contact</Header3>
-          <div className="flex flex-col gap-2 text-teal">
+          <div className="flex flex-col text-teal">
             {website ? (
               <ContactLink>
                 <LuGlobe />
