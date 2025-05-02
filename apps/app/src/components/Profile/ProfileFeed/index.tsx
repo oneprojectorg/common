@@ -92,7 +92,7 @@ const FeedMain = ({
   return (
     <div
       className={cn(
-        'flex min-h-16 w-full flex-col items-start justify-start gap-3',
+        'flex min-h-16 w-full flex-col items-start justify-start gap-2',
         className,
       )}
     >
@@ -185,7 +185,7 @@ export const ProfileFeedPost = ({
             <div className="size-8 rounded-full border bg-white" />
           )}
         </FeedAvatar>
-        <FeedMain className="gap-2">
+        <FeedMain>
           <Form onSubmit={handleSubmit} className="flex w-full flex-row gap-4">
             <TextArea
               className="size-full h-10 min-h-10 overflow-y-hidden border-none"
