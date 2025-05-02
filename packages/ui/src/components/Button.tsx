@@ -25,7 +25,7 @@ const buttonStyle = tv({
     },
     size: {
       small: 'h-8 p-3',
-      medium: 'h-11 p-4',
+      medium: 'h-10 p-4',
     },
     surface: {
       solid: '',
