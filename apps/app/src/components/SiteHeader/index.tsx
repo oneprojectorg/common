@@ -54,21 +54,23 @@ const UserAvatarMenu = () => {
 export const SiteHeader = () => {
   return (
     <>
-      <header className="hidden h-14 w-full items-center justify-between px-4 py-7 sm:flex md:px-28">
+      <header className="gridCentered hidden h-auto w-full items-center justify-between px-4 py-3 sm:grid md:px-28">
         <Link href="/" className="flex gap-1">
           <OPLogo />
           <CommonLogo />
         </Link>
-        <TextField
-          inputProps={{
-            placeholder: 'Search',
-            color: 'muted',
-            size: 'small',
-            icon: <LuSearch className="text-darkGray" />,
-          }}
-          className="w-96"
-          aria-label="Search"
-        />
+        <span className="flex items-center justify-center">
+          <TextField
+            inputProps={{
+              placeholder: 'Search',
+              color: 'muted',
+              size: 'small',
+              icon: <LuSearch className="text-darkGray" />,
+            }}
+            className="w-96"
+            aria-label="Search"
+          />
+        </span>
 
         <ClientOnly>
           <ErrorBoundary
