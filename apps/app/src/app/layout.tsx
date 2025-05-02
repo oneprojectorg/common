@@ -12,24 +12,28 @@ const roboto = Roboto({
   subsets: ['latin'],
   weight: ['100', '300', '400', '500', '700', '900'],
   variable: '--font-sans',
+  display: 'swap',
 });
 
 const inter = Inter({
   subsets: ['latin'],
   weight: 'variable',
   variable: '--font-inter',
+  display: 'swap',
 });
 
 const robotoMono = Roboto_Mono({
   subsets: ['latin'],
   weight: 'variable',
   variable: '--font-mono',
+  display: 'swap',
 });
 
 const robotoSerif = Roboto_Serif({
   subsets: ['latin'],
   weight: ['300', '400'],
   variable: '--font-serif',
+  display: 'swap',
 });
 
 export const metadata: Metadata = {

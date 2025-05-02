@@ -16,12 +16,6 @@ const config: Pick<Config, 'content' | 'theme' | 'presets'> = {
         sans: ['var(--font-sans)', ...defaultTheme.fontFamily.sans],
         mono: ['var(--font-mono)', ...defaultTheme.fontFamily.mono],
       },
-      borderRadius: {
-        ...defaultTheme.borderRadius,
-        // xs: '0.125rem',
-        // sm: '0.1875rem',
-        // md: '0.5rem',
-      },
       keyframes: {
         wiggle: {
           '0%, 100%': { transform: 'rotate(-5deg)' },
