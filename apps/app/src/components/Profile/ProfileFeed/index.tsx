@@ -188,7 +188,8 @@ export const ProfileFeedPost = ({
         <FeedMain>
           <Form onSubmit={handleSubmit} className="flex w-full flex-row gap-4">
             <TextArea
-              className="size-full h-10 min-h-10 overflow-y-hidden border-none"
+              className="size-full h-10 min-h-10 overflow-y-hidden"
+              variant="borderless"
               ref={textareaRef as RefObject<HTMLTextAreaElement>}
               placeholder={`Post an update…`}
               value={content}

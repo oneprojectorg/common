@@ -158,19 +158,41 @@ export const InputWithIcon = ({
   );
 };
 
+const textAreaStyles = tv({
+  base: [
+    'w-full min-w-0 rounded-md border border-neutral-gray1 p-3 text-sm text-neutral-black',
+    'outline outline-0 placeholder:text-base placeholder:text-neutral-gray4',
+    'active:border-neutral-gray4 active:outline',
+    'hover:border-neutral-gray2',
+    'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue',
+    'disabled:border-neutral-gray2 disabled:bg-neutral-gray1 disabled:text-lightGray',
+  ],
+  variants: {
+    variant: {
+      default: '',
+      borderless: 'border-none p-0',
+    },
+  },
+  defaultVariants: {
+    variant: 'default',
+  },
+});
+type TextAreaVariantProps = VariantProps<typeof textAreaStyles>;
+
 export const TextArea = ({
   ref,
+  variant,
+  className,
   ...props
-}: TextAreaProps & { ref?: React.RefObject<HTMLTextAreaElement> }) => {
+}: TextAreaProps & {
+  ref?: React.RefObject<HTMLTextAreaElement>;
+  className?: string;
+} & TextAreaVariantProps) => {
   return (
     <RACTextArea
       ref={ref}
       {...props}
-      className={composeTailwindRenderProps(
-        props.className,
-        // 'min-h-28 min-w-0 flex-1 items-center rounded border border-offWhite bg-white p-4 text-sm text-darkGray placeholder:text-midGray disabled:text-neutral-400',
-        'min-h-28 w-full min-w-0 rounded-md border border-neutral-gray1 p-3 text-sm text-neutral-black outline outline-0 placeholder:text-base placeholder:text-neutral-gray4 active:border-neutral-gray4 active:outline hover:border-neutral-gray2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue disabled:border-neutral-gray2 disabled:bg-neutral-gray1 disabled:text-lightGray',
-      )}
+      className={textAreaStyles({ variant, className })}
     />
   );
 };

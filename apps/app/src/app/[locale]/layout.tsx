@@ -1,6 +1,7 @@
 import { setupSSR } from '@/utils/setupSSR';
-import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
+
+import { I18nProvider } from '@/lib/i18n';
 
 const AppLayout = async ({
   children,
@@ -15,9 +16,9 @@ const AppLayout = async ({
   const messages = await getMessages();
 
   return (
-    <NextIntlClientProvider locale={locale} messages={messages}>
+    <I18nProvider locale={locale} messages={messages}>
       {children}
-    </NextIntlClientProvider>
+    </I18nProvider>
   );
 };
 
