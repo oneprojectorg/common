@@ -6,11 +6,10 @@ import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { StepProps } from '../MultiStepForm';
 import { FormContainer } from '../form/FormContainer';
 import { FormHeader } from '../form/FormHeader';
-import { useMultiStep } from '../form/multiStep';
 import { getFieldErrorMessage, useAppForm } from '../form/utils';
-import type { StepProps } from '../form/utils';
 
 export const validator = z.object({
   fullName: z
@@ -35,8 +34,7 @@ export const validator = z.object({
 type FormFields = z.infer<typeof validator>;
 
 export const PersonalDetailsForm = ({
-  defaultValues,
-  resolver,
+  onNext,
   className,
 }: StepProps & { className?: string }) => {
   const t = useTranslations();
@@ -44,12 +42,11 @@ export const PersonalDetailsForm = ({
   const updateProfile = trpc.account.updateUserProfile.useMutation();
   const [profileImageUrl, setProfileImageUrl] = useState<string | undefined>();
 
-  const { onNext } = useMultiStep();
   // If a resolver is provided, use it; otherwise, use the localized validator
   const form = useAppForm({
-    defaultValues: defaultValues as FormFields,
+    // defaultValues: defaultValues as FormFields,
     validators: {
-      onChange: resolver ? resolver : validator,
+      onChange: validator,
     },
     onSubmit: async ({ value }: { value: FormFields }) => {
       await updateProfile.mutateAsync({

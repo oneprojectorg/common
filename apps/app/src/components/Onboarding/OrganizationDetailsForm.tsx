@@ -9,12 +9,11 @@ import { z } from 'zod';
 import { useTranslations } from '@/lib/i18n';
 
 import { GeoNamesMultiSelect } from '../GeoNamesMultiSelect';
+import { StepProps } from '../MultiStepForm';
 import { TermsMultiSelect } from '../TermsMultiSelect';
 import { FormContainer } from '../form/FormContainer';
 import { FormHeader } from '../form/FormHeader';
-import { useMultiStep } from '../form/multiStep';
 import { getFieldErrorMessage, useAppForm } from '../form/utils';
-import type { StepProps } from '../form/utils';
 import { ToggleRow } from '../layout/split/form/ToggleRow';
 
 const multiSelectOptionValidator = z.object({
@@ -63,21 +62,20 @@ interface ImageData {
 }
 
 export const OrganizationDetailsForm = ({
-  defaultValues,
-  resolver,
+  onNext,
+  onBack,
   className,
 }: StepProps & { className?: string }) => {
   const t = useTranslations();
-  const { onNext, onBack } = useMultiStep();
   const [profileImage, setProfileImage] = useState<ImageData | undefined>();
   const [bannerImage, setBannerImage] = useState<ImageData | undefined>();
 
   const uploadImage = trpc.organization.uploadAvatarImage.useMutation();
 
   const form = useAppForm({
-    defaultValues,
+    // defaultValues,
     validators: {
-      onChange: resolver,
+      onChange: validator,
     },
     onSubmit: ({ value }) => {
       onNext({

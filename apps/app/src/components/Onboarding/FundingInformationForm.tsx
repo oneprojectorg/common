@@ -4,11 +4,10 @@ import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 
+import type { StepProps } from '../MultiStepForm';
 import { FormContainer } from '../form/FormContainer';
 import { FormHeader } from '../form/FormHeader';
-import { useMultiStep } from '../form/multiStep';
 import { getFieldErrorMessage, useAppForm } from '../form/utils';
-import type { StepProps } from '../form/utils';
 import { ToggleRow } from '../layout/split/form/ToggleRow';
 
 export const validator = z.object({
@@ -28,17 +27,16 @@ export const validator = z.object({
 });
 
 export const FundingInformationForm = ({
-  defaultValues,
-  resolver,
+  onNext,
+  onBack,
   className,
 }: StepProps & { className?: string }) => {
-  const { onNext, onBack } = useMultiStep();
   const t = useTranslations();
 
   const form = useAppForm({
-    defaultValues,
+    // defaultValues,
     validators: {
-      onChange: resolver,
+      onChange: validator,
     },
     onSubmit: ({ value }) => {
       onNext(value);

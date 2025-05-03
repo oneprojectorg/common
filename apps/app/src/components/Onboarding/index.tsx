@@ -1,15 +1,29 @@
 'use client';
 
-import { Formity } from '@formity/react';
-import type { OnReturn, ReturnOutput } from '@formity/react';
 import { trpc } from '@op/trpc/client';
 import { useRouter } from 'next/navigation';
 import { useCallback, useState } from 'react';
 
-import { schema } from './schema';
-import type { Values } from './schema';
+import { MultiStepForm } from '../MultiStepForm';
+import {
+  FundingInformationForm,
+  validator as FundingInformationFormValidator,
+} from './FundingInformationForm';
+import {
+  OrganizationDetailsForm,
+  validator as OrganizationDetailsFormValidator,
+} from './OrganizationDetailsForm';
+import {
+  PersonalDetailsForm,
+  validator as PersonalDetailsFormValidator,
+} from './PersonalDetailsForm';
+import {
+  PrivacyPolicyForm,
+  validator as PrivacyPolicyFormValidator,
+} from './PrivacyPolicyForm';
+import { ToSForm, validator as ToSFormValidator } from './ToSForm';
 
-const processInputs = (data: ReturnOutput<Values>) => {
+const processInputs = (data: any) => {
   const inputs = {
     ...data,
   };
@@ -18,12 +32,13 @@ const processInputs = (data: ReturnOutput<Values>) => {
 };
 
 export const OnboardingFlow = () => {
-  const [values, setValues] = useState<ReturnOutput<Values> | null>(null);
+  const [values, setValues] = useState<any | null>(null);
   const createOrganization = trpc.organization.create.useMutation();
   const router = useRouter();
 
-  const onReturn = useCallback<OnReturn<Values>>(
+  const onReturn = useCallback<any>(
     (values) => {
+      console.log('VALUES', values);
       setValues(values);
       createOrganization
         .mutateAsync(processInputs(values))
@@ -42,6 +57,22 @@ export const OnboardingFlow = () => {
   }
 
   return (
-    <Formity<Values> schema={schema} onReturn={onReturn} onYield={onReturn} />
+    <MultiStepForm
+      steps={[
+        PersonalDetailsForm,
+        OrganizationDetailsForm,
+        FundingInformationForm,
+        PrivacyPolicyForm,
+        ToSForm,
+      ]}
+      schemas={[
+        PersonalDetailsFormValidator,
+        OrganizationDetailsFormValidator,
+        FundingInformationFormValidator,
+        PrivacyPolicyFormValidator,
+        ToSFormValidator,
+      ]}
+      onFinish={onReturn}
+    />
   );
 };
