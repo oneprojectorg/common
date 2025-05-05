@@ -50,9 +50,6 @@ export const assertAccess = (
   needed: AccessZonePermission,
   roles: Array<AccessRole>,
 ) => {
-  // TODO: ENABLE THIS DOWN THE ROAD
-  return true;
-
   if (!hasAccess(needed, roles)) {
     throw new UnauthorizedError('Not authenticated');
   }
