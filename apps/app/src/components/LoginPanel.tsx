@@ -106,7 +106,6 @@ export const LoginPanel = () => {
   );
 
   const combinedError = (login.error?.message || error) ?? undefined;
-  console.log('ERROR', combinedError);
 
   const emailParser = z.string().email();
 
@@ -321,7 +320,7 @@ export const LoginPanel = () => {
                       isDisabled={
                         !emailIsValid ||
                         login.isFetching ||
-                        (!!token && token.length !== 6)
+                        (!!token && token.length !== 10)
                       }
                       onPress={async () => {
                         if (!loginSuccess) {
@@ -333,7 +332,7 @@ export const LoginPanel = () => {
                         } else if (
                           loginSuccess &&
                           token &&
-                          token.length === 6
+                          token.length === 10
                         ) {
                           void handleTokenSubmit();
                         }
