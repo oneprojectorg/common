@@ -1,8 +1,7 @@
 import { trpc } from '@op/trpc/client';
 import { AvatarUploader } from '@op/ui/AvatarUploader';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { ReactNode, useState, useEffect } from 'react';
-import { useOnboardingFormStore } from './useOnboardingFormStore';
+import { ReactNode, useState } from 'react';
 import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
@@ -11,6 +10,7 @@ import { StepProps } from '../MultiStepForm';
 import { FormContainer } from '../form/FormContainer';
 import { FormHeader } from '../form/FormHeader';
 import { getFieldErrorMessage, useAppForm } from '../form/utils';
+import { useOnboardingFormStore } from './useOnboardingFormStore';
 
 export const validator = z.object({
   fullName: z
@@ -38,14 +38,17 @@ export const PersonalDetailsForm = ({
   onNext,
   className,
 }: StepProps & { className?: string }): ReactNode => {
-  // 1. Get and set store values
   const personalDetails = useOnboardingFormStore((s) => s.personalDetails);
-  const setPersonalDetails = useOnboardingFormStore((s) => s.setPersonalDetails);
+  const setPersonalDetails = useOnboardingFormStore(
+    (s) => s.setPersonalDetails,
+  );
   const t = useTranslations();
   const uploadImage = trpc.account.uploadImage.useMutation();
   const updateProfile = trpc.account.updateUserProfile.useMutation();
   // Hydrate profileImageUrl from store if present, else undefined
-  const [profileImageUrl, setProfileImageUrl] = useState<string | undefined>(personalDetails?.profileImageUrl);
+  const [profileImageUrl, setProfileImageUrl] = useState<string | undefined>(
+    personalDetails?.profileImageUrl,
+  );
 
   // Hydrate form from store if present
   const form = useAppForm({
@@ -62,26 +65,6 @@ export const PersonalDetailsForm = ({
       onNext(value);
     },
   });
-
-  // Live sync form changes to store (if form.watch exists)
-  useEffect(() => {
-    if (typeof form.watch === 'function') {
-      const unsubscribe = form.watch((values: FormFields) => {
-        setPersonalDetails({ ...values, profileImageUrl });
-      });
-      return () => unsubscribe();
-    }
-    // If no watch, skip live sync
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form, setPersonalDetails, profileImageUrl]);
-
-  // Sync profileImageUrl changes to store (only if form.getValues exists)
-  useEffect(() => {
-    if (typeof form.getValues === 'function') {
-      setPersonalDetails({ ...form.getValues(), profileImageUrl });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profileImageUrl]);
 
   return (
     <form

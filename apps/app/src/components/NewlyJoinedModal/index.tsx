@@ -31,7 +31,6 @@ export const NewlyJoinedModal = () => {
   const router = useRouter();
   const isNew = searchParams.get('new');
   const [modalOpen, setModalOpen] = useState(!!isNew);
-  console.log('isNew', isNew);
 
   useEffect(() => {
     setModalOpen(!!isNew);

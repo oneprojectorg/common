@@ -3,8 +3,7 @@ import { AvatarUploader } from '@op/ui/AvatarUploader';
 import { BannerUploader } from '@op/ui/BannerUploader';
 import type { Option } from '@op/ui/MultiSelectComboBox';
 import { SelectItem } from '@op/ui/Select';
-import { useState, useEffect } from 'react';
-import { useOnboardingFormStore } from './useOnboardingFormStore';
+import { useState } from 'react';
 import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
@@ -16,6 +15,7 @@ import { FormContainer } from '../form/FormContainer';
 import { FormHeader } from '../form/FormHeader';
 import { getFieldErrorMessage, useAppForm } from '../form/utils';
 import { ToggleRow } from '../layout/split/form/ToggleRow';
+import { useOnboardingFormStore } from './useOnboardingFormStore';
 
 const multiSelectOptionValidator = z.object({
   id: z.string(),
@@ -67,13 +67,20 @@ export const OrganizationDetailsForm = ({
   onBack,
   className,
 }: StepProps & { className?: string }) => {
-  // 1. Get and set store values
-  const organizationDetails = useOnboardingFormStore((s) => s.organizationDetails);
-  const setOrganizationDetails = useOnboardingFormStore((s) => s.setOrganizationDetails);
+  const organizationDetails = useOnboardingFormStore(
+    (s) => s.organizationDetails,
+  );
+  const setOrganizationDetails = useOnboardingFormStore(
+    (s) => s.setOrganizationDetails,
+  );
   const t = useTranslations();
   // Hydrate images from store if present
-  const [profileImage, setProfileImage] = useState<ImageData | undefined>(organizationDetails?.profileImage);
-  const [bannerImage, setBannerImage] = useState<ImageData | undefined>(organizationDetails?.bannerImage);
+  const [profileImage, setProfileImage] = useState<ImageData | undefined>(
+    organizationDetails?.profileImage,
+  );
+  const [bannerImage, setBannerImage] = useState<ImageData | undefined>(
+    organizationDetails?.bannerImage,
+  );
 
   const uploadImage = trpc.organization.uploadAvatarImage.useMutation();
 
@@ -91,26 +98,6 @@ export const OrganizationDetailsForm = ({
       });
     },
   });
-
-  // Live sync form changes to store (if form.watch exists)
-  useEffect(() => {
-    if (typeof form.watch === 'function') {
-      const unsubscribe = form.watch((values: any) => {
-        setOrganizationDetails({ ...values, profileImage, bannerImage });
-      });
-      return () => unsubscribe();
-    }
-    // If no watch, skip live sync
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form, setOrganizationDetails, profileImage, bannerImage]);
-
-  // Sync image changes to store (only if form.getValues exists)
-  useEffect(() => {
-    if (typeof form.getValues === 'function') {
-      setOrganizationDetails({ ...form.getValues(), profileImage, bannerImage });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profileImage, bannerImage]);
 
   return (
     <form

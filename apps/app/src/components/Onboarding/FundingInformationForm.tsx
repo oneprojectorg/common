@@ -1,6 +1,4 @@
 import { ToggleButton } from '@op/ui/ToggleButton';
-import { useEffect } from 'react';
-import { useOnboardingFormStore } from './useOnboardingFormStore';
 import { LuLink } from 'react-icons/lu';
 import { z } from 'zod';
 
@@ -11,6 +9,7 @@ import { FormContainer } from '../form/FormContainer';
 import { FormHeader } from '../form/FormHeader';
 import { getFieldErrorMessage, useAppForm } from '../form/utils';
 import { ToggleRow } from '../layout/split/form/ToggleRow';
+import { useOnboardingFormStore } from './useOnboardingFormStore';
 
 export const validator = z.object({
   isReceivingFunds: z.boolean().default(false).optional(),
@@ -33,9 +32,12 @@ export const FundingInformationForm = ({
   onBack,
   className,
 }: StepProps & { className?: string }) => {
-  // 1. Get and set store values
-  const fundingInformation = useOnboardingFormStore((s) => s.fundingInformation);
-  const setFundingInformation = useOnboardingFormStore((s) => s.setFundingInformation);
+  const fundingInformation = useOnboardingFormStore(
+    (s) => s.fundingInformation,
+  );
+  const setFundingInformation = useOnboardingFormStore(
+    (s) => s.setFundingInformation,
+  );
   const t = useTranslations();
 
   const form = useAppForm({
@@ -48,18 +50,6 @@ export const FundingInformationForm = ({
       onNext(value);
     },
   });
-
-  // Live sync form changes to store (if form.watch exists)
-  useEffect(() => {
-    if (typeof form.watch === 'function') {
-      const unsubscribe = form.watch((values: any) => {
-        setFundingInformation(values);
-      });
-      return () => unsubscribe();
-    }
-    // If no watch, skip live sync
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form, setFundingInformation]);
 
   return (
     <form

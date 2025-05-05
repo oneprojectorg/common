@@ -38,9 +38,15 @@ export interface StepProps {
 }
 
 export const getFieldErrorMessage = (field: {
-  state: { meta: { errors: { message: string }[] } };
+  state: {
+    meta: {
+      errors?: Array<{ message?: string } | undefined>;
+    };
+  };
 }): string => {
-  return field.state.meta.errors.map((err) => err.message).join(', ');
+  return (
+    field.state.meta.errors?.map((err) => err?.message ?? '').join(', ') ?? ''
+  );
 };
 
 export type UnionToIntersection<U> = (

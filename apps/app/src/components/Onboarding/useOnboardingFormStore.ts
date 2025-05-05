@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { createJSONStorage, persist } from 'zustand/middleware';
 
 interface OnboardingFormState {
   step: number;
@@ -21,7 +21,7 @@ interface OnboardingFormState {
 
 export const useOnboardingFormStore = create<OnboardingFormState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       step: 0,
       personalDetails: undefined,
       organizationDetails: undefined,
@@ -36,19 +36,20 @@ export const useOnboardingFormStore = create<OnboardingFormState>()(
       setPrivacyPolicy: (data) => set({ privacyPolicy: data }),
       setTos: (data) => set({ tos: data }),
       setError: (error) => set({ error }),
-      reset: () => set({
-        step: 0,
-        personalDetails: undefined,
-        organizationDetails: undefined,
-        fundingInformation: undefined,
-        privacyPolicy: undefined,
-        tos: undefined,
-        error: null,
-      }),
+      reset: () =>
+        set({
+          step: 0,
+          personalDetails: undefined,
+          organizationDetails: undefined,
+          fundingInformation: undefined,
+          privacyPolicy: undefined,
+          tos: undefined,
+          error: null,
+        }),
     }),
     {
       name: 'onboarding-form',
       storage: createJSONStorage(() => sessionStorage),
-    }
-  )
+    },
+  ),
 );

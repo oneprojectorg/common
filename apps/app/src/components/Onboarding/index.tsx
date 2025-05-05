@@ -4,6 +4,7 @@ import { trpc } from '@op/trpc/client';
 import { StepperProgressIndicator } from '@op/ui/Stepper';
 import { useRouter } from 'next/navigation';
 import { useCallback, useState } from 'react';
+import { z } from 'zod';
 
 import { MultiStepForm, ProgressComponentProps } from '../MultiStepForm';
 import { Portal } from '../Portal';
@@ -25,6 +26,12 @@ import {
 } from './PrivacyPolicyForm';
 import { ToSForm, validator as ToSFormValidator } from './ToSForm';
 
+type FormValues = z.infer<typeof PersonalDetailsFormValidator> &
+  z.infer<typeof OrganizationDetailsFormValidator> &
+  z.infer<typeof FundingInformationFormValidator> &
+  z.infer<typeof PrivacyPolicyFormValidator> &
+  z.infer<typeof ToSFormValidator>;
+
 const processInputs = (data: any) => {
   const inputs = {
     ...data,
@@ -40,15 +47,15 @@ const ProgressInPortal = (props: ProgressComponentProps) => (
 );
 
 export const OnboardingFlow = () => {
-  const [values, setValues] = useState<any | null>(null);
+  const [values, setValues] = useState<FormValues | null>(null);
   const createOrganization = trpc.organization.create.useMutation();
   const router = useRouter();
 
   const onReturn = useCallback<any>(
-    (values) => {
-      const combined = values.reduce(
+    (values: Array<FormValues>) => {
+      const combined: FormValues = values.reduce(
         (accum, val) => ({ ...accum, ...val }),
-        {},
+        {} as FormValues,
       );
       setValues(combined);
       createOrganization
@@ -72,16 +79,16 @@ export const OnboardingFlow = () => {
       steps={[
         PersonalDetailsForm,
         OrganizationDetailsForm,
-        FundingInformationForm,
-        PrivacyPolicyForm,
         ToSForm,
+        PrivacyPolicyForm,
+        FundingInformationForm,
       ]}
       schemas={[
         PersonalDetailsFormValidator,
         OrganizationDetailsFormValidator,
-        FundingInformationFormValidator,
-        PrivacyPolicyFormValidator,
         ToSFormValidator,
+        PrivacyPolicyFormValidator,
+        FundingInformationFormValidator,
       ]}
       onFinish={onReturn}
       ProgressComponent={ProgressInPortal}
