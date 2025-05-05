@@ -13,6 +13,7 @@ import { ReactNode } from 'react';
 import { Link } from '@/lib/i18n';
 
 import { ImageHeader } from '@/components/ImageHeader';
+import { ProfileFeed, ProfileFeedPost } from '@/components/Profile/ProfileFeed';
 
 const HighlightNumber = ({
   children,
@@ -89,7 +90,11 @@ export const LandingScreen = () => {
       </Surface>
       <hr />
       <div className="grid grid-cols-15">
-        <div className="col-span-9">feed</div>
+        <div className="flex flex-col gap-8 col-span-9">
+          <Surface>feed post</Surface>
+          <hr />
+          <div>THE FEED</div>
+        </div>
         <span />
         <div className="col-span-5">
           <Surface className="flex flex-col gap-6 p-6">
