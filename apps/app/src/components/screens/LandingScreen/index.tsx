@@ -1,14 +1,48 @@
 import { getPublicUrl } from '@/utils';
 import { trpc } from '@op/trpc/client';
+import { Avatar } from '@op/ui/Avatar';
+import { FacePile } from '@op/ui/FacePile';
 import { Header1, Header3 } from '@op/ui/Header';
 import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
-import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
+import { cn } from '@op/ui/utils';
 import Image from 'next/image';
+import { ReactNode } from 'react';
 
 import { Link } from '@/lib/i18n';
 
-import { ImageHeader } from '@/components/ImageHeader';
+const HighlightNumber = ({
+  children,
+  className,
+}: {
+  children?: ReactNode;
+  className?: string;
+}) => {
+  return (
+    <div className="text-transparent">
+      <div
+        className={cn(
+          'flex items-center bg-gradient bg-clip-text font-serif text-title-xxl',
+          className,
+        )}
+      >
+        {children}
+      </div>
+    </div>
+  );
+};
+
+const HighlightLabel = ({ children }: { children?: ReactNode }) => {
+  return (
+    <div className="flex h-12 max-w-32 items-center text-neutral-charcoal">
+      {children}
+    </div>
+  );
+};
+
+const Highlight = ({ children }: { children?: ReactNode }) => {
+  return <div className="flex items-center gap-4">{children}</div>;
+};
 
 export const LandingScreen = () => {
   const [organizations] = trpc.organization.list.useSuspenseQuery();
@@ -17,68 +51,81 @@ export const LandingScreen = () => {
   console.log('USER', user);
 
   return (
-    <div className="container flex min-h-0 grow flex-col gap-8 pt-14">
+    <div className="container flex min-h-0 grow flex-col gap-10 pt-14">
       <div className="flex flex-col gap-6">
         <Header1 className="text-center">Welcome back, {user.name}!</Header1>
         <span className="text-center text-neutral-charcoal">
           Explore new connections and strengthen existing relationships.
         </span>
       </div>
-      <Surface>hello</Surface>
-      <Tabs>
-        <TabList>
-          <Tab id="discover">Discover</Tab>
-          <Tab id="recent">Recent</Tab>
-        </TabList>
+      <Surface>
+        <div className="flex items-center justify-between gap-4 px-10 py-6">
+          <Highlight>
+            <HighlightNumber className="bg-tealGreen">12</HighlightNumber>
+            <HighlightLabel>new organizations to explore</HighlightLabel>
+          </Highlight>
+          <hr className="h-20 w-0.5 bg-neutral-offWhite" />
+          <Highlight>
+            <HighlightNumber className="bg-orange">878</HighlightNumber>
+            <HighlightLabel>active relationships</HighlightLabel>
+          </Highlight>
+          <hr className="h-20 w-0.5 bg-neutral-offWhite" />
+          <Highlight>
+            <HighlightNumber className="bg-redTeal">48</HighlightNumber>
+            <HighlightLabel>organizations on Common</HighlightLabel>
+          </Highlight>
+        </div>
+        <div className="flex items-center justify-end gap-2 border border-0 border-t p-6 text-sm text-neutral-charcoal">
+          <FacePile
+            items={new Array(10).fill(0).map(() => (
+              <Avatar>SC</Avatar>
+            ))}
+          />
+          are collaborating on Common
+        </div>
+      </Surface>
+      <hr />
+      <div className="grid grid-cols-15">
+        <div className="col-span-9 flex flex-col gap-8">
+          <Surface>feed post</Surface>
+          <hr />
+          <div>THE FEED</div>
+        </div>
+        <span />
+        <div className="col-span-5">
+          <Surface className="flex flex-col gap-6 p-6">
+            <Header3 className="text-title-sm">New Organizations</Header3>
+            {organizations?.map((org) => {
+              const { avatarImage } = org;
+              const avatarUrl = getPublicUrl(avatarImage?.name);
 
-        <TabPanel id="discover" className="px-0">
-          <div className="flex flex-col gap-8">
-            <Header3 className="font-serif">New Organizations</Header3>
-            <div className="grid grid-cols-3 gap-8">
-              {organizations?.map((org) => {
-                const { headerImage, avatarImage } = org;
-                const headerUrl = getPublicUrl(headerImage?.name);
-                const avatarUrl = getPublicUrl(avatarImage?.name);
-
-                return (
-                  <div className="w-60 overflow-hidden rounded-md" key={org.id}>
-                    <Link href={`/org/${org.slug}`}>
-                      <ImageHeader
-                        headerClassName="h-32 "
-                        headerImage={
-                          headerUrl ? (
-                            <Image
-                              src={headerUrl}
-                              alt=""
-                              fill
-                              className="object-cover"
-                            />
-                          ) : null
-                        }
-                        avatarImage={
-                          avatarUrl ? (
-                            <Image
-                              src={avatarUrl}
-                              alt=""
-                              fill
-                              className="object-cover"
-                            />
-                          ) : null
-                        }
-                      />
-                      <div className="flex flex-col gap-3">
-                        <Header3>{org.name}</Header3>
-                        <p className="text-charcoal">{org.city}</p>
-                      </div>
-                    </Link>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </TabPanel>
-        <TabPanel id="recent">Nothing here yet</TabPanel>
-      </Tabs>
+              return (
+                <div key={org.id}>
+                  <Link
+                    className="flex items-center gap-4"
+                    href={`/org/${org.slug}`}
+                  >
+                    <Avatar>
+                      {avatarUrl ? (
+                        <Image
+                          src={avatarUrl}
+                          alt=""
+                          fill
+                          className="object-cover"
+                        />
+                      ) : null}
+                    </Avatar>
+                    <div className="flex flex-col text-sm">
+                      <span>{org.name}</span>
+                      <span>{org.city}</span>
+                    </div>
+                  </Link>
+                </div>
+              );
+            })}
+          </Surface>
+        </div>
+      </div>
     </div>
   );
 };
