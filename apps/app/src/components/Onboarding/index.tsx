@@ -1,6 +1,7 @@
 'use client';
 
 import { trpc } from '@op/trpc/client';
+import { StepperProgressIndicator } from '@op/ui/Stepper';
 import { useRouter } from 'next/navigation';
 import { useCallback, useState } from 'react';
 
@@ -38,7 +39,6 @@ export const OnboardingFlow = () => {
 
   const onReturn = useCallback<any>(
     (values) => {
-      console.log('VALUES', values);
       const combined = values.reduce(
         (accum, val) => ({ ...accum, ...val }),
         {},
@@ -77,6 +77,7 @@ export const OnboardingFlow = () => {
         ToSFormValidator,
       ]}
       onFinish={onReturn}
+      ProgressComponent={StepperProgressIndicator}
     />
   );
 };

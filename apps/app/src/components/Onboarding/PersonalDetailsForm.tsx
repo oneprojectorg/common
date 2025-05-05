@@ -1,7 +1,7 @@
 import { trpc } from '@op/trpc/client';
 import { AvatarUploader } from '@op/ui/AvatarUploader';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { useState } from 'react';
+import { ReactNode, useState } from 'react';
 import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
@@ -36,7 +36,7 @@ type FormFields = z.infer<typeof validator>;
 export const PersonalDetailsForm = ({
   onNext,
   className,
-}: StepProps & { className?: string }) => {
+}: StepProps & { className?: string }): ReactNode => {
   const t = useTranslations();
   const uploadImage = trpc.account.uploadImage.useMutation();
   const updateProfile = trpc.account.updateUserProfile.useMutation();

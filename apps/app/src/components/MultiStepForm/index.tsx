@@ -1,24 +1,29 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import React, { ReactNode } from 'react';
+import React, { ComponentType } from 'react';
 import { ZodSchema } from 'zod';
+
+import { Portal } from '../Portal';
 
 export type StepProps = {
   value: any;
   onChange: (v: any) => void;
   onNext: (v: any) => void;
-  validator: ZodSchema<any>;
   onBack: () => void;
-  error?: string;
+  error?: string | null;
 };
 
 // Types for props
 interface MultiStepFormProps {
-  steps: ReactNode[];
+  steps: ComponentType<StepProps>[];
   schemas: ZodSchema<any>[];
   initialValues?: any[];
   onFinish?: (allValues: any[]) => void;
+  ProgressComponent?: ComponentType<{
+    numItems: number;
+    currentStep?: number;
+  }>;
 }
 
 export const MultiStepForm: React.FC<MultiStepFormProps> = ({
@@ -26,6 +31,7 @@ export const MultiStepForm: React.FC<MultiStepFormProps> = ({
   schemas,
   initialValues = [],
   onFinish,
+  ProgressComponent,
 }) => {
   const router = useRouter();
   const [step, setStep] = React.useState(0);
@@ -97,6 +103,10 @@ export const MultiStepForm: React.FC<MultiStepFormProps> = ({
     prevStep();
   };
 
+  if (!StepComponent) {
+    return null;
+  }
+
   return (
     <div>
       <StepComponent
@@ -111,6 +121,11 @@ export const MultiStepForm: React.FC<MultiStepFormProps> = ({
         error={error}
       />
       {error && <div className="mt-4 font-medium text-red-500">{error}</div>}
+      {ProgressComponent ? (
+        <Portal id="top-slot">
+          <ProgressComponent numItems={steps.length} currentStep={step + 1} />
+        </Portal>
+      ) : null}
     </div>
   );
 };
