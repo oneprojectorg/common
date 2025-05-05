@@ -80,7 +80,7 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
       </head>
       <TRPCProvider>
         <body
-          className={`${roboto.variable} ${robotoMono.variable} ${robotoSerif.variable} ${inter.variable} overflow-x-hidden text-base text-neutral-black`}
+          className={`${roboto.variable} ${robotoMono.variable} ${robotoSerif.variable} ${inter.variable} overflow-x-hidden text-base text-neutral-black antialiased`}
         >
           <PostHogProvider>{children}</PostHogProvider>
           <Toast />
