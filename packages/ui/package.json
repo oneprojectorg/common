@@ -5,7 +5,9 @@
   "type": "module",
   "exports": {
     "./AlertDialog": "./src/components/AlertDialog.tsx",
+    "./Avatar": "./src/components/Avatar/index.tsx",
     "./AvatarUploader": "./src/components/AvatarUploader.tsx",
+    "./FacePile": "./src/components/FacePile.tsx",
     "./BannerUploader": "./src/components/BannerUploader.tsx",
     "./Button": "./src/components/Button.tsx",
     "./ComboBox": "./src/components/ComboBox.tsx",

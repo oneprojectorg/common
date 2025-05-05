@@ -4,6 +4,7 @@ import { getPublicUrl } from '@/utils';
 import { ClientOnly } from '@/utils/ClientOnly';
 import { useAuthLogout } from '@op/hooks';
 import { trpc } from '@op/trpc/client';
+import { Avatar } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
 import { Menu, MenuItem } from '@op/ui/Menu';
 import { MenuTrigger } from '@op/ui/RAC';
@@ -24,7 +25,7 @@ const UserAvatarMenu = () => {
   const logout = useAuthLogout();
 
   return (
-    <div className="size-8 overflow-hidden text-clip rounded-full border bg-white shadow">
+    <Avatar>
       <MenuTrigger>
         <Button unstyled>
           {user.avatarImage?.name ? (
@@ -47,7 +48,7 @@ const UserAvatarMenu = () => {
           </MenuItem>
         </Menu>
       </MenuTrigger>
-    </div>
+    </Avatar>
   );
 };
 
