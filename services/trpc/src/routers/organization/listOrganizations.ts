@@ -40,7 +40,7 @@ export const listOrganizationsRouter = router({
           headerImage: true,
           avatarImage: true,
         },
-        orderBy: (orgs, { asc }) => asc(orgs.updatedAt),
+        orderBy: (orgs, { desc }) => desc(orgs.updatedAt),
       });
 
       if (!result) {
