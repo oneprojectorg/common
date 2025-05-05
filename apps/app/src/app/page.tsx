@@ -17,7 +17,7 @@ const MainPage = () => {
     }
 
     if (account?.organizationUsers?.length) {
-      router.push('/app/org');
+      router.push('/');
 
       return;
     }
