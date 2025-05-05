@@ -1,3 +1,5 @@
+'use client';
+
 import { useAuthUser } from '@op/hooks';
 import { redirect } from 'next/navigation';
 

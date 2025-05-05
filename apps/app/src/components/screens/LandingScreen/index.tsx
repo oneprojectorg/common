@@ -11,6 +11,8 @@ import { ReactNode } from 'react';
 
 import { Link } from '@/lib/i18n';
 
+import { NewlyJoinedModal } from '@/components/NewlyJoinedModal';
+
 const HighlightNumber = ({
   children,
   className,
@@ -48,8 +50,6 @@ export const LandingScreen = () => {
   const [organizations] = trpc.organization.list.useSuspenseQuery();
   const [user] = trpc.account.getMyAccount.useSuspenseQuery();
 
-  console.log('USER', user);
-
   return (
     <div className="container flex min-h-0 grow flex-col gap-10 pt-14">
       <div className="flex flex-col gap-6">
@@ -75,7 +75,7 @@ export const LandingScreen = () => {
             <HighlightLabel>organizations on Common</HighlightLabel>
           </Highlight>
         </div>
-        <div className="flex items-center justify-end gap-2 border border-0 border-t p-6 text-sm text-neutral-charcoal">
+        <div className="flex items-center justify-end gap-2 border-0 border-t p-6 text-sm text-neutral-charcoal">
           <FacePile
             items={new Array(10).fill(0).map(() => (
               <Avatar>SC</Avatar>
@@ -126,6 +126,7 @@ export const LandingScreen = () => {
           </Surface>
         </div>
       </div>
+      <NewlyJoinedModal />
     </div>
   );
 };
