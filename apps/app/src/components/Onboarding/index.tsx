@@ -39,9 +39,13 @@ export const OnboardingFlow = () => {
   const onReturn = useCallback<any>(
     (values) => {
       console.log('VALUES', values);
-      setValues(values);
+      const combined = values.reduce(
+        (accum, val) => ({ ...accum, ...val }),
+        {},
+      );
+      setValues(combined);
       createOrganization
-        .mutateAsync(processInputs(values))
+        .mutateAsync(processInputs(combined))
         .then(() => {
           router.push(`/?new=1`);
         })
