@@ -5,7 +5,8 @@ import { StepperProgressIndicator } from '@op/ui/Stepper';
 import { useRouter } from 'next/navigation';
 import { useCallback, useState } from 'react';
 
-import { MultiStepForm } from '../MultiStepForm';
+import { MultiStepForm, ProgressComponentProps } from '../MultiStepForm';
+import { Portal } from '../Portal';
 import {
   FundingInformationForm,
   validator as FundingInformationFormValidator,
@@ -31,6 +32,12 @@ const processInputs = (data: any) => {
 
   return inputs;
 };
+
+const ProgressInPortal = (props: ProgressComponentProps) => (
+  <Portal id="top-slot">
+    <StepperProgressIndicator {...props} />
+  </Portal>
+);
 
 export const OnboardingFlow = () => {
   const [values, setValues] = useState<any | null>(null);
@@ -77,7 +84,7 @@ export const OnboardingFlow = () => {
         ToSFormValidator,
       ]}
       onFinish={onReturn}
-      ProgressComponent={StepperProgressIndicator}
+      ProgressComponent={ProgressInPortal}
     />
   );
 };

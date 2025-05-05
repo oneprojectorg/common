@@ -4,8 +4,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import React, { ComponentType } from 'react';
 import { ZodSchema } from 'zod';
 
-import { Portal } from '../Portal';
-
 export type StepProps = {
   value: any;
   onChange: (v: any) => void;
@@ -14,16 +12,18 @@ export type StepProps = {
   error?: string | null;
 };
 
+export type ProgressComponentProps = {
+  numItems: number;
+  currentStep?: number;
+};
+
 // Types for props
 interface MultiStepFormProps {
   steps: ComponentType<StepProps>[];
   schemas: ZodSchema<any>[];
   initialValues?: any[];
   onFinish?: (allValues: any[]) => void;
-  ProgressComponent?: ComponentType<{
-    numItems: number;
-    currentStep?: number;
-  }>;
+  ProgressComponent?: ComponentType<ProgressComponentProps>;
 }
 
 export const MultiStepForm: React.FC<MultiStepFormProps> = ({
@@ -122,9 +122,7 @@ export const MultiStepForm: React.FC<MultiStepFormProps> = ({
       />
       {error && <div className="mt-4 font-medium text-red-500">{error}</div>}
       {ProgressComponent ? (
-        <Portal id="top-slot">
-          <ProgressComponent numItems={steps.length} currentStep={step + 1} />
-        </Portal>
+        <ProgressComponent numItems={steps.length} currentStep={step + 1} />
       ) : null}
     </div>
   );
