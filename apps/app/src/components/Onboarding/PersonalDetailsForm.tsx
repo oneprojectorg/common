@@ -1,7 +1,8 @@
 import { trpc } from '@op/trpc/client';
 import { AvatarUploader } from '@op/ui/AvatarUploader';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { ReactNode, useState } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
+import { useOnboardingFormStore } from './useOnboardingFormStore';
 import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
@@ -37,26 +38,50 @@ export const PersonalDetailsForm = ({
   onNext,
   className,
 }: StepProps & { className?: string }): ReactNode => {
+  // 1. Get and set store values
+  const personalDetails = useOnboardingFormStore((s) => s.personalDetails);
+  const setPersonalDetails = useOnboardingFormStore((s) => s.setPersonalDetails);
   const t = useTranslations();
   const uploadImage = trpc.account.uploadImage.useMutation();
   const updateProfile = trpc.account.updateUserProfile.useMutation();
-  const [profileImageUrl, setProfileImageUrl] = useState<string | undefined>();
+  // Hydrate profileImageUrl from store if present, else undefined
+  const [profileImageUrl, setProfileImageUrl] = useState<string | undefined>(personalDetails?.profileImageUrl);
 
-  // If a resolver is provided, use it; otherwise, use the localized validator
+  // Hydrate form from store if present
   const form = useAppForm({
-    // defaultValues: defaultValues as FormFields,
+    defaultValues: personalDetails,
     validators: {
       onChange: validator,
     },
     onSubmit: async ({ value }: { value: FormFields }) => {
       await updateProfile.mutateAsync({
-        name: (value as FormFields).fullName,
-        title: (value as FormFields).title,
+        name: value.fullName,
+        title: value.title,
       });
-
-      onNext(value as FormFields);
+      setPersonalDetails({ ...value, profileImageUrl }); // Persist to store on submit
+      onNext(value);
     },
   });
+
+  // Live sync form changes to store (if form.watch exists)
+  useEffect(() => {
+    if (typeof form.watch === 'function') {
+      const unsubscribe = form.watch((values: FormFields) => {
+        setPersonalDetails({ ...values, profileImageUrl });
+      });
+      return () => unsubscribe();
+    }
+    // If no watch, skip live sync
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form, setPersonalDetails, profileImageUrl]);
+
+  // Sync profileImageUrl changes to store (only if form.getValues exists)
+  useEffect(() => {
+    if (typeof form.getValues === 'function') {
+      setPersonalDetails({ ...form.getValues(), profileImageUrl });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profileImageUrl]);
 
   return (
     <form

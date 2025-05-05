@@ -1,4 +1,6 @@
 import { ToggleButton } from '@op/ui/ToggleButton';
+import { useEffect } from 'react';
+import { useOnboardingFormStore } from './useOnboardingFormStore';
 import { LuLink } from 'react-icons/lu';
 import { z } from 'zod';
 
@@ -31,17 +33,33 @@ export const FundingInformationForm = ({
   onBack,
   className,
 }: StepProps & { className?: string }) => {
+  // 1. Get and set store values
+  const fundingInformation = useOnboardingFormStore((s) => s.fundingInformation);
+  const setFundingInformation = useOnboardingFormStore((s) => s.setFundingInformation);
   const t = useTranslations();
 
   const form = useAppForm({
-    // defaultValues,
+    defaultValues: fundingInformation,
     validators: {
       onChange: validator,
     },
     onSubmit: ({ value }) => {
+      setFundingInformation(value); // Persist to store on submit
       onNext(value);
     },
   });
+
+  // Live sync form changes to store (if form.watch exists)
+  useEffect(() => {
+    if (typeof form.watch === 'function') {
+      const unsubscribe = form.watch((values: any) => {
+        setFundingInformation(values);
+      });
+      return () => unsubscribe();
+    }
+    // If no watch, skip live sync
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form, setFundingInformation]);
 
   return (
     <form
