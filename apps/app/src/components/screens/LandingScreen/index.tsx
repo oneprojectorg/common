@@ -5,15 +5,11 @@ import { FacePile } from '@op/ui/FacePile';
 import { Header1, Header3 } from '@op/ui/Header';
 import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
-import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';
 import { ReactNode } from 'react';
 
 import { Link } from '@/lib/i18n';
-
-import { ImageHeader } from '@/components/ImageHeader';
-import { ProfileFeed, ProfileFeedPost } from '@/components/Profile/ProfileFeed';
 
 const HighlightNumber = ({
   children,
@@ -90,7 +86,7 @@ export const LandingScreen = () => {
       </Surface>
       <hr />
       <div className="grid grid-cols-15">
-        <div className="flex flex-col gap-8 col-span-9">
+        <div className="col-span-9 flex flex-col gap-8">
           <Surface>feed post</Surface>
           <hr />
           <div>THE FEED</div>
