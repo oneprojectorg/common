@@ -106,6 +106,7 @@ export const LoginPanel = () => {
   );
 
   const combinedError = (login.error?.message || error) ?? undefined;
+  console.log('ERROR', combinedError);
 
   const emailParser = z.string().email();
 
@@ -263,7 +264,7 @@ export const LoginPanel = () => {
                     <div className="flex flex-col">
                       <Form
                         onSubmit={async (e) => {
-                          if (token && token.length === 6) {
+                          if (token && token.length === 10) {
                             e.preventDefault();
                             e.stopPropagation();
                             await handleTokenSubmit();
