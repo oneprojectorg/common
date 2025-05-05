@@ -4,6 +4,7 @@ import { accessRoles } from '@op/db/schema';
 export type AccessRole = typeof accessRoles;
 
 export const ACCESS_ZONES = ['organization', 'projects', 'posts'] as const;
+export type AccessZone = (typeof ACCESS_ZONES)[number];
 
 export const accessMasks = {
   CREATE: 0b1000,
@@ -24,12 +25,11 @@ export const collapseAccessRoles = (roles: Array<AccessRole>) =>
     .reduce(
       (accum, role) =>
         Object.entries(role).reduce((roleAccum, [key, val]) => {
-          // @ts-expect-error - bit operations tend to throw TS errors
-          roleAccum[key] |= val;
+          roleAccum[key as AccessZone] |= val;
 
           return roleAccum;
         }, accum),
-      {},
+      {} as Record<AccessZone, number>,
     );
 
 export const hasAccess = (
@@ -41,7 +41,8 @@ export const hasAccess = (
   // Use a bitwise OR to check collapsed permissions satisfy "needed"
   return Object.entries(needed).every(
     ([section, neededAccessBits]: [string, number]) =>
-      (neededAccessBits & currentPermissions[section]) === neededAccessBits,
+      (neededAccessBits & currentPermissions[section as AccessZone]) ===
+      neededAccessBits,
   );
 };
 
