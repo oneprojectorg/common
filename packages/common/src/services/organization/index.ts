@@ -1,6 +1,7 @@
 import { db, sql } from '@op/db/client';
 import {
   links,
+  organizationUserToAccessRoles,
   organizationUsers,
   organizations,
   organizationsStrategies,
@@ -173,14 +174,27 @@ export const createOrganization = async ({
     }
 
     // Insert organizationUser linking the user to organization, with a default role of owner
-    const [newOrgUser] = await tx
-      .insert(organizationUsers)
-      .values({
-        organizationId: newOrg.id,
-        authUserId: user.id,
-        email: user.email!,
-      })
-      .returning();
+    const [[newOrgUser], adminRole] = await Promise.all([
+      tx
+        .insert(organizationUsers)
+        .values({
+          organizationId: newOrg.id,
+          authUserId: user.id,
+          email: user.email!,
+        })
+        .returning(),
+      tx.query.accessRoles.findFirst({
+        where: (table, { eq }) => eq(table.name, 'Admin'),
+      }),
+    ]);
+
+    // Add admin role to the user creating the organization
+    if (adminRole && newOrgUser) {
+      await tx.insert(organizationUserToAccessRoles).values({
+        organizationUserId: newOrgUser.id,
+        accessRoleId: adminRole.id,
+      });
+    }
 
     // Add funding links
     await Promise.all([

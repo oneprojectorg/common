@@ -276,6 +276,13 @@ await Promise.all(
   ),
 );
 
+await db.insert(schema.accessRoles).values([
+  {
+    name: 'Admin',
+    access: 0b11111,
+  },
+]);
+
 // Insert some taxonomies we will need
 const taxonomy = 'splcStrategies';
 const terms = [
