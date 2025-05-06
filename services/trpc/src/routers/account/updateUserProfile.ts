@@ -64,6 +64,7 @@ const updateUserProfile = router({
           .where(eq(users.authUserId, id))
           .returning();
       } catch (error) {
+        console.error(error);
         if (error instanceof Error && error.message.includes('duplicate')) {
           throw new ZodError([
             {
@@ -74,8 +75,6 @@ const updateUserProfile = router({
             },
           ]);
         }
-
-        console.error(error);
 
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',

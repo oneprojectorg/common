@@ -1,4 +1,11 @@
-import { index, jsonb, pgTable, uuid, varchar } from 'drizzle-orm/pg-core';
+import {
+  index,
+  jsonb,
+  pgTable,
+  uniqueIndex,
+  uuid,
+  varchar,
+} from 'drizzle-orm/pg-core';
 
 import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
 import { organizations } from './organizations.sql';
@@ -22,5 +29,10 @@ export const organizationRelationships = pgTable(
     index().on(table.sourceOrganizationId).concurrently(),
     index().on(table.targetOrganizationId).concurrently(),
     index().on(table.relationshipType).concurrently(),
+    uniqueIndex().on(
+      table.sourceOrganizationId,
+      table.targetOrganizationId,
+      table.relationshipType,
+    ),
   ],
 );

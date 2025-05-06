@@ -58,7 +58,7 @@ const supabase = createServerClient(
     cookieOptions: {},
     cookies: {
       getAll: async () => [],
-      setAll: async () => {},
+      setAll: async () => { },
     },
   },
 );
@@ -229,23 +229,23 @@ await Promise.all(
         await tx.insert(schema.links).values([
           ...(data.isOfferingFunds
             ? [
-                {
-                  href: data.website,
-                  name: data.name,
-                  type: LinkType.OFFERING,
-                  organizationId: org.id,
-                },
-              ]
+              {
+                href: data.website,
+                name: data.name,
+                type: LinkType.OFFERING,
+                organizationId: org.id,
+              },
+            ]
             : []),
           ...(data.isReceivingFunds
             ? [
-                {
-                  href: data.website,
-                  name: data.name,
-                  type: LinkType.RECEIVING,
-                  organizationId: org.id,
-                },
-              ]
+              {
+                href: data.website,
+                name: data.name,
+                type: LinkType.RECEIVING,
+                organizationId: org.id,
+              },
+            ]
             : []),
         ]);
 
@@ -276,11 +276,25 @@ await Promise.all(
   ),
 );
 
+// access is inherited from 
 await db.insert(schema.accessRoles).values([
   {
     name: 'Admin',
     access: 0b11111,
   },
+  {
+    name: 'Staff',
+    {
+    posts: {
+      access: 0b01110,
+    }
+  }
+  },
+  // {
+  // name: 'Member',
+  // access: 0b00000,
+  // },
+
 ]);
 
 // Insert some taxonomies we will need

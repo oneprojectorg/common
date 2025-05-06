@@ -1,3 +1,4 @@
+import { trpc } from '@op/trpc/client';
 import type { Organization } from '@op/trpc/encoders';
 import { Button, ButtonLink } from '@op/ui/Button';
 import { SkeletonLine } from '@op/ui/Skeleton';
@@ -17,9 +18,14 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
     (fundingLink) => fundingLink.type === 'offering',
   );
 
+  const addRelationship = trpc.organization.addRelationship.useMutation();
+
   return (
     <div className="flex flex-wrap gap-3 sm:gap-4">
-      <Button className="min-w-full sm:min-w-fit">
+      <Button
+        className="min-w-full sm:min-w-fit"
+        onPress={() => addRelationship.mutate({ to: profile.id })}
+      >
         <LuPlus className="size-4" />
         Add relationship
       </Button>

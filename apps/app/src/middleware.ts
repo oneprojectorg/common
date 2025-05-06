@@ -67,11 +67,11 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user && request.nextUrl.pathname.startsWith('/protected')) {
+  if (!user && request.nextUrl.pathname.startsWith('/login')) {
     // no user, potentially respond by redirecting the user to the login page
     const url = request.nextUrl.clone();
 
-    url.pathname = '/';
+    url.pathname = '/login';
 
     return NextResponse.redirect(url);
   }

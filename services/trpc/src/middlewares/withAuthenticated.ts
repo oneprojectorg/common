@@ -5,7 +5,7 @@ import { TRPCError } from '@trpc/server';
 import { createSBAdminClient } from '../supabase/server';
 import type { MiddlewareBuilderBase, TContextWithUser } from '../types';
 
-const verifyAuthData = (data: UserResponse, adminOnly = false) => {
+const verifyAuthentication = (data: UserResponse, adminOnly = false) => {
   if (!data) {
     throw new TRPCError({
       message: `Failed to authenticate user`,
@@ -52,7 +52,7 @@ const withAuthenticated: MiddlewareBuilderBase<TContextWithUser> = async ({
   const supabase = createSBAdminClient(ctx);
   const data = await supabase.auth.getUser();
 
-  const user = verifyAuthData(data);
+  const user = verifyAuthentication(data);
 
   return next({
     ctx: { ...ctx, user },
@@ -65,7 +65,7 @@ export const withAuthenticatedAdmin: MiddlewareBuilderBase<
   const supabase = createSBAdminClient(ctx);
   const data = await supabase.auth.getUser();
 
-  const user = verifyAuthData(data, true);
+  const user = verifyAuthentication(data, true);
 
   return next({
     ctx: { ...ctx, user },
