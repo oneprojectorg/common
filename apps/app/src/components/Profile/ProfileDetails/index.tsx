@@ -1,12 +1,98 @@
 import { trpc } from '@op/trpc/client';
 import type { Organization } from '@op/trpc/encoders';
 import { Button, ButtonLink } from '@op/ui/Button';
+import { Checkbox } from '@op/ui/Checkbox';
+import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
+import { Dialog, DialogTrigger } from '@op/ui/RAC';
 import { SkeletonLine } from '@op/ui/Skeleton';
 import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
+import { ReactNode } from 'react';
 import { LuArrowUpRight, LuInfo, LuPlus } from 'react-icons/lu';
 
 import { ProfileSummary } from '../ProfileSummary';
 
+const ModalForm = ({ profile }: { profile: Organization }) => {
+  const addRelationship = trpc.organization.addRelationship.useMutation();
+
+  return (
+    <Dialog>
+      {({ close }) => (
+        <>
+          <ModalHeader>Add relationship</ModalHeader>
+          <ModalBody>
+            <div>
+              Choose how you’re in relationship with{' '}
+              <span className="font-semibold">{profile.name}:</span>
+              <ul>
+                <li className="flex gap-3 py-2">
+                  <Checkbox />
+                  <div className="flex flex-col text-neutral-charcoal">
+                    <span>Partnership</span>
+                    <span className="text-sm text-neutral-gray4">
+                      You’ve partnered with One Project on projects/programs
+                    </span>
+                  </div>
+                </li>
+
+                <li className="flex gap-3 py-2">
+                  <Checkbox />
+                  <div className="flex flex-col text-neutral-charcoal">
+                    <span>Funding</span>
+                    <span className="text-sm text-neutral-gray4">
+                      You’ve either received or given funds to One Project
+                    </span>
+                  </div>
+                </li>
+
+                <li className="flex gap-3 py-2">
+                  <Checkbox />
+                  <div className="flex flex-col text-neutral-charcoal">
+                    <span>Membership</span>
+                    <span className="text-sm text-neutral-gray4">
+                      Your organization is a member of One Project's network
+                    </span>
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <Button onPress={close} color="secondary">
+              Cancel
+            </Button>
+            <Button
+              onPress={() => {
+                addRelationship.mutate({ to: profile.id });
+                close();
+              }}
+            >
+              Add
+            </Button>
+          </ModalFooter>
+        </>
+      )}
+    </Dialog>
+  );
+};
+
+const AddRelationshipModal = ({
+  children,
+  profile,
+}: {
+  children: ReactNode;
+  profile: Organization;
+}) => {
+  return (
+    <DialogTrigger>
+      {children}
+      <Modal className="min-w-[29rem]">
+        <ModalForm profile={profile} />
+      </Modal>
+    </DialogTrigger>
+  );
+};
+
+// onPress={() => addRelationship.mutate({ to: profile.id })}
 const ProfileInteractions = ({ profile }: { profile: Organization }) => {
   const { isReceivingFunds, isOfferingFunds, links } = profile;
 
@@ -18,17 +104,14 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
     (fundingLink) => fundingLink.type === 'offering',
   );
 
-  const addRelationship = trpc.organization.addRelationship.useMutation();
-
   return (
     <div className="flex flex-wrap gap-3 sm:gap-4">
-      <Button
-        className="min-w-full sm:min-w-fit"
-        onPress={() => addRelationship.mutate({ to: profile.id })}
-      >
-        <LuPlus className="size-4" />
-        Add relationship
-      </Button>
+      <AddRelationshipModal profile={profile}>
+        <Button className="min-w-full sm:min-w-fit">
+          <LuPlus className="size-4" />
+          Add relationship
+        </Button>
+      </AddRelationshipModal>
 
       {isReceivingFunds
         ? receivingFundingLinks.map((link) => (

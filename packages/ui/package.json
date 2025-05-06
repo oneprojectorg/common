@@ -12,6 +12,7 @@
     "./Button": "./src/components/Button.tsx",
     "./ComboBox": "./src/components/ComboBox.tsx",
     "./Command": "./src/components/Command.tsx",
+    "./Checkbox": "./src/components/Checkbox.tsx",
     "./Dialog": "./src/components/Dialog.tsx",
     "./EditableText": "./src/components/EditableText.tsx",
     "./Field": "./src/components/Field.tsx",
