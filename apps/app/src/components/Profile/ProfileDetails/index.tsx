@@ -1,4 +1,3 @@
-import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/trpc/client';
 import type { Organization } from '@op/trpc/encoders';
 import { Button, ButtonLink } from '@op/ui/Button';
@@ -8,7 +7,13 @@ import { DialogTrigger } from '@op/ui/RAC';
 import { SkeletonLine } from '@op/ui/Skeleton';
 import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
 import { Suspense } from 'react';
-import { LuArrowUpRight, LuInfo, LuPlus } from 'react-icons/lu';
+import {
+  LuArrowUpRight,
+  LuCheck,
+  LuClock,
+  LuInfo,
+  LuPlus,
+} from 'react-icons/lu';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
 
@@ -16,26 +21,80 @@ import { ProfileSummary } from '../ProfileSummary';
 import { AddRelationshipForm } from './AddRelationshipForm';
 
 const AddRelationshipModal = ({ profile }: { profile: Organization }) => {
+  const utils = trpc.useUtils();
   const [{ relationships }] =
     trpc.organization.listRelationships.useSuspenseQuery({
       to: profile.id,
     });
 
-  const isPending = relationships.some((r) => r.pending);
-
   return (
-    <DialogTrigger>
-      <Button
-        className="min-w-full sm:min-w-fit"
-        color={isPending ? 'secondary' : 'primary'}
-      >
-        <LuPlus className="size-4" />
-        {isPending ? 'Pending' : 'Add relationship'}
-      </Button>
-      <Modal className="min-w-[29rem]">
-        <AddRelationshipForm profile={profile} />
-      </Modal>
-    </DialogTrigger>
+    <>
+      {relationships.length > 0 ? (
+        relationships.map((relationship) => {
+          return (
+            <TooltipTrigger isDisabled={!relationship.pending}>
+              {(() => {
+                switch (relationship.relationshipType) {
+                  case 'partnership':
+                    return (
+                      <>
+                        <Button color="secondary">
+                          {relationship.pending ? <LuClock /> : <LuCheck />}
+                          Partner
+                        </Button>
+                        {relationship.pending && (
+                          <Tooltip>
+                            Pending confirmation from {profile.name}
+                          </Tooltip>
+                        )}
+                      </>
+                    );
+                  case 'funding':
+                    return (
+                      <>
+                        <Button color="secondary">
+                          {relationship.pending ? <LuClock /> : <LuCheck />}
+                          Funder
+                        </Button>
+                        <Tooltip>
+                          {relationship.pending &&
+                            `Pending confirmation from ${profile.name}`}
+                        </Tooltip>
+                      </>
+                    );
+                  default:
+                    return (
+                      <>
+                        <Button color="secondary">
+                          {relationship.pending ? <LuClock /> : <LuCheck />}
+                          Member
+                        </Button>
+                        <Tooltip>
+                          {relationship.pending &&
+                            `Pending confirmation from ${profile.name}`}
+                        </Tooltip>
+                      </>
+                    );
+                }
+              })()}
+            </TooltipTrigger>
+          );
+        })
+      ) : (
+        <DialogTrigger>
+          <Button className="min-w-full sm:min-w-fit">
+            <LuPlus className="size-4" />
+            Add relationship
+          </Button>
+          <Modal className="min-w-[29rem]">
+            <AddRelationshipForm
+              profile={profile}
+              onChange={utils.organization.listRelationships.invalidate}
+            />
+          </Modal>
+        </DialogTrigger>
+      )}
+    </>
   );
 };
 
@@ -52,7 +111,7 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
 
   return (
     <div className="flex flex-wrap gap-3 sm:gap-4">
-      <ErrorBoundary fallbacks={null}>
+      <ErrorBoundary fallback={null}>
         <Suspense
           fallback={
             <Button isDisabled={true}>

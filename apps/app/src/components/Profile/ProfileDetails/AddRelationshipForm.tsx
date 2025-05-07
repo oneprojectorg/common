@@ -31,11 +31,13 @@ const RELATIONSHIP_OPTIONS = [
 
 type RelationshipType = (typeof RELATIONSHIP_OPTIONS)[number]['key'];
 
-export const AddRelationshipForm = ({ profile }: { profile: Organization }) => {
-  const relationships = trpc.organization.listRelationships.useSuspenseQuery({
-    to: profile.id,
-  });
-
+export const AddRelationshipForm = ({
+  profile,
+  onChange,
+}: {
+  profile: Organization;
+  onChange: () => void;
+}) => {
   const addRelationship = trpc.organization.addRelationship.useMutation();
 
   const [selectedRelations, setSelectedRelations] = useState<Array<string>>([]);
@@ -51,6 +53,7 @@ export const AddRelationshipForm = ({ profile }: { profile: Organization }) => {
           relationships: selectedRelations,
         });
 
+        onChange();
         toast.success('Relationship requested');
       } catch (e) {
         toast.error('Could not create relationship');
@@ -59,8 +62,6 @@ export const AddRelationshipForm = ({ profile }: { profile: Organization }) => {
       close();
     });
   };
-
-  const isPending = relationships.some((r) => r.pending);
 
   return (
     <Dialog>

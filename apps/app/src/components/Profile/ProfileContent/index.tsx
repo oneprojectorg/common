@@ -93,7 +93,7 @@ const ProfileAbout = ({ profile }: { profile: Organization }) => {
 
 export const ProfileGrid = ({ profile }: { profile: Organization }) => {
   return (
-    <div className="hidden grid-cols-[repeat(15,minmax(0,1fr))] border-t sm:grid">
+    <div className="hidden flex-grow grid-cols-15 border-t sm:grid">
       <div className="col-span-9 flex flex-col gap-8">
         <ProfileFeedPost
           profile={profile}
