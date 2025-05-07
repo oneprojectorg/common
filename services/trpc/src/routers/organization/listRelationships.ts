@@ -11,6 +11,7 @@ import { loggedProcedure, router } from '../../trpcFactory';
 const inputSchema = z.object({
   // from: z.string().uuid({ message: 'Invalid source organization ID' }),
   to: z.string().uuid({ message: 'Invalid target organization ID' }),
+  pending: z.boolean().optional(),
 });
 
 const meta: OpenApiMeta = {
@@ -32,7 +33,7 @@ export const listRelationshipsRouter = router({
     .input(inputSchema)
     .query(async ({ ctx, input }) => {
       const { user } = ctx;
-      const { to } = input;
+      const { to, pending } = input;
 
       try {
         const session = await getSession();
@@ -40,15 +41,15 @@ export const listRelationshipsRouter = router({
           throw new UnauthorizedError('No user found');
         }
 
-        const relationships = await getRelationship({
+        const { records: relationships, count } = await getRelationship({
           user,
           from: session.user.lastOrgId,
           to,
+          pending,
         });
 
-        return { relationships };
+        return { relationships, count };
       } catch (error: unknown) {
-        console.log('ERROR', error);
         if (error instanceof UnauthorizedError) {
           throw new TRPCError({
             message: error.message,

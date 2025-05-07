@@ -1,4 +1,4 @@
-import { db } from '@op/db/client';
+import { and, db, eq, sql } from '@op/db/client';
 import { organizationRelationships } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
@@ -42,10 +42,12 @@ export const addRelationship = async ({
 export const getRelationship = async ({
   from,
   to,
+  pending = null,
 }: {
   user: User;
   from: string;
   to: string;
+  pending?: boolean | null;
 }) => {
   // const orgUser = await getOrgAccessUser({ user, organizationId: from });
 
@@ -55,14 +57,27 @@ export const getRelationship = async ({
   // if (!orgUser) {
   // throw new UnauthorizedError('You are not a member of this organization');
   // }
+  //
+  const where = () =>
+    and(
+      eq(organizationRelationships.sourceOrganizationId, from),
+      eq(organizationRelationships.targetOrganizationId, to),
+      ...(pending !== null
+        ? [eq(organizationRelationships.pending, pending)]
+        : []),
+    );
 
-  const relationships = await db.query.organizationRelationships.findMany({
-    where: (table, { and, eq }) =>
-      and(
-        eq(table.sourceOrganizationId, from),
-        eq(table.targetOrganizationId, to),
-      ),
-  });
+  const [relationships, count] = await Promise.all([
+    db.query.organizationRelationships.findMany({
+      where,
+    }),
+    db
+      .select({
+        count: sql`count(*)::int`,
+      })
+      .from(organizationRelationships)
+      .where(where),
+  ]);
 
-  return relationships;
+  return { records: relationships, count: count[0]?.count ?? 0 };
 };
