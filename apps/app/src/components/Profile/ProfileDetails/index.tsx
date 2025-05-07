@@ -1,25 +1,37 @@
+import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
+import { trpc } from '@op/trpc/client';
 import type { Organization } from '@op/trpc/encoders';
 import { Button, ButtonLink } from '@op/ui/Button';
+import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Modal } from '@op/ui/Modal';
 import { DialogTrigger } from '@op/ui/RAC';
 import { SkeletonLine } from '@op/ui/Skeleton';
 import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
-import { ReactNode } from 'react';
+import { Suspense } from 'react';
 import { LuArrowUpRight, LuInfo, LuPlus } from 'react-icons/lu';
+
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 import { ProfileSummary } from '../ProfileSummary';
 import { AddRelationshipForm } from './AddRelationshipForm';
 
-const AddRelationshipModal = ({
-  children,
-  profile,
-}: {
-  children: ReactNode;
-  profile: Organization;
-}) => {
+const AddRelationshipModal = ({ profile }: { profile: Organization }) => {
+  const [{ relationships }] =
+    trpc.organization.listRelationships.useSuspenseQuery({
+      to: profile.id,
+    });
+
+  const isPending = relationships.some((r) => r.pending);
+
   return (
     <DialogTrigger>
-      {children}
+      <Button
+        className="min-w-full sm:min-w-fit"
+        color={isPending ? 'secondary' : 'primary'}
+      >
+        <LuPlus className="size-4" />
+        {isPending ? 'Pending' : 'Add relationship'}
+      </Button>
       <Modal className="min-w-[29rem]">
         <AddRelationshipForm profile={profile} />
       </Modal>
@@ -40,12 +52,17 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
 
   return (
     <div className="flex flex-wrap gap-3 sm:gap-4">
-      <AddRelationshipModal profile={profile}>
-        <Button className="min-w-full sm:min-w-fit">
-          <LuPlus className="size-4" />
-          Add relationship
-        </Button>
-      </AddRelationshipModal>
+      <ErrorBoundary fallbacks={null}>
+        <Suspense
+          fallback={
+            <Button isDisabled={true}>
+              <LoadingSpinner />
+            </Button>
+          }
+        >
+          <AddRelationshipModal profile={profile} />
+        </Suspense>
+      </ErrorBoundary>
 
       {isReceivingFunds
         ? receivingFundingLinks.map((link) => (

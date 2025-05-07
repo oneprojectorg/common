@@ -64,4 +64,43 @@ export const getOrganizationRouter = router({
         });
       }
     }),
+  getById: loggedProcedure
+    // Middlewares
+    .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
+    .use(withAuthenticated)
+    .use(withDB)
+    // Router
+    .meta(meta)
+    .input(z.object({ id: z.string() }))
+    .output(organizationsEncoder)
+    .query(async ({ ctx, input }) => {
+      const { id } = input;
+      const { user } = ctx;
+
+      try {
+        const result = await getOrganization({ id, user });
+
+        if (!result) {
+          throw new TRPCError({
+            message: 'Organization not found',
+            code: 'NOT_FOUND',
+          });
+        }
+
+        return organizationsEncoder.parse(result);
+      } catch (error: unknown) {
+        console.log(error);
+        if (error instanceof UnauthorizedError) {
+          throw new TRPCError({
+            message: 'You do not have acess to this organization',
+            code: 'UNAUTHORIZED',
+          });
+        }
+
+        throw new TRPCError({
+          message: 'Organization not found',
+          code: 'NOT_FOUND',
+        });
+      }
+    }),
 });
