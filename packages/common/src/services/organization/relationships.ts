@@ -2,6 +2,8 @@ import { and, db, eq, or, sql } from '@op/db/client';
 import { organizationRelationships } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
+import { CommonError } from '../../utils';
+
 export const addRelationship = async ({
   from,
   to,
@@ -83,4 +85,31 @@ export const getRelationship = async ({
   ]);
 
   return { records: relationships, count: count[0]?.count ?? 0 };
+};
+
+export const removeRelationship = async ({
+  id,
+}: {
+  user: User;
+  id: string;
+}) => {
+  // const orgUser = await getOrgAccessUser({ user, organizationId: from });
+
+  // TODO: ALL USERS IN THE ORG ARE ADMIN AT THE MOMENT
+  // assertAccess();
+
+  // if (!orgUser) {
+  // throw new UnauthorizedError('You are not a member of this organization');
+  // }
+  //
+
+  try {
+    await db
+      .delete(organizationRelationships)
+      .where(eq(organizationRelationships.id, id));
+
+    return true;
+  } catch (e) {
+    throw new CommonError('Could not remove relationship');
+  }
 };

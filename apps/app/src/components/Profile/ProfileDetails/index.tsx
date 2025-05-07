@@ -19,6 +19,7 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 
 import { ProfileSummary } from '../ProfileSummary';
 import { AddRelationshipForm } from './AddRelationshipForm';
+import { RemoveRelationshipModal } from './RemoveRelationshipModal';
 
 const AddRelationshipModal = ({ profile }: { profile: Organization }) => {
   const utils = trpc.useUtils();
@@ -37,7 +38,7 @@ const AddRelationshipModal = ({ profile }: { profile: Organization }) => {
                 switch (relationship.relationshipType) {
                   case 'partnership':
                     return (
-                      <>
+                      <DialogTrigger>
                         <Button color="secondary">
                           {relationship.pending ? <LuClock /> : <LuCheck />}
                           Partner
@@ -47,11 +48,24 @@ const AddRelationshipModal = ({ profile }: { profile: Organization }) => {
                             Pending confirmation from {profile.name}
                           </Tooltip>
                         )}
-                      </>
+                        <RemoveRelationshipModal
+                          relationship={relationship}
+                          onChange={() => {
+                            utils.organization.listRelationships.invalidate({
+                              from: profile.id,
+                            });
+                            utils.organization.listDirectedRelationships.invalidate(
+                              {
+                                to: profile.id,
+                              },
+                            );
+                          }}
+                        />
+                      </DialogTrigger>
                     );
                   case 'funding':
                     return (
-                      <>
+                      <DialogTrigger>
                         <Button color="secondary">
                           {relationship.pending ? <LuClock /> : <LuCheck />}
                           Funder
@@ -60,11 +74,24 @@ const AddRelationshipModal = ({ profile }: { profile: Organization }) => {
                           {relationship.pending &&
                             `Pending confirmation from ${profile.name}`}
                         </Tooltip>
-                      </>
+                        <RemoveRelationshipModal
+                          relationship={relationship}
+                          onChange={() => {
+                            utils.organization.listRelationships.invalidate({
+                              from: profile.id,
+                            });
+                            utils.organization.listDirectedRelationships.invalidate(
+                              {
+                                to: profile.id,
+                              },
+                            );
+                          }}
+                        />
+                      </DialogTrigger>
                     );
                   default:
                     return (
-                      <>
+                      <DialogTrigger>
                         <Button color="secondary">
                           {relationship.pending ? <LuClock /> : <LuCheck />}
                           Member
@@ -73,7 +100,20 @@ const AddRelationshipModal = ({ profile }: { profile: Organization }) => {
                           {relationship.pending &&
                             `Pending confirmation from ${profile.name}`}
                         </Tooltip>
-                      </>
+                        <RemoveRelationshipModal
+                          relationship={relationship}
+                          onChange={() => {
+                            utils.organization.listRelationships.invalidate({
+                              from: profile.id,
+                            });
+                            utils.organization.listDirectedRelationships.invalidate(
+                              {
+                                to: profile.id,
+                              },
+                            );
+                          }}
+                        />
+                      </DialogTrigger>
                     );
                 }
               })()}

@@ -1,0 +1,73 @@
+import { trpc } from '@op/trpc/client';
+import type { Relationship } from '@op/trpc/encoders';
+import { Button } from '@op/ui/Button';
+import { LoadingSpinner } from '@op/ui/LoadingSpinner';
+import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
+import { Dialog } from '@op/ui/RAC';
+import { FormEvent, useTransition } from 'react';
+import { toast } from 'sonner';
+
+export const RemoveRelationshipModal = ({
+  relationship,
+  onChange,
+}: {
+  relationship: Relationship;
+  onChange: () => void;
+}) => {
+  const removeRelationship = trpc.organization.removeRelationship.useMutation();
+
+  const [isSubmitting, startTransition] = useTransition();
+
+  const handleSubmit = (e: FormEvent, close: () => void) => {
+    e.preventDefault();
+
+    startTransition(async () => {
+      try {
+        await removeRelationship.mutateAsync({
+          id: relationship.id,
+        });
+
+        onChange();
+        toast.success('Relationship removed');
+      } catch (e) {
+        toast.error('Could not remove relationship');
+      }
+
+      close();
+    });
+  };
+
+  return (
+    <Modal className="min-w-[29rem]">
+      <Dialog>
+        {({ close }) => (
+          <form onSubmit={(e) => handleSubmit(e, close)} className="contents">
+            <ModalHeader>Remove relationship</ModalHeader>
+            <ModalBody>
+              <div>
+                Are you sure you want to remove the Funding relationship with{' '}
+                {relationship.relationshipType}?
+              </div>
+              <div>
+                You’ll need to send a new request to restore this relationship
+                on your profile.
+              </div>
+            </ModalBody>
+            <ModalFooter>
+              <Button onPress={close} color="neutral" type="button">
+                Cancel
+              </Button>
+              <Button
+                color="destructive"
+                type="submit"
+                isPending={isSubmitting}
+              >
+                {isSubmitting ? <LoadingSpinner /> : 'Remove'}
+              </Button>
+            </ModalFooter>
+          </form>
+        )}
+      </Dialog>
+    </Modal>
+  );
+};

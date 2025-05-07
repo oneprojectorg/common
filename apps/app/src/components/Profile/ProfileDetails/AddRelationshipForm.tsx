@@ -22,7 +22,7 @@ const RELATIONSHIP_OPTIONS = [
       `You’ve either received or given funds to ${orgName}`,
   },
   {
-    key: 'membership',
+    key: 'foaf:memberOf',
     label: 'Membership',
     description: (orgName: string) =>
       `Your organization is a member of ${orgName}'s network`,

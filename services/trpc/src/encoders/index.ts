@@ -4,3 +4,4 @@ export * from './projects';
 export * from './users';
 export * from './posts';
 export * from './taxonomyTerms';
+export * from './relationships';
