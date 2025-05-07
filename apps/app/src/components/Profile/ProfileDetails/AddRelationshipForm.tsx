@@ -5,30 +5,33 @@ import { Checkbox } from '@op/ui/Checkbox';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Dialog } from '@op/ui/RAC';
-import { FormEvent, startTransition, useState, useTransition } from 'react';
+import { FormEvent, useState, useTransition } from 'react';
 import { toast } from 'sonner';
 
 const RELATIONSHIP_OPTIONS = [
   {
     key: 'partnership',
     label: 'Partnership',
-    description: `You’ve partnered with One Project on projects/programs`,
+    description: (orgName: string) =>
+      `You’ve partnered with ${orgName} on projects/programs`,
   },
   {
     key: 'funding',
     label: 'Funding',
-    description: `You’ve either received or given funds to One Project`,
+    description: (orgName: string) =>
+      `You’ve either received or given funds to ${orgName}`,
   },
   {
     key: 'membership',
     label: 'Membership',
-    description: `Your organization is a member of One Project's network`,
+    description: (orgName: string) =>
+      `Your organization is a member of ${orgName}'s network`,
   },
 ];
 
 type RelationshipType = (typeof RELATIONSHIP_OPTIONS)[number]['key'];
 
-export const ModalForm = ({ profile }: { profile: Organization }) => {
+export const AddRelationshipForm = ({ profile }: { profile: Organization }) => {
   const addRelationship = trpc.organization.addRelationship.useMutation();
 
   const [selectedRelations, setSelectedRelations] = useState<Array<string>>([]);
@@ -88,7 +91,7 @@ export const ModalForm = ({ profile }: { profile: Organization }) => {
                     <div className="flex flex-col text-neutral-charcoal">
                       <span>{option.label}</span>
                       <span className="text-sm text-neutral-gray4">
-                        {option.description}
+                        {option.description(profile.name)}
                       </span>
                     </div>
                   </li>

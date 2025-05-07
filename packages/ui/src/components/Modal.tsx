@@ -1,51 +1,12 @@
 'use client';
 
-import {
-  ReactNode,
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-  useState,
-} from 'react';
+import { ReactNode } from 'react';
 import { ModalOverlay, Modal as RACModal } from 'react-aria-components';
 import type { ModalOverlayProps } from 'react-aria-components';
 import { tv } from 'tailwind-variants';
 
 import { cn } from '../lib/utils';
 import { Header1 } from './Header';
-
-// interface ModalContextType {
-// isOpen: boolean;
-// openModal: () => void;
-// closeModal: () => void;
-// }
-
-// const ModalContext = createContext<ModalContextType | undefined>(undefined);
-
-// export const useModal = (): ModalContextType => {
-// const context = useContext(ModalContext);
-// if (!context) {
-// throw new Error('useModal must be used within a ModalProvider');
-// }
-// return context;
-// };
-
-// export const ModalProvider = ({ children }: { children: ReactNode }) => {
-// const [isOpen, setIsOpen] = useState(false);
-
-// const openModal = useCallback(() => setIsOpen(true), []);
-// const closeModal = useCallback(() => setIsOpen(false), []);
-
-// const value = useMemo(
-// () => ({ isOpen, openModal, closeModal }),
-// [isOpen, openModal, closeModal],
-// );
-
-// return (
-// <ModalContext.Provider value={value}>{children}</ModalContext.Provider>
-// );
-// };
 
 const overlayStyles = tv({
   base: 'fixed left-0 top-0 z-[99999] flex h-[--visual-viewport-height] w-full items-center justify-center bg-neutral-50/50 p-4 text-center backdrop-blur-sm entering:duration-300 entering:ease-out entering:animate-in entering:fade-in exiting:duration-300 exiting:ease-in exiting:animate-out exiting:fade-out',

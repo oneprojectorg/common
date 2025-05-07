@@ -1,4 +1,5 @@
 import {
+  boolean,
   index,
   jsonb,
   pgTable,
@@ -21,6 +22,7 @@ export const organizationRelationships = pgTable(
       .notNull()
       .references(() => organizations.id),
     relationshipType: varchar({ length: 255 }).notNull(),
+    pending: boolean(),
     metadata: jsonb('metadata'),
     ...timestamps,
   },

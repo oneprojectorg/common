@@ -33,7 +33,7 @@ export const addRelationshipRouter = router({
     .input(inputSchema)
     .mutation(async ({ ctx, input }) => {
       const { user } = ctx;
-      const { to } = input;
+      const { to, relationships } = input;
 
       try {
         const session = await getSession();
@@ -41,7 +41,12 @@ export const addRelationshipRouter = router({
           throw new UnauthorizedError('No user found');
         }
 
-        await addRelationship({ user, from: session.user.lastOrgId, to });
+        await addRelationship({
+          user,
+          from: session.user.lastOrgId,
+          to,
+          relationships,
+        });
 
         return { success: true };
       } catch (error: unknown) {
