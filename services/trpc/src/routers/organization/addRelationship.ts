@@ -11,6 +11,7 @@ import { loggedProcedure, router } from '../../trpcFactory';
 const inputSchema = z.object({
   // from: z.string().uuid({ message: 'Invalid source organization ID' }),
   to: z.string().uuid({ message: 'Invalid target organization ID' }),
+  relationships: z.array(z.string()),
 });
 
 const meta: OpenApiMeta = {

@@ -10,70 +10,73 @@ import { ReactNode } from 'react';
 import { LuArrowUpRight, LuInfo, LuPlus } from 'react-icons/lu';
 
 import { ProfileSummary } from '../ProfileSummary';
+import { ModalForm } from './ModalForm';
 
-const ModalForm = ({ profile }: { profile: Organization }) => {
-  const addRelationship = trpc.organization.addRelationship.useMutation();
+// const ModalForm = ({ profile }: { profile: Organization }) => {
+// const addRelationship = trpc.organization.addRelationship.useMutation();
 
-  return (
-    <Dialog>
-      {({ close }) => (
-        <>
-          <ModalHeader>Add relationship</ModalHeader>
-          <ModalBody>
-            <div>
-              Choose how you’re in relationship with{' '}
-              <span className="font-semibold">{profile.name}:</span>
-              <ul>
-                <li className="flex gap-3 py-2">
-                  <Checkbox />
-                  <div className="flex flex-col text-neutral-charcoal">
-                    <span>Partnership</span>
-                    <span className="text-sm text-neutral-gray4">
-                      You’ve partnered with One Project on projects/programs
-                    </span>
-                  </div>
-                </li>
+// return (
+// <Dialog>
+// {({ close }) => (
+// <>
+// <ModalHeader>Add relationship</ModalHeader>
+// <form>
+// <ModalBody>
+// <div>
+// Choose how you’re in relationship with{' '}
+// <span className="font-semibold">{profile.name}:</span>
+// <ul>
+// <li className="flex gap-3 py-2">
+// <Checkbox />
+// <div className="flex flex-col text-neutral-charcoal">
+// <span>Partnership</span>
+// <span className="text-sm text-neutral-gray4">
+// You’ve partnered with One Project on projects/programs
+// </span>
+// </div>
+// </li>
 
-                <li className="flex gap-3 py-2">
-                  <Checkbox />
-                  <div className="flex flex-col text-neutral-charcoal">
-                    <span>Funding</span>
-                    <span className="text-sm text-neutral-gray4">
-                      You’ve either received or given funds to One Project
-                    </span>
-                  </div>
-                </li>
+// <li className="flex gap-3 py-2">
+// <Checkbox />
+// <div className="flex flex-col text-neutral-charcoal">
+// <span>Funding</span>
+// <span className="text-sm text-neutral-gray4">
+// You’ve either received or given funds to One Project
+// </span>
+// </div>
+// </li>
 
-                <li className="flex gap-3 py-2">
-                  <Checkbox />
-                  <div className="flex flex-col text-neutral-charcoal">
-                    <span>Membership</span>
-                    <span className="text-sm text-neutral-gray4">
-                      Your organization is a member of One Project's network
-                    </span>
-                  </div>
-                </li>
-              </ul>
-            </div>
-          </ModalBody>
-          <ModalFooter>
-            <Button onPress={close} color="secondary">
-              Cancel
-            </Button>
-            <Button
-              onPress={() => {
-                addRelationship.mutate({ to: profile.id });
-                close();
-              }}
-            >
-              Add
-            </Button>
-          </ModalFooter>
-        </>
-      )}
-    </Dialog>
-  );
-};
+// <li className="flex gap-3 py-2">
+// <Checkbox />
+// <div className="flex flex-col text-neutral-charcoal">
+// <span>Membership</span>
+// <span className="text-sm text-neutral-gray4">
+// Your organization is a member of One Project's network
+// </span>
+// </div>
+// </li>
+// </ul>
+// </div>
+// </ModalBody>
+// <ModalFooter>
+// <Button onPress={close} color="secondary">
+// Cancel
+// </Button>
+// <Button
+// onPress={() => {
+// addRelationship.mutate({ to: profile.id });
+// close();
+// }}
+// >
+// Add
+// </Button>
+// </ModalFooter>
+// </form>
+// </>
+// )}
+// </Dialog>
+// );
+// };
 
 const AddRelationshipModal = ({
   children,

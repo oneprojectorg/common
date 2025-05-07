@@ -1,5 +1,6 @@
 import { Button } from '@op/ui/Button';
 import type { ButtonProps } from '@op/ui/Button';
+import { Checkbox } from '@op/ui/Checkbox';
 import { MultiSelectComboBox } from '@op/ui/MultiSelectComboBox';
 import { Select } from '@op/ui/Select';
 import { TextField } from '@op/ui/TextField';
@@ -15,6 +16,7 @@ export const { useAppForm } = createFormHook({
     Select,
     MultiSelectComboBox,
     ToggleButton,
+    Checkbox,
   },
   formComponents: {
     Button: ({ className, ...props }: ButtonProps) => (
