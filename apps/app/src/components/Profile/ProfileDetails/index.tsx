@@ -23,7 +23,7 @@ import { AddRelationshipForm } from './AddRelationshipForm';
 const AddRelationshipModal = ({ profile }: { profile: Organization }) => {
   const utils = trpc.useUtils();
   const [{ relationships }] =
-    trpc.organization.listRelationships.useSuspenseQuery({
+    trpc.organization.listDirectedRelationships.useSuspenseQuery({
       to: profile.id,
     });
 
@@ -89,7 +89,14 @@ const AddRelationshipModal = ({ profile }: { profile: Organization }) => {
           <Modal className="min-w-[29rem]">
             <AddRelationshipForm
               profile={profile}
-              onChange={utils.organization.listRelationships.invalidate}
+              onChange={() => {
+                utils.organization.listRelationships.invalidate({
+                  from: profile.id,
+                });
+                utils.organization.listDirectedRelationships.invalidate({
+                  to: profile.id,
+                });
+              }}
             />
           </Modal>
         </DialogTrigger>

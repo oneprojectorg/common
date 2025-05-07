@@ -1,4 +1,4 @@
-import { and, db, eq, sql } from '@op/db/client';
+import { and, db, eq, or, sql } from '@op/db/client';
 import { organizationRelationships } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
@@ -43,11 +43,13 @@ export const getRelationship = async ({
   from,
   to,
   pending = null,
+  directed = false,
 }: {
   user: User;
   from: string;
-  to: string;
+  to?: string;
   pending?: boolean | null;
+  directed?: boolean;
 }) => {
   // const orgUser = await getOrgAccessUser({ user, organizationId: from });
 
@@ -58,10 +60,11 @@ export const getRelationship = async ({
   // throw new UnauthorizedError('You are not a member of this organization');
   // }
   //
+  const andOr = directed ? and : or;
   const where = () =>
-    and(
+    andOr(
       eq(organizationRelationships.sourceOrganizationId, from),
-      eq(organizationRelationships.targetOrganizationId, to),
+      ...(to ? [eq(organizationRelationships.targetOrganizationId, to)] : []),
       ...(pending !== null
         ? [eq(organizationRelationships.pending, pending)]
         : []),
@@ -73,7 +76,7 @@ export const getRelationship = async ({
     }),
     db
       .select({
-        count: sql`count(*)::int`,
+        count: sql<number>`count(*)::int`,
       })
       .from(organizationRelationships)
       .where(where),

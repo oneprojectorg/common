@@ -8,13 +8,19 @@ import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
-const inputSchema = z.object({
+const directedInputSchema = z.object({
   // from: z.string().uuid({ message: 'Invalid source organization ID' }),
   to: z.string().uuid({ message: 'Invalid target organization ID' }),
   pending: z.boolean().optional(),
 });
 
-const meta: OpenApiMeta = {
+const nonDirectedInputSchema = z.object({
+  from: z.string().uuid({ message: 'Invalid source organization ID' }),
+  // to: z.string().uuid({ message: 'Invalid target organization ID' }),
+  pending: z.boolean().optional(),
+});
+
+const directedMeta: OpenApiMeta = {
   openapi: {
     enabled: true,
     method: 'GET',
@@ -25,12 +31,23 @@ const meta: OpenApiMeta = {
   },
 };
 
+const nonDirectedMeta: OpenApiMeta = {
+  openapi: {
+    enabled: true,
+    method: 'GET',
+    path: '/organization/{from}/relationships',
+    protect: true,
+    tags: ['organization', 'relationships'],
+    summary: 'List organization relationships',
+  },
+};
+
 export const listRelationshipsRouter = router({
-  listRelationships: loggedProcedure
+  listDirectedRelationships: loggedProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticated)
-    .meta(meta)
-    .input(inputSchema)
+    .meta(directedMeta)
+    .input(directedInputSchema)
     .query(async ({ ctx, input }) => {
       const { user } = ctx;
       const { to, pending } = input;
@@ -45,6 +62,43 @@ export const listRelationshipsRouter = router({
           user,
           from: session.user.lastOrgId,
           to,
+          pending,
+          directed: true,
+        });
+
+        return { relationships, count };
+      } catch (error: unknown) {
+        if (error instanceof UnauthorizedError) {
+          throw new TRPCError({
+            message: error.message,
+            code: 'UNAUTHORIZED',
+          });
+        }
+        throw new TRPCError({
+          message: 'Could not retrieve relationships',
+          code: 'INTERNAL_SERVER_ERROR',
+        });
+      }
+    }),
+  listRelationships: loggedProcedure
+    .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
+    .use(withAuthenticated)
+    .meta(nonDirectedMeta)
+    .input(nonDirectedInputSchema)
+    .query(async ({ ctx, input }) => {
+      const { user } = ctx;
+      const { from, pending } = input;
+
+      try {
+        const session = await getSession();
+        if (!session) {
+          throw new UnauthorizedError('No user found');
+        }
+
+        const { records: relationships, count } = await getRelationship({
+          user,
+          from,
+          to: from,
           pending,
         });
 
