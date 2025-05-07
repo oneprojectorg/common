@@ -4,20 +4,20 @@ import { Header1 } from '@op/ui/Header';
 import { Skeleton } from '@op/ui/Skeleton';
 import { Suspense } from 'react';
 
-import { useTranslations } from '@/lib/i18n';
+import { Link, useTranslations } from '@/lib/i18n';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
 
-const RelationshipCount = ({ profileId }: { profileId: string }) => {
+const RelationshipCount = ({ profile }: { profile: Organization }) => {
   const t = useTranslations();
   const [{ count }] = trpc.organization.listRelationships.useSuspenseQuery({
-    from: profileId,
+    from: profile.id,
   });
 
   return (
-    <>
+    <Link href={`/org/${profile.slug}/relationships`}>
       <span className="font-semibold">{count}</span> {t('relationships')}
-    </>
+    </Link>
   );
 };
 
@@ -34,7 +34,7 @@ export const ProfileSummary = ({ profile }: { profile: Organization }) => {
         <div className="flex flex-col-reverse gap-6 sm:flex-col">
           <div className="flex gap-1 text-base text-neutral-gray4">
             <Suspense fallback={<Skeleton>482 relationships</Skeleton>}>
-              <RelationshipCount profileId={profile.id} />
+              <RelationshipCount profile={profile} />
             </Suspense>
           </div>
         </div>

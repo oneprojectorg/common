@@ -1,6 +1,5 @@
 import {
   UnauthorizedError,
-  addRelationship,
   removeRelationship,
 } from '@op/common';
 import { getSession } from '@op/common/src/services/access';

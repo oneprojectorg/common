@@ -41,7 +41,7 @@ export const addRelationship = async ({
 };
 
 // TODO: this can be a heavy query if we don't watch it
-export const getRelationship = async ({
+export const getRelationships = async ({
   from,
   to,
   pending = null,
@@ -75,6 +75,13 @@ export const getRelationship = async ({
   const [relationships, count] = await Promise.all([
     db.query.organizationRelationships.findMany({
       where,
+      with: {
+        targetOrganization: {
+          with: {
+            avatarImage: true,
+          },
+        },
+      },
     }),
     db
       .select({

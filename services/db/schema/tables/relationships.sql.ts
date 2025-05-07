@@ -1,3 +1,4 @@
+import { relations } from 'drizzle-orm';
 import {
   boolean,
   index,
@@ -37,4 +38,18 @@ export const organizationRelationships = pgTable(
       table.relationshipType,
     ),
   ],
+);
+
+export const organizationRelationshipsRelations = relations(
+  organizationRelationships,
+  ({ one }) => ({
+    sourceOrganization: one(organizations, {
+      fields: [organizationRelationships.sourceOrganizationId],
+      references: [organizations.id],
+    }),
+    targetOrganization: one(organizations, {
+      fields: [organizationRelationships.targetOrganizationId],
+      references: [organizations.id],
+    }),
+  }),
 );

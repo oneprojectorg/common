@@ -33,6 +33,9 @@ export {
 } from './tables/taxonomies.sql';
 
 export { projects, projectsRelations } from './tables/projects.sql';
-export { organizationRelationships } from './tables/relationships.sql';
+export {
+  organizationRelationships,
+  organizationRelationshipsRelations,
+} from './tables/relationships.sql';
 export { users, usersRelations } from './tables/users.sql';
 export { usersUsedStorage } from './tables/usersUsedStorage.sql';

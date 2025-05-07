@@ -1,4 +1,4 @@
-import { UnauthorizedError, getRelationship } from '@op/common';
+import { UnauthorizedError, getRelationships } from '@op/common';
 import { getSession } from '@op/common/src/services/access';
 import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
@@ -58,7 +58,7 @@ export const listRelationshipsRouter = router({
           throw new UnauthorizedError('No user found');
         }
 
-        const { records: relationships, count } = await getRelationship({
+        const { records: relationships, count } = await getRelationships({
           user,
           from: session.user.lastOrgId,
           to,
@@ -95,7 +95,7 @@ export const listRelationshipsRouter = router({
           throw new UnauthorizedError('No user found');
         }
 
-        const { records: relationships, count } = await getRelationship({
+        const { records: relationships, count } = await getRelationships({
           user,
           from,
           to: from,
