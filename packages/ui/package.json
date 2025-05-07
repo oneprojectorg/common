@@ -7,6 +7,7 @@
     "./AlertDialog": "./src/components/AlertDialog.tsx",
     "./Avatar": "./src/components/Avatar/index.tsx",
     "./AvatarUploader": "./src/components/AvatarUploader.tsx",
+    "./Breadcrumbs": "./src/components/Breadcrumbs.tsx",
     "./FacePile": "./src/components/FacePile.tsx",
     "./BannerUploader": "./src/components/BannerUploader.tsx",
     "./Button": "./src/components/Button.tsx",

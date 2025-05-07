@@ -3,6 +3,7 @@
 import { getPublicUrl } from '@/utils';
 import { trpc } from '@op/trpc/client';
 import { Avatar } from '@op/ui/Avatar';
+import { Breadcrumb, Breadcrumbs } from '@op/ui/Breadcrumbs';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
 import { ErrorBoundary } from 'next/dist/client/components/error-boundary';
@@ -24,7 +25,15 @@ const ProfileRelationshipsSuspense = ({ slug }: { slug: string }) => {
 
   return (
     <>
-      <div className="font-serif text-title-lg">{count} relationships</div>
+      <div className="flex flex-col gap-4">
+        <Breadcrumbs>
+          <Breadcrumb>
+            <Link href={`/org/${slug}`}>{organization.name}</Link>
+          </Breadcrumb>
+          <Breadcrumb>Relationships</Breadcrumb>
+        </Breadcrumbs>
+        <div className="font-serif text-title-lg">{count} relationships</div>
+      </div>
       <Tabs>
         <TabList className="px-4">
           <Tab id="all">All relationships</Tab>
@@ -65,20 +74,26 @@ const ProfileRelationshipsSuspense = ({ slug }: { slug: string }) => {
                     }
                   </Avatar>
                 </div>
-                <div className="flex flex-col gap-2">
-                  <div className="font-semibold">
-                    {
-                      // @ts-expect-error
-                      relationship.targetOrganization.name
-                    }
+                <div className="flex flex-col gap-3">
+                  <div className="flex flex-col gap-2">
+                    <div className="font-semibold">
+                      {
+                        // @ts-expect-error
+                        relationship.targetOrganization.name
+                      }
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {relationship.relationshipType}{' '}
+                      {relationship.pending ? (
+                        <TagGroup>
+                          <Tag className="rounded-sm p-1">Pending</Tag>
+                        </TagGroup>
+                      ) : null}
+                    </div>
                   </div>
+
                   <div className="flex items-center gap-1">
-                    {relationship.relationshipType}{' '}
-                    {relationship.pending ? (
-                      <TagGroup>
-                        <Tag className="rounded-sm p-1">Pending</Tag>
-                      </TagGroup>
-                    ) : null}
+                    {relationship.targetOrganization.description}
                   </div>
                 </div>
               </li>
