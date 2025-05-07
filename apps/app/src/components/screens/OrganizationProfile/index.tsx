@@ -54,7 +54,7 @@ export const OrganizationProfile = ({ slug }: { slug: string }) => {
           <LuArrowLeft className="size-6 text-neutral-offWhite" />
         </Link>
       </header>
-      <div className="flex w-full flex-col gap-3 border border-offWhite border-b-transparent sm:gap-4">
+      <div className="flex w-full flex-col gap-3 border border-offWhite border-b-transparent sm:min-h-[calc(100vh-3.5rem)] sm:gap-4">
         <ErrorBoundary errorComponent={() => <div>Could not load profile</div>}>
           <Suspense fallback={<div>Loading...</div>}>
             <OrganizationProfileSuspense slug={slug} />
