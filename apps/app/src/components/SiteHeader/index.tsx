@@ -4,6 +4,7 @@ import { getPublicUrl } from '@/utils';
 import { ClientOnly } from '@/utils/ClientOnly';
 import { UserProvider, useUser } from '@/utils/UserProvider';
 import { useAuthLogout } from '@op/hooks';
+import { trpc } from '@op/trpc/client';
 import { Avatar } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
 import { Menu, MenuItem } from '@op/ui/Menu';
@@ -23,10 +24,12 @@ import { OPLogo } from '../OPLogo';
 const UserAvatarMenu = () => {
   const { user } = useUser();
   const logout = useAuthLogout();
-
-  const switchUser = (organizationId: string) => {
-    console.log('switch');
-  };
+  const utils = trpc.useContext();
+  const switchOrganization = trpc.account.switchOrganization.useMutation({
+    onSuccess: () => {
+      utils.account.getMyAccount.invalidate();
+    },
+  });
 
   return (
     <Avatar>
@@ -50,7 +53,13 @@ const UserAvatarMenu = () => {
 
         <Menu className="min-w-72">
           {user?.organizationUsers.map((orgUser) => (
-            <MenuItem onAction={() => void logout.refetch()}>
+            <MenuItem
+              onAction={() =>
+                void switchOrganization.mutate({
+                  organizationId: orgUser.organization?.id,
+                })
+              }
+            >
               {orgUser.organization?.name}
             </MenuItem>
           ))}

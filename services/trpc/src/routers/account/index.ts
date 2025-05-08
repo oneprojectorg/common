@@ -1,5 +1,6 @@
 import { mergeRouters } from '../../trpcFactory';
 import { getMyAccount } from './getMyAccount';
+import { switchOrganization } from './updateLastOrgId';
 import login from './login';
 import updateUserProfile from './updateUserProfile';
 import { uploadAvatarImage } from './uploadAvatarImage';
@@ -13,6 +14,7 @@ const accountRouter = mergeRouters(
   usernameAvailable,
   usedStorage,
   uploadAvatarImage,
+  switchOrganization,
 );
 
 export default accountRouter;
