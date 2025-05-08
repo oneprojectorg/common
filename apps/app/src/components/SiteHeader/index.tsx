@@ -55,7 +55,7 @@ const UserAvatarMenu = () => {
 export const SiteHeader = () => {
   return (
     <>
-      <header className="gridCentered hidden h-auto w-full items-center justify-between px-4 py-3 sm:grid md:px-28">
+      <header className="gridCentered hidden h-auto w-full items-center justify-between border-b border-offWhite px-4 py-3 sm:grid md:px-28">
         <Link href="/" className="flex gap-1">
           <OPLogo />
           <CommonLogo />

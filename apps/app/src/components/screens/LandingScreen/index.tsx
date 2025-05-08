@@ -79,7 +79,7 @@ const NewOrganizationsSuspense = () => {
   );
 };
 
-const OrganizationStats = () => {
+const OrganizationHighlights = () => {
   const [stats] = trpc.organization.getStats.useSuspenseQuery();
 
   return (
@@ -132,11 +132,11 @@ export const LandingScreen = () => {
       <Suspense
         fallback={
           <Surface>
-            <Skeleton className="h-96 w-full" />
+            <Skeleton className="h-52 w-full" />
           </Surface>
         }
       >
-        <OrganizationStats />
+        <OrganizationHighlights />
       </Suspense>
       <hr />
       <div className="grid grid-cols-15">
