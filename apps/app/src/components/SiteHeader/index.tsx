@@ -24,6 +24,10 @@ const UserAvatarMenu = () => {
   const { user } = useUser();
   const logout = useAuthLogout();
 
+  const switchUser = (organizationId: string) => {
+    console.log('switch');
+  };
+
   return (
     <Avatar>
       <MenuTrigger>
@@ -44,7 +48,12 @@ const UserAvatarMenu = () => {
           )}
         </Button>
 
-        <Menu>
+        <Menu className="min-w-72">
+          {user?.organizationUsers.map((orgUser) => (
+            <MenuItem onAction={() => void logout.refetch()}>
+              {orgUser.organization?.name}
+            </MenuItem>
+          ))}
           <MenuItem id="logout" onAction={() => void logout.refetch()}>
             Logout
           </MenuItem>

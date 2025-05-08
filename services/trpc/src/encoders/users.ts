@@ -6,7 +6,12 @@ import { organizationsEncoder } from './organizations';
 
 export const userEncoder = createSelectSchema(users).extend({
   avatarImage: createSelectSchema(objectsInStorage).nullish(),
-  organizationUsers: createSelectSchema(organizationUsers).array().nullish(),
+  organizationUsers: createSelectSchema(organizationUsers)
+    .extend({
+      organization: organizationsEncoder.nullish(),
+    })
+    .array()
+    .nullish(),
   currentOrganization: organizationsEncoder.nullish(),
 });
 

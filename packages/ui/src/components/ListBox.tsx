@@ -58,7 +58,7 @@ export const itemStyles = tv({
   variants: {
     isSelected: {
       false: 'text-neutral-700 -outline-offset-2 hover:bg-neutral-300',
-      true: 'bg-neutral-400 text-white -outline-offset-4 [&+[data-selected]]:rounded-t-none [&:has(+[data-selected])]:rounded-b-none',
+      true: 'bg-neutral-gray1 text-neutral-black -outline-offset-4 [&+[data-selected]]:rounded-t-none [&:has(+[data-selected])]:rounded-b-none',
     },
     isDisabled: {
       true: 'text-neutral-400',
@@ -70,7 +70,7 @@ type ListBoxItemVariants = VariantProps<typeof itemStyles>;
 
 export interface ListBoxItemProps
   extends React.ComponentProps<typeof AriaListBoxItem>,
-  ListBoxItemVariants {
+    ListBoxItemVariants {
   className?: string;
 }
 
@@ -99,11 +99,11 @@ export const dropdownItemStyles = tv({
   base: 'group flex cursor-default select-none items-center gap-4 rounded py-2 pl-3 pr-1.5 outline outline-0 forced-color-adjust-none',
   variants: {
     isDisabled: {
-      false: 'text-neutral-900',
+      false: 'text-neutral-black',
       true: 'text-neutral-400',
     },
     isFocused: {
-      true: 'bg-neutral-gray1 text-white',
+      true: 'bg-neutral-gray1',
     },
   },
   compoundVariants: [
