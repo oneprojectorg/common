@@ -14,6 +14,7 @@ import { Link } from '@/lib/i18n';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { NewlyJoinedModal } from '@/components/NewlyJoinedModal';
+import { PostFeed } from '@/components/PostFeed';
 import { PostUpdate } from '@/components/PostUpdate';
 
 const HighlightNumber = ({
@@ -152,6 +153,14 @@ const OrganizationHighlights = () => {
   );
 };
 
+const Feed = ({ organizationId }: { organizationId: string }) => {
+  const [posts] = trpc.organization.listRelatedPosts.useSuspenseQuery({
+    organizationId,
+  });
+
+  return <PostFeed posts={posts} />;
+};
+
 export const LandingScreen = () => {
   const [user] = trpc.account.getMyAccount.useSuspenseQuery();
 
@@ -183,7 +192,13 @@ export const LandingScreen = () => {
             </Surface>
           </Suspense>
           <hr />
-          <div>THE FEED</div>
+          <div>
+            {user.currentOrganization ? (
+              <Suspense>
+                <Feed organizationId={user.currentOrganization.id} />
+              </Suspense>
+            ) : null}
+          </div>
         </div>
         <span />
         <div className="col-span-5">

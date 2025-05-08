@@ -1,5 +1,5 @@
 import { getPublicUrl } from '@/utils';
-import type { Organization, PostToOrganization } from '@op/trpc/encoders';
+import type { PostToOrganization } from '@op/trpc/encoders';
 import { Header3 } from '@op/ui/Header';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';
@@ -98,50 +98,49 @@ export const FeedMain = ({
 
 export const PostFeed = ({
   posts,
-  profile,
   className,
 }: {
   posts: Array<PostToOrganization>;
-  profile: Organization;
   className?: string;
 }) => {
   const t = useTranslations();
 
-  const profileImageUrl = getPublicUrl(profile.avatarImage?.name);
-
   return (
     <div className={cn('flex flex-col gap-8 pb-8', className)}>
       {posts.length > 0 ? (
-        posts.map(({ content, createdAt }, i) => (
-          <FeedItem key={i}>
-            <FeedAvatar>
-              {profileImageUrl ? (
-                <Image
-                  src={profileImageUrl}
-                  alt=""
-                  fill
-                  className="!size-8 max-h-8 max-w-8 rounded-full"
-                />
-              ) : (
-                <div className="size-8 rounded-full border bg-white" />
-              )}
-            </FeedAvatar>
-            <FeedMain>
-              <FeedHeader>
-                <Header3 className="font-medium leading-5">
-                  name
-                  {/* profile.name */}
-                </Header3>
-                {createdAt ? (
-                  <span className="text-xs text-darkGray">
-                    {formatRelativeTime(createdAt)}
-                  </span>
-                ) : null}
-              </FeedHeader>
-              <FeedContent>{content}</FeedContent>
-            </FeedMain>
-          </FeedItem>
-        ))
+        posts.map(({ organization, post: { content, createdAt } }, i) => {
+          const profileImageUrl = getPublicUrl(organization?.avatarImage?.name);
+
+          return (
+            <FeedItem key={i}>
+              <FeedAvatar>
+                {profileImageUrl ? (
+                  <Image
+                    src={profileImageUrl}
+                    alt=""
+                    fill
+                    className="!size-8 max-h-8 max-w-8 rounded-full"
+                  />
+                ) : (
+                  <div className="size-8 rounded-full border bg-white" />
+                )}
+              </FeedAvatar>
+              <FeedMain>
+                <FeedHeader>
+                  <Header3 className="font-medium leading-5">
+                    {organization?.name}
+                  </Header3>
+                  {createdAt ? (
+                    <span className="text-xs text-darkGray">
+                      {formatRelativeTime(createdAt)}
+                    </span>
+                  ) : null}
+                </FeedHeader>
+                <FeedContent>{content}</FeedContent>
+              </FeedMain>
+            </FeedItem>
+          );
+        })
       ) : (
         <FeedItem>
           <FeedMain className="flex w-full flex-col items-center justify-center py-6">

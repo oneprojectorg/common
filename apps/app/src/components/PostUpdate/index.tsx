@@ -47,7 +47,13 @@ export const PostUpdate = ({
       // @ts-expect-error - temporary
       utils.organization.listPosts.setData({ slug: profile.slug }, (old) =>
         old
-          ? [...old, { ...newPost, createdAt: new Date() }]
+          ? [
+              ...old,
+              {
+                ...{ organization: profile, post: newPost },
+                createdAt: new Date(),
+              },
+            ]
           : [{ ...newPost, createdAt: new Date() }],
       );
 

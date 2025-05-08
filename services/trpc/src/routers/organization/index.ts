@@ -5,6 +5,7 @@ import { createPostInOrganization } from './createPostInOrganization';
 import { getOrganizationRouter } from './getOrganization';
 import { listOrganizationsRouter } from './listOrganizations';
 import { listOrganizationPostsRouter } from './listPosts';
+import { listRelatedOrganizationPostsRouter } from './listRelatedOrganizationPosts';
 import { listRelationshipsRouter } from './listRelationships';
 import { removeRelationshipRouter } from './removeRelationship';
 import { organizationStatsRouter } from './stats';
@@ -21,4 +22,5 @@ export const organizationRouter = mergeRouters(
   listRelationshipsRouter,
   removeRelationshipRouter,
   organizationStatsRouter,
+  listRelatedOrganizationPostsRouter,
 );

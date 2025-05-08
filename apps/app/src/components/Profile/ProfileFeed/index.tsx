@@ -14,5 +14,5 @@ export const ProfileFeed = ({
     slug: profile.slug,
   });
 
-  return <PostFeed posts={posts} profile={profile} className={className} />;
+  return <PostFeed posts={posts} className={className} />;
 };

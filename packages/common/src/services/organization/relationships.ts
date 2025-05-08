@@ -135,7 +135,6 @@ export const getRelatedOrganizations = async ({
     ([_, val]) => val,
   );
 
-  console.log('RECORDS', organizations);
   return { records: organizations, count: count[0]?.count ?? 0 };
 };
 

@@ -67,8 +67,6 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  console.log('MIDDLEWARE USER', user);
-
   if (!user && !request.nextUrl.pathname.startsWith('/login')) {
     // no user, potentially respond by redirecting the user to the login page
     const url = request.nextUrl.clone();
