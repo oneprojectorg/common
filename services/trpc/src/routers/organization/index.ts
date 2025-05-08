@@ -7,6 +7,7 @@ import { listOrganizationsRouter } from './listOrganizations';
 import { listOrganizationPostsRouter } from './listPosts';
 import { listRelationshipsRouter } from './listRelationships';
 import { removeRelationshipRouter } from './removeRelationship';
+import { organizationStatsRouter } from './stats';
 import { uploadAvatarImage } from './uploadAvatarImage';
 
 export const organizationRouter = mergeRouters(
@@ -19,4 +20,5 @@ export const organizationRouter = mergeRouters(
   addRelationshipRouter,
   listRelationshipsRouter,
   removeRelationshipRouter,
+  organizationStatsRouter,
 );

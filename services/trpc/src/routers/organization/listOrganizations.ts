@@ -7,6 +7,7 @@ import withAuthenticated from '../../middlewares/withAuthenticated';
 import withDB from '../../middlewares/withDB';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
+import { dbFilter } from '../../utils';
 
 const meta: OpenApiMeta = {
   openapi: {
@@ -27,10 +28,11 @@ export const listOrganizationsRouter = router({
     .use(withDB)
     // Router
     .meta(meta)
-    .input(z.void())
+    .input(dbFilter)
     .output(z.array(organizationsEncoder))
-    .query(async ({ ctx }) => {
+    .query(async ({ ctx, input }) => {
       const { db } = ctx.database;
+      const { limit = 10 } = input ?? {};
 
       // TODO: assert authorization, setup a common package
       const result = await db.query.organizations.findMany({
@@ -41,6 +43,7 @@ export const listOrganizationsRouter = router({
           avatarImage: true,
         },
         orderBy: (orgs, { desc }) => desc(orgs.updatedAt),
+        limit,
       });
 
       if (!result) {

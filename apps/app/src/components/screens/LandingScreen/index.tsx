@@ -7,10 +7,11 @@ import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';
-import { ReactNode } from 'react';
+import { ReactNode, Suspense } from 'react';
 
 import { Link } from '@/lib/i18n';
 
+import ErrorBoundary from '@/components/ErrorBoundary';
 import { NewlyJoinedModal } from '@/components/NewlyJoinedModal';
 
 const HighlightNumber = ({
@@ -46,8 +47,71 @@ const Highlight = ({ children }: { children?: ReactNode }) => {
   return <div className="flex items-center gap-4">{children}</div>;
 };
 
-export const LandingScreen = () => {
+const NewOrganizationsSuspense = () => {
   const [organizations] = trpc.organization.list.useSuspenseQuery();
+
+  return organizations?.map((org) => {
+    const { avatarImage } = org;
+    const avatarUrl = getPublicUrl(avatarImage?.name);
+
+    return (
+      <div key={org.id}>
+        <Link className="flex items-center gap-4" href={`/org/${org.slug}`}>
+          <Avatar>
+            {avatarUrl ? (
+              <Image src={avatarUrl} alt="" fill className="object-cover" />
+            ) : null}
+          </Avatar>
+          <div className="flex flex-col text-sm">
+            <span>{org.name}</span>
+            <span>{org.city}</span>
+          </div>
+        </Link>
+      </div>
+    );
+  });
+};
+
+const OrganizationStats = () => {
+  const [stats] = trpc.organization.getStats.useSuspenseQuery();
+
+  return (
+    <Surface>
+      <div className="flex items-center justify-between gap-4 px-10 py-6">
+        <Highlight>
+          <HighlightNumber className="bg-tealGreen">
+            {stats.newOrganizations}
+          </HighlightNumber>
+          <HighlightLabel>new organizations to explore</HighlightLabel>
+        </Highlight>
+        <hr className="h-20 w-0.5 bg-neutral-offWhite" />
+        <Highlight>
+          <HighlightNumber className="bg-orange">
+            {stats.totalRelationships}
+          </HighlightNumber>
+          <HighlightLabel>active relationships</HighlightLabel>
+        </Highlight>
+        <hr className="h-20 w-0.5 bg-neutral-offWhite" />
+        <Highlight>
+          <HighlightNumber className="bg-redTeal">
+            {stats.totalOrganizations}
+          </HighlightNumber>
+          <HighlightLabel>organizations on Common</HighlightLabel>
+        </Highlight>
+      </div>
+      <div className="flex items-center justify-end gap-2 border-0 border-t p-6 text-sm text-neutral-charcoal">
+        <FacePile
+          items={new Array(10).fill(0).map(() => (
+            <Avatar>SC</Avatar>
+          ))}
+        />
+        are collaborating on Common
+      </div>
+    </Surface>
+  );
+};
+
+export const LandingScreen = () => {
   const [user] = trpc.account.getMyAccount.useSuspenseQuery();
 
   return (
@@ -58,32 +122,15 @@ export const LandingScreen = () => {
           Explore new connections and strengthen existing relationships.
         </span>
       </div>
-      <Surface>
-        <div className="flex items-center justify-between gap-4 px-10 py-6">
-          <Highlight>
-            <HighlightNumber className="bg-tealGreen">12</HighlightNumber>
-            <HighlightLabel>new organizations to explore</HighlightLabel>
-          </Highlight>
-          <hr className="h-20 w-0.5 bg-neutral-offWhite" />
-          <Highlight>
-            <HighlightNumber className="bg-orange">878</HighlightNumber>
-            <HighlightLabel>active relationships</HighlightLabel>
-          </Highlight>
-          <hr className="h-20 w-0.5 bg-neutral-offWhite" />
-          <Highlight>
-            <HighlightNumber className="bg-redTeal">48</HighlightNumber>
-            <HighlightLabel>organizations on Common</HighlightLabel>
-          </Highlight>
-        </div>
-        <div className="flex items-center justify-end gap-2 border-0 border-t p-6 text-sm text-neutral-charcoal">
-          <FacePile
-            items={new Array(10).fill(0).map(() => (
-              <Avatar>SC</Avatar>
-            ))}
-          />
-          are collaborating on Common
-        </div>
-      </Surface>
+      <Suspense
+        fallback={
+          <Surface>
+            <Skeleton className="h-96 w-full" />
+          </Surface>
+        }
+      >
+        <OrganizationStats />
+      </Suspense>
       <hr />
       <div className="grid grid-cols-15">
         <div className="col-span-9 flex flex-col gap-8">
@@ -95,34 +142,11 @@ export const LandingScreen = () => {
         <div className="col-span-5">
           <Surface className="flex flex-col gap-6 p-6">
             <Header3 className="text-title-sm">New Organizations</Header3>
-            {organizations?.map((org) => {
-              const { avatarImage } = org;
-              const avatarUrl = getPublicUrl(avatarImage?.name);
-
-              return (
-                <div key={org.id}>
-                  <Link
-                    className="flex items-center gap-4"
-                    href={`/org/${org.slug}`}
-                  >
-                    <Avatar>
-                      {avatarUrl ? (
-                        <Image
-                          src={avatarUrl}
-                          alt=""
-                          fill
-                          className="object-cover"
-                        />
-                      ) : null}
-                    </Avatar>
-                    <div className="flex flex-col text-sm">
-                      <span>{org.name}</span>
-                      <span>{org.city}</span>
-                    </div>
-                  </Link>
-                </div>
-              );
-            })}
+            <ErrorBoundary fallback={<div>Could not load organizations</div>}>
+              <Suspense fallback={<SkeletonLine lines={5} />}>
+                <NewOrganizationsSuspense />
+              </Suspense>
+            </ErrorBoundary>
           </Surface>
         </div>
       </div>
