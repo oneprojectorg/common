@@ -15,7 +15,10 @@ export const Skeleton = ({
 }: React.HTMLAttributes<HTMLDivElement>) => {
   return (
     <div
-      className={cn('bg-muted animate-pulse rounded-md', className)}
+      className={cn(
+        'min-h-4 animate-pulse rounded-sm bg-neutral-gray1',
+        className,
+      )}
       {...props}
     />
   );

@@ -84,6 +84,7 @@ export const getRelatedOrganizations = async ({
         },
       },
     }),
+    // TODO: this doesn't count the right thing. It counts the relationships rather than the orgs in relationship
     db
       .select({
         count: sql<number>`count(*)::int`,
@@ -92,6 +93,8 @@ export const getRelatedOrganizations = async ({
       .where(where),
   ]);
 
+  // At the moment we combine all the relationships into one distinct org record
+  // in JS as this is harder to do in SQL
   const distinctRelationships = new Map<
     string,
     Organization & {

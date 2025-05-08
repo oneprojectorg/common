@@ -13,6 +13,59 @@ import { LuArrowLeft } from 'react-icons/lu';
 
 import { Link } from '@/lib/i18n';
 
+import { ProfileRelationshipsSkeleton } from './Skeleton';
+
+const RelationshipList = ({ organizations }) => {
+  return (
+    <ul className="flex flex-col gap-12">
+      {organizations.map((relationshipOrg) => (
+        <li className="flex w-full gap-6">
+          <div>
+            <Avatar className="size-12">
+              {relationshipOrg.name ? (
+                <Image
+                  src={
+                    getPublicUrl(
+                      // @ts-expect-error
+                      relationshipOrg.avatarImage?.name,
+                    ) ?? ''
+                  }
+                  width={80}
+                  height={80}
+                  alt={relationshipOrg.name}
+                />
+              ) : (
+                <div className="flex size-8 items-center justify-center text-neutral-gray3">
+                  {relationshipOrg.name?.slice(0, 1) ?? ''}
+                </div>
+              )}
+            </Avatar>
+          </div>
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-2">
+              <div className="font-semibold">{relationshipOrg.name}</div>
+              {relationshipOrg.relationships?.map((relationship) => (
+                <div className="flex items-center gap-1">
+                  {relationship.relationshipType}{' '}
+                  {relationship.pending ? (
+                    <TagGroup>
+                      <Tag className="rounded-sm p-1">Pending</Tag>
+                    </TagGroup>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-1">
+              {relationshipOrg.description}
+            </div>
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+};
+
 const ProfileRelationshipsSuspense = ({ slug }: { slug: string }) => {
   const [organization] = trpc.organization.getBySlug.useSuspenseQuery({
     slug,
@@ -20,7 +73,7 @@ const ProfileRelationshipsSuspense = ({ slug }: { slug: string }) => {
 
   const [{ organizations, count }] =
     trpc.organization.listRelationships.useSuspenseQuery({
-      from: organization.id,
+      organizationId: organization.id,
     });
 
   return (
@@ -33,59 +86,12 @@ const ProfileRelationshipsSuspense = ({ slug }: { slug: string }) => {
         <div className="font-serif text-title-lg">{count} relationships</div>
       </div>
       <Tabs>
-        <TabList className="px-4">
+        <TabList>
           <Tab id="all">All relationships</Tab>
         </TabList>
 
-        <TabPanel id="all" className="px-6">
-          <ul className="flex flex-col gap-12">
-            {organizations.map((relationshipOrg) => (
-              <li className="flex w-full gap-6">
-                <div>
-                  <Avatar className="size-12">
-                    {relationshipOrg.name ? (
-                      <Image
-                        src={
-                          getPublicUrl(
-                            // @ts-expect-error
-                            relationshipOrg.avatarImage?.name,
-                          ) ?? ''
-                        }
-                        width={80}
-                        height={80}
-                        alt={relationshipOrg.name}
-                      />
-                    ) : (
-                      <div className="flex size-8 items-center justify-center text-neutral-gray3">
-                        {relationshipOrg.name?.slice(0, 1) ?? ''}
-                      </div>
-                    )}
-                  </Avatar>
-                </div>
-                <div className="flex flex-col gap-3">
-                  <div className="flex flex-col gap-2">
-                    <div className="font-semibold">{relationshipOrg.name}</div>
-                    <div className="flex items-center gap-1">
-                      {relationshipOrg.relationships?.map((relationship) => (
-                        <>
-                          {relationship.relationshipType}{' '}
-                          {relationship.pending ? (
-                            <TagGroup>
-                              <Tag className="rounded-sm p-1">Pending</Tag>
-                            </TagGroup>
-                          ) : null}
-                        </>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-1">
-                    {relationshipOrg.description}
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
+        <TabPanel id="all" className="px-0">
+          <RelationshipList organizations={organizations} />
         </TabPanel>
       </Tabs>
     </>
@@ -101,9 +107,9 @@ export const ProfileRelationships = ({ slug }: { slug: string }) => {
           <LuArrowLeft className="size-6 text-neutral-offWhite" />
         </Link>
       </header>
-      <div className="flex w-full flex-col gap-3 border border-offWhite border-b-transparent sm:min-h-[calc(100vh-3.5rem)] sm:gap-4">
+      <div className="flex w-full flex-col gap-3 pt-8 sm:min-h-[calc(100vh-3.5rem)] sm:gap-4">
         <ErrorBoundary errorComponent={() => <div>Could not load profile</div>}>
-          <Suspense fallback={<div>Loading...</div>}>
+          <Suspense fallback={<ProfileRelationshipsSkeleton />}>
             <ProfileRelationshipsSuspense slug={slug} />
           </Suspense>
         </ErrorBoundary>

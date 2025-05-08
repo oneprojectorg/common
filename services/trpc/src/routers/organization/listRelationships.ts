@@ -19,7 +19,7 @@ const directedInputSchema = z.object({
 });
 
 const nonDirectedInputSchema = z.object({
-  from: z.string().uuid({ message: 'Invalid source organization ID' }),
+  organizationId: z.string().uuid({ message: 'Invalid organization ID' }),
   // to: z.string().uuid({ message: 'Invalid target organization ID' }),
   pending: z.boolean().optional(),
 });
@@ -91,7 +91,7 @@ export const listRelationshipsRouter = router({
     .input(nonDirectedInputSchema)
     .query(async ({ ctx, input }) => {
       const { user } = ctx;
-      const { from, pending } = input;
+      const { organizationId, pending } = input;
 
       try {
         const session = await getSession();
@@ -102,7 +102,7 @@ export const listRelationshipsRouter = router({
         const { records: organizations, count } = await getRelatedOrganizations(
           {
             user,
-            orgId: from,
+            orgId: organizationId,
             pending,
           },
         );

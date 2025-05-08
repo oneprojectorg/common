@@ -11,7 +11,7 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 const RelationshipCount = ({ profile }: { profile: Organization }) => {
   const t = useTranslations();
   const [{ count }] = trpc.organization.listRelationships.useSuspenseQuery({
-    from: profile.id,
+    organizationId: profile.id,
   });
 
   return (
