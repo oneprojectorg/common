@@ -1,4 +1,5 @@
 import { getPublicUrl } from '@/utils';
+import { UserProvider } from '@/utils/UserProvider';
 import { trpc } from '@op/trpc/client';
 import { Avatar } from '@op/ui/Avatar';
 import { FacePile } from '@op/ui/FacePile';
@@ -13,6 +14,7 @@ import { Link } from '@/lib/i18n';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { NewlyJoinedModal } from '@/components/NewlyJoinedModal';
+import { PostUpdate } from '@/components/PostUpdate';
 
 const HighlightNumber = ({
   children,
@@ -141,7 +143,13 @@ export const LandingScreen = () => {
       <hr />
       <div className="grid grid-cols-15">
         <div className="col-span-9 flex flex-col gap-8">
-          <Surface>feed post</Surface>
+          <Suspense fallback={<Skeleton className="h-full w-full" />}>
+            <Surface className="p-4 pt-5">
+              <UserProvider>
+                <PostUpdate />
+              </UserProvider>
+            </Surface>
+          </Suspense>
           <hr />
           <div>THE FEED</div>
         </div>

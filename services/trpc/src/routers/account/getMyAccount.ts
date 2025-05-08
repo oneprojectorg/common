@@ -38,6 +38,11 @@ export const getMyAccount = router({
         with: {
           avatarImage: true,
           organizationUsers: true,
+          currentOrganization: {
+            with: {
+              avatarImage: true,
+            },
+          },
         },
       });
 

@@ -1,3 +1,4 @@
+import { UserProvider } from '@/utils/UserProvider';
 import type { Organization } from '@op/trpc/encoders';
 import { Button } from '@op/ui/Button';
 import { Header3 } from '@op/ui/Header';
@@ -8,7 +9,9 @@ import { Suspense } from 'react';
 import { LuCopy, LuGlobe, LuMail } from 'react-icons/lu';
 import { toast } from 'sonner';
 
-import { ProfileFeed, ProfileFeedPost } from '../ProfileFeed';
+import { PostUpdate } from '@/components/PostUpdate';
+
+import { ProfileFeed } from '../ProfileFeed';
 
 const ContactLink = ({
   children,
@@ -95,10 +98,11 @@ export const ProfileGrid = ({ profile }: { profile: Organization }) => {
   return (
     <div className="hidden flex-grow grid-cols-15 border-t sm:grid">
       <div className="col-span-9 flex flex-col gap-8">
-        <ProfileFeedPost
-          profile={profile}
-          className="border-b px-4 pb-8 pt-6"
-        />
+        <Suspense fallback={null}>
+          <UserProvider>
+            <PostUpdate className="border-b px-4 pb-8 pt-6" />
+          </UserProvider>
+        </Suspense>
         <Suspense fallback={<div>Loading...</div>}>
           <ProfileFeed profile={profile} className="px-4" />
         </Suspense>
@@ -118,7 +122,11 @@ export const ProfileTabs = ({ profile }: { profile: Organization }) => {
         <Tab id="about">About</Tab>
       </TabList>
       <TabPanel id="updates" className="px-6">
-        <ProfileFeedPost profile={profile} className="border-b px-4 py-6" />
+        <Suspense fallback={null}>
+          <UserProvider>
+            <PostUpdate className="border-b px-4 py-6" />
+          </UserProvider>
+        </Suspense>
         <Suspense fallback={<div>Loading...</div>}>
           <ProfileFeed profile={profile} className="px-4 py-6" />
         </Suspense>

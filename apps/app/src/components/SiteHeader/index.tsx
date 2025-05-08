@@ -2,8 +2,8 @@
 
 import { getPublicUrl } from '@/utils';
 import { ClientOnly } from '@/utils/ClientOnly';
+import { UserProvider, useUser } from '@/utils/UserProvider';
 import { useAuthLogout } from '@op/hooks';
-import { trpc } from '@op/trpc/client';
 import { Avatar } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
 import { Menu, MenuItem } from '@op/ui/Menu';
@@ -21,23 +21,25 @@ import { CommonLogo } from '../CommonLogo';
 import { OPLogo } from '../OPLogo';
 
 const UserAvatarMenu = () => {
-  const [user] = trpc.account.getMyAccount.useSuspenseQuery();
+  const { user } = useUser();
   const logout = useAuthLogout();
 
   return (
     <Avatar>
       <MenuTrigger>
         <Button unstyled>
-          {user.avatarImage?.name ? (
+          {user?.currentOrganization?.avatarImage?.name ? (
             <Image
-              src={getPublicUrl(user.avatarImage.name) ?? ''}
+              src={
+                getPublicUrl(user?.currentOrganization.avatarImage.name) ?? ''
+              }
               alt="User avatar"
               width={48}
               height={48}
             />
           ) : (
             <div className="flex size-8 items-center justify-center text-neutral-gray3">
-              {user.name?.slice(0, 1) ?? ''}
+              {user?.currentOrganization?.name?.slice(0, 1) ?? ''}
             </div>
           )}
         </Button>
@@ -84,7 +86,9 @@ export const SiteHeader = () => {
                 <Skeleton className="size-8 rounded-full border bg-white shadow" />
               }
             >
-              <UserAvatarMenu />
+              <UserProvider>
+                <UserAvatarMenu />
+              </UserProvider>
             </Suspense>
           </ErrorBoundary>
         </ClientOnly>
