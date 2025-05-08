@@ -21,44 +21,48 @@ const RelationshipList = ({ organizations }) => {
       {organizations.map((relationshipOrg) => (
         <li className="flex w-full gap-6">
           <div>
-            <Avatar className="size-12">
-              {relationshipOrg.name ? (
-                <Image
-                  src={
-                    getPublicUrl(
-                      // @ts-expect-error
-                      relationshipOrg.avatarImage?.name,
-                    ) ?? ''
-                  }
-                  width={80}
-                  height={80}
-                  alt={relationshipOrg.name}
-                />
-              ) : (
-                <div className="flex size-8 items-center justify-center text-neutral-gray3">
-                  {relationshipOrg.name?.slice(0, 1) ?? ''}
-                </div>
-              )}
-            </Avatar>
+            <Link href={`/org/${relationshipOrg.slug}`}>
+              <Avatar className="size-12">
+                {relationshipOrg.name ? (
+                  <Image
+                    src={
+                      getPublicUrl(
+                        // @ts-expect-error
+                        relationshipOrg.avatarImage?.name,
+                      ) ?? ''
+                    }
+                    width={80}
+                    height={80}
+                    alt={relationshipOrg.name}
+                  />
+                ) : (
+                  <div className="flex size-8 items-center justify-center text-neutral-gray3">
+                    {relationshipOrg.name?.slice(0, 1) ?? ''}
+                  </div>
+                )}
+              </Avatar>
+            </Link>
           </div>
           <div className="flex flex-col gap-3">
-            <div className="flex flex-col gap-2">
-              <div className="font-semibold">{relationshipOrg.name}</div>
-              {relationshipOrg.relationships?.map((relationship) => (
-                <div className="flex items-center gap-1">
-                  {relationship.relationshipType}{' '}
-                  {relationship.pending ? (
-                    <TagGroup>
-                      <Tag className="rounded-sm p-1">Pending</Tag>
-                    </TagGroup>
-                  ) : null}
-                </div>
-              ))}
-            </div>
+            <Link href={`/org/${relationshipOrg.slug}`}>
+              <div className="flex flex-col gap-2">
+                <div className="font-semibold">{relationshipOrg.name}</div>
+                {relationshipOrg.relationships?.map((relationship) => (
+                  <div className="flex items-center gap-1">
+                    {relationship.relationshipType}{' '}
+                    {relationship.pending ? (
+                      <TagGroup>
+                        <Tag className="rounded-sm p-1">Pending</Tag>
+                      </TagGroup>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
 
-            <div className="flex items-center gap-1">
-              {relationshipOrg.description}
-            </div>
+              <div className="flex items-center gap-1">
+                {relationshipOrg.description}
+              </div>
+            </Link>
           </div>
         </li>
       ))}
