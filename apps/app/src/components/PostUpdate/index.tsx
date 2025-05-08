@@ -15,14 +15,23 @@ import { useTranslations } from '@/lib/i18n';
 
 import { FeedAvatar, FeedItem, FeedMain } from '@/components/PostFeed';
 
-export const PostUpdate = ({ className }: { className?: string }) => {
+export const PostUpdate = ({
+  targetOrganizationId,
+  className,
+}: {
+  targetOrganizationId?: string;
+  className?: string;
+}) => {
   const { user } = useUser();
   const profile = user?.currentOrganization;
   const [content, setContent] = useState('');
   const t = useTranslations();
   const utils = trpc.useContext();
-  if (!profile) {
-    return null;
+  if (
+    !profile ||
+    (targetOrganizationId && targetOrganizationId !== profile.id)
+  ) {
+    return <div className={cn(className, 'border-none')} />;
   }
 
   const createPost = trpc.organization.createPost.useMutation({

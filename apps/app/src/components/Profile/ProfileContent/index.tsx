@@ -100,7 +100,10 @@ export const ProfileGrid = ({ profile }: { profile: Organization }) => {
       <div className="col-span-9 flex flex-col gap-8">
         <Suspense fallback={null}>
           <UserProvider>
-            <PostUpdate className="border-b px-4 pb-8 pt-6" />
+            <PostUpdate
+              targetOrganizationId={profile.id}
+              className="border-b px-4 pb-8 pt-6"
+            />
           </UserProvider>
         </Suspense>
         <Suspense fallback={<div>Loading...</div>}>
@@ -124,7 +127,10 @@ export const ProfileTabs = ({ profile }: { profile: Organization }) => {
       <TabPanel id="updates" className="px-6">
         <Suspense fallback={null}>
           <UserProvider>
-            <PostUpdate className="border-b px-4 py-6" />
+            <PostUpdate
+              targetOrganizationId={profile.id}
+              className="border-b px-4 py-6"
+            />
           </UserProvider>
         </Suspense>
         <Suspense fallback={<div>Loading...</div>}>

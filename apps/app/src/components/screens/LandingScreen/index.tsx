@@ -83,6 +83,9 @@ const NewOrganizationsSuspense = () => {
 
 const OrganizationHighlights = () => {
   const [stats] = trpc.organization.getStats.useSuspenseQuery();
+  const [organizations] = trpc.organization.list.useSuspenseQuery({
+    limit: 20,
+  });
 
   return (
     <Surface>
@@ -110,9 +113,24 @@ const OrganizationHighlights = () => {
       </div>
       <div className="flex items-center justify-end gap-2 border-0 border-t p-6 text-sm text-neutral-charcoal">
         <FacePile
-          items={new Array(10).fill(0).map(() => (
-            <Avatar>SC</Avatar>
-          ))}
+          items={organizations.map((org) => {
+            const { avatarImage } = org;
+            const avatarUrl = getPublicUrl(avatarImage?.name);
+            return (
+              <Link key={org.id} href={`/org/${org.slug}`}>
+                <Avatar>
+                  {avatarUrl ? (
+                    <Image
+                      src={avatarUrl}
+                      alt=""
+                      fill
+                      className="object-cover"
+                    />
+                  ) : null}
+                </Avatar>
+              </Link>
+            );
+          })}
         />
         are collaborating on Common
       </div>
