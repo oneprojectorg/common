@@ -81,11 +81,42 @@ const NewOrganizationsSuspense = () => {
   );
 };
 
-const OrganizationHighlights = () => {
-  const [stats] = trpc.organization.getStats.useSuspenseQuery();
+const OrganizationFacePile = () => {
   const [organizations] = trpc.organization.list.useSuspenseQuery({
     limit: 20,
   });
+  const [stats] = trpc.organization.getStats.useSuspenseQuery();
+
+  const items = organizations.map((org) => {
+    const { avatarImage } = org;
+    const avatarUrl = getPublicUrl(avatarImage?.name);
+    return (
+      <Link key={org.id} href={`/org/${org.slug}`}>
+        <Avatar>
+          {avatarUrl ? (
+            <Image src={avatarUrl} alt="" fill className="object-cover" />
+          ) : null}
+        </Avatar>
+      </Link>
+    );
+  });
+
+  if (stats.totalOrganizations > 20) {
+    items.push(
+      <Link key="more" href={`/org`}>
+        <Avatar className="bg-neutral-charcoal text-sm text-neutral-offWhite">
+          <span className="align-super">+</span>
+          {stats.totalOrganizations - 20}
+        </Avatar>
+      </Link>,
+    );
+  }
+
+  return <FacePile items={items} />;
+};
+
+const OrganizationHighlights = () => {
+  const [stats] = trpc.organization.getStats.useSuspenseQuery();
 
   return (
     <Surface>
@@ -112,27 +143,10 @@ const OrganizationHighlights = () => {
         </Highlight>
       </div>
       <div className="flex items-center justify-end gap-2 border-0 border-t p-6 text-sm text-neutral-charcoal">
-        <FacePile
-          items={organizations.map((org) => {
-            const { avatarImage } = org;
-            const avatarUrl = getPublicUrl(avatarImage?.name);
-            return (
-              <Link key={org.id} href={`/org/${org.slug}`}>
-                <Avatar>
-                  {avatarUrl ? (
-                    <Image
-                      src={avatarUrl}
-                      alt=""
-                      fill
-                      className="object-cover"
-                    />
-                  ) : null}
-                </Avatar>
-              </Link>
-            );
-          })}
-        />
-        are collaborating on Common
+        <Suspense>
+          <OrganizationFacePile />
+          are collaborating on Common
+        </Suspense>
       </div>
     </Surface>
   );
