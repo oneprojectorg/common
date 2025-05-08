@@ -1,7 +1,7 @@
 'use client';
 
 import { getPublicUrl } from '@/utils';
-import { trpc } from '@op/trpc/client';
+import { RouterOutput, trpc } from '@op/trpc/client';
 import { Avatar } from '@op/ui/Avatar';
 import { Breadcrumb, Breadcrumbs } from '@op/ui/Breadcrumbs';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
@@ -15,7 +15,14 @@ import { Link } from '@/lib/i18n';
 
 import { ProfileRelationshipsSkeleton } from './Skeleton';
 
-const RelationshipList = ({ organizations }) => {
+type relationshipOrganization =
+  RouterOutput['organization']['listRelationships']['organizations'];
+
+const RelationshipList = ({
+  organizations,
+}: {
+  organizations: relationshipOrganization;
+}) => {
   return (
     <ul className="flex flex-col gap-12">
       {organizations.map((relationshipOrg) => (

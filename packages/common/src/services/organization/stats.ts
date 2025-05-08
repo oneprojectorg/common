@@ -3,6 +3,9 @@ import { organizationRelationships, organizations } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
 export const getOrganizationStats = async ({ user }: { user: User }) => {
+  const lastLogin = new Date(user.last_sign_in_at ?? 0);
+  const newOrgThreshold = new Date(lastLogin.setDate(lastLogin.getDate() - 7));
+
   const [orgCount, relationshipCount, newOrganizationsCount] =
     await Promise.all([
       db
@@ -21,12 +24,7 @@ export const getOrganizationStats = async ({ user }: { user: User }) => {
           count: sql<number>`count(*)::int`,
         })
         .from(organizations)
-        .where(
-          gte(
-            organizations.createdAt,
-            new Date(user.last_sign_in_at ?? 0).toISOString(),
-          ),
-        ),
+        .where(gte(organizations.createdAt, newOrgThreshold.toISOString())),
     ]);
 
   const totalOrganizations = orgCount[0]?.count ?? 0;

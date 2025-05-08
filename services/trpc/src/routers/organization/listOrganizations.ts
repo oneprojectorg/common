@@ -32,7 +32,7 @@ export const listOrganizationsRouter = router({
     .output(z.array(organizationsEncoder))
     .query(async ({ ctx, input }) => {
       const { db } = ctx.database;
-      const { limit = 10 } = input ?? {};
+      const { limit = 3 } = input ?? {};
 
       // TODO: assert authorization, setup a common package
       const result = await db.query.organizations.findMany({

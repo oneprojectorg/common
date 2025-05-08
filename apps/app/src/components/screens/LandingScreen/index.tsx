@@ -50,26 +50,33 @@ const Highlight = ({ children }: { children?: ReactNode }) => {
 const NewOrganizationsSuspense = () => {
   const [organizations] = trpc.organization.list.useSuspenseQuery();
 
-  return organizations?.map((org) => {
-    const { avatarImage } = org;
-    const avatarUrl = getPublicUrl(avatarImage?.name);
+  return (
+    <div className="flex flex-col gap-6">
+      {organizations?.map((org) => {
+        const { avatarImage } = org;
+        const avatarUrl = getPublicUrl(avatarImage?.name);
 
-    return (
-      <div key={org.id}>
-        <Link className="flex items-center gap-4" href={`/org/${org.slug}`}>
-          <Avatar>
-            {avatarUrl ? (
-              <Image src={avatarUrl} alt="" fill className="object-cover" />
-            ) : null}
-          </Avatar>
-          <div className="flex flex-col text-sm">
-            <span>{org.name}</span>
-            <span>{org.city}</span>
+        return (
+          <div key={org.id}>
+            <Link className="flex items-center gap-4" href={`/org/${org.slug}`}>
+              <Avatar>
+                {avatarUrl ? (
+                  <Image src={avatarUrl} alt="" fill className="object-cover" />
+                ) : null}
+              </Avatar>
+              <div className="flex flex-col text-sm">
+                <span>{org.name}</span>
+                <span>{org.city}</span>
+              </div>
+            </Link>
           </div>
-        </Link>
-      </div>
-    );
-  });
+        );
+      })}
+      <Link href="/org" className="text-sm text-teal">
+        See more
+      </Link>
+    </div>
+  );
 };
 
 const OrganizationStats = () => {

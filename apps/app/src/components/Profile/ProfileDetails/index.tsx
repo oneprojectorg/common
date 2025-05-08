@@ -52,7 +52,7 @@ const AddRelationshipModal = ({ profile }: { profile: Organization }) => {
                           relationship={relationship}
                           onChange={() => {
                             utils.organization.listRelationships.invalidate({
-                              from: profile.id,
+                              organizationId: profile.id,
                             });
                             utils.organization.listDirectedRelationships.invalidate(
                               {
@@ -78,7 +78,7 @@ const AddRelationshipModal = ({ profile }: { profile: Organization }) => {
                           relationship={relationship}
                           onChange={() => {
                             utils.organization.listRelationships.invalidate({
-                              from: profile.id,
+                              organizationId: profile.id,
                             });
                             utils.organization.listDirectedRelationships.invalidate(
                               {
@@ -104,7 +104,7 @@ const AddRelationshipModal = ({ profile }: { profile: Organization }) => {
                           relationship={relationship}
                           onChange={() => {
                             utils.organization.listRelationships.invalidate({
-                              from: profile.id,
+                              organizationId: profile.id,
                             });
                             utils.organization.listDirectedRelationships.invalidate(
                               {
@@ -131,7 +131,7 @@ const AddRelationshipModal = ({ profile }: { profile: Organization }) => {
               profile={profile}
               onChange={() => {
                 utils.organization.listRelationships.invalidate({
-                  from: profile.id,
+                  organizationId: profile.id,
                 });
                 utils.organization.listDirectedRelationships.invalidate({
                   to: profile.id,
