@@ -18,7 +18,7 @@ const ProfileRelationshipsSuspense = ({ slug }: { slug: string }) => {
     slug,
   });
 
-  const [{ relationships, count }] =
+  const [{ organizations, count }] =
     trpc.organization.listRelationships.useSuspenseQuery({
       from: organization.id,
     });
@@ -27,9 +27,7 @@ const ProfileRelationshipsSuspense = ({ slug }: { slug: string }) => {
     <>
       <div className="flex flex-col gap-4">
         <Breadcrumbs>
-          <Breadcrumb>
-            <Link href={`/org/${slug}`}>{organization.name}</Link>
-          </Breadcrumb>
+          <Breadcrumb href={`/org/${slug}`}>{organization.name}</Breadcrumb>
           <Breadcrumb>Relationships</Breadcrumb>
         </Breadcrumbs>
         <div className="font-serif text-title-lg">{count} relationships</div>
@@ -41,59 +39,48 @@ const ProfileRelationshipsSuspense = ({ slug }: { slug: string }) => {
 
         <TabPanel id="all" className="px-6">
           <ul className="flex flex-col gap-12">
-            {relationships.map((relationship) => (
+            {organizations.map((relationshipOrg) => (
               <li className="flex w-full gap-6">
                 <div>
                   <Avatar className="size-12">
-                    {
-                      // @ts-expect-error
-                      relationship.targetOrganization.name ? (
-                        <Image
-                          src={
-                            getPublicUrl(
-                              // @ts-expect-error
-                              relationship.targetOrganization.avatarImage?.name,
-                            ) ?? ''
-                          }
-                          width={80}
-                          height={80}
-                          alt={
+                    {relationshipOrg.name ? (
+                      <Image
+                        src={
+                          getPublicUrl(
                             // @ts-expect-error
-                            relationship.targetOrganization.name
-                          }
-                        />
-                      ) : (
-                        <div className="flex size-8 items-center justify-center text-neutral-gray3">
-                          {
-                            // @ts-expect-error
-                            relationship.targetOrganization.name?.slice(0, 1) ??
-                              ''
-                          }
-                        </div>
-                      )
-                    }
+                            relationshipOrg.avatarImage?.name,
+                          ) ?? ''
+                        }
+                        width={80}
+                        height={80}
+                        alt={relationshipOrg.name}
+                      />
+                    ) : (
+                      <div className="flex size-8 items-center justify-center text-neutral-gray3">
+                        {relationshipOrg.name?.slice(0, 1) ?? ''}
+                      </div>
+                    )}
                   </Avatar>
                 </div>
                 <div className="flex flex-col gap-3">
                   <div className="flex flex-col gap-2">
-                    <div className="font-semibold">
-                      {
-                        // @ts-expect-error
-                        relationship.targetOrganization.name
-                      }
-                    </div>
+                    <div className="font-semibold">{relationshipOrg.name}</div>
                     <div className="flex items-center gap-1">
-                      {relationship.relationshipType}{' '}
-                      {relationship.pending ? (
-                        <TagGroup>
-                          <Tag className="rounded-sm p-1">Pending</Tag>
-                        </TagGroup>
-                      ) : null}
+                      {relationshipOrg.relationships?.map((relationship) => (
+                        <>
+                          {relationship.relationshipType}{' '}
+                          {relationship.pending ? (
+                            <TagGroup>
+                              <Tag className="rounded-sm p-1">Pending</Tag>
+                            </TagGroup>
+                          ) : null}
+                        </>
+                      ))}
                     </div>
                   </div>
 
                   <div className="flex items-center gap-1">
-                    {relationship.targetOrganization.description}
+                    {relationshipOrg.description}
                   </div>
                 </div>
               </li>

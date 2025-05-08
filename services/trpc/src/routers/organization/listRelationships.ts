@@ -1,4 +1,8 @@
-import { UnauthorizedError, getRelationships } from '@op/common';
+import {
+  UnauthorizedError,
+  getDirectedRelationships,
+  getRelatedOrganizations,
+} from '@op/common';
 import { getSession } from '@op/common/src/services/access';
 import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
@@ -58,13 +62,13 @@ export const listRelationshipsRouter = router({
           throw new UnauthorizedError('No user found');
         }
 
-        const { records: relationships, count } = await getRelationships({
-          user,
-          from: session.user.lastOrgId,
-          to,
-          pending,
-          directed: true,
-        });
+        const { records: relationships, count } =
+          await getDirectedRelationships({
+            user,
+            from: session.user.lastOrgId,
+            to,
+            pending,
+          });
 
         return { relationships, count };
       } catch (error: unknown) {
@@ -95,14 +99,15 @@ export const listRelationshipsRouter = router({
           throw new UnauthorizedError('No user found');
         }
 
-        const { records: relationships, count } = await getRelationships({
-          user,
-          from,
-          to: from,
-          pending,
-        });
+        const { records: organizations, count } = await getRelatedOrganizations(
+          {
+            user,
+            orgId: from,
+            pending,
+          },
+        );
 
-        return { relationships, count };
+        return { organizations, count };
       } catch (error: unknown) {
         if (error instanceof UnauthorizedError) {
           throw new TRPCError({
