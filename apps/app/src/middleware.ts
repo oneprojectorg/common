@@ -8,6 +8,11 @@ import { i18nConfig, routing } from './lib/i18n';
 const useUrl = OPURLConfig('APP');
 
 export async function middleware(request: NextRequest) {
+  if (request.nextUrl.origin.match('ubi.oneproject.tech')) {
+    return NextResponse.redirect(
+      new URL('https://monetarycommons.com/', request.url),
+    );
+  }
   // i18n ROUTING
   const pathname = request.nextUrl.pathname;
   const pathnameIsMissingLocale = i18nConfig.locales.every(
