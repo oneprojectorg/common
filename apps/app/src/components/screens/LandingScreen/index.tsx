@@ -98,41 +98,55 @@ const NewOrganizationsSuspense = () => {
       {/* mobile */}
       <div className="flex flex-col gap-6 sm:hidden">
         <OrganizationCarousel label="New Organizations" itemWidth={192}>
-          {organizations?.map((org) => {
-            const { avatarImage } = org;
-            const avatarUrl = getPublicUrl(avatarImage?.name);
+          <>
+            {organizations?.map((org) => {
+              const { avatarImage, headerImage } = org;
+              const avatarUrl = getPublicUrl(avatarImage?.name);
+              const headerUrl = getPublicUrl(headerImage?.name);
 
-            return (
-              <CarouselItem key={org.id}>
-                <Surface className="flex size-48">
-                  <Link
-                    className="flex size-full flex-col items-center gap-4"
-                    href={`/org/${org.slug}`}
-                  >
-                    <ImageHeader
-                      avatarImage={
-                        <Avatar>
-                          {avatarUrl ? (
+              return (
+                <CarouselItem key={org.id}>
+                  <Surface className="flex size-48">
+                    <Link
+                      className="flex size-full flex-col gap-3"
+                      href={`/org/${org.slug}`}
+                    >
+                      <ImageHeader
+                        headerImage={
+                          headerUrl ? (
+                            <Image
+                              src={headerUrl}
+                              alt=""
+                              fill
+                              className="object-cover"
+                            />
+                          ) : null
+                        }
+                        avatarImage={
+                          avatarUrl ? (
                             <Image
                               src={avatarUrl}
                               alt=""
                               fill
                               className="object-cover"
                             />
-                          ) : null}
-                        </Avatar>
-                      }
-                    />
+                          ) : null
+                        }
+                      />
 
-                    <div className="flex flex-col text-sm">
-                      <span>{org.name}</span>
-                      <span>{org.city}</span>
-                    </div>
-                  </Link>
-                </Surface>
-              </CarouselItem>
-            );
-          })}
+                      <div className="flex flex-col p-4 pt-0 text-left">
+                        <span>{org.name}</span>
+                        <span>
+                          {org.city}
+                          {org.state && org.city ? `, ${org.state}` : ''}
+                        </span>
+                      </div>
+                    </Link>
+                  </Surface>
+                </CarouselItem>
+              );
+            })}
+          </>
         </OrganizationCarousel>
         <Link href="/org" className="text-sm text-teal">
           See more
@@ -273,7 +287,7 @@ const LandingScreenFeeds = ({
         </div>
       </div>
       <Tabs className="pb-8 sm:hidden">
-        <TabList className="px-4" variant="pill">
+        <TabList variant="pill">
           <Tab id="discover" variant="pill">
             Discover
           </Tab>
@@ -281,10 +295,10 @@ const LandingScreenFeeds = ({
             Recent
           </Tab>
         </TabList>
-        <TabPanel id="discover" className="px-6">
+        <TabPanel id="discover" className="p-0">
           <NewOrganizationsList />
         </TabPanel>
-        <TabPanel id="recent">
+        <TabPanel id="recent" className="p-0">
           <PostFeed />
         </TabPanel>
       </Tabs>

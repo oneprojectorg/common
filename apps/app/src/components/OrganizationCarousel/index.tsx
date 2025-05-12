@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useRef, useState } from 'react';
+import { ReactElement, useEffect, useRef, useState } from 'react';
 import { Carousel, CarouselItem, CarouselScroller } from 'react-aria-carousel';
 
 export const OrganizationCarousel = ({
@@ -6,7 +6,7 @@ export const OrganizationCarousel = ({
   label,
   itemWidth,
 }: {
-  children: ReactNode;
+  children: ReactElement;
   label?: string;
   itemWidth: number;
 }) => {
