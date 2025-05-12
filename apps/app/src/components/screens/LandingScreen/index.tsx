@@ -257,14 +257,14 @@ const LandingScreenFeeds = ({
     return (
       <>
         <Suspense fallback={<Skeleton className="h-full w-full" />}>
-          <Surface className="mb-4 p-4 pt-5">
+          <Surface className="mb-8 border-none p-0 pt-5 sm:mb-4 sm:border sm:p-4">
             <UserProvider>
               <PostUpdate />
             </UserProvider>
           </Surface>
         </Suspense>
         <hr />
-        <div>
+        <div className="mt-4 sm:mt-0">
           {user.currentOrganization ? (
             <Suspense>
               <Feed organizationId={user.currentOrganization.id} />
