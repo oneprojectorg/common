@@ -28,7 +28,7 @@ const HighlightNumber = ({
     <div className="text-transparent">
       <div
         className={cn(
-          'flex items-center bg-gradient bg-clip-text font-serif text-title-xxl',
+          'flex items-center bg-gradient bg-clip-text text-right font-serif text-title-xxl',
           className,
         )}
       >
