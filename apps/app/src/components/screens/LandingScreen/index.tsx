@@ -121,21 +121,21 @@ const OrganizationHighlights = () => {
 
   return (
     <Surface className="shadow-light">
-      <div className="flex items-center justify-between gap-4 px-10 py-6">
+      <div className="flex flex-col items-center justify-between gap-6 px-10 py-6 sm:flex-row sm:gap-4">
         <Highlight>
           <HighlightNumber className="bg-tealGreen">
             {stats.newOrganizations}
           </HighlightNumber>
           <HighlightLabel>new organizations to explore</HighlightLabel>
         </Highlight>
-        <hr className="h-20 w-0.5 bg-neutral-offWhite" />
+        <hr className="hidden h-20 w-0.5 bg-neutral-offWhite sm:block" />
         <Highlight>
           <HighlightNumber className="bg-orange">
             {stats.totalRelationships}
           </HighlightNumber>
           <HighlightLabel>active relationships</HighlightLabel>
         </Highlight>
-        <hr className="h-20 w-0.5 bg-neutral-offWhite" />
+        <hr className="hidden h-20 w-0.5 bg-neutral-offWhite sm:block" />
         <Highlight>
           <HighlightNumber className="bg-redTeal">
             {stats.totalOrganizations}
@@ -143,7 +143,7 @@ const OrganizationHighlights = () => {
           <HighlightLabel>organizations on Common</HighlightLabel>
         </Highlight>
       </div>
-      <div className="flex items-center justify-end gap-2 border-0 border-t bg-neutral-offWhite p-6 text-sm text-neutral-charcoal">
+      <div className="flex flex-col justify-start gap-2 border-0 border-t bg-neutral-offWhite p-6 text-sm text-neutral-charcoal sm:flex-row sm:items-center sm:justify-end">
         <Suspense>
           <OrganizationFacePile />
           are collaborating on Common
@@ -165,9 +165,9 @@ export const LandingScreen = () => {
   const [user] = trpc.account.getMyAccount.useSuspenseQuery();
 
   return (
-    <div className="container flex min-h-0 grow flex-col gap-10 pt-14">
+    <div className="container flex min-h-0 grow flex-col gap-4 pt-8 sm:gap-10 sm:pt-14">
       <div className="flex flex-col gap-2">
-        <Header1 className="text-center sm:text-title-xl">
+        <Header1 className="text-center text-title-md sm:text-title-xl">
           Welcome back, {user.name}!
         </Header1>
         <span className="text-center text-neutral-charcoal">

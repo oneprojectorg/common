@@ -125,6 +125,35 @@ export const SiteHeader = () => {
           </ErrorBoundary>
         </ClientOnly>
       </header>
+      {/* Mobile */}
+      <header className="flex h-auto w-full items-center justify-between px-4 py-2 sm:hidden">
+        <Link href="/">
+          <CommonLogo />
+        </Link>
+        <div className="flex gap-4">
+          <span className="flex items-center justify-center">
+            <LuSearch className="size-4 text-neutral-gray4" />
+          </span>
+
+          <ClientOnly>
+            <ErrorBoundary
+              errorComponent={() => (
+                <div className="size-8 rounded-full border bg-white shadow" />
+              )}
+            >
+              <Suspense
+                fallback={
+                  <Skeleton className="size-8 rounded-full border bg-white shadow" />
+                }
+              >
+                <UserProvider>
+                  <UserAvatarMenu />
+                </UserProvider>
+              </Suspense>
+            </ErrorBoundary>
+          </ClientOnly>
+        </div>
+      </header>
     </>
   );
 };
