@@ -63,6 +63,10 @@ const tabProps = tv({
   extend: focusRing,
   base: 'flex cursor-default items-center px-2 py-3 text-sm font-medium text-neutral-gray4 transition forced-color-adjust-none',
   variants: {
+    variant: {
+      default: '',
+      pill: 'border-b-0',
+    },
     isSelected: {
       false: '',
       true: 'border-b border-charcoal text-charcoal',
@@ -70,6 +74,16 @@ const tabProps = tv({
     isDisabled: {
       true: 'text-lightGray',
     },
+  },
+  compoundVariants: [
+    {
+      variant: 'pill',
+      isSelected: true,
+      class: 'border-red',
+    },
+  ],
+  defaultVariants: {
+    variant: 'default',
   },
 });
 

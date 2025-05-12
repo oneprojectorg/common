@@ -1,11 +1,12 @@
 import { getPublicUrl } from '@/utils';
 import { UserProvider } from '@/utils/UserProvider';
-import { trpc } from '@op/trpc/client';
+import { RouterOutput, trpc } from '@op/trpc/client';
 import { Avatar } from '@op/ui/Avatar';
 import { FacePile } from '@op/ui/FacePile';
 import { Header1, Header3 } from '@op/ui/Header';
 import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
+import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';
 import { ReactNode, Suspense } from 'react';
@@ -161,6 +162,73 @@ const Feed = ({ organizationId }: { organizationId: string }) => {
   return <PostFeed posts={posts} />;
 };
 
+const LandingScreenFeeds = ({
+  user,
+}: {
+  user: RouterOutput['account']['getMyAccount'];
+}) => {
+  const NewOrganizationsList = () => {
+    return (
+      <Surface className="flex flex-col gap-6 p-6">
+        <Header3 className="text-title-sm">New Organizations</Header3>
+        <ErrorBoundary fallback={<div>Could not load organizations</div>}>
+          <Suspense fallback={<SkeletonLine lines={5} />}>
+            <NewOrganizationsSuspense />
+          </Suspense>
+        </ErrorBoundary>
+      </Surface>
+    );
+  };
+
+  const PostFeed = () => {
+    return (
+      <>
+        <Suspense fallback={<Skeleton className="h-full w-full" />}>
+          <Surface className="mb-4 p-4 pt-5">
+            <UserProvider>
+              <PostUpdate />
+            </UserProvider>
+          </Surface>
+        </Suspense>
+        <hr />
+        <div>
+          {user.currentOrganization ? (
+            <Suspense>
+              <Feed organizationId={user.currentOrganization.id} />
+            </Suspense>
+          ) : null}
+        </div>
+      </>
+    );
+  };
+
+  return (
+    <>
+      <div className="hidden grid-cols-15 sm:grid">
+        <div className="col-span-9 flex flex-col gap-4">
+          <PostFeed />
+        </div>
+        <span />
+        <div className="col-span-5">
+          <NewOrganizationsList />
+        </div>
+      </div>
+      <Tabs className="pb-8 sm:hidden">
+        <TabList className="px-4" variant="pill">
+          <Tab id="discover">Discover</Tab>
+          <Tab id="recent">Recent</Tab>
+        </TabList>
+        <TabPanel id="discover" className="px-6">
+          <NewOrganizationsList />
+        </TabPanel>
+        <TabPanel id="recent">
+          <PostFeed />
+        </TabPanel>
+      </Tabs>
+    </>
+  );
+};
+
 export const LandingScreen = () => {
   const [user] = trpc.account.getMyAccount.useSuspenseQuery();
 
@@ -184,36 +252,7 @@ export const LandingScreen = () => {
         <OrganizationHighlights />
       </Suspense>
       <hr />
-      <div className="grid grid-cols-15">
-        <div className="col-span-9 flex flex-col gap-4">
-          <Suspense fallback={<Skeleton className="h-full w-full" />}>
-            <Surface className="mb-4 p-4 pt-5">
-              <UserProvider>
-                <PostUpdate />
-              </UserProvider>
-            </Surface>
-          </Suspense>
-          <hr />
-          <div>
-            {user.currentOrganization ? (
-              <Suspense>
-                <Feed organizationId={user.currentOrganization.id} />
-              </Suspense>
-            ) : null}
-          </div>
-        </div>
-        <span />
-        <div className="col-span-5">
-          <Surface className="flex flex-col gap-6 p-6">
-            <Header3 className="text-title-sm">New Organizations</Header3>
-            <ErrorBoundary fallback={<div>Could not load organizations</div>}>
-              <Suspense fallback={<SkeletonLine lines={5} />}>
-                <NewOrganizationsSuspense />
-              </Suspense>
-            </ErrorBoundary>
-          </Surface>
-        </div>
-      </div>
+      <LandingScreenFeeds user={user} />
       <NewlyJoinedModal />
     </div>
   );
