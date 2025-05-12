@@ -215,8 +215,12 @@ const LandingScreenFeeds = ({
       </div>
       <Tabs className="pb-8 sm:hidden">
         <TabList className="px-4" variant="pill">
-          <Tab id="discover">Discover</Tab>
-          <Tab id="recent">Recent</Tab>
+          <Tab id="discover" variant="pill">
+            Discover
+          </Tab>
+          <Tab id="recent" variant="pill">
+            Recent
+          </Tab>
         </TabList>
         <TabPanel id="discover" className="px-6">
           <NewOrganizationsList />
