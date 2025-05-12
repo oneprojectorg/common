@@ -120,7 +120,7 @@ const OrganizationHighlights = () => {
   const [stats] = trpc.organization.getStats.useSuspenseQuery();
 
   return (
-    <Surface>
+    <Surface className="shadow-light">
       <div className="flex items-center justify-between gap-4 px-10 py-6">
         <Highlight>
           <HighlightNumber className="bg-tealGreen">
@@ -166,8 +166,10 @@ export const LandingScreen = () => {
 
   return (
     <div className="container flex min-h-0 grow flex-col gap-10 pt-14">
-      <div className="flex flex-col gap-6">
-        <Header1 className="text-center">Welcome back, {user.name}!</Header1>
+      <div className="flex flex-col gap-2">
+        <Header1 className="text-center sm:text-title-xl">
+          Welcome back, {user.name}!
+        </Header1>
         <span className="text-center text-neutral-charcoal">
           Explore new connections and strengthen existing relationships.
         </span>
@@ -185,7 +187,7 @@ export const LandingScreen = () => {
       <div className="grid grid-cols-15">
         <div className="col-span-9 flex flex-col gap-4">
           <Suspense fallback={<Skeleton className="h-full w-full" />}>
-            <Surface className="mb-4 p-4 pt-5 shadow-none">
+            <Surface className="mb-4 p-4 pt-5">
               <UserProvider>
                 <PostUpdate />
               </UserProvider>

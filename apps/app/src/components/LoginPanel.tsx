@@ -17,7 +17,6 @@ import { create } from 'zustand';
 import GoogleIcon from '~icons/logos/google-icon.jsx';
 
 import { CommonLogo } from './CommonLogo';
-import { OPLogo } from './OPLogo';
 
 interface LoginState {
   email: string;
@@ -136,7 +135,6 @@ export const LoginPanel = () => {
         <div className="flex flex-col gap-4 sm:gap-8">
           <section className="flex flex-col items-center justify-center gap-2">
             <div className="flex items-center gap-2 pb-2 sm:hidden">
-              <OPLogo />
               <CommonLogo />
             </div>
             <Header1 className="text-center">

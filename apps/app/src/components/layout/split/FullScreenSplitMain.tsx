@@ -1,7 +1,6 @@
 import Link from 'next/link';
 
 import { CommonLogo } from '@/components/CommonLogo';
-import { OPLogo } from '@/components/OPLogo';
 
 export const FullScreenSplitMain = ({
   children,
@@ -13,7 +12,6 @@ export const FullScreenSplitMain = ({
       <section className="hidden lg:block">
         <div className="flex items-center gap-2">
           <Link href="/login" className="flex items-center gap-2">
-            <OPLogo />
             <CommonLogo />
           </Link>
         </div>

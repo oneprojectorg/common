@@ -12,7 +12,7 @@ export const Surface = ({
   return (
     <div
       className={cn(
-        'bg-neutral-white rounded border border-neutral-gray1 shadow-light',
+        'bg-neutral-white rounded border border-neutral-gray1',
         className,
       )}
     >

@@ -19,7 +19,6 @@ import { LuSearch } from 'react-icons/lu';
 import { Link } from '@/lib/i18n';
 
 import { CommonLogo } from '../CommonLogo';
-import { OPLogo } from '../OPLogo';
 
 const UserAvatarMenu = () => {
   const { user } = useUser();
@@ -93,7 +92,6 @@ export const SiteHeader = () => {
     <>
       <header className="gridCentered hidden h-auto w-full items-center justify-between border-b border-offWhite px-4 py-3 sm:grid md:px-28">
         <Link href="/" className="flex gap-1">
-          <OPLogo />
           <CommonLogo />
         </Link>
         <span className="flex items-center justify-center">
