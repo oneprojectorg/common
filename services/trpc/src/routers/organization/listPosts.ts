@@ -65,10 +65,12 @@ export const listOrganizationPostsRouter = router({
         orderBy: (table, { desc }) => desc(table.createdAt),
       });
 
-      return result.map((postToOrg) => ({
-        ...postToOrg,
-        organization: organizationsEncoder.parse(postToOrg.organization),
-        post: postsEncoder.parse(postToOrg.post),
-      }));
+      return result.length > 0
+        ? result.map((postToOrg) => ({
+            ...postToOrg,
+            organization: organizationsEncoder.parse(postToOrg.organization),
+            post: postsEncoder.parse(postToOrg.post),
+          }))
+        : [];
     }),
 });

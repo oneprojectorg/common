@@ -60,6 +60,22 @@ const UserAvatarMenu = () => {
                 })
               }
             >
+              <Avatar>
+                {orgUser.organization?.avatarImage?.name ? (
+                  <Image
+                    src={
+                      getPublicUrl(orgUser.organization.avatarImage.name) ?? ''
+                    }
+                    alt="User avatar"
+                    width={48}
+                    height={48}
+                  />
+                ) : (
+                  <div className="flex size-8 items-center justify-center text-neutral-gray3">
+                    {orgUser.organization?.name?.slice(0, 1) ?? ''}
+                  </div>
+                )}
+              </Avatar>
               {orgUser.organization?.name}
             </MenuItem>
           ))}

@@ -19,10 +19,14 @@ export const postsToOrganizations = pgTable(
   {
     postId: uuid()
       .notNull()
-      .references(() => posts.id),
+      .references(() => posts.id, {
+        onDelete: 'cascade',
+      }),
     organizationId: uuid()
       .notNull()
-      .references(() => organizations.id),
+      .references(() => organizations.id, {
+        onDelete: 'cascade',
+      }),
     ...timestamps,
   },
   (table) => [

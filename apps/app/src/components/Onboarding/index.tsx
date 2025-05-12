@@ -79,16 +79,16 @@ export const OnboardingFlow = () => {
       steps={[
         PersonalDetailsForm,
         OrganizationDetailsForm,
+        FundingInformationForm,
         ToSForm,
         PrivacyPolicyForm,
-        FundingInformationForm,
       ]}
       schemas={[
         PersonalDetailsFormValidator,
         OrganizationDetailsFormValidator,
+        FundingInformationFormValidator,
         ToSFormValidator,
         PrivacyPolicyFormValidator,
-        FundingInformationFormValidator,
       ]}
       onFinish={onReturn}
       ProgressComponent={ProgressInPortal}

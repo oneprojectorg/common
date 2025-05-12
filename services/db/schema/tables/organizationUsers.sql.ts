@@ -73,10 +73,14 @@ export const organizationUserToAccessRoles = pgTable(
   {
     organizationUserId: uuid()
       .notNull()
-      .references(() => organizationUsers.id),
+      .references(() => organizationUsers.id, {
+        onDelete: 'cascade',
+      }),
     accessRoleId: uuid()
       .notNull()
-      .references(() => accessRoles.id),
+      .references(() => accessRoles.id, {
+        onDelete: 'cascade',
+      }),
     ...timestamps,
   },
   (table) => [

@@ -143,7 +143,7 @@ const OrganizationHighlights = () => {
           <HighlightLabel>organizations on Common</HighlightLabel>
         </Highlight>
       </div>
-      <div className="flex items-center justify-end gap-2 border-0 border-t p-6 text-sm text-neutral-charcoal">
+      <div className="flex items-center justify-end gap-2 border-0 border-t bg-neutral-offWhite p-6 text-sm text-neutral-charcoal">
         <Suspense>
           <OrganizationFacePile />
           are collaborating on Common
@@ -183,9 +183,9 @@ export const LandingScreen = () => {
       </Suspense>
       <hr />
       <div className="grid grid-cols-15">
-        <div className="col-span-9 flex flex-col gap-8">
+        <div className="col-span-9 flex flex-col gap-4">
           <Suspense fallback={<Skeleton className="h-full w-full" />}>
-            <Surface className="p-4 pt-5">
+            <Surface className="mb-4 p-4 pt-5 shadow-none">
               <UserProvider>
                 <PostUpdate />
               </UserProvider>
