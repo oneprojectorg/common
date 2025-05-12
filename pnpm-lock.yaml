@@ -418,6 +418,9 @@ importers:
       react:
         specifier: ^19.0.0
         version: 19.0.0
+      react-aria-carousel:
+        specifier: ^0.2.0
+        version: 0.2.0
       react-dom:
         specifier: ^19.0.0
         version: 19.0.0(react@19.0.0)
@@ -6547,6 +6550,9 @@ packages:
   raw-body@2.5.2:
     resolution: {integrity: sha512-8zGqypfENjCIqGhgXToC8aB2r7YrBX+AQAfIPs/Mlk+BtPTztOvTS01NRW/3Eh60J+a48lt8qsCzirQ6loCVfA==}
     engines: {node: '>= 0.8'}
+
+  react-aria-carousel@0.2.0:
+    resolution: {integrity: sha512-XSQ2qnn7lVo0pE+3oR6nutoZEVpRsasEJ1uu3NAzV8i5Tf59HiM0xbqTrFjjcBuwGsQ8Ny9Lo+5/XrQf2cThRw==}
 
   react-aria-components@1.6.0:
     resolution: {integrity: sha512-YfG9PUE7XrXtDDAqT4pLTGyYQaiHHTBFdAK/wNgGsypVnQSdzmyYlV3Ty8aHlZJI6hP9RWkbywvosXkU7KcPHg==}
@@ -13699,6 +13705,8 @@ snapshots:
       http-errors: 2.0.0
       iconv-lite: 0.4.24
       unpipe: 1.0.0
+
+  react-aria-carousel@0.2.0: {}
 
   react-aria-components@1.6.0(react-dom@19.0.0(react@19.0.0))(react@19.0.0):
     dependencies:

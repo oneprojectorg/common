@@ -14,7 +14,12 @@ import { ReactNode, Suspense } from 'react';
 import { Link } from '@/lib/i18n';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
+import { ImageHeader } from '@/components/ImageHeader';
 import { NewlyJoinedModal } from '@/components/NewlyJoinedModal';
+import {
+  CarouselItem,
+  OrganizationCarousel,
+} from '@/components/OrganizationCarousel';
 import { PostFeed } from '@/components/PostFeed';
 import { PostUpdate } from '@/components/PostUpdate';
 
@@ -55,31 +60,85 @@ const NewOrganizationsSuspense = () => {
   const [organizations] = trpc.organization.list.useSuspenseQuery();
 
   return (
-    <div className="flex flex-col gap-6">
-      {organizations?.map((org) => {
-        const { avatarImage } = org;
-        const avatarUrl = getPublicUrl(avatarImage?.name);
+    <>
+      <div className="hidden flex-col gap-6 sm:flex">
+        {organizations?.map((org) => {
+          const { avatarImage } = org;
+          const avatarUrl = getPublicUrl(avatarImage?.name);
 
-        return (
-          <div key={org.id}>
-            <Link className="flex items-center gap-4" href={`/org/${org.slug}`}>
-              <Avatar>
-                {avatarUrl ? (
-                  <Image src={avatarUrl} alt="" fill className="object-cover" />
-                ) : null}
-              </Avatar>
-              <div className="flex flex-col text-sm">
-                <span>{org.name}</span>
-                <span>{org.city}</span>
-              </div>
-            </Link>
-          </div>
-        );
-      })}
-      <Link href="/org" className="text-sm text-teal">
-        See more
-      </Link>
-    </div>
+          return (
+            <div key={org.id}>
+              <Link
+                className="flex items-center gap-4"
+                href={`/org/${org.slug}`}
+              >
+                <Avatar>
+                  {avatarUrl ? (
+                    <Image
+                      src={avatarUrl}
+                      alt=""
+                      fill
+                      className="object-cover"
+                    />
+                  ) : null}
+                </Avatar>
+                <div className="flex flex-col text-sm">
+                  <span>{org.name}</span>
+                  <span>{org.city}</span>
+                </div>
+              </Link>
+            </div>
+          );
+        })}
+        <Link href="/org" className="text-sm text-teal">
+          See more
+        </Link>
+      </div>
+
+      {/* mobile */}
+      <div className="flex flex-col gap-6 sm:hidden">
+        <OrganizationCarousel label="New Organizations" itemWidth={192}>
+          {organizations?.map((org) => {
+            const { avatarImage } = org;
+            const avatarUrl = getPublicUrl(avatarImage?.name);
+
+            return (
+              <CarouselItem key={org.id}>
+                <Surface className="flex size-48">
+                  <Link
+                    className="flex size-full flex-col items-center gap-4"
+                    href={`/org/${org.slug}`}
+                  >
+                    <ImageHeader
+                      avatarImage={
+                        <Avatar>
+                          {avatarUrl ? (
+                            <Image
+                              src={avatarUrl}
+                              alt=""
+                              fill
+                              className="object-cover"
+                            />
+                          ) : null}
+                        </Avatar>
+                      }
+                    />
+
+                    <div className="flex flex-col text-sm">
+                      <span>{org.name}</span>
+                      <span>{org.city}</span>
+                    </div>
+                  </Link>
+                </Surface>
+              </CarouselItem>
+            );
+          })}
+        </OrganizationCarousel>
+        <Link href="/org" className="text-sm text-teal">
+          See more
+        </Link>
+      </div>
+    </>
   );
 };
 
@@ -169,7 +228,7 @@ const LandingScreenFeeds = ({
 }) => {
   const NewOrganizationsList = () => {
     return (
-      <Surface className="flex flex-col gap-6 p-6">
+      <Surface className="flex flex-col gap-6 border-none sm:border sm:p-6">
         <Header3 className="text-title-sm">New Organizations</Header3>
         <ErrorBoundary fallback={<div>Could not load organizations</div>}>
           <Suspense fallback={<SkeletonLine lines={5} />}>

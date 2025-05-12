@@ -41,10 +41,10 @@ const tabListStyles = tv({
   variants: {
     variant: {
       default: '',
-      pill: 'border-0',
+      pill: 'border-none',
     },
     orientation: {
-      horizontal: 'border-b-none flex-row border-offWhite',
+      horizontal: 'flex-row border-b border-offWhite',
       vertical: '',
     },
   },
