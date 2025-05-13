@@ -31,10 +31,10 @@ const HighlightNumber = ({
   className?: string;
 }) => {
   return (
-    <div className="text-transparent">
+    <div className="col-span-2 text-transparent">
       <div
         className={cn(
-          'flex items-center bg-gradient bg-clip-text text-right font-serif text-title-xxl',
+          'flex items-center justify-end bg-gradient bg-clip-text text-right font-serif text-title-xxl',
           className,
         )}
       >
@@ -46,14 +46,18 @@ const HighlightNumber = ({
 
 const HighlightLabel = ({ children }: { children?: ReactNode }) => {
   return (
-    <div className="flex h-12 max-w-32 items-center text-neutral-charcoal">
+    <div className="col-span-3 flex h-12 max-w-32 items-center text-neutral-charcoal">
       {children}
     </div>
   );
 };
 
 const Highlight = ({ children }: { children?: ReactNode }) => {
-  return <div className="flex items-center gap-4">{children}</div>;
+  return (
+    <div className="grid w-full grid-cols-5 items-center gap-4 sm:flex">
+      {children}
+    </div>
+  );
 };
 
 const NewOrganizationsSuspense = () => {
