@@ -16,7 +16,7 @@ const meta: OpenApiMeta = {
   openapi: {
     enabled: true,
     method: 'DELETE',
-    path: '/organization/{from}/relationship/{id}',
+    path: '/organization/relationship/{id}',
     protect: true,
     tags: ['organization'],
     summary: 'Remove organization relationship',
