@@ -31,6 +31,7 @@ export const addRelationshipRouter = router({
     .use(withAuthenticated)
     .meta(meta)
     .input(inputSchema)
+    .output(z.object({ success: z.boolean() }))
     .mutation(async ({ ctx, input }) => {
       const { user } = ctx;
       const { to, relationships } = input;
