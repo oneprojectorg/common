@@ -1,3 +1,4 @@
+import { RELATIONSHIP_OPTIONS, RelationshipType } from '@/utils/relationships';
 import { trpc } from '@op/trpc/client';
 import type { Organization } from '@op/trpc/encoders';
 import { Button } from '@op/ui/Button';
@@ -7,29 +8,6 @@ import { ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Dialog } from '@op/ui/RAC';
 import { FormEvent, useState, useTransition } from 'react';
 import { toast } from 'sonner';
-
-const RELATIONSHIP_OPTIONS = [
-  {
-    key: 'partnership',
-    label: 'Partnership',
-    description: (orgName: string) =>
-      `You’ve partnered with ${orgName} on projects/programs`,
-  },
-  {
-    key: 'funding',
-    label: 'Funding',
-    description: (orgName: string) =>
-      `You’ve either received or given funds to ${orgName}`,
-  },
-  {
-    key: 'foaf:memberOf',
-    label: 'Membership',
-    description: (orgName: string) =>
-      `Your organization is a member of ${orgName}'s network`,
-  },
-];
-
-type RelationshipType = (typeof RELATIONSHIP_OPTIONS)[number]['key'];
 
 export const AddRelationshipForm = ({
   profile,

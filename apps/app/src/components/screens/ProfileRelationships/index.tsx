@@ -1,6 +1,7 @@
 'use client';
 
 import { getPublicUrl } from '@/utils';
+import { relationshipMap } from '@/utils/relationships';
 import { RouterOutput, trpc } from '@op/trpc/client';
 import { Avatar } from '@op/ui/Avatar';
 import { Breadcrumb, Breadcrumbs } from '@op/ui/Breadcrumbs';
@@ -50,16 +51,19 @@ const RelationshipList = ({
               </Avatar>
             </Link>
           </div>
-          <div className="flex flex-col gap-3">
-            <Link href={`/org/${relationshipOrg.slug}`}>
+          <div>
+            <Link
+              className="flex flex-col gap-3"
+              href={`/org/${relationshipOrg.slug}`}
+            >
               <div className="flex flex-col gap-2">
                 <div className="font-semibold">{relationshipOrg.name}</div>
                 {relationshipOrg.relationships?.map((relationship) => (
                   <div className="flex items-center gap-1">
-                    {relationship.relationshipType}{' '}
+                    {relationshipMap[relationship.relationshipType]?.label}{' '}
                     {relationship.pending ? (
                       <TagGroup>
-                        <Tag className="rounded-sm p-1">Pending</Tag>
+                        <Tag className="rounded-sm p-1 text-xs">Pending</Tag>
                       </TagGroup>
                     ) : null}
                   </div>
@@ -89,7 +93,7 @@ const ProfileRelationshipsSuspense = ({ slug }: { slug: string }) => {
 
   return (
     <>
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4 px-4 sm:px-0">
         <Breadcrumbs>
           <Breadcrumb href={`/org/${slug}`}>{organization.name}</Breadcrumb>
           <Breadcrumb>Relationships</Breadcrumb>
@@ -97,11 +101,11 @@ const ProfileRelationshipsSuspense = ({ slug }: { slug: string }) => {
         <div className="font-serif text-title-lg">{count} relationships</div>
       </div>
       <Tabs>
-        <TabList>
+        <TabList className="px-4 sm:px-0">
           <Tab id="all">All relationships</Tab>
         </TabList>
 
-        <TabPanel id="all" className="px-0">
+        <TabPanel id="all" className="sm:px-0">
           <RelationshipList organizations={organizations} />
         </TabPanel>
       </Tabs>

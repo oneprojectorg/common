@@ -126,7 +126,7 @@ export const SiteHeader = () => {
         </ClientOnly>
       </header>
       {/* Mobile */}
-      <header className="flex h-auto w-full items-center justify-between px-4 py-2 sm:hidden">
+      <header className="flex h-auto w-full items-center justify-between border-b px-4 py-2 sm:hidden">
         <Link href="/">
           <CommonLogo />
         </Link>
