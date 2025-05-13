@@ -50,7 +50,7 @@ export const listRelationshipsRouter = router({
   listDirectedRelationships: loggedProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticated)
-    .meta(directedMeta)
+    // .meta(directedMeta)
     .input(directedInputSchema)
     .query(async ({ ctx, input }) => {
       const { user } = ctx;
@@ -87,7 +87,7 @@ export const listRelationshipsRouter = router({
   listRelationships: loggedProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticated)
-    .meta(nonDirectedMeta)
+    // .meta(nonDirectedMeta)
     .input(nonDirectedInputSchema)
     .query(async ({ ctx, input }) => {
       const { user } = ctx;
