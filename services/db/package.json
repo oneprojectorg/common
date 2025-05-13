@@ -9,8 +9,6 @@
     "./tables": "./tables.ts"
   },
   "scripts": {
-    "build": "next build",
-    "dev": "next dev -p 3700",
     "generate": "pnpm drizzle-kit generate && tsx scripts/extractIndexes.ts",
     "lint": "pnpm tsc --noEmit",
     "migrate": "cross-env DB_MIGRATING=true tsx ./migrate.ts",
@@ -24,33 +22,20 @@
   },
   "dependencies": {
     "@op/core": "workspace:*",
-    "@op/ui": "workspace:*",
     "@types/pg": "^8.11.11",
-    "@xyflow/react": "^12.5.3",
     "dotenv": "^16.4.7",
     "drizzle-orm": "^0.40.0",
-    "next": "^15.3.0",
     "pg": "^8.14.1",
     "postgres": "^3.4.5",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
     "server-only": "^0.0.1"
   },
   "devDependencies": {
     "@op/typescript-config": "workspace:*",
     "@supabase/ssr": "0.5.2",
-    "@svgr/core": "^8.1.0",
-    "@svgr/plugin-jsx": "^8.1.0",
-    "@svgx/core": "^1.0.1",
-    "@types/react": "19.0.10",
     "autoprefixer": "^10.4.20",
     "cross-env": "^7.0.3",
     "dotenv": "^16.4.5",
     "drizzle-kit": "^0.30.5",
-    "postcss": "^8.5.3",
-    "sass": "^1.85.1",
-    "tailwindcss": "^3.4.17",
-    "tsx": "^4.19.3",
     "typescript": "5.7.3",
     "unplugin-icons": "22.1.0"
   }
