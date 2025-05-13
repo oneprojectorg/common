@@ -148,7 +148,7 @@ export const PostFeed = ({
               <div className="flex size-10 items-center justify-center gap-4 rounded-full bg-neutral-gray1">
                 <LuLeaf />
               </div>
-              <span>{t('No posts yet.')}</span>
+              <span>{'No posts yet.'}</span>
             </FeedContent>
           </FeedMain>
         </FeedItem>
