@@ -1,7 +1,4 @@
-import {
-  UnauthorizedError,
-  removeRelationship,
-} from '@op/common';
+import { UnauthorizedError, removeRelationship } from '@op/common';
 import { getSession } from '@op/common/src/services/access';
 import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
@@ -32,6 +29,7 @@ export const removeRelationshipRouter = router({
     .use(withAuthenticated)
     .meta(meta)
     .input(inputSchema)
+    .output(z.object({ success: z.boolean() }))
     .mutation(async ({ ctx, input }) => {
       const { user } = ctx;
       const { id } = input;
