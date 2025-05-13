@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { ReactNode } from 'react';
 import { LuLeaf } from 'react-icons/lu';
 
-import { useTranslations } from '@/lib/i18n';
+// import { useTranslations } from '@/lib/i18n';
 
 // TODO: generated this quick with AI. refactor it!
 const formatRelativeTime = (timestamp: Date | string | number): string => {
@@ -103,7 +103,7 @@ export const PostFeed = ({
   posts: Array<PostToOrganization>;
   className?: string;
 }) => {
-  const t = useTranslations();
+  // const t = useTranslations();
 
   return (
     <div className={cn('flex flex-col gap-8 pb-8', className)}>

@@ -31,7 +31,7 @@ export const PostUpdate = ({
     !profile ||
     (targetOrganizationId && targetOrganizationId !== profile.id)
   ) {
-    return <div className={cn(className, 'border-none')} />;
+    return <div className={cn(className, 'border-none p-0')} />;
   }
 
   const createPost = trpc.organization.createPost.useMutation({
