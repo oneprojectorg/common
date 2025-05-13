@@ -2,7 +2,7 @@
 
 import { getPublicUrl } from '@/utils';
 import { AuthWrapper } from '@/utils/AuthWrapper';
-import { trpc } from '@op/trpc/client';
+import { trpc } from '@op/api/client';
 import { ErrorBoundary } from 'next/dist/client/components/error-boundary';
 import Image from 'next/image';
 import React, { Suspense } from 'react';

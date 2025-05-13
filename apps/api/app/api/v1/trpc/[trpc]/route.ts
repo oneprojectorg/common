@@ -1,5 +1,5 @@
+import { appRouter, createContext } from '@op/api';
 import { API_TRPC_PTH } from '@op/core';
-import { appRouter, createContext } from '@op/trpc';
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import type { NextRequest } from 'next/server';
 

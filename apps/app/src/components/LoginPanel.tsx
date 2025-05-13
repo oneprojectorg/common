@@ -1,9 +1,9 @@
 'use client';
 
+import { trpc } from '@op/api/client';
 import { APP_NAME, OPURLConfig, OP_EMAIL_HELP } from '@op/core';
 import { useAuthUser, useMount } from '@op/hooks';
 import { createSBBrowserClient } from '@op/supabase/client';
-import { trpc } from '@op/trpc/client';
 import { Button, ButtonLink } from '@op/ui/Button';
 import { Form } from '@op/ui/Form';
 import { Header1 } from '@op/ui/Header';

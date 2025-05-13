@@ -315,15 +315,15 @@ importers:
 
   apps/api:
     dependencies:
+      '@op/api':
+        specifier: workspace:*
+        version: link:../../services/trpc
       '@op/core':
         specifier: workspace:*
         version: link:../../packages/core
       '@op/supabase':
         specifier: workspace:*
         version: link:../../services/supabase
-      '@op/trpc':
-        specifier: workspace:*
-        version: link:../../services/trpc
       '@op/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -376,6 +376,9 @@ importers:
       '@next/bundle-analyzer':
         specifier: ^15.3.0
         version: 15.3.0
+      '@op/api':
+        specifier: workspace:*
+        version: link:../../services/trpc
       '@op/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -385,9 +388,6 @@ importers:
       '@op/supabase':
         specifier: workspace:*
         version: link:../../services/supabase
-      '@op/trpc':
-        specifier: workspace:*
-        version: link:../../services/trpc
       '@op/ui':
         specifier: workspace:*
         version: link:../../packages/ui

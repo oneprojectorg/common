@@ -3,8 +3,8 @@
 import { getPublicUrl } from '@/utils';
 import { ClientOnly } from '@/utils/ClientOnly';
 import { UserProvider, useUser } from '@/utils/UserProvider';
+import { trpc } from '@op/api/client';
 import { useAuthLogout } from '@op/hooks';
-import { trpc } from '@op/trpc/client';
 import { Avatar } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
 import { Menu, MenuItem } from '@op/ui/Menu';

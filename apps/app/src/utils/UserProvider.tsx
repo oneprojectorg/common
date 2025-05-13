@@ -1,11 +1,11 @@
 'use client';
 
-import { RouterOutput, trpc } from '@op/trpc/client';
+import { RouterOutput, trpc } from '@op/api/client';
 import React, { createContext, useContext } from 'react';
 
 // Type for the user data returned by getMyAccount
 // You can refine this type by importing the correct type from your trpc/encoders if available
-// import type { User } from '@op/trpc/encoders';
+// import type { User } from '@op/api/encoders';
 
 type User = RouterOutput['account']['getMyAccount'];
 

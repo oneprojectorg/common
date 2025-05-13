@@ -1,7 +1,7 @@
 import { getPublicUrl } from '@/utils';
 import { useUser } from '@/utils/UserProvider';
-import { trpc } from '@op/trpc/client';
-import type { PostToOrganization } from '@op/trpc/encoders';
+import { trpc } from '@op/api/client';
+import type { PostToOrganization } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { TextArea } from '@op/ui/Field';
 import { Form } from '@op/ui/Form';

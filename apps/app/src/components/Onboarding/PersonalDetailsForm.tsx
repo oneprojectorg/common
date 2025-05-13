@@ -1,4 +1,4 @@
-import { trpc } from '@op/trpc/client';
+import { trpc } from '@op/api/client';
 import { AvatarUploader } from '@op/ui/AvatarUploader';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { ReactNode, useState } from 'react';

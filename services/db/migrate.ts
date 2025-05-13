@@ -14,13 +14,6 @@ if (!process.env.DB_MIGRATING) {
   );
 }
 
-// if (
-// process.env.DATABASE_URL
-// !== 'postgresql://postgres:postgres@127.0.0.1:54322/postgres'
-// ) {
-// throw new Error('You are running migrations in production');
-// }
-
 const supabase = createServerClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE!,

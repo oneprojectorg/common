@@ -13,10 +13,10 @@
   "dependencies": {
     "@formity/react": "^1.0.0",
     "@next/bundle-analyzer": "^15.3.0",
+    "@op/api": "workspace:*",
     "@op/core": "workspace:*",
     "@op/hooks": "workspace:*",
     "@op/supabase": "workspace:*",
-    "@op/trpc": "workspace:*",
     "@op/ui": "workspace:*",
     "@tanstack/react-form": "^1.6.2",
     "babel-plugin-react-compiler": "19.0.0-beta-e1e972c-20250221",

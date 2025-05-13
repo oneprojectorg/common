@@ -1,5 +1,5 @@
 import { UserProvider } from '@/utils/UserProvider';
-import type { Organization } from '@op/trpc/encoders';
+import type { Organization } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { Header3 } from '@op/ui/Header';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';

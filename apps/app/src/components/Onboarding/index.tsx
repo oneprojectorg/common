@@ -1,6 +1,6 @@
 'use client';
 
-import { trpc } from '@op/trpc/client';
+import { trpc } from '@op/api/client';
 import { StepperProgressIndicator } from '@op/ui/Stepper';
 import { useRouter } from 'next/navigation';
 import { useCallback, useState } from 'react';

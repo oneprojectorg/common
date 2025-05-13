@@ -1,7 +1,7 @@
 'use client';
 
+import { trpc } from '@op/api/client';
 import { useAuthUser } from '@op/hooks';
-import { trpc } from '@op/trpc/client';
 import { useRouter } from 'next/navigation';
 
 const MainPage = () => {

@@ -1,5 +1,5 @@
 import { getPublicUrl } from '@/utils';
-import type { PostToOrganization } from '@op/trpc/encoders';
+import type { PostToOrganization } from '@op/api/encoders';
 import { Header3 } from '@op/ui/Header';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';

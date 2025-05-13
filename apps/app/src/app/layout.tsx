@@ -1,5 +1,5 @@
+import { TRPCProvider } from '@op/api/client';
 import { APP_NAME, printNFO } from '@op/core';
-import { TRPCProvider } from '@op/trpc/client';
 import { Toast } from '@op/ui/Toast';
 import '@op/ui/tailwind-styles';
 import type { Metadata, Viewport } from 'next';

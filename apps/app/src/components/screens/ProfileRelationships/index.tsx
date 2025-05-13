@@ -2,7 +2,7 @@
 
 import { getPublicUrl } from '@/utils';
 import { relationshipMap } from '@/utils/relationships';
-import { RouterOutput, trpc } from '@op/trpc/client';
+import { RouterOutput, trpc } from '@op/api/client';
 import { Avatar } from '@op/ui/Avatar';
 import { Breadcrumb, Breadcrumbs } from '@op/ui/Breadcrumbs';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';

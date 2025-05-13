@@ -1,6 +1,6 @@
 import { RELATIONSHIP_OPTIONS, RelationshipType } from '@/utils/relationships';
-import { trpc } from '@op/trpc/client';
-import type { Organization } from '@op/trpc/encoders';
+import { trpc } from '@op/api/client';
+import type { Organization } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { Checkbox } from '@op/ui/Checkbox';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';

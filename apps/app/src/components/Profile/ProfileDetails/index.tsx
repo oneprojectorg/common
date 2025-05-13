@@ -1,5 +1,5 @@
-import { trpc } from '@op/trpc/client';
-import type { Organization } from '@op/trpc/encoders';
+import { trpc } from '@op/api/client';
+import type { Organization } from '@op/api/encoders';
 import { Button, ButtonLink } from '@op/ui/Button';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Modal } from '@op/ui/Modal';

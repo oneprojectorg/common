@@ -1,6 +1,6 @@
 import { getPublicUrl } from '@/utils';
 import { UserProvider } from '@/utils/UserProvider';
-import { RouterOutput, trpc } from '@op/trpc/client';
+import { RouterOutput, trpc } from '@op/api/client';
 import { Avatar } from '@op/ui/Avatar';
 import { FacePile } from '@op/ui/FacePile';
 import { Header1, Header3 } from '@op/ui/Header';
