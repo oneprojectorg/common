@@ -23,6 +23,13 @@ export const organizationStatsRouter = router({
     .use(withAuthenticated)
     .meta(meta)
     .input(z.void())
+    .output(
+      z.object({
+        totalOrganizations: z.number(),
+        totalRelationships: z.number(),
+        newOrganizations: z.number(),
+      }),
+    )
     .query(async ({ ctx }) => {
       const { user } = ctx;
       return await getOrganizationStats({ user });
