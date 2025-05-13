@@ -51,10 +51,11 @@ const UserAvatarMenu = () => {
         </Button>
 
         <Menu className="min-w-72">
-          {user?.organizationUsers.map((orgUser) => (
+          {user?.organizationUsers?.map((orgUser) => (
             <MenuItem
               onAction={() =>
                 void switchOrganization.mutate({
+                  // @ts-expect-error this is a backend issue to be resolved
                   organizationId: orgUser.organization?.id,
                 })
               }
