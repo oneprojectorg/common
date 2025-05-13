@@ -18,7 +18,7 @@ const meta: OpenApiMeta = {
   openapi: {
     enabled: true,
     method: 'POST',
-    path: '/organization/{from}/relationship',
+    path: '/organization/relationship',
     protect: true,
     tags: ['organization'],
     summary: 'Add organization relationship',
