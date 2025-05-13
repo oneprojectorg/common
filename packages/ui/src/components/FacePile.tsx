@@ -1,16 +1,14 @@
-import { ReactNode } from 'react';
+import { ReactNode, forwardRef } from 'react';
 
-export const FacePile = ({
-  items,
-}: {
-  children?: ReactNode;
-  items: Array<ReactNode>;
-}) => {
+export const FacePile = forwardRef<
+  HTMLUListElement,
+  { items: Array<ReactNode> }
+>(({ items }: { children?: ReactNode; items: Array<ReactNode> }, ref) => {
   return (
-    <ul className="-gap-2 flex">
+    <ul className="-gap-2 flex" ref={ref}>
       {items.map((node) => (
         <li className="-ml-2">{node}</li>
       ))}
     </ul>
   );
-};
+});

@@ -9,7 +9,7 @@ import { Surface } from '@op/ui/Surface';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';
-import { ReactNode, Suspense } from 'react';
+import { ReactNode, Suspense, useEffect, useRef, useState } from 'react';
 
 import { Link } from '@/lib/i18n';
 
@@ -161,33 +161,54 @@ const OrganizationFacePile = () => {
     limit: 20,
   });
   const [stats] = trpc.organization.getStats.useSuspenseQuery();
+  const facePileRef = useRef<HTMLUListElement>(null);
+  const [numItems, setNumItems] = useState(20);
 
-  const items = organizations.map((org) => {
-    const { avatarImage } = org;
-    const avatarUrl = getPublicUrl(avatarImage?.name);
-    return (
-      <Link key={org.id} href={`/org/${org.slug}`}>
-        <Avatar>
-          {avatarUrl ? (
-            <Image src={avatarUrl} alt="" fill className="object-cover" />
-          ) : null}
-        </Avatar>
-      </Link>
-    );
-  });
+  useEffect(() => {
+    if (!facePileRef.current) {
+      return;
+    }
 
-  if (stats.totalOrganizations > 20) {
+    const resizeObserver = new ResizeObserver((e) => {
+      // divide by 2 rem - 0.5 rem overlap
+      setNumItems(Math.floor((e[0]?.contentRect.width ?? 1) / (32 - 8)));
+    });
+
+    resizeObserver.observe(facePileRef.current);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [facePileRef]);
+
+  const items = organizations
+    .map((org) => {
+      const { avatarImage } = org;
+      const avatarUrl = getPublicUrl(avatarImage?.name);
+      return (
+        <Link key={org.id} href={`/org/${org.slug}`}>
+          <Avatar>
+            {avatarUrl ? (
+              <Image src={avatarUrl} alt="" fill className="object-cover" />
+            ) : null}
+          </Avatar>
+        </Link>
+      );
+    })
+    .slice(0, numItems);
+
+  if (stats.totalOrganizations > numItems) {
     items.push(
       <Link key="more" href={`/org`}>
         <Avatar className="bg-neutral-charcoal text-sm text-neutral-offWhite">
           <span className="align-super">+</span>
-          {stats.totalOrganizations - 20}
+          {stats.totalOrganizations - numItems}
         </Avatar>
       </Link>,
     );
   }
 
-  return <FacePile items={items} />;
+  return <FacePile items={items} ref={facePileRef} />;
 };
 
 const OrganizationHighlights = () => {
