@@ -5,7 +5,7 @@ import {
 } from '@op/common';
 import { getSession } from '@op/common/src/services/access';
 import { TRPCError } from '@trpc/server';
-import type { OpenApiMeta } from 'trpc-to-openapi';
+// import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import withAuthenticated from '../../middlewares/withAuthenticated';
@@ -24,27 +24,27 @@ const nonDirectedInputSchema = z.object({
   pending: z.boolean().optional(),
 });
 
-const directedMeta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'GET',
-    path: '/organization/{from}/relationships/{to}',
-    protect: true,
-    tags: ['organization', 'relationships'],
-    summary: 'List organization relationships to another organization',
-  },
-};
+// const directedMeta: OpenApiMeta = {
+// openapi: {
+// enabled: true,
+// method: 'GET',
+// path: '/organization/{from}/relationships/{to}',
+// protect: true,
+// tags: ['organization', 'relationships'],
+// summary: 'List organization relationships to another organization',
+// },
+// };
 
-const nonDirectedMeta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'GET',
-    path: '/organization/{from}/relationships',
-    protect: true,
-    tags: ['organization', 'relationships'],
-    summary: 'List organization relationships',
-  },
-};
+// const nonDirectedMeta: OpenApiMeta = {
+// openapi: {
+// enabled: true,
+// method: 'GET',
+// path: '/organization/{from}/relationships',
+// protect: true,
+// tags: ['organization', 'relationships'],
+// summary: 'List organization relationships',
+// },
+// };
 
 export const listRelationshipsRouter = router({
   listDirectedRelationships: loggedProcedure
