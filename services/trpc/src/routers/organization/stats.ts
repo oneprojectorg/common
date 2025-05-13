@@ -1,5 +1,6 @@
 import { getOrganizationStats } from '@op/common';
 import { OpenApiMeta } from 'trpc-to-openapi';
+import { z } from 'zod';
 
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
@@ -21,6 +22,7 @@ export const organizationStatsRouter = router({
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticated)
     .meta(meta)
+    .input(z.void())
     .query(async ({ ctx }) => {
       const { user } = ctx;
       return await getOrganizationStats({ user });
