@@ -60,7 +60,8 @@ const RelationshipList = ({
                 <div className="font-semibold">{relationshipOrg.name}</div>
                 {relationshipOrg.relationships?.map((relationship) => (
                   <div className="flex items-center gap-1">
-                    {relationshipMap[relationship.relationshipType]?.label}{' '}
+                    {relationshipMap[relationship.relationshipType]?.label ??
+                      'Relationship'}{' '}
                     {relationship.pending ? (
                       <TagGroup>
                         <Tag className="rounded-sm p-1 text-xs">Pending</Tag>
