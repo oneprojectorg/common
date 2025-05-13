@@ -70,7 +70,7 @@ export const getOrganizationRouter = router({
     .use(withAuthenticated)
     .use(withDB)
     // Router
-    .meta(meta)
+    // .meta(meta)
     .input(z.object({ id: z.string() }))
     .output(organizationsEncoder)
     .query(async ({ ctx, input }) => {
