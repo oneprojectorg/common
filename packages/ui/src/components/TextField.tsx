@@ -53,14 +53,14 @@ export const TextField = ({
       {...props}
       className={composeTailwindRenderProps(
         props.className,
-        'flex flex-col gap-2',
+        'group flex flex-col gap-2',
       )}
     >
       {label && (
         <Label
           className={cn(
             labelClassName,
-            !!errorMessage && 'text-functional-red',
+            'group-data-[invalid=true]:text-functional-red',
           )}
         >
           {label}
@@ -71,12 +71,19 @@ export const TextField = ({
         {useTextArea ? (
           <TextArea
             {...textareaProps}
+            className={cn(
+              textareaProps?.className,
+              'group-data-[invalid=true]:outline-functional-red',
+            )}
             ref={ref as React.RefObject<HTMLTextAreaElement>}
           />
         ) : (
           <Input
             {...inputProps}
-            color={errorMessage ? 'error' : inputProps?.color}
+            className={cn(
+              inputProps?.className,
+              'group-data-[invalid=true]:outline-functional-red',
+            )}
             ref={ref as React.RefObject<HTMLInputElement>}
           />
         )}

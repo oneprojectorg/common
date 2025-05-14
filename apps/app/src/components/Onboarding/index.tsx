@@ -25,6 +25,7 @@ import {
   validator as PrivacyPolicyFormValidator,
 } from './PrivacyPolicyForm';
 import { ToSForm, validator as ToSFormValidator } from './ToSForm';
+import { useOnboardingFormStore } from './useOnboardingFormStore';
 
 type FormValues = z.infer<typeof PersonalDetailsFormValidator> &
   z.infer<typeof OrganizationDetailsFormValidator> &
@@ -50,6 +51,7 @@ export const OnboardingFlow = () => {
   const [values, setValues] = useState<FormValues | null>(null);
   const createOrganization = trpc.organization.create.useMutation();
   const router = useRouter();
+  const { reset } = useOnboardingFormStore();
 
   const onReturn = useCallback<any>(
     (values: Array<FormValues>) => {
@@ -61,6 +63,7 @@ export const OnboardingFlow = () => {
       createOrganization
         .mutateAsync(processInputs(combined))
         .then(() => {
+          reset();
           router.push(`/?new=1`);
         })
         .catch((err) => {
