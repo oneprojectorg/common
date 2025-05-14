@@ -143,6 +143,8 @@ export const OrganizationDetailsForm = ({
 
               reader.readAsDataURL(file);
             }}
+            uploading={uploadImage.isPending}
+            error={uploadImage.error?.message || undefined}
           />
           <AvatarUploader
             className="absolute bottom-0 left-4 aspect-square size-20 sm:size-28"

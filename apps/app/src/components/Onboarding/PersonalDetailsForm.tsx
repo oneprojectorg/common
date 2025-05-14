@@ -45,6 +45,7 @@ export const PersonalDetailsForm = ({
   const t = useTranslations();
   const uploadImage = trpc.account.uploadImage.useMutation();
   const updateProfile = trpc.account.updateUserProfile.useMutation();
+
   // Hydrate profileImageUrl from store if present, else undefined
   const [profileImageUrl, setProfileImageUrl] = useState<string | undefined>(
     personalDetails?.profileImageUrl,
