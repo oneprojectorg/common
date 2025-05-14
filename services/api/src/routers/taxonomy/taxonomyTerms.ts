@@ -1,5 +1,4 @@
-import { taxonomies, taxonomyTerms } from '@op/db/schema';
-import { eq, sql } from 'drizzle-orm';
+import { getTerms } from '@op/common';
 import { z } from 'zod';
 
 import { taxonomyTermsEncoder } from '../../encoders/taxonomyTerms';
@@ -15,25 +14,11 @@ export const termsRouter = router({
     .use(withDB)
     .input(z.object({ name: z.string().min(3), q: z.string().optional() }))
     .output(z.array(taxonomyTermsEncoder))
-    .query(async ({ input, ctx }) => {
+    .query(async ({ input }) => {
       const { name, q } = input;
-      const { db } = ctx.database;
 
-      let whereClause = eq(taxonomies.name, name);
-      if (q) {
-        whereClause = sql`${taxonomies.name} = ${name} AND ${taxonomyTerms.label} @@ plainto_tsquery('english', ${q})`;
-      }
+      const terms = await getTerms({ name, query: q });
 
-      const results = await db
-        .select()
-        .from(taxonomyTerms)
-        .innerJoin(taxonomies, () =>
-          eq(taxonomyTerms.taxonomyId, taxonomies.id),
-        )
-        .where(whereClause);
-
-      const terms = results.map((row) => row.taxonomyTerms);
-      console.log('TERMS', terms);
-      return terms;
+      return terms.map((term) => taxonomyTermsEncoder.parse(term));
     }),
 });
