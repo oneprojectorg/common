@@ -1,41 +1,41 @@
 import { InferSelectModel, db, eq, sql } from '@op/db/client';
 import { taxonomies, taxonomyTerms } from '@op/db/schema';
 
-const getTermsFromCandid = async ({ query }) => {
-  const gqlQuery = `
-    query termsByMatch($match: MatchInput) {
-      termsByMatch(match: $match) {
-        meta {
-          ...MetaFragment
-        }
-        data {
-          ...TermFragment
-        }
-      }
-    }
-  `;
+// const getTermsFromCandid = async ({ query }) => {
+// const gqlQuery = `
+// query termsByMatch($match: MatchInput) {
+// termsByMatch(match: $match) {
+// meta {
+// ...MetaFragment
+// }
+// data {
+// ...TermFragment
+// }
+// }
+// }
+// `;
 
-  const variables = {
-    match: {
-      searchTerm: query,
-      limit: 100,
-    },
-  };
+// const variables = {
+// match: {
+// searchTerm: query,
+// limit: 100,
+// },
+// };
 
-  const response = await fetch('https://api.candid.org/taxonomy/graphql/', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Subscription-Key': 'Bearer YOUR_AUTH_TOKEN', // Include if authentication is required
-    },
-    body: JSON.stringify({
-      query: gqlQuery,
-      variables,
-    }),
-  });
+// const response = await fetch('https://api.candid.org/taxonomy/graphql/', {
+// method: 'POST',
+// headers: {
+// 'Content-Type': 'application/json',
+// 'Subscription-Key': 'Bearer YOUR_AUTH_TOKEN', // Include if authentication is required
+// },
+// body: JSON.stringify({
+// query: gqlQuery,
+// variables,
+// }),
+// });
 
-  return await response.json();
-};
+// return await response.json();
+// };
 
 export const getTerms = async ({
   name,

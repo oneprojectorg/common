@@ -72,7 +72,7 @@ const RelationshipList = ({
               </div>
 
               <div className="flex items-center gap-1">
-                {relationshipOrg.description}
+                {relationshipOrg.bio}
               </div>
             </Link>
           </div>
