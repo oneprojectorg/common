@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "next build",
+    "build": "cd ../../ && pnpm w:db migrate && cd ./apps/app && next build",
     "check:i18n": "tsx scripts/check-missing-intl-keys.ts",
     "dev": "next dev -p 3100",
     "lint": "pnpm tsc --noEmit",

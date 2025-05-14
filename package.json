@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "pnpm w:db migrate && turbo build",
+    "build": "turbo build",
     "check": "pnpm check-migrations && pnpx lint-staged",
     "check-migrations": "tsx scripts/migrationsCheck.ts",
     "clean": "find . \\( -name \"node_modules\" -o -name \"build\" -o -name \"dist\" -o -name \".next\" -o -name \".turbo\" \\)  -type d -prune -exec rm -rf '{}' +",
