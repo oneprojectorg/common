@@ -1,6 +1,5 @@
 import { OPURLConfig } from '@op/core';
 import { loggerLink, unstable_httpBatchStreamLink } from '@trpc/client';
-// import { unstable_httpBatchStreamLink } from '@trpc/client';
 import superjson from 'superjson';
 
 const envURL = OPURLConfig('API');
@@ -20,6 +19,7 @@ export const links = [
      */
     url: envURL.TRPC_URL,
     transformer: superjson,
+
     async fetch(url, options) {
       return fetch(url, {
         ...options,

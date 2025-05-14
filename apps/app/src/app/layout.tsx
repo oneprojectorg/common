@@ -1,9 +1,11 @@
 import { TRPCProvider } from '@op/api/client';
+import { createTRPCNextClient } from '@op/api/next';
 import { APP_NAME, printNFO } from '@op/core';
 import { Toast } from '@op/ui/Toast';
 import '@op/ui/tailwind-styles';
 import type { Metadata, Viewport } from 'next';
 import { Inter, Roboto, Roboto_Mono, Roboto_Serif } from 'next/font/google';
+import { redirect } from 'next/navigation';
 import Script from 'next/script';
 
 import { PostHogProvider } from '../components/PostHogProvider';
@@ -64,6 +66,13 @@ export const viewport: Viewport = {
 // const { IS_DEVELOPMENT, IS_PREVIEW } = OPURLConfig('APP');
 
 const RootLayout = async ({ children }: { children: React.ReactNode }) => {
+  const trpcNext = await createTRPCNextClient();
+  const user = await trpcNext.account.getMyAccount.query();
+
+  if (!user?.organizationUsers?.length) {
+    redirect('/start');
+  }
+
   return (
     <html lang="en">
       <head>

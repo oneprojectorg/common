@@ -14,6 +14,7 @@
     "@formity/react": "^1.0.0",
     "@next/bundle-analyzer": "^15.3.0",
     "@op/api": "workspace:*",
+    "@op/common": "workspace:*",
     "@op/core": "workspace:*",
     "@op/hooks": "workspace:*",
     "@op/supabase": "workspace:*",
