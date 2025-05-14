@@ -41,9 +41,9 @@ export const CommonLogo = () => {
             gradientUnits="userSpaceOnUse"
             gradientTransform="translate(62.6257 11.9507) rotate(-116.418) scale(12.055 7.01259)"
           >
-            <stop stop-color="#E35F00" />
-            <stop offset="0.484375" stop-color="#DE8D00" />
-            <stop offset="0.9999" stop-color="#FF9739" />
+            <stop stopColor="#E35F00" />
+            <stop offset="0.484375" stopColor="#DE8D00" />
+            <stop offset="0.9999" stopColor="#FF9739" />
           </radialGradient>
           <radialGradient
             id="paint1_radial_2593_1529"
@@ -53,9 +53,9 @@ export const CommonLogo = () => {
             gradientUnits="userSpaceOnUse"
             gradientTransform="translate(53.3277 12) rotate(-115.602) scale(12.0391 6.84924)"
           >
-            <stop stop-color="#E35F00" />
-            <stop offset="0.484375" stop-color="#DE8D00" />
-            <stop offset="0.9999" stop-color="#FF9739" />
+            <stop stopColor="#E35F00" />
+            <stop offset="0.484375" stopColor="#DE8D00" />
+            <stop offset="0.9999" stopColor="#FF9739" />
           </radialGradient>
           <radialGradient
             id="paint2_radial_2593_1529"
@@ -65,9 +65,9 @@ export const CommonLogo = () => {
             gradientUnits="userSpaceOnUse"
             gradientTransform="translate(43.2478 11.9507) rotate(-127.725) scale(13.6493 9.64392)"
           >
-            <stop stop-color="#E35F00" />
-            <stop offset="0.484375" stop-color="#DE8D00" />
-            <stop offset="0.9999" stop-color="#FF9739" />
+            <stop stopColor="#E35F00" />
+            <stop offset="0.484375" stopColor="#DE8D00" />
+            <stop offset="0.9999" stopColor="#FF9739" />
           </radialGradient>
           <radialGradient
             id="paint3_radial_2593_1529"
@@ -77,9 +77,9 @@ export const CommonLogo = () => {
             gradientUnits="userSpaceOnUse"
             gradientTransform="translate(29.3745 11.9507) rotate(-127.725) scale(13.6493 9.64392)"
           >
-            <stop stop-color="#E35F00" />
-            <stop offset="0.484375" stop-color="#DE8D00" />
-            <stop offset="0.9999" stop-color="#FF9739" />
+            <stop stopColor="#E35F00" />
+            <stop offset="0.484375" stopColor="#DE8D00" />
+            <stop offset="0.9999" stopColor="#FF9739" />
           </radialGradient>
           <radialGradient
             id="paint4_radial_2593_1529"
@@ -89,9 +89,9 @@ export const CommonLogo = () => {
             gradientUnits="userSpaceOnUse"
             gradientTransform="translate(16.7896 12) rotate(-115.602) scale(12.0391 6.84924)"
           >
-            <stop stop-color="#E35F00" />
-            <stop offset="0.484375" stop-color="#DE8D00" />
-            <stop offset="0.9999" stop-color="#FF9739" />
+            <stop stopColor="#E35F00" />
+            <stop offset="0.484375" stopColor="#DE8D00" />
+            <stop offset="0.9999" stopColor="#FF9739" />
           </radialGradient>
           <radialGradient
             id="paint5_radial_2593_1529"
@@ -101,9 +101,9 @@ export const CommonLogo = () => {
             gradientUnits="userSpaceOnUse"
             gradientTransform="translate(7.68517 11.9836) rotate(-115.208) scale(16.4042 9.22848)"
           >
-            <stop stop-color="#E35F00" />
-            <stop offset="0.484375" stop-color="#DE8D00" />
-            <stop offset="0.9999" stop-color="#FF9739" />
+            <stop stopColor="#E35F00" />
+            <stop offset="0.484375" stopColor="#DE8D00" />
+            <stop offset="0.9999" stopColor="#FF9739" />
           </radialGradient>
         </defs>
       </svg>
