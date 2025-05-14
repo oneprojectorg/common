@@ -41,7 +41,11 @@ export const links = pgTable(
       }),
     ...timestamps,
   },
-  (table) => [...serviceRolePolicies, index().on(table.id).concurrently()],
+  (table) => [
+    ...serviceRolePolicies,
+    index().on(table.id).concurrently(),
+    index('links_organization_id_idx').on(table.organizationId).concurrently(),
+  ],
 );
 
 export const linksRelations = relations(links, ({ one }) => ({
