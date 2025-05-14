@@ -44,25 +44,25 @@ await migrate(db, {
 });
 
 // Then handle custom migrations that need to run outside transactions
-const customMigrationsPath = path.join(process.cwd(), 'customMigrations');
-const sqlFiles = fs
-  .readdirSync(customMigrationsPath)
-  .filter((file: string) => file.endsWith('.sql'))
-  .map((file: string) => path.join(customMigrationsPath, file));
+// const customMigrationsPath = path.join(process.cwd(), 'customMigrations');
+// const sqlFiles = fs
+// .readdirSync(customMigrationsPath)
+// .filter((file: string) => file.endsWith('.sql'))
+// .map((file: string) => path.join(customMigrationsPath, file));
 
-// Use the raw connection for executing CONCURRENT index creation
-for (const sqlFile of sqlFiles) {
-  const sqlData = fs.readFileSync(sqlFile, 'utf8');
-  const statements = sqlData.split('--> statement-breakpoint');
+// // Use the raw connection for executing CONCURRENT index creation
+// for (const sqlFile of sqlFiles) {
+// const sqlData = fs.readFileSync(sqlFile, 'utf8');
+// const statements = sqlData.split('--> statement-breakpoint');
 
-  // Execute each statement separately without transaction
-  for (const statement of statements) {
-    const trimmedStatement = statement.trim();
+// // Execute each statement separately without transaction
+// for (const statement of statements) {
+// const trimmedStatement = statement.trim();
 
-    if (trimmedStatement) {
-      await db.execute(sql.raw(trimmedStatement));
-    }
-  }
-}
+// if (trimmedStatement) {
+// await db.execute(sql.raw(trimmedStatement));
+// }
+// }
+// }
 
 await db.$client.end();

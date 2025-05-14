@@ -9,7 +9,7 @@
     "./tables": "./tables.ts"
   },
   "scripts": {
-    "generate": "pnpm drizzle-kit generate && tsx scripts/extractIndexes.ts",
+    "generate": "pnpm drizzle-kit generate",
     "lint": "pnpm tsc --noEmit",
     "migrate": "cross-env DB_MIGRATING=true tsx ./migrate.ts",
     "push": "pnpm drizzle-kit push",
