@@ -54,6 +54,7 @@ export const listRelatedOrganizationPostsRouter = router({
       }
 
       const orgIds = organizations.map((org: any) => org.id);
+      orgIds.push(organizationId); // Add our own org so we see our own posts
 
       // Fetch posts for all related organizations
       const result = await db.query.postsToOrganizations.findMany({

@@ -72,7 +72,8 @@ export const PostUpdate = ({
     },
     onSettled: () => {
       // Invalidate the posts query to sync with the server
-      void utils.organization.listPosts.invalidate({ slug: profile.slug });
+      // void utils.organization.listPosts.invalidate({ slug: profile.slug });
+      utils.organization.invalidate();
     },
   });
 
