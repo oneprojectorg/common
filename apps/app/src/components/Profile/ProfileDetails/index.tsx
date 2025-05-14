@@ -209,9 +209,7 @@ export const ProfileDetails = ({ profile }: { profile: Organization }) => {
   return (
     <div className="flex w-full flex-col gap-3 px-4">
       <ProfileSummary profile={profile} />
-      <div className="text-base text-neutral-charcoal">
-        {profile.description}
-      </div>
+      <div className="text-base text-neutral-charcoal">{profile.bio}</div>
       <ProfileInteractions profile={profile} />
     </div>
   );

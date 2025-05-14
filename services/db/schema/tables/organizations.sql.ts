@@ -42,7 +42,7 @@ export const organizations = pgTable(
     id: autoId().primaryKey(),
     name: varchar({ length: 256 }).notNull(),
     slug: varchar({ length: 256 }).notNull().unique(),
-    description: text(),
+    bio: text(),
 
     // Mission
     mission: text(),
@@ -89,8 +89,12 @@ export const organizations = pgTable(
     index('organizations_name_gin_index')
       .using('gin', sql`to_tsvector('english', ${table.name})`)
       .concurrently(),
-    index('organizations_header_image_id_idx').on(table.headerImageId).concurrently(),
-    index('organizations_avatar_image_id_idx').on(table.avatarImageId).concurrently(),
+    index('organizations_header_image_id_idx')
+      .on(table.headerImageId)
+      .concurrently(),
+    index('organizations_avatar_image_id_idx')
+      .on(table.avatarImageId)
+      .concurrently(),
   ],
 );
 

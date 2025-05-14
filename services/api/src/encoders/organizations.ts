@@ -23,7 +23,7 @@ export const organizationsEncoder = createSelectSchema(organizations)
     name: true,
     city: true,
     state: true,
-    description: true,
+    bio: true,
     mission: true,
     email: true,
     website: true,
@@ -44,7 +44,7 @@ export const organizationsCreateInputEncoder = createSelectSchema(organizations)
   .pick({
     name: true,
     slug: true,
-    description: true,
+    bio: true,
 
     // Mission
     mission: true,

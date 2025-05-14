@@ -40,6 +40,7 @@ export const organizationInputSchema = z
     slug: z.string(),
     email: z.string().email(),
     name: z.string().optional(),
+    bio: z.string().optional(),
     isOfferingFunds: z.boolean().optional(),
     isReceivingFunds: z.boolean().optional(),
     website: z.string().url().optional(),

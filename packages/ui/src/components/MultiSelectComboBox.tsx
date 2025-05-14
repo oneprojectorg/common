@@ -232,21 +232,6 @@ export const MultiSelectComboBox = ({
           }}
         >
           <div className="flex w-full flex-wrap items-center gap-1">
-            {selectedOptions.map((option) => (
-              <div
-                key={option.isNewValue ? 'other' : option.id}
-                className="flex items-center rounded bg-black/5 p-2 text-charcoal"
-              >
-                <span>{option.label}</span>
-                <button
-                  type="button"
-                  className="ml-1"
-                  onClick={(e) => handleRemoveOption(option, e)}
-                >
-                  <X size={14} />
-                </button>
-              </div>
-            ))}
             <input
               ref={inputRef}
               type="text"
@@ -269,7 +254,29 @@ export const MultiSelectComboBox = ({
           <FieldError>{errorMessage}</FieldError>
         </div>
 
-        {/* Dropdown menu */}
+        {/* Selected options below input box, not inside */}
+        {selectedOptions.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-2">
+            {selectedOptions.map((option) => (
+              <div
+                key={option.isNewValue ? 'other' : option.id}
+                className="flex items-center rounded bg-black/5 p-2 text-charcoal"
+              >
+                <span>{option.label}</span>
+                <button
+                  type="button"
+                  className="ml-1"
+                  onClick={(e) => handleRemoveOption(option, e)}
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        <FieldError>{errorMessage}</FieldError>
+
+        {/* Dropdown menu - now always below input and selected options */}
         {isOpen && filteredItems.length > 0 && (
           <div className="absolute z-10 mt-1 w-full rounded-md border border-gray-200 bg-white shadow-lg">
             <ul className="max-h-60 overflow-auto py-1">
