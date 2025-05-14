@@ -31,17 +31,21 @@ export const validator = z.object({
     .max(20, { message: 'Must be at most 20 characters' })
     .optional(),
   website: z
-    .string()
+    .string({ message: 'Enter a website address' })
     .url({ message: 'Enter a valid website address' })
     .min(1, { message: 'Must be at least 1 character' })
     .max(200, { message: 'Must be at most 200 characters' }),
   email: z
-    .string()
+    .string({ message: 'Enter an email' })
     .email({ message: 'Invalid email' })
     .max(20, { message: 'Must be at most 20 characters' })
     .optional(),
-  orgType: z.string().max(20, { message: 'Must be at most 20 characters' }),
-  bio: z.string().max(200, { message: 'Must be at most 200 characters' }),
+  orgType: z
+    .string({ message: 'Select an organization type' })
+    .max(20, { message: 'Must be at most 20 characters' }),
+  bio: z
+    .string({ message: 'Enter an organization bio' })
+    .max(200, { message: 'Must be at most 200 characters' }),
   mission: z
     .string()
     .max(200, { message: 'Must be at most 200 characters' })
