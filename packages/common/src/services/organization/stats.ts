@@ -7,25 +7,38 @@ export const getOrganizationStats = async ({ user }: { user: User }) => {
   const newOrgThreshold = new Date(lastLogin.setDate(lastLogin.getDate() - 7));
 
   const [orgCount, relationshipCount, newOrganizationsCount] =
-    await Promise.all([
-      db
+    await db.transaction(async (tx) => {
+      console.log('GETTING STATS');
+      const orgCount = tx
         .select({
           count: sql<number>`count(*)::int`,
         })
-        .from(organizations),
-      db
+        .from(organizations);
+
+      const relationshipCount = tx
         .select({
           count: sql<number>`count(*)::int`,
         })
         .from(organizationRelationships)
-        .where(() => eq(organizationRelationships.pending, false)),
-      db
+        .where(() => eq(organizationRelationships.pending, false));
+
+      const newOrganizationsCount = tx
         .select({
           count: sql<number>`count(*)::int`,
         })
         .from(organizations)
-        .where(gte(organizations.createdAt, newOrgThreshold.toISOString())),
-    ]);
+        .where(gte(organizations.createdAt, newOrgThreshold.toISOString()));
+
+      const results = Promise.all([
+        orgCount,
+        relationshipCount,
+        newOrganizationsCount,
+      ]);
+
+      console.log('RETURN STATS', results);
+
+      return results;
+    });
 
   const totalOrganizations = orgCount[0]?.count ?? 0;
   const totalRelationships = relationshipCount[0]?.count ?? 0;

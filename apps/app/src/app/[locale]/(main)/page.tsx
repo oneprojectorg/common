@@ -1,6 +1,5 @@
 'use client';
 
-import { AuthWrapper } from '@/utils/AuthWrapper';
 import { Suspense } from 'react';
 
 import {
@@ -10,11 +9,9 @@ import {
 
 const MainPage = () => {
   return (
-    <AuthWrapper>
-      <Suspense fallback={<LandingScreenSkeleton />}>
-        <LandingScreen />
-      </Suspense>
-    </AuthWrapper>
+    <Suspense fallback={<LandingScreenSkeleton />}>
+      <LandingScreen />
+    </Suspense>
   );
 };
 

@@ -67,17 +67,17 @@ export const viewport: Viewport = {
 // const { IS_DEVELOPMENT, IS_PREVIEW } = OPURLConfig('APP');
 
 const RootLayout = async ({ children }: { children: React.ReactNode }) => {
-  try {
-    const trpcNext = await createTRPCNextClient();
-    const user = await trpcNext.account.getMyAccount.query();
+  // try {
+  // const trpcNext = await createTRPCNextClient();
+  // const user = await trpcNext.account.getMyAccount.query();
 
-    // if we have a user and no orgs, redirect to onboarding
-    if (!user?.organizationUsers?.length) {
-      redirect('/start');
-    }
-  } catch (error) {
-    console.error(error);
-  }
+  // // if we have a user and no orgs, redirect to onboarding
+  // if (!user?.organizationUsers?.length) {
+  // redirect('/start');
+  // }
+  // } catch (error) {
+  // console.error(error);
+  // }
 
   return (
     <html lang="en">

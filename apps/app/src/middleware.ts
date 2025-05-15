@@ -16,7 +16,7 @@ export async function middleware(request: NextRequest) {
   );
 
   // only reroute if locale is missing. Otherwise we want to use the domain routing
-  if (pathnameIsMissingLocale) {
+  if (pathnameIsMissingLocale && !pathname.startsWith('/api')) {
     const handleI18nRouting = createMiddleware(routing);
 
     const response = handleI18nRouting(request);
@@ -76,6 +76,12 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  if (user && !user.email?.match('oneproject.org')) {
+    console.log('INVALID USER EMAIL', user.email);
+    supabase.auth.signOut();
+    return NextResponse.redirect(new URL('/waitlist', request.url));
+  }
+
   // IMPORTANT: You *must* return the supabaseResponse object as it is.
   // If you're creating a new response object with NextResponse.next() make sure to:
   // 1. Pass the request in it, like so:
@@ -101,7 +107,7 @@ export const config = {
      * - favicon.ico (favicon file)
      * Feel free to modify this pattern to include more paths.
      */
-    '/((?!_next/static|api|ingest|_next/image|favicon.ico|login|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|ingest|api|waitlist|_next/image|favicon.ico|login|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
     // '/(.*rss\\.xml)',
     // '/((?!node/|auth/|_next/|_static/|_vercel|_axiom/|media/|[\\w-]+\\.\\w+|.*\\..*).*)',
   ],

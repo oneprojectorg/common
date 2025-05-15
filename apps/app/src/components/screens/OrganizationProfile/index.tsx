@@ -1,7 +1,6 @@
 'use client';
 
 import { getPublicUrl } from '@/utils';
-import { AuthWrapper } from '@/utils/AuthWrapper';
 import { trpc } from '@op/api/client';
 import { ErrorBoundary } from 'next/dist/client/components/error-boundary';
 import Image from 'next/image';
@@ -47,7 +46,7 @@ const OrganizationProfileSuspense = ({ slug }: { slug: string }) => {
 
 export const OrganizationProfile = ({ slug }: { slug: string }) => {
   return (
-    <AuthWrapper>
+    <>
       {/* nav arrow */}
       <header className="absolute left-0 top-0 z-50 px-4 py-3 sm:hidden">
         <Link href="/">
@@ -61,6 +60,6 @@ export const OrganizationProfile = ({ slug }: { slug: string }) => {
           </Suspense>
         </ErrorBoundary>
       </div>
-    </AuthWrapper>
+    </>
   );
 };
