@@ -28,7 +28,7 @@ export const validator = z.object({
   name: z
     .string()
     .min(1, { message: 'Enter a name for your organization' })
-    .max(20, { message: 'Must be at most 20 characters' })
+    .max(100, { message: 'Must be at most 100 characters' })
     .optional(),
   website: z
     .string({ message: 'Enter a website address' })
@@ -38,11 +38,11 @@ export const validator = z.object({
   email: z
     .string({ message: 'Enter an email' })
     .email({ message: 'Invalid email' })
-    .max(20, { message: 'Must be at most 20 characters' })
+    .max(100, { message: 'Must be at most 100 characters' })
     .optional(),
   orgType: z
     .string({ message: 'Select an organization type' })
-    .max(20, { message: 'Must be at most 20 characters' }),
+    .max(100, { message: 'Must be at most 100 characters' }),
   bio: z
     .string({ message: 'Enter an organization bio' })
     .max(200, { message: 'Must be at most 200 characters' }),
@@ -91,7 +91,7 @@ export const OrganizationDetailsForm = ({
   const form = useAppForm({
     defaultValues: organizationDetails,
     validators: {
-      onChange: validator,
+      onBlur: validator,
     },
     onSubmit: ({ value }) => {
       setOrganizationDetails({ ...value, profileImage, bannerImage }); // Persist to store on submit

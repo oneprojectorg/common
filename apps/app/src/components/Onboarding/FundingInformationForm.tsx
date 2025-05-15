@@ -43,7 +43,7 @@ export const FundingInformationForm = ({
   const form = useAppForm({
     defaultValues: fundingInformation,
     validators: {
-      onChange: validator,
+      onBlur: validator,
     },
     onSubmit: ({ value }) => {
       setFundingInformation(value); // Persist to store on submit
