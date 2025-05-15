@@ -48,7 +48,6 @@ export const TextField = ({
   ref?: React.RefObject<HTMLInputElement | HTMLTextAreaElement | null>;
   children?: React.ReactNode;
 }) => {
-  console.log(typeof errorMessage, errorMessage);
   return (
     <AriaTextField
       {...props}
