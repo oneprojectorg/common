@@ -15,19 +15,21 @@ import { useOnboardingFormStore } from './useOnboardingFormStore';
 export const validator = z.object({
   fullName: z
     .string()
+    .trim()
     .min(1, {
       message: 'Enter your full name',
     })
-    .max(20, {
-      message: 'Must be at most 20 characters',
+    .max(200, {
+      message: 'Must be at most 200 characters',
     }),
   title: z
     .string()
+    .trim()
     .min(1, {
       message: 'Enter your professional title',
     })
-    .max(20, {
-      message: 'Must be at most 20 characters',
+    .max(200, {
+      message: 'Must be at most 200 characters',
     }),
   profileImageUrl: z.string().optional(),
 });
@@ -55,7 +57,7 @@ export const PersonalDetailsForm = ({
   const form = useAppForm({
     defaultValues: personalDetails,
     validators: {
-      onChange: validator,
+      onBlur: validator,
     },
     onSubmit: async ({ value }: { value: FormFields }) => {
       await updateProfile.mutateAsync({
@@ -71,6 +73,7 @@ export const PersonalDetailsForm = ({
     <form
       onSubmit={(e) => {
         e.preventDefault();
+        console.log('submit');
         void form.handleSubmit();
       }}
       className={className}

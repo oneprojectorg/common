@@ -54,11 +54,15 @@ export const MultiStepForm: React.FC<MultiStepFormProps> = ({
 
   // Next/back handlers
   const nextStep = React.useCallback(() => {
-    if (step < steps.length - 1) goToStep(step + 1);
+    if (step < steps.length - 1) {
+      goToStep(step + 1);
+    }
   }, [step, steps.length, goToStep]);
 
   const prevStep = React.useCallback(() => {
-    if (step > 0) goToStep(step - 1);
+    if (step > 0) {
+      goToStep(step - 1);
+    }
   }, [step, goToStep]);
 
   const searchParams = useSearchParams();
@@ -80,21 +84,28 @@ export const MultiStepForm: React.FC<MultiStepFormProps> = ({
 
   const handleNext = (stepValue: any) => {
     const schema = schemas[step];
+
     if (schema) {
       const result = schema.safeParse(stepValue);
+
       if (!result.success) {
         setError(result.error.errors[0]?.message || 'Invalid input');
         return;
       }
     }
+
     setError(null);
+
     const newValues = [...values];
     newValues[step] = stepValue;
     setValues(newValues);
+
     if (step < steps.length - 1) {
       nextStep();
     } else {
-      if (onFinish) onFinish(newValues);
+      if (onFinish) {
+        onFinish(newValues);
+      }
     }
   };
 
