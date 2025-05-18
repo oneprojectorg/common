@@ -99,7 +99,7 @@ const ProfileAbout = ({ profile }: { profile: Organization }) => {
 
       {communitiesServed?.length ? (
         <section className="flex flex-col gap-2 text-neutral-charcoal">
-          <Header3>Communities Served</Header3>
+          <Header3>Communities We Serve</Header3>
           <TagGroup>
             {communitiesServed.map((term) => (
               <Tag>{term.label}</Tag>
