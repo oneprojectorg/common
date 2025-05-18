@@ -6,6 +6,7 @@ interface TermLookupHandler {
   name: string;
 }
 
+/*
 const getTermsFromCandid = async ({ query, name }: TermLookupHandler) => {
   const [, facet] = name.trim().split(':');
   const gqlQuery = `
@@ -95,6 +96,7 @@ const getTermsFromCandid = async ({ query, name }: TermLookupHandler) => {
 
   return transformed;
 };
+*/
 
 const getTermsFromDb = async ({
   query,
@@ -149,7 +151,7 @@ export const getTerms = async ({
   query?: string;
 }): Promise<Array<InferSelectModel<typeof taxonomyTerms>>> => {
   const [taxonomyName] = name.split(':');
-  const handler = nameHandlers[taxonomyName] ?? getTermsFromDb;
+  const handler = nameHandlers[taxonomyName ?? name] ?? getTermsFromDb;
 
   try {
     const terms = await handler({ query, name });

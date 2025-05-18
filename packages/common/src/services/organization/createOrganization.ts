@@ -114,7 +114,7 @@ const upsertTaxonomyTerms = async ({
 
   // retrieve the taxonomy so we can grab the id
   const taxonomy = await tx.query.taxonomies.findFirst({
-    where: () => eq(taxonomies.name, name),
+    where: () => eq(taxonomies.name, name ?? taxonomyName),
   });
 
   if (!taxonomy) {

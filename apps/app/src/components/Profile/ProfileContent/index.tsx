@@ -1,4 +1,5 @@
 import { UserProvider } from '@/utils/UserProvider';
+import { trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { Header3 } from '@op/ui/Header';
@@ -30,6 +31,11 @@ const ContactLink = ({
 
 const ProfileAbout = ({ profile }: { profile: Organization }) => {
   const { mission, email, website, orgType, strategies } = profile;
+  const [terms] = trpc.organization.getTerms.useSuspenseQuery({
+    id: profile.id,
+  });
+
+  const communitiesServed = terms['candid:POPULATION'];
 
   return (
     <div className="flex flex-col gap-8">
@@ -86,6 +92,17 @@ const ProfileAbout = ({ profile }: { profile: Organization }) => {
           <TagGroup>
             {strategies.map((strategy) => (
               <Tag>{strategy.label}</Tag>
+            ))}
+          </TagGroup>
+        </section>
+      ) : null}
+
+      {communitiesServed?.length ? (
+        <section className="flex flex-col gap-2 text-neutral-charcoal">
+          <Header3>Communities Served</Header3>
+          <TagGroup>
+            {communitiesServed.map((term) => (
+              <Tag>{term.label}</Tag>
             ))}
           </TagGroup>
         </section>

@@ -34,6 +34,7 @@ export const getOrganization = async ({
             term: true,
           },
         },
+        // TODO: CONVERT TO TERMS
         strategies: {
           with: {
             term: true,
