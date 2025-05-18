@@ -4,3 +4,4 @@ import 'server-only';
 
 export { db } from './index';
 export * from 'drizzle-orm';
+export * from './types';

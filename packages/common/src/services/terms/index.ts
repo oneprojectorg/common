@@ -1,4 +1,4 @@
-import { InferSelectModel, db, eq, sql } from '@op/db/client';
+import { InferSelectModel, SQL, and, db, eq, sql } from '@op/db/client';
 import { taxonomies, taxonomyTerms } from '@op/db/schema';
 
 interface TermLookupHandler {
@@ -6,40 +6,94 @@ interface TermLookupHandler {
   name: string;
 }
 
-const getTermsFromCandid = async ({ query }: TermLookupHandler) => {
+const getTermsFromCandid = async ({ query, name }: TermLookupHandler) => {
+  const [, facet] = name.trim().split(':');
   const gqlQuery = `
-query termsByMatch($match: MatchInput) {
-termsByMatch(match: $match) {
-meta {
-...MetaFragment
-}
-data {
-...TermFragment
-}
-}
-}
-`;
+  query termsByFacet($facet: FacetType!) {
+    termsByFacet(facet: $facet) {
+      meta {
+    code
+    message
+    resultsCount
+    took
+  }
+    data {
+    code
+    name
+    description
+    facet
+    depth
+    hasChildren
+  }
+    }
+  }
+  `;
 
-  const variables = {
-    match: {
-      searchTerm: query,
-      limit: 100,
-    },
-  };
+  // const gqlQuery = `
+  // query {
+  // termsByMatch(match: {
+  // searchTerm: "${query?.trim() ?? ''}",
+  // facet: ${facet},
+  // limit: 100}) {
+  // meta {
+  // code
+  // message
+  // resultsCount
+  // took
+  // }
+  // data {
+  // code
+  // name
+  // description
+  // facet
+  // depth
+  // hasChildren
+  // }
+  // }
+  // }
+  // `;
+
+  if (!process.env.CANDID_API_KEY) {
+    return [];
+  }
 
   const response = await fetch('https://api.candid.org/taxonomy/graphql/', {
     method: 'POST',
-    headers: {
+    headers: new Headers({
       'Content-Type': 'application/json',
-      'Subscription-Key': 'Bearer YOUR_AUTH_TOKEN', // Include if authentication is required
-    },
+      'Subscription-Key': process.env.CANDID_API_KEY,
+    }),
     body: JSON.stringify({
       query: gqlQuery,
-      variables,
+      variables: { facet },
     }),
   });
 
-  return await response.json();
+  const data = await response.json();
+
+  if (data.errors) {
+    console.error('Candid Errors:', data.errors);
+    return null;
+  }
+
+  type CandidTerm = {
+    code: string;
+    name: string;
+    description: string;
+    facet: string;
+    depth: number;
+    hasChildren: boolean;
+  };
+
+  const transformed = data.data.termsByFacet.data.map((term: CandidTerm) => ({
+    id: term.code,
+    label: term.name,
+    taxonomyId: name,
+    definition: term.description,
+    data: term,
+  }));
+
+  return transformed;
 };
 
 const getTermsFromDb = async ({
@@ -49,9 +103,22 @@ const getTermsFromDb = async ({
   query?: string;
   name: string;
 }) => {
-  let whereClause = eq(taxonomies.name, name);
+  const [taxonomyName, facet] = name.split(':');
+
+  if (!taxonomyName) {
+    return [];
+  }
+
+  let whereClause = eq(taxonomies.name, taxonomyName);
+  if (facet) {
+    whereClause = and(
+      whereClause,
+      eq(taxonomyTerms.facet, facet.trim()),
+    ) as SQL<unknown>;
+  }
+
   if (query) {
-    whereClause = sql`${taxonomies.name} = ${name} AND ${taxonomyTerms.label} @@ plainto_tsquery('english', ${query})`;
+    whereClause = sql`${taxonomies.name} = ${taxonomyName} AND ${taxonomyTerms.facet} = ${facet?.trim() ?? null} AND ${taxonomyTerms.label} @@to_tsquery('english', ${query + ':*'})`;
   }
 
   const results = await db
@@ -71,7 +138,7 @@ const nameHandlers: Record<
     args: TermLookupHandler,
   ) => Promise<Array<InferSelectModel<typeof taxonomyTerms>>>
 > = {
-  candid: getTermsFromCandid,
+  // candid: getTermsFromCandid,
 };
 
 export const getTerms = async ({
@@ -81,7 +148,8 @@ export const getTerms = async ({
   name: string;
   query?: string;
 }): Promise<Array<InferSelectModel<typeof taxonomyTerms>>> => {
-  const handler = nameHandlers[name] ?? getTermsFromDb;
+  const [taxonomyName] = name.split(':');
+  const handler = nameHandlers[taxonomyName] ?? getTermsFromDb;
 
   try {
     const terms = await handler({ query, name });

@@ -15,7 +15,7 @@ import { loggedProcedure, router } from '../../trpcFactory';
 
 const multiSelectOptionValidator = z.object({
   id: z.string(),
-  label: z.string().max(20),
+  label: z.string().max(200),
   isNewValue: z.boolean().default(false).optional(),
   data: z.any().optional(),
 });

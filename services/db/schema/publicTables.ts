@@ -9,6 +9,8 @@ export {
   organizationsWhereWeWorkRelations,
   organizationsStrategies, // reconsider these tables as possible graphs and edges
   organizationsStrategiesRelations,
+  organizationsTerms,
+  organizationsTermsRelations,
 } from './tables/organizations.sql';
 export type { Organization } from './tables/organizations.sql';
 export {

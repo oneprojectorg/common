@@ -85,7 +85,7 @@ const ProfileAbout = ({ profile }: { profile: Organization }) => {
           <Header3>Strategies</Header3>
           <TagGroup>
             {strategies.map((strategy) => (
-              <Tag>{strategy.label as unknown as string}</Tag>
+              <Tag>{strategy.label}</Tag>
             ))}
           </TagGroup>
         </section>

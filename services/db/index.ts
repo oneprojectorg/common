@@ -26,5 +26,5 @@ export const db = drizzle({
   },
   casing: config.casing,
   schema,
-  logger: false,
+  logger: true,
 });

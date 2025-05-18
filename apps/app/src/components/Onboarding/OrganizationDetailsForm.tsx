@@ -19,7 +19,7 @@ import { useOnboardingFormStore } from './useOnboardingFormStore';
 
 const multiSelectOptionValidator = z.object({
   id: z.string(),
-  label: z.string().max(20),
+  label: z.string().max(200),
   isNewValue: z.boolean().default(false).optional(),
   data: z.record(z.any()).default({}),
 });
@@ -28,8 +28,7 @@ export const validator = z.object({
   name: z
     .string()
     .min(1, { message: 'Enter a name for your organization' })
-    .max(100, { message: 'Must be at most 100 characters' })
-    .optional(),
+    .max(100, { message: 'Must be at most 100 characters' }),
   website: z
     .string({ message: 'Enter a website address' })
     .url({ message: 'Enter a valid website address' })
@@ -295,23 +294,12 @@ export const OrganizationDetailsForm = ({
         <form.AppField
           name="focusAreas"
           children={(field) => (
-            <field.MultiSelectComboBox
+            <TermsMultiSelect
               label={t('Focus Areas')}
-              placeholder={t('Select one or more')}
+              taxonomy="NECFunding"
               value={(field.state.value as Array<Option>) ?? []}
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
-              items={[
-                { id: 'placeholder1', label: 'Placeholder 1' },
-                { id: 'placeholder2', label: 'Placeholder 2' },
-                { id: 'placeholder3', label: 'Placeholder 3' },
-                { id: 'placeholder4', label: 'Placeholder 4' },
-                { id: 'placeholder5', label: 'Placeholder 5' },
-                { id: 'placeholder6', label: 'Placeholder 6' },
-                { id: 'placeholder7', label: 'Placeholder 7' },
-                { id: 'placeholder8', label: 'Placeholder 8' },
-                { id: 'placeholder9', label: 'Placeholder 9' },
-              ]}
             />
           )}
         />
@@ -319,22 +307,12 @@ export const OrganizationDetailsForm = ({
         <form.AppField
           name="communitiesServed"
           children={(field) => (
-            <field.MultiSelectComboBox
+            <TermsMultiSelect
               label={t('Communities Served')}
+              taxonomy="candid:POPULATION"
               value={(field.state.value as Array<Option>) ?? []}
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
-              items={[
-                { id: 'placeholder1', label: 'Placeholder 1' },
-                { id: 'placeholder2', label: 'Placeholder 2' },
-                { id: 'placeholder3', label: 'Placeholder 3' },
-                { id: 'placeholder4', label: 'Placeholder 4' },
-                { id: 'placeholder5', label: 'Placeholder 5' },
-                { id: 'placeholder6', label: 'Placeholder 6' },
-                { id: 'placeholder7', label: 'Placeholder 7' },
-                { id: 'placeholder8', label: 'Placeholder 8' },
-                { id: 'placeholder9', label: 'Placeholder 9' },
-              ]}
             />
           )}
         />

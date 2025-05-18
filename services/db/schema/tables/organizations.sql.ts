@@ -106,6 +106,7 @@ export const organizationsRelations = relations(
     posts: many(posts),
     whereWeWork: many(organizationsWhereWeWork),
     strategies: many(organizationsStrategies),
+    terms: many(organizationsTerms),
     headerImage: one(objectsInStorage, {
       fields: [organizations.headerImageId],
       references: [objectsInStorage.id],
@@ -116,6 +117,41 @@ export const organizationsRelations = relations(
     }),
     outgoingRelationships: many(organizationRelationships),
     incomingRelationships: many(organizationRelationships),
+  }),
+);
+
+export const organizationsTerms = pgTable(
+  'organizations_terms',
+  {
+    organizationId: uuid('organization_id')
+      .notNull()
+      .references(() => organizations.id, {
+        onUpdate: 'cascade',
+        onDelete: 'cascade',
+      }),
+    taxonomyTermId: uuid('taxonomy_term_id')
+      .notNull()
+      .references(() => taxonomyTerms.id, {
+        onUpdate: 'cascade',
+        onDelete: 'cascade',
+      }),
+  },
+  (table) => ({
+    pk: primaryKey(table.organizationId, table.taxonomyTermId),
+  }),
+);
+
+export const organizationsTermsRelations = relations(
+  organizationsTerms,
+  ({ one }) => ({
+    organization: one(organizations, {
+      fields: [organizationsTerms.organizationId],
+      references: [organizations.id],
+    }),
+    term: one(taxonomyTerms, {
+      fields: [organizationsTerms.taxonomyTermId],
+      references: [taxonomyTerms.id],
+    }),
   }),
 );
 

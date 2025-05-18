@@ -1,11 +1,13 @@
-import { db, eq, sql } from '@op/db/client';
+import { type TransactionType, db, eq, sql } from '@op/db/client';
 import {
   links,
   organizationUserToAccessRoles,
   organizationUsers,
   organizations,
   organizationsStrategies,
+  organizationsTerms,
   organizationsWhereWeWork,
+  taxonomies,
   taxonomyTerms,
   users,
 } from '@op/db/schema';
@@ -54,6 +56,20 @@ export const organizationInputSchema = z
         id: z.string(),
       }),
     ),
+    focusAreas: z.array(
+      z.object({
+        id: z.string(),
+        label: z.string(),
+      }),
+    ),
+    communitiesServed: z
+      .array(
+        z.object({
+          id: z.string(),
+          label: z.string(),
+        }),
+      )
+      .optional(),
   })
   .strip()
   .partial();
@@ -69,7 +85,7 @@ const OrganizationInputParser = organizationInputSchema.transform(
   },
 );
 
-export const fundingLinksnputSchema = z
+export const fundingLinksInputSchema = z
   .object({
     receivingFundsLink: z
       .string()
@@ -83,7 +99,59 @@ export const fundingLinksnputSchema = z
   })
   .strip()
   .partial();
-type FundingLinksInput = z.infer<typeof fundingLinksnputSchema>;
+type FundingLinksInput = z.infer<typeof fundingLinksInputSchema>;
+
+const upsertTaxonomyTerms = async ({
+  tx,
+  terms,
+  taxonomyName,
+}: {
+  tx: TransactionType;
+  terms: Array<{ id?: string; label: string }>;
+  taxonomyName: string;
+}) => {
+  const [name, facet] = taxonomyName.split(':');
+
+  // retrieve the taxonomy so we can grab the id
+  const taxonomy = await tx.query.taxonomies.findFirst({
+    where: () => eq(taxonomies.name, name),
+  });
+
+  if (!taxonomy) {
+    return undefined;
+  }
+
+  // upsert all terms attached to the taxonomy
+  const addedTerms = await Promise.all(
+    terms.map(async (externalTerm) => {
+      // upsert the terms
+
+      const [term] = await tx
+        .insert(taxonomyTerms)
+        .values({
+          taxonomyId: taxonomy.id,
+          label: externalTerm.label,
+          facet,
+          termUri: `${taxonomy.name}:${externalTerm.id}`,
+          // data: externalTerm.data,
+        })
+        // just update in case we have new info from the API
+        .onConflictDoUpdate({
+          target: [taxonomyTerms.termUri, taxonomyTerms.taxonomyId],
+          set: {
+            // set the existing value. This is so we can get the value back without an extra call
+            label: sql`excluded.label`,
+          },
+        })
+        .returning();
+
+      return term;
+    }),
+  );
+
+  // return what we have added so those can be linked to the record
+  return addedTerms.filter((term) => term !== undefined);
+};
 
 export const createOrganization = async ({
   data,
@@ -174,6 +242,7 @@ export const createOrganization = async ({
       data.whereWeWork?.map((whereWeWork) =>
         geoNamesDataSchema.parse(whereWeWork.data),
       ) || [];
+
     const geoNamesTaxonomy = await tx.query.taxonomies.findFirst({
       where: (table, { eq, and }) =>
         and(
@@ -217,9 +286,32 @@ export const createOrganization = async ({
         }),
       );
     }
+
+    const { focusAreas, strategies, communitiesServed } = data;
+
+    // add in focus areas
+    if (focusAreas) {
+      const focusAreaRecords = await upsertTaxonomyTerms({
+        tx,
+        taxonomyName: 'candid:focusArea',
+        terms: focusAreas,
+      });
+
+      await Promise.all(
+        (focusAreaRecords ?? []).map((term) =>
+          tx
+            .insert(organizationsTerms)
+            .values({
+              organizationId: newOrg.id,
+              taxonomyTermId: term.id,
+            })
+            .onConflictDoNothing(),
+        ),
+      );
+    }
+
     // add all stategy terms to the org (strategy terms already exist in the DB)
     // TODO: parallelize this
-    const { strategies } = data;
 
     if (strategies) {
       await Promise.all(
@@ -229,6 +321,20 @@ export const createOrganization = async ({
             .values({
               organizationId: newOrg.id,
               taxonomyTermId: strategy.id,
+            })
+            .onConflictDoNothing(),
+        ),
+      );
+    }
+
+    if (communitiesServed) {
+      await Promise.all(
+        communitiesServed.map((term) =>
+          tx
+            .insert(organizationsTerms)
+            .values({
+              organizationId: newOrg.id,
+              taxonomyTermId: term.id,
             })
             .onConflictDoNothing(),
         ),
