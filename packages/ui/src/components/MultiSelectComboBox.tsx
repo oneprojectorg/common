@@ -1,6 +1,6 @@
 'use client';
 
-import { X } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { ValidationResult } from 'react-aria-components';
 
@@ -231,11 +231,11 @@ export const MultiSelectComboBox = ({
             }
           }}
         >
-          <div className="flex w-full flex-wrap items-center gap-1">
+          <div className="relative flex w-full flex-wrap items-center gap-1">
             <input
               ref={inputRef}
               type="text"
-              className="ml-1 min-w-[40px] flex-1 border-none bg-transparent py-1 text-sm outline-none placeholder:text-midGray group-data-[invalid=true]:outline-functional-red"
+              className="ml-1 min-w-[40px] flex-1 border-none bg-transparent py-1 pr-7 text-sm outline-none placeholder:text-midGray group-data-[invalid=true]:outline-functional-red"
               value={inputValue}
               onChange={handleInputChange}
               onKeyDown={handleInputKeyDown}
@@ -250,13 +250,16 @@ export const MultiSelectComboBox = ({
               placeholder={placeholder}
               style={{ minWidth: 40 }}
             />
+            <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-midGray text-neutral-charcoal">
+              <Search className="size-4" />
+            </span>
           </div>
           <FieldError>{errorMessage}</FieldError>
         </div>
 
         {/* Selected options below input box, not inside */}
         {selectedOptions.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-2">
+          <div className="mt-1 flex flex-wrap gap-2">
             {selectedOptions.map((option) => (
               <div
                 key={option.isNewValue ? 'other' : option.id}

@@ -4,6 +4,7 @@ import { BannerUploader } from '@op/ui/BannerUploader';
 import type { Option } from '@op/ui/MultiSelectComboBox';
 import { SelectItem } from '@op/ui/Select';
 import { useState } from 'react';
+import { LuLink } from 'react-icons/lu';
 import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
@@ -205,6 +206,10 @@ export const OrganizationDetailsForm = ({
               value={field.state.value as string}
               onBlur={field.handleBlur}
               onChange={field.handleChange}
+              inputProps={{
+                icon: <LuLink className="size-4 text-neutral-black" />,
+                placeholder: "Enter your organization's websit here",
+              }}
               errorMessage={getFieldErrorMessage(field)}
             />
           )}
