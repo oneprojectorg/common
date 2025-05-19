@@ -130,6 +130,7 @@ export const FundingInformationForm = ({
         />
 
         <hr />
+
         <form.AppField
           name="isOfferingFunds"
           children={(field) => (
