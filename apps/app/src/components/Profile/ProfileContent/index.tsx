@@ -92,7 +92,7 @@ const ProfileAbout = ({ profile }: { profile: Organization }) => {
           <Header3>Strategies</Header3>
           <TagGroup>
             {strategies.map((strategy) =>
-              strategy ? <Tag>{strategy.label}</Tag> : null,
+              strategy ? <Tag>{strategy.label as string}</Tag> : null,
             )}
           </TagGroup>
         </section>
