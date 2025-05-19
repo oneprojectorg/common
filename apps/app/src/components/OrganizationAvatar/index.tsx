@@ -19,22 +19,26 @@ export const OrganizationAvatar = ({
   return (
     <Link href={`/org/${organization.slug}`}>
       <Avatar className={cn('size-12', className)}>
-        {organization.avatarImage?.name ? (
-          <Image
-            src={
-              getPublicUrl(
-                organization.avatarImage?.name,
-              ) ?? ''
-            }
-            width={80}
-            height={80}
-            alt={organization.name}
-          />
-        ) : (
-          <div className="flex size-8 items-center justify-center text-neutral-gray3">
-            {organization.name?.slice(0, 1) ?? ''}
-          </div>
-        )}
+        {
+          // @ts-expect-error
+          organization.avatarImage?.name ? (
+            <Image
+              src={
+                getPublicUrl(
+                  // @ts-expect-error
+                  organization.avatarImage?.name,
+                ) ?? ''
+              }
+              width={80}
+              height={80}
+              alt={organization.name}
+            />
+          ) : (
+            <div className="flex size-8 items-center justify-center text-neutral-gray3">
+              {organization.name?.slice(0, 1) ?? ''}
+            </div>
+          )
+        }
       </Avatar>
     </Link>
   );
