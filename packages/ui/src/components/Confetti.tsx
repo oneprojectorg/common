@@ -19,6 +19,7 @@ export const Confetti: React.FC = () => {
 
   // Array of emojis to use as confetti
   const emojis: Array<string> = ['🌱', '🦋', '🐝'];
+  // const emojis: Array<string> = ['🐚', '🥬'];
 
   const explode = (): void => {
     setIsExploding(true);

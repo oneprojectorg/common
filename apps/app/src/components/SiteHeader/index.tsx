@@ -27,6 +27,7 @@ const UserAvatarMenu = () => {
   const switchOrganization = trpc.account.switchOrganization.useMutation({
     onSuccess: () => {
       utils.account.getMyAccount.invalidate();
+      utils.invalidate();
     },
   });
 
