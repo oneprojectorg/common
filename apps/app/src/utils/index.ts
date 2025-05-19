@@ -10,6 +10,10 @@ export const getPublicUrl = (key?: string | null) => {
 
 // There is a bug in URL() which causes most any string to pass so we need a custom regex check here that additionally checks for more practical URLs
 export const zodUrlRefine = (val: string) => {
+  if (!val) {
+    return true;
+  }
+
   const urlPattern = new RegExp(
     '^(https?:\\/\\/)?' + // protocol
       '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|' + // domain name
