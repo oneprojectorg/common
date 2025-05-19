@@ -26,7 +26,7 @@ export const PostUpdate = ({
   const profile = user?.currentOrganization;
   const [content, setContent] = useState('');
   const t = useTranslations();
-  const utils = trpc.useContext();
+  const utils = trpc.useUtils();
   if (
     !profile ||
     (targetOrganizationId && targetOrganizationId !== profile.id)

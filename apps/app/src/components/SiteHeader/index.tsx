@@ -23,7 +23,7 @@ import { CommonLogo } from '../CommonLogo';
 const UserAvatarMenu = () => {
   const { user } = useUser();
   const logout = useAuthLogout();
-  const utils = trpc.useContext();
+  const utils = trpc.useUtils();
   const switchOrganization = trpc.account.switchOrganization.useMutation({
     onSuccess: () => {
       utils.account.getMyAccount.invalidate();

@@ -19,10 +19,10 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
       pending: true,
     });
 
-  const utils = trpc.useContext();
+  const utils = trpc.useUtils();
   const approve = trpc.organization.approveRelationship.useMutation({
     onSuccess: () => {
-      utils.organization.listRelationships.invalidate();
+      utils.organization.invalidate();
       utils.organization.listPosts.invalidate();
     },
   });

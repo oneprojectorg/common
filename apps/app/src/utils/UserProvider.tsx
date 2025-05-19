@@ -1,6 +1,7 @@
 'use client';
 
 import { RouterOutput, trpc } from '@op/api/client';
+import posthog from 'posthog-js';
 import React, { createContext, useContext } from 'react';
 
 // Type for the user data returned by getMyAccount
@@ -17,6 +18,10 @@ const UserContext = createContext<UserContextValue | undefined>(undefined);
 
 export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const [user] = trpc.account.getMyAccount.useSuspenseQuery();
+
+  if (user) {
+    posthog.identify(user.id, { email: user.email, name: user.name });
+  }
 
   return (
     <UserContext.Provider value={{ user }}>{children}</UserContext.Provider>
