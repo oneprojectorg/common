@@ -28,6 +28,7 @@ export const zodUrl = ({ message }: { message: string }) => {
     (val) => {
       // Check if the URL already starts with http:// or https://
       if (
+        val &&
         typeof val == 'string' &&
         !val.startsWith('http://') &&
         !val.startsWith('https://')
@@ -36,14 +37,14 @@ export const zodUrl = ({ message }: { message: string }) => {
         return `https://${val}`;
       }
 
-      return String(val);
+      return val;
     },
     z
       .string({ message })
-      .url({ message })
-      .min(1, { message: 'Must be at least 1 character' })
       .max(200, { message: 'Must be at most 200 characters' })
-      .refine(zodUrlRefine)
+      .refine(zodUrlRefine, {
+        message,
+      })
       .optional(),
   );
 };
