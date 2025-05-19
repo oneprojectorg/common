@@ -109,7 +109,9 @@ export const FundingInformationForm = ({
                           onChange={field.handleChange}
                           errorMessage={getFieldErrorMessage(field)}
                           inputProps={{
-                            icon: <LuLink className="text-teal" />,
+                            icon: (
+                              <LuLink className="size-4 text-neutral-black" />
+                            ),
                             placeholder: 'Add your contribution page here',
                           }}
                         />
@@ -194,7 +196,9 @@ export const FundingInformationForm = ({
                                     .value
                                     ? 'Add a link where organizations can apply for funding'
                                     : 'Add a link to learn more about your funding process',
-                                  icon: <LuLink className="text-teal" />,
+                                  icon: (
+                                    <LuLink className="size-4 text-neutral-black" />
+                                  ),
                                 }}
                               />
                               <span className="text-xs text-darkGray">

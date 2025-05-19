@@ -44,7 +44,7 @@ export const MultiSelectComboBox = ({
   const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
 
   const selectedOptions = value ?? [];
-  const setSelectedOptions = onChange ?? (() => {});
+  const setSelectedOptions = onChange ?? (() => { });
 
   // Handle outside clicks to close dropdown
   useEffect(() => {
@@ -235,7 +235,7 @@ export const MultiSelectComboBox = ({
             <input
               ref={inputRef}
               type="text"
-              className="ml-1 min-w-[40px] flex-1 border-none bg-transparent py-1 pr-7 text-sm outline-none placeholder:text-midGray group-data-[invalid=true]:outline-functional-red"
+              className="ml-1 min-w-[40px] flex-1 border-none bg-transparent py-1 pr-7 text-sm outline-none placeholder:text-neutral-gray4 group-data-[invalid=true]:outline-functional-red"
               value={inputValue}
               onChange={handleInputChange}
               onKeyDown={handleInputKeyDown}
@@ -250,7 +250,7 @@ export const MultiSelectComboBox = ({
               placeholder={placeholder}
               style={{ minWidth: 40 }}
             />
-            <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-midGray text-neutral-charcoal">
+            <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-neutral-charcoal">
               <Search className="size-4" />
             </span>
           </div>
@@ -286,11 +286,10 @@ export const MultiSelectComboBox = ({
               {filteredItems.map((option, idx) => (
                 <li
                   key={option.id}
-                  className={`flex cursor-pointer items-center px-3 py-2 text-sm hover:bg-gray-100 ${
-                    selectedOptions.some((item) => item.id === option.id)
+                  className={`flex cursor-pointer items-center px-3 py-2 text-sm hover:bg-gray-100 ${selectedOptions.some((item) => item.id === option.id)
                       ? 'bg-blue-50'
                       : ''
-                  } ${highlightedIndex === idx ? 'bg-blue-100' : ''}`}
+                    } ${highlightedIndex === idx ? 'bg-blue-100' : ''}`}
                   onMouseEnter={() => setHighlightedIndex(idx)}
                   onMouseLeave={() => setHighlightedIndex(-1)}
                   onMouseDown={(e) => e.preventDefault()}
