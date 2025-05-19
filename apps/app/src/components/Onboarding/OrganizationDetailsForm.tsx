@@ -26,7 +26,7 @@ const multiSelectOptionValidator = z.object({
 
 export const validator = z.object({
   name: z
-    .string()
+    .string({ message: 'Enter a name for your organization' })
     .min(1, { message: 'Enter a name for your organization' })
     .max(100, { message: 'Must be at most 100 characters' }),
   website: z

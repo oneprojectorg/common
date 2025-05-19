@@ -1,3 +1,4 @@
+import { zodUrl } from '@/utils';
 import { ToggleButton } from '@op/ui/ToggleButton';
 import { LuLink } from 'react-icons/lu';
 import { z } from 'zod';
@@ -15,16 +16,13 @@ export const validator = z.object({
   isReceivingFunds: z.boolean().default(false).optional(),
   isOfferingFunds: z.boolean().default(false).optional(),
   acceptingApplications: z.boolean().default(false).optional(),
-  receivingFundsDescription: z.string().optional(),
-  receivingFundsLink: z
+  receivingFundsDescription: z
     .string()
-    .url({ message: 'Enter a valid website address' })
+    .max(200, { message: 'Must be at most 200 characters' })
     .optional(),
+  receivingFundsLink: zodUrl({ message: 'Enter a valid website address' }),
   offeringFundsDescription: z.string().optional(),
-  offeringFundsLink: z
-    .string()
-    .url({ message: 'Enter a valid website address' })
-    .optional(),
+  offeringFundsLink: zodUrl({ message: 'Enter a valid website address' }),
 });
 
 export const FundingInformationForm = ({
