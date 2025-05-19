@@ -92,7 +92,8 @@ const ProfileAbout = ({ profile }: { profile: Organization }) => {
           <Header3>Strategies</Header3>
           <TagGroup>
             {strategies.map((strategy) =>
-              strategy ? <Tag>{strategy.label as string}</Tag> : null,
+              // @ts-ignore - odd TS bug that only shows in CI
+              strategy ? <Tag>{strategy.label}</Tag> : null,
             )}
           </TagGroup>
         </section>
