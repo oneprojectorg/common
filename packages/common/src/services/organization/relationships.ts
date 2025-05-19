@@ -2,7 +2,8 @@ import { and, db, eq, or, sql } from '@op/db/client';
 import { Organization, organizationRelationships } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
-import { CommonError } from '../../utils';
+import { CommonError, UnauthorizedError } from '../../utils';
+import { getOrgAccessUser } from '../access';
 
 export const addRelationship = async ({
   from,
@@ -196,10 +197,10 @@ export const getDirectedRelationships = async ({
 export const removeRelationship = async ({
   id,
 }: {
-  user: User;
   id: string;
+  user: User;
 }) => {
-  // const orgUser = await getOrgAccessUser({ user, organizationId: from });
+  // const orgUser = await getOrgAccessUser({ user, organizationId: user });
 
   // TODO: ALL USERS IN THE ORG ARE ADMIN AT THE MOMENT
   // assertAccess();
@@ -207,7 +208,6 @@ export const removeRelationship = async ({
   // if (!orgUser) {
   // throw new UnauthorizedError('You are not a member of this organization');
   // }
-  //
 
   try {
     await db
@@ -217,5 +217,43 @@ export const removeRelationship = async ({
     return true;
   } catch (e) {
     throw new CommonError('Could not remove relationship');
+  }
+};
+
+export const approveRelationship = async ({
+  targetOrganizationId,
+  organizationId,
+  user,
+}: {
+  user: User;
+  targetOrganizationId: string;
+  organizationId: string;
+}) => {
+  const orgUser = await getOrgAccessUser({ user, organizationId });
+
+  // TODO: ALL USERS IN THE ORG ARE ADMIN AT THE MOMENT
+  // assertAccess();
+
+  if (!orgUser) {
+    throw new UnauthorizedError('You are not a member of this organization');
+  }
+
+  try {
+    await db
+      .update(organizationRelationships)
+      .set({ pending: false })
+      .where(
+        and(
+          eq(
+            organizationRelationships.targetOrganizationId,
+            targetOrganizationId,
+          ),
+          eq(organizationRelationships.sourceOrganizationId, organizationId),
+        ),
+      );
+
+    return true;
+  } catch (e) {
+    throw new CommonError('Could not approve relationship');
   }
 };

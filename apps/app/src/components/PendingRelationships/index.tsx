@@ -19,6 +19,14 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
       pending: true,
     });
 
+  const utils = trpc.useContext();
+  const approve = trpc.organization.approveRelationship.useMutation({
+    onSuccess: () => {
+      utils.organization.listRelationships.invalidate();
+      utils.organization.listPosts.invalidate();
+    },
+  });
+
   return (
     <Surface className="flex flex-col gap-0 border-b">
       <Header2 className="p-6 font-serif text-title-sm text-neutral-black">
@@ -40,11 +48,21 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
                   <span>Added you as a {relationships ?? 'related'}</span>
                 </div>
               </div>
-              <div className="flex gap-4">
+              <div className="flex items-center gap-4">
                 <Button color="secondary" size="small">
                   Decline
                 </Button>
-                <Button size="small">Accept</Button>
+                <Button
+                  size="small"
+                  onPress={() =>
+                    approve.mutate({
+                      targetOrganizationId: org.id,
+                      organizationId: organization.id,
+                    })
+                  }
+                >
+                  Accept
+                </Button>
               </div>
             </li>
           );

@@ -1,5 +1,6 @@
 import { mergeRouters } from '../../trpcFactory';
 import { addRelationshipRouter } from './addRelationship';
+import { approveRelationshipRouter } from './approveRelationship';
 import { createOrganizationRouter } from './createOrganization';
 import { createPostInOrganization } from './createPostInOrganization';
 import { getOrganizationRouter } from './getOrganization';
@@ -19,6 +20,7 @@ export const organizationRouter = mergeRouters(
   createOrganizationRouter,
   uploadAvatarImage,
   addRelationshipRouter,
+  approveRelationshipRouter,
   listRelationshipsRouter,
   removeRelationshipRouter,
   organizationStatsRouter,

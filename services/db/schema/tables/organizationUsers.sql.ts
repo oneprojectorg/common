@@ -67,7 +67,7 @@ export const organizationUsersRelations = relations(
       fields: [organizationUsers.organizationId],
       references: [organizations.id],
     }),
-    roles: many(accessRoles),
+    roles: many(organizationUserToAccessRoles),
   }),
 );
 
