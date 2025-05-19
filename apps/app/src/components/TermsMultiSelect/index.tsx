@@ -55,6 +55,7 @@ export const TermsMultiSelect = ({
 
             return {
               id: item.id,
+              // @ts-ignore - weird TS error
               label: item.label,
             };
           })

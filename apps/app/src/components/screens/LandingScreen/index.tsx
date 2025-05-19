@@ -20,6 +20,7 @@ import {
   CarouselItem,
   OrganizationCarousel,
 } from '@/components/OrganizationCarousel';
+import { PendingRelationships } from '@/components/PendingRelationships';
 import { PostFeed } from '@/components/PostFeed';
 import { PostUpdate } from '@/components/PostUpdate';
 
@@ -353,6 +354,9 @@ export const LandingScreen = () => {
       >
         <OrganizationHighlights />
       </Suspense>
+      {user.currentOrganization ? (
+        <PendingRelationships slug={user.currentOrganization.slug} />
+      ) : null}
       <hr />
       <LandingScreenFeeds user={user} />
       <NewlyJoinedModal />

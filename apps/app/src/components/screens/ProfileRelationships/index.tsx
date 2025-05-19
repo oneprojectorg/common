@@ -1,55 +1,34 @@
 'use client';
 
-import { getPublicUrl } from '@/utils';
 import { relationshipMap } from '@/utils/relationships';
 import { RouterOutput, trpc } from '@op/api/client';
-import { Avatar } from '@op/ui/Avatar';
 import { Breadcrumb, Breadcrumbs } from '@op/ui/Breadcrumbs';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
 import { ErrorBoundary } from 'next/dist/client/components/error-boundary';
-import Image from 'next/image';
 import React, { Suspense } from 'react';
 import { LuArrowLeft } from 'react-icons/lu';
 
 import { Link } from '@/lib/i18n';
 
+import { OrganizationAvatar } from '@/components/OrganizationAvatar';
+
 import { ProfileRelationshipsSkeleton } from './Skeleton';
 
 type relationshipOrganization =
-  RouterOutput['organization']['listRelationships']['organizations'];
+  RouterOutput['organization']['listRelationships']['organizations'][number];
 
 const RelationshipList = ({
   organizations,
 }: {
-  organizations: relationshipOrganization;
+  organizations: Array<relationshipOrganization>;
 }) => {
   return (
     <ul className="flex flex-col gap-12">
       {organizations.map((relationshipOrg) => (
         <li className="flex w-full gap-6">
           <div>
-            <Link href={`/org/${relationshipOrg.slug}`}>
-              <Avatar className="size-12">
-                {relationshipOrg.name ? (
-                  <Image
-                    src={
-                      getPublicUrl(
-                        // @ts-expect-error
-                        relationshipOrg.avatarImage?.name,
-                      ) ?? ''
-                    }
-                    width={80}
-                    height={80}
-                    alt={relationshipOrg.name}
-                  />
-                ) : (
-                  <div className="flex size-8 items-center justify-center text-neutral-gray3">
-                    {relationshipOrg.name?.slice(0, 1) ?? ''}
-                  </div>
-                )}
-              </Avatar>
-            </Link>
+            <OrganizationAvatar organization={relationshipOrg} />
           </div>
           <div>
             <Link
