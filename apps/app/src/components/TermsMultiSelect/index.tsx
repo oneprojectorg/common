@@ -47,6 +47,7 @@ export const TermsMultiSelect = ({
             if (
               item == null ||
               typeof item.id !== 'string' ||
+              // @ts-ignore - weird TS error
               typeof item.label !== 'string'
             ) {
               return null;
