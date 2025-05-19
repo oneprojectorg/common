@@ -301,7 +301,7 @@ export const OrganizationDetailsForm = ({
           children={(field) => (
             <TermsMultiSelect
               label={t('Focus Areas')}
-              taxonomy="NECFunding"
+              taxonomy="necSimple:focusArea"
               value={(field.state.value as Array<Option>) ?? []}
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}

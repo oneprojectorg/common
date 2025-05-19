@@ -111,7 +111,7 @@ const getTermsFromDb = async ({
     return [];
   }
 
-  let whereClause = eq(taxonomies.name, taxonomyName);
+  let whereClause = eq(taxonomies.namespaceUri, taxonomyName);
   if (facet) {
     whereClause = and(
       whereClause,
@@ -120,7 +120,7 @@ const getTermsFromDb = async ({
   }
 
   if (query) {
-    whereClause = sql`${taxonomies.name} = ${taxonomyName} AND ${taxonomyTerms.facet} = ${facet?.trim() ?? null} AND ${taxonomyTerms.label} @@to_tsquery('english', ${query + ':*'})`;
+    whereClause = sql`${taxonomies.namespaceUri} = ${taxonomyName} AND ${taxonomyTerms.facet} = ${facet?.trim() ?? null} AND ${taxonomyTerms.label} @@to_tsquery('english', ${query + ':*'})`;
   }
 
   const results = await db
