@@ -28,7 +28,7 @@ const inputSchema = z.object({
     .optional(),
   website: z
     .string()
-    .url({ message: 'Enter a valid website address' })
+    // .url({ message: 'Enter a valid website address' })
     .min(1, { message: 'enter a ' })
     .max(200, { message: 'Must be at most 200 characters' }),
   email: z

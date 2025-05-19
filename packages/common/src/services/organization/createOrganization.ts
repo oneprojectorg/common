@@ -45,7 +45,7 @@ export const organizationInputSchema = z
     bio: z.string().optional(),
     isOfferingFunds: z.boolean().optional(),
     isReceivingFunds: z.boolean().optional(),
-    website: z.string().url().optional(),
+    website: z.string().optional(),
     mission: z.string().optional(),
 
     headerImageId: z.string().optional(),
@@ -291,14 +291,8 @@ export const createOrganization = async ({
 
     // add in focus areas
     if (focusAreas) {
-      const focusAreaRecords = await upsertTaxonomyTerms({
-        tx,
-        taxonomyName: 'candid:focusArea',
-        terms: focusAreas,
-      });
-
       await Promise.all(
-        (focusAreaRecords ?? []).map((term) =>
+        focusAreas.map((term) =>
           tx
             .insert(organizationsTerms)
             .values({

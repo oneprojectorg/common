@@ -1,3 +1,4 @@
+import { zodUrl, zodUrlRefine } from '@/utils';
 import { trpc } from '@op/api/client';
 import { AvatarUploader } from '@op/ui/AvatarUploader';
 import { BannerUploader } from '@op/ui/BannerUploader';
@@ -30,11 +31,7 @@ export const validator = z.object({
     .string({ message: 'Enter a name for your organization' })
     .min(1, { message: 'Enter a name for your organization' })
     .max(100, { message: 'Must be at most 100 characters' }),
-  website: z
-    .string({ message: 'Enter a website address' })
-    .url({ message: 'Enter a valid website address' })
-    .min(1, { message: 'Must be at least 1 character' })
-    .max(200, { message: 'Must be at most 200 characters' }),
+  website: zodUrl({ message: 'Enter a valid website address' }),
   email: z
     .string({ message: 'Enter an email' })
     .email({ message: 'Invalid email' })
@@ -208,7 +205,7 @@ export const OrganizationDetailsForm = ({
               onChange={field.handleChange}
               inputProps={{
                 icon: <LuLink className="size-4 text-neutral-black" />,
-                placeholder: "Enter your organization's websit here",
+                placeholder: "Enter your organization's website here",
               }}
               errorMessage={getFieldErrorMessage(field)}
             />

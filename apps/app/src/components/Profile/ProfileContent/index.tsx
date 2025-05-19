@@ -36,6 +36,7 @@ const ProfileAbout = ({ profile }: { profile: Organization }) => {
   });
 
   const communitiesServed = terms['candid:POPULATION'];
+  const focusAreas = terms['necSimple:focusArea'];
 
   return (
     <div className="flex flex-col gap-8">
@@ -97,6 +98,16 @@ const ProfileAbout = ({ profile }: { profile: Organization }) => {
         </section>
       ) : null}
 
+      {focusAreas?.length ? (
+        <section className="flex flex-col gap-2 text-neutral-charcoal">
+          <Header3>Focus Areas</Header3>
+          <TagGroup>
+            {focusAreas.map((term) => (
+              <Tag>{term.label}</Tag>
+            ))}
+          </TagGroup>
+        </section>
+      ) : null}
       {communitiesServed?.length ? (
         <section className="flex flex-col gap-2 text-neutral-charcoal">
           <Header3>Communities We Serve</Header3>
