@@ -44,9 +44,14 @@ export const TermsMultiSelect = ({
       items={
         terms
           ?.map((item): Option | null => {
-            if (typeof item.id !== 'string' || typeof item.label !== 'string') {
+            if (
+              item == null ||
+              typeof item.id !== 'string' ||
+              typeof item.label !== 'string'
+            ) {
               return null;
             }
+
             return {
               id: item.id,
               label: item.label,

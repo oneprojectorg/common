@@ -1,4 +1,4 @@
-import { type TransactionType, db, eq, sql } from '@op/db/client';
+import { db, eq, sql } from '@op/db/client';
 import {
   links,
   organizationUserToAccessRoles,
@@ -7,7 +7,6 @@ import {
   organizationsStrategies,
   organizationsTerms,
   organizationsWhereWeWork,
-  taxonomies,
   taxonomyTerms,
   users,
 } from '@op/db/schema';
@@ -101,57 +100,57 @@ export const fundingLinksInputSchema = z
   .partial();
 type FundingLinksInput = z.infer<typeof fundingLinksInputSchema>;
 
-const upsertTaxonomyTerms = async ({
-  tx,
-  terms,
-  taxonomyName,
-}: {
-  tx: TransactionType;
-  terms: Array<{ id?: string; label: string }>;
-  taxonomyName: string;
-}) => {
-  const [name, facet] = taxonomyName.split(':');
+// const upsertTaxonomyTerms = async ({
+// tx,
+// terms,
+// taxonomyName,
+// }: {
+// tx: TransactionType;
+// terms: Array<{ id?: string; label: string }>;
+// taxonomyName: string;
+// }) => {
+// const [name, facet] = taxonomyName.split(':');
 
-  // retrieve the taxonomy so we can grab the id
-  const taxonomy = await tx.query.taxonomies.findFirst({
-    where: () => eq(taxonomies.name, name ?? taxonomyName),
-  });
+// // retrieve the taxonomy so we can grab the id
+// const taxonomy = await tx.query.taxonomies.findFirst({
+// where: () => eq(taxonomies.name, name ?? taxonomyName),
+// });
 
-  if (!taxonomy) {
-    return undefined;
-  }
+// if (!taxonomy) {
+// return undefined;
+// }
 
-  // upsert all terms attached to the taxonomy
-  const addedTerms = await Promise.all(
-    terms.map(async (externalTerm) => {
-      // upsert the terms
+// // upsert all terms attached to the taxonomy
+// const addedTerms = await Promise.all(
+// terms.map(async (externalTerm) => {
+// // upsert the terms
 
-      const [term] = await tx
-        .insert(taxonomyTerms)
-        .values({
-          taxonomyId: taxonomy.id,
-          label: externalTerm.label,
-          facet,
-          termUri: `${taxonomy.name}:${externalTerm.id}`,
-          // data: externalTerm.data,
-        })
-        // just update in case we have new info from the API
-        .onConflictDoUpdate({
-          target: [taxonomyTerms.termUri, taxonomyTerms.taxonomyId],
-          set: {
-            // set the existing value. This is so we can get the value back without an extra call
-            label: sql`excluded.label`,
-          },
-        })
-        .returning();
+// const [term] = await tx
+// .insert(taxonomyTerms)
+// .values({
+// taxonomyId: taxonomy.id,
+// label: externalTerm.label,
+// facet,
+// termUri: `${taxonomy.name}:${externalTerm.id}`,
+// // data: externalTerm.data,
+// })
+// // just update in case we have new info from the API
+// .onConflictDoUpdate({
+// target: [taxonomyTerms.termUri, taxonomyTerms.taxonomyId],
+// set: {
+// // set the existing value. This is so we can get the value back without an extra call
+// label: sql`excluded.label`,
+// },
+// })
+// .returning();
 
-      return term;
-    }),
-  );
+// return term;
+// }),
+// );
 
-  // return what we have added so those can be linked to the record
-  return addedTerms.filter((term) => term !== undefined);
-};
+// return what we have added so those can be linked to the record
+// return addedTerms.filter((term) => term !== undefined);
+// };
 
 export const createOrganization = async ({
   data,

@@ -91,9 +91,9 @@ const ProfileAbout = ({ profile }: { profile: Organization }) => {
         <section className="flex flex-col gap-2 text-neutral-charcoal">
           <Header3>Strategies</Header3>
           <TagGroup>
-            {strategies.map((strategy) => (
-              <Tag>{strategy.label}</Tag>
-            ))}
+            {strategies.map((strategy) =>
+              strategy ? <Tag>{strategy.label}</Tag> : null,
+            )}
           </TagGroup>
         </section>
       ) : null}
