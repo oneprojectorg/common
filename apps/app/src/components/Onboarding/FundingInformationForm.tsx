@@ -120,7 +120,6 @@ export const FundingInformationForm = ({
                           GoFundMe or any platform where supporters can
                           contribute or learn more about how.
                         </span>
-                        <hr className="mt-6" />
                       </div>
                     )}
                   />
@@ -129,6 +128,8 @@ export const FundingInformationForm = ({
             </>
           )}
         />
+
+        <hr />
         <form.AppField
           name="isOfferingFunds"
           children={(field) => (
@@ -208,7 +209,6 @@ export const FundingInformationForm = ({
                                 to they might receive funding from your
                                 organization now or in the future.`}
                               </span>
-                              <hr className="mt-6" />
                             </div>
                           )}
                         />
