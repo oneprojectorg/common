@@ -43,6 +43,7 @@ export const TextField = ({
   labelClassName,
   useTextArea,
   children,
+  isRequired, // we pull this out as it conflicts with other form validation libraries
   ...props
 }: TextFieldProps & {
   ref?: React.RefObject<HTMLInputElement | HTMLTextAreaElement | null>;
@@ -65,7 +66,7 @@ export const TextField = ({
           )}
         >
           {label}
-          {props.isRequired && <span className="text-functional-red"> *</span>}
+          {isRequired && <span className="text-functional-red"> *</span>}
         </Label>
       )}
       <FieldGroup className={fieldClassName}>

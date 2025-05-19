@@ -14,7 +14,7 @@ import { useOnboardingFormStore } from './useOnboardingFormStore';
 
 export const validator = z.object({
   fullName: z
-    .string()
+    .string({ message: 'Enter your full name' })
     .trim()
     .min(1, {
       message: 'Enter your full name',
@@ -23,7 +23,9 @@ export const validator = z.object({
       message: 'Must be at most 200 characters',
     }),
   title: z
-    .string()
+    .string({
+      message: 'Enter your professional title',
+    })
     .trim()
     .min(1, {
       message: 'Enter your professional title',
@@ -57,7 +59,7 @@ export const PersonalDetailsForm = ({
   const form = useAppForm({
     defaultValues: personalDetails,
     validators: {
-      onBlur: validator,
+      onSubmit: validator,
     },
     onSubmit: async ({ value }: { value: FormFields }) => {
       await updateProfile.mutateAsync({
@@ -122,8 +124,8 @@ export const PersonalDetailsForm = ({
           name="fullName"
           children={(field) => (
             <field.TextField
-              label={t('Full Name')}
               isRequired
+              label={t('Full Name')}
               value={field.state.value}
               onBlur={field.handleBlur}
               onChange={field.handleChange}
@@ -138,8 +140,8 @@ export const PersonalDetailsForm = ({
           name="title"
           children={(field) => (
             <field.TextField
-              label={t('Professional title')}
               isRequired
+              label={t('Professional title')}
               value={field.state.value}
               onBlur={field.handleBlur}
               onChange={field.handleChange}

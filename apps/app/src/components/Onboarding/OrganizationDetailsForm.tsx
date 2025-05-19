@@ -90,7 +90,7 @@ export const OrganizationDetailsForm = ({
   const form = useAppForm({
     defaultValues: organizationDetails,
     validators: {
-      onBlur: validator,
+      onSubmit: validator,
     },
     onSubmit: ({ value }) => {
       setOrganizationDetails({ ...value, profileImage, bannerImage }); // Persist to store on submit
@@ -214,7 +214,6 @@ export const OrganizationDetailsForm = ({
           children={(field) => (
             <field.TextField
               label={t('Email')}
-              isRequired
               type="email"
               value={field.state.value as string}
               onBlur={field.handleBlur}
@@ -259,6 +258,7 @@ export const OrganizationDetailsForm = ({
           children={(field) => (
             <field.TextField
               useTextArea
+              isRequired
               label={t('Bio')}
               value={field.state.value as string}
               onBlur={field.handleBlur}

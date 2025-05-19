@@ -235,7 +235,7 @@ export const MultiSelectComboBox = ({
             <input
               ref={inputRef}
               type="text"
-              className="ml-1 min-w-[40px] flex-1 border-none bg-transparent py-1 text-sm outline-none placeholder:text-midGray"
+              className="ml-1 min-w-[40px] flex-1 border-none bg-transparent py-1 text-sm outline-none placeholder:text-midGray group-data-[invalid=true]:outline-functional-red"
               value={inputValue}
               onChange={handleInputChange}
               onKeyDown={handleInputKeyDown}
