@@ -55,8 +55,9 @@ export const NewlyJoinedModal = () => {
       className="inset-shadow-none shadow-green"
       isOpen={modalOpen}
       onOpenChange={handleModalChange}
+      confetti={true}
     >
-      <div className="p-12 text-center">
+      <div className="z-10 p-12 text-center">
         <div className="flex flex-col gap-6">
           <div className="flex flex-col items-center justify-center gap-4">
             <CheckIcon />

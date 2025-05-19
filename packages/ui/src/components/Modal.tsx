@@ -6,6 +6,7 @@ import type { ModalOverlayProps } from 'react-aria-components';
 import { tv } from 'tailwind-variants';
 
 import { cn } from '../lib/utils';
+import { Confetti } from './Confetti';
 import { Header1 } from './Header';
 
 const overlayStyles = tv({
@@ -69,11 +70,13 @@ export const ModalInContext = ({
   className,
   wrapperClassName,
   overlayClassName,
+  confetti,
   ...props
 }: ModalOverlayProps & {
   className?: string;
   wrapperClassName?: string;
   overlayClassName?: string;
+  confetti?: boolean;
 }) => {
   return (
     <ModalOverlay
@@ -82,6 +85,7 @@ export const ModalInContext = ({
         className: cn(overlayClassName),
       })}
     >
+      {confetti && <Confetti />}
       <div className={wrapperClassName}>
         <RACModal {...props} className={modalStyles({ className })} />
       </div>
@@ -94,6 +98,7 @@ export const Modal = (
     className?: string;
     wrapperClassName?: string;
     overlayClassName?: string;
+    confetti?: boolean;
   },
 ) => {
   return <ModalInContext {...props} />;

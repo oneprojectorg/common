@@ -19,11 +19,10 @@ export const OrganizationAvatar = ({
   return (
     <Link href={`/org/${organization.slug}`}>
       <Avatar className={cn('size-12', className)}>
-        {organization.name ? (
+        {organization.avatarImage?.name ? (
           <Image
             src={
               getPublicUrl(
-                // @ts-expect-error
                 organization.avatarImage?.name,
               ) ?? ''
             }
