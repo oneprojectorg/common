@@ -241,6 +241,7 @@ export const OrganizationDetailsForm = ({
           children={(field) => (
             <field.Select
               label={t('Organizational Status')}
+              isRequired
               placeholder={t('Select')}
               selectedKey={field.state.value as string}
               onSelectionChange={field.handleChange}
