@@ -1,7 +1,19 @@
 import type { User } from '@op/supabase/lib';
+import pino from 'pino';
 import spacetime from 'spacetime';
 
 import type { MiddlewareBuilderBase } from '../types';
+
+const logger = pino(
+  { level: 'info' },
+  pino.transport({
+    target: '@axiomhq/pino',
+    options: {
+      dataset: 'common',
+      token: process.env.AXIOM_API_TOKEN,
+    },
+  }),
+);
 
 const withLogger: MiddlewareBuilderBase = async ({
   ctx,
@@ -36,7 +48,8 @@ const withLogger: MiddlewareBuilderBase = async ({
     } else {
       const { error } = res;
 
-      console.log(
+      logger.info(
+        'incoming',
         {
           path,
           type,
