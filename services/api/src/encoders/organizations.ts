@@ -33,9 +33,9 @@ export const organizationsEncoder = createSelectSchema(organizations)
   })
   .extend({
     projects: z.array(projectEncoder).optional(),
-    links: z.array(linksEncoder).default([]),
-    whereWeWork: z.array(taxonomyTermsEncoder).default([]),
-    strategies: z.array(taxonomyTermsEncoder).default([]),
+    links: z.array(linksEncoder).optional().default([]),
+    whereWeWork: z.array(taxonomyTermsEncoder).optional().default([]),
+    strategies: z.array(taxonomyTermsEncoder).optional().optional().default([]),
     headerImage: storageItemEncoder.nullish(),
     avatarImage: storageItemEncoder.nullish(),
   });
