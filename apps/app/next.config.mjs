@@ -41,7 +41,7 @@ const config = {
     clientInstrumentationHook: true,
   },
 
-  webpack: (cfg) => {
+  webpack: (cfg, { isServer }) => {
     // Grab the existing rule that handles SVG imports
     const fileLoaderRule = cfg.module.rules.find((rule) =>
       rule.test?.test?.('.svg'),
@@ -73,6 +73,13 @@ const config = {
     // Modify the file loader rule to ignore *.svg, since we have it handled now.
     fileLoaderRule.exclude = /\.svg$/i;
 
+    if (!isServer) {
+      cfg.resolve.fallback = {
+        // Disable the 'tls' module on the client side
+        tls: false,
+      };
+    }
+
     return cfg;
   },
   async rewrites() {
@@ -99,13 +106,6 @@ const config = {
   skipTrailingSlashRedirect: true,
   // productionBrowserSourceMaps: true,
 };
-
-if (!isServer) {
-  config.resolve.fallback = {
-    // Disable the 'tls' module on the client side
-    tls: false,
-  };
-}
 
 export default withBundleAnalyzer(
   withNextIntl(withTranspiledWorkspacesForNext(config)),
