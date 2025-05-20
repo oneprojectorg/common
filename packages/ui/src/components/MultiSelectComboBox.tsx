@@ -44,7 +44,7 @@ export const MultiSelectComboBox = ({
   const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
 
   const selectedOptions = value ?? [];
-  const setSelectedOptions = onChange ?? (() => { });
+  const setSelectedOptions = onChange ?? (() => {});
 
   // Handle outside clicks to close dropdown
   useEffect(() => {
@@ -223,7 +223,7 @@ export const MultiSelectComboBox = ({
       <div className="relative" ref={dropdownRef}>
         {/* Dropdown button / Selected options display */}
         <div
-          className="flex min-h-10 w-full cursor-pointer flex-wrap items-center rounded-md border border-offWhite bg-white px-4 py-2 text-sm"
+          className="flex min-h-10 w-full cursor-pointer flex-wrap items-center rounded-md border border-offWhite bg-white px-4 py-2 text-base"
           onClick={() => {
             // Only toggle if input is NOT focused
             if (document.activeElement !== inputRef.current) {
@@ -235,7 +235,7 @@ export const MultiSelectComboBox = ({
             <input
               ref={inputRef}
               type="text"
-              className="ml-1 min-w-[40px] flex-1 border-none bg-transparent py-1 pr-7 text-sm outline-none placeholder:text-neutral-gray4 group-data-[invalid=true]:outline-functional-red"
+              className="ml-1 min-w-[40px] flex-1 border-none bg-transparent py-1 pr-7 text-base outline-none placeholder:text-neutral-gray4 group-data-[invalid=true]:outline-functional-red"
               value={inputValue}
               onChange={handleInputChange}
               onKeyDown={handleInputKeyDown}
@@ -286,10 +286,11 @@ export const MultiSelectComboBox = ({
               {filteredItems.map((option, idx) => (
                 <li
                   key={option.id}
-                  className={`flex cursor-pointer items-center px-3 py-2 text-sm hover:bg-gray-100 ${selectedOptions.some((item) => item.id === option.id)
+                  className={`flex cursor-pointer items-center px-3 py-2 text-base hover:bg-gray-100 ${
+                    selectedOptions.some((item) => item.id === option.id)
                       ? 'bg-blue-50'
                       : ''
-                    } ${highlightedIndex === idx ? 'bg-blue-100' : ''}`}
+                  } ${highlightedIndex === idx ? 'bg-blue-100' : ''}`}
                   onMouseEnter={() => setHighlightedIndex(idx)}
                   onMouseLeave={() => setHighlightedIndex(-1)}
                   onMouseDown={(e) => e.preventDefault()}
