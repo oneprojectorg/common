@@ -4,6 +4,8 @@ import { cn } from '@op/ui/utils';
 import { ReactNode } from 'react';
 import { LuLeaf } from 'react-icons/lu';
 
+import { Link } from '@/lib/i18n';
+
 import { OrganizationAvatar } from '../OrganizationAvatar';
 
 // import { useTranslations } from '@/lib/i18n';
@@ -118,7 +120,9 @@ export const PostFeed = ({
               <FeedMain>
                 <FeedHeader>
                   <Header3 className="font-medium leading-5">
-                    {organization?.name}
+                    <Link href={`/org/${organization?.slug}`}>
+                      {organization?.name}
+                    </Link>
                   </Header3>
                   {post?.createdAt ? (
                     <span className="text-xs text-darkGray">
