@@ -56,7 +56,7 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
                   onPress={() =>
                     approve.mutate({
                       sourceOrganizationId: org.id,
-                      targetOrganizationId: organization.id,
+                      organizationId: organization.id,
                     })
                   }
                 >

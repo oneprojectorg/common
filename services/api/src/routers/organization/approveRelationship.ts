@@ -9,7 +9,7 @@ import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
 const inputSchema = z.object({
-  targetOrganizationId: z
+  organizationId: z
     .string()
     .uuid({ message: 'Invalid target organization ID' }),
   sourceOrganizationId: z.string().uuid({ message: 'Invalid organization ID' }),
@@ -35,7 +35,8 @@ export const approveRelationshipRouter = router({
     .output(z.boolean())
     .mutation(async ({ ctx, input }) => {
       const { user } = ctx;
-      const { targetOrganizationId, sourceOrganizationId } = input;
+      const { organizationId: targetOrganizationId, sourceOrganizationId } =
+        input;
 
       try {
         const session = await getSession();
