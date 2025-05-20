@@ -16,6 +16,7 @@ import { Link } from '@/lib/i18n';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { ImageHeader } from '@/components/ImageHeader';
 import { NewlyJoinedModal } from '@/components/NewlyJoinedModal';
+import { OrganizationAvatar } from '@/components/OrganizationAvatar';
 import {
   CarouselItem,
   OrganizationCarousel,
@@ -68,25 +69,14 @@ const NewOrganizationsSuspense = () => {
     <>
       <div className="hidden flex-col gap-6 sm:flex">
         {organizations?.map((org) => {
-          const { avatarImage } = org;
-          const avatarUrl = getPublicUrl(avatarImage?.name);
-
           return (
             <div key={org.id}>
               <Link
                 className="flex items-center gap-4"
                 href={`/org/${org.slug}`}
               >
-                <Avatar>
-                  {avatarUrl ? (
-                    <Image
-                      src={avatarUrl}
-                      alt=""
-                      fill
-                      className="object-cover"
-                    />
-                  ) : null}
-                </Avatar>
+                <OrganizationAvatar organization={org} className="size-8" />
+
                 <div className="flex flex-col text-sm">
                   <span>{org.name}</span>
                   <span>{org.city}</span>

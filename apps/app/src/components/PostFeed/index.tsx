@@ -1,10 +1,10 @@
-import { getPublicUrl } from '@/utils';
 import type { PostToOrganization } from '@op/api/encoders';
 import { Header3 } from '@op/ui/Header';
 import { cn } from '@op/ui/utils';
-import Image from 'next/image';
 import { ReactNode } from 'react';
 import { LuLeaf } from 'react-icons/lu';
+
+import { OrganizationAvatar } from '../OrganizationAvatar';
 
 // import { useTranslations } from '@/lib/i18n';
 
@@ -109,22 +109,12 @@ export const PostFeed = ({
     <div className={cn('flex flex-col gap-8 pb-8', className)}>
       {posts.length > 0 ? (
         posts.map(({ organization, post }, i) => {
-          const profileImageUrl = getPublicUrl(organization?.avatarImage?.name);
-
           return (
             <FeedItem key={i}>
-              <FeedAvatar>
-                {profileImageUrl ? (
-                  <Image
-                    src={profileImageUrl}
-                    alt=""
-                    fill
-                    className="!size-8 max-h-8 max-w-8 rounded-full"
-                  />
-                ) : (
-                  <div className="size-8 rounded-full border bg-white" />
-                )}
-              </FeedAvatar>
+              <OrganizationAvatar
+                organization={organization}
+                className="!size-8 max-h-8 max-w-8 rounded-full"
+              />
               <FeedMain>
                 <FeedHeader>
                   <Header3 className="font-medium leading-5">

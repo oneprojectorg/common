@@ -32,9 +32,9 @@ const UserAvatarMenu = () => {
   });
 
   return (
-    <Avatar placeholder={user?.currentOrganization?.name}>
-      <MenuTrigger>
-        <Button unstyled>
+    <MenuTrigger>
+      <Button unstyled>
+        <Avatar placeholder={user?.currentOrganization?.name}>
           {user?.currentOrganization?.avatarImage?.name ? (
             <Image
               src={
@@ -45,39 +45,39 @@ const UserAvatarMenu = () => {
               height={48}
             />
           ) : null}
-        </Button>
+        </Avatar>
+      </Button>
 
-        <Menu className="min-w-72">
-          {user?.organizationUsers?.map((orgUser) => (
-            <MenuItem
-              onAction={() =>
-                void switchOrganization.mutate({
-                  // @ts-expect-error this is a backend issue to be resolved
-                  organizationId: orgUser.organization?.id,
-                })
-              }
-            >
-              <Avatar placeholder={orgUser.organization?.name}>
-                {orgUser.organization?.avatarImage?.name ? (
-                  <Image
-                    src={
-                      getPublicUrl(orgUser.organization.avatarImage.name) ?? ''
-                    }
-                    alt="User avatar"
-                    width={48}
-                    height={48}
-                  />
-                ) : null}
-              </Avatar>
-              {orgUser.organization?.name}
-            </MenuItem>
-          ))}
-          <MenuItem id="logout" onAction={() => void logout.refetch()}>
-            Logout
+      <Menu className="min-w-72">
+        {user?.organizationUsers?.map((orgUser) => (
+          <MenuItem
+            onAction={() =>
+              void switchOrganization.mutate({
+                // @ts-expect-error this is a backend issue to be resolved
+                organizationId: orgUser.organization?.id,
+              })
+            }
+          >
+            <Avatar placeholder={orgUser.organization?.name}>
+              {orgUser.organization?.avatarImage?.name ? (
+                <Image
+                  src={
+                    getPublicUrl(orgUser.organization.avatarImage.name) ?? ''
+                  }
+                  alt="User avatar"
+                  width={48}
+                  height={48}
+                />
+              ) : null}
+            </Avatar>
+            {orgUser.organization?.name}
           </MenuItem>
-        </Menu>
-      </MenuTrigger>
-    </Avatar>
+        ))}
+        <MenuItem id="logout" onAction={() => void logout.refetch()}>
+          Logout
+        </MenuItem>
+      </Menu>
+    </MenuTrigger>
   );
 };
 

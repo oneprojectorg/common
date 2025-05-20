@@ -7,7 +7,9 @@ import Image from 'next/image';
 import { Link } from '@/lib/i18n';
 
 type relationshipOrganization =
-  RouterOutput['organization']['listRelationships']['organizations'][number];
+  | RouterOutput['organization']['listRelationships']['organizations'][number]
+  | RouterOutput['organization']['list'][number]
+  | RouterOutput['organization']['listPosts'][number]['organization'];
 
 export const OrganizationAvatar = ({
   organization,
@@ -16,9 +18,16 @@ export const OrganizationAvatar = ({
   organization: relationshipOrganization;
   className?: string;
 }) => {
+  if (!organization) {
+    return null;
+  }
+
   return (
     <Link href={`/org/${organization.slug}`}>
-      <Avatar className={cn('size-12', className)}>
+      <Avatar
+        className={cn('size-12', className)}
+        placeholder={organization.name}
+      >
         {
           // @ts-expect-error
           organization.avatarImage?.name ? (
@@ -33,11 +42,7 @@ export const OrganizationAvatar = ({
               height={80}
               alt={organization.name}
             />
-          ) : (
-            <div className="flex size-8 items-center justify-center text-neutral-gray3">
-              {organization.name?.slice(0, 1) ?? ''}
-            </div>
-          )
+          ) : null
         }
       </Avatar>
     </Link>
