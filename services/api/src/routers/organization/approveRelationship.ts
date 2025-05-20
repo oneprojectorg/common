@@ -32,6 +32,7 @@ export const approveRelationshipRouter = router({
     .use(withAuthenticated)
     .meta(meta)
     .input(inputSchema)
+    .output(z.boolean())
     .mutation(async ({ ctx, input }) => {
       const { user } = ctx;
       const { targetOrganizationId, organizationId } = input;
