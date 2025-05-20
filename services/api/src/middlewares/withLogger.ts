@@ -1,4 +1,4 @@
-import type { User } from '@op/supabase/lib';
+// import type { User } from '@op/supabase/lib';
 import spacetime from 'spacetime';
 
 import type { MiddlewareBuilderBase } from '../types';
@@ -44,12 +44,12 @@ async function sendLogsToAxiom(events: Array<Record<string, any>>) {
 
 const withLogger: MiddlewareBuilderBase = async ({
   ctx,
-  path,
-  type,
-  getRawInput,
+  // path,
+  // type,
+  // getRawInput,
   next,
 }) => {
-  const events: Array<Record<string, any>> = [];
+  // const events: Array<Record<string, any>> = [];
   const start = Date.now();
   const logger = {
     info: (message: string) => {
@@ -71,51 +71,51 @@ const withLogger: MiddlewareBuilderBase = async ({
   });
   const end = Date.now();
 
-  const rawInput = await getRawInput();
+  // const rawInput = await getRawInput();
 
   const logHeadline = `[${spacetime(ctx.time).format('nice')}] - ${end - start}ms`;
 
-  type MiddlewareResult = typeof result;
+  // type MiddlewareResult = typeof result;
 
-  const logInfo = (res: MiddlewareResult) => {
-    // eslint-disable-next-line ts/no-unsafe-member-access
-    const userData = (res as any)?.ctx?.user as User | undefined | null;
-    const user = userData
-      ? {
-          id: userData?.id,
-          email: userData?.email,
-          role: userData?.role,
-        }
-      : undefined;
+  // const logInfo = (res: MiddlewareResult) => {
+  // // eslint-disable-next-line ts/no-unsafe-member-access
+  // const userData = (res as any)?.ctx?.user as User | undefined | null;
+  // const user = userData
+  // ? {
+  // id: userData?.id,
+  // email: userData?.email,
+  // role: userData?.role,
+  // }
+  // : undefined;
 
-    if (res.ok) {
-      console.log({ path, type, rawInput, user, result: res }, '\n');
-    } else {
-      const { error } = res;
+  // if (res.ok) {
+  // console.log({ path, type, rawInput, user, result: res }, '\n');
+  // } else {
+  // const { error } = res;
 
-      console.log(
-        'incoming',
-        {
-          path,
-          type,
-          rawInput,
-          ctx,
-          user,
-          error: {
-            name: error.name,
-            message: error.message,
-            code: error.code,
-            cause: error.cause,
-          },
-          result: {
-            ...res,
-            error,
-          },
-        },
-        '\n',
-      );
-    }
-  };
+  // console.log(
+  // 'incoming',
+  // {
+  // path,
+  // type,
+  // rawInput,
+  // ctx,
+  // user,
+  // error: {
+  // name: error.name,
+  // message: error.message,
+  // code: error.code,
+  // cause: error.cause,
+  // },
+  // result: {
+  // ...res,
+  // error,
+  // },
+  // },
+  // '\n',
+  // );
+  // }
+  // };
 
   if (result.ok) {
     console.log(`✔ OK:\t${ctx.requestId}\n\t${logHeadline}\n\tIP: ${ctx.ip}`);
