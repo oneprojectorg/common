@@ -38,7 +38,7 @@ dotenv.config({
 const config = {
   experimental: {
     // reactCompiler: true,
-    clientInstrumentationHook: true,
+    instrumentationHook: true,
   },
 
   webpack: (cfg, { isServer }) => {
