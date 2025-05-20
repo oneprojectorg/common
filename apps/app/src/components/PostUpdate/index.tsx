@@ -1,4 +1,3 @@
-import { getPublicUrl } from '@/utils';
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import type { PostToOrganization } from '@op/api/encoders';
@@ -6,14 +5,15 @@ import { Button } from '@op/ui/Button';
 import { TextArea } from '@op/ui/Field';
 import { Form } from '@op/ui/Form';
 import { cn } from '@op/ui/utils';
-import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 import { LuImage, LuPaperclip } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { FeedAvatar, FeedItem, FeedMain } from '@/components/PostFeed';
+import { FeedItem, FeedMain } from '@/components/PostFeed';
+
+import { OrganizationAvatar } from '../OrganizationAvatar';
 
 export const PostUpdate = ({
   targetOrganizationId,
@@ -86,8 +86,6 @@ export const PostUpdate = ({
     }
   };
 
-  const profileImageUrl = getPublicUrl(profile.avatarImage?.name);
-
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
     if (textareaRef.current) {
@@ -103,18 +101,10 @@ export const PostUpdate = ({
   return (
     <div className={cn('flex flex-col gap-8', className)}>
       <FeedItem>
-        <FeedAvatar>
-          {profileImageUrl ? (
-            <Image
-              src={profileImageUrl}
-              alt=""
-              fill
-              className="!size-8 max-h-8 max-w-8 rounded-full"
-            />
-          ) : (
-            <div className="size-8 rounded-full border bg-white" />
-          )}
-        </FeedAvatar>
+        <OrganizationAvatar
+          organization={profile}
+          className="size-8 rounded-full border bg-white"
+        />
         <FeedMain>
           <Form onSubmit={handleSubmit} className="flex w-full flex-row gap-4">
             <TextArea
