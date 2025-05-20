@@ -137,7 +137,9 @@ export const OrganizationDetailsForm = ({
                   mimeType: file.type,
                 });
 
+                console.log('UPLOADED', JSON.stringify(res));
                 if (res?.url) {
+                  console.log('UPLOADED url', res.url);
                   setBannerImage(res);
                 }
               };
@@ -155,11 +157,13 @@ export const OrganizationDetailsForm = ({
 
               reader.onload = async (e) => {
                 const base64 = (e.target?.result as string)?.split(',')[1];
+                console.log('FILE LOADED in client');
 
                 if (!base64) {
                   return;
                 }
 
+                console.log('FILE LOADED in client: has bas64');
                 const dataUrl = `data:${file.type};base64,${base64}`;
 
                 setProfileImage({ url: dataUrl });

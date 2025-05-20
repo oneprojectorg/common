@@ -74,6 +74,7 @@ export const uploadAvatarImage = router({
 
         buffer = Buffer.from(base64, 'base64');
       } catch (_err) {
+        console.log('Error decoding base64', _err);
         throw new TRPCError({
           code: 'BAD_REQUEST',
           message: 'Invalid base64 encoding',
@@ -94,6 +95,8 @@ export const uploadAvatarImage = router({
       const bucket = 'assets';
       const filePath = `${ctx.user.id}/temp/${Date.now()}_${fileName}`;
 
+      console.log('UPLOADING FILE', filePath);
+
       const { error: uploadError, data } = await supabase.storage
         .from(bucket)
         .upload(filePath, buffer, {
@@ -102,6 +105,7 @@ export const uploadAvatarImage = router({
         });
 
       if (uploadError) {
+        console.log('UPLOAD ERROR', uploadError);
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: uploadError.message,
@@ -112,13 +116,18 @@ export const uploadAvatarImage = router({
       const { data: signedUrlData, error: signedUrlError } =
         await supabase.storage.from(bucket).createSignedUrl(filePath, 60 * 60); // 1 hour
 
+      console.log('GOT SIGNED URL', signedUrlData);
+
       if (signedUrlError || !signedUrlData) {
+        console.log('SIGNED URL ERROR', signedUrlError);
+
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: signedUrlError?.message || 'Could not get signed url',
         });
       }
 
+      console.log('RETURNING UPLOAD URL', signedUrlData.signedUrl, filePath);
       return {
         url: signedUrlData.signedUrl,
         path: filePath,
