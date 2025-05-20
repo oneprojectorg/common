@@ -1,4 +1,5 @@
 // import type { User } from '@op/supabase/lib';
+import { waitUntil } from '@vercel/functions';
 import spacetime from 'spacetime';
 
 import type { MiddlewareBuilderBase } from '../types';
@@ -53,13 +54,15 @@ const withLogger: MiddlewareBuilderBase = async ({
   const start = Date.now();
   const logger = {
     info: (message: string) => {
-      sendLogsToAxiom([
-        {
-          start,
-          level: 'info',
-          message,
-        },
-      ]);
+      waitUntil(
+        sendLogsToAxiom([
+          {
+            start,
+            level: 'info',
+            message,
+          },
+        ]),
+      );
     },
   };
 

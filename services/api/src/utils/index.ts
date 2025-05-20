@@ -25,7 +25,7 @@ export function sanitizeS3Filename(filename: string) {
     .replace(/_+/g, '_');
 
   // Ensure the key doesn't start with these special characters
-  sanitized = sanitized.replace(/^[!-.*]/g, '');
+  sanitized = sanitized.replace(/^[!-.* ]/g, '');
 
   // Limit length (optional, modify as needed)
   const maxLength = 1024; // S3 allows up to 1024 bytes for key length
