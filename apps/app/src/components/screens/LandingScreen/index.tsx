@@ -192,7 +192,7 @@ const OrganizationFacePile = () => {
       const avatarUrl = getPublicUrl(avatarImage?.name);
       return (
         <Link key={org.id} href={`/org/${org.slug}`}>
-          <Avatar>
+          <Avatar placeholder={org.name}>
             {avatarUrl ? (
               <Image src={avatarUrl} alt="" fill className="object-cover" />
             ) : null}

@@ -21,3 +21,12 @@ export function composeTailwindRenderProps<T>(
 ): string | ((v: T) => string) {
   return composeRenderProps(className, (cls) => cn(tw, cls));
 }
+
+export const GRADIENTS = [
+  'bg-gradient',
+  'bg-tealGreen',
+  'bg-redTeal',
+  'bg-blueGreen',
+  'bg-orangePurple',
+  // 'bg-yellowOrange',
+];

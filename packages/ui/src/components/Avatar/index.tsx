@@ -1,14 +1,21 @@
-import { ReactNode } from 'react';
+import { ReactNode, useMemo } from 'react';
 
 import { cn } from '../../lib/utils';
+import { GRADIENTS } from '../../utils';
 
 export const Avatar = ({
   children,
+  placeholder,
   className,
 }: {
   children?: ReactNode;
+  placeholder?: string;
   className?: string;
 }) => {
+  const gradientBg = useMemo(
+    () => GRADIENTS[Math.floor(Math.random() * GRADIENTS.length)],
+    [],
+  );
   return (
     <div
       className={cn(
@@ -16,7 +23,18 @@ export const Avatar = ({
         className,
       )}
     >
-      {children}
+      {children === null ? (
+        <div
+          className={cn(
+            'bg-yellowOrange flex size-full items-center justify-center text-white',
+            gradientBg,
+          )}
+        >
+          {placeholder?.slice(0, 1) ?? ''}
+        </div>
+      ) : (
+        children
+      )}
     </div>
   );
 };

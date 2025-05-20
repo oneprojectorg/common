@@ -32,7 +32,7 @@ const UserAvatarMenu = () => {
   });
 
   return (
-    <Avatar>
+    <Avatar placeholder={user?.currentOrganization?.name}>
       <MenuTrigger>
         <Button unstyled>
           {user?.currentOrganization?.avatarImage?.name ? (
@@ -44,11 +44,7 @@ const UserAvatarMenu = () => {
               width={48}
               height={48}
             />
-          ) : (
-            <div className="flex size-8 items-center justify-center text-neutral-gray3">
-              {user?.currentOrganization?.name?.slice(0, 1) ?? ''}
-            </div>
-          )}
+          ) : null}
         </Button>
 
         <Menu className="min-w-72">
@@ -61,7 +57,7 @@ const UserAvatarMenu = () => {
                 })
               }
             >
-              <Avatar>
+              <Avatar placeholder={orgUser.organization?.name}>
                 {orgUser.organization?.avatarImage?.name ? (
                   <Image
                     src={
@@ -71,11 +67,7 @@ const UserAvatarMenu = () => {
                     width={48}
                     height={48}
                   />
-                ) : (
-                  <div className="flex size-8 items-center justify-center text-neutral-gray3">
-                    {orgUser.organization?.name?.slice(0, 1) ?? ''}
-                  </div>
-                )}
+                ) : null}
               </Avatar>
               {orgUser.organization?.name}
             </MenuItem>
