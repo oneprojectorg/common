@@ -108,7 +108,7 @@ export const PostFeed = ({
   return (
     <div className={cn('flex flex-col gap-8 pb-8', className)}>
       {posts.length > 0 ? (
-        posts.map(({ organization, post: { content, createdAt } }, i) => {
+        posts.map(({ organization, post }, i) => {
           const profileImageUrl = getPublicUrl(organization?.avatarImage?.name);
 
           return (
@@ -130,13 +130,13 @@ export const PostFeed = ({
                   <Header3 className="font-medium leading-5">
                     {organization?.name}
                   </Header3>
-                  {createdAt ? (
+                  {post.createdAt ? (
                     <span className="text-xs text-darkGray">
                       {formatRelativeTime(createdAt)}
                     </span>
                   ) : null}
                 </FeedHeader>
-                <FeedContent>{content}</FeedContent>
+                <FeedContent>{post.content}</FeedContent>
               </FeedMain>
             </FeedItem>
           );
