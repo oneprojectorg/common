@@ -32,6 +32,7 @@
     "drizzle-zod": "^0.7.0",
     "fast-xml-parser": "^5.2.1",
     "nanoid": "5.1.2",
+    "next-axiom": "^1.9.1",
     "node-geonames-client": "^0.0.2",
     "pino": "^9.7.0",
     "react": "^19.0.0",

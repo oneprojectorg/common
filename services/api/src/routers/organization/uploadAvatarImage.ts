@@ -49,6 +49,8 @@ export const uploadAvatarImage = router({
     )
     .mutation(async ({ input, ctx }) => {
       const { file, fileName, mimeType } = input;
+      // @ts-ignore
+      const { logger } = ctx;
 
       const sanitizedFileName = sanitizeS3Filename(fileName);
       if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
@@ -97,7 +99,7 @@ export const uploadAvatarImage = router({
       const bucket = 'assets';
       const filePath = `${ctx.user.id}/temp/${Date.now()}_${sanitizedFileName}`;
 
-      console.log('UPLOADING FILE', filePath);
+      logger.info('UPLOADING FILE' + filePath);
 
       const { error: uploadError, data } = await supabase.storage
         .from(bucket)
@@ -118,10 +120,10 @@ export const uploadAvatarImage = router({
       const { data: signedUrlData, error: signedUrlError } =
         await supabase.storage.from(bucket).createSignedUrl(filePath, 60 * 60); // 1 hour
 
-      console.log('GOT SIGNED URL', signedUrlData);
+      logger.info('GOT SIGNED URL' + signedUrlData);
 
       if (signedUrlError || !signedUrlData) {
-        console.log('SIGNED URL ERROR', signedUrlError);
+        logger.info('SIGNED URL ERROR' + signedUrlError);
 
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
@@ -129,7 +131,9 @@ export const uploadAvatarImage = router({
         });
       }
 
-      console.log('RETURNING UPLOAD URL', signedUrlData.signedUrl, filePath);
+      logger.info(
+        'RETURNING UPLOAD URL' + signedUrlData.signedUrl + ' - ' + filePath,
+      );
       return {
         url: signedUrlData.signedUrl,
         path: filePath,

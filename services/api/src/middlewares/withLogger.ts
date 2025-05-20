@@ -1,20 +1,46 @@
-import '@axiomhq/pino';
 import type { User } from '@op/supabase/lib';
-import pino from 'pino';
 import spacetime from 'spacetime';
 
 import type { MiddlewareBuilderBase } from '../types';
 
-const logger = pino(
-  { level: 'info' },
-  pino.transport({
-    target: '@axiomhq/pino',
-    options: {
-      dataset: 'common',
-      token: process.env.AXIOM_API_TOKEN,
-    },
-  }),
-);
+async function sendLogsToAxiom(events: Array<Record<string, any>>) {
+  try {
+    const response = await fetch(
+      `https://api.axiom.co/v1/datasets/common/ingest`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${process.env.AXIOM_API_TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(events),
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error(`Error: ${response.status} - ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    console.log('Logs sent successfully:', data);
+    return data;
+  } catch (error) {
+    // @ts-ignore
+    console.error('Error sending logs to Axiom:', error.message);
+    throw error;
+  }
+}
+
+// const logger = pino(
+// { level: 'info' },
+// pino.transport({
+// target: '@axiomhq/pino',
+// options: {
+// dataset: 'common',
+// token: process.env.AXIOM_API_TOKEN,
+// },
+// }),
+// );
 
 const withLogger: MiddlewareBuilderBase = async ({
   ctx,
@@ -23,8 +49,24 @@ const withLogger: MiddlewareBuilderBase = async ({
   getRawInput,
   next,
 }) => {
+  const events: Array<Record<string, any>> = [];
   const start = Date.now();
-  const result = await next({ ctx });
+  const logger = {
+    info: (message: string) => {
+      events.push({
+        start,
+        level: 'info',
+        message,
+      });
+    },
+  };
+
+  const result = await next({
+    ctx: {
+      ...ctx,
+      logger,
+    },
+  });
   const end = Date.now();
 
   const rawInput = await getRawInput();
@@ -49,7 +91,7 @@ const withLogger: MiddlewareBuilderBase = async ({
     } else {
       const { error } = res;
 
-      logger.info(
+      console.log(
         'incoming',
         {
           path,
@@ -84,8 +126,11 @@ const withLogger: MiddlewareBuilderBase = async ({
   }
 
   logInfo(result);
+  if (events.length > 0) {
+    await sendLogsToAxiom(events);
+    events.length = 0;
+  }
 
-  logger.flush();
   return result;
 };
 
