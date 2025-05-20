@@ -1,6 +1,7 @@
 import { createServerClient } from '@op/supabase/lib';
 import { TRPCError } from '@trpc/server';
 import { Buffer } from 'buffer';
+import { sanitizeS3Filename } from 'src/utils';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
@@ -49,6 +50,7 @@ export const uploadAvatarImage = router({
     .mutation(async ({ input, ctx }) => {
       const { file, fileName, mimeType } = input;
 
+      const sanitizedFileName = sanitizeS3Filename(fileName);
       if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
@@ -93,7 +95,7 @@ export const uploadAvatarImage = router({
         },
       );
       const bucket = 'assets';
-      const filePath = `${ctx.user.id}/temp/${Date.now()}_${fileName}`;
+      const filePath = `${ctx.user.id}/temp/${Date.now()}_${sanitizedFileName}`;
 
       console.log('UPLOADING FILE', filePath);
 
