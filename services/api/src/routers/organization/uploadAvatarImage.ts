@@ -1,7 +1,6 @@
 import { createServerClient } from '@op/supabase/lib';
 import { TRPCError } from '@trpc/server';
 import { Buffer } from 'buffer';
-import { sanitizeS3Filename } from 'src/utils';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
@@ -9,6 +8,7 @@ import withAuthenticated from '../../middlewares/withAuthenticated';
 import withDB from '../../middlewares/withDB';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
+import { sanitizeS3Filename } from '../../utils';
 
 const ALLOWED_MIME_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
 
