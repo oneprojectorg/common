@@ -132,7 +132,7 @@ export const PostFeed = ({
                   </Header3>
                   {post.createdAt ? (
                     <span className="text-xs text-darkGray">
-                      {formatRelativeTime(createdAt)}
+                      {formatRelativeTime(post.createdAt)}
                     </span>
                   ) : null}
                 </FeedHeader>
