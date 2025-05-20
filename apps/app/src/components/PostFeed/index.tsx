@@ -120,13 +120,13 @@ export const PostFeed = ({
                   <Header3 className="font-medium leading-5">
                     {organization?.name}
                   </Header3>
-                  {post.createdAt ? (
+                  {post?.createdAt ? (
                     <span className="text-xs text-darkGray">
-                      {formatRelativeTime(post.createdAt)}
+                      {formatRelativeTime(post?.createdAt)}
                     </span>
                   ) : null}
                 </FeedHeader>
-                <FeedContent>{post.content}</FeedContent>
+                <FeedContent>{post?.content}</FeedContent>
               </FeedMain>
             </FeedItem>
           );
