@@ -1,14 +1,12 @@
-import dotenv from 'dotenv';
-
 import { withTranspiledWorkspacesForNext } from '@op/ui/tailwind-utils';
+import dotenv from 'dotenv';
 
 try {
   if (process.env.NODE_ENV === 'development') {
     process.stdout.write(`\x1B]2;${'API'}\x1B\x5C`);
     process.stdout.write(`\x1B];${'API'}\x07`);
   }
-}
-catch (error) {
+} catch (error) {
   console.error(error);
   // Ignore error
 }
@@ -29,9 +27,20 @@ dotenv.config({
 
 /** @type {import('next').NextConfig} */
 const config = {
+  experimental: {
+    serverComponentsExternalPackages: [
+      'sharp',
+      'onnxruntime-node',
+      'thread-stream',
+      'pino',
+      'pino-worker',
+      '@axiomhq/pino',
+    ],
+    instrumentationHook: true,
+  },
   webpack: (cfg) => {
     // Grab the existing rule that handles SVG imports
-    const fileLoaderRule = cfg.module.rules.find(rule =>
+    const fileLoaderRule = cfg.module.rules.find((rule) =>
       rule.test?.test?.('.svg'),
     );
 

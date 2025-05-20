@@ -73,10 +73,6 @@ const withLogger: MiddlewareBuilderBase = async ({
     }
   };
 
-  const logLine = () => {
-    console.log('---------------------------------------------');
-  };
-
   if (result.ok) {
     console.log(`✔ OK:\t${ctx.requestId}\n\t${logHeadline}\n\tIP: ${ctx.ip}`);
   } else if (result.error) {
@@ -87,9 +83,9 @@ const withLogger: MiddlewareBuilderBase = async ({
     );
   }
 
-  logLine();
   logInfo(result);
 
+  logger.flush();
   return result;
 };
 
