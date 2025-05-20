@@ -61,9 +61,11 @@ export const getRelatedOrganizations = async ({
   //
 
   const where = () =>
-    or(
-      eq(organizationRelationships.sourceOrganizationId, orgId),
-      eq(organizationRelationships.targetOrganizationId, orgId),
+    and(
+      or(
+        eq(organizationRelationships.sourceOrganizationId, orgId),
+        eq(organizationRelationships.targetOrganizationId, orgId),
+      ),
       ...(pending !== null
         ? [eq(organizationRelationships.pending, pending)]
         : []),
