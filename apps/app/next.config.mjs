@@ -36,9 +36,10 @@ dotenv.config({
 
 /** @type {import('next').NextConfig} */
 const config = {
-  //   experimental: {
-  //     reactCompiler: true,
-  //   },
+  experimental: {
+    // reactCompiler: true,
+    clientInstrumentationHook: true,
+  },
 
   webpack: (cfg) => {
     // Grab the existing rule that handles SVG imports
@@ -98,6 +99,13 @@ const config = {
   skipTrailingSlashRedirect: true,
   // productionBrowserSourceMaps: true,
 };
+
+if (!isServer) {
+  config.resolve.fallback = {
+    // Disable the 'tls' module on the client side
+    tls: false,
+  };
+}
 
 export default withBundleAnalyzer(
   withNextIntl(withTranspiledWorkspacesForNext(config)),

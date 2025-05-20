@@ -7,7 +7,11 @@ import type { Metadata, Viewport } from 'next';
 import { Inter, Roboto, Roboto_Mono, Roboto_Serif } from 'next/font/google';
 import Script from 'next/script';
 
+import { register } from '../../instrumentation';
 import { PostHogProvider } from '../components/PostHogProvider';
+
+// Register Axiom logging
+register();
 
 const roboto = Roboto({
   subsets: ['latin'],
