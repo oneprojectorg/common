@@ -9,7 +9,7 @@ import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
 const inputSchema = z.object({
-  organizationId: z
+  targetOrganizationId: z
     .string()
     .uuid({ message: 'Invalid target organization ID' }),
   sourceOrganizationId: z.string().uuid({ message: 'Invalid organization ID' }),
@@ -19,7 +19,7 @@ const meta: OpenApiMeta = {
   openapi: {
     enabled: true,
     method: 'POST',
-    path: '/organization/{organizationId}/relationships/approve',
+    path: '/organization/{targetOrganizationId}/relationships/approve',
     protect: true,
     tags: ['organization', 'relationships'],
     summary: 'Approve an organizations relationships',
@@ -35,8 +35,7 @@ export const approveRelationshipRouter = router({
     .output(z.boolean())
     .mutation(async ({ ctx, input }) => {
       const { user } = ctx;
-      const { organizationId: targetOrganizationId, sourceOrganizationId } =
-        input;
+      const { targetOrganizationId, sourceOrganizationId } = input;
 
       try {
         const session = await getSession();
