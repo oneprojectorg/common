@@ -1,3 +1,4 @@
+import '@axiomhq/pino';
 import type { User } from '@op/supabase/lib';
 import pino from 'pino';
 import spacetime from 'spacetime';
