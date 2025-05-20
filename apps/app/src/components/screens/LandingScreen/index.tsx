@@ -258,7 +258,7 @@ const LandingScreenFeeds = ({
 }) => {
   const NewOrganizationsList = () => {
     return (
-      <Surface className="flex flex-col gap-6 border-none sm:border sm:p-6">
+      <Surface className="flex flex-col gap-6 border-0 sm:border sm:p-6">
         <Header3 className="text-title-sm">New Organizations</Header3>
         <ErrorBoundary fallback={<div>Could not load organizations</div>}>
           <Suspense fallback={<SkeletonLine lines={5} />}>
@@ -273,7 +273,7 @@ const LandingScreenFeeds = ({
     return (
       <>
         <Suspense fallback={<Skeleton className="h-full w-full" />}>
-          <Surface className="mb-8 border-none p-0 pt-5 sm:mb-4 sm:border sm:p-4">
+          <Surface className="mb-8 border-0 p-0 pt-5 sm:mb-4 sm:border sm:p-4">
             <UserProvider>
               <PostUpdate />
             </UserProvider>
