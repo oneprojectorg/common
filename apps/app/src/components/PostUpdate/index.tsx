@@ -123,7 +123,7 @@ export const PostUpdate = ({
               ref={textareaRef as RefObject<HTMLTextAreaElement>}
               placeholder={`Post an update…`}
               value={content}
-              onChange={(e) => setContent(e.target.value)}
+              onChange={(e) => setContent(e.target.value ?? '')}
             />
             {content.length > 0 && (
               <Button color="secondary" type="submit">
