@@ -32,25 +32,36 @@ const RelationshipList = ({
           </div>
           <div>
             <Link
-              className="flex flex-col gap-3"
+              className="flex flex-col gap-3 text-neutral-black"
               href={`/org/${relationshipOrg.slug}`}
             >
               <div className="flex flex-col gap-2">
-                <div className="font-semibold">{relationshipOrg.name}</div>
-                {relationshipOrg.relationships?.map((relationship) => (
-                  <div className="flex items-center gap-1">
-                    {relationshipMap[relationship.relationshipType]?.label ??
-                      'Relationship'}{' '}
-                    {relationship.pending ? (
-                      <TagGroup>
-                        <Tag className="rounded-sm p-1 text-xs">Pending</Tag>
-                      </TagGroup>
-                    ) : null}
-                  </div>
-                ))}
+                <div className="h-4 font-semibold">{relationshipOrg.name}</div>
+                <div className="flex items-center gap-1">
+                  {relationshipOrg.relationships?.map(
+                    (relationship, i, arr) => (
+                      <>
+                        <div className="flex items-center gap-1">
+                          {relationshipMap[relationship.relationshipType]
+                            ?.label ?? 'Relationship'}{' '}
+                          {relationship.pending ? (
+                            <TagGroup>
+                              <Tag className="rounded-sm p-1 text-xs">
+                                Pending
+                              </Tag>
+                            </TagGroup>
+                          ) : null}
+                        </div>
+                        {i < arr.length - 1 && (
+                          <span className="text-neutral-gray4">•</span>
+                        )}
+                      </>
+                    ),
+                  )}
+                </div>
               </div>
 
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 text-neutral-charcoal">
                 {relationshipOrg.bio}
               </div>
             </Link>
