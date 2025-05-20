@@ -53,11 +53,13 @@ const withLogger: MiddlewareBuilderBase = async ({
   const start = Date.now();
   const logger = {
     info: (message: string) => {
-      events.push({
-        start,
-        level: 'info',
-        message,
-      });
+      sendLogsToAxiom([
+        {
+          start,
+          level: 'info',
+          message,
+        },
+      ]);
     },
   };
 
@@ -125,11 +127,11 @@ const withLogger: MiddlewareBuilderBase = async ({
     );
   }
 
-  logInfo(result);
-  if (events.length > 0) {
-    await sendLogsToAxiom(events);
-    events.length = 0;
-  }
+  // logInfo(result);
+  // if (events.length > 0) {
+  // await sendLogsToAxiom(events);
+  // events.length = 0;
+  // }
 
   return result;
 };
