@@ -1,3 +1,4 @@
+import { relationshipMap } from '@/utils/relationships';
 import { trpc } from '@op/api/client';
 import { Button } from '@op/ui/Button';
 import { Header2 } from '@op/ui/Header';
@@ -35,7 +36,7 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
         {organizations.map((org) => {
           const relationships = org.relationships
             ?.filter((r) => r.pending)
-            .map((r) => r.relationshipType)
+            .map((r) => relationshipMap[r.relationshipType]?.label)
             .join(', ');
 
           return (
