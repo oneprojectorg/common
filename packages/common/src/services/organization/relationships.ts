@@ -194,6 +194,103 @@ export const getDirectedRelationships = async ({
   return { records: relationships, count: count[0]?.count ?? 0 };
 };
 
+export const getRelationshipsTowardsOrganization = async ({
+  // user,
+  orgId,
+  pending = null,
+}: {
+  user: User;
+  orgId: string;
+  pending?: boolean | null;
+}) => {
+  // const orgUser = await getOrgAccessUser({ user, organizationId: orgId });
+
+  // TODO: ALL USERS IN THE ORG ARE ADMIN AT THE MOMENT
+  // assertAccess();
+
+  // if (!orgUser) {
+  // throw new UnauthorizedError('You are not a member of this organization');
+  // }
+  //
+
+  const where = () =>
+    and(
+      eq(organizationRelationships.targetOrganizationId, orgId),
+      ...(pending !== null
+        ? [eq(organizationRelationships.pending, pending)]
+        : []),
+    );
+
+  const [relationships, count] = await Promise.all([
+    db.query.organizationRelationships.findMany({
+      where,
+      with: {
+        targetOrganization: {
+          with: {
+            avatarImage: true,
+          },
+        },
+        sourceOrganization: {
+          with: {
+            avatarImage: true,
+          },
+        },
+      },
+    }),
+    // TODO: this doesn't count the right thing. It counts the relationships rather than the orgs in relationship
+    db
+      .select({
+        count: sql<number>`count(*)::int`,
+      })
+      .from(organizationRelationships)
+      .where(where),
+  ]);
+
+  // At the moment we combine all the relationships into one distinct org record
+  // in JS as this is harder to do in SQL
+  const distinctRelationships = new Map<
+    string,
+    Organization & {
+      relationships?: Array<{
+        relationshipType: string;
+        pending: boolean | null;
+        createdAt: string | null;
+      }>;
+    }
+  >();
+
+  relationships.forEach((relationship) => {
+    const relatedOrg = (
+      relationship.sourceOrganizationId === orgId
+        ? relationship.targetOrganization
+        : relationship.sourceOrganization
+    ) as Organization;
+
+    if (!distinctRelationships.has(relatedOrg.id)) {
+      distinctRelationships.set(relatedOrg.id, relatedOrg);
+    }
+
+    const org = distinctRelationships.get(relatedOrg.id);
+    const relationshipRecord = {
+      relationshipType: relationship.relationshipType,
+      pending: relationship.pending,
+      createdAt: relationship.createdAt,
+    };
+
+    if (org?.relationships) {
+      org.relationships?.push(relationshipRecord);
+    } else if (org) {
+      org.relationships = [relationshipRecord];
+    }
+  });
+
+  const organizations = Array.from(distinctRelationships).map(
+    ([_, val]) => val,
+  );
+
+  return { records: organizations, count: count[0]?.count ?? 0 };
+};
+
 export const removeRelationship = async ({
   id,
 }: {
@@ -222,14 +319,17 @@ export const removeRelationship = async ({
 
 export const approveRelationship = async ({
   targetOrganizationId,
-  organizationId,
+  sourceOrganizationId,
   user,
 }: {
   user: User;
   targetOrganizationId: string;
-  organizationId: string;
+  sourceOrganizationId: string;
 }) => {
-  const orgUser = await getOrgAccessUser({ user, organizationId });
+  const orgUser = await getOrgAccessUser({
+    user,
+    organizationId: targetOrganizationId,
+  });
 
   // TODO: ALL USERS IN THE ORG ARE ADMIN AT THE MOMENT
   // assertAccess();
@@ -248,9 +348,13 @@ export const approveRelationship = async ({
             organizationRelationships.targetOrganizationId,
             targetOrganizationId,
           ),
-          eq(organizationRelationships.sourceOrganizationId, organizationId),
+          eq(
+            organizationRelationships.sourceOrganizationId,
+            sourceOrganizationId,
+          ),
         ),
-      );
+      )
+      .execute();
 
     return true;
   } catch (e) {

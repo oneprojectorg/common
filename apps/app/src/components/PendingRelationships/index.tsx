@@ -14,8 +14,7 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
   });
 
   const [{ organizations, count }] =
-    trpc.organization.listRelationships.useSuspenseQuery({
-      organizationId: organization.id,
+    trpc.organization.listRelationshipsTowardsOrganization.useSuspenseQuery({
       pending: true,
     });
 
@@ -27,7 +26,7 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
     },
   });
 
-  return (
+  return count > 0 ? (
     <Surface className="flex flex-col gap-0 border-b">
       <Header2 className="p-6 font-serif text-title-sm text-neutral-black">
         Relationship Requests {count}
@@ -56,8 +55,8 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
                   size="small"
                   onPress={() =>
                     approve.mutate({
-                      targetOrganizationId: org.id,
-                      organizationId: organization.id,
+                      sourceOrganizationId: org.id,
+                      targetOrganizationId: organization.id,
                     })
                   }
                 >
@@ -69,7 +68,7 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
         })}
       </ul>
     </Surface>
-  );
+  ) : null;
 };
 
 export const PendingRelationships = (props: { slug: string }) => {

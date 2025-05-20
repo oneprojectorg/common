@@ -2,6 +2,7 @@ import {
   UnauthorizedError,
   getDirectedRelationships,
   getRelatedOrganizations,
+  getRelationshipsTowardsOrganization,
 } from '@op/common';
 import { getSession } from '@op/common/src/services/access';
 import { TRPCError } from '@trpc/server';
@@ -47,6 +48,42 @@ const nonDirectedInputSchema = z.object({
 // };
 
 export const listRelationshipsRouter = router({
+  listRelationshipsTowardsOrganization: loggedProcedure
+    .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
+    .use(withAuthenticated)
+    // .meta(directedMeta)
+    .input(z.object({ pending: z.boolean().optional() }))
+    .query(async ({ ctx, input }) => {
+      const { user } = ctx;
+      const { pending } = input;
+
+      try {
+        const session = await getSession();
+        if (!session) {
+          throw new UnauthorizedError('No user found');
+        }
+
+        const { records: organizations, count } =
+          await getRelationshipsTowardsOrganization({
+            user,
+            orgId: session.user.lastOrgId,
+            pending,
+          });
+
+        return { organizations, count };
+      } catch (error: unknown) {
+        if (error instanceof UnauthorizedError) {
+          throw new TRPCError({
+            message: error.message,
+            code: 'UNAUTHORIZED',
+          });
+        }
+        throw new TRPCError({
+          message: 'Could not retrieve relationships',
+          code: 'INTERNAL_SERVER_ERROR',
+        });
+      }
+    }),
   listDirectedRelationships: loggedProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticated)
