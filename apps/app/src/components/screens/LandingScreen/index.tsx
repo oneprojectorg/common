@@ -225,14 +225,14 @@ const OrganizationHighlights = () => {
           </HighlightNumber>
           <HighlightLabel>new organizations to explore</HighlightLabel>
         </Highlight>
-        <hr className="hidden h-20 w-0.5 bg-neutral-offWhite sm:block" />
+        <hr className="hidden h-20 w-0.5 bg-neutral-gray1 sm:block" />
         <Highlight>
           <HighlightNumber className="bg-orange">
             {stats.totalRelationships}
           </HighlightNumber>
           <HighlightLabel>active relationships</HighlightLabel>
         </Highlight>
-        <hr className="hidden h-20 w-0.5 bg-neutral-offWhite sm:block" />
+        <hr className="hidden h-20 w-0.5 bg-neutral-gray1 sm:block" />
         <Highlight>
           <HighlightNumber className="bg-redTeal">
             {stats.totalOrganizations}
