@@ -363,3 +363,47 @@ export const approveRelationship = async ({
     throw new CommonError('Could not approve relationship');
   }
 };
+
+export const declineRelationship = async ({
+  targetOrganizationId,
+  sourceOrganizationId,
+  user,
+}: {
+  user: User;
+  targetOrganizationId: string;
+  sourceOrganizationId: string;
+}) => {
+  const orgUser = await getOrgAccessUser({
+    user,
+    organizationId: targetOrganizationId,
+  });
+
+  // TODO: ALL USERS IN THE ORG ARE ADMIN AT THE MOMENT
+  // assertAccess();
+
+  if (!orgUser) {
+    throw new UnauthorizedError('You are not a member of this organization');
+  }
+
+  try {
+    await db
+      .delete(organizationRelationships)
+      .where(
+        and(
+          eq(
+            organizationRelationships.targetOrganizationId,
+            targetOrganizationId,
+          ),
+          eq(
+            organizationRelationships.sourceOrganizationId,
+            sourceOrganizationId,
+          ),
+        ),
+      )
+      .execute();
+
+    return true;
+  } catch (e) {
+    throw new CommonError('Could not decline relationship');
+  }
+};

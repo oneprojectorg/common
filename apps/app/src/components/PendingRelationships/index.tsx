@@ -21,6 +21,11 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
     });
 
   const utils = trpc.useUtils();
+  const remove = trpc.organization.declineRelationship.useMutation({
+    onSuccess: () => {
+      utils.organization.listRelationshipsTowardsOrganization.invalidate();
+    },
+  });
   const approve = trpc.organization.approveRelationship.useMutation({
     onSuccess: () => {
       utils.organization.invalidate();
@@ -53,7 +58,16 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
                 </div>
               </div>
               <div className="flex items-center gap-4">
-                <Button color="secondary" size="small">
+                <Button
+                  color="secondary"
+                  size="small"
+                  onPress={() =>
+                    remove.mutate({
+                      sourceOrganizationId: org.id,
+                      targetOrganizationId: organization.id,
+                    })
+                  }
+                >
                   Decline
                 </Button>
                 <Button
