@@ -1,6 +1,7 @@
 'use client';
 
 import { RouterOutput, trpc } from '@op/api/client';
+import { useRouter } from 'next/navigation';
 import posthog from 'posthog-js';
 import React, { createContext, useContext } from 'react';
 
@@ -17,7 +18,12 @@ interface UserContextValue {
 const UserContext = createContext<UserContextValue | undefined>(undefined);
 
 export const UserProvider = ({ children }: { children: React.ReactNode }) => {
+  const router = useRouter();
   const [user] = trpc.account.getMyAccount.useSuspenseQuery();
+
+  if (user.organizationUsers.length === 0) {
+    router.push('/start');
+  }
 
   if (user) {
     posthog.identify(user.id, { email: user.email, name: user.name });

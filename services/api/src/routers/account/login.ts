@@ -1,4 +1,9 @@
-import { APP_NAME, allowedEmailDomains, genericEmail } from '@op/core';
+import {
+  APP_NAME,
+  adminEmails,
+  allowedEmailDomains,
+  genericEmail,
+} from '@op/core';
 import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
@@ -44,7 +49,10 @@ const login = router({
       }
 
       // If the user is not invited, add them to the waitlist
-      if (!allowedEmailDomains.includes(emailDomain)) {
+      if (
+        !allowedEmailDomains.includes(emailDomain) &&
+        !adminEmails.includes(input.email)
+      ) {
         throw new TRPCError({
           message: `${APP_NAME} is invite-only! You’re now on the waitlist. Keep an eye on your inbox for updates.`,
           code: 'FORBIDDEN',

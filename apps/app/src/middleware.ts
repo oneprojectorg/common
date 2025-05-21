@@ -76,7 +76,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (user && !user.email?.match('oneproject.org')) {
+  if (user && !user.email?.match('oneproject.org|scottcazan@gmail.com')) {
     console.log('INVALID USER EMAIL', user.email);
     supabase.auth.signOut();
     return NextResponse.redirect(new URL('/waitlist', request.url));
