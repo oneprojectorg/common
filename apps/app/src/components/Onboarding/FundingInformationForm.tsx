@@ -115,7 +115,7 @@ export const FundingInformationForm = ({
                             placeholder: 'Add your contribution page here',
                           }}
                         />
-                        <span className="text-xs text-darkGray">
+                        <span className="text-sm text-darkGray">
                           Add a link to your donation page, Open Collective,
                           GoFundMe or any platform where supporters can
                           contribute or learn more about how.
@@ -203,7 +203,7 @@ export const FundingInformationForm = ({
                                   ),
                                 }}
                               />
-                              <span className="text-xs text-darkGray">
+                              <span className="text-sm text-darkGray">
                                 {acceptingApplicationsField.state.value
                                   ? null
                                   : `Add a link where others can learn more about how
