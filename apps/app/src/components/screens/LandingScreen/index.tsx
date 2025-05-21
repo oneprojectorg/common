@@ -240,7 +240,7 @@ const OrganizationHighlights = () => {
           <HighlightLabel>organizations on Common</HighlightLabel>
         </Highlight>
       </div>
-      <div className="flex flex-col justify-start gap-2 border-0 border-t bg-neutral-offWhite p-6 text-sm text-neutral-charcoal sm:flex-row sm:items-center sm:justify-end">
+      <div className="flex flex-col justify-start gap-2 border-0 border-t bg-neutral-offWhite p-6 text-sm text-neutral-charcoal sm:flex-row sm:items-center">
         <Suspense>
           <OrganizationFacePile />
           are collaborating on Common
