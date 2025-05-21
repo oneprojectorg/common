@@ -129,7 +129,7 @@ export const DropdownItem = (
       className={composeRenderProps(props.className, (className, renderProps) =>
         dropdownItemStyles({
           ...renderProps,
-          className: `px-3 py-2 text-sm ${className || ''}`,
+          className: `px-3 py-2 ${className || ''}`,
         }),
       )}
     >

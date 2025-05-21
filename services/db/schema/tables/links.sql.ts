@@ -30,6 +30,7 @@ export const links = pgTable(
   {
     id: autoId().primaryKey(),
     name: varchar({ length: 256 }),
+    description: varchar({ length: 256 }),
     href: varchar({ length: 256 }).notNull(),
     type: linkTypeEnum('link_type').notNull().default(LinkType.OFFERING),
     metadata: jsonb(),

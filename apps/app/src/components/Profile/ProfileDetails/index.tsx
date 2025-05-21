@@ -181,7 +181,7 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
                 <LuArrowUpRight className="size-4" />
                 Contribute
               </ButtonLink>
-              <Tooltip>We accept applications on a rolling basis</Tooltip>
+              <Tooltip>{link.description ?? 'Click to learn more'}</Tooltip>
             </TooltipTrigger>
           ))
         : null}
@@ -197,7 +197,7 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
                 <LuInfo />
                 Learn more
               </ButtonLink>
-              <Tooltip>We’re an invite-only granting organization</Tooltip>
+              <Tooltip>{link.description ?? 'Click to learn more'}</Tooltip>
             </TooltipTrigger>
           ))
         : null}
