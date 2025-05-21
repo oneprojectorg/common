@@ -17,7 +17,6 @@ export const Avatar = ({
     [],
   );
 
-  console.log('gradientBg', gradientBg);
   return (
     <div
       className={cn(
