@@ -1,5 +1,4 @@
 import { getPublicUrl } from '@/utils';
-import { UserProvider } from '@/utils/UserProvider';
 import { RouterOutput, trpc } from '@op/api/client';
 import { Avatar } from '@op/ui/Avatar';
 import { FacePile } from '@op/ui/FacePile';
@@ -282,9 +281,7 @@ const LandingScreenFeeds = ({
       <>
         <Suspense fallback={<Skeleton className="h-full w-full" />}>
           <Surface className="mb-8 border-0 p-0 pt-5 sm:mb-4 sm:border sm:p-4">
-            <UserProvider>
-              <PostUpdate />
-            </UserProvider>
+            <PostUpdate />
           </Surface>
         </Suspense>
         <hr />

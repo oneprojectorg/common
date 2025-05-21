@@ -2,7 +2,7 @@
 
 import { getPublicUrl } from '@/utils';
 import { ClientOnly } from '@/utils/ClientOnly';
-import { UserProvider, useUser } from '@/utils/UserProvider';
+import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { useAuthLogout } from '@op/hooks';
 import { Avatar } from '@op/ui/Avatar';
@@ -53,12 +53,17 @@ const UserAvatarMenu = () => {
       <Menu className="min-w-72">
         {user?.organizationUsers?.map((orgUser) => (
           <MenuItem
-            onAction={() =>
+            onAction={() => {
+              if (user.currentOrganization?.id === orgUser.organizationId) {
+                router.push(`/org/${orgUser.organization?.slug}`);
+                return;
+              }
+
               void switchOrganization.mutate({
                 // @ts-expect-error this is a backend issue to be resolved
                 organizationId: orgUser.organization?.id,
-              })
-            }
+              });
+            }}
           >
             <Avatar placeholder={orgUser.organization?.name}>
               {orgUser.organization?.avatarImage?.name ? (
@@ -117,9 +122,7 @@ export const SiteHeader = () => {
                 <Skeleton className="size-8 rounded-full border bg-white shadow" />
               }
             >
-              <UserProvider>
-                <UserAvatarMenu />
-              </UserProvider>
+              <UserAvatarMenu />
             </Suspense>
           </ErrorBoundary>
         </ClientOnly>
@@ -145,9 +148,7 @@ export const SiteHeader = () => {
                   <Skeleton className="size-8 rounded-full border bg-white shadow" />
                 }
               >
-                <UserProvider>
-                  <UserAvatarMenu />
-                </UserProvider>
+                <UserAvatarMenu />
               </Suspense>
             </ErrorBoundary>
           </ClientOnly>

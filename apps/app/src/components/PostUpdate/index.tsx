@@ -1,6 +1,6 @@
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import type { PostToOrganization } from '@op/api/encoders';
+import type { Organization, PostToOrganization } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { TextArea } from '@op/ui/Field';
 import { Form } from '@op/ui/Form';
@@ -15,24 +15,16 @@ import { FeedItem, FeedMain } from '@/components/PostFeed';
 
 import { OrganizationAvatar } from '../OrganizationAvatar';
 
-export const PostUpdate = ({
-  targetOrganizationId,
+const PostUpdateWithUser = ({
+  organization,
   className,
 }: {
-  targetOrganizationId?: string;
+  organization: Organization;
   className?: string;
 }) => {
-  const { user } = useUser();
-  const profile = user?.currentOrganization;
   const [content, setContent] = useState('');
   const t = useTranslations();
   const utils = trpc.useUtils();
-  if (
-    !profile ||
-    (targetOrganizationId && targetOrganizationId !== profile.id)
-  ) {
-    return <div className={cn(className, 'border-none p-0')} />;
-  }
 
   const createPost = trpc.organization.createPost.useMutation({
     onMutate: (newPost) => {
@@ -40,21 +32,23 @@ export const PostUpdate = ({
       // await utils.organization.listPosts.cancel();
       // Snapshot the previous list of posts
       const previousPosts = utils.organization.listPosts.getData({
-        slug: profile.slug,
+        slug: organization.slug,
       });
 
       // Optimistically update the cache with the new post
-      // @ts-expect-error - temporary
-      utils.organization.listPosts.setData({ slug: profile.slug }, (old) =>
-        old
-          ? [
-              ...old,
-              {
-                ...{ organization: profile, post: newPost },
-                createdAt: new Date(),
-              },
-            ]
-          : [{ ...newPost, createdAt: new Date() }],
+      utils.organization.listPosts.setData(
+        { slug: organization.slug },
+        // @ts-expect-error - temporary
+        (old) =>
+          old
+            ? [
+                ...old,
+                {
+                  ...{ organization: organization, post: newPost },
+                  createdAt: new Date(),
+                },
+              ]
+            : [{ ...newPost, createdAt: new Date() }],
       );
 
       return { previousPosts };
@@ -66,13 +60,13 @@ export const PostUpdate = ({
     ) => {
       // Roll back to the previous posts on error
       utils.organization.listPosts.setData(
-        { slug: profile.slug },
+        { slug: organization.slug },
         context?.previousPosts || [],
       );
     },
     onSettled: () => {
       // Invalidate the posts query to sync with the server
-      // void utils.organization.listPosts.invalidate({ slug: profile.slug });
+      // void utils.organization.listPosts.invalidate({ slug: organization.slug });
       utils.organization.invalidate();
     },
   });
@@ -81,7 +75,7 @@ export const PostUpdate = ({
     e.preventDefault();
 
     if (content.trim()) {
-      createPost.mutate({ id: profile.id, content });
+      createPost.mutate({ id: organization.id, content });
       setContent('');
     }
   };
@@ -102,7 +96,7 @@ export const PostUpdate = ({
     <div className={cn('flex flex-col gap-8', className)}>
       <FeedItem>
         <OrganizationAvatar
-          organization={profile}
+          organization={organization}
           className="size-8 rounded-full border bg-white"
         />
         <FeedMain>
@@ -134,5 +128,30 @@ export const PostUpdate = ({
         </FeedMain>
       </FeedItem>
     </div>
+  );
+};
+
+export const PostUpdate = ({
+  organization,
+  className,
+}: {
+  organization?: Organization;
+  className?: string;
+}) => {
+  const { user } = useUser();
+  const profile = user?.currentOrganization;
+
+  if (
+    !(profile && !organization) &&
+    (!profile || organization?.id !== profile.id)
+  ) {
+    return <div className={cn(className, 'border-none p-0')} />;
+  }
+
+  return (
+    <PostUpdateWithUser
+      organization={organization ?? profile}
+      className={className}
+    />
   );
 };

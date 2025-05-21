@@ -2,9 +2,9 @@
 
 import { getPublicUrl } from '@/utils';
 import { trpc } from '@op/api/client';
-import { ErrorBoundary } from 'next/dist/client/components/error-boundary';
 import Image from 'next/image';
 import React, { Suspense } from 'react';
+import { ErrorBoundary } from 'react-error-boundary';
 import { LuArrowLeft } from 'react-icons/lu';
 
 import { Link } from '@/lib/i18n';
@@ -54,7 +54,10 @@ export const OrganizationProfile = ({ slug }: { slug: string }) => {
         </Link>
       </header>
       <div className="-mt-12 flex w-full flex-col gap-3 border-offWhite border-b-transparent sm:mt-0 sm:min-h-[calc(100vh-3.5rem)] sm:gap-4 sm:border">
-        <ErrorBoundary errorComponent={() => <div>Could not load profile</div>}>
+        <ErrorBoundary
+          fallback={<div>Could not load profile</div>}
+          onError={console.log}
+        >
           <Suspense fallback={<div>Loading...</div>}>
             <OrganizationProfileSuspense slug={slug} />
           </Suspense>

@@ -1,4 +1,3 @@
-import { UserProvider } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
@@ -128,12 +127,10 @@ export const ProfileGrid = ({ profile }: { profile: Organization }) => {
     <div className="hidden flex-grow grid-cols-15 border-t sm:grid">
       <div className="col-span-9 flex flex-col gap-8">
         <Suspense fallback={null}>
-          <UserProvider>
-            <PostUpdate
-              targetOrganizationId={profile.id}
-              className="border-b px-4 pb-8 pt-6"
-            />
-          </UserProvider>
+          <PostUpdate
+            organization={profile}
+            className="border-b px-4 pb-8 pt-6"
+          />
         </Suspense>
         <Suspense fallback={<div>Loading...</div>}>
           <ProfileFeed profile={profile} className="px-4" />
@@ -155,12 +152,10 @@ export const ProfileTabs = ({ profile }: { profile: Organization }) => {
       </TabList>
       <TabPanel id="updates" className="px-6">
         <Suspense fallback={null}>
-          <UserProvider>
-            <PostUpdate
-              targetOrganizationId={profile.id}
-              className="border-b px-4 py-6"
-            />
-          </UserProvider>
+          <PostUpdate
+            targetOrganizationId={profile.id}
+            className="border-b px-4 py-6"
+          />
         </Suspense>
         <Suspense fallback={<div>Loading...</div>}>
           <ProfileFeed profile={profile} className="px-4 py-6" />
