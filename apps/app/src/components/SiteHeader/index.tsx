@@ -13,6 +13,7 @@ import { Skeleton } from '@op/ui/Skeleton';
 import { TextField } from '@op/ui/TextField';
 import { ErrorBoundary } from 'next/dist/client/components/error-boundary';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { Suspense } from 'react';
 import { LuSearch } from 'react-icons/lu';
 
@@ -23,6 +24,7 @@ import { CommonLogo } from '../CommonLogo';
 const UserAvatarMenu = () => {
   const { user } = useUser();
   const logout = useAuthLogout();
+  const router = useRouter();
   const utils = trpc.useUtils();
   const switchOrganization = trpc.account.switchOrganization.useMutation({
     onSuccess: () => {
@@ -73,7 +75,10 @@ const UserAvatarMenu = () => {
             {orgUser.organization?.name}
           </MenuItem>
         ))}
-        <MenuItem id="logout" onAction={() => void logout.refetch()}>
+        <MenuItem
+          id="logout"
+          onAction={() => void logout.refetch().then(() => router.push('/'))}
+        >
           Logout
         </MenuItem>
       </Menu>
