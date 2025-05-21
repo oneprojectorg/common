@@ -1,3 +1,4 @@
+import { formatToUrl } from '@/utils';
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
@@ -178,7 +179,7 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
             <TooltipTrigger key={link.id}>
               <ButtonLink
                 color="secondary"
-                href={link.href}
+                href={formatToUrl(link.href)}
                 className="min-w-full sm:min-w-fit"
               >
                 <LuArrowUpRight className="size-4" />
@@ -193,7 +194,7 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
             <TooltipTrigger key={link.id}>
               <ButtonLink
                 color="secondary"
-                href={link.href}
+                href={formatToUrl(link.href)}
                 className="min-w-full sm:min-w-fit"
               >
                 <LuInfo />

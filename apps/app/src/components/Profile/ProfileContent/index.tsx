@@ -1,3 +1,4 @@
+import { formatToUrl } from '@/utils';
 import { trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
@@ -46,7 +47,7 @@ const ProfileAbout = ({ profile }: { profile: Organization }) => {
             {website ? (
               <ContactLink>
                 <LuGlobe />
-                <Link href={website}>{website}</Link>
+                <Link href={formatToUrl(website)}>{website}</Link>
               </ContactLink>
             ) : null}
             {email ? (

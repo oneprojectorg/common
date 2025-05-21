@@ -62,3 +62,34 @@ export const zodUrl = ({
     return val;
   }, validation);
 };
+
+export const formatToUrl = (inputString: string) => {
+  // Trim any whitespace
+  let url = inputString.trim();
+
+  // Check if the URL has a protocol (http:// or https://)
+  if (!url.match(/^https?:\/\//i)) {
+    // If no protocol is specified, default to https://
+    url = 'https://' + url;
+  }
+
+  // Remove trailing slash if present
+  if (url.endsWith('/')) {
+    url = url.slice(0, -1);
+  }
+
+  // Parse the URL to handle encoding properly
+  try {
+    const parsedUrl = new URL(url);
+
+    // Ensure the hostname is properly formatted
+    if (!parsedUrl.hostname.includes('.')) {
+      throw new Error('Invalid hostname');
+    }
+
+    return parsedUrl.toString();
+  } catch (error) {
+    // If URL parsing fails, return null or an error message
+    return '/';
+  }
+};
