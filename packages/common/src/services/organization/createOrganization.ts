@@ -32,7 +32,7 @@ export const geoNamesDataSchema = z
   .strip();
 
 const whereWeWorkSchema = z
-  .object({ data: geoNamesDataSchema })
+  .object({ id: z.string(), label: z.string(), data: geoNamesDataSchema })
   .partial()
   .strip();
 
@@ -242,7 +242,12 @@ export const createOrganization = async ({
     // Add where we work geoNames
     const geoNames =
       data.whereWeWork?.map((whereWeWork) =>
-        geoNamesDataSchema.parse(whereWeWork.data),
+        whereWeWork.data
+          ? geoNamesDataSchema.parse(whereWeWork.data)
+          : {
+              geonameId: `custom-${whereWeWork.label}`,
+              name: whereWeWork.label,
+            },
       ) || [];
 
     const geoNamesTaxonomy = await tx.query.taxonomies.findFirst({

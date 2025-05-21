@@ -44,7 +44,7 @@ const inputSchema = z.object({
   whereWeWork: z
     .array(
       multiSelectOptionValidator.extend({
-        data: geoNamesDataSchema,
+        data: geoNamesDataSchema.optional(),
       }),
     )
     .optional(),
