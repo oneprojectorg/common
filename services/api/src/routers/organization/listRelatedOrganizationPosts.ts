@@ -49,11 +49,7 @@ export const listRelatedOrganizationPostsRouter = router({
         pending: false,
       });
 
-      if (!organizations || organizations.length === 0) {
-        return [];
-      }
-
-      const orgIds = organizations.map((org: any) => org.id);
+      const orgIds = organizations?.map((org: any) => org.id) ?? [];
       orgIds.push(organizationId); // Add our own org so we see our own posts
 
       // Fetch posts for all related organizations
