@@ -160,7 +160,7 @@ export const InputWithIcon = ({
 
 const textAreaStyles = tv({
   base: [
-    'w-full min-w-0 rounded-md border border-neutral-gray1 p-3 text-base text-neutral-black',
+    'w-full min-w-0 resize-none rounded-md border border-neutral-gray1 p-3 text-base text-neutral-black',
     'outline outline-0 placeholder:text-base placeholder:text-neutral-gray4',
     'active:border-neutral-gray4 active:outline',
     'hover:border-neutral-gray2',
