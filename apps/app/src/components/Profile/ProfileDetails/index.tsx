@@ -1,3 +1,4 @@
+import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
 import { Button, ButtonLink } from '@op/ui/Button';
@@ -146,6 +147,7 @@ const AddRelationshipModal = ({ profile }: { profile: Organization }) => {
 };
 
 const ProfileInteractions = ({ profile }: { profile: Organization }) => {
+  const { user } = useUser();
   const { isReceivingFunds, isOfferingFunds, links } = profile;
 
   // split funding links up by type
@@ -158,18 +160,19 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
 
   return (
     <div className="flex flex-wrap gap-3 sm:gap-4">
-      <ErrorBoundary fallback={null}>
-        <Suspense
-          fallback={
-            <Button isDisabled={true}>
-              <LoadingSpinner />
-            </Button>
-          }
-        >
-          <AddRelationshipModal profile={profile} />
-        </Suspense>
-      </ErrorBoundary>
-
+      {user?.currentOrganization?.id !== profile.id ? (
+        <ErrorBoundary fallback={null}>
+          <Suspense
+            fallback={
+              <Button isDisabled={true}>
+                <LoadingSpinner />
+              </Button>
+            }
+          >
+            <AddRelationshipModal profile={profile} />
+          </Suspense>
+        </ErrorBoundary>
+      ) : null}
       {isReceivingFunds
         ? receivingFundingLinks.map((link) => (
             <TooltipTrigger key={link.id}>
@@ -185,7 +188,6 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
             </TooltipTrigger>
           ))
         : null}
-
       {isOfferingFunds
         ? offeringFundingLinks.map((link) => (
             <TooltipTrigger key={link.id}>

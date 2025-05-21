@@ -152,10 +152,7 @@ export const ProfileTabs = ({ profile }: { profile: Organization }) => {
       </TabList>
       <TabPanel id="updates" className="px-6">
         <Suspense fallback={null}>
-          <PostUpdate
-            targetOrganizationId={profile.id}
-            className="border-b px-4 py-6"
-          />
+          <PostUpdate organization={profile} className="border-b px-4 py-6" />
         </Suspense>
         <Suspense fallback={<div>Loading...</div>}>
           <ProfileFeed profile={profile} className="px-4 py-6" />
