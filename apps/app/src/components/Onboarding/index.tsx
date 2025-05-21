@@ -52,6 +52,7 @@ export const OnboardingFlow = () => {
   const createOrganization = trpc.organization.create.useMutation();
   const router = useRouter();
   const { reset } = useOnboardingFormStore();
+  const trpcUtil = trpc.useUtils();
 
   const onReturn = useCallback<any>(
     (values: Array<FormValues>) => {
@@ -64,6 +65,8 @@ export const OnboardingFlow = () => {
         .mutateAsync(processInputs(combined))
         .then(() => {
           reset();
+          // invalidate account so we refetch organization users again
+          trpcUtil.account.getMyAccount.invalidate();
           router.push(`/?new=1`);
         })
         .catch((err) => {

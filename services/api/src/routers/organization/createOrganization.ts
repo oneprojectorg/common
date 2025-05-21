@@ -24,19 +24,18 @@ const inputSchema = z.object({
   name: z
     .string()
     .min(1, { message: 'Enter a name for your organization' })
-    .max(20, { message: 'Must be at most 20 characters' })
+    .max(200, { message: 'Must be at most 200 characters' })
     .optional(),
   website: z
     .string()
-    // .url({ message: 'Enter a valid website address' })
     .min(1, { message: 'enter a ' })
     .max(200, { message: 'Must be at most 200 characters' }),
   email: z
     .string()
     .email({ message: 'Invalid email' })
-    .max(20, { message: 'Must be at most 20 characters' })
+    .max(200, { message: 'Must be at most 200 characters' })
     .optional(),
-  orgType: z.string().max(20, { message: 'Must be at most 20 characters' }),
+  orgType: z.string().max(200, { message: 'Must be at most 20 characters' }),
   bio: z.string().max(200, { message: 'Must be at most 200 characters' }),
   mission: z
     .string()
