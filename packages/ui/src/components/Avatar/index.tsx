@@ -1,7 +1,7 @@
 import { ReactNode, useMemo } from 'react';
 
 import { cn } from '../../lib/utils';
-import { GRADIENTS } from '../../utils';
+import { getGradientForString } from '../../utils';
 
 export const Avatar = ({
   children,
@@ -13,9 +13,11 @@ export const Avatar = ({
   className?: string;
 }) => {
   const gradientBg = useMemo(
-    () => GRADIENTS[Math.floor(Math.random() * GRADIENTS.length)],
+    () => getGradientForString(placeholder || 'Common'),
     [],
   );
+
+  console.log('gradientBg', gradientBg);
   return (
     <div
       className={cn(

@@ -28,5 +28,20 @@ export const GRADIENTS = [
   'bg-redTeal',
   'bg-blueGreen',
   'bg-orangePurple',
-  // 'bg-yellowOrange',
 ];
+
+const getNumberFromHashedString = (name: string): number => {
+  let hash = 0;
+  if (name.length === 0) return hash;
+  for (let i = 0; i < name.length; i++) {
+    const char = name.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash |= 0; // Convert to 32-bit integer
+  }
+  return hash as number;
+};
+
+export const getGradientForString = (name: string) => {
+  const hash = getNumberFromHashedString(name);
+  return GRADIENTS[Math.abs(hash) % GRADIENTS.length];
+};
