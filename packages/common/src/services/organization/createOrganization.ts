@@ -86,6 +86,7 @@ const OrganizationInputParser = organizationInputSchema.transform(
 
 export const fundingLinksInputSchema = z
   .object({
+    receivingFundsDescription: z.string().optional(),
     receivingFundsLink: z
       .string()
       .url({ message: 'Enter a valid website address' })
@@ -221,6 +222,7 @@ export const createOrganization = async ({
             tx.insert(links).values({
               organizationId: newOrg.id,
               href: data.receivingFundsLink,
+              description: data.receivingFundsDescription,
               type: 'receiving',
             }),
           ]
@@ -230,6 +232,7 @@ export const createOrganization = async ({
             tx.insert(links).values({
               organizationId: newOrg.id,
               href: data.offeringFundsLink,
+              description: data.offeringFundsDescription,
               type: 'offering',
             }),
           ]
