@@ -9,7 +9,15 @@ import { Surface } from '@op/ui/Surface';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';
-import { ReactNode, Suspense, useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import {
+  ReactNode,
+  Suspense,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import { Link } from '@/lib/i18n';
 
@@ -324,12 +332,17 @@ const LandingScreenFeeds = ({
 
 export const LandingScreen = () => {
   const [user] = trpc.account.getMyAccount.useSuspenseQuery();
+  const searchParams = useSearchParams();
+
+  const isNew = useMemo(() => {
+    return searchParams.get('new') === '1';
+  }, []);
 
   return (
     <div className="container flex min-h-0 grow flex-col gap-4 pt-8 sm:gap-10 sm:pt-14">
       <div className="flex flex-col gap-2">
         <Header1 className="text-center text-title-md sm:text-title-xl">
-          Welcome back, {user.name}!
+          {isNew ? `Welcome, ${user.name}!` : `Welcome back, ${user.name}!`}
         </Header1>
         <span className="text-center text-neutral-charcoal">
           Explore new connections and strengthen existing relationships.

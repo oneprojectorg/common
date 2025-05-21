@@ -31,7 +31,10 @@ export const validator = z.object({
     .string({ message: 'Enter a name for your organization' })
     .min(1, { message: 'Enter a name for your organization' })
     .max(100, { message: 'Must be at most 100 characters' }),
-  website: zodUrl({ message: 'Enter a valid website address' }),
+  website: zodUrl({
+    message: 'Enter a valid website address',
+    isRequired: true,
+  }),
   email: z
     .string({ message: 'Enter an email' })
     .email({ message: 'Invalid email' })

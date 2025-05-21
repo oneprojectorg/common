@@ -27,28 +27,38 @@ export const zodUrlRefine = (val: string) => {
   return urlPattern.test(val);
 };
 
-export const zodUrl = ({ message }: { message: string }) => {
-  return z.preprocess(
-    (val) => {
-      // Check if the URL already starts with http:// or https://
-      if (
-        val &&
-        typeof val == 'string' &&
-        !val.startsWith('http://') &&
-        !val.startsWith('https://')
-      ) {
-        // If not, prefix with https://
-        return `https://${val}`;
-      }
-
-      return val;
-    },
-    z
-      .string({ message })
-      .max(200, { message: 'Must be at most 200 characters' })
-      .refine(zodUrlRefine, {
+export const zodUrl = ({
+  message,
+  isRequired,
+}: {
+  message: string;
+  isRequired?: boolean;
+}) => {
+  const baseValidation = z
+    .string({ message })
+    .max(200, { message: 'Must be at most 200 characters' })
+    .refine(zodUrlRefine, {
+      message,
+    })
+    .optional();
+  const validation = isRequired
+    ? baseValidation.refine((val) => val && val.trim() !== '', {
         message,
       })
-      .optional(),
-  );
+    : baseValidation.optional();
+
+  return z.preprocess((val) => {
+    // Check if the URL already starts with http:// or https://
+    if (
+      val &&
+      typeof val == 'string' &&
+      !val.startsWith('http://') &&
+      !val.startsWith('https://')
+    ) {
+      // If not, prefix with https://
+      return `https://${val}`;
+    }
+
+    return val;
+  }, validation);
 };

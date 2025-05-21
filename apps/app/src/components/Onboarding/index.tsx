@@ -66,8 +66,13 @@ export const OnboardingFlow = () => {
         .then(() => {
           reset();
           // invalidate account so we refetch organization users again
-          trpcUtil.account.getMyAccount.invalidate();
-          router.push(`/?new=1`);
+          trpcUtil.account.getMyAccount
+            .invalidate(undefined, {
+              refetchType: 'all',
+            })
+            .then(() => {
+              router.push(`/?new=1`);
+            });
         })
         .catch((err) => {
           console.error('ERROR', err);
