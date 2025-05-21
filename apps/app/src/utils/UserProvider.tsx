@@ -21,7 +21,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter();
   const [user] = trpc.account.getMyAccount.useSuspenseQuery();
 
-  if (user.organizationUsers.length === 0) {
+  if (user.organizationUsers?.length === 0) {
     router.push('/start');
   }
 
