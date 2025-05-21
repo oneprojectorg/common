@@ -2,8 +2,9 @@
 
 import { getPublicUrl } from '@/utils';
 import { trpc } from '@op/api/client';
+import { cn, getGradientForString } from '@op/ui/utils';
 import Image from 'next/image';
-import React, { Suspense } from 'react';
+import React, { Suspense, useMemo } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { LuArrowLeft } from 'react-icons/lu';
 
@@ -22,18 +23,31 @@ const OrganizationProfileSuspense = ({ slug }: { slug: string }) => {
   const headerUrl = getPublicUrl(headerImage?.name);
   const avatarUrl = getPublicUrl(avatarImage?.name);
 
+  const gradientBg = useMemo(
+    () => getGradientForString(organization.name || 'Common'),
+    [],
+  );
+  const gradientBgHeader = useMemo(
+    () => getGradientForString(organization.name + 'C' || 'Common'),
+    [],
+  );
+
   return (
     <>
       <ImageHeader
         headerImage={
           headerUrl ? (
             <Image src={headerUrl} alt="" fill className="object-cover" />
-          ) : null
+          ) : (
+            <div className={cn('h-full w-full', gradientBgHeader)} />
+          )
         }
         avatarImage={
           avatarUrl ? (
             <Image src={avatarUrl} alt="" fill className="object-cover" />
-          ) : null
+          ) : (
+            <div className={cn('h-full w-full', gradientBg)} />
+          )
         }
       />
 

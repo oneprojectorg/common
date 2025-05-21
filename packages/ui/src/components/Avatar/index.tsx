@@ -1,7 +1,6 @@
 import { ReactNode, useMemo } from 'react';
 
-import { cn } from '../../lib/utils';
-import { getGradientForString } from '../../utils';
+import { cn, getGradientForString } from '../../lib/utils';
 
 export const Avatar = ({
   children,
