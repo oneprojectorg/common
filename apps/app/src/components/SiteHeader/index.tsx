@@ -77,7 +77,7 @@ const UserAvatarMenu = () => {
         ))}
         <MenuItem
           id="logout"
-          onAction={() => void logout.refetch().then(() => router.push('/'))}
+          onAction={() => void logout.refetch().finally(() => router.push('/'))}
         >
           Logout
         </MenuItem>

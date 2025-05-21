@@ -237,7 +237,6 @@ export const OrganizationDetailsForm = ({
           children={(field) => (
             <GeoNamesMultiSelect
               label={t('Where we work')}
-              isRequired
               onChange={(value) => field.handleChange(value)}
               value={(field.state.value as Array<Option>) ?? []}
             />

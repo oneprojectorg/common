@@ -223,7 +223,7 @@ export const MultiSelectComboBox = ({
       <div className="relative" ref={dropdownRef}>
         {/* Dropdown button / Selected options display */}
         <div
-          className="flex min-h-10 w-full cursor-pointer flex-wrap items-center rounded-md border border-offWhite bg-white px-4 py-2 text-base"
+          className="flex min-h-10 w-full cursor-pointer flex-wrap items-center rounded-md border border-offWhite bg-white px-3 py-2 text-base hover:border-neutral-gray2"
           onClick={() => {
             // Only toggle if input is NOT focused
             if (document.activeElement !== inputRef.current) {
@@ -235,7 +235,7 @@ export const MultiSelectComboBox = ({
             <input
               ref={inputRef}
               type="text"
-              className="ml-1 min-w-[40px] flex-1 border-none bg-transparent py-1 pr-7 text-base outline-none placeholder:text-neutral-gray4 group-data-[invalid=true]:outline-functional-red"
+              className="ml-1 min-w-[40px] flex-1 border-none bg-transparent pr-7 text-base outline-none placeholder:text-neutral-gray4 group-data-[invalid=true]:outline-functional-red"
               value={inputValue}
               onChange={handleInputChange}
               onKeyDown={handleInputKeyDown}

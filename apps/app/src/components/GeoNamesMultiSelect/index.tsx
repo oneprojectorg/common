@@ -14,7 +14,7 @@ export const GeoNamesMultiSelect = ({
   label: string;
   value: Array<Option>;
   onChange: (value: Array<Option>) => void;
-  isRequired: boolean;
+  isRequired?: boolean;
 }) => {
   const [whereWeWorkQuery, setWhereWeWorkQuery] = useState('');
   const { data: geoNames } = trpc.taxonomy.getGeoNames.useQuery(
