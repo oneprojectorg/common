@@ -30,8 +30,11 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
 
   return count > 0 ? (
     <Surface className="flex flex-col gap-0 border-b">
-      <Header2 className="p-6 font-serif text-title-sm text-neutral-black">
-        Relationship Requests {count}
+      <Header2 className="flex items-center gap-1 p-6 font-serif text-title-sm text-neutral-black">
+        Relationship Requests{' '}
+        <span className="flex size-4 items-center justify-center rounded-full bg-functional-red font-sans text-xs text-neutral-offWhite">
+          {count}
+        </span>
       </Header2>
       <ul className="flex flex-col">
         {organizations.map((org) => {
