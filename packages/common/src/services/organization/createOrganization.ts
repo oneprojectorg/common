@@ -42,6 +42,7 @@ export const organizationInputSchema = z
     email: z.string().email(),
     name: z.string().optional(),
     bio: z.string().optional(),
+    orgType: z.string(),
     isOfferingFunds: z.boolean().optional(),
     isReceivingFunds: z.boolean().optional(),
     website: z.string().optional(),
