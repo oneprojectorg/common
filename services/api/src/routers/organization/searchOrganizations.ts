@@ -39,6 +39,9 @@ export const searchOrganizationsRouter = router({
     .query(async ({ ctx, input }) => {
       const { db } = ctx.database;
       const { q, limit = 10 } = input;
+      if (q === '') {
+        return [];
+      }
 
       const where = sql`${organizations.name} @@to_tsquery('english', ${q + ':*'})`;
 
