@@ -38,9 +38,14 @@ const AddRelationshipModal = ({ profile }: { profile: Organization }) => {
       organizationId: profile.id,
     });
 
-  const relationshipsToCurrentUserOrg = inverseRelationships.filter(
-    (relationship) => relationship.id === user?.currentOrganization?.id,
-  );
+  const relationshipsToCurrentUserOrg = relationships.find(
+    (relationship) =>
+      relationship.sourceOrganizationId === user?.currentOrganization?.id,
+  )
+    ? []
+    : inverseRelationships.filter(
+        (relationship) => relationship.id === user?.currentOrganization?.id,
+      );
 
   return (
     <>
@@ -181,7 +186,7 @@ const AddRelationshipModal = ({ profile }: { profile: Organization }) => {
                     <>
                       <Button color="secondary">
                         {relationship.pending ? <LuClock /> : <LuCheck />}
-                        Funded by
+                        Fundee
                       </Button>
                       <Tooltip>
                         {relationship.pending &&
