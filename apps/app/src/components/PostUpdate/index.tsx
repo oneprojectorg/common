@@ -42,11 +42,11 @@ const PostUpdateWithUser = ({
         (old) =>
           old
             ? [
-                ...old,
                 {
                   ...{ organization: organization, post: newPost },
                   createdAt: new Date(),
                 },
+                ...old,
               ]
             : [{ ...newPost, createdAt: new Date() }],
       );

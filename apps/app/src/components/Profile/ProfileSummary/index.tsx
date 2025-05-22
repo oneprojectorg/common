@@ -15,11 +15,13 @@ const RelationshipCount = ({ profile }: { profile: Organization }) => {
   });
 
   return (
-    <Link href={`/org/${profile.slug}/relationships`}>
-      <span className="font-bold text-teal">
-        {count} {t('relationships')}
-      </span>
-    </Link>
+    count > 0 && (
+      <Link href={`/org/${profile.slug}/relationships`}>
+        <span className="font-bold text-teal">
+          {count} {t('relationships')}
+        </span>
+      </Link>
+    )
   );
 };
 
