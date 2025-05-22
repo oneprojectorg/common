@@ -38,17 +38,17 @@ export const validator = z.object({
   email: z
     .string({ message: 'Enter an email' })
     .email({ message: 'Invalid email' })
-    .max(100, { message: 'Must be at most 100 characters' })
+    .max(200, { message: 'Must be at most 200 characters' })
     .optional(),
   orgType: z
     .string({ message: 'Select an organization type' })
-    .max(100, { message: 'Must be at most 100 characters' }),
+    .max(200, { message: 'Must be at most 200 characters' }),
   bio: z
     .string({ message: 'Enter an organization bio' })
-    .max(200, { message: 'Must be at most 200 characters' }),
+    .max(1500, { message: 'Must be at most 1500 characters' }),
   mission: z
     .string()
-    .max(200, { message: 'Must be at most 200 characters' })
+    .max(1500, { message: 'Must be at most 1500 characters' })
     .optional(),
   whereWeWork: z.array(multiSelectOptionValidator).optional(),
   focusAreas: z.array(multiSelectOptionValidator).optional(),

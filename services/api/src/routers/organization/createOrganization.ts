@@ -36,10 +36,10 @@ const inputSchema = z.object({
     .max(200, { message: 'Must be at most 200 characters' })
     .optional(),
   orgType: z.string().max(200, { message: 'Must be at most 20 characters' }),
-  bio: z.string().max(200, { message: 'Must be at most 200 characters' }),
+  bio: z.string().max(1500, { message: 'Must be at most 1500 characters' }),
   mission: z
     .string()
-    .max(200, { message: 'Must be at most 200 characters' })
+    .max(1500, { message: 'Must be at most 1500 characters' })
     .optional(),
   whereWeWork: z
     .array(
