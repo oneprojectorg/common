@@ -160,24 +160,26 @@ export const FundingInformationForm = ({
                         />
                       </ToggleRow>
                       <div className="flex flex-col gap-4">
-                        <form.AppField
-                          name="offeringFundsDescription"
-                          children={(field) => (
-                            <field.TextField
-                              useTextArea
-                              label="What is your funding process?"
-                              value={field.state.value as string}
-                              onBlur={field.handleBlur}
-                              onChange={field.handleChange}
-                              errorMessage={getFieldErrorMessage(field)}
-                              textareaProps={{
-                                className: 'min-h-32',
-                                placeholder:
-                                  'Enter a description of the type of funding you’re seeking (e.g., grants, integrated capital, etc.)',
-                              }}
-                            />
-                          )}
-                        />
+                        {!acceptingApplicationsField.state.value ? (
+                          <form.AppField
+                            name="offeringFundsDescription"
+                            children={(field) => (
+                              <field.TextField
+                                useTextArea
+                                label="What is your funding process?"
+                                value={field.state.value as string}
+                                onBlur={field.handleBlur}
+                                onChange={field.handleChange}
+                                errorMessage={getFieldErrorMessage(field)}
+                                textareaProps={{
+                                  className: 'min-h-32',
+                                  placeholder:
+                                    'Enter a description of the type of funding you’re seeking (e.g., grants, integrated capital, etc.)',
+                                }}
+                              />
+                            )}
+                          />
+                        ) : null}
 
                         <form.AppField
                           name="offeringFundsLink"
