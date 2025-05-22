@@ -249,6 +249,7 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
               <ButtonLink
                 color="secondary"
                 href={formatToUrl(link.href)}
+                target="_blank"
                 className="min-w-full sm:min-w-fit"
               >
                 <LuArrowUpRight className="size-4" />
@@ -264,6 +265,7 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
               <ButtonLink
                 color="secondary"
                 href={formatToUrl(link.href)}
+                target="_blank"
                 className="min-w-full sm:min-w-fit"
               >
                 <LuInfo />
