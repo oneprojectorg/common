@@ -1,3 +1,5 @@
+import { sql } from '@op/db/client';
+import { organizations } from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
@@ -13,26 +15,32 @@ const meta: OpenApiMeta = {
   openapi: {
     enabled: true,
     method: 'GET',
-    path: '/organization',
+    path: '/organization/search',
     protect: true,
     tags: ['organization'],
-    summary: 'List organizations',
+    summary: 'Search organizations',
   },
 };
 
-export const listOrganizationsRouter = router({
-  list: loggedProcedure
+export const searchOrganizationsRouter = router({
+  search: loggedProcedure
     // Middlewares
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticated)
     .use(withDB)
     // Router
     .meta(meta)
-    .input(dbFilter.optional())
+    .input(
+      dbFilter.extend({
+        q: z.string(),
+      }),
+    )
     .output(z.array(organizationsEncoder))
     .query(async ({ ctx, input }) => {
       const { db } = ctx.database;
-      const { limit = 10 } = input ?? {};
+      const { q, limit = 10 } = input;
+
+      const where = sql`${organizations.name} @@to_tsquery('english', ${q + ':*'})`;
 
       // TODO: assert authorization, setup a common package
       const result = await db.query.organizations.findMany({
@@ -44,6 +52,7 @@ export const listOrganizationsRouter = router({
         },
         orderBy: (orgs, { desc }) => desc(orgs.updatedAt),
         limit,
+        where,
       });
 
       if (!result) {
