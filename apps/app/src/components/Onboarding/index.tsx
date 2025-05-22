@@ -1,6 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
+import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { StepperProgressIndicator } from '@op/ui/Stepper';
 import { useRouter } from 'next/navigation';
 import { useCallback, useState } from 'react';
@@ -82,7 +83,7 @@ export const OnboardingFlow = () => {
   );
 
   if (values) {
-    return <div>Processing...</div>;
+    return <LoadingSpinner />;
   }
 
   return (

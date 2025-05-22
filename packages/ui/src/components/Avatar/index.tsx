@@ -1,6 +1,7 @@
 import { ReactNode, useMemo } from 'react';
 
 import { cn, getGradientForString } from '../../lib/utils';
+import { Skeleton } from '../Skeleton';
 
 export const Avatar = ({
   children,
@@ -36,5 +37,16 @@ export const Avatar = ({
         children
       )}
     </div>
+  );
+};
+
+export const AvatarSkeleton = ({ className }: { className?: string }) => {
+  return (
+    <Skeleton
+      className={cn(
+        'relative flex size-8 items-center justify-center overflow-hidden text-clip rounded-full bg-white shadow outline outline-neutral-gray1',
+        className,
+      )}
+    />
   );
 };

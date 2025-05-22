@@ -2,6 +2,7 @@
 
 import { getPublicUrl } from '@/utils';
 import { trpc } from '@op/api/client';
+import { Skeleton } from '@op/ui/Skeleton';
 import { cn, getGradientForString } from '@op/ui/utils';
 import Image from 'next/image';
 import React, { Suspense, useMemo } from 'react';
@@ -72,7 +73,7 @@ export const OrganizationProfile = ({ slug }: { slug: string }) => {
           fallback={<div>Could not load profile</div>}
           onError={console.log}
         >
-          <Suspense fallback={<div>Loading...</div>}>
+          <Suspense fallback={<Skeleton className="h-96 w-full" />}>
             <OrganizationProfileSuspense slug={slug} />
           </Suspense>
         </ErrorBoundary>

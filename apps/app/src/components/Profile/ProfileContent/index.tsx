@@ -3,6 +3,8 @@ import { trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { Header3 } from '@op/ui/Header';
+import { LoadingSpinner } from '@op/ui/LoadingSpinner';
+import { Skeleton } from '@op/ui/Skeleton';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
 import Link from 'next/link';
@@ -10,6 +12,7 @@ import { Suspense } from 'react';
 import { LuCopy, LuGlobe, LuMail } from 'react-icons/lu';
 import { toast } from 'sonner';
 
+import { PostFeedSkeleton } from '@/components/PostFeed';
 import { PostUpdate } from '@/components/PostUpdate';
 
 import { ProfileFeed } from '../ProfileFeed';
@@ -133,7 +136,7 @@ export const ProfileGrid = ({ profile }: { profile: Organization }) => {
             className="border-b px-4 pb-8 pt-6"
           />
         </Suspense>
-        <Suspense fallback={<div>Loading...</div>}>
+        <Suspense fallback={<LoadingSpinner />}>
           <ProfileFeed profile={profile} className="px-4" />
         </Suspense>
       </div>
@@ -152,10 +155,10 @@ export const ProfileTabs = ({ profile }: { profile: Organization }) => {
         <Tab id="about">About</Tab>
       </TabList>
       <TabPanel id="updates" className="px-6">
-        <Suspense fallback={null}>
+        <Suspense fallback={<Skeleton className="w-full" />}>
           <PostUpdate organization={profile} className="border-b px-4 py-6" />
         </Suspense>
-        <Suspense fallback={<div>Loading...</div>}>
+        <Suspense fallback={<Skeleton className="min-h-20 w-full" />}>
           <ProfileFeed profile={profile} className="px-4 py-6" />
         </Suspense>
       </TabPanel>

@@ -1,5 +1,7 @@
 import type { PostToOrganization } from '@op/api/encoders';
+import { AvatarSkeleton } from '@op/ui/Avatar';
 import { Header3 } from '@op/ui/Header';
+import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
 import { cn } from '@op/ui/utils';
 import { ReactNode } from 'react';
 import { LuLeaf } from 'react-icons/lu';
@@ -147,6 +149,27 @@ export const PostFeed = ({
           </FeedMain>
         </FeedItem>
       )}
+    </div>
+  );
+};
+
+export const PostFeedSkeleton = ({ className }: { className?: string }) => {
+  return (
+    <div className={cn('flex flex-col gap-8 pb-8', className)}>
+      <FeedItem>
+        <AvatarSkeleton className="!size-8 max-h-8 max-w-8 rounded-full" />
+        <FeedMain>
+          <FeedHeader>
+            <Header3 className="font-medium leading-5">
+              <Skeleton />
+            </Header3>
+            <Skeleton />
+          </FeedHeader>
+          <FeedContent>
+            <SkeletonLine lines={3} />
+          </FeedContent>
+        </FeedMain>
+      </FeedItem>
     </div>
   );
 };
