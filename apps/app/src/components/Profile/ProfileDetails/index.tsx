@@ -192,7 +192,7 @@ const AddRelationshipModal = ({ profile }: { profile: Organization }) => {
                 default:
                   return (
                     <>
-                      <Button color="secondary" isDisabled>
+                      <Button color="secondary">
                         {relationship.pending ? <LuClock /> : <LuCheck />}
                         Member
                       </Button>
