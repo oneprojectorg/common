@@ -16,7 +16,9 @@ const RelationshipCount = ({ profile }: { profile: Organization }) => {
 
   return (
     <Link href={`/org/${profile.slug}/relationships`}>
-      <span className="font-semibold">{count}</span> {t('relationships')}
+      <span className="font-bold text-teal">
+        {count} {t('relationships')}
+      </span>
     </Link>
   );
 };
@@ -30,6 +32,8 @@ export const ProfileSummary = ({ profile }: { profile: Organization }) => {
           ? `${profile.city}, ${profile.state}`
           : null}
       </div>
+
+      <div className="text-base text-neutral-charcoal">{profile.bio}</div>
       <ErrorBoundary fallback={null}>
         <div className="flex flex-col-reverse gap-6 sm:flex-col">
           <div className="flex gap-1 text-base text-neutral-gray4">
