@@ -69,8 +69,12 @@ const Highlight = ({ children }: { children?: ReactNode }) => {
   );
 };
 
-const NewOrganizationsSuspense = () => {
-  const [organizations] = trpc.organization.list.useSuspenseQuery();
+export const NewOrganizationsSuspense = ({
+  limit = 10,
+}: {
+  limit?: number;
+}) => {
+  const [organizations] = trpc.organization.list.useSuspenseQuery({ limit });
 
   return (
     <>

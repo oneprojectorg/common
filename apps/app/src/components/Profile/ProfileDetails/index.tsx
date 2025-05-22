@@ -38,9 +38,14 @@ const AddRelationshipModal = ({ profile }: { profile: Organization }) => {
       organizationId: profile.id,
     });
 
-  const relationshipsToCurrentUserOrg = inverseRelationships.filter(
-    (relationship) => relationship.id === user?.currentOrganization?.id,
-  );
+  const relationshipsToCurrentUserOrg = relationships.find(
+    (relationship) =>
+      relationship.sourceOrganizationId === user?.currentOrganization?.id,
+  )
+    ? []
+    : inverseRelationships.filter(
+        (relationship) => relationship.id === user?.currentOrganization?.id,
+      );
 
   return (
     <>
@@ -181,7 +186,7 @@ const AddRelationshipModal = ({ profile }: { profile: Organization }) => {
                     <>
                       <Button color="secondary">
                         {relationship.pending ? <LuClock /> : <LuCheck />}
-                        Funded by
+                        Fundee
                       </Button>
                       <Tooltip>
                         {relationship.pending &&
@@ -192,7 +197,7 @@ const AddRelationshipModal = ({ profile }: { profile: Organization }) => {
                 default:
                   return (
                     <>
-                      <Button color="secondary" isDisabled>
+                      <Button color="secondary">
                         {relationship.pending ? <LuClock /> : <LuCheck />}
                         Member
                       </Button>
@@ -244,6 +249,7 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
               <ButtonLink
                 color="secondary"
                 href={formatToUrl(link.href)}
+                target="_blank"
                 className="min-w-full sm:min-w-fit"
               >
                 <LuArrowUpRight className="size-4" />
@@ -259,6 +265,7 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
               <ButtonLink
                 color="secondary"
                 href={formatToUrl(link.href)}
+                target="_blank"
                 className="min-w-full sm:min-w-fit"
               >
                 <LuInfo />

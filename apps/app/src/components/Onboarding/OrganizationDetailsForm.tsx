@@ -86,6 +86,7 @@ export const OrganizationDetailsForm = ({
     organizationDetails?.bannerImage,
   );
 
+  const uploadAvatarImage = trpc.organization.uploadAvatarImage.useMutation();
   const uploadImage = trpc.organization.uploadAvatarImage.useMutation();
 
   const form = useAppForm({
@@ -170,7 +171,7 @@ export const OrganizationDetailsForm = ({
                 const dataUrl = `data:${file.type};base64,${base64}`;
 
                 setProfileImage({ url: dataUrl });
-                const res = await uploadImage.mutateAsync({
+                const res = await uploadAvatarImage.mutateAsync({
                   file: base64,
                   fileName: file.name,
                   mimeType: file.type,
@@ -183,8 +184,8 @@ export const OrganizationDetailsForm = ({
 
               reader.readAsDataURL(file);
             }}
-            uploading={uploadImage.isPending}
-            error={uploadImage.error?.message || undefined}
+            uploading={uploadAvatarImage.isPending}
+            error={uploadAvatarImage.error?.message || undefined}
           />
         </div>
         <form.AppField

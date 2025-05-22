@@ -3,6 +3,7 @@ import { useRef } from 'react';
 import { useButton } from 'react-aria';
 
 import { cn } from '../lib/utils';
+import { LoadingSpinner } from './LoadingSpinner';
 
 interface ImageUploaderProps {
   label?: string;
@@ -41,20 +42,17 @@ export const BannerUploader = ({
   };
 
   return (
-    <div
-      className={cn(
-        'flex flex-col items-center justify-center',
-        uploading && 'opacity-20',
-        className,
-      )}
-    >
+    <div className={cn('flex flex-col items-center justify-center', className)}>
       <div className="size-full">
         <div className="relative flex size-full items-center justify-center bg-redTeal bg-center">
           {value ? (
             <img
               src={value}
               alt="Profile"
-              className="absolute size-full object-cover"
+              className={cn(
+                'absolute size-full object-cover',
+                uploading && 'opacity-20',
+              )}
             />
           ) : null}
           <button
@@ -63,7 +61,11 @@ export const BannerUploader = ({
             className="z-10 rounded-full bg-black/50 p-2 text-white hover:bg-neutral-800"
             disabled={uploading}
           >
-            <Camera className="stroke-offWhite stroke-1" />
+            {uploading ? (
+              <LoadingSpinner />
+            ) : (
+              <Camera className="stroke-offWhite stroke-1" />
+            )}
           </button>
         </div>
 
