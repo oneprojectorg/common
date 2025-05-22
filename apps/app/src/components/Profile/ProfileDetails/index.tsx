@@ -25,10 +25,22 @@ import { RemoveRelationshipModal } from './RemoveRelationshipModal';
 
 const AddRelationshipModal = ({ profile }: { profile: Organization }) => {
   const utils = trpc.useUtils();
+  const { user } = useUser();
+  // checking for our relationships TOWARDS the profile
   const [{ relationships }] =
     trpc.organization.listDirectedRelationships.useSuspenseQuery({
       to: profile.id,
     });
+  // TODO: allow to filter in the API
+  // checking for relationships FROM the profile
+  const [{ organizations: inverseRelationships }] =
+    trpc.organization.listRelationships.useSuspenseQuery({
+      organizationId: profile.id,
+    });
+
+  const relationshipsToCurrentUserOrg = inverseRelationships.filter(
+    (relationship) => relationship.id === user?.currentOrganization?.id,
+  );
 
   return (
     <>
@@ -122,7 +134,7 @@ const AddRelationshipModal = ({ profile }: { profile: Organization }) => {
             </TooltipTrigger>
           );
         })
-      ) : (
+      ) : relationshipsToCurrentUserOrg.length <= 0 ? (
         <DialogTrigger>
           <Button className="min-w-full sm:min-w-fit">
             <LuPlus className="size-4" />
@@ -142,7 +154,59 @@ const AddRelationshipModal = ({ profile }: { profile: Organization }) => {
             />
           </Modal>
         </DialogTrigger>
-      )}
+      ) : null}
+
+      {relationshipsToCurrentUserOrg[0]?.relationships?.map((relationship) => {
+        return (
+          <TooltipTrigger isDisabled={!relationship.pending}>
+            {(() => {
+              switch (relationship.relationshipType) {
+                case 'partnership':
+                  return (
+                    <>
+                      <Button color="secondary">
+                        {relationship.pending ? <LuClock /> : <LuCheck />}
+                        Partner
+                      </Button>
+                      {relationship.pending && (
+                        <Tooltip>
+                          Pending confirmation from{' '}
+                          {user?.currentOrganization?.name}
+                        </Tooltip>
+                      )}
+                    </>
+                  );
+                case 'funding':
+                  return (
+                    <>
+                      <Button color="secondary">
+                        {relationship.pending ? <LuClock /> : <LuCheck />}
+                        Funded by
+                      </Button>
+                      <Tooltip>
+                        {relationship.pending &&
+                          `Pending confirmation from ${user?.currentOrganization?.name}`}
+                      </Tooltip>
+                    </>
+                  );
+                default:
+                  return (
+                    <>
+                      <Button color="secondary" isDisabled>
+                        {relationship.pending ? <LuClock /> : <LuCheck />}
+                        Member
+                      </Button>
+                      <Tooltip>
+                        {relationship.pending &&
+                          `Pending confirmation from ${user?.currentOrganization?.name}`}
+                      </Tooltip>
+                    </>
+                  );
+              }
+            })()}
+          </TooltipTrigger>
+        );
+      })}
     </>
   );
 };

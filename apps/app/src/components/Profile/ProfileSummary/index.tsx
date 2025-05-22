@@ -34,6 +34,7 @@ export const ProfileSummary = ({ profile }: { profile: Organization }) => {
       </div>
 
       <div className="text-base text-neutral-charcoal">{profile.bio}</div>
+
       <ErrorBoundary fallback={null}>
         <div className="flex flex-col-reverse gap-6 sm:flex-col">
           <div className="flex gap-1 text-base text-neutral-gray4">

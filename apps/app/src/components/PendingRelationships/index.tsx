@@ -45,7 +45,7 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
         {organizations.map((org) => {
           const relationships = org.relationships
             ?.filter((r) => r.pending)
-            .map((r) => relationshipMap[r.relationshipType]?.label)
+            .map((r) => relationshipMap[r.relationshipType]?.noun)
             .join(', ');
 
           return (
@@ -54,7 +54,9 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
                 <OrganizationAvatar organization={org} />
                 <div className="flex flex-col">
                   <span className="font-bold">{org.name}</span>
-                  <span>Added you as a {relationships ?? 'related'}</span>
+                  <span>
+                    Added you as a {relationships ?? 'related organization'}
+                  </span>
                 </div>
               </div>
               <div className="flex items-center gap-4">
