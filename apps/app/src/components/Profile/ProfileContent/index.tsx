@@ -96,10 +96,10 @@ const ProfileAbout = ({ profile }: { profile: Organization }) => {
           <Header3>Strategies</Header3>
           <TagGroup>
             {strategies.map((strategy) =>
-              // @ts-ignore - odd TS bug that only shows in CI
               strategy ? (
                 <Tag>
                   <I18nLink href={`/org/?terms=${strategy.id}`}>
+                    {/* @ts-ignore - odd TS bug that only shows in CI */}
                     {strategy.label}
                   </I18nLink>
                 </Tag>
