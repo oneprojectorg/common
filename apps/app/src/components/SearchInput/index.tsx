@@ -13,16 +13,10 @@ export const SearchInput = () => {
   const [query, setQuery] = useState<string>('');
   const containerRef = useRef<HTMLDivElement>(null);
   const [showResults, setShowResults] = useState<boolean>(false);
-  const [debouncedQuery] = useDebounce(query, 500);
+  const [debouncedQuery] = useDebounce(query, 200);
   const { data: organizationResults } = trpc.organization.search.useQuery({
     q: debouncedQuery,
   });
-
-  console.log('organizationResults:', organizationResults);
-
-  useEffect(() => {
-    console.log('debouncedQuery:', debouncedQuery);
-  }, [debouncedQuery]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -69,6 +63,7 @@ export const SearchInput = () => {
                   <Link
                     className="flex items-center gap-4"
                     href={`/org/${org.slug}`}
+                    onClick={() => setShowResults(false)}
                   >
                     <OrganizationAvatar organization={org} className="size-8" />
 

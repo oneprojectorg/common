@@ -43,7 +43,7 @@ export const searchOrganizationsRouter = router({
         return [];
       }
 
-      const where = sql`${organizations.name} @@to_tsquery('english', ${q + ':*'})`;
+      const where = sql`${organizations.name} @@to_tsquery('english', ${q.trim() + ':*'})`;
 
       // TODO: assert authorization, setup a common package
       const result = await db.query.organizations.findMany({

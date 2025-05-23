@@ -1,4 +1,3 @@
-import { organizationsTerms } from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
 import { inArray } from 'drizzle-orm';
 import type { OpenApiMeta } from 'trpc-to-openapi';
