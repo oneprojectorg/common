@@ -10,7 +10,6 @@ import { Button } from '@op/ui/Button';
 import { Menu, MenuItem } from '@op/ui/Menu';
 import { MenuTrigger } from '@op/ui/RAC';
 import { Skeleton } from '@op/ui/Skeleton';
-import { TextField } from '@op/ui/TextField';
 import { ErrorBoundary } from 'next/dist/client/components/error-boundary';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -20,6 +19,7 @@ import { LuSearch } from 'react-icons/lu';
 import { Link } from '@/lib/i18n';
 
 import { CommonLogo } from '../CommonLogo';
+import { SearchInput } from '../SearchInput';
 
 const UserAvatarMenu = () => {
   const { user } = useUser();
@@ -99,16 +99,7 @@ export const SiteHeader = () => {
           <CommonLogo />
         </Link>
         <span className="flex items-center justify-center">
-          <TextField
-            inputProps={{
-              placeholder: 'Search',
-              color: 'muted',
-              size: 'small',
-              icon: <LuSearch className="size-4 text-neutral-gray4" />,
-            }}
-            className="w-96"
-            aria-label="Search"
-          />
+          <SearchInput />
         </span>
 
         <ClientOnly>

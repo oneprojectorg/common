@@ -69,12 +69,30 @@ const Highlight = ({ children }: { children?: ReactNode }) => {
   );
 };
 
+const makeArray = (item: any) => {
+  if (item == null) {
+    return [];
+  }
+
+  if (Array.isArray(item)) {
+    return item;
+  }
+
+  return [item];
+};
+
 export const NewOrganizationsSuspense = ({
   limit = 10,
 }: {
   limit?: number;
 }) => {
-  const [organizations] = trpc.organization.list.useSuspenseQuery({ limit });
+  const searchParams = useSearchParams();
+  const termsFilter = makeArray(searchParams.get('terms'));
+
+  const [organizations] = trpc.organization.list.useSuspenseQuery({
+    limit,
+    terms: termsFilter,
+  });
 
   return (
     <>

@@ -1,10 +1,8 @@
 import { z } from 'zod';
 
-export const dbFilter = z
-  .object({
-    limit: z.number().optional(),
-  })
-  .optional();
+export const dbFilter = z.object({
+  limit: z.number().optional(),
+});
 
 export function sanitizeS3Filename(filename: string) {
   if (!filename) {

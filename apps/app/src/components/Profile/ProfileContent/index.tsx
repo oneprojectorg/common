@@ -12,6 +12,8 @@ import { Suspense } from 'react';
 import { LuCopy, LuGlobe, LuMail } from 'react-icons/lu';
 import { toast } from 'sonner';
 
+import { Link as I18nLink } from '@/lib/i18n';
+
 import { PostUpdate } from '@/components/PostUpdate';
 
 import { ProfileFeed } from '../ProfileFeed';
@@ -95,7 +97,13 @@ const ProfileAbout = ({ profile }: { profile: Organization }) => {
           <TagGroup>
             {strategies.map((strategy) =>
               // @ts-ignore - odd TS bug that only shows in CI
-              strategy ? <Tag>{strategy.label}</Tag> : null,
+              strategy ? (
+                <Tag>
+                  <I18nLink href={`/org/?terms=${strategy.id}`}>
+                    {strategy.label}
+                  </I18nLink>
+                </Tag>
+              ) : null,
             )}
           </TagGroup>
         </section>
