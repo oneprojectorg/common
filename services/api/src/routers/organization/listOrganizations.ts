@@ -1,4 +1,6 @@
+import { organizationsTerms } from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
+import { inArray } from 'drizzle-orm';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
@@ -28,11 +30,49 @@ export const listOrganizationsRouter = router({
     .use(withDB)
     // Router
     .meta(meta)
-    .input(dbFilter.optional())
+    .input(
+      dbFilter
+        .extend({
+          terms: z.array(z.string()).nullish(),
+        })
+        .optional(),
+    )
     .output(z.array(organizationsEncoder))
     .query(async ({ ctx, input }) => {
       const { db } = ctx.database;
-      const { limit = 10 } = input ?? {};
+      const { limit = 10, terms = [] } = input ?? {};
+
+      if (terms?.length) {
+        const result = await db.query.organizationsTerms.findMany({
+          where: (table) => inArray(table.taxonomyTermId, terms),
+          // with: {
+          // organization: {
+          // // links: true,
+          // headerImage: true,
+          // avatarImage: true,
+          // },
+          // },
+        });
+
+        console.log('TERMS', terms, result);
+        const orgs = await db.query.organizations.findMany({
+          where: (table) =>
+            inArray(
+              table.id,
+              result.map((r) => r.organizationId),
+            ),
+          with: {
+            projects: true,
+            links: true,
+            headerImage: true,
+            avatarImage: true,
+          },
+          orderBy: (orgs, { desc }) => desc(orgs.updatedAt),
+          limit,
+        });
+
+        return orgs.map((org) => organizationsEncoder.parse(org));
+      }
 
       // TODO: assert authorization, setup a common package
       const result = await db.query.organizations.findMany({
