@@ -12,17 +12,21 @@ import { OrganizationAvatar } from '../OrganizationAvatar';
 const SearchResultItem = ({
   children,
   selected,
+  className,
 }: {
   children: React.ReactNode;
   selected: boolean;
+  className?: string;
 }) => {
   return (
     <div
       role="option"
       aria-selected={selected}
-      className={`group flex cursor-pointer select-none items-center gap-2 p-4 ${
-        selected ? 'bg-neutral-offWhite' : 'hover:bg-neutral-offWhite'
-      }`}
+      className={cn(
+        'group flex cursor-pointer select-none items-center gap-2 p-4',
+        selected ? 'bg-neutral-offWhite' : 'hover:bg-neutral-offWhite',
+        className,
+      )}
     >
       {children}
     </div>
@@ -113,7 +117,7 @@ export const SearchInput = () => {
           placeholder: 'Search',
           color: 'muted',
           size: 'small',
-          icon: <LuSearch className="size-4 text-neutral-gray4" />,
+          icon: <LuSearch className="size-4 text-neutral-gray3" />,
           className: cn(
             'active:bg-white focus:bg-white',
             'active:border-inherit', // override TextField input styles that are used everywhere
@@ -143,8 +147,17 @@ export const SearchInput = () => {
             aria-label="Search results"
           >
             <div className="space-y-1">
-              <SearchResultItem selected={selectedIndex === 0}>
-                {query}
+              <SearchResultItem
+                selected={selectedIndex === 0}
+                className="border-b py-2"
+              >
+                <Link
+                  className="flex w-full items-center gap-2"
+                  href={`/org/?q=${query}`}
+                  onClick={() => setShowResults(false)}
+                >
+                  <LuSearch className="size-4 text-neutral-charcoal" /> {query}
+                </Link>
               </SearchResultItem>
               {organizationResults.map((org, index) => (
                 <SearchResultItem
