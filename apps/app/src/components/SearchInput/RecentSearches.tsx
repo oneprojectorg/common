@@ -23,7 +23,7 @@ export const RecentSearches = ({
 
   return (
     <>
-      <SearchResultItem className="py-2 pt-6 text-neutral-gray4">
+      <SearchResultItem className="border-t py-2 pt-6 text-neutral-gray4">
         Recent Searches
       </SearchResultItem>
       {recentSearches.map((recentQuery, index) => (

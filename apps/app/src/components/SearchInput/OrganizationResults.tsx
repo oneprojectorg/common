@@ -20,22 +20,7 @@ export const OrganizationResults = ({
   onSearch,
 }: OrganizationResultsProps) => {
   return (
-    <>
-      {query.length > 0 && (
-        <SearchResultItem
-          selected={selectedIndex === 0}
-          className="border-b py-2"
-        >
-          <Link
-            className="flex w-full items-center gap-2"
-            href={`/org/?q=${query}`}
-            onClick={() => onSearch(query)}
-          >
-            <LuSearch className="size-4 text-neutral-charcoal" /> {query}
-          </Link>
-        </SearchResultItem>
-      )}
-
+    <span className="border-t">
       {organizationResults.map((org, index) => (
         <SearchResultItem key={org.id} selected={selectedIndex === index + 1}>
           <Link
@@ -52,6 +37,6 @@ export const OrganizationResults = ({
           </Link>
         </SearchResultItem>
       ))}
-    </>
+    </span>
   );
 };

@@ -6,10 +6,11 @@ import { useEffect, useRef, useState } from 'react';
 import { LuSearch } from 'react-icons/lu';
 import { useDebounce } from 'use-debounce';
 
-import { useRouter } from '@/lib/i18n';
+import { Link, useRouter } from '@/lib/i18n';
 
 import { OrganizationResults } from './OrganizationResults';
 import { RecentSearches } from './RecentSearches';
+import { SearchResultItem } from './SearchResultItem';
 
 export const SearchInput = () => {
   const router = useRouter();
@@ -59,7 +60,7 @@ export const SearchInput = () => {
 
     if (query.length && !recentSearches.includes(query)) {
       const recentTrimmed = recentSearches.slice(0, 2);
-      setRecentSearches([...recentTrimmed, query]);
+      setRecentSearches([query, ...recentTrimmed]);
     }
   };
 
@@ -108,7 +109,7 @@ export const SearchInput = () => {
           }
         }
 
-        router.push(`/org?q=${query}`);
+        router.push(`/search?q=${query}`);
         break;
       case 'Escape':
         event.preventDefault();
@@ -155,7 +156,22 @@ export const SearchInput = () => {
             aria-label="Search results"
           >
             <div className="space-y-1">
-              {organizationResults?.length ? (
+              {query.length > 0 && (
+                <SearchResultItem
+                  selected={selectedIndex === 0}
+                  className="py-2"
+                >
+                  <Link
+                    className="flex w-full items-center gap-2"
+                    href={`/search/?q=${query}`}
+                    onClick={() => recordSearch(query)}
+                  >
+                    <LuSearch className="size-4 text-neutral-charcoal" />{' '}
+                    {query}
+                  </Link>
+                </SearchResultItem>
+              )}
+              {query?.length ? (
                 <OrganizationResults
                   query={query}
                   organizationResults={organizationResults}

@@ -6,8 +6,8 @@ import { Suspense } from 'react';
 import ErrorBoundary from '@/components/ErrorBoundary';
 
 import {
-  OrganizationList,
   OrganizationListSkeleton,
+  OrganizationSummaryList,
 } from '../OrganizationList';
 
 export const OrganizationSearchResultsSuspense = ({
@@ -22,7 +22,7 @@ export const OrganizationSearchResultsSuspense = ({
     q: query,
   });
 
-  return <OrganizationList organizations={organizations} />;
+  return <OrganizationSummaryList organizations={organizations} />;
 };
 
 export const OrganizationSearchResults = ({

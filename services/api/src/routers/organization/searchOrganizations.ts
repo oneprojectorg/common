@@ -39,9 +39,6 @@ export const searchOrganizationsRouter = router({
     .query(async ({ ctx, input }) => {
       const { db } = ctx.database;
       const { q, limit = 10 } = input;
-      if (q === '') {
-        return [];
-      }
 
       const where = sql`${organizations.name} @@to_tsquery('english', ${q.trim() + ':*'})`;
 
@@ -55,7 +52,7 @@ export const searchOrganizationsRouter = router({
         },
         orderBy: (orgs, { desc }) => desc(orgs.updatedAt),
         limit,
-        where,
+        ...(q ? { where } : {}),
       });
 
       if (!result) {
