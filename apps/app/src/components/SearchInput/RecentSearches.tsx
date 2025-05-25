@@ -22,8 +22,8 @@ export const RecentSearches = ({
   }
 
   return (
-    <>
-      <SearchResultItem className="border-t py-2 pt-6 text-neutral-gray4">
+    <div className="pb-4">
+      <SearchResultItem className="py-2 pt-6 text-neutral-gray4 hover:bg-transparent">
         Recent Searches
       </SearchResultItem>
       {recentSearches.map((recentQuery, index) => (
@@ -41,6 +41,6 @@ export const RecentSearches = ({
           </Link>
         </SearchResultItem>
       ))}
-    </>
+    </div>
   );
 };

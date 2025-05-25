@@ -9,8 +9,7 @@ import { Avatar } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
 import { Menu, MenuItem } from '@op/ui/Menu';
 import { MenuTrigger } from '@op/ui/RAC';
-import { Skeleton } from '@op/ui/Skeleton';
-import { ErrorBoundary } from 'next/dist/client/components/error-boundary';
+import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Suspense } from 'react';
@@ -19,6 +18,7 @@ import { LuSearch } from 'react-icons/lu';
 import { Link } from '@/lib/i18n';
 
 import { CommonLogo } from '../CommonLogo';
+import ErrorBoundary from '../ErrorBoundary';
 import { SearchInput } from '../SearchInput';
 
 const UserAvatarMenu = () => {
@@ -99,14 +99,16 @@ export const SiteHeader = () => {
           <CommonLogo />
         </Link>
         <span className="flex items-center justify-center">
-          <SearchInput />
+          <ErrorBoundary fallback={<Skeleton className="h-10 w-96" />}>
+            <SearchInput />
+          </ErrorBoundary>
         </span>
 
         <ClientOnly>
           <ErrorBoundary
-            errorComponent={() => (
+            fallback={
               <div className="size-8 rounded-full border bg-white shadow" />
-            )}
+            }
           >
             <Suspense
               fallback={
@@ -130,9 +132,9 @@ export const SiteHeader = () => {
 
           <ClientOnly>
             <ErrorBoundary
-              errorComponent={() => (
+              fallback={
                 <div className="size-8 rounded-full border bg-white shadow" />
-              )}
+              }
             >
               <Suspense
                 fallback={

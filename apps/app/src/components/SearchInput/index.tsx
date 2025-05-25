@@ -151,15 +151,18 @@ export const SearchInput = () => {
       >
         {dropdownShowing ? (
           <div
-            className="absolute top-10 z-10 !max-h-80 w-[--trigger-width] min-w-96 overflow-y-auto rounded-b border border-t-0 bg-white pb-4 group-hover:border-neutral-gray2"
+            className="absolute top-10 z-10 !max-h-80 w-[--trigger-width] min-w-96 overflow-y-auto rounded-b border border-t-0 bg-white group-hover:border-neutral-gray2"
             role="listbox"
             aria-label="Search results"
           >
-            <div className="space-y-1">
+            <div>
               {query.length > 0 && (
                 <SearchResultItem
                   selected={selectedIndex === 0}
-                  className="py-2"
+                  className={cn(
+                    'py-2',
+                    organizationResults?.length && 'border-b',
+                  )}
                 >
                   <Link
                     className="flex w-full items-center gap-2"
@@ -171,7 +174,7 @@ export const SearchInput = () => {
                   </Link>
                 </SearchResultItem>
               )}
-              {query?.length ? (
+              {query?.length && organizationResults?.length ? (
                 <OrganizationResults
                   query={query}
                   organizationResults={organizationResults}

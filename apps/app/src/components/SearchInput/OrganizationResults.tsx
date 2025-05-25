@@ -20,7 +20,7 @@ export const OrganizationResults = ({
   onSearch,
 }: OrganizationResultsProps) => {
   return (
-    <span className="border-t">
+    <div className="pb-4">
       {organizationResults.map((org, index) => (
         <SearchResultItem key={org.id} selected={selectedIndex === index + 1}>
           <Link
@@ -37,6 +37,6 @@ export const OrganizationResults = ({
           </Link>
         </SearchResultItem>
       ))}
-    </span>
+    </div>
   );
 };
