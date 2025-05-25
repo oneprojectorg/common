@@ -9,7 +9,7 @@ import { Avatar } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
 import { Menu, MenuItem } from '@op/ui/Menu';
 import { MenuTrigger } from '@op/ui/RAC';
-import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
+import { Skeleton } from '@op/ui/Skeleton';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Suspense } from 'react';

@@ -1,5 +1,4 @@
 import { RouterOutput } from '@op/api/client';
-import { LuSearch } from 'react-icons/lu';
 
 import { Link } from '@/lib/i18n';
 
