@@ -9,6 +9,26 @@ import { Link, useRouter } from '@/lib/i18n';
 
 import { OrganizationAvatar } from '../OrganizationAvatar';
 
+const SearchResultItem = ({
+  children,
+  selected,
+}: {
+  children: React.ReactNode;
+  selected: boolean;
+}) => {
+  return (
+    <div
+      role="option"
+      aria-selected={selected}
+      className={`group flex cursor-pointer select-none items-center gap-2 p-4 ${
+        selected ? 'bg-neutral-offWhite' : 'hover:bg-neutral-offWhite'
+      }`}
+    >
+      {children}
+    </div>
+  );
+};
+
 export const SearchInput = () => {
   const router = useRouter();
 
@@ -52,7 +72,7 @@ export const SearchInput = () => {
       case 'ArrowDown':
         event.preventDefault();
         setSelectedIndex((prev) =>
-          prev < organizationResults.length - 1 ? prev + 1 : 0,
+          prev < organizationResults.length ? prev + 1 : 0,
         );
         break;
       case 'ArrowUp':
@@ -63,14 +83,20 @@ export const SearchInput = () => {
         break;
       case 'Enter':
         event.preventDefault();
-        if (selectedIndex >= 0) {
-          const selectedOrg = organizationResults[selectedIndex];
+
+        setImmediateQuery('');
+        setQuery('');
+
+        if (selectedIndex > 0) {
+          const selectedOrg = organizationResults[selectedIndex - 1];
+
           if (selectedOrg) {
-            setImmediateQuery('');
-            setQuery('');
             router.push(`/org/${selectedOrg.slug}`);
+            break;
           }
         }
+
+        router.push(`/org?q=${query}`);
         break;
       case 'Escape':
         event.preventDefault();
@@ -117,17 +143,13 @@ export const SearchInput = () => {
             aria-label="Search results"
           >
             <div className="space-y-1">
+              <SearchResultItem selected={selectedIndex === 0}>
+                {query}
+              </SearchResultItem>
               {organizationResults.map((org, index) => (
-                <div
+                <SearchResultItem
                   key={org.id}
-                  id={`search-option-${index}`}
-                  role="option"
-                  aria-selected={selectedIndex === index}
-                  className={`group flex cursor-pointer select-none items-center gap-2 p-4 ${
-                    selectedIndex === index
-                      ? 'bg-neutral-offWhite'
-                      : 'hover:bg-neutral-offWhite'
-                  }`}
+                  selected={selectedIndex === index + 1}
                 >
                   <Link
                     className="flex w-full items-center gap-4"
@@ -141,7 +163,7 @@ export const SearchInput = () => {
                       <span>{org.city}</span>
                     </div>
                   </Link>
-                </div>
+                </SearchResultItem>
               ))}
             </div>
           </div>
