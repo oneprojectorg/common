@@ -81,7 +81,7 @@ export const SearchInput = () => {
   };
 
   return (
-    <div ref={containerRef}>
+    <div ref={containerRef} className="group">
       <TextField
         inputProps={{
           placeholder: 'Search',
@@ -90,6 +90,7 @@ export const SearchInput = () => {
           icon: <LuSearch className="size-4 text-neutral-gray4" />,
           className: cn(
             'active:bg-white focus:bg-white',
+            'active:border-inherit', // override TextField input styles that are used everywhere
             dropdownShowing && 'rounded-b-none',
           ),
           onKeyDown: handleKeyDown,
@@ -111,7 +112,7 @@ export const SearchInput = () => {
       >
         {dropdownShowing ? (
           <div
-            className="absolute top-10 z-10 !max-h-60 w-[--trigger-width] min-w-96 overflow-y-auto rounded-b border border-t-0 bg-white"
+            className="absolute top-10 z-10 !max-h-60 w-[--trigger-width] min-w-96 overflow-y-auto rounded-b border border-t-0 bg-white pb-4 group-hover:border-neutral-gray2"
             role="listbox"
             aria-label="Search results"
           >
@@ -122,7 +123,7 @@ export const SearchInput = () => {
                   id={`search-option-${index}`}
                   role="option"
                   aria-selected={selectedIndex === index}
-                  className={`group flex cursor-pointer select-none items-center gap-2 py-2 pl-2 pr-4 ${
+                  className={`group flex cursor-pointer select-none items-center gap-2 p-4 ${
                     selectedIndex === index
                       ? 'bg-neutral-offWhite'
                       : 'hover:bg-neutral-offWhite'
