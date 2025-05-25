@@ -142,9 +142,6 @@ export const InputWithIcon = ({
 }: InputWithVariantsProps & { ref?: React.RefObject<HTMLInputElement> }) => {
   return (
     <span className="relative w-full">
-      <span className="absolute left-4 top-1/2 -translate-y-1/2">
-        {props.icon}
-      </span>
       <RACInput
         ref={ref}
         {...props}
@@ -154,6 +151,9 @@ export const InputWithIcon = ({
           hasIcon: true,
         } as InputVariantsProps)}
       />
+      <span className="absolute left-4 top-1/2 -translate-y-1/2">
+        {props.icon}
+      </span>
     </span>
   );
 };

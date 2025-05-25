@@ -1,22 +1,27 @@
 import { trpc } from '@op/api/client';
-import { ListBox, ListBoxItem } from '@op/ui/ListBox';
 import { TextField } from '@op/ui/TextField';
+import { cn } from '@op/ui/utils';
 import { useEffect, useRef, useState } from 'react';
 import { LuSearch } from 'react-icons/lu';
 import { useDebounce } from 'use-debounce';
 
-import { Link } from '@/lib/i18n';
+import { Link, useRouter } from '@/lib/i18n';
 
 import { OrganizationAvatar } from '../OrganizationAvatar';
 
 export const SearchInput = () => {
+  const router = useRouter();
+
   const [query, setQuery] = useState<string>('');
+  const [debouncedQuery, setImmediateQuery] = useDebounce(query, 200);
   const containerRef = useRef<HTMLDivElement>(null);
   const [showResults, setShowResults] = useState<boolean>(false);
-  const [debouncedQuery] = useDebounce(query, 200);
+  const [selectedIndex, setSelectedIndex] = useState<number>(-1);
   const { data: organizationResults } = trpc.organization.search.useQuery({
     q: debouncedQuery,
   });
+
+  const dropdownShowing = !!(showResults && organizationResults?.length);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -25,6 +30,7 @@ export const SearchInput = () => {
         !containerRef.current.contains(event.target as Node)
       ) {
         setShowResults(false);
+        setSelectedIndex(-1);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -32,6 +38,47 @@ export const SearchInput = () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+
+  useEffect(() => {
+    setSelectedIndex(-1);
+  }, [organizationResults]);
+
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    if (!dropdownShowing) {
+      return;
+    }
+
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault();
+        setSelectedIndex((prev) =>
+          prev < organizationResults.length - 1 ? prev + 1 : 0,
+        );
+        break;
+      case 'ArrowUp':
+        event.preventDefault();
+        setSelectedIndex((prev) =>
+          prev > 0 ? prev - 1 : organizationResults.length - 1,
+        );
+        break;
+      case 'Enter':
+        event.preventDefault();
+        if (selectedIndex >= 0) {
+          const selectedOrg = organizationResults[selectedIndex];
+          if (selectedOrg) {
+            setImmediateQuery('');
+            setQuery('');
+            router.push(`/org/${selectedOrg.slug}`);
+          }
+        }
+        break;
+      case 'Escape':
+        event.preventDefault();
+        setShowResults(false);
+        setSelectedIndex(-1);
+        break;
+    }
+  };
 
   return (
     <div ref={containerRef}>
@@ -41,7 +88,17 @@ export const SearchInput = () => {
           color: 'muted',
           size: 'small',
           icon: <LuSearch className="size-4 text-neutral-gray4" />,
-          className: 'active:bg-neutral-offWhite focus:bg-neutral-offWhite',
+          className: cn(
+            'active:bg-white focus:bg-white',
+            dropdownShowing && 'rounded-b-none',
+          ),
+          onKeyDown: handleKeyDown,
+          'aria-expanded': dropdownShowing,
+          'aria-haspopup': 'listbox',
+          'aria-activedescendant':
+            selectedIndex >= 0 ? `search-option-${selectedIndex}` : undefined,
+          role: 'combobox',
+          'aria-autocomplete': 'list',
         }}
         onChange={(e) => {
           setQuery(e);
@@ -49,19 +106,30 @@ export const SearchInput = () => {
         }}
         onFocus={() => setShowResults(true)}
         value={query}
-        className="w-96"
+        className="relative z-20 w-96"
         aria-label="Search"
       >
-        {showResults && organizationResults?.length ? (
-          <div className="absolute top-12 z-10 !max-h-60 w-[--trigger-width] min-w-96 rounded-b border-b border-l border-r bg-neutral-offWhite p-2 shadow">
-            <ListBox items={organizationResults} className="border-0">
-              {(org) => (
-                <ListBoxItem
-                  id={org.id}
-                  className="group flex cursor-pointer select-none items-center gap-2 py-2 pl-2 pr-4"
+        {dropdownShowing ? (
+          <div
+            className="absolute top-10 z-10 !max-h-60 w-[--trigger-width] min-w-96 overflow-y-auto rounded-b border border-t-0 bg-white"
+            role="listbox"
+            aria-label="Search results"
+          >
+            <div className="space-y-1">
+              {organizationResults.map((org, index) => (
+                <div
+                  key={org.id}
+                  id={`search-option-${index}`}
+                  role="option"
+                  aria-selected={selectedIndex === index}
+                  className={`group flex cursor-pointer select-none items-center gap-2 py-2 pl-2 pr-4 ${
+                    selectedIndex === index
+                      ? 'bg-neutral-offWhite'
+                      : 'hover:bg-neutral-offWhite'
+                  }`}
                 >
                   <Link
-                    className="flex items-center gap-4"
+                    className="flex w-full items-center gap-4"
                     href={`/org/${org.slug}`}
                     onClick={() => setShowResults(false)}
                   >
@@ -72,9 +140,9 @@ export const SearchInput = () => {
                       <span>{org.city}</span>
                     </div>
                   </Link>
-                </ListBoxItem>
-              )}
-            </ListBox>
+                </div>
+              ))}
+            </div>
           </div>
         ) : null}
       </TextField>
