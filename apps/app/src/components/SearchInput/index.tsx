@@ -12,11 +12,11 @@ import { OrganizationAvatar } from '../OrganizationAvatar';
 
 const SearchResultItem = ({
   children,
-  selected,
+  selected = false,
   className,
 }: {
   children: React.ReactNode;
-  selected: boolean;
+  selected?: boolean;
   className?: string;
 }) => {
   return (
@@ -88,7 +88,7 @@ export const SearchInput = () => {
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
     const isInteractingwWithDropdown =
-      !dropdownShowing || !organizationResults?.length;
+      !showResults || !organizationResults?.length;
 
     switch (event.key) {
       case 'ArrowDown':
@@ -218,25 +218,31 @@ export const SearchInput = () => {
                     </SearchResultItem>
                   ))
                 : recentSearches.length > 0 &&
-                  !query.length &&
-                  recentSearches.map((recentQuery, index) => (
-                    <SearchResultItem
-                      key={recentQuery}
-                      selected={
-                        selectedIndex === index + (query.length ? 1 : 0)
-                      }
-                      className="py-2"
-                    >
-                      <Link
-                        className="flex w-full items-center gap-2"
-                        href={`/org/?q=${recentQuery}`}
-                        onClick={() => recordSearch(query)}
-                      >
-                        <LuClock className="size-4 text-neutral-charcoal" />{' '}
-                        {recentQuery}
-                      </Link>
-                    </SearchResultItem>
-                  ))}
+                  !query.length && (
+                    <>
+                      <SearchResultItem className="py-2 pt-6 text-neutral-gray4">
+                        Recent Searches
+                      </SearchResultItem>
+                      {recentSearches.map((recentQuery, index) => (
+                        <SearchResultItem
+                          key={recentQuery}
+                          selected={
+                            selectedIndex === index + (query.length ? 1 : 0)
+                          }
+                          className="py-2"
+                        >
+                          <Link
+                            className="flex w-full items-center gap-2"
+                            href={`/org/?q=${recentQuery}`}
+                            onClick={() => recordSearch(query)}
+                          >
+                            <LuClock className="size-4 text-neutral-charcoal" />{' '}
+                            {recentQuery}
+                          </Link>
+                        </SearchResultItem>
+                      ))}
+                    </>
+                  )}
             </div>
           </div>
         ) : null}
