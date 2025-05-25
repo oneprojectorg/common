@@ -1,6 +1,6 @@
 import { getPublicUrl } from '@/utils';
 import { RouterOutput } from '@op/api/client';
-import { Avatar } from '@op/ui/Avatar';
+import { Avatar, AvatarSkeleton } from '@op/ui/Avatar';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';
 
@@ -46,5 +46,17 @@ export const OrganizationAvatar = ({
         }
       </Avatar>
     </Link>
+  );
+};
+
+export const OrganizationAvatarSkeleton = ({
+  className,
+}: {
+  className?: string;
+}) => {
+  return (
+    <div>
+      <AvatarSkeleton className={cn('size-12', className)} />
+    </div>
   );
 };

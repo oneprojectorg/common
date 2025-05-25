@@ -44,7 +44,7 @@ export const AvatarSkeleton = ({ className }: { className?: string }) => {
   return (
     <Skeleton
       className={cn(
-        'relative flex size-8 items-center justify-center overflow-hidden text-clip rounded-full bg-white shadow outline outline-neutral-gray1',
+        'relative flex size-8 items-center justify-center overflow-hidden text-clip rounded-full',
         className,
       )}
     />

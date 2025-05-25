@@ -93,3 +93,15 @@ export const formatToUrl = (inputString: string) => {
     return '/';
   }
 };
+
+export const makeArray = (item: any) => {
+  if (item == null) {
+    return [];
+  }
+
+  if (Array.isArray(item)) {
+    return item;
+  }
+
+  return [item];
+};
