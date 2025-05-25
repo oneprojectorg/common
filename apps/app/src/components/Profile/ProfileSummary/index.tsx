@@ -40,13 +40,7 @@ export const ProfileSummary = ({ profile }: { profile: Organization }) => {
       <ErrorBoundary fallback={null}>
         <div className="flex flex-col-reverse gap-6 sm:flex-col">
           <div className="flex gap-1 text-base text-neutral-gray4">
-            <Suspense
-              fallback={
-                <Skeleton>
-                  <span className="opacity-0">482 relationships</span>
-                </Skeleton>
-              }
-            >
+            <Suspense fallback={<Skeleton>482 relationships</Skeleton>}>
               <RelationshipCount profile={profile} />
             </Suspense>
           </div>

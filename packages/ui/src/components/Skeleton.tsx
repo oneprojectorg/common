@@ -6,12 +6,12 @@ interface SkeletonProps {
   className?: string;
   lines?: number;
   randomWidth?: boolean;
-  animated?: boolean;
+  children?: React.ReactNode;
 }
 
 export const Skeleton = ({
   className,
-  animated,
+  children,
   ...props
 }: Omit<SkeletonProps, 'lines'>) => {
   return (
@@ -19,16 +19,17 @@ export const Skeleton = ({
       className={cn(
         'min-h-4 rounded-sm bg-neutral-gray1',
         'animate-pulse',
-        animated && 'animate-[sweep]',
         className,
       )}
       {...props}
-    />
+    >
+      {children ? <span className="opacity-0">{children}</span> : null}
+    </div>
   );
 };
 
 export const SkeletonLine: React.FC<SkeletonProps> = memo(
-  ({ className, lines = 10, randomWidth = true, animated = true }) => {
+  ({ className, lines = 10, randomWidth = true, children }) => {
     const width = useMemo(() => Math.random() * 50 + 40, []);
 
     return (
@@ -38,10 +39,7 @@ export const SkeletonLine: React.FC<SkeletonProps> = memo(
         {Array.from({ length: lines }).map((_, index) => (
           <div
             key={`${index + 1}`}
-            className={cn(
-              'h-[1em] rounded-[0.25em] bg-gradient-to-br from-neutral-300 to-neutral-200',
-              animated && 'animate-pulse',
-            )}
+            className="h-[1em] animate-pulse rounded-[0.25em] bg-gradient-to-br from-neutral-300 to-neutral-200"
             style={{
               backgroundSize: '200% 200%',
               width: randomWidth
@@ -50,7 +48,9 @@ export const SkeletonLine: React.FC<SkeletonProps> = memo(
                   : '100%'
                 : undefined,
             }}
-          />
+          >
+            {children ? <span className="opacity-0">{children}</span> : null}
+          </div>
         ))}
       </div>
     );
