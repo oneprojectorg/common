@@ -41,9 +41,6 @@ export const OrganizationList = ({
             </div>
           );
         })}
-        <Link href="/org" className="text-sm text-teal">
-          See more
-        </Link>
       </div>
 
       {/* mobile */}
@@ -113,85 +110,28 @@ export const OrganizationSummaryList = ({
   organizations: Array<Organization>;
 }) => {
   return (
-    <>
-      <div className="hidden flex-col gap-6 sm:flex">
-        {organizations?.map((org) => {
-          return (
-            <div key={org.id}>
-              <Link
-                className="flex items-start gap-6"
-                href={`/org/${org.slug}`}
-              >
-                <OrganizationAvatar organization={org} className="size-12" />
+    <div className="flex flex-col gap-6">
+      {organizations?.map((org) => {
+        return (
+          <div key={org.id}>
+            <Link className="flex items-start gap-6" href={`/org/${org.slug}`}>
+              <OrganizationAvatar
+                organization={org}
+                className="size-6 sm:size-12"
+              />
 
-                <div className="flex flex-col gap-2 text-neutral-black">
-                  <span className="font-semibold">{org.name}</span>
-                  {org.city ? (
-                    <span className="text-neutral-gray4">{org.city}</span>
-                  ) : null}
-                  <span className="text-neutral-charcoal">{org.bio}</span>
-                </div>
-              </Link>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* mobile */}
-      <div className="flex flex-col gap-6 sm:hidden">
-        <OrganizationCarousel label="New Organizations" itemWidth={192}>
-          <>
-            {organizations?.map((org) => {
-              const { avatarImage, headerImage } = org;
-              const avatarUrl = getPublicUrl(avatarImage?.name);
-              const headerUrl = getPublicUrl(headerImage?.name);
-
-              return (
-                <CarouselItem key={org.id}>
-                  <Surface className="flex size-48">
-                    <Link
-                      className="flex size-full flex-col gap-3"
-                      href={`/org/${org.slug}`}
-                    >
-                      <ImageHeader
-                        headerImage={
-                          headerUrl ? (
-                            <Image
-                              src={headerUrl}
-                              alt=""
-                              fill
-                              className="object-cover"
-                            />
-                          ) : null
-                        }
-                        avatarImage={
-                          avatarUrl ? (
-                            <Image
-                              src={avatarUrl}
-                              alt=""
-                              fill
-                              className="object-cover"
-                            />
-                          ) : null
-                        }
-                      />
-
-                      <div className="flex flex-col p-4 pt-0 text-left">
-                        <span>{org.name}</span>
-                        <span>
-                          {org.city}
-                          {org.state && org.city ? `, ${org.state}` : ''}
-                        </span>
-                      </div>
-                    </Link>
-                  </Surface>
-                </CarouselItem>
-              );
-            })}
-          </>
-        </OrganizationCarousel>
-      </div>
-    </>
+              <div className="flex flex-col gap-2 text-neutral-black">
+                <span className="font-semibold leading-base">{org.name}</span>
+                {org.city ? (
+                  <span className="text-neutral-gray4">{org.city}</span>
+                ) : null}
+                <span className="text-neutral-charcoal">{org.bio}</span>
+              </div>
+            </Link>
+          </div>
+        );
+      })}
+    </div>
   );
 };
 

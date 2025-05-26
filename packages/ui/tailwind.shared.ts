@@ -31,6 +31,9 @@ const config: Omit<Config, 'content'> = {
         sans: ['var(--font-sans)', ...defaultTheme.fontFamily.sans],
         mono: ['var(--font-mono)', ...defaultTheme.fontFamily.mono],
       },
+      lineHeight: {
+        base: '0.875rem',
+      },
       fontSize: {
         'title-xxl': [
           '3rem',

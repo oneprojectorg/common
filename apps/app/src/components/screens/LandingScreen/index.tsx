@@ -64,9 +64,10 @@ const Highlight = ({ children }: { children?: ReactNode }) => {
 };
 
 const OrganizationFacePile = () => {
-  const [organizations] = trpc.organization.list.useSuspenseQuery({
+  const [{ items: organizations }] = trpc.organization.list.useSuspenseQuery({
     limit: 20,
   });
+
   const [stats] = trpc.organization.getStats.useSuspenseQuery();
   const facePileRef = useRef<HTMLUListElement>(null);
   const [numItems, setNumItems] = useState(20);
