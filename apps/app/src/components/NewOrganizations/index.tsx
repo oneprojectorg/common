@@ -2,78 +2,44 @@
 
 import { makeArray } from '@/utils';
 import { trpc } from '@op/api/client';
-import { Organization } from '@op/api/encoders';
-import { useInfiniteScroll } from '@op/hooks';
 import { SkeletonLine } from '@op/ui/Skeleton';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 
+import { Link } from '@/lib/i18n';
+
 import ErrorBoundary from '@/components/ErrorBoundary';
 
 import { OrganizationList } from '../OrganizationList';
-
-export type OrganizationListResponse = {
-  items: Array<Organization>;
-  next?: string | null;
-  hasMore: boolean;
-};
+import { OrganizationListResponse } from '../Organizations/types';
 
 export const NewOrganizationsSuspense = ({
   limit = 10,
-  initialData,
+  initialData = [],
 }: {
   limit?: number;
-  initialData?: OrganizationListResponse;
+  initialData?: any;
 }) => {
   const searchParams = useSearchParams();
   const termsFilter = makeArray(searchParams.get('terms'));
 
-  const {
-    data: paginatedData,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = trpc.organization.list.useInfiniteQuery(
+  const [{ items: organizations }] = trpc.organization.list.useSuspenseQuery(
     {
       limit,
       terms: termsFilter,
+      cursor: null,
     },
-    initialData
-      ? {
-          initialData: {
-            pages: [initialData],
-            pageParams: [null],
-          },
-          getNextPageParam: (lastPage) => lastPage.next,
-        }
-      : undefined,
+    {
+      initialData,
+    },
   );
-
-  const { ref, shouldShowTrigger } = useInfiniteScroll(fetchNextPage, {
-    hasNextPage,
-    isFetchingNextPage,
-    threshold: 0.1,
-    rootMargin: '100px',
-  });
-
-  const allOrganizations =
-    paginatedData?.pages.flatMap((page) => page.items) || [];
 
   return (
     <div className="flex flex-col gap-4">
-      <OrganizationList organizations={allOrganizations} />
-      {shouldShowTrigger && (
-        <div
-          ref={ref as React.RefObject<HTMLDivElement>}
-          className="flex justify-center py-4"
-        >
-          {isFetchingNextPage ? (
-            <div className="text-sm text-neutral-gray4">
-              <SkeletonLine lines={3} />
-            </div>
-          ) : null}
-        </div>
-      )}
+      <OrganizationList organizations={organizations} />
+      <Link href="/org" className="text-sm text-teal">
+        See more
+      </Link>
     </div>
   );
 };

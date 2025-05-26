@@ -1,3 +1,4 @@
+import { decodeCursor, encodeCursor } from '@op/common';
 import { organizations } from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
 import { and, eq, lt, or } from 'drizzle-orm';
@@ -48,24 +49,6 @@ export const listOrganizationsRouter = router({
     .query(async ({ ctx, input }) => {
       const { db } = ctx.database;
       const { limit = 10, cursor } = input ?? {};
-
-      // Cursor utilities
-      const decodeCursor = (cursor: string) => {
-        try {
-          return JSON.parse(Buffer.from(cursor, 'base64').toString());
-        } catch {
-          throw new TRPCError({
-            message: 'Invalid cursor',
-            code: 'BAD_REQUEST',
-          });
-        }
-      };
-
-      const encodeCursor = (updatedAt: Date, id: string) => {
-        return Buffer.from(JSON.stringify({ updatedAt, id })).toString(
-          'base64',
-        );
-      };
 
       // Parse cursor
       const cursorData = cursor ? decodeCursor(cursor) : null;

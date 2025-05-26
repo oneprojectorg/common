@@ -41,9 +41,6 @@ export const OrganizationList = ({
             </div>
           );
         })}
-        <Link href="/org" className="text-sm text-teal">
-          See more
-        </Link>
       </div>
 
       {/* mobile */}
