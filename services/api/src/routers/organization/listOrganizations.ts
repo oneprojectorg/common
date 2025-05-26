@@ -1,5 +1,6 @@
+import { organizations } from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
-import { and, inArray, lt, or, eq } from 'drizzle-orm';
+import { and, eq, lt, or } from 'drizzle-orm';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
@@ -9,7 +10,6 @@ import withDB from '../../middlewares/withDB';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 import { dbFilter } from '../../utils';
-import { organizations } from '../../../../db/schema/tables/organizations.sql';
 
 const meta: OpenApiMeta = {
   openapi: {
@@ -41,13 +41,13 @@ export const listOrganizationsRouter = router({
     .output(
       z.object({
         items: z.array(organizationsEncoder),
-        nextCursor: z.string().nullish(),
+        next: z.string().nullish(),
         hasMore: z.boolean(),
       }),
     )
     .query(async ({ ctx, input }) => {
       const { db } = ctx.database;
-      const { limit = 10, terms = [], cursor } = input ?? {};
+      const { limit = 10, cursor } = input ?? {};
 
       // Cursor utilities
       const decodeCursor = (cursor: string) => {
@@ -62,75 +62,13 @@ export const listOrganizationsRouter = router({
       };
 
       const encodeCursor = (updatedAt: Date, id: string) => {
-        return Buffer.from(JSON.stringify({ updatedAt, id })).toString('base64');
+        return Buffer.from(JSON.stringify({ updatedAt, id })).toString(
+          'base64',
+        );
       };
 
-      // Parse cursor if provided
+      // Parse cursor
       const cursorData = cursor ? decodeCursor(cursor) : null;
-
-      if (terms?.length) {
-        const result = await db.query.organizationsTerms.findMany({
-          where: (table) => inArray(table.taxonomyTermId, terms),
-          // with: {
-          // organization: {
-          // // links: true,
-          // headerImage: true,
-          // avatarImage: true,
-          // },
-          // },
-        });
-
-        console.log('TERMS', terms, result);
-        
-        // Build cursor condition for filtered query
-        const cursorCondition = cursorData
-          ? or(
-              lt(organizations.updatedAt, cursorData.updatedAt),
-              and(
-                eq(organizations.updatedAt, cursorData.updatedAt),
-                lt(organizations.id, cursorData.id),
-              ),
-            )
-          : undefined;
-
-        const whereCondition = cursorCondition
-          ? and(
-              inArray(
-                organizations.id,
-                result.map((r) => r.organizationId),
-              ),
-              cursorCondition,
-            )
-          : inArray(
-              organizations.id,
-              result.map((r) => r.organizationId),
-            );
-
-        const orgs = await db.query.organizations.findMany({
-          where: whereCondition,
-          with: {
-            projects: true,
-            links: true,
-            headerImage: true,
-            avatarImage: true,
-          },
-          orderBy: (orgs, { desc }) => desc(orgs.updatedAt),
-          limit: limit + 1, // Fetch one extra to check hasMore
-        });
-
-        const hasMore = orgs.length > limit;
-        const items = hasMore ? orgs.slice(0, limit) : orgs;
-        const lastItem = items[items.length - 1];
-        const nextCursor = hasMore && lastItem && lastItem.updatedAt
-          ? encodeCursor(new Date(lastItem.updatedAt), lastItem.id)
-          : null;
-
-        return {
-          items: items.map((org) => organizationsEncoder.parse(org)),
-          nextCursor,
-          hasMore,
-        };
-      }
 
       // Build cursor condition for unfiltered query
       const cursorCondition = cursorData
@@ -166,13 +104,14 @@ export const listOrganizationsRouter = router({
       const hasMore = result.length > limit;
       const items = hasMore ? result.slice(0, limit) : result;
       const lastItem = items[items.length - 1];
-      const nextCursor = hasMore && lastItem && lastItem.updatedAt
-        ? encodeCursor(new Date(lastItem.updatedAt), lastItem.id)
-        : null;
+      const nextCursor =
+        hasMore && lastItem && lastItem.updatedAt
+          ? encodeCursor(new Date(lastItem.updatedAt), lastItem.id)
+          : null;
 
       return {
         items: items.map((org) => organizationsEncoder.parse(org)),
-        nextCursor,
+        next: nextCursor,
         hasMore,
       };
     }),
