@@ -1,8 +1,11 @@
+'use client';
+
 import { makeArray } from '@/utils';
 import { trpc } from '@op/api/client';
+import { useInfiniteScroll } from '@op/hooks';
 import { SkeletonLine } from '@op/ui/Skeleton';
 import { useSearchParams } from 'next/navigation';
-import { Suspense, useState } from 'react';
+import { Suspense } from 'react';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
 
@@ -15,7 +18,6 @@ export const NewOrganizationsSuspense = ({
 }) => {
   const searchParams = useSearchParams();
   const termsFilter = makeArray(searchParams.get('terms'));
-  const [cursor, setCursor] = useState<string | null>(null);
 
   const [initialData] = trpc.organization.list.useSuspenseQuery({
     limit,
@@ -42,20 +44,30 @@ export const NewOrganizationsSuspense = ({
     },
   );
 
+  const { ref, shouldShowTrigger } = useInfiniteScroll(fetchNextPage, {
+    hasNextPage,
+    isFetchingNextPage,
+    threshold: 0.1,
+    rootMargin: '100px',
+  });
+
   const allOrganizations =
     paginatedData?.pages.flatMap((page) => page.items) || [];
 
   return (
     <div className="flex flex-col gap-4">
       <OrganizationList organizations={allOrganizations} />
-      {hasNextPage && (
-        <button
-          onClick={() => fetchNextPage()}
-          disabled={isFetchingNextPage}
-          className="text-sm text-teal hover:underline disabled:opacity-50"
+      {shouldShowTrigger && (
+        <div
+          ref={ref as React.RefObject<HTMLDivElement>}
+          className="flex justify-center py-4"
         >
-          {isFetchingNextPage ? 'Loading...' : 'Load more'}
-        </button>
+          {isFetchingNextPage ? (
+            <div className="text-sm text-neutral-gray4">
+              <SkeletonLine lines={3} />
+            </div>
+          ) : null}
+        </div>
       )}
     </div>
   );
