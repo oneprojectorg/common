@@ -1,12 +1,14 @@
-import { trpcVanilla } from '@op/api/vanilla';
+import { createTRPCVanillaClient } from '@op/api/vanilla';
+import { headers } from 'next/headers';
 
 import { NewOrganizations } from '@/components/NewOrganizations';
 
 const OrgListingPage = async () => {
-  // const organizations = await trpcVanilla.organization.list.query();
-  // console.log('organizations', organizations);
+  const organizations = await createTRPCVanillaClient(
+    Object.fromEntries(await headers()),
+  ).organization.list.query();
 
-  return <NewOrganizations limit={5} />;
+  return <NewOrganizations initialData={organizations} limit={5} />;
 };
 
 export default OrgListingPage;

@@ -2,6 +2,7 @@
 
 import { makeArray } from '@/utils';
 import { trpc } from '@op/api/client';
+import { Organization } from '@op/api/encoders';
 import { useInfiniteScroll } from '@op/hooks';
 import { SkeletonLine } from '@op/ui/Skeleton';
 import { useSearchParams } from 'next/navigation';
@@ -11,19 +12,21 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 
 import { OrganizationList } from '../OrganizationList';
 
+export type OrganizationListResponse = {
+  items: Array<Organization>;
+  next?: string | null;
+  hasMore: boolean;
+};
+
 export const NewOrganizationsSuspense = ({
   limit = 10,
+  initialData,
 }: {
   limit?: number;
+  initialData?: OrganizationListResponse;
 }) => {
   const searchParams = useSearchParams();
   const termsFilter = makeArray(searchParams.get('terms'));
-
-  const [initialData] = trpc.organization.list.useSuspenseQuery({
-    limit,
-    terms: termsFilter,
-    cursor: null,
-  });
 
   const {
     data: paginatedData,
@@ -35,13 +38,15 @@ export const NewOrganizationsSuspense = ({
       limit,
       terms: termsFilter,
     },
-    {
-      initialData: {
-        pages: [initialData],
-        pageParams: [null],
-      },
-      getNextPageParam: (lastPage) => lastPage.next,
-    },
+    initialData
+      ? {
+          initialData: {
+            pages: [initialData],
+            pageParams: [null],
+          },
+          getNextPageParam: (lastPage) => lastPage.next,
+        }
+      : undefined,
   );
 
   const { ref, shouldShowTrigger } = useInfiniteScroll(fetchNextPage, {
@@ -73,11 +78,17 @@ export const NewOrganizationsSuspense = ({
   );
 };
 
-export const NewOrganizations = ({ limit }: { limit?: number }) => {
+export const NewOrganizations = ({
+  limit,
+  initialData,
+}: {
+  limit?: number;
+  initialData?: OrganizationListResponse;
+}) => {
   return (
     <ErrorBoundary fallback={<div>Could not load organizations</div>}>
       <Suspense fallback={<SkeletonLine lines={5} />}>
-        <NewOrganizationsSuspense limit={limit} />
+        <NewOrganizationsSuspense initialData={initialData} limit={limit} />
       </Suspense>
     </ErrorBoundary>
   );
