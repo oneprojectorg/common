@@ -1,4 +1,4 @@
-import { RouterOutput } from '@op/api/client';
+import { Organization } from '@op/api/encoders';
 
 import { Link } from '@/lib/i18n';
 
@@ -7,7 +7,7 @@ import { SearchResultItem } from './SearchResultItem';
 
 interface OrganizationResultsProps {
   query: string;
-  organizationResults: RouterOutput['organization']['search'];
+  organizationResults: Array<Organization>;
   selectedIndex: number;
   onSearch: (query: string) => void;
 }
