@@ -8,7 +8,7 @@ import { Link } from '@/lib/i18n';
 
 type relationshipOrganization =
   | RouterOutput['organization']['listRelationships']['organizations'][number]
-  | RouterOutput['organization']['list'][number]
+  | RouterOutput['organization']['list']['items'][number]
   | RouterOutput['organization']['listPosts'][number]['organization'];
 
 export const OrganizationAvatar = ({

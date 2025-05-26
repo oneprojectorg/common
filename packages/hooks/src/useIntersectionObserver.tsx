@@ -7,7 +7,7 @@ interface UseIntersectionObserverOptions {
 }
 
 export const useIntersectionObserver = (
-  options: UseIntersectionObserverOptions = {}
+  options: UseIntersectionObserverOptions = {},
 ) => {
   const { threshold = 0, rootMargin = '0px', enabled = true } = options;
   const [isIntersecting, setIsIntersecting] = useState(false);
@@ -18,12 +18,14 @@ export const useIntersectionObserver = (
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        setIsIntersecting(entry.isIntersecting);
+        if (entry) {
+          setIsIntersecting(entry.isIntersecting);
+        }
       },
       {
         threshold,
         rootMargin,
-      }
+      },
     );
 
     observer.observe(ref.current);
