@@ -155,19 +155,25 @@ export const FileUploader = ({
     [processFiles],
   );
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    if (!enableDragAndDrop) return;
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragOver(true);
-  }, [enableDragAndDrop]);
+  const handleDragOver = useCallback(
+    (e: React.DragEvent) => {
+      if (!enableDragAndDrop) return;
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragOver(true);
+    },
+    [enableDragAndDrop],
+  );
 
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    if (!enableDragAndDrop) return;
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragOver(false);
-  }, [enableDragAndDrop]);
+  const handleDragLeave = useCallback(
+    (e: React.DragEvent) => {
+      if (!enableDragAndDrop) return;
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragOver(false);
+    },
+    [enableDragAndDrop],
+  );
 
   const handleDrop = useCallback(
     async (e: React.DragEvent) => {
@@ -195,31 +201,22 @@ export const FileUploader = ({
   );
 
   const defaultDragOverlay = (
-    <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg border-2 border-dashed border-blue-300 bg-blue-50/90">
-      <div className="text-center">
-        <LuImage className="mx-auto mb-2 size-8 text-blue-500" />
-        <p className="font-medium text-blue-700">Drop files here to upload</p>
-        <p className="text-sm text-blue-600">
-          {acceptedTypes.includes('image/png') ? 'Images (PNG, JPEG, WebP)' : 'Files'} 
-          {acceptedTypes.includes('application/pdf') ? ' and PDFs' : ''} supported
-        </p>
-      </div>
-    </div>
+    <div className="absolute inset-0 z-10 flex items-center justify-center rounded border border-dotted"></div>
   );
 
   return (
-    <div 
+    <div
       className={cn(
-        'flex w-full flex-col gap-2 relative transition-colors',
-        enableDragAndDrop && isDragOver && 'rounded-lg border-2 border-dashed border-blue-200 bg-blue-50',
-        className
+        'relative flex w-full flex-col gap-2',
+        enableDragAndDrop && isDragOver && 'rounded border border-dotted p-4',
+        className,
       )}
       onDragOver={enableDragAndDrop ? handleDragOver : undefined}
       onDragLeave={enableDragAndDrop ? handleDragLeave : undefined}
       onDrop={enableDragAndDrop ? handleDrop : undefined}
     >
       {enableDragAndDrop && isDragOver && (dragOverlay || defaultDragOverlay)}
-      
+
       {/* Upload Button */}
       <button
         {...buttonProps}
@@ -289,7 +286,7 @@ export const createFileUploaderUtils = (
   onUpload: FileUploaderProps['onUpload'],
   acceptedTypes: string[] = ACCEPTED_TYPES,
   maxFiles: number = MAX_FILES,
-  maxSizePerFile: number = MAX_FILE_SIZE
+  maxSizePerFile: number = MAX_FILE_SIZE,
 ) => {
   const [files, setFiles] = useState<FilePreview[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -398,13 +395,16 @@ export const createFileUploaderUtils = (
     [processFiles],
   );
 
-  const removeFile = useCallback((id: string) => {
-    const file = files.find((f) => f.id === id);
-    if (file) {
-      URL.revokeObjectURL(file.url);
-      setFiles((prev) => prev.filter((f) => f.id !== id));
-    }
-  }, [files]);
+  const removeFile = useCallback(
+    (id: string) => {
+      const file = files.find((f) => f.id === id);
+      if (file) {
+        URL.revokeObjectURL(file.url);
+        setFiles((prev) => prev.filter((f) => f.id !== id));
+      }
+    },
+    [files],
+  );
 
   const clearFiles = useCallback(() => {
     files.forEach((file) => URL.revokeObjectURL(file.url));
