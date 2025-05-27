@@ -10,7 +10,7 @@ import { Form } from '@op/ui/Form';
 import { cn } from '@op/ui/utils';
 import { useEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
-import { LuImage, LuPaperclip } from 'react-icons/lu';
+import { LuImage } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -122,29 +122,7 @@ const PostUpdateWithUser = ({
           organization={organization}
           className="size-8 rounded-full border bg-white"
         />
-        <FeedMain
-          onDragOver={fileUpload.handleDragOver}
-          onDragLeave={fileUpload.handleDragLeave}
-          onDrop={fileUpload.handleDrop}
-          className={cn(
-            'relative transition-colors',
-            fileUpload.isDragOver &&
-              'rounded-lg border-2 border-dashed border-blue-200 bg-blue-50',
-          )}
-        >
-          {fileUpload.isDragOver && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg border-2 border-dashed border-blue-300 bg-blue-50/90">
-              <div className="text-center">
-                <LuImage className="mx-auto mb-2 size-8 text-blue-500" />
-                <p className="font-medium text-blue-700">
-                  Drop files here to upload
-                </p>
-                <p className="text-sm text-blue-600">
-                  Images (PNG, JPEG, WebP) and PDFs supported
-                </p>
-              </div>
-            </div>
-          )}
+        <FeedMain className="relative">
           <Form onSubmit={handleSubmit} className="flex w-full flex-row gap-4">
             <TextArea
               className="size-full h-10 min-h-10 overflow-y-hidden"
@@ -179,6 +157,7 @@ const PostUpdateWithUser = ({
                 'application/pdf',
               ]}
               maxFiles={1}
+              enableDragAndDrop={true}
               className="flex-1"
             >
               <LuImage className="size-4" />

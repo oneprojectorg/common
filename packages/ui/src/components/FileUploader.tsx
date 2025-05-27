@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { useButton } from 'react-aria';
-import { LuX } from 'react-icons/lu';
+import { LuImage, LuX } from 'react-icons/lu';
 
 import { cn } from '../lib/utils';
 import { LoadingSpinner } from './LoadingSpinner';
@@ -29,6 +29,8 @@ interface FileUploaderProps {
   acceptedTypes?: string[];
   className?: string;
   children?: React.ReactNode;
+  enableDragAndDrop?: boolean;
+  dragOverlay?: React.ReactNode;
 }
 
 const ACCEPTED_TYPES = [
@@ -48,8 +50,11 @@ export const FileUploader = ({
   acceptedTypes = ACCEPTED_TYPES,
   className,
   children,
+  enableDragAndDrop = false,
+  dragOverlay,
 }: FileUploaderProps) => {
   const [files, setFiles] = useState<FilePreview[]>([]);
+  const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
 
@@ -79,10 +84,8 @@ export const FileUploader = ({
     return null;
   };
 
-  const handleFileChange = useCallback(
-    async (event: React.ChangeEvent<HTMLInputElement>) => {
-      const selectedFiles = Array.from(event.target.files || []);
-
+  const processFiles = useCallback(
+    async (selectedFiles: File[]) => {
       if (selectedFiles.length === 0) return;
 
       // Check if adding these files would exceed max files
@@ -135,13 +138,48 @@ export const FileUploader = ({
           }
         }
       }
+    },
+    [files.length, maxFiles, onUpload, acceptedTypes, maxSizePerFile],
+  );
+
+  const handleFileChange = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const selectedFiles = Array.from(event.target.files || []);
+      await processFiles(selectedFiles);
 
       // Clear input
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
     },
-    [files.length, maxFiles, onUpload, acceptedTypes, maxSizePerFile],
+    [processFiles],
+  );
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    if (!enableDragAndDrop) return;
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  }, [enableDragAndDrop]);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    if (!enableDragAndDrop) return;
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+  }, [enableDragAndDrop]);
+
+  const handleDrop = useCallback(
+    async (e: React.DragEvent) => {
+      if (!enableDragAndDrop) return;
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragOver(false);
+
+      const droppedFiles = Array.from(e.dataTransfer.files);
+      await processFiles(droppedFiles);
+    },
+    [enableDragAndDrop, processFiles],
   );
 
   const handleRemove = useCallback(
@@ -156,8 +194,32 @@ export const FileUploader = ({
     [files, onRemove],
   );
 
+  const defaultDragOverlay = (
+    <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg border-2 border-dashed border-blue-300 bg-blue-50/90">
+      <div className="text-center">
+        <LuImage className="mx-auto mb-2 size-8 text-blue-500" />
+        <p className="font-medium text-blue-700">Drop files here to upload</p>
+        <p className="text-sm text-blue-600">
+          {acceptedTypes.includes('image/png') ? 'Images (PNG, JPEG, WebP)' : 'Files'} 
+          {acceptedTypes.includes('application/pdf') ? ' and PDFs' : ''} supported
+        </p>
+      </div>
+    </div>
+  );
+
   return (
-    <div className={cn('flex w-full flex-col gap-2', className)}>
+    <div 
+      className={cn(
+        'flex w-full flex-col gap-2 relative transition-colors',
+        enableDragAndDrop && isDragOver && 'rounded-lg border-2 border-dashed border-blue-200 bg-blue-50',
+        className
+      )}
+      onDragOver={enableDragAndDrop ? handleDragOver : undefined}
+      onDragLeave={enableDragAndDrop ? handleDragLeave : undefined}
+      onDrop={enableDragAndDrop ? handleDrop : undefined}
+    >
+      {enableDragAndDrop && isDragOver && (dragOverlay || defaultDragOverlay)}
+      
       {/* Upload Button */}
       <button
         {...buttonProps}
@@ -220,4 +282,153 @@ export const FileUploader = ({
       )}
     </div>
   );
+};
+
+// Export additional utilities for components that need to implement their own drag and drop
+export const createFileUploaderUtils = (
+  onUpload: FileUploaderProps['onUpload'],
+  acceptedTypes: string[] = ACCEPTED_TYPES,
+  maxFiles: number = MAX_FILES,
+  maxSizePerFile: number = MAX_FILE_SIZE
+) => {
+  const [files, setFiles] = useState<FilePreview[]>([]);
+  const [isDragOver, setIsDragOver] = useState(false);
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const validateFile = (file: File): string | null => {
+    if (!acceptedTypes.includes(file.type)) {
+      return `File type ${file.type} not supported. Accepted types: ${acceptedTypes.join(', ')}`;
+    }
+    if (file.size > maxSizePerFile) {
+      return `File too large. Maximum size: ${formatFileSize(maxSizePerFile)}`;
+    }
+    return null;
+  };
+
+  const processFiles = useCallback(
+    async (selectedFiles: File[]) => {
+      if (selectedFiles.length === 0) return;
+
+      if (files.length + selectedFiles.length > maxFiles) {
+        alert(`Maximum ${maxFiles} files allowed`);
+        return;
+      }
+
+      const newPreviews: FilePreview[] = selectedFiles.map((file) => {
+        const error = validateFile(file);
+        return {
+          id: `${Date.now()}-${Math.random()}`,
+          file,
+          url: URL.createObjectURL(file),
+          uploading: !error,
+          error,
+        };
+      });
+
+      setFiles((prev) => [...prev, ...newPreviews]);
+
+      for (const preview of newPreviews) {
+        if (!preview.error) {
+          try {
+            const result = await onUpload(preview.file);
+            setFiles((prev) =>
+              prev.map((f) =>
+                f.id === preview.id
+                  ? { ...f, uploading: false, uploaded: true, id: result.id }
+                  : f,
+              ),
+            );
+          } catch (error) {
+            setFiles((prev) =>
+              prev.map((f) =>
+                f.id === preview.id
+                  ? {
+                      ...f,
+                      uploading: false,
+                      error:
+                        error instanceof Error
+                          ? error.message
+                          : 'Upload failed',
+                    }
+                  : f,
+              ),
+            );
+          }
+        }
+      }
+    },
+    [files.length, maxFiles, onUpload, acceptedTypes, maxSizePerFile],
+  );
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+  }, []);
+
+  const handleDrop = useCallback(
+    async (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragOver(false);
+
+      const droppedFiles = Array.from(e.dataTransfer.files);
+      await processFiles(droppedFiles);
+    },
+    [processFiles],
+  );
+
+  const uploadFile = useCallback(
+    async (file: File) => {
+      await processFiles([file]);
+    },
+    [processFiles],
+  );
+
+  const removeFile = useCallback((id: string) => {
+    const file = files.find((f) => f.id === id);
+    if (file) {
+      URL.revokeObjectURL(file.url);
+      setFiles((prev) => prev.filter((f) => f.id !== id));
+    }
+  }, [files]);
+
+  const clearFiles = useCallback(() => {
+    files.forEach((file) => URL.revokeObjectURL(file.url));
+    setFiles([]);
+  }, [files]);
+
+  const hasUploadedFiles = useCallback(() => {
+    return files.some((f) => f.uploaded);
+  }, [files]);
+
+  const getUploadedAttachmentIds = useCallback(() => {
+    return files.filter((f) => f.uploaded).map((f) => f.id);
+  }, [files]);
+
+  return {
+    files,
+    isDragOver,
+    handleDragOver,
+    handleDragLeave,
+    handleDrop,
+    uploadFile,
+    removeFile,
+    clearFiles,
+    hasUploadedFiles,
+    getUploadedAttachmentIds,
+  };
 };
