@@ -1,4 +1,5 @@
 import { useUser } from '@/utils/UserProvider';
+import { detectLinks } from '@/utils/linkDetection';
 import { trpc } from '@op/api/client';
 import type { Organization, PostToOrganization } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
@@ -11,6 +12,7 @@ import { LuImage, LuPaperclip } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { LinkPreview } from '@/components/LinkPreview';
 import { FeedItem, FeedMain } from '@/components/PostFeed';
 
 import { OrganizationAvatar } from '../OrganizationAvatar';
@@ -23,6 +25,7 @@ const PostUpdateWithUser = ({
   className?: string;
 }) => {
   const [content, setContent] = useState('');
+  const [detectedUrls, setDetectedUrls] = useState<string[]>([]);
   const t = useTranslations();
   const utils = trpc.useUtils();
 
@@ -77,7 +80,14 @@ const PostUpdateWithUser = ({
     if (content.trim()) {
       createPost.mutate({ id: organization.id, content });
       setContent('');
+      setDetectedUrls([]);
     }
+  };
+
+  const handleContentChange = (value: string) => {
+    setContent(value);
+    const { urls } = detectLinks(value);
+    setDetectedUrls(urls);
   };
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -107,7 +117,7 @@ const PostUpdateWithUser = ({
               ref={textareaRef as RefObject<HTMLTextAreaElement>}
               placeholder={`Post an update…`}
               value={content}
-              onChange={(e) => setContent(e.target.value ?? '')}
+              onChange={(e) => handleContentChange(e.target.value ?? '')}
             />
             {content.length > 0 && (
               <Button color="secondary" type="submit">
@@ -115,6 +125,13 @@ const PostUpdateWithUser = ({
               </Button>
             )}
           </Form>
+          {detectedUrls.length > 0 && (
+            <div>
+              {detectedUrls.map((url, index) => (
+                <LinkPreview key={index} url={url} />
+              ))}
+            </div>
+          )}
           <div className="flex gap-6">
             <div className="flex items-center gap-1 text-charcoal">
               <LuImage className="size-4" />

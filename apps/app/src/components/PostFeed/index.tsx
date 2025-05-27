@@ -1,3 +1,4 @@
+import { detectLinks } from '@/utils/linkDetection';
 import type { PostToOrganization } from '@op/api/encoders';
 import { AvatarSkeleton } from '@op/ui/Avatar';
 import { Header3 } from '@op/ui/Header';
@@ -8,6 +9,7 @@ import { LuLeaf } from 'react-icons/lu';
 
 import { Link } from '@/lib/i18n';
 
+import { LinkPreview } from '../LinkPreview';
 import { OrganizationAvatar } from '../OrganizationAvatar';
 
 // import { useTranslations } from '@/lib/i18n';
@@ -66,7 +68,14 @@ export const FeedContent = ({
   children: ReactNode;
   className?: string;
 }) => {
-  return <div className={cn('leading-6', className)}>{children}</div>;
+  return (
+    <div
+      className={cn('leading-6', className)}
+      style={{ overflowWrap: 'anywhere' }}
+    >
+      {children}
+    </div>
+  );
 };
 
 const FeedHeader = ({ children }: { children: ReactNode }) => {
@@ -113,6 +122,8 @@ export const PostFeed = ({
     <div className={cn('flex flex-col gap-8 pb-8', className)}>
       {posts.length > 0 ? (
         posts.map(({ organization, post }, i) => {
+          const { urls } = detectLinks(post?.content);
+
           return (
             <FeedItem key={i}>
               <OrganizationAvatar
@@ -132,7 +143,16 @@ export const PostFeed = ({
                     </span>
                   ) : null}
                 </FeedHeader>
-                <FeedContent>{post?.content}</FeedContent>
+                <FeedContent>
+                  {post?.content}
+                  {urls.length > 0 && (
+                    <div>
+                      {urls.map((url) => (
+                        <LinkPreview key={url} url={url} />
+                      ))}
+                    </div>
+                  )}
+                </FeedContent>
               </FeedMain>
             </FeedItem>
           );

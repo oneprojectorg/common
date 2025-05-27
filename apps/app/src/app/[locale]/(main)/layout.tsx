@@ -1,4 +1,5 @@
 import { UserProvider } from '@/utils/UserProvider';
+import Script from 'next/script';
 import { Suspense } from 'react';
 
 import { SiteHeader } from '@/components/SiteHeader';
@@ -13,6 +14,7 @@ const AppRoot = ({ children }: { children: React.ReactNode }) => {
           <AppLayout>{children}</AppLayout>
         </UserProvider>
       </Suspense>
+      <Script async src="//cdn.iframe.ly/embed.js"></Script>
     </div>
   );
 };
