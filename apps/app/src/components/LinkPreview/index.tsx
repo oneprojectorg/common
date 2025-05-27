@@ -23,7 +23,7 @@ export const LinkPreview = ({ url, className }: LinkPreviewProps) => {
     data: previewData,
     isLoading: loading,
     error,
-  } = trpc.linkPreview.linkPreview.useQuery(
+  } = trpc.content.linkPreview.useQuery(
     { url },
     {
       enabled: !!url,
