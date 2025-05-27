@@ -10,6 +10,7 @@
     "./Breadcrumbs": "./src/components/Breadcrumbs.tsx",
     "./FacePile": "./src/components/FacePile.tsx",
     "./BannerUploader": "./src/components/BannerUploader.tsx",
+    "./FileUploader": "./src/components/FileUploader.tsx",
     "./Button": "./src/components/Button.tsx",
     "./ComboBox": "./src/components/ComboBox.tsx",
     "./Command": "./src/components/Command.tsx",

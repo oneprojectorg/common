@@ -1,4 +1,4 @@
-import { posts, postsToOrganizations } from '@op/db/schema';
+import { attachments, posts, postsToOrganizations } from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
@@ -34,12 +34,13 @@ export const createPostInOrganization = router({
       z.object({
         id: z.string(),
         content: z.string().trim().max(255),
+        attachmentIds: z.array(z.string()).optional().default([]),
       }),
     )
     .output(outputSchema)
     .mutation(async ({ input, ctx }) => {
       const { db } = ctx.database;
-      // const { id } = ctx.user;
+      const { id: userId } = ctx.user;
 
       try {
         const newPost = await db.transaction(async (tx) => {
@@ -64,6 +65,19 @@ export const createPostInOrganization = router({
             organizationId: input.id,
             postId: post.id,
           });
+
+          // Create attachment records if any attachments were uploaded
+          if (input.attachmentIds.length > 0) {
+            const attachmentValues = input.attachmentIds.map((storageObjectId) => ({
+              postId: post.id,
+              storageObjectId,
+              fileName: '', // Will be updated from storage metadata if needed
+              mimeType: '', // Will be updated from storage metadata if needed
+              uploadedBy: userId,
+            }));
+
+            await tx.insert(attachments).values(attachmentValues);
+          }
 
           return post;
         });

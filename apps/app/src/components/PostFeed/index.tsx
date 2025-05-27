@@ -93,16 +93,18 @@ export const FeedAvatar = ({ children }: { children?: ReactNode }) => {
 export const FeedMain = ({
   children,
   className,
+  ...props
 }: {
   children: ReactNode;
   className?: string;
-}) => {
+} & React.HTMLAttributes<HTMLDivElement>) => {
   return (
     <div
       className={cn(
         'flex min-h-16 w-full flex-col items-start justify-start gap-2',
         className,
       )}
+      {...props}
     >
       {children}
     </div>

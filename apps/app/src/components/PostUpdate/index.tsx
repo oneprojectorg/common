@@ -1,9 +1,11 @@
+import { useFileUpload } from '@/hooks/useFileUpload';
 import { useUser } from '@/utils/UserProvider';
 import { detectLinks } from '@/utils/linkDetection';
 import { trpc } from '@op/api/client';
 import type { Organization, PostToOrganization } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { TextArea } from '@op/ui/Field';
+import { FileUploader } from '@op/ui/FileUploader';
 import { Form } from '@op/ui/Form';
 import { cn } from '@op/ui/utils';
 import { useEffect, useRef, useState } from 'react';
@@ -12,6 +14,7 @@ import { LuImage, LuPaperclip } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { FilePreviewList } from '@/components/FilePreviewList';
 import { LinkPreview } from '@/components/LinkPreview';
 import { FeedItem, FeedMain } from '@/components/PostFeed';
 
@@ -28,6 +31,11 @@ const PostUpdateWithUser = ({
   const [detectedUrls, setDetectedUrls] = useState<string[]>([]);
   const t = useTranslations();
   const utils = trpc.useUtils();
+
+  const fileUpload = useFileUpload({
+    acceptedTypes: ['image/png', 'image/jpeg', 'image/webp', 'application/pdf'],
+    maxFiles: 1,
+  });
 
   const createPost = trpc.organization.createPost.useMutation({
     onMutate: (newPost) => {
@@ -77,10 +85,15 @@ const PostUpdateWithUser = ({
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (content.trim()) {
-      createPost.mutate({ id: organization.id, content });
+    if (content.trim() || fileUpload.hasUploadedFiles()) {
+      createPost.mutate({
+        id: organization.id,
+        content: content.trim() || '',
+        attachmentIds: fileUpload.getUploadedAttachmentIds(),
+      });
       setContent('');
       setDetectedUrls([]);
+      fileUpload.clearFiles();
     }
   };
 
@@ -109,7 +122,29 @@ const PostUpdateWithUser = ({
           organization={organization}
           className="size-8 rounded-full border bg-white"
         />
-        <FeedMain>
+        <FeedMain
+          onDragOver={fileUpload.handleDragOver}
+          onDragLeave={fileUpload.handleDragLeave}
+          onDrop={fileUpload.handleDrop}
+          className={cn(
+            'relative transition-colors',
+            fileUpload.isDragOver &&
+              'rounded-lg border-2 border-dashed border-blue-200 bg-blue-50',
+          )}
+        >
+          {fileUpload.isDragOver && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg border-2 border-dashed border-blue-300 bg-blue-50/90">
+              <div className="text-center">
+                <LuImage className="mx-auto mb-2 size-8 text-blue-500" />
+                <p className="font-medium text-blue-700">
+                  Drop files here to upload
+                </p>
+                <p className="text-sm text-blue-600">
+                  Images (PNG, JPEG, WebP) and PDFs supported
+                </p>
+              </div>
+            </div>
+          )}
           <Form onSubmit={handleSubmit} className="flex w-full flex-row gap-4">
             <TextArea
               className="size-full h-10 min-h-10 overflow-y-hidden"
@@ -119,7 +154,7 @@ const PostUpdateWithUser = ({
               value={content}
               onChange={(e) => handleContentChange(e.target.value ?? '')}
             />
-            {content.length > 0 && (
+            {(content.length > 0 || fileUpload.hasUploadedFiles()) && (
               <Button color="secondary" type="submit">
                 {t('Post')}
               </Button>
@@ -132,15 +167,23 @@ const PostUpdateWithUser = ({
               ))}
             </div>
           )}
-          <div className="flex gap-6">
-            <div className="flex items-center gap-1 text-charcoal">
+
+          <div className="flex w-full gap-6">
+            <FileUploader
+              onUpload={fileUpload.uploadFile}
+              onRemove={fileUpload.removeFile}
+              acceptedTypes={[
+                'image/png',
+                'image/jpeg',
+                'image/webp',
+                'application/pdf',
+              ]}
+              maxFiles={1}
+              className="flex-1"
+            >
               <LuImage className="size-4" />
               {t('Media')}
-            </div>
-            <div className="flex items-center gap-1 text-charcoal">
-              <LuPaperclip className="size-4" />
-              {t('Resource')}
-            </div>
+            </FileUploader>
           </div>
         </FeedMain>
       </FeedItem>

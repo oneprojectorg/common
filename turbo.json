@@ -24,6 +24,7 @@
     "RESEND_PASSWORD",
     "SUPABASE_SERVICE_ROLE",
     "DATABASE_URL",
+    "IFRAMELY_API_KEY",
     "🌎 ------ PUBLIC VARS ------ 🌎",
     "NEXT_PUBLIC_SUPABASE_URL",
     "NEXT_PUBLIC_SUPABASE_ANON_KEY",
@@ -38,7 +39,6 @@
     "VERCEL_GIT_COMMIT_REF",
     "💻 ------ DEVELOPMENT VARS ------ 💻",
     "DB_MIGRATING",
-    "DB_SEEDING",
-    "IFRAMELY_API_KEY"
+    "DB_SEEDING"
   ]
 }

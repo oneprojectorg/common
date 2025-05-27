@@ -28,6 +28,11 @@ export {
 } from './tables/posts.sql';
 
 export {
+  attachments,
+  attachmentsRelations,
+} from './tables/attachments.sql';
+
+export {
   taxonomies,
   taxonomyTerms,
   taxonomyTermsRelations,

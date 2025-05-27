@@ -1,3 +1,4 @@
+export * from './attachments';
 export * from './links';
 export * from './organizations';
 export * from './projects';
