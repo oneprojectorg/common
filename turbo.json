@@ -38,6 +38,7 @@
     "VERCEL_GIT_COMMIT_REF",
     "💻 ------ DEVELOPMENT VARS ------ 💻",
     "DB_MIGRATING",
-    "DB_SEEDING"
+    "DB_SEEDING",
+    "IFRAMELY_API_KEY"
   ]
 }
