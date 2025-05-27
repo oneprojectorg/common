@@ -1,19 +1,16 @@
+import { trpc } from '@op/api/client';
 import { Header3 } from '@op/ui/Header';
 import { Skeleton } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { LuGlobe } from 'react-icons/lu';
 
-interface LinkPreviewData {
-  title?: string;
-  description?: string;
-  thumbnail_url?: string;
-  author_name?: string;
-  author_url?: string;
-  provider_name?: string;
-  provider_url?: string;
-  url: string;
-  html?: string;
+declare global {
+  interface Window {
+    iframely?: {
+      load: () => void;
+    };
+  }
 }
 
 interface LinkPreviewProps {
@@ -22,66 +19,40 @@ interface LinkPreviewProps {
 }
 
 export const LinkPreview = ({ url, className }: LinkPreviewProps) => {
-  const [previewData, setPreviewData] = useState<LinkPreviewData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    data: previewData,
+    isLoading: loading,
+    error,
+  } = trpc.linkPreview.linkPreview.useQuery(
+    { url },
+    {
+      enabled: !!url,
+      retry: false,
+    },
+  );
 
   useEffect(() => {
-    const fetchPreview = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        // Using iframely's public API endpoint
-        const response = await fetch(
-          `https://cdn.iframe.ly/api/iframely?omit_script=1&consent=1&url=${encodeURIComponent(url)}&api_key=${process.env.IFRAMELY_API_KEY}`,
-        );
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch preview');
-        }
-
-        const data = await response.json();
-        setPreviewData(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load preview');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (url) {
-      fetchPreview();
-    }
-  }, [url]);
-
-  useEffect(() => {
-    // Make sure you load Iframely embed.js script yourself
+    // relies on the embed.js from iframely being loaded
     window.iframely && window.iframely.load();
   });
 
   if (loading) {
     return (
       <Skeleton className={className}>
-        <div className="mb-2 h-4 rounded bg-gray-200"></div>
-        <div className="mb-2 h-3 w-3/4 rounded bg-gray-200"></div>
-        <div className="h-20 rounded bg-gray-200"></div>
+        <Skeleton className="mb-2 h-4" />
+        <Skeleton className="mb-2 h-3 w-3/4 bg-gray-200" />
+        <Skeleton className="h-20 bg-gray-200" />
       </Skeleton>
     );
   }
 
-  if (error || !previewData) {
+  if (error || !previewData || previewData.error) {
     return null;
   }
 
   return (
     <Surface className={className}>
-      <a
-        href={url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="block transition-colors"
-      >
+      <a href={url} target="_blank" rel="noopener noreferrer" className="block">
         {previewData.html && (
           <div
             className="aspect-video w-full"
@@ -89,21 +60,16 @@ export const LinkPreview = ({ url, className }: LinkPreviewProps) => {
           />
         )}
         <div className="p-4">
-          {previewData.meta.title && (
+          {previewData.meta?.title && (
             <Header3 className="text-base text-neutral-black">
               {previewData.meta.title}
             </Header3>
           )}
-          {previewData.meta.author && (
-            <>
-              {previewData.site && <span className="mx-1">•</span>}
-              <span>{previewData.meta.author}</span>
-            </>
-          )}
-          <div className="flex flex-col text-xs text-gray-500">
-            {previewData.meta.site && <span>{previewData.meta.site}</span>}
+          {previewData.meta?.author && <span>{previewData.meta.author}</span>}
+          <div className="flex flex-col text-xs text-neutral-gray4">
+            {previewData.meta?.site && <span>{previewData.meta.site}</span>}
           </div>
-          {previewData.meta.description && (
+          {previewData.meta?.description && (
             <p className="text-sm text-neutral-gray4">
               {previewData.meta.description.length > 200
                 ? previewData.meta.description.slice(0, 200) + '...'
