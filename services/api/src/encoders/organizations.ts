@@ -1,20 +1,11 @@
-import {
-  objectsInStorage,
-  organizationUsers,
-  organizations,
-} from '@op/db/schema';
+import { organizationUsers, organizations } from '@op/db/schema';
 import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
 import { linksEncoder } from './links';
 import { projectEncoder } from './projects';
+import { storageItemEncoder } from './storageItem';
 import { taxonomyTermsEncoder } from './taxonomyTerms';
-
-export const storageItemEncoder = createSelectSchema(objectsInStorage).pick({
-  id: true,
-  name: true,
-  // TODO: add metadata but make sure TRPC can resolve the type properly
-});
 
 export const organizationsEncoder = createSelectSchema(organizations)
   .pick({

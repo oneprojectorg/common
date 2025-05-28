@@ -141,9 +141,7 @@ export const OrganizationDetailsForm = ({
                   mimeType: file.type,
                 });
 
-                console.log('UPLOADED', JSON.stringify(res));
                 if (res?.url) {
-                  console.log('UPLOADED url', res.url);
                   setBannerImage(res);
                 }
               };

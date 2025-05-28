@@ -56,7 +56,15 @@ export const listRelatedOrganizationPostsRouter = router({
       const result = await db.query.postsToOrganizations.findMany({
         where: () => inArray(postsToOrganizations.organizationId, orgIds),
         with: {
-          post: true,
+          post: {
+            with: {
+              attachments: {
+                with: {
+                  storageObject: true,
+                },
+              },
+            },
+          },
           organization: {
             with: {
               avatarImage: true,

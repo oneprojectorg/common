@@ -55,6 +55,8 @@ export * from './components/Toolbar';
 export * from './components/Tooltip';
 export * from './components/LoadingSpinner';
 export * from './components/Toast';
+export * from './components/AvatarUploader';
+export * from './components/FileUploader';
 
 // Export everything from lib and utils
 export * from './lib/utils';

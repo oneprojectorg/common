@@ -2,6 +2,7 @@ import { relations } from 'drizzle-orm';
 import { index, pgTable, primaryKey, text, uuid } from 'drizzle-orm/pg-core';
 
 import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
+import { attachments } from './attachments.sql';
 import { organizations } from './organizations.sql';
 
 export const posts = pgTable(
@@ -37,6 +38,7 @@ export const postsToOrganizations = pgTable(
 
 export const postsRelations = relations(posts, ({ many }) => ({
   organization: many(organizations),
+  attachments: many(attachments),
 }));
 
 export const postsToOrganizationsRelations = relations(

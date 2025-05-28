@@ -8,7 +8,6 @@ export const getOrganizationStats = async ({ user }: { user: User }) => {
 
   const [orgCount, relationshipCount, newOrganizationsCount] =
     await db.transaction(async (tx) => {
-      console.log('GETTING STATS');
       const orgCount = tx
         .select({
           count: sql<number>`count(*)::int`,
@@ -34,8 +33,6 @@ export const getOrganizationStats = async ({ user }: { user: User }) => {
         relationshipCount,
         newOrganizationsCount,
       ]);
-
-      console.log('RETURN STATS', results);
 
       return results;
     });
