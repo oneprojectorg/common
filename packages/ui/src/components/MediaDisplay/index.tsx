@@ -1,7 +1,7 @@
 import { Header3 } from '@op/ui/Header';
 import { Surface } from '@op/ui/Surface';
 import { ReactNode } from 'react';
-import { LuGlobe } from 'react-icons/lu';
+import { LuFile, LuFileText, LuGlobe } from 'react-icons/lu';
 
 export const MediaDisplay = ({
   className,
@@ -28,7 +28,7 @@ export const MediaDisplay = ({
         {children}
         {title || author || site || description || url ? (
           <div className="p-4">
-            {title && !mimeType?.match(/application\/pdf/) && (
+            {title && mimeType?.match(/application\/pdf/) && (
               <Header3 className="text-base text-neutral-black">
                 {title}
               </Header3>
@@ -54,6 +54,15 @@ export const MediaDisplay = ({
                 </div>
               </>
             ) : null}
+            {mimeType?.match(/application\/pdf/) && (
+              <>
+                <hr className="my-2 bg-neutral-gray1 text-sm" />
+                <div className="flex gap-1 text-sm text-neutral-gray4">
+                  <LuFileText className="size-4 text-neutral-gray4" />
+                  <span>3.2MB • PDF</span>
+                </div>
+              </>
+            )}
           </div>
         ) : null}
       </a>

@@ -251,8 +251,8 @@ export const FileUploader = ({
             >
               {filePreview.uploading ? (
                 <Skeleton className="relative flex aspect-video w-full items-center justify-center rounded text-white" />
-              ) : (
-                <div className="relative flex aspect-video w-full items-center justify-center rounded bg-orangePurple text-white">
+              ) : filePreview.file.type.startsWith('image/') ? (
+                <div className="relative flex aspect-video w-full items-center justify-center rounded bg-neutral-gray1 text-white">
                   {filePreview.error ? (
                     <p className="text-title-sm">{filePreview.error}</p>
                   ) : filePreview.file.type.startsWith('image/') ? (
@@ -275,7 +275,7 @@ export const FileUploader = ({
                     <LuX className="size-3" />
                   </button>
                 </div>
-              )}
+              ) : null}
             </MediaDisplay>
           ))}
         </div>
