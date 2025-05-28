@@ -15,7 +15,7 @@ export const ProfileFeed = ({
       slug: profile.slug,
     },
     {
-      staleTime: 0, // Data is always considered stale
+      staleTime: 30 * 1000, // Data is always considered stale
       refetchOnMount: true, // Always refetch when component mounts
       refetchOnWindowFocus: true, // Always refetch when window gets focus
       refetchOnReconnect: true, // Always refetch when reconnecting

@@ -1,12 +1,9 @@
-'use client';
-
 import { getPublicUrl } from '@/utils';
-import { trpc } from '@op/api/client';
+import { trpcNext } from '@op/api/vanilla';
 import { Skeleton } from '@op/ui/Skeleton';
 import { cn, getGradientForString } from '@op/ui/utils';
 import Image from 'next/image';
-import React, { Suspense, useMemo } from 'react';
-import { ErrorBoundary } from 'react-error-boundary';
+import React, { Suspense } from 'react';
 import { LuArrowLeft } from 'react-icons/lu';
 
 import { Link } from '@/lib/i18n';
@@ -15,8 +12,9 @@ import { ImageHeader } from '@/components/ImageHeader';
 import { ProfileGrid, ProfileTabs } from '@/components/Profile/ProfileContent';
 import { ProfileDetails } from '@/components/Profile/ProfileDetails';
 
-const OrganizationProfileSuspense = ({ slug }: { slug: string }) => {
-  const [organization] = trpc.organization.getBySlug.useSuspenseQuery({
+const OrganizationProfileSuspense = async ({ slug }: { slug: string }) => {
+  const client = await trpcNext();
+  const organization = await client.organization.getBySlug.query({
     slug,
   });
 
@@ -24,13 +22,9 @@ const OrganizationProfileSuspense = ({ slug }: { slug: string }) => {
   const headerUrl = getPublicUrl(headerImage?.name);
   const avatarUrl = getPublicUrl(avatarImage?.name);
 
-  const gradientBg = useMemo(
-    () => getGradientForString(organization.name || 'Common'),
-    [],
-  );
-  const gradientBgHeader = useMemo(
-    () => getGradientForString(organization.name + 'C' || 'Common'),
-    [],
+  const gradientBg = getGradientForString(organization.name || 'Common');
+  const gradientBgHeader = getGradientForString(
+    organization.name + 'C' || 'Common',
   );
 
   return (
@@ -69,14 +63,9 @@ export const OrganizationProfile = ({ slug }: { slug: string }) => {
         </Link>
       </header>
       <div className="-mt-12 flex w-full flex-col gap-3 border-offWhite border-b-transparent sm:mt-0 sm:min-h-[calc(100vh-3.5rem)] sm:gap-4 sm:border">
-        <ErrorBoundary
-          fallback={<div>Could not load profile</div>}
-          onError={console.log}
-        >
-          <Suspense fallback={<Skeleton className="h-96 w-full" />}>
-            <OrganizationProfileSuspense slug={slug} />
-          </Suspense>
-        </ErrorBoundary>
+        <Suspense fallback={<Skeleton className="h-96 w-full" />}>
+          <OrganizationProfileSuspense slug={slug} />
+        </Suspense>
       </div>
     </>
   );

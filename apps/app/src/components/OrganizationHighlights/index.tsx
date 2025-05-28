@@ -82,7 +82,12 @@ const OrganizationFacePile = () => {
         <Link key={org.id} href={`/org/${org.slug}`}>
           <Avatar placeholder={org.name}>
             {avatarUrl ? (
-              <Image src={avatarUrl} alt="" fill className="object-cover" />
+              <Image
+                src={avatarUrl}
+                alt={org.name}
+                fill
+                className="object-cover"
+              />
             ) : null}
           </Avatar>
         </Link>

@@ -1,3 +1,5 @@
+'use client';
+
 import {
   Tooltip as AriaTooltip,
   TooltipTrigger as AriaTooltipTrigger,

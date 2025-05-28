@@ -81,8 +81,18 @@ export const FeedContent = ({
   );
 };
 
-const FeedHeader = ({ children }: { children: ReactNode }) => {
-  return <span className="flex items-baseline gap-2">{children}</span>;
+const FeedHeader = ({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) => {
+  return (
+    <span className={cn('flex items-baseline gap-2', className)}>
+      {children}
+    </span>
+  );
 };
 
 export const FeedAvatar = ({ children }: { children?: ReactNode }) => {
@@ -152,27 +162,27 @@ export const PostFeed = ({
                   {post?.content}
                   {post.attachments
                     ? post.attachments.map(({ fileName, storageObject }) => {
-                        const { mimetype } = storageObject.metadata;
+                      const { mimetype } = storageObject.metadata;
 
-                        return (
-                          <MediaDisplay
-                            key={storageObject.id}
-                            title={fileName}
-                            mimeType={mimetype}
-                          >
-                            {mimetype.startsWith('image/') ? (
-                              <div className="relative flex aspect-video w-full items-center justify-center rounded bg-neutral-gray1 text-white">
-                                <Image
-                                  src={getPublicUrl(storageObject.name) ?? ''}
-                                  alt={fileName}
-                                  fill={true}
-                                  className="size-full object-cover"
-                                />
-                              </div>
-                            ) : null}
-                          </MediaDisplay>
-                        );
-                      })
+                      return (
+                        <MediaDisplay
+                          key={storageObject.id}
+                          title={fileName}
+                          mimeType={mimetype}
+                        >
+                          {mimetype.startsWith('image/') ? (
+                            <div className="relative flex aspect-video w-full items-center justify-center rounded bg-neutral-gray1 text-white">
+                              <Image
+                                src={getPublicUrl(storageObject.name) ?? ''}
+                                alt={fileName}
+                                fill={true}
+                                className="size-full object-cover"
+                              />
+                            </div>
+                          ) : null}
+                        </MediaDisplay>
+                      );
+                    })
                     : null}
                   {urls.length > 0 && (
                     <div>
@@ -215,8 +225,8 @@ export const PostFeedSkeleton = ({
         <FeedItem key={i}>
           <AvatarSkeleton className="!size-8 max-h-8 max-w-8 rounded-full" />
           <FeedMain>
-            <FeedHeader>
-              <Header3 className="font-medium leading-5">
+            <FeedHeader className="w-1/2">
+              <Header3 className="w-full font-medium leading-5">
                 <Skeleton />
               </Header3>
               <Skeleton />

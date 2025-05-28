@@ -1,3 +1,5 @@
+'use client';
+
 import { formatToUrl } from '@/utils';
 import { trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
@@ -14,6 +16,7 @@ import { toast } from 'sonner';
 
 import { Link as I18nLink } from '@/lib/i18n';
 
+import { PostFeedSkeleton } from '@/components/PostFeed';
 import { PostUpdate } from '@/components/PostUpdate';
 
 import { ProfileFeed } from '../ProfileFeed';
@@ -97,7 +100,7 @@ const ProfileAbout = ({ profile }: { profile: Organization }) => {
           <TagGroup>
             {strategies.map((strategy) =>
               strategy ? (
-                <Tag>
+                <Tag key={strategy.id}>
                   <I18nLink href={`/org/?terms=${strategy.id}`}>
                     {/* @ts-ignore - odd TS bug that only shows in CI */}
                     {strategy.label}
@@ -143,7 +146,7 @@ export const ProfileGrid = ({ profile }: { profile: Organization }) => {
             className="border-b px-4 pb-8 pt-6"
           />
         </Suspense>
-        <Suspense fallback={<LoadingSpinner />}>
+        <Suspense fallback={<PostFeedSkeleton className="px-4" numPosts={3} />}>
           <ProfileFeed profile={profile} className="px-4" />
         </Suspense>
       </div>
