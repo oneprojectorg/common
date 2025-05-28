@@ -6,8 +6,10 @@ export const FacePile = forwardRef<
 >(({ items }: { children?: ReactNode; items: Array<ReactNode> }, ref) => {
   return (
     <ul className="-gap-2 flex" ref={ref}>
-      {items.map((node) => (
-        <li className="-ml-2">{node}</li>
+      {items.map((node, i) => (
+        <li key={i} className="-ml-2">
+          {node}
+        </li>
       ))}
     </ul>
   );

@@ -16,7 +16,7 @@ const OrgListingPage = async () => {
     <ListPageLayout>
       <ListPageLayoutHeader>Organizations</ListPageLayoutHeader>
 
-      <AllOrganizations initialData={organizations} limit={2} />
+      <AllOrganizations initialData={organizations} limit={20} />
     </ListPageLayout>
   );
 };
