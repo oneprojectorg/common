@@ -5,7 +5,6 @@ import { trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { Header3 } from '@op/ui/Header';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Skeleton } from '@op/ui/Skeleton';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
