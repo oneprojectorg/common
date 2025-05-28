@@ -160,20 +160,16 @@ export const PostFeed = ({
                             title={fileName}
                             mimeType={mimetype}
                           >
-                            <div className="relative flex aspect-video w-full items-center justify-center rounded bg-neutral-gray1 text-white">
-                              {mimetype.startsWith('image/') ? (
+                            {mimetype.startsWith('image/') ? (
+                              <div className="relative flex aspect-video w-full items-center justify-center rounded bg-neutral-gray1 text-white">
                                 <Image
                                   src={getPublicUrl(storageObject.name) ?? ''}
                                   alt={fileName}
                                   fill={true}
                                   className="size-full object-cover"
                                 />
-                              ) : (
-                                <div className="font-serif text-title-md">
-                                  {fileName}
-                                </div>
-                              )}
-                            </div>
+                              </div>
+                            ) : null}
                           </MediaDisplay>
                         );
                       })
