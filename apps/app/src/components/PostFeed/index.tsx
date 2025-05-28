@@ -1,9 +1,12 @@
+import { getPublicUrl } from '@/utils';
 import { detectLinks } from '@/utils/linkDetection';
 import type { PostToOrganization } from '@op/api/encoders';
 import { AvatarSkeleton } from '@op/ui/Avatar';
 import { Header3 } from '@op/ui/Header';
+import { MediaDisplay } from '@op/ui/MediaDisplay';
 import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
 import { cn } from '@op/ui/utils';
+import Image from 'next/image';
 import { ReactNode } from 'react';
 import { LuLeaf } from 'react-icons/lu';
 
@@ -70,7 +73,7 @@ export const FeedContent = ({
 }) => {
   return (
     <div
-      className={cn('leading-6', className)}
+      className={cn('w-full leading-6', className)}
       style={{ overflowWrap: 'anywhere' }}
     >
       {children}
@@ -147,6 +150,34 @@ export const PostFeed = ({
                 </FeedHeader>
                 <FeedContent>
                   {post?.content}
+                  {post.attachments
+                    ? post.attachments.map(({ fileName, storageObject }) => {
+                        const { mimetype } = storageObject.metadata;
+
+                        return (
+                          <MediaDisplay
+                            key={storageObject.id}
+                            title={fileName}
+                            mimeType={mimetype}
+                          >
+                            <div className="relative flex aspect-video w-full items-center justify-center rounded bg-orangePurple text-white">
+                              {mimetype.startsWith('image/') ? (
+                                <Image
+                                  src={getPublicUrl(storageObject.name) ?? ''}
+                                  alt={fileName}
+                                  fill={true}
+                                  className="size-full object-cover"
+                                />
+                              ) : (
+                                <div className="font-serif text-title-md">
+                                  {fileName}
+                                </div>
+                              )}
+                            </div>
+                          </MediaDisplay>
+                        );
+                      })
+                    : null}
                   {urls.length > 0 && (
                     <div>
                       {urls.map((url) => (

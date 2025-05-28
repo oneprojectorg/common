@@ -11,10 +11,10 @@ import { loggedProcedure, router } from '../../trpcFactory';
 import { sanitizeS3Filename } from '../../utils';
 
 const ALLOWED_MIME_TYPES = [
-  'image/png', 
-  'image/jpeg', 
+  'image/png',
+  'image/jpeg',
   'image/webp',
-  'application/pdf'
+  'application/pdf',
 ];
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -25,10 +25,10 @@ const meta: OpenApiMeta = {
   openapi: {
     enabled: true,
     method: 'POST',
-    path: `/organization/${endpoint}`,
+    path: `/organization/${endpoint}/attachment`,
     protect: true,
     tags: ['organization'],
-    summary: 'Upload a file attachment for posts (images and PDFs)',
+    summary: 'Upload a attachment for posts',
   },
 };
 
@@ -67,7 +67,8 @@ export const uploadPostAttachment = router({
       if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
-          message: 'Unsupported file type. Only images (PNG, JPEG, WebP) and PDFs are allowed.',
+          message:
+            'Unsupported file type. Only images (PNG, JPEG, WebP) and PDFs are allowed.',
         });
       }
 
@@ -115,7 +116,7 @@ export const uploadPostAttachment = router({
           },
         },
       );
-      
+
       const bucket = 'assets';
       const filePath = `posts/${ctx.user.id}/${Date.now()}_${sanitizedFileName}`;
 
@@ -145,7 +146,9 @@ export const uploadPostAttachment = router({
 
       // Get signed URL
       const { data: signedUrlData, error: signedUrlError } =
-        await supabase.storage.from(bucket).createSignedUrl(filePath, 60 * 60 * 24); // 24 hours
+        await supabase.storage
+          .from(bucket)
+          .createSignedUrl(filePath, 60 * 60 * 24); // 24 hours
 
       if (signedUrlError || !signedUrlData) {
         logger?.info('SIGNED URL ERROR', signedUrlError);
@@ -155,8 +158,10 @@ export const uploadPostAttachment = router({
         });
       }
 
-      logger?.info('RETURNING UPLOAD URL: ' + signedUrlData.signedUrl + ' - ' + filePath);
-      
+      logger?.info(
+        'RETURNING UPLOAD URL: ' + signedUrlData.signedUrl + ' - ' + filePath,
+      );
+
       return {
         url: signedUrlData.signedUrl,
         path: filePath,

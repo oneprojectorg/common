@@ -1,3 +1,4 @@
+import { UnauthorizedError, getOrgAccessUser } from '@op/common';
 import { attachments, posts, postsToOrganizations } from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
@@ -40,7 +41,15 @@ export const createPostInOrganization = router({
     .output(outputSchema)
     .mutation(async ({ input, ctx }) => {
       const { db } = ctx.database;
-      const { id: userId } = ctx.user;
+
+      const user = await getOrgAccessUser({
+        organizationId: input.id,
+        user: ctx.user,
+      });
+
+      if (!user) {
+        throw new UnauthorizedError();
+      }
 
       try {
         const newPost = await db.transaction(async (tx) => {
@@ -68,14 +77,15 @@ export const createPostInOrganization = router({
 
           // Create attachment records if any attachments were uploaded
           if (input.attachmentIds.length > 0) {
-            const attachmentValues = input.attachmentIds.map((storageObjectId) => ({
-              postId: post.id,
-              storageObjectId,
-              fileName: '', // Will be updated from storage metadata if needed
-              mimeType: '', // Will be updated from storage metadata if needed
-              uploadedBy: userId,
-            }));
+            const attachmentValues = input.attachmentIds.map(
+              (storageObjectId) => ({
+                postId: post.id,
+                storageObjectId,
+                uploadedBy: user.id,
+              }),
+            );
 
+            // @ts-ignore
             await tx.insert(attachments).values(attachmentValues);
           }
 
@@ -85,6 +95,7 @@ export const createPostInOrganization = router({
         const output = outputSchema.parse(newPost);
         return output;
       } catch (error) {
+        console.log('ERROR', error);
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to add post to organization',

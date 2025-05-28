@@ -1,10 +1,19 @@
-import { posts, postsToOrganizations } from '@op/db/schema';
+import { attachments, posts, postsToOrganizations } from '@op/db/schema';
 import { createSelectSchema } from 'drizzle-zod';
-import type { z } from 'zod';
+import { z } from 'zod';
 
 import { organizationsEncoder } from './organizations';
+import { storageItemEncoder } from './storageItem';
 
-export const postsEncoder = createSelectSchema(posts).strip();
+export const postAttachmentEncoder = createSelectSchema(attachments).extend({
+  storageObject: storageItemEncoder,
+});
+
+export const postsEncoder = createSelectSchema(posts)
+  .extend({
+    attachments: z.array(postAttachmentEncoder).nullish(),
+  })
+  .strip();
 
 export type Post = z.infer<typeof postsEncoder>;
 

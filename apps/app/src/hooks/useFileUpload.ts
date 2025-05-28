@@ -19,7 +19,12 @@ interface UseFileUploadOptions {
   maxSizePerFile?: number;
 }
 
-const DEFAULT_ACCEPTED_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'application/pdf'];
+const DEFAULT_ACCEPTED_TYPES = [
+  'image/png',
+  'image/jpeg',
+  'image/webp',
+  'application/pdf',
+];
 const DEFAULT_MAX_FILES = 10;
 const DEFAULT_MAX_SIZE = 10 * 1024 * 1024; // 10MB
 
@@ -46,14 +51,22 @@ export const useFileUpload = (options: UseFileUploadOptions = {}) => {
     return null;
   };
 
-  const uploadFile = async (file: File): Promise<{ id: string; url: string; fileName: string; mimeType: string; fileSize: number }> => {
+  const uploadFile = async (
+    file: File,
+  ): Promise<{
+    id: string;
+    url: string;
+    fileName: string;
+    mimeType: string;
+    fileSize: number;
+  }> => {
     const validationError = validateFile(file);
     if (validationError) {
       throw new Error(validationError);
     }
 
     const previewId = `${Date.now()}-${Math.random()}`;
-    
+
     // Create initial preview
     const preview: FilePreview = {
       id: previewId,
@@ -64,8 +77,8 @@ export const useFileUpload = (options: UseFileUploadOptions = {}) => {
       mimeType: file.type,
       fileSize: file.size,
     };
-    
-    setFilePreviews(prev => [...prev, preview]);
+
+    setFilePreviews((prev) => [...prev, preview]);
 
     try {
       // Convert file to base64
@@ -81,40 +94,44 @@ export const useFileUpload = (options: UseFileUploadOptions = {}) => {
         fileName: file.name,
         mimeType: file.type,
       });
-      
+
       // Update preview with success
-      setFilePreviews(prev => prev.map(f => 
-        f.id === previewId 
-          ? { ...f, uploading: false, uploaded: true, id: result.id }
-          : f
-      ));
+      setFilePreviews((prev) =>
+        prev.map((f) =>
+          f.id === previewId
+            ? { ...f, uploading: false, uploaded: true, id: result.id }
+            : f,
+        ),
+      );
 
       return result;
     } catch (error) {
       // Update preview with error
-      setFilePreviews(prev => prev.map(f => 
-        f.id === previewId 
-          ? { 
-              ...f, 
-              uploading: false, 
-              error: error instanceof Error ? error.message : 'Upload failed' 
-            }
-          : f
-      ));
+      setFilePreviews((prev) =>
+        prev.map((f) =>
+          f.id === previewId
+            ? {
+                ...f,
+                uploading: false,
+                error: error instanceof Error ? error.message : 'Upload failed',
+              }
+            : f,
+        ),
+      );
       throw error;
     }
   };
 
   const removeFile = (id: string) => {
-    const preview = filePreviews.find(f => f.id === id);
+    const preview = filePreviews.find((f) => f.id === id);
     if (preview) {
       URL.revokeObjectURL(preview.url);
-      setFilePreviews(prev => prev.filter(f => f.id !== id));
+      setFilePreviews((prev) => prev.filter((f) => f.id !== id));
     }
   };
 
   const clearFiles = () => {
-    filePreviews.forEach(preview => URL.revokeObjectURL(preview.url));
+    filePreviews.forEach((preview) => URL.revokeObjectURL(preview.url));
     setFilePreviews([]);
   };
 
@@ -133,68 +150,75 @@ export const useFileUpload = (options: UseFileUploadOptions = {}) => {
     }
   }, []);
 
-  const handleDrop = useCallback(async (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragOver(false);
+  const handleDrop = useCallback(
+    async (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragOver(false);
 
-    const files = Array.from(e.dataTransfer.files);
-    
-    // Check file limit
-    if (filePreviews.length + files.length > maxFiles) {
-      alert(`Maximum ${maxFiles} files allowed`);
-      return;
-    }
+      const files = Array.from(e.dataTransfer.files);
 
-    const validFiles = files.filter(file => acceptedTypes.includes(file.type));
-
-    if (validFiles.length === 0) {
-      alert(`Please drop only supported file types: ${acceptedTypes.join(', ')}`);
-      return;
-    }
-
-    // Upload each valid file
-    for (const file of validFiles) {
-      try {
-        await uploadFile(file);
-      } catch (error) {
-        console.error('Failed to upload file:', file.name, error);
+      // Check file limit
+      if (filePreviews.length + files.length > maxFiles) {
+        alert(`Maximum ${maxFiles} files allowed`);
+        return;
       }
-    }
-  }, [filePreviews.length, maxFiles, acceptedTypes, uploadFile]);
+
+      const validFiles = files.filter((file) =>
+        acceptedTypes.includes(file.type),
+      );
+
+      if (validFiles.length === 0) {
+        alert(
+          `Please drop only supported file types: ${acceptedTypes.join(', ')}`,
+        );
+        return;
+      }
+
+      // Upload each valid file
+      for (const file of validFiles) {
+        try {
+          await uploadFile(file);
+        } catch (error) {
+          console.error('Failed to upload file:', file.name, error);
+        }
+      }
+    },
+    [filePreviews.length, maxFiles, acceptedTypes, uploadFile],
+  );
 
   const getUploadedAttachmentIds = () => {
-    return filePreviews.filter(f => f.uploaded && !f.error).map(f => f.id);
+    return filePreviews.filter((f) => f.uploaded && !f.error).map((f) => f.id);
   };
 
   const hasUploadedFiles = () => {
-    return filePreviews.some(f => f.uploaded && !f.error);
+    return filePreviews.some((f) => f.uploaded && !f.error);
   };
 
   const isUploading = () => {
-    return filePreviews.some(f => f.uploading);
+    return filePreviews.some((f) => f.uploading);
   };
 
   return {
     // State
     filePreviews,
     isDragOver,
-    
+
     // Actions
     uploadFile,
     removeFile,
     clearFiles,
-    
+
     // Drag and drop handlers
     handleDragOver,
     handleDragLeave,
     handleDrop,
-    
+
     // Computed values
     getUploadedAttachmentIds,
     hasUploadedFiles,
     isUploading,
-    
+
     // Configuration
     acceptedTypes,
     maxFiles,

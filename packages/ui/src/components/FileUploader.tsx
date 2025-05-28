@@ -1,6 +1,7 @@
+import Image from 'next/image';
 import { useCallback, useRef, useState } from 'react';
 import { useButton } from 'react-aria';
-import { LuImage, LuX } from 'react-icons/lu';
+import { LuX } from 'react-icons/lu';
 
 import { cn } from '../lib/utils';
 import { LoadingSpinner } from './LoadingSpinner';
@@ -255,7 +256,7 @@ export const FileUploader = ({
                 )}
                 {!filePreview.uploading &&
                   (filePreview.file.type.startsWith('image/') ? (
-                    <img
+                    <Image
                       src={filePreview.url}
                       alt={filePreview.file.name}
                       className="size-full object-cover"

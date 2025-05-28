@@ -2,9 +2,9 @@ import { relations } from 'drizzle-orm';
 import { bigint, index, pgTable, text, uuid } from 'drizzle-orm/pg-core';
 
 import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
+import { organizationUsers } from './organizationUsers.sql';
 import { posts } from './posts.sql';
 import { objectsInStorage } from './storage.sql';
-import { users } from './users.sql';
 
 export const attachments = pgTable(
   'attachments',
@@ -25,7 +25,7 @@ export const attachments = pgTable(
     fileSize: bigint({ mode: 'number' }),
     uploadedBy: uuid()
       .notNull()
-      .references(() => users.id, {
+      .references(() => organizationUsers.id, {
         onDelete: 'cascade',
       }),
     ...timestamps,
@@ -48,8 +48,8 @@ export const attachmentsRelations = relations(attachments, ({ one }) => ({
     fields: [attachments.storageObjectId],
     references: [objectsInStorage.id],
   }),
-  uploader: one(users, {
+  uploader: one(organizationUsers, {
     fields: [attachments.uploadedBy],
-    references: [users.id],
+    references: [organizationUsers.id],
   }),
 }));

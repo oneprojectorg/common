@@ -14,7 +14,6 @@ import { LuImage } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { FilePreviewList } from '@/components/FilePreviewList';
 import { LinkPreview } from '@/components/LinkPreview';
 import { FeedItem, FeedMain } from '@/components/PostFeed';
 
