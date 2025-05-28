@@ -75,15 +75,28 @@ export const createPostInOrganization = router({
             postId: post.id,
           });
 
+          const allStorageObjects = await tx.query.objectsInStorage.findMany({
+            where: (table, { inArray }) =>
+              inArray(table.id, input.attachmentIds),
+          });
+
           // Create attachment records if any attachments were uploaded
-          if (input.attachmentIds.length > 0) {
-            const attachmentValues = input.attachmentIds.map(
-              (storageObjectId) => ({
-                postId: post.id,
-                storageObjectId,
-                uploadedBy: user.id,
-              }),
-            );
+          if (allStorageObjects.length > 0) {
+            const attachmentValues = allStorageObjects.map((storageObject) => ({
+              postId: post.id,
+              storageObjectId: storageObject.id,
+              uploadedBy: user.id,
+              fileName:
+                // @ts-expect-error - We check for this existence first. TODO: find the source of this TS error
+                storageObject?.name
+                  ?.split('/')
+                  .slice(-1)[0]
+                  .split('_')
+                  .slice(1)
+                  .join('_') ?? '',
+              mimeType: (storageObject.metadata as { mimetype: string })
+                .mimetype,
+            }));
 
             // @ts-ignore
             await tx.insert(attachments).values(attachmentValues);

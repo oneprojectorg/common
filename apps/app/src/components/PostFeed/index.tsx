@@ -73,7 +73,7 @@ export const FeedContent = ({
 }) => {
   return (
     <div
-      className={cn('w-full leading-6', className)}
+      className={cn('flex w-full flex-col gap-2 leading-6', className)}
       style={{ overflowWrap: 'anywhere' }}
     >
       {children}
@@ -160,7 +160,7 @@ export const PostFeed = ({
                             title={fileName}
                             mimeType={mimetype}
                           >
-                            <div className="relative flex aspect-video w-full items-center justify-center rounded bg-orangePurple text-white">
+                            <div className="relative flex aspect-video w-full items-center justify-center rounded bg-neutral-gray1 text-white">
                               {mimetype.startsWith('image/') ? (
                                 <Image
                                   src={getPublicUrl(storageObject.name) ?? ''}

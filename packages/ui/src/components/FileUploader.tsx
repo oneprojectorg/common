@@ -259,6 +259,7 @@ export const FileUploader = ({
                     <Image
                       src={filePreview.url}
                       alt={filePreview.file.name}
+                      fill={true}
                       className="size-full object-cover"
                     />
                   ) : (

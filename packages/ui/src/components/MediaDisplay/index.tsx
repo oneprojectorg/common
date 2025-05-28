@@ -26,30 +26,36 @@ export const MediaDisplay = ({
     <Surface className={className}>
       <a href={url} target="_blank" rel="noopener noreferrer" className="block">
         {children}
-        <div className="p-4">
-          {title && !mimeType?.match(/application\/pdf/) && (
-            <Header3 className="text-base text-neutral-black">{title}</Header3>
-          )}
-          {author && <span>{author}</span>}
-          <div className="flex flex-col text-xs text-neutral-gray4">
-            {site && <span>{site}</span>}
-          </div>
-          {description && (
-            <p className="text-sm text-neutral-gray4">
-              {description.length > 200
-                ? description.slice(0, 200) + '...'
-                : description}
-            </p>
-          )}
-          {url ? (
-            <>
-              <hr className="my-2 bg-neutral-gray1 text-sm" />
-              <div className="flex items-center gap-2 text-xs text-neutral-gray4">
-                <LuGlobe className="size-4" /> <span>{url}</span>
+        {title || author || site || description || url ? (
+          <div className="p-4">
+            {title && !mimeType?.match(/application\/pdf/) && (
+              <Header3 className="text-base text-neutral-black">
+                {title}
+              </Header3>
+            )}
+            {author && <span>{author}</span>}
+            {site && (
+              <div className="flex flex-col text-xs text-neutral-gray4">
+                {site}
               </div>
-            </>
-          ) : null}
-        </div>
+            )}
+            {description && (
+              <p className="text-sm text-neutral-gray4">
+                {description.length > 200
+                  ? description.slice(0, 200) + '...'
+                  : description}
+              </p>
+            )}
+            {url ? (
+              <>
+                <hr className="my-2 bg-neutral-gray1 text-sm" />
+                <div className="flex items-center gap-2 text-xs text-neutral-gray4">
+                  <LuGlobe className="size-4" /> <span>{url}</span>
+                </div>
+              </>
+            ) : null}
+          </div>
+        ) : null}
       </a>
     </Surface>
   );

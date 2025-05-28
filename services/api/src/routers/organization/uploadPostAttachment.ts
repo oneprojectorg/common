@@ -1,5 +1,5 @@
+import { CommonError, UnauthorizedError, getOrgAccessUser } from '@op/common';
 import { createServerClient } from '@op/supabase/lib';
-import { TRPCError } from '@trpc/server';
 import { Buffer } from 'buffer';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
@@ -19,13 +19,11 @@ const ALLOWED_MIME_TYPES = [
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
-const endpoint = 'uploadPostAttachment';
-
 const meta: OpenApiMeta = {
   openapi: {
     enabled: true,
     method: 'POST',
-    path: `/organization/${endpoint}/attachment`,
+    path: `/organization/{organizationId}/feed/posts/attachment`,
     protect: true,
     tags: ['organization'],
     summary: 'Upload a attachment for posts',
@@ -42,6 +40,7 @@ export const uploadPostAttachment = router({
     .meta(meta)
     .input(
       z.object({
+        organizationId: z.string().uuid({ message: 'Invalid organization ID' }),
         file: z.string(), // base64 encoded
         fileName: z.string(),
         mimeType: z.string(),
@@ -58,18 +57,24 @@ export const uploadPostAttachment = router({
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      const { file, fileName, mimeType } = input;
-      // @ts-ignore
-      const { logger } = ctx;
+      const { organizationId, file, fileName, mimeType } = input;
+      const { user } = ctx;
+
+      const orgUser = await getOrgAccessUser({
+        organizationId,
+        user,
+      });
+
+      if (!orgUser) {
+        throw new UnauthorizedError();
+      }
 
       const sanitizedFileName = sanitizeS3Filename(fileName);
 
       if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message:
-            'Unsupported file type. Only images (PNG, JPEG, WebP) and PDFs are allowed.',
-        });
+        throw new CommonError(
+          'Unsupported file type. Only images (PNG, JPEG, WebP) and PDFs are allowed.',
+        );
       }
 
       let buffer: Buffer;
@@ -90,19 +95,14 @@ export const uploadPostAttachment = router({
 
         buffer = Buffer.from(base64, 'base64');
       } catch (_err) {
-        logger?.info('Error decoding base64', _err);
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Invalid base64 encoding',
-        });
+        throw new CommonError('Invalid base64 encoding');
       }
 
       // Check file size
       if (buffer.length > MAX_FILE_SIZE) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: `File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB`,
-        });
+        throw new CommonError(
+          `File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB`,
+        );
       }
 
       const supabase = createServerClient(
@@ -118,9 +118,7 @@ export const uploadPostAttachment = router({
       );
 
       const bucket = 'assets';
-      const filePath = `posts/${ctx.user.id}/${Date.now()}_${sanitizedFileName}`;
-
-      logger?.info('UPLOADING POST ATTACHMENT: ' + filePath);
+      const filePath = `org/${organizationId}/posts/${Date.now()}_${sanitizedFileName}`;
 
       const { error: uploadError, data } = await supabase.storage
         .from(bucket)
@@ -130,18 +128,11 @@ export const uploadPostAttachment = router({
         });
 
       if (uploadError) {
-        logger?.info('UPLOAD ERROR', uploadError);
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: uploadError.message,
-        });
+        throw new CommonError(uploadError.message);
       }
 
       if (!data) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Upload failed - no data returned',
-        });
+        throw new CommonError('Upload failed - no data returned');
       }
 
       // Get signed URL
@@ -151,16 +142,8 @@ export const uploadPostAttachment = router({
           .createSignedUrl(filePath, 60 * 60 * 24); // 24 hours
 
       if (signedUrlError || !signedUrlData) {
-        logger?.info('SIGNED URL ERROR', signedUrlError);
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: signedUrlError?.message || 'Could not get signed url',
-        });
+        throw new CommonError('Could not get signed url');
       }
-
-      logger?.info(
-        'RETURNING UPLOAD URL: ' + signedUrlData.signedUrl + ' - ' + filePath,
-      );
 
       return {
         url: signedUrlData.signedUrl,

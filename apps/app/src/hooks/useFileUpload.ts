@@ -14,6 +14,7 @@ export interface FilePreview {
 }
 
 interface UseFileUploadOptions {
+  organizationId: string;
   acceptedTypes?: string[];
   maxFiles?: number;
   maxSizePerFile?: number;
@@ -28,12 +29,13 @@ const DEFAULT_ACCEPTED_TYPES = [
 const DEFAULT_MAX_FILES = 10;
 const DEFAULT_MAX_SIZE = 10 * 1024 * 1024; // 10MB
 
-export const useFileUpload = (options: UseFileUploadOptions = {}) => {
+export const useFileUpload = (options: UseFileUploadOptions) => {
   const {
+    organizationId,
     acceptedTypes = DEFAULT_ACCEPTED_TYPES,
     maxFiles = DEFAULT_MAX_FILES,
     maxSizePerFile = DEFAULT_MAX_SIZE,
-  } = options;
+  } = options ?? {};
 
   const [filePreviews, setFilePreviews] = useState<FilePreview[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -90,6 +92,7 @@ export const useFileUpload = (options: UseFileUploadOptions = {}) => {
       });
 
       const result = await uploadAttachment.mutateAsync({
+        organizationId,
         file: base64,
         fileName: file.name,
         mimeType: file.type,

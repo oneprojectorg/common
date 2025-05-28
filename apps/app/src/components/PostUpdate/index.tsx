@@ -32,6 +32,7 @@ const PostUpdateWithUser = ({
   const utils = trpc.useUtils();
 
   const fileUpload = useFileUpload({
+    organizationId: organization.id,
     acceptedTypes: ['image/png', 'image/jpeg', 'image/webp', 'application/pdf'],
     maxFiles: 1,
   });
