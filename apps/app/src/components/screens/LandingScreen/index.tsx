@@ -1,163 +1,23 @@
-import { getPublicUrl } from '@/utils';
-import { RouterOutput, trpc } from '@op/api/client';
-import { Avatar } from '@op/ui/Avatar';
-import { FacePile } from '@op/ui/FacePile';
-import { Header1, Header3 } from '@op/ui/Header';
+import { RouterOutput } from '@op/api/client';
+import { trpcNext } from '@op/api/vanilla';
+import { Header3 } from '@op/ui/Header';
 import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
-import { cn } from '@op/ui/utils';
-import Image from 'next/image';
-import { useSearchParams } from 'next/navigation';
-import {
-  ReactNode,
-  Suspense,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
-
-import { Link } from '@/lib/i18n';
+import { Suspense } from 'react';
 
 import { NewOrganizations } from '@/components/NewOrganizations';
 import { NewlyJoinedModal } from '@/components/NewlyJoinedModal';
+import { OrganizationHighlights } from '@/components/OrganizationHighlights';
 import { PendingRelationships } from '@/components/PendingRelationships';
-import { PostFeed } from '@/components/PostFeed';
+import { PostFeed, PostFeedSkeleton } from '@/components/PostFeed';
 import { PostUpdate } from '@/components/PostUpdate';
 
-const HighlightNumber = ({
-  children,
-  className,
-}: {
-  children?: ReactNode;
-  className?: string;
-}) => {
-  return (
-    <div className="col-span-2 text-transparent">
-      <div
-        className={cn(
-          'flex items-center justify-end bg-gradient bg-clip-text text-right font-serif text-title-xxl',
-          className,
-        )}
-      >
-        {children}
-      </div>
-    </div>
-  );
-};
+import { Welcome } from './Welcome';
 
-const HighlightLabel = ({ children }: { children?: ReactNode }) => {
-  return (
-    <div className="col-span-3 flex h-12 max-w-32 items-center text-neutral-charcoal">
-      {children}
-    </div>
-  );
-};
-
-const Highlight = ({ children }: { children?: ReactNode }) => {
-  return (
-    <div className="grid w-full grid-cols-5 items-center gap-4 sm:flex">
-      {children}
-    </div>
-  );
-};
-
-const OrganizationFacePile = () => {
-  const [{ items: organizations }] = trpc.organization.list.useSuspenseQuery({
-    limit: 20,
-  });
-
-  const [stats] = trpc.organization.getStats.useSuspenseQuery();
-  const facePileRef = useRef<HTMLUListElement>(null);
-  const [numItems, setNumItems] = useState(20);
-
-  useEffect(() => {
-    if (!facePileRef.current) {
-      return;
-    }
-
-    const resizeObserver = new ResizeObserver((e) => {
-      // divide by 2 rem - 0.5 rem overlap
-      setNumItems(Math.floor((e[0]?.contentRect.width ?? 1) / (32 - 8)));
-    });
-
-    resizeObserver.observe(facePileRef.current);
-
-    return () => {
-      resizeObserver.disconnect();
-    };
-  }, [facePileRef]);
-
-  const items = organizations
-    .map((org) => {
-      const { avatarImage } = org;
-      const avatarUrl = getPublicUrl(avatarImage?.name);
-      return (
-        <Link key={org.id} href={`/org/${org.slug}`}>
-          <Avatar placeholder={org.name}>
-            {avatarUrl ? (
-              <Image src={avatarUrl} alt="" fill className="object-cover" />
-            ) : null}
-          </Avatar>
-        </Link>
-      );
-    })
-    .slice(0, numItems);
-
-  if (stats.totalOrganizations > numItems) {
-    items.push(
-      <Link key="more" href={`/org`}>
-        <Avatar className="bg-neutral-charcoal text-sm text-neutral-offWhite">
-          <span className="align-super">+</span>
-          {stats.totalOrganizations - numItems}
-        </Avatar>
-      </Link>,
-    );
-  }
-
-  return <FacePile items={items} ref={facePileRef} />;
-};
-
-const OrganizationHighlights = () => {
-  const [stats] = trpc.organization.getStats.useSuspenseQuery();
-
-  return (
-    <Surface className="shadow-light">
-      <div className="flex flex-col items-center justify-between gap-6 px-10 py-6 sm:flex-row sm:gap-4">
-        <Highlight>
-          <HighlightNumber className="bg-tealGreen">
-            {stats.newOrganizations}
-          </HighlightNumber>
-          <HighlightLabel>new organizations to explore</HighlightLabel>
-        </Highlight>
-        <hr className="hidden h-20 w-0.5 bg-neutral-gray1 sm:block" />
-        <Highlight>
-          <HighlightNumber className="bg-orange">
-            {stats.totalRelationships}
-          </HighlightNumber>
-          <HighlightLabel>active relationships</HighlightLabel>
-        </Highlight>
-        <hr className="hidden h-20 w-0.5 bg-neutral-gray1 sm:block" />
-        <Highlight>
-          <HighlightNumber className="bg-redTeal">
-            {stats.totalOrganizations}
-          </HighlightNumber>
-          <HighlightLabel>organizations on Common</HighlightLabel>
-        </Highlight>
-      </div>
-      <div className="flex flex-col justify-start gap-2 border-0 border-t bg-neutral-offWhite p-6 text-sm text-neutral-charcoal sm:flex-row sm:items-center">
-        <Suspense>
-          <OrganizationFacePile />
-          are collaborating on Common
-        </Suspense>
-      </div>
-    </Surface>
-  );
-};
-
-const Feed = ({ organizationId }: { organizationId: string }) => {
-  const [posts] = trpc.organization.listRelatedPosts.useSuspenseQuery({
+const Feed = async ({ organizationId }: { organizationId: string }) => {
+  const client = await trpcNext();
+  const posts = await client.organization.listRelatedPosts.query({
     organizationId,
   });
 
@@ -189,7 +49,7 @@ const LandingScreenFeeds = ({
         <hr />
         <div className="mt-4 sm:mt-0">
           {user.currentOrganization ? (
-            <Suspense>
+            <Suspense fallback={<PostFeedSkeleton numPosts={3} />}>
               <Feed organizationId={user.currentOrganization.id} />
             </Suspense>
           ) : null}
@@ -229,20 +89,14 @@ const LandingScreenFeeds = ({
   );
 };
 
-export const LandingScreen = () => {
-  const [user] = trpc.account.getMyAccount.useSuspenseQuery();
-  const searchParams = useSearchParams();
-
-  const isNew = useMemo(() => {
-    return searchParams.get('new') === '1';
-  }, []);
+export const LandingScreen = async () => {
+  const client = await trpcNext();
+  const user = await client.account.getMyAccount.query();
 
   return (
     <div className="container flex min-h-0 grow flex-col gap-4 pt-8 sm:gap-10 sm:pt-14">
       <div className="flex flex-col gap-2">
-        <Header1 className="text-center text-title-md sm:text-title-xl">
-          {isNew ? `Welcome, ${user.name}!` : `Welcome back, ${user.name}!`}
-        </Header1>
+        <Welcome user={user} />
         <span className="text-center text-neutral-charcoal">
           Explore new connections and strengthen existing relationships.
         </span>

@@ -4,6 +4,7 @@ import {
   loggerLink,
   unstable_httpBatchStreamLink,
 } from '@trpc/client';
+import { headers } from 'next/headers';
 import superjson from 'superjson';
 
 import type { AppRouter } from './routers';
@@ -41,3 +42,5 @@ export const createTRPCVanillaClient = (headers?: Record<string, string>) => {
 };
 
 export const trpcVanilla = createTRPCVanillaClient();
+export const trpcNext = async () =>
+  createTRPCVanillaClient(Object.fromEntries(await headers()));

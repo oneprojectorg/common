@@ -1,3 +1,5 @@
+'use client';
+
 import { getPublicUrl } from '@/utils';
 import { Organization } from '@op/api/encoders';
 import { SkeletonLine } from '@op/ui/Skeleton';

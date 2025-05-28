@@ -1,0 +1,142 @@
+'use client';
+
+import { getPublicUrl } from '@/utils';
+import { trpc } from '@op/api/client';
+import { Avatar } from '@op/ui/Avatar';
+import { FacePile } from '@op/ui/FacePile';
+import { Surface } from '@op/ui/Surface';
+import { cn } from '@op/ui/utils';
+import Image from 'next/image';
+import { ReactNode, Suspense, useEffect, useRef, useState } from 'react';
+
+import { Link } from '@/lib/i18n';
+
+const HighlightNumber = ({
+  children,
+  className,
+}: {
+  children?: ReactNode;
+  className?: string;
+}) => {
+  return (
+    <div className="col-span-2 text-transparent">
+      <div
+        className={cn(
+          'flex items-center justify-end bg-gradient bg-clip-text text-right font-serif text-title-xxl',
+          className,
+        )}
+      >
+        {children}
+      </div>
+    </div>
+  );
+};
+
+const HighlightLabel = ({ children }: { children?: ReactNode }) => {
+  return (
+    <div className="col-span-3 flex h-12 max-w-32 items-center text-neutral-charcoal">
+      {children}
+    </div>
+  );
+};
+
+const Highlight = ({ children }: { children?: ReactNode }) => {
+  return (
+    <div className="grid w-full grid-cols-5 items-center gap-4 sm:flex">
+      {children}
+    </div>
+  );
+};
+
+const OrganizationFacePile = () => {
+  const [{ items: organizations }] = trpc.organization.list.useSuspenseQuery({
+    limit: 20,
+  });
+
+  const [stats] = trpc.organization.getStats.useSuspenseQuery();
+  const facePileRef = useRef<HTMLUListElement>(null);
+  const [numItems, setNumItems] = useState(20);
+
+  useEffect(() => {
+    if (!facePileRef.current) {
+      return;
+    }
+
+    const resizeObserver = new ResizeObserver((e) => {
+      // divide by 2 rem - 0.5 rem overlap
+      setNumItems(Math.floor((e[0]?.contentRect.width ?? 1) / (32 - 8)));
+    });
+
+    resizeObserver.observe(facePileRef.current);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [facePileRef]);
+
+  const items = organizations
+    .map((org) => {
+      const { avatarImage } = org;
+      const avatarUrl = getPublicUrl(avatarImage?.name);
+      return (
+        <Link key={org.id} href={`/org/${org.slug}`}>
+          <Avatar placeholder={org.name}>
+            {avatarUrl ? (
+              <Image src={avatarUrl} alt="" fill className="object-cover" />
+            ) : null}
+          </Avatar>
+        </Link>
+      );
+    })
+    .slice(0, numItems);
+
+  if (stats.totalOrganizations > numItems) {
+    items.push(
+      <Link key="more" href={`/org`}>
+        <Avatar className="bg-neutral-charcoal text-sm text-neutral-offWhite">
+          <span className="align-super">+</span>
+          {stats.totalOrganizations - numItems}
+        </Avatar>
+      </Link>,
+    );
+  }
+
+  return <FacePile items={items} ref={facePileRef} />;
+};
+
+export const OrganizationHighlights = () => {
+  const [stats] = trpc.organization.getStats.useSuspenseQuery();
+
+  return (
+    <Surface className="shadow-light">
+      <div className="flex flex-col items-center justify-between gap-6 px-10 py-6 sm:flex-row sm:gap-4">
+        <Highlight>
+          <HighlightNumber className="bg-tealGreen">
+            {stats.newOrganizations}
+          </HighlightNumber>
+          <HighlightLabel>new organizations to explore</HighlightLabel>
+        </Highlight>
+        <hr className="hidden h-20 w-0.5 bg-neutral-gray1 sm:block" />
+        <Highlight>
+          <HighlightNumber className="bg-orange">
+            {stats.totalRelationships}
+          </HighlightNumber>
+          <HighlightLabel>active relationships</HighlightLabel>
+        </Highlight>
+        <hr className="hidden h-20 w-0.5 bg-neutral-gray1 sm:block" />
+        <Highlight>
+          <HighlightNumber className="bg-redTeal">
+            {stats.totalOrganizations}
+          </HighlightNumber>
+          <HighlightLabel>organizations on Common</HighlightLabel>
+        </Highlight>
+      </div>
+      <div className="flex flex-col justify-start gap-2 border-0 border-t bg-neutral-offWhite p-6 text-sm text-neutral-charcoal sm:flex-row sm:items-center">
+        <Suspense>
+          <OrganizationFacePile />
+          are collaborating on Common
+        </Suspense>
+      </div>
+    </Surface>
+  );
+};

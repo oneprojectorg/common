@@ -1,61 +1,41 @@
-'use client';
-
-import { makeArray } from '@/utils';
-import { trpc } from '@op/api/client';
+import { trpcNext } from '@op/api/vanilla';
 import { SkeletonLine } from '@op/ui/Skeleton';
-import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 
 import { Link } from '@/lib/i18n';
 
-import ErrorBoundary from '@/components/ErrorBoundary';
-
 import { OrganizationList } from '../OrganizationList';
-import { OrganizationListResponse } from '../Organizations/types';
 
-export const NewOrganizationsSuspense = ({
+export const NewOrganizationsSuspense = async ({
   limit = 10,
-  initialData = [],
 }: {
   limit?: number;
-  initialData?: any;
 }) => {
-  const searchParams = useSearchParams();
-  const termsFilter = makeArray(searchParams.get('terms'));
+  try {
+    const client = await trpcNext();
 
-  const [{ items: organizations }] = trpc.organization.list.useSuspenseQuery(
-    {
+    const { items: organizations } = await client.organization.list.query({
       limit,
-      terms: termsFilter,
       cursor: null,
-    },
-    {
-      initialData,
-    },
-  );
+    });
 
-  return (
-    <div className="flex flex-col gap-4">
-      <OrganizationList organizations={organizations} />
-      <Link href="/org" className="text-sm text-teal">
-        See more
-      </Link>
-    </div>
-  );
+    return (
+      <div className="flex flex-col gap-4">
+        <OrganizationList organizations={organizations} />
+        <Link href="/org" className="text-sm text-teal">
+          See more
+        </Link>
+      </div>
+    );
+  } catch (e) {
+    return <div>Could not load organizations</div>;
+  }
 };
 
-export const NewOrganizations = ({
-  limit,
-  initialData,
-}: {
-  limit?: number;
-  initialData?: OrganizationListResponse;
-}) => {
+export const NewOrganizations = ({ limit }: { limit?: number }) => {
   return (
-    <ErrorBoundary fallback={<div>Could not load organizations</div>}>
-      <Suspense fallback={<SkeletonLine lines={5} />}>
-        <NewOrganizationsSuspense initialData={initialData} limit={limit} />
-      </Suspense>
-    </ErrorBoundary>
+    <Suspense fallback={<SkeletonLine lines={5} />}>
+      <NewOrganizationsSuspense limit={limit} />
+    </Suspense>
   );
 };

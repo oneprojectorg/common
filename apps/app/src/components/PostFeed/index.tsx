@@ -202,23 +202,31 @@ export const PostFeed = ({
   );
 };
 
-export const PostFeedSkeleton = ({ className }: { className?: string }) => {
+export const PostFeedSkeleton = ({
+  className,
+  numPosts = 1,
+}: {
+  className?: string;
+  numPosts?: number;
+}) => {
   return (
     <div className={cn('flex flex-col gap-8 pb-8', className)}>
-      <FeedItem>
-        <AvatarSkeleton className="!size-8 max-h-8 max-w-8 rounded-full" />
-        <FeedMain>
-          <FeedHeader>
-            <Header3 className="font-medium leading-5">
+      {new Array(numPosts).fill(0).map((_, i) => (
+        <FeedItem key={i}>
+          <AvatarSkeleton className="!size-8 max-h-8 max-w-8 rounded-full" />
+          <FeedMain>
+            <FeedHeader>
+              <Header3 className="font-medium leading-5">
+                <Skeleton />
+              </Header3>
               <Skeleton />
-            </Header3>
-            <Skeleton />
-          </FeedHeader>
-          <FeedContent>
-            <SkeletonLine lines={3} />
-          </FeedContent>
-        </FeedMain>
-      </FeedItem>
+            </FeedHeader>
+            <FeedContent>
+              <SkeletonLine lines={3} />
+            </FeedContent>
+          </FeedMain>
+        </FeedItem>
+      ))}
     </div>
   );
 };

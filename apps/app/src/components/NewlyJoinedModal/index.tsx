@@ -1,3 +1,5 @@
+'use client';
+
 import { Button } from '@op/ui/Button';
 import { Header1 } from '@op/ui/Header';
 import { Modal } from '@op/ui/Modal';

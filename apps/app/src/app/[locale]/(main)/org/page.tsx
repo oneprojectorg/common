@@ -1,5 +1,4 @@
-import { createTRPCVanillaClient } from '@op/api/vanilla';
-import { headers } from 'next/headers';
+import { trpcNext } from '@op/api/vanilla';
 
 import { AllOrganizations } from '@/components/Organizations/AllOrganizations';
 import {
@@ -8,9 +7,8 @@ import {
 } from '@/components/layout/ListPageLayout';
 
 const OrgListingPage = async () => {
-  const organizations = await createTRPCVanillaClient(
-    Object.fromEntries(await headers()),
-  ).organization.list.query({ limit: 5 });
+  const client = await trpcNext();
+  const organizations = await client.organization.list.query({ limit: 5 });
 
   return (
     <ListPageLayout>

@@ -1,3 +1,5 @@
+'use client';
+
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { useUser } from '@/utils/UserProvider';
 import { detectLinks } from '@/utils/linkDetection';

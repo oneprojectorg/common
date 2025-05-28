@@ -26,6 +26,7 @@ export const MediaDisplay = ({
     <Surface className={className}>
       <a href={url} target="_blank" rel="noopener noreferrer" className="block">
         {children}
+
         {title || author || site || description || url ? (
           <div className="p-4">
             {title && mimeType?.match(/application\/pdf/) && (
