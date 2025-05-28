@@ -4,8 +4,8 @@ import { useButton } from 'react-aria';
 import { LuX } from 'react-icons/lu';
 
 import { cn } from '../lib/utils';
-import { LoadingSpinner } from './LoadingSpinner';
 import { MediaDisplay } from './MediaDisplay';
+import { Skeleton } from './Skeleton';
 
 interface FilePreview {
   id: string;
@@ -249,13 +249,13 @@ export const FileUploader = ({
               title={filePreview.file.name}
               mimeType={filePreview.file.type}
             >
-              <div className="relative flex aspect-video w-full items-center justify-center rounded bg-orangePurple text-white">
-                {filePreview.uploading && <LoadingSpinner size="md" />}
-                {filePreview.error && (
-                  <p className="text-title-sm">{filePreview.error}</p>
-                )}
-                {!filePreview.uploading &&
-                  (filePreview.file.type.startsWith('image/') ? (
+              {filePreview.uploading ? (
+                <Skeleton className="relative flex aspect-video w-full items-center justify-center rounded text-white" />
+              ) : (
+                <div className="relative flex aspect-video w-full items-center justify-center rounded bg-orangePurple text-white">
+                  {filePreview.error ? (
+                    <p className="text-title-sm">{filePreview.error}</p>
+                  ) : filePreview.file.type.startsWith('image/') ? (
                     <Image
                       src={filePreview.url}
                       alt={filePreview.file.name}
@@ -265,15 +265,16 @@ export const FileUploader = ({
                     <div className="font-serif text-title-md">
                       {filePreview.file.name}
                     </div>
-                  ))}
-                <button
-                  onClick={() => handleRemove(filePreview.id)}
-                  className="absolute right-4 top-4"
-                  disabled={filePreview.uploading}
-                >
-                  <LuX className="size-3" />
-                </button>
-              </div>
+                  )}
+                  <button
+                    onClick={() => handleRemove(filePreview.id)}
+                    className="absolute right-4 top-4"
+                    disabled={filePreview.uploading}
+                  >
+                    <LuX className="size-3" />
+                  </button>
+                </div>
+              )}
             </MediaDisplay>
           ))}
         </div>
