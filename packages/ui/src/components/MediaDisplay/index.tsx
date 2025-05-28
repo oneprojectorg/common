@@ -1,7 +1,7 @@
 import { Header3 } from '@op/ui/Header';
 import { Surface } from '@op/ui/Surface';
 import { ReactNode } from 'react';
-import { LuFile, LuFileText, LuGlobe } from 'react-icons/lu';
+import { LuFileText, LuGlobe } from 'react-icons/lu';
 
 export const MediaDisplay = ({
   className,
