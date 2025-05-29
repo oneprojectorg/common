@@ -1,5 +1,6 @@
 'use client';
 
+import { getPublicUrl } from '@/utils';
 import { trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
@@ -75,7 +76,7 @@ export const UpdateOrganizationForm = ({
   const [profileImage, setProfileImage] = useState<ImageData | undefined>(
     profile.avatarImage
       ? {
-          url: profile.avatarImage.url || '',
+          url: getPublicUrl(profile.avatarImage.name) || '',
           id: profile.avatarImage.id,
         }
       : undefined,
@@ -83,7 +84,7 @@ export const UpdateOrganizationForm = ({
   const [bannerImage, setBannerImage] = useState<ImageData | undefined>(
     profile.headerImage
       ? {
-          url: profile.headerImage.url || '',
+          url: getPublicUrl(profile.headerImage.name) || '',
           id: profile.headerImage.id,
         }
       : undefined,
