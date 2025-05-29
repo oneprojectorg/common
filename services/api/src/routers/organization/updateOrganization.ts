@@ -1,7 +1,4 @@
-import {
-  UnauthorizedError,
-  createOrganization,
-} from '@op/common';
+import { UnauthorizedError, updateOrganization } from '@op/common';
 import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 
@@ -10,34 +7,34 @@ import withAuthenticated from '../../middlewares/withAuthenticated';
 import withDB from '../../middlewares/withDB';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
-import { createOrganizationInputSchema } from './validators';
+import { updateOrganizationInputSchema } from './validators';
 
 const meta: OpenApiMeta = {
   openapi: {
     enabled: true,
-    method: 'POST',
-    path: '/organization',
+    method: 'PUT',
+    path: '/organization/{id}',
     protect: true,
     tags: ['organization'],
-    summary: 'Create organization',
+    summary: 'Update organization',
   },
 };
 
-export const createOrganizationRouter = router({
-  create: loggedProcedure
+export const updateOrganizationRouter = router({
+  update: loggedProcedure
     // Middlewares
-    .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
+    .use(withRateLimited({ windowSize: 10, maxRequests: 20 }))
     .use(withAuthenticated)
     .use(withDB)
     // Router
     .meta(meta)
-    .input(createOrganizationInputSchema)
+    .input(updateOrganizationInputSchema)
     .output(organizationsEncoder)
     .mutation(async ({ ctx, input }) => {
       const { user } = ctx;
 
       try {
-        const org = await createOrganization({ data: input, user });
+        const org = await updateOrganization({ data: input, user });
 
         return organizationsEncoder.parse(org);
       } catch (error: unknown) {
@@ -45,13 +42,13 @@ export const createOrganizationRouter = router({
 
         if (error instanceof UnauthorizedError) {
           throw new TRPCError({
-            message: 'You do not have permission to create organizations',
+            message: 'You do not have permission to update this organization',
             code: 'UNAUTHORIZED',
           });
         }
 
         throw new TRPCError({
-          message: 'Failed to create organization',
+          message: 'Failed to update organization',
           code: 'INTERNAL_SERVER_ERROR',
         });
       }
