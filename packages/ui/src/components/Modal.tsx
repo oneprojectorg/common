@@ -57,7 +57,7 @@ export const ModalFooter = ({
   return (
     <div
       className={cn(
-        'flex w-full justify-end gap-4 border-t border-neutral-gray1 px-6 py-3',
+        'sticky bottom-0 flex w-full justify-end gap-4 border-t border-neutral-gray1 bg-white px-6 py-3',
         className,
       )}
     >

@@ -5,6 +5,7 @@ import { trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
+import { ModalFooter } from '@op/ui/Modal';
 import { cn } from '@op/ui/utils';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -136,9 +137,9 @@ export const UpdateOrganizationForm = ({
         e.preventDefault();
         void form.handleSubmit();
       }}
-      className={cn('w-full', className)}
+      className="w-full"
     >
-      <FormContainer>
+      <FormContainer className={className}>
         <OrganizationFormFields
           form={form}
           profileImage={profileImage}
@@ -146,20 +147,18 @@ export const UpdateOrganizationForm = ({
           bannerImage={bannerImage}
           setBannerImage={setBannerImage}
         />
+      </FormContainer>
 
+      <ModalFooter>
         <div className="flex flex-col-reverse justify-between gap-4 sm:flex-row sm:gap-2">
-          <Button color="secondary" type="button" onPress={() => onSuccess()}>
-            {t('Cancel')}
-          </Button>
-          <form.SubmitButton isDisabled={updateOrganization.isPending}>
-            {updateOrganization.isPending ? (
-              <LoadingSpinner />
-            ) : (
-              t('Update Organization')
-            )}
+          <form.SubmitButton
+            className="max-w-fit"
+            isDisabled={updateOrganization.isPending}
+          >
+            {updateOrganization.isPending ? <LoadingSpinner /> : t('Save')}
           </form.SubmitButton>
         </div>
-      </FormContainer>
+      </ModalFooter>
     </form>
   );
 };

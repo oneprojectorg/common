@@ -3,9 +3,9 @@
 import { useUser } from '@/utils/UserProvider';
 import type { Organization } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
-import { Modal, ModalHeader } from '@op/ui/Modal';
+import { Modal, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { DialogTrigger } from '@op/ui/RAC';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { LuPencil } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -26,6 +26,23 @@ export const UpdateOrganizationModal = ({
   // Only show edit button if user belongs to this organization
   const canEdit = user?.currentOrganization?.id === profile.id;
 
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isOpen) {
+        event.preventDefault();
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen]);
+
   if (!canEdit) {
     return null;
   }
@@ -42,6 +59,8 @@ export const UpdateOrganizationModal = ({
       </Button>
       <Modal
         isOpen={isOpen}
+        onOpenChange={setIsOpen}
+        isDismissable
         className="max-h-[39rem] w-[36rem] max-w-[36rem] overflow-y-auto"
       >
         <ModalHeader>{t('Edit Profile')}</ModalHeader>
