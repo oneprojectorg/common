@@ -162,27 +162,28 @@ export const PostFeed = ({
                   {post?.content}
                   {post.attachments
                     ? post.attachments.map(({ fileName, storageObject }) => {
-                      const { mimetype } = storageObject.metadata;
+                        const { mimetype } = storageObject.metadata;
 
-                      return (
-                        <MediaDisplay
-                          key={storageObject.id}
-                          title={fileName}
-                          mimeType={mimetype}
-                        >
-                          {mimetype.startsWith('image/') ? (
-                            <div className="relative flex aspect-video w-full items-center justify-center rounded bg-neutral-gray1 text-white">
-                              <Image
-                                src={getPublicUrl(storageObject.name) ?? ''}
-                                alt={fileName}
-                                fill={true}
-                                className="size-full object-cover"
-                              />
-                            </div>
-                          ) : null}
-                        </MediaDisplay>
-                      );
-                    })
+                        return (
+                          <MediaDisplay
+                            key={storageObject.id}
+                            title={fileName}
+                            mimeType={mimetype}
+                            url={getPublicUrl(storageObject.name) ?? undefined}
+                          >
+                            {mimetype.startsWith('image/') ? (
+                              <div className="relative flex aspect-video w-full items-center justify-center rounded bg-neutral-gray1 text-white">
+                                <Image
+                                  src={getPublicUrl(storageObject.name) ?? ''}
+                                  alt={fileName}
+                                  fill={true}
+                                  className="size-full object-cover"
+                                />
+                              </div>
+                            ) : null}
+                          </MediaDisplay>
+                        );
+                      })
                     : null}
                   {urls.length > 0 && (
                     <div>

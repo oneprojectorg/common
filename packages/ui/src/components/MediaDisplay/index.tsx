@@ -47,7 +47,8 @@ export const MediaDisplay = ({
                   : description}
               </p>
             )}
-            {url ? (
+            {/* we check for mime type because we generally don't want to show a URL for internal files in our own storage */}
+            {!mimeType && url ? (
               <>
                 <hr className="my-2 bg-neutral-gray1 text-sm" />
                 <div className="flex items-center gap-2 text-xs text-neutral-gray4">
