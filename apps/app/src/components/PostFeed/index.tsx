@@ -73,7 +73,7 @@ export const FeedContent = ({
 }) => {
   return (
     <div
-      className={cn('flex w-full flex-col gap-2 leading-6', className)}
+      className={cn('flex w-full flex-col gap-2 leading-4', className)}
       style={{ overflowWrap: 'anywhere' }}
     >
       {children}
@@ -147,7 +147,7 @@ export const PostFeed = ({
               />
               <FeedMain>
                 <FeedHeader>
-                  <Header3 className="font-medium leading-5">
+                  <Header3 className="font-medium leading-3">
                     <Link href={`/org/${organization?.slug}`}>
                       {organization?.name}
                     </Link>
