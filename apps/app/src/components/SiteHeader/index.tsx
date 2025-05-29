@@ -13,7 +13,7 @@ import { Skeleton } from '@op/ui/Skeleton';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Suspense } from 'react';
-import { LuSearch } from 'react-icons/lu';
+import { LuChevronDown, LuSearch } from 'react-icons/lu';
 
 import { Link } from '@/lib/i18n';
 
@@ -35,7 +35,7 @@ const UserAvatarMenu = () => {
 
   return (
     <MenuTrigger>
-      <Button unstyled>
+      <Button unstyled className="relative">
         <Avatar placeholder={user?.currentOrganization?.name}>
           {user?.currentOrganization?.avatarImage?.name ? (
             <Image
@@ -48,6 +48,9 @@ const UserAvatarMenu = () => {
             />
           ) : null}
         </Avatar>
+        <div className="absolute -bottom-1 -right-1 flex size-4 items-center justify-center rounded-full bg-neutral-offWhite outline outline-white">
+          <LuChevronDown className="size-3" />{' '}
+        </div>
       </Button>
 
       <Menu className="min-w-72">
