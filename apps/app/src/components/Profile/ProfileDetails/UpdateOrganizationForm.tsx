@@ -6,6 +6,7 @@ import type { Organization } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { cn } from '@op/ui/utils';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -28,7 +29,11 @@ interface UpdateOrganizationFormProps {
 }
 
 // Helper function to transform organization data to form format
-const transformOrganizationToFormData = (org: Organization) => {
+const transformOrganizationToFormData = (org: Organization, terms?: any) => {
+  // Extract focus areas and communities served from terms
+  const focusAreas = terms?.['necSimple:focusArea'] || [];
+  const communitiesServed = terms?.['candid:POPULATION'] || [];
+
   return {
     name: org.name || '',
     website: org.website || '',
@@ -37,26 +42,28 @@ const transformOrganizationToFormData = (org: Organization) => {
     bio: org.bio || '',
     mission: org.mission || '',
     whereWeWork:
-      org.organizationsWhereWeWork?.map((item) => ({
-        id: item.taxonomyTerm.id,
-        label: item.taxonomyTerm.label,
-        data: item.taxonomyTerm.data || {},
-      })) || [],
-    focusAreas:
-      org.organizationsTerms?.map((item) => ({
-        id: item.taxonomyTerm.id,
-        label: item.taxonomyTerm.label,
-      })) || [],
-    communitiesServed:
-      org.organizationsTerms?.map((item) => ({
-        id: item.taxonomyTerm.id,
-        label: item.taxonomyTerm.label,
-      })) || [],
+      org.whereWeWork?.map((item) => {
+        return {
+          id: item.id,
+          label: item.label,
+          data: item.data || {},
+        };
+      }) || [],
+    focusAreas: focusAreas.map((item: any) => ({
+      id: item.id,
+      label: item.label,
+    })),
+    communitiesServed: communitiesServed.map((item: any) => ({
+      id: item.id,
+      label: item.label,
+    })),
     strategies:
-      org.organizationsStrategies?.map((item) => ({
-        id: item.taxonomyTerm.id,
-        label: item.taxonomyTerm.label,
-      })) || [],
+      org.strategies?.map((item) => {
+        return {
+          id: item.id,
+          label: item.label,
+        };
+      }) || [],
     networkOrganization: org.networkOrganization || false,
   };
 };
@@ -68,9 +75,15 @@ export const UpdateOrganizationForm = ({
 }: UpdateOrganizationFormProps) => {
   const t = useTranslations();
   const utils = trpc.useUtils();
+  const router = useRouter();
 
-  // Initialize form data from profile
-  const initialData = transformOrganizationToFormData(profile);
+  // Fetch organization terms for focus areas and communities served
+  const { data: terms } = trpc.organization.getTerms.useQuery({
+    id: profile.id,
+  });
+
+  // Initialize form data from profile and terms
+  const initialData = transformOrganizationToFormData(profile, terms);
 
   // Initialize images from profile
   const [profileImage, setProfileImage] = useState<ImageData | undefined>(
@@ -90,8 +103,6 @@ export const UpdateOrganizationForm = ({
       : undefined,
   );
 
-  const uploadAvatarImage = trpc.organization.uploadAvatarImage.useMutation();
-  const uploadImage = trpc.organization.uploadAvatarImage.useMutation();
   const updateOrganization = trpc.organization.update.useMutation();
 
   const form = useAppForm({
@@ -110,6 +121,7 @@ export const UpdateOrganizationForm = ({
 
         // Invalidate relevant queries
         await utils.organization.getBySlug.invalidate({ slug: profile.slug });
+        router.refresh();
 
         onSuccess();
       } catch (error) {
@@ -127,7 +139,6 @@ export const UpdateOrganizationForm = ({
       className={cn('w-full', className)}
     >
       <FormContainer>
-
         <OrganizationFormFields
           form={form}
           profileImage={profileImage}

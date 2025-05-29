@@ -42,7 +42,7 @@ export const UpdateOrganizationModal = ({
       </Button>
       <Modal
         isOpen={isOpen}
-        className="max-h-[39rem] w-[36rem] overflow-y-auto"
+        className="max-h-[39rem] w-[36rem] max-w-[36rem] overflow-y-auto"
       >
         <ModalHeader>{t('Edit Profile')}</ModalHeader>
         <UpdateOrganizationForm

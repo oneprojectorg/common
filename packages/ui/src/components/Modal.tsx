@@ -25,7 +25,7 @@ export const ModalHeader = ({
   children: ReactNode;
 }) => {
   return (
-    <div className="w-full border-b border-neutral-gray1 p-6 text-left">
+    <div className="sticky top-0 z-30 w-full border-b border-neutral-gray1 bg-white p-6 text-left">
       <Header1 className={cn('font-serif sm:text-title-sm', className)}>
         {children}
       </Header1>
