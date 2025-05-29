@@ -10,6 +10,7 @@ import { TextArea } from '@op/ui/Field';
 import { FileUploader } from '@op/ui/FileUploader';
 import { Form } from '@op/ui/Form';
 import { cn } from '@op/ui/utils';
+import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 import { LuImage } from 'react-icons/lu';
@@ -33,6 +34,7 @@ const PostUpdateWithUser = ({
   const [fileUploaderKey, setFileUploaderKey] = useState(0);
   const t = useTranslations();
   const utils = trpc.useUtils();
+  const router = useRouter();
 
   const fileUpload = useFileUpload({
     organizationId: organization.id,
@@ -79,9 +81,10 @@ const PostUpdateWithUser = ({
       );
     },
     onSettled: () => {
-      // Invalidate the posts query to sync with the server
-      // void utils.organization.listPosts.invalidate({ slug: organization.slug });
+      void utils.organization.listPosts.invalidate({ slug: organization.slug });
       utils.organization.invalidate();
+      // Refresh server-side components
+      router.refresh();
     },
   });
 
@@ -97,7 +100,7 @@ const PostUpdateWithUser = ({
       setContent('');
       setDetectedUrls([]);
       fileUpload.clearFiles();
-      setFileUploaderKey(prev => prev + 1);
+      setFileUploaderKey((prev) => prev + 1);
     }
   };
 
