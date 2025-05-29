@@ -3,10 +3,8 @@
 import { getPublicUrl } from '@/utils';
 import { trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
-import { Button } from '@op/ui/Button';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { ModalFooter } from '@op/ui/Modal';
-import { cn } from '@op/ui/utils';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 

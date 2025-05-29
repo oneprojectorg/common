@@ -12,16 +12,13 @@ import {
 } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 import { randomUUID } from 'crypto';
-import { z } from 'zod';
 
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
-import { 
-  geoNamesDataSchema,
-  organizationInputSchema,
-  fundingLinksInputSchema,
-  OrganizationInputParser,
-  type OrganizationInput,
+import {
   type FundingLinksInput,
+  type OrganizationInput,
+  OrganizationInputParser,
+  geoNamesDataSchema,
 } from './validators';
 
 // const upsertTaxonomyTerms = async ({

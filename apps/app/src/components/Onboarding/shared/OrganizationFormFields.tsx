@@ -3,8 +3,6 @@ import { AvatarUploader } from '@op/ui/AvatarUploader';
 import { BannerUploader } from '@op/ui/BannerUploader';
 import type { Option } from '@op/ui/MultiSelectComboBox';
 import { SelectItem } from '@op/ui/Select';
-import type { FieldApi } from '@tanstack/react-form';
-import { useState } from 'react';
 import { LuLink } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -13,7 +11,6 @@ import { GeoNamesMultiSelect } from '../../GeoNamesMultiSelect';
 import { TermsMultiSelect } from '../../TermsMultiSelect';
 import { getFieldErrorMessage } from '../../form/utils';
 import { ToggleRow } from '../../layout/split/form/ToggleRow';
-import type { OrganizationFormData } from './organizationValidation';
 
 interface ImageData {
   url: string;
@@ -111,7 +108,7 @@ export const OrganizationFormFields = ({
 
       <form.AppField
         name="name"
-        children={(field: FieldApi<OrganizationFormData, 'name'>) => (
+        children={(field) => (
           <field.TextField
             label={t('Name')}
             isRequired
@@ -125,7 +122,7 @@ export const OrganizationFormFields = ({
 
       <form.AppField
         name="website"
-        children={(field: FieldApi<OrganizationFormData, 'website'>) => (
+        children={(field) => (
           <field.TextField
             label={t('Website')}
             isRequired
@@ -143,7 +140,7 @@ export const OrganizationFormFields = ({
 
       <form.AppField
         name="email"
-        children={(field: FieldApi<OrganizationFormData, 'email'>) => (
+        children={(field) => (
           <field.TextField
             label={t('Email')}
             type="email"
@@ -157,7 +154,7 @@ export const OrganizationFormFields = ({
 
       <form.AppField
         name="whereWeWork"
-        children={(field: FieldApi<OrganizationFormData, 'whereWeWork'>) => (
+        children={(field) => (
           <GeoNamesMultiSelect
             label={t('Where we work')}
             onChange={(value) => field.handleChange(value)}
@@ -168,7 +165,7 @@ export const OrganizationFormFields = ({
 
       <form.AppField
         name="orgType"
-        children={(field: FieldApi<OrganizationFormData, 'orgType'>) => (
+        children={(field) => (
           <field.Select
             label={t('Organizational Status')}
             isRequired
@@ -188,7 +185,7 @@ export const OrganizationFormFields = ({
 
       <form.AppField
         name="bio"
-        children={(field: FieldApi<OrganizationFormData, 'bio'>) => (
+        children={(field) => (
           <field.TextField
             useTextArea
             isRequired
@@ -207,7 +204,7 @@ export const OrganizationFormFields = ({
 
       <form.AppField
         name="mission"
-        children={(field: FieldApi<OrganizationFormData, 'mission'>) => (
+        children={(field) => (
           <field.TextField
             useTextArea
             label={t('Mission statement')}
@@ -226,7 +223,7 @@ export const OrganizationFormFields = ({
 
       <form.AppField
         name="focusAreas"
-        children={(field: FieldApi<OrganizationFormData, 'focusAreas'>) => (
+        children={(field) => (
           <TermsMultiSelect
             label={t('Focus Areas')}
             taxonomy="necSimple:focusArea"
@@ -239,7 +236,7 @@ export const OrganizationFormFields = ({
 
       <form.AppField
         name="communitiesServed"
-        children={(field: FieldApi<OrganizationFormData, 'communitiesServed'>) => (
+        children={(field) => (
           <TermsMultiSelect
             label={t('Communities Served')}
             taxonomy="candid:POPULATION"
@@ -252,7 +249,7 @@ export const OrganizationFormFields = ({
 
       <form.AppField
         name="strategies"
-        children={(field: FieldApi<OrganizationFormData, 'strategies'>) => (
+        children={(field) => (
           <TermsMultiSelect
             label={t('Strategies/Tactics')}
             taxonomy="splcStrategies"
@@ -265,7 +262,7 @@ export const OrganizationFormFields = ({
 
       <form.AppField
         name="networkOrganization"
-        children={(field: FieldApi<OrganizationFormData, 'networkOrganization'>) => (
+        children={(field) => (
           <ToggleRow>
             {t(
               'Does your organization serve as a network or coalition with member organizations?',

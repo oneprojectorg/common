@@ -13,10 +13,7 @@ import {
   FundingInformationForm,
   validator as FundingInformationFormValidator,
 } from './FundingInformationForm';
-import {
-  OrganizationDetailsForm,
-  validator as OrganizationDetailsFormValidator,
-} from './OrganizationDetailsForm';
+import { OrganizationDetailsForm } from './OrganizationDetailsForm';
 import {
   PersonalDetailsForm,
   validator as PersonalDetailsFormValidator,
@@ -26,6 +23,7 @@ import {
   validator as PrivacyPolicyFormValidator,
 } from './PrivacyPolicyForm';
 import { ToSForm, validator as ToSFormValidator } from './ToSForm';
+import { organizationFormValidator as OrganizationDetailsFormValidator } from './shared/organizationValidation';
 import { useOnboardingFormStore } from './useOnboardingFormStore';
 
 type FormValues = z.infer<typeof PersonalDetailsFormValidator> &
