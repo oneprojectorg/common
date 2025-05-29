@@ -48,7 +48,7 @@ const UserAvatarMenu = () => {
             />
           ) : null}
         </Avatar>
-        <div className="absolute -bottom-1 -right-1 flex size-4 items-center justify-center rounded-full bg-neutral-offWhite outline outline-white">
+        <div className="absolute -bottom-1 -right-1 flex size-4 items-center justify-center rounded-full bg-neutral-offWhite outline -outline-offset-1 outline-white">
           <LuChevronDown className="size-3" />{' '}
         </div>
       </Button>
