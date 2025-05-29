@@ -4,6 +4,7 @@ import { useButton } from 'react-aria';
 import { LuX } from 'react-icons/lu';
 
 import { cn } from '../lib/utils';
+import { Button } from './Button';
 import { MediaDisplay } from './MediaDisplay';
 import { Skeleton } from './Skeleton';
 
@@ -219,17 +220,6 @@ export const FileUploader = ({
       {enableDragAndDrop && isDragOver && (dragOverlay || defaultDragOverlay)}
 
       {/* Upload Button */}
-      <button
-        {...buttonProps}
-        ref={buttonRef}
-        className={cn(
-          'flex items-center gap-2 text-sm text-charcoal transition-colors hover:text-black',
-          files.length >= maxFiles && 'cursor-not-allowed opacity-50',
-        )}
-        disabled={files.length >= maxFiles}
-      >
-        {children}
-      </button>
 
       <input
         type="file"
@@ -241,7 +231,7 @@ export const FileUploader = ({
       />
 
       {/* File Previews */}
-      {files.length > 0 && (
+      {files.length > 0 ? (
         <div className="flex w-full flex-col gap-2">
           {files.map((filePreview) => (
             <MediaDisplay
@@ -267,18 +257,32 @@ export const FileUploader = ({
                       {filePreview.file.name}
                     </div>
                   )}
-                  <button
-                    onClick={() => handleRemove(filePreview.id)}
+                  <Button
+                    onPress={() => handleRemove(filePreview.id)}
                     className="absolute right-4 top-4"
-                    disabled={filePreview.uploading}
+                    isDisabled={filePreview.uploading}
+                    size="small"
+                    color="neutral"
                   >
                     <LuX className="size-3" />
-                  </button>
+                  </Button>
                 </div>
               ) : null}
             </MediaDisplay>
           ))}
         </div>
+      ) : (
+        <button
+          {...buttonProps}
+          ref={buttonRef}
+          className={cn(
+            'flex items-center gap-2 text-sm text-charcoal transition-colors hover:text-black',
+            files.length >= maxFiles && 'cursor-not-allowed opacity-50',
+          )}
+          disabled={files.length >= maxFiles}
+        >
+          {children}
+        </button>
       )}
     </div>
   );
