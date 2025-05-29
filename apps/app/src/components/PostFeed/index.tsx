@@ -73,7 +73,7 @@ export const FeedContent = ({
 }) => {
   return (
     <div
-      className={cn('flex w-full flex-col gap-2 leading-4', className)}
+      className={cn('flex w-full flex-col gap-2 leading-6', className)}
       style={{ overflowWrap: 'anywhere' }}
     >
       {children}
