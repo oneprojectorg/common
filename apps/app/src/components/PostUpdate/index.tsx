@@ -30,6 +30,7 @@ const PostUpdateWithUser = ({
 }) => {
   const [content, setContent] = useState('');
   const [detectedUrls, setDetectedUrls] = useState<string[]>([]);
+  const [fileUploaderKey, setFileUploaderKey] = useState(0);
   const t = useTranslations();
   const utils = trpc.useUtils();
 
@@ -96,6 +97,7 @@ const PostUpdateWithUser = ({
       setContent('');
       setDetectedUrls([]);
       fileUpload.clearFiles();
+      setFileUploaderKey(prev => prev + 1);
     }
   };
 
@@ -150,6 +152,7 @@ const PostUpdateWithUser = ({
 
           <div className="flex w-full gap-6">
             <FileUploader
+              key={fileUploaderKey}
               onUpload={fileUpload.uploadFile}
               onRemove={fileUpload.removeFile}
               acceptedTypes={[
