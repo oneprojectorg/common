@@ -66,25 +66,21 @@ export const organizationInputSchema = baseOrganizationSchema
     acceptingApplications: z.boolean().optional(),
     headerImageId: z.string().optional(),
     avatarImageId: z.string().optional(),
-    communitiesServed: z.array(
-      z.object({
-        id: z.string(),
-        label: z.string(),
-      }),
-    ).optional(),
+    communitiesServed: z
+      .array(
+        z.object({
+          id: z.string(),
+          label: z.string(),
+        }),
+      )
+      .optional(),
   })
   .strip()
   .partial();
 
 export const updateOrganizationInputSchema = baseOrganizationSchema
-  .extend({
-    id: z.string(),
-  })
   .omit({ slug: true })
-  .partial()
-  .extend({
-    id: z.string(), // Keep id as required
-  });
+  .partial();
 
 export const fundingLinksInputSchema = z
   .object({
@@ -103,7 +99,9 @@ export const fundingLinksInputSchema = z
   .partial();
 
 export type OrganizationInput = z.infer<typeof organizationInputSchema>;
-export type UpdateOrganizationInput = z.infer<typeof updateOrganizationInputSchema>;
+export type UpdateOrganizationInput = z.infer<
+  typeof updateOrganizationInputSchema
+>;
 export type FundingLinksInput = z.infer<typeof fundingLinksInputSchema>;
 
 export const OrganizationInputParser = organizationInputSchema.transform(
@@ -115,11 +113,10 @@ export const OrganizationInputParser = organizationInputSchema.transform(
   },
 );
 
-export const UpdateOrganizationInputParser = updateOrganizationInputSchema.transform(
-  (data: UpdateOrganizationInput) => {
+export const UpdateOrganizationInputParser =
+  updateOrganizationInputSchema.transform((data: UpdateOrganizationInput) => {
     // Remove keys with undefined values
     return Object.fromEntries(
       Object.entries(data).filter(([_, value]) => value !== undefined),
     ) as UpdateOrganizationInput;
-  },
-);
+  });

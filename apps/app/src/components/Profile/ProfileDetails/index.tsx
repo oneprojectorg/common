@@ -10,6 +10,7 @@ import { LuArrowUpRight, LuInfo } from 'react-icons/lu';
 
 import { ProfileSummary } from '../ProfileSummary';
 import { AddRelationshipModal } from './AddRelationshipModal';
+import { UpdateOrganizationModal } from './UpdateOrganizationModal';
 
 const ProfileInteractions = ({ profile }: { profile: Organization }) => {
   const { user } = useUser();
@@ -27,7 +28,9 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
     <div className="flex flex-wrap gap-3 sm:gap-4">
       {user?.currentOrganization?.id !== profile.id ? (
         <AddRelationshipModal profile={profile} />
-      ) : null}
+      ) : (
+        <UpdateOrganizationModal profile={profile} />
+      )}
       {isReceivingFunds
         ? receivingFundingLinks.map((link) => (
             <TooltipTrigger key={link.id}>

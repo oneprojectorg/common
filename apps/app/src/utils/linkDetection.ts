@@ -6,6 +6,10 @@ export function extractUrls(text: string): string[] {
 }
 
 export function detectLinks(text: string): { text: string; urls: string[] } {
+  if (!text) {
+    return { text, urls: [] };
+  }
+
   const urls = extractUrls(text);
   return { text, urls };
 }
