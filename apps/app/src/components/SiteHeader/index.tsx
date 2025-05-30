@@ -7,8 +7,9 @@ import { trpc } from '@op/api/client';
 import { useAuthLogout } from '@op/hooks';
 import { Avatar } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
-import { Menu, MenuItem, MenuSection, MenuSeparator } from '@op/ui/Menu';
-import { MenuTrigger } from '@op/ui/RAC';
+import { Menu, MenuItem, MenuItemSimple, MenuSeparator } from '@op/ui/Menu';
+import { Modal, ModalBody, ModalHeader } from '@op/ui/Modal';
+import { Dialog, DialogTrigger, MenuTrigger } from '@op/ui/RAC';
 import { Skeleton } from '@op/ui/Skeleton';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -55,7 +56,7 @@ const UserAvatarMenu = () => {
       </Button>
 
       <Menu className="flex min-w-72 flex-col p-4 pb-6">
-        <MenuItem className="mb-4 flex items-center gap-2">
+        <MenuItem className="mb-4 flex items-center gap-2 px-0 text-neutral-charcoal">
           <Avatar className="size-6" placeholder={user?.name ?? ''}>
             {user?.avatarImage?.name ? (
               <Image
@@ -78,6 +79,7 @@ const UserAvatarMenu = () => {
         </MenuItem>
         {user?.organizationUsers?.map((orgUser) => (
           <MenuItem
+            className="px-4 py-3 text-neutral-charcoal"
             onAction={() => {
               if (user.currentOrganization?.id === orgUser.organizationId) {
                 router.push(`/org/${orgUser.organization?.slug}`);
@@ -102,17 +104,52 @@ const UserAvatarMenu = () => {
                 />
               ) : null}
             </Avatar>
-            {orgUser.organization?.name}
+            <div className="flex flex-col">
+              <div>{orgUser.organization?.name}</div>
+              <div className="text-sm text-neutral-gray4">
+                {orgUser.organization?.orgType}
+              </div>
+            </div>
           </MenuItem>
         ))}
         <MenuSeparator />
         <MenuItem
           id="logout"
+          className="text-neutral-charcoal"
           onAction={() => void logout.refetch().finally(() => router.push('/'))}
         >
           <LuLogOut className="size-8 rounded-full bg-neutral-offWhite p-2" />{' '}
           {t('Log out')}
         </MenuItem>
+
+        <MenuItemSimple className="flex flex-col items-start justify-start gap-2 text-sm text-neutral-gray4 hover:bg-transparent">
+          <div>
+            <DialogTrigger>
+              <span className="text-primary-teal">{t('Privacy Policy')}</span>
+
+              <Modal className="min-w-[29rem]">
+                <Dialog>
+                  <ModalHeader>{t('Privacy Policy')}</ModalHeader>
+                  <ModalBody>privacy policy</ModalBody>
+                </Dialog>
+              </Modal>
+            </DialogTrigger>{' '}
+            •{' '}
+            <DialogTrigger>
+              <span className="text-primary-teal">{t('Terms of Service')}</span>
+
+              <Modal className="min-w-[29rem]">
+                <Dialog>
+                  <ModalHeader>{t('Terms of Service')}</ModalHeader>
+                  <ModalBody>ToS</ModalBody>
+                </Dialog>
+              </Modal>
+            </DialogTrigger>
+          </div>
+          <div className="text-xs">
+            Ethical Open Source • One Project • {new Date().getFullYear()}
+          </div>
+        </MenuItemSimple>
       </Menu>
     </MenuTrigger>
   );
