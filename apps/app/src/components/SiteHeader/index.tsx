@@ -7,15 +7,15 @@ import { trpc } from '@op/api/client';
 import { useAuthLogout } from '@op/hooks';
 import { Avatar } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
-import { Menu, MenuItem } from '@op/ui/Menu';
+import { Menu, MenuItem, MenuSection, MenuSeparator } from '@op/ui/Menu';
 import { MenuTrigger } from '@op/ui/RAC';
 import { Skeleton } from '@op/ui/Skeleton';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Suspense } from 'react';
-import { LuChevronDown, LuSearch } from 'react-icons/lu';
+import { LuChevronDown, LuLogOut, LuSearch } from 'react-icons/lu';
 
-import { Link } from '@/lib/i18n';
+import { Link, useTranslations } from '@/lib/i18n';
 
 import { CommonLogo } from '../CommonLogo';
 import ErrorBoundary from '../ErrorBoundary';
@@ -26,6 +26,7 @@ const UserAvatarMenu = () => {
   const logout = useAuthLogout();
   const router = useRouter();
   const utils = trpc.useUtils();
+  const t = useTranslations();
   const switchOrganization = trpc.account.switchOrganization.useMutation({
     onSuccess: () => {
       utils.account.getMyAccount.invalidate();
@@ -53,7 +54,28 @@ const UserAvatarMenu = () => {
         </div>
       </Button>
 
-      <Menu className="min-w-72">
+      <Menu className="flex min-w-72 flex-col p-4 pb-6">
+        <MenuItem className="mb-4 flex items-center gap-2">
+          <Avatar className="size-6" placeholder={user?.name ?? ''}>
+            {user?.avatarImage?.name ? (
+              <Image
+                src={getPublicUrl(user?.avatarImage?.name) ?? ''}
+                width={80}
+                height={80}
+                alt={user?.name ?? 'User avatar'}
+              />
+            ) : null}
+          </Avatar>
+          <div className="flex flex-col">
+            <span className="text-sm">
+              Logged in as {user?.name} (
+              <span className="text-primary-teal">Edit profile</span>)
+            </span>
+            <span className="text-xs text-neutral-gray4">
+              Admin for {user?.currentOrganization?.name}
+            </span>
+          </div>
+        </MenuItem>
         {user?.organizationUsers?.map((orgUser) => (
           <MenuItem
             onAction={() => {
@@ -83,11 +105,13 @@ const UserAvatarMenu = () => {
             {orgUser.organization?.name}
           </MenuItem>
         ))}
+        <MenuSeparator />
         <MenuItem
           id="logout"
           onAction={() => void logout.refetch().finally(() => router.push('/'))}
         >
-          Logout
+          <LuLogOut className="size-8 rounded-full bg-neutral-offWhite p-2" />{' '}
+          {t('Log out')}
         </MenuItem>
       </Menu>
     </MenuTrigger>

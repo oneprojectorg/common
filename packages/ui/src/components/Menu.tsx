@@ -87,7 +87,10 @@ export const MenuItemSimple = (
 
 export const MenuSeparator = (props: SeparatorProps) => {
   return (
-    <Separator {...props} className="mx-3 my-1 border-b border-neutral-300" />
+    <Separator
+      {...props}
+      className="mx-3 my-1 border-b border-neutral-offWhite"
+    />
   );
 };
 
