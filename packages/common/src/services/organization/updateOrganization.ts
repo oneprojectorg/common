@@ -31,13 +31,14 @@ export const updateOrganization = async ({
     };
   user: User;
 }) => {
-  const orgUser = await getOrgAccessUser({ user, organizationId: id });
+  const organizationId = id;
+  const orgUser = await getOrgAccessUser({ user, organizationId });
 
   if (!orgUser) {
     throw new UnauthorizedError('You are not a member of this organization');
   }
 
-  const { id: organizationId, ...updateData } = data;
+  const { ...updateData } = data;
 
   if (!organizationId) {
     throw new CommonError('Organization ID is required');

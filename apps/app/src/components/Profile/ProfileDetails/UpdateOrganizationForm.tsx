@@ -112,7 +112,6 @@ export const UpdateOrganizationForm = ({
     },
     onSubmit: async ({ value }) => {
       try {
-        // @ts-expect-error - We need to refactor this for tanstack form's type inference
         await updateOrganization.mutateAsync({
           id: profile.id,
           ...value,
