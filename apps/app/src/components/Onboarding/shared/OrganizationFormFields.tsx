@@ -3,104 +3,120 @@ import { AvatarUploader } from '@op/ui/AvatarUploader';
 import { BannerUploader } from '@op/ui/BannerUploader';
 import type { Option } from '@op/ui/MultiSelectComboBox';
 import { SelectItem } from '@op/ui/Select';
+import { useState } from 'react';
 import { LuLink } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { GeoNamesMultiSelect } from '../../GeoNamesMultiSelect';
 import { TermsMultiSelect } from '../../TermsMultiSelect';
-import { getFieldErrorMessage } from '../../form/utils';
+import { getFieldErrorMessage, useAppForm } from '../../form/utils';
 import { ToggleRow } from '../../layout/split/form/ToggleRow';
+import { organizationFormValidator } from './organizationValidation';
 
-interface ImageData {
+export interface ImageData {
   url: string;
   path?: string;
   id?: string;
 }
 
 interface OrganizationFormFieldsProps {
-  form: any;
-  profileImage?: ImageData;
-  setProfileImage: (image: ImageData | undefined) => void;
-  bannerImage?: ImageData;
-  setBannerImage: (image: ImageData | undefined) => void;
+  defaultValues?: any;
+  onSubmit: (data: any) => void | Promise<void>;
+  initialProfileImage?: ImageData;
+  initialBannerImage?: ImageData;
+  children: (props: {
+    form: any;
+    profileImage?: ImageData;
+    bannerImage?: ImageData;
+    isSubmitting?: boolean;
+    formFields: React.ReactNode;
+  }) => React.ReactNode;
 }
 
 export const OrganizationFormFields = ({
-  form,
-  profileImage,
-  setProfileImage,
-  bannerImage,
-  setBannerImage,
+  defaultValues,
+  onSubmit,
+  initialProfileImage,
+  initialBannerImage,
+  children,
 }: OrganizationFormFieldsProps) => {
   const t = useTranslations();
   const uploadAvatarImage = trpc.organization.uploadAvatarImage.useMutation();
   const uploadImage = trpc.organization.uploadAvatarImage.useMutation();
 
-  return (
+  const [profileImage, setProfileImage] = useState<ImageData | undefined>(
+    initialProfileImage,
+  );
+  const [bannerImage, setBannerImage] = useState<ImageData | undefined>(
+    initialBannerImage,
+  );
+
+  const form = useAppForm({
+    defaultValues,
+    validators: {
+      onSubmit: organizationFormValidator,
+    },
+    onSubmit: async ({ value }) => {
+      await onSubmit({
+        ...value,
+        profileImage,
+        bannerImage,
+        orgAvatarImageId: profileImage?.id,
+        orgBannerImageId: bannerImage?.id,
+      });
+    },
+  });
+
+  const handleImageUpload = async (
+    file: File,
+    setImage: (image: ImageData | undefined) => void,
+    uploadMutation: any,
+  ): Promise<void> => {
+    const reader = new FileReader();
+
+    reader.onload = async (e) => {
+      const base64 = (e.target?.result as string)?.split(',')[1];
+
+      if (!base64) {
+        return;
+      }
+
+      const dataUrl = `data:${file.type};base64,${base64}`;
+
+      setImage({ url: dataUrl });
+      const res = await uploadMutation.mutateAsync({
+        file: base64,
+        fileName: file.name,
+        mimeType: file.type,
+      });
+
+      if (res?.url) {
+        setImage(res);
+      }
+    };
+
+    reader.readAsDataURL(file);
+  };
+
+  const formFields = (
     <>
       <div className="relative w-full pb-12 sm:pb-20">
         <BannerUploader
           className="relative aspect-[128/55] w-full bg-offWhite"
           value={bannerImage?.url ?? undefined}
-          onChange={async (file: File): Promise<void> => {
-            const reader = new FileReader();
-
-            reader.onload = async (e) => {
-              const base64 = (e.target?.result as string)?.split(',')[1];
-
-              if (!base64) {
-                return;
-              }
-
-              const dataUrl = `data:${file.type};base64,${base64}`;
-
-              setBannerImage({ url: dataUrl });
-              const res = await uploadImage.mutateAsync({
-                file: base64,
-                fileName: file.name,
-                mimeType: file.type,
-              });
-
-              if (res?.url) {
-                setBannerImage(res);
-              }
-            };
-
-            reader.readAsDataURL(file);
-          }}
+          onChange={(file: File) =>
+            handleImageUpload(file, setBannerImage, uploadImage)
+          }
           uploading={uploadImage.isPending}
           error={uploadImage.error?.message || undefined}
         />
         <AvatarUploader
           className="absolute bottom-0 left-4 aspect-square size-20 sm:size-28"
           value={profileImage?.url ?? undefined}
-          onChange={async (file: File): Promise<void> => {
-            const reader = new FileReader();
-
-            reader.onload = async (e) => {
-              const base64 = (e.target?.result as string)?.split(',')[1];
-
-              if (!base64) {
-                return;
-              }
-
-              const dataUrl = `data:${file.type};base64,${base64}`;
-
-              setProfileImage({ url: dataUrl });
-              const res = await uploadAvatarImage.mutateAsync({
-                file: base64,
-                fileName: file.name,
-                mimeType: file.type,
-              });
-
-              if (res?.url) {
-                setProfileImage(res);
-              }
-            };
-
-            reader.readAsDataURL(file);
-          }}
+          onChange={(file: File) =>
+            handleImageUpload(file, setProfileImage, uploadAvatarImage)
+          }
           uploading={uploadAvatarImage.isPending}
           error={uploadAvatarImage.error?.message || undefined}
         />
@@ -108,7 +124,7 @@ export const OrganizationFormFields = ({
 
       <form.AppField
         name="name"
-        children={(field: any) => (
+        children={(field) => (
           <field.TextField
             label={t('Name')}
             isRequired
@@ -122,7 +138,7 @@ export const OrganizationFormFields = ({
 
       <form.AppField
         name="website"
-        children={(field: any) => (
+        children={(field) => (
           <field.TextField
             label={t('Website')}
             isRequired
@@ -140,7 +156,7 @@ export const OrganizationFormFields = ({
 
       <form.AppField
         name="email"
-        children={(field: any) => (
+        children={(field) => (
           <field.TextField
             label={t('Email')}
             type="email"
@@ -154,7 +170,7 @@ export const OrganizationFormFields = ({
 
       <form.AppField
         name="whereWeWork"
-        children={(field: any) => (
+        children={(field) => (
           <GeoNamesMultiSelect
             label={t('Where we work')}
             onChange={(value) => field.handleChange(value)}
@@ -165,7 +181,7 @@ export const OrganizationFormFields = ({
 
       <form.AppField
         name="orgType"
-        children={(field: any) => (
+        children={(field) => (
           <field.Select
             label={t('Organizational Status')}
             isRequired
@@ -185,7 +201,7 @@ export const OrganizationFormFields = ({
 
       <form.AppField
         name="bio"
-        children={(field: any) => (
+        children={(field) => (
           <field.TextField
             useTextArea
             isRequired
@@ -204,7 +220,7 @@ export const OrganizationFormFields = ({
 
       <form.AppField
         name="mission"
-        children={(field: any) => (
+        children={(field) => (
           <field.TextField
             useTextArea
             label={t('Mission statement')}
@@ -223,7 +239,7 @@ export const OrganizationFormFields = ({
 
       <form.AppField
         name="focusAreas"
-        children={(field: any) => (
+        children={(field) => (
           <TermsMultiSelect
             label={t('Focus Areas')}
             taxonomy="necSimple:focusArea"
@@ -236,7 +252,7 @@ export const OrganizationFormFields = ({
 
       <form.AppField
         name="communitiesServed"
-        children={(field: any) => (
+        children={(field) => (
           <TermsMultiSelect
             label={t('Communities Served')}
             taxonomy="candid:POPULATION"
@@ -249,7 +265,7 @@ export const OrganizationFormFields = ({
 
       <form.AppField
         name="strategies"
-        children={(field: any) => (
+        children={(field) => (
           <TermsMultiSelect
             label={t('Strategies/Tactics')}
             taxonomy="splcStrategies"
@@ -262,7 +278,7 @@ export const OrganizationFormFields = ({
 
       <form.AppField
         name="networkOrganization"
-        children={(field: any) => (
+        children={(field) => (
           <ToggleRow>
             {t(
               'Does your organization serve as a network or coalition with member organizations?',
@@ -277,6 +293,15 @@ export const OrganizationFormFields = ({
           </ToggleRow>
         )}
       />
+
     </>
   );
+
+  return children({
+    form,
+    profileImage,
+    bannerImage,
+    isSubmitting: form.state.isSubmitting,
+    formFields,
+  });
 };

@@ -6,20 +6,14 @@ import type { Organization } from '@op/api/encoders';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { ModalFooter } from '@op/ui/Modal';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { OrganizationFormFields } from '../../Onboarding/shared/OrganizationFormFields';
-import { organizationFormValidator } from '../../Onboarding/shared/organizationValidation';
+import {
+  type ImageData,
+  OrganizationFormFields,
+} from '../../Onboarding/shared/OrganizationFormFields';
 import { FormContainer } from '../../form/FormContainer';
-import { useAppForm } from '../../form/utils';
-
-interface ImageData {
-  url: string;
-  path?: string;
-  id?: string;
-}
 
 interface UpdateOrganizationFormProps {
   profile: Organization;
@@ -85,79 +79,72 @@ export const UpdateOrganizationForm = ({
   const initialData = transformOrganizationToFormData(profile, terms);
 
   // Initialize images from profile
-  const [profileImage, setProfileImage] = useState<ImageData | undefined>(
-    profile.avatarImage
-      ? {
-          url: getPublicUrl(profile.avatarImage.name) || '',
-          id: profile.avatarImage.id,
-        }
-      : undefined,
-  );
-  const [bannerImage, setBannerImage] = useState<ImageData | undefined>(
-    profile.headerImage
-      ? {
-          url: getPublicUrl(profile.headerImage.name) || '',
-          id: profile.headerImage.id,
-        }
-      : undefined,
-  );
+  const initialProfileImage: ImageData | undefined = profile.avatarImage
+    ? {
+        url: getPublicUrl(profile.avatarImage.name) || '',
+        id: profile.avatarImage.id,
+      }
+    : undefined;
+
+  const initialBannerImage: ImageData | undefined = profile.headerImage
+    ? {
+        url: getPublicUrl(profile.headerImage.name) || '',
+        id: profile.headerImage.id,
+      }
+    : undefined;
 
   const updateOrganization = trpc.organization.update.useMutation();
 
-  const form = useAppForm({
-    defaultValues: initialData,
-    validators: {
-      // @ts-expect-error - We need to refactor this for tanstack form's type inference
-      onSubmit: organizationFormValidator,
-    },
-    onSubmit: async ({ value }) => {
-      try {
-        await updateOrganization.mutateAsync({
-          id: profile.id,
-          ...value,
-          orgAvatarImageId: profileImage?.id,
-          orgBannerImageId: bannerImage?.id,
-        });
-
-        // Invalidate relevant queries
-        await utils.organization.getBySlug.invalidate({ slug: profile.slug });
-        router.refresh();
-
-        onSuccess();
-      } catch (error) {
-        console.error('Failed to update organization:', error);
-      }
-    },
-  });
-
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        void form.handleSubmit();
-      }}
-      className="w-full"
-    >
-      <FormContainer className={className}>
-        <OrganizationFormFields
-          form={form}
-          profileImage={profileImage}
-          setProfileImage={setProfileImage}
-          bannerImage={bannerImage}
-          setBannerImage={setBannerImage}
-        />
-      </FormContainer>
+    <OrganizationFormFields
+      defaultValues={initialData}
+      initialProfileImage={initialProfileImage}
+      initialBannerImage={initialBannerImage}
+      onSubmit={async (data) => {
+        try {
+          await updateOrganization.mutateAsync({
+            id: profile.id,
+            ...data,
+          });
 
-      <ModalFooter>
-        <div className="flex flex-col-reverse justify-between gap-4 sm:flex-row sm:gap-2">
-          <form.SubmitButton
-            className="max-w-fit"
-            isDisabled={updateOrganization.isPending}
-          >
-            {updateOrganization.isPending ? <LoadingSpinner /> : t('Save')}
-          </form.SubmitButton>
-        </div>
-      </ModalFooter>
-    </form>
+          // Invalidate relevant queries
+          await utils.organization.getBySlug.invalidate({ slug: profile.slug });
+          router.refresh();
+
+          onSuccess();
+        } catch (error) {
+          console.error('Failed to update organization:', error);
+        }
+      }}
+    >
+      {({ form, isSubmitting, formFields }) => (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            void form.handleSubmit();
+          }}
+          className="w-full"
+        >
+          <FormContainer className={className}>
+            {formFields}
+          </FormContainer>
+
+          <ModalFooter>
+            <div className="flex flex-col-reverse justify-between gap-4 sm:flex-row sm:gap-2">
+              <form.SubmitButton
+                className="max-w-fit"
+                isDisabled={isSubmitting || updateOrganization.isPending}
+              >
+                {isSubmitting || updateOrganization.isPending ? (
+                  <LoadingSpinner />
+                ) : (
+                  t('Save')
+                )}
+              </form.SubmitButton>
+            </div>
+          </ModalFooter>
+        </form>
+      )}
+    </OrganizationFormFields>
   );
 };
