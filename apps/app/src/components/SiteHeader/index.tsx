@@ -56,7 +56,7 @@ const UserAvatarMenu = () => {
       </Button>
 
       <Menu className="flex min-w-72 flex-col p-4 pb-6">
-        <MenuItem className="mb-4 flex items-center gap-2 px-0 text-neutral-charcoal">
+        <MenuItem className="mb-4 flex items-center gap-2 px-0 text-neutral-charcoal hover:bg-transparent">
           <Avatar className="size-6" placeholder={user?.name ?? ''}>
             {user?.avatarImage?.name ? (
               <Image
