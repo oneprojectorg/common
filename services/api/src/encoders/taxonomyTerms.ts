@@ -14,7 +14,7 @@ export const taxonomyTermsEncoder = createSelectSchema(taxonomyTerms)
   .extend({
     id: z.string(),
     taxonomyId: z.string(),
-    termUri: z.string().optional(),
+    termUri: z.string().nullish(),
     label: z.string(),
-    data: z.object({}).optional(),
+    data: z.object({}).nullish(),
   });
