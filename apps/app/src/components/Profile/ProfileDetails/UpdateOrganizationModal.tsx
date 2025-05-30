@@ -6,7 +6,7 @@ import { Button } from '@op/ui/Button';
 import { Modal, ModalHeader } from '@op/ui/Modal';
 import { DialogTrigger } from '@op/ui/RAC';
 import { useEffect, useState } from 'react';
-import { LuPencil } from 'react-icons/lu';
+import { LuPencil, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -63,7 +63,13 @@ export const UpdateOrganizationModal = ({
         isDismissable
         className="max-h-[39rem] w-[36rem] max-w-[36rem] overflow-y-auto"
       >
-        <ModalHeader>{t('Edit Profile')}</ModalHeader>
+        <ModalHeader className="flex items-center justify-between">
+          {t('Edit Profile')}
+          <LuX
+            className="size-6 cursor-pointer stroke-1"
+            onClick={() => setIsOpen(false)}
+          />
+        </ModalHeader>
         <UpdateOrganizationForm
           profile={profile}
           onSuccess={() => setIsOpen(false)}
