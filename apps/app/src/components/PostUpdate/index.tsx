@@ -91,6 +91,10 @@ const PostUpdateWithUser = ({
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
+    createNewPostUpdate();
+  };
+
+  const createNewPostUpdate = () => {
     if (content.trim() || fileUpload.hasUploadedFiles()) {
       createPost.mutate({
         id: organization.id,
@@ -108,6 +112,14 @@ const PostUpdateWithUser = ({
     setContent(value);
     const { urls } = detectLinks(value);
     setDetectedUrls(urls);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault();
+
+      createNewPostUpdate();
+    }
   };
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -138,6 +150,7 @@ const PostUpdateWithUser = ({
               placeholder={`Post an update…`}
               value={content}
               onChange={(e) => handleContentChange(e.target.value ?? '')}
+              onKeyDown={handleKeyDown}
             />
             {(content.length > 0 || fileUpload.hasUploadedFiles()) && (
               <Button color="secondary" type="submit">
