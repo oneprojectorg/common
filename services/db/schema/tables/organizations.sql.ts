@@ -138,6 +138,7 @@ export const organizationsTerms = pgTable(
       }),
   },
   (table) => ({
+    ...serviceRolePolicies,
     pk: primaryKey(table.organizationId, table.taxonomyTermId),
   }),
 );
@@ -173,6 +174,7 @@ export const organizationsWhereWeWork = pgTable(
       }),
   },
   (table) => ({
+    ...serviceRolePolicies,
     pk: primaryKey(table.organizationId, table.taxonomyTermId),
   }),
 );
@@ -208,6 +210,7 @@ export const organizationsStrategies = pgTable(
       }),
   },
   (table) => ({
+    ...serviceRolePolicies,
     pk: primaryKey(table.organizationId, table.taxonomyTermId),
   }),
 );
