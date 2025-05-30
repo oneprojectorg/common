@@ -34,7 +34,11 @@ export const updateOrganizationRouter = router({
       const { user } = ctx;
 
       try {
-        const org = await updateOrganization({ data: input, user });
+        const org = await updateOrganization({
+          id: input.id,
+          data: input,
+          user,
+        });
 
         return organizationsEncoder.parse(org);
       } catch (error: unknown) {

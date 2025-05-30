@@ -19,7 +19,7 @@ interface ImageData {
 }
 
 interface OrganizationFormFieldsProps {
-  form: any; // Form instance from useAppForm
+  form: any;
   profileImage?: ImageData;
   setProfileImage: (image: ImageData | undefined) => void;
   bannerImage?: ImageData;
@@ -108,7 +108,7 @@ export const OrganizationFormFields = ({
 
       <form.AppField
         name="name"
-        children={(field) => (
+        children={(field: any) => (
           <field.TextField
             label={t('Name')}
             isRequired
@@ -122,7 +122,7 @@ export const OrganizationFormFields = ({
 
       <form.AppField
         name="website"
-        children={(field) => (
+        children={(field: any) => (
           <field.TextField
             label={t('Website')}
             isRequired
@@ -140,7 +140,7 @@ export const OrganizationFormFields = ({
 
       <form.AppField
         name="email"
-        children={(field) => (
+        children={(field: any) => (
           <field.TextField
             label={t('Email')}
             type="email"
@@ -154,7 +154,7 @@ export const OrganizationFormFields = ({
 
       <form.AppField
         name="whereWeWork"
-        children={(field) => (
+        children={(field: any) => (
           <GeoNamesMultiSelect
             label={t('Where we work')}
             onChange={(value) => field.handleChange(value)}
@@ -165,7 +165,7 @@ export const OrganizationFormFields = ({
 
       <form.AppField
         name="orgType"
-        children={(field) => (
+        children={(field: any) => (
           <field.Select
             label={t('Organizational Status')}
             isRequired
@@ -185,7 +185,7 @@ export const OrganizationFormFields = ({
 
       <form.AppField
         name="bio"
-        children={(field) => (
+        children={(field: any) => (
           <field.TextField
             useTextArea
             isRequired
@@ -204,7 +204,7 @@ export const OrganizationFormFields = ({
 
       <form.AppField
         name="mission"
-        children={(field) => (
+        children={(field: any) => (
           <field.TextField
             useTextArea
             label={t('Mission statement')}
@@ -223,7 +223,7 @@ export const OrganizationFormFields = ({
 
       <form.AppField
         name="focusAreas"
-        children={(field) => (
+        children={(field: any) => (
           <TermsMultiSelect
             label={t('Focus Areas')}
             taxonomy="necSimple:focusArea"
@@ -236,7 +236,7 @@ export const OrganizationFormFields = ({
 
       <form.AppField
         name="communitiesServed"
-        children={(field) => (
+        children={(field: any) => (
           <TermsMultiSelect
             label={t('Communities Served')}
             taxonomy="candid:POPULATION"
@@ -249,7 +249,7 @@ export const OrganizationFormFields = ({
 
       <form.AppField
         name="strategies"
-        children={(field) => (
+        children={(field: any) => (
           <TermsMultiSelect
             label={t('Strategies/Tactics')}
             taxonomy="splcStrategies"
@@ -262,7 +262,7 @@ export const OrganizationFormFields = ({
 
       <form.AppField
         name="networkOrganization"
-        children={(field) => (
+        children={(field: any) => (
           <ToggleRow>
             {t(
               'Does your organization serve as a network or coalition with member organizations?',

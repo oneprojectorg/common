@@ -3,7 +3,7 @@
 import { useUser } from '@/utils/UserProvider';
 import type { Organization } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
-import { Modal, ModalFooter, ModalHeader } from '@op/ui/Modal';
+import { Modal, ModalHeader } from '@op/ui/Modal';
 import { DialogTrigger } from '@op/ui/RAC';
 import { useEffect, useState } from 'react';
 import { LuPencil } from 'react-icons/lu';

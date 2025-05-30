@@ -19,9 +19,11 @@ import {
 } from './validators';
 
 export const updateOrganization = async ({
+  id,
   data,
   user,
 }: {
+  id: string;
   data: UpdateOrganizationInput &
     FundingLinksInput & {
       orgAvatarImageId?: string;
@@ -29,7 +31,7 @@ export const updateOrganization = async ({
     };
   user: User;
 }) => {
-  const orgUser = await getOrgAccessUser({ user, organizationId: data.id });
+  const orgUser = await getOrgAccessUser({ user, organizationId: id });
 
   if (!orgUser) {
     throw new UnauthorizedError('You are not a member of this organization');
