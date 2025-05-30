@@ -2,6 +2,7 @@ import { mergeRouters } from '../../trpcFactory';
 import { addRelationshipRouter } from './addRelationship';
 import { approveRelationshipRouter } from './approveRelationship';
 import { createOrganizationRouter } from './createOrganization';
+import { updateOrganizationRouter } from './updateOrganization';
 import { createPostInOrganization } from './createPostInOrganization';
 import { declineRelationshipRouter } from './declineRelationship';
 import { getOrganizationRouter } from './getOrganization';
@@ -22,6 +23,7 @@ export const organizationRouter = mergeRouters(
   searchOrganizationsRouter,
   createPostInOrganization,
   createOrganizationRouter,
+  updateOrganizationRouter,
   uploadAvatarImage,
   uploadPostAttachment,
   addRelationshipRouter,

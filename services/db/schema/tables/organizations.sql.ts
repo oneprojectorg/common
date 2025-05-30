@@ -63,6 +63,7 @@ export const organizations = pgTable(
     // Geography
     // location: geometry('location', { srid: 4326 }),
     isVerified: boolean().default(false),
+    networkOrganization: boolean().default(false),
 
     isOfferingFunds: boolean().default(false),
     isReceivingFunds: boolean().default(false),
@@ -137,6 +138,7 @@ export const organizationsTerms = pgTable(
       }),
   },
   (table) => ({
+    ...serviceRolePolicies,
     pk: primaryKey(table.organizationId, table.taxonomyTermId),
   }),
 );
@@ -172,6 +174,7 @@ export const organizationsWhereWeWork = pgTable(
       }),
   },
   (table) => ({
+    ...serviceRolePolicies,
     pk: primaryKey(table.organizationId, table.taxonomyTermId),
   }),
 );
@@ -207,6 +210,7 @@ export const organizationsStrategies = pgTable(
       }),
   },
   (table) => ({
+    ...serviceRolePolicies,
     pk: primaryKey(table.organizationId, table.taxonomyTermId),
   }),
 );

@@ -4,6 +4,9 @@ import { z } from 'zod';
 
 export const taxonomyTermsEncoder = createSelectSchema(taxonomyTerms)
   .pick({
+    id: true,
+    taxonomyId: true,
+    termUri: true,
     label: true,
     data: true,
     definition: true,
@@ -11,5 +14,7 @@ export const taxonomyTermsEncoder = createSelectSchema(taxonomyTerms)
   .extend({
     id: z.string(),
     taxonomyId: z.string(),
-    termUri: z.string().optional(),
+    termUri: z.string().nullish(),
+    label: z.string(),
+    data: z.object({}).nullish(),
   });

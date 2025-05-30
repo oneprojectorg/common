@@ -1,5 +1,7 @@
 export * from './getOrganization';
 export * from './createOrganization';
+export * from './updateOrganization';
 export * from './getOrganizationTerms';
 export * from './relationships';
 export * from './stats';
+export * from './validators';

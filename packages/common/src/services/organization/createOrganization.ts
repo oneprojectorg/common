@@ -12,95 +12,14 @@ import {
 } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 import { randomUUID } from 'crypto';
-import { z } from 'zod';
 
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
-
-export const geoNamesDataSchema = z
-  .object({
-    toponymName: z.string(),
-    name: z.string(),
-    lat: z.number(),
-    lng: z.number(),
-    geonameId: z.number(),
-    countryCode: z.string(),
-    countryName: z.string(),
-    fcl: z.string(),
-    fcode: z.string(),
-  })
-  .partial()
-  .strip();
-
-const whereWeWorkSchema = z
-  .object({ id: z.string(), label: z.string(), data: geoNamesDataSchema })
-  .partial()
-  .strip();
-
-export const organizationInputSchema = z
-  .object({
-    slug: z.string(),
-    email: z.string().email(),
-    name: z.string().optional(),
-    bio: z.string().optional(),
-    orgType: z.string(),
-    isOfferingFunds: z.boolean().optional(),
-    isReceivingFunds: z.boolean().optional(),
-    website: z.string().optional(),
-    mission: z.string().optional(),
-
-    headerImageId: z.string().optional(),
-    avatarImageId: z.string().optional(),
-    whereWeWork: z.array(whereWeWorkSchema),
-    strategies: z.array(
-      z.object({
-        id: z.string(),
-      }),
-    ),
-    focusAreas: z.array(
-      z.object({
-        id: z.string(),
-        label: z.string(),
-      }),
-    ),
-    communitiesServed: z
-      .array(
-        z.object({
-          id: z.string(),
-          label: z.string(),
-        }),
-      )
-      .optional(),
-  })
-  .strip()
-  .partial();
-
-type OrganizationInput = z.infer<typeof organizationInputSchema>;
-
-const OrganizationInputParser = organizationInputSchema.transform(
-  (data: OrganizationInput) => {
-    // Remove keys with undefined values
-    return Object.fromEntries(
-      Object.entries(data).filter(([_, value]) => value !== undefined),
-    ) as OrganizationInput;
-  },
-);
-
-export const fundingLinksInputSchema = z
-  .object({
-    receivingFundsDescription: z.string().optional(),
-    receivingFundsLink: z
-      .string()
-      .url({ message: 'Enter a valid website address' })
-      .optional(),
-    offeringFundsDescription: z.string().optional(),
-    offeringFundsLink: z
-      .string()
-      .url({ message: 'Enter a valid website address' })
-      .optional(),
-  })
-  .strip()
-  .partial();
-type FundingLinksInput = z.infer<typeof fundingLinksInputSchema>;
+import {
+  type FundingLinksInput,
+  type OrganizationInput,
+  OrganizationInputParser,
+  geoNamesDataSchema,
+} from './validators';
 
 // const upsertTaxonomyTerms = async ({
 // tx,

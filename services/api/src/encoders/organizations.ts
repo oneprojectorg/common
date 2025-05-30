@@ -20,6 +20,7 @@ export const organizationsEncoder = createSelectSchema(organizations)
     website: true,
     isOfferingFunds: true,
     isReceivingFunds: true,
+    networkOrganization: true,
     orgType: true,
   })
   .extend({

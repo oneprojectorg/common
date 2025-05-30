@@ -1,4 +1,5 @@
 import { pgTable, primaryKey, uuid } from 'drizzle-orm/pg-core';
+import { serviceRolePolicies } from 'helpers';
 
 import { organizations } from './organizations.sql';
 import { taxonomyTerms } from './taxonomies.sql';
@@ -20,6 +21,7 @@ export const organizationsWhereWeWork = pgTable(
       }),
   },
   (table) => ({
+    ...serviceRolePolicies,
     pk: primaryKey(table.organizationId, table.taxonomyTermId),
   }),
 );
