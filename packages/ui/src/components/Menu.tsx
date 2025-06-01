@@ -17,7 +17,6 @@ import type {
 import { cn } from '../lib/utils';
 import { DropdownSection, dropdownItemStyles } from './ListBox';
 import type { DropdownSectionProps } from './ListBox';
-import { Popover } from './Popover';
 import type { PopoverProps } from './Popover';
 
 export { AriaMenuTrigger as MenuTrigger };
@@ -28,15 +27,13 @@ interface MenuProps<T> extends AriaMenuProps<T> {
 
 export const Menu = <T extends object>(props: MenuProps<T>) => {
   return (
-    <Popover placement={props.placement} className="min-w-[150px]">
-      <AriaMenu
-        {...props}
-        className={cn(
-          'max-h-[inherit] overflow-auto border bg-white p-1 py-1.5 text-neutral-charcoal outline outline-0 [clip-path:inset(0_0_0_0_round_.75rem)]',
-          props.className,
-        )}
-      />
-    </Popover>
+    <AriaMenu
+      {...props}
+      className={cn(
+        'max-h-[inherit] overflow-auto border bg-white p-1 py-1.5 text-neutral-charcoal outline outline-0 [clip-path:inset(0_0_0_0_round_.75rem)]',
+        props.className,
+      )}
+    />
   );
 };
 
