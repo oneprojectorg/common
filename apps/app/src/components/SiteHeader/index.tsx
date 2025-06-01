@@ -8,90 +8,21 @@ import { useAuthLogout } from '@op/hooks';
 import { Avatar } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
 import { Menu, MenuItem, MenuItemSimple, MenuSeparator } from '@op/ui/Menu';
-import { Modal, ModalBody, ModalHeader } from '@op/ui/Modal';
 import { Popover } from '@op/ui/Popover';
-import { Dialog, DialogTrigger, MenuTrigger } from '@op/ui/RAC';
+import { MenuTrigger } from '@op/ui/RAC';
 import { Skeleton } from '@op/ui/Skeleton';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Suspense, useState } from 'react';
-import { LuChevronDown, LuLogOut, LuSearch, LuX } from 'react-icons/lu';
+import { Suspense } from 'react';
+import { LuChevronDown, LuLogOut, LuSearch } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
 import { CommonLogo } from '../CommonLogo';
 import ErrorBoundary from '../ErrorBoundary';
+import { PrivacyPolicyModal } from '../PrivacyPolicyModal';
 import { SearchInput } from '../SearchInput';
-
-const PrivacyPolicyModal = () => {
-  const t = useTranslations();
-  const [isOpen, setIsOpen] = useState(false);
-
-  return (
-    <DialogTrigger>
-      <Button
-        unstyled
-        onPress={() => setIsOpen(true)}
-        className="text-primary-teal"
-      >
-        {t('Privacy Policy')}
-      </Button>
-
-      <Modal
-        className="min-w-[29rem]"
-        onOpenChange={setIsOpen}
-        isDismissable
-        isOpen={isOpen}
-      >
-        <Dialog>
-          <ModalHeader className="flex items-center justify-between">
-            {t('Privacy Policy')}
-            <LuX
-              className="size-6 cursor-pointer stroke-1"
-              onClick={() => setIsOpen(false)}
-            />
-          </ModalHeader>
-          <ModalBody>Privacy Policy</ModalBody>
-        </Dialog>
-      </Modal>
-    </DialogTrigger>
-  );
-};
-
-const ToSModal = () => {
-  const t = useTranslations();
-  const [isToSOpen, setIsToSOpen] = useState(false);
-
-  return (
-    <DialogTrigger>
-      <Button
-        unstyled
-        onPress={() => setIsToSOpen(true)}
-        className="text-primary-teal"
-      >
-        {t('Terms of Service')}
-      </Button>
-
-      <Modal
-        className="min-w-[29rem]"
-        onOpenChange={setIsToSOpen}
-        isDismissable
-        isOpen={isToSOpen}
-      >
-        <Dialog>
-          <ModalHeader className="flex items-center justify-between">
-            {t('Terms of Service')}
-            <LuX
-              className="size-6 cursor-pointer stroke-1"
-              onClick={() => setIsToSOpen(false)}
-            />
-          </ModalHeader>
-          <ModalBody>ToS</ModalBody>
-        </Dialog>
-      </Modal>
-    </DialogTrigger>
-  );
-};
+import { ToSModal } from '../ToSModal/index.tsx';
 
 const UserAvatarMenu = () => {
   const { user } = useUser();
