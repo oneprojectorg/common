@@ -1,5 +1,5 @@
 import { relations, sql } from 'drizzle-orm';
-import type { InferModel } from 'drizzle-orm';
+import type { InferModel, SQL } from 'drizzle-orm';
 import {
   boolean,
   index,
@@ -17,6 +17,7 @@ import {
   enumToPgEnum,
   serviceRolePolicies,
   timestamps,
+  tsvector,
 } from '../../helpers';
 import { links } from './links.sql';
 import { posts } from './posts.sql';
@@ -81,21 +82,18 @@ export const organizations = pgTable(
       onUpdate: 'cascade',
     }),
 
+    search: tsvector('search').generatedAlwaysAs(
+      (): SQL =>
+        sql`setweight(to_tsvector('simple', ${organizations.name}), 'A') || ' ' || setweight(to_tsvector('english',  ${organizations.bio}), 'B') || ' ' || setweight(to_tsvector('english', ${organizations.mission}), 'C')::tsvector`,
+    ),
+
     ...timestamps,
   },
   (table) => [
     ...serviceRolePolicies,
     index().on(table.id).concurrently(),
     index().on(table.slug).concurrently(),
-    index('organizations_name_gin_index')
-      .using('gin', sql`to_tsvector('english', ${table.name})`)
-      .concurrently(),
-    index('organizations_header_image_id_idx')
-      .on(table.headerImageId)
-      .concurrently(),
-    index('organizations_avatar_image_id_idx')
-      .on(table.avatarImageId)
-      .concurrently(),
+    index('organizations_search_gin_index').using('gin', table.search),
   ],
 );
 
