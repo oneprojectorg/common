@@ -12,7 +12,7 @@
   "dependencies": {
     "@op/api": "workspace:*",
     "@op/core": "workspace:*",
-    "@op/logger": "workspace:*",
+    "@op/logging": "workspace:*",
     "@op/supabase": "workspace:*",
     "@op/ui": "workspace:*",
     "@scalar/nextjs-api-reference": "^0.5.10",

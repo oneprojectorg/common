@@ -1,5 +1,5 @@
 import { OPURLConfig, cookieOptionsDomain } from '@op/core';
-import { logger, transformMiddlewareRequest } from '@op/logger';
+import { logger, transformMiddlewareRequest } from '@op/logging';
 import { createServerClient } from '@op/supabase/lib';
 import createMiddleware from 'next-intl/middleware';
 import { NextFetchEvent, NextRequest, NextResponse } from 'next/server';
@@ -39,10 +39,10 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
       cookieOptions:
         useUrl.IS_PRODUCTION || useUrl.IS_STAGING || useUrl.IS_PREVIEW
           ? {
-              domain: cookieOptionsDomain,
-              sameSite: 'lax',
-              secure: true,
-            }
+            domain: cookieOptionsDomain,
+            sameSite: 'lax',
+            secure: true,
+          }
           : {},
       cookies: {
         getAll() {

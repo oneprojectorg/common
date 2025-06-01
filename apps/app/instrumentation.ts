@@ -1,5 +1,5 @@
 import { createOnRequestError } from '@axiomhq/nextjs';
-import { logger } from '@op/logger';
+import { logger } from '@op/logging';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { SimpleSpanProcessor } from '@opentelemetry/sdk-trace-node';
 import { registerOTel } from '@vercel/otel';

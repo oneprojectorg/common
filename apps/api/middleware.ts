@@ -1,5 +1,5 @@
 import { OPURLConfig, urlMatcher } from '@op/core';
-import { logger, transformMiddlewareRequest } from '@op/logger';
+import { logger, transformMiddlewareRequest } from '@op/logging';
 import { NextResponse } from 'next/server';
 import type { NextFetchEvent, NextRequest } from 'next/server';
 

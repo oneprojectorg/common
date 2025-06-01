@@ -1,6 +1,6 @@
 import { TRPCProvider } from '@op/api/client';
 import { APP_NAME, printNFO } from '@op/core';
-import { WebVitals } from '@op/logger';
+import { WebVitals } from '@op/logging';
 import { Toast } from '@op/ui/Toast';
 import '@op/ui/tailwind-styles';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';

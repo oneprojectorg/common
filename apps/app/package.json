@@ -22,7 +22,7 @@
     "@op/common": "workspace:*",
     "@op/core": "workspace:*",
     "@op/hooks": "workspace:*",
-    "@op/logger": "workspace:*",
+    "@op/logging": "workspace:*",
     "@op/supabase": "workspace:*",
     "@op/ui": "workspace:*",
     "@opentelemetry/exporter-trace-otlp-http": "^0.201.1",

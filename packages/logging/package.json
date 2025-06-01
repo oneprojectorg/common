@@ -1,16 +1,16 @@
 {
-  "name": "@op/logger",
+  "name": "@op/logging",
   "version": "0.1.0",
-  "type": "module",
   "description": "Axiom logging utilities for OP",
-  "main": "src/index.ts",
+  "type": "module",
   "exports": {
     ".": "./src/index.ts"
   },
+  "main": "src/index.ts",
   "scripts": {
     "build": "tsc",
-    "dev": "tsc --watch",
     "clean": "rm -rf dist",
+    "dev": "tsc --watch",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
