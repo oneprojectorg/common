@@ -122,7 +122,7 @@ const UserAvatarMenu = () => {
           {t('Log out')}
         </MenuItem>
 
-        <MenuItemSimple className="flex flex-col items-start justify-start gap-2 text-sm text-neutral-gray4 hover:bg-transparent">
+        <MenuItem className="flex flex-col items-start justify-start gap-2 text-sm text-neutral-gray4 hover:bg-transparent">
           <div>
             <DialogTrigger>
               <span className="text-primary-teal">{t('Privacy Policy')}</span>
@@ -149,7 +149,7 @@ const UserAvatarMenu = () => {
           <div className="text-xs">
             Ethical Open Source • One Project • {new Date().getFullYear()}
           </div>
-        </MenuItemSimple>
+        </MenuItem>
       </Menu>
     </MenuTrigger>
   );
