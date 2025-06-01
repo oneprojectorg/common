@@ -1,5 +1,6 @@
 import { TRPCProvider } from '@op/api/client';
 import { APP_NAME, printNFO } from '@op/core';
+import { WebVitals } from '@op/logger';
 import { Toast } from '@op/ui/Toast';
 import '@op/ui/tailwind-styles';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
@@ -83,6 +84,7 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
           {printNFO()}
         </Script>
       </head>
+      <WebVitals />
       <TRPCProvider>
         <body
           className={`${roboto.variable} ${robotoMono.variable} ${robotoSerif.variable} ${inter.variable} overflow-x-hidden text-base text-neutral-black antialiased`}

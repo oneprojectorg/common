@@ -2,9 +2,9 @@
   "extends": "@op/typescript-config/base.json",
   "compilerOptions": {
     "outDir": "dist",
-    "baseUrl": "./src", // Point baseUrl to the new src directory
+    "baseUrl": "./src",
     "paths": {
-      "@/*": ["./*"] // Alias will now resolve relative to ./src
+      "@/*": ["./*"]
     }
   },
   "include": ["src/**/*"],

@@ -4,7 +4,7 @@ import { AxiomJSTransport, Logger } from '@axiomhq/logging';
 import { nextJsFormatters } from '@axiomhq/nextjs/client';
 import { createUseLogger, createWebVitalsComponent } from '@axiomhq/react';
 
-import axiomClient from '@/lib/axiom/axiom';
+import axiomClient from './axiom';
 
 export const logger = new Logger({
   transports: [
