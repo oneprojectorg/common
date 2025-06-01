@@ -4,10 +4,18 @@ import createMiddleware from 'next-intl/middleware';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { i18nConfig, routing } from './lib/i18n';
+import { logger } from '@op/logger';
 
 const useUrl = OPURLConfig('APP');
 
 export async function middleware(request: NextRequest) {
+  // Log request
+  logger.info('Middleware request', {
+    pathname: request.nextUrl.pathname,
+    method: request.method,
+    userAgent: request.headers.get('user-agent'),
+  });
+
   // i18n ROUTING
   const pathname = request.nextUrl.pathname;
   const pathnameIsMissingLocale = i18nConfig.locales.every(
@@ -77,7 +85,7 @@ export async function middleware(request: NextRequest) {
   }
 
   if (user && !user.email?.match('oneproject.org|scottcazan@gmail.com')) {
-    console.log('INVALID USER EMAIL', user.email);
+    logger.warn('Invalid user email access attempt', { email: user.email });
     supabase.auth.signOut();
     return NextResponse.redirect(new URL('/waitlist', request.url));
   }

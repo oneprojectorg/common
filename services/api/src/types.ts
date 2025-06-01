@@ -2,6 +2,7 @@
 import type { db } from '@op/db/client';
 import type { tables } from '@op/db/tables';
 import type { User } from '@op/supabase/lib';
+import type { Logger } from '@op/logger';
 import type { MiddlewareFunction } from '@trpc/server/unstable-core-do-not-import';
 import type { SerializeOptions } from 'cookie';
 import type { OpenApiMeta } from 'trpc-to-openapi';
@@ -31,6 +32,10 @@ export interface TContextWithDB {
     /** Drizzle table schemas */
     tables: typeof tables;
   };
+}
+
+export interface TContextWithLogger {
+  logger: Logger;
 }
 
 export type MiddlewareBuilderBase<TContextAfter = {}> = MiddlewareFunction<

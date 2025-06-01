@@ -1,7 +1,4 @@
-import {
-  UnauthorizedError,
-  createOrganization,
-} from '@op/common';
+import { UnauthorizedError, createOrganization } from '@op/common';
 import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 
@@ -34,14 +31,23 @@ export const createOrganizationRouter = router({
     .input(createOrganizationInputSchema)
     .output(organizationsEncoder)
     .mutation(async ({ ctx, input }) => {
-      const { user } = ctx;
+      const { user, logger } = ctx;
 
       try {
         const org = await createOrganization({ data: input, user });
 
+        logger.info('Organization created', {
+          userId: user.id,
+          organizationId: org.id,
+          organizationName: org.name,
+        });
+
         return organizationsEncoder.parse(org);
       } catch (error: unknown) {
-        console.log('ERROR', error);
+        logger.error('Failed to create organization', error as Error, {
+          userId: user.id,
+          organizationName: input.name,
+        });
 
         if (error instanceof UnauthorizedError) {
           throw new TRPCError({

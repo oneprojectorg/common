@@ -39,9 +39,17 @@ const login = router({
     )
     .output(z.boolean())
     .query(async ({ input, ctx }) => {
+      const { logger } = ctx;
       const emailDomain = input.email.split('@')[1];
 
+      logger.info('Login attempt', { 
+        email: input.email,
+        emailDomain,
+        usingOAuth: input.usingOAuth 
+      });
+
       if (!emailDomain) {
+        logger.warn('Login failed - invalid email', { email: input.email });
         throw new TRPCError({
           message: 'Invalid email',
           code: 'BAD_REQUEST',
