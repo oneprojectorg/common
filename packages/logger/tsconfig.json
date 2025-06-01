@@ -1,7 +1,11 @@
 {
   "extends": "@op/typescript-config/base.json",
   "compilerOptions": {
-    "outDir": "dist"
+    "outDir": "dist",
+    "baseUrl": "./src", // Point baseUrl to the new src directory
+    "paths": {
+      "@/*": ["./*"] // Alias will now resolve relative to ./src
+    }
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]

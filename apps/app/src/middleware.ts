@@ -1,20 +1,18 @@
 import { OPURLConfig, cookieOptionsDomain } from '@op/core';
+import { nextLogger as logger, transformMiddlewareRequest } from '@op/logger';
 import { createServerClient } from '@op/supabase/lib';
 import createMiddleware from 'next-intl/middleware';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextFetchEvent, NextRequest, NextResponse } from 'next/server';
 
 import { i18nConfig, routing } from './lib/i18n';
-import { logger } from '@op/logger';
 
 const useUrl = OPURLConfig('APP');
 
-export async function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest, event: NextFetchEvent) {
   // Log request
-  logger.info('Middleware request', {
-    pathname: request.nextUrl.pathname,
-    method: request.method,
-    userAgent: request.headers.get('user-agent'),
-  });
+  logger.info(...transformMiddlewareRequest(request));
+
+  event.waitUntil(logger.flush());
 
   // i18n ROUTING
   const pathname = request.nextUrl.pathname;
