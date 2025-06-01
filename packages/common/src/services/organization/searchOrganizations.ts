@@ -16,6 +16,10 @@ export const searchOrganizations = async ({
   }
   // TODO: assert authorization
 
+  if (query.length < 2) {
+    return [];
+  }
+
   const searchQueries = db.$with('search_queries').as(
     db
       .select({

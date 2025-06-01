@@ -1,68 +1,44 @@
 // import type { User } from '@op/supabase/lib';
-import { waitUntil } from '@vercel/functions';
+import { logger as opLogger } from '@op/logging';
 import spacetime from 'spacetime';
 
-import type { MiddlewareBuilderBase } from '../types';
+import type { MiddlewareBuilderBase, TContextWithLogger } from '../types';
 
-async function sendLogsToAxiom(events: Array<Record<string, any>>) {
-  try {
-    const response = await fetch(
-      `https://api.axiom.co/v1/datasets/common/ingest`,
-      {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${process.env.AXIOM_API_TOKEN}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(events),
-      },
-    );
-
-    if (!response.ok) {
-      throw new Error(`Error: ${response.status} - ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    console.log('Logs sent successfully:', data);
-    return data;
-  } catch (error) {
-    // @ts-ignore
-    console.error('Error sending logs to Axiom:', error.message);
-    throw error;
-  }
-}
-
-// const logger = pino(
-// { level: 'info' },
-// pino.transport({
-// target: '@axiomhq/pino',
-// options: {
-// dataset: 'common',
-// token: process.env.AXIOM_API_TOKEN,
-// },
-// }),
-// );
-
-const withLogger: MiddlewareBuilderBase = async ({
+const withLogger: MiddlewareBuilderBase<TContextWithLogger> = async ({
   ctx,
-  // path,
-  // type,
-  // getRawInput,
+  path,
+  type,
   next,
 }) => {
-  // const events: Array<Record<string, any>> = [];
   const start = Date.now();
   const logger = {
-    info: (message: string) => {
-      waitUntil(
-        sendLogsToAxiom([
-          {
-            start,
-            level: 'info',
-            message,
-          },
-        ]),
-      );
+    info: (message: string, data?: Record<string, any>) => {
+      opLogger.info(message, {
+        requestId: ctx.requestId,
+        path,
+        type,
+        ip: ctx.ip,
+        ...data,
+      });
+    },
+    error: (message: string, error?: Error, data?: Record<string, any>) => {
+      opLogger.error(message, {
+        requestId: ctx.requestId,
+        path,
+        type,
+        ip: ctx.ip,
+        error,
+        ...data,
+      });
+    },
+    warn: (message: string, data?: Record<string, any>) => {
+      opLogger.warn(message, {
+        requestId: ctx.requestId,
+        path,
+        type,
+        ip: ctx.ip,
+        ...data,
+      });
     },
   };
 
@@ -74,67 +50,40 @@ const withLogger: MiddlewareBuilderBase = async ({
   });
   const end = Date.now();
 
-  // const rawInput = await getRawInput();
+  const duration = end - start;
+  const logHeadline = `[${spacetime(ctx.time).format('nice')}] - ${duration}ms`;
 
-  const logHeadline = `[${spacetime(ctx.time).format('nice')}] - ${end - start}ms`;
-
-  // type MiddlewareResult = typeof result;
-
-  // const logInfo = (res: MiddlewareResult) => {
-  // // eslint-disable-next-line ts/no-unsafe-member-access
-  // const userData = (res as any)?.ctx?.user as User | undefined | null;
-  // const user = userData
-  // ? {
-  // id: userData?.id,
-  // email: userData?.email,
-  // role: userData?.role,
-  // }
-  // : undefined;
-
-  // if (res.ok) {
-  // console.log({ path, type, rawInput, user, result: res }, '\n');
-  // } else {
-  // const { error } = res;
-
-  // console.log(
-  // 'incoming',
-  // {
-  // path,
-  // type,
-  // rawInput,
-  // ctx,
-  // user,
-  // error: {
-  // name: error.name,
-  // message: error.message,
-  // code: error.code,
-  // cause: error.cause,
-  // },
-  // result: {
-  // ...res,
-  // error,
-  // },
-  // },
-  // '\n',
-  // );
-  // }
-  // };
-
+  // Log result
   if (result.ok) {
     console.log(`✔ OK:\t${ctx.requestId}\n\t${logHeadline}\n\tIP: ${ctx.ip}`);
   } else if (result.error) {
-    console.log(`X FAIL:\t${ctx.requestId}\n\t${logHeadline}\n\tIP: ${ctx.ip}`);
+    opLogger.error('Request failed', {
+      requestId: ctx.requestId,
+      path,
+      type,
+      ip: ctx.ip,
+      duration,
+      status: 'error',
+      timestamp: end,
+      errorCode: result.error.code,
+      errorName: result.error.name,
+      error: result.error,
+    });
   } else {
     console.log(
       `? UNHANDLED ERROR:\t${ctx.requestId}\n\t${logHeadline}\n\tIP: ${ctx.ip}`,
     );
+    opLogger.error('Unhandled error', {
+      requestId: ctx.requestId,
+      path,
+      type,
+      ip: ctx.ip,
+      duration,
+      status: 'unhandled_error',
+      error: result.error,
+      timestamp: end,
+    });
   }
-
-  // logInfo(result);
-  // if (events.length > 0) {
-  // await sendLogsToAxiom(events);
-  // events.length = 0;
-  // }
 
   return result;
 };
