@@ -22,11 +22,12 @@ const withLogger: MiddlewareBuilderBase<TContextWithLogger> = async ({
       });
     },
     error: (message: string, error?: Error, data?: Record<string, any>) => {
-      opLogger.error(message, error, {
+      opLogger.error(message, {
         requestId: ctx.requestId,
         path,
         type,
         ip: ctx.ip,
+        error,
         ...data,
       });
     },
@@ -56,7 +57,7 @@ const withLogger: MiddlewareBuilderBase<TContextWithLogger> = async ({
   if (result.ok) {
     console.log(`✔ OK:\t${ctx.requestId}\n\t${logHeadline}\n\tIP: ${ctx.ip}`);
   } else if (result.error) {
-    opLogger.error('Request failed', result.error, {
+    opLogger.error('Request failed', {
       requestId: ctx.requestId,
       path,
       type,
@@ -66,18 +67,20 @@ const withLogger: MiddlewareBuilderBase<TContextWithLogger> = async ({
       timestamp: end,
       errorCode: result.error.code,
       errorName: result.error.name,
+      error: result.error,
     });
   } else {
     console.log(
       `? UNHANDLED ERROR:\t${ctx.requestId}\n\t${logHeadline}\n\tIP: ${ctx.ip}`,
     );
-    opLogger.error('Unhandled error', undefined, {
+    opLogger.error('Unhandled error', {
       requestId: ctx.requestId,
       path,
       type,
       ip: ctx.ip,
       duration,
       status: 'unhandled_error',
+      error: result.error,
       timestamp: end,
     });
   }

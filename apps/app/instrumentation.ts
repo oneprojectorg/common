@@ -1,8 +1,8 @@
+import { createOnRequestError } from '@axiomhq/nextjs';
+import { logger } from '@op/logger';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { SimpleSpanProcessor } from '@opentelemetry/sdk-trace-node';
 import { registerOTel } from '@vercel/otel';
-
-import { flushLogs } from '@op/logger';
 
 export function register() {
   registerOTel({
@@ -22,6 +22,8 @@ export function register() {
 
   // Flush Axiom logs on process exit
   process.on('beforeExit', () => {
-    flushLogs().catch(console.error);
+    logger.flush().catch(console.error);
   });
 }
+
+export const onRequestError = createOnRequestError(logger);

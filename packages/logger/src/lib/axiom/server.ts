@@ -3,7 +3,7 @@ import { createAxiomRouteHandler, nextJsFormatters } from '@axiomhq/nextjs';
 
 import axiomClient from './axiom';
 
-export const nextLogger = new Logger({
+export const logger = new Logger({
   transports: [
     new AxiomJSTransport({
       axiom: axiomClient,
@@ -13,4 +13,4 @@ export const nextLogger = new Logger({
   formatters: nextJsFormatters,
 });
 
-export const withAxiom = createAxiomRouteHandler(nextLogger);
+export const withAxiom = createAxiomRouteHandler(logger);

@@ -1,5 +1,5 @@
 import { OPURLConfig, cookieOptionsDomain } from '@op/core';
-import { nextLogger as logger, transformMiddlewareRequest } from '@op/logger';
+import { logger, transformMiddlewareRequest } from '@op/logger';
 import { createServerClient } from '@op/supabase/lib';
 import createMiddleware from 'next-intl/middleware';
 import { NextFetchEvent, NextRequest, NextResponse } from 'next/server';
@@ -13,7 +13,6 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
   logger.info(...transformMiddlewareRequest(request));
 
   event.waitUntil(logger.flush());
-
   // i18n ROUTING
   const pathname = request.nextUrl.pathname;
   const pathnameIsMissingLocale = i18nConfig.locales.every(
