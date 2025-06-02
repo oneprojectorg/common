@@ -13,7 +13,7 @@ import { MenuTrigger } from '@op/ui/RAC';
 import { Skeleton } from '@op/ui/Skeleton';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Suspense } from 'react';
+import { Suspense, useState } from 'react';
 import { LuChevronDown, LuLogOut, LuSearch } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
@@ -38,115 +38,130 @@ const UserAvatarMenu = () => {
     },
   });
 
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+
   return (
-    <MenuTrigger>
-      <Button unstyled className="relative">
-        <Avatar placeholder={user?.currentOrganization?.name}>
-          {user?.currentOrganization?.avatarImage?.name ? (
-            <Image
-              src={
-                getPublicUrl(user?.currentOrganization.avatarImage.name) ?? ''
-              }
-              alt="User avatar"
-              width={48}
-              height={48}
-            />
-          ) : null}
-        </Avatar>
-        <div className="absolute -bottom-1 -right-1 flex size-4 items-center justify-center rounded-full bg-neutral-offWhite outline -outline-offset-1 outline-white">
-          <LuChevronDown className="size-3" />{' '}
-        </div>
-      </Button>
-
-      <Popover className="min-w-[150px]">
-        <Menu className="flex min-w-72 flex-col p-4 pb-6">
-          <MenuItemSimple
-            isDisabled
-            className="flex cursor-default items-center gap-2 p-0 px-0 pb-4 text-neutral-charcoal hover:bg-transparent"
-          >
-            <Avatar className="size-6" placeholder={user?.name ?? ''}>
-              {user?.avatarImage?.name ? (
-                <Image
-                  src={getPublicUrl(user?.avatarImage?.name) ?? ''}
-                  width={80}
-                  height={80}
-                  alt={user?.name ?? 'User avatar'}
-                />
-              ) : null}
-            </Avatar>
-            <div className="flex flex-col">
-              <span className="text-sm">
-                Logged in as {user?.name} (
-                <UpdateProfileModal />)
-              </span>
-
-              <span className="text-xs text-neutral-gray4">
-                Admin for {user?.currentOrganization?.name}
-              </span>
-            </div>
-          </MenuItemSimple>
-          {user?.organizationUsers?.map((orgUser) => (
-            <MenuItem
-              className="px-4 py-3 text-neutral-charcoal"
-              onAction={() => {
-                if (user.currentOrganization?.id === orgUser.organizationId) {
-                  router.push(`/org/${orgUser.organization?.slug}`);
-                  return;
+    <>
+      <MenuTrigger>
+        <Button unstyled className="relative">
+          <Avatar placeholder={user?.currentOrganization?.name}>
+            {user?.currentOrganization?.avatarImage?.name ? (
+              <Image
+                src={
+                  getPublicUrl(user?.currentOrganization.avatarImage.name) ?? ''
                 }
+                alt="User avatar"
+                width={48}
+                height={48}
+              />
+            ) : null}
+          </Avatar>
+          <div className="absolute -bottom-1 -right-1 flex size-4 items-center justify-center rounded-full bg-neutral-offWhite outline -outline-offset-1 outline-white">
+            <LuChevronDown className="size-3" />{' '}
+          </div>
+        </Button>
 
-                void switchOrganization.mutate({
-                  // @ts-expect-error this is a backend issue to be resolved
-                  organizationId: orgUser.organization?.id,
-                });
-              }}
+        <Popover className="min-w-[150px]">
+          <Menu className="flex min-w-72 flex-col p-4 pb-6">
+            <MenuItemSimple
+              isDisabled
+              className="flex cursor-default items-center gap-2 p-0 px-0 pb-4 text-neutral-charcoal hover:bg-transparent"
             >
-              <Avatar placeholder={orgUser.organization?.name}>
-                {orgUser.organization?.avatarImage?.name ? (
+              <Avatar className="size-6" placeholder={user?.name ?? ''}>
+                {user?.avatarImage?.name ? (
                   <Image
-                    src={
-                      getPublicUrl(orgUser.organization.avatarImage.name) ?? ''
-                    }
-                    alt="User avatar"
-                    width={48}
-                    height={48}
+                    src={getPublicUrl(user?.avatarImage?.name) ?? ''}
+                    width={80}
+                    height={80}
+                    alt={user?.name ?? 'User avatar'}
                   />
                 ) : null}
               </Avatar>
               <div className="flex flex-col">
-                <div>{orgUser.organization?.name}</div>
-                <div className="text-sm text-neutral-gray4">
-                  {orgUser.organization?.orgType}
-                </div>
+                <span className="text-sm">
+                  Logged in as {user?.name} (
+                  <Button
+                    onPress={() => setIsProfileOpen(true)}
+                    unstyled
+                    className=""
+                  >
+                    <span className="text-primary-teal hover:underline">
+                      {t('Edit Profile')}
+                    </span>
+                  </Button>
+                  )
+                </span>
+
+                <span className="text-xs text-neutral-gray4">
+                  Admin for {user?.currentOrganization?.name}
+                </span>
               </div>
+            </MenuItemSimple>
+            {user?.organizationUsers?.map((orgUser) => (
+              <MenuItem
+                className="px-4 py-3 text-neutral-charcoal"
+                onAction={() => {
+                  if (user.currentOrganization?.id === orgUser.organizationId) {
+                    router.push(`/org/${orgUser.organization?.slug}`);
+                    return;
+                  }
+
+                  void switchOrganization.mutate({
+                    // @ts-expect-error this is a backend issue to be resolved
+                    organizationId: orgUser.organization?.id,
+                  });
+                }}
+              >
+                <Avatar placeholder={orgUser.organization?.name}>
+                  {orgUser.organization?.avatarImage?.name ? (
+                    <Image
+                      src={
+                        getPublicUrl(orgUser.organization.avatarImage.name) ??
+                        ''
+                      }
+                      alt="User avatar"
+                      width={48}
+                      height={48}
+                    />
+                  ) : null}
+                </Avatar>
+                <div className="flex flex-col">
+                  <div>{orgUser.organization?.name}</div>
+                  <div className="text-sm text-neutral-gray4">
+                    {orgUser.organization?.orgType}
+                  </div>
+                </div>
+              </MenuItem>
+            ))}
+            <MenuSeparator />
+            <MenuItem
+              id="logout"
+              className="text-neutral-charcoal"
+              onAction={() =>
+                void logout.refetch().finally(() => router.push('/'))
+              }
+            >
+              <LuLogOut className="size-8 rounded-full bg-neutral-offWhite p-2" />{' '}
+              {t('Log out')}
             </MenuItem>
-          ))}
-          <MenuSeparator />
-          <MenuItem
-            id="logout"
-            className="text-neutral-charcoal"
-            onAction={() =>
-              void logout.refetch().finally(() => router.push('/'))
-            }
-          >
-            <LuLogOut className="size-8 rounded-full bg-neutral-offWhite p-2" />{' '}
-            {t('Log out')}
-          </MenuItem>
-          <MenuItemSimple
-            isDisabled
-            className="flex flex-col items-start justify-start gap-2 text-sm text-neutral-gray4 hover:bg-transparent"
-          >
-            <div>
-              <PrivacyPolicyModal />
-              {' • '}
-              <ToSModal />
-            </div>
-            <div className="text-xs">
-              Ethical Open Source • One Project • {new Date().getFullYear()}
-            </div>
-          </MenuItemSimple>
-        </Menu>
-      </Popover>
-    </MenuTrigger>
+            <MenuItemSimple
+              isDisabled
+              className="flex flex-col items-start justify-start gap-2 text-sm text-neutral-gray4 hover:bg-transparent"
+            >
+              <div>
+                <PrivacyPolicyModal />
+                {' • '}
+                <ToSModal />
+              </div>
+              <div className="text-xs">
+                Ethical Open Source • One Project • {new Date().getFullYear()}
+              </div>
+            </MenuItemSimple>
+          </Menu>
+        </Popover>
+      </MenuTrigger>
+      <UpdateProfileModal isOpen={isProfileOpen} setIsOpen={setIsProfileOpen} />
+    </>
   );
 };
 

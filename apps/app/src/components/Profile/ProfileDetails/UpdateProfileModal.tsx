@@ -1,20 +1,22 @@
-'use client';
-
 import { useUser } from '@/utils/UserProvider';
-import { Button } from '@op/ui/Button';
 import { Modal, ModalHeader } from '@op/ui/Modal';
 import { DialogTrigger } from '@op/ui/RAC';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { UpdateProfileForm } from './UpdateProfileForm';
 
-export const UpdateProfileModal = () => {
+export const UpdateProfileModal = ({
+  isOpen,
+  setIsOpen,
+}: {
+  isOpen: boolean;
+  setIsOpen: (isOpen: boolean) => void;
+}) => {
   const { user } = useUser();
   const t = useTranslations();
-  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -39,11 +41,6 @@ export const UpdateProfileModal = () => {
 
   return (
     <DialogTrigger>
-      <Button onPress={() => setIsOpen(true)} unstyled className="">
-        <span className="text-primary-teal hover:underline">
-          {t('Edit Profile')}
-        </span>
-      </Button>
       <Modal
         isOpen={isOpen}
         onOpenChange={setIsOpen}
