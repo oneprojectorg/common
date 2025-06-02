@@ -29,13 +29,13 @@ const RelationshipCount = ({ profile }: { profile: Organization }) => {
 
 export const ProfileSummary = ({ profile }: { profile: Organization }) => {
   return (
-    <div className="flex flex-col gap-0 py-2 sm:gap-2">
+    <div className="flex flex-col gap-2 py-2">
       <Header1>{profile.name}</Header1>
-      <div className="text-base text-neutral-gray4">
-        {profile.city && profile.state
-          ? `${profile.city}, ${profile.state}`
-          : null}
-      </div>
+      {profile.city && profile.state ? (
+        <div className="text-base text-neutral-gray4">
+          {profile.city}, {profile.state}
+        </div>
+      ) : null}
 
       <div className="text-base text-neutral-charcoal">{profile.bio}</div>
 

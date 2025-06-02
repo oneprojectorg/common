@@ -158,12 +158,12 @@ export const ProfileGrid = ({ profile }: { profile: Organization }) => {
 
 export const ProfileTabs = ({ profile }: { profile: Organization }) => {
   return (
-    <Tabs className="pb-8 sm:hidden">
+    <Tabs className="px-0 pb-8 sm:hidden">
       <TabList className="px-4">
         <Tab id="updates">Updates</Tab>
         <Tab id="about">About</Tab>
       </TabList>
-      <TabPanel id="updates" className="px-6">
+      <TabPanel id="updates" className="px-0">
         <Suspense fallback={<Skeleton className="w-full" />}>
           <PostUpdate organization={profile} className="border-b px-4 py-6" />
         </Suspense>

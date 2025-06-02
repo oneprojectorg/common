@@ -34,32 +34,47 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
       {isReceivingFunds
         ? receivingFundingLinks.map((link) => (
             <TooltipTrigger key={link.id}>
-              <ButtonLink
-                color="secondary"
-                href={formatToUrl(link.href)}
-                target="_blank"
-                className="min-w-full sm:min-w-fit"
-              >
-                <LuArrowUpRight className="size-4" />
-                Contribute
-              </ButtonLink>
-              <Tooltip>{link.description ?? 'Click to learn more'}</Tooltip>
+              <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+                <ButtonLink
+                  color="secondary"
+                  href={formatToUrl(link.href)}
+                  target="_blank"
+                  className="min-w-full sm:min-w-fit"
+                >
+                  <LuArrowUpRight className="size-4" />
+                  Contribute
+                </ButtonLink>
+                <Tooltip>{link.description ?? 'Click to learn more'}</Tooltip>
+
+                {link.description ? (
+                  <div className="flex w-full items-center justify-center text-sm text-neutral-charcoal sm:hidden">
+                    {link.description}
+                  </div>
+                ) : null}
+              </div>
             </TooltipTrigger>
           ))
         : null}
       {isOfferingFunds
         ? offeringFundingLinks.map((link) => (
             <TooltipTrigger key={link.id}>
-              <ButtonLink
-                color="secondary"
-                href={formatToUrl(link.href)}
-                target="_blank"
-                className="min-w-full sm:min-w-fit"
-              >
-                <LuInfo />
-                Learn more
-              </ButtonLink>
-              <Tooltip>{link.description ?? 'Click to learn more'}</Tooltip>
+              <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+                <ButtonLink
+                  color="secondary"
+                  href={formatToUrl(link.href)}
+                  target="_blank"
+                  className="min-w-full sm:min-w-fit"
+                >
+                  <LuInfo />
+                  Learn more
+                </ButtonLink>
+                <Tooltip>{link.description ?? 'Click to learn more'}</Tooltip>
+                {link.description ? (
+                  <div className="flex w-full items-center justify-center text-sm text-neutral-charcoal sm:hidden">
+                    {link.description}
+                  </div>
+                ) : null}
+              </div>
             </TooltipTrigger>
           ))
         : null}

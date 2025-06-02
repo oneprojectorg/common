@@ -58,7 +58,7 @@ export const AddRelationshipModalSuspense = ({
                   case 'partnership':
                     return (
                       <DialogTrigger>
-                        <Button color="secondary">
+                        <Button className="w-full sm:w-auto" color="secondary">
                           {relationship.pending ? <LuClock /> : <LuCheck />}
                           Partner
                         </Button>
@@ -85,7 +85,7 @@ export const AddRelationshipModalSuspense = ({
                   case 'funding':
                     return (
                       <DialogTrigger>
-                        <Button color="secondary">
+                        <Button className="w-full sm:w-auto" color="secondary">
                           {relationship.pending ? <LuClock /> : <LuCheck />}
                           Funder
                         </Button>
@@ -111,7 +111,7 @@ export const AddRelationshipModalSuspense = ({
                   default:
                     return (
                       <DialogTrigger>
-                        <Button color="secondary">
+                        <Button color="secondary" className="w-full sm:w-auto">
                           {relationship.pending ? <LuClock /> : <LuCheck />}
                           Member
                         </Button>
@@ -169,7 +169,7 @@ export const AddRelationshipModalSuspense = ({
                 case 'partnership':
                   return (
                     <>
-                      <Button color="secondary">
+                      <Button color="secondary" className="w-full sm:w-auto">
                         {relationship.pending ? <LuClock /> : <LuCheck />}
                         Partner
                       </Button>
@@ -184,7 +184,7 @@ export const AddRelationshipModalSuspense = ({
                 case 'funding':
                   return (
                     <>
-                      <Button color="secondary">
+                      <Button className="w-full sm:w-auto" color="secondary">
                         {relationship.pending ? <LuClock /> : <LuCheck />}
                         Fundee
                       </Button>
@@ -197,7 +197,7 @@ export const AddRelationshipModalSuspense = ({
                 default:
                   return (
                     <>
-                      <Button color="secondary">
+                      <Button className="w-full sm:w-auto" color="secondary">
                         {relationship.pending ? <LuClock /> : <LuCheck />}
                         Member
                       </Button>

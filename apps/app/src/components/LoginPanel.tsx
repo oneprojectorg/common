@@ -175,6 +175,7 @@ export const LoginPanel = () => {
                     );
                   })()}
             </Header1>
+
             <div className="px-4 text-center text-sm leading-[130%] text-neutral-gray4 sm:text-base">
               {user?.error?.name === 'AuthRetryableFetchError'
                 ? `${APP_NAME} can\`t connect to the internet. Please check your internet connection and try again.`
