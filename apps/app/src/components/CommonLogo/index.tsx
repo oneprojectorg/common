@@ -1,6 +1,8 @@
-export const CommonLogo = () => {
+import { cn } from '@op/ui/utils';
+
+export const CommonLogo = ({ className }: { className?: string }) => {
   return (
-    <div className="h-3 w-16">
+    <div className={cn('h-3 w-16', className)}>
       <svg
         viewBox="0 0 65 12"
         width="65"

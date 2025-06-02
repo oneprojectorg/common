@@ -1,7 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { APP_NAME, OPURLConfig, OP_EMAIL_HELP } from '@op/core';
+import { APP_NAME, OPURLConfig } from '@op/core';
 import { useAuthUser, useMount } from '@op/hooks';
 import { createSBBrowserClient } from '@op/supabase/client';
 import { Button, ButtonLink } from '@op/ui/Button';
@@ -17,6 +17,7 @@ import { create } from 'zustand';
 import GoogleIcon from '~icons/logos/google-icon.jsx';
 
 import { CommonLogo } from './CommonLogo';
+import { CheckIcon } from './icons/CheckIcon';
 
 interface LoginState {
   email: string;
@@ -132,11 +133,8 @@ export const LoginPanel = () => {
   return (
     <div className="flex items-center justify-center sm:block">
       <div className="min-w-xs z-[999999] max-h-full w-auto rounded-md border-offWhite bg-white bg-clip-padding px-4 py-8 font-sans text-neutral-700 xs:w-96 sm:border-0">
-        <div className="flex flex-col gap-4 sm:gap-8">
-          <section className="flex flex-col items-center justify-center gap-2">
-            <div className="flex items-center gap-2 pb-2 sm:hidden">
-              <CommonLogo />
-            </div>
+        <div className="flex flex-col gap-12 sm:gap-8">
+          <section className="flex flex-col items-center justify-center gap-2 sm:gap-4">
             <Header1 className="text-center">
               {user?.error?.name === 'AuthRetryableFetchError'
                 ? 'Connection Issue'
@@ -157,13 +155,27 @@ export const LoginPanel = () => {
                         return `Sign up to ${APP_NAME}`;
                       }
 
-                      return 'Welcome to Common.';
+                      return (
+                        <div className="flex flex-col gap-2">
+                          <span className="sm:text-base">Welcome to</span>
+                          <span>
+                            <CommonLogo className="h-8 w-auto" />
+                          </span>
+                        </div>
+                      );
                     }
 
-                    return 'Check your email!';
+                    return (
+                      <div className="flex flex-col items-center justify-center gap-4">
+                        <CheckIcon />
+                        <span className="text-title-base sm:text-title-lg">
+                          Email sent!
+                        </span>
+                      </div>
+                    );
                   })()}
             </Header1>
-            <div className="px-4 text-center text-xs leading-[130%] text-darkGray sm:text-base">
+            <div className="px-4 text-center text-sm leading-[130%] text-neutral-gray4 sm:text-base">
               {user?.error?.name === 'AuthRetryableFetchError'
                 ? `${APP_NAME} can\`t connect to the internet. Please check your internet connection and try again.`
                 : (() => {
@@ -233,8 +245,9 @@ export const LoginPanel = () => {
                         <TextField
                           aria-label="Email"
                           label="Organization email"
+                          isRequired
                           inputProps={{
-                            placeholder: OP_EMAIL_HELP,
+                            placeholder: 'admin@yourorganization.org',
                             spellCheck: false,
                           }}
                           // eslint-disable-next-line jsx-a11y/no-autofocus

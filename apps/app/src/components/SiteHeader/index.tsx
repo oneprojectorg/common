@@ -99,6 +99,7 @@ const UserAvatarMenu = () => {
             </MenuItemSimple>
             {user?.organizationUsers?.map((orgUser) => (
               <MenuItem
+                key={orgUser.organizationId}
                 className="px-4 py-3 text-neutral-charcoal"
                 onAction={() => {
                   if (user.currentOrganization?.id === orgUser.organizationId) {
