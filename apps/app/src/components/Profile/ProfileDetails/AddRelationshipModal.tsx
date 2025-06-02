@@ -49,7 +49,10 @@ export const AddRelationshipModalSuspense = ({
       {relationships.length > 0 ? (
         relationships.map((relationship) => {
           return (
-            <TooltipTrigger isDisabled={!relationship.pending}>
+            <TooltipTrigger
+              key={relationship.id}
+              isDisabled={!relationship.pending}
+            >
               {(() => {
                 switch (relationship.relationshipType) {
                   case 'partnership':
