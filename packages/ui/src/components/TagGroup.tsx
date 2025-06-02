@@ -34,7 +34,7 @@ const ColorContext = createContext<Color>('transparent');
 
 const tagStyles = tv({
   extend: focusRing,
-  base: 'flex max-w-fit cursor-default items-center gap-1 rounded bg-neutral-gray1 p-2 leading-none',
+  base: 'rounder-sm flex max-w-fit cursor-default items-center gap-1 bg-neutral-gray1 p-2 leading-none sm:rounded',
   variants: {
     color: {
       transparent: '',
