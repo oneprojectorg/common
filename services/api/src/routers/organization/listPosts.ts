@@ -16,9 +16,8 @@ import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 import { dbFilter } from '../../utils';
 
-const inputSchema = z.object({
+const inputSchema = dbFilter.extend({
   slug: z.string(),
-  limit: z.number().min(1).max(50).default(10),
   cursor: z.string().nullish(),
 });
 const meta: OpenApiMeta = {
@@ -50,7 +49,7 @@ export const listOrganizationPostsRouter = router({
     )
     .query(async ({ ctx, input }) => {
       const { db } = ctx.database;
-      const { slug, limit, cursor } = input;
+      const { slug, limit = 20, cursor } = input;
 
       const org = await db.query.organizations.findFirst({
         where: (table, { eq }) => eq(table.slug, slug),
@@ -78,8 +77,11 @@ export const listOrganizationPostsRouter = router({
         : undefined;
 
       const result = await db.query.postsToOrganizations.findMany({
-        where: cursorCondition 
-          ? and(eq(postsToOrganizations.organizationId, org.id), cursorCondition)
+        where: cursorCondition
+          ? and(
+              eq(postsToOrganizations.organizationId, org.id),
+              cursorCondition,
+            )
           : (table, { eq }) => eq(table.organizationId, org.id),
         with: {
           post: {

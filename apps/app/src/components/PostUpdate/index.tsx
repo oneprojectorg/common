@@ -4,7 +4,8 @@ import { useFileUpload } from '@/hooks/useFileUpload';
 import { useUser } from '@/utils/UserProvider';
 import { detectLinks } from '@/utils/linkDetection';
 import { trpc } from '@op/api/client';
-import type { Organization, PostToOrganization } from '@op/api/encoders';
+import type { RouterOutput } from '@op/api/client';
+import type { Organization } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { TextArea } from '@op/ui/Field';
 import { FileUploader } from '@op/ui/FileUploader';
@@ -21,6 +22,8 @@ import { LinkPreview } from '@/components/LinkPreview';
 import { FeedItem, FeedMain } from '@/components/PostFeed';
 
 import { OrganizationAvatar } from '../OrganizationAvatar';
+
+type PaginatedPostToOrganizations = RouterOutput['organization']['listPosts'];
 
 const PostUpdateWithUser = ({
   organization,
@@ -54,17 +57,28 @@ const PostUpdateWithUser = ({
       // Optimistically update the cache with the new post
       utils.organization.listPosts.setData(
         { slug: organization.slug },
-        // @ts-expect-error - temporary
-        (old) =>
-          old
-            ? [
-                {
-                  ...{ organization: organization, post: newPost },
-                  createdAt: new Date(),
-                },
-                ...old,
-              ]
-            : [{ ...newPost, createdAt: new Date() }],
+        (old) => ({
+          ...(old ? old : { hasMore: false }),
+          items: [
+            {
+              postId: newPost.id,
+              organizationId: organization.id,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              deletedAt: null,
+              post: {
+                id: crypto.randomUUID(),
+                content: newPost.content,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                deletedAt: null,
+                attachments: [],
+              },
+              organization,
+            },
+            ...(old ? old.items : []),
+          ],
+        }),
       );
 
       return { previousPosts };
@@ -72,12 +86,12 @@ const PostUpdateWithUser = ({
     onError: (
       _,
       __,
-      context: { previousPosts?: Array<PostToOrganization> } | undefined,
+      context: { previousPosts?: PaginatedPostToOrganizations } | undefined,
     ) => {
       // Roll back to the previous posts on error
       utils.organization.listPosts.setData(
         { slug: organization.slug },
-        context?.previousPosts || [],
+        context?.previousPosts || { items: [], hasMore: false },
       );
     },
     onSettled: () => {
