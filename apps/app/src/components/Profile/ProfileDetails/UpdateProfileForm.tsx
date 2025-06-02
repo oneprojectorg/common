@@ -149,7 +149,7 @@ export const UpdateProfileForm = ({
             <field.TextField
               isRequired
               label={t('Professional title')}
-              value={field.state.value || ''}
+              value={field.state.value}
               onBlur={field.handleBlur}
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}

@@ -43,7 +43,6 @@ export const UpdateProfileModal = () => {
         <span className="text-primary-teal hover:underline">
           {t('Edit Profile')}
         </span>
-        )
       </Button>
       <Modal
         isOpen={isOpen}

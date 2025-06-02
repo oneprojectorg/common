@@ -77,8 +77,9 @@ const UserAvatarMenu = () => {
             <div className="flex flex-col">
               <span className="text-sm">
                 Logged in as {user?.name} (
-                <UpdateProfileModal />
+                <UpdateProfileModal />)
               </span>
+
               <span className="text-xs text-neutral-gray4">
                 Admin for {user?.currentOrganization?.name}
               </span>
