@@ -116,7 +116,10 @@ export const OrganizationSummaryList = ({
       {organizations?.map((org) => {
         return (
           <div key={org.id}>
-            <Link className="flex items-start gap-6" href={`/org/${org.slug}`}>
+            <Link
+              className="flex items-start gap-6 py-2"
+              href={`/org/${org.slug}`}
+            >
               <OrganizationAvatar
                 organization={org}
                 className="size-6 sm:size-12"
@@ -126,7 +129,9 @@ export const OrganizationSummaryList = ({
                 <span className="font-semibold leading-base">{org.name}</span>
                 {org.city ? (
                   <span className="text-neutral-gray4">{org.city}</span>
-                ) : null}
+                ) : (
+                  <span className="text-neutral-gray4">International</span>
+                )}
                 <span className="text-neutral-charcoal">{org.bio}</span>
               </div>
             </Link>
