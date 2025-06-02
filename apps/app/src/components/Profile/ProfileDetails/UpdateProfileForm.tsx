@@ -1,3 +1,4 @@
+import { getPublicUrl } from '@/utils';
 import { OrganizationUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { AvatarUploader } from '@op/ui/AvatarUploader';
@@ -49,20 +50,23 @@ export const UpdateProfileForm = ({
   className,
 }: UpdateProfileFormProps): ReactNode => {
   const t = useTranslations();
+  const utils = trpc.useUtils();
   const uploadImage = trpc.account.uploadImage.useMutation();
   const updateProfile = trpc.account.updateUserProfile.useMutation();
 
   // Initialize with current profile data
   const [profileImageUrl, setProfileImageUrl] = useState<string | undefined>(
-    profile.avatarImage?.url || undefined,
+    getPublicUrl(profile.avatarImage?.name) || undefined,
   );
 
+  const defaultValues = {
+    fullName: profile?.name ?? '',
+    title: profile?.title ?? '',
+    profileImageUrl: getPublicUrl(profile.avatarImage?.name) ?? '',
+  };
+
   const form = useAppForm({
-    defaultValues: {
-      fullName: profile.name || '',
-      title: profile.title || '',
-      profileImageUrl: profile.avatarImage?.url || undefined,
-    },
+    defaultValues,
     validators: {
       onSubmit: validator,
     },
@@ -102,11 +106,18 @@ export const UpdateProfileForm = ({
 
                 setProfileImageUrl(dataUrl);
 
-                const res = await uploadImage.mutateAsync({
-                  file: base64,
-                  fileName: file.name,
-                  mimeType: file.type,
-                });
+                const res = await uploadImage.mutateAsync(
+                  {
+                    file: base64,
+                    fileName: file.name,
+                    mimeType: file.type,
+                  },
+                  {
+                    onSuccess: () => {
+                      utils.account.getMyAccount.invalidate();
+                    },
+                  },
+                );
 
                 if (res?.url) {
                   setProfileImageUrl(res.url);
@@ -125,7 +136,7 @@ export const UpdateProfileForm = ({
             <field.TextField
               isRequired
               label={t('Full Name')}
-              value={field.state.value}
+              value={field.state.value || ''}
               onBlur={field.handleBlur}
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
@@ -141,7 +152,7 @@ export const UpdateProfileForm = ({
             <field.TextField
               isRequired
               label={t('Professional title')}
-              value={field.state.value}
+              value={field.state.value || ''}
               onBlur={field.handleBlur}
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
