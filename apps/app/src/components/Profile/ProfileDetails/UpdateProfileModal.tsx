@@ -40,7 +40,10 @@ export const UpdateProfileModal = () => {
   return (
     <DialogTrigger>
       <Button onPress={() => setIsOpen(true)} unstyled className="">
-        <span className="text-primary-teal">{t('Edit Profile')}</span>)
+        <span className="text-primary-teal hover:underline">
+          {t('Edit Profile')}
+        </span>
+        )
       </Button>
       <Modal
         isOpen={isOpen}

@@ -62,7 +62,7 @@ const UserAvatarMenu = () => {
         <Menu className="flex min-w-72 flex-col p-4 pb-6">
           <MenuItemSimple
             isDisabled
-            className="mb-4 flex items-center gap-2 px-0 text-neutral-charcoal hover:bg-transparent"
+            className="flex cursor-default items-center gap-2 p-0 px-0 pb-4 text-neutral-charcoal hover:bg-transparent"
           >
             <Avatar className="size-6" placeholder={user?.name ?? ''}>
               {user?.avatarImage?.name ? (
@@ -136,7 +136,8 @@ const UserAvatarMenu = () => {
           >
             <div>
               <PrivacyPolicyModal />
-              • <ToSModal />
+              {' • '}
+              <ToSModal />
             </div>
             <div className="text-xs">
               Ethical Open Source • One Project • {new Date().getFullYear()}

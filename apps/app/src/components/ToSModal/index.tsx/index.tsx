@@ -15,7 +15,7 @@ export const ToSModal = () => {
       <Button
         unstyled
         onPress={() => setIsToSOpen(true)}
-        className="text-primary-teal"
+        className="text-primary-teal hover:underline"
       >
         {t('Terms of Service')}
       </Button>

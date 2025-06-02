@@ -102,7 +102,7 @@ export const inputStyles = tv({
       small: 'px-4 py-2',
     },
     hasIcon: {
-      true: 'w-full pl-10',
+      true: 'w-full pl-8',
       false: 'outline-functional-red',
     },
   },
@@ -151,7 +151,7 @@ export const InputWithIcon = ({
           hasIcon: true,
         } as InputVariantsProps)}
       />
-      <span className="absolute left-4 top-1/2 -translate-y-1/2">
+      <span className="absolute left-3 top-1/2 -translate-y-1/2">
         {props.icon}
       </span>
     </span>

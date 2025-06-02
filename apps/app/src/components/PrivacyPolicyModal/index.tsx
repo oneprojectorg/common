@@ -15,7 +15,7 @@ export const PrivacyPolicyModal = () => {
       <Button
         unstyled
         onPress={() => setIsOpen(true)}
-        className="text-primary-teal"
+        className="text-primary-teal hover:underline"
       >
         {t('Privacy Policy')}
       </Button>
