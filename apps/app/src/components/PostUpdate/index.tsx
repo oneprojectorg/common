@@ -156,7 +156,7 @@ const PostUpdateWithUser = ({
           className="size-8 rounded-full border bg-white"
         />
         <FeedMain className="relative">
-          <Form onSubmit={handleSubmit} className="flex w-full flex-row gap-4">
+          <Form onSubmit={handleSubmit} className="flex w-full flex-col gap-4">
             <TextArea
               className="size-full h-10 min-h-10 overflow-y-hidden"
               variant="borderless"
@@ -166,11 +166,6 @@ const PostUpdateWithUser = ({
               onChange={(e) => handleContentChange(e.target.value ?? '')}
               onKeyDown={handleKeyDown}
             />
-            {(content.length > 0 || fileUpload.hasUploadedFiles()) && (
-              <Button color="secondary" type="submit">
-                {t('Post')}
-              </Button>
-            )}
           </Form>
           {detectedUrls.length > 0 && (
             <div>
@@ -180,7 +175,7 @@ const PostUpdateWithUser = ({
             </div>
           )}
 
-          <div className="flex w-full gap-6">
+          <div className="flex w-full items-center justify-between gap-6">
             <FileUploader
               key={fileUploaderKey}
               onUpload={fileUpload.uploadFile}
@@ -198,6 +193,15 @@ const PostUpdateWithUser = ({
               <LuImage className="size-4" />
               {t('Media')}
             </FileUploader>
+            <Button
+              size="small"
+              isDisabled={
+                !(content.length > 0 || fileUpload.hasUploadedFiles())
+              }
+              onPress={createNewPostUpdate}
+            >
+              {t('Post')}
+            </Button>
           </div>
         </FeedMain>
       </FeedItem>
