@@ -21,6 +21,7 @@ import { Link, useTranslations } from '@/lib/i18n';
 import { CommonLogo } from '../CommonLogo';
 import ErrorBoundary from '../ErrorBoundary';
 import { PrivacyPolicyModal } from '../PrivacyPolicyModal';
+import { UpdateProfileModal } from '../Profile/ProfileDetails/UpdateProfileModal';
 import { SearchInput } from '../SearchInput';
 import { ToSModal } from '../ToSModal/index.tsx';
 
@@ -59,7 +60,10 @@ const UserAvatarMenu = () => {
 
       <Popover className="min-w-[150px]">
         <Menu className="flex min-w-72 flex-col p-4 pb-6">
-          <MenuItem className="mb-4 flex items-center gap-2 px-0 text-neutral-charcoal hover:bg-transparent">
+          <MenuItemSimple
+            isDisabled
+            className="mb-4 flex items-center gap-2 px-0 text-neutral-charcoal hover:bg-transparent"
+          >
             <Avatar className="size-6" placeholder={user?.name ?? ''}>
               {user?.avatarImage?.name ? (
                 <Image
@@ -73,13 +77,13 @@ const UserAvatarMenu = () => {
             <div className="flex flex-col">
               <span className="text-sm">
                 Logged in as {user?.name} (
-                <span className="text-primary-teal">Edit profile</span>)
+                <UpdateProfileModal />
               </span>
               <span className="text-xs text-neutral-gray4">
                 Admin for {user?.currentOrganization?.name}
               </span>
             </div>
-          </MenuItem>
+          </MenuItemSimple>
           {user?.organizationUsers?.map((orgUser) => (
             <MenuItem
               className="px-4 py-3 text-neutral-charcoal"

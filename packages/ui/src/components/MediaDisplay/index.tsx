@@ -70,13 +70,11 @@ export const MediaDisplay = ({
 
   if (mimeType?.match(/application\/pdf/)) {
     detailComponents.push(
-      <>
-        <hr key="format-hr" className="my-2 bg-neutral-gray1 text-sm" />
-        <div key="format" className="flex gap-1 text-sm text-neutral-gray4">
-          <LuFileText className="size-4 text-neutral-gray4" />
-          <span>3.2MB • PDF</span>
-        </div>
-      </>,
+      <hr key="format-hr" className="my-2 bg-neutral-gray1 text-sm" />,
+      <div key="format" className="flex gap-1 text-sm text-neutral-gray4">
+        <LuFileText className="size-4 text-neutral-gray4" />
+        <span>3.2MB • PDF</span>
+      </div>,
     );
   }
 

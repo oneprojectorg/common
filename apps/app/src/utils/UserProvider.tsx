@@ -9,10 +9,10 @@ import React, { createContext, useContext } from 'react';
 // You can refine this type by importing the correct type from your trpc/encoders if available
 // import type { User } from '@op/api/encoders';
 
-type User = RouterOutput['account']['getMyAccount'];
+export type OrganizationUser = RouterOutput['account']['getMyAccount'];
 
 interface UserContextValue {
-  user: User | undefined;
+  user: OrganizationUser | undefined;
 }
 
 const UserContext = createContext<UserContextValue | undefined>(undefined);
@@ -25,6 +25,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     router.push('/start');
   }
 
+  // TODO: During TESTING we are identifying users by email.
   if (user) {
     posthog.identify(user.id, { email: user.email, name: user.name });
   }
