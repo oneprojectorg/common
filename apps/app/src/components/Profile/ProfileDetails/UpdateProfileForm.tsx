@@ -33,7 +33,6 @@ export const validator = z.object({
     .max(200, {
       message: 'Must be at most 200 characters',
     }),
-  profileImageUrl: z.string().optional(),
 });
 
 type FormFields = z.infer<typeof validator>;
@@ -59,14 +58,11 @@ export const UpdateProfileForm = ({
     getPublicUrl(profile.avatarImage?.name) || undefined,
   );
 
-  const defaultValues = {
-    fullName: profile?.name ?? '',
-    title: profile?.title ?? '',
-    profileImageUrl: getPublicUrl(profile.avatarImage?.name) ?? '',
-  };
-
   const form = useAppForm({
-    defaultValues,
+    defaultValues: {
+      fullName: profile.name ?? '',
+      title: profile.title ?? '',
+    },
     validators: {
       onSubmit: validator,
     },
@@ -75,6 +71,7 @@ export const UpdateProfileForm = ({
         name: value.fullName,
         title: value.title,
       });
+      utils.account.getMyAccount.invalidate();
       onSuccess();
     },
   });
@@ -136,7 +133,7 @@ export const UpdateProfileForm = ({
             <field.TextField
               isRequired
               label={t('Full Name')}
-              value={field.state.value || ''}
+              value={field.state.value}
               onBlur={field.handleBlur}
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}

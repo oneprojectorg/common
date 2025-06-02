@@ -11,7 +11,6 @@ import { LuArrowUpRight, LuInfo } from 'react-icons/lu';
 import { ProfileSummary } from '../ProfileSummary';
 import { AddRelationshipModal } from './AddRelationshipModal';
 import { UpdateOrganizationModal } from './UpdateOrganizationModal';
-import { UpdateProfileModal } from './UpdateProfileModal';
 
 const ProfileInteractions = ({ profile }: { profile: Organization }) => {
   const { user } = useUser();
@@ -88,5 +87,3 @@ export const ProfileDetailsSkeleton = () => {
     </div>
   );
 };
-
-export { UpdateProfileModal };

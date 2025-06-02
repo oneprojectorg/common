@@ -116,7 +116,7 @@ const ProfileAbout = ({ profile }: { profile: Organization }) => {
           <Header3>Focus Areas</Header3>
           <TagGroup>
             {focusAreas.map((term) => (
-              <Tag>{term.label}</Tag>
+              <Tag key={term.label}>{term.label}</Tag>
             ))}
           </TagGroup>
         </section>
@@ -126,7 +126,7 @@ const ProfileAbout = ({ profile }: { profile: Organization }) => {
           <Header3>Communities We Serve</Header3>
           <TagGroup>
             {communitiesServed.map((term) => (
-              <Tag>{term.label}</Tag>
+              <Tag key={term.label}>{term.label}</Tag>
             ))}
           </TagGroup>
         </section>

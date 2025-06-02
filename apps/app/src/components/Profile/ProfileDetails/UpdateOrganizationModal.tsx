@@ -61,7 +61,7 @@ export const UpdateOrganizationModal = ({
         isOpen={isOpen}
         onOpenChange={setIsOpen}
         isDismissable
-        className="max-h-[39rem] w-[36rem] max-w-[36rem] overflow-y-auto"
+        className="max-h-[75vh] w-[36rem] max-w-[36rem] overflow-y-auto"
       >
         <ModalHeader className="flex items-center justify-between">
           {t('Edit Profile')}
