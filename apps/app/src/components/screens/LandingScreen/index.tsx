@@ -32,7 +32,9 @@ const LandingScreenFeeds = ({
   const NewOrganizationsList = () => {
     return (
       <Surface className="flex flex-col gap-6 border-0 sm:border sm:p-6">
-        <Header3 className="text-title-sm">New Organizations</Header3>
+        <Header3 className="font-serif text-title-sm">
+          New Organizations
+        </Header3>
         <NewOrganizations />
       </Surface>
     );
