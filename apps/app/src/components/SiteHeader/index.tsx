@@ -8,7 +8,7 @@ import { useAuthLogout } from '@op/hooks';
 import { Avatar } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
 import { Menu, MenuItem, MenuItemSimple, MenuSeparator } from '@op/ui/Menu';
-import { Modal, ModalBody, ModalHeader } from '@op/ui/Modal';
+import { Modal, ModalBody } from '@op/ui/Modal';
 import { Popover } from '@op/ui/Popover';
 import { MenuTrigger } from '@op/ui/RAC';
 import { Skeleton } from '@op/ui/Skeleton';
@@ -42,7 +42,13 @@ const useMediaQuery = (query: string) => {
   return matches;
 };
 
-const AvatarMenuContent = ({ onClose }: { onClose?: () => void }) => {
+const AvatarMenuContent = ({
+  onClose,
+  setIsProfileOpen = () => {},
+}: {
+  onClose?: () => void;
+  setIsProfileOpen?: (isOpen: boolean) => void;
+}) => {
   const { user } = useUser();
   const logout = useAuthLogout();
   const router = useRouter();
@@ -54,8 +60,6 @@ const AvatarMenuContent = ({ onClose }: { onClose?: () => void }) => {
       utils.invalidate();
     },
   });
-
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   return (
     <>
@@ -154,7 +158,6 @@ const AvatarMenuContent = ({ onClose }: { onClose?: () => void }) => {
           Ethical Open Source • One Project • {new Date().getFullYear()}
         </div>
       </MenuItemSimple>
-      <UpdateProfileModal isOpen={isProfileOpen} setIsOpen={setIsProfileOpen} />
     </>
   );
 };
@@ -163,6 +166,7 @@ const UserAvatarMenu = () => {
   const { user } = useUser();
   const isMobile = useMediaQuery('(max-width: 640px)');
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   const avatarButton = (
     <Button
@@ -200,23 +204,36 @@ const UserAvatarMenu = () => {
         >
           <ModalBody className="pb-safe p-0">
             <Menu className="flex min-w-full flex-col p-4 pb-8">
-              <AvatarMenuContent onClose={() => setIsDrawerOpen(false)} />
+              <AvatarMenuContent
+                setIsProfileOpen={setIsProfileOpen}
+                onClose={() => setIsDrawerOpen(false)}
+              />
             </Menu>
           </ModalBody>
         </Modal>
+        <UpdateProfileModal
+          isOpen={isProfileOpen}
+          setIsOpen={setIsProfileOpen}
+        />
       </>
     );
   }
 
   return (
-    <MenuTrigger>
-      {avatarButton}
-      <Popover className="min-w-[150px]">
-        <Menu className="flex min-w-72 flex-col p-4 pb-6">
-          <AvatarMenuContent />
-        </Menu>
-      </Popover>
-    </MenuTrigger>
+    <>
+      <MenuTrigger>
+        {avatarButton}
+        <Popover className="min-w-[150px]">
+          <Menu className="flex min-w-72 flex-col p-4 pb-6">
+            <AvatarMenuContent
+              setIsProfileOpen={setIsProfileOpen}
+              onClose={() => setIsProfileOpen(false)}
+            />
+          </Menu>
+        </Popover>
+      </MenuTrigger>
+      <UpdateProfileModal isOpen={isProfileOpen} setIsOpen={setIsProfileOpen} />
+    </>
   );
 };
 
