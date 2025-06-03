@@ -316,6 +316,9 @@ const config: Omit<Config, 'content'> = {
       gridTemplateColumns: {
         '15': 'repeat(15, minmax(0, 1fr))',
       },
+      backdropBlur: {
+        sm: '1px',
+      },
     },
   },
   plugins: [
