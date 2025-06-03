@@ -7,7 +7,7 @@ import { Link } from '@/lib/i18n';
 import { OrganizationList } from '../OrganizationList';
 
 export const NewOrganizationsSuspense = async ({
-  limit = 10,
+  limit = 5,
 }: {
   limit?: number;
 }) => {
