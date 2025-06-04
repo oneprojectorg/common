@@ -143,20 +143,55 @@ const nameHandlers: Record<
   // candid: getTermsFromCandid,
 };
 
+type TaxonomyTerms = InferSelectModel<typeof taxonomyTerms>;
+export type TermWithChildren = TaxonomyTerms & {
+  children: TermWithChildren[];
+};
+
+// Build a tree of terms with parents and children[]
+const buildTermTree = (terms: TaxonomyTerms[]): TermWithChildren[] => {
+  const termMap = new Map<string, TermWithChildren>();
+  const rootTerms: TermWithChildren[] = [];
+
+  // create map of all terms with empty children arrays
+  terms.forEach((term) => {
+    termMap.set(term.id, { ...term, children: [] });
+  });
+
+  // build the tree structure
+  terms.forEach((term) => {
+    const termWithChildren = termMap.get(term.id)!;
+
+    if (term.parentId) {
+      const parent = termMap.get(term.parentId);
+      if (parent) {
+        parent.children.push(termWithChildren);
+      } else {
+        // Parent not found in current result set, treat as root
+        rootTerms.push(termWithChildren);
+      }
+    } else {
+      // No parent, this is a root term
+      rootTerms.push(termWithChildren);
+    }
+  });
+
+  return rootTerms;
+};
+
 export const getTerms = async ({
   name,
   query,
 }: {
   name: string;
   query?: string;
-}): Promise<Array<InferSelectModel<typeof taxonomyTerms>>> => {
+}): Promise<TermWithChildren[]> => {
   const [taxonomyName] = name.split(':');
   const handler = nameHandlers[taxonomyName ?? name] ?? getTermsFromDb;
 
   try {
     const terms = await handler({ query, name });
-
-    return terms;
+    return buildTermTree(terms);
   } catch (e) {
     return [];
   }

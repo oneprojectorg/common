@@ -18,3 +18,8 @@ export const taxonomyTermsEncoder = createSelectSchema(taxonomyTerms)
     label: z.string(),
     data: z.object({}).nullish(),
   });
+
+export const taxonomyTermsWithChildrenEncoder: z.ZodType<any> =
+  taxonomyTermsEncoder.extend({
+    children: z.lazy(() => z.array(taxonomyTermsWithChildrenEncoder)),
+  });
