@@ -141,7 +141,7 @@ const PostUpdateWithUser = ({
     if (textareaRef.current) {
       textareaRef.current.addEventListener('input', () => {
         if (textareaRef.current) {
-          textareaRef.current.style.height = '2.5rem'; // Reset to min height
+          textareaRef.current.style.height = '1.5rem'; // Reset to min height
           textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`; // Set to scrollHeight
         }
       });
@@ -158,7 +158,7 @@ const PostUpdateWithUser = ({
         <FeedMain className="relative">
           <Form onSubmit={handleSubmit} className="flex w-full flex-col gap-4">
             <TextArea
-              className="size-full h-10 min-h-10 overflow-y-hidden"
+              className="size-full h-6 overflow-y-hidden"
               variant="borderless"
               ref={textareaRef as RefObject<HTMLTextAreaElement>}
               placeholder={`Post an update…`}
@@ -174,8 +174,12 @@ const PostUpdateWithUser = ({
               ))}
             </div>
           )}
-          <hr className="h-0 w-full border-neutral-gray1" />
-          <div className="flex w-full items-center justify-between gap-6">
+          <div
+            className={cn(
+              'flex w-full items-center justify-between gap-6',
+              content && 'border-t border-neutral-gray1 py-2',
+            )}
+          >
             <FileUploader
               key={fileUploaderKey}
               onUpload={fileUpload.uploadFile}
