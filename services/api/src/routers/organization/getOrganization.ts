@@ -47,7 +47,11 @@ export const getOrganizationRouter = router({
       const { user } = ctx;
 
       try {
-        const result = await getOrganization({ slug, user });
+        const result = await cache({
+          type: 'organization',
+          params: [slug],
+          fetch: () => getOrganization({ slug, user }),
+        });
 
         if (!result) {
           throw new TRPCError({

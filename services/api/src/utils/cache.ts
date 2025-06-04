@@ -86,16 +86,16 @@ export const cache = async <T = any>({
 
 export const invalidate = async ({
   type,
-  siteKey,
+  appKey,
   params,
   data,
 }: {
   type: keyof typeof TypeMap;
-  siteKey: string;
+  appKey?: string;
   params: any[];
   data?: any;
 }) => {
-  const cacheKey = getCacheKey(type, siteKey, params);
+  const cacheKey = getCacheKey(type, appKey, params);
 
   if (data) {
     memCache.set(cacheKey, { createdAt: Date.now(), data });
@@ -106,7 +106,6 @@ export const invalidate = async ({
   }
 };
 
-// REDIS
 const get = async (key: string) => {
   try {
     const data = await redis.get(key);
@@ -120,7 +119,8 @@ const get = async (key: string) => {
   }
 };
 
-const DEFAULT_TTL = 3600 * 24 * 30;
+// const DEFAULT_TTL = 3600 * 24 * 30; // 3600 * 24 = 1 day
+const DEFAULT_TTL = 3600; // short TTL for testing
 const set = async (key: string, data: any, ttl?: number) => {
   try {
     const serializedData = JSON.stringify(data);
