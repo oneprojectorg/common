@@ -21,6 +21,7 @@ const flattenTermTree = (
     const flatTerm: FlattenedTerm = {
       id: term.id,
       label: term.label,
+      definition: term.definition,
       level,
       hasChildren: term.children.length > 0,
     };
@@ -44,6 +45,7 @@ type TreeMultiSelectComboBoxProps = {
   onChange?: (value: Array<Option>) => void;
   onInputUpdate?: (value: string) => void;
   errorMessage?: string | ((validation: ValidationResult) => string);
+  showDefinitions?: boolean;
 };
 
 const TreeMultiSelectComboBox = ({
@@ -55,6 +57,7 @@ const TreeMultiSelectComboBox = ({
   onChange,
   onInputUpdate,
   errorMessage,
+  showDefinitions = false,
 }: TreeMultiSelectComboBoxProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
@@ -129,7 +132,10 @@ const TreeMultiSelectComboBox = ({
   useEffect(() => {
     if (!isOpen || filteredItems.length === 0) {
       setHighlightedIndex(-1);
-    } else if (highlightedIndex >= filteredItems.length || (highlightedIndex >= 0 && filteredItems[highlightedIndex]?.hasChildren)) {
+    } else if (
+      highlightedIndex >= filteredItems.length ||
+      (highlightedIndex >= 0 && filteredItems[highlightedIndex]?.hasChildren)
+    ) {
       setHighlightedIndex(findFirstSelectableIndex());
     }
   }, [filteredItems, isOpen, highlightedIndex]);
@@ -137,7 +143,9 @@ const TreeMultiSelectComboBox = ({
   // Scroll highlighted item into view
   useEffect(() => {
     if (highlightedIndex >= 0 && listRef.current) {
-      const highlightedElement = listRef.current.children[highlightedIndex] as HTMLElement;
+      const highlightedElement = listRef.current.children[
+        highlightedIndex
+      ] as HTMLElement;
       if (highlightedElement) {
         highlightedElement.scrollIntoView({
           behavior: 'smooth',
@@ -323,7 +331,7 @@ const TreeMultiSelectComboBox = ({
               {filteredItems.map((option, idx) => (
                 <li
                   key={option.id}
-                  className={`flex items-center px-3 py-2 text-base ${
+                  className={`flex flex-col px-3 py-2 text-base ${
                     option.hasChildren
                       ? 'h-6 cursor-default py-0 pt-2 text-sm text-neutral-gray4' // parent
                       : `cursor-pointer hover:bg-neutral-gray1 ${
@@ -350,6 +358,11 @@ const TreeMultiSelectComboBox = ({
                   >
                     {option.label}
                   </span>
+                  {showDefinitions && option.definition ? (
+                    <span className="overflow-hidden text-ellipsis text-nowrap text-sm text-neutral-charcoal">
+                      {option.definition}
+                    </span>
+                  ) : null}
                 </li>
               ))}
             </ul>

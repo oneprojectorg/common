@@ -9,6 +9,7 @@ import { FieldError, Label } from './Field';
 export interface Option {
   id: string;
   label: string;
+  definition?: string | null;
   isNewValue?: boolean;
 }
 
