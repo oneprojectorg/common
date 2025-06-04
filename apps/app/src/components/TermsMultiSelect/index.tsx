@@ -255,7 +255,7 @@ const TreeMultiSelectComboBox = ({
                   key={option.id}
                   className={`flex items-center px-3 py-2 text-base ${
                     option.hasChildren
-                      ? 'h-6 cursor-default py-0 text-sm text-neutral-gray4' // parent
+                      ? 'h-6 cursor-default py-0 pt-2 text-sm text-neutral-gray4' // parent
                       : `cursor-pointer hover:bg-neutral-gray1 ${
                           selectedOptions.some((item) => item.id === option.id)
                             ? 'bg-neutral-gray1'
