@@ -174,7 +174,7 @@ const PostUpdateWithUser = ({
               ))}
             </div>
           )}
-
+          <hr className="h-0 w-full border-neutral-gray1" />
           <div className="flex w-full items-center justify-between gap-6">
             <FileUploader
               key={fileUploaderKey}
