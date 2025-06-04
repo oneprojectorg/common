@@ -191,6 +191,7 @@ export const getTerms = async ({
 
   try {
     const terms = await handler({ query, name });
+
     return buildTermTree(terms);
   } catch (e) {
     return [];
