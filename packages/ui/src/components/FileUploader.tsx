@@ -1,3 +1,4 @@
+// This is potentially unused now
 import Image from 'next/image';
 import { useCallback, useRef, useState } from 'react';
 import { useButton } from 'react-aria';

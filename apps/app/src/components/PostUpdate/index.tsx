@@ -8,7 +8,6 @@ import type { RouterOutput } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { TextArea } from '@op/ui/Field';
-import { FileUploader } from '@op/ui/FileUploader';
 import { Form } from '@op/ui/Form';
 import { Skeleton } from '@op/ui/Skeleton';
 import { cn } from '@op/ui/utils';
@@ -35,7 +34,6 @@ const PostUpdateWithUser = ({
 }) => {
   const [content, setContent] = useState('');
   const [detectedUrls, setDetectedUrls] = useState<string[]>([]);
-  const [fileUploaderKey, setFileUploaderKey] = useState(0);
   const t = useTranslations();
   const utils = trpc.useUtils();
   const router = useRouter();
@@ -119,7 +117,6 @@ const PostUpdateWithUser = ({
       setContent('');
       setDetectedUrls([]);
       fileUpload.clearFiles();
-      setFileUploaderKey((prev) => prev + 1);
     }
   };
 
