@@ -1,5 +1,5 @@
-import { db, getTableColumns, sql } from '@op/db/client';
-import { organizations } from '@op/db/schema';
+import { aliasedTable, db, eq, getTableColumns, sql } from '@op/db/client';
+import { objectsInStorage, organizations } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
 export const searchOrganizations = async ({
@@ -37,16 +37,26 @@ export const searchOrganizations = async ({
       .from(sql`(SELECT 1) as dummy`),
   );
 
+  const avatarObjectsInStorage = aliasedTable(
+    objectsInStorage,
+    'avatarObjectsInStorage',
+  );
+
   const results = await db
     .with(searchQueries)
     .select({
       ...getTableColumns(organizations),
+      avatarImage: avatarObjectsInStorage,
       rank: sql`ts_rank(${organizations.search}, ${searchQueries.englishQuery}) + ts_rank(${organizations.search}, ${searchQueries.simpleQuery})`.as(
         'rank',
       ),
     })
     .from(organizations)
     .crossJoin(searchQueries)
+    .leftJoin(
+      avatarObjectsInStorage,
+      eq(avatarObjectsInStorage.id, organizations.avatarImageId),
+    )
     .where(
       sql`${organizations.search} @@ ${searchQueries.englishQuery} OR ${organizations.search} @@ ${searchQueries.simpleQuery}`,
     )
