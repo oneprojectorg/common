@@ -10,11 +10,12 @@ import { Button } from '@op/ui/Button';
 import { TextArea } from '@op/ui/Field';
 import { FileUploader } from '@op/ui/FileUploader';
 import { Form } from '@op/ui/Form';
+import { Skeleton } from '@op/ui/Skeleton';
 import { cn } from '@op/ui/utils';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
-import { LuImage } from 'react-icons/lu';
+import { LuImage, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -167,6 +168,51 @@ const PostUpdateWithUser = ({
               onKeyDown={handleKeyDown}
             />
           </Form>
+          {fileUpload.filePreviews?.length > 0 && (
+            <div className="w-full">
+              {fileUpload.filePreviews.map((filePreview) => (
+                <div key={filePreview.id} className="relative">
+                  {filePreview.uploading ? (
+                    <Skeleton className="relative flex aspect-video w-full items-center justify-center rounded text-white" />
+                  ) : filePreview.file.type.startsWith('image/') ? (
+                    <div className="relative flex aspect-video w-full items-center justify-center rounded bg-neutral-gray1 text-white">
+                      {filePreview.error ? (
+                        <p className="text-sm">{filePreview.error}</p>
+                      ) : (
+                        <img
+                          src={filePreview.url}
+                          alt={filePreview.file.name}
+                          className="size-full rounded object-cover"
+                        />
+                      )}
+                      <Button
+                        onPress={() => fileUpload.removeFile(filePreview.id)}
+                        className="absolute right-2 top-2"
+                        size="small"
+                        color="neutral"
+                      >
+                        <LuX className="size-3" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="relative flex aspect-video w-full items-center justify-center rounded bg-neutral-gray1 text-white">
+                      <div className="font-serif text-lg">
+                        {filePreview.file.name}
+                      </div>
+                      <Button
+                        onPress={() => fileUpload.removeFile(filePreview.id)}
+                        className="absolute right-2 top-2"
+                        size="small"
+                        color="neutral"
+                      >
+                        <LuX className="size-3" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
           {detectedUrls.length > 0 && (
             <div>
               {detectedUrls.map((url, index) => (
@@ -177,26 +223,34 @@ const PostUpdateWithUser = ({
           <div
             className={cn(
               'flex w-full items-center justify-between gap-6',
-              content && 'border-t border-neutral-gray1 py-2',
+              (content || fileUpload.filePreviews?.length) &&
+                'border-t border-neutral-gray1 py-2',
             )}
           >
-            <FileUploader
-              key={fileUploaderKey}
-              onUpload={fileUpload.uploadFile}
-              onRemove={fileUpload.removeFile}
-              acceptedTypes={[
-                'image/png',
-                'image/jpeg',
-                'image/webp',
-                'application/pdf',
-              ]}
-              maxFiles={1}
-              enableDragAndDrop={true}
-              className="flex-1"
+            <button
+              onClick={() => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = [
+                  'image/png',
+                  'image/jpeg',
+                  'image/webp',
+                  'application/pdf',
+                ].join(',');
+                input.onchange = (e) => {
+                  const file = (e.target as HTMLInputElement).files?.[0];
+                  if (file) {
+                    fileUpload.uploadFile(file);
+                  }
+                };
+                input.click();
+              }}
+              className="flex items-center gap-2 text-sm text-charcoal transition-colors hover:text-black"
+              disabled={fileUpload.filePreviews.length >= 1}
             >
               <LuImage className="size-4" />
               {t('Media')}
-            </FileUploader>
+            </button>
             <Button
               size="small"
               isDisabled={
