@@ -9,6 +9,7 @@ import {
   OrganizationListSkeleton,
   OrganizationSummaryList,
 } from '../OrganizationList';
+import { ListPageLayoutHeader } from '../layout/ListPageLayout';
 
 export const OrganizationSearchResultsSuspense = ({
   query,
@@ -22,7 +23,28 @@ export const OrganizationSearchResultsSuspense = ({
     q: query,
   });
 
-  return <OrganizationSummaryList organizations={organizations} />;
+  return organizations.length > 0 ? (
+    <>
+      <ListPageLayoutHeader>
+        <span className="text-neutral-gray4">Results for</span>{' '}
+        <span className="text-neutral-black">{query}</span>
+      </ListPageLayoutHeader>
+      <OrganizationSummaryList organizations={organizations} />
+    </>
+  ) : (
+    <>
+      <ListPageLayoutHeader className="flex justify-center gap-2">
+        <span className="text-neutral-gray4">No results for </span>
+        <span className="text-neutral-black">{query}</span>
+      </ListPageLayoutHeader>
+      <div className="flex justify-center">
+        <span className="max-w-96 text-center text-neutral-black">
+          You may want to try using different keywords, checking for typos, or
+          adjusting your filters.
+        </span>
+      </div>
+    </>
+  );
 };
 
 export const OrganizationSearchResults = ({

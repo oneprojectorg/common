@@ -13,9 +13,6 @@ const SearchListingPage = async ({
 
   return (
     <ListPageLayout>
-      <ListPageLayoutHeader>
-        Results for <span className="text-neutral-black">{q}</span>
-      </ListPageLayoutHeader>
       <OrganizationSearchResults query={q} />
     </ListPageLayout>
   );

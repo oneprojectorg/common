@@ -1,3 +1,4 @@
+import { cn } from '@op/ui/utils';
 import { ReactNode } from 'react';
 
 export const ListPageLayout = ({ children }: { children: ReactNode }) => {
@@ -9,13 +10,20 @@ export const ListPageLayout = ({ children }: { children: ReactNode }) => {
 };
 
 export const ListPageLayoutHeader = ({
+  className,
   children,
 }: {
+  className?: string;
   children?: ReactNode;
 }) => {
   return (
     <div className="flex flex-col gap-4 px-0">
-      <div className="font-serif text-title-lg text-neutral-black sm:text-title-lg">
+      <div
+        className={cn(
+          'font-serif text-title-lg text-neutral-black sm:text-title-lg',
+          className,
+        )}
+      >
         {children}
       </div>
     </div>
