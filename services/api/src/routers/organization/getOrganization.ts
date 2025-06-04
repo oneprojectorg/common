@@ -15,6 +15,7 @@ import withAuthenticated from '../../middlewares/withAuthenticated';
 import withDB from '../../middlewares/withDB';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
+import { cache } from '../../utils/cache';
 
 const inputSchema = z.object({
   slug: z.string(),
@@ -85,7 +86,11 @@ export const getOrganizationRouter = router({
       const { user } = ctx;
 
       try {
-        const result = await getOrganization({ id, user });
+        const result = await cache({
+          type: 'organization',
+          params: [id],
+          fetch: () => getOrganization({ id, user }),
+        });
 
         if (!result) {
           throw new TRPCError({

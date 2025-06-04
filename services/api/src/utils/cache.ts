@@ -24,7 +24,7 @@ const TypeMap = {
 
 const getCacheKey = (
   type: keyof typeof TypeMap,
-  siteKey: string,
+  appKey: string = 'common',
   params: Array<string>,
 ) => {
   const apiVersion = 'v1';
@@ -33,7 +33,7 @@ const getCacheKey = (
 
   // this matches the ability to disregard full paths so pages can be moved without a 404
   const slug = fullSlug?.split('/').slice(-1)[0] ?? '';
-  return `${apiVersion}/${siteKey}/${key}/${slug}${
+  return `${apiVersion}/${appKey}/${key}/${slug}${
     otherParams?.length ? `:${otherParams.join(':')}` : ''
   }`;
 };
@@ -43,16 +43,16 @@ const MEMCACHE_EXPIRE = 60 * 1000;
 
 export const cache = async <T = any>({
   type,
-  siteKey,
+  appKey,
   params = [],
   fetch,
 }: {
   type: keyof typeof TypeMap;
-  siteKey: string;
+  appKey?: string;
   params?: any[];
   fetch: () => Promise<any>;
 }): Promise<T> => {
-  const cacheKey = getCacheKey(type, siteKey, params);
+  const cacheKey = getCacheKey(type, appKey, params);
 
   // try memcache first
   if (memCache.has(cacheKey)) {
