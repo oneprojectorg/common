@@ -60,6 +60,7 @@ const TreeMultiSelectComboBox = ({
   const [inputValue, setInputValue] = useState('');
   const inputRef = useRef<HTMLInputElement | null>(null);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
+  const listRef = useRef<HTMLUListElement | null>(null);
   const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
 
   const selectedOptions = value ?? [];
@@ -128,17 +129,70 @@ const TreeMultiSelectComboBox = ({
   useEffect(() => {
     if (!isOpen || filteredItems.length === 0) {
       setHighlightedIndex(-1);
-    } else if (highlightedIndex >= filteredItems.length) {
-      setHighlightedIndex(0);
+    } else if (highlightedIndex >= filteredItems.length || (highlightedIndex >= 0 && filteredItems[highlightedIndex]?.hasChildren)) {
+      setHighlightedIndex(findFirstSelectableIndex());
     }
-  }, [filteredItems, isOpen]);
+  }, [filteredItems, isOpen, highlightedIndex]);
+
+  // Scroll highlighted item into view
+  useEffect(() => {
+    if (highlightedIndex >= 0 && listRef.current) {
+      const highlightedElement = listRef.current.children[highlightedIndex] as HTMLElement;
+      if (highlightedElement) {
+        highlightedElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+        });
+      }
+    }
+  }, [highlightedIndex]);
+
+  // Helper functions for keyboard navigation
+  const findNextSelectableIndex = (currentIndex: number): number => {
+    for (let i = currentIndex + 1; i < filteredItems.length; i++) {
+      if (!filteredItems[i]?.hasChildren) {
+        return i;
+      }
+    }
+    // If no next selectable item found, wrap to first selectable
+    for (let i = 0; i <= currentIndex; i++) {
+      if (!filteredItems[i]?.hasChildren) {
+        return i;
+      }
+    }
+    return -1; // No selectable items found
+  };
+
+  const findPreviousSelectableIndex = (currentIndex: number): number => {
+    for (let i = currentIndex - 1; i >= 0; i--) {
+      if (!filteredItems[i]?.hasChildren) {
+        return i;
+      }
+    }
+    // If no previous selectable item found, wrap to last selectable
+    for (let i = filteredItems.length - 1; i >= currentIndex; i--) {
+      if (!filteredItems[i]?.hasChildren) {
+        return i;
+      }
+    }
+    return -1; // No selectable items found
+  };
+
+  const findFirstSelectableIndex = (): number => {
+    for (let i = 0; i < filteredItems.length; i++) {
+      if (!filteredItems[i]?.hasChildren) {
+        return i;
+      }
+    }
+    return -1; // No selectable items found
+  };
 
   // Handle input change
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onInputUpdate?.(e.target.value ?? '');
     setInputValue(e.target.value ?? '');
     setIsOpen(true);
-    setHighlightedIndex(0);
+    setHighlightedIndex(findFirstSelectableIndex());
   };
 
   // Handle input keydown
@@ -153,17 +207,23 @@ const TreeMultiSelectComboBox = ({
       e.preventDefault();
       if (filteredItems.length > 0) {
         setIsOpen(true);
-        setHighlightedIndex((prev) =>
-          prev < filteredItems.length - 1 ? prev + 1 : 0,
-        );
+        setHighlightedIndex((prev) => {
+          if (prev === -1) {
+            return findFirstSelectableIndex();
+          }
+          return findNextSelectableIndex(prev);
+        });
       }
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       if (filteredItems.length > 0) {
         setIsOpen(true);
-        setHighlightedIndex((prev) =>
-          prev > 0 ? prev - 1 : filteredItems.length - 1,
-        );
+        setHighlightedIndex((prev) => {
+          if (prev === -1) {
+            return findFirstSelectableIndex();
+          }
+          return findPreviousSelectableIndex(prev);
+        });
       }
     } else if (
       e.key === 'Tab' &&
@@ -212,10 +272,20 @@ const TreeMultiSelectComboBox = ({
               onChange={handleInputChange}
               onKeyDown={handleInputKeyDown}
               onFocus={() => {
-                if (filteredItems.length > 0) setIsOpen(true);
+                if (filteredItems.length > 0) {
+                  setIsOpen(true);
+                  if (highlightedIndex === -1) {
+                    setHighlightedIndex(findFirstSelectableIndex());
+                  }
+                }
               }}
               onMouseDown={() => {
-                if (filteredItems.length > 0) setIsOpen(true);
+                if (filteredItems.length > 0) {
+                  setIsOpen(true);
+                  if (highlightedIndex === -1) {
+                    setHighlightedIndex(findFirstSelectableIndex());
+                  }
+                }
               }}
               placeholder={placeholder}
               style={{ minWidth: 40 }}
@@ -249,7 +319,7 @@ const TreeMultiSelectComboBox = ({
 
         {isOpen && filteredItems.length > 0 && (
           <div className="absolute z-10 mt-1 w-full rounded-md border border-gray-200 bg-white shadow-lg">
-            <ul className="max-h-60 overflow-auto py-1">
+            <ul ref={listRef} className="max-h-60 overflow-auto py-1">
               {filteredItems.map((option, idx) => (
                 <li
                   key={option.id}
