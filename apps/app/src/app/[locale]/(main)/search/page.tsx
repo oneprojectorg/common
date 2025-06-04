@@ -1,8 +1,5 @@
 import { OrganizationSearchResults } from '@/components/OrganizationsSearchResults';
-import {
-  ListPageLayout,
-  ListPageLayoutHeader,
-} from '@/components/layout/ListPageLayout';
+import { ListPageLayout } from '@/components/layout/ListPageLayout';
 
 const SearchListingPage = async ({
   searchParams,
