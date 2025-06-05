@@ -1,7 +1,6 @@
 import { trpc } from '@op/api/client';
 import { AvatarUploader } from '@op/ui/AvatarUploader';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { warn } from 'console';
 import { ReactNode, useState } from 'react';
 import { z } from 'zod';
 
