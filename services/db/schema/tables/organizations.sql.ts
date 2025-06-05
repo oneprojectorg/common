@@ -61,6 +61,9 @@ export const organizations = pgTable(
     state: varchar({ length: 50 }),
     postalCode: varchar({ length: 20 }),
 
+    // Used for checking if a user should be automatically added to an organization
+    domain: varchar({ length: 255 }),
+
     // Geography
     // location: geometry('location', { srid: 4326 }),
     isVerified: boolean().default(false),

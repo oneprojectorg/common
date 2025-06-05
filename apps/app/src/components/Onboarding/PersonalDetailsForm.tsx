@@ -1,6 +1,7 @@
 import { trpc } from '@op/api/client';
 import { AvatarUploader } from '@op/ui/AvatarUploader';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
+import { warn } from 'console';
 import { ReactNode, useState } from 'react';
 import { z } from 'zod';
 
@@ -49,6 +50,8 @@ export const PersonalDetailsForm = ({
   const t = useTranslations();
   const uploadImage = trpc.account.uploadImage.useMutation();
   const updateProfile = trpc.account.updateUserProfile.useMutation();
+  const getMatchingDomainOrgs =
+    trpc.account.listMatchingDomainOrganizations.useQuery();
 
   // Hydrate profileImageUrl from store if present, else undefined
   const [profileImageUrl, setProfileImageUrl] = useState<string | undefined>(
@@ -67,6 +70,9 @@ export const PersonalDetailsForm = ({
         title: value.title,
       });
       setPersonalDetails({ ...value, profileImageUrl }); // Persist to store on submit
+
+      const matchinOrgs = getMatchingDomainOrgs.data;
+
       onNext(value);
     },
   });
