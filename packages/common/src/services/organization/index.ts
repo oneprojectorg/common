@@ -6,4 +6,5 @@ export * from './relationships';
 export * from './stats';
 export * from './searchOrganizations';
 export * from './matchingDomainOrganizations';
+export * from './joinOrganization';
 export * from './validators';

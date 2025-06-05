@@ -4,6 +4,7 @@ import { Header3 } from '@op/ui/Header';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Surface } from '@op/ui/Surface';
 import { cn } from '@op/ui/utils';
+import { useRouter } from 'next/navigation';
 import { ReactNode, useEffect, useState } from 'react';
 import { LuGlobe, LuMail } from 'react-icons/lu';
 import { z } from 'zod';
@@ -24,24 +25,57 @@ export const MatchingOrganizationsForm = ({
   className,
 }: StepProps & { className?: string }): ReactNode => {
   const t = useTranslations();
+  const router = useRouter();
   const getMatchingDomainOrgs =
     trpc.account.listMatchingDomainOrganizations.useQuery();
+
+  const joinOrganization = trpc.organization.join.useMutation();
+  const trpcUtil = trpc.useUtils();
   const [selectedOrganizationId, setSelectedOrganizationId] = useState<
     string | undefined
   >();
 
   // If no matching organizations, automatically proceed to next step
+  // If there are organizations, select the first one by default
   useEffect(() => {
-    if (
-      !getMatchingDomainOrgs.isLoading &&
-      getMatchingDomainOrgs.data?.length === 0
-    ) {
-      onNext({});
+    if (!getMatchingDomainOrgs.isLoading && getMatchingDomainOrgs.data) {
+      if (getMatchingDomainOrgs.data.length === 0) {
+        onNext({});
+      } else if (
+        getMatchingDomainOrgs.data.length > 0 &&
+        !selectedOrganizationId
+      ) {
+        setSelectedOrganizationId(getMatchingDomainOrgs.data[0]?.id);
+      }
     }
-  }, [getMatchingDomainOrgs.isLoading, getMatchingDomainOrgs.data, onNext]);
+  }, [
+    getMatchingDomainOrgs.isLoading,
+    getMatchingDomainOrgs.data,
+    onNext,
+    selectedOrganizationId,
+  ]);
 
-  const handleContinue = () => {
-    onNext({ selectedOrganizationId });
+  const handleContinue = async () => {
+    if (!selectedOrganizationId) {
+      return;
+    }
+
+    try {
+      await joinOrganization.mutateAsync({
+        organizationId: selectedOrganizationId,
+      });
+
+      // Invalidate account data to refetch organization users
+      await trpcUtil.account.getMyAccount.invalidate(undefined, {
+        refetchType: 'all',
+      });
+
+      // Redirect to the main app with new org flag
+      router.push(`/?new=1`);
+    } catch (error) {
+      console.error('Failed to join organization:', error);
+      // Handle error (could show toast notification)
+    }
   };
 
   const handleContinueWithNoSelection = () => {
@@ -127,8 +161,16 @@ export const MatchingOrganizationsForm = ({
             {t('Back')}
           </Button>
       */}
-            <Button className="sm:w-full" onPress={handleContinue}>
-              {t('Get Started')}
+            <Button
+              className="sm:w-full"
+              onPress={handleContinue}
+              isDisabled={!selectedOrganizationId || joinOrganization.isPending}
+            >
+              {joinOrganization.isPending ? (
+                <LoadingSpinner />
+              ) : (
+                t('Get Started')
+              )}
             </Button>
           </div>
           <Button
