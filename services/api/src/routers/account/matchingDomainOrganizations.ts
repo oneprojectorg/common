@@ -11,7 +11,7 @@ const meta: OpenApiMeta = {
   openapi: {
     enabled: true,
     method: 'GET',
-    path: `/account/matching-domain-organizations`,
+    path: `/account/matching-organizations`,
     protect: true,
     tags: ['account'],
     summary: 'Get organizations with matching email domain',
