@@ -26,7 +26,7 @@ export const MatchingOrganizationsForm = ({
 }: StepProps & { className?: string }): ReactNode => {
   const t = useTranslations();
   const router = useRouter();
-  const getMatchingDomainOrgs =
+  const { data: matchingOrgs, isLoading } =
     trpc.account.listMatchingDomainOrganizations.useQuery();
 
   const joinOrganization = trpc.organization.join.useMutation();
@@ -38,22 +38,14 @@ export const MatchingOrganizationsForm = ({
   // If no matching organizations, automatically proceed to next step
   // If there are organizations, select the first one by default
   useEffect(() => {
-    if (!getMatchingDomainOrgs.isLoading && getMatchingDomainOrgs.data) {
-      if (getMatchingDomainOrgs.data.length === 0) {
+    if (!isLoading && matchingOrgs) {
+      if (matchingOrgs.length === 0) {
         onNext({});
-      } else if (
-        getMatchingDomainOrgs.data.length > 0 &&
-        !selectedOrganizationId
-      ) {
-        setSelectedOrganizationId(getMatchingDomainOrgs.data[0]?.id);
+      } else if (matchingOrgs.length > 0 && !selectedOrganizationId) {
+        setSelectedOrganizationId(matchingOrgs[0]?.id);
       }
     }
-  }, [
-    getMatchingDomainOrgs.isLoading,
-    getMatchingDomainOrgs.data,
-    onNext,
-    selectedOrganizationId,
-  ]);
+  }, [isLoading, matchingOrgs, onNext, selectedOrganizationId]);
 
   const handleContinue = async () => {
     if (!selectedOrganizationId) {
@@ -83,7 +75,7 @@ export const MatchingOrganizationsForm = ({
   };
 
   // Show loading while fetching
-  if (getMatchingDomainOrgs.isLoading) {
+  if (isLoading) {
     return (
       <div className={className}>
         <FormContainer>
@@ -96,7 +88,7 @@ export const MatchingOrganizationsForm = ({
   }
 
   // Don't render if no organizations (useEffect will handle navigation)
-  if (!getMatchingDomainOrgs.data || getMatchingDomainOrgs.data.length === 0) {
+  if (!matchingOrgs || matchingOrgs.length === 0) {
     return null;
   }
 
@@ -109,7 +101,7 @@ export const MatchingOrganizationsForm = ({
           )}
         </FormHeader>
         <div className="flex flex-col items-center space-y-4">
-          {getMatchingDomainOrgs.data.map((org) => (
+          {matchingOrgs.map((org) => (
             <Surface className="w-full p-4">
               <label key={org.id} className="flex cursor-pointer gap-4">
                 <input
