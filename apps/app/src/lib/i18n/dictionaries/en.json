@@ -31,5 +31,11 @@
   "Terms of Service": "Terms of Service",
   "Effective Date: March 15, 2025": "Effective Date: March 15, 2025",
   "Privacy Policy": "Privacy Policy",
-  "Media": "Media"
+  "Media": "Media",
+  "We've found your organization": "We've found your organization",
+  "Based on your email domain, you have admin access to your organization’s profile.": "Based on your email domain, you have admin access to your organization’s profile.",
+  "Confirm Administrator Access": "Confirm Administrator Access",
+  "For now, we're only supporting administrator accounts. In the future, we’ll be able to support member accounts.": "For now, we're only supporting administrator accounts. In the future, we’ll be able to support member accounts.",
+  "Get Started": "Get Started",
+  "Whoops! This is not my organization": "Whoops! This is not my organization"
 }

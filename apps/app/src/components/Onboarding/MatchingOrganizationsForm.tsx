@@ -95,9 +95,9 @@ export const MatchingOrganizationsForm = ({
   return (
     <div className={cn('max-w-md', className)}>
       <FormContainer>
-        <FormHeader text={t('We’ve found your organization')}>
+        <FormHeader text={t("We've found your organization")}>
           {t(
-            'Based on your email domain, you have admin access to your organization’s profile.',
+            "Based on your email domain, you have admin access to your organization's profile.",
           )}
         </FormHeader>
         <div className="flex flex-col items-center space-y-4">
