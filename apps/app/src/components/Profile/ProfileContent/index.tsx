@@ -15,25 +15,11 @@ import { toast } from 'sonner';
 
 import { Link as I18nLink } from '@/lib/i18n';
 
+import { ContactLink } from '@/components/ContactLink';
 import { PostFeedSkeleton } from '@/components/PostFeed';
 import { PostUpdate } from '@/components/PostUpdate';
 
 import { ProfileFeed } from '../ProfileFeed';
-
-const ContactLink = ({
-  children,
-  button,
-}: {
-  children: React.ReactNode;
-  button?: React.ReactNode;
-}) => {
-  return (
-    <div className="flex h-8 items-center gap-2">
-      <div className="flex items-center gap-1">{children}</div>
-      {button}
-    </div>
-  );
-};
 
 const ProfileAbout = ({ profile }: { profile: Organization }) => {
   const { mission, email, website, orgType, strategies } = profile;

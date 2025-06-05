@@ -49,8 +49,6 @@ export const PersonalDetailsForm = ({
   const t = useTranslations();
   const uploadImage = trpc.account.uploadImage.useMutation();
   const updateProfile = trpc.account.updateUserProfile.useMutation();
-  const getMatchingDomainOrgs =
-    trpc.account.listMatchingDomainOrganizations.useQuery();
 
   // Hydrate profileImageUrl from store if present, else undefined
   const [profileImageUrl, setProfileImageUrl] = useState<string | undefined>(
@@ -69,8 +67,6 @@ export const PersonalDetailsForm = ({
         title: value.title,
       });
       setPersonalDetails({ ...value, profileImageUrl }); // Persist to store on submit
-
-      const matchinOrgs = getMatchingDomainOrgs.data;
 
       onNext(value);
     },

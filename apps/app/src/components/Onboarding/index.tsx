@@ -13,6 +13,10 @@ import {
   FundingInformationForm,
   validator as FundingInformationFormValidator,
 } from './FundingInformationForm';
+import {
+  MatchingOrganizationsForm,
+  validator as MatchingOrganizationsFormValidator,
+} from './MatchingOrganizationsForm';
 import { OrganizationDetailsForm } from './OrganizationDetailsForm';
 import {
   PersonalDetailsForm,
@@ -27,6 +31,7 @@ import { organizationFormValidator as OrganizationDetailsFormValidator } from '.
 import { useOnboardingFormStore } from './useOnboardingFormStore';
 
 type FormValues = z.infer<typeof PersonalDetailsFormValidator> &
+  z.infer<typeof MatchingOrganizationsFormValidator> &
   z.infer<typeof OrganizationDetailsFormValidator> &
   z.infer<typeof FundingInformationFormValidator> &
   z.infer<typeof PrivacyPolicyFormValidator> &
@@ -88,6 +93,7 @@ export const OnboardingFlow = () => {
     <MultiStepForm
       steps={[
         PersonalDetailsForm,
+        MatchingOrganizationsForm,
         OrganizationDetailsForm,
         FundingInformationForm,
         ToSForm,
@@ -95,6 +101,7 @@ export const OnboardingFlow = () => {
       ]}
       schemas={[
         PersonalDetailsFormValidator,
+        MatchingOrganizationsFormValidator,
         OrganizationDetailsFormValidator,
         FundingInformationFormValidator,
         ToSFormValidator,

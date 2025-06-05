@@ -57,6 +57,7 @@ const buttonStyle = tv({
       false: '',
     },
   },
+
   defaultVariants: {
     variant: 'primary',
     color: 'primary',
