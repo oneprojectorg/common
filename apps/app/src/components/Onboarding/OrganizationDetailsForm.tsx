@@ -43,7 +43,7 @@ export const OrganizationDetailsForm = ({
               <br />
               {t('Please review and make any necessary changes.')}
             </FormHeader>
-            
+
             {formFields}
 
             <div className="flex flex-col-reverse justify-between gap-4 sm:flex-row sm:gap-2">

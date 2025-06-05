@@ -1,39 +1,51 @@
 import { trpc } from '@op/api/client';
 import { Button } from '@op/ui/Button';
+import { Header3 } from '@op/ui/Header';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
+import { Surface } from '@op/ui/Surface';
+import { cn } from '@op/ui/utils';
 import { ReactNode, useEffect, useState } from 'react';
+import { LuGlobe, LuMail } from 'react-icons/lu';
 import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { ContactLink } from '../ContactLink';
 import { StepProps } from '../MultiStepForm';
+import { OrganizationAvatar } from '../OrganizationAvatar';
 import { FormContainer } from '../form/FormContainer';
 import { FormHeader } from '../form/FormHeader';
-import { OrganizationAvatar } from '../OrganizationAvatar';
 
-export const validator = z.object({
-  selectedOrganizationId: z.string().optional(),
-});
-
+export const validator = z.object({});
 
 export const MatchingOrganizationsForm = ({
   onNext,
-  onBack,
+  // onBack,
   className,
 }: StepProps & { className?: string }): ReactNode => {
   const t = useTranslations();
-  const getMatchingDomainOrgs = trpc.account.listMatchingDomainOrganizations.useQuery();
-  const [selectedOrganizationId, setSelectedOrganizationId] = useState<string | undefined>();
+  const getMatchingDomainOrgs =
+    trpc.account.listMatchingDomainOrganizations.useQuery();
+  const [selectedOrganizationId, setSelectedOrganizationId] = useState<
+    string | undefined
+  >();
 
   // If no matching organizations, automatically proceed to next step
   useEffect(() => {
-    if (!getMatchingDomainOrgs.isLoading && getMatchingDomainOrgs.data?.length === 0) {
+    if (
+      !getMatchingDomainOrgs.isLoading &&
+      getMatchingDomainOrgs.data?.length === 0
+    ) {
       onNext({});
     }
   }, [getMatchingDomainOrgs.isLoading, getMatchingDomainOrgs.data, onNext]);
 
   const handleContinue = () => {
     onNext({ selectedOrganizationId });
+  };
+
+  const handleContinueWithNoSelection = () => {
+    onNext({});
   };
 
   // Show loading while fetching
@@ -55,72 +67,76 @@ export const MatchingOrganizationsForm = ({
   }
 
   return (
-    <div className={className}>
+    <div className={cn('max-w-md', className)}>
       <FormContainer>
-        <FormHeader text={t('Found existing organizations')}>
-          {t('We found organizations that match your email domain. Would you like to join one of them instead of creating a new organization?')}
+        <FormHeader text={t('We’ve found your organization')}>
+          {t(
+            'Based on your email domain, you have admin access to your organization’s profile.',
+          )}
         </FormHeader>
-
-        <div className="space-y-4">
+        <div className="flex flex-col items-center space-y-4">
           {getMatchingDomainOrgs.data.map((org) => (
-            <label
-              key={org.id}
-              className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
-            >
-              <input
-                type="radio"
-                name="selectedOrganization"
-                value={org.id}
-                checked={selectedOrganizationId === org.id}
-                onChange={(e) => {
-                  setSelectedOrganizationId(e.target.value);
-                }}
-                className="w-4 h-4 text-blue-600"
-              />
-              <OrganizationAvatar 
-                organization={org} 
-                className="size-12"
-              />
-              <div className="flex-1">
-                <h3 className="font-semibold text-gray-900">{org.name}</h3>
-                {org.bio && (
-                  <p className="text-sm text-gray-600 mt-1">{org.bio}</p>
-                )}
-                {org.city && org.state && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    {org.city}, {org.state}
-                  </p>
-                )}
-              </div>
-            </label>
+            <Surface className="w-full p-4">
+              <label key={org.id} className="flex cursor-pointer gap-4">
+                <input
+                  type="radio"
+                  name="selectedOrganization"
+                  value={org.id}
+                  checked={selectedOrganizationId === org.id}
+                  onChange={(e) => {
+                    setSelectedOrganizationId(e.target.value);
+                  }}
+                  className="hidden"
+                />
+                <OrganizationAvatar organization={org} className="size-12" />
+                <div className="flex flex-col gap-2">
+                  <Header3 className="text-base text-neutral-charcoal">
+                    {org.name}
+                  </Header3>
+                  <div className="flex flex-col gap-1 text-teal">
+                    {org.website ? (
+                      <ContactLink className="h-auto">
+                        <LuGlobe className="size-4" />
+                        <div>{org.website}</div>
+                      </ContactLink>
+                    ) : null}
+                    {org.email ? (
+                      <ContactLink className="h-auto">
+                        <LuMail className="min-w-4" />
+                        <div>{org.email}</div>
+                      </ContactLink>
+                    ) : null}
+                  </div>
+                </div>
+              </label>
+            </Surface>
           ))}
-
-          <label className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
-            <input
-              type="radio"
-              name="selectedOrganization"
-              value=""
-              checked={selectedOrganizationId === undefined}
-              onChange={() => {
-                setSelectedOrganizationId(undefined);
-              }}
-              className="w-4 h-4 text-blue-600"
-            />
-            <div className="flex-1">
-              <h3 className="font-semibold text-gray-900">{t('Create a new organization')}</h3>
-              <p className="text-sm text-gray-600 mt-1">
-                {t('None of these organizations match what I\'m looking for')}
-              </p>
-            </div>
-          </label>
         </div>
-
-        <div className="flex flex-col-reverse justify-between gap-4 sm:flex-row sm:gap-2">
+        <div className="flex flex-col gap-2">
+          <div>{t('Confirm Administrator Access')}</div>
+          <div>
+            {t(
+              "For now, we're only supporting administrator accounts. In the future, we’ll be able to support member accounts.",
+            )}
+          </div>
+        </div>
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col-reverse justify-between gap-4 sm:flex-row sm:gap-2">
+            {/*
           <Button color="secondary" onPress={onBack}>
             {t('Back')}
           </Button>
-          <Button className="sm:w-full" onPress={handleContinue}>
-            {t('Continue')}
+      */}
+            <Button className="sm:w-full" onPress={handleContinue}>
+              {t('Get Started')}
+            </Button>
+          </div>
+          <Button
+            unstyled
+            className="text-teal hover:underline"
+            onPress={handleContinueWithNoSelection}
+          >
+            {t('Whoops! This is not my organization')}
           </Button>
         </div>
       </FormContainer>
