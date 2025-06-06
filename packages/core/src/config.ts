@@ -139,7 +139,7 @@ export const cookieDomains = [
   'web-dev.oneproject.tech',
 ];
 
-export const allowedEmailDomains = ['oneproject.org'];
+export const allowedEmailDomains = ['oneproject.org', 'team.oneproject.org'];
 
 export const genericEmail = 'hello@oneproject.org';
 
