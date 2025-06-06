@@ -1,3 +1,5 @@
+'use client';
+
 import {
   Tooltip as AriaTooltip,
   TooltipTrigger as AriaTooltipTrigger,
@@ -35,7 +37,7 @@ const TooltipTrigger = ({
 };
 
 const styles = tv({
-  base: 'group relative z-0 rounded-md bg-charcoal px-3 py-2 font-sans text-xs text-offWhite will-change-transform',
+  base: 'group relative z-0 rounded-md bg-charcoal px-3 py-2 font-sans text-sm text-offWhite will-change-transform',
   variants: {
     isEntering: {
       true: 'ease-out animate-in fade-in duration-animate-200 placement-left:slide-in-from-right-0.5 placement-right:slide-in-from-left-0.5 placement-top:slide-in-from-bottom-0.5 placement-bottom:slide-in-from-top-0.5',

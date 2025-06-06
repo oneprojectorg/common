@@ -13,9 +13,7 @@ import type {
   TabProps,
   TabsProps,
 } from 'react-aria-components';
-import { tv } from 'tailwind-variants';
-
-import { focusRing } from '../utils';
+import { VariantProps, tv } from 'tailwind-variants';
 
 const tabsStyles = tv({
   base: 'flex gap-4',
@@ -39,30 +37,44 @@ export const Tabs = (props: TabsProps) => {
 };
 
 const tabListStyles = tv({
-  base: 'flex gap-6',
+  base: 'flex gap-4',
   variants: {
+    variant: {
+      default: '',
+      pill: 'border-none',
+    },
     orientation: {
       horizontal: 'flex-row border-b border-offWhite',
       vertical: '',
     },
   },
+  defaultVariants: {
+    variant: 'default',
+    orientation: 'horizontal',
+  },
 });
+export type TabListVariantsProps = VariantProps<typeof tabListStyles>;
 
-export const TabList = <T extends object>(props: TabListProps<T>) => {
+export const TabList = <T extends object>(
+  props: TabListProps<T> & TabListVariantsProps,
+) => {
   return (
     <RACTabList
       {...props}
       className={composeRenderProps(props.className, (className, renderProps) =>
-        tabListStyles({ ...renderProps, className }),
+        tabListStyles({ ...renderProps, variant: props.variant, className }),
       )}
     />
   );
 };
 
 const tabProps = tv({
-  extend: focusRing,
-  base: 'flex cursor-default items-center p-3 text-sm font-medium text-darkGray transition forced-color-adjust-none',
+  base: 'flex cursor-default items-center px-2 py-3 text-base font-normal text-neutral-gray4 outline-none transition forced-color-adjust-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue',
   variants: {
+    variant: {
+      default: '',
+      pill: 'border-b-none rounded p-3',
+    },
     isSelected: {
       false: '',
       true: 'border-b border-charcoal text-charcoal',
@@ -71,9 +83,22 @@ const tabProps = tv({
       true: 'text-lightGray',
     },
   },
+  compoundVariants: [
+    {
+      variant: 'pill',
+      isSelected: true,
+      class: 'border-none bg-neutral-offWhite text-neutral-charcoal',
+    },
+  ],
+  defaultVariants: {
+    variant: 'default',
+  },
 });
+export type TabVariantsProps = VariantProps<typeof tabProps>;
 
-export const Tab = (props: TabProps & { unstyled?: boolean }) => {
+export const Tab = (
+  props: TabProps & TabVariantsProps & { unstyled?: boolean },
+) => {
   return (
     <RACTab
       {...props}
@@ -82,14 +107,13 @@ export const Tab = (props: TabProps & { unstyled?: boolean }) => {
         (className, renderProps) =>
           props.unstyled
             ? className || ''
-            : tabProps({ ...renderProps, className }),
+            : tabProps({ ...renderProps, variant: props.variant, className }),
       )}
     />
   );
 };
 
 const tabPanelStyles = tv({
-  extend: focusRing,
   base: 'flex-1 p-4 text-base',
 });
 

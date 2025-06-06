@@ -3,10 +3,10 @@ import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 
+import type { StepProps } from '../MultiStepForm';
 import { FormContainer } from '../form/FormContainer';
 import { FormHeader } from '../form/FormHeader';
-import { useMultiStep } from '../form/multiStep';
-import { StepProps, useAppForm } from '../form/utils';
+import { useAppForm } from '../form/utils';
 
 export const validator = z.object({
   tosAccept: z.boolean().default(true),
@@ -20,14 +20,14 @@ const FormalSection = ({ children }: { children: React.ReactNode }) => {
   );
 };
 export const ToSForm = ({
-  resolver,
+  onNext,
+  onBack,
   className,
 }: StepProps & { className?: string }) => {
   const t = useTranslations();
-  const { onNext, onBack } = useMultiStep();
   const form = useAppForm({
     validators: {
-      onChange: resolver,
+      onChange: validator,
     },
     onSubmit: () => {
       onNext({});

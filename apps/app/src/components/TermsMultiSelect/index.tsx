@@ -1,12 +1,37 @@
 'use client';
 
-import { trpc } from '@op/trpc/client';
-import { MultiSelectComboBox } from '@op/ui/MultiSelectComboBox';
-import type {
-  MultiSelectComboBoxProps,
-  Option,
-} from '@op/ui/MultiSelectComboBox';
+import { trpc } from '@op/api/client';
+import type { TermWithChildren } from '@op/common';
+import { MultiSelectComboBox, type Option } from '@op/ui/MultiSelectComboBox';
 import { useState } from 'react';
+
+type FlattenedTerm = Option & {
+  level: number;
+  hasChildren: boolean;
+};
+
+const flattenTermTree = (
+  terms: TermWithChildren[],
+  level = 0,
+): FlattenedTerm[] => {
+  return terms.reduce<FlattenedTerm[]>((acc, term) => {
+    const flatTerm: FlattenedTerm = {
+      id: term.id,
+      label: term.label,
+      definition: term.definition,
+      level,
+      hasChildren: term.children.length > 0,
+    };
+
+    acc.push(flatTerm);
+
+    if (term.children.length > 0) {
+      acc.push(...flattenTermTree(term.children, level + 1));
+    }
+
+    return acc;
+  }, []);
+};
 
 export const TermsMultiSelect = ({
   label,
@@ -15,7 +40,7 @@ export const TermsMultiSelect = ({
   onChange,
   taxonomy,
   isRequired = false,
-  ...props
+  errorMessage,
 }: {
   label?: string;
   placeholder?: string;
@@ -23,16 +48,18 @@ export const TermsMultiSelect = ({
   value: Array<Option>;
   onChange: (value: Array<Option>) => void;
   isRequired?: boolean;
-} & Omit<MultiSelectComboBoxProps, 'items'>) => {
+  errorMessage?: string;
+}) => {
   const [termsQuery, setTermsQuery] = useState('');
   const { data: terms } = trpc.taxonomy.getTerms.useQuery({
     name: taxonomy,
     q: termsQuery.length >= 2 ? termsQuery : undefined,
   });
 
+  const flattenedTerms = terms ? flattenTermTree(terms) : [];
+
   return (
     <MultiSelectComboBox
-      {...props}
       label={label}
       placeholder={placeholder ?? 'Select one or more…'}
       isRequired={isRequired}
@@ -41,19 +68,9 @@ export const TermsMultiSelect = ({
         setTermsQuery(inputValue);
       }}
       value={value ?? []}
-      items={
-        terms
-          ?.map((item): Option | null => {
-            if (typeof item.id !== 'string' || typeof item.label !== 'string') {
-              return null;
-            }
-            return {
-              id: item.id,
-              label: item.label,
-            };
-          })
-          .filter((o) => o !== null) ?? []
-      }
+      items={flattenedTerms}
+      errorMessage={errorMessage}
+      allowAdditions
     />
   );
 };

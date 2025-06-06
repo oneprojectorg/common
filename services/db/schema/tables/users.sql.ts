@@ -4,6 +4,7 @@ import { authUsers } from 'drizzle-orm/supabase';
 
 import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
 import { organizationUsers } from './organizationUsers.sql';
+import { organizations } from './organizations.sql';
 import { objectsInStorage } from './storage.sql';
 
 export const users = pgTable(
@@ -24,6 +25,9 @@ export const users = pgTable(
     avatarImageId: uuid().references(() => objectsInStorage.id, {
       onUpdate: 'cascade',
     }),
+    lastOrgId: uuid().references(() => organizations.id, {
+      onDelete: 'set null',
+    }),
     ...timestamps,
   },
   (table) => [
@@ -42,6 +46,10 @@ export const users = pgTable(
 
 export const usersRelations = relations(users, ({ many, one }) => ({
   organizationUsers: many(organizationUsers),
+  currentOrganization: one(organizations, {
+    fields: [users.lastOrgId],
+    references: [organizations.id],
+  }),
   avatarImage: one(objectsInStorage, {
     fields: [users.avatarImageId],
     references: [objectsInStorage.id],

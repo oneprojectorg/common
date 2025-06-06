@@ -4,7 +4,7 @@ import { tv } from 'tailwind-variants';
 import { cn } from '../lib/utils';
 
 export const focusRing = tv({
-  base: 'outline-auto -outline-offset-8 outline-transparent focus-within:outline-offWhite focus:outline-offWhite focus-visible:outline-offWhite',
+  base: 'outline-auto -outline-offset-8 outline-transparent focus-within:outline-offWhite focus-visible:outline-offWhite',
   variants: {
     isFocused: {
       true: 'outline-lightGray',

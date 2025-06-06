@@ -1,46 +1,50 @@
+import { zodUrl } from '@/utils';
 import { ToggleButton } from '@op/ui/ToggleButton';
 import { LuLink } from 'react-icons/lu';
 import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 
+import type { StepProps } from '../MultiStepForm';
 import { FormContainer } from '../form/FormContainer';
 import { FormHeader } from '../form/FormHeader';
-import { useMultiStep } from '../form/multiStep';
 import { getFieldErrorMessage, useAppForm } from '../form/utils';
-import type { StepProps } from '../form/utils';
 import { ToggleRow } from '../layout/split/form/ToggleRow';
+import { useOnboardingFormStore } from './useOnboardingFormStore';
 
 export const validator = z.object({
   isReceivingFunds: z.boolean().default(false).optional(),
   isOfferingFunds: z.boolean().default(false).optional(),
   acceptingApplications: z.boolean().default(false).optional(),
-  receivingFundsDescription: z.string().optional(),
-  receivingFundsLink: z
+  receivingFundsDescription: z
     .string()
-    .url({ message: 'Enter a valid website address' })
+    .max(200, { message: 'Must be at most 200 characters' })
     .optional(),
+  receivingFundsLink: zodUrl({ message: 'Enter a valid website address' }),
   offeringFundsDescription: z.string().optional(),
-  offeringFundsLink: z
-    .string()
-    .url({ message: 'Enter a valid website address' })
-    .optional(),
+  offeringFundsLink: zodUrl({ message: 'Enter a valid website address' }),
 });
 
 export const FundingInformationForm = ({
-  defaultValues,
-  resolver,
+  onNext,
+  onBack,
   className,
 }: StepProps & { className?: string }) => {
-  const { onNext, onBack } = useMultiStep();
+  const fundingInformation = useOnboardingFormStore(
+    (s) => s.fundingInformation,
+  );
+  const setFundingInformation = useOnboardingFormStore(
+    (s) => s.setFundingInformation,
+  );
   const t = useTranslations();
 
   const form = useAppForm({
-    defaultValues,
+    defaultValues: fundingInformation,
     validators: {
-      onChange: resolver,
+      onBlur: validator,
     },
     onSubmit: ({ value }) => {
+      setFundingInformation(value); // Persist to store on submit
       onNext(value);
     },
   });
@@ -105,16 +109,17 @@ export const FundingInformationForm = ({
                           onChange={field.handleChange}
                           errorMessage={getFieldErrorMessage(field)}
                           inputProps={{
-                            icon: <LuLink className="text-teal" />,
+                            icon: (
+                              <LuLink className="size-4 text-neutral-black" />
+                            ),
                             placeholder: 'Add your contribution page here',
                           }}
                         />
-                        <span className="text-xs text-darkGray">
+                        <span className="text-sm text-darkGray">
                           Add a link to your donation page, Open Collective,
                           GoFundMe or any platform where supporters can
                           contribute or learn more about how.
                         </span>
-                        <hr className="mt-6" />
                       </div>
                     )}
                   />
@@ -123,6 +128,9 @@ export const FundingInformationForm = ({
             </>
           )}
         />
+
+        <hr />
+
         <form.AppField
           name="isOfferingFunds"
           children={(field) => (
@@ -152,24 +160,26 @@ export const FundingInformationForm = ({
                         />
                       </ToggleRow>
                       <div className="flex flex-col gap-4">
-                        <form.AppField
-                          name="offeringFundsDescription"
-                          children={(field) => (
-                            <field.TextField
-                              useTextArea
-                              label="What is your funding process?"
-                              value={field.state.value as string}
-                              onBlur={field.handleBlur}
-                              onChange={field.handleChange}
-                              errorMessage={getFieldErrorMessage(field)}
-                              textareaProps={{
-                                className: 'min-h-32',
-                                placeholder:
-                                  'Enter a description of the type of funding you’re seeking (e.g., grants, integrated capital, etc.)',
-                              }}
-                            />
-                          )}
-                        />
+                        {!acceptingApplicationsField.state.value ? (
+                          <form.AppField
+                            name="offeringFundsDescription"
+                            children={(field) => (
+                              <field.TextField
+                                useTextArea
+                                label="What is your funding process?"
+                                value={field.state.value as string}
+                                onBlur={field.handleBlur}
+                                onChange={field.handleChange}
+                                errorMessage={getFieldErrorMessage(field)}
+                                textareaProps={{
+                                  className: 'min-h-32',
+                                  placeholder:
+                                    'Enter a description of the type of funding you’re seeking (e.g., grants, integrated capital, etc.)',
+                                }}
+                              />
+                            )}
+                          />
+                        ) : null}
 
                         <form.AppField
                           name="offeringFundsLink"
@@ -190,17 +200,18 @@ export const FundingInformationForm = ({
                                     .value
                                     ? 'Add a link where organizations can apply for funding'
                                     : 'Add a link to learn more about your funding process',
-                                  icon: <LuLink className="text-teal" />,
+                                  icon: (
+                                    <LuLink className="size-4 text-neutral-black" />
+                                  ),
                                 }}
                               />
-                              <span className="text-xs text-darkGray">
+                              <span className="text-sm text-darkGray">
                                 {acceptingApplicationsField.state.value
                                   ? null
                                   : `Add a link where others can learn more about how
                                 to they might receive funding from your
                                 organization now or in the future.`}
                               </span>
-                              <hr className="mt-6" />
                             </div>
                           )}
                         />

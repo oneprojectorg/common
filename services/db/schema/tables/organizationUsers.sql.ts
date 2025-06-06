@@ -45,6 +45,9 @@ export const organizationUsers = pgTable(
     index('organizationUsers_organizations_idx')
       .on(table.organizationId)
       .concurrently(),
+    index('organizationUsers_auth_user_id_idx')
+      .on(table.authUserId)
+      .concurrently(),
   ],
 );
 
@@ -64,7 +67,7 @@ export const organizationUsersRelations = relations(
       fields: [organizationUsers.organizationId],
       references: [organizations.id],
     }),
-    roles: many(accessRoles),
+    roles: many(organizationUserToAccessRoles),
   }),
 );
 
@@ -73,10 +76,14 @@ export const organizationUserToAccessRoles = pgTable(
   {
     organizationUserId: uuid()
       .notNull()
-      .references(() => organizationUsers.id),
+      .references(() => organizationUsers.id, {
+        onDelete: 'cascade',
+      }),
     accessRoleId: uuid()
       .notNull()
-      .references(() => accessRoles.id),
+      .references(() => accessRoles.id, {
+        onDelete: 'cascade',
+      }),
     ...timestamps,
   },
   (table) => [

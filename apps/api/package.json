@@ -10,9 +10,10 @@
     "start": "next start"
   },
   "dependencies": {
+    "@op/api": "workspace:*",
     "@op/core": "workspace:*",
+    "@op/logging": "workspace:*",
     "@op/supabase": "workspace:*",
-    "@op/trpc": "workspace:*",
     "@op/ui": "workspace:*",
     "@scalar/nextjs-api-reference": "^0.5.10",
     "@trpc/server": "11.0.0-rc.700",

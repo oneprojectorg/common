@@ -1,6 +1,6 @@
 'use client';
 
-import { trpc } from '@op/trpc/client';
+import { trpc } from '@op/api/client';
 import { MultiSelectComboBox } from '@op/ui/MultiSelectComboBox';
 import type { Option } from '@op/ui/MultiSelectComboBox';
 import { useState } from 'react';
@@ -14,7 +14,7 @@ export const GeoNamesMultiSelect = ({
   label: string;
   value: Array<Option>;
   onChange: (value: Array<Option>) => void;
-  isRequired: boolean;
+  isRequired?: boolean;
 }) => {
   const [whereWeWorkQuery, setWhereWeWorkQuery] = useState('');
   const { data: geoNames } = trpc.taxonomy.getGeoNames.useQuery(

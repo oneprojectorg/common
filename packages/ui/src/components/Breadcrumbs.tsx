@@ -35,8 +35,8 @@ export const Breadcrumb = (
         'flex items-center gap-1',
       )}
     >
-      <Link variant="secondary" {...props} />
-      {props.href && <ChevronRight className="size-3 text-neutral-600" />}
+      <Link variant={props.href ? 'primary' : 'neutral'} {...props} />
+      {props.href && <ChevronRight className="size-3" />}
     </AriaBreadcrumb>
   );
 };

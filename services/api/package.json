@@ -1,0 +1,53 @@
+{
+  "name": "@op/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./index.ts",
+    "./client": "./src/TRPCProvider.tsx",
+    "./vanilla": "./src/vanilla.ts",
+    "./next": "./src/next.ts",
+    "./encoders": "./src/encoders/index.ts"
+  },
+  "scripts": {
+    "lint": "pnpm tsc --noEmit"
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "^1.2.1",
+    "@axiomhq/pino": "^1.3.1",
+    "@op/cache": "workspace:*",
+    "@op/common": "workspace:*",
+    "@op/core": "workspace:*",
+    "@op/db": "workspace:*",
+    "@op/logging": "workspace:*",
+    "@op/supabase": "workspace:*",
+    "@tanstack/query-sync-storage-persister": "5.66.11",
+    "@tanstack/react-query": "5.66.11",
+    "@tanstack/react-query-persist-client": "5.66.11",
+    "@trpc/client": "11.0.0-rc.700",
+    "@trpc/react-query": "11.0.0-rc.700",
+    "@trpc/server": "11.0.0-rc.700",
+    "@vercel/functions": "^2.1.0",
+    "ai": "^4.2.2",
+    "cookie": "^1.0.2",
+    "drizzle-orm": "^0.40.0",
+    "drizzle-zod": "^0.7.0",
+    "fast-xml-parser": "^5.2.1",
+    "nanoid": "5.1.2",
+    "next-axiom": "^1.9.1",
+    "node-geonames-client": "^0.0.2",
+    "pino": "^9.7.0",
+    "react": "^19.0.0",
+    "redis": "^5.5.5",
+    "server-only": "^0.0.1",
+    "spacetime": "^7.7.0",
+    "superjson": "^2.2.2",
+    "trpc-to-openapi": "2.1.3",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@op/typescript-config": "workspace:*",
+    "typescript": "5.7.3"
+  }
+}

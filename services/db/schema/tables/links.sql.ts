@@ -30,6 +30,7 @@ export const links = pgTable(
   {
     id: autoId().primaryKey(),
     name: varchar({ length: 256 }),
+    description: varchar({ length: 256 }),
     href: varchar({ length: 256 }).notNull(),
     type: linkTypeEnum('link_type').notNull().default(LinkType.OFFERING),
     metadata: jsonb(),
@@ -41,7 +42,11 @@ export const links = pgTable(
       }),
     ...timestamps,
   },
-  (table) => [...serviceRolePolicies, index().on(table.id).concurrently()],
+  (table) => [
+    ...serviceRolePolicies,
+    index().on(table.id).concurrently(),
+    index('links_organization_id_idx').on(table.organizationId).concurrently(),
+  ],
 );
 
 export const linksRelations = relations(links, ({ one }) => ({

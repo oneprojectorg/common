@@ -1,11 +1,16 @@
 import { Button } from '@op/ui/Button';
 import type { ButtonProps } from '@op/ui/Button';
+import { Checkbox } from '@op/ui/Checkbox';
 import { MultiSelectComboBox } from '@op/ui/MultiSelectComboBox';
 import { Select } from '@op/ui/Select';
 import { TextField } from '@op/ui/TextField';
 import { ToggleButton } from '@op/ui/ToggleButton';
 import { cn } from '@op/ui/utils';
-import { createFormHook, createFormHookContexts } from '@tanstack/react-form';
+import {
+  AnyFieldApi,
+  createFormHook,
+  createFormHookContexts,
+} from '@tanstack/react-form';
 
 const { fieldContext, formContext } = createFormHookContexts();
 
@@ -15,6 +20,7 @@ export const { useAppForm } = createFormHook({
     Select,
     MultiSelectComboBox,
     ToggleButton,
+    Checkbox,
   },
   formComponents: {
     Button: ({ className, ...props }: ButtonProps) => (
@@ -37,10 +43,12 @@ export interface StepProps {
   resolver?: any;
 }
 
-export const getFieldErrorMessage = (field: {
-  state: { meta: { errors: { message: string }[] } };
-}): string => {
-  return field.state.meta.errors.map((err) => err.message).join(', ');
+export const getFieldErrorMessage = (
+  field: AnyFieldApi,
+): string | undefined => {
+  return field.state.meta.isTouched
+    ? field.state.meta.errors?.map((err) => err?.message ?? '').join(', ')
+    : undefined;
 };
 
 export type UnionToIntersection<U> = (

@@ -7,7 +7,7 @@ import { tv } from 'tailwind-variants';
 import { focusRing } from '../utils';
 
 interface LinkProps extends AriaLinkProps {
-  variant?: 'primary' | 'secondary';
+  variant?: 'primary' | 'secondary' | 'neutral';
 }
 
 const styles = tv({
@@ -15,10 +15,10 @@ const styles = tv({
   base: 'rounded underline transition disabled:cursor-default disabled:no-underline',
   variants: {
     variant: {
-      primary:
-        'text-neutral-500 underline decoration-neutral-500/60 hover:decoration-neutral-500',
+      primary: 'text-teal no-underline hover:underline',
       secondary:
         'text-neutral-700 underline decoration-neutral-700/70 hover:decoration-neutral-700',
+      neutral: 'text-neutral-gray4',
     },
   },
   defaultVariants: {

@@ -20,12 +20,14 @@ const buttonStyle = tv({
       secondary:
         'border border-offWhite bg-white text-teal hover:bg-neutral-50 pressed:bg-white',
       gradient: '',
+      neutral:
+        'border border-neutral-gray1 bg-white text-neutral-charcoal shadow-light hover:bg-neutral-50 pressed:bg-white',
       destructive:
         'border-functional-red bg-functional-red text-neutral-offWhite hover:bg-functional-redBlack',
     },
     size: {
       small: 'h-8 p-3',
-      medium: 'h-11 p-4',
+      medium: 'h-10 p-4',
     },
     surface: {
       solid: '',
@@ -55,6 +57,7 @@ const buttonStyle = tv({
       false: '',
     },
   },
+
   defaultVariants: {
     variant: 'primary',
     color: 'primary',

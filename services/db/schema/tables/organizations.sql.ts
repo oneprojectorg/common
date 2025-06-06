@@ -1,5 +1,5 @@
 import { relations, sql } from 'drizzle-orm';
-import type { InferModel } from 'drizzle-orm';
+import type { InferModel, SQL } from 'drizzle-orm';
 import {
   boolean,
   index,
@@ -17,6 +17,7 @@ import {
   enumToPgEnum,
   serviceRolePolicies,
   timestamps,
+  tsvector,
 } from '../../helpers';
 import { links } from './links.sql';
 import { posts } from './posts.sql';
@@ -42,7 +43,7 @@ export const organizations = pgTable(
     id: autoId().primaryKey(),
     name: varchar({ length: 256 }).notNull(),
     slug: varchar({ length: 256 }).notNull().unique(),
-    description: text(),
+    bio: text(),
 
     // Mission
     mission: text(),
@@ -60,9 +61,13 @@ export const organizations = pgTable(
     state: varchar({ length: 50 }),
     postalCode: varchar({ length: 20 }),
 
+    // Used for checking if a user should be automatically added to an organization
+    domain: varchar({ length: 255 }),
+
     // Geography
     // location: geometry('location', { srid: 4326 }),
     isVerified: boolean().default(false),
+    networkOrganization: boolean().default(false),
 
     isOfferingFunds: boolean().default(false),
     isReceivingFunds: boolean().default(false),
@@ -80,15 +85,18 @@ export const organizations = pgTable(
       onUpdate: 'cascade',
     }),
 
+    search: tsvector('search').generatedAlwaysAs(
+      (): SQL =>
+        sql`setweight(to_tsvector('simple', ${organizations.name}), 'A') || ' ' || setweight(to_tsvector('english',  ${organizations.bio}), 'B') || ' ' || setweight(to_tsvector('english', ${organizations.mission}), 'C')::tsvector`,
+    ),
+
     ...timestamps,
   },
   (table) => [
     ...serviceRolePolicies,
     index().on(table.id).concurrently(),
     index().on(table.slug).concurrently(),
-    index('organizations_name_gin_index')
-      .using('gin', sql`to_tsvector('english', ${table.name})`)
-      .concurrently(),
+    index('organizations_search_gin_index').using('gin', table.search),
   ],
 );
 
@@ -100,6 +108,7 @@ export const organizationsRelations = relations(
     posts: many(posts),
     whereWeWork: many(organizationsWhereWeWork),
     strategies: many(organizationsStrategies),
+    terms: many(organizationsTerms),
     headerImage: one(objectsInStorage, {
       fields: [organizations.headerImageId],
       references: [objectsInStorage.id],
@@ -110,6 +119,42 @@ export const organizationsRelations = relations(
     }),
     outgoingRelationships: many(organizationRelationships),
     incomingRelationships: many(organizationRelationships),
+  }),
+);
+
+export const organizationsTerms = pgTable(
+  'organizations_terms',
+  {
+    organizationId: uuid('organization_id')
+      .notNull()
+      .references(() => organizations.id, {
+        onUpdate: 'cascade',
+        onDelete: 'cascade',
+      }),
+    taxonomyTermId: uuid('taxonomy_term_id')
+      .notNull()
+      .references(() => taxonomyTerms.id, {
+        onUpdate: 'cascade',
+        onDelete: 'cascade',
+      }),
+  },
+  (table) => ({
+    ...serviceRolePolicies,
+    pk: primaryKey(table.organizationId, table.taxonomyTermId),
+  }),
+);
+
+export const organizationsTermsRelations = relations(
+  organizationsTerms,
+  ({ one }) => ({
+    organization: one(organizations, {
+      fields: [organizationsTerms.organizationId],
+      references: [organizations.id],
+    }),
+    term: one(taxonomyTerms, {
+      fields: [organizationsTerms.taxonomyTermId],
+      references: [taxonomyTerms.id],
+    }),
   }),
 );
 
@@ -130,6 +175,7 @@ export const organizationsWhereWeWork = pgTable(
       }),
   },
   (table) => ({
+    ...serviceRolePolicies,
     pk: primaryKey(table.organizationId, table.taxonomyTermId),
   }),
 );
@@ -165,6 +211,7 @@ export const organizationsStrategies = pgTable(
       }),
   },
   (table) => ({
+    ...serviceRolePolicies,
     pk: primaryKey(table.organizationId, table.taxonomyTermId),
   }),
 );

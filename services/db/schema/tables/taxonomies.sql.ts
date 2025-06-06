@@ -34,6 +34,7 @@ export const taxonomyTerms = pgTable(
     id: autoId().primaryKey(),
     taxonomyId: uuid('taxonomy_id').references(() => taxonomies.id),
     termUri: varchar('term_uri', { length: 255 }).notNull(),
+    facet: varchar('facet', { length: 255 }),
     label: varchar('label', { length: 255 }).notNull(),
     definition: text('definition'),
     // @ts-expect-error - circular reference somehow isn't inferring the correct type

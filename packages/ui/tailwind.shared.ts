@@ -31,6 +31,9 @@ const config: Omit<Config, 'content'> = {
         sans: ['var(--font-sans)', ...defaultTheme.fontFamily.sans],
         mono: ['var(--font-mono)', ...defaultTheme.fontFamily.mono],
       },
+      lineHeight: {
+        base: '0.875rem',
+      },
       fontSize: {
         'title-xxl': [
           '3rem',
@@ -285,8 +288,7 @@ const config: Omit<Config, 'content'> = {
         DEFAULT: '0.5rem',
         lg: '0.5rem',
         md: '0.5rem',
-        // sm: 'calc(var(--radius) - 0.25rem)',
-        sm: '0.5rem',
+        sm: '0.25rem',
       },
       boxShadow: {
         DEFAULT: '0px 0px 48px 0px rgba(20, 35, 38, 0.08)',
@@ -310,6 +312,12 @@ const config: Omit<Config, 'content'> = {
           'radial-gradient(70.56% 70.56% at 72.75% 33.21%, #6200C3 0%, #FF613D 100%)',
         yellowOrange:
           'radial-gradient(74.88% 74.88% at 42.58% 76.89%, #F29F05 0%, #F2B705 100%))',
+      },
+      gridTemplateColumns: {
+        '15': 'repeat(15, minmax(0, 1fr))',
+      },
+      backdropBlur: {
+        sm: '1px',
       },
     },
   },

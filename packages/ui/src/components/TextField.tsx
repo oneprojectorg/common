@@ -43,6 +43,7 @@ export const TextField = ({
   labelClassName,
   useTextArea,
   children,
+  isRequired, // we pull this out as it conflicts with other form validation libraries
   ...props
 }: TextFieldProps & {
   ref?: React.RefObject<HTMLInputElement | HTMLTextAreaElement | null>;
@@ -51,32 +52,40 @@ export const TextField = ({
   return (
     <AriaTextField
       {...props}
+      isInvalid={!!errorMessage && errorMessage.length > 0}
       className={composeTailwindRenderProps(
         props.className,
-        'flex flex-col gap-2',
+        'group flex flex-col gap-2',
       )}
     >
       {label && (
         <Label
           className={cn(
             labelClassName,
-            !!errorMessage && 'text-functional-red',
+            'group-data-[invalid=true]:text-functional-red',
           )}
         >
           {label}
-          {props.isRequired && <span className="text-functional-red"> *</span>}
+          {isRequired && <span className="text-functional-red"> *</span>}
         </Label>
       )}
       <FieldGroup className={fieldClassName}>
         {useTextArea ? (
           <TextArea
             {...textareaProps}
+            className={cn(
+              textareaProps?.className,
+              'group-data-[invalid=true]:outline-1 group-data-[invalid=true]:outline-functional-red',
+            )}
             ref={ref as React.RefObject<HTMLTextAreaElement>}
           />
         ) : (
           <Input
             {...inputProps}
-            color={errorMessage ? 'error' : inputProps?.color}
+            className={cn(
+              inputProps?.className,
+              'group-data-[invalid=true]:outline-1 group-data-[invalid=true]:outline-functional-red',
+            )}
             ref={ref as React.RefObject<HTMLInputElement>}
           />
         )}

@@ -9,6 +9,8 @@ export {
   organizationsWhereWeWorkRelations,
   organizationsStrategies, // reconsider these tables as possible graphs and edges
   organizationsStrategiesRelations,
+  organizationsTerms,
+  organizationsTermsRelations,
 } from './tables/organizations.sql';
 export type { Organization } from './tables/organizations.sql';
 export {
@@ -26,6 +28,11 @@ export {
 } from './tables/posts.sql';
 
 export {
+  attachments,
+  attachmentsRelations,
+} from './tables/attachments.sql';
+
+export {
   taxonomies,
   taxonomyTerms,
   taxonomyTermsRelations,
@@ -33,6 +40,9 @@ export {
 } from './tables/taxonomies.sql';
 
 export { projects, projectsRelations } from './tables/projects.sql';
-export { organizationRelationships } from './tables/relationships.sql';
+export {
+  organizationRelationships,
+  organizationRelationshipsRelations,
+} from './tables/relationships.sql';
 export { users, usersRelations } from './tables/users.sql';
 export { usersUsedStorage } from './tables/usersUsedStorage.sql';

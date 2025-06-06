@@ -54,12 +54,11 @@ const checkboxStyles = tv({
 
 const boxStyles = tv({
   extend: focusRing,
-  base: 'flex size-5 flex-shrink-0 items-center justify-center rounded border-2 transition',
+  base: 'flex size-6 flex-shrink-0 items-center justify-center rounded-sm border border-neutral-gray2 transition',
   variants: {
     isSelected: {
-      false:
-        '[--color:colors.neutral-400)] border-[--color] bg-neutral-100 group-pressed:[--color:theme(colors.neutral.300)]',
-      true: 'border-[--color] bg-[--color] [--color:theme(colors.neutral.300)] group-pressed:[--color:theme(colors.neutral.200)]',
+      false: '',
+      true: 'border-none bg-teal text-neutral-offWhite',
     },
     isInvalid: {
       true: '[--color:theme(colors.red.600)] group-pressed:[--color:theme(colors.red.700)]',

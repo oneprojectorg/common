@@ -29,7 +29,7 @@ export const Label = (props: LabelProps) => {
     <RACLabel
       {...props}
       className={twMerge(
-        'w-fit cursor-default text-xs font-normal text-neutral-black',
+        'w-fit cursor-default text-sm font-normal text-neutral-black',
         props.className,
       )}
     />
@@ -91,7 +91,7 @@ export const FieldGroup = (props: GroupProps) => {
 };
 
 export const inputStyles = tv({
-  base: 'min-w-0 flex-1 rounded-md border border-neutral-gray1 p-4 text-sm leading-[0.5rem] text-neutral-black outline outline-0 placeholder:text-neutral-gray4 active:border-neutral-gray4 active:outline hover:border-neutral-gray2 focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-data-blue disabled:border-neutral-gray2 disabled:bg-neutral-gray1 disabled:text-lightGray',
+  base: 'h-10 min-w-0 flex-1 rounded-md border border-neutral-gray1 p-4 text-base leading-[0.5rem] text-neutral-black outline outline-0 placeholder:text-neutral-gray3 active:border-neutral-gray4 active:outline hover:border-neutral-gray2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue disabled:border-neutral-gray2 disabled:bg-neutral-gray1 disabled:text-lightGray',
   variants: {
     color: {
       primary: '',
@@ -102,7 +102,7 @@ export const inputStyles = tv({
       small: 'px-4 py-2',
     },
     hasIcon: {
-      true: 'w-full pl-10',
+      true: 'w-full pl-8',
       false: 'outline-functional-red',
     },
   },
@@ -142,9 +142,6 @@ export const InputWithIcon = ({
 }: InputWithVariantsProps & { ref?: React.RefObject<HTMLInputElement> }) => {
   return (
     <span className="relative w-full">
-      <span className="absolute left-4 top-1/2 -translate-y-1/2">
-        {props.icon}
-      </span>
       <RACInput
         ref={ref}
         {...props}
@@ -154,23 +151,48 @@ export const InputWithIcon = ({
           hasIcon: true,
         } as InputVariantsProps)}
       />
+      <span className="absolute left-3 top-1/2 -translate-y-1/2">
+        {props.icon}
+      </span>
     </span>
   );
 };
 
+const textAreaStyles = tv({
+  base: [
+    'w-full min-w-0 resize-none rounded-md border border-neutral-gray1 p-3 text-base text-neutral-black',
+    'outline outline-0 placeholder:text-base placeholder:text-neutral-gray4',
+    'active:border-neutral-gray4 active:outline',
+    'hover:border-neutral-gray2',
+    'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue',
+    'disabled:border-neutral-gray2 disabled:bg-neutral-gray1 disabled:text-lightGray',
+  ],
+  variants: {
+    variant: {
+      default: '',
+      borderless: 'border-none p-0',
+    },
+  },
+  defaultVariants: {
+    variant: 'default',
+  },
+});
+type TextAreaVariantProps = VariantProps<typeof textAreaStyles>;
+
 export const TextArea = ({
   ref,
+  variant,
+  className,
   ...props
-}: TextAreaProps & { ref?: React.RefObject<HTMLTextAreaElement> }) => {
+}: TextAreaProps & {
+  ref?: React.RefObject<HTMLTextAreaElement>;
+  className?: string;
+} & TextAreaVariantProps) => {
   return (
     <RACTextArea
       ref={ref}
       {...props}
-      className={composeTailwindRenderProps(
-        props.className,
-        // 'min-h-28 min-w-0 flex-1 items-center rounded border border-offWhite bg-white p-4 text-sm text-darkGray placeholder:text-midGray disabled:text-neutral-400',
-        'min-h-28 w-full min-w-0 rounded-md border border-neutral-gray1 p-3 text-sm text-neutral-black outline outline-0 placeholder:text-base placeholder:text-neutral-gray4 active:border-neutral-gray4 active:outline hover:border-neutral-gray2 focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-data-blue disabled:border-neutral-gray2 disabled:bg-neutral-gray1 disabled:text-lightGray',
-      )}
+      className={textAreaStyles({ variant, className })}
     />
   );
 };

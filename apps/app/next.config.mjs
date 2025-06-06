@@ -36,11 +36,20 @@ dotenv.config({
 
 /** @type {import('next').NextConfig} */
 const config = {
-  //   experimental: {
-  //     reactCompiler: true,
-  //   },
+  experimental: {
+    // reactCompiler: true,
+    serverComponentsExternalPackages: [
+      'sharp',
+      'onnxruntime-node',
+      'thread-stream',
+      'pino',
+      'pino-worker',
+      '@axiomhq/pino',
+    ],
+    instrumentationHook: true,
+  },
 
-  webpack: (cfg) => {
+  webpack: (cfg, { isServer }) => {
     // Grab the existing rule that handles SVG imports
     const fileLoaderRule = cfg.module.rules.find((rule) =>
       rule.test?.test?.('.svg'),
@@ -72,6 +81,13 @@ const config = {
     // Modify the file loader rule to ignore *.svg, since we have it handled now.
     fileLoaderRule.exclude = /\.svg$/i;
 
+    if (!isServer) {
+      cfg.resolve.fallback = {
+        // Disable the 'tls' module on the client side
+        tls: false,
+      };
+    }
+
     return cfg;
   },
   async rewrites() {
@@ -96,6 +112,7 @@ const config = {
   },
   // This is required to support PostHog trailing slash API requests
   skipTrailingSlashRedirect: true,
+  // productionBrowserSourceMaps: true,
 };
 
 export default withBundleAnalyzer(

@@ -1,6 +1,6 @@
 'use client';
 
-import { X } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { ValidationResult } from 'react-aria-components';
 
@@ -9,7 +9,10 @@ import { FieldError, Label } from './Field';
 export interface Option {
   id: string;
   label: string;
+  definition?: string | null;
   isNewValue?: boolean;
+  level?: number;
+  hasChildren?: boolean;
 }
 
 export type MultiSelectComboBoxProps = {
@@ -22,6 +25,8 @@ export type MultiSelectComboBoxProps = {
   onInputUpdate?: (value: string) => void;
   errorMessage?: string | ((validation: ValidationResult) => string);
   allowAdditions?: boolean;
+  showDefinitions?: boolean;
+  disableParentSelection?: boolean;
 };
 
 export const MultiSelectComboBox = ({
@@ -34,6 +39,8 @@ export const MultiSelectComboBox = ({
   onInputUpdate,
   errorMessage,
   allowAdditions,
+  showDefinitions = false,
+  disableParentSelection = true,
 }: MultiSelectComboBoxProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
@@ -41,10 +48,11 @@ export const MultiSelectComboBox = ({
   const [showOtherInput, setShowOtherInput] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const otherInputRef = useRef<HTMLInputElement | null>(null);
+  const listRef = useRef<HTMLUListElement | null>(null);
   const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
 
   const selectedOptions = value ?? [];
-  const setSelectedOptions = onChange ?? (() => {});
+  const setSelectedOptions = onChange ?? (() => { });
 
   // Handle outside clicks to close dropdown
   useEffect(() => {
@@ -80,6 +88,11 @@ export const MultiSelectComboBox = ({
   };
 
   const handleOptionClick = (option: Option) => {
+    // Don't allow selection of parent terms if disableParentSelection is true
+    if (disableParentSelection && option.hasChildren) {
+      return;
+    }
+
     // Check if option is already selected
     const isSelected = selectedOptions.some((item) => item.id === option.id);
 
@@ -118,21 +131,85 @@ export const MultiSelectComboBox = ({
       !selectedOptions.some((item) => item.id === option.id),
   );
 
+  // Helper functions for tree navigation
+  const isItemSelectable = (item: Option): boolean => {
+    if (!disableParentSelection) return true;
+    return !item.hasChildren;
+  };
+
+  const findNextSelectableIndex = (currentIndex: number): number => {
+    for (let i = currentIndex + 1; i < filteredItems.length; i++) {
+      if (isItemSelectable(filteredItems[i]!)) {
+        return i;
+      }
+    }
+    // If no next selectable item found, wrap to first selectable
+    for (let i = 0; i <= currentIndex; i++) {
+      if (isItemSelectable(filteredItems[i]!)) {
+        return i;
+      }
+    }
+    return -1; // No selectable items found
+  };
+
+  const findPreviousSelectableIndex = (currentIndex: number): number => {
+    for (let i = currentIndex - 1; i >= 0; i--) {
+      if (isItemSelectable(filteredItems[i]!)) {
+        return i;
+      }
+    }
+    // If no previous selectable item found, wrap to last selectable
+    for (let i = filteredItems.length - 1; i >= currentIndex; i--) {
+      if (isItemSelectable(filteredItems[i]!)) {
+        return i;
+      }
+    }
+    return -1; // No selectable items found
+  };
+
+  const findFirstSelectableIndex = (): number => {
+    for (let i = 0; i < filteredItems.length; i++) {
+      if (isItemSelectable(filteredItems[i]!)) {
+        return i;
+      }
+    }
+    return -1; // No selectable items found
+  };
+
   // Reset highlighted index if filteredItems changes
   useEffect(() => {
     if (!isOpen || filteredItems.length === 0) {
       setHighlightedIndex(-1);
-    } else if (highlightedIndex >= filteredItems.length) {
-      setHighlightedIndex(0);
+    } else if (
+      highlightedIndex >= filteredItems.length ||
+      (highlightedIndex >= 0 &&
+        !isItemSelectable(filteredItems[highlightedIndex]!))
+    ) {
+      setHighlightedIndex(findFirstSelectableIndex());
     }
-  }, [filteredItems, isOpen]);
+  }, [filteredItems, isOpen, highlightedIndex, disableParentSelection]);
+
+  // Scroll highlighted item into view
+  useEffect(() => {
+    if (highlightedIndex >= 0 && listRef.current) {
+      const highlightedElement = listRef.current.children[
+        highlightedIndex
+      ] as HTMLElement;
+      if (highlightedElement) {
+        highlightedElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+        });
+      }
+    }
+  }, [highlightedIndex]);
 
   // Handle input change
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onInputUpdate?.(e.target.value ?? '');
     setInputValue(e.target.value ?? '');
     setIsOpen(true);
-    setHighlightedIndex(0);
+    setHighlightedIndex(findFirstSelectableIndex());
   };
 
   // Add inputValue as a new tag if not empty and not already selected
@@ -163,30 +240,35 @@ export const MultiSelectComboBox = ({
 
       if (filteredItems.length > 0) {
         setIsOpen(true);
-        setHighlightedIndex((prev) =>
-          prev < filteredItems.length - 1 ? prev + 1 : 0,
-        );
+        setHighlightedIndex((prev) => {
+          if (prev === -1) {
+            return findFirstSelectableIndex();
+          }
+          return findNextSelectableIndex(prev);
+        });
       }
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
 
       if (filteredItems.length > 0) {
         setIsOpen(true);
-        setHighlightedIndex((prev) =>
-          prev > 0 ? prev - 1 : filteredItems.length - 1,
-        );
+        setHighlightedIndex((prev) => {
+          if (prev === -1) {
+            return findFirstSelectableIndex();
+          }
+          return findPreviousSelectableIndex(prev);
+        });
       }
     } else if (
       e.key === 'Tab' &&
       isOpen &&
       filteredItems.length > 0 &&
-      highlightedIndex >= 0 &&
-      highlightedIndex < filteredItems.length
+      highlightedIndex >= 0
     ) {
       e.preventDefault();
       const chosen = filteredItems[highlightedIndex];
 
-      if (chosen) {
+      if (chosen && isItemSelectable(chosen)) {
         handleOptionClick(chosen);
       }
 
@@ -223,7 +305,7 @@ export const MultiSelectComboBox = ({
       <div className="relative" ref={dropdownRef}>
         {/* Dropdown button / Selected options display */}
         <div
-          className="flex min-h-10 w-full cursor-pointer flex-wrap items-center rounded-md border border-offWhite bg-white px-4 py-2 text-sm"
+          className="flex min-h-10 w-full cursor-pointer flex-wrap items-center rounded-md border border-offWhite bg-white px-3 py-2 text-base hover:border-neutral-gray2"
           onClick={() => {
             // Only toggle if input is NOT focused
             if (document.activeElement !== inputRef.current) {
@@ -231,7 +313,45 @@ export const MultiSelectComboBox = ({
             }
           }}
         >
-          <div className="flex w-full flex-wrap items-center gap-1">
+          <div className="relative flex w-full flex-wrap items-center gap-1">
+            <input
+              ref={inputRef}
+              type="text"
+              className="ml-1 min-w-[40px] flex-1 border-none bg-transparent pr-7 text-base outline-none placeholder:text-neutral-gray4 group-data-[invalid=true]:outline-1 group-data-[invalid=true]:outline-functional-red"
+              value={inputValue}
+              onChange={handleInputChange}
+              onKeyDown={handleInputKeyDown}
+              onBlur={handleInputBlur}
+              onFocus={() => {
+                if (filteredItems.length > 0) {
+                  setIsOpen(true);
+                  if (highlightedIndex === -1) {
+                    setHighlightedIndex(findFirstSelectableIndex());
+                  }
+                }
+              }}
+              onMouseDown={() => {
+                // Open dropdown before focus event
+                if (filteredItems.length > 0) {
+                  setIsOpen(true);
+                  if (highlightedIndex === -1) {
+                    setHighlightedIndex(findFirstSelectableIndex());
+                  }
+                }
+              }}
+              placeholder={placeholder}
+              style={{ minWidth: 40 }}
+            />
+            <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-neutral-charcoal">
+              <Search className="size-4" />
+            </span>
+          </div>
+          <FieldError>{errorMessage}</FieldError>
+        </div>
+
+        {/* Selected options below input box, not inside */}
+        {selectedOptions.length > 0 && (
+          <div className="mt-1 flex flex-wrap gap-2">
             {selectedOptions.map((option) => (
               <div
                 key={option.isNewValue ? 'other' : option.id}
@@ -247,52 +367,55 @@ export const MultiSelectComboBox = ({
                 </button>
               </div>
             ))}
-            <input
-              ref={inputRef}
-              type="text"
-              className="ml-1 min-w-[40px] flex-1 border-none bg-transparent py-1 text-sm outline-none placeholder:text-midGray"
-              value={inputValue}
-              onChange={handleInputChange}
-              onKeyDown={handleInputKeyDown}
-              onBlur={handleInputBlur}
-              onFocus={() => {
-                if (filteredItems.length > 0) setIsOpen(true);
-              }}
-              onMouseDown={() => {
-                // Open dropdown before focus event
-                if (filteredItems.length > 0) setIsOpen(true);
-              }}
-              placeholder={placeholder}
-              style={{ minWidth: 40 }}
-            />
           </div>
-          <FieldError>{errorMessage}</FieldError>
-        </div>
+        )}
+        <FieldError>{errorMessage}</FieldError>
 
-        {/* Dropdown menu */}
+        {/* Dropdown menu - always below input and selected options */}
         {isOpen && filteredItems.length > 0 && (
           <div className="absolute z-10 mt-1 w-full rounded-md border border-gray-200 bg-white shadow-lg">
-            <ul className="max-h-60 overflow-auto py-1">
-              {filteredItems.map((option, idx) => (
-                <li
-                  key={option.id}
-                  className={`flex cursor-pointer items-center px-3 py-2 text-sm hover:bg-gray-100 ${
-                    selectedOptions.some((item) => item.id === option.id)
-                      ? 'bg-blue-50'
-                      : ''
-                  } ${highlightedIndex === idx ? 'bg-blue-100' : ''}`}
-                  onMouseEnter={() => setHighlightedIndex(idx)}
-                  onMouseLeave={() => setHighlightedIndex(-1)}
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => {
-                    handleOptionClick(option);
-                    setInputValue('');
-                    setHighlightedIndex(-1);
-                  }}
-                >
-                  {option.label}
-                </li>
-              ))}
+            <ul ref={listRef} className="max-h-60 overflow-auto py-1">
+              {filteredItems.map((option, idx) => {
+                const isParent = disableParentSelection && option.hasChildren;
+                const isSelected = selectedOptions.some(
+                  (item) => item.id === option.id,
+                );
+                const isHighlighted = highlightedIndex === idx;
+                const indentLevel = option.level || 0;
+
+                return (
+                  <li
+                    key={option.id}
+                    className={`flex flex-col items-start px-3 py-2 text-base ${isParent
+                      ? 'h-6 cursor-default py-0 pt-2 text-sm text-neutral-gray4' // parent styling
+                      : `cursor-pointer hover:bg-neutral-gray1 ${isSelected ? 'bg-neutral-gray1' : ''
+                      } ${isHighlighted ? 'bg-neutral-gray1' : ''}`
+                      }`}
+                    style={{
+                      paddingLeft: `${12 + indentLevel * 16}px`, // Base padding + indentation
+                    }}
+                    onMouseEnter={() => !isParent && setHighlightedIndex(idx)}
+                    onMouseLeave={() => setHighlightedIndex(-1)}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => {
+                      handleOptionClick(option);
+                      setInputValue('');
+                      setHighlightedIndex(-1);
+                    }}
+                  >
+                    <span
+                      className={isParent ? 'text-sm text-neutral-gray4' : ''}
+                    >
+                      {option.label}
+                    </span>
+                    {showDefinitions && option.definition && !isParent ? (
+                      <span className="overflow-hidden text-ellipsis text-nowrap text-sm text-neutral-charcoal">
+                        {option.definition}
+                      </span>
+                    ) : null}
+                  </li>
+                );
+              })}
             </ul>
           </div>
         )}

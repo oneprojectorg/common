@@ -1,0 +1,230 @@
+import { trpc } from '@op/api/client';
+import { useCallback, useState } from 'react';
+
+export interface FilePreview {
+  id: string;
+  file: File;
+  url: string;
+  uploading: boolean;
+  uploaded?: boolean;
+  error?: string;
+  fileName: string;
+  mimeType: string;
+  fileSize: number;
+}
+
+interface UseFileUploadOptions {
+  organizationId: string;
+  acceptedTypes?: string[];
+  maxFiles?: number;
+  maxSizePerFile?: number;
+}
+
+const DEFAULT_ACCEPTED_TYPES = [
+  'image/png',
+  'image/jpeg',
+  'image/webp',
+  'application/pdf',
+];
+const DEFAULT_MAX_FILES = 10;
+const DEFAULT_MAX_SIZE = 10 * 1024 * 1024; // 10MB
+
+export const useFileUpload = (options: UseFileUploadOptions) => {
+  const {
+    organizationId,
+    acceptedTypes = DEFAULT_ACCEPTED_TYPES,
+    maxFiles = DEFAULT_MAX_FILES,
+    maxSizePerFile = DEFAULT_MAX_SIZE,
+  } = options ?? {};
+
+  const [filePreviews, setFilePreviews] = useState<FilePreview[]>([]);
+  const [isDragOver, setIsDragOver] = useState(false);
+
+  const uploadAttachment = trpc.organization.uploadPostAttachment.useMutation();
+
+  const validateFile = (file: File): string | null => {
+    if (!acceptedTypes.includes(file.type)) {
+      return `File type ${file.type} not supported. Accepted types: ${acceptedTypes.join(', ')}`;
+    }
+    if (file.size > maxSizePerFile) {
+      const maxSizeMB = (maxSizePerFile / 1024 / 1024).toFixed(2);
+      return `File too large. Maximum size: ${maxSizeMB}MB`;
+    }
+    return null;
+  };
+
+  const uploadFile = async (
+    file: File,
+  ): Promise<{
+    id: string;
+    url: string;
+    fileName: string;
+    mimeType: string;
+    fileSize: number;
+  }> => {
+    const validationError = validateFile(file);
+    if (validationError) {
+      throw new Error(validationError);
+    }
+
+    const previewId = `${Date.now()}-${Math.random()}`;
+
+    // Create initial preview
+    const preview: FilePreview = {
+      id: previewId,
+      file,
+      url: URL.createObjectURL(file),
+      uploading: true,
+      fileName: file.name,
+      mimeType: file.type,
+      fileSize: file.size,
+    };
+
+    setFilePreviews((prev) => [...prev, preview]);
+
+    try {
+      // Convert file to base64
+      const reader = new FileReader();
+      const base64 = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () => reject(new Error('Failed to read file'));
+        reader.readAsDataURL(file);
+      });
+
+      const result = await uploadAttachment.mutateAsync({
+        organizationId,
+        file: base64,
+        fileName: file.name,
+        mimeType: file.type,
+      });
+
+      // Update preview with success
+      setFilePreviews((prev) =>
+        prev.map((f) =>
+          f.id === previewId
+            ? { ...f, uploading: false, uploaded: true, id: result.id }
+            : f,
+        ),
+      );
+
+      return result;
+    } catch (error) {
+      // Update preview with error
+      setFilePreviews((prev) =>
+        prev.map((f) =>
+          f.id === previewId
+            ? {
+                ...f,
+                uploading: false,
+                error: error instanceof Error ? error.message : 'Upload failed',
+              }
+            : f,
+        ),
+      );
+      throw error;
+    }
+  };
+
+  const removeFile = (id: string) => {
+    const preview = filePreviews.find((f) => f.id === id);
+    if (preview) {
+      URL.revokeObjectURL(preview.url);
+      setFilePreviews((prev) => prev.filter((f) => f.id !== id));
+    }
+  };
+
+  const clearFiles = () => {
+    filePreviews.forEach((preview) => URL.revokeObjectURL(preview.url));
+    setFilePreviews([]);
+  };
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Only set drag over to false if we're leaving the main container
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setIsDragOver(false);
+    }
+  }, []);
+
+  const handleDrop = useCallback(
+    async (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragOver(false);
+
+      const files = Array.from(e.dataTransfer.files);
+
+      // Check file limit
+      if (filePreviews.length + files.length > maxFiles) {
+        alert(`Maximum ${maxFiles} files allowed`);
+        return;
+      }
+
+      const validFiles = files.filter((file) =>
+        acceptedTypes.includes(file.type),
+      );
+
+      if (validFiles.length === 0) {
+        alert(
+          `Please drop only supported file types: ${acceptedTypes.join(', ')}`,
+        );
+        return;
+      }
+
+      // Upload each valid file
+      for (const file of validFiles) {
+        try {
+          await uploadFile(file);
+        } catch (error) {
+          console.error('Failed to upload file:', file.name, error);
+        }
+      }
+    },
+    [filePreviews.length, maxFiles, acceptedTypes, uploadFile],
+  );
+
+  const getUploadedAttachmentIds = () => {
+    return filePreviews.filter((f) => f.uploaded && !f.error).map((f) => f.id);
+  };
+
+  const hasUploadedFiles = () => {
+    return filePreviews.some((f) => f.uploaded && !f.error);
+  };
+
+  const isUploading = () => {
+    return filePreviews.some((f) => f.uploading);
+  };
+
+  return {
+    // State
+    filePreviews,
+    isDragOver,
+
+    // Actions
+    uploadFile,
+    removeFile,
+    clearFiles,
+
+    // Drag and drop handlers
+    handleDragOver,
+    handleDragLeave,
+    handleDrop,
+
+    // Computed values
+    getUploadedAttachmentIds,
+    hasUploadedFiles,
+    isUploading,
+
+    // Configuration
+    acceptedTypes,
+    maxFiles,
+    maxSizePerFile,
+  };
+};

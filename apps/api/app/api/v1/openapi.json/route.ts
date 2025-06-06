@@ -1,6 +1,6 @@
+import { appRouter } from '@op/api';
 import { APP_NAME, OPURLConfig } from '@op/core';
 import { createSBServerClient } from '@op/supabase/server';
-import { appRouter } from '@op/trpc';
 import { generateOpenApiDocument } from 'trpc-to-openapi';
 
 import { verifyAdminOnly } from '../../../route';

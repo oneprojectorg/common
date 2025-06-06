@@ -1,12 +1,19 @@
-import type { Organization } from '@op/trpc/encoders';
-import { Button, ButtonLink } from '@op/ui/Button';
+'use client';
+
+import { formatToUrl } from '@/utils';
+import { useUser } from '@/utils/UserProvider';
+import type { Organization } from '@op/api/encoders';
+import { ButtonLink } from '@op/ui/Button';
 import { SkeletonLine } from '@op/ui/Skeleton';
 import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
-import { LuArrowUpRight, LuInfo, LuPlus } from 'react-icons/lu';
+import { LuArrowUpRight, LuInfo } from 'react-icons/lu';
 
 import { ProfileSummary } from '../ProfileSummary';
+import { AddRelationshipModal } from './AddRelationshipModal';
+import { UpdateOrganizationModal } from './UpdateOrganizationModal';
 
 const ProfileInteractions = ({ profile }: { profile: Organization }) => {
+  const { user } = useUser();
   const { isReceivingFunds, isOfferingFunds, links } = profile;
 
   // split funding links up by type
@@ -19,42 +26,58 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
 
   return (
     <div className="flex flex-wrap gap-3 sm:gap-4">
+      {user?.currentOrganization?.id !== profile.id ? (
+        <AddRelationshipModal profile={profile} />
+      ) : (
+        <UpdateOrganizationModal profile={profile} />
+      )}
       {isReceivingFunds
         ? receivingFundingLinks.map((link) => (
             <TooltipTrigger key={link.id}>
-              <ButtonLink
-                color="secondary"
-                href={link.href}
-                className="min-w-full sm:min-w-fit"
-              >
-                <LuArrowUpRight className="size-4" />
-                Contribute
-              </ButtonLink>
-              <Tooltip>We accept applications on a rolling basis</Tooltip>
+              <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+                <ButtonLink
+                  color="secondary"
+                  href={formatToUrl(link.href)}
+                  target="_blank"
+                  className="min-w-full sm:min-w-fit"
+                >
+                  <LuArrowUpRight className="size-4" />
+                  Contribute
+                </ButtonLink>
+                <Tooltip>{link.description ?? 'Click to learn more'}</Tooltip>
+
+                {link.description ? (
+                  <div className="flex w-full items-center justify-center text-sm text-neutral-charcoal sm:hidden">
+                    {link.description}
+                  </div>
+                ) : null}
+              </div>
             </TooltipTrigger>
           ))
         : null}
-
       {isOfferingFunds
         ? offeringFundingLinks.map((link) => (
             <TooltipTrigger key={link.id}>
-              <ButtonLink
-                color="secondary"
-                href={link.href}
-                className="min-w-full sm:min-w-fit"
-              >
-                <LuInfo />
-                Learn more
-              </ButtonLink>
-              <Tooltip>We’re an invite-only granting organization</Tooltip>
+              <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+                <ButtonLink
+                  color="secondary"
+                  href={formatToUrl(link.href)}
+                  target="_blank"
+                  className="min-w-full sm:min-w-fit"
+                >
+                  <LuInfo />
+                  Learn more
+                </ButtonLink>
+                <Tooltip>{link.description ?? 'Click to learn more'}</Tooltip>
+                {link.description ? (
+                  <div className="flex w-full items-center justify-center text-sm text-neutral-charcoal sm:hidden">
+                    {link.description}
+                  </div>
+                ) : null}
+              </div>
             </TooltipTrigger>
           ))
         : null}
-
-      <Button className="min-w-full sm:min-w-fit">
-        <LuPlus className="size-4" />
-        Add relationship
-      </Button>
     </div>
   );
 };
@@ -63,9 +86,6 @@ export const ProfileDetails = ({ profile }: { profile: Organization }) => {
   return (
     <div className="flex w-full flex-col gap-3 px-4">
       <ProfileSummary profile={profile} />
-      <div className="text-base text-neutral-charcoal">
-        {profile.description}
-      </div>
       <ProfileInteractions profile={profile} />
     </div>
   );

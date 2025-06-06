@@ -11,7 +11,7 @@ import { focusRing } from '../utils';
 
 const styles = tv({
   extend: focusRing,
-  base: 'flex h-10 min-w-18 cursor-default items-center rounded-full p-1 outline-offset-0 outline-transparent transition-colors duration-300 focus:ring-transparent',
+  base: 'flex h-10 min-w-18 cursor-pointer items-center rounded-full p-1 outline-offset-0 outline-transparent transition-colors duration-300 focus-visible:ring-transparent',
   variants: {
     isSelected: {
       false: 'bg-lightGray',

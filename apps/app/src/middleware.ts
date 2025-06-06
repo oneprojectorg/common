@@ -1,13 +1,18 @@
 import { OPURLConfig, cookieOptionsDomain } from '@op/core';
+import { logger, transformMiddlewareRequest } from '@op/logging';
 import { createServerClient } from '@op/supabase/lib';
 import createMiddleware from 'next-intl/middleware';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextFetchEvent, NextRequest, NextResponse } from 'next/server';
 
 import { i18nConfig, routing } from './lib/i18n';
 
 const useUrl = OPURLConfig('APP');
 
-export async function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest, event: NextFetchEvent) {
+  // Log request
+  logger.info(...transformMiddlewareRequest(request));
+
+  event.waitUntil(logger.flush());
   // i18n ROUTING
   const pathname = request.nextUrl.pathname;
   const pathnameIsMissingLocale = i18nConfig.locales.every(
@@ -16,7 +21,7 @@ export async function middleware(request: NextRequest) {
   );
 
   // only reroute if locale is missing. Otherwise we want to use the domain routing
-  if (pathnameIsMissingLocale) {
+  if (pathnameIsMissingLocale && !pathname.startsWith('/api')) {
     const handleI18nRouting = createMiddleware(routing);
 
     const response = handleI18nRouting(request);
@@ -34,10 +39,10 @@ export async function middleware(request: NextRequest) {
       cookieOptions:
         useUrl.IS_PRODUCTION || useUrl.IS_STAGING || useUrl.IS_PREVIEW
           ? {
-              domain: cookieOptionsDomain,
-              sameSite: 'lax',
-              secure: true,
-            }
+            domain: cookieOptionsDomain,
+            sameSite: 'lax',
+            secure: true,
+          }
           : {},
       cookies: {
         getAll() {
@@ -67,13 +72,19 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user && request.nextUrl.pathname.startsWith('/protected')) {
+  if (!user && !request.nextUrl.pathname.startsWith('/login')) {
     // no user, potentially respond by redirecting the user to the login page
     const url = request.nextUrl.clone();
 
-    url.pathname = '/';
+    url.pathname = '/login';
 
     return NextResponse.redirect(url);
+  }
+
+  if (user && !user.email?.match('oneproject.org|scottcazan@gmail.com')) {
+    logger.warn('Invalid user email access attempt', { email: user.email });
+    supabase.auth.signOut();
+    return NextResponse.redirect(new URL('/waitlist', request.url));
   }
 
   // IMPORTANT: You *must* return the supabaseResponse object as it is.
@@ -101,7 +112,7 @@ export const config = {
      * - favicon.ico (favicon file)
      * Feel free to modify this pattern to include more paths.
      */
-    '/((?!_next/static|api|_next/image|favicon.ico|login|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|ingest|api|waitlist|_next/image|favicon.ico|login|.*\\.(?:svg|png|jpg|jpeg|gif|webp|pdf)$).*)',
     // '/(.*rss\\.xml)',
     // '/((?!node/|auth/|_next/|_static/|_vercel|_axiom/|media/|[\\w-]+\\.\\w+|.*\\..*).*)',
   ],

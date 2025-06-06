@@ -1,11 +1,12 @@
+import { appRouter, createContext } from '@op/api';
 import { API_OPENAPI_PATH } from '@op/core';
+import { withAxiom } from '@op/logging';
 import { createSBServerClient } from '@op/supabase/server';
-import { appRouter, createContext } from '@op/trpc';
 import { createOpenApiFetchHandler } from 'trpc-to-openapi';
 
 import { verifyAdminOnly } from '../../../route';
 
-const handler = async (req: Request) => {
+const handler = withAxiom(async (req: Request) => {
   const supabase = await createSBServerClient();
   const data = await supabase.auth.getUser();
 
@@ -18,7 +19,7 @@ const handler = async (req: Request) => {
     createContext,
     req,
   });
-};
+});
 
 export {
   handler as DELETE,

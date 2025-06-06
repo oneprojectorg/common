@@ -58,7 +58,7 @@ const supabase = createServerClient(
     cookieOptions: {},
     cookies: {
       getAll: async () => [],
-      setAll: async () => {},
+      setAll: async () => { },
     },
   },
 );
@@ -92,6 +92,149 @@ const seedOrgs = [
     email: 'info@oneproject.org',
     website: 'https://oneproject.org',
     type: OrgType.NONPROFIT,
+  },
+  {
+    name: 'FutureWorks Tech',
+    slug: 'futureworks-tech',
+    description: 'A for-profit startup building AI-driven job matching platforms.',
+    mission: 'To connect people with meaningful work through technology.',
+    city: 'Austin',
+    state: 'TX',
+    isOfferingFunds: false,
+    isReceivingFunds: true,
+    email: 'hello@futureworks.com',
+    website: 'https://futureworks.com',
+    type: OrgType.FORPROFIT,
+  },
+  {
+    name: 'GreenGov Initiative',
+    slug: 'greengov-initiative',
+    description: 'A government initiative supporting sustainable city planning.',
+    mission: 'To create greener, more sustainable urban environments.',
+    city: 'Portland',
+    state: 'OR',
+    isOfferingFunds: true,
+    isReceivingFunds: false,
+    email: 'info@greengov.gov',
+    website: 'https://greengov.gov',
+    type: OrgType.GOVERNMENT,
+  },
+  {
+    name: 'Open Horizons',
+    slug: 'open-horizons',
+    description: 'A nonprofit focused on educational equity for underserved youth.',
+    mission: 'Expanding access to quality education for all.',
+    city: 'Atlanta',
+    state: 'GA',
+    isOfferingFunds: false,
+    isReceivingFunds: true,
+    email: 'contact@openhorizons.org',
+    website: 'https://openhorizons.org',
+    type: OrgType.NONPROFIT,
+  },
+  {
+    name: 'Civic Bridge',
+    slug: 'civic-bridge',
+    description: 'A public-private partnership for infrastructure improvement.',
+    mission: 'Building bridges—literally and figuratively—for better communities.',
+    city: 'Pittsburgh',
+    state: 'PA',
+    isOfferingFunds: true,
+    isReceivingFunds: true,
+    email: 'info@civicbridge.com',
+    website: 'https://civicbridge.com',
+    type: OrgType.OTHER,
+  },
+  {
+    name: 'Youth Empowerment League',
+    slug: 'youth-empowerment-league',
+    description: 'Grassroots nonprofit for youth leadership programs.',
+    mission: 'Empowering the next generation of leaders.',
+    city: 'Detroit',
+    state: 'MI',
+    isOfferingFunds: false,
+    isReceivingFunds: true,
+    email: 'team@youthempower.org',
+    website: 'https://youthempower.org',
+    type: OrgType.NONPROFIT,
+  },
+  {
+    name: 'Global Health Access',
+    slug: 'global-health-access',
+    description: 'International NGO improving healthcare access in rural areas.',
+    mission: 'Health equity for all.',
+    city: 'Geneva',
+    state: 'GE',
+    isOfferingFunds: true,
+    isReceivingFunds: true,
+    email: 'contact@ghaccess.org',
+    website: 'https://ghaccess.org',
+    type: OrgType.NONPROFIT,
+  },
+  {
+    name: 'Urban Roots Collective',
+    slug: 'urban-roots-collective',
+    description: 'Community group supporting urban gardening and food security.',
+    mission: 'Growing food and community together.',
+    city: 'Oakland',
+    state: 'CA',
+    isOfferingFunds: false,
+    isReceivingFunds: true,
+    email: 'info@urbanroots.org',
+    website: 'https://urbanroots.org',
+    type: OrgType.OTHER,
+  },
+  {
+    name: 'Tech for Good',
+    slug: 'tech-for-good',
+    description: 'For-profit company building tech solutions for nonprofits.',
+    mission: 'Leveraging technology to solve social problems.',
+    city: 'Seattle',
+    state: 'WA',
+    isOfferingFunds: true,
+    isReceivingFunds: false,
+    email: 'support@techforgood.com',
+    website: 'https://techforgood.com',
+    type: OrgType.FORPROFIT,
+  },
+  {
+    name: 'Community Arts Fund',
+    slug: 'community-arts-fund',
+    description: 'Nonprofit supporting local artists and creative projects.',
+    mission: 'Funding the arts for vibrant communities.',
+    city: 'Minneapolis',
+    state: 'MN',
+    isOfferingFunds: true,
+    isReceivingFunds: false,
+    email: 'grants@communityarts.org',
+    website: 'https://communityarts.org',
+    type: OrgType.NONPROFIT,
+  },
+  {
+    name: 'Women in STEM Alliance',
+    slug: 'women-in-stem-alliance',
+    description: 'Global coalition advancing women in science and technology.',
+    mission: 'Achieving gender equity in STEM fields.',
+    city: 'London',
+    state: 'LN',
+    isOfferingFunds: false,
+    isReceivingFunds: true,
+    email: 'info@wistemalliance.org',
+    website: 'https://wistemalliance.org',
+    type: OrgType.NONPROFIT,
+  },
+  {
+    name: 'EcoAction Network',
+    slug: 'ecoaction-network',
+    description: 'Grassroots environmental advocacy group.',
+    mission: 'Mobilizing communities for climate action.',
+    city: 'Denver',
+    state: 'CO',
+    isOfferingFunds: false,
+    isReceivingFunds: true,
+    email: 'hello@ecoaction.org',
+    website: 'https://ecoaction.org',
+    type: OrgType.OTHER,
   },
   {
     name: 'New Economy Coalition',
@@ -229,23 +372,23 @@ await Promise.all(
         await tx.insert(schema.links).values([
           ...(data.isOfferingFunds
             ? [
-                {
-                  href: data.website,
-                  name: data.name,
-                  type: LinkType.OFFERING,
-                  organizationId: org.id,
-                },
-              ]
+              {
+                href: data.website,
+                name: data.name,
+                type: LinkType.OFFERING,
+                organizationId: org.id,
+              },
+            ]
             : []),
           ...(data.isReceivingFunds
             ? [
-                {
-                  href: data.website,
-                  name: data.name,
-                  type: LinkType.RECEIVING,
-                  organizationId: org.id,
-                },
-              ]
+              {
+                href: data.website,
+                name: data.name,
+                type: LinkType.RECEIVING,
+                organizationId: org.id,
+              },
+            ]
             : []),
         ]);
 
@@ -275,6 +418,27 @@ await Promise.all(
     }),
   ),
 );
+
+// access is inherited from 
+await db.insert(schema.accessRoles).values([
+  {
+    name: 'Admin',
+    access: 0b11111,
+  },
+  {
+    name: 'Staff',
+    {
+    posts: {
+      access: 0b01110,
+    }
+  }
+  },
+  // {
+  // name: 'Member',
+  // access: 0b00000,
+  // },
+
+]);
 
 // Insert some taxonomies we will need
 const taxonomy = 'splcStrategies';

@@ -3,6 +3,7 @@ import { useRef } from 'react';
 import { useButton } from 'react-aria';
 
 import { cn } from '../lib/utils';
+import { LoadingSpinner } from './LoadingSpinner';
 
 interface ImageUploaderProps {
   label?: string;
@@ -63,7 +64,11 @@ export const AvatarUploader = ({
             className="z-10 rounded-full bg-black/50 p-2 text-white hover:bg-neutral-800"
             disabled={uploading}
           >
-            <Camera className="stroke-offWhite stroke-1" />
+            {uploading ? (
+              <LoadingSpinner />
+            ) : (
+              <Camera className="stroke-offWhite stroke-1" />
+            )}
           </button>
         </div>
 
@@ -77,7 +82,7 @@ export const AvatarUploader = ({
       </div>
 
       <div className="text-center">
-        <h2 className="text-xs">{label}</h2>
+        <h2 className="text-sm">{label}</h2>
         {error && <p className="mt-2 text-red-500">{error}</p>}
       </div>
     </div>

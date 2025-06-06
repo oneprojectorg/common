@@ -1,33 +1,37 @@
-import { trpc } from '@op/trpc/client';
+import { trpc } from '@op/api/client';
 import { AvatarUploader } from '@op/ui/AvatarUploader';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { useState } from 'react';
+import { ReactNode, useState } from 'react';
 import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { StepProps } from '../MultiStepForm';
 import { FormContainer } from '../form/FormContainer';
 import { FormHeader } from '../form/FormHeader';
-import { useMultiStep } from '../form/multiStep';
 import { getFieldErrorMessage, useAppForm } from '../form/utils';
-import type { StepProps } from '../form/utils';
+import { useOnboardingFormStore } from './useOnboardingFormStore';
 
 export const validator = z.object({
   fullName: z
-    .string()
+    .string({ message: 'Enter your full name' })
+    .trim()
     .min(1, {
       message: 'Enter your full name',
     })
-    .max(20, {
-      message: 'Must be at most 20 characters',
+    .max(200, {
+      message: 'Must be at most 200 characters',
     }),
   title: z
-    .string()
+    .string({
+      message: 'Enter your professional title',
+    })
+    .trim()
     .min(1, {
       message: 'Enter your professional title',
     })
-    .max(20, {
-      message: 'Must be at most 20 characters',
+    .max(200, {
+      message: 'Must be at most 200 characters',
     }),
   profileImageUrl: z.string().optional(),
 });
@@ -35,29 +39,36 @@ export const validator = z.object({
 type FormFields = z.infer<typeof validator>;
 
 export const PersonalDetailsForm = ({
-  defaultValues,
-  resolver,
+  onNext,
   className,
-}: StepProps & { className?: string }) => {
+}: StepProps & { className?: string }): ReactNode => {
+  const personalDetails = useOnboardingFormStore((s) => s.personalDetails);
+  const setPersonalDetails = useOnboardingFormStore(
+    (s) => s.setPersonalDetails,
+  );
   const t = useTranslations();
   const uploadImage = trpc.account.uploadImage.useMutation();
   const updateProfile = trpc.account.updateUserProfile.useMutation();
-  const [profileImageUrl, setProfileImageUrl] = useState<string | undefined>();
 
-  const { onNext } = useMultiStep();
-  // If a resolver is provided, use it; otherwise, use the localized validator
+  // Hydrate profileImageUrl from store if present, else undefined
+  const [profileImageUrl, setProfileImageUrl] = useState<string | undefined>(
+    personalDetails?.profileImageUrl,
+  );
+
+  // Hydrate form from store if present
   const form = useAppForm({
-    defaultValues: defaultValues as FormFields,
+    defaultValues: personalDetails,
     validators: {
-      onChange: resolver ? resolver : validator,
+      onSubmit: validator,
     },
     onSubmit: async ({ value }: { value: FormFields }) => {
       await updateProfile.mutateAsync({
-        name: (value as FormFields).fullName,
-        title: (value as FormFields).title,
+        name: value.fullName,
+        title: value.title,
       });
+      setPersonalDetails({ ...value, profileImageUrl }); // Persist to store on submit
 
-      onNext(value as FormFields);
+      onNext(value);
     },
   });
 
@@ -65,6 +76,7 @@ export const PersonalDetailsForm = ({
     <form
       onSubmit={(e) => {
         e.preventDefault();
+        console.log('submit');
         void form.handleSubmit();
       }}
       className={className}
@@ -113,8 +125,8 @@ export const PersonalDetailsForm = ({
           name="fullName"
           children={(field) => (
             <field.TextField
-              label={t('Full Name')}
               isRequired
+              label={t('Full Name')}
               value={field.state.value}
               onBlur={field.handleBlur}
               onChange={field.handleChange}
@@ -129,8 +141,8 @@ export const PersonalDetailsForm = ({
           name="title"
           children={(field) => (
             <field.TextField
-              label={t('Professional title')}
               isRequired
+              label={t('Professional title')}
               value={field.state.value}
               onBlur={field.handleBlur}
               onChange={field.handleChange}

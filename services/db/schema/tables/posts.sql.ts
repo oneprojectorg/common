@@ -2,6 +2,7 @@ import { relations } from 'drizzle-orm';
 import { index, pgTable, primaryKey, text, uuid } from 'drizzle-orm/pg-core';
 
 import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
+import { attachments } from './attachments.sql';
 import { organizations } from './organizations.sql';
 
 export const posts = pgTable(
@@ -19,10 +20,14 @@ export const postsToOrganizations = pgTable(
   {
     postId: uuid()
       .notNull()
-      .references(() => posts.id),
+      .references(() => posts.id, {
+        onDelete: 'cascade',
+      }),
     organizationId: uuid()
       .notNull()
-      .references(() => organizations.id),
+      .references(() => organizations.id, {
+        onDelete: 'cascade',
+      }),
     ...timestamps,
   },
   (table) => [
@@ -33,6 +38,7 @@ export const postsToOrganizations = pgTable(
 
 export const postsRelations = relations(posts, ({ many }) => ({
   organization: many(organizations),
+  attachments: many(attachments),
 }));
 
 export const postsToOrganizationsRelations = relations(
