@@ -28,7 +28,7 @@ export const OrganizationList = ({
       <div className="hidden flex-col gap-6 sm:flex">
         {organizations?.map((org) => {
           return (
-            <div key={org.id} className="flex items-center gap-4">
+            <div key={org.id} className="flex items-center gap-2">
               <OrganizationAvatar organization={org} className="size-8" />
 
               <div className="flex min-w-0 flex-col text-sm">
