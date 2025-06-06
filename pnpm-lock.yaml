@@ -381,7 +381,7 @@ importers:
         version: 0.1.3(@axiomhq/js@1.3.1)
       '@axiomhq/nextjs':
         specifier: ^0.1.3
-        version: 0.1.3(@axiomhq/logging@0.1.3(@axiomhq/js@1.3.1))(next@15.3.0(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-e1e972c-20250221)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.85.1))
+        version: 0.1.3(@axiomhq/logging@0.1.3(@axiomhq/js@1.3.1))(next@15.3.0(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.85.1))
       '@axiomhq/react':
         specifier: ^0.1.3
         version: 0.1.3(@axiomhq/logging@0.1.3(@axiomhq/js@1.3.1))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -584,7 +584,7 @@ importers:
         version: 0.1.3(@axiomhq/js@1.3.1)
       '@axiomhq/nextjs':
         specifier: ^0.1.3
-        version: 0.1.3(@axiomhq/logging@0.1.3(@axiomhq/js@1.3.1))(next@15.3.0(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-e1e972c-20250221)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.85.1))
+        version: 0.1.3(@axiomhq/logging@0.1.3(@axiomhq/js@1.3.1))(next@15.3.0(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.85.1))
       '@axiomhq/react':
         specifier: ^0.1.3
         version: 0.1.3(@axiomhq/logging@0.1.3(@axiomhq/js@1.3.1))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -725,6 +725,9 @@ importers:
       '@axiomhq/pino':
         specifier: ^1.3.1
         version: 1.3.1
+      '@op/cache':
+        specifier: workspace:*
+        version: link:../cache
       '@op/common':
         specifier: workspace:*
         version: link:../../packages/common
@@ -809,6 +812,25 @@ importers:
       zod:
         specifier: ^3.24.2
         version: 3.24.2
+    devDependencies:
+      '@op/typescript-config':
+        specifier: workspace:*
+        version: link:../../configs/typescript-config
+      typescript:
+        specifier: 5.7.3
+        version: 5.7.3
+
+  services/cache:
+    dependencies:
+      '@op/logging':
+        specifier: workspace:*
+        version: link:../../packages/logging
+      '@vercel/functions':
+        specifier: ^2.1.0
+        version: 2.1.0
+      redis:
+        specifier: ^5.5.5
+        version: 5.5.5
     devDependencies:
       '@op/typescript-config':
         specifier: workspace:*
@@ -7958,7 +7980,7 @@ snapshots:
     optionalDependencies:
       '@axiomhq/js': 1.3.1
 
-  '@axiomhq/nextjs@0.1.3(@axiomhq/logging@0.1.3(@axiomhq/js@1.3.1))(next@15.3.0(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-e1e972c-20250221)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.85.1))':
+  '@axiomhq/nextjs@0.1.3(@axiomhq/logging@0.1.3(@axiomhq/js@1.3.1))(next@15.3.0(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.85.1))':
     dependencies:
       '@axiomhq/logging': 0.1.3(@axiomhq/js@1.3.1)
       next: 15.3.0(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-e1e972c-20250221)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.85.1)

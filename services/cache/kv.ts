@@ -2,7 +2,7 @@ import { logger as log } from '@op/logging';
 import { waitUntil } from '@vercel/functions';
 import { createClient } from 'redis';
 
-const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
+const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:1234';
 
 // Create Redis client
 const redis = createClient({
@@ -41,6 +41,9 @@ const getCacheKey = (
 const memCache = new Map();
 const MEMCACHE_EXPIRE = 60 * 1000;
 
+/*
+ * Caches values into a tiered structure of memcache, KV cache, and ultimately a call to the DB
+ */
 export const cache = async <T = any>({
   type,
   appKey,
@@ -67,7 +70,7 @@ export const cache = async <T = any>({
   const data = (await get(cacheKey)) as T;
 
   if (data) {
-    log.info('CACHE: Redis');
+    log.info('CACHE: KV');
     memCache.set(cacheKey, { createdAt: Date.now(), data });
     return data as T;
   }
@@ -97,6 +100,7 @@ export const invalidate = async ({
 }) => {
   const cacheKey = getCacheKey(type, appKey, params);
 
+  // TODO: support invalidating entire trees
   if (data) {
     memCache.set(cacheKey, { createdAt: Date.now(), data });
     set(cacheKey, data);
@@ -109,12 +113,15 @@ export const invalidate = async ({
 const get = async (key: string) => {
   try {
     const data = await redis.get(key);
+
     if (data) {
       return JSON.parse(data);
     }
+
     return null;
   } catch (e) {
     log.error('CACHE: error getting from Redis', { error: e });
+
     return null;
   }
 };

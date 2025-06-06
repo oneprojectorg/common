@@ -1,3 +1,4 @@
+import { invalidate } from '@op/cache';
 import { UnauthorizedError, updateOrganization } from '@op/common';
 import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
@@ -39,6 +40,12 @@ export const updateOrganizationRouter = router({
           data: input,
           user,
         });
+
+        // invalidate cache and wait for a return so FE can then refetch
+        await Promise.all([
+          invalidate({ type: 'organization', params: [org.slug] }),
+          invalidate({ type: 'organization', params: [org.id] }),
+        ]);
 
         return organizationsEncoder.parse(org);
       } catch (error: unknown) {

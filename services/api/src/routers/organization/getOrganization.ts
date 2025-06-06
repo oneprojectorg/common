@@ -1,3 +1,4 @@
+import { cache } from '@op/cache';
 import {
   UnauthorizedError,
   getOrganization,
@@ -15,7 +16,6 @@ import withAuthenticated from '../../middlewares/withAuthenticated';
 import withDB from '../../middlewares/withDB';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
-import { cache } from '../../utils/cache';
 
 const inputSchema = z.object({
   slug: z.string(),

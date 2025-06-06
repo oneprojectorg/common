@@ -96,7 +96,7 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
 
 export const PendingRelationships = (props: { slug: string }) => {
   return (
-    <ErrorBoundary fallback={<div>Could not load pending reltionships</div>}>
+    <ErrorBoundary fallback={<div>Could not load pending relationships</div>}>
       <Suspense fallback={<Skeleton />}>
         <PendingRelationshipsSuspense {...props} />
       </Suspense>

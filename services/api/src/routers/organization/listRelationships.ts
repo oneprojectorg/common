@@ -58,6 +58,7 @@ export const listRelationshipsRouter = router({
       const { pending } = input;
 
       try {
+        console.log('LIST them', user);
         const session = await getSession();
         if (!session) {
           throw new UnauthorizedError('No user found');
