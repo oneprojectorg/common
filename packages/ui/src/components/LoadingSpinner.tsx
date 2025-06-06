@@ -6,7 +6,7 @@ const spinnerVariants = tv({
   base: 'aspect-square h-full w-auto animate-spin',
   variants: {
     color: {
-      gray: 'fill-offWhite text-darkGray',
+      gray: 'fill-offWhite text-neutral-gray4',
       teal: 'fill-teal-200 text-teal',
     },
     size: {
