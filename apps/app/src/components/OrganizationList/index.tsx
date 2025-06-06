@@ -28,18 +28,18 @@ export const OrganizationList = ({
       <div className="hidden flex-col gap-6 sm:flex">
         {organizations?.map((org) => {
           return (
-            <div key={org.id}>
-              <Link
-                className="flex items-center gap-4"
-                href={`/org/${org.slug}`}
-              >
-                <OrganizationAvatar organization={org} className="size-8" />
+            <div key={org.id} className="flex items-center gap-4">
+              <OrganizationAvatar organization={org} className="size-8" />
 
-                <div className="flex flex-col text-sm">
-                  <span>{org.name}</span>
-                  <span>{org.city}</span>
-                </div>
-              </Link>
+              <div className="flex min-w-0 flex-col text-sm">
+                <Link
+                  className="max-w-full truncate text-nowrap hover:underline"
+                  href={`/org/${org.slug}`}
+                >
+                  {org.name}
+                </Link>
+                <span>{org.city}</span>
+              </div>
             </div>
           );
         })}
