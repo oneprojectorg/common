@@ -386,10 +386,10 @@ export const MultiSelectComboBox = ({
                 return (
                   <li
                     key={option.id}
-                    className={`flex flex-col px-3 py-2 text-base ${isParent
-                        ? 'h-6 cursor-default py-0 pt-2 text-sm text-neutral-gray4' // parent styling
-                        : `cursor-pointer hover:bg-neutral-gray1 ${isSelected ? 'bg-neutral-gray1' : ''
-                        } ${isHighlighted ? 'bg-neutral-gray1' : ''}`
+                    className={`flex flex-col items-start px-3 py-2 text-base ${isParent
+                      ? 'h-6 cursor-default py-0 pt-2 text-sm text-neutral-gray4' // parent styling
+                      : `cursor-pointer hover:bg-neutral-gray1 ${isSelected ? 'bg-neutral-gray1' : ''
+                      } ${isHighlighted ? 'bg-neutral-gray1' : ''}`
                       }`}
                     style={{
                       paddingLeft: `${12 + indentLevel * 16}px`, // Base padding + indentation
