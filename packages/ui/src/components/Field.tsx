@@ -95,7 +95,7 @@ export const inputStyles = tv({
   variants: {
     color: {
       primary: '',
-      muted: 'bg-offWhite text-darkGray',
+      muted: 'bg-offWhite text-neutral-gray4',
       error: 'border-functional-red outline-functional-red',
     },
     size: {

@@ -39,10 +39,10 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
       cookieOptions:
         useUrl.IS_PRODUCTION || useUrl.IS_STAGING || useUrl.IS_PREVIEW
           ? {
-            domain: cookieOptionsDomain,
-            sameSite: 'lax',
-            secure: true,
-          }
+              domain: cookieOptionsDomain,
+              sameSite: 'lax',
+              secure: true,
+            }
           : {},
       cookies: {
         getAll() {
@@ -81,7 +81,12 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
     return NextResponse.redirect(url);
   }
 
-  if (user && !user.email?.match('oneproject.org|scottcazan@gmail.com')) {
+  if (
+    user &&
+    !user.email?.match(
+      'oneproject.org|team.oneproject.org|scottcazan@gmail.com',
+    )
+  ) {
     logger.warn('Invalid user email access attempt', { email: user.email });
     supabase.auth.signOut();
     return NextResponse.redirect(new URL('/waitlist', request.url));

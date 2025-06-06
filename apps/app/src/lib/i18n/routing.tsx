@@ -1,4 +1,5 @@
 // eslint-disable-next-line no-restricted-imports
+import { cn } from '@op/ui/utils';
 import { useTranslations as _useTranslations } from 'next-intl';
 import { createNavigation } from 'next-intl/navigation';
 import { defineRouting } from 'next-intl/routing';
@@ -19,11 +20,16 @@ const {
 
 const Link = ({
   children,
+  className,
   ...props
 }: AnchorHTMLAttributes<HTMLAnchorElement>) => {
   return (
     // @ts-ignore
-    <NavLink {...props} prefetch={true}>
+    <NavLink
+      {...props}
+      className={cn('hover:underline', className)}
+      prefetch={true}
+    >
       {children}
     </NavLink>
   );

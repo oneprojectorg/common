@@ -14,7 +14,7 @@ const overlayStyles = tv({
 });
 
 const modalStyles = tv({
-  base: 'isolate z-[999999] max-h-full w-full max-w-md rounded-md border border-offWhite bg-white bg-clip-padding backdrop-blur-lg backdrop-brightness-50 backdrop-saturate-50 entering:duration-500 entering:ease-out entering:animate-in entering:fade-in exiting:duration-500 exiting:ease-in exiting:animate-out exiting:fade-out',
+  base: 'isolate z-[999999] max-h-full w-full max-w-md overflow-hidden rounded-md border border-offWhite bg-white bg-clip-padding backdrop-blur-lg backdrop-brightness-50 backdrop-saturate-50 entering:duration-500 entering:ease-out entering:animate-in entering:fade-in exiting:duration-500 exiting:ease-in exiting:animate-out exiting:fade-out',
 });
 
 export const ModalHeader = ({
@@ -41,7 +41,12 @@ export const ModalBody = ({
   children: ReactNode;
 }) => {
   return (
-    <div className={cn('flex w-full flex-col gap-2 p-6 text-left', className)}>
+    <div
+      className={cn(
+        'flex w-full flex-col gap-2 p-6 text-left focus-visible:outline-0',
+        className,
+      )}
+    >
       {children}
     </div>
   );
