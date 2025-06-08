@@ -1,12 +1,10 @@
 'use client';
 
-import { CheckIcon } from '@op/ui/CheckIcon';
 import { ReactNode } from 'react';
 import { LuCircleAlert, LuCircleCheck, LuX } from 'react-icons/lu';
 import { Toaster as Sonner, toast as sonnerToast } from 'sonner';
 
 import { Button } from './Button';
-import { Surface } from './Surface';
 
 export const Toast = () => {
   return (
@@ -83,12 +81,20 @@ export const toast = {
   error: ({ title, message }: { title?: string; message?: string }) => {
     return sonnerToast.custom((id) => (
       <ToastWrapper id={id}>
-        <CheckIcon className="size-6" />
+        <LuCircleAlert className="size-6 stroke-1 text-white" />
         <ToastBody>
-          {title ? <ToastTitle title={title} /> : null}
-          {message ? <div>{message}</div> : null}
+          {title ? (
+            <div className="text-title-base text-white">{title}</div>
+          ) : null}
+          {message ? <div className="text-white">{message}</div> : null}
         </ToastBody>
       </ToastWrapper>
-    ));
+    ), {
+      style: {
+        background: 'rgb(239 68 68)', // bg-functional-red equivalent
+        color: 'white',
+        border: 'none'
+      }
+    });
   },
 };

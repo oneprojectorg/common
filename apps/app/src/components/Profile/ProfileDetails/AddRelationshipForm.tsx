@@ -32,7 +32,9 @@ export const AddRelationshipForm = ({
         });
 
         onChange();
-        toast.success({ title: 'Relationship requested' });
+        toast.success({
+          title: 'Relationship requested',
+        });
       } catch (e) {
         toast.error({ title: 'Could not create relationship' });
       }

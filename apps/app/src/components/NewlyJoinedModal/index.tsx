@@ -1,12 +1,11 @@
 'use client';
 
 import { Button } from '@op/ui/Button';
+import { CheckIcon } from '@op/ui/CheckIcon';
 import { Header1 } from '@op/ui/Header';
 import { Modal } from '@op/ui/Modal';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-
-import { CheckIcon } from '../icons/CheckIcon';
 
 export const NewlyJoinedModal = () => {
   const searchParams = useSearchParams();

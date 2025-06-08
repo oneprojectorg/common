@@ -30,7 +30,6 @@ export const RemoveRelationshipModal = ({
         onChange();
         toast.success({
           title: 'Relationship removed',
-          message: 'Here is a message',
         });
       } catch (e) {
         toast.error({ message: 'Could not remove relationship' });
