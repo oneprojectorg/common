@@ -29,22 +29,14 @@ export const OrganizationAvatar = ({
       className={cn('size-12', withLink && 'hover:opacity-80', className)}
       placeholder={organization.name}
     >
-      {
-        // @ts-expect-error
-        organization.avatarImage?.name ? (
-          <Image
-            src={
-              getPublicUrl(
-                // @ts-expect-error
-                organization.avatarImage?.name,
-              ) ?? ''
-            }
-            width={80}
-            height={80}
-            alt={organization.name}
-          />
-        ) : null
-      }
+      {'avatarImage' in organization && organization.avatarImage?.name ? (
+        <Image
+          src={getPublicUrl(organization.avatarImage?.name) ?? ''}
+          alt={organization.name}
+          fill
+          className="object-cover"
+        />
+      ) : null}
     </Avatar>
   );
 
