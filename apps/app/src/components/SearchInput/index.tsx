@@ -128,7 +128,7 @@ export const SearchInput = () => {
           size: 'small',
           icon: <LuSearch className="size-4 text-neutral-gray4" />,
           className: cn(
-            'active:bg-white active:text-neutral-gray3 focus:bg-white',
+            'bg-transparent placeholder:text-neutral-gray4 active:bg-white active:text-neutral-gray3 focus:bg-white',
             'active:border-inherit', // override TextField input styles that are used everywhere
             dropdownShowing && 'rounded-b-none',
           ),
