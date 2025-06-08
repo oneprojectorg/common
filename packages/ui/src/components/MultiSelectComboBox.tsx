@@ -52,7 +52,7 @@ export const MultiSelectComboBox = ({
   const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
 
   const selectedOptions = value ?? [];
-  const setSelectedOptions = onChange ?? (() => { });
+  const setSelectedOptions = onChange ?? (() => {});
 
   // Handle outside clicks to close dropdown
   useEffect(() => {
@@ -381,19 +381,17 @@ export const MultiSelectComboBox = ({
                   (item) => item.id === option.id,
                 );
                 const isHighlighted = highlightedIndex === idx;
-                const indentLevel = option.level || 0;
 
                 return (
                   <li
                     key={option.id}
-                    className={`flex flex-col items-start px-3 py-2 text-base ${isParent
-                      ? 'h-6 cursor-default py-0 pt-2 text-sm text-neutral-gray4' // parent styling
-                      : `cursor-pointer hover:bg-neutral-gray1 ${isSelected ? 'bg-neutral-gray1' : ''
-                      } ${isHighlighted ? 'bg-neutral-gray1' : ''}`
-                      }`}
-                    style={{
-                      paddingLeft: `${12 + indentLevel * 16}px`, // Base padding + indentation
-                    }}
+                    className={`flex flex-col items-start px-3 py-2 text-base ${
+                      isParent
+                        ? 'cursor-default py-2 pt-2 text-sm text-neutral-gray4' // parent styling
+                        : `cursor-pointer hover:bg-neutral-gray1 ${
+                            isSelected ? 'bg-neutral-gray1' : ''
+                          } ${isHighlighted ? 'bg-neutral-gray1' : ''}`
+                    }`}
                     onMouseEnter={() => !isParent && setHighlightedIndex(idx)}
                     onMouseLeave={() => setHighlightedIndex(-1)}
                     onMouseDown={(e) => e.preventDefault()}
