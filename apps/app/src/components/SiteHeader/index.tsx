@@ -238,6 +238,8 @@ const UserAvatarMenu = () => {
 };
 
 export const SiteHeader = () => {
+  const [isMobileSearchExpanded, setIsMobileSearchExpanded] = useState(false);
+
   return (
     <>
       <header className="gridCentered hidden h-auto w-full items-center justify-between border-b border-offWhite px-4 py-3 sm:grid md:px-28">
@@ -266,31 +268,58 @@ export const SiteHeader = () => {
           </ErrorBoundary>
         </ClientOnly>
       </header>
+
       {/* Mobile */}
       <header className="flex h-auto w-full items-center justify-between border-b px-4 py-2 sm:hidden">
-        <Link href="/">
-          <CommonLogo />
-        </Link>
-        <div className="flex gap-4">
-          <span className="flex items-center justify-center">
-            <LuSearch className="size-4 text-neutral-gray4" />
-          </span>
-
-          <ClientOnly>
-            <ErrorBoundary
-              fallback={
-                <div className="size-8 rounded-full border bg-white shadow" />
-              }
-            >
-              <Suspense
-                fallback={
-                  <Skeleton className="size-8 rounded-full border bg-white shadow" />
-                }
+        {!isMobileSearchExpanded && (
+          <Link href="/">
+            <CommonLogo />
+          </Link>
+        )}
+        
+        <div className={`flex ${isMobileSearchExpanded ? 'w-full justify-between items-center' : 'gap-4'}`}>
+          {isMobileSearchExpanded ? (
+            <>
+              <div className="flex-1 min-w-0">
+                <ErrorBoundary fallback={<Skeleton className="h-10 w-full" />}>
+                  <SearchInput onBlur={() => setIsMobileSearchExpanded(false)} />
+                </ErrorBoundary>
+              </div>
+              <Button
+                unstyled
+                onPress={() => setIsMobileSearchExpanded(false)}
+                className="ml-3 text-neutral-gray4 whitespace-nowrap"
               >
-                <UserAvatarMenu />
-              </Suspense>
-            </ErrorBoundary>
-          </ClientOnly>
+                Cancel
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                unstyled
+                onPress={() => setIsMobileSearchExpanded(true)}
+                className="flex items-center justify-center"
+              >
+                <LuSearch className="size-4 text-neutral-gray4" />
+              </Button>
+
+              <ClientOnly>
+                <ErrorBoundary
+                  fallback={
+                    <div className="size-8 rounded-full border bg-white shadow" />
+                  }
+                >
+                  <Suspense
+                    fallback={
+                      <Skeleton className="size-8 rounded-full border bg-white shadow" />
+                    }
+                  >
+                    <UserAvatarMenu />
+                  </Suspense>
+                </ErrorBoundary>
+              </ClientOnly>
+            </>
+          )}
         </div>
       </header>
     </>

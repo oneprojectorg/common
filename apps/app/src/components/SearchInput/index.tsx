@@ -12,14 +12,16 @@ import { OrganizationResults } from './OrganizationResults';
 import { RecentSearches } from './RecentSearches';
 import { SearchResultItem } from './SearchResultItem';
 
-export const SearchInput = () => {
+export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
   const router = useRouter();
 
   const [query, setQuery] = useState<string>('');
   const [debouncedQuery, setImmediateQuery] = useDebounce(query, 200);
   const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const [showResults, setShowResults] = useState<boolean>(false);
   const [selectedIndex, setSelectedIndex] = useState<number>(-1);
+  const [isMobile, setIsMobile] = useState(false);
   const { data: organizationResults } = trpc.organization.search.useQuery({
     q: debouncedQuery,
   });
@@ -41,13 +43,29 @@ export const SearchInput = () => {
       ) {
         setShowResults(false);
         setSelectedIndex(-1);
+        onBlur?.();
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
+  }, [onBlur]);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  useEffect(() => {
+    if (isMobile && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isMobile]);
 
   useEffect(() => {
     setSelectedIndex(-1);
@@ -122,6 +140,7 @@ export const SearchInput = () => {
   return (
     <div ref={containerRef} className="group">
       <TextField
+        ref={inputRef}
         inputProps={{
           placeholder: 'Search',
           color: 'muted',
@@ -145,17 +164,28 @@ export const SearchInput = () => {
           setShowResults(true);
         }}
         onFocus={() => setShowResults(true)}
+        onBlur={() => {
+          setTimeout(() => {
+            setShowResults(false);
+            onBlur?.();
+          }, 150);
+        }}
         value={query}
-        className="relative z-20 w-96"
+        className={cn("relative z-20", isMobile ? "w-full" : "w-96")}
         aria-label="Search"
       >
         {dropdownShowing ? (
           <div
-            className="absolute top-10 z-10 !max-h-80 w-[--trigger-width] min-w-96 overflow-y-auto rounded-b border border-t-0 bg-white group-hover:border-neutral-gray2"
+            className={cn(
+              "absolute z-10 overflow-y-auto bg-white",
+              isMobile 
+                ? "fixed inset-x-0 top-[60px] bottom-0 border-t" 
+                : "top-10 !max-h-80 w-[--trigger-width] min-w-96 rounded-b border border-t-0 group-hover:border-neutral-gray2"
+            )}
             role="listbox"
             aria-label="Search results"
           >
-            <div>
+            <div className={cn(isMobile ? "p-4" : "")}>
               {query.length > 0 && (
                 <SearchResultItem
                   selected={selectedIndex === 0}
