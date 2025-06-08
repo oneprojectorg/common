@@ -1,15 +1,21 @@
 'use client';
 
+import { CheckIcon } from '@op/ui/CheckIcon';
+import { ReactNode } from 'react';
 import { LuCircleAlert, LuCircleCheck, LuX } from 'react-icons/lu';
-import { Toaster as Sonner } from 'sonner';
+import { Toaster as Sonner, toast as sonnerToast } from 'sonner';
+
+import { Button } from './Button';
+import { Surface } from './Surface';
 
 export const Toast = () => {
   return (
     <Sonner
-      position="bottom-center"
+      position="bottom-left"
       className="toaster group"
       pauseWhenPageIsHidden
       visibleToasts={5}
+      duration={10000}
       icons={{
         success: <LuCircleCheck className="size-6 text-functional-green" />,
         close: <LuX className="size-6 text-neutral-black" />,
@@ -18,7 +24,7 @@ export const Toast = () => {
       toastOptions={{
         classNames: {
           toast:
-            'group font-serif relative text-5 toast bg-neutral-offWhite backdrop-blur-md border border-neutral-gray1 text-neutral-black p-3 flex gap-3',
+            'group font-serif relative text-5 toast bg-white rounded-lg backdrop-blur-md border border-neutral-gray1 text-neutral-black p-3 flex gap-3',
           description: 'text-neutral-charcoal',
           actionButton:
             'group-[.toast]:bg-primary group-[.toast]:text-primary-foreground',
@@ -30,4 +36,59 @@ export const Toast = () => {
       }}
     />
   );
+};
+
+const ToastWrapper = ({
+  children,
+  id,
+}: {
+  children: React.ReactNode;
+  id: string | number;
+}) => {
+  return (
+    <div className="flex w-full items-start gap-2">
+      {children}
+      <Button
+        unstyled
+        className="w-6 transition-opacity hover:opacity-70"
+        onPress={() => sonnerToast.dismiss(id)}
+      >
+        <LuX className="size-6 stroke-1" />
+      </Button>
+    </div>
+  );
+};
+
+const ToastBody = ({ children }: { children: React.ReactNode }) => {
+  return <div className="flex w-full flex-col gap-2 px-1">{children}</div>;
+};
+
+const ToastTitle = ({ title }: { title: string }) => {
+  return <div className="text-title-base">{title}</div>;
+};
+
+export const toast = {
+  success: ({ title, message }: { title?: string; message?: ReactNode }) => {
+    return sonnerToast.custom((id) => (
+      <ToastWrapper id={id}>
+        <LuCircleCheck className="size-6 stroke-1 text-functional-green" />
+        <ToastBody>
+          {title ? <ToastTitle title={title} /> : null}
+          {message ? <div>{message}</div> : null}
+        </ToastBody>
+      </ToastWrapper>
+    ));
+  },
+
+  error: ({ title, message }: { title?: string; message?: string }) => {
+    return sonnerToast.custom((id) => (
+      <ToastWrapper id={id}>
+        <CheckIcon className="size-6" />
+        <ToastBody>
+          {title ? <ToastTitle title={title} /> : null}
+          {message ? <div>{message}</div> : null}
+        </ToastBody>
+      </ToastWrapper>
+    ));
+  },
 };

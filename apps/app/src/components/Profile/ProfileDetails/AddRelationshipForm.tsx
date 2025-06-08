@@ -6,8 +6,8 @@ import { Checkbox } from '@op/ui/Checkbox';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Dialog } from '@op/ui/RAC';
+import { toast } from '@op/ui/Toast';
 import { FormEvent, useState, useTransition } from 'react';
-import { toast } from 'sonner';
 
 export const AddRelationshipForm = ({
   profile,
@@ -32,9 +32,9 @@ export const AddRelationshipForm = ({
         });
 
         onChange();
-        toast.success('Relationship requested');
+        toast.success({ title: 'Relationship requested' });
       } catch (e) {
-        toast.error('Could not create relationship');
+        toast.error({ title: 'Could not create relationship' });
       }
 
       close();
