@@ -7,7 +7,7 @@ export const FacePile = forwardRef<
   return (
     <ul className="-gap-2 flex" ref={ref}>
       {items.map((node, i) => (
-        <li key={i} className="-ml-2">
+        <li key={i} className="-ml-2 hover:opacity-80">
           {node}
         </li>
       ))}

@@ -15,8 +15,6 @@ import { Link } from '@/lib/i18n';
 import { LinkPreview } from '../LinkPreview';
 import { OrganizationAvatar } from '../OrganizationAvatar';
 
-// import { useTranslations } from '@/lib/i18n';
-
 // TODO: generated this quick with AI. refactor it!
 const formatRelativeTime = (timestamp: Date | string | number): string => {
   const now = new Date();
@@ -127,12 +125,12 @@ export const FeedMain = ({
 export const PostFeed = ({
   posts,
   className,
+  withLinks = true,
 }: {
   posts: Array<PostToOrganization>;
   className?: string;
+  withLinks?: boolean;
 }) => {
-  // const t = useTranslations();
-
   return (
     <div className={cn('flex flex-col gap-8 pb-8', className)}>
       {posts.length > 0 ? (
@@ -143,14 +141,19 @@ export const PostFeed = ({
             <FeedItem key={i}>
               <OrganizationAvatar
                 organization={organization}
-                className="!size-8 max-h-8 max-w-8 rounded-full"
+                withLink={withLinks}
+                className="!size-8 max-h-8 max-w-8"
               />
               <FeedMain>
                 <FeedHeader>
                   <Header3 className="font-medium leading-3">
-                    <Link href={`/org/${organization?.slug}`}>
-                      {organization?.name}
-                    </Link>
+                    {withLinks ? (
+                      <Link href={`/org/${organization?.slug}`}>
+                        {organization?.name}
+                      </Link>
+                    ) : (
+                      organization?.name
+                    )}
                   </Header3>
                   {post?.createdAt ? (
                     <span className="text-xs text-neutral-gray4">
