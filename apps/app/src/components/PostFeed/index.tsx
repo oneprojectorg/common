@@ -132,72 +132,77 @@ export const PostFeed = ({
   withLinks?: boolean;
 }) => {
   return (
-    <div className={cn('flex flex-col gap-8 pb-8', className)}>
+    <div className={cn('flex flex-col gap-4 pb-8', className)}>
       {posts.length > 0 ? (
         posts.map(({ organization, post }, i) => {
           const { urls } = detectLinks(post?.content);
 
           return (
-            <FeedItem key={i}>
-              <OrganizationAvatar
-                organization={organization}
-                withLink={withLinks}
-                className="!size-8 max-h-8 max-w-8"
-              />
-              <FeedMain>
-                <FeedHeader>
-                  <Header3 className="font-medium leading-3">
-                    {withLinks ? (
-                      <Link href={`/org/${organization?.slug}`}>
-                        {organization?.name}
-                      </Link>
-                    ) : (
-                      organization?.name
-                    )}
-                  </Header3>
-                  {post?.createdAt ? (
-                    <span className="text-xs text-neutral-gray4">
-                      {formatRelativeTime(post?.createdAt)}
-                    </span>
-                  ) : null}
-                </FeedHeader>
-                <FeedContent>
-                  {post?.content}
-                  {post.attachments
-                    ? post.attachments.map(({ fileName, storageObject }) => {
-                        const { mimetype } = storageObject.metadata;
+            <>
+              <FeedItem key={i}>
+                <OrganizationAvatar
+                  organization={organization}
+                  withLink={withLinks}
+                  className="!size-8 max-h-8 max-w-8"
+                />
+                <FeedMain>
+                  <FeedHeader>
+                    <Header3 className="pt-2 font-medium leading-3">
+                      {withLinks ? (
+                        <Link href={`/org/${organization?.slug}`}>
+                          {organization?.name}
+                        </Link>
+                      ) : (
+                        organization?.name
+                      )}
+                    </Header3>
+                    {post?.createdAt ? (
+                      <span className="text-xs text-neutral-gray4">
+                        {formatRelativeTime(post?.createdAt)}
+                      </span>
+                    ) : null}
+                  </FeedHeader>
+                  <FeedContent>
+                    {post?.content}
+                    {post.attachments
+                      ? post.attachments.map(({ fileName, storageObject }) => {
+                          const { mimetype } = storageObject.metadata;
 
-                        return (
-                          <MediaDisplay
-                            key={storageObject.id}
-                            title={fileName}
-                            mimeType={mimetype}
-                            url={getPublicUrl(storageObject.name) ?? undefined}
-                          >
-                            {mimetype.startsWith('image/') ? (
-                              <div className="relative flex aspect-video w-full items-center justify-center rounded bg-neutral-gray1 text-white">
-                                <Image
-                                  src={getPublicUrl(storageObject.name) ?? ''}
-                                  alt={fileName}
-                                  fill={true}
-                                  className="size-full object-cover"
-                                />
-                              </div>
-                            ) : null}
-                          </MediaDisplay>
-                        );
-                      })
-                    : null}
-                  {urls.length > 0 && (
-                    <div>
-                      {urls.map((url) => (
-                        <LinkPreview key={url} url={url} />
-                      ))}
-                    </div>
-                  )}
-                </FeedContent>
-              </FeedMain>
-            </FeedItem>
+                          return (
+                            <MediaDisplay
+                              key={storageObject.id}
+                              title={fileName}
+                              mimeType={mimetype}
+                              url={
+                                getPublicUrl(storageObject.name) ?? undefined
+                              }
+                            >
+                              {mimetype.startsWith('image/') ? (
+                                <div className="relative flex aspect-video w-full items-center justify-center rounded bg-neutral-gray1 text-white">
+                                  <Image
+                                    src={getPublicUrl(storageObject.name) ?? ''}
+                                    alt={fileName}
+                                    fill={true}
+                                    className="size-full object-cover"
+                                  />
+                                </div>
+                              ) : null}
+                            </MediaDisplay>
+                          );
+                        })
+                      : null}
+                    {urls.length > 0 && (
+                      <div>
+                        {urls.map((url) => (
+                          <LinkPreview key={url} url={url} />
+                        ))}
+                      </div>
+                    )}
+                  </FeedContent>
+                </FeedMain>
+              </FeedItem>
+              <hr className="bg-neutral-gray1" />
+            </>
           );
         })
       ) : (
