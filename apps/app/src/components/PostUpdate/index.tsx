@@ -242,7 +242,7 @@ const PostUpdateWithUser = ({
                 };
                 input.click();
               }}
-              className="flex items-center gap-2 text-sm text-neutral-charcoal transition-colors hover:text-black sm:text-base"
+              className="flex items-center gap-2 text-base text-neutral-charcoal transition-colors hover:text-black"
               disabled={fileUpload.filePreviews.length >= 1}
             >
               <LuImage className="size-4" />
