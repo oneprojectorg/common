@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "next build",
+    "build": "pnpm run migrate && next build",
     "dev": "next dev -p 3300",
     "lint": "pnpm tsc --noEmit",
     "start": "next start"
