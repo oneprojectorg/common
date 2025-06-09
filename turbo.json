@@ -11,6 +11,9 @@
         "build/**"
       ]
     },
+    "migrate": {
+      "dependsOn": []
+    },
     "lint": {
       "dependsOn": ["^lint"]
     },

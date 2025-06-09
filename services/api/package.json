@@ -11,6 +11,7 @@
     "./encoders": "./src/encoders/index.ts"
   },
   "scripts": {
+    "build": "next build",
     "lint": "pnpm tsc --noEmit"
   },
   "dependencies": {
