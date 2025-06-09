@@ -3,7 +3,7 @@
 import { RouterOutput, trpc } from '@op/api/client';
 import { useRouter } from 'next/navigation';
 import posthog from 'posthog-js';
-import React, { createContext, useContext } from 'react';
+import React, { Suspense, createContext, useContext } from 'react';
 
 // Type for the user data returned by getMyAccount
 // You can refine this type by importing the correct type from your trpc/encoders if available
@@ -17,11 +17,15 @@ interface UserContextValue {
 
 const UserContext = createContext<UserContextValue | undefined>(undefined);
 
-export const UserProvider = ({ children }: { children: React.ReactNode }) => {
+export const UserProviderSuspense = ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => {
   const router = useRouter();
-  const { data: user } = trpc.account.getMyAccount.useQuery();
+  const [user] = trpc.account.getMyAccount.useSuspenseQuery();
 
-  if (!user || user.organizationUsers?.length === 0) {
+  if (user.organizationUsers?.length === 0) {
     router.push('/start');
   }
 
@@ -32,6 +36,14 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <UserContext.Provider value={{ user }}>{children}</UserContext.Provider>
+  );
+};
+
+export const UserProvider = ({ children }: { children: React.ReactNode }) => {
+  return (
+    <Suspense fallback={null}>
+      <UserProviderSuspense>{children}</UserProviderSuspense>
+    </Suspense>
   );
 };
 

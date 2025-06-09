@@ -6,7 +6,7 @@ LANGUAGE plpgsql
 SECURITY DEFINER 
 AS $function$
 BEGIN
-  insert into public.users (id, email, created_at, updated_at)
+  insert into public.users (auth_user_id, email, created_at, updated_at)
   values (new.id, new.email, new.created_at, new.updated_at);
   return new;
 END;

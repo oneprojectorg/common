@@ -139,68 +139,68 @@ export const LoginPanel = () => {
               {user?.error?.name === 'AuthRetryableFetchError'
                 ? 'Connection Issue'
                 : (() => {
-                    if (login.isError || error || tokenError) {
-                      if (
-                        combinedError?.includes('invite') ||
-                        combinedError?.includes('waitlist')
-                      ) {
-                        return 'Stay tuned!';
-                      }
-
-                      return 'Oops!';
+                  if (login.isError || error || tokenError) {
+                    if (
+                      combinedError?.includes('invite') ||
+                      combinedError?.includes('waitlist')
+                    ) {
+                      return 'Stay tuned!';
                     }
 
-                    if (!loginSuccess) {
-                      if (isSignup) {
-                        return `Sign up to ${APP_NAME}`;
-                      }
+                    return 'Oops!';
+                  }
 
-                      return (
-                        <div className="flex flex-col gap-2">
-                          <span className="sm:text-base">Welcome to</span>
-                          <span>
-                            <CommonLogo className="h-8 w-auto" />
-                          </span>
-                        </div>
-                      );
+                  if (!loginSuccess) {
+                    if (isSignup) {
+                      return `Sign up to ${APP_NAME}`;
                     }
 
                     return (
-                      <div className="flex flex-col items-center justify-center gap-4">
-                        <CheckIcon />
-                        <span className="text-title-base sm:text-title-lg">
-                          Email sent!
+                      <div className="flex flex-col gap-2">
+                        <span className="sm:text-base">Welcome to</span>
+                        <span>
+                          <CommonLogo className="h-8 w-auto" />
                         </span>
                       </div>
                     );
-                  })()}
+                  }
+
+                  return (
+                    <div className="flex flex-col items-center justify-center gap-4">
+                      <CheckIcon />
+                      <span className="text-title-base sm:text-title-lg">
+                        Email sent!
+                      </span>
+                    </div>
+                  );
+                })()}
             </Header1>
 
             <div className="px-4 text-center text-sm leading-[130%] text-neutral-gray4 sm:text-base">
               {user?.error?.name === 'AuthRetryableFetchError'
                 ? `${APP_NAME} can\`t connect to the internet. Please check your internet connection and try again.`
                 : (() => {
-                    if (combinedError || tokenError) {
-                      return (
-                        <span className={cn(tokenError && 'text-red-500')}>
-                          {combinedError ||
-                            tokenError ||
-                            'There was an error signing you in.'}
-                        </span>
-                      );
-                    }
-
-                    if (!loginSuccess) {
-                      return 'Connect with aligned organizations and funders building a new economy together';
-                    }
-
+                  if (combinedError || tokenError) {
                     return (
-                      <span>
-                        A code was sent to <span>{email}</span>. Type the code
-                        below to sign in.
+                      <span className={cn(tokenError && 'text-red-500')}>
+                        {combinedError ||
+                          tokenError ||
+                          'There was an error signing you in.'}
                       </span>
                     );
-                  })()}
+                  }
+
+                  if (!loginSuccess) {
+                    return 'Connect with aligned organizations and funders building a new economy together';
+                  }
+
+                  return (
+                    <span>
+                      A code was sent to <span>{email}</span>. Type the code
+                      below to sign in.
+                    </span>
+                  );
+                })()}
             </div>
           </section>
 
@@ -285,7 +285,7 @@ export const LoginPanel = () => {
                         <TextField
                           aria-label="Code"
                           inputProps={{
-                            placeholder: '123456',
+                            placeholder: '1234567890',
                             spellCheck: false,
                           }}
                           fieldClassName="h-auto"
@@ -379,8 +379,8 @@ export const LoginPanel = () => {
               )}
 
               {user?.error?.name === 'AuthRetryableFetchError' ||
-              login.isError ||
-              !!combinedError ? null : (
+                login.isError ||
+                !!combinedError ? null : (
                 <div className="flex flex-col items-center justify-center text-center text-xs text-midGray sm:text-sm">
                   {isSignup ? (
                     <span>
