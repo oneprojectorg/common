@@ -19,9 +19,9 @@ const UserContext = createContext<UserContextValue | undefined>(undefined);
 
 export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter();
-  const [user] = trpc.account.getMyAccount.useSuspenseQuery();
+  const { data: user } = trpc.account.getMyAccount.useQuery();
 
-  if (user.organizationUsers?.length === 0) {
+  if (!user || user.organizationUsers?.length === 0) {
     router.push('/start');
   }
 
