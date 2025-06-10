@@ -23,13 +23,16 @@ export const OrganizationResults = ({
       {organizationResults.map((org, index) => (
         <SearchResultItem key={org.id} selected={selectedIndex === index + 1}>
           <Link
-            className="flex w-full items-center gap-4"
+            className="group/result flex w-full items-center gap-4 hover:no-underline"
             href={`/org/${org.slug}`}
             onClick={() => onSearch(query)}
           >
-            <OrganizationAvatar organization={org} className="size-8" />
+            <OrganizationAvatar
+              organization={org}
+              className="size-8 group-hover/result:no-underline"
+            />
 
-            <div className="flex flex-col text-sm">
+            <div className="flex flex-col font-semibold text-neutral-charcoal group-hover/result:underline">
               <span>{org.name}</span>
               <span>{org.city}</span>
             </div>
