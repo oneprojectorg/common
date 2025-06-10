@@ -50,7 +50,10 @@ const ProfileAbout = ({ profile }: { profile: Organization }) => {
                     size="small"
                     onPress={() => {
                       navigator.clipboard.writeText(email);
-                      toast.success({ message: 'Copied to clipboard' });
+                      toast.success({
+                        message:
+                          'This email address has been copied to your clipboard.',
+                      });
                     }}
                   >
                     <LuCopy /> Copy
