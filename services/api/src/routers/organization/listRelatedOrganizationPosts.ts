@@ -35,7 +35,7 @@ export const listRelatedOrganizationPostsRouter = router({
     .use(withAuthenticated)
     .use(withDB)
     .meta(meta)
-    .input(z.void())
+    .input(z.object({}))
     .output(z.array(postsToOrganizationsEncoder))
     .query(async ({ ctx }) => {
       const { db } = ctx.database;

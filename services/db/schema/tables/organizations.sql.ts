@@ -74,7 +74,7 @@ export const organizations = pgTable(
 
     // Organization Type
     orgType: orgTypeEnum('org_type').notNull().default(OrgType.OTHER),
-
+    // cd ../../services/db && pnpm run migrate && cd - &&
     // Thematic Areas
 
     // Media items
