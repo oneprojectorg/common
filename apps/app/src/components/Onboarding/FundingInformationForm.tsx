@@ -1,4 +1,5 @@
 import { zodUrl } from '@/utils';
+import type { Option } from '@op/ui/MultiSelectComboBox';
 import { ToggleButton } from '@op/ui/ToggleButton';
 import { LuLink } from 'react-icons/lu';
 import { z } from 'zod';
@@ -11,6 +12,7 @@ import { FormContainer } from '../form/FormContainer';
 import { FormHeader } from '../form/FormHeader';
 import { getFieldErrorMessage, useAppForm } from '../form/utils';
 import { ToggleRow } from '../layout/split/form/ToggleRow';
+import { multiSelectOptionValidator } from './shared/organizationValidation';
 import { useOnboardingFormStore } from './useOnboardingFormStore';
 
 export const validator = z.object({
@@ -21,6 +23,7 @@ export const validator = z.object({
     .string()
     .max(200, { message: 'Must be at most 200 characters' })
     .optional(),
+  receivingFundsTerms: z.array(multiSelectOptionValidator).optional(),
   receivingFundsLink: zodUrl({ message: 'Enter a valid website address' }),
   offeringFundsDescription: z.string().optional(),
   offeringFundsLink: zodUrl({ message: 'Enter a valid website address' }),
@@ -81,10 +84,10 @@ export const FundingInformationForm = ({
               {field.state.value ? (
                 <div className="flex flex-col gap-4">
                   <form.AppField
-                    name="receivingFundsDescription"
+                    name="receivingFundsTerms"
                     children={(field) => (
                       <TermsMultiSelect
-                        taxonomy="necSimple:focusArea"
+                        taxonomy="necFunding"
                         value={(field.state.value as Array<Option>) ?? []}
                         label={t('What types of funding are you seeking?')}
                         onChange={field.handleChange}
