@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { useTranslations } from '@/lib/i18n';
 
 import type { StepProps } from '../MultiStepForm';
+import { TermsMultiSelect } from '../TermsMultiSelect';
 import { FormContainer } from '../form/FormContainer';
 import { FormHeader } from '../form/FormHeader';
 import { getFieldErrorMessage, useAppForm } from '../form/utils';
@@ -82,18 +83,12 @@ export const FundingInformationForm = ({
                   <form.AppField
                     name="receivingFundsDescription"
                     children={(field) => (
-                      <field.TextField
-                        useTextArea
-                        label="What types of funding are you seeking?"
-                        value={field.state.value as string}
-                        onBlur={field.handleBlur}
+                      <TermsMultiSelect
+                        taxonomy="necSimple:focusArea"
+                        value={(field.state.value as Array<Option>) ?? []}
+                        label={t('What types of funding are you seeking?')}
                         onChange={field.handleChange}
                         errorMessage={getFieldErrorMessage(field)}
-                        textareaProps={{
-                          className: 'min-h-32',
-                          placeholder:
-                            'Enter a description of the type of funding you’re seeking (e.g., grants, integrated capital, etc.',
-                        }}
                       />
                     )}
                   />
