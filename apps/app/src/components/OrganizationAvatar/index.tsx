@@ -41,7 +41,9 @@ export const OrganizationAvatar = ({
   );
 
   return withLink ? (
-    <Link href={`/org/${organization.slug}`}>{avatar}</Link>
+    <Link href={`/org/${organization.slug}`} className="hover:no-underline">
+      {avatar}
+    </Link>
   ) : (
     <div>{avatar}</div>
   );

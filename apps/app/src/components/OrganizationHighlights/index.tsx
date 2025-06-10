@@ -79,7 +79,7 @@ const OrganizationFacePile = () => {
       const { avatarImage } = org;
       const avatarUrl = getPublicUrl(avatarImage?.name);
       return (
-        <Link key={org.id} href={`/org/${org.slug}`}>
+        <Link key={org.id} href={`/org/${org.slug}`} className="hover:no-underline">
           <Avatar placeholder={org.name}>
             {avatarUrl ? (
               <Image
@@ -97,7 +97,7 @@ const OrganizationFacePile = () => {
 
   if (stats.totalOrganizations > numItems) {
     items.push(
-      <Link key="more" href={`/org`}>
+      <Link key="more" href="/org" className="hover:no-underline">
         <Avatar className="bg-neutral-charcoal text-sm text-neutral-offWhite">
           <span className="align-super">+</span>
           {stats.totalOrganizations - numItems}
