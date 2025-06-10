@@ -89,6 +89,14 @@ export const fundingLinksInputSchema = z
       .string()
       .url({ message: 'Enter a valid website address' })
       .optional(),
+    receivingFundsTerms: z
+      .array(
+        z.object({
+          id: z.string(),
+          label: z.string(),
+        }),
+      )
+      .optional(),
     offeringFundsDescription: z.string().optional(),
     offeringFundsLink: z
       .string()
