@@ -87,7 +87,7 @@ export const organizations = pgTable(
 
     search: tsvector('search').generatedAlwaysAs(
       (): SQL =>
-        sql`setweight(to_tsvector('simple', ${organizations.name}), 'A') || ' ' || setweight(to_tsvector('english',  ${organizations.bio}), 'B') || ' ' || setweight(to_tsvector('english', ${organizations.mission}), 'C')::tsvector`,
+        sql`setweight(to_tsvector('simple', ${organizations.name}), 'A') || ' ' || setweight(to_tsvector('english', COALESCE(${organizations.bio}, '')), 'B') || ' ' || setweight(to_tsvector('english', COALESCE(${organizations.mission}, '')), 'C')::tsvector`,
     ),
 
     ...timestamps,
