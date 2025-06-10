@@ -29,12 +29,23 @@ const meta: OpenApiMeta = {
   },
 };
 
+const metaAllPosts: OpenApiMeta = {
+  openapi: {
+    enabled: true,
+    method: 'GET',
+    path: '/organization/feed',
+    protect: true,
+    tags: ['organization', 'posts', 'relationships'],
+    summary: 'List posts for organizations related to a given organization',
+  },
+};
+
 export const listRelatedOrganizationPostsRouter = router({
   listAllPosts: loggedProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticated)
     .use(withDB)
-    .meta(meta)
+    .meta(metaAllPosts)
     .input(z.object({}))
     .output(z.array(postsToOrganizationsEncoder))
     .query(async ({ ctx }) => {
