@@ -16,11 +16,9 @@ import { PostUpdate } from '@/components/PostUpdate';
 
 import { Welcome } from './Welcome';
 
-const Feed = async ({ organizationId }: { organizationId: string }) => {
+const Feed = async () => {
   const client = await trpcNext();
-  const posts = await client.organization.listRelatedPosts.query({
-    organizationId,
-  });
+  const posts = await client.organization.listAllPosts.query();
 
   return <PostFeed posts={posts} />;
 };
@@ -53,7 +51,7 @@ const LandingScreenFeeds = ({
         <div className="mt-4 sm:mt-0">
           {user.currentOrganization ? (
             <Suspense fallback={<PostFeedSkeleton numPosts={3} />}>
-              <Feed organizationId={user.currentOrganization.id} />
+              <Feed />
             </Suspense>
           ) : null}
         </div>

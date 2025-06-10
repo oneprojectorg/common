@@ -30,6 +30,43 @@ const meta: OpenApiMeta = {
 };
 
 export const listRelatedOrganizationPostsRouter = router({
+  listAllPosts: loggedProcedure
+    .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
+    .use(withAuthenticated)
+    .use(withDB)
+    .meta(meta)
+    .input(z.void())
+    .output(z.array(postsToOrganizationsEncoder))
+    .query(async ({ ctx }) => {
+      const { db } = ctx.database;
+
+      // Fetch posts for all related organizations
+      const result = await db.query.postsToOrganizations.findMany({
+        with: {
+          post: {
+            with: {
+              attachments: {
+                with: {
+                  storageObject: true,
+                },
+              },
+            },
+          },
+          organization: {
+            with: {
+              avatarImage: true,
+            },
+          },
+        },
+        orderBy: (table, { desc }) => desc(table.createdAt),
+      });
+
+      return result.map((postToOrg) => ({
+        ...postToOrg,
+        organization: organizationsEncoder.parse(postToOrg.organization),
+        post: postsEncoder.parse(postToOrg.post),
+      }));
+    }),
   listRelatedPosts: loggedProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticated)
