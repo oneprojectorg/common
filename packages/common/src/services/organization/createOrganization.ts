@@ -159,6 +159,7 @@ export const createOrganization = async ({
         : []),
     ]);
 
+    // TODO: deprecated. Moving to Maps API
     // Add where we work geoNames
     const geoNames =
       data.whereWeWork?.map((whereWeWork) =>
@@ -214,22 +215,8 @@ export const createOrganization = async ({
       );
     }
 
-    const { focusAreas, strategies, communitiesServed } = data;
-
-    // add in focus areas
-    if (focusAreas) {
-      await Promise.all(
-        focusAreas.map((term) =>
-          tx
-            .insert(organizationsTerms)
-            .values({
-              organizationId: newOrg.id,
-              taxonomyTermId: term.id,
-            })
-            .onConflictDoNothing(),
-        ),
-      );
-    }
+    const { focusAreas, strategies, communitiesServed, receivingFundsTerms } =
+      data;
 
     // add all stategy terms to the org (strategy terms already exist in the DB)
     // TODO: parallelize this
@@ -248,9 +235,16 @@ export const createOrganization = async ({
       );
     }
 
-    if (communitiesServed) {
+    // TODO: this was changed quickly in the process. We are transitioning to this way of doing terms.
+    if (focusAreas || communitiesServed || receivingFundsTerms) {
+      const terms = [
+        ...(communitiesServed ?? []),
+        ...(receivingFundsTerms ?? []),
+        ...(focusAreas ?? []),
+      ];
+
       await Promise.all(
-        communitiesServed.map((term) =>
+        terms.map((term) =>
           tx
             .insert(organizationsTerms)
             .values({

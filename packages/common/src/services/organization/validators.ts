@@ -46,6 +46,14 @@ export const baseOrganizationSchema = z.object({
       label: z.string(),
     }),
   ),
+  receivingFundsTerms: z
+    .array(
+      z.object({
+        id: z.string(),
+        label: z.string(),
+      }),
+    )
+    .optional(),
   communitiesServed: z.array(
     z.object({
       id: z.string(),
@@ -66,6 +74,8 @@ export const organizationInputSchema = baseOrganizationSchema
     acceptingApplications: z.boolean().optional(),
     headerImageId: z.string().optional(),
     avatarImageId: z.string().optional(),
+
+    // TODO: redundant. Pausing to remove while running tests
     communitiesServed: z
       .array(
         z.object({

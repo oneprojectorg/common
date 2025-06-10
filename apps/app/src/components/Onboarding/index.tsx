@@ -3,6 +3,7 @@
 import { trpc } from '@op/api/client';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { StepperProgressIndicator } from '@op/ui/Stepper';
+import { toast } from '@op/ui/Toast';
 import { useRouter } from 'next/navigation';
 import { useCallback, useState } from 'react';
 import { z } from 'zod';
@@ -52,7 +53,7 @@ const ProgressInPortal = (props: ProgressComponentProps) => (
 );
 
 export const OnboardingFlow = () => {
-  const [values, setValues] = useState<FormValues | null>(null);
+  const [submitting, setSubmitting] = useState<boolean>(false);
   const createOrganization = trpc.organization.create.useMutation();
   const router = useRouter();
   const { reset } = useOnboardingFormStore();
@@ -64,7 +65,9 @@ export const OnboardingFlow = () => {
         (accum, val) => ({ ...accum, ...val }),
         {} as FormValues,
       );
-      setValues(combined);
+
+      setSubmitting(true);
+
       createOrganization
         .mutateAsync(processInputs(combined))
         .then(() => {
@@ -74,15 +77,22 @@ export const OnboardingFlow = () => {
           trpcUtil.account.getMyAccount.refetch().then(() => {
             router.push(`/?new=1`);
           });
+          setSubmitting(false);
         })
         .catch((err) => {
           console.error('ERROR', err);
+          setSubmitting(false);
+          toast.error({
+            title: 'Oops! Not found',
+            message: "We can't seem to find that.It might have been removed.",
+          });
+          router.push(`/start?step=1`);
         });
     },
     [createOrganization],
   );
 
-  if (values) {
+  if (submitting) {
     return <LoadingSpinner />;
   }
 

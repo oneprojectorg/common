@@ -74,6 +74,7 @@ export const createOrganizationInputSchema = baseOrganizationSchema.extend({
     )
     .optional(),
   focusAreas: z.array(multiSelectOptionValidator).optional(),
+  receivingFundsTerms: z.array(multiSelectOptionValidator).optional(),
   communitiesServed: z.array(multiSelectOptionValidator).optional(),
   strategies: z.array(multiSelectOptionValidator).optional(),
   networkOrganization: z.boolean().default(false),
