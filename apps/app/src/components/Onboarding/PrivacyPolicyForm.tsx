@@ -66,11 +66,11 @@ export const PrivacyPolicyForm = ({
           <FormalSection>
             <Header3 className="font-serif">3. Account Registration</Header3>
 
-            <Header3 className="font-serif text-xs">3.1 Eligibility</Header3>
+            <Header3 className="font-serif text-sm">3.1 Eligibility</Header3>
             <p>PLACEHOLDER.</p>
           </FormalSection>
           <FormalSection>
-            <Header3 className="font-serif text-xs">
+            <Header3 className="font-serif text-sm">
               3.2 Account Information
             </Header3>
             <p>PLACEHOLDER.</p>
