@@ -1,6 +1,7 @@
 import { trpc } from '@op/api/client';
 import { AvatarUploader } from '@op/ui/AvatarUploader';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
+import { toast } from '@op/ui/Toast';
 import { ReactNode, useState } from 'react';
 import { z } from 'zod';
 
@@ -104,11 +105,15 @@ export const PersonalDetailsForm = ({
 
                 setProfileImageUrl(dataUrl);
 
-                const res = await uploadImage.mutateAsync({
-                  file: base64,
-                  fileName: file.name,
-                  mimeType: file.type,
-                });
+                const res = await uploadImage
+                  .mutateAsync({
+                    file: base64,
+                    fileName: file.name,
+                    mimeType: file.type,
+                  })
+                  .catch((error) => {
+                    toast.error({ message: error.message });
+                  });
 
                 if (res?.url) {
                   setProfileImageUrl(res.url);

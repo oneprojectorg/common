@@ -83,7 +83,6 @@ export const AvatarUploader = ({
 
       <div className="text-center">
         <h2 className="text-sm">{label}</h2>
-        {error && <p className="mt-2 text-red-500">{error}</p>}
       </div>
     </div>
   );
