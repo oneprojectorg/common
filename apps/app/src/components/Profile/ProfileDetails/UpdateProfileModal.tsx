@@ -45,7 +45,7 @@ export const UpdateProfileModal = ({
         isOpen={isOpen}
         onOpenChange={setIsOpen}
         isDismissable
-        className="max-h-[39rem] w-[36rem] max-w-[36rem] overflow-y-auto"
+        className="w-[95vw] max-h-[39rem] max-w-[36rem] overflow-y-auto sm:w-[36rem]"
       >
         <ModalHeader className="flex items-center justify-between">
           {t('Edit Profile')}
