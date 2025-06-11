@@ -13,6 +13,8 @@ import { FormHeader } from '../form/FormHeader';
 import { getFieldErrorMessage, useAppForm } from '../form/utils';
 import { useOnboardingFormStore } from './useOnboardingFormStore';
 
+type FormFields = z.infer<typeof validator>;
+
 export const validator = z.object({
   fullName: z
     .string({ message: 'Enter your full name' })
@@ -36,8 +38,25 @@ export const validator = z.object({
     }),
   profileImageUrl: z.string().optional(),
 });
+const DEFAULT_MAX_SIZE = 4 * 1024 * 1024; // 4MB
 
-type FormFields = z.infer<typeof validator>;
+const DEFAULT_ACCEPTED_TYPES = [
+  'image/png',
+  'image/jpeg',
+  'image/webp',
+  'application/pdf',
+];
+const validateFile = (file: File): string | null => {
+  if (!DEFAULT_ACCEPTED_TYPES.includes(file.type)) {
+    return `That file type is not supported. Accepted types: ${DEFAULT_ACCEPTED_TYPES.map((t) => t.split('/')[1]).join(', ')}`;
+  }
+
+  if (file.size > DEFAULT_MAX_SIZE) {
+    const maxSizeMB = (DEFAULT_MAX_SIZE / 1024 / 1024).toFixed(2);
+    return `File too large. Maximum size: ${maxSizeMB}MB`;
+  }
+  return null;
+};
 
 export const PersonalDetailsForm = ({
   onNext,
@@ -95,6 +114,14 @@ export const PersonalDetailsForm = ({
               const reader = new FileReader();
 
               reader.onload = async (e) => {
+                const validationError = validateFile(file);
+                if (validationError) {
+                  toast.status({ code: 500, message: validationError });
+                  setProfileImageUrl(undefined);
+
+                  throw new Error(validationError);
+                }
+
                 const base64 = (e.target?.result as string)?.split(',')[1];
 
                 if (!base64) {
