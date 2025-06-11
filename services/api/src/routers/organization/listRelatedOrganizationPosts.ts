@@ -1,5 +1,5 @@
-import { getRelatedOrganizations } from '@op/common';
-import { inArray } from '@op/db/client';
+import { getRelatedOrganizations, decodeCursor, encodeCursor } from '@op/common';
+import { inArray, and, eq, lt, or } from '@op/db/client';
 import { postsToOrganizations } from '@op/db/schema';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
@@ -13,6 +13,7 @@ import withAuthenticated from '../../middlewares/withAuthenticated';
 import withDB from '../../middlewares/withDB';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
+import { dbFilter } from '../../utils';
 
 const inputSchema = z.object({
   organizationId: z.string().uuid({ message: 'Invalid organization ID' }),
@@ -46,13 +47,37 @@ export const listRelatedOrganizationPostsRouter = router({
     .use(withAuthenticated)
     .use(withDB)
     .meta(metaAllPosts)
-    .input(z.object({}))
-    .output(z.array(postsToOrganizationsEncoder))
-    .query(async ({ ctx }) => {
+    .input(dbFilter.extend({
+      cursor: z.string().nullish(),
+    }).optional())
+    .output(
+      z.object({
+        items: z.array(postsToOrganizationsEncoder),
+        next: z.string().nullish(),
+        hasMore: z.boolean(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
       const { db } = ctx.database;
+      const { limit = 20, cursor } = input ?? {};
 
-      // Fetch posts for all related organizations
+      // Parse cursor
+      const cursorData = cursor ? decodeCursor(cursor) : null;
+
+      // Build cursor condition for pagination
+      const cursorCondition = cursorData
+        ? or(
+            lt(postsToOrganizations.createdAt, cursorData.createdAt),
+            and(
+              eq(postsToOrganizations.createdAt, cursorData.createdAt),
+              lt(postsToOrganizations.postId, cursorData.id),
+            ),
+          )
+        : undefined;
+
+      // Fetch posts for all organizations with pagination
       const result = await db.query.postsToOrganizations.findMany({
+        where: cursorCondition,
         with: {
           post: {
             with: {
@@ -70,13 +95,26 @@ export const listRelatedOrganizationPostsRouter = router({
           },
         },
         orderBy: (table, { desc }) => desc(table.createdAt),
+        limit: limit + 1, // Fetch one extra to check hasMore
       });
 
-      return result.map((postToOrg) => ({
-        ...postToOrg,
-        organization: organizationsEncoder.parse(postToOrg.organization),
-        post: postsEncoder.parse(postToOrg.post),
-      }));
+      const hasMore = result.length > limit;
+      const items = hasMore ? result.slice(0, limit) : result;
+      const lastItem = items[items.length - 1];
+      const nextCursor =
+        hasMore && lastItem && lastItem.createdAt
+          ? encodeCursor(new Date(lastItem.createdAt), lastItem.postId)
+          : null;
+
+      return {
+        items: items.map((postToOrg) => ({
+          ...postToOrg,
+          organization: organizationsEncoder.parse(postToOrg.organization),
+          post: postsEncoder.parse(postToOrg.post),
+        })),
+        next: nextCursor,
+        hasMore,
+      };
     }),
   listRelatedPosts: loggedProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
