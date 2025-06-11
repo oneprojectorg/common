@@ -43,6 +43,10 @@ export const AddRelationshipForm = ({
     });
   };
 
+  const filteredRelationshipOptions = profile.networkOrganization
+    ? RELATIONSHIP_OPTIONS
+    : RELATIONSHIP_OPTIONS.filter((option) => option.key !== 'memberOf');
+
   return (
     <Dialog>
       {({ close }) => (
@@ -53,7 +57,7 @@ export const AddRelationshipForm = ({
               Choose how you’re in relationship with{' '}
               <span className="font-semibold">{profile.name}:</span>
               <ul>
-                {RELATIONSHIP_OPTIONS.map((option) => (
+                {filteredRelationshipOptions.map((option) => (
                   <li key={option.key} className="flex gap-3 py-2">
                     <Checkbox
                       isSelected={Array.from(selectedRelations).includes(
