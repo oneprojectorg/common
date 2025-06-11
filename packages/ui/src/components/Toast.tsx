@@ -100,4 +100,31 @@ export const toast = {
       },
     );
   },
+
+  status: ({ code, message }: { code: number; message?: string }) => {
+    switch (code) {
+      case 200:
+        return;
+      case 404:
+        return toast.error({
+          title: 'Oops! Not found',
+          message:
+            message ??
+            "We can't seem to find that. It might have been removed.",
+        });
+      case 403:
+        return toast.error({
+          title: 'Permission needed',
+          message:
+            message ??
+            "You'll need additional access to do that. Contact your organization's admin for help.",
+        });
+      default:
+        return toast.error({
+          title: "That didn't work",
+          message:
+            message ?? 'Something went wrong on our end. Please try again',
+        });
+    }
+  },
 };

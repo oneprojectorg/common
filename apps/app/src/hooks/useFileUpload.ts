@@ -1,4 +1,5 @@
 import { trpc } from '@op/api/client';
+import { toast } from '@op/ui/Toast';
 import { useCallback, useState } from 'react';
 
 export interface FilePreview {
@@ -44,7 +45,7 @@ export const useFileUpload = (options: UseFileUploadOptions) => {
 
   const validateFile = (file: File): string | null => {
     if (!acceptedTypes.includes(file.type)) {
-      return `File type ${file.type} not supported. Accepted types: ${acceptedTypes.join(', ')}`;
+      return `That file type is not supported. Accepted types: ${acceptedTypes.map((t) => t.split('/')[1]).join(', ')}`;
     }
     if (file.size > maxSizePerFile) {
       const maxSizeMB = (maxSizePerFile / 1024 / 1024).toFixed(2);
@@ -64,6 +65,7 @@ export const useFileUpload = (options: UseFileUploadOptions) => {
   }> => {
     const validationError = validateFile(file);
     if (validationError) {
+      toast.status({ code: 500, message: validationError });
       throw new Error(validationError);
     }
 
@@ -91,12 +93,17 @@ export const useFileUpload = (options: UseFileUploadOptions) => {
         reader.readAsDataURL(file);
       });
 
-      const result = await uploadAttachment.mutateAsync({
-        organizationId,
-        file: base64,
-        fileName: file.name,
-        mimeType: file.type,
-      });
+      const result = await uploadAttachment
+        .mutateAsync({
+          organizationId,
+          file: base64,
+          fileName: file.name,
+          mimeType: file.type,
+        })
+        .catch((err) => {
+          toast.status(err);
+          throw err;
+        });
 
       // Update preview with success
       setFilePreviews((prev) =>
@@ -116,7 +123,6 @@ export const useFileUpload = (options: UseFileUploadOptions) => {
             ? {
                 ...f,
                 uploading: false,
-                error: error instanceof Error ? error.message : 'Upload failed',
               }
             : f,
         ),
