@@ -1,3 +1,4 @@
+import sanitizeForS3 from 'sanitize-s3-objectkey';
 import { z } from 'zod';
 
 export const dbFilter = z.object({
@@ -13,6 +14,7 @@ export function sanitizeS3Filename(filename: string) {
   let sanitized = filename
     // Replace spaces with underscores
     .replace(/\s+/g, '_')
+    .replace(/\[|\]/g, '_')
     // Remove problematic characters for S3
     .replace(/[&$@=;:+,?\\{^}%`\]>[~#|]/g, '')
     // Remove control characters (ASCII 0-31) and DEL (127)
@@ -31,5 +33,5 @@ export function sanitizeS3Filename(filename: string) {
     sanitized = sanitized.substring(0, maxLength);
   }
 
-  return sanitized;
+  return sanitizeForS3(sanitized, '-');
 }

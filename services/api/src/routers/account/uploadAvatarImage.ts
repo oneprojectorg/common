@@ -10,6 +10,7 @@ import withAuthenticated from '../../middlewares/withAuthenticated';
 import withDB from '../../middlewares/withDB';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
+import { sanitizeS3Filename } from '../../utils';
 
 const ALLOWED_MIME_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
 
@@ -51,6 +52,7 @@ export const uploadAvatarImage = router({
       const { file, fileName, mimeType } = input;
       const { db } = ctx.database;
 
+      const sanitizedFileName = sanitizeS3Filename(fileName);
       if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
@@ -94,7 +96,7 @@ export const uploadAvatarImage = router({
         },
       );
       const bucket = 'assets';
-      const filePath = `${ctx.user.id}/${Date.now()}_${fileName}`;
+      const filePath = `${ctx.user.id}/${Date.now()}_${sanitizedFileName}`;
 
       const { error: uploadError, data } = await supabase.storage
         .from(bucket)
