@@ -28,7 +28,7 @@ const DEFAULT_ACCEPTED_TYPES = [
   'application/pdf',
 ];
 const DEFAULT_MAX_FILES = 10;
-const DEFAULT_MAX_SIZE = 10 * 1024 * 1024; // 10MB
+const DEFAULT_MAX_SIZE = 4 * 1024 * 1024; // 4MB
 
 export const useFileUpload = (options: UseFileUploadOptions) => {
   const {
@@ -121,9 +121,9 @@ export const useFileUpload = (options: UseFileUploadOptions) => {
         prev.map((f) =>
           f.id === previewId
             ? {
-                ...f,
-                uploading: false,
-              }
+              ...f,
+              uploading: false,
+            }
             : f,
         ),
       );

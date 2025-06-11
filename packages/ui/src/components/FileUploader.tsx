@@ -42,7 +42,7 @@ const ACCEPTED_TYPES = [
   'image/webp',
   'application/pdf',
 ];
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4MB
 const MAX_FILES = 5;
 
 export const FileUploader = ({
@@ -128,13 +128,13 @@ export const FileUploader = ({
               prev.map((f) =>
                 f.id === preview.id
                   ? {
-                      ...f,
-                      uploading: false,
-                      error:
-                        error instanceof Error
-                          ? error.message
-                          : 'Upload failed',
-                    }
+                    ...f,
+                    uploading: false,
+                    error:
+                      error instanceof Error
+                        ? error.message
+                        : 'Upload failed',
+                  }
                   : f,
               ),
             );
@@ -355,13 +355,13 @@ export const createFileUploaderUtils = (
               prev.map((f) =>
                 f.id === preview.id
                   ? {
-                      ...f,
-                      uploading: false,
-                      error:
-                        error instanceof Error
-                          ? error.message
-                          : 'Upload failed',
-                    }
+                    ...f,
+                    uploading: false,
+                    error:
+                      error instanceof Error
+                        ? error.message
+                        : 'Upload failed',
+                  }
                   : f,
               ),
             );
