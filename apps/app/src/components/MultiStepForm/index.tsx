@@ -4,6 +4,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import React, { ComponentType } from 'react';
 import { ZodSchema } from 'zod';
 
+import { findFirstInvalidStepBefore } from './stepValidation';
+
 export type StepProps = {
   value: any;
   onChange: (v: any) => void;
@@ -24,6 +26,8 @@ interface MultiStepFormProps {
   initialValues?: any[];
   onFinish?: (allValues: any[]) => void;
   ProgressComponent?: ComponentType<ProgressComponentProps>;
+  getStepValues?: () => any[];
+  hasHydrated?: boolean;
 }
 
 export const MultiStepForm: React.FC<MultiStepFormProps> = ({
@@ -32,6 +36,8 @@ export const MultiStepForm: React.FC<MultiStepFormProps> = ({
   initialValues = [],
   onFinish,
   ProgressComponent,
+  getStepValues,
+  hasHydrated = true,
 }) => {
   const router = useRouter();
   const [step, setStep] = React.useState(0);
@@ -66,8 +72,14 @@ export const MultiStepForm: React.FC<MultiStepFormProps> = ({
   }, [step, goToStep]);
 
   const searchParams = useSearchParams();
-  // Sync step from query param on mount
+
+  // Sync step from query param on mount with validation
   React.useEffect(() => {
+    // Don't validate until the store has hydrated
+    if (!hasHydrated) {
+      return;
+    }
+
     const stepParam = searchParams.get('step');
 
     let stepFromQuery = 0;
@@ -77,8 +89,25 @@ export const MultiStepForm: React.FC<MultiStepFormProps> = ({
         stepFromQuery = parsed;
       }
     }
+
+    // Get current values from the store or fallback to local state
+    const currentValues = getStepValues ? getStepValues() : values;
+
+    // Check if the user is trying to access a step without completing previous steps
+    const firstInvalidStep = findFirstInvalidStepBefore(
+      currentValues,
+      stepFromQuery,
+      schemas,
+    );
+
+    if (firstInvalidStep !== -1) {
+      // Redirect to the first invalid step
+      goToStep(firstInvalidStep);
+      return;
+    }
+
     setStep(stepFromQuery);
-  }, [searchParams]);
+  }, [searchParams, values, goToStep, hasHydrated, getStepValues, schemas]);
 
   const StepComponent = steps[step];
 
