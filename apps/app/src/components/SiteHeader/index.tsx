@@ -71,8 +71,8 @@ const AvatarMenuContent = ({
           {user?.avatarImage?.name ? (
             <Image
               src={getPublicUrl(user?.avatarImage?.name) ?? ''}
-              width={80}
-              height={80}
+              fill
+              className="object-cover"
               alt={user?.name ?? 'User avatar'}
             />
           ) : null}
@@ -120,8 +120,8 @@ const AvatarMenuContent = ({
               <Image
                 src={getPublicUrl(orgUser.organization.avatarImage.name) ?? ''}
                 alt="User avatar"
-                width={48}
-                height={48}
+                fill
+                className="object-cover"
               />
             ) : null}
           </Avatar>
@@ -179,8 +179,8 @@ const UserAvatarMenu = () => {
           <Image
             src={getPublicUrl(user?.currentOrganization.avatarImage.name) ?? ''}
             alt="User avatar"
-            width={48}
-            height={48}
+            fill
+            className="object-cover"
           />
         ) : null}
       </Avatar>
@@ -276,19 +276,23 @@ export const SiteHeader = () => {
             <CommonLogo />
           </Link>
         )}
-        
-        <div className={`flex ${isMobileSearchExpanded ? 'w-full justify-between items-center' : 'gap-4'}`}>
+
+        <div
+          className={`flex ${isMobileSearchExpanded ? 'w-full items-center justify-between' : 'gap-4'}`}
+        >
           {isMobileSearchExpanded ? (
             <>
-              <div className="flex-1 min-w-0">
+              <div className="min-w-0 flex-1">
                 <ErrorBoundary fallback={<Skeleton className="h-10 w-full" />}>
-                  <SearchInput onBlur={() => setIsMobileSearchExpanded(false)} />
+                  <SearchInput
+                    onBlur={() => setIsMobileSearchExpanded(false)}
+                  />
                 </ErrorBoundary>
               </div>
               <Button
                 unstyled
                 onPress={() => setIsMobileSearchExpanded(false)}
-                className="ml-3 text-neutral-gray4 whitespace-nowrap"
+                className="ml-3 whitespace-nowrap text-neutral-gray4"
               >
                 Cancel
               </Button>

@@ -18,10 +18,10 @@ export const organizationRelationships = pgTable(
     id: autoId().primaryKey(),
     sourceOrganizationId: uuid('source_organization_id')
       .notNull()
-      .references(() => organizations.id),
+      .references(() => organizations.id, { onDelete: 'cascade' }),
     targetOrganizationId: uuid('target_organization_id')
       .notNull()
-      .references(() => organizations.id),
+      .references(() => organizations.id, { onDelete: 'cascade' }),
     relationshipType: varchar({ length: 255 }).notNull(),
     pending: boolean(),
     metadata: jsonb('metadata'),
