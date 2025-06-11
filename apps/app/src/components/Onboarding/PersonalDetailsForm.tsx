@@ -113,6 +113,7 @@ export const PersonalDetailsForm = ({
                   })
                   .catch((error) => {
                     toast.status({ code: 500, message: error.message });
+                    setProfileImageUrl(undefined);
                   });
 
                 if (res?.url) {
