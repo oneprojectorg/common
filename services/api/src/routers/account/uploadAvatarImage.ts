@@ -27,6 +27,7 @@ const meta: OpenApiMeta = {
   },
 };
 
+// TODO: This is a duplicate of organization/uploadAvatarImage. Converge these
 export const uploadAvatarImage = router({
   uploadImage: loggedProcedure
     // middlewares
