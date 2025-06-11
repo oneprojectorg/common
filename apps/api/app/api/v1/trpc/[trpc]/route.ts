@@ -6,6 +6,8 @@ import type { NextRequest } from 'next/server';
 export const maxDuration = 120;
 
 const allowedOrigins = [
+  'https://api-dev.oneproject.tech',
+  'https://api.oneproject.tech',
   'https://app-dev.oneproject.tech',
   'https://app.oneproject.tech',
   'https://common.oneproject.org',
@@ -45,7 +47,8 @@ const handler = async (req: NextRequest) => {
 const optionsHandler = async (req: NextRequest) => {
   const origin = req.headers.get('origin');
   const headers: Record<string, string> = {
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS',
+    'Access-Control-Allow-Methods':
+      'GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS',
     'Access-Control-Allow-Headers':
       'Content-Type, Authorization, trpc-batch-mode',
     'Access-Control-Allow-Credentials': 'true',
