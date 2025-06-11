@@ -112,7 +112,7 @@ export const PersonalDetailsForm = ({
                     mimeType: file.type,
                   })
                   .catch((error) => {
-                    toast.error({ message: error.message });
+                    toast.status({ code: 500, message: error.message });
                   });
 
                 if (res?.url) {
