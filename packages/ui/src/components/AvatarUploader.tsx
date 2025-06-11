@@ -20,7 +20,6 @@ export const AvatarUploader = ({
   onChange,
   uploading = false,
   className,
-  error = null,
 }: ImageUploaderProps) => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
