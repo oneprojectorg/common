@@ -12,8 +12,8 @@ export const Toast = () => {
       position="bottom-left"
       className="toaster group"
       pauseWhenPageIsHidden
-      visibleToasts={5}
-      duration={10000}
+      visibleToasts={3}
+      duration={3000}
       icons={{
         success: <LuCircleCheck className="size-6 text-functional-green" />,
         close: <LuX className="size-6 text-neutral-black" />,
@@ -79,22 +79,25 @@ export const toast = {
   },
 
   error: ({ title, message }: { title?: string; message?: string }) => {
-    return sonnerToast.custom((id) => (
-      <ToastWrapper id={id}>
-        <LuCircleAlert className="size-6 stroke-1 text-white" />
-        <ToastBody>
-          {title ? (
-            <div className="text-title-base text-white">{title}</div>
-          ) : null}
-          {message ? <div className="text-white">{message}</div> : null}
-        </ToastBody>
-      </ToastWrapper>
-    ), {
-      style: {
-        background: 'rgb(239 68 68)', // bg-functional-red equivalent
-        color: 'white',
-        border: 'none'
-      }
-    });
+    return sonnerToast.custom(
+      (id) => (
+        <ToastWrapper id={id}>
+          <LuCircleAlert className="size-6 stroke-1 text-white" />
+          <ToastBody>
+            {title ? (
+              <div className="text-title-base text-white">{title}</div>
+            ) : null}
+            {message ? <div className="text-white">{message}</div> : null}
+          </ToastBody>
+        </ToastWrapper>
+      ),
+      {
+        style: {
+          background: 'rgb(239 68 68)', // bg-functional-red equivalent
+          color: 'white',
+          border: 'none',
+        },
+      },
+    );
   },
 };

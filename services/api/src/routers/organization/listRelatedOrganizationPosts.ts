@@ -1,5 +1,9 @@
-import { getRelatedOrganizations, decodeCursor, encodeCursor } from '@op/common';
-import { inArray, and, eq, lt, or } from '@op/db/client';
+import {
+  decodeCursor,
+  encodeCursor,
+  getRelatedOrganizations,
+} from '@op/common';
+import { and, eq, inArray, lt, or } from '@op/db/client';
 import { postsToOrganizations } from '@op/db/schema';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
@@ -47,9 +51,13 @@ export const listRelatedOrganizationPostsRouter = router({
     .use(withAuthenticated)
     .use(withDB)
     .meta(metaAllPosts)
-    .input(dbFilter.extend({
-      cursor: z.string().nullish(),
-    }).optional())
+    .input(
+      dbFilter
+        .extend({
+          cursor: z.string().nullish(),
+        })
+        .optional(),
+    )
     .output(
       z.object({
         items: z.array(postsToOrganizationsEncoder),
@@ -59,7 +67,7 @@ export const listRelatedOrganizationPostsRouter = router({
     )
     .query(async ({ ctx, input }) => {
       const { db } = ctx.database;
-      const { limit = 20, cursor } = input ?? {};
+      const { limit = 200, cursor } = input ?? {};
 
       // Parse cursor
       const cursorData = cursor ? decodeCursor(cursor) : null;
