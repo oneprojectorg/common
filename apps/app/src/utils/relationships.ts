@@ -20,6 +20,13 @@ export const RELATIONSHIP_OPTIONS = [
     description: (orgName: string) =>
       `Your organization is a member of ${orgName}'s network`,
   },
+  {
+    key: 'affiliation',
+    label: 'Affiliation',
+    noun: 'Affiliate',
+    description: (orgName: string) =>
+      `Your organization informally supports or collaborates with  ${orgName}`,
+  },
 ];
 
 export const relationshipMap = RELATIONSHIP_OPTIONS.reduce(
