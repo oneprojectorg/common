@@ -7,7 +7,7 @@ import { MediaDisplay } from '@op/ui/MediaDisplay';
 import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';
-import { ReactNode } from 'react';
+import { Fragment, ReactNode } from 'react';
 import { LuLeaf } from 'react-icons/lu';
 
 import { Link } from '@/lib/i18n';
@@ -138,8 +138,8 @@ export const PostFeed = ({
           const { urls } = detectLinks(post?.content);
 
           return (
-            <>
-              <FeedItem key={i}>
+            <Fragment key={i}>
+              <FeedItem>
                 <OrganizationAvatar
                   organization={organization}
                   withLink={withLinks}
@@ -202,7 +202,7 @@ export const PostFeed = ({
                 </FeedMain>
               </FeedItem>
               <hr className="bg-neutral-gray1" />
-            </>
+            </Fragment>
           );
         })
       ) : (
