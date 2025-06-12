@@ -53,7 +53,6 @@ export const uploadAvatarImage = router({
       const { logger } = ctx;
 
       const sanitizedFileName = sanitizeS3Filename(fileName);
-      console.log('fileName', sanitizedFileName);
       if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
         throw new TRPCError({
           code: 'BAD_REQUEST',

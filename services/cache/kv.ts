@@ -68,6 +68,7 @@ export const cache = async <T = any>({
 
   // fall back to Redis cache
   const data = (await get(cacheKey)) as T;
+  // const data = null;
 
   if (data) {
     log.info('CACHE: KV');

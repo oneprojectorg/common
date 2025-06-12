@@ -59,7 +59,7 @@ export const ProfileFeed = ({
 
   return (
     <div className={className}>
-      <PostFeed posts={allPosts} />
+      <PostFeed posts={allPosts} withLinks={false} />
       {shouldShowTrigger && (
         <div
           ref={ref as React.RefObject<HTMLDivElement>}

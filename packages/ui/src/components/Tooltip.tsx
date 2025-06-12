@@ -76,7 +76,7 @@ const Tooltip = ({ children, ...props }: TooltipProps) => {
       </OverlayArrow>
       <div
         className={cn(
-          'op-ui-Tooltip grid max-w-sm items-center text-xs/[1.4]',
+          'op-ui-Tooltip grid max-w-sm items-center text-sm',
           Array.isArray(children) && children.length > 0 && 'gap-x-2',
         )}
       >

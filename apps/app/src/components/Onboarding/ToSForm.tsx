@@ -72,7 +72,7 @@ export const ToSForm = ({
           <FormalSection>
             <Header3 className="font-serif">3. Account Registration</Header3>
 
-            <Header3 className="font-serif text-xs">3.1 Eligibility</Header3>
+            <Header3 className="font-serif text-sm">3.1 Eligibility</Header3>
             <p>
               To use the Service, you must register for an account on behalf of
               an organization. You must be authorized to represent your
@@ -81,7 +81,7 @@ export const ToSForm = ({
             </p>
           </FormalSection>
           <FormalSection>
-            <Header3 className="font-serif text-xs">
+            <Header3 className="font-serif text-sm">
               3.2 Account Information
             </Header3>
             <p>

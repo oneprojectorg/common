@@ -15,6 +15,20 @@
       "when": 1747238469405,
       "tag": "0001_wide_greymalkin",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1749461508577,
+      "tag": "0002_classy_mathemanic",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1749568647487,
+      "tag": "0003_lyrical_whirlwind",
+      "breakpoints": true
     }
   ]
 }

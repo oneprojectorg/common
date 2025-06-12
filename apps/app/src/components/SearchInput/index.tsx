@@ -12,14 +12,26 @@ import { OrganizationResults } from './OrganizationResults';
 import { RecentSearches } from './RecentSearches';
 import { SearchResultItem } from './SearchResultItem';
 
-export const SearchInput = () => {
+export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
   const router = useRouter();
 
   const [query, setQuery] = useState<string>('');
   const [debouncedQuery, setImmediateQuery] = useDebounce(query, 200);
   const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const [showResults, setShowResults] = useState<boolean>(false);
   const [selectedIndex, setSelectedIndex] = useState<number>(-1);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Check if we're on mobile using the same breakpoint as the header
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640); // sm breakpoint
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
   const { data: organizationResults } = trpc.organization.search.useQuery({
     q: debouncedQuery,
   });
@@ -41,13 +53,20 @@ export const SearchInput = () => {
       ) {
         setShowResults(false);
         setSelectedIndex(-1);
+        onBlur?.();
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, []);
+  }, [onBlur]);
+
+  useEffect(() => {
+    if (isMobile && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isMobile]);
 
   useEffect(() => {
     setSelectedIndex(-1);
@@ -122,13 +141,14 @@ export const SearchInput = () => {
   return (
     <div ref={containerRef} className="group">
       <TextField
+        ref={inputRef}
         inputProps={{
           placeholder: 'Search',
           color: 'muted',
           size: 'small',
           icon: <LuSearch className="size-4 text-neutral-gray4" />,
           className: cn(
-            'active:bg-white active:text-neutral-gray3 focus:bg-white',
+            'bg-transparent placeholder:text-neutral-gray4 active:bg-white active:text-neutral-gray3 focus:bg-white',
             'active:border-inherit', // override TextField input styles that are used everywhere
             dropdownShowing && 'rounded-b-none',
           ),
@@ -145,13 +165,19 @@ export const SearchInput = () => {
           setShowResults(true);
         }}
         onFocus={() => setShowResults(true)}
+        onBlur={() => {
+          setTimeout(() => {
+            setShowResults(false);
+            onBlur?.();
+          }, 150);
+        }}
         value={query}
-        className="relative z-20 w-96"
+        className={cn('relative z-20', isMobile ? 'w-full' : 'w-96')}
         aria-label="Search"
       >
         {dropdownShowing ? (
           <div
-            className="absolute top-10 z-10 !max-h-80 w-[--trigger-width] min-w-96 overflow-y-auto rounded-b border border-t-0 bg-white group-hover:border-neutral-gray2"
+            className="absolute top-10 z-10 hidden !max-h-80 w-[--trigger-width] min-w-96 overflow-y-auto rounded-b border border-t-0 bg-white group-hover:border-neutral-gray2 sm:block"
             role="listbox"
             aria-label="Search results"
           >
@@ -193,6 +219,50 @@ export const SearchInput = () => {
           </div>
         ) : null}
       </TextField>
+
+      {/* Mobile full-screen search results */}
+      {dropdownShowing && (
+        <div
+          className="fixed inset-x-0 bottom-0 top-[60px] z-10 block overflow-y-auto bg-white sm:hidden"
+          role="listbox"
+          aria-label="Search results"
+        >
+          <div className="p-4 pt-0">
+            {false && query.length > 0 && (
+              <SearchResultItem
+                selected={selectedIndex === 0}
+                className={cn(
+                  'py-2',
+                  organizationResults?.length && 'border-b',
+                )}
+              >
+                <Link
+                  className="flex w-full items-center gap-2"
+                  href={`/search/?q=${query}`}
+                  onClick={() => recordSearch(query)}
+                >
+                  <LuSearch className="size-4 text-neutral-charcoal" /> {query}
+                </Link>
+              </SearchResultItem>
+            )}
+            {query?.length && organizationResults?.length ? (
+              <OrganizationResults
+                query={query}
+                organizationResults={organizationResults}
+                selectedIndex={selectedIndex}
+                onSearch={recordSearch}
+              />
+            ) : (
+              <RecentSearches
+                recentSearches={recentSearches}
+                selectedIndex={selectedIndex}
+                query={query}
+                onSearch={recordSearch}
+              />
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

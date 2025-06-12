@@ -4,8 +4,8 @@ import { Button } from '@op/ui/Button';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Dialog } from '@op/ui/RAC';
+import { toast } from '@op/ui/Toast';
 import { FormEvent, useTransition } from 'react';
-import { toast } from 'sonner';
 
 export const RemoveRelationshipModal = ({
   relationship,
@@ -28,9 +28,11 @@ export const RemoveRelationshipModal = ({
         });
 
         onChange();
-        toast.success('Relationship removed');
+        toast.success({
+          message: 'Relationship removed',
+        });
       } catch (e) {
-        toast.error('Could not remove relationship');
+        toast.error({ message: 'Could not remove relationship' });
       }
 
       close();

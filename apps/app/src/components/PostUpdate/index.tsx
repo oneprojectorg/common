@@ -151,7 +151,7 @@ const PostUpdateWithUser = ({
       <FeedItem>
         <OrganizationAvatar
           organization={organization}
-          className="size-8 rounded-full border bg-white"
+          className="size-8 bg-white"
         />
         <FeedMain className="relative">
           <Form onSubmit={handleSubmit} className="flex w-full flex-col gap-4">
@@ -242,7 +242,7 @@ const PostUpdateWithUser = ({
                 };
                 input.click();
               }}
-              className="flex items-center gap-2 text-sm text-charcoal transition-colors hover:text-black"
+              className="flex items-center gap-2 text-base text-neutral-charcoal transition-colors hover:text-black"
               disabled={fileUpload.filePreviews.length >= 1}
             >
               <LuImage className="size-4" />

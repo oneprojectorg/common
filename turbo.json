@@ -11,6 +11,9 @@
         "build/**"
       ]
     },
+    "migrate": {
+      "dependsOn": []
+    },
     "lint": {
       "dependsOn": ["^lint"]
     },
@@ -39,6 +42,7 @@
     "VERCEL_GIT_COMMIT_REF",
     "💻 ------ DEVELOPMENT VARS ------ 💻",
     "DB_MIGRATING",
-    "DB_SEEDING"
+    "DB_SEEDING",
+    "REDIS_URL"
   ]
 }

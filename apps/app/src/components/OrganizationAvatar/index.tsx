@@ -13,39 +13,39 @@ type relationshipOrganization =
 
 export const OrganizationAvatar = ({
   organization,
+  withLink = true,
   className,
 }: {
   organization: relationshipOrganization;
+  withLink?: boolean;
   className?: string;
 }) => {
   if (!organization) {
     return null;
   }
 
-  return (
-    <Link href={`/org/${organization.slug}`}>
-      <Avatar
-        className={cn('size-12', className)}
-        placeholder={organization.name}
-      >
-        {
-          // @ts-expect-error
-          organization.avatarImage?.name ? (
-            <Image
-              src={
-                getPublicUrl(
-                  // @ts-expect-error
-                  organization.avatarImage?.name,
-                ) ?? ''
-              }
-              width={80}
-              height={80}
-              alt={organization.name}
-            />
-          ) : null
-        }
-      </Avatar>
+  const avatar = (
+    <Avatar
+      className={cn('size-12', withLink && 'hover:opacity-80', className)}
+      placeholder={organization.name}
+    >
+      {'avatarImage' in organization && organization.avatarImage?.name ? (
+        <Image
+          src={getPublicUrl(organization.avatarImage?.name) ?? ''}
+          alt={organization.name}
+          fill
+          className="object-cover"
+        />
+      ) : null}
+    </Avatar>
+  );
+
+  return withLink ? (
+    <Link href={`/org/${organization.slug}`} className="hover:no-underline">
+      {avatar}
     </Link>
+  ) : (
+    <div>{avatar}</div>
   );
 };
 

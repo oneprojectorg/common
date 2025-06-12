@@ -20,7 +20,6 @@ export const AvatarUploader = ({
   onChange,
   uploading = false,
   className,
-  error = null,
 }: ImageUploaderProps) => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
@@ -83,7 +82,6 @@ export const AvatarUploader = ({
 
       <div className="text-center">
         <h2 className="text-sm">{label}</h2>
-        {error && <p className="mt-2 text-red-500">{error}</p>}
       </div>
     </div>
   );

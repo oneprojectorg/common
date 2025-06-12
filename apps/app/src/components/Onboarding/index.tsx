@@ -3,8 +3,9 @@
 import { trpc } from '@op/api/client';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { StepperProgressIndicator } from '@op/ui/Stepper';
+import { toast } from '@op/ui/Toast';
 import { useRouter } from 'next/navigation';
-import { useCallback, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { z } from 'zod';
 
 import { MultiStepForm, ProgressComponentProps } from '../MultiStepForm';
@@ -52,11 +53,63 @@ const ProgressInPortal = (props: ProgressComponentProps) => (
 );
 
 export const OnboardingFlow = () => {
-  const [values, setValues] = useState<FormValues | null>(null);
+  const [submitting, setSubmitting] = useState<boolean>(false);
+  const [hasHydrated, setHasHydrated] = useState(false);
   const createOrganization = trpc.organization.create.useMutation();
   const router = useRouter();
-  const { reset } = useOnboardingFormStore();
+  const {
+    reset,
+    personalDetails,
+    organizationDetails,
+    fundingInformation,
+    tos,
+    privacyPolicy,
+  } = useOnboardingFormStore();
   const trpcUtil = trpc.useUtils();
+
+  // Handle hydration detection
+  React.useEffect(() => {
+    // Check if already hydrated (if method exists)
+    if (useOnboardingFormStore.persist.hasHydrated?.()) {
+      setHasHydrated(true);
+      return;
+    }
+
+    // Set up hydration listener
+    const unsubscribe = useOnboardingFormStore.persist.onFinishHydration(() => {
+      setHasHydrated(true);
+    });
+
+    // Fallback: assume hydrated after a short delay if callback doesn't fire
+    const fallbackTimeout = setTimeout(() => {
+      setHasHydrated(true);
+    }, 100);
+
+    return () => {
+      unsubscribe();
+      clearTimeout(fallbackTimeout);
+    };
+  }, []);
+
+  // Function to get current step values from the store
+  const getStepValues = useCallback(() => {
+    const values = [
+      personalDetails,
+      {}, // MatchingOrganizationsForm expects empty object and handles its own logic
+      organizationDetails,
+      fundingInformation,
+      tos,
+      privacyPolicy,
+    ];
+
+    return values;
+  }, [
+    personalDetails,
+    organizationDetails,
+    fundingInformation,
+    tos,
+    privacyPolicy,
+  ]);
 
   const onReturn = useCallback<any>(
     (values: Array<FormValues>) => {
@@ -64,28 +117,34 @@ export const OnboardingFlow = () => {
         (accum, val) => ({ ...accum, ...val }),
         {} as FormValues,
       );
-      setValues(combined);
+
+      setSubmitting(true);
+
       createOrganization
         .mutateAsync(processInputs(combined))
         .then(() => {
           reset();
           // invalidate account so we refetch organization users again
-          trpcUtil.account.getMyAccount
-            .invalidate(undefined, {
-              refetchType: 'all',
-            })
-            .then(() => {
-              router.push(`/?new=1`);
-            });
+          trpcUtil.account.getMyAccount.reset();
+          trpcUtil.account.getMyAccount.refetch().then(() => {
+            router.push(`/?new=1`);
+          });
+          setSubmitting(false);
         })
         .catch((err) => {
           console.error('ERROR', err);
+          setSubmitting(false);
+          toast.error({
+            title: "That didn't work",
+            message: 'Something went wrong on our end. Please try again',
+          });
+          router.push(`/start?step=1`);
         });
     },
     [createOrganization],
   );
 
-  if (values) {
+  if (submitting) {
     return <LoadingSpinner />;
   }
 
@@ -109,6 +168,8 @@ export const OnboardingFlow = () => {
       ]}
       onFinish={onReturn}
       ProgressComponent={ProgressInPortal}
+      getStepValues={getStepValues}
+      hasHydrated={hasHydrated}
     />
   );
 };

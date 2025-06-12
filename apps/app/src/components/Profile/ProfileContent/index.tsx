@@ -8,10 +8,10 @@ import { Header3 } from '@op/ui/Header';
 import { Skeleton } from '@op/ui/Skeleton';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
+import { toast } from '@op/ui/Toast';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { LuCopy, LuGlobe, LuMail } from 'react-icons/lu';
-import { toast } from 'sonner';
 
 import { Link as I18nLink } from '@/lib/i18n';
 
@@ -50,7 +50,10 @@ const ProfileAbout = ({ profile }: { profile: Organization }) => {
                     size="small"
                     onPress={() => {
                       navigator.clipboard.writeText(email);
-                      toast.success('Copied to clipboard');
+                      toast.success({
+                        message:
+                          'This email address has been copied to your clipboard.',
+                      });
                     }}
                   >
                     <LuCopy /> Copy

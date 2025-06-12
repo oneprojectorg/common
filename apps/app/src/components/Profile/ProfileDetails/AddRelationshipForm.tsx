@@ -6,8 +6,8 @@ import { Checkbox } from '@op/ui/Checkbox';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Dialog } from '@op/ui/RAC';
+import { toast } from '@op/ui/Toast';
 import { FormEvent, useState, useTransition } from 'react';
-import { toast } from 'sonner';
 
 export const AddRelationshipForm = ({
   profile,
@@ -32,14 +32,20 @@ export const AddRelationshipForm = ({
         });
 
         onChange();
-        toast.success('Relationship requested');
+        toast.success({
+          message: 'Relationship requested',
+        });
       } catch (e) {
-        toast.error('Could not create relationship');
+        toast.error({ title: 'Could not create relationship' });
       }
 
       close();
     });
   };
+
+  const filteredRelationshipOptions = profile.networkOrganization
+    ? RELATIONSHIP_OPTIONS
+    : RELATIONSHIP_OPTIONS.filter((option) => option.key !== 'memberOf');
 
   return (
     <Dialog>
@@ -51,7 +57,7 @@ export const AddRelationshipForm = ({
               Choose how you’re in relationship with{' '}
               <span className="font-semibold">{profile.name}:</span>
               <ul>
-                {RELATIONSHIP_OPTIONS.map((option) => (
+                {filteredRelationshipOptions.map((option) => (
                   <li key={option.key} className="flex gap-3 py-2">
                     <Checkbox
                       isSelected={Array.from(selectedRelations).includes(

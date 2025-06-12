@@ -28,7 +28,7 @@ export const OrganizationList = ({
       <div className="hidden flex-col gap-6 sm:flex">
         {organizations?.map((org) => {
           return (
-            <div key={org.id} className="flex items-center gap-4">
+            <div key={org.id} className="flex items-center gap-2">
               <OrganizationAvatar organization={org} className="size-8" />
 
               <div className="flex min-w-0 flex-col text-sm">
@@ -113,17 +113,19 @@ export const OrganizationSummaryList = ({
       {organizations?.map((org) => {
         return (
           <div key={org.id}>
-            <Link
-              className="flex items-start gap-6 py-2"
-              href={`/org/${org.slug}`}
-            >
+            <div className="flex items-start gap-6 py-2">
               <OrganizationAvatar
                 organization={org}
                 className="size-6 sm:size-12"
               />
 
               <div className="flex flex-col gap-2 text-neutral-black">
-                <span className="font-semibold leading-base">{org.name}</span>
+                <Link
+                  href={`/org/${org.slug}`}
+                  className="font-semibold leading-base"
+                >
+                  {org.name}
+                </Link>
                 {org.city ? (
                   <span className="text-neutral-gray4">{org.city}</span>
                 ) : (
@@ -131,7 +133,7 @@ export const OrganizationSummaryList = ({
                 )}
                 <span className="text-neutral-charcoal">{org.bio}</span>
               </div>
-            </Link>
+            </div>
           </div>
         );
       })}

@@ -7,7 +7,7 @@ import { Header2 } from '@op/ui/Header';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Skeleton } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
-import { Suspense } from 'react';
+import { Suspense, useState } from 'react';
 
 import ErrorBoundary from '../ErrorBoundary';
 import { OrganizationAvatar } from '../OrganizationAvatar';
@@ -22,6 +22,10 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
       pending: true,
     });
 
+  const [acceptedRelationships, setAcceptedRelationships] = useState<
+    Set<string>
+  >(new Set());
+
   const utils = trpc.useUtils();
   const remove = trpc.organization.declineRelationship.useMutation({
     onSuccess: () => {
@@ -29,9 +33,17 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
     },
   });
   const approve = trpc.organization.approveRelationship.useMutation({
-    onSuccess: () => {
-      utils.organization.invalidate();
+    onSuccess: (_, variables) => {
+      const relationshipKey = `${variables.sourceOrganizationId}-${variables.targetOrganizationId}`;
+      setAcceptedRelationships((prev) => new Set(prev).add(relationshipKey));
+
       utils.organization.listPosts.invalidate();
+
+      // invalidate so we remove it from the list.
+      setTimeout(() => {
+        utils.organization.invalidate();
+        utils.organization.listRelationshipsTowardsOrganization.invalidate();
+      }, 5_000);
     },
   });
 
@@ -50,41 +62,69 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
             .map((r) => relationshipMap[r.relationshipType]?.noun)
             .join(', ');
 
+          const relationshipKey = `${org.id}-${organization.id}`;
+          const isAccepted = acceptedRelationships.has(relationshipKey);
+          const isPending =
+            approve.isPending &&
+            approve.variables?.sourceOrganizationId === org.id;
+
           return (
-            <li className="flex items-center justify-between border-t p-6">
-              <div className="flex gap-3">
+            <li
+              key={org.id}
+              className={`flex items-center justify-between border-t p-6 transition-colors ${isAccepted ? 'bg-primary-tealWhite' : ''}`}
+            >
+              <div className="flex items-center gap-3">
                 <OrganizationAvatar organization={org} />
-                <div className="flex flex-col">
-                  <span className="font-bold">{org.name}</span>
-                  <span>
-                    Added you as a {relationships ?? 'related organization'}
+                <div className="flex h-full flex-col">
+                  <span className="font-bold">
+                    {org.name}{' '}
+                    {isAccepted ? (
+                      <>
+                        <span className="font-normal">
+                          will now appear as a
+                        </span>{' '}
+                        {relationships ?? 'related organization'}{' '}
+                        <span className="font-normal"> on your profile.</span>
+                      </>
+                    ) : null}
                   </span>
+                  {!isAccepted ? (
+                    <span>
+                      Added you as a {relationships ?? 'related organization'}
+                    </span>
+                  ) : null}
                 </div>
               </div>
               <div className="flex items-center gap-4">
-                <Button
-                  color="secondary"
-                  size="small"
-                  onPress={() =>
-                    remove.mutate({
-                      sourceOrganizationId: org.id,
-                      targetOrganizationId: organization.id,
-                    })
-                  }
-                >
-                  Decline
-                </Button>
-                <Button
-                  size="small"
-                  onPress={() =>
-                    approve.mutate({
-                      sourceOrganizationId: org.id,
-                      targetOrganizationId: organization.id,
-                    })
-                  }
-                >
-                  {approve.isPending ? <LoadingSpinner /> : 'Accept'}
-                </Button>
+                {!isAccepted ? (
+                  <>
+                    <Button
+                      color="secondary"
+                      size="small"
+                      onPress={() =>
+                        remove.mutate({
+                          sourceOrganizationId: org.id,
+                          targetOrganizationId: organization.id,
+                        })
+                      }
+                      isDisabled={isPending}
+                    >
+                      Decline
+                    </Button>
+                    <Button
+                      size="small"
+                      onPress={() =>
+                        approve.mutate({
+                          sourceOrganizationId: org.id,
+                          targetOrganizationId: organization.id,
+                        })
+                      }
+                      isDisabled={isPending}
+                    >
+                      {isPending ? <LoadingSpinner /> : 'Accept'}
+                    </Button>
+                  </>
+                ) : null}
               </div>
             </li>
           );

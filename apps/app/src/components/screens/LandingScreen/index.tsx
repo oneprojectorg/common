@@ -4,6 +4,7 @@ import { Header1, Header3 } from '@op/ui/Header';
 import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
+import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
 import { NewOrganizations } from '@/components/NewOrganizations';
@@ -15,11 +16,9 @@ import { PostUpdate } from '@/components/PostUpdate';
 
 import { Welcome } from './Welcome';
 
-const Feed = async ({ organizationId }: { organizationId: string }) => {
+const Feed = async () => {
   const client = await trpcNext();
-  const posts = await client.organization.listRelatedPosts.query({
-    organizationId,
-  });
+  const { items: posts } = await client.organization.listAllPosts.query({});
 
   return <PostFeed posts={posts} />;
 };
@@ -52,7 +51,7 @@ const LandingScreenFeeds = ({
         <div className="mt-4 sm:mt-0">
           {user.currentOrganization ? (
             <Suspense fallback={<PostFeedSkeleton numPosts={3} />}>
-              <Feed organizationId={user.currentOrganization.id} />
+              <Feed />
             </Suspense>
           ) : null}
         </div>
@@ -92,34 +91,40 @@ const LandingScreenFeeds = ({
 };
 
 export const LandingScreen = async () => {
-  const client = await trpcNext();
-  const user = await client.account.getMyAccount.query();
+  try {
+    const client = await trpcNext();
+    const user = await client.account.getMyAccount.query();
 
-  return (
-    <div className="container flex min-h-0 grow flex-col gap-4 pt-8 sm:gap-10 sm:pt-14">
-      <div className="flex flex-col gap-2">
-        <Welcome user={user} />
-        <span className="text-center text-neutral-charcoal">
-          Explore new connections and strengthen existing relationships.
-        </span>
+    return (
+      <div className="container flex min-h-0 grow flex-col gap-4 pt-8 sm:gap-10 sm:pt-14">
+        <div className="flex flex-col gap-2">
+          <Welcome user={user} />
+          <span className="text-center text-neutral-charcoal">
+            Explore new connections and strengthen existing relationships.
+          </span>
+        </div>
+        <Suspense
+          fallback={
+            <Surface>
+              <Skeleton className="h-52 w-full" />
+            </Surface>
+          }
+        >
+          <OrganizationHighlights />
+        </Suspense>
+        {user.currentOrganization ? (
+          <PendingRelationships slug={user.currentOrganization.slug} />
+        ) : null}
+        <hr />
+        <LandingScreenFeeds user={user} />
+        <NewlyJoinedModal />
       </div>
-      <Suspense
-        fallback={
-          <Surface>
-            <Skeleton className="h-52 w-full" />
-          </Surface>
-        }
-      >
-        <OrganizationHighlights />
-      </Suspense>
-      {user.currentOrganization ? (
-        <PendingRelationships slug={user.currentOrganization.slug} />
-      ) : null}
-      <hr />
-      <LandingScreenFeeds user={user} />
-      <NewlyJoinedModal />
-    </div>
-  );
+    );
+  } catch (e) {
+    if ((e as any)?.data?.code === 'NOT_FOUND') {
+      redirect('/start');
+    }
+  }
 };
 
 export const LandingScreenSkeleton: React.FC = () => {

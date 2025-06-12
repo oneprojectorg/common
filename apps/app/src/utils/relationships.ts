@@ -14,11 +14,18 @@ export const RELATIONSHIP_OPTIONS = [
       `You’ve either received or given funds to ${orgName}`,
   },
   {
-    key: 'foaf:memberOf',
+    key: 'memberOf',
     label: 'Membership',
     noun: 'Member',
     description: (orgName: string) =>
       `Your organization is a member of ${orgName}'s network`,
+  },
+  {
+    key: 'affiliation',
+    label: 'Affiliation',
+    noun: 'Affiliate',
+    description: (orgName: string) =>
+      `Your organization informally supports or collaborates with  ${orgName}`,
   },
 ];
 

@@ -159,6 +159,7 @@ export const OrganizationFormFields = ({
         children={(field) => (
           <field.TextField
             label={t('Email')}
+            isRequired
             type="email"
             value={field.state.value as string}
             onBlur={field.handleBlur}
@@ -293,7 +294,6 @@ export const OrganizationFormFields = ({
           </ToggleRow>
         )}
       />
-
     </>
   );
 

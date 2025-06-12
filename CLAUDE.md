@@ -1,0 +1,2 @@
+- For typechecking you should use `pnpm w:app lint`
+- Our UI component library is in @op/ui and the components are exported in the package.json in the exports field

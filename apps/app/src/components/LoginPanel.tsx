@@ -5,8 +5,10 @@ import { APP_NAME, OPURLConfig } from '@op/core';
 import { useAuthUser, useMount } from '@op/hooks';
 import { createSBBrowserClient } from '@op/supabase/client';
 import { Button, ButtonLink } from '@op/ui/Button';
+import { CheckIcon } from '@op/ui/CheckIcon';
 import { Form } from '@op/ui/Form';
 import { Header1 } from '@op/ui/Header';
+import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { SocialLinks } from '@op/ui/SocialLinks';
 import { TextField } from '@op/ui/TextField';
 import { cn } from '@op/ui/utils';
@@ -17,7 +19,6 @@ import { create } from 'zustand';
 import GoogleIcon from '~icons/logos/google-icon.jsx';
 
 import { CommonLogo } from './CommonLogo';
-import { CheckIcon } from './icons/CheckIcon';
 
 interface LoginState {
   email: string;
@@ -285,7 +286,7 @@ export const LoginPanel = () => {
                         <TextField
                           aria-label="Code"
                           inputProps={{
-                            placeholder: '123456',
+                            placeholder: '1234567890',
                             spellCheck: false,
                           }}
                           fieldClassName="h-auto"
@@ -351,7 +352,7 @@ export const LoginPanel = () => {
                       }}
                     >
                       {login.isFetching ? (
-                        <div className="aspect-square w-4 animate-spin rounded-full" />
+                        <LoadingSpinner />
                       ) : loginSuccess ? (
                         isSignup ? (
                           'Sign up'
