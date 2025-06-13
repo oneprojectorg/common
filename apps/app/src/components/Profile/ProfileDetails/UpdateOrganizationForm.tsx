@@ -6,6 +6,7 @@ import type { Organization } from '@op/api/encoders';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { ModalFooter } from '@op/ui/Modal';
 import { useRouter } from 'next/navigation';
+import { forwardRef } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -61,11 +62,10 @@ const transformOrganizationToFormData = (org: Organization, terms?: any) => {
   };
 };
 
-export const UpdateOrganizationForm = ({
-  profile,
-  onSuccess,
-  className,
-}: UpdateOrganizationFormProps) => {
+export const UpdateOrganizationForm = forwardRef<
+  HTMLFormElement,
+  UpdateOrganizationFormProps
+>(({ profile, onSuccess, className }, ref) => {
   const t = useTranslations();
   const utils = trpc.useUtils();
   const router = useRouter();
@@ -119,17 +119,17 @@ export const UpdateOrganizationForm = ({
     >
       {({ form, isSubmitting, formFields }) => (
         <form
+          ref={ref}
+          id="update-organization-form"
           onSubmit={(e) => {
             e.preventDefault();
             void form.handleSubmit();
           }}
           className="w-full"
         >
-          <FormContainer className={className}>
-            {formFields}
-          </FormContainer>
+          <FormContainer className={className}>{formFields}</FormContainer>
 
-          <ModalFooter>
+          <ModalFooter className="hidden sm:flex">
             <div className="flex flex-col-reverse justify-between gap-4 sm:flex-row sm:gap-2">
               <form.SubmitButton
                 className="max-w-fit"
@@ -147,4 +147,6 @@ export const UpdateOrganizationForm = ({
       )}
     </OrganizationFormFields>
   );
-};
+});
+
+UpdateOrganizationForm.displayName = 'UpdateOrganizationForm';
