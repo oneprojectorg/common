@@ -53,10 +53,21 @@ export const getGeoNames = router({
         throw new Error('GOOGLE_MAPS_API_KEY environment variable is required');
       }
 
-      const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(q)}&key=${process.env.GOOGLE_MAPS_API_KEY}`;
+      const url = `https://places.googleapis.com/v1/places:searchText`;
 
       try {
-        const response = await fetch(url);
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Goog-Api-Key': process.env.GOOGLE_MAPS_API_KEY,
+            'X-Goog-FieldMask':
+              'places.id,places.displayName,places.formattedAddress,places.addressComponents,places.location,places.generativeSummary',
+          },
+          body: JSON.stringify({
+            textQuery: q,
+          }),
+        });
         const data = await response.json();
 
         if (!response.ok) {
@@ -67,23 +78,23 @@ export const getGeoNames = router({
 
         const geoNameMap = new Map();
 
-        if (data.results) {
-          for (const place of data.results) {
-            if (place.geometry?.location && place.formatted_address) {
-              const countryComponent = place.address_components?.find(
+        if (data.places) {
+          for (const place of data.places) {
+            if (place.location && place.formattedAddress) {
+              const countryComponent = place.addressComponents?.find(
                 (component: any) => component.types.includes('country'),
               );
 
-              const countryCode = countryComponent?.short_name || '';
-              const countryName = countryComponent?.long_name || '';
+              const countryCode = countryComponent?.shortText || '';
+              const countryName = countryComponent?.longText || '';
 
               const geoName: GeoName = {
-                address: place.formatted_address,
-                name: place.name ?? place.formatted_address,
-                plusCode: place.plus_code?.compound_code,
-                lat: place.geometry.location.lat,
-                lng: place.geometry.location.lng,
-                id: place.place_id ?? Math.floor(Math.random() * 1000000),
+                address: place.formattedAddress,
+                name: place.displayName.text ?? place.formattedAddress,
+                plusCode: place.plusCode?.compoundCode,
+                lat: place.location.latitude,
+                lng: place.location.longitude,
+                id: place.id ?? Math.floor(Math.random() * 1000000),
                 countryCode,
                 countryName,
               };
