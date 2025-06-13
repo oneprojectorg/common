@@ -68,6 +68,7 @@ export const getGeoNames = router({
             textQuery: q,
           }),
         });
+
         const data = await response.json();
 
         if (!response.ok) {
