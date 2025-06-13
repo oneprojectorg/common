@@ -4,7 +4,7 @@ import { trpc } from '@op/api/client';
 import { AvatarUploader } from '@op/ui/AvatarUploader';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { ModalFooter } from '@op/ui/Modal';
-import { ReactNode, useState } from 'react';
+import { ReactNode, useState, forwardRef } from 'react';
 import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
@@ -43,11 +43,11 @@ interface UpdateProfileFormProps {
   className?: string;
 }
 
-export const UpdateProfileForm = ({
+export const UpdateProfileForm = forwardRef<HTMLFormElement, UpdateProfileFormProps>(({
   profile,
   onSuccess,
   className,
-}: UpdateProfileFormProps): ReactNode => {
+}, ref): ReactNode => {
   const t = useTranslations();
   const utils = trpc.useUtils();
   const uploadImage = trpc.account.uploadImage.useMutation();
@@ -78,6 +78,8 @@ export const UpdateProfileForm = ({
 
   return (
     <form
+      ref={ref}
+      id="update-profile-form"
       onSubmit={(e) => {
         e.preventDefault();
         void form.handleSubmit();
@@ -160,7 +162,7 @@ export const UpdateProfileForm = ({
           )}
         />
       </FormContainer>
-      <ModalFooter>
+      <ModalFooter className="hidden sm:flex">
         <form.SubmitButton className="sm:w-auto">
           {updateProfile.isPending || uploadImage.isPending ? (
             <LoadingSpinner />
@@ -171,4 +173,6 @@ export const UpdateProfileForm = ({
       </ModalFooter>
     </form>
   );
-};
+});
+
+UpdateProfileForm.displayName = 'UpdateProfileForm';
