@@ -10,7 +10,7 @@ import { ZodSchema } from 'zod';
 export function findFirstInvalidStepBefore(
   currentValues: any[],
   targetStep: number,
-  schemas: ZodSchema<any>[]
+  schemas: ZodSchema<any>[],
 ): number {
   // Only validate steps before the target step
   for (let i = 0; i < Math.min(targetStep, schemas.length); i++) {
@@ -22,7 +22,7 @@ export function findFirstInvalidStepBefore(
     }
 
     // Check if value exists and validate it
-    if (value !== undefined && value !== null) {
+    if (value !== null) {
       const result = schema.safeParse(value);
 
       if (!result.success) {
@@ -47,10 +47,14 @@ export function findFirstInvalidStepBefore(
 export function validateStepAccess(
   currentValues: any[],
   targetStep: number,
-  schemas: ZodSchema<any>[]
+  schemas: ZodSchema<any>[],
 ): { isValid: boolean; firstInvalidStep: number } {
-  const firstInvalidStep = findFirstInvalidStepBefore(currentValues, targetStep, schemas);
-  
+  const firstInvalidStep = findFirstInvalidStepBefore(
+    currentValues,
+    targetStep,
+    schemas,
+  );
+
   return {
     isValid: firstInvalidStep === -1,
     firstInvalidStep: firstInvalidStep === -1 ? targetStep : firstInvalidStep,

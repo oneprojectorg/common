@@ -8,9 +8,13 @@ import { FormContainer } from '../form/FormContainer';
 import { FormHeader } from '../form/FormHeader';
 import { useAppForm } from '../form/utils';
 
-export const validator = z.object({
-  privacyPolicyAccept: z.boolean().default(true),
-});
+export const validator = z
+  .object({
+    privacyPolicyAccept: z.boolean().default(true),
+  })
+  .default({
+    privacyPolicyAccept: true,
+  });
 
 const FormalSection = ({ children }: { children: React.ReactNode }) => {
   return (
