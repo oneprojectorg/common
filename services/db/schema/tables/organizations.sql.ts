@@ -20,6 +20,7 @@ import {
   tsvector,
 } from '../../helpers';
 import { links } from './links.sql';
+import { locations } from './locations.sql';
 import { posts } from './posts.sql';
 import { projects } from './projects.sql';
 import { organizationRelationships } from './relationships.sql';
@@ -167,16 +168,16 @@ export const organizationsWhereWeWork = pgTable(
         onUpdate: 'cascade',
         onDelete: 'cascade',
       }),
-    taxonomyTermId: uuid('taxonomy_term_id')
+    locationId: uuid('location_id')
       .notNull()
-      .references(() => taxonomyTerms.id, {
+      .references(() => locations.id, {
         onUpdate: 'cascade',
         onDelete: 'cascade',
       }),
   },
   (table) => ({
     ...serviceRolePolicies,
-    pk: primaryKey(table.organizationId, table.taxonomyTermId),
+    pk: primaryKey(table.organizationId, table.locationId),
   }),
 );
 
@@ -187,9 +188,9 @@ export const organizationsWhereWeWorkRelations = relations(
       fields: [organizationsWhereWeWork.organizationId],
       references: [organizations.id],
     }),
-    term: one(taxonomyTerms, {
-      fields: [organizationsWhereWeWork.taxonomyTermId],
-      references: [taxonomyTerms.id],
+    location: one(locations, {
+      fields: [organizationsWhereWeWork.locationId],
+      references: [locations.id],
     }),
   }),
 );
