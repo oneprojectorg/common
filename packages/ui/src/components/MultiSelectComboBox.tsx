@@ -27,6 +27,7 @@ export type MultiSelectComboBoxProps = {
   allowAdditions?: boolean;
   showDefinitions?: boolean;
   disableParentSelection?: boolean;
+  enableLocalSearch?: boolean;
 };
 
 export const MultiSelectComboBox = ({
@@ -41,6 +42,7 @@ export const MultiSelectComboBox = ({
   allowAdditions,
   showDefinitions = false,
   disableParentSelection = true,
+  enableLocalSearch = true,
 }: MultiSelectComboBoxProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
@@ -125,11 +127,15 @@ export const MultiSelectComboBox = ({
   };
 
   // Filter items based on inputValue and not already selected
-  const filteredItems = items.filter(
-    (option) =>
-      option.label.toLowerCase().includes(inputValue.toLowerCase()) &&
-      !selectedOptions.some((item) => item.id === option.id),
-  );
+  const filteredItems = enableLocalSearch
+    ? items.filter(
+        (option) =>
+          option.label.toLowerCase().includes(inputValue.toLowerCase()) &&
+          !selectedOptions.some((item) => item.id === option.id),
+      )
+    : items.filter(
+        (option) => !selectedOptions.some((item) => item.id === option.id),
+      );
 
   // Helper functions for tree navigation
   const isItemSelectable = (item: Option): boolean => {

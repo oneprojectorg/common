@@ -50,6 +50,10 @@ Key exports (`.`, `client` -> `TRPCProvider.tsx`, `vanilla`) are defined in `pac
 - **`apps/api`**: Hosts the tRPC router endpoint (`app/api/v1/trpc/[trpc]/route.ts`) and consumes the `appRouter` and `createContext` from this package.
 - **`apps/app`**: Consumes the tRPC client via `TRPCProvider.tsx`.
 
+## Environment Variables
+
+- `GOOGLE_MAPS_API_KEY`: Required for the geoNames route to perform location searches via Google Maps Places API.
+
 ## Development
 
 - Run `pnpm lint` to lint and type-check the code.

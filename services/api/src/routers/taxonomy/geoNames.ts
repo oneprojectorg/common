@@ -4,15 +4,18 @@ import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
-type GeoName = {
-  toponymName: string;
-  name: string;
-  lat: number;
-  lng: number;
-  geonameId: number;
-  countryCode: string;
-  countryName: string;
-};
+const GeoNameSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  address: z.string().optional(),
+  plusCode: z.string().optional(),
+  lat: z.number(),
+  lng: z.number(),
+  countryCode: z.string(),
+  countryName: z.string(),
+});
+
+type GeoName = z.infer<typeof GeoNameSchema>;
 
 // const meta: OpenApiMeta = {
 // openapi: {
@@ -37,7 +40,10 @@ export const getGeoNames = router({
     )
     .output(
       z.object({
-        geonames: z.array(z.record(z.any())).optional().default([]),
+        geonames: z
+          .array(z.record(z.string(), GeoNameSchema))
+          .optional()
+          .default([]),
       }),
     )
     .query(async ({ input }) => {
@@ -72,26 +78,17 @@ export const getGeoNames = router({
               const countryName = countryComponent?.long_name || '';
 
               const geoName: GeoName = {
-                toponymName: place.name || place.formatted_address,
-                name: place.name || place.formatted_address,
+                address: place.formatted_address,
+                name: place.name ?? place.formatted_address,
+                plusCode: place.plus_code?.compound_code,
                 lat: place.geometry.location.lat,
                 lng: place.geometry.location.lng,
-                geonameId: place.place_id
-                  ? Math.abs(
-                      place.place_id
-                        .split('')
-                        .reduce(
-                          (a: number, b: string) =>
-                            ((a << 5) - a + b.charCodeAt(0)) & 0x7fffffff,
-                          0,
-                        ),
-                    )
-                  : Math.floor(Math.random() * 1000000),
+                id: place.place_id ?? Math.floor(Math.random() * 1000000),
                 countryCode,
                 countryName,
               };
 
-              const key = `${geoName.name}, ${geoName.countryCode}`;
+              const key = `${geoName.name}`;
               geoNameMap.set(key, geoName);
             }
           }
