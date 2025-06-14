@@ -1,6 +1,7 @@
 import { db, eq, sql } from '@op/db/client';
 import {
   links,
+  locations,
   organizations,
   organizationsStrategies,
   organizationsTerms,
@@ -105,59 +106,55 @@ export const updateOrganization = async ({
       ]);
     }
 
-    // Update where we work geoNames if provided
+    // Update where we work locations if provided
     if (data.whereWeWork !== undefined) {
       // Remove existing where we work entries
       await tx
         .delete(organizationsWhereWeWork)
         .where(eq(organizationsWhereWeWork.organizationId, organizationId));
 
-      const geoNames =
-        data.whereWeWork?.map((whereWeWork) =>
-          whereWeWork.data
-            ? geoNamesDataSchema.parse(whereWeWork.data)
-            : {
-                geonameId: `custom-${whereWeWork.label}`,
-                name: whereWeWork.label,
-              },
-        ) || [];
-
-      const geoNamesTaxonomy = await tx.query.taxonomies.findFirst({
-        where: (table, { eq, and }) =>
-          and(
-            eq(table.name, 'geoNames'),
-            eq(table.namespaceUri, 'https://www.geonames.org/ontology'),
-          ),
-      });
-
-      if (geoNamesTaxonomy) {
+      if (data.whereWeWork.length > 0) {
         await Promise.all(
-          geoNames.map(async (geoName) => {
-            if (geoName.geonameId) {
-              const [term] = await tx
-                .insert(taxonomyTerms)
-                .values({
-                  taxonomyId: geoNamesTaxonomy.id,
-                  label: geoName.name,
-                  termUri: geoName.geonameId.toString(),
-                  data: geoName,
-                })
-                .onConflictDoUpdate({
-                  target: [taxonomyTerms.termUri, taxonomyTerms.taxonomyId],
-                  set: {
-                    label: sql`excluded.label`,
-                  },
-                })
-                .returning();
+          data.whereWeWork.map(async (whereWeWork) => {
+            const geoData = whereWeWork.data
+              ? geoNamesDataSchema.parse(whereWeWork.data)
+              : null;
 
-              await tx
-                .insert(organizationsWhereWeWork)
-                .values({
-                  organizationId: updatedOrg.id,
-                  taxonomyTermId: term.id,
-                })
-                .onConflictDoNothing();
-            }
+            // Create location record
+            const [location] = await tx
+              .insert(locations)
+              .values({
+                name: whereWeWork.label,
+                placeId: geoData?.geonameId?.toString(),
+                address: geoData?.toponymName,
+                location: geoData?.lat && geoData?.lng 
+                  ? sql`ST_SetSRID(ST_MakePoint(${geoData.lng}, ${geoData.lat}), 4326)`
+                  : undefined,
+                countryCode: geoData?.countryCode,
+                countryName: geoData?.countryName,
+                metadata: geoData,
+              })
+              .onConflictDoUpdate({
+                target: [locations.placeId],
+                set: {
+                  name: sql`excluded.name`,
+                  address: sql`excluded.address`,
+                  location: sql`excluded.location`,
+                  countryCode: sql`excluded.country_code`,
+                  countryName: sql`excluded.country_name`,
+                  metadata: sql`excluded.metadata`,
+                },
+              })
+              .returning();
+
+            // Link location to organization
+            await tx
+              .insert(organizationsWhereWeWork)
+              .values({
+                organizationId: updatedOrg.id,
+                locationId: location.id,
+              })
+              .onConflictDoNothing();
           }),
         );
       }

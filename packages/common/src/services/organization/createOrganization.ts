@@ -1,13 +1,13 @@
 import { db, eq, sql } from '@op/db/client';
 import {
   links,
+  locations,
   organizationUserToAccessRoles,
   organizationUsers,
   organizations,
   organizationsStrategies,
   organizationsTerms,
   organizationsWhereWeWork,
-  taxonomyTerms,
   users,
 } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
@@ -159,58 +159,50 @@ export const createOrganization = async ({
         : []),
     ]);
 
-    // TODO: deprecated. Moving to Maps API
-    // Add where we work geoNames
-    const geoNames =
-      data.whereWeWork?.map((whereWeWork) =>
-        whereWeWork.data
-          ? geoNamesDataSchema.parse(whereWeWork.data)
-          : {
-              geonameId: `custom-${whereWeWork.label}`,
-              name: whereWeWork.label,
-            },
-      ) || [];
-
-    const geoNamesTaxonomy = await tx.query.taxonomies.findFirst({
-      where: (table, { eq, and }) =>
-        and(
-          eq(table.name, 'geoNames'),
-          eq(table.namespaceUri, 'https://www.geonames.org/ontology'),
-        ),
-    });
-
-    if (geoNamesTaxonomy) {
+    // Add where we work locations using Google Places data
+    if (data.whereWeWork?.length) {
       await Promise.all(
-        geoNames.map(async (geoName) => {
-          // make sure we have a valid ID
-          if (geoName.geonameId) {
-            // upsert the terms
-            const [term] = await tx
-              .insert(taxonomyTerms)
-              .values({
-                taxonomyId: geoNamesTaxonomy.id,
-                label: geoName.name,
-                termUri: geoName.geonameId.toString(),
-                data: geoName,
-              })
-              // just update in case we have new info from the API
-              .onConflictDoUpdate({
-                target: [taxonomyTerms.termUri, taxonomyTerms.taxonomyId],
-                set: {
-                  // set the existing value. This is so we can get the value back without an extra call
-                  label: sql`excluded.label`,
-                },
-              })
-              .returning();
+        data.whereWeWork.map(async (whereWeWork) => {
+          const geoData = whereWeWork.data
+            ? geoNamesDataSchema.parse(whereWeWork.data)
+            : null;
 
-            await tx
-              .insert(organizationsWhereWeWork)
-              .values({
-                organizationId: newOrg.id,
-                taxonomyTermId: term.id,
-              })
-              .onConflictDoNothing();
-          }
+          // Create location record
+          const [location] = await tx
+            .insert(locations)
+            .values({
+              name: whereWeWork.label,
+              placeId: geoData?.geonameId?.toString(),
+              address: geoData?.toponymName,
+              location:
+                geoData?.lat && geoData?.lng
+                  ? sql`ST_SetSRID(ST_MakePoint(${geoData.lng}, ${geoData.lat}), 4326)`
+                  : undefined,
+              countryCode: geoData?.countryCode,
+              countryName: geoData?.countryName,
+              metadata: geoData,
+            })
+            .onConflictDoUpdate({
+              target: [locations.placeId],
+              set: {
+                name: sql`excluded.name`,
+                address: sql`excluded.address`,
+                location: sql`excluded.location`,
+                countryCode: sql`excluded.country_code`,
+                countryName: sql`excluded.country_name`,
+                metadata: sql`excluded.metadata`,
+              },
+            })
+            .returning();
+
+          // Link location to organization
+          await tx
+            .insert(organizationsWhereWeWork)
+            .values({
+              organizationId: newOrg.id,
+              locationId: location.id,
+            })
+            .onConflictDoNothing();
         }),
       );
     }

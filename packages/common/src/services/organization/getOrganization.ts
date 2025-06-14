@@ -31,7 +31,7 @@ export const getOrganization = async ({
         avatarImage: true,
         whereWeWork: {
           with: {
-            term: true,
+            location: true,
           },
         },
         // TODO: CONVERT TO TERMS

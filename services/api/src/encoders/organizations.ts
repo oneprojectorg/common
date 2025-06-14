@@ -26,7 +26,7 @@ export const organizationsEncoder = createSelectSchema(organizations)
   .extend({
     projects: z.array(projectEncoder).optional(),
     links: z.array(linksEncoder).optional().default([]),
-    whereWeWork: z.array(taxonomyTermsEncoder).optional().default([]),
+    whereWeWork: z.array(z.any()).optional().default([]),
     receivingFundsTerms: z.array(taxonomyTermsEncoder).optional().default([]),
     strategies: z.array(taxonomyTermsEncoder).optional().default([]),
     headerImage: storageItemEncoder.nullish(),
