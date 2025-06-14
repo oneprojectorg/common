@@ -6,7 +6,6 @@ import {
   organizationsStrategies,
   organizationsTerms,
   organizationsWhereWeWork,
-  taxonomyTerms,
 } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
@@ -127,9 +126,10 @@ export const updateOrganization = async ({
                 name: whereWeWork.label,
                 placeId: geoData?.geonameId?.toString(),
                 address: geoData?.toponymName,
-                location: geoData?.lat && geoData?.lng 
-                  ? sql`ST_SetSRID(ST_MakePoint(${geoData.lng}, ${geoData.lat}), 4326)`
-                  : undefined,
+                location:
+                  geoData?.lat && geoData?.lng
+                    ? sql`ST_SetSRID(ST_MakePoint(${geoData.lng}, ${geoData.lat}), 4326)`
+                    : undefined,
                 countryCode: geoData?.countryCode,
                 countryName: geoData?.countryName,
                 metadata: geoData,
@@ -147,14 +147,16 @@ export const updateOrganization = async ({
               })
               .returning();
 
-            // Link location to organization
-            await tx
-              .insert(organizationsWhereWeWork)
-              .values({
-                organizationId: updatedOrg.id,
-                locationId: location.id,
-              })
-              .onConflictDoNothing();
+            if (location) {
+              // Link location to organization
+              await tx
+                .insert(organizationsWhereWeWork)
+                .values({
+                  organizationId: updatedOrg.id,
+                  locationId: location.id,
+                })
+                .onConflictDoNothing();
+            }
           }),
         );
       }

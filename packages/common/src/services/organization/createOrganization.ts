@@ -195,14 +195,16 @@ export const createOrganization = async ({
             })
             .returning();
 
-          // Link location to organization
-          await tx
-            .insert(organizationsWhereWeWork)
-            .values({
-              organizationId: newOrg.id,
-              locationId: location.id,
-            })
-            .onConflictDoNothing();
+          if (location) {
+            // Link location to organization
+            await tx
+              .insert(organizationsWhereWeWork)
+              .values({
+                organizationId: newOrg.id,
+                locationId: location.id,
+              })
+              .onConflictDoNothing();
+          }
         }),
       );
     }
