@@ -2,11 +2,8 @@ import { and, db, eq, or, sql } from '@op/db/client';
 import { Organization, organizationRelationships } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
-import { Profile } from '../../../../../services/db/schema/tables/profiles.sql';
 import { CommonError, UnauthorizedError } from '../../utils';
 import { getOrgAccessUser } from '../access';
-
-type OrganizationWithProfile = Organization & Profile;
 
 export const addRelationship = async ({
   from,
@@ -117,7 +114,7 @@ export const getRelatedOrganizations = async ({
       relationship.sourceOrganizationId === orgId
         ? relationship.targetOrganization
         : relationship.sourceOrganization
-    ) as OrganizationWithProfile;
+    ) as Organization;
 
     if (!distinctRelationships.has(relatedOrg.id)) {
       distinctRelationships.set(relatedOrg.id, relatedOrg);
@@ -232,16 +229,12 @@ export const getRelationshipsTowardsOrganization = async ({
       with: {
         targetOrganization: {
           with: {
-            profile: {
-              avatarImage: true,
-            },
+            avatarImage: true,
           },
         },
         sourceOrganization: {
           with: {
-            profile: {
-              avatarImage: true,
-            },
+            avatarImage: true,
           },
         },
       },
@@ -273,7 +266,7 @@ export const getRelationshipsTowardsOrganization = async ({
       relationship.sourceOrganizationId === orgId
         ? relationship.targetOrganization
         : relationship.sourceOrganization
-    ) as OrganizationWithProfile;
+    ) as Organization;
 
     if (!distinctRelationships.has(relatedOrg.id)) {
       distinctRelationships.set(relatedOrg.id, relatedOrg);
