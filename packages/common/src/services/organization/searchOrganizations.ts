@@ -1,5 +1,5 @@
 import { aliasedTable, db, eq, getTableColumns, sql } from '@op/db/client';
-import { objectsInStorage, organizations } from '@op/db/schema';
+import { objectsInStorage, organizations, profiles } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
 export const searchOrganizations = async ({
@@ -46,19 +46,21 @@ export const searchOrganizations = async ({
     .with(searchQueries)
     .select({
       ...getTableColumns(organizations),
+      ...getTableColumns(profiles),
       avatarImage: avatarObjectsInStorage,
-      rank: sql`ts_rank(${organizations.search}, ${searchQueries.englishQuery}) + ts_rank(${organizations.search}, ${searchQueries.simpleQuery})`.as(
+      rank: sql`ts_rank(${profiles.search}, ${searchQueries.englishQuery}) + ts_rank(${profiles.search}, ${searchQueries.simpleQuery})`.as(
         'rank',
       ),
     })
     .from(organizations)
     .crossJoin(searchQueries)
+    .leftJoin(profiles, eq(organizations.profileId, profiles.id))
     .leftJoin(
       avatarObjectsInStorage,
-      eq(avatarObjectsInStorage.id, organizations.avatarImageId),
+      eq(avatarObjectsInStorage.id, profiles.avatarImageId),
     )
     .where(
-      sql`${organizations.search} @@ ${searchQueries.englishQuery} OR ${organizations.search} @@ ${searchQueries.simpleQuery}`,
+      sql`${profiles.search} @@ ${searchQueries.englishQuery} OR ${profiles.search} @@ ${searchQueries.simpleQuery}`,
     )
     .limit(limit)
     .orderBy(sql`rank DESC`);

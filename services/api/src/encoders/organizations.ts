@@ -3,55 +3,30 @@ import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
 import { linksEncoder } from './links';
+import { profileEncoder } from './profiles';
 import { projectEncoder } from './projects';
-import { storageItemEncoder } from './storageItem';
 import { taxonomyTermsEncoder } from './taxonomyTerms';
 
 export const organizationsEncoder = createSelectSchema(organizations)
   .pick({
     id: true,
-    slug: true,
-    name: true,
-    city: true,
-    state: true,
-    bio: true,
-    mission: true,
-    email: true,
-    website: true,
+
     isOfferingFunds: true,
     isReceivingFunds: true,
     networkOrganization: true,
     orgType: true,
   })
+  .merge(profileEncoder)
   .extend({
     projects: z.array(projectEncoder).optional(),
     links: z.array(linksEncoder).optional().default([]),
     whereWeWork: z.array(z.any()).optional().default([]),
     receivingFundsTerms: z.array(taxonomyTermsEncoder).optional().default([]),
     strategies: z.array(taxonomyTermsEncoder).optional().default([]),
-    headerImage: storageItemEncoder.nullish(),
-    avatarImage: storageItemEncoder.nullish(),
   });
 
 export const organizationsCreateInputEncoder = createSelectSchema(organizations)
   .pick({
-    name: true,
-    slug: true,
-    bio: true,
-
-    // Mission
-    mission: true,
-    // Year Founded
-    yearFounded: true,
-    // Email
-    email: true,
-    phone: true,
-    website: true,
-    // Address
-    address: true,
-    city: true,
-    state: true,
-    postalCode: true,
     // Geography
     isVerified: true,
 
@@ -60,6 +35,25 @@ export const organizationsCreateInputEncoder = createSelectSchema(organizations)
 
     // Organization Type
     orgType: true,
+  })
+  .extend({
+    name: z.string(),
+    slug: z.string(),
+    bio: z.string(),
+
+    // Mission
+    mission: z.string(),
+    // Year Founded
+    yearFounded: z.string(),
+    // Email
+    email: z.string(),
+    phone: z.string(),
+    website: z.string(),
+    // Address
+    address: z.string(),
+    city: z.string(),
+    state: z.string(),
+    postalCode: z.string(),
   })
   .partial();
 
