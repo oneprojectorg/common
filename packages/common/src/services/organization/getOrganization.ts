@@ -1,4 +1,5 @@
 import { db } from '@op/db/client';
+import { profiles } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
@@ -22,13 +23,17 @@ export const getOrganization = async ({
   try {
     const org = await db.query.organizations.findFirst({
       where: slug
-        ? (table, { eq }) => eq(table.slug, slug)
+        ? (_, { eq }) => eq(profiles.slug, slug)
         : (table, { eq }) => eq(table.id, id!),
       with: {
         projects: true,
         links: true,
-        headerImage: true,
-        avatarImage: true,
+        profile: {
+          with: {
+            headerImage: true,
+            avatarImage: true,
+          },
+        },
         whereWeWork: {
           with: {
             location: true,

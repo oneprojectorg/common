@@ -1,4 +1,5 @@
 export * from './getOrganization';
+export * from './listOrganizations';
 export * from './createOrganization';
 export * from './updateOrganization';
 export * from './getOrganizationTerms';
