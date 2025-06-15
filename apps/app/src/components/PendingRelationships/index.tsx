@@ -77,7 +77,7 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
                 <OrganizationAvatar organization={org} />
                 <div className="flex h-full flex-col">
                   <span className="font-bold">
-                    {org.name}{' '}
+                    {org.profile.name}
                     {isAccepted ? (
                       <>
                         <span className="font-normal">

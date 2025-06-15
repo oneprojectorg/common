@@ -17,13 +17,13 @@ const OrganizationProfileSuspense = async ({ slug }: { slug: string }) => {
       slug,
     });
 
-    const { headerImage, avatarImage } = organization;
+    const { headerImage, avatarImage } = organization.profile;
     const headerUrl = getPublicUrl(headerImage?.name);
     const avatarUrl = getPublicUrl(avatarImage?.name);
 
-    const gradientBg = getGradientForString(organization.name || 'Common');
+    const gradientBg = getGradientForString(organization.profile.name || 'Common');
     const gradientBgHeader = getGradientForString(
-      organization.name + 'C' || 'Common',
+      organization.profile.name + 'C' || 'Common',
     );
 
     return (

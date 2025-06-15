@@ -93,7 +93,7 @@ const AvatarMenuContent = ({
           </span>
 
           <span className="text-xs text-neutral-gray4">
-            Admin for {user?.currentOrganization?.name}
+            Admin for {user?.currentOrganization?.profile.name}
           </span>
         </div>
       </MenuItemSimple>
@@ -103,7 +103,7 @@ const AvatarMenuContent = ({
           className="min-h-[60px] px-4 py-4 text-neutral-charcoal"
           onAction={() => {
             if (user.currentOrganization?.id === orgUser.organizationId) {
-              router.push(`/org/${orgUser.organization?.slug}`);
+              router.push(`/org/${orgUser.organization?.profile.slug}`);
               onClose?.();
               return;
             }
@@ -115,10 +115,10 @@ const AvatarMenuContent = ({
             onClose?.();
           }}
         >
-          <Avatar placeholder={orgUser.organization?.name}>
-            {orgUser.organization?.avatarImage?.name ? (
+          <Avatar placeholder={orgUser.organization?.profile.name}>
+            {orgUser.organization?.profile.avatarImage?.name ? (
               <Image
-                src={getPublicUrl(orgUser.organization.avatarImage.name) ?? ''}
+                src={getPublicUrl(orgUser.organization.profile.avatarImage.name) ?? ''}
                 alt="User avatar"
                 fill
                 className="object-cover"
@@ -126,7 +126,7 @@ const AvatarMenuContent = ({
             ) : null}
           </Avatar>
           <div className="flex flex-col">
-            <div>{orgUser.organization?.name}</div>
+            <div>{orgUser.organization?.profile.name}</div>
             <div className="text-sm text-neutral-gray4">
               {orgUser.organization?.orgType}
             </div>
@@ -174,10 +174,10 @@ const UserAvatarMenu = () => {
       className="relative"
       onPress={() => (isMobile ? setIsDrawerOpen(true) : undefined)}
     >
-      <Avatar placeholder={user?.currentOrganization?.name}>
-        {user?.currentOrganization?.avatarImage?.name ? (
+      <Avatar placeholder={user?.currentOrganization?.profile.name}>
+        {user?.currentOrganization?.profile.avatarImage?.name ? (
           <Image
-            src={getPublicUrl(user?.currentOrganization.avatarImage.name) ?? ''}
+            src={getPublicUrl(user?.currentOrganization.profile.avatarImage.name) ?? ''}
             alt="User avatar"
             fill
             className="object-cover"
