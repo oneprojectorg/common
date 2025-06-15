@@ -8,6 +8,7 @@ import {
   organizationsStrategies,
   organizationsTerms,
   organizationsWhereWeWork,
+  profiles,
   users,
 } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
@@ -87,14 +88,29 @@ export const createOrganization = async ({
   if (!user) {
     throw new UnauthorizedError();
   }
-
   const orgInputs = OrganizationInputParser.parse({
-    slug: randomUUID(),
-    email: user.email,
     ...data,
-    headerImageId: data.orgBannerImageId,
-    avatarImageId: data.orgAvatarImageId,
+    profileId: null,
   });
+
+  // Create an org profile
+  const [profile] = await db
+    .insert(profiles)
+    .values({
+      name: data.name! ?? 'New Organization',
+      slug: randomUUID(),
+      email: user.email,
+      bio: data.bio,
+      website: data.website,
+      mission: data.mission,
+      headerImageId: data.orgBannerImageId,
+      avatarImageId: data.orgAvatarImageId,
+    })
+    .returning();
+
+  if (!profile) {
+    throw new CommonError('Failed to create profile');
+  }
 
   // Create organization and link user
   const result = await db.transaction(async (tx) => {
@@ -254,7 +270,8 @@ export const createOrganization = async ({
       throw new CommonError('Failed to associate organization with user');
     }
 
-    return newOrg;
+    // @ts-ignore
+    return { ...newOrg, profile };
   });
 
   return result;

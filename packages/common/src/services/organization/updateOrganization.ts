@@ -6,6 +6,7 @@ import {
   organizationsStrategies,
   organizationsTerms,
   organizationsWhereWeWork,
+  profiles,
 } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
@@ -60,7 +61,7 @@ export const updateOrganization = async ({
   });
 
   // Update organization
-  const result = await db.transaction(async (tx) => {
+  await db.transaction(async (tx) => {
     // Update main organization data
     const [updatedOrg] = await tx
       .update(organizations)
@@ -70,6 +71,19 @@ export const updateOrganization = async ({
 
     if (!updatedOrg) {
       throw new NotFoundError('Failed to update organization');
+    }
+
+    // Update profile with relevant fields
+    const profileFields = Object.fromEntries(
+      Object.entries(data).filter(([_, value]) => value !== undefined),
+    );
+
+    // Only update profile if there are fields to update
+    if (Object.keys(profileFields).length > 0) {
+      await tx
+        .update(profiles)
+        .set(profileFields)
+        .where(eq(profiles.id, updatedOrg.profileId));
     }
 
     // Update funding links if provided
@@ -229,5 +243,24 @@ export const updateOrganization = async ({
     return updatedOrg;
   });
 
-  return result;
+  // Fetch the updated organization and profile separately to ensure proper typing
+  const [updatedOrg, updatedProfile] = await Promise.all([
+    db.query.organizations.findFirst({
+      where: eq(organizations.id, organizationId),
+    }),
+    db.query.profiles.findFirst({
+      where: eq(profiles.id, existingOrg.profileId),
+      with: {
+        headerImage: true,
+        avatarImage: true,
+      },
+    }),
+  ]);
+
+  if (!updatedOrg || !updatedProfile) {
+    throw new NotFoundError('Organization not found after update');
+  }
+
+  // @ts-ignore
+  return { ...updatedOrg, profile: updatedProfile };
 };

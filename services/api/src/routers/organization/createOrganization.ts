@@ -39,7 +39,7 @@ export const createOrganizationRouter = router({
         logger.info('Organization created', {
           userId: user.id,
           organizationId: org.id,
-          organizationName: org.name,
+          organizationName: org.profile.name,
         });
 
         return organizationsEncoder.parse(org);
