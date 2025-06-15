@@ -116,8 +116,7 @@ export const createOrganization = async ({
   const result = await db.transaction(async (tx) => {
     const [newOrg] = await tx
       .insert(organizations)
-      // @ts-expect-error - TODO: this is well defined with zod
-      .values(orgInputs)
+      .values({ ...orgInputs, profileId: profile.id })
       .returning();
 
     if (!newOrg) {
@@ -188,7 +187,7 @@ export const createOrganization = async ({
             .insert(locations)
             .values({
               name: whereWeWork.label,
-              placeId: geoData?.geonameId?.toString(),
+              placeId: geoData?.geonameId?.toString() ?? randomUUID(),
               address: geoData?.toponymName,
               location:
                 geoData?.lat && geoData?.lng
@@ -203,7 +202,7 @@ export const createOrganization = async ({
               set: {
                 name: sql`excluded.name`,
                 address: sql`excluded.address`,
-                location: sql`excluded.location`,
+                // location: sql`excluded.location`,
                 countryCode: sql`excluded.country_code`,
                 countryName: sql`excluded.country_name`,
                 metadata: sql`excluded.metadata`,

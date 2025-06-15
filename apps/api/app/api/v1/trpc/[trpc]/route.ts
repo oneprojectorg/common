@@ -11,6 +11,7 @@ const allowedOrigins = [
   'https://app-dev.oneproject.tech',
   'https://app.oneproject.tech',
   'https://common.oneproject.org',
+  'https://api.common.oneproject.org',
 ];
 
 const handler = async (req: NextRequest) => {

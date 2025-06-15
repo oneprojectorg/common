@@ -63,7 +63,11 @@ export const listPosts = async ({
         },
         organization: {
           with: {
-            avatarImage: true,
+            profile: {
+              with: {
+                avatarImage: true,
+              },
+            },
           },
         },
       },

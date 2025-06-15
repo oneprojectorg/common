@@ -98,7 +98,11 @@ export const listRelatedOrganizationPostsRouter = router({
           },
           organization: {
             with: {
-              avatarImage: true,
+              profile: {
+                with: {
+                  avatarImage: true,
+                },
+              },
             },
           },
         },
@@ -161,7 +165,11 @@ export const listRelatedOrganizationPostsRouter = router({
           },
           organization: {
             with: {
-              avatarImage: true,
+              profile: {
+                with: {
+                  avatarImage: true,
+                },
+              },
             },
           },
         },

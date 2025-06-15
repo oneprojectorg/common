@@ -79,7 +79,11 @@ const OrganizationFacePile = () => {
       const { avatarImage } = org.profile;
       const avatarUrl = getPublicUrl(avatarImage?.name);
       return (
-        <Link key={org.id} href={`/org/${org.profile.slug}`} className="hover:no-underline">
+        <Link
+          key={org.id}
+          href={`/org/${org.profile.slug}`}
+          className="hover:no-underline"
+        >
           <Avatar placeholder={org.profile.name}>
             {avatarUrl ? (
               <Image
