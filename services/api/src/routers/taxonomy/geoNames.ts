@@ -6,6 +6,7 @@ import { loggedProcedure, router } from '../../trpcFactory';
 
 const GeoNameSchema = z.object({
   id: z.string(),
+  placeId: z.string(),
   name: z.string(),
   address: z.string().optional(),
   plusCode: z.string().optional(),
@@ -13,6 +14,7 @@ const GeoNameSchema = z.object({
   lng: z.number(),
   countryCode: z.string(),
   countryName: z.string(),
+  metadata: z.any()
 });
 
 type GeoName = z.infer<typeof GeoNameSchema>;
@@ -93,8 +95,10 @@ export const getGeoNames = router({
                 lat: place.location.latitude,
                 lng: place.location.longitude,
                 id: place.id ?? Math.floor(Math.random() * 1000000),
+                placeId: place.id ?? Math.floor(Math.random() * 1000000),
                 countryCode,
                 countryName,
+                metadata: place,
               };
 
               const key = `${geoName.name}`;

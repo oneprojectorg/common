@@ -15,10 +15,4 @@ export const locationEncoder = createSelectSchema(locations)
   .extend({
     id: z.string().optional(),
     metadata: z.record(z.string(), z.any()).optional(),
-  })
-  .transform((data) => {
-    return {
-      ...data,
-      data: data.metadata,
-    };
   });
