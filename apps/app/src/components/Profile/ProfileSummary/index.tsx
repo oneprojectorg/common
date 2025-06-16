@@ -31,13 +31,13 @@ export const ProfileSummary = ({ profile }: { profile: Organization }) => {
   return (
     <div className="flex flex-col gap-2 py-2">
       <Header1>{profile.profile.name}</Header1>
-      {profile.profile.city && profile.profile.state ? (
-        <div className="text-base text-neutral-gray4">
-          {profile.profile.city}, {profile.profile.state}
-        </div>
-      ) : null}
+      {profile.whereWeWork.map((location) => (
+        <div className="text-base text-neutral-gray4">{location.name}</div>
+      ))}
 
-      <div className="text-base text-neutral-charcoal">{profile.profile.bio}</div>
+      <div className="text-base text-neutral-charcoal">
+        {profile.profile.bio}
+      </div>
 
       <ErrorBoundary fallback={null}>
         <div className="flex flex-col-reverse gap-6 sm:flex-col">

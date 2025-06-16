@@ -39,7 +39,7 @@ const transformOrganizationToFormData = (org: Organization, terms?: any) => {
       org.whereWeWork?.map((item) => {
         return {
           id: item.id,
-          label: item.label,
+          label: item.name,
           data: item.data || {},
         };
       }) || [],
@@ -108,7 +108,9 @@ export const UpdateOrganizationForm = forwardRef<
           });
 
           // Invalidate relevant queries
-          await utils.organization.getBySlug.invalidate({ slug: profile.profile.slug });
+          await utils.organization.getBySlug.invalidate({
+            slug: profile.profile.slug,
+          });
           router.refresh();
 
           onSuccess();

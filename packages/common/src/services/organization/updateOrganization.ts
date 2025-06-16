@@ -16,7 +16,6 @@ import {
   type FundingLinksInput,
   type UpdateOrganizationInput,
   UpdateOrganizationInputParser,
-  geoNamesDataSchema,
 } from './validators';
 
 export const updateOrganization = async ({
@@ -26,10 +25,10 @@ export const updateOrganization = async ({
 }: {
   id: string;
   data: UpdateOrganizationInput &
-  FundingLinksInput & {
-    orgAvatarImageId?: string;
-    orgBannerImageId?: string;
-  };
+    FundingLinksInput & {
+      orgAvatarImageId?: string;
+      orgBannerImageId?: string;
+    };
   user: User;
 }) => {
   const organizationId = id;
@@ -98,23 +97,23 @@ export const updateOrganization = async ({
       await Promise.all([
         ...(data.receivingFundsLink
           ? [
-            tx.insert(links).values({
-              organizationId: updatedOrg.id,
-              href: data.receivingFundsLink,
-              description: data.receivingFundsDescription,
-              type: 'receiving',
-            }),
-          ]
+              tx.insert(links).values({
+                organizationId: updatedOrg.id,
+                href: data.receivingFundsLink,
+                description: data.receivingFundsDescription,
+                type: 'receiving',
+              }),
+            ]
           : []),
         ...(data.offeringFundsLink
           ? [
-            tx.insert(links).values({
-              organizationId: updatedOrg.id,
-              href: data.offeringFundsLink,
-              description: data.offeringFundsDescription,
-              type: 'offering',
-            }),
-          ]
+              tx.insert(links).values({
+                organizationId: updatedOrg.id,
+                href: data.offeringFundsLink,
+                description: data.offeringFundsDescription,
+                type: 'offering',
+              }),
+            ]
           : []),
       ]);
     }
@@ -129,24 +128,20 @@ export const updateOrganization = async ({
       if (data.whereWeWork.length > 0) {
         await Promise.all(
           data.whereWeWork.map(async (whereWeWork) => {
-            const geoData = whereWeWork.data
-              ? geoNamesDataSchema.parse(whereWeWork.data)
-              : null;
-
             // Create location record
             const [location] = await tx
               .insert(locations)
               .values({
-                name: whereWeWork.label,
-                placeId: geoData?.geonameId?.toString(),
-                address: geoData?.toponymName,
+                name: whereWeWork.data.name,
+                placeId: whereWeWork.data.placeId,
+                address: whereWeWork.data.address,
                 location:
-                  geoData?.lat && geoData?.lng
-                    ? sql`ST_SetSRID(ST_MakePoint(${geoData.lng}, ${geoData.lat}), 4326)`
+                  whereWeWork.data?.lat && whereWeWork.data?.lng
+                    ? sql`ST_SetSRID(ST_MakePoint(${whereWeWork.data.lng}, ${whereWeWork.data.lat}), 4326)`
                     : undefined,
-                countryCode: geoData?.countryCode,
-                countryName: geoData?.countryName,
-                metadata: geoData,
+                countryCode: whereWeWork.data.countryCode,
+                countryName: whereWeWork.data.countryName,
+                metadata: whereWeWork.data,
               })
               .onConflictDoUpdate({
                 target: [locations.placeId],

@@ -19,7 +19,7 @@ export const whereWeWorkSchema = z
   .object({
     id: z.string(),
     label: z.string(),
-    data: geoNamesDataSchema.optional(),
+    data: z.record(z.string(), z.any()),
   })
   .strip();
 
