@@ -127,6 +127,10 @@ export const OrganizationSummaryList = ({
   return (
     <div className="flex flex-col gap-6">
       {organizations?.map((org) => {
+        const whereWeWork = org.whereWeWork
+          .map((location) => location.name)
+          .join(' • ');
+
         return (
           <div key={org.id}>
             <div className="flex items-start gap-2 py-2 sm:gap-6">
@@ -143,9 +147,9 @@ export const OrganizationSummaryList = ({
                   >
                     {org.profile.name}
                   </Link>
-                  {org.whereWeWork.map((location) => (
-                    <span className="text-neutral-gray4">{location.name}</span>
-                  ))}
+                  {whereWeWork.length > 0 ? (
+                    <span className="text-neutral-gray4">{whereWeWork}</span>
+                  ) : null}
                 </div>
                 <span className="text-neutral-charcoal">{org.profile.bio}</span>
               </div>
