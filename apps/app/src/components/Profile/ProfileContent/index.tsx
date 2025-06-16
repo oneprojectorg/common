@@ -47,7 +47,9 @@ const ProfileAbout = ({
             {website ? (
               <ContactLink>
                 <LuGlobe />
-                <Link href={formatToUrl(website)}>{website}</Link>
+                <Link href={formatToUrl(website)} target="_blank">
+                  {website}
+                </Link>
               </ContactLink>
             ) : null}
             {email ? (
