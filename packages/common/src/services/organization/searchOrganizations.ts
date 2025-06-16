@@ -46,7 +46,7 @@ export const searchOrganizations = async ({
     .with(searchQueries)
     .select({
       ...getTableColumns(organizations),
-      ...getTableColumns(profiles),
+      profile: getTableColumns(profiles),
       avatarImage: avatarObjectsInStorage,
       rank: sql`ts_rank(${profiles.search}, ${searchQueries.englishQuery}) + ts_rank(${profiles.search}, ${searchQueries.simpleQuery})`.as(
         'rank',
