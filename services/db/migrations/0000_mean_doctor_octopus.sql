@@ -1,5 +1,5 @@
-CREATE TYPE "public"."link_type" AS ENUM('offering', 'receiving', 'website', 'social');--> statement-breakpoint
-CREATE TYPE "public"."org_type" AS ENUM('nonprofit', 'forprofit', 'government', 'other');--> statement-breakpoint
+CREATE TYPE IF NOT EXISTS "public"."link_type" AS ENUM('offering', 'receiving', 'website', 'social');--> statement-breakpoint
+CREATE TYPE IF NOT EXISTS "public"."org_type" AS ENUM('nonprofit', 'forprofit', 'government', 'other');--> statement-breakpoint
 CREATE TABLE "access_roles" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"name" varchar(255),
