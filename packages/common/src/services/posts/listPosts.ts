@@ -1,5 +1,5 @@
 import { and, db, eq, lt, or } from '@op/db/client';
-import { postsToOrganizations, profiles } from '@op/db/schema';
+import { organizations, postsToOrganizations, profiles } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
 import {
@@ -25,14 +25,6 @@ export const listPosts = async ({
   }
 
   try {
-    const org = await db.query.organizations.findFirst({
-      where: (_, { eq }) => eq(profiles.slug, slug),
-    });
-
-    if (!org) {
-      throw new NotFoundError('Organization not found');
-    }
-
     // Parse cursor
     const cursorData = cursor ? decodeCursor(cursor) : null;
 
@@ -46,6 +38,28 @@ export const listPosts = async ({
           ),
         )
       : undefined;
+
+    const profile = slug
+      ? await db
+          .select({ id: profiles.id })
+          .from(profiles)
+          .where(eq(profiles.slug, slug))
+          .limit(1)
+      : null;
+
+    const profileId = profile?.[0]?.id;
+
+    if (!profileId) {
+      throw new NotFoundError('Could not find organization');
+    }
+
+    const org = await db.query.organizations.findFirst({
+      where: (_, { eq }) => eq(organizations.profileId, profileId),
+    });
+
+    if (!org) {
+      throw new NotFoundError('Organization not found');
+    }
 
     const result = await db.query.postsToOrganizations.findMany({
       where: cursorCondition

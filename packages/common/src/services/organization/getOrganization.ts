@@ -35,7 +35,6 @@ export const getOrganization = async ({
       throw new NotFoundError('Could not find organization');
     }
 
-    console.log('PROFILE ID', profileId);
     const org = await db.query.organizations.findFirst({
       where: profileId
         ? (table, { eq }) => eq(table.profileId, profileId)

@@ -81,6 +81,7 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
                     {isAccepted ? (
                       <>
                         <span className="font-normal">
+                          {' '}
                           will now appear as a
                         </span>{' '}
                         {relationships ?? 'related organization'}{' '}
