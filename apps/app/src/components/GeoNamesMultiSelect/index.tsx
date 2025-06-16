@@ -41,11 +41,13 @@ export const GeoNamesMultiSelect = ({
         geoNames?.geonames
           .map((item) => {
             const { name } = item;
+            // @ts-ignore
+            item.placeId = item.id;
 
             return {
               id: item.id,
               label: item.address ?? name,
-              data: item,
+              data: { ...item, id: undefined },
             };
           })
           .filter((o) => !!o) ?? []

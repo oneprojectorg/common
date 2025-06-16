@@ -1,5 +1,6 @@
 import { locations } from '@op/db/schema';
 import { createSelectSchema } from 'drizzle-zod';
+import { z } from 'zod';
 
 export const locationEncoder = createSelectSchema(locations)
   .pick({
@@ -9,6 +10,11 @@ export const locationEncoder = createSelectSchema(locations)
     countryCode: true,
     countryName: true,
     metadata: true,
+  })
+  .strip()
+  .extend({
+    id: z.string().optional(),
+    metadata: z.record(z.string(), z.any()).optional(),
   })
   .transform((data) => {
     return {

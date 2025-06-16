@@ -1,5 +1,5 @@
-import { and, db, eq, lt, or } from '@op/db/client';
-import { organizations } from '@op/db/schema';
+import { and, db, eq, lt, or, sql } from '@op/db/client';
+import { locations, organizations } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
 import {
@@ -48,6 +48,25 @@ export const listOrganizations = async ({
             avatarImage: true,
           },
         },
+        whereWeWork: {
+          with: {
+            location: {
+              extras: {
+                x: sql<number>`ST_X(${locations.location})`.as('x'),
+                y: sql<number>`ST_Y(${locations.location})`.as('y'),
+              },
+              columns: {
+                id: true,
+                name: true,
+                placeId: true,
+                countryCode: true,
+                countryName: true,
+                metadata: true,
+                latLng: false,
+              },
+            },
+          },
+        },
       },
       orderBy: (orgs, { desc }) => desc(orgs.updatedAt),
       limit: limit + 1, // Fetch one extra to check hasMore
@@ -56,6 +75,10 @@ export const listOrganizations = async ({
     if (!result) {
       throw new NotFoundError('Organizations not found');
     }
+
+    result.forEach((org) => {
+      org.whereWeWork = org.whereWeWork.map((item) => item.location);
+    });
 
     const hasMore = result.length > limit;
     const items = hasMore ? result.slice(0, limit) : result;

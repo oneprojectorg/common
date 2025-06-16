@@ -129,24 +129,24 @@ export const OrganizationSummaryList = ({
       {organizations?.map((org) => {
         return (
           <div key={org.id}>
-            <div className="flex items-start gap-6 py-2">
+            <div className="flex items-start gap-2 py-2 sm:gap-6">
               <OrganizationAvatar
                 organization={org}
                 className="size-6 sm:size-12"
               />
 
-              <div className="flex flex-col gap-2 text-neutral-black">
-                <Link
-                  href={`/org/${org.profile.slug}`}
-                  className="font-semibold leading-base"
-                >
-                  {org.profile.name}
-                </Link>
-                {org.profile.city ? (
-                  <span className="text-neutral-gray4">{org.profile.city}</span>
-                ) : (
-                  <span className="text-neutral-gray4">International</span>
-                )}
+              <div className="flex flex-col gap-3 text-neutral-black">
+                <div className="flex flex-col gap-2">
+                  <Link
+                    href={`/org/${org.profile.slug}`}
+                    className="font-semibold leading-base"
+                  >
+                    {org.profile.name}
+                  </Link>
+                  {org.whereWeWork.map((location) => (
+                    <span className="text-neutral-gray4">{location.name}</span>
+                  ))}
+                </div>
                 <span className="text-neutral-charcoal">{org.profile.bio}</span>
               </div>
             </div>
