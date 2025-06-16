@@ -118,7 +118,10 @@ const AvatarMenuContent = ({
           <Avatar placeholder={orgUser.organization?.profile.name}>
             {orgUser.organization?.profile.avatarImage?.name ? (
               <Image
-                src={getPublicUrl(orgUser.organization.profile.avatarImage.name) ?? ''}
+                src={
+                  getPublicUrl(orgUser.organization.profile.avatarImage.name) ??
+                  ''
+                }
                 alt="User avatar"
                 fill
                 className="object-cover"
@@ -177,7 +180,11 @@ const UserAvatarMenu = () => {
       <Avatar placeholder={user?.currentOrganization?.profile.name}>
         {user?.currentOrganization?.profile.avatarImage?.name ? (
           <Image
-            src={getPublicUrl(user?.currentOrganization.profile.avatarImage.name) ?? ''}
+            src={
+              getPublicUrl(
+                user?.currentOrganization.profile.avatarImage.name,
+              ) ?? ''
+            }
             alt="User avatar"
             fill
             className="object-cover"
@@ -270,7 +277,7 @@ export const SiteHeader = () => {
       </header>
 
       {/* Mobile */}
-      <header className="flex h-auto w-full items-center justify-between border-b px-4 py-2 sm:hidden">
+      <header className="flex h-auto w-full items-center justify-between px-4 py-2 sm:hidden">
         {!isMobileSearchExpanded && (
           <Link href="/">
             <CommonLogo />

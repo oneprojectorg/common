@@ -69,7 +69,7 @@ export const TabList = <T extends object>(
 };
 
 const tabProps = tv({
-  base: 'flex cursor-default items-center px-2 py-3 text-base font-normal text-neutral-gray4 outline-none transition forced-color-adjust-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue',
+  base: 'flex cursor-default items-center bg-neutral-offWhite px-2 py-3 text-base font-normal text-neutral-gray4 outline-none transition forced-color-adjust-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue',
   variants: {
     variant: {
       default: '',
@@ -87,7 +87,7 @@ const tabProps = tv({
     {
       variant: 'pill',
       isSelected: true,
-      class: 'border-none bg-neutral-offWhite text-neutral-charcoal',
+      class: 'border-none bg-neutral-gray1 text-neutral-charcoal',
     },
   ],
   defaultVariants: {
