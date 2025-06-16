@@ -152,7 +152,7 @@ export const OnboardingFlow = () => {
     <MultiStepForm
       steps={[
         PersonalDetailsForm,
-        // MatchingOrganizationsForm,
+        MatchingOrganizationsForm,
         OrganizationDetailsForm,
         FundingInformationForm,
         ToSForm,
@@ -160,7 +160,7 @@ export const OnboardingFlow = () => {
       ]}
       schemas={[
         PersonalDetailsFormValidator,
-        // MatchingOrganizationsFormValidator,
+        MatchingOrganizationsFormValidator,
         OrganizationDetailsFormValidator,
         FundingInformationFormValidator,
         ToSFormValidator,

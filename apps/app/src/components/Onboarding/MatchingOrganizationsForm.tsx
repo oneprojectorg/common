@@ -45,7 +45,7 @@ export const MatchingOrganizationsForm = ({
         setSelectedOrganizationId(matchingOrgs[0]?.id);
       }
     }
-  }, [isLoading, matchingOrgs, onNext, selectedOrganizationId]);
+  }, [isLoading, matchingOrgs]);
 
   const handleContinue = async () => {
     if (!selectedOrganizationId) {

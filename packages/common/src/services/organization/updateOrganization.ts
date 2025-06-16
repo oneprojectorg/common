@@ -26,10 +26,10 @@ export const updateOrganization = async ({
 }: {
   id: string;
   data: UpdateOrganizationInput &
-    FundingLinksInput & {
-      orgAvatarImageId?: string;
-      orgBannerImageId?: string;
-    };
+  FundingLinksInput & {
+    orgAvatarImageId?: string;
+    orgBannerImageId?: string;
+  };
   user: User;
 }) => {
   const organizationId = id;
@@ -54,11 +54,7 @@ export const updateOrganization = async ({
     throw new NotFoundError('Organization not found');
   }
 
-  const orgInputs = UpdateOrganizationInputParser.parse({
-    ...updateData,
-    headerImageId: data.orgBannerImageId,
-    avatarImageId: data.orgAvatarImageId,
-  });
+  const orgInputs = UpdateOrganizationInputParser.parse(updateData);
 
   // Update organization
   await db.transaction(async (tx) => {
@@ -82,7 +78,11 @@ export const updateOrganization = async ({
     if (Object.keys(profileFields).length > 0) {
       await tx
         .update(profiles)
-        .set(profileFields)
+        .set({
+          ...profileFields,
+          headerImageId: data.orgBannerImageId,
+          avatarImageId: data.orgAvatarImageId,
+        })
         .where(eq(profiles.id, updatedOrg.profileId));
     }
 
@@ -98,23 +98,23 @@ export const updateOrganization = async ({
       await Promise.all([
         ...(data.receivingFundsLink
           ? [
-              tx.insert(links).values({
-                organizationId: updatedOrg.id,
-                href: data.receivingFundsLink,
-                description: data.receivingFundsDescription,
-                type: 'receiving',
-              }),
-            ]
+            tx.insert(links).values({
+              organizationId: updatedOrg.id,
+              href: data.receivingFundsLink,
+              description: data.receivingFundsDescription,
+              type: 'receiving',
+            }),
+          ]
           : []),
         ...(data.offeringFundsLink
           ? [
-              tx.insert(links).values({
-                organizationId: updatedOrg.id,
-                href: data.offeringFundsLink,
-                description: data.offeringFundsDescription,
-                type: 'offering',
-              }),
-            ]
+            tx.insert(links).values({
+              organizationId: updatedOrg.id,
+              href: data.offeringFundsLink,
+              description: data.offeringFundsDescription,
+              type: 'offering',
+            }),
+          ]
           : []),
       ]);
     }
