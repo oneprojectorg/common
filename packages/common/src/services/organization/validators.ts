@@ -16,8 +16,11 @@ export const geoNamesDataSchema = z
   .strip();
 
 export const whereWeWorkSchema = z
-  .object({ id: z.string(), label: z.string(), data: geoNamesDataSchema })
-  .partial()
+  .object({
+    id: z.string(),
+    label: z.string(),
+    data: geoNamesDataSchema.optional(),
+  })
   .strip();
 
 export const baseOrganizationSchema = z.object({
