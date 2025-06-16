@@ -28,12 +28,17 @@ const RelationshipCount = ({ profile }: { profile: Organization }) => {
 };
 
 export const ProfileSummary = ({ profile }: { profile: Organization }) => {
+  const whereWeWork = profile.whereWeWork
+    .map((location) => location.name)
+    .join(' • ');
+
   return (
     <div className="flex flex-col gap-2 py-2">
       <Header1>{profile.profile.name}</Header1>
-      {profile.whereWeWork.map((location) => (
-        <div className="text-base text-neutral-gray4">{location.name}</div>
-      ))}
+
+      {whereWeWork.length ? (
+        <div className="text-base text-neutral-gray4">{whereWeWork}</div>
+      ) : null}
 
       <div className="text-base text-neutral-charcoal">
         {profile.profile.bio}
