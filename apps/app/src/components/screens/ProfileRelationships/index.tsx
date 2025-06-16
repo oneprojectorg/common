@@ -100,7 +100,7 @@ const ProfileRelationshipsSuspense = ({ slug }: { slug: string }) => {
           <Tab id="all">All relationships</Tab>
         </TabList>
 
-        <TabPanel id="all" className="sm:px-0">
+        <TabPanel id="all" className="px-4 sm:px-0">
           <RelationshipList organizations={organizations} />
         </TabPanel>
       </Tabs>
