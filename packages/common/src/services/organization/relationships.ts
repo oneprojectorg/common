@@ -1,9 +1,17 @@
 import { and, db, eq, or, sql } from '@op/db/client';
-import { Organization, organizationRelationships } from '@op/db/schema';
+import {
+  Organization,
+  Profile,
+  organizationRelationships,
+} from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
 import { CommonError, UnauthorizedError } from '../../utils';
 import { getOrgAccessUser } from '../access';
+
+type OrganizationWithProfile = Organization & {
+  profile: Profile & { avatarImage: any };
+};
 
 export const addRelationship = async ({
   from,
@@ -71,36 +79,35 @@ export const getRelatedOrganizations = async ({
         : []),
     );
 
-  const [relationships, count] = await Promise.all([
-    db.query.organizationRelationships.findMany({
-      where,
-      with: {
-        targetOrganization: {
-          with: {
-            avatarImage: true,
-          },
-        },
-        sourceOrganization: {
-          with: {
-            avatarImage: true,
+  const relationships = await db.query.organizationRelationships.findMany({
+    where,
+    with: {
+      targetOrganization: {
+        with: {
+          profile: {
+            with: {
+              avatarImage: true,
+            },
           },
         },
       },
-    }),
-    // TODO: this doesn't count the right thing. It counts the relationships rather than the orgs in relationship
-    db
-      .select({
-        count: sql<number>`count(*)::int`,
-      })
-      .from(organizationRelationships)
-      .where(where),
-  ]);
+      sourceOrganization: {
+        with: {
+          profile: {
+            with: {
+              avatarImage: true,
+            },
+          },
+        },
+      },
+    },
+  });
 
   // At the moment we combine all the relationships into one distinct org record
   // in JS as this is harder to do in SQL
   const distinctRelationships = new Map<
     string,
-    Organization & {
+    OrganizationWithProfile & {
       relationships?: Array<{
         relationshipType: string;
         pending: boolean | null;
@@ -114,7 +121,7 @@ export const getRelatedOrganizations = async ({
       relationship.sourceOrganizationId === orgId
         ? relationship.targetOrganization
         : relationship.sourceOrganization
-    ) as Organization;
+    ) as OrganizationWithProfile;
 
     if (!distinctRelationships.has(relatedOrg.id)) {
       distinctRelationships.set(relatedOrg.id, relatedOrg);
@@ -138,7 +145,8 @@ export const getRelatedOrganizations = async ({
     ([_, val]) => val,
   );
 
-  return { records: organizations, count: count[0]?.count ?? 0 };
+  // TODO: do this through SQL
+  return { records: organizations, count: organizations.length ?? 0 };
 };
 
 export const getDirectedRelationships = async ({
@@ -175,12 +183,20 @@ export const getDirectedRelationships = async ({
       with: {
         targetOrganization: {
           with: {
-            avatarImage: true,
+            profile: {
+              with: {
+                avatarImage: true,
+              },
+            },
           },
         },
         sourceOrganization: {
           with: {
-            avatarImage: true,
+            profile: {
+              with: {
+                avatarImage: true,
+              },
+            },
           },
         },
       },
@@ -229,12 +245,20 @@ export const getRelationshipsTowardsOrganization = async ({
       with: {
         targetOrganization: {
           with: {
-            avatarImage: true,
+            profile: {
+              with: {
+                avatarImage: true,
+              },
+            },
           },
         },
         sourceOrganization: {
           with: {
-            avatarImage: true,
+            profile: {
+              with: {
+                avatarImage: true,
+              },
+            },
           },
         },
       },
@@ -252,7 +276,7 @@ export const getRelationshipsTowardsOrganization = async ({
   // in JS as this is harder to do in SQL
   const distinctRelationships = new Map<
     string,
-    Organization & {
+    OrganizationWithProfile & {
       relationships?: Array<{
         relationshipType: string;
         pending: boolean | null;
@@ -266,7 +290,7 @@ export const getRelationshipsTowardsOrganization = async ({
       relationship.sourceOrganizationId === orgId
         ? relationship.targetOrganization
         : relationship.sourceOrganization
-    ) as Organization;
+    ) as OrganizationWithProfile;
 
     if (!distinctRelationships.has(relatedOrg.id)) {
       distinctRelationships.set(relatedOrg.id, relatedOrg);

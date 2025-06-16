@@ -6,7 +6,7 @@
         "name": "next"
       }
     ],
-    "baseUrl": ".",
+    "baseUrl": "./",
     // "noErrorTruncation": true
     "types": ["unplugin-icons/types/react"],
     "strict": true /* Enable all strict type-checking options. */,

@@ -2,20 +2,24 @@ import { logger as log } from '@op/logging';
 import { waitUntil } from '@vercel/functions';
 import { createClient } from 'redis';
 
-const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:1234';
+const REDIS_URL = process.env.REDIS_URL;
 
-// Create Redis client
-const redis = createClient({
-  url: REDIS_URL,
-});
+// Create Redis client only if REDIS_URL is provided
+let redis: ReturnType<typeof createClient> | null = null;
 
-redis.on('error', (err) => {
-  log.error('Redis Client Error', err);
-});
+if (REDIS_URL) {
+  redis = createClient({
+    url: REDIS_URL,
+  });
 
-// Connect to Redis
-if (!redis.isOpen) {
-  redis.connect().catch(console.error);
+  redis.on('error', (err) => {
+    log.error('Redis Client Error', err);
+  });
+
+  // Connect to Redis
+  if (!redis.isOpen) {
+    redis.connect().catch(console.error);
+  }
 }
 
 const TypeMap = {
@@ -112,6 +116,10 @@ export const invalidate = async ({
 };
 
 const get = async (key: string) => {
+  if (!redis) {
+    return null;
+  }
+
   try {
     const data = await redis.get(key);
 
@@ -130,6 +138,10 @@ const get = async (key: string) => {
 // const DEFAULT_TTL = 3600 * 24 * 30; // 3600 * 24 = 1 day
 const DEFAULT_TTL = 3600; // short TTL for testing
 const set = async (key: string, data: any, ttl?: number) => {
+  if (!redis) {
+    return;
+  }
+
   try {
     const serializedData = JSON.stringify(data);
     if (data === null) {

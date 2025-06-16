@@ -6,6 +6,7 @@ import {
   organizationsStrategies,
   organizationsTerms,
   organizationsWhereWeWork,
+  profiles,
 } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
@@ -25,10 +26,10 @@ export const updateOrganization = async ({
 }: {
   id: string;
   data: UpdateOrganizationInput &
-    FundingLinksInput & {
-      orgAvatarImageId?: string;
-      orgBannerImageId?: string;
-    };
+  FundingLinksInput & {
+    orgAvatarImageId?: string;
+    orgBannerImageId?: string;
+  };
   user: User;
 }) => {
   const organizationId = id;
@@ -53,14 +54,10 @@ export const updateOrganization = async ({
     throw new NotFoundError('Organization not found');
   }
 
-  const orgInputs = UpdateOrganizationInputParser.parse({
-    ...updateData,
-    headerImageId: data.orgBannerImageId,
-    avatarImageId: data.orgAvatarImageId,
-  });
+  const orgInputs = UpdateOrganizationInputParser.parse(updateData);
 
   // Update organization
-  const result = await db.transaction(async (tx) => {
+  await db.transaction(async (tx) => {
     // Update main organization data
     const [updatedOrg] = await tx
       .update(organizations)
@@ -70,6 +67,23 @@ export const updateOrganization = async ({
 
     if (!updatedOrg) {
       throw new NotFoundError('Failed to update organization');
+    }
+
+    // Update profile with relevant fields
+    const profileFields = Object.fromEntries(
+      Object.entries(data).filter(([_, value]) => value !== undefined),
+    );
+
+    // Only update profile if there are fields to update
+    if (Object.keys(profileFields).length > 0) {
+      await tx
+        .update(profiles)
+        .set({
+          ...profileFields,
+          headerImageId: data.orgBannerImageId,
+          avatarImageId: data.orgAvatarImageId,
+        })
+        .where(eq(profiles.id, updatedOrg.profileId));
     }
 
     // Update funding links if provided
@@ -84,23 +98,23 @@ export const updateOrganization = async ({
       await Promise.all([
         ...(data.receivingFundsLink
           ? [
-              tx.insert(links).values({
-                organizationId: updatedOrg.id,
-                href: data.receivingFundsLink,
-                description: data.receivingFundsDescription,
-                type: 'receiving',
-              }),
-            ]
+            tx.insert(links).values({
+              organizationId: updatedOrg.id,
+              href: data.receivingFundsLink,
+              description: data.receivingFundsDescription,
+              type: 'receiving',
+            }),
+          ]
           : []),
         ...(data.offeringFundsLink
           ? [
-              tx.insert(links).values({
-                organizationId: updatedOrg.id,
-                href: data.offeringFundsLink,
-                description: data.offeringFundsDescription,
-                type: 'offering',
-              }),
-            ]
+            tx.insert(links).values({
+              organizationId: updatedOrg.id,
+              href: data.offeringFundsLink,
+              description: data.offeringFundsDescription,
+              type: 'offering',
+            }),
+          ]
           : []),
       ]);
     }
@@ -229,5 +243,24 @@ export const updateOrganization = async ({
     return updatedOrg;
   });
 
-  return result;
+  // Fetch the updated organization and profile separately to ensure proper typing
+  const [updatedOrg, updatedProfile] = await Promise.all([
+    db.query.organizations.findFirst({
+      where: eq(organizations.id, organizationId),
+    }),
+    db.query.profiles.findFirst({
+      where: eq(profiles.id, existingOrg.profileId),
+      with: {
+        headerImage: true,
+        avatarImage: true,
+      },
+    }),
+  ]);
+
+  if (!updatedOrg || !updatedProfile) {
+    throw new NotFoundError('Organization not found after update');
+  }
+
+  // @ts-ignore
+  return { ...updatedOrg, profile: updatedProfile };
 };

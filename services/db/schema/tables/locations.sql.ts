@@ -21,5 +21,6 @@ export const locations = pgTable(
     ...serviceRolePolicies,
     index().on(table.id).concurrently(),
     index().on(table.placeId).concurrently(),
+    index('spatial_index').using('gist', table.location),
   ],
 );

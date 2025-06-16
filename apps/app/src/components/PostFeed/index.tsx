@@ -149,11 +149,11 @@ export const PostFeed = ({
                   <FeedHeader>
                     <Header3 className="pt-2 font-medium leading-3">
                       {withLinks ? (
-                        <Link href={`/org/${organization?.slug}`}>
-                          {organization?.name}
+                        <Link href={`/org/${organization?.profile.slug}`}>
+                          {organization?.profile.name}
                         </Link>
                       ) : (
-                        organization?.name
+                        organization?.profile.name
                       )}
                     </Header3>
                     {post?.createdAt ? (

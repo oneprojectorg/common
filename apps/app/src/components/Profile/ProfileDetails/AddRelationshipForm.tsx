@@ -55,7 +55,7 @@ export const AddRelationshipForm = ({
           <ModalBody>
             <div>
               Choose how you’re in relationship with{' '}
-              <span className="font-semibold">{profile.name}:</span>
+              <span className="font-semibold">{profile.profile.name}:</span>
               <ul>
                 {filteredRelationshipOptions.map((option) => (
                   <li key={option.key} className="flex gap-3 py-2">
@@ -82,7 +82,7 @@ export const AddRelationshipForm = ({
                     <div className="flex flex-col text-neutral-charcoal">
                       <span>{option.label}</span>
                       <span className="text-sm text-neutral-gray4">
-                        {option.description(profile.name)}
+                        {option.description(profile.profile.name)}
                       </span>
                     </div>
                   </li>

@@ -45,7 +45,7 @@ export const MatchingOrganizationsForm = ({
         setSelectedOrganizationId(matchingOrgs[0]?.id);
       }
     }
-  }, [isLoading, matchingOrgs, onNext, selectedOrganizationId]);
+  }, [isLoading, matchingOrgs]);
 
   const handleContinue = async () => {
     if (!selectedOrganizationId) {
@@ -117,19 +117,19 @@ export const MatchingOrganizationsForm = ({
                 <OrganizationAvatar organization={org} className="size-12" />
                 <div className="flex flex-col gap-2">
                   <Header3 className="text-base text-neutral-charcoal">
-                    {org.name}
+                    {org.profile.name}
                   </Header3>
                   <div className="flex flex-col gap-1 text-teal">
-                    {org.website ? (
+                    {org.profile.website ? (
                       <ContactLink className="h-auto">
                         <LuGlobe className="size-4" />
-                        <div>{org.website}</div>
+                        <div>{org.profile.website}</div>
                       </ContactLink>
                     ) : null}
-                    {org.email ? (
+                    {org.profile.email ? (
                       <ContactLink className="h-auto">
                         <LuMail className="min-w-4" />
-                        <div>{org.email}</div>
+                        <div>{org.profile.email}</div>
                       </ContactLink>
                     ) : null}
                   </div>

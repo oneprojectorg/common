@@ -40,10 +40,7 @@ export const getGeoNames = router({
     )
     .output(
       z.object({
-        geonames: z
-          .array(z.record(z.string(), GeoNameSchema))
-          .optional()
-          .default([]),
+        geonames: z.array(GeoNameSchema).optional().default([]),
       }),
     )
     .query(async ({ input }) => {
@@ -106,9 +103,7 @@ export const getGeoNames = router({
           }
         }
 
-        const geonames = Array.from(geoNameMap).map((item) => ({
-          [item[0]]: item[1],
-        }));
+        const geonames = Array.from(geoNameMap).map((item) => item[1]);
 
         return {
           geonames,

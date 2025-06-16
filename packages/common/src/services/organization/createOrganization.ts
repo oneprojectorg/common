@@ -8,6 +8,7 @@ import {
   organizationsStrategies,
   organizationsTerms,
   organizationsWhereWeWork,
+  profiles,
   users,
 } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
@@ -87,21 +88,35 @@ export const createOrganization = async ({
   if (!user) {
     throw new UnauthorizedError();
   }
-
   const orgInputs = OrganizationInputParser.parse({
-    slug: randomUUID(),
-    email: user.email,
     ...data,
-    headerImageId: data.orgBannerImageId,
-    avatarImageId: data.orgAvatarImageId,
+    profileId: null,
   });
+
+  // Create an org profile
+  const [profile] = await db
+    .insert(profiles)
+    .values({
+      name: data.name! ?? 'New Organization',
+      slug: randomUUID(),
+      email: user.email,
+      bio: data.bio,
+      website: data.website,
+      mission: data.mission,
+      headerImageId: data.orgBannerImageId,
+      avatarImageId: data.orgAvatarImageId,
+    })
+    .returning();
+
+  if (!profile) {
+    throw new CommonError('Failed to create profile');
+  }
 
   // Create organization and link user
   const result = await db.transaction(async (tx) => {
     const [newOrg] = await tx
       .insert(organizations)
-      // @ts-expect-error - TODO: this is well defined with zod
-      .values(orgInputs)
+      .values({ ...orgInputs, profileId: profile.id })
       .returning();
 
     if (!newOrg) {
@@ -172,7 +187,7 @@ export const createOrganization = async ({
             .insert(locations)
             .values({
               name: whereWeWork.label,
-              placeId: geoData?.geonameId?.toString(),
+              placeId: geoData?.geonameId?.toString() ?? randomUUID(),
               address: geoData?.toponymName,
               location:
                 geoData?.lat && geoData?.lng
@@ -187,7 +202,7 @@ export const createOrganization = async ({
               set: {
                 name: sql`excluded.name`,
                 address: sql`excluded.address`,
-                location: sql`excluded.location`,
+                // location: sql`excluded.location`,
                 countryCode: sql`excluded.country_code`,
                 countryName: sql`excluded.country_name`,
                 metadata: sql`excluded.metadata`,
@@ -254,7 +269,8 @@ export const createOrganization = async ({
       throw new CommonError('Failed to associate organization with user');
     }
 
-    return newOrg;
+    // @ts-ignore
+    return { ...newOrg, profile };
   });
 
   return result;

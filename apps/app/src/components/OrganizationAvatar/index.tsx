@@ -24,15 +24,22 @@ export const OrganizationAvatar = ({
     return null;
   }
 
+  // TODO: fix type resolution in drizzle.
+  const profile = 'profile' in organization ? organization.profile : null;
+
+  const name = profile?.name ?? '';
+  const avatarImage = profile?.avatarImage;
+  const slug = profile?.slug;
+
   const avatar = (
     <Avatar
       className={cn('size-12', withLink && 'hover:opacity-80', className)}
-      placeholder={organization.name}
+      placeholder={name ?? ''}
     >
-      {'avatarImage' in organization && organization.avatarImage?.name ? (
+      {avatarImage?.name ? (
         <Image
-          src={getPublicUrl(organization.avatarImage?.name) ?? ''}
-          alt={organization.name}
+          src={getPublicUrl(avatarImage?.name) ?? ''}
+          alt={name ?? ''}
           fill
           className="object-cover"
         />
@@ -41,7 +48,7 @@ export const OrganizationAvatar = ({
   );
 
   return withLink ? (
-    <Link href={`/org/${organization.slug}`} className="hover:no-underline">
+    <Link href={`/org/${slug}`} className="hover:no-underline">
       {avatar}
     </Link>
   ) : (

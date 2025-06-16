@@ -22,7 +22,8 @@ import { PostUpdate } from '@/components/PostUpdate';
 import { ProfileFeed } from '../ProfileFeed';
 
 const ProfileAbout = ({ profile }: { profile: Organization }) => {
-  const { mission, email, website, orgType, strategies } = profile;
+  const { mission, email, website } = profile.profile;
+  const { orgType, strategies } = profile;
   const [terms] = trpc.organization.getTerms.useSuspenseQuery({
     id: profile.id,
   });

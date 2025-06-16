@@ -67,16 +67,14 @@ export const baseOrganizationSchema = z.object({
 
 export const organizationInputSchema = baseOrganizationSchema
   .extend({
-    name: z.string().optional(),
-    bio: z.string().optional(),
+    // name: z.string().optional(),
+    // bio: z.string().optional(),
     isOfferingFunds: z.boolean().optional(),
     isReceivingFunds: z.boolean().optional(),
-    website: z.string().optional(),
-    mission: z.string().optional(),
+    // website: z.string().optional(),
+    // mission: z.string().optional(),
     networkOrganization: z.boolean().optional(),
     acceptingApplications: z.boolean().optional(),
-    headerImageId: z.string().optional(),
-    avatarImageId: z.string().optional(),
 
     // TODO: redundant. Pausing to remove while running tests
     communitiesServed: z

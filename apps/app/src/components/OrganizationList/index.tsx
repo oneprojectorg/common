@@ -34,11 +34,11 @@ export const OrganizationList = ({
               <div className="flex min-w-0 flex-col text-sm">
                 <Link
                   className="max-w-full truncate text-nowrap hover:underline"
-                  href={`/org/${org.slug}`}
+                  href={`/org/${org.profile.slug}`}
                 >
-                  {org.name}
+                  {org.profile.name}
                 </Link>
-                <span>{org.city}</span>
+                <span>{org.profile.city}</span>
               </div>
             </div>
           );
@@ -50,7 +50,7 @@ export const OrganizationList = ({
         <OrganizationCarousel label="New Organizations" itemWidth={192}>
           <>
             {organizations?.map((org) => {
-              const { avatarImage, headerImage } = org;
+              const { avatarImage, headerImage } = org.profile;
               const avatarUrl = getPublicUrl(avatarImage?.name);
               const headerUrl = getPublicUrl(headerImage?.name);
 
@@ -59,7 +59,7 @@ export const OrganizationList = ({
                   <Surface className="flex size-48">
                     <Link
                       className="flex size-full flex-col gap-3"
-                      href={`/org/${org.slug}`}
+                      href={`/org/${org.profile.slug}`}
                     >
                       <ImageHeader
                         headerImage={
@@ -85,10 +85,10 @@ export const OrganizationList = ({
                       />
 
                       <div className="flex flex-col p-4 pt-0 text-left">
-                        <span>{org.name}</span>
+                        <span>{org.profile.name}</span>
                         <span>
-                          {org.city}
-                          {org.state && org.city ? `, ${org.state}` : ''}
+                          {org.profile.city}
+                          {org.profile.state && org.profile.city ? `, ${org.profile.state}` : ''}
                         </span>
                       </div>
                     </Link>
@@ -121,17 +121,17 @@ export const OrganizationSummaryList = ({
 
               <div className="flex flex-col gap-2 text-neutral-black">
                 <Link
-                  href={`/org/${org.slug}`}
+                  href={`/org/${org.profile.slug}`}
                   className="font-semibold leading-base"
                 >
-                  {org.name}
+                  {org.profile.name}
                 </Link>
-                {org.city ? (
-                  <span className="text-neutral-gray4">{org.city}</span>
+                {org.profile.city ? (
+                  <span className="text-neutral-gray4">{org.profile.city}</span>
                 ) : (
                   <span className="text-neutral-gray4">International</span>
                 )}
-                <span className="text-neutral-charcoal">{org.bio}</span>
+                <span className="text-neutral-charcoal">{org.profile.bio}</span>
               </div>
             </div>
           </div>

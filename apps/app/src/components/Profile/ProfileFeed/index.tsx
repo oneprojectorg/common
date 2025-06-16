@@ -24,7 +24,7 @@ export const ProfileFeed = ({
     isFetchingNextPage,
   } = trpc.organization.listPosts.useInfiniteQuery(
     {
-      slug: profile.slug,
+      slug: profile.profile.slug,
       limit,
     },
     {

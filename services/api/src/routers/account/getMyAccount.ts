@@ -41,14 +41,22 @@ export const getMyAccount = router({
             with: {
               organization: {
                 with: {
-                  avatarImage: true,
+                  profile: {
+                    with: {
+                      avatarImage: true,
+                    },
+                  },
                 },
               },
             },
           },
           currentOrganization: {
             with: {
-              avatarImage: true,
+              profile: {
+                with: {
+                  avatarImage: true,
+                },
+              },
             },
           },
         },

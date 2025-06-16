@@ -1,8 +1,9 @@
-import { organizationUsers, organizations } from '@op/db/schema';
+import { organizationUsers, organizations, profiles } from '@op/db/schema';
 import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
 import { linksEncoder } from './links';
+import { profileEncoder } from './profiles';
 import { projectEncoder } from './projects';
 import { storageItemEncoder } from './storageItem';
 import { taxonomyTermsEncoder } from './taxonomyTerms';
@@ -10,20 +11,13 @@ import { taxonomyTermsEncoder } from './taxonomyTerms';
 export const organizationsEncoder = createSelectSchema(organizations)
   .pick({
     id: true,
-    slug: true,
-    name: true,
-    city: true,
-    state: true,
-    bio: true,
-    mission: true,
-    email: true,
-    website: true,
     isOfferingFunds: true,
     isReceivingFunds: true,
     networkOrganization: true,
     orgType: true,
   })
   .extend({
+    profile: profileEncoder,
     projects: z.array(projectEncoder).optional(),
     links: z.array(linksEncoder).optional().default([]),
     whereWeWork: z.array(z.any()).optional().default([]),
@@ -34,6 +28,7 @@ export const organizationsEncoder = createSelectSchema(organizations)
   });
 
 export const organizationsCreateInputEncoder = createSelectSchema(organizations)
+  .merge(createSelectSchema(profiles))
   .pick({
     name: true,
     slug: true,
@@ -41,8 +36,6 @@ export const organizationsCreateInputEncoder = createSelectSchema(organizations)
 
     // Mission
     mission: true,
-    // Year Founded
-    yearFounded: true,
     // Email
     email: true,
     phone: true,

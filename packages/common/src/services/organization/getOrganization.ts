@@ -1,4 +1,5 @@
-import { db } from '@op/db/client';
+import { db, eq, sql } from '@op/db/client';
+import { locations, profiles } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
@@ -20,18 +21,42 @@ export const getOrganization = async ({
   }
 
   try {
+    const profile = slug
+      ? await db
+          .select({ id: profiles.id })
+          .from(profiles)
+          .where(eq(profiles.slug, slug))
+          .limit(1)
+      : null;
+
+    const profileId = profile?.[0]?.id;
+
+    if (!profileId) {
+      throw new NotFoundError('Could not find organization');
+    }
+
     const org = await db.query.organizations.findFirst({
-      where: slug
-        ? (table, { eq }) => eq(table.slug, slug)
+      where: profileId
+        ? (table, { eq }) => eq(table.profileId, profileId)
         : (table, { eq }) => eq(table.id, id!),
       with: {
         projects: true,
         links: true,
-        headerImage: true,
-        avatarImage: true,
+        profile: {
+          with: {
+            headerImage: true,
+            avatarImage: true,
+          },
+        },
         whereWeWork: {
           with: {
-            location: true,
+            location: {
+              extras: {
+                x: sql<number>`ST_X(${locations.location})`.as('x'),
+                y: sql<number>`ST_Y(${locations.location})`.as('y'),
+              },
+              columns: { latLng: false },
+            },
           },
         },
         // TODO: CONVERT TO TERMS
@@ -42,6 +67,8 @@ export const getOrganization = async ({
         },
       },
     });
+
+    console.log('ORG', profile, org);
 
     if (!org) {
       throw new NotFoundError('Could not find organization');

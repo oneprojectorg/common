@@ -21,3 +21,8 @@ export function composeTailwindRenderProps<T>(
 ): string | ((v: T) => string) {
   return composeRenderProps(className, (cls) => cn(tw, cls));
 }
+
+export const filterNullOrUndefined = (data: Record<string, any>) =>
+  Object.fromEntries(
+    Object.entries(data).filter(([_, value]) => value !== undefined),
+  );

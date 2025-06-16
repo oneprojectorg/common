@@ -18,7 +18,7 @@ const RelationshipCount = ({ profile }: { profile: Organization }) => {
 
   return (
     count > 0 && (
-      <Link href={`/org/${profile.slug}/relationships`}>
+      <Link href={`/org/${profile.profile.slug}/relationships`}>
         <span className="font-bold text-teal">
           {count} {t('relationships')}
         </span>
@@ -30,14 +30,14 @@ const RelationshipCount = ({ profile }: { profile: Organization }) => {
 export const ProfileSummary = ({ profile }: { profile: Organization }) => {
   return (
     <div className="flex flex-col gap-2 py-2">
-      <Header1>{profile.name}</Header1>
-      {profile.city && profile.state ? (
+      <Header1>{profile.profile.name}</Header1>
+      {profile.profile.city && profile.profile.state ? (
         <div className="text-base text-neutral-gray4">
-          {profile.city}, {profile.state}
+          {profile.profile.city}, {profile.profile.state}
         </div>
       ) : null}
 
-      <div className="text-base text-neutral-charcoal">{profile.bio}</div>
+      <div className="text-base text-neutral-charcoal">{profile.profile.bio}</div>
 
       <ErrorBoundary fallback={null}>
         <div className="flex flex-col-reverse gap-6 sm:flex-col">

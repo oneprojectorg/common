@@ -50,12 +50,12 @@ const PostUpdateWithUser = ({
       // await utils.organization.listPosts.cancel();
       // Snapshot the previous list of posts
       const previousPosts = utils.organization.listPosts.getData({
-        slug: organization.slug,
+        slug: organization.profile.slug,
       });
 
       // Optimistically update the cache with the new post
       utils.organization.listPosts.setData(
-        { slug: organization.slug },
+        { slug: organization.profile.slug },
         (old) => ({
           ...(old ? old : { hasMore: false }),
           items: [
@@ -89,12 +89,12 @@ const PostUpdateWithUser = ({
     ) => {
       // Roll back to the previous posts on error
       utils.organization.listPosts.setData(
-        { slug: organization.slug },
+        { slug: organization.profile.slug },
         context?.previousPosts || { items: [], hasMore: false },
       );
     },
     onSettled: () => {
-      void utils.organization.listPosts.invalidate({ slug: organization.slug });
+      void utils.organization.listPosts.invalidate({ slug: organization.profile.slug });
       utils.organization.invalidate();
       // Refresh server-side components
       router.refresh();

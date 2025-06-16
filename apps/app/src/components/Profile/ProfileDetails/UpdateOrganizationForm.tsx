@@ -29,12 +29,12 @@ const transformOrganizationToFormData = (org: Organization, terms?: any) => {
   const communitiesServed = terms?.['candid:POPULATION'] || [];
 
   return {
-    name: org.name || '',
-    website: org.website || '',
-    email: org.email || '',
+    name: org.profile.name || '',
+    website: org.profile.website || '',
+    email: org.profile.email || '',
     orgType: org.orgType || '',
-    bio: org.bio || '',
-    mission: org.mission || '',
+    bio: org.profile.bio || '',
+    mission: org.profile.mission || '',
     whereWeWork:
       org.whereWeWork?.map((item) => {
         return {
@@ -79,17 +79,17 @@ export const UpdateOrganizationForm = forwardRef<
   const initialData = transformOrganizationToFormData(profile, terms);
 
   // Initialize images from profile
-  const initialProfileImage: ImageData | undefined = profile.avatarImage
+  const initialProfileImage: ImageData | undefined = profile.profile.avatarImage
     ? {
-        url: getPublicUrl(profile.avatarImage.name) || '',
-        id: profile.avatarImage.id,
+        url: getPublicUrl(profile.profile.avatarImage.name) || '',
+        id: profile.profile.avatarImage.id,
       }
     : undefined;
 
-  const initialBannerImage: ImageData | undefined = profile.headerImage
+  const initialBannerImage: ImageData | undefined = profile.profile.headerImage
     ? {
-        url: getPublicUrl(profile.headerImage.name) || '',
-        id: profile.headerImage.id,
+        url: getPublicUrl(profile.profile.headerImage.name) || '',
+        id: profile.profile.headerImage.id,
       }
     : undefined;
 
@@ -108,7 +108,7 @@ export const UpdateOrganizationForm = forwardRef<
           });
 
           // Invalidate relevant queries
-          await utils.organization.getBySlug.invalidate({ slug: profile.slug });
+          await utils.organization.getBySlug.invalidate({ slug: profile.profile.slug });
           router.refresh();
 
           onSuccess();

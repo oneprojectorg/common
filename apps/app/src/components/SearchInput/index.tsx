@@ -123,7 +123,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
           const selectedOrg = organizationResults[selectedIndex - 1];
 
           if (selectedOrg) {
-            router.push(`/org/${selectedOrg.slug}`);
+            router.push(`/org/${selectedOrg.profile.slug}`);
             break;
           }
         }
