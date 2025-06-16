@@ -9,6 +9,7 @@ import { Skeleton } from '@op/ui/Skeleton';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
 import { toast } from '@op/ui/Toast';
+import { cn } from '@op/ui/utils';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { LuCopy, LuGlobe, LuMail } from 'react-icons/lu';
@@ -21,7 +22,13 @@ import { PostUpdate } from '@/components/PostUpdate';
 
 import { ProfileFeed } from '../ProfileFeed';
 
-const ProfileAbout = ({ profile }: { profile: Organization }) => {
+const ProfileAbout = ({
+  profile,
+  className,
+}: {
+  profile: Organization;
+  className?: string;
+}) => {
   const { mission, email, website } = profile.profile;
   const { orgType, strategies } = profile;
   const [terms] = trpc.organization.getTerms.useSuspenseQuery({
@@ -32,7 +39,7 @@ const ProfileAbout = ({ profile }: { profile: Organization }) => {
   const focusAreas = terms['necSimple:focusArea'];
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className={cn('flex flex-col gap-8', className)}>
       {email || website ? (
         <section className="flex flex-col gap-2">
           <Header3>Contact</Header3>
@@ -158,11 +165,11 @@ export const ProfileTabs = ({ profile }: { profile: Organization }) => {
           <PostUpdate organization={profile} className="border-b px-4 py-6" />
         </Suspense>
         <Suspense fallback={<Skeleton className="min-h-20 w-full" />}>
-          <ProfileFeed profile={profile} className="px-4 py-6" />
+          <ProfileFeed profile={profile} className="px-4 py-2 sm:py-6" />
         </Suspense>
       </TabPanel>
       <TabPanel id="about">
-        <ProfileAbout profile={profile} />
+        <ProfileAbout profile={profile} className="px-4 py-2" />
       </TabPanel>
     </Tabs>
   );

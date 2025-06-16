@@ -20,7 +20,18 @@ export const organizationsEncoder = createSelectSchema(organizations)
     profile: profileEncoder,
     projects: z.array(projectEncoder).optional(),
     links: z.array(linksEncoder).optional().default([]),
-    whereWeWork: z.array(z.any()).optional().default([]),
+    whereWeWork: z
+      .array(
+        z.object({
+          id: z.string(),
+          name: z.string(),
+          placeId: z.string(),
+          countryCode: z.string().optional(),
+          countryName: z.string().optional(),
+        }),
+      )
+      .optional()
+      .default([]),
     receivingFundsTerms: z.array(taxonomyTermsEncoder).optional().default([]),
     strategies: z.array(taxonomyTermsEncoder).optional().default([]),
     headerImage: storageItemEncoder.nullish(),

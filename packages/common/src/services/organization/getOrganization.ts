@@ -55,7 +55,14 @@ export const getOrganization = async ({
                 x: sql<number>`ST_X(${locations.location})`.as('x'),
                 y: sql<number>`ST_Y(${locations.location})`.as('y'),
               },
-              columns: { latLng: false },
+              columns: {
+                id: true,
+                name: true,
+                placeId: true,
+                countryCode: true,
+                countryName: true,
+                latLng: false,
+              },
             },
           },
         },
@@ -68,13 +75,11 @@ export const getOrganization = async ({
       },
     });
 
-    console.log('ORG', profile, org);
-
     if (!org) {
       throw new NotFoundError('Could not find organization');
     }
 
-    org.whereWeWork = org.whereWeWork.map((record) => record.term);
+    org.whereWeWork = org.whereWeWork.map((record) => record.location);
     org.strategies = org.strategies.map((record) => record.term);
 
     return org;

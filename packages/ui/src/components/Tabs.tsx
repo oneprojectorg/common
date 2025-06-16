@@ -114,7 +114,7 @@ export const Tab = (
 };
 
 const tabPanelStyles = tv({
-  base: 'flex-1 p-4 text-base',
+  base: 'flex-1 text-base sm:p-4',
 });
 
 export const TabPanel = (props: TabPanelProps) => {

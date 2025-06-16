@@ -7,8 +7,8 @@ export const locations = pgTable(
   'locations',
   {
     id: autoId().primaryKey(),
-    name: varchar({ length: 256 }).notNull().unique(),
-    placeId: varchar({ length: 512 }),
+    name: varchar({ length: 256 }),
+    placeId: varchar({ length: 512 }).notNull().unique(),
     address: text(),
     plusCode: varchar({ length: 128 }),
     location: geometry({ type: 'point', mode: 'xy', srid: 4326 }),
