@@ -3,7 +3,7 @@ import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
 import { linksEncoder } from './links';
-import { locationEncoder } from './locationEncoder';
+import { locationEncoder } from './locations';
 import { profileEncoder } from './profiles';
 import { projectEncoder } from './projects';
 import { storageItemEncoder } from './storageItem';

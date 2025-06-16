@@ -4,6 +4,7 @@ import { getPublicUrl } from '@/utils';
 import { Organization } from '@op/api/encoders';
 import { SkeletonLine } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
+import { cn, getGradientForString } from '@op/ui/utils';
 import Image from 'next/image';
 
 import { Link } from '@/lib/i18n';
@@ -54,6 +55,13 @@ export const OrganizationList = ({
               const avatarUrl = getPublicUrl(avatarImage?.name);
               const headerUrl = getPublicUrl(headerImage?.name);
 
+              const gradientBg = getGradientForString(
+                org.profile.name || 'Common',
+              );
+              const gradientBgHeader = getGradientForString(
+                org.profile.name + 'C' || 'Common',
+              );
+
               return (
                 <CarouselItem key={org.id}>
                   <Surface className="flex size-48">
@@ -70,7 +78,11 @@ export const OrganizationList = ({
                               fill
                               className="object-cover"
                             />
-                          ) : null
+                          ) : (
+                            <div
+                              className={cn('h-full w-full', gradientBgHeader)}
+                            />
+                          )
                         }
                         avatarImage={
                           avatarUrl ? (
@@ -80,7 +92,9 @@ export const OrganizationList = ({
                               fill
                               className="object-cover"
                             />
-                          ) : null
+                          ) : (
+                            <div className={cn('h-full w-full', gradientBg)} />
+                          )
                         }
                       />
 
@@ -88,7 +102,9 @@ export const OrganizationList = ({
                         <span>{org.profile.name}</span>
                         <span>
                           {org.profile.city}
-                          {org.profile.state && org.profile.city ? `, ${org.profile.state}` : ''}
+                          {org.profile.state && org.profile.city
+                            ? `, ${org.profile.state}`
+                            : ''}
                         </span>
                       </div>
                     </Link>

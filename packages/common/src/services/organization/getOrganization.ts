@@ -61,7 +61,7 @@ export const getOrganization = async ({
                 placeId: true,
                 countryCode: true,
                 countryName: true,
-                data: true,
+                metadata: true,
                 latLng: false,
               },
             },

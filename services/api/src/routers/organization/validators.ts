@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { locationEncoder } from '../../encoders/locationEncoder';
+import { locationEncoder } from '../../encoders/locations';
 
 export const multiSelectOptionValidator = z.object({
   id: z.string(),
