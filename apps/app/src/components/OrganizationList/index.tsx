@@ -4,6 +4,7 @@ import { getPublicUrl } from '@/utils';
 import { Organization } from '@op/api/encoders';
 import { SkeletonLine } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
+import { cn, getGradientForString } from '@op/ui/utils';
 import Image from 'next/image';
 
 import { Link } from '@/lib/i18n';
@@ -34,11 +35,11 @@ export const OrganizationList = ({
               <div className="flex min-w-0 flex-col text-sm">
                 <Link
                   className="max-w-full truncate text-nowrap hover:underline"
-                  href={`/org/${org.slug}`}
+                  href={`/org/${org.profile.slug}`}
                 >
-                  {org.name}
+                  {org.profile.name}
                 </Link>
-                <span>{org.city}</span>
+                <span>{org.profile.city}</span>
               </div>
             </div>
           );
@@ -50,16 +51,23 @@ export const OrganizationList = ({
         <OrganizationCarousel label="New Organizations" itemWidth={192}>
           <>
             {organizations?.map((org) => {
-              const { avatarImage, headerImage } = org;
+              const { avatarImage, headerImage } = org.profile;
               const avatarUrl = getPublicUrl(avatarImage?.name);
               const headerUrl = getPublicUrl(headerImage?.name);
+
+              const gradientBg = getGradientForString(
+                org.profile.name || 'Common',
+              );
+              const gradientBgHeader = getGradientForString(
+                org.profile.name + 'C' || 'Common',
+              );
 
               return (
                 <CarouselItem key={org.id}>
                   <Surface className="flex size-48">
                     <Link
                       className="flex size-full flex-col gap-3"
-                      href={`/org/${org.slug}`}
+                      href={`/org/${org.profile.slug}`}
                     >
                       <ImageHeader
                         headerImage={
@@ -70,7 +78,11 @@ export const OrganizationList = ({
                               fill
                               className="object-cover"
                             />
-                          ) : null
+                          ) : (
+                            <div
+                              className={cn('h-full w-full', gradientBgHeader)}
+                            />
+                          )
                         }
                         avatarImage={
                           avatarUrl ? (
@@ -80,15 +92,19 @@ export const OrganizationList = ({
                               fill
                               className="object-cover"
                             />
-                          ) : null
+                          ) : (
+                            <div className={cn('h-full w-full', gradientBg)} />
+                          )
                         }
                       />
 
                       <div className="flex flex-col p-4 pt-0 text-left">
-                        <span>{org.name}</span>
+                        <span>{org.profile.name}</span>
                         <span>
-                          {org.city}
-                          {org.state && org.city ? `, ${org.state}` : ''}
+                          {org.profile.city}
+                          {org.profile.state && org.profile.city
+                            ? `, ${org.profile.state}`
+                            : ''}
                         </span>
                       </div>
                     </Link>
@@ -111,27 +127,31 @@ export const OrganizationSummaryList = ({
   return (
     <div className="flex flex-col gap-6">
       {organizations?.map((org) => {
+        const whereWeWork = org.whereWeWork
+          .map((location) => location.name)
+          .join(' • ');
+
         return (
           <div key={org.id}>
-            <div className="flex items-start gap-6 py-2">
+            <div className="flex items-start gap-2 py-2 sm:gap-6">
               <OrganizationAvatar
                 organization={org}
                 className="size-6 sm:size-12"
               />
 
-              <div className="flex flex-col gap-2 text-neutral-black">
-                <Link
-                  href={`/org/${org.slug}`}
-                  className="font-semibold leading-base"
-                >
-                  {org.name}
-                </Link>
-                {org.city ? (
-                  <span className="text-neutral-gray4">{org.city}</span>
-                ) : (
-                  <span className="text-neutral-gray4">International</span>
-                )}
-                <span className="text-neutral-charcoal">{org.bio}</span>
+              <div className="flex flex-col gap-3 text-neutral-black">
+                <div className="flex flex-col gap-2">
+                  <Link
+                    href={`/org/${org.profile.slug}`}
+                    className="font-semibold leading-base"
+                  >
+                    {org.profile.name}
+                  </Link>
+                  {whereWeWork.length > 0 ? (
+                    <span className="text-neutral-gray4">{whereWeWork}</span>
+                  ) : null}
+                </div>
+                <span className="text-neutral-charcoal">{org.profile.bio}</span>
               </div>
             </div>
           </div>

@@ -64,7 +64,7 @@ export const AddRelationshipModalSuspense = ({
                         </Button>
                         {relationship.pending && (
                           <Tooltip>
-                            Pending confirmation from {profile.name}
+                            Pending confirmation from {profile.profile.name}
                           </Tooltip>
                         )}
                         <RemoveRelationshipModal
@@ -91,7 +91,7 @@ export const AddRelationshipModalSuspense = ({
                         </Button>
                         <Tooltip>
                           {relationship.pending &&
-                            `Pending confirmation from ${profile.name}`}
+                            `Pending confirmation from ${profile.profile.name}`}
                         </Tooltip>
                         <RemoveRelationshipModal
                           relationship={relationship}
@@ -117,7 +117,7 @@ export const AddRelationshipModalSuspense = ({
                         </Button>
                         <Tooltip>
                           {relationship.pending &&
-                            `Pending confirmation from ${profile.name}`}
+                            `Pending confirmation from ${profile.profile.name}`}
                         </Tooltip>
                         <RemoveRelationshipModal
                           relationship={relationship}
@@ -176,7 +176,7 @@ export const AddRelationshipModalSuspense = ({
                       {relationship.pending && (
                         <Tooltip>
                           Pending confirmation from{' '}
-                          {user?.currentOrganization?.name}
+                          {user?.currentOrganization?.profile.name}
                         </Tooltip>
                       )}
                     </>
@@ -190,7 +190,7 @@ export const AddRelationshipModalSuspense = ({
                       </Button>
                       <Tooltip>
                         {relationship.pending &&
-                          `Pending confirmation from ${user?.currentOrganization?.name}`}
+                          `Pending confirmation from ${user?.currentOrganization?.profile.name}`}
                       </Tooltip>
                     </>
                   );
@@ -203,7 +203,7 @@ export const AddRelationshipModalSuspense = ({
                       </Button>
                       <Tooltip>
                         {relationship.pending &&
-                          `Pending confirmation from ${user?.currentOrganization?.name}`}
+                          `Pending confirmation from ${user?.currentOrganization?.profile.name}`}
                       </Tooltip>
                     </>
                   );

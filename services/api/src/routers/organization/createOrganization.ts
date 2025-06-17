@@ -39,12 +39,12 @@ export const createOrganizationRouter = router({
         logger.info('Organization created', {
           userId: user.id,
           organizationId: org.id,
-          organizationName: org.name,
+          organizationName: org.profile.name,
         });
 
         return organizationsEncoder.parse(org);
       } catch (error: unknown) {
-        logger.error('Failed to create organization', {
+        console.error('Failed to create organization', {
           userId: user.id,
           organizationName: input.name,
           error,

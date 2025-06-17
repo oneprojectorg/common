@@ -9,11 +9,10 @@ import { Skeleton } from '@op/ui/Skeleton';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
 import { toast } from '@op/ui/Toast';
+import { cn } from '@op/ui/utils';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { LuCopy, LuGlobe, LuMail } from 'react-icons/lu';
-
-import { Link as I18nLink } from '@/lib/i18n';
 
 import { ContactLink } from '@/components/ContactLink';
 import { PostFeedSkeleton } from '@/components/PostFeed';
@@ -21,8 +20,15 @@ import { PostUpdate } from '@/components/PostUpdate';
 
 import { ProfileFeed } from '../ProfileFeed';
 
-const ProfileAbout = ({ profile }: { profile: Organization }) => {
-  const { mission, email, website, orgType, strategies } = profile;
+const ProfileAbout = ({
+  profile,
+  className,
+}: {
+  profile: Organization;
+  className?: string;
+}) => {
+  const { mission, email, website } = profile.profile;
+  const { orgType, strategies } = profile;
   const [terms] = trpc.organization.getTerms.useSuspenseQuery({
     id: profile.id,
   });
@@ -31,7 +37,7 @@ const ProfileAbout = ({ profile }: { profile: Organization }) => {
   const focusAreas = terms['necSimple:focusArea'];
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className={cn('flex flex-col gap-8', className)}>
       {email || website ? (
         <section className="flex flex-col gap-2">
           <Header3>Contact</Header3>
@@ -39,7 +45,9 @@ const ProfileAbout = ({ profile }: { profile: Organization }) => {
             {website ? (
               <ContactLink>
                 <LuGlobe />
-                <Link href={formatToUrl(website)}>{website}</Link>
+                <Link href={formatToUrl(website)} target="_blank">
+                  {website}
+                </Link>
               </ContactLink>
             ) : null}
             {email ? (
@@ -71,7 +79,7 @@ const ProfileAbout = ({ profile }: { profile: Organization }) => {
       <section className="flex flex-col gap-2 text-neutral-charcoal">
         <Header3>Organizational Status</Header3>
         <TagGroup>
-          <Tag>{orgType}</Tag>
+          <Tag className="capitalize">{orgType}</Tag>
         </TagGroup>
       </section>
 
@@ -89,10 +97,8 @@ const ProfileAbout = ({ profile }: { profile: Organization }) => {
             {strategies.map((strategy) =>
               strategy ? (
                 <Tag key={strategy.id}>
-                  <I18nLink href={`/org/?terms=${strategy.id}`}>
-                    {/* @ts-ignore - odd TS bug that only shows in CI */}
-                    {strategy.label}
-                  </I18nLink>
+                  {/* @ts-ignore - odd TS bug that only shows in CI */}
+                  {strategy.label}
                 </Tag>
               ) : null,
             )}
@@ -157,11 +163,11 @@ export const ProfileTabs = ({ profile }: { profile: Organization }) => {
           <PostUpdate organization={profile} className="border-b px-4 py-6" />
         </Suspense>
         <Suspense fallback={<Skeleton className="min-h-20 w-full" />}>
-          <ProfileFeed profile={profile} className="px-4 py-6" />
+          <ProfileFeed profile={profile} className="px-4 py-2 sm:py-6" />
         </Suspense>
       </TabPanel>
       <TabPanel id="about">
-        <ProfileAbout profile={profile} />
+        <ProfileAbout profile={profile} className="px-4 py-2" />
       </TabPanel>
     </Tabs>
   );

@@ -17,13 +17,15 @@ const OrganizationProfileSuspense = async ({ slug }: { slug: string }) => {
       slug,
     });
 
-    const { headerImage, avatarImage } = organization;
+    const { headerImage, avatarImage } = organization.profile;
     const headerUrl = getPublicUrl(headerImage?.name);
     const avatarUrl = getPublicUrl(avatarImage?.name);
 
-    const gradientBg = getGradientForString(organization.name || 'Common');
+    const gradientBg = getGradientForString(
+      organization.profile.name || 'Common',
+    );
     const gradientBgHeader = getGradientForString(
-      organization.name + 'C' || 'Common',
+      organization.profile.name + 'C' || 'Common',
     );
 
     return (
@@ -73,7 +75,7 @@ export const OrganizationProfile = ({ slug }: { slug: string }) => {
           <LuArrowLeft className="size-6 text-neutral-offWhite" />
         </Link>
       </header>
-      <div className="-mt-12 flex w-full flex-col gap-3 border-offWhite border-b-transparent sm:mt-0 sm:min-h-[calc(100vh-3.5rem)] sm:gap-4 sm:border">
+      <div className="-mt-[3.05rem] flex w-full flex-col gap-3 border-offWhite border-b-transparent sm:mt-0 sm:min-h-[calc(100vh-3.5rem)] sm:gap-4 sm:border">
         <OrganizationProfileSuspense slug={slug} />
       </div>
     </>

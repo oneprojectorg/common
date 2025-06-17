@@ -24,7 +24,7 @@ export const OrganizationResults = ({
         <SearchResultItem key={org.id} selected={selectedIndex === index + 1}>
           <Link
             className="group/result flex w-full items-center gap-4 hover:no-underline"
-            href={`/org/${org.slug}`}
+            href={`/org/${org.profile.slug}`}
             onClick={() => onSearch(query)}
           >
             <OrganizationAvatar
@@ -33,8 +33,8 @@ export const OrganizationResults = ({
             />
 
             <div className="flex flex-col font-semibold text-neutral-charcoal group-hover/result:underline">
-              <span>{org.name}</span>
-              <span>{org.city}</span>
+              <span>{org.profile.name}</span>
+              <span>{org.profile.city}</span>
             </div>
           </Link>
         </SearchResultItem>

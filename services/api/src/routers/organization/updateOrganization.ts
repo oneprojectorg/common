@@ -43,7 +43,7 @@ export const updateOrganizationRouter = router({
 
         // invalidate cache and wait for a return so FE can then refetch
         await Promise.all([
-          invalidate({ type: 'organization', params: [org.slug] }),
+          invalidate({ type: 'organization', params: [org.profile.slug] }),
           invalidate({ type: 'organization', params: [org.id] }),
         ]);
 

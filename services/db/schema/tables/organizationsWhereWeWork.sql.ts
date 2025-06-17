@@ -2,7 +2,7 @@ import { pgTable, primaryKey, uuid } from 'drizzle-orm/pg-core';
 import { serviceRolePolicies } from 'helpers';
 
 import { organizations } from './organizations.sql';
-import { taxonomyTerms } from './taxonomies.sql';
+import { locations } from './locations.sql';
 
 export const organizationsWhereWeWork = pgTable(
   'organizations_where_we_work',
@@ -13,15 +13,15 @@ export const organizationsWhereWeWork = pgTable(
         onUpdate: 'cascade',
         onDelete: 'cascade',
       }),
-    taxonomyTermId: uuid('taxonomy_term_id')
+    locationId: uuid('location_id')
       .notNull()
-      .references(() => taxonomyTerms.id, {
+      .references(() => locations.id, {
         onUpdate: 'cascade',
         onDelete: 'cascade',
       }),
   },
   (table) => ({
     ...serviceRolePolicies,
-    pk: primaryKey(table.organizationId, table.taxonomyTermId),
+    pk: primaryKey(table.organizationId, table.locationId),
   }),
 );

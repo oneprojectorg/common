@@ -1,11 +1,12 @@
 import { db, eq, sql } from '@op/db/client';
 import {
   links,
+  locations,
   organizations,
   organizationsStrategies,
   organizationsTerms,
   organizationsWhereWeWork,
-  taxonomyTerms,
+  profiles,
 } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
@@ -15,7 +16,6 @@ import {
   type FundingLinksInput,
   type UpdateOrganizationInput,
   UpdateOrganizationInputParser,
-  geoNamesDataSchema,
 } from './validators';
 
 export const updateOrganization = async ({
@@ -53,14 +53,10 @@ export const updateOrganization = async ({
     throw new NotFoundError('Organization not found');
   }
 
-  const orgInputs = UpdateOrganizationInputParser.parse({
-    ...updateData,
-    headerImageId: data.orgBannerImageId,
-    avatarImageId: data.orgAvatarImageId,
-  });
+  const orgInputs = UpdateOrganizationInputParser.parse(updateData);
 
   // Update organization
-  const result = await db.transaction(async (tx) => {
+  await db.transaction(async (tx) => {
     // Update main organization data
     const [updatedOrg] = await tx
       .update(organizations)
@@ -70,6 +66,23 @@ export const updateOrganization = async ({
 
     if (!updatedOrg) {
       throw new NotFoundError('Failed to update organization');
+    }
+
+    // Update profile with relevant fields
+    const profileFields = Object.fromEntries(
+      Object.entries(data).filter(([_, value]) => value !== undefined),
+    );
+
+    // Only update profile if there are fields to update
+    if (Object.keys(profileFields).length > 0) {
+      await tx
+        .update(profiles)
+        .set({
+          ...profileFields,
+          headerImageId: data.orgBannerImageId,
+          avatarImageId: data.orgAvatarImageId,
+        })
+        .where(eq(profiles.id, updatedOrg.profileId));
     }
 
     // Update funding links if provided
@@ -105,56 +118,51 @@ export const updateOrganization = async ({
       ]);
     }
 
-    // Update where we work geoNames if provided
+    // Update where we work locations if provided
     if (data.whereWeWork !== undefined) {
       // Remove existing where we work entries
       await tx
         .delete(organizationsWhereWeWork)
         .where(eq(organizationsWhereWeWork.organizationId, organizationId));
 
-      const geoNames =
-        data.whereWeWork?.map((whereWeWork) =>
-          whereWeWork.data
-            ? geoNamesDataSchema.parse(whereWeWork.data)
-            : {
-                geonameId: `custom-${whereWeWork.label}`,
-                name: whereWeWork.label,
-              },
-        ) || [];
-
-      const geoNamesTaxonomy = await tx.query.taxonomies.findFirst({
-        where: (table, { eq, and }) =>
-          and(
-            eq(table.name, 'geoNames'),
-            eq(table.namespaceUri, 'https://www.geonames.org/ontology'),
-          ),
-      });
-
-      if (geoNamesTaxonomy) {
+      if (data.whereWeWork.length > 0) {
         await Promise.all(
-          geoNames.map(async (geoName) => {
-            if (geoName.geonameId) {
-              const [term] = await tx
-                .insert(taxonomyTerms)
-                .values({
-                  taxonomyId: geoNamesTaxonomy.id,
-                  label: geoName.name,
-                  termUri: geoName.geonameId.toString(),
-                  data: geoName,
-                })
-                .onConflictDoUpdate({
-                  target: [taxonomyTerms.termUri, taxonomyTerms.taxonomyId],
-                  set: {
-                    label: sql`excluded.label`,
-                  },
-                })
-                .returning();
+          data.whereWeWork.map(async (whereWeWork) => {
+            // Create location record
+            const [location] = await tx
+              .insert(locations)
+              .values({
+                name: whereWeWork.data.name,
+                placeId: whereWeWork.data.placeId,
+                address: whereWeWork.data.address,
+                location:
+                  whereWeWork.data?.lat && whereWeWork.data?.lng
+                    ? sql`ST_SetSRID(ST_MakePoint(${whereWeWork.data.lng}, ${whereWeWork.data.lat}), 4326)`
+                    : undefined,
+                countryCode: whereWeWork.data.countryCode,
+                countryName: whereWeWork.data.countryName,
+                metadata: whereWeWork.data,
+              })
+              .onConflictDoUpdate({
+                target: [locations.placeId],
+                set: {
+                  name: sql`excluded.name`,
+                  address: sql`excluded.address`,
+                  location: sql`excluded.location`,
+                  countryCode: sql`excluded.country_code`,
+                  countryName: sql`excluded.country_name`,
+                  metadata: sql`excluded.metadata`,
+                },
+              })
+              .returning();
 
+            if (location) {
+              // Link location to organization
               await tx
                 .insert(organizationsWhereWeWork)
                 .values({
                   organizationId: updatedOrg.id,
-                  taxonomyTermId: term.id,
+                  locationId: location.id,
                 })
                 .onConflictDoNothing();
             }
@@ -230,5 +238,24 @@ export const updateOrganization = async ({
     return updatedOrg;
   });
 
-  return result;
+  // Fetch the updated organization and profile separately to ensure proper typing
+  const [updatedOrg, updatedProfile] = await Promise.all([
+    db.query.organizations.findFirst({
+      where: eq(organizations.id, organizationId),
+    }),
+    db.query.profiles.findFirst({
+      where: eq(profiles.id, existingOrg.profileId),
+      with: {
+        headerImage: true,
+        avatarImage: true,
+      },
+    }),
+  ]);
+
+  if (!updatedOrg || !updatedProfile) {
+    throw new NotFoundError('Organization not found after update');
+  }
+
+  // @ts-ignore
+  return { ...updatedOrg, profile: updatedProfile };
 };

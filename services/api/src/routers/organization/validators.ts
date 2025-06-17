@@ -1,5 +1,6 @@
-import { geoNamesDataSchema } from '@op/common';
 import { z } from 'zod';
+
+import { locationEncoder } from '../../encoders/locations';
 
 export const multiSelectOptionValidator = z.object({
   id: z.string(),
@@ -26,7 +27,7 @@ export const baseOrganizationSchema = z.object({
   mission: z.string().max(1500, { message: 'Must be at most 1500 characters' }),
   whereWeWork: z.array(
     multiSelectOptionValidator.extend({
-      data: geoNamesDataSchema.optional(),
+      data: locationEncoder,
     }),
   ),
   focusAreas: z.array(multiSelectOptionValidator),
@@ -69,7 +70,7 @@ export const createOrganizationInputSchema = baseOrganizationSchema.extend({
   whereWeWork: z
     .array(
       multiSelectOptionValidator.extend({
-        data: geoNamesDataSchema.optional(),
+        data: locationEncoder,
       }),
     )
     .optional(),

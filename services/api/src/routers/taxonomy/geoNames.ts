@@ -1,19 +1,23 @@
-import { XMLParser } from 'fast-xml-parser';
 import { z } from 'zod';
 
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
-type GeoName = {
-  toponymName: string;
-  name: string;
-  lat: number;
-  lng: number;
-  geonameId: number;
-  countryCode: string;
-  countryName: string;
-};
+const GeoNameSchema = z.object({
+  id: z.string(),
+  placeId: z.string(),
+  name: z.string(),
+  address: z.string().optional(),
+  plusCode: z.string().optional(),
+  lat: z.number(),
+  lng: z.number(),
+  countryCode: z.string(),
+  countryName: z.string(),
+  metadata: z.any()
+});
+
+type GeoName = z.infer<typeof GeoNameSchema>;
 
 // const meta: OpenApiMeta = {
 // openapi: {
@@ -38,37 +42,81 @@ export const getGeoNames = router({
     )
     .output(
       z.object({
-        geonames: z.array(z.record(z.any())).optional().default([]),
+        geonames: z.array(GeoNameSchema).optional().default([]),
       }),
     )
     .query(async ({ input }) => {
       const { q } = input;
-      const url = `https://secure.geonames.org/search?q=${q}&username=${process.env.GEONAMES_USERNAME}`;
 
-      const res = await fetch(url);
-
-      const data = await res.text();
-
-      const parser = new XMLParser();
-      const jsonData = parser.parse(data) as {
-        geonames: {
-          geoname: Array<GeoName>;
-        };
-      };
-
-      const geoNameMap = new Map();
-
-      if (jsonData?.geonames?.geoname) {
-        for (const geoName of jsonData.geonames.geoname) {
-          geoNameMap.set(`${geoName.name}, ${geoName.countryCode}`, geoName);
-        }
+      if (!process.env.GOOGLE_MAPS_API_KEY) {
+        throw new Error('GOOGLE_MAPS_API_KEY environment variable is required');
       }
 
-      const geonames =
-        Array.from(geoNameMap).map((item) => ({ [item[0]]: item[1] })) ?? [];
+      const url = `https://places.googleapis.com/v1/places:searchText`;
 
-      return {
-        geonames,
-      };
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Goog-Api-Key': process.env.GOOGLE_MAPS_API_KEY,
+            'X-Goog-FieldMask':
+              'places.id,places.displayName,places.formattedAddress,places.addressComponents,places.location,places.generativeSummary',
+          },
+          body: JSON.stringify({
+            textQuery: q,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            `Google Maps API error: ${data.error_message || response.statusText}`,
+          );
+        }
+
+        const geoNameMap = new Map();
+
+        if (data.places) {
+          for (const place of data.places) {
+            if (place.location && place.formattedAddress) {
+              const countryComponent = place.addressComponents?.find(
+                (component: any) => component.types.includes('country'),
+              );
+
+              const countryCode = countryComponent?.shortText || '';
+              const countryName = countryComponent?.longText || '';
+
+              const geoName: GeoName = {
+                address: place.formattedAddress,
+                name: place.displayName.text ?? place.formattedAddress,
+                plusCode: place.plusCode?.compoundCode,
+                lat: place.location.latitude,
+                lng: place.location.longitude,
+                id: place.id ?? Math.floor(Math.random() * 1000000),
+                placeId: place.id ?? Math.floor(Math.random() * 1000000),
+                countryCode,
+                countryName,
+                metadata: place,
+              };
+
+              const key = `${geoName.name}`;
+              geoNameMap.set(key, geoName);
+            }
+          }
+        }
+
+        const geonames = Array.from(geoNameMap).map((item) => item[1]);
+
+        return {
+          geonames,
+        };
+      } catch (error) {
+        console.error('Maps API error:', error);
+        return {
+          geonames: [],
+        };
+      }
     }),
 });

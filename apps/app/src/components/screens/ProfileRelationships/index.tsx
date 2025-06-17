@@ -33,10 +33,12 @@ const RelationshipList = ({
           <div>
             <Link
               className="flex flex-col gap-3 text-neutral-black"
-              href={`/org/${relationshipOrg.slug}`}
+              href={`/org/${relationshipOrg.profile.slug}`}
             >
               <div className="flex flex-col gap-2">
-                <div className="h-4 font-semibold">{relationshipOrg.name}</div>
+                <div className="h-4 font-semibold">
+                  {relationshipOrg.profile.name}
+                </div>
                 <div className="flex items-center gap-1">
                   {relationshipOrg.relationships?.map(
                     (relationship, i, arr) => (
@@ -62,7 +64,7 @@ const RelationshipList = ({
               </div>
 
               <div className="flex items-center gap-1 text-neutral-charcoal">
-                {relationshipOrg.bio}
+                {relationshipOrg.profile.bio}
               </div>
             </Link>
           </div>
@@ -86,7 +88,9 @@ const ProfileRelationshipsSuspense = ({ slug }: { slug: string }) => {
     <>
       <div className="flex flex-col gap-4 px-4 sm:px-0">
         <Breadcrumbs>
-          <Breadcrumb href={`/org/${slug}`}>{organization.name}</Breadcrumb>
+          <Breadcrumb href={`/org/${slug}`}>
+            {organization.profile.name}
+          </Breadcrumb>
           <Breadcrumb>Relationships</Breadcrumb>
         </Breadcrumbs>
         <div className="font-serif text-title-lg">{count} relationships</div>
@@ -96,7 +100,7 @@ const ProfileRelationshipsSuspense = ({ slug }: { slug: string }) => {
           <Tab id="all">All relationships</Tab>
         </TabList>
 
-        <TabPanel id="all" className="sm:px-0">
+        <TabPanel id="all" className="px-4 sm:px-0">
           <RelationshipList organizations={organizations} />
         </TabPanel>
       </Tabs>

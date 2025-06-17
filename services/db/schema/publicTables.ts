@@ -27,10 +27,7 @@ export {
   postsToOrganizationsRelations,
 } from './tables/posts.sql';
 
-export {
-  attachments,
-  attachmentsRelations,
-} from './tables/attachments.sql';
+export { attachments, attachmentsRelations } from './tables/attachments.sql';
 
 export {
   taxonomies,
@@ -46,3 +43,7 @@ export {
 } from './tables/relationships.sql';
 export { users, usersRelations } from './tables/users.sql';
 export { usersUsedStorage } from './tables/usersUsedStorage.sql';
+export { locations } from './tables/locations.sql';
+export { profiles, profilesRelations } from './tables/profiles.sql';
+export type { Profile } from './tables/profiles.sql';
+export { EntityType, entityTypeEnum } from './tables/entities.sql';

@@ -6,6 +6,7 @@ import type { Organization } from '@op/api/encoders';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { ModalFooter } from '@op/ui/Modal';
 import { useRouter } from 'next/navigation';
+import { forwardRef } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -28,18 +29,18 @@ const transformOrganizationToFormData = (org: Organization, terms?: any) => {
   const communitiesServed = terms?.['candid:POPULATION'] || [];
 
   return {
-    name: org.name || '',
-    website: org.website || '',
-    email: org.email || '',
+    name: org.profile.name || '',
+    website: org.profile.website || '',
+    email: org.profile.email || '',
     orgType: org.orgType || '',
-    bio: org.bio || '',
-    mission: org.mission || '',
+    bio: org.profile.bio || '',
+    mission: org.profile.mission || '',
     whereWeWork:
       org.whereWeWork?.map((item) => {
         return {
           id: item.id,
-          label: item.label,
-          data: item.data || {},
+          label: item.name,
+          data: item.metadata || {},
         };
       }) || [],
     focusAreas: focusAreas.map((item: any) => ({
@@ -61,11 +62,10 @@ const transformOrganizationToFormData = (org: Organization, terms?: any) => {
   };
 };
 
-export const UpdateOrganizationForm = ({
-  profile,
-  onSuccess,
-  className,
-}: UpdateOrganizationFormProps) => {
+export const UpdateOrganizationForm = forwardRef<
+  HTMLFormElement,
+  UpdateOrganizationFormProps
+>(({ profile, onSuccess, className }, ref) => {
   const t = useTranslations();
   const utils = trpc.useUtils();
   const router = useRouter();
@@ -79,17 +79,17 @@ export const UpdateOrganizationForm = ({
   const initialData = transformOrganizationToFormData(profile, terms);
 
   // Initialize images from profile
-  const initialProfileImage: ImageData | undefined = profile.avatarImage
+  const initialProfileImage: ImageData | undefined = profile.profile.avatarImage
     ? {
-        url: getPublicUrl(profile.avatarImage.name) || '',
-        id: profile.avatarImage.id,
+        url: getPublicUrl(profile.profile.avatarImage.name) || '',
+        id: profile.profile.avatarImage.id,
       }
     : undefined;
 
-  const initialBannerImage: ImageData | undefined = profile.headerImage
+  const initialBannerImage: ImageData | undefined = profile.profile.headerImage
     ? {
-        url: getPublicUrl(profile.headerImage.name) || '',
-        id: profile.headerImage.id,
+        url: getPublicUrl(profile.profile.headerImage.name) || '',
+        id: profile.profile.headerImage.id,
       }
     : undefined;
 
@@ -108,7 +108,9 @@ export const UpdateOrganizationForm = ({
           });
 
           // Invalidate relevant queries
-          await utils.organization.getBySlug.invalidate({ slug: profile.slug });
+          await utils.organization.getBySlug.invalidate({
+            slug: profile.profile.slug,
+          });
           router.refresh();
 
           onSuccess();
@@ -119,17 +121,17 @@ export const UpdateOrganizationForm = ({
     >
       {({ form, isSubmitting, formFields }) => (
         <form
+          ref={ref}
+          id="update-organization-form"
           onSubmit={(e) => {
             e.preventDefault();
             void form.handleSubmit();
           }}
           className="w-full"
         >
-          <FormContainer className={className}>
-            {formFields}
-          </FormContainer>
+          <FormContainer className={className}>{formFields}</FormContainer>
 
-          <ModalFooter>
+          <ModalFooter className="hidden sm:flex">
             <div className="flex flex-col-reverse justify-between gap-4 sm:flex-row sm:gap-2">
               <form.SubmitButton
                 className="max-w-fit"
@@ -147,4 +149,6 @@ export const UpdateOrganizationForm = ({
       )}
     </OrganizationFormFields>
   );
-};
+});
+
+UpdateOrganizationForm.displayName = 'UpdateOrganizationForm';

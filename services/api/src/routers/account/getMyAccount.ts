@@ -1,4 +1,5 @@
-import { TRPCError } from '@trpc/server';
+import { CommonError, NotFoundError } from '@op/common';
+import { users } from '@op/db/schema';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
@@ -31,7 +32,7 @@ export const getMyAccount = router({
     .output(userEncoder)
     .query(async ({ ctx }) => {
       const { db } = ctx.database;
-      const { id } = ctx.user;
+      const { id, email } = ctx.user;
 
       const result = await db.query.users.findFirst({
         where: (table, { eq }) => eq(table.authUserId, id),
@@ -41,24 +42,75 @@ export const getMyAccount = router({
             with: {
               organization: {
                 with: {
-                  avatarImage: true,
+                  profile: {
+                    with: {
+                      avatarImage: true,
+                    },
+                  },
                 },
               },
             },
           },
           currentOrganization: {
             with: {
-              avatarImage: true,
+              profile: {
+                with: {
+                  avatarImage: true,
+                },
+              },
             },
           },
         },
       });
 
       if (!result) {
-        throw new TRPCError({
-          message: 'User not found',
-          code: 'NOT_FOUND',
+        if (!email) {
+          throw new NotFoundError('Could not find user');
+        }
+
+        // if there is no user but the user is authenticated, create one
+        const [newUser] = await db
+          .insert(users)
+          .values({
+            authUserId: id,
+            email: ctx.user.email!,
+          })
+          .returning();
+
+        if (!newUser) {
+          throw new CommonError('Could not create user');
+        }
+
+        const newUserWithRelations = await db.query.users.findFirst({
+          where: (table, { eq }) => eq(table.id, newUser.id),
+          with: {
+            avatarImage: true,
+            organizationUsers: {
+              with: {
+                organization: {
+                  with: {
+                    profile: {
+                      with: {
+                        avatarImage: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            currentOrganization: {
+              with: {
+                profile: {
+                  with: {
+                    avatarImage: true,
+                  },
+                },
+              },
+            },
+          },
         });
+
+        return userEncoder.parse(newUserWithRelations);
       }
 
       return userEncoder.parse(result);

@@ -29,7 +29,7 @@ export const GeoNamesMultiSelect = ({
   return (
     <MultiSelectComboBox
       placeholder="Select locations…"
-      allowAdditions
+      enableLocalSearch={false}
       label={label}
       isRequired={isRequired}
       onChange={(value) => onChange(value)}
@@ -40,18 +40,14 @@ export const GeoNamesMultiSelect = ({
       items={
         geoNames?.geonames
           .map((item) => {
-            const entries = Object.entries(item)[0];
-
-            if (!entries?.length) {
-              return null;
-            }
-
-            const [name, data] = entries;
+            const { name } = item;
+            // @ts-ignore
+            item.placeId = item.id;
 
             return {
-              id: name,
-              label: name,
-              data,
+              id: item.id,
+              label: item.address ?? name,
+              data: { ...item, id: undefined },
             };
           })
           .filter((o) => !!o) ?? []
