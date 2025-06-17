@@ -130,7 +130,7 @@ const AvatarMenuContent = ({
           </Avatar>
           <div className="flex flex-col">
             <div>{orgUser.organization?.profile.name}</div>
-            <div className="text-sm text-neutral-gray4">
+            <div className="text-sm capitalize text-neutral-gray4">
               {orgUser.organization?.orgType}
             </div>
           </div>

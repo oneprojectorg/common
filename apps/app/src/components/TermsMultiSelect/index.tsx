@@ -71,6 +71,7 @@ export const TermsMultiSelect = ({
       items={flattenedTerms}
       errorMessage={errorMessage}
       allowAdditions
+      enableLocalSearch
     />
   );
 };

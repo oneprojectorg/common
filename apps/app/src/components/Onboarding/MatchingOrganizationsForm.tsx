@@ -9,7 +9,7 @@ import { ReactNode, useEffect, useState } from 'react';
 import { LuGlobe, LuMail } from 'react-icons/lu';
 import { z } from 'zod';
 
-import { useTranslations } from '@/lib/i18n';
+import { Link, useTranslations } from '@/lib/i18n';
 
 import { ContactLink } from '../ContactLink';
 import { StepProps } from '../MultiStepForm';
@@ -70,9 +70,9 @@ export const MatchingOrganizationsForm = ({
     }
   };
 
-  const handleContinueWithNoSelection = () => {
-    onNext({});
-  };
+  // const handleContinueWithNoSelection = () => {
+  // onNext({});
+  // };
 
   // Show loading while fetching
   if (isLoading) {
@@ -165,13 +165,12 @@ export const MatchingOrganizationsForm = ({
               )}
             </Button>
           </div>
-          <Button
-            unstyled
+          <Link
             className="text-teal hover:underline"
-            onPress={handleContinueWithNoSelection}
+            href="mailto:support@oneproject.org"
           >
             {t('Whoops! This is not my organization')}
-          </Button>
+          </Link>
         </div>
       </FormContainer>
     </div>

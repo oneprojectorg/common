@@ -14,8 +14,6 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 import { LuCopy, LuGlobe, LuMail } from 'react-icons/lu';
 
-import { Link as I18nLink } from '@/lib/i18n';
-
 import { ContactLink } from '@/components/ContactLink';
 import { PostFeedSkeleton } from '@/components/PostFeed';
 import { PostUpdate } from '@/components/PostUpdate';
@@ -81,7 +79,7 @@ const ProfileAbout = ({
       <section className="flex flex-col gap-2 text-neutral-charcoal">
         <Header3>Organizational Status</Header3>
         <TagGroup>
-          <Tag>{orgType}</Tag>
+          <Tag className="capitalize">{orgType}</Tag>
         </TagGroup>
       </section>
 
@@ -99,10 +97,8 @@ const ProfileAbout = ({
             {strategies.map((strategy) =>
               strategy ? (
                 <Tag key={strategy.id}>
-                  <I18nLink href={`/org/?terms=${strategy.id}`}>
-                    {/* @ts-ignore - odd TS bug that only shows in CI */}
-                    {strategy.label}
-                  </I18nLink>
+                  {/* @ts-ignore - odd TS bug that only shows in CI */}
+                  {strategy.label}
                 </Tag>
               ) : null,
             )}
