@@ -70,7 +70,6 @@ export const TermsMultiSelect = ({
       value={value ?? []}
       items={flattenedTerms}
       errorMessage={errorMessage}
-      allowAdditions
       enableLocalSearch
     />
   );
