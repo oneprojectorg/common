@@ -5,7 +5,6 @@ import { trpc } from '@op/api/client';
 import { Button } from '@op/ui/Button';
 import { Header2 } from '@op/ui/Header';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { Skeleton } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
 import { Suspense, useState } from 'react';
 
