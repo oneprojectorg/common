@@ -20,8 +20,7 @@ export const organizationFormValidator = z.object({
   email: z
     .string({ message: 'Enter an email' })
     .email({ message: 'Invalid email' })
-    .max(200, { message: 'Must be at most 200 characters' })
-    .optional(),
+    .max(200, { message: 'Must be at most 200 characters' }),
   orgType: z
     .string({ message: 'Select an organization type' })
     .max(200, { message: 'Must be at most 200 characters' }),

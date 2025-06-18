@@ -54,6 +54,7 @@ export const OrganizationFormFields = ({
 
   const form = useAppForm({
     defaultValues,
+    canSubmitWhenInvalid: true,
     validators: {
       onSubmit: organizationFormValidator,
     },
