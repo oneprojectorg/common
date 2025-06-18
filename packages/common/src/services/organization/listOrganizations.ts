@@ -9,14 +9,29 @@ import {
   encodeCursor,
 } from '../../utils';
 
+const getOrderByColumn = (orderBy: string) => {
+  switch (orderBy) {
+    case 'updatedAt':
+      return organizations.updatedAt;
+    case 'createdAt':
+      return organizations.createdAt;
+    default:
+      return organizations.updatedAt;
+  }
+};
+
 export const listOrganizations = async ({
   cursor,
   user,
   limit = 10,
+  orderBy = 'updatedAt',
+  dir = 'desc',
 }: {
   user: User;
   cursor?: string | null;
   limit?: number;
+  orderBy?: string;
+  dir?: 'asc' | 'desc';
 }) => {
   if (!user) {
     throw new UnauthorizedError();
@@ -35,6 +50,8 @@ export const listOrganizations = async ({
           ),
         )
       : undefined;
+
+    const orderByColumn = getOrderByColumn(orderBy);
 
     // TODO: assert authorization, setup a common package
     const result = await db.query.organizations.findMany({
@@ -68,7 +85,8 @@ export const listOrganizations = async ({
           },
         },
       },
-      orderBy: (orgs, { desc }) => desc(orgs.updatedAt),
+      orderBy: (_, { asc, desc }) =>
+        dir === 'asc' ? asc(orderByColumn) : desc(orderByColumn),
       limit: limit + 1, // Fetch one extra to check hasMore
     });
 

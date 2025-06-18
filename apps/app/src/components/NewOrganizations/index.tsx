@@ -1,10 +1,12 @@
 import { trpcNext } from '@op/api/vanilla';
-import { SkeletonLine } from '@op/ui/Skeleton';
 import { Suspense } from 'react';
 
 import { Link } from '@/lib/i18n';
 
-import { OrganizationList } from '../OrganizationList';
+import {
+  OrganizationList,
+  OrganizationListSkeleton,
+} from '../OrganizationList';
 
 export const NewOrganizationsSuspense = async ({
   limit = 5,
@@ -17,6 +19,7 @@ export const NewOrganizationsSuspense = async ({
     const { items: organizations } = await client.organization.list.query({
       limit,
       cursor: null,
+      orderBy: 'createdAt',
     });
 
     return (
@@ -34,7 +37,7 @@ export const NewOrganizationsSuspense = async ({
 
 export const NewOrganizations = ({ limit }: { limit?: number }) => {
   return (
-    <Suspense fallback={<SkeletonLine lines={5} />}>
+    <Suspense fallback={<OrganizationListSkeleton />}>
       <NewOrganizationsSuspense limit={limit} />
     </Suspense>
   );

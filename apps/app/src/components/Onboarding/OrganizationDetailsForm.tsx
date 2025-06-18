@@ -38,11 +38,7 @@ export const OrganizationDetailsForm = ({
           className={className}
         >
           <FormContainer>
-            <FormHeader text={t("Add your organization's details")}>
-              {t("We've pre-filled information about [ORGANIZATION].")}
-              <br />
-              {t('Please review and make any necessary changes.')}
-            </FormHeader>
+            <FormHeader text={t("Add your organization's details")} />
 
             {formFields}
 

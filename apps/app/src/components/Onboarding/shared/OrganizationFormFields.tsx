@@ -54,6 +54,7 @@ export const OrganizationFormFields = ({
 
   const form = useAppForm({
     defaultValues,
+    canSubmitWhenInvalid: true,
     validators: {
       onSubmit: organizationFormValidator,
     },
@@ -272,6 +273,7 @@ export const OrganizationFormFields = ({
             taxonomy="splcStrategies"
             value={(field.state.value as Array<Option>) ?? []}
             onChange={field.handleChange}
+            showDefinitions
             errorMessage={getFieldErrorMessage(field)}
           />
         )}

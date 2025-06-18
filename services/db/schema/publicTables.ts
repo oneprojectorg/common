@@ -47,3 +47,4 @@ export { locations } from './tables/locations.sql';
 export { profiles, profilesRelations } from './tables/profiles.sql';
 export type { Profile } from './tables/profiles.sql';
 export { EntityType, entityTypeEnum } from './tables/entities.sql';
+export { allowList, allowListRelations } from './tables/allowList.sql';

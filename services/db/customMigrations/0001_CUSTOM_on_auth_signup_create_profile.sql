@@ -4,6 +4,7 @@ OR REPLACE FUNCTION public.create_user_on_signup ()
 RETURNS trigger 
 LANGUAGE plpgsql 
 SECURITY DEFINER 
+SET search_path = ''
 AS $function$
 BEGIN
   insert into public.users (auth_user_id, email, created_at, updated_at)

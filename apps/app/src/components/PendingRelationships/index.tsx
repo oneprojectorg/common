@@ -5,7 +5,6 @@ import { trpc } from '@op/api/client';
 import { Button } from '@op/ui/Button';
 import { Header2 } from '@op/ui/Header';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { Skeleton } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
 import { Suspense, useState } from 'react';
 
@@ -136,9 +135,10 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
 };
 
 export const PendingRelationships = (props: { slug: string }) => {
+  // Don't show a skeleton loader as it will shift the layout and there might not be any pending relationships. Nicer to shift if there are pending
   return (
-    <ErrorBoundary fallback={<div>Could not load pending relationships</div>}>
-      <Suspense fallback={<Skeleton />}>
+    <ErrorBoundary fallback={null}>
+      <Suspense fallback={null}>
         <PendingRelationshipsSuspense {...props} />
       </Suspense>
     </ErrorBoundary>

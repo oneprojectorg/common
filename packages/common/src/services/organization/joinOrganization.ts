@@ -1,3 +1,4 @@
+import { cache } from '@op/cache';
 import { db, eq } from '@op/db/client';
 import {
   organizationUserToAccessRoles,
@@ -7,6 +8,7 @@ import {
 import { User } from '@op/supabase/lib';
 
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
+import { getAllowListUser } from '../user';
 
 export const joinOrganization = async ({
   user,
@@ -28,18 +30,24 @@ export const joinOrganization = async ({
     throw new NotFoundError('Organization not found');
   }
 
-  if (!organization.domain) {
-    throw new UnauthorizedError(
-      'Organization does not support domain-based joining',
-    );
-  }
-
   // Verify user's email domain matches organization domain
   const userEmailDomain = user.email.split('@')[1];
   if (userEmailDomain !== organization.domain) {
-    throw new UnauthorizedError(
-      'Your email domain does not match this organization',
-    );
+    // Retrieve the pre-mapped user to verify that we can still join without domian mapping
+    const allowedUserEmail = await cache<ReturnType<typeof getAllowListUser>>({
+      type: 'allowList',
+      params: [user.email],
+      fetch: () => getAllowListUser({ email: user.email }),
+    });
+
+    if (
+      !allowedUserEmail?.organizationId ||
+      allowedUserEmail?.organizationId !== organizationId
+    ) {
+      throw new UnauthorizedError(
+        'Your email does not have access to join this organization',
+      );
+    }
   }
 
   // Check if user is already a member of this organization

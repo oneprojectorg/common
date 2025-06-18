@@ -1,5 +1,5 @@
 import { db, eq } from '@op/db/client';
-import { users } from '@op/db/schema';
+import { allowList, users } from '@op/db/schema';
 
 export interface User {
   id: number;
@@ -21,9 +21,8 @@ export const createUserByEmail = async ({
       .onConflictDoNothing()
       .returning();
 
-    // If insertion was successful, return the new user
+    // If insertion was successful, return
     if (newUser.length > 0) {
-      // return newUser;
       return;
     }
 
@@ -35,12 +34,27 @@ export const createUserByEmail = async ({
       .limit(1);
 
     if (existingUser.length > 0) {
-      // return existingUser[0];
       return;
     }
   } catch (e) {
-    return;
-    // If no user is found, throw an error
-    // throw new Error('User upsert failed: no user found.');
+    console.error(e);
+    throw new Error('Something went wrong. Please try again.');
   }
+};
+
+export const getAllowListUser = async ({ email }: { email?: string }) => {
+  if (!email) {
+    return;
+  }
+
+  const [allowedEmail] = await db
+    .select({
+      email: allowList.email,
+      organizationId: allowList.organizationId,
+    })
+    .from(allowList)
+    .where(eq(allowList.email, email))
+    .limit(1);
+
+  return allowedEmail;
 };

@@ -1,3 +1,5 @@
+import { cache } from '@op/cache';
+import { getAllowListUser } from '@op/common';
 import {
   APP_NAME,
   adminEmails,
@@ -56,8 +58,17 @@ const login = router({
         });
       }
 
+      const allowedUserEmail = await cache<ReturnType<typeof getAllowListUser>>(
+        {
+          type: 'allowList',
+          params: [input.email],
+          fetch: () => getAllowListUser({ email: input.email }),
+        },
+      );
+
       // If the user is not invited, add them to the waitlist
       if (
+        !allowedUserEmail?.email &&
         !allowedEmailDomains.includes(emailDomain) &&
         !adminEmails.includes(input.email)
       ) {
