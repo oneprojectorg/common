@@ -123,8 +123,8 @@ export const OPURLConfig: TOPURLConfig = (type) => {
   };
 };
 
-export const urlMatcher = /oneproject\.tech$/;
-export const cookieOptionsDomain = '.oneproject.tech';
+export const urlMatcher = /oneproject\.(tech|org)$/;
+export const cookieOptionsDomain = '.oneproject.org';
 export const cookieDomains = [
   'oneproject.tech',
   '.oneproject.tech',
