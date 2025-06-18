@@ -21,9 +21,8 @@ export const createUserByEmail = async ({
       .onConflictDoNothing()
       .returning();
 
-    // If insertion was successful, return the new user
+    // If insertion was successful, return
     if (newUser.length > 0) {
-      // return newUser;
       return;
     }
 
@@ -35,13 +34,11 @@ export const createUserByEmail = async ({
       .limit(1);
 
     if (existingUser.length > 0) {
-      // return existingUser[0];
       return;
     }
   } catch (e) {
-    return;
-    // If no user is found, throw an error
-    // throw new Error('User upsert failed: no user found.');
+    console.error(e);
+    throw new Error('User upsert failed: no user found.');
   }
 };
 
