@@ -136,9 +136,10 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
 };
 
 export const PendingRelationships = (props: { slug: string }) => {
+  // Don't show a skeleton loader as it will shift the layout and there might not be any pending relationships. Nicer to shift if there are pending
   return (
-    <ErrorBoundary fallback={<div>Could not load pending relationships</div>}>
-      <Suspense fallback={<Skeleton />}>
+    <ErrorBoundary fallback={null}>
+      <Suspense fallback={null}>
         <PendingRelationshipsSuspense {...props} />
       </Suspense>
     </ErrorBoundary>
