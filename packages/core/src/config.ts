@@ -142,9 +142,9 @@ export const cookieDomains = [
 
 export const allowedEmailDomains = ['oneproject.org', 'team.oneproject.org'];
 
-export const genericEmail = 'hello@oneproject.org';
+export const genericEmail = 'support@oneproject.org';
 
-export const adminEmails = ['scott@oneproject.org', 'scottcazan@gmail.com'];
+export const adminEmails = ['scott@oneproject.org'];
 
 export const commonColors = colors.neutral;
 

@@ -145,7 +145,7 @@ export const AddRelationshipModalSuspense = ({
             <LuPlus className="size-4" />
             Add relationship
           </Button>
-          <Modal className="min-w-[29rem]">
+          <Modal className="sm:min-w-[29rem]">
             <AddRelationshipForm
               profile={profile}
               onChange={() => {

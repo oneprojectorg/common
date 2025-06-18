@@ -40,7 +40,7 @@ export const RemoveRelationshipModal = ({
   };
 
   return (
-    <Modal className="min-w-[29rem]">
+    <Modal className="sm:min-w-[29rem]">
       <Dialog>
         {({ close }) => (
           <form onSubmit={(e) => handleSubmit(e, close)} className="contents">

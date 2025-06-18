@@ -1,3 +1,5 @@
+import { cache } from '@op/cache';
+import { getAllowListUser } from '@op/common';
 import { adminEmails } from '@op/core';
 import type { UserResponse } from '@op/supabase/lib';
 import { TRPCError } from '@trpc/server';
@@ -53,6 +55,19 @@ const withAuthenticated: MiddlewareBuilderBase<TContextWithUser> = async ({
   const data = await supabase.auth.getUser();
 
   const user = verifyAuthentication(data);
+
+  // Only allow users who are invited
+  const allowedUserEmail = await cache<ReturnType<typeof getAllowListUser>>({
+    type: 'allowList',
+    params: [user.email],
+    fetch: () => getAllowListUser({ email: user.email }),
+  });
+
+  if (!allowedUserEmail) {
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+    });
+  }
 
   return next({
     ctx: { ...ctx, user },
