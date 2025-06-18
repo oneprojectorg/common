@@ -49,7 +49,7 @@ const EmailTemplate = ({
               className="mt-4 max-w-[648px] pb-4 md:mt-10"
               style={{
                 backgroundImage:
-                  'url("https://oneproject.tech/email-box-shadow-compressed.png")',
+                  'url("https://common.oneproject.org/email-box-shadow-compressed.png")',
                 backgroundRepeat: 'no-repeat',
                 backgroundSize: '98% 105%',
                 backgroundPosition: 'center',
@@ -63,7 +63,7 @@ const EmailTemplate = ({
                         <Row>
                           <Column align="left" width={24}>
                             <Img
-                              src="https://oneproject.tech/email-logo.png"
+                              src="https://common.oneproject.org/email-logo.png"
                               width="24"
                               height="24"
                             />
@@ -103,7 +103,7 @@ const EmailTemplate = ({
 
               <Link href="https://oneproject.org">
                 <Img
-                  src="https://oneproject.tech/email-logo.png"
+                  src="https://common.oneproject.org/email-logo.png"
                   width="20"
                   height="20"
                   className="mx-auto mt-4"
