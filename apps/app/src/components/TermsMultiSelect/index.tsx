@@ -41,6 +41,7 @@ export const TermsMultiSelect = ({
   taxonomy,
   isRequired = false,
   errorMessage,
+  showDefinitions = false,
 }: {
   label?: string;
   placeholder?: string;
@@ -49,6 +50,7 @@ export const TermsMultiSelect = ({
   onChange: (value: Array<Option>) => void;
   isRequired?: boolean;
   errorMessage?: string;
+  showDefinitions?: boolean;
 }) => {
   const [termsQuery, setTermsQuery] = useState('');
   const { data: terms } = trpc.taxonomy.getTerms.useQuery({
@@ -71,6 +73,7 @@ export const TermsMultiSelect = ({
       items={flattenedTerms}
       errorMessage={errorMessage}
       enableLocalSearch
+      showDefinitions={showDefinitions}
     />
   );
 };

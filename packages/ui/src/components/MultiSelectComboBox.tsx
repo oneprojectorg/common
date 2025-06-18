@@ -413,7 +413,7 @@ export const MultiSelectComboBox = ({
                       {option.label}
                     </span>
                     {showDefinitions && option.definition && !isParent ? (
-                      <span className="overflow-hidden text-ellipsis text-nowrap text-sm text-neutral-charcoal">
+                      <span className="overflow-hidden text-ellipsis text-wrap text-left text-sm text-neutral-charcoal">
                         {option.definition}
                       </span>
                     ) : null}
