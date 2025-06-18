@@ -40,7 +40,10 @@ export const joinOrganization = async ({
       fetch: () => getAllowListUser({ email: user.email }),
     });
 
-    if (allowedUserEmail?.organizationId !== organizationId) {
+    if (
+      !allowedUserEmail?.organizationId ||
+      allowedUserEmail?.organizationId !== organizationId
+    ) {
       throw new UnauthorizedError(
         'Your email does not have access to join this organization',
       );
