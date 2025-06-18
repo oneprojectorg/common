@@ -56,17 +56,20 @@ const withAuthenticated: MiddlewareBuilderBase<TContextWithUser> = async ({
 
   const user = verifyAuthentication(data);
 
-  // Only allow users who are invited
-  const allowedUserEmail = await cache<ReturnType<typeof getAllowListUser>>({
-    type: 'allowList',
-    params: [user.email],
-    fetch: () => getAllowListUser({ email: user.email }),
-  });
-
-  if (!allowedUserEmail) {
-    throw new TRPCError({
-      code: 'UNAUTHORIZED',
+  // if the user is not a oneproject.org user, verify against the allow list
+  if (user.email?.toLowerCase().split('@')[1] !== 'oneproject.org') {
+    // Only allow users who are invited
+    const allowedUserEmail = await cache<ReturnType<typeof getAllowListUser>>({
+      type: 'allowList',
+      params: [user.email],
+      fetch: () => getAllowListUser({ email: user.email }),
     });
+
+    if (!allowedUserEmail) {
+      throw new TRPCError({
+        code: 'UNAUTHORIZED',
+      });
+    }
   }
 
   return next({
