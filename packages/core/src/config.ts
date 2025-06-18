@@ -128,6 +128,7 @@ export const cookieOptionsDomain = '.oneproject.org';
 export const cookieDomains = [
   'oneproject.tech',
   '.oneproject.tech',
+  '.oneproject.org',
   'api.oneproject.tech',
   'app.oneproject.tech',
   'web.oneproject.tech',
