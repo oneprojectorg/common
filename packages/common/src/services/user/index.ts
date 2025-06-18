@@ -38,7 +38,7 @@ export const createUserByEmail = async ({
     }
   } catch (e) {
     console.error(e);
-    throw new Error('User upsert failed: no user found.');
+    throw new Error('Something went wrong. Please try again.');
   }
 };
 
