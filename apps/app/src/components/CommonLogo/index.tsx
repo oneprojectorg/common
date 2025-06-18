@@ -6,7 +6,7 @@ export const CommonLogo = ({ className }: { className?: string }) => {
     <div className={cn('h-3 w-16', className)}>
       <Image
         alt="Common logo"
-        className="sm:hidden"
+        className="max-h-full w-auto sm:hidden"
         src="/Common.png"
         width={260}
         height={48}
