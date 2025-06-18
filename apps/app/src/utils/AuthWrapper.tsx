@@ -10,12 +10,7 @@ export const AuthWrapper = ({ children }: { children: React.ReactNode }) => {
     redirect('/login');
   }
 
-  if (
-    !user ||
-    user.isFetching ||
-    user.isPending ||
-    !user.data?.user?.email?.includes('@oneproject.org')
-  ) {
+  if (!user || user.isFetching || user.isPending) {
     return null;
   }
 

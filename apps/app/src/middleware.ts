@@ -81,16 +81,14 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
     return NextResponse.redirect(url);
   }
 
-  if (
-    user &&
-    !user.email?.match(
-      'oneproject.org|team.oneproject.org|scottcazan@gmail.com',
-    )
-  ) {
-    logger.warn('Invalid user email access attempt', { email: user.email });
-    supabase.auth.signOut();
-    return NextResponse.redirect(new URL('/waitlist', request.url));
-  }
+  // if (
+  // user &&
+  // !user.email?.trim().toLowerCase().split('@')[1]?.match('oneproject.org')
+  // ) {
+  // logger.warn('Invalid user email access attempt', { email: user.email });
+  // supabase.auth.signOut();
+  // return NextResponse.redirect(new URL('/waitlist', request.url));
+  // }
 
   // IMPORTANT: You *must* return the supabaseResponse object as it is.
   // If you're creating a new response object with NextResponse.next() make sure to:
