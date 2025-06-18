@@ -61,7 +61,7 @@ type TOPURLConfig = (type: TTarget) => {
 
 export const OPURLConfig: TOPURLConfig = (type) => {
   // Include the . suffix for production if not APP
-  const prodTarget = type === 'APP' ? '' : `${type.toLowerCase()}.`;
+  const prodTarget = type === 'APP' ? '' : `${type.toLowerCase()}-`;
   const target = type.toLowerCase();
   let port = 0;
 
@@ -87,8 +87,8 @@ export const OPURLConfig: TOPURLConfig = (type) => {
   }
 
   const urls = {
-    STAGING: `https://${target}-staging.oneproject.tech`,
-    PRODUCTION: `https://${prodTarget}oneproject.tech`,
+    STAGING: `https://${target}-dev.oneproject.tech`,
+    PRODUCTION: `https://${prodTarget}common.oneproject.org`,
     // TODO: gotta figure preview out properly
     // <project-name>-git-<branch-name>-<scope-slug>.vercel.app
     PREVIEW: `https://${target}-dev.oneproject.tech`,
@@ -138,6 +138,7 @@ export const cookieDomains = [
   'app-dev.oneproject.tech',
   'web-dev.oneproject.tech',
   'common.oneproject.org',
+  'api-common.oneproject.org',
 ];
 
 export const allowedEmailDomains = ['oneproject.org', 'team.oneproject.org'];
