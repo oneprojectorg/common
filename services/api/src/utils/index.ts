@@ -3,6 +3,9 @@ import { z } from 'zod';
 
 export const dbFilter = z.object({
   limit: z.number().optional(),
+  cursor: z.string().nullish(),
+  orderBy: z.string().optional(),
+  dir: z.enum(['asc', 'desc']).optional(),
 });
 
 export function sanitizeS3Filename(filename: string) {

@@ -30,7 +30,6 @@ export const listOrganizationsRouter = router({
       dbFilter
         .extend({
           terms: z.array(z.string()).nullish(),
-          cursor: z.string().nullish(),
         })
         .optional(),
     )
@@ -42,12 +41,14 @@ export const listOrganizationsRouter = router({
       }),
     )
     .query(async ({ ctx, input }) => {
-      const { limit = 10, cursor } = input ?? {};
+      const { limit = 10, cursor, orderBy, dir } = input ?? {};
 
       const { items, next, hasMore } = await listOrganizations({
         cursor,
         user: ctx.user,
         limit,
+        orderBy,
+        dir,
       });
 
       return {

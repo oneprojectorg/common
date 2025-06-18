@@ -17,6 +17,7 @@ export const NewOrganizationsSuspense = async ({
     const { items: organizations } = await client.organization.list.query({
       limit,
       cursor: null,
+      orderBy: 'createdAt',
     });
 
     return (
