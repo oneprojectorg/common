@@ -52,15 +52,22 @@ export const createPostInOrganization = router({
       }
 
       try {
+        // Get all storage objects that were attached to the post
+        const allStorageObjects =
+          input.attachmentIds.length > 0
+            ? await db.query.objectsInStorage.findMany({
+                where: (table, { inArray }) =>
+                  inArray(table.id, input.attachmentIds),
+              })
+            : [];
+
         const newPost = await db.transaction(async (tx) => {
-          const insertedPosts = await tx
+          const [post] = await tx
             .insert(posts)
             .values({
               content: input.content,
             })
             .returning();
-
-          const post = insertedPosts[0];
 
           if (!post) {
             throw new TRPCError({
@@ -70,15 +77,13 @@ export const createPostInOrganization = router({
           }
 
           // Create the join record associating the post with the organization
-          await tx.insert(postsToOrganizations).values({
-            organizationId: input.id,
-            postId: post.id,
-          });
 
-          const allStorageObjects = await tx.query.objectsInStorage.findMany({
-            where: (table, { inArray }) =>
-              inArray(table.id, input.attachmentIds),
-          });
+          const queryPromises: Promise<any>[] = [
+            tx.insert(postsToOrganizations).values({
+              organizationId: input.id,
+              postId: post.id,
+            }),
+          ];
 
           // Create attachment records if any attachments were uploaded
           if (allStorageObjects.length > 0) {
@@ -99,8 +104,11 @@ export const createPostInOrganization = router({
             }));
 
             // @ts-ignore
-            await tx.insert(attachments).values(attachmentValues);
+            queryPromises.push(tx.insert(attachments).values(attachmentValues));
           }
+
+          // Run attachments and join record in parallel
+          await Promise.all(queryPromises);
 
           return post;
         });
