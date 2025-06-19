@@ -19,6 +19,7 @@ import { LuChevronDown, LuLogOut, LuSearch } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
+import { CoCModal } from '../CoCModal';
 import { CommonLogo } from '../CommonLogo';
 import ErrorBoundary from '../ErrorBoundary';
 import { PrivacyPolicyModal } from '../PrivacyPolicyModal';
@@ -156,6 +157,8 @@ const AvatarMenuContent = ({
           <PrivacyPolicyModal />
           {' • '}
           <ToSModal />
+          {' • '}
+          <CoCModal />
         </div>
         <div className="text-xs">
           Ethical Open Source • One Project • {new Date().getFullYear()}
