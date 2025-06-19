@@ -63,6 +63,10 @@ const withAuthenticated: MiddlewareBuilderBase<TContextWithUser> = async ({
       type: 'allowList',
       params: [user.email],
       fetch: () => getAllowListUser({ email: user.email }),
+      options: {
+        storeNulls: true,
+        ttl: 30 * 60 * 1000,
+      },
     });
 
     if (!allowedUserEmail) {
