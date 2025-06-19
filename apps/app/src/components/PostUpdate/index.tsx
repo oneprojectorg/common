@@ -98,7 +98,7 @@ const PostUpdateWithUser = ({
         slug: organization.profile.slug,
       });
       utils.organization.invalidate();
-      utils.organization.listPosts.refetch();
+      utils.organization.listPosts.invalidate();
       // Refresh server-side components
       router.refresh();
     },
