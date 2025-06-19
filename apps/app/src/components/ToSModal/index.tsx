@@ -6,6 +6,8 @@ import { LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { ToSContent } from '@/components/ToSContent';
+
 export const ToSModal = () => {
   const t = useTranslations();
   const [isToSOpen, setIsToSOpen] = useState(false);
@@ -21,7 +23,7 @@ export const ToSModal = () => {
       </Button>
 
       <Modal
-        className="min-w-[29rem]"
+        className="h-screen max-h-none w-screen max-w-none overflow-y-auto sm:h-auto sm:max-h-[75vh] sm:w-[36rem] sm:max-w-[36rem]"
         onOpenChange={setIsToSOpen}
         isDismissable
         isOpen={isToSOpen}
@@ -34,7 +36,9 @@ export const ToSModal = () => {
               onClick={() => setIsToSOpen(false)}
             />
           </ModalHeader>
-          <ModalBody>ToS</ModalBody>
+          <ModalBody>
+            <ToSContent />
+          </ModalBody>
         </Dialog>
       </Modal>
     </DialogTrigger>
