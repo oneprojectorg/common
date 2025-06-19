@@ -23,6 +23,7 @@ if (REDIS_URL) {
 }
 
 const TypeMap = {
+  search: 'search',
   organization: 'org',
   allowList: 'allowList',
 };
@@ -93,7 +94,8 @@ export const cache = async <T = any>({
   if (newData) {
     memCache.set(cacheKey, { createdAt: Date.now(), data: newData });
     // don't cache if we couldn't find the record (?)
-    waitUntil(set(cacheKey, newData));
+    // TTL in redis is in seconds
+    waitUntil(set(cacheKey, newData, ttl / 1000));
   } else if (storeNulls) {
     // This allows us to store negative values in the memcache to improve rejections as well (and avoid DB calls for repeated rejections)
     memCache.set(cacheKey, { createdAt: Date.now(), data: null });

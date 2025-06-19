@@ -32,9 +32,14 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
-  const { data: organizationResults } = trpc.organization.search.useQuery({
-    q: debouncedQuery,
-  });
+  const { data: organizationResults } = trpc.organization.search.useQuery(
+    {
+      q: debouncedQuery,
+    },
+    {
+      staleTime: 30_000,
+    },
+  );
   const [recentSearches, setRecentSearches] = useLocalStorage<Array<string>>(
     'recentSearches',
     [],
