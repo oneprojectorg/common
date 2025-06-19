@@ -1,3 +1,4 @@
+import { cache } from '@op/cache';
 import { searchOrganizations } from '@op/common';
 import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
@@ -36,10 +37,18 @@ export const searchOrganizationsRouter = router({
     .query(async ({ ctx, input }) => {
       const { q, limit = 10 } = input;
 
-      const result = await searchOrganizations({
-        query: q,
-        limit,
-        user: ctx.user,
+      const result = await cache<ReturnType<typeof searchOrganizations>>({
+        type: 'search',
+        params: [q, ctx.user.id],
+        options: {
+          ttl: 30 * 1000,
+        },
+        fetch: () =>
+          searchOrganizations({
+            query: q,
+            limit,
+            user: ctx.user,
+          }),
       });
 
       if (!result) {
