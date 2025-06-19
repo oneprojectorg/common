@@ -4,12 +4,13 @@ import { useFileUpload } from '@/hooks/useFileUpload';
 import { useUser } from '@/utils/UserProvider';
 import { detectLinks } from '@/utils/linkDetection';
 import { trpc } from '@op/api/client';
-import type { RouterOutput } from '@op/api/client';
+// import type { RouterOutput } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { TextArea } from '@op/ui/Field';
 import { Form } from '@op/ui/Form';
 import { Skeleton } from '@op/ui/Skeleton';
+import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
@@ -23,7 +24,7 @@ import { FeedItem, FeedMain } from '@/components/PostFeed';
 
 import { OrganizationAvatar } from '../OrganizationAvatar';
 
-type PaginatedPostToOrganizations = RouterOutput['organization']['listPosts'];
+// type PaginatedPostToOrganizations = RouterOutput['organization']['listPosts'];
 
 const PostUpdateWithUser = ({
   organization,
@@ -45,61 +46,66 @@ const PostUpdateWithUser = ({
   });
 
   const createPost = trpc.organization.createPost.useMutation({
-    onMutate: async (newPost) => {
-      // Cancel any outgoing refetches for the posts query
-      await utils.organization.listPosts.cancel();
-      // Snapshot the previous list of posts
-      const previousPosts = utils.organization.listPosts.getData({
-        slug: organization.profile.slug,
-      });
+    // onMutate: async (newPost) => {
+    // await utils.organization.listPosts.cancel();
 
-      // Optimistically update the cache with the new post
-      utils.organization.listPosts.setData(
-        { slug: organization.profile.slug },
-        (old) => ({
-          ...(old ? old : { hasMore: false }),
-          items: [
-            {
-              postId: newPost.id,
-              organizationId: organization.id,
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-              deletedAt: null,
-              post: {
-                id: crypto.randomUUID(),
-                content: newPost.content,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
-                deletedAt: null,
-                attachments: [],
-              },
-              organization,
-            },
-            ...(old ? old.items : []),
-          ],
-        }),
-      );
+    // const queryKey = { slug: organization.profile.slug, limit: 20 };
+    // const previousData =
+    // utils.organization.listPosts.getInfiniteData(queryKey);
 
-      return { previousPosts };
-    },
-    onError: (
-      _,
-      __,
-      context: { previousPosts?: PaginatedPostToOrganizations } | undefined,
-    ) => {
-      // Roll back to the previous posts on error
-      utils.organization.listPosts.setData(
-        { slug: organization.profile.slug },
-        context?.previousPosts || { items: [], hasMore: false },
-      );
+    // // Helper to create the new post object
+    // const newPostObject = {
+    // postId: newPost.id,
+    // organizationId: organization.id,
+    // createdAt: new Date().toISOString(),
+    // updatedAt: new Date().toISOString(),
+    // deletedAt: null,
+    // post: {
+    // id: crypto.randomUUID(),
+    // content: newPost.content,
+    // createdAt: new Date().toISOString(),
+    // updatedAt: new Date().toISOString(),
+    // deletedAt: null,
+    // attachments: [],
+    // },
+    // organization,
+    // };
+
+    // // Update all infinite query variations if you have multiple query keys
+    // const queryKeys = [
+    // { slug: organization.profile.slug },
+    // // Add other query key variations if needed
+    // ];
+
+    // queryKeys.forEach((key) => {
+    // utils.organization.listPosts.setInfiniteData(key, (old) => {
+    // if (!old) return old;
+
+    // return {
+    // ...old,
+    // pages: old.pages.map((page, pageIndex) => ({
+    // ...page,
+    // items:
+    // pageIndex === 0 ? [newPostObject, ...page.items] : page.items,
+    // })),
+    // };
+    // });
+    // });
+
+    // return { previousData };
+    // },
+    onError: (err) => {
+      toast.error({ message: 'Could not create post' });
+      console.log('ERROR', err);
+      // if (context?.previousData) {
+      // utils.organization.listPosts.setInfiniteData(
+      // { slug: organization.profile.slug },
+      // context.previousData,
+      // );
+      // }
     },
     onSettled: () => {
-      void utils.organization.listPosts.invalidate({
-        slug: organization.profile.slug,
-      });
-      utils.organization.invalidate();
-      utils.organization.listPosts.invalidate();
-      // Refresh server-side components
+      void utils.organization.listPosts.invalidate();
       router.refresh();
     },
   });
