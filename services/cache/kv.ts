@@ -44,7 +44,7 @@ const getCacheKey = (
 };
 
 const memCache = new Map();
-const MEMCACHE_EXPIRE = 60 * 1000;
+const MEMCACHE_EXPIRE = 2 * 60 * 1000;
 
 /*
  * Caches values into a tiered structure of memcache, KV cache, and ultimately a call to the DB
@@ -54,18 +54,25 @@ export const cache = async <T = any>({
   appKey,
   params = [],
   fetch,
+  options = {},
 }: {
   type: keyof typeof TypeMap;
   appKey?: string;
   params?: any[];
   fetch: () => Promise<any>;
+  options?: {
+    storeNulls?: boolean;
+    ttl?: number;
+  };
 }): Promise<T> => {
   const cacheKey = getCacheKey(type, appKey, params);
+  const { ttl = MEMCACHE_EXPIRE, storeNulls = false } = options;
 
   // try memcache first
   if (memCache.has(cacheKey)) {
     const cachedVal = memCache.get(cacheKey);
-    if (Date.now() - cachedVal.createdAt < MEMCACHE_EXPIRE) {
+
+    if (Date.now() - cachedVal.createdAt < ttl) {
       log.info('CACHE: memory');
       return cachedVal.data;
     }
@@ -87,6 +94,9 @@ export const cache = async <T = any>({
     memCache.set(cacheKey, { createdAt: Date.now(), data: newData });
     // don't cache if we couldn't find the record (?)
     waitUntil(set(cacheKey, newData));
+  } else if (storeNulls) {
+    // This allows us to store negative values in the memcache to improve rejections as well (and avoid DB calls for repeated rejections)
+    memCache.set(cacheKey, { createdAt: Date.now(), data: null });
   }
 
   return newData as T;
