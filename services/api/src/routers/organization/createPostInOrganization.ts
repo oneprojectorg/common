@@ -53,14 +53,12 @@ export const createPostInOrganization = router({
 
       try {
         const newPost = await db.transaction(async (tx) => {
-          const insertedPosts = await tx
+          const [post] = await tx
             .insert(posts)
             .values({
               content: input.content,
             })
             .returning();
-
-          const post = insertedPosts[0];
 
           if (!post) {
             throw new TRPCError({
@@ -70,37 +68,50 @@ export const createPostInOrganization = router({
           }
 
           // Create the join record associating the post with the organization
-          await tx.insert(postsToOrganizations).values({
-            organizationId: input.id,
-            postId: post.id,
-          });
 
-          const allStorageObjects = await tx.query.objectsInStorage.findMany({
-            where: (table, { inArray }) =>
-              inArray(table.id, input.attachmentIds),
-          });
-
-          // Create attachment records if any attachments were uploaded
-          if (allStorageObjects.length > 0) {
-            const attachmentValues = allStorageObjects.map((storageObject) => ({
+          const queryPromises: Promise<any>[] = [
+            tx.insert(postsToOrganizations).values({
+              organizationId: input.id,
               postId: post.id,
-              storageObjectId: storageObject.id,
-              uploadedBy: user.id,
-              fileName:
-                // @ts-expect-error - We check for this existence first. TODO: find the source of this TS error
-                storageObject?.name
-                  ?.split('/')
-                  .slice(-1)[0]
-                  .split('_')
-                  .slice(1)
-                  .join('_') ?? '',
-              mimeType: (storageObject.metadata as { mimetype: string })
-                .mimetype,
-            }));
+            }),
+          ];
 
-            // @ts-ignore
-            await tx.insert(attachments).values(attachmentValues);
+          // check if we need to attach attachments
+          if (input.attachmentIds.length > 0) {
+            const allStorageObjects = await tx.query.objectsInStorage.findMany({
+              where: (table, { inArray }) =>
+                inArray(table.id, input.attachmentIds),
+            });
+
+            // Create attachment records if any attachments were uploaded
+            if (allStorageObjects.length > 0) {
+              const attachmentValues = allStorageObjects.map(
+                (storageObject) => ({
+                  postId: post.id,
+                  storageObjectId: storageObject.id,
+                  uploadedBy: user.id,
+                  fileName:
+                    // @ts-expect-error - We check for this existence first. TODO: find the source of this TS error
+                    storageObject?.name
+                      ?.split('/')
+                      .slice(-1)[0]
+                      .split('_')
+                      .slice(1)
+                      .join('_') ?? '',
+                  mimeType: (storageObject.metadata as { mimetype: string })
+                    .mimetype,
+                }),
+              );
+
+              // @ts-ignore
+              queryPromises.push(
+                tx.insert(attachments).values(attachmentValues),
+              );
+            }
           }
+
+          // Run attachments and join record in parallel
+          await Promise.all(queryPromises);
 
           return post;
         });

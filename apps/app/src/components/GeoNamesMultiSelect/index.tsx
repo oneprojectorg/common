@@ -17,7 +17,7 @@ export const GeoNamesMultiSelect = ({
   isRequired?: boolean;
 }) => {
   const [whereWeWorkQuery, setWhereWeWorkQuery] = useState('');
-  const { data: geoNames } = trpc.taxonomy.getGeoNames.useQuery(
+  const { data: geoNames, isLoading } = trpc.taxonomy.getGeoNames.useQuery(
     {
       q: whereWeWorkQuery,
     },
@@ -52,6 +52,7 @@ export const GeoNamesMultiSelect = ({
           })
           .filter((o) => !!o) ?? []
       }
+      isLoading={isLoading && whereWeWorkQuery.length >= 2}
     />
   );
 };
