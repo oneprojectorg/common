@@ -53,7 +53,7 @@ export const TermsMultiSelect = ({
   showDefinitions?: boolean;
 }) => {
   const [termsQuery, setTermsQuery] = useState('');
-  const { data: terms } = trpc.taxonomy.getTerms.useQuery({
+  const { data: terms, isLoading } = trpc.taxonomy.getTerms.useQuery({
     name: taxonomy,
     q: termsQuery.length >= 2 ? termsQuery : undefined,
   });
@@ -74,6 +74,7 @@ export const TermsMultiSelect = ({
       errorMessage={errorMessage}
       enableLocalSearch
       showDefinitions={showDefinitions}
+      isLoading={isLoading && termsQuery.length >= 2}
     />
   );
 };
