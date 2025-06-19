@@ -8,8 +8,8 @@ export const EMAILS_PORT = 3883;
 export const ORM_VIZ_PORT = 3700;
 
 export const APP_NAME = 'Common';
-export const OP_EMAIL_NAME = 'OP Labs';
-export const OP_EMAIL_HELP = 'connect@oneproject.org';
+export const OP_EMAIL_NAME = 'Common';
+export const OP_EMAIL_HELP = 'support@oneproject.org';
 
 export const API_OPENAPI_PATH = `api/v1`;
 export const API_TRPC_PTH = `api/v1/trpc`;
