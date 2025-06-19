@@ -10,6 +10,7 @@ import { Button } from '@op/ui/Button';
 import { TextArea } from '@op/ui/Field';
 import { Form } from '@op/ui/Form';
 import { Skeleton } from '@op/ui/Skeleton';
+import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
@@ -93,13 +94,15 @@ const PostUpdateWithUser = ({
 
     // return { previousData };
     // },
-    onError: (_, __, context) => {
-      if (context?.previousData) {
-        utils.organization.listPosts.setInfiniteData(
-          { slug: organization.profile.slug },
-          context.previousData,
-        );
-      }
+    onError: (err) => {
+      toast.error({ message: 'Could not create post' });
+      console.log('ERROR', err);
+      // if (context?.previousData) {
+      // utils.organization.listPosts.setInfiniteData(
+      // { slug: organization.profile.slug },
+      // context.previousData,
+      // );
+      // }
     },
     onSettled: () => {
       void utils.organization.listPosts.invalidate();
