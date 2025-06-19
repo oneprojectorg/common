@@ -1,4 +1,3 @@
-import { Header3 } from '@op/ui/Header';
 import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
