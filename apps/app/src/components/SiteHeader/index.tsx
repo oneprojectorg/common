@@ -24,7 +24,7 @@ import ErrorBoundary from '../ErrorBoundary';
 import { PrivacyPolicyModal } from '../PrivacyPolicyModal';
 import { UpdateProfileModal } from '../Profile/ProfileDetails/UpdateProfileModal';
 import { SearchInput } from '../SearchInput';
-import { ToSModal } from '../ToSModal/index.tsx';
+import { ToSModal } from '../ToSModal';
 
 const useMediaQuery = (query: string) => {
   const [matches, setMatches] = useState(false);
