@@ -52,6 +52,15 @@ export const createPostInOrganization = router({
       }
 
       try {
+        // Get all storage objects that were attached to the post
+        const allStorageObjects =
+          input.attachmentIds.length > 0
+            ? await db.query.objectsInStorage.findMany({
+                where: (table, { inArray }) =>
+                  inArray(table.id, input.attachmentIds),
+              })
+            : [];
+
         const newPost = await db.transaction(async (tx) => {
           const [post] = await tx
             .insert(posts)
@@ -76,38 +85,26 @@ export const createPostInOrganization = router({
             }),
           ];
 
-          // check if we need to attach attachments
-          if (input.attachmentIds.length > 0) {
-            const allStorageObjects = await tx.query.objectsInStorage.findMany({
-              where: (table, { inArray }) =>
-                inArray(table.id, input.attachmentIds),
-            });
+          // Create attachment records if any attachments were uploaded
+          if (allStorageObjects.length > 0) {
+            const attachmentValues = allStorageObjects.map((storageObject) => ({
+              postId: post.id,
+              storageObjectId: storageObject.id,
+              uploadedBy: user.id,
+              fileName:
+                // @ts-expect-error - We check for this existence first. TODO: find the source of this TS error
+                storageObject?.name
+                  ?.split('/')
+                  .slice(-1)[0]
+                  .split('_')
+                  .slice(1)
+                  .join('_') ?? '',
+              mimeType: (storageObject.metadata as { mimetype: string })
+                .mimetype,
+            }));
 
-            // Create attachment records if any attachments were uploaded
-            if (allStorageObjects.length > 0) {
-              const attachmentValues = allStorageObjects.map(
-                (storageObject) => ({
-                  postId: post.id,
-                  storageObjectId: storageObject.id,
-                  uploadedBy: user.id,
-                  fileName:
-                    // @ts-expect-error - We check for this existence first. TODO: find the source of this TS error
-                    storageObject?.name
-                      ?.split('/')
-                      .slice(-1)[0]
-                      .split('_')
-                      .slice(1)
-                      .join('_') ?? '',
-                  mimeType: (storageObject.metadata as { mimetype: string })
-                    .mimetype,
-                }),
-              );
-
-              // @ts-ignore
-              queryPromises.push(
-                tx.insert(attachments).values(attachmentValues),
-              );
-            }
+            // @ts-ignore
+            queryPromises.push(tx.insert(attachments).values(attachmentValues));
           }
 
           // Run attachments and join record in parallel
