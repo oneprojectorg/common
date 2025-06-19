@@ -6,6 +6,8 @@ import { LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { PrivacyPolicyContent } from '../PrivacyPolicyContent';
+
 export const PrivacyPolicyModal = () => {
   const t = useTranslations();
   const [isOpen, setIsOpen] = useState(false);
@@ -34,7 +36,9 @@ export const PrivacyPolicyModal = () => {
               onClick={() => setIsOpen(false)}
             />
           </ModalHeader>
-          <ModalBody>Privacy Policy</ModalBody>
+          <ModalBody>
+            <PrivacyPolicyContent />
+          </ModalBody>
         </Dialog>
       </Modal>
     </DialogTrigger>
