@@ -1,6 +1,8 @@
 'use client';
 
 import { Search, X } from 'lucide-react';
+
+import { LoadingSpinner } from './LoadingSpinner';
 import { useEffect, useRef, useState } from 'react';
 import type { ValidationResult } from 'react-aria-components';
 
@@ -28,6 +30,7 @@ export type MultiSelectComboBoxProps = {
   showDefinitions?: boolean;
   disableParentSelection?: boolean;
   enableLocalSearch?: boolean;
+  isLoading?: boolean;
 };
 
 export const MultiSelectComboBox = ({
@@ -43,6 +46,7 @@ export const MultiSelectComboBox = ({
   showDefinitions = false,
   disableParentSelection = true,
   enableLocalSearch = true,
+  isLoading = false,
 }: MultiSelectComboBoxProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
@@ -349,7 +353,11 @@ export const MultiSelectComboBox = ({
               style={{ minWidth: 40 }}
             />
             <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-neutral-charcoal">
-              <Search className="size-4" />
+              {isLoading ? (
+                <LoadingSpinner className="size-4" color="gray" />
+              ) : (
+                <Search className="size-4" />
+              )}
             </span>
           </div>
           <FieldError>{errorMessage}</FieldError>
