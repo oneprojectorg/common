@@ -67,13 +67,14 @@ export const cache = async <T = any>({
   };
 }): Promise<T> => {
   const cacheKey = getCacheKey(type, appKey, params);
-  const { ttl = MEMCACHE_EXPIRE, storeNulls = false } = options;
+  const { ttl, storeNulls = false } = options;
 
   // try memcache first
   if (memCache.has(cacheKey)) {
     const cachedVal = memCache.get(cacheKey);
 
-    if (Date.now() - cachedVal.createdAt < ttl) {
+    const memCacheExpire = ttl ? ttl : MEMCACHE_EXPIRE;
+    if (Date.now() - cachedVal.createdAt < memCacheExpire) {
       log.info('CACHE: memory');
       return cachedVal.data;
     }
@@ -95,7 +96,7 @@ export const cache = async <T = any>({
     memCache.set(cacheKey, { createdAt: Date.now(), data: newData });
     // don't cache if we couldn't find the record (?)
     // TTL in redis is in seconds
-    waitUntil(set(cacheKey, newData, ttl / 1000));
+    waitUntil(set(cacheKey, newData, ttl ? ttl / 1000 : 24 * 60 * 60 * 1000)); // 24h default cache
   } else if (storeNulls) {
     // This allows us to store negative values in the memcache to improve rejections as well (and avoid DB calls for repeated rejections)
     memCache.set(cacheKey, { createdAt: Date.now(), data: null });
