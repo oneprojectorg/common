@@ -42,6 +42,7 @@ const DEFAULT_MAX_SIZE = 4 * 1024 * 1024; // 4MB
 
 const DEFAULT_ACCEPTED_TYPES = [
   'image/png',
+  'image/gif',
   'image/jpeg',
   'image/webp',
   'application/pdf',

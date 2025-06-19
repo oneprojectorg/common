@@ -14,6 +14,7 @@ const ALLOWED_MIME_TYPES = [
   'image/png',
   'image/jpeg',
   'image/webp',
+  'image/gif',
   'application/pdf',
 ];
 
@@ -112,7 +113,7 @@ export const uploadPostAttachment = router({
           cookieOptions: {},
           cookies: {
             getAll: async () => [],
-            setAll: async () => { },
+            setAll: async () => {},
           },
         },
       );

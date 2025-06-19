@@ -41,7 +41,13 @@ const PostUpdateWithUser = ({
 
   const fileUpload = useFileUpload({
     organizationId: organization.id,
-    acceptedTypes: ['image/png', 'image/jpeg', 'image/webp', 'application/pdf'],
+    acceptedTypes: [
+      'image/gif',
+      'image/png',
+      'image/jpeg',
+      'image/webp',
+      'application/pdf',
+    ],
     maxFiles: 1,
   });
 
@@ -239,6 +245,7 @@ const PostUpdateWithUser = ({
                 input.type = 'file';
                 input.accept = [
                   'image/png',
+                  'image/gif',
                   'image/jpeg',
                   'image/webp',
                   'application/pdf',
