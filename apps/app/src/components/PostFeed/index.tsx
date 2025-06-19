@@ -1,5 +1,5 @@
 import { getPublicUrl } from '@/utils';
-import { detectLinks } from '@/utils/linkDetection';
+import { detectLinks, linkifyText } from '@/utils/linkDetection';
 import type { PostToOrganization } from '@op/api/encoders';
 import { AvatarSkeleton } from '@op/ui/Avatar';
 import { Header3 } from '@op/ui/Header';
@@ -163,7 +163,7 @@ export const PostFeed = ({
                     ) : null}
                   </FeedHeader>
                   <FeedContent>
-                    {post?.content}
+                    {post?.content ? linkifyText(post.content) : null}
                     {post.attachments
                       ? post.attachments.map(({ fileName, storageObject }) => {
                           const { mimetype } = storageObject.metadata;
