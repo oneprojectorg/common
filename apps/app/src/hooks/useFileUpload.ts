@@ -25,6 +25,7 @@ const DEFAULT_ACCEPTED_TYPES = [
   'image/png',
   'image/jpeg',
   'image/webp',
+  'image/gif',
   'application/pdf',
 ];
 const DEFAULT_MAX_FILES = 10;
@@ -122,9 +123,9 @@ export const useFileUpload = (options: UseFileUploadOptions) => {
         prev.map((f) =>
           f.id === previewId
             ? {
-              ...f,
-              uploading: false,
-            }
+                ...f,
+                uploading: false,
+              }
             : f,
         ),
       );
