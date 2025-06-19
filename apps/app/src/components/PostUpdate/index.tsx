@@ -45,9 +45,9 @@ const PostUpdateWithUser = ({
   });
 
   const createPost = trpc.organization.createPost.useMutation({
-    onMutate: (newPost) => {
+    onMutate: async (newPost) => {
       // Cancel any outgoing refetches for the posts query
-      // await utils.organization.listPosts.cancel();
+      await utils.organization.listPosts.cancel();
       // Snapshot the previous list of posts
       const previousPosts = utils.organization.listPosts.getData({
         slug: organization.profile.slug,
@@ -94,8 +94,11 @@ const PostUpdateWithUser = ({
       );
     },
     onSettled: () => {
-      void utils.organization.listPosts.invalidate({ slug: organization.profile.slug });
+      void utils.organization.listPosts.invalidate({
+        slug: organization.profile.slug,
+      });
       utils.organization.invalidate();
+      utils.organization.listPosts.refetch();
       // Refresh server-side components
       router.refresh();
     },

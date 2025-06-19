@@ -1,5 +1,12 @@
 import { relations, sql } from 'drizzle-orm';
-import { index, pgTable, text, uuid, varchar } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  index,
+  pgTable,
+  text,
+  uuid,
+  varchar,
+} from 'drizzle-orm/pg-core';
 import { authUsers } from 'drizzle-orm/supabase';
 
 import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
@@ -28,6 +35,8 @@ export const users = pgTable(
     lastOrgId: uuid().references(() => organizations.id, {
       onDelete: 'set null',
     }),
+    tos: boolean(),
+    privacy: boolean(),
     ...timestamps,
   },
   (table) => [
