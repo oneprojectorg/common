@@ -14,7 +14,7 @@ import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';
 import { Fragment, ReactNode } from 'react';
-import { LuEllipsis, LuLeaf, LuTrash2 } from 'react-icons/lu';
+import { LuEllipsis, LuLeaf } from 'react-icons/lu';
 
 import { Link } from '@/lib/i18n';
 
@@ -135,7 +135,7 @@ export const PostFeed = ({
   withLinks = true,
 }: {
   posts: Array<PostToOrganization>;
-  user: OrganizationUser;
+  user?: OrganizationUser;
   className?: string;
   withLinks?: boolean;
 }) => {
