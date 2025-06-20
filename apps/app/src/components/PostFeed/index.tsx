@@ -1,16 +1,14 @@
 import { getPublicUrl } from '@/utils';
 import { OrganizationUser } from '@/utils/UserProvider';
 import { detectLinks, linkifyText } from '@/utils/linkDetection';
-import { trpc } from '@op/api/client';
 import type { PostToOrganization } from '@op/api/encoders';
 import { AvatarSkeleton } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
 import { Header3 } from '@op/ui/Header';
 import { MediaDisplay } from '@op/ui/MediaDisplay';
-import { Menu, MenuItem, MenuTrigger } from '@op/ui/Menu';
+import { MenuTrigger } from '@op/ui/Menu';
 import { Popover } from '@op/ui/Popover';
 import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
-import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';
 import { Fragment, ReactNode } from 'react';
@@ -20,6 +18,7 @@ import { Link } from '@/lib/i18n';
 
 import { LinkPreview } from '../LinkPreview';
 import { OrganizationAvatar } from '../OrganizationAvatar';
+import { DeletePost } from './DeletePost';
 
 // TODO: generated this quick with AI. refactor it!
 const formatRelativeTime = (timestamp: Date | string | number): string => {
@@ -139,25 +138,6 @@ export const PostFeed = ({
   className?: string;
   withLinks?: boolean;
 }) => {
-  const utils = trpc.useUtils();
-
-  const deletePost = trpc.organization.deletePost.useMutation({
-    onSuccess: () => {
-      toast.success({ message: 'Post deleted' });
-      void utils.organization.listPosts.invalidate();
-    },
-    onError: (error) => {
-      toast.error({ message: error.message || 'Failed to delete post' });
-    },
-  });
-
-  const handleDeletePost = (postId: string, organizationId: string) => {
-    deletePost.mutate({
-      id: postId,
-      organizationId,
-    });
-    utils.organization.listPosts.invalidate();
-  };
   return (
     <div className={cn('flex flex-col gap-4 pb-8', className)}>
       {posts.length > 0 ? (
@@ -202,15 +182,12 @@ export const PostFeed = ({
                             <LuEllipsis className="size-4" />
                           </Button>
                           <Popover placement="bottom end">
-                            <Menu
-                              onAction={() => {
-                                if (post?.id && organization?.id) {
-                                  handleDeletePost(post.id, organization.id);
-                                }
-                              }}
-                            >
-                              <MenuItem key="delete">Delete</MenuItem>
-                            </Menu>
+                            {post?.id && organization?.id ? (
+                              <DeletePost
+                                postId={post.id}
+                                organizationId={organization.id}
+                              />
+                            ) : null}
                           </Popover>
                         </MenuTrigger>
                       )}
