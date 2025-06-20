@@ -1,15 +1,20 @@
 import { getPublicUrl } from '@/utils';
 import { OrganizationUser } from '@/utils/UserProvider';
 import { detectLinks, linkifyText } from '@/utils/linkDetection';
+import { trpc } from '@op/api/client';
 import type { PostToOrganization } from '@op/api/encoders';
 import { AvatarSkeleton } from '@op/ui/Avatar';
+import { Button } from '@op/ui/Button';
 import { Header3 } from '@op/ui/Header';
 import { MediaDisplay } from '@op/ui/MediaDisplay';
+import { Menu, MenuItem, MenuTrigger } from '@op/ui/Menu';
+import { Popover } from '@op/ui/Popover';
 import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
+import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';
 import { Fragment, ReactNode } from 'react';
-import { LuEllipsis, LuLeaf } from 'react-icons/lu';
+import { LuEllipsis, LuLeaf, LuTrash2 } from 'react-icons/lu';
 
 import { Link } from '@/lib/i18n';
 
@@ -134,6 +139,25 @@ export const PostFeed = ({
   className?: string;
   withLinks?: boolean;
 }) => {
+  const utils = trpc.useUtils();
+
+  const deletePost = trpc.organization.deletePost.useMutation({
+    onSuccess: () => {
+      toast.success({ message: 'Post deleted' });
+      void utils.organization.listPosts.invalidate();
+    },
+    onError: (error) => {
+      toast.error({ message: error.message || 'Failed to delete post' });
+    },
+  });
+
+  const handleDeletePost = (postId: string, organizationId: string) => {
+    deletePost.mutate({
+      id: postId,
+      organizationId,
+    });
+    utils.organization.listPosts.invalidate();
+  };
   return (
     <div className={cn('flex flex-col gap-4 pb-8', className)}>
       {posts.length > 0 ? (
@@ -149,24 +173,47 @@ export const PostFeed = ({
                   className="!size-8 max-h-8 max-w-8"
                 />
                 <FeedMain>
-                  <FeedHeader>
-                    <Header3 className="pt-2 font-medium leading-3">
-                      {withLinks ? (
-                        <Link href={`/org/${organization?.profile.slug}`}>
-                          {organization?.profile.name}
-                        </Link>
-                      ) : (
-                        organization?.profile.name
+                  <FeedHeader className="w-full justify-between">
+                    <div className="flex items-baseline gap-2">
+                      <Header3 className="pt-2 font-medium leading-3">
+                        {withLinks ? (
+                          <Link href={`/org/${organization?.profile.slug}`}>
+                            {organization?.profile.name}
+                          </Link>
+                        ) : (
+                          organization?.profile.name
+                        )}
+                      </Header3>
+                      {post?.createdAt ? (
+                        <span className="text-xs text-neutral-gray4">
+                          {formatRelativeTime(post?.createdAt)}
+                        </span>
+                      ) : null}
+                    </div>
+                    {organization?.id === user?.currentOrganization?.id &&
+                      post?.id && (
+                        <MenuTrigger>
+                          <Button
+                            color="neutral"
+                            variant="icon"
+                            size="small"
+                            className="size-4 border-0 p-0 outline-0"
+                          >
+                            <LuEllipsis className="size-4" />
+                          </Button>
+                          <Popover placement="bottom end">
+                            <Menu
+                              onAction={() => {
+                                if (post?.id && organization?.id) {
+                                  handleDeletePost(post.id, organization.id);
+                                }
+                              }}
+                            >
+                              <MenuItem key="delete">Delete</MenuItem>
+                            </Menu>
+                          </Popover>
+                        </MenuTrigger>
                       )}
-                    </Header3>
-                    {post?.createdAt ? (
-                      <span className="text-xs text-neutral-gray4">
-                        {formatRelativeTime(post?.createdAt)}
-                      </span>
-                    ) : null}
-                    {organization?.id === user?.currentOrganization?.id && (
-                      <LuEllipsis className="size-4" />
-                    )}
                   </FeedHeader>
                   <FeedContent>
                     {post?.content ? linkifyText(post.content) : null}
