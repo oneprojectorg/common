@@ -1,4 +1,5 @@
 import { getPublicUrl } from '@/utils';
+import { OrganizationUser } from '@/utils/UserProvider';
 import { detectLinks, linkifyText } from '@/utils/linkDetection';
 import type { PostToOrganization } from '@op/api/encoders';
 import { AvatarSkeleton } from '@op/ui/Avatar';
@@ -8,7 +9,7 @@ import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';
 import { Fragment, ReactNode } from 'react';
-import { LuLeaf } from 'react-icons/lu';
+import { LuEllipsis, LuLeaf } from 'react-icons/lu';
 
 import { Link } from '@/lib/i18n';
 
@@ -124,10 +125,12 @@ export const FeedMain = ({
 
 export const PostFeed = ({
   posts,
+  user,
   className,
   withLinks = true,
 }: {
   posts: Array<PostToOrganization>;
+  user: OrganizationUser;
   className?: string;
   withLinks?: boolean;
 }) => {
@@ -161,6 +164,9 @@ export const PostFeed = ({
                         {formatRelativeTime(post?.createdAt)}
                       </span>
                     ) : null}
+                    {organization?.id === user?.currentOrganization?.id && (
+                      <LuEllipsis className="size-4" />
+                    )}
                   </FeedHeader>
                   <FeedContent>
                     {post?.content ? linkifyText(post.content) : null}

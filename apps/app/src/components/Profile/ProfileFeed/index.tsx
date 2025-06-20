@@ -1,5 +1,6 @@
 'use client';
 
+import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
 import { useInfiniteScroll } from '@op/hooks';
@@ -17,6 +18,7 @@ export const ProfileFeed = ({
   className?: string;
   limit?: number;
 }) => {
+  const { user } = useUser();
   const {
     data: paginatedData,
     fetchNextPage,
@@ -59,7 +61,7 @@ export const ProfileFeed = ({
 
   return (
     <div className={className}>
-      <PostFeed posts={allPosts} withLinks={false} />
+      <PostFeed posts={allPosts} user={user} withLinks={false} />
       {shouldShowTrigger && (
         <div
           ref={ref as React.RefObject<HTMLDivElement>}

@@ -19,8 +19,9 @@ import { Welcome } from './Welcome';
 const Feed = async () => {
   const client = await trpcNext();
   const { items: posts } = await client.organization.listAllPosts.query({});
+  const user = await client.account.getMyAccount.query();
 
-  return <PostFeed posts={posts} />;
+  return <PostFeed user={user} posts={posts} />;
 };
 
 const LandingScreenFeeds = ({
