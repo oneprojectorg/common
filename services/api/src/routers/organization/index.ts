@@ -3,6 +3,7 @@ import { addRelationshipRouter } from './addRelationship';
 import { approveRelationshipRouter } from './approveRelationship';
 import { createOrganizationRouter } from './createOrganization';
 import { createPostInOrganization } from './createPostInOrganization';
+import { deletePost } from './deletePost';
 import { declineRelationshipRouter } from './declineRelationship';
 import { getOrganizationRouter } from './getOrganization';
 import { joinOrganization } from './joinOrganization';
@@ -23,6 +24,7 @@ export const organizationRouter = mergeRouters(
   listOrganizationPostsRouter,
   searchOrganizationsRouter,
   createPostInOrganization,
+  deletePost,
   createOrganizationRouter,
   updateOrganizationRouter,
   uploadAvatarImage,
