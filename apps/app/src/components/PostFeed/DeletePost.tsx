@@ -17,6 +17,7 @@ export const DeletePost = ({
     onSuccess: () => {
       toast.success({ message: 'Post deleted' });
       void utils.organization.listPosts.invalidate();
+      void utils.organization.listAllPosts.invalidate();
     },
     onError: (error) => {
       toast.error({ message: error.message || 'Failed to delete post' });
