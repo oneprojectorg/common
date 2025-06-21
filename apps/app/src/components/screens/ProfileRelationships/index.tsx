@@ -24,7 +24,7 @@ const RelationshipList = ({
   organizations: Array<relationshipOrganization>;
 }) => {
   return (
-    <ul className="flex flex-col gap-12">
+    <ul className="flex flex-col gap-12 pb-6">
       {organizations.map((relationshipOrg) => (
         <li className="flex w-full gap-6">
           <div>
@@ -39,7 +39,7 @@ const RelationshipList = ({
                 <div className="h-4 font-semibold">
                   {relationshipOrg.profile.name}
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex flex-wrap items-center gap-1">
                   {relationshipOrg.relationships?.map(
                     (relationship, i, arr) => (
                       <>
