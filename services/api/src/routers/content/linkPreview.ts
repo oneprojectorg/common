@@ -1,3 +1,4 @@
+import { cache } from '@op/cache';
 import { z } from 'zod';
 
 import { loggedProcedure, router } from '../../trpcFactory';
@@ -19,6 +20,54 @@ const linkPreviewResponseSchema = z.object({
   error: z.string().optional(),
 });
 
+const getLinkPreview = async (url: string) => {
+  try {
+    const apiKey = process.env.IFRAMELY_API_KEY;
+
+    if (!apiKey) {
+      return {
+        url,
+        error: 'Iframely API key not configured',
+      };
+    }
+
+    // TODO: add caching
+    const response = await fetch(
+      `https://cdn.iframe.ly/api/iframely?omit_script=1&consent=1&url=${encodeURIComponent(url)}&api_key=${apiKey}`,
+    );
+
+    if (!response.ok) {
+      return {
+        url,
+        error: `Failed to fetch preview: ${response.status}`,
+      };
+    }
+
+    const data = await response.json();
+
+    return {
+      url,
+      meta: data.meta
+        ? {
+            title: data.meta.title,
+            description: data.meta.description,
+            author: data.meta.author,
+            site: data.meta.site,
+          }
+        : undefined,
+      html: data.html,
+      thumbnail_url: data.thumbnail_url,
+      provider_name: data.provider_name,
+      provider_url: data.provider_url,
+    };
+  } catch (error) {
+    return {
+      url,
+      error: error instanceof Error ? error.message : 'Unknown error occurred',
+    };
+  }
+};
+
 export const linkPreview = router({
   linkPreview: loggedProcedure
     .input(
@@ -28,51 +77,15 @@ export const linkPreview = router({
     )
     .output(linkPreviewResponseSchema)
     .query(async ({ input }) => {
-      try {
-        const apiKey = process.env.IFRAMELY_API_KEY;
+      const result = await cache({
+        type: 'linkPreview',
+        params: [input.url],
+        fetch: () => getLinkPreview(input.url),
+        options: {
+          ttl: 30 * 24 * 60 * 60 * 1000,
+        },
+      });
 
-        if (!apiKey) {
-          return {
-            url: input.url,
-            error: 'Iframely API key not configured',
-          };
-        }
-
-        // TODO: add caching
-        const response = await fetch(
-          `https://cdn.iframe.ly/api/iframely?omit_script=1&consent=1&url=${encodeURIComponent(input.url)}&api_key=${apiKey}`,
-        );
-
-        if (!response.ok) {
-          return {
-            url: input.url,
-            error: `Failed to fetch preview: ${response.status}`,
-          };
-        }
-
-        const data = await response.json();
-
-        return {
-          url: input.url,
-          meta: data.meta
-            ? {
-                title: data.meta.title,
-                description: data.meta.description,
-                author: data.meta.author,
-                site: data.meta.site,
-              }
-            : undefined,
-          html: data.html,
-          thumbnail_url: data.thumbnail_url,
-          provider_name: data.provider_name,
-          provider_url: data.provider_url,
-        };
-      } catch (error) {
-        return {
-          url: input.url,
-          error:
-            error instanceof Error ? error.message : 'Unknown error occurred',
-        };
-      }
+      return result;
     }),
 });
