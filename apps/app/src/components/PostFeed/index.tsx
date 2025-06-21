@@ -165,7 +165,7 @@ export const PostFeed = ({
                         )}
                       </Header3>
                       {post?.createdAt ? (
-                        <span className="text-xs text-neutral-gray4">
+                        <span className="text-sm text-neutral-gray4">
                           {formatRelativeTime(post?.createdAt)}
                         </span>
                       ) : null}
