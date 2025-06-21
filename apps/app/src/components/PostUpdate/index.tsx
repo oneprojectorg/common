@@ -200,11 +200,11 @@ const PostUpdateWithUser = ({
                       )}
                       <Button
                         onPress={() => fileUpload.removeFile(filePreview.id)}
-                        className="absolute right-2 top-2"
+                        className="absolute right-2 top-2 size-6 rounded-full p-0 opacity-80 hover:opacity-100 focus:outline-1"
                         size="small"
                         color="neutral"
                       >
-                        <LuX className="size-3" />
+                        <LuX className="size-4" />
                       </Button>
                     </div>
                   ) : (
