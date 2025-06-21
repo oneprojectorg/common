@@ -24,6 +24,7 @@ if (REDIS_URL) {
 
 const TypeMap = {
   search: 'search',
+  geonames: 'geonames',
   organization: 'org',
   allowList: 'allowList',
 };
