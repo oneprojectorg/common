@@ -6,7 +6,7 @@ import { Breadcrumb, Breadcrumbs } from '@op/ui/Breadcrumbs';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
 import { ErrorBoundary } from 'next/dist/client/components/error-boundary';
-import React, { Suspense } from 'react';
+import React, { Suspense, useMemo } from 'react';
 import { LuArrowLeft } from 'react-icons/lu';
 
 import { Link } from '@/lib/i18n';
@@ -84,6 +84,16 @@ const ProfileRelationshipsSuspense = ({ slug }: { slug: string }) => {
       organizationId: organization.id,
     });
 
+  const fundingOrgs = useMemo(
+    () =>
+      organizations.filter((org) =>
+        org.relationships?.some(
+          (relationship) => relationship.relationshipType === 'funding',
+        ),
+      ),
+    [organizations],
+  );
+
   return (
     <>
       <div className="flex flex-col gap-4 px-4 sm:px-0">
@@ -98,10 +108,15 @@ const ProfileRelationshipsSuspense = ({ slug }: { slug: string }) => {
       <Tabs>
         <TabList className="px-4 sm:px-0">
           <Tab id="all">All relationships</Tab>
+          {fundingOrgs.length > 0 ? <Tab id="funding">Funders</Tab> : null}
         </TabList>
 
         <TabPanel id="all" className="px-4 sm:px-0">
           <RelationshipList organizations={organizations} />
+        </TabPanel>
+
+        <TabPanel id="funding" className="px-4 sm:px-0">
+          <RelationshipList organizations={fundingOrgs} />
         </TabPanel>
       </Tabs>
     </>
