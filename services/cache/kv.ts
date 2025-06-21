@@ -27,6 +27,7 @@ const TypeMap = {
   geonames: 'geonames',
   organization: 'org',
   allowList: 'allowList',
+  linkPreview: 'linkPreview',
 };
 
 const getCacheKey = (
