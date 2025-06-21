@@ -381,7 +381,7 @@ importers:
         version: 0.1.3(@axiomhq/js@1.3.1)
       '@axiomhq/nextjs':
         specifier: ^0.1.3
-        version: 0.1.3(@axiomhq/logging@0.1.3(@axiomhq/js@1.3.1))(next@15.3.0(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.85.1))
+        version: 0.1.3(@axiomhq/logging@0.1.3(@axiomhq/js@1.3.1))(next@15.3.0(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-e1e972c-20250221)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.85.1))
       '@axiomhq/react':
         specifier: ^0.1.3
         version: 0.1.3(@axiomhq/logging@0.1.3(@axiomhq/js@1.3.1))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -513,6 +513,10 @@ importers:
   configs/typescript-config: {}
 
   packages/common:
+    dependencies:
+      p-map:
+        specifier: ^7.0.3
+        version: 7.0.3
     devDependencies:
       '@op/cache':
         specifier: workspace:*
@@ -590,7 +594,7 @@ importers:
         version: 0.1.3(@axiomhq/js@1.3.1)
       '@axiomhq/nextjs':
         specifier: ^0.1.3
-        version: 0.1.3(@axiomhq/logging@0.1.3(@axiomhq/js@1.3.1))(next@15.3.0(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.85.1))
+        version: 0.1.3(@axiomhq/logging@0.1.3(@axiomhq/js@1.3.1))(next@15.3.0(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-e1e972c-20250221)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.85.1))
       '@axiomhq/react':
         specifier: ^0.1.3
         version: 0.1.3(@axiomhq/logging@0.1.3(@axiomhq/js@1.3.1))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -6297,6 +6301,10 @@ packages:
     resolution: {integrity: sha512-LaNjtRWUBY++zB5nE/NwcaoMylSPk+S+ZHNB1TzdbMJMny6dynpAGt7X/tl/QYq3TIeE6nxHppbo2LGymrG5Pw==}
     engines: {node: '>=10'}
 
+  p-map@7.0.3:
+    resolution: {integrity: sha512-VkndIv2fIB99swvQoA65bm+fsmt6UNdGeIB0oxBs+WhAhdh08QA04JXpI7rbB9r08/nkbysKoya9rtDERYOYMA==}
+    engines: {node: '>=18'}
+
   p-queue@8.1.0:
     resolution: {integrity: sha512-mxLDbbGIBEXTJL0zEx8JIylaj3xQ7Z/7eEVjcF9fJX4DBiH9oqe+oahYnlKKxm0Ci9TlWTyhSHgygxMxjIB2jw==}
     engines: {node: '>=18'}
@@ -7990,7 +7998,7 @@ snapshots:
     optionalDependencies:
       '@axiomhq/js': 1.3.1
 
-  '@axiomhq/nextjs@0.1.3(@axiomhq/logging@0.1.3(@axiomhq/js@1.3.1))(next@15.3.0(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.85.1))':
+  '@axiomhq/nextjs@0.1.3(@axiomhq/logging@0.1.3(@axiomhq/js@1.3.1))(next@15.3.0(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-e1e972c-20250221)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.85.1))':
     dependencies:
       '@axiomhq/logging': 0.1.3(@axiomhq/js@1.3.1)
       next: 15.3.0(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-e1e972c-20250221)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.85.1)
@@ -13689,6 +13697,8 @@ snapshots:
   p-locate@5.0.0:
     dependencies:
       p-limit: 3.1.0
+
+  p-map@7.0.3: {}
 
   p-queue@8.1.0:
     dependencies:

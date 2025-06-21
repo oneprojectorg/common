@@ -15,5 +15,8 @@
     "@op/db": "workspace:*",
     "@op/supabase": "workspace:*",
     "@op/typescript-config": "workspace:*"
+  },
+  "dependencies": {
+    "p-map": "^7.0.3"
   }
 }

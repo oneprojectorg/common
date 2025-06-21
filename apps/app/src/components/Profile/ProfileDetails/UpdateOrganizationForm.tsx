@@ -40,7 +40,7 @@ const transformOrganizationToFormData = (org: Organization, terms?: any) => {
         return {
           id: item.id,
           label: item.name,
-          data: item.metadata || {},
+          data: item || {},
         };
       }) || [],
     focusAreas: focusAreas.map((item: any) => ({

@@ -25,11 +25,13 @@ export const baseOrganizationSchema = z.object({
   orgType: z.string().max(200, { message: 'Must be at most 20 characters' }),
   bio: z.string().max(1500, { message: 'Must be at most 1500 characters' }),
   mission: z.string().max(1500, { message: 'Must be at most 1500 characters' }),
-  whereWeWork: z.array(
-    multiSelectOptionValidator.extend({
-      data: locationEncoder,
-    }),
-  ),
+  whereWeWork: z
+    .array(
+      multiSelectOptionValidator.extend({
+        data: locationEncoder,
+      }),
+    )
+    .optional(),
   focusAreas: z.array(multiSelectOptionValidator),
   communitiesServed: z.array(multiSelectOptionValidator),
   strategies: z.array(multiSelectOptionValidator),
