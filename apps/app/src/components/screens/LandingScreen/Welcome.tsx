@@ -15,9 +15,12 @@ export const Welcome = ({
   const isNew = useMemo(() => {
     return searchParams.get('new') === '1';
   }, []);
+
+  const name = user.name ? `, ${user.name}` : ` to Common`;
+
   return (
     <Header1 className="text-center text-title-md sm:text-title-xl">
-      {isNew ? `Welcome, ${user.name}!` : `Welcome back, ${user.name}!`}
+      {isNew ? `Welcome${name}!` : `Welcome back${name}!`}
     </Header1>
   );
 };
