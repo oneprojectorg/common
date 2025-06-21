@@ -147,7 +147,7 @@ export const MatchingOrganizationsForm = ({
           </Button>
       */}
             <Button
-              className="sm:w-full"
+              className="w-full"
               onPress={handleContinue}
               isDisabled={!selectedOrganizationId || joinOrganization.isPending}
             >
@@ -159,10 +159,10 @@ export const MatchingOrganizationsForm = ({
             </Button>
           </div>
           <Link
-            className="text-teal hover:underline"
+            className="text-center text-teal hover:underline"
             href="mailto:support@oneproject.org"
           >
-            {t('Whoops! This is not my organization')}
+            {t('Whoops! This is not my organization.')}
           </Link>
         </div>
       </FormContainer>
