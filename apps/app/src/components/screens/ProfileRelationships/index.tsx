@@ -31,14 +31,14 @@ const RelationshipList = ({
             <OrganizationAvatar organization={relationshipOrg} />
           </div>
           <div>
-            <Link
-              className="flex flex-col gap-3 text-neutral-black"
-              href={`/org/${relationshipOrg.profile.slug}`}
-            >
+            <div className="flex flex-col gap-3 text-neutral-black">
               <div className="flex flex-col gap-2">
-                <div className="h-4 font-semibold">
+                <Link
+                  className="h-4 font-semibold"
+                  href={`/org/${relationshipOrg.profile.slug}`}
+                >
                   {relationshipOrg.profile.name}
-                </div>
+                </Link>
                 <div className="flex flex-wrap items-center gap-1">
                   {relationshipOrg.relationships?.map(
                     (relationship, i, arr) => (
@@ -66,7 +66,7 @@ const RelationshipList = ({
               <div className="flex items-center gap-1 text-neutral-charcoal">
                 {relationshipOrg.profile.bio}
               </div>
-            </Link>
+            </div>
           </div>
         </li>
       ))}
