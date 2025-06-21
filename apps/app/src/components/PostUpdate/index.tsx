@@ -112,6 +112,7 @@ const PostUpdateWithUser = ({
     },
     onSettled: () => {
       void utils.organization.listPosts.invalidate();
+      void utils.organization.listAllPosts.invalidate();
       router.refresh();
     },
   });
