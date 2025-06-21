@@ -14,6 +14,7 @@ type OrganizationWithProfile = Organization & {
 };
 
 export const addRelationship = async ({
+  user,
   from,
   to,
   relationships,
@@ -23,14 +24,14 @@ export const addRelationship = async ({
   to: string;
   relationships: Array<string>;
 }) => {
-  // const orgUser = await getOrgAccessUser({ user, organizationId: from });
+  const orgUser = await getOrgAccessUser({ user, organizationId: from });
 
   // TODO: ALL USERS IN THE ORG ARE ADMIN AT THE MOMENT
   // assertAccess();
 
-  // if (!orgUser) {
-  // throw new UnauthorizedError('You are not a member of this organization');
-  // }
+  if (!orgUser) {
+    throw new UnauthorizedError('You are not a member of this organization');
+  }
 
   await db.transaction(async (tx) => {
     await Promise.all(

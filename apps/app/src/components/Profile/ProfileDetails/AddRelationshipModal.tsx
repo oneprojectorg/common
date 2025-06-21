@@ -108,6 +108,32 @@ export const AddRelationshipModalSuspense = ({
                         />
                       </DialogTrigger>
                     );
+                  case 'affiliation':
+                    return (
+                      <DialogTrigger>
+                        <Button className="w-full sm:w-auto" color="secondary">
+                          {relationship.pending ? <LuClock /> : <LuCheck />}
+                          Affiliate
+                        </Button>
+                        <Tooltip>
+                          {relationship.pending &&
+                            `Pending confirmation from ${profile.profile.name}`}
+                        </Tooltip>
+                        <RemoveRelationshipModal
+                          relationship={relationship}
+                          onChange={() => {
+                            utils.organization.listRelationships.invalidate({
+                              organizationId: profile.id,
+                            });
+                            utils.organization.listDirectedRelationships.invalidate(
+                              {
+                                to: profile.id,
+                              },
+                            );
+                          }}
+                        />
+                      </DialogTrigger>
+                    );
                   default:
                     return (
                       <DialogTrigger>
