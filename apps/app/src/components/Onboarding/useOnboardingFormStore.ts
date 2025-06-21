@@ -23,6 +23,7 @@ export const useOnboardingFormStore = create<OnboardingFormState>()(
   persist(
     (set) => ({
       step: 0,
+      matchingOrganizations: undefined,
       personalDetails: undefined,
       organizationDetails: undefined,
       fundingInformation: undefined,

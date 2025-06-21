@@ -5,13 +5,15 @@ import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Surface } from '@op/ui/Surface';
 import { cn } from '@op/ui/utils';
 import { useRouter } from 'next/navigation';
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode, Suspense, useEffect, useState } from 'react';
 import { LuGlobe, LuMail } from 'react-icons/lu';
 import { z } from 'zod';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
 import { ContactLink } from '../ContactLink';
+import ErrorBoundary from '../ErrorBoundary';
+import { ErrorMessage } from '../ErrorMessage';
 import { StepProps } from '../MultiStepForm';
 import { OrganizationAvatar } from '../OrganizationAvatar';
 import { FormContainer } from '../form/FormContainer';
@@ -19,15 +21,19 @@ import { FormHeader } from '../form/FormHeader';
 
 export const validator = z.object({});
 
+type MatchingOrganizationsFormProps = StepProps & {
+  className?: string;
+};
+
 export const MatchingOrganizationsForm = ({
   onNext,
   // onBack,
   className,
-}: StepProps & { className?: string }): ReactNode => {
+}: MatchingOrganizationsFormProps): ReactNode => {
   const t = useTranslations();
   const router = useRouter();
-  const { data: matchingOrgs, isLoading } =
-    trpc.account.listMatchingDomainOrganizations.useQuery();
+  const [matchingOrgs] =
+    trpc.account.listMatchingDomainOrganizations.useSuspenseQuery();
 
   const joinOrganization = trpc.organization.join.useMutation();
   const trpcUtil = trpc.useUtils();
@@ -38,14 +44,14 @@ export const MatchingOrganizationsForm = ({
   // If no matching organizations, automatically proceed to next step
   // If there are organizations, select the first one by default
   useEffect(() => {
-    if (!isLoading && matchingOrgs) {
+    if (matchingOrgs) {
       if (matchingOrgs.length === 0) {
         onNext({});
       } else if (matchingOrgs.length > 0 && !selectedOrganizationId) {
         setSelectedOrganizationId(matchingOrgs[0]?.id);
       }
     }
-  }, [isLoading, matchingOrgs]);
+  }, [matchingOrgs]);
 
   const handleContinue = async () => {
     if (!selectedOrganizationId) {
@@ -74,22 +80,9 @@ export const MatchingOrganizationsForm = ({
   // onNext({});
   // };
 
-  // Show loading while fetching
-  if (isLoading) {
-    return (
-      <div className={className}>
-        <FormContainer>
-          <div className="flex items-center justify-center py-8">
-            <LoadingSpinner />
-          </div>
-        </FormContainer>
-      </div>
-    );
-  }
-
   // Don't render if no organizations (useEffect will handle navigation)
   if (!matchingOrgs || matchingOrgs.length === 0) {
-    return null;
+    return <LoadingSpinner />;
   }
 
   return (
@@ -174,5 +167,27 @@ export const MatchingOrganizationsForm = ({
         </div>
       </FormContainer>
     </div>
+  );
+};
+
+export const MatchingOrganizationsFormSuspense = (
+  props: MatchingOrganizationsFormProps,
+) => {
+  return (
+    <ErrorBoundary fallback={<ErrorMessage />}>
+      <Suspense
+        fallback={
+          <div className={props.className}>
+            <FormContainer>
+              <div className="flex items-center justify-center py-8">
+                <LoadingSpinner />
+              </div>
+            </FormContainer>
+          </div>
+        }
+      >
+        <MatchingOrganizationsForm {...props} />
+      </Suspense>
+    </ErrorBoundary>
   );
 };

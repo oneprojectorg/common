@@ -15,7 +15,7 @@ import {
   validator as FundingInformationFormValidator,
 } from './FundingInformationForm';
 import {
-  MatchingOrganizationsForm,
+  MatchingOrganizationsFormSuspense,
   validator as MatchingOrganizationsFormValidator,
 } from './MatchingOrganizationsForm';
 import { OrganizationDetailsForm } from './OrganizationDetailsForm';
@@ -56,6 +56,7 @@ export const OnboardingFlow = () => {
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [hasHydrated, setHasHydrated] = useState(false);
   const createOrganization = trpc.organization.create.useMutation();
+  void trpc.account.listMatchingDomainOrganizations.usePrefetchQuery();
   const router = useRouter();
   const {
     reset,
@@ -148,11 +149,11 @@ export const OnboardingFlow = () => {
     return <LoadingSpinner />;
   }
 
-  return (
+  return hasHydrated ? (
     <MultiStepForm
       steps={[
         PersonalDetailsForm,
-        MatchingOrganizationsForm,
+        MatchingOrganizationsFormSuspense,
         OrganizationDetailsForm,
         FundingInformationForm,
         ToSForm,
@@ -171,5 +172,7 @@ export const OnboardingFlow = () => {
       getStepValues={getStepValues}
       hasHydrated={hasHydrated}
     />
+  ) : (
+    <LoadingSpinner />
   );
 };
