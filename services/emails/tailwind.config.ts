@@ -10,6 +10,7 @@ export default {
     },
     fontFamily: {
       sans: [
+        'Roboto',
         'Helvetica Neue',
         'Helvetica',
         'Arial',

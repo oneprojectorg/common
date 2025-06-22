@@ -7,11 +7,11 @@ import EmailTemplate from '../components/EmailTemplate';
 const OPLoginCodeEmail = () => {
   return (
     <EmailTemplate previewText="Time to get you logged in! 🔑">
-      <Heading className="!my-0 mx-0 p-0 text-left font-serif text-[28px]">
+      <Heading className="!my-0 mx-0 p-0 text-left font-serif text-[28px] font-light tracking-[-0.02625rem] text-[#222D38]">
         Login
       </Heading>
-      <Section className="mb-6">
-        <Text className="mt-8 text-sm">
+      <Section className="pb-0 font-sans">
+        <Text className="pb-6 pt-8 text-sm">
           Your login code is ready below. Enter it in your open browser window,
           and we’ll get you signed in.
         </Text>
@@ -29,9 +29,9 @@ const OPLoginCodeEmail = () => {
         </code>
       </Section>
 
-      <Text className="text-xs text-[#606A6C]">
-        This code will only be valid for the next 10 minutes. <br /> If you’re
-        having problems, send us an{' '}
+      <Text className="mb-0 text-xs text-[#606A6C]">
+        This code will only be valid for the next 10 minutes. If you’re having
+        problems, send us an{' '}
         <Link href={`mailto:${OP_EMAIL_HELP}`} className="text-[#0396A6]">
           email
         </Link>

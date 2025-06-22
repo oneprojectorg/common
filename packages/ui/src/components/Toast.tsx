@@ -22,7 +22,7 @@ export const Toast = () => {
       toastOptions={{
         classNames: {
           toast:
-            'group font-serif relative text-5 toast bg-white rounded-lg backdrop-blur-md border border-neutral-gray1 text-neutral-black p-3 flex gap-3',
+            'group relative text-5 toast bg-white rounded-lg backdrop-blur-md border border-neutral-gray1 text-neutral-black p-3 flex gap-3',
           description: 'text-neutral-charcoal',
           actionButton:
             'group-[.toast]:bg-primary group-[.toast]:text-primary-foreground',
@@ -62,7 +62,7 @@ const ToastBody = ({ children }: { children: React.ReactNode }) => {
 };
 
 const ToastTitle = ({ title }: { title: string }) => {
-  return <div className="text-title-base">{title}</div>;
+  return <div className="font-serif text-title-base">{title}</div>;
 };
 
 export const toast = {
