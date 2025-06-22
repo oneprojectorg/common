@@ -96,7 +96,7 @@ export const MatchingOrganizationsForm = ({
         <div className="flex flex-col items-center space-y-4">
           {matchingOrgs.map((org) => (
             <Surface className="w-full p-4">
-              <label key={org.id} className="flex cursor-pointer gap-4">
+              <label key={org.id} className="flex cursor-default gap-4">
                 <input
                   type="radio"
                   name="selectedOrganization"
@@ -107,7 +107,11 @@ export const MatchingOrganizationsForm = ({
                   }}
                   className="hidden"
                 />
-                <OrganizationAvatar organization={org} className="size-12" />
+                <OrganizationAvatar
+                  organization={org}
+                  withLink={false}
+                  className="size-12"
+                />
                 <div className="flex flex-col gap-2">
                   <Header3 className="text-base text-neutral-charcoal">
                     {org.profile.name}

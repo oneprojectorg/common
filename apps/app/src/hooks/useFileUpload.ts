@@ -29,7 +29,7 @@ const DEFAULT_ACCEPTED_TYPES = [
   'application/pdf',
 ];
 const DEFAULT_MAX_FILES = 10;
-const DEFAULT_MAX_SIZE = 4 * 1024 * 1024; // 4MB
+export const DEFAULT_MAX_SIZE = 4 * 1024 * 1024; // 4MB
 
 export const useFileUpload = (options: UseFileUploadOptions) => {
   const {

@@ -8,7 +8,7 @@ import withAuthenticated from '../../middlewares/withAuthenticated';
 import withDB from '../../middlewares/withDB';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
-import { sanitizeS3Filename } from '../../utils';
+import { MAX_FILE_SIZE, sanitizeS3Filename } from '../../utils';
 
 const ALLOWED_MIME_TYPES = [
   'image/png',
@@ -17,8 +17,6 @@ const ALLOWED_MIME_TYPES = [
   'image/gif',
   'application/pdf',
 ];
-
-const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4MB
 
 const meta: OpenApiMeta = {
   openapi: {
@@ -74,7 +72,7 @@ export const uploadPostAttachment = router({
 
       if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
         throw new CommonError(
-          'Unsupported file type. Only images (PNG, JPEG, WebP) and PDFs are allowed.',
+          'Unsupported file type. Only images (PNG, JPEG, GIF, WebP) and PDFs are allowed.',
         );
       }
 

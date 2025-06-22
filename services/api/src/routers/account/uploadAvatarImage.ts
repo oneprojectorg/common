@@ -1,3 +1,4 @@
+import { CommonError } from '@op/common';
 import { eq } from '@op/db/client';
 import { users } from '@op/db/schema';
 import { createServerClient } from '@op/supabase/lib';
@@ -10,7 +11,7 @@ import withAuthenticated from '../../middlewares/withAuthenticated';
 import withDB from '../../middlewares/withDB';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
-import { sanitizeS3Filename } from '../../utils';
+import { MAX_FILE_SIZE, sanitizeS3Filename } from '../../utils';
 
 const ALLOWED_MIME_TYPES = [
   'image/png',
@@ -60,10 +61,9 @@ export const uploadAvatarImage = router({
 
       const sanitizedFileName = sanitizeS3Filename(fileName);
       if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Unsupported file type',
-        });
+        throw new CommonError(
+          'Unsupported file type. Only images (PNG, JPEG, GIF, WebP) are allowed.',
+        );
       }
 
       let buffer: Buffer;
@@ -88,6 +88,13 @@ export const uploadAvatarImage = router({
           code: 'BAD_REQUEST',
           message: 'Invalid base64 encoding',
         });
+      }
+
+      // Check file size
+      if (buffer.length > MAX_FILE_SIZE) {
+        throw new CommonError(
+          `File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB`,
+        );
       }
 
       const supabase = createServerClient(

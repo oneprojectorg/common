@@ -1,9 +1,11 @@
+import { DEFAULT_MAX_SIZE } from '@/hooks/useFileUpload';
 import { getPublicUrl } from '@/utils';
 import { OrganizationUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { AvatarUploader } from '@op/ui/AvatarUploader';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { ModalFooter } from '@op/ui/Modal';
+import { toast } from '@op/ui/Toast';
 import { ReactNode, forwardRef, useState } from 'react';
 import { z } from 'zod';
 
@@ -42,6 +44,8 @@ interface UpdateProfileFormProps {
   onSuccess: () => void;
   className?: string;
 }
+
+const acceptedTypes = ['image/gif', 'image/png', 'image/jpeg', 'image/webp'];
 
 export const UpdateProfileForm = forwardRef<
   HTMLFormElement,
@@ -98,6 +102,21 @@ export const UpdateProfileForm = forwardRef<
                 const base64 = (e.target?.result as string)?.split(',')[1];
 
                 if (!base64) {
+                  return;
+                }
+
+                if (!acceptedTypes.includes(file.type)) {
+                  toast.error({
+                    message: `That file type is not supported. Accepted types: ${acceptedTypes.map((t) => t.split('/')[1]).join(', ')}`,
+                  });
+                  return;
+                }
+
+                if (file.size > DEFAULT_MAX_SIZE) {
+                  const maxSizeMB = (DEFAULT_MAX_SIZE / 1024 / 1024).toFixed(2);
+                  toast.error({
+                    message: `File too large. Maximum size: ${maxSizeMB}MB`,
+                  });
                   return;
                 }
 
