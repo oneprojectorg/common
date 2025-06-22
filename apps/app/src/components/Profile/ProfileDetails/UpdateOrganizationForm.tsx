@@ -132,7 +132,7 @@ export const UpdateOrganizationForm = forwardRef<
           <FormContainer className={className}>{formFields}</FormContainer>
 
           <ModalFooter className="hidden sm:flex">
-            <div className="flex flex-col-reverse justify-between gap-4 sm:flex-row sm:gap-2">
+            <div className="flex flex-col-reverse justify-end gap-4 sm:flex-row sm:gap-2">
               <form.SubmitButton
                 className="max-w-fit"
                 isDisabled={isSubmitting || updateOrganization.isPending}

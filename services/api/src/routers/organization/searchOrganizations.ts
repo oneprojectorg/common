@@ -58,6 +58,15 @@ export const searchOrganizationsRouter = router({
         });
       }
 
-      return result.map((org) => organizationsEncoder.parse(org));
+      return result.map((org) => {
+        // TODO: Doing this to account for the difference in shape between on avatarImage
+        // which here is rendered even if it is null (with all null values)
+        // @ts-expect-error
+        if (org.profile.avatarImage.id == null) {
+          // @ts-expect-error
+          org.profile.avatarImage = null;
+        }
+        return organizationsEncoder.parse(org);
+      });
     }),
 });

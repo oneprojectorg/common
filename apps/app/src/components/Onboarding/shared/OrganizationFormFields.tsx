@@ -237,7 +237,7 @@ export const OrganizationFormFields = ({
             errorMessage={getFieldErrorMessage(field)}
             textareaProps={{
               className: 'min-h-28',
-              placeholder: t('Enter a brief bio for your profile'),
+              placeholder: t('Enter a brief description for your organization'),
             }}
           />
         )}
