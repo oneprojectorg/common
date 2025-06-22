@@ -177,7 +177,7 @@ const PostUpdateWithUser = ({
             </div>
           )}
           {detectedUrls.length > 0 && (
-            <div>
+            <div className="max-w-full">
               {detectedUrls.map((url, index) => (
                 <LinkPreview key={index} url={url} />
               ))}
