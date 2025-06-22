@@ -43,72 +43,37 @@ const EmailTemplate = ({
         </Head>
         <Preview>{previewText}</Preview>
 
-        <Body className="m-auto rounded-[16px] bg-white font-sans text-neutral-600">
-          <Container className="max-w-[648px]">
-            <Container
-              className="mt-4 max-w-[648px] pb-4 md:mt-10"
-              style={{
-                backgroundImage:
-                  'url("https://common.oneproject.org/email-box-shadow-compressed.png")',
-                backgroundRepeat: 'no-repeat',
-                backgroundSize: '98% 105%',
-                backgroundPosition: 'center',
-              }}
-            >
-              <Container className="mx-auto w-full rounded-[16px] border-2 border-solid border-neutral-300 bg-neutral-50 p-4 md:max-w-[600px] md:p-8">
-                <Section>
-                  <Row>
-                    <Column align="left">
-                      <Link href="https://oneproject.org">
-                        <Row>
-                          <Column align="left" width={24}>
-                            <Img
-                              src="https://common.oneproject.org/email-logo.png"
-                              width="24"
-                              height="24"
-                            />
-                          </Column>
-                          <Column
-                            align="left"
-                            className="font hidden pl-2 pt-0.5 align-bottom text-base leading-[24px] text-neutral-600 md:table-cell"
-                          >
-                            One Project
-                          </Column>
-                        </Row>
-                      </Link>
-                    </Column>
+        <Body className="m-auto rounded-[16px] bg-[#FAFBFB] p-8 font-sans text-neutral-600">
+          <Container className="mt-4 max-w-[648px] p-12 md:mt-10">
+            <Container className="mx-auto w-full rounded-lg border border-solid border-[#EDEEEE] bg-white p-12 md:max-w-[600px]">
+              <Section>
+                <Row>
+                  <Column align="left">
+                    <Link href="https://oneproject.org">
+                      <Row>
+                        <Column align="left" width={24}>
+                          <Img
+                            src="https://common.oneproject.org/Common.png"
+                            width="64"
+                            height="12"
+                          />
+                        </Column>
+                      </Row>
+                    </Link>
+                  </Column>
+                </Row>
+              </Section>
 
-                    <Column align="right">
-                      <Text className="!my-0 font-mono text-[10px] leading-[14px] text-neutral-600">
-                        Co-creating Alternatives.
-                        <br />
-                        Global Networks.
-                      </Text>
-                    </Column>
-                  </Row>
-                </Section>
-
-                <Container className="mt-12">{children}</Container>
-              </Container>
+              <Container className="mt-6">{children}</Container>
             </Container>
-            <Container className="mx-auto max-w-[600px]">
-              {/* <Hr className="mx-0 w-full border border-solid border-neutral-300" /> */}
-              <Text className="mb-0 mt-6 text-center text-[12px] font-bold leading-[12px] text-neutral-400">
-                One Project Org, {new Date().getFullYear()}
+            <Container className="mx-auto max-w-[600px] px-12 py-8">
+              <Text className="mb-0 text-[12px]">
+                Common is maintained by One Project.
               </Text>
-              <Text className="mb-0 mt-2 text-center text-[12px] leading-[12px] text-neutral-400">
-                You’re receiving this email as part of our <br />
-                authentication and communication processes.
+              <Text className="mb-0 mt-2 text-[12px]">
+                You’re receiving this email as part of our authentication and
+                communication processes.
               </Text>
-
-              <Link href="https://oneproject.org">
-                <Img
-                  src="https://common.oneproject.org/email-logo.png"
-                  width="20"
-                  height="20"
-                  className="mx-auto mt-4"
-                />
-              </Link>
             </Container>
           </Container>
         </Body>

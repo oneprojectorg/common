@@ -6,16 +6,16 @@
   "scripts": {
     "disable-build": "email build",
     "export": "email export",
-    "lint": "pnpm tsc --noEmit"
+    "lint": "pnpm tsc --noEmit",
+    "start": "email start"
   },
   "dependencies": {
     "@op/core": "workspace:*",
-    "@react-email/components": "0.0.33",
-    "@react-email/render": "^1.0.5",
-    "@react-email/tailwind": "^1.0.4",
+    "@react-email/components": "^0.1.0",
+    "@react-email/render": "^1.1.2",
     "nodemailer": "^6.10.0",
     "react": "^19.0.0",
-    "react-email": "3.0.7",
+    "react-email": "4.0.16",
     "zod": "^3.24.2"
   },
   "devDependencies": {
