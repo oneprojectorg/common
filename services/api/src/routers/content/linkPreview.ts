@@ -37,10 +37,7 @@ const getLinkPreview = async (url: string) => {
     );
 
     if (!response.ok) {
-      return {
-        url,
-        error: `Failed to fetch preview: ${response.status}`,
-      };
+      return null;
     }
 
     const data = await response.json();
