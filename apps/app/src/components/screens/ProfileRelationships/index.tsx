@@ -1,6 +1,6 @@
 'use client';
 
-import { relationshipMap } from '@/utils/relationships';
+import { RELATIONSHIP_OPTIONS, relationshipMap } from '@/utils/relationships';
 import { RouterOutput, trpc } from '@op/api/client';
 import { Breadcrumb, Breadcrumbs } from '@op/ui/Breadcrumbs';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
@@ -84,13 +84,16 @@ const ProfileRelationshipsSuspense = ({ slug }: { slug: string }) => {
       organizationId: organization.id,
     });
 
-  const fundingOrgs = useMemo(
+  const relationshipsSegmented = useMemo(
     () =>
-      organizations.filter((org) =>
-        org.relationships?.some(
-          (relationship) => relationship.relationshipType === 'funding',
+      RELATIONSHIP_OPTIONS.map((definition) => [
+        definition.noun,
+        organizations.filter((org) =>
+          org.relationships?.some(
+            (relationship) => relationship.relationshipType === definition.key,
+          ),
         ),
-      ),
+      ]),
     [organizations],
   );
 
@@ -108,16 +111,22 @@ const ProfileRelationshipsSuspense = ({ slug }: { slug: string }) => {
       <Tabs>
         <TabList className="px-4 sm:px-0">
           <Tab id="all">All relationships</Tab>
-          {fundingOrgs.length > 0 ? <Tab id="funding">Funders</Tab> : null}
+          {relationshipsSegmented.map(([noun, orgs]) =>
+            orgs?.length ? <Tab id={noun}>{noun}s</Tab> : null,
+          )}
         </TabList>
 
         <TabPanel id="all" className="px-4 sm:px-0">
           <RelationshipList organizations={organizations} />
         </TabPanel>
 
-        <TabPanel id="funding" className="px-4 sm:px-0">
-          <RelationshipList organizations={fundingOrgs} />
-        </TabPanel>
+        {relationshipsSegmented.map(([noun, orgs]) =>
+          orgs?.length ? (
+            <TabPanel id={noun} className="px-4 sm:px-0">
+              <RelationshipList organizations={orgs} />
+            </TabPanel>
+          ) : null,
+        )}
       </Tabs>
     </>
   );
