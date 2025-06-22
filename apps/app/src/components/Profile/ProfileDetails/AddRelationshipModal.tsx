@@ -58,7 +58,12 @@ export const AddRelationshipModalSuspense = ({
                   case 'partnership':
                     return (
                       <DialogTrigger>
-                        <Button className="w-full sm:w-auto" color="secondary">
+                        <Button
+                          className="w-full sm:w-auto"
+                          color={
+                            relationship.pending ? 'unverified' : 'verified'
+                          }
+                        >
                           {relationship.pending ? (
                             <LuClock className="size-4 stroke-1" />
                           ) : (
@@ -89,7 +94,12 @@ export const AddRelationshipModalSuspense = ({
                   case 'funding':
                     return (
                       <DialogTrigger>
-                        <Button className="w-full sm:w-auto" color="secondary">
+                        <Button
+                          className="w-full sm:w-auto"
+                          color={
+                            relationship.pending ? 'unverified' : 'verified'
+                          }
+                        >
                           {relationship.pending ? (
                             <LuClock className="size-4 stroke-1" />
                           ) : (
@@ -119,7 +129,12 @@ export const AddRelationshipModalSuspense = ({
                   case 'affiliation':
                     return (
                       <DialogTrigger>
-                        <Button className="w-full sm:w-auto" color="secondary">
+                        <Button
+                          className="w-full sm:w-auto"
+                          color={
+                            relationship.pending ? 'unverified' : 'verified'
+                          }
+                        >
                           {relationship.pending ? (
                             <LuClock className="size-4 stroke-1" />
                           ) : (
@@ -149,7 +164,12 @@ export const AddRelationshipModalSuspense = ({
                   default:
                     return (
                       <DialogTrigger>
-                        <Button color="secondary" className="w-full sm:w-auto">
+                        <Button
+                          color={
+                            relationship.pending ? 'unverified' : 'verified'
+                          }
+                          className="w-full sm:w-auto"
+                        >
                           {relationship.pending ? (
                             <LuClock className="size-4 stroke-1" />
                           ) : (
@@ -211,7 +231,10 @@ export const AddRelationshipModalSuspense = ({
                 case 'partnership':
                   return (
                     <>
-                      <Button color="secondary" className="w-full sm:w-auto">
+                      <Button
+                        color={relationship.pending ? 'unverified' : 'verified'}
+                        className="w-full sm:w-auto"
+                      >
                         {relationship.pending ? (
                           <LuClock className="size-4 stroke-1" />
                         ) : (
@@ -230,7 +253,10 @@ export const AddRelationshipModalSuspense = ({
                 case 'funding':
                   return (
                     <>
-                      <Button className="w-full sm:w-auto" color="secondary">
+                      <Button
+                        className="w-full sm:w-auto"
+                        color={relationship.pending ? 'unverified' : 'verified'}
+                      >
                         {relationship.pending ? (
                           <LuClock className="size-4 stroke-1" />
                         ) : (
@@ -247,7 +273,10 @@ export const AddRelationshipModalSuspense = ({
                 default:
                   return (
                     <>
-                      <Button className="w-full sm:w-auto" color="secondary">
+                      <Button
+                        className="w-full sm:w-auto"
+                        color={relationship.pending ? 'unverified' : 'verified'}
+                      >
                         {relationship.pending ? (
                           <LuClock className="size-4 stroke-1" />
                         ) : (

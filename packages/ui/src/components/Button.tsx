@@ -20,6 +20,10 @@ const buttonStyle = tv({
       secondary:
         'border border-offWhite bg-white text-teal hover:bg-neutral-50 pressed:bg-white',
       gradient: '',
+      unverified:
+        'border border-primary-teal bg-primary-tealWhite text-teal hover:bg-neutral-50 pressed:bg-white',
+      verified:
+        'border border-primary-teal bg-primary-tealWhite text-teal hover:bg-neutral-50 pressed:bg-white',
       neutral:
         'border border-neutral-gray1 bg-white text-neutral-charcoal shadow-light hover:bg-neutral-50 pressed:bg-white',
       destructive:
