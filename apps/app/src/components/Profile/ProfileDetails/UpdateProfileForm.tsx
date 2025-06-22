@@ -4,7 +4,7 @@ import { trpc } from '@op/api/client';
 import { AvatarUploader } from '@op/ui/AvatarUploader';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { ModalFooter } from '@op/ui/Modal';
-import { ReactNode, useState, forwardRef } from 'react';
+import { ReactNode, forwardRef, useState } from 'react';
 import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
@@ -43,11 +43,10 @@ interface UpdateProfileFormProps {
   className?: string;
 }
 
-export const UpdateProfileForm = forwardRef<HTMLFormElement, UpdateProfileFormProps>(({
-  profile,
-  onSuccess,
-  className,
-}, ref): ReactNode => {
+export const UpdateProfileForm = forwardRef<
+  HTMLFormElement,
+  UpdateProfileFormProps
+>(({ profile, onSuccess, className }, ref): ReactNode => {
   const t = useTranslations();
   const utils = trpc.useUtils();
   const uploadImage = trpc.account.uploadImage.useMutation();
@@ -72,6 +71,7 @@ export const UpdateProfileForm = forwardRef<HTMLFormElement, UpdateProfileFormPr
         title: value.title,
       });
       utils.account.getMyAccount.invalidate();
+      utils.organization.listPosts.invalidate();
       onSuccess();
     },
   });
