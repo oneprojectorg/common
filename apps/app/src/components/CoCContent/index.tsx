@@ -6,12 +6,6 @@ export const CoCContent = () => {
   return (
     <div className="relative flex w-full flex-col gap-8 sm:pb-20">
       <FormalSection>
-        <Header3 className="font-serif">
-          Common Platform Code of Conduct
-        </Header3>
-      </FormalSection>
-
-      <FormalSection>
         <Header3 className="font-serif">Who We Are</Header3>
         <p>
           Common is a digital platform that connects people, organizations, and

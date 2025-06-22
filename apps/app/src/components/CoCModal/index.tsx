@@ -30,7 +30,7 @@ export const CoCModal = () => {
       >
         <Dialog>
           <ModalHeader className="flex items-center justify-between">
-            {t('Terms of Service')}
+            {t('Code of Conduct')}
             <LuX
               className="size-6 cursor-pointer stroke-1"
               onClick={() => setIsToSOpen(false)}
