@@ -44,10 +44,18 @@ const useTranslations: typeof _useTranslations = (...args) => {
     const proxyTranslateFn = new Proxy(translateFn, {
       apply(target, thisArg, argumentsList: Parameters<typeof translateFn>) {
         const [message, ...rest] = argumentsList;
-        return target.apply(thisArg, [
-          message.replaceAll('.', '_') as typeof message,
-          ...rest,
-        ]);
+        const originalMessage = message;
+        const transformedMessage = message.replaceAll('.', '_') as typeof message;
+        
+        const result = target.apply(thisArg, [transformedMessage, ...rest]);
+        
+        // If the result is the same as the transformed message, it means the key wasn't found
+        // In this case, return the original message with periods intact
+        if (result === transformedMessage) {
+          return originalMessage;
+        }
+        
+        return result;
       },
     }) as typeof translateFn;
 
