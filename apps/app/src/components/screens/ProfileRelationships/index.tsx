@@ -84,7 +84,9 @@ const ProfileRelationshipsSuspense = ({ slug }: { slug: string }) => {
       organizationId: organization.id,
     });
 
-  const relationshipsSegmented = useMemo(
+  const relationshipsSegmented: Array<
+    [string, Array<relationshipOrganization>]
+  > = useMemo(
     () =>
       RELATIONSHIP_OPTIONS.map((definition) => [
         definition.noun,
