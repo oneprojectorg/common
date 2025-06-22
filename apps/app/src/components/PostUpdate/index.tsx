@@ -9,6 +9,7 @@ import type { Organization } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { TextArea } from '@op/ui/Field';
 import { Form } from '@op/ui/Form';
+import { MediaDisplay } from '@op/ui/MediaDisplay';
 import { Skeleton } from '@op/ui/Skeleton';
 import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
@@ -154,13 +155,16 @@ const PostUpdateWithUser = ({
                       </Button>
                     </div>
                   ) : (
-                    <div className="relative flex aspect-video w-full items-center justify-center rounded bg-neutral-gray1 text-white">
-                      <div className="font-serif text-lg">
-                        {filePreview.file.name}
-                      </div>
+                    <div className="relative w-full">
+                      <MediaDisplay
+                        title={filePreview.file.name}
+                        mimeType={filePreview.file.type}
+                        url={filePreview.url}
+                        size={filePreview.file.size}
+                      />
                       <Button
                         onPress={() => fileUpload.removeFile(filePreview.id)}
-                        className="absolute right-2 top-2"
+                        className="absolute right-2 top-2 size-6 rounded-full p-0 opacity-80 hover:opacity-100 focus:outline-1"
                         size="small"
                         color="neutral"
                       >
