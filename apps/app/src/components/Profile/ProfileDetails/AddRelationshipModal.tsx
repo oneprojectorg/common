@@ -59,7 +59,11 @@ export const AddRelationshipModalSuspense = ({
                     return (
                       <DialogTrigger>
                         <Button className="w-full sm:w-auto" color="secondary">
-                          {relationship.pending ? <LuClock /> : <LuCheck />}
+                          {relationship.pending ? (
+                            <LuClock className="size-4 stroke-1" />
+                          ) : (
+                            <LuCheck className="size-4 stroke-1" />
+                          )}
                           Partner
                         </Button>
                         {relationship.pending && (
@@ -86,7 +90,11 @@ export const AddRelationshipModalSuspense = ({
                     return (
                       <DialogTrigger>
                         <Button className="w-full sm:w-auto" color="secondary">
-                          {relationship.pending ? <LuClock /> : <LuCheck />}
+                          {relationship.pending ? (
+                            <LuClock className="size-4 stroke-1" />
+                          ) : (
+                            <LuCheck className="size-4 stroke-1" />
+                          )}
                           Funder
                         </Button>
                         <Tooltip>
@@ -112,7 +120,11 @@ export const AddRelationshipModalSuspense = ({
                     return (
                       <DialogTrigger>
                         <Button className="w-full sm:w-auto" color="secondary">
-                          {relationship.pending ? <LuClock /> : <LuCheck />}
+                          {relationship.pending ? (
+                            <LuClock className="size-4 stroke-1" />
+                          ) : (
+                            <LuCheck className="size-4 stroke-1" />
+                          )}
                           Affiliate
                         </Button>
                         <Tooltip>
@@ -138,7 +150,11 @@ export const AddRelationshipModalSuspense = ({
                     return (
                       <DialogTrigger>
                         <Button color="secondary" className="w-full sm:w-auto">
-                          {relationship.pending ? <LuClock /> : <LuCheck />}
+                          {relationship.pending ? (
+                            <LuClock className="size-4 stroke-1" />
+                          ) : (
+                            <LuCheck className="size-4 stroke-1" />
+                          )}
                           Member
                         </Button>
                         <Tooltip>
@@ -168,7 +184,7 @@ export const AddRelationshipModalSuspense = ({
       ) : relationshipsToCurrentUserOrg.length <= 0 ? (
         <DialogTrigger>
           <Button className="min-w-full sm:min-w-fit">
-            <LuPlus className="size-4" />
+            <LuPlus className="size-4 stroke-1" />
             Add relationship
           </Button>
           <Modal className="sm:min-w-[29rem]">
@@ -196,7 +212,11 @@ export const AddRelationshipModalSuspense = ({
                   return (
                     <>
                       <Button color="secondary" className="w-full sm:w-auto">
-                        {relationship.pending ? <LuClock /> : <LuCheck />}
+                        {relationship.pending ? (
+                          <LuClock className="size-4 stroke-1" />
+                        ) : (
+                          <LuCheck className="size-4 stroke-1" />
+                        )}
                         Partner
                       </Button>
                       {relationship.pending && (
@@ -211,7 +231,11 @@ export const AddRelationshipModalSuspense = ({
                   return (
                     <>
                       <Button className="w-full sm:w-auto" color="secondary">
-                        {relationship.pending ? <LuClock /> : <LuCheck />}
+                        {relationship.pending ? (
+                          <LuClock className="size-4 stroke-1" />
+                        ) : (
+                          <LuCheck className="size-4 stroke-1" />
+                        )}
                         Fundee
                       </Button>
                       <Tooltip>
@@ -224,7 +248,11 @@ export const AddRelationshipModalSuspense = ({
                   return (
                     <>
                       <Button className="w-full sm:w-auto" color="secondary">
-                        {relationship.pending ? <LuClock /> : <LuCheck />}
+                        {relationship.pending ? (
+                          <LuClock className="size-4 stroke-1" />
+                        ) : (
+                          <LuCheck className="size-4 stroke-1" />
+                        )}
                         Member
                       </Button>
                       <Tooltip>

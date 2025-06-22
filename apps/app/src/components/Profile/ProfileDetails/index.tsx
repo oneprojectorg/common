@@ -41,7 +41,7 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
                   target="_blank"
                   className="min-w-full sm:min-w-fit"
                 >
-                  <LuArrowUpRight className="size-4" />
+                  <LuArrowUpRight className="size-4 stroke-1" />
                   Contribute
                 </ButtonLink>
                 <Tooltip>{link.description ?? 'Click to learn more'}</Tooltip>
@@ -65,7 +65,7 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
                   target="_blank"
                   className="min-w-full sm:min-w-fit"
                 >
-                  <LuInfo />
+                  <LuInfo className="size-4 stroke-1" />
                   Learn more
                 </ButtonLink>
                 <Tooltip>{link.description ?? 'Click to learn more'}</Tooltip>
