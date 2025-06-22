@@ -196,7 +196,7 @@ export const PostFeed = ({
                     {post?.content ? linkifyText(post.content) : null}
                     {post.attachments
                       ? post.attachments.map(({ fileName, storageObject }) => {
-                          const { mimetype } = storageObject.metadata;
+                          const { mimetype, size } = storageObject.metadata;
 
                           return (
                             <MediaDisplay
@@ -206,6 +206,7 @@ export const PostFeed = ({
                               url={
                                 getPublicUrl(storageObject.name) ?? undefined
                               }
+                              size={size}
                             >
                               {mimetype.startsWith('image/') ? (
                                 <div className="relative flex aspect-video w-full items-center justify-center rounded bg-neutral-gray1 text-white">

@@ -3,6 +3,8 @@ import { Surface } from '@op/ui/Surface';
 import { ReactNode } from 'react';
 import { LuFileText, LuGlobe } from 'react-icons/lu';
 
+import { formatFileSize } from '../../utils/file';
+
 export const MediaDisplay = ({
   className,
   children,
@@ -12,6 +14,7 @@ export const MediaDisplay = ({
   url,
   site,
   mimeType,
+  size,
 }: {
   className?: string;
   children?: ReactNode;
@@ -21,6 +24,7 @@ export const MediaDisplay = ({
   url?: string;
   site?: string;
   mimeType?: string;
+  size?: number;
 }) => {
   const detailComponents = [];
 
@@ -73,7 +77,7 @@ export const MediaDisplay = ({
       <hr key="format-hr" className="my-2 bg-neutral-gray1 text-sm" />,
       <div key="format" className="flex gap-1 text-sm text-neutral-gray4">
         <LuFileText className="size-4 text-neutral-gray4" />
-        <span>3.2MB • PDF</span>
+        <span>{size ? `${formatFileSize(size)} • PDF` : 'PDF'}</span>
       </div>,
     );
   }

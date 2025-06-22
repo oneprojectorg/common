@@ -52,63 +52,9 @@ const PostUpdateWithUser = ({
   });
 
   const createPost = trpc.organization.createPost.useMutation({
-    // onMutate: async (newPost) => {
-    // await utils.organization.listPosts.cancel();
-
-    // const queryKey = { slug: organization.profile.slug, limit: 20 };
-    // const previousData =
-    // utils.organization.listPosts.getInfiniteData(queryKey);
-
-    // // Helper to create the new post object
-    // const newPostObject = {
-    // postId: newPost.id,
-    // organizationId: organization.id,
-    // createdAt: new Date().toISOString(),
-    // updatedAt: new Date().toISOString(),
-    // deletedAt: null,
-    // post: {
-    // id: crypto.randomUUID(),
-    // content: newPost.content,
-    // createdAt: new Date().toISOString(),
-    // updatedAt: new Date().toISOString(),
-    // deletedAt: null,
-    // attachments: [],
-    // },
-    // organization,
-    // };
-
-    // // Update all infinite query variations if you have multiple query keys
-    // const queryKeys = [
-    // { slug: organization.profile.slug },
-    // // Add other query key variations if needed
-    // ];
-
-    // queryKeys.forEach((key) => {
-    // utils.organization.listPosts.setInfiniteData(key, (old) => {
-    // if (!old) return old;
-
-    // return {
-    // ...old,
-    // pages: old.pages.map((page, pageIndex) => ({
-    // ...page,
-    // items:
-    // pageIndex === 0 ? [newPostObject, ...page.items] : page.items,
-    // })),
-    // };
-    // });
-    // });
-
-    // return { previousData };
-    // },
     onError: (err) => {
       toast.error({ message: 'Could not create post' });
       console.log('ERROR', err);
-      // if (context?.previousData) {
-      // utils.organization.listPosts.setInfiniteData(
-      // { slug: organization.profile.slug },
-      // context.previousData,
-      // );
-      // }
     },
     onSettled: () => {
       void utils.organization.listPosts.invalidate();

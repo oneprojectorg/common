@@ -5,6 +5,7 @@ import { useButton } from 'react-aria';
 import { LuX } from 'react-icons/lu';
 
 import { cn } from '../lib/utils';
+import { formatFileSize } from '../utils/file';
 import { Button } from './Button';
 import { MediaDisplay } from './MediaDisplay';
 import { Skeleton } from './Skeleton';
@@ -69,14 +70,6 @@ export const FileUploader = ({
     },
     buttonRef,
   );
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
 
   const validateFile = (file: File): string | null => {
     if (!acceptedTypes.includes(file.type)) {
@@ -299,14 +292,6 @@ export const createFileUploaderUtils = (
 ) => {
   const [files, setFiles] = useState<FilePreview[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
 
   const validateFile = (file: File): string | null => {
     if (!acceptedTypes.includes(file.type)) {
