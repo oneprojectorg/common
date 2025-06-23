@@ -160,15 +160,22 @@ const AvatarMenuContent = ({
           {' • '}
           <CoCModal />
         </div>
-        <div className="text-sm">
-          <a
-            className="text-primary-teal hover:underline"
+      </MenuItemSimple>
+      <MenuItemSimple className="flex flex-col items-start justify-start gap-2 text-sm hover:bg-transparent">
+        <div className="text-sm text-primary-teal hover:underline">
+          <Link
             href="https://oneprojectorg.notion.site/Common-Platform-Feature-Requests-Bug-Submissions-1f3f0b6622538047a51ec4a8b335bc27"
             target="_blank"
+            rel="noopener noreferrer"
           >
             Submit Bugs & Feature Requests
-          </a>
+          </Link>
         </div>
+      </MenuItemSimple>
+      <MenuItemSimple
+        isDisabled
+        className="flex flex-col items-start justify-start gap-2 text-sm text-neutral-gray4 hover:bg-transparent"
+      >
         <div className="text-xs">
           Ethical Open Source • One Project • {new Date().getFullYear()}
         </div>
