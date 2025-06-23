@@ -50,7 +50,7 @@ export const ToSForm = ({
           <form.Button color="secondary" onPress={onBack}>
             {t('Back')}
           </form.Button>
-          <form.SubmitButton>{t('Continue')}</form.SubmitButton>
+          <form.SubmitButton>{t('Accept & Continue')}</form.SubmitButton>
         </div>
       </FormContainer>
     </form>
