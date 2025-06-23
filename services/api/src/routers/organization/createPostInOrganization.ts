@@ -61,57 +61,53 @@ export const createPostInOrganization = router({
               })
             : [];
 
-        const newPost = await db.transaction(async (tx) => {
-          const [post] = await tx
-            .insert(posts)
-            .values({
-              content: input.content,
-            })
-            .returning();
+        const [post] = await db
+          .insert(posts)
+          .values({
+            content: input.content,
+          })
+          .returning();
 
-          if (!post) {
-            throw new TRPCError({
-              code: 'INTERNAL_SERVER_ERROR',
-              message: 'Failed to add post to organization',
-            });
-          }
+        if (!post) {
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'Failed to add post to organization',
+          });
+        }
 
-          // Create the join record associating the post with the organization
+        // Create the join record associating the post with the organization
+        const queryPromises: Promise<any>[] = [
+          db.insert(postsToOrganizations).values({
+            organizationId: input.id,
+            postId: post.id,
+          }),
+        ];
 
-          const queryPromises: Promise<any>[] = [
-            tx.insert(postsToOrganizations).values({
-              organizationId: input.id,
-              postId: post.id,
-            }),
-          ];
+        // Create attachment records if any attachments were uploaded
+        if (allStorageObjects.length > 0) {
+          const attachmentValues = allStorageObjects.map((storageObject) => ({
+            postId: post.id,
+            storageObjectId: storageObject.id,
+            uploadedBy: user.id,
+            fileName:
+              // @ts-expect-error - We check for this existence first. TODO: find the source of this TS error
+              storageObject?.name
+                ?.split('/')
+                .slice(-1)[0]
+                .split('_')
+                .slice(1)
+                .join('_') ?? '',
+            mimeType: (storageObject.metadata as { mimetype: string }).mimetype,
+          }));
 
-          // Create attachment records if any attachments were uploaded
-          if (allStorageObjects.length > 0) {
-            const attachmentValues = allStorageObjects.map((storageObject) => ({
-              postId: post.id,
-              storageObjectId: storageObject.id,
-              uploadedBy: user.id,
-              fileName:
-                // @ts-expect-error - We check for this existence first. TODO: find the source of this TS error
-                storageObject?.name
-                  ?.split('/')
-                  .slice(-1)[0]
-                  .split('_')
-                  .slice(1)
-                  .join('_') ?? '',
-              mimeType: (storageObject.metadata as { mimetype: string })
-                .mimetype,
-            }));
+          // @ts-ignore
+          queryPromises.push(db.insert(attachments).values(attachmentValues));
+        }
 
-            // @ts-ignore
-            queryPromises.push(tx.insert(attachments).values(attachmentValues));
-          }
+        // Run attachments and join record in parallel
+        await Promise.all(queryPromises);
 
-          // Run attachments and join record in parallel
-          await Promise.all(queryPromises);
-
-          return post;
-        });
+        const newPost = post;
 
         const output = outputSchema.parse(newPost);
         return output;
