@@ -160,6 +160,15 @@ const AvatarMenuContent = ({
           {' • '}
           <CoCModal />
         </div>
+        <div className="text-sm">
+          <a
+            className="text-primary-teal hover:underline"
+            href="https://oneprojectorg.notion.site/Common-Platform-Feature-Requests-Bug-Submissions-1f3f0b6622538047a51ec4a8b335bc27"
+            target="_blank"
+          >
+            Submit Bugs & Feature Requests
+          </a>
+        </div>
         <div className="text-xs">
           Ethical Open Source • One Project • {new Date().getFullYear()}
         </div>
