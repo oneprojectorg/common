@@ -1,9 +1,9 @@
-import { Header3 } from '@op/ui/Header';
 import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 
 import type { StepProps } from '../MultiStepForm';
+import { ToSContent } from '../ToSContent';
 import { FormContainer } from '../form/FormContainer';
 import { FormHeader } from '../form/FormHeader';
 import { useAppForm } from '../form/utils';
@@ -16,13 +16,6 @@ export const validator = z
     tosAccept: true,
   });
 
-const FormalSection = ({ children }: { children: React.ReactNode }) => {
-  return (
-    <section className="flex flex-col gap-6 text-neutral-charcoal">
-      {children}
-    </section>
-  );
-};
 export const ToSForm = ({
   onNext,
   onBack,
@@ -51,50 +44,7 @@ export const ToSForm = ({
         <span className="text-neutral-charcoal">
           {t('Effective Date: March 15, 2025')}
         </span>
-        <div className="relative flex w-full flex-col gap-8 sm:pb-20">
-          <FormalSection>
-            <Header3 className="font-serif"> 1. Introduction</Header3>
-            <p>
-              Welcome to Common Network. These Terms of Service ("Terms") govern
-              your access to and use of the Common Network platform, including
-              our website, mobile applications, and services (collectively, the
-              "Service"). By accessing or using the Service, you agree to be
-              bound by these Terms. If you do not agree to these Terms, you may
-              not access or use the Service.
-            </p>
-          </FormalSection>
-          <FormalSection>
-            <Header3 className="font-serif"> 2. About Common Network</Header3>
-            <p>
-              Common Network is a platform designed to connect aligned
-              organizations and funders building a new economy together. Our
-              mission is to strengthen the ecosystem of organizations working
-              toward economic justice, community ownership, and ecological
-              sustainability.
-            </p>
-          </FormalSection>
-          <FormalSection>
-            <Header3 className="font-serif">3. Account Registration</Header3>
-
-            <Header3 className="font-serif text-sm">3.1 Eligibility</Header3>
-            <p>
-              To use the Service, you must register for an account on behalf of
-              an organization. You must be authorized to represent your
-              organization and must have the authority to bind your organization
-              to these Terms.
-            </p>
-          </FormalSection>
-          <FormalSection>
-            <Header3 className="font-serif text-sm">
-              3.2 Account Information
-            </Header3>
-            <p>
-              You agree to provide accurate, current, and complete information
-              during the registration process and to update such information to
-              keep it accurate, current, and complete.
-            </p>
-          </FormalSection>
-        </div>
+        <ToSContent />
 
         <div className="flex flex-col-reverse justify-between gap-4 sm:flex-row sm:gap-2">
           <form.Button color="secondary" onPress={onBack}>

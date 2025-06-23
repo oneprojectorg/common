@@ -29,6 +29,7 @@ export const OrganizationResults = ({
           >
             <OrganizationAvatar
               organization={org}
+              withLink={false}
               className="size-8 group-hover/result:no-underline"
             />
 
