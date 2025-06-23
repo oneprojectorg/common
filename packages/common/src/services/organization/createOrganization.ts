@@ -143,12 +143,15 @@ export const createOrganization = async ({
     ]);
 
     // Add admin role to the user creating the organization
-    if (adminRole && newOrgUser) {
-      await tx.insert(organizationUserToAccessRoles).values({
-        organizationUserId: newOrgUser.id,
-        accessRoleId: adminRole.id,
-      });
+    if (!(adminRole && newOrgUser)) {
+      console.error('adminRole:', !!adminRole, 'newOrgUser:', !!newOrgUser);
+      throw new CommonError('Failed to create organization');
     }
+
+    await tx.insert(organizationUserToAccessRoles).values({
+      organizationUserId: newOrgUser.id,
+      accessRoleId: adminRole.id,
+    });
 
     // Add funding links
     await Promise.all([
