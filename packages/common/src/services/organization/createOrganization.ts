@@ -114,166 +114,171 @@ export const createOrganization = async ({
 
   // Create organization and link user
   const result = await db.transaction(async (tx) => {
-    const [newOrg] = await tx
-      .insert(organizations)
-      .values({ ...orgInputs, profileId: profile.id })
-      .returning();
+    try {
+      const [newOrg] = await tx
+        .insert(organizations)
+        .values({ ...orgInputs, profileId: profile.id })
+        .returning();
 
-    if (!newOrg) {
-      throw new NotFoundError('Failed to create organization');
-    }
+      if (!newOrg) {
+        throw new NotFoundError('Failed to create organization');
+      }
 
-    // Insert organizationUser linking the user to organization, with a default role of owner
-    const [[newOrgUser], adminRole] = await Promise.all([
-      tx
-        .insert(organizationUsers)
-        .values({
-          organizationId: newOrg.id,
-          authUserId: user.id,
-          email: user.email!,
-        })
-        .returning(),
-      tx.query.accessRoles.findFirst({
-        where: (table, { eq }) => eq(table.name, 'Admin'),
-      }),
-      tx
-        .update(users)
-        .set({ lastOrgId: newOrg.id })
-        .where(eq(users.authUserId, user.id)),
-    ]);
+      // Insert organizationUser linking the user to organization, with a default role of owner
+      const [[newOrgUser], adminRole] = await Promise.all([
+        tx
+          .insert(organizationUsers)
+          .values({
+            organizationId: newOrg.id,
+            authUserId: user.id,
+            email: user.email!,
+          })
+          .returning(),
+        tx.query.accessRoles.findFirst({
+          where: (table, { eq }) => eq(table.name, 'Admin'),
+        }),
+        tx
+          .update(users)
+          .set({ lastOrgId: newOrg.id })
+          .where(eq(users.authUserId, user.id)),
+      ]);
 
-    // Add admin role to the user creating the organization
-    if (!(adminRole && newOrgUser)) {
-      console.error('adminRole:', !!adminRole, 'newOrgUser:', !!newOrgUser);
-      throw new CommonError('Failed to create organization');
-    }
+      console.error('adminRole:', adminRole, 'newOrgUser:', newOrgUser);
+      // Add admin role to the user creating the organization
+      if (!(adminRole && newOrgUser)) {
+        throw new CommonError('Failed to create organization');
+      }
 
-    await tx.insert(organizationUserToAccessRoles).values({
-      organizationUserId: newOrgUser.id,
-      accessRoleId: adminRole.id,
-    });
+      await tx.insert(organizationUserToAccessRoles).values({
+        organizationUserId: newOrgUser.id,
+        accessRoleId: adminRole.id,
+      });
 
-    // Add funding links
-    await Promise.all([
-      ...(data.receivingFundsLink
-        ? [
-            tx.insert(links).values({
-              organizationId: newOrg.id,
-              href: data.receivingFundsLink,
-              description: data.receivingFundsDescription,
-              type: 'receiving',
-            }),
-          ]
-        : []),
-      ...(data.offeringFundsLink
-        ? [
-            tx.insert(links).values({
-              organizationId: newOrg.id,
-              href: data.offeringFundsLink,
-              description: data.offeringFundsDescription,
-              type: 'offering',
-            }),
-          ]
-        : []),
-    ]);
+      // Add funding links
+      await Promise.all([
+        ...(data.receivingFundsLink
+          ? [
+              tx.insert(links).values({
+                organizationId: newOrg.id,
+                href: data.receivingFundsLink,
+                description: data.receivingFundsDescription,
+                type: 'receiving',
+              }),
+            ]
+          : []),
+        ...(data.offeringFundsLink
+          ? [
+              tx.insert(links).values({
+                organizationId: newOrg.id,
+                href: data.offeringFundsLink,
+                description: data.offeringFundsDescription,
+                type: 'offering',
+              }),
+            ]
+          : []),
+      ]);
 
-    // Add where we work locations using Google Places data
-    if (data.whereWeWork?.length) {
-      await Promise.all(
-        data.whereWeWork.map(async (whereWeWork) => {
-          const geoData = whereWeWork.data
-            ? geoNamesDataSchema.parse(whereWeWork.data)
-            : null;
+      // Add where we work locations using Google Places data
+      if (data.whereWeWork?.length) {
+        await Promise.all(
+          data.whereWeWork.map(async (whereWeWork) => {
+            const geoData = whereWeWork.data
+              ? geoNamesDataSchema.parse(whereWeWork.data)
+              : null;
 
-          // Create location record
-          const [location] = await tx
-            .insert(locations)
-            .values({
-              name: whereWeWork.label,
-              placeId: geoData?.geonameId?.toString() ?? randomUUID(),
-              address: geoData?.toponymName,
-              location:
-                geoData?.lat && geoData?.lng
-                  ? sql`ST_SetSRID(ST_MakePoint(${geoData.lng}, ${geoData.lat}), 4326)`
-                  : undefined,
-              countryCode: geoData?.countryCode,
-              countryName: geoData?.countryName,
-              metadata: geoData,
-            })
-            .onConflictDoUpdate({
-              target: [locations.placeId],
-              set: {
-                name: sql`excluded.name`,
-                address: sql`excluded.address`,
-                // location: sql`excluded.location`,
-                countryCode: sql`excluded.country_code`,
-                countryName: sql`excluded.country_name`,
-                metadata: sql`excluded.metadata`,
-              },
-            })
-            .returning();
+            // Create location record
+            const [location] = await tx
+              .insert(locations)
+              .values({
+                name: whereWeWork.label,
+                placeId: geoData?.geonameId?.toString() ?? randomUUID(),
+                address: geoData?.toponymName,
+                location:
+                  geoData?.lat && geoData?.lng
+                    ? sql`ST_SetSRID(ST_MakePoint(${geoData.lng}, ${geoData.lat}), 4326)`
+                    : undefined,
+                countryCode: geoData?.countryCode,
+                countryName: geoData?.countryName,
+                metadata: geoData,
+              })
+              .onConflictDoUpdate({
+                target: [locations.placeId],
+                set: {
+                  name: sql`excluded.name`,
+                  address: sql`excluded.address`,
+                  // location: sql`excluded.location`,
+                  countryCode: sql`excluded.country_code`,
+                  countryName: sql`excluded.country_name`,
+                  metadata: sql`excluded.metadata`,
+                },
+              })
+              .returning();
 
-          if (location) {
-            // Link location to organization
-            await tx
-              .insert(organizationsWhereWeWork)
+            if (location) {
+              // Link location to organization
+              await tx
+                .insert(organizationsWhereWeWork)
+                .values({
+                  organizationId: newOrg.id,
+                  locationId: location.id,
+                })
+                .onConflictDoNothing();
+            }
+          }),
+        );
+      }
+
+      const { focusAreas, strategies, communitiesServed, receivingFundsTerms } =
+        data;
+
+      // add all stategy terms to the org (strategy terms already exist in the DB)
+      // TODO: parallelize this
+
+      if (strategies) {
+        await Promise.all(
+          strategies.map((strategy) =>
+            tx
+              .insert(organizationsStrategies)
               .values({
                 organizationId: newOrg.id,
-                locationId: location.id,
+                taxonomyTermId: strategy.id,
               })
-              .onConflictDoNothing();
-          }
-        }),
-      );
+              .onConflictDoNothing(),
+          ),
+        );
+      }
+
+      // TODO: this was changed quickly in the process. We are transitioning to this way of doing terms.
+      if (focusAreas || communitiesServed || receivingFundsTerms) {
+        const terms = [
+          ...(communitiesServed ?? []),
+          ...(receivingFundsTerms ?? []),
+          ...(focusAreas ?? []),
+        ];
+
+        await Promise.all(
+          terms.map((term) =>
+            tx
+              .insert(organizationsTerms)
+              .values({
+                organizationId: newOrg.id,
+                taxonomyTermId: term.id,
+              })
+              .onConflictDoNothing(),
+          ),
+        );
+      }
+
+      if (!newOrgUser) {
+        throw new CommonError('Failed to associate organization with user');
+      }
+
+      // @ts-ignore
+      return { ...newOrg, profile };
+    } catch (e) {
+      console.error(e);
+      throw new CommonError('Failed to create organization');
     }
-
-    const { focusAreas, strategies, communitiesServed, receivingFundsTerms } =
-      data;
-
-    // add all stategy terms to the org (strategy terms already exist in the DB)
-    // TODO: parallelize this
-
-    if (strategies) {
-      await Promise.all(
-        strategies.map((strategy) =>
-          tx
-            .insert(organizationsStrategies)
-            .values({
-              organizationId: newOrg.id,
-              taxonomyTermId: strategy.id,
-            })
-            .onConflictDoNothing(),
-        ),
-      );
-    }
-
-    // TODO: this was changed quickly in the process. We are transitioning to this way of doing terms.
-    if (focusAreas || communitiesServed || receivingFundsTerms) {
-      const terms = [
-        ...(communitiesServed ?? []),
-        ...(receivingFundsTerms ?? []),
-        ...(focusAreas ?? []),
-      ];
-
-      await Promise.all(
-        terms.map((term) =>
-          tx
-            .insert(organizationsTerms)
-            .values({
-              organizationId: newOrg.id,
-              taxonomyTermId: term.id,
-            })
-            .onConflictDoNothing(),
-        ),
-      );
-    }
-
-    if (!newOrgUser) {
-      throw new CommonError('Failed to associate organization with user');
-    }
-
-    // @ts-ignore
-    return { ...newOrg, profile };
   });
 
   return result;
