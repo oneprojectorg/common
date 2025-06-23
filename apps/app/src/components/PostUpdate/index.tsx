@@ -121,6 +121,7 @@ const PostUpdateWithUser = ({
             <TextArea
               className="size-full h-6 overflow-y-hidden"
               variant="borderless"
+              maxLength={255}
               ref={textareaRef as RefObject<HTMLTextAreaElement>}
               placeholder={`Post an update…`}
               value={content}
