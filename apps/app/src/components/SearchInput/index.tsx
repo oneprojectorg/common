@@ -155,7 +155,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
           className: cn(
             'bg-transparent placeholder:text-neutral-gray4 active:bg-white active:text-neutral-gray3 focus:bg-white',
             'active:border-inherit', // override TextField input styles that are used everywhere
-            dropdownShowing && 'rounded-b-none',
+            dropdownShowing && 'sm:rounded-b-none',
           ),
           onKeyDown: handleKeyDown,
           'aria-expanded': dropdownShowing,
