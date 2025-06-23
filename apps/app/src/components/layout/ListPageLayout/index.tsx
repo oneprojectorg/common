@@ -20,7 +20,7 @@ export const ListPageLayoutHeader = ({
     <div className="flex flex-col gap-4 px-0">
       <div
         className={cn(
-          'font-serif text-title-lg text-neutral-black sm:text-title-lg',
+          'font-serif text-[1rem] text-neutral-black sm:text-title-lg',
           className,
         )}
       >
