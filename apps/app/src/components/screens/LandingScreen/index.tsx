@@ -71,7 +71,7 @@ const LandingScreenFeeds = ({
           <NewOrganizationsList />
         </div>
       </div>
-      <Tabs className="pb-8 sm:hidden">
+      <Tabs className="gap-8 pb-8 sm:hidden">
         <TabList variant="pill">
           <Tab id="discover" variant="pill">
             Discover
