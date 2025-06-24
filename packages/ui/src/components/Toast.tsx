@@ -45,7 +45,7 @@ const ToastWrapper = ({
   children: React.ReactNode;
 }) => {
   return (
-    <div className="flex w-full items-end gap-2">
+    <div className="flex w-full items-start gap-2">
       {children}
       {dismissable && (
         <Button
@@ -91,7 +91,7 @@ export const toast = {
         <LuCircleCheck className="size-6 stroke-1 text-functional-green" />
         <ToastBody>
           {title ? <ToastTitle title={title} /> : null}
-          {message ? <div>{message}</div> : null}
+          {message ? <div className="pt-1">{message}</div> : null}
           {children}
         </ToastBody>
       </ToastWrapper>
