@@ -26,6 +26,24 @@ import { FeedItem, FeedMain } from '@/components/PostFeed';
 import { OrganizationAvatar } from '../OrganizationAvatar';
 
 // type PaginatedPostToOrganizations = RouterOutput['organization']['listPosts'];
+const TextCounter = ({ text, max }: { text: string; max: number }) => {
+  if (!text || text.length === 0) {
+    return null;
+  }
+  const textLength = text.length;
+  const countDown = max - textLength;
+
+  return (
+    <span
+      className={cn(
+        'text-neutral-charcoal',
+        countDown < 0 && 'text-functional-red',
+      )}
+    >
+      {countDown}
+    </span>
+  );
+};
 
 const PostUpdateWithUser = ({
   organization,
@@ -121,7 +139,6 @@ const PostUpdateWithUser = ({
             <TextArea
               className="size-full h-6 overflow-y-hidden"
               variant="borderless"
-              maxLength={255}
               ref={textareaRef as RefObject<HTMLTextAreaElement>}
               placeholder={`Post an update…`}
               value={content}
@@ -216,15 +233,19 @@ const PostUpdateWithUser = ({
               <LuImage className="size-4" />
               {t('Media')}
             </button>
-            <Button
-              size="small"
-              isDisabled={
-                !(content.length > 0 || fileUpload.hasUploadedFiles())
-              }
-              onPress={createNewPostUpdate}
-            >
-              {t('Post')}
-            </Button>
+            <div className="flex items-center gap-2 text-neutral-charcoal">
+              <TextCounter text={content} max={240} />
+              <Button
+                size="small"
+                isDisabled={
+                  !(content.length > 0 || fileUpload.hasUploadedFiles()) ||
+                  content.length > 240
+                }
+                onPress={createNewPostUpdate}
+              >
+                {t('Post')}
+              </Button>
+            </div>
           </div>
         </FeedMain>
       </FeedItem>
