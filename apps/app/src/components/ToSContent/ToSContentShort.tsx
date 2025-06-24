@@ -7,8 +7,8 @@ export const ToSContentShort = () => {
     <div className="relative flex w-full flex-col gap-8 sm:pb-20">
       <FormalSection>
         <p className="italic">
-          This is a summarized version of our Terms of Service. Please read the
-          full legal version in the dropdown below for complete details.
+          This is a summarized version of our Terms of Use. Please read the full
+          legal version in the dropdown below for complete details.
         </p>
       </FormalSection>
       <FormalSection>

@@ -7,9 +7,9 @@ export const ToSContent = () => {
     <div className="relative flex w-full flex-col gap-8 sm:pb-20">
       <FormalSection>
         <Header3 className="font-serif">
-          TERMS OF SERVICE FOR COMMON PLATFORM AND ONE PROJECT SERVICES
+          TERMS OF USE FOR COMMON PLATFORM AND ONE PROJECT SERVICES
         </Header3>
-        <p>These Terms of Service were last revised on 06 18, 2025.</p>
+        <p>These Terms of Use were last revised on 06 18, 2025.</p>
       </FormalSection>
 
       <FormalSection>
