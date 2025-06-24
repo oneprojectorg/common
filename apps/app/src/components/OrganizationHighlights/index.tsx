@@ -1,6 +1,7 @@
 'use client';
 
 import { getPublicUrl } from '@/utils';
+import { pluralize } from '@/utils/pluralize';
 import { trpc } from '@op/api/client';
 import { Avatar } from '@op/ui/Avatar';
 import { FacePile } from '@op/ui/FacePile';
@@ -131,7 +132,9 @@ export const OrganizationHighlights = () => {
           <HighlightNumber className="bg-orange">
             {stats.totalRelationships}
           </HighlightNumber>
-          <HighlightLabel>active relationships</HighlightLabel>
+          <HighlightLabel>
+            active {pluralize('relationship', stats.totalRelationships)}
+          </HighlightLabel>
         </Highlight>
         <hr className="hidden h-20 w-0.5 bg-neutral-gray1 sm:block" />
         <Highlight>

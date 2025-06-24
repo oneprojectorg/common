@@ -1,5 +1,6 @@
 'use client';
 
+import { pluralize } from '@/utils/pluralize';
 import { trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
 import { Header1 } from '@op/ui/Header';
@@ -20,7 +21,7 @@ const RelationshipCount = ({ profile }: { profile: Organization }) => {
     count > 0 && (
       <Link href={`/org/${profile.profile.slug}/relationships`}>
         <span className="font-bold text-teal">
-          {count} {t('relationships')}
+          {count} {pluralize(t('relationship'), count)}
         </span>
       </Link>
     )

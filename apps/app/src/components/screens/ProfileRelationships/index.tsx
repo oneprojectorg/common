@@ -1,5 +1,6 @@
 'use client';
 
+import { pluralize } from '@/utils/pluralize';
 import { RELATIONSHIP_OPTIONS, relationshipMap } from '@/utils/relationships';
 import { RouterOutput, trpc } from '@op/api/client';
 import { Breadcrumb, Breadcrumbs } from '@op/ui/Breadcrumbs';
@@ -108,7 +109,9 @@ const ProfileRelationshipsSuspense = ({ slug }: { slug: string }) => {
           </Breadcrumb>
           <Breadcrumb>Relationships</Breadcrumb>
         </Breadcrumbs>
-        <div className="font-serif text-title-lg">{count} relationships</div>
+        <div className="font-serif text-title-lg">
+          {count} {pluralize('relationship', count)}
+        </div>
       </div>
       <Tabs>
         <TabList className="px-4 sm:px-0">
