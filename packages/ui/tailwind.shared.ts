@@ -251,7 +251,7 @@ const config: Omit<Config, 'content'> = {
         darkGray: 'hsl(var(--op-neutral-700))',
         midGray: 'hsl(var(--op-neutral-500))',
         lightGray: 'hsl(var(--op-neutral-400))',
-        offWhite: 'hsl(var(--op-neutral-50))',
+        offWhite: 'hsl(var(--op-neutral-200))',
         whiteish: 'hsl(var(--op-neutral-50))',
         white: 'hsl(var(--op-white))',
 
