@@ -49,7 +49,7 @@ const RelationshipList = ({
                             ?.label ?? 'Relationship'}{' '}
                           {relationship.pending ? (
                             <TagGroup>
-                              <Tag className="rounded-sm p-1 text-xs">
+                              <Tag className="rounded-sm p-1 text-xs sm:rounded-sm">
                                 Pending
                               </Tag>
                             </TagGroup>
