@@ -62,7 +62,7 @@ const ToastWrapper = ({
 
 const ToastBody = ({ children }: { children: React.ReactNode }) => {
   return (
-    <div className="flex w-full flex-col gap-2 px-1 text-base text-neutral-charcoal">
+    <div className="flex w-full flex-col gap-2 px-1 pt-1 text-base text-neutral-charcoal">
       {children}
     </div>
   );
@@ -91,7 +91,7 @@ export const toast = {
         <LuCircleCheck className="size-6 stroke-1 text-functional-green" />
         <ToastBody>
           {title ? <ToastTitle title={title} /> : null}
-          {message ? <div className="pt-1">{message}</div> : null}
+          {message ? <div>{message}</div> : null}
           {children}
         </ToastBody>
       </ToastWrapper>
