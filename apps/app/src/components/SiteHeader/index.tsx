@@ -309,7 +309,7 @@ export const SiteHeader = () => {
       </header>
 
       {/* Mobile */}
-      <header className="flex h-auto w-full items-center justify-between border-b border-neutral-gray1 px-4 py-2 sm:hidden">
+      <header className="flex h-auto w-full items-center justify-between px-4 py-2 sm:hidden">
         {!isMobileSearchExpanded && (
           <Link href="/">
             <CommonLogo />

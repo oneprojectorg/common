@@ -141,7 +141,7 @@ export const OrganizationSummaryList = ({
             <div className="flex items-start gap-2 py-2 sm:gap-6">
               <OrganizationAvatar
                 organization={org}
-                className="size-6 sm:size-12"
+                className="size-8 sm:size-12"
               />
 
               <div className="flex flex-col gap-3 text-neutral-black">
@@ -153,7 +153,9 @@ export const OrganizationSummaryList = ({
                     {org.profile.name}
                   </Link>
                   {whereWeWork.length > 0 ? (
-                    <span className="text-neutral-gray4">{whereWeWork}</span>
+                    <span className="text-sm text-neutral-gray4 sm:text-base">
+                      {whereWeWork}
+                    </span>
                   ) : null}
                 </div>
                 <span className="text-neutral-charcoal">{trimmedBio}</span>
