@@ -62,11 +62,17 @@ const ToastWrapper = ({
 };
 
 const ToastBody = ({ children }: { children: React.ReactNode }) => {
-  return <div className="flex w-full flex-col gap-2 px-1">{children}</div>;
+  return (
+    <div className="flex w-full flex-col gap-2 px-1 text-neutral-charcoal">
+      {children}
+    </div>
+  );
 };
 
 const ToastTitle = ({ title }: { title: string }) => {
-  return <div className="font-serif text-title-base">{title}</div>;
+  return (
+    <div className="font-serif text-title-base text-neutral-black">{title}</div>
+  );
 };
 
 export const toast = {
@@ -74,10 +80,12 @@ export const toast = {
     title,
     message,
     dismissable,
+    children,
   }: {
     title?: string;
     message?: ReactNode;
     dismissable?: boolean;
+    children?: React.ReactNode;
   }) => {
     return sonnerToast.custom((id) => (
       <ToastWrapper id={id} dismissable={dismissable}>
@@ -85,12 +93,21 @@ export const toast = {
         <ToastBody>
           {title ? <ToastTitle title={title} /> : null}
           {message ? <div>{message}</div> : null}
+          {children}
         </ToastBody>
       </ToastWrapper>
     ));
   },
 
-  error: ({ title, message }: { title?: string; message?: string }) => {
+  error: ({
+    title,
+    message,
+    children,
+  }: {
+    title?: string;
+    message?: string;
+    children?: React.ReactNode;
+  }) => {
     return sonnerToast.custom(
       (id) => (
         <ToastWrapper id={id}>
@@ -100,6 +117,7 @@ export const toast = {
               <div className="text-title-base text-white">{title}</div>
             ) : null}
             {message ? <div className="text-white">{message}</div> : null}
+            {children}
           </ToastBody>
         </ToastWrapper>
       ),

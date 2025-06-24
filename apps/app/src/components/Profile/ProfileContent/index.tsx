@@ -45,7 +45,11 @@ const ProfileAbout = ({
             {website ? (
               <ContactLink>
                 <LuGlobe />
-                <Link href={formatToUrl(website)} target="_blank">
+                <Link
+                  href={formatToUrl(website)}
+                  target="_blank"
+                  className="max-w-full overflow-hidden overflow-ellipsis text-nowrap"
+                >
                   {website}
                 </Link>
               </ContactLink>
@@ -70,7 +74,12 @@ const ProfileAbout = ({
                 }
               >
                 <LuMail className="min-w-4" />
-                <Link href={`mailto:${email}`}>{email}</Link>
+                <Link
+                  href={`mailto:${email}`}
+                  className="max-w-full overflow-hidden overflow-ellipsis text-nowrap"
+                >
+                  {email}
+                </Link>
               </ContactLink>
             ) : null}
           </div>
