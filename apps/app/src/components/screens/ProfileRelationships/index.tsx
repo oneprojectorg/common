@@ -40,7 +40,7 @@ const RelationshipList = ({
                 >
                   {relationshipOrg.profile.name}
                 </Link>
-                <div className="flex flex-wrap items-center gap-1">
+                <div className="flex flex-wrap items-center gap-4 gap-x-1 gap-y-2">
                   {relationshipOrg.relationships?.map(
                     (relationship, i, arr) => (
                       <>
@@ -103,13 +103,13 @@ const ProfileRelationshipsSuspense = ({ slug }: { slug: string }) => {
   return (
     <>
       <div className="flex flex-col gap-4 px-4 sm:px-0">
-        <Breadcrumbs>
+        <Breadcrumbs className="hidden sm:flex">
           <Breadcrumb href={`/org/${slug}`}>
             {organization.profile.name}
           </Breadcrumb>
           <Breadcrumb>Relationships</Breadcrumb>
         </Breadcrumbs>
-        <div className="font-serif text-title-lg">
+        <div className="font-serif text-title-sm sm:text-title-lg">
           {count} {pluralize('relationship', count)}
         </div>
       </div>
@@ -137,16 +137,43 @@ const ProfileRelationshipsSuspense = ({ slug }: { slug: string }) => {
   );
 };
 
+const OrganizationNameSuspense = ({ slug }: { slug: string }) => {
+  const [organization] = trpc.organization.getBySlug.useSuspenseQuery({
+    slug,
+  });
+
+  return (
+    <Link
+      href={`/org/${organization.profile.slug}`}
+      className="flex items-center gap-2"
+    >
+      <LuArrowLeft className="size-6 stroke-1 text-neutral-black" />
+      <div className="flex items-center gap-1 text-sm font-semibold text-neutral-black">
+        <OrganizationAvatar organization={organization} className="size-6" />
+        {organization.profile.name}
+      </div>
+    </Link>
+  );
+};
+
 export const ProfileRelationships = ({ slug }: { slug: string }) => {
   return (
     <>
       {/* nav arrow */}
-      <header className="absolute left-0 top-0 z-50 px-4 py-3 sm:hidden">
-        <Link href="/">
-          <LuArrowLeft className="size-6 text-neutral-offWhite" />
-        </Link>
+      <header className="absolute left-0 top-0 z-50 w-full bg-white px-4 py-3 sm:hidden">
+        <ErrorBoundary
+          errorComponent={() => (
+            <Link href="/" className="flex items-center gap-2">
+              <LuArrowLeft className="size-6 stroke-1 text-neutral-black" />
+            </Link>
+          )}
+        >
+          <Suspense fallback={null}>
+            <OrganizationNameSuspense slug={slug} />
+          </Suspense>
+        </ErrorBoundary>
       </header>
-      <div className="flex w-full flex-col gap-3 pt-8 sm:min-h-[calc(100vh-3.5rem)] sm:gap-4">
+      <div className="flex w-full flex-col gap-3 pt-4 sm:min-h-[calc(100vh-3.5rem)] sm:gap-4 sm:pt-8">
         <ErrorBoundary errorComponent={() => <div>Could not load profile</div>}>
           <Suspense fallback={<ProfileRelationshipsSkeleton />}>
             <ProfileRelationshipsSuspense slug={slug} />
