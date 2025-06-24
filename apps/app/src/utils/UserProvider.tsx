@@ -29,8 +29,8 @@ export const UserProviderSuspense = ({
     router.push('/start');
   }
 
-  // TODO: During TESTING we are identifying users by email.
-  if (user) {
+  // We are only identifying One Project users by email.
+  if (user && user.email.match(/.+@oneproject\.org$/)) {
     posthog.identify(user.id, { email: user.email, name: user.name });
   }
 
