@@ -14,7 +14,7 @@ export const FullScreenSplitMain = ({
       <section className="hidden lg:block">
         <div className="flex items-center gap-2">
           {logo ? (
-            <Link href="/login" className="flex items-center gap-2">
+            <Link href="/" className="flex items-center gap-2">
               <CommonLogo />
             </Link>
           ) : null}
