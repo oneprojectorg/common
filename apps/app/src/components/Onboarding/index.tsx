@@ -59,7 +59,7 @@ export const OnboardingFlow = () => {
   void trpc.account.listMatchingDomainOrganizations.usePrefetchQuery();
   const router = useRouter();
   const {
-    reset,
+    // reset,
     personalDetails,
     organizationDetails,
     fundingInformation,
@@ -127,9 +127,9 @@ export const OnboardingFlow = () => {
           // invalidate account so we refetch organization users again
           trpcUtil.account.getMyAccount.reset();
           trpcUtil.account.getMyAccount.refetch().then(() => {
+            setSubmitting(false);
             router.push(`/?new=1`);
           });
-          setSubmitting(false);
         })
         .catch((err) => {
           console.error('ERROR', err);
