@@ -10,7 +10,7 @@ export const Toast = () => {
   return (
     <Sonner
       position="bottom-left"
-      className="toaster group"
+      className="toaster group w-[27rem]"
       pauseWhenPageIsHidden
       visibleToasts={3}
       duration={3000}
@@ -45,7 +45,7 @@ const ToastWrapper = ({
   children: React.ReactNode;
 }) => {
   return (
-    <div className="flex w-full items-start gap-2">
+    <div className="flex w-full items-end gap-2">
       {children}
       {dismissable && (
         <Button
