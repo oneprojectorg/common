@@ -86,7 +86,7 @@ export const MenuSeparator = (props: SeparatorProps) => {
   return (
     <Separator
       {...props}
-      className="mx-3 my-1 border-b border-neutral-offWhite"
+      className={cn('my-1 border-b border-neutral-offWhite', props.className)}
     />
   );
 };

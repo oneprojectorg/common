@@ -20,7 +20,7 @@ export const Avatar = ({
   return (
     <div
       className={cn(
-        'relative flex size-8 items-center justify-center overflow-hidden text-clip rounded-full bg-white shadow outline outline-neutral-gray1',
+        'relative flex size-8 items-center justify-center overflow-hidden text-clip rounded-full bg-white shadow',
         className,
       )}
     >

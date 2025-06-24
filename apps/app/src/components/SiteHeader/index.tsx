@@ -12,10 +12,16 @@ import { Modal, ModalBody } from '@op/ui/Modal';
 import { Popover } from '@op/ui/Popover';
 import { MenuTrigger } from '@op/ui/RAC';
 import { Skeleton } from '@op/ui/Skeleton';
+import { cn } from '@op/ui/utils';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
-import { LuChevronDown, LuLogOut, LuSearch } from 'react-icons/lu';
+import {
+  LuChevronDown,
+  LuCircleHelp,
+  LuLogOut,
+  LuSearch,
+} from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
@@ -79,7 +85,7 @@ const AvatarMenuContent = ({
           ) : null}
         </Avatar>
         <div className="flex flex-col">
-          <span className="text-sm">
+          <span className="sm:text-sm">
             Logged in as {user?.name} (
             <Button
               onPress={() => setIsProfileOpen(true)}
@@ -93,7 +99,7 @@ const AvatarMenuContent = ({
             )
           </span>
 
-          <span className="text-xs text-neutral-gray4">
+          <span className="text-sm text-neutral-gray4 sm:text-xs">
             Admin for {user?.currentOrganization?.profile.name}
           </span>
         </div>
@@ -101,7 +107,11 @@ const AvatarMenuContent = ({
       {user?.organizationUsers?.map((orgUser) => (
         <MenuItem
           key={orgUser.organizationId}
-          className="min-h-[60px] px-4 py-4 text-neutral-charcoal"
+          className={cn(
+            'min-h-[60px] px-4 py-4 text-neutral-charcoal',
+            user.currentOrganization?.id === orgUser.organizationId &&
+              'bg-neutral-offWhite',
+          )}
           onAction={() => {
             if (user.currentOrganization?.id === orgUser.organizationId) {
               router.push(`/org/${orgUser.organization?.profile.slug}`);
@@ -137,10 +147,24 @@ const AvatarMenuContent = ({
           </div>
         </MenuItem>
       ))}
-      <MenuSeparator />
+      <MenuSeparator className="pt-4" />
+      <MenuItem
+        id="help"
+        className="min-h-[60px] px-0 py-4 text-neutral-charcoal hover:bg-neutral-offWhite focus:bg-neutral-offWhite"
+        onAction={() => {
+          router.push(
+            'https://oneprojectorg.notion.site/Common-Platform-Feature-Requests-Bug-Submissions-1f3f0b6622538047a51ec4a8b335bc27',
+          );
+
+          onClose?.();
+        }}
+      >
+        <LuCircleHelp className="size-8 rounded-full bg-neutral-offWhite p-2" />{' '}
+        {t('Help & Support')}
+      </MenuItem>
       <MenuItem
         id="logout"
-        className="min-h-[60px] px-4 py-4 text-neutral-charcoal"
+        className="min-h-[60px] px-0 py-4 text-neutral-charcoal hover:bg-neutral-offWhite focus:bg-neutral-offWhite"
         onAction={() => {
           void logout.refetch().finally(() => router.push('/'));
           onClose?.();
@@ -151,7 +175,7 @@ const AvatarMenuContent = ({
       </MenuItem>
       <MenuItemSimple
         isDisabled
-        className="flex flex-col items-start justify-start gap-2 text-sm text-neutral-gray4 hover:bg-transparent"
+        className="flex flex-col items-start justify-start gap-2 px-0 text-neutral-gray4 hover:bg-transparent sm:text-sm"
       >
         <div>
           <PrivacyPolicyModal />
@@ -161,22 +185,11 @@ const AvatarMenuContent = ({
           <CoCModal />
         </div>
       </MenuItemSimple>
-      <MenuItemSimple className="flex flex-col items-start justify-start gap-2 text-sm hover:bg-transparent">
-        <div className="text-sm text-primary-teal hover:underline">
-          <Link
-            href="https://oneprojectorg.notion.site/Common-Platform-Feature-Requests-Bug-Submissions-1f3f0b6622538047a51ec4a8b335bc27"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Submit Bugs & Feature Requests
-          </Link>
-        </div>
-      </MenuItemSimple>
       <MenuItemSimple
         isDisabled
-        className="flex flex-col items-start justify-start gap-2 text-sm text-neutral-gray4 hover:bg-transparent"
+        className="flex flex-col items-start justify-start gap-2 px-0 text-sm text-neutral-gray4 hover:bg-transparent"
       >
-        <div className="text-xs">
+        <div className="text-sm sm:text-xs">
           Ethical Open Source • One Project • {new Date().getFullYear()}
         </div>
       </MenuItemSimple>
@@ -226,10 +239,10 @@ const UserAvatarMenu = () => {
           isDismissable={true}
           isKeyboardDismissDisabled={false}
           overlayClassName="p-0 items-end justify-center animate-in fade-in-0 duration-300"
-          className="m-0 w-screen max-w-none rounded-b-none rounded-t duration-300 ease-out animate-in slide-in-from-bottom-full"
+          className="m-0 w-screen max-w-none rounded-b-none rounded-t border-0 outline-0 duration-300 ease-out animate-in slide-in-from-bottom-full"
         >
           <ModalBody className="pb-safe p-0">
-            <Menu className="flex min-w-full flex-col p-4 pb-8">
+            <Menu className="flex min-w-full flex-col border-t-0 p-4 pb-8">
               <AvatarMenuContent
                 setIsProfileOpen={setIsProfileOpen}
                 onClose={() => setIsDrawerOpen(false)}

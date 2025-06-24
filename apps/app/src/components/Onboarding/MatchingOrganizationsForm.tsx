@@ -9,7 +9,7 @@ import { ReactNode, Suspense, useEffect, useState } from 'react';
 import { LuGlobe, LuMail } from 'react-icons/lu';
 import { z } from 'zod';
 
-import { Link, useTranslations } from '@/lib/i18n';
+import { useTranslations } from '@/lib/i18n';
 
 import { ContactLink } from '../ContactLink';
 import ErrorBoundary from '../ErrorBoundary';
@@ -162,12 +162,13 @@ export const MatchingOrganizationsForm = ({
               )}
             </Button>
           </div>
-          <Link
+          <a
             className="text-center text-teal hover:underline"
             href="mailto:support@oneproject.org"
+            rel="noopener noreferrer"
           >
             {t('Whoops! This is not my organization.')}
-          </Link>
+          </a>
         </div>
       </FormContainer>
     </div>
