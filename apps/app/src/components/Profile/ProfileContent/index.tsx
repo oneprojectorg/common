@@ -61,6 +61,7 @@ const ProfileAbout = ({
                       toast.success({
                         message:
                           'This email address has been copied to your clipboard.',
+                        dismissable: false,
                       });
                     }}
                   >

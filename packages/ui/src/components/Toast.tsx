@@ -37,22 +37,26 @@ export const Toast = () => {
 };
 
 const ToastWrapper = ({
-  children,
   id,
+  dismissable = false,
+  children,
 }: {
-  children: React.ReactNode;
   id: string | number;
+  dismissable?: boolean;
+  children: React.ReactNode;
 }) => {
   return (
     <div className="flex w-full items-start gap-2">
       {children}
-      <Button
-        unstyled
-        className="w-6 transition-opacity hover:opacity-70"
-        onPress={() => sonnerToast.dismiss(id)}
-      >
-        <LuX className="size-6 stroke-1" />
-      </Button>
+      {dismissable && (
+        <Button
+          unstyled
+          className="w-6 transition-opacity hover:opacity-70"
+          onPress={() => sonnerToast.dismiss(id)}
+        >
+          <LuX className="size-6 stroke-1" />
+        </Button>
+      )}
     </div>
   );
 };
@@ -66,9 +70,17 @@ const ToastTitle = ({ title }: { title: string }) => {
 };
 
 export const toast = {
-  success: ({ title, message }: { title?: string; message?: ReactNode }) => {
+  success: ({
+    title,
+    message,
+    dismissable,
+  }: {
+    title?: string;
+    message?: ReactNode;
+    dismissable?: boolean;
+  }) => {
     return sonnerToast.custom((id) => (
-      <ToastWrapper id={id}>
+      <ToastWrapper id={id} dismissable={dismissable}>
         <LuCircleCheck className="size-6 stroke-1 text-functional-green" />
         <ToastBody>
           {title ? <ToastTitle title={title} /> : null}
