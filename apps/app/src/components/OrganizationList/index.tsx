@@ -32,7 +32,7 @@ export const OrganizationList = ({
             <div key={org.id} className="flex items-center gap-2">
               <OrganizationAvatar organization={org} className="size-8" />
 
-              <div className="flex min-w-0 flex-col text-sm">
+              <div className="flex min-w-0 flex-col text-sm sm:text-base">
                 <Link
                   className="max-w-full truncate text-nowrap hover:underline"
                   href={`/org/${org.profile.slug}`}
@@ -100,12 +100,6 @@ export const OrganizationList = ({
 
                       <div className="flex flex-col p-4 pt-0 text-left">
                         <span>{org.profile.name}</span>
-                        <span>
-                          {org.profile.city}
-                          {org.profile.state && org.profile.city
-                            ? `, ${org.profile.state}`
-                            : ''}
-                        </span>
                       </div>
                     </Link>
                   </Surface>
