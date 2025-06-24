@@ -150,7 +150,7 @@ const AvatarMenuContent = ({
       <MenuSeparator className="pt-4" />
       <MenuItem
         id="help"
-        className="min-h-[60px] px-0 py-4 text-neutral-charcoal hover:bg-neutral-offWhite focus:bg-neutral-offWhite"
+        className="px-0 py-2 text-neutral-charcoal hover:bg-neutral-offWhite focus:bg-neutral-offWhite"
         onAction={() => {
           router.push(
             'https://oneprojectorg.notion.site/Common-Platform-Feature-Requests-Bug-Submissions-1f3f0b6622538047a51ec4a8b335bc27',
@@ -164,7 +164,7 @@ const AvatarMenuContent = ({
       </MenuItem>
       <MenuItem
         id="logout"
-        className="min-h-[60px] px-0 py-4 text-neutral-charcoal hover:bg-neutral-offWhite focus:bg-neutral-offWhite"
+        className="px-0 py-2 text-neutral-charcoal hover:bg-neutral-offWhite focus:bg-neutral-offWhite"
         onAction={() => {
           void logout.refetch().finally(() => router.push('/'));
           onClose?.();
@@ -175,7 +175,7 @@ const AvatarMenuContent = ({
       </MenuItem>
       <MenuItemSimple
         isDisabled
-        className="flex flex-col items-start justify-start gap-2 px-0 text-neutral-gray4 hover:bg-transparent sm:text-sm"
+        className="flex flex-col items-start justify-start gap-2 px-0 pt-4 text-neutral-gray4 hover:bg-transparent sm:text-sm"
       >
         <div>
           <PrivacyPolicyModal />
