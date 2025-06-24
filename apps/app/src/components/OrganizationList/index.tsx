@@ -131,6 +131,11 @@ export const OrganizationSummaryList = ({
           .map((location) => location.name)
           .join(' • ');
 
+        const trimmedBio =
+          org.profile.bio && org.profile.bio.length > 325
+            ? `${org.profile.bio.slice(0, 325)}...`
+            : org.profile.bio;
+
         return (
           <div key={org.id}>
             <div className="flex items-start gap-2 py-2 sm:gap-6">
@@ -151,7 +156,7 @@ export const OrganizationSummaryList = ({
                     <span className="text-neutral-gray4">{whereWeWork}</span>
                   ) : null}
                 </div>
-                <span className="text-neutral-charcoal">{org.profile.bio}</span>
+                <span className="text-neutral-charcoal">{trimmedBio}</span>
               </div>
             </div>
           </div>
