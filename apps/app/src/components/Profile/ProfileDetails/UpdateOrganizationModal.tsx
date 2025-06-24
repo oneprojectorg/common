@@ -62,7 +62,7 @@ export const UpdateOrganizationModal = ({
         isOpen={isOpen}
         onOpenChange={setIsOpen}
         isDismissable
-        className="h-svh max-h-none w-screen max-w-none overflow-y-auto sm:h-auto sm:max-h-[75vh] sm:w-[36rem] sm:max-w-[36rem]"
+        className="h-svh max-h-none w-screen max-w-none overflow-y-auto rounded-none sm:h-auto sm:max-h-[75vh] sm:w-[36rem] sm:max-w-[36rem] sm:rounded-md"
       >
         <ModalHeader className="flex items-center justify-between">
           {/* Desktop header */}
