@@ -10,6 +10,7 @@ import { Suspense } from 'react';
 import { NewOrganizations } from '@/components/NewOrganizations';
 import { NewlyJoinedModal } from '@/components/NewlyJoinedModal';
 import { OrganizationHighlights } from '@/components/OrganizationHighlights';
+import { OrganizationListSkeleton } from '@/components/OrganizationList';
 import { PendingRelationships } from '@/components/PendingRelationships';
 import { PostFeed, PostFeedSkeleton } from '@/components/PostFeed';
 import { PostUpdate } from '@/components/PostUpdate';
@@ -160,7 +161,7 @@ export const LandingScreenSkeleton: React.FC = () => {
         <div className="col-span-5">
           <Surface className="flex flex-col gap-6 border-0 sm:border sm:p-6">
             <Skeleton className="text-title-sm">New Organizations</Skeleton>
-            <SkeletonLine lines={5} />
+            <OrganizationListSkeleton />
           </Surface>
         </div>
       </div>
