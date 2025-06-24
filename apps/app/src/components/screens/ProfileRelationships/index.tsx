@@ -65,7 +65,10 @@ const RelationshipList = ({
               </div>
 
               <div className="flex items-center gap-1 text-neutral-charcoal">
-                {relationshipOrg.profile.bio}
+                {relationshipOrg.profile.bio &&
+                relationshipOrg.profile.bio.length > 325
+                  ? `${relationshipOrg.profile.bio.slice(0, 325)}...`
+                  : relationshipOrg.profile.bio}
               </div>
             </div>
           </div>
