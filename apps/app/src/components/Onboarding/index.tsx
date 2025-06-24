@@ -124,10 +124,10 @@ export const OnboardingFlow = () => {
       createOrganization
         .mutateAsync(processInputs(combined))
         .then(() => {
-          reset();
           // invalidate account so we refetch organization users again
-          trpcUtil.account.getMyAccount.reset();
-          trpcUtil.account.getMyAccount.refetch().then(() => {
+          // trpcUtil.account.getMyAccount.reset();
+          trpcUtil.account.getMyAccount.invalidate().then(() => {
+            reset();
             router.push(`/?new=1`);
           });
           setSubmitting(false);

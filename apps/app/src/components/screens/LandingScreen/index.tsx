@@ -137,11 +137,11 @@ export const LandingScreenSkeleton: React.FC = () => {
     <div className="container flex min-h-0 grow flex-col gap-4 pt-8 sm:gap-10 sm:pt-14">
       <div className="flex flex-col gap-2">
         <Skeleton>
-          <Header1 className="text-center text-title-md sm:text-title-xl">
+          <Header1 className="text-center text-title-md text-transparent sm:text-title-xl">
             Welcome back, to Common!
           </Header1>
         </Skeleton>
-        <Skeleton className="text-center text-neutral-charcoal">
+        <Skeleton className="text-center text-transparent">
           Explore new connections and strengthen existing relationships.
         </Skeleton>
       </div>
