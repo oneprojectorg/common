@@ -125,9 +125,8 @@ export const OnboardingFlow = () => {
         .mutateAsync(processInputs(combined))
         .then(() => {
           // invalidate account so we refetch organization users again
-          // trpcUtil.account.getMyAccount.reset();
-          trpcUtil.account.getMyAccount.invalidate().then(() => {
-            reset();
+          trpcUtil.account.getMyAccount.reset();
+          trpcUtil.account.getMyAccount.refetch().then(() => {
             router.push(`/?new=1`);
           });
           setSubmitting(false);
