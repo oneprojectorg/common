@@ -22,14 +22,13 @@ export const Toast = () => {
       toastOptions={{
         classNames: {
           toast:
-            'group relative text-5 toast bg-white rounded-lg backdrop-blur-md border border-neutral-gray1 text-neutral-black p-3 flex gap-3',
+            'group relative text-5 toast bg-neutral-offWhite rounded-lg backdrop-blur-md border border-neutral-gray1 text-neutral-black p-3 flex gap-3',
           description: 'text-neutral-charcoal',
           actionButton:
             'group-[.toast]:bg-primary group-[.toast]:text-primary-foreground',
           cancelButton:
             'group-[.toast]:bg-muted group-[.toast]:text-muted-foreground',
           closeButton: '!absolute !right-0 top-0',
-          // error: 'text-neutral-offWhite bg-functional-red',
         },
       }}
     />
@@ -63,7 +62,7 @@ const ToastWrapper = ({
 
 const ToastBody = ({ children }: { children: React.ReactNode }) => {
   return (
-    <div className="flex w-full flex-col gap-2 px-1 text-neutral-charcoal">
+    <div className="flex w-full flex-col gap-2 px-1 text-base text-neutral-charcoal">
       {children}
     </div>
   );
