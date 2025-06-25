@@ -73,6 +73,7 @@ import {
 // return what we have added so those can be linked to the record
 // return addedTerms.filter((term) => term !== undefined);
 // };
+const broadDomains = ['gmail.com', 'outlook.com', 'hotmail.com'];
 
 export const createOrganization = async ({
   data,
@@ -93,13 +94,18 @@ export const createOrganization = async ({
     profileId: null,
   });
 
+  let domain = data.email?.split('@')[1];
+  if (domain && broadDomains.includes(domain)) {
+    domain = undefined;
+  }
+
   // Create an org profile
   const [profile] = await db
     .insert(profiles)
     .values({
       name: data.name! ?? 'New Organization',
       slug: randomUUID(),
-      email: user.email,
+      email: data.email,
       bio: data.bio,
       website: data.website,
       mission: data.mission,
@@ -114,7 +120,11 @@ export const createOrganization = async ({
 
   const [newOrg] = await db
     .insert(organizations)
-    .values({ ...orgInputs, profileId: profile.id })
+    .values({
+      ...orgInputs,
+      profileId: profile.id,
+      domain,
+    })
     .returning();
 
   if (!newOrg) {
