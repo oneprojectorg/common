@@ -100,6 +100,10 @@ export const PrivacyPolicyContent = () => {
           not provide us with certain Personal Data, there may be some Services
           that are unavailable to you.
         </p>
+
+        <Header3 className="font-serif text-sm">
+          3.2 Types of Personal Data We Collect
+        </Header3>
         <p>
           The below table is a high-level summary of the types of Personal Data
           we may collect from you. Following that high-level summary is
@@ -117,56 +121,154 @@ export const PrivacyPolicyContent = () => {
           sensitive Personal Data other than for the purposes specified herein.
         </p>
 
-        <Header3 className="font-serif text-sm">
-          3.2 Categories of Personal Data We Collect
-        </Header3>
-        <p>
-          <strong>Identity and Contact Information:</strong> This may include
-          name, username, email, phone number, etc.
-        </p>
-        <p>
-          <strong>Demographic Information:</strong> This may include
-          characteristics of protected classifications under some laws and may
-          include age, gender, disability, etc.
-        </p>
-        <p>
-          <strong>Activity Data:</strong> This may include posts on the
-          Platform, relational connections, etc.
-        </p>
-        <p>
-          <strong>Video, Audio, and Recorded Information:</strong> This may
-          include photos, video, call, or chat recordings, etc.
-        </p>
-        <p>
-          <strong>Technical or Electronic Network Activity Information:</strong>{' '}
-          This may include Internet Protocol (IP) address, browser, device type,
-          etc.
-        </p>
-        <p>
-          <strong>Financial Information:</strong> This may include financial
-          information related to funding.
-        </p>
-        <p>
-          <strong>
-            Professional, Employment, and Educational Information:
-          </strong>{' '}
-          This may include job title or position, employer, focus area,
-          biography, etc.
-        </p>
-        <p>
-          <strong>Anonymized / De-Identified Data:</strong> Data that removes
-          individual personal data
-        </p>
-        <p>
-          Personal Data that may be considered sensitive is noted with a "^". If
-          required to do so, we will obtain your consent prior to processing
-          your sensitive data.
-        </p>
-        <p>
-          *One Project does not knowingly process Personal Data of children
-          below the age of 16 without the permission of their parents or legal
-          guardians.
-        </p>
+        <div className="my-4 overflow-x-auto">
+          <table className="min-w-full border-collapse border border-gray-300">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="border border-gray-300 px-4 py-2 text-left">
+                  Category
+                </th>
+                <th className="border border-gray-300 px-4 py-2 text-left">
+                  Description
+                </th>
+                <th className="border border-gray-300 px-4 py-2 text-center">
+                  Users of the Platform
+                </th>
+                <th className="border border-gray-300 px-4 py-2 text-center">
+                  Children*
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td className="border border-gray-300 px-4 py-2">
+                  Identity and Contact Information
+                </td>
+                <td className="border border-gray-300 px-4 py-2">
+                  This may include name, username, email, phone number, etc.
+                </td>
+                <td className="border border-gray-300 px-4 py-2 text-center">
+                  X^
+                </td>
+                <td className="border border-gray-300 px-4 py-2 text-center">
+                  -
+                </td>
+              </tr>
+              <tr>
+                <td className="border border-gray-300 px-4 py-2">
+                  Demographic Information
+                </td>
+                <td className="border border-gray-300 px-4 py-2">
+                  This may include characteristics of protected classifications
+                  under some laws and may include age, gender, disability, etc.
+                </td>
+                <td className="border border-gray-300 px-4 py-2 text-center">
+                  X^
+                </td>
+                <td className="border border-gray-300 px-4 py-2 text-center">
+                  -
+                </td>
+              </tr>
+              <tr>
+                <td className="border border-gray-300 px-4 py-2">
+                  Activity Data
+                </td>
+                <td className="border border-gray-300 px-4 py-2">
+                  This may include posts on the Platform, relational
+                  connections, etc.
+                </td>
+                <td className="border border-gray-300 px-4 py-2 text-center">
+                  X
+                </td>
+                <td className="border border-gray-300 px-4 py-2 text-center">
+                  -
+                </td>
+              </tr>
+              <tr>
+                <td className="border border-gray-300 px-4 py-2">
+                  Video, Audio, and Recorded Information
+                </td>
+                <td className="border border-gray-300 px-4 py-2">
+                  This may include photos, video, call, or chat recordings, etc.
+                </td>
+                <td className="border border-gray-300 px-4 py-2 text-center">
+                  X^
+                </td>
+                <td className="border border-gray-300 px-4 py-2 text-center">
+                  -
+                </td>
+              </tr>
+              <tr>
+                <td className="border border-gray-300 px-4 py-2">
+                  Technical or Electronic Network Activity Information
+                </td>
+                <td className="border border-gray-300 px-4 py-2">
+                  This may include Internet Protocol (IP) address, browser,
+                  device type, etc.
+                </td>
+                <td className="border border-gray-300 px-4 py-2 text-center">
+                  X
+                </td>
+                <td className="border border-gray-300 px-4 py-2 text-center">
+                  -
+                </td>
+              </tr>
+              <tr>
+                <td className="border border-gray-300 px-4 py-2">
+                  Financial Information
+                </td>
+                <td className="border border-gray-300 px-4 py-2">
+                  This may include financial information related to funding.
+                </td>
+                <td className="border border-gray-300 px-4 py-2 text-center">
+                  X^
+                </td>
+                <td className="border border-gray-300 px-4 py-2 text-center">
+                  -
+                </td>
+              </tr>
+              <tr>
+                <td className="border border-gray-300 px-4 py-2">
+                  Professional, Employment, and Educational Information
+                </td>
+                <td className="border border-gray-300 px-4 py-2">
+                  This may include job title or position, employer, focus area,
+                  biography, etc.
+                </td>
+                <td className="border border-gray-300 px-4 py-2 text-center">
+                  X
+                </td>
+                <td className="border border-gray-300 px-4 py-2 text-center">
+                  -
+                </td>
+              </tr>
+              <tr>
+                <td className="border border-gray-300 px-4 py-2">
+                  Anonymized / De-Identified Data
+                </td>
+                <td className="border border-gray-300 px-4 py-2">
+                  Data that removes individual personal data
+                </td>
+                <td className="border border-gray-300 px-4 py-2 text-center">
+                  X
+                </td>
+                <td className="border border-gray-300 px-4 py-2 text-center">
+                  -
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p className="mt-2 text-sm italic">
+            Personal Data that may be considered sensitive is noted with a "^".
+            If required to do so, we will obtain your consent prior to
+            processing your sensitive data.
+          </p>
+          <p className="mt-2 text-sm italic">
+            *One Project does not knowingly process Personal Data of children
+            below the age of 16 without the permission of their parents or legal
+            guardians.
+          </p>
+        </div>
 
         <Header3 className="font-serif text-sm">
           3.3 Users of the Platform
@@ -180,237 +282,256 @@ export const PrivacyPolicyContent = () => {
           events or activities we offer through or for the Platform.
         </p>
 
-        <p>
-          <strong>Examples of the types of data we process</strong> (Personal
-          Data that may be considered sensitive is noted with a "^"):
-        </p>
+        <div className="my-4">
+          <p className="mb-2 font-semibold">
+            Examples of the types of data we process (Personal Data that may be
+            considered sensitive is noted with a "^")
+          </p>
 
-        <p>
-          <strong>Identity and contact information, such as:</strong>
-        </p>
-        <ul>
-          <li>first and last name or unique pseudonym</li>
-          <li>honorifics and titles, preferred form of address</li>
-          <li>employer / organization</li>
-          <li>email address</li>
-          <li>organization name or identifier</li>
-          <li>phone number username or code and user preferences</li>
-        </ul>
+          <div className="space-y-4">
+            <div>
+              <p className="font-semibold">
+                Identity and contact information, such as:
+              </p>
+              <ul className="mt-1 list-disc pl-6">
+                <li>first and last name or unique pseudonym</li>
+                <li>honorifics and titles, preferred form of address</li>
+                <li>employer / organization</li>
+                <li>email address</li>
+                <li>organization name or identifier</li>
+                <li>phone number username or code and user preferences</li>
+              </ul>
+            </div>
 
-        <p>
-          <strong>Demographic Information, such as:</strong>
-        </p>
-        <ul>
-          <li>preferred language</li>
-          <li>approximate location</li>
-          <li>interests</li>
-        </ul>
+            <div>
+              <p className="font-semibold">Demographic Information, such as:</p>
+              <ul className="mt-1 list-disc pl-6">
+                <li>preferred language</li>
+                <li>approximate location</li>
+                <li>interests</li>
+              </ul>
+            </div>
 
-        <p>
-          <strong>Activity Data:</strong>
-        </p>
-        <ul>
-          <li>Posts on the platform</li>
-          <li>Relational connections</li>
-        </ul>
+            <div>
+              <p className="font-semibold">Activity Data:</p>
+              <ul className="mt-1 list-disc pl-6">
+                <li>Posts on the platform</li>
+                <li>Relational connections</li>
+              </ul>
+            </div>
 
-        <p>
-          <strong>Video, Audio, and Recorded Information, such as:</strong>
-        </p>
-        <ul>
-          <li>Still images^</li>
-          <li>Video (including videos posted on the platform)</li>
-          <li>recordings of online events^</li>
-          <li>
-            recordings of your interactions with our Services, whether through
-            email or otherwise
-          </li>
-        </ul>
+            <div>
+              <p className="font-semibold">
+                Video, Audio, and Recorded Information, such as:
+              </p>
+              <ul className="mt-1 list-disc pl-6">
+                <li>Still images^</li>
+                <li>Video (including videos posted on the platform)</li>
+                <li>recordings of online events^</li>
+                <li>
+                  recordings of your interactions with our Services, whether
+                  through email or otherwise
+                </li>
+              </ul>
+            </div>
 
-        <p>
-          <strong>
-            Technical or electronic network activity information, such as:
-          </strong>
-        </p>
-        <ul>
-          <li>
-            Internet Protocol (IP) addresses (which may identify your general
-            geographic location or organization)
-          </li>
-          <li>browser type and browser language</li>
-          <li>device type and operating system</li>
-          <li>date and time you use our Online Services</li>
-          <li>communications metadata</li>
-          <li>
-            Uniform Resource Locators, or URLs (i.e., website addresses) visited
-            prior to arriving and after leaving our Services
-          </li>
-          <li>
-            Information about how you interact with our Services, including
-            analytics information about what pages you visit, where you click,
-            videos you watch, the website you came from before ours to
-            understand how you were referred to our platform (ie. through social
-            media, direct link, or another partner's website, etc.), and any
-            forms of or other details you choose to share with us (As further
-            described below in "Why do we process the data?" We collect this
-            information to better understand how people use our services,
-            improve your experience, fix problems, and show you content that is
-            more relevant to you on the Platform. We do not use this information
-            to track individuals across the Internet for targeted advertising
-            purposes.
-          </li>
-          <li>data collected from cookies or other similar technologies***</li>
-        </ul>
+            <div>
+              <p className="font-semibold">
+                Technical or electronic network activity information, such as:
+              </p>
+              <ul className="mt-1 list-disc pl-6">
+                <li>
+                  Internet Protocol (IP) addresses (which may identify your
+                  general geographic location or organization)
+                </li>
+                <li>browser type and browser language</li>
+                <li>device type and operating system</li>
+                <li>date and time you use our Online Services</li>
+                <li>communications metadata</li>
+                <li>
+                  Uniform Resource Locators, or URLs (i.e., website addresses)
+                  visited prior to arriving and after leaving our Services
+                </li>
+                <li>
+                  Information about how you interact with our Services,
+                  including analytics information about what pages you visit,
+                  where you click, videos you watch, the website you came from
+                  before ours to understand how you were referred to our
+                  platform (ie. through social media, direct link, or another
+                  partner's website, etc.), and any forms of or other details
+                  you choose to share with us (As further described below in
+                  "Why do we process the data?" We collect this information to
+                  better understand how people use our services, improve your
+                  experience, fix problems, and show you content that is more
+                  relevant to you on the Platform. We do not use this
+                  information to track individuals across the Internet for
+                  targeted advertising purposes.
+                </li>
+                <li>
+                  data collected from cookies or other similar technologies***
+                </li>
+              </ul>
+            </div>
 
-        <p>
-          <strong>Financial information, such as:</strong>
-        </p>
-        <ul>
-          <li>
-            self-disclosed funding information (example: who funded you, how
-            much)
-          </li>
-        </ul>
+            <div>
+              <p className="font-semibold">Financial information, such as:</p>
+              <ul className="mt-1 list-disc pl-6">
+                <li>
+                  self-disclosed funding information (example: who funded you,
+                  how much)
+                </li>
+              </ul>
+            </div>
 
-        <p>
-          <strong>Anonymized / de-identified data:</strong>
-        </p>
-        <p>
-          Anonymized and/or de-identified data is data for which your individual
-          personal characteristics and information have been removed such that
-          you are not identified or identifiable and the information is no
-          longer considered Personal Data under data protection laws~
-        </p>
+            <div>
+              <p className="font-semibold">Anonymized / de-identified data:</p>
+              <p className="mt-1">
+                Anonymized and/or de-identified data is data for which your
+                individual personal characteristics and information have been
+                removed such that you are not identified or identifiable and the
+                information is no longer considered Personal Data under data
+                protection laws~
+              </p>
+            </div>
+          </div>
+        </div>
 
-        <Header3 className="font-serif text-sm">
-          3.4 Where do we get the data?
-        </Header3>
-        <ul>
-          <li>you directly</li>
-          <li>
-            those authorized to provide Personal Data on your behalf, such as
-            your authorized representative(s)
-          </li>
-          <li>our affiliates, consultants, or service providers</li>
-          <li>your devices</li>
-          <li>our security systems</li>
-          <li>
-            third parties that provide access to information you make publicly
-            available, such as social media
-          </li>
-          <li>
-            business partners and other third parties that assist us in
-            providing and improving our Services
-          </li>
-        </ul>
+        <div className="my-4">
+          <p className="font-semibold">Where do we get the data?</p>
+          <ul className="mt-1 list-disc pl-6">
+            <li>you directly</li>
+            <li>
+              those authorized to provide Personal Data on your behalf, such as
+              your authorized representative(s)
+            </li>
+            <li>our affiliates, consultants, or service providers</li>
+            <li>your devices</li>
+            <li>our security systems</li>
+            <li>
+              third parties that provide access to information you make publicly
+              available, such as social media
+            </li>
+            <li>
+              business partners and other third parties that assist us in
+              providing and improving our Services
+            </li>
+          </ul>
+        </div>
 
-        <Header3 className="font-serif text-sm">
-          3.5 Why do we process the data?
-        </Header3>
-        <ul>
-          <li>to provide you with our Services</li>
-          <li>to facilitate grant making</li>
-          <li>to communicate with you</li>
-          <li>to administer our relationship with your organization</li>
-          <li>
-            to send you updates, including about our programs, events, and
-            campaigns
-          </li>
-          <li>to communicate with you</li>
-          <li>to register you for events</li>
-          <li>to customize content for you</li>
-          <li>to identify and authenticate you</li>
-          <li>to detect security incidents</li>
-          <li>to protect against malicious, fraudulent, or illegal activity</li>
-          <li>to ensure the appropriate use of our Services</li>
-          <li>to improve our Services</li>
-          <li>for short-term, transient use</li>
-          <li>for administrative purposes</li>
-          <li>for marketing, internal research, and development</li>
-          <li>
-            to contact you regarding programs, services, and topics that may be
-            of interest or useful
-          </li>
-          <li>for quality assurance</li>
-          <li>to comply with legal and regulatory obligations</li>
-        </ul>
+        <div className="my-4">
+          <p className="font-semibold">Why do we process the data?</p>
+          <ul className="mt-1 list-disc pl-6">
+            <li>to provide you with our Services</li>
+            <li>to facilitate grant making</li>
+            <li>to communicate with you</li>
+            <li>to administer our relationship with your organization</li>
+            <li>
+              to send you updates, including about our programs, events, and
+              campaigns
+            </li>
+            <li>to communicate with you</li>
+            <li>to register you for events</li>
+            <li>to customize content for you</li>
+            <li>to identify and authenticate you</li>
+            <li>to detect security incidents</li>
+            <li>
+              to protect against malicious, fraudulent, or illegal activity
+            </li>
+            <li>to ensure the appropriate use of our Services</li>
+            <li>to improve our Services</li>
+            <li>for short-term, transient use</li>
+            <li>for administrative purposes</li>
+            <li>for marketing, internal research, and development</li>
+            <li>
+              to contact you regarding programs, services, and topics that may
+              be of interest or useful
+            </li>
+            <li>for quality assurance</li>
+            <li>to comply with legal and regulatory obligations</li>
+          </ul>
+        </div>
 
-        <Header3 className="font-serif text-sm">
-          3.6 What are the Lawful or Legal Bases of Processing?
-        </Header3>
-        <ul>
-          <li>for the purposes of legitimate interests</li>
-          <li>in preparation for or to perform a contract with you</li>
-          <li>
-            to comply with legal and regulatory obligations and to establish,
-            exercise, or defend our legal claims and rights
-          </li>
-          <li>
-            in circumstances where we have requested and received consent and
-            for other purposes that may be required or allowed by law*
-          </li>
-        </ul>
+        <div className="my-4">
+          <p className="font-semibold">
+            What are the Lawful or Legal Bases of Processing?
+          </p>
+          <ul className="mt-1 list-disc pl-6">
+            <li>for the purposes of legitimate interests</li>
+            <li>in preparation for or to perform a contract with you</li>
+            <li>
+              to comply with legal and regulatory obligations and to establish,
+              exercise, or defend our legal claims and rights
+            </li>
+            <li>
+              in circumstances where we have requested and received consent and
+              for other purposes that may be required or allowed by law*
+            </li>
+          </ul>
+        </div>
 
-        <Header3 className="font-serif text-sm">
-          3.7 Who receives the data?
-        </Header3>
-        <ul>
-          <li>One Project, and our Affiliates</li>
-          <li>
-            individuals or entities that you designate or instruct us to share
-            your Personal Data with
-          </li>
-          <li>authorized representatives</li>
-          <li>service providers</li>
-          <li>
-            third parties who assist with fraud prevention, detection, and
-            mitigation
-          </li>
-          <li>
-            third parties who assist with our information technology and
-            security programs
-          </li>
-          <li>One Project's lawyers, auditors, and consultants</li>
-        </ul>
-        <p>
-          We do not share your personal information with third parties for
-          commercial purposes.
-        </p>
+        <div className="my-4">
+          <p className="font-semibold">Who receives the data?</p>
+          <ul className="mt-1 list-disc pl-6">
+            <li>One Project, and our Affiliates</li>
+            <li>
+              individuals or entities that you designate or instruct us to share
+              your Personal Data with
+            </li>
+            <li>authorized representatives</li>
+            <li>service providers</li>
+            <li>
+              third parties who assist with fraud prevention, detection, and
+              mitigation
+            </li>
+            <li>
+              third parties who assist with our information technology and
+              security programs
+            </li>
+            <li>One Project's lawyers, auditors, and consultants</li>
+          </ul>
+          <p className="mt-2">
+            We do not share your personal information with third parties for
+            commercial purposes.
+          </p>
+        </div>
 
-        <Header3 className="font-serif text-sm">3.8 Children</Header3>
+        <Header3 className="font-serif text-sm">3.4 Children</Header3>
         <p>
           One Project does not knowingly collect, maintain, disclose, or
           otherwise process Personal Data from minors below the age of 16
           without the permission of such minor's parents or legal guardians.
         </p>
 
-        <p className="text-sm">
-          *The legal bases relied upon by One Project include those enumerated
-          in Clause 4.3 of Schedule 1, and Section 7 of the Personal Information
-          Protection and Electronic Documents Act (PIPEDA), as well as within
-          other applicable privacy laws. When required and allowed, we will seek
-          to obtain your consent or authorization to process your Personal Data
-          and only process your Personal Data upon receiving such consent. In
-          such circumstances, your refusal to provide consent or authorization
-          will have no adverse consequence on you. However, in some
-          circumstances where consent is required, it may be impossible for One
-          Project to manage its relationship with you or provide you with the
-          Services absent your consent to process your Personal Data.
-        </p>
-        <p className="text-sm">
-          **In limited circumstances, recipients may include, (1) in the event
-          of a sale, assignment, merger, consolidation, corporate
-          reorganization, or transfer, to the buyer, assignee, or transferee;
-          and (2) government or regulatory officials, law enforcement, courts,
-          public authorities, or others when permitted by this Notice or
-          required by law.
-        </p>
-        <p className="text-sm">
-          ~We will not attempt to reidentify you or anyone else from anonymized
-          or deidentified data, and if we disclose it to third parties, we will
-          require that they commit to not attempting to reidentify you or anyone
-          else from the deidentified data.
-        </p>
+        <div className="mt-4 text-sm">
+          <p className="mb-2">
+            *The legal bases relied upon by One Project include those enumerated
+            in Clause 4.3 of Schedule 1, and Section 7 of the Personal
+            Information Protection and Electronic Documents Act (PIPEDA), as
+            well as within other applicable privacy laws. When required and
+            allowed, we will seek to obtain your consent or authorization to
+            process your Personal Data and only process your Personal Data upon
+            receiving such consent. In such circumstances, your refusal to
+            provide consent or authorization will have no adverse consequence on
+            you. However, in some circumstances where consent is required, it
+            may be impossible for One Project to manage its relationship with
+            you or provide you with the Services absent your consent to process
+            your Personal Data.
+          </p>
+          <p className="mb-2">
+            **In limited circumstances, recipients may include, (1) in the event
+            of a sale, assignment, merger, consolidation, corporate
+            reorganization, or transfer, to the buyer, assignee, or transferee;
+            and (2) government or regulatory officials, law enforcement, courts,
+            public authorities, or others when permitted by this Notice or
+            required by law.
+          </p>
+          <p>
+            ~We will not attempt to reidentify you or anyone else from
+            anonymized or deidentified data, and if we disclose it to third
+            parties, we will require that they commit to not attempting to
+            reidentify you or anyone else from the deidentified data.
+          </p>
+        </div>
       </FormalSection>
 
       <FormalSection>
@@ -482,11 +603,9 @@ export const PrivacyPolicyContent = () => {
           regulations. Our processors and subprocessors can be located in the
           United States, and other jurisdictions.
         </p>
-      </FormalSection>
 
-      <FormalSection>
-        <Header3 className="font-serif">
-          7. Combination of Data with Data Received from Third Parties and
+        <Header3 className="font-serif text-sm">
+          6.1 Combination of Data with Data Received from Third Parties and
           Affiliates
         </Header3>
         <p>
@@ -498,10 +617,10 @@ export const PrivacyPolicyContent = () => {
           Services. For the specific affiliates or third parties who may jointly
           use your data, please contact us.
         </p>
-      </FormalSection>
 
-      <FormalSection>
-        <Header3 className="font-serif">8. Links to Other Websites</Header3>
+        <Header3 className="font-serif text-sm">
+          6.2 Links to Other Websites
+        </Header3>
         <p>
           Our Services may contain links to other websites, applications, or
           services that are not owned or operated by One Project. Such links do
@@ -516,13 +635,13 @@ export const PrivacyPolicyContent = () => {
 
       <FormalSection>
         <Header3 className="font-serif">
-          9. Your Rights Regarding Your Personal Data
+          7. Your Rights Regarding Your Personal Data
         </Header3>
         <p>
           Depending on where you live, you may have the following rights with
           respect to some or all of your Personal Data:
         </p>
-        <ul>
+        <ul className="mt-2 list-disc pl-6">
           <li>
             To request information about or explain whether, and how, we process
             your Personal Data
@@ -543,15 +662,15 @@ export const PrivacyPolicyContent = () => {
           </li>
           <li>
             To provide your Personal Data directly to another, i.e., a right to
-            data portability;
+            data portability
           </li>
-          <li>To appeal the denial of a request; and</li>
+          <li>To appeal the denial of a request</li>
           <li>
             To lodge a complaint with the data protection authority in your
-            jurisdiction.
+            jurisdiction
           </li>
         </ul>
-        <p>
+        <p className="mt-4">
           In the event you wish to make a right request, file a complaint about
           how we process your Personal Data, or appeal the denial of one of your
           requests, please contact us. Even if you make a complaint to us, you
@@ -600,7 +719,7 @@ export const PrivacyPolicyContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">10. Safeguarding Personal Data</Header3>
+        <Header3 className="font-serif">8. Safeguarding Personal Data</Header3>
         <p>
           Consistent with applicable laws and requirements, One Project has put
           in place physical, technical, and administrative safeguards designed
@@ -617,7 +736,7 @@ export const PrivacyPolicyContent = () => {
 
       <FormalSection>
         <Header3 className="font-serif">
-          11. How Long Your Personal Data Will Be Kept
+          9. How Long Your Personal Data Will Be Kept
         </Header3>
         <p>
           We generally retain Personal Data for as long as needed for the
@@ -641,7 +760,7 @@ export const PrivacyPolicyContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">12. Transfer of Personal Data</Header3>
+        <Header3 className="font-serif">10. Transfer of Personal Data</Header3>
         <p>
           We operate in various countries throughout the world, including, but
           not limited to, the United States and Canada. Please be aware that
@@ -656,7 +775,7 @@ export const PrivacyPolicyContent = () => {
 
       <FormalSection>
         <Header3 className="font-serif">
-          13. Changes to This Privacy Notice
+          11. Changes to This Privacy Notice
         </Header3>
         <p>
           We reserve the right to change this Notice from time to time. We will
@@ -668,17 +787,24 @@ export const PrivacyPolicyContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">14. Contact Us</Header3>
+        <Header3 className="font-serif">12. Contact Us</Header3>
         <p>
           If you have questions or comments about this Notice or about how your
           Personal Data is processed, or to exercise your privacy rights, please
           contact us by one of the methods below:
         </p>
-        <p>Email: privacy@oneproject.org</p>
-        <p>
-          Mail: 548 Market Street, Suite 85871, San Francisco, California 94104
-        </p>
-        <p>Phone: (408) 461-7921</p>
+        <div className="mt-4">
+          <p>
+            <strong>Email:</strong> privacy@oneproject.org
+          </p>
+          <p>
+            <strong>Mail:</strong> 548 Market Street, Suite 85871, San
+            Francisco, California 94104
+          </p>
+          <p>
+            <strong>Phone:</strong> (408) 461-7921
+          </p>
+        </div>
       </FormalSection>
     </div>
   );
