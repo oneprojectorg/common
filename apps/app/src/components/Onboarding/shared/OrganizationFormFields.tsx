@@ -150,7 +150,7 @@ export const OrganizationFormFields = ({
         name="name"
         children={(field) => (
           <field.TextField
-            label={t('Name')}
+            label={t('Organization Name')}
             isRequired
             value={field.state.value as string}
             onBlur={field.handleBlur}
