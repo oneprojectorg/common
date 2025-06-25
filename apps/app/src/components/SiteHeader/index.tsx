@@ -160,7 +160,7 @@ const AvatarMenuContent = ({
         }}
       >
         <LuCircleHelp className="size-8 rounded-full bg-neutral-offWhite p-2" />{' '}
-        {t('Help & Support')}
+        {t('Feature Requests & Support')}
       </MenuItem>
       <MenuItem
         id="logout"
