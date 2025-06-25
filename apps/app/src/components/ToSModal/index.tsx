@@ -19,7 +19,7 @@ export const ToSModal = () => {
         onPress={() => setIsToSOpen(true)}
         className="text-primary-teal hover:underline"
       >
-        {t('Terms of Service')}
+        {t('Terms of Use')}
       </Button>
 
       <Modal
@@ -30,7 +30,7 @@ export const ToSModal = () => {
       >
         <Dialog>
           <ModalHeader className="flex items-center justify-between">
-            {t('Terms of Service')}
+            {t('Terms of Use')}
             <LuX
               className="size-6 cursor-pointer stroke-1"
               onClick={() => setIsToSOpen(false)}

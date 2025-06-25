@@ -8,7 +8,7 @@ const ToSPage = () => {
   const t = useTranslations();
   return (
     <FormContainer className="max-w-[32rem]">
-      <FormHeader text={t('Terms of Service')}></FormHeader>
+      <FormHeader text={t('Terms of Use')}></FormHeader>
       <ToSContent />
     </FormContainer>
   );

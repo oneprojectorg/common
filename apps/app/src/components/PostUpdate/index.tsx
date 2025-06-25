@@ -95,6 +95,7 @@ const PostUpdateWithUser = ({
         content: content.trim() || '',
         attachmentIds: fileUpload.getUploadedAttachmentIds(),
       });
+
       setContent('');
       setDetectedUrls([]);
       fileUpload.clearFiles();

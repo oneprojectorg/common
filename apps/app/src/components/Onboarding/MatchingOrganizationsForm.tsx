@@ -1,5 +1,6 @@
 import { trpc } from '@op/api/client';
 import { Button } from '@op/ui/Button';
+import { Checkbox } from '@op/ui/Checkbox';
 import { Header3 } from '@op/ui/Header';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Surface } from '@op/ui/Surface';
@@ -40,6 +41,9 @@ export const MatchingOrganizationsForm = ({
   const [selectedOrganizationId, setSelectedOrganizationId] = useState<
     string | undefined
   >();
+
+  const [termsAccepted, setTermsAccepted] = useState<boolean>(false);
+  const [privacyAccepted, setPrivacyAccepted] = useState<boolean>(false);
 
   // If no matching organizations, automatically proceed to next step
   // If there are organizations, select the first one by default
@@ -142,6 +146,42 @@ export const MatchingOrganizationsForm = ({
               "For now, we're only supporting administrator accounts. In the future, we’ll be able to support member accounts.",
             )}
           </div>
+
+          <div className="flex flex-col gap-2 pt-4">
+            <div className="flex items-center gap-1">
+              <Checkbox
+                className="text-base text-neutral-charcoal"
+                value={'' + termsAccepted}
+                onChange={setTermsAccepted}
+              >
+                I have read and accept
+              </Checkbox>
+              <a
+                href="/info/tos"
+                target="_blank"
+                className="text-primary-teal hover:underline"
+              >
+                the Common Terms of Use
+              </a>
+            </div>
+            <div className="flex items-center gap-1">
+              <Checkbox
+                value={'' + privacyAccepted}
+                onChange={setPrivacyAccepted}
+                className="text-base text-neutral-charcoal"
+              >
+                I have read and accept
+              </Checkbox>
+              <a
+                href="/info/tos"
+                target="_blank"
+                className="text-primary-teal hover:underline"
+              >
+                {' '}
+                the Common Privacy Policy
+              </a>
+            </div>
+          </div>
         </div>
         <div className="flex flex-col gap-4">
           <div className="flex flex-col-reverse justify-between gap-4 sm:flex-row sm:gap-2">
@@ -153,7 +193,12 @@ export const MatchingOrganizationsForm = ({
             <Button
               className="w-full"
               onPress={handleContinue}
-              isDisabled={!selectedOrganizationId || joinOrganization.isPending}
+              isDisabled={
+                !selectedOrganizationId ||
+                joinOrganization.isPending ||
+                !termsAccepted ||
+                !privacyAccepted
+              }
             >
               {joinOrganization.isPending ? (
                 <LoadingSpinner />
