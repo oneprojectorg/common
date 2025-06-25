@@ -230,7 +230,7 @@ export const OrganizationFormFields = ({
           <field.TextField
             useTextArea
             isRequired
-            label={t('Organization Description')}
+            label={t('Organization headline')}
             value={field.state.value as string}
             onBlur={field.handleBlur}
             onChange={field.handleChange}

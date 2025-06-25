@@ -154,14 +154,14 @@ export const MatchingOrganizationsForm = ({
                 value={'' + termsAccepted}
                 onChange={setTermsAccepted}
               >
-                I have read and accept
+                I have read and accept the
               </Checkbox>
               <a
                 href="/info/tos"
                 target="_blank"
                 className="text-sm text-primary-teal hover:underline"
               >
-                the Common Terms of Use
+                Terms of Use
               </a>
             </div>
             <div className="flex items-center gap-1">
@@ -170,7 +170,7 @@ export const MatchingOrganizationsForm = ({
                 value={'' + privacyAccepted}
                 onChange={setPrivacyAccepted}
               >
-                I have read and accept
+                I have read and accept the
               </Checkbox>
               <a
                 href="/info/tos"
@@ -178,7 +178,7 @@ export const MatchingOrganizationsForm = ({
                 className="text-sm text-primary-teal hover:underline"
               >
                 {' '}
-                the Common Privacy Policy
+                Privacy Policy
               </a>
             </div>
           </div>
