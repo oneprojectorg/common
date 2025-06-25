@@ -16,7 +16,8 @@ export const Welcome = ({
     return searchParams.get('new') === '1';
   }, []);
 
-  const name = user.name ? `, ${user.name}` : ` to Common`;
+  const orgName = user.currentOrganization?.profile.name;
+  const name = orgName ? `, ${orgName}` : ` to Common`;
 
   return (
     <Header1 className="text-center text-title-md sm:text-title-xl">
