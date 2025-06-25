@@ -73,7 +73,16 @@ import {
 // return what we have added so those can be linked to the record
 // return addedTerms.filter((term) => term !== undefined);
 // };
-const broadDomains = ['gmail.com', 'outlook.com', 'hotmail.com'];
+const broadDomains = [
+  'facebook.com',
+  'twitter.com',
+  'linkedin.com',
+  'bsky.app',
+  'mastodon.social',
+  'gmail.com',
+  'outlook.com',
+  'hotmail.com',
+];
 
 export const createOrganization = async ({
   data,
@@ -94,9 +103,24 @@ export const createOrganization = async ({
     profileId: null,
   });
 
-  let domain = data.email?.split('@')[1];
-  if (domain && broadDomains.includes(domain)) {
-    domain = undefined;
+  let domain: string | undefined;
+  if (data.website) {
+    try {
+      let val = data.website;
+      if (val && !val.startsWith('http://') && !val.startsWith('https://')) {
+        val = `https://${val}`;
+      }
+      const fullDomain = new URL(val);
+      domain = fullDomain.hostname;
+      if (
+        domain &&
+        broadDomains.some((broad) => domain?.match(new RegExp(broad)))
+      ) {
+        domain = undefined;
+      }
+    } catch (e) {
+      console.error('Could not parse hostname', e);
+    }
   }
 
   // Create an org profile
