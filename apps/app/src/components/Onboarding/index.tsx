@@ -137,7 +137,6 @@ export const OnboardingFlow = () => {
             title: "That didn't work",
             message: 'Something went wrong on our end. Please try again',
           });
-          router.push(`/start?step=1`);
         });
     },
     [createOrganization],
