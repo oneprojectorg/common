@@ -150,7 +150,7 @@ export const MatchingOrganizationsForm = ({
           <div className="flex flex-col gap-2 pt-4">
             <div className="flex items-center gap-1">
               <Checkbox
-                className="text-base text-neutral-charcoal"
+                size="small"
                 value={'' + termsAccepted}
                 onChange={setTermsAccepted}
               >
@@ -159,23 +159,23 @@ export const MatchingOrganizationsForm = ({
               <a
                 href="/info/tos"
                 target="_blank"
-                className="text-primary-teal hover:underline"
+                className="text-sm text-primary-teal hover:underline"
               >
                 the Common Terms of Use
               </a>
             </div>
             <div className="flex items-center gap-1">
               <Checkbox
+                size="small"
                 value={'' + privacyAccepted}
                 onChange={setPrivacyAccepted}
-                className="text-base text-neutral-charcoal"
               >
                 I have read and accept
               </Checkbox>
               <a
                 href="/info/tos"
                 target="_blank"
-                className="text-primary-teal hover:underline"
+                className="text-sm text-primary-teal hover:underline"
               >
                 {' '}
                 the Common Privacy Policy

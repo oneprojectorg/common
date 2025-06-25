@@ -12,7 +12,7 @@ import type {
   CheckboxProps,
   ValidationResult,
 } from 'react-aria-components';
-import { tv } from 'tailwind-variants';
+import { VariantProps, tv } from 'tailwind-variants';
 
 import { composeTailwindRenderProps, focusRing } from '../utils';
 import { Description, FieldError, Label } from './Field';
@@ -66,12 +66,17 @@ const boxStyles = tv({
     isDisabled: {
       true: '[--color:theme(colors.neutral.700)]',
     },
+    size: {
+      small: 'size-4',
+    },
   },
 });
 
 const iconStyles = 'w-4 h-4 text-neutral-100 group-disabled:text-neutral-400';
 
-export const Checkbox = (props: CheckboxProps) => {
+type CheckboxVariants = VariantProps<typeof boxStyles>;
+
+export const Checkbox = (props: CheckboxProps & CheckboxVariants) => {
   return (
     <AriaCheckbox
       {...props}
@@ -83,6 +88,7 @@ export const Checkbox = (props: CheckboxProps) => {
         <>
           <div
             className={boxStyles({
+              size: props.size,
               isSelected: isSelected || isIndeterminate,
               ...renderProps,
             })}
