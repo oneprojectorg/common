@@ -7,13 +7,9 @@ export const ToSContent = () => {
     <div className="relative flex w-full flex-col gap-8 sm:pb-20">
       <FormalSection>
         <Header3 className="font-serif">
-          TERMS OF USE FOR COMMON PLATFORM AND ONE PROJECT SERVICES
+          1. Introduction and Acceptance of Terms
         </Header3>
-        <p>These Terms of Use were last revised on 06 18, 2025.</p>
-      </FormalSection>
-
-      <FormalSection>
-        <Header3 className="font-serif">1. Introduction and Acceptance</Header3>
+        <p>These Terms of Service were last revised on June 20, 2025.</p>
         <p>
           These terms and conditions ("Terms of Service") are entered into by
           and between you and OneProject.org. ("One Project", "we" or "us").
@@ -26,6 +22,8 @@ export const ToSContent = () => {
           connects people, organizations, and resources to coordinate and grow
           economic democracy to global scale (the "Platform", and together with
           such services including the Platform and the Website, the "Services").
+        </p>
+        <p>
           Please read these Terms of Service carefully before you start to use
           the Services. By using the Services or clicking to accept or agree to
           the Terms of Service when this option is made available to you, you
@@ -46,8 +44,8 @@ export const ToSContent = () => {
         <p>
           THESE TERMS OF SERVICE CONTAIN IMPORTANT INFORMATION REGARDING YOUR
           RIGHTS AND OBLIGATIONS, AS WELL AS VARIOUS CONDITIONS, LIMITATIONS,
-          AND EXCLUSIONS, INCLUDING LIMITATIONS OF LIABILITY IN SECTION 18 AND
-          AN ARBITRATION CLAUSE AND CLASS ACTION WAIVER IN SECTION 26.
+          AND EXCLUSIONS, INCLUDING LIMITATIONS OF LIABILITY IN SECTION 19 AND
+          AN ARBITRATION CLAUSE AND CLASS ACTION WAIVER IN SECTION 27.
         </p>
         <p>
           BY AGREEING TO THESE TERMS OF SERVICE, YOU AGREE TO RESOLVE ALL
@@ -106,57 +104,74 @@ export const ToSContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">4. Our Mission</Header3>
+        <Header3 className="font-serif">
+          4. Our Mission and Community Principles
+        </Header3>
         <p>
           One Project is focused on connecting people, organizations, and
-          resources to coordinate and scale a global democratic economy. We ask
-          that all users of our Services, including the Platform, embrace these
-          core community principles:
+          resources to coordinate and scale a global democratic economy. All
+          users of the Platform must comply with our Code of Conduct, available
+          here, including these core community principles:
         </p>
+
+        <Header3 className="font-serif text-sm">
+          4.1 Treat Everyone with Respect and Consideration
+        </Header3>
         <p>
-          Treat Everyone with Respect and Consideration (adopted from DisCO
-          Caring Community Guidelines): Be kind, understanding, and
-          compassionate to each other. Be welcoming. Be aware of how we use
-          language. This is especially important when discussing sensitive
-          topics where misunderstandings and stereotypes can be exacerbated.
-          Remember we're here to support, learn, and collaborate with each other
-          to grow a democratic economy.
+          (adopted from DisCO Caring Community Guidelines): Be kind,
+          understanding, and compassionate to each other. Be welcoming. Be aware
+          of how we use language. This is especially important when discussing
+          sensitive topics where misunderstandings and stereotypes can be
+          exacerbated. Remember we're here to support, learn, and collaborate
+          with each other to grow a democratic economy.
         </p>
+
+        <Header3 className="font-serif text-sm">
+          4.2 Be Respectful of Privacy
+        </Header3>
         <p>
-          Be Respectful of Privacy: Respect the privacy and confidentiality of
-          others. If there are sensitive partnerships, obtain permission before
-          making them visible on the platform.
+          Respect the privacy and confidentiality of others. If there are
+          sensitive partnerships, obtain permission before making them visible
+          on the Platform.
         </p>
+
+        <Header3 className="font-serif text-sm">
+          4.3 Build Robust Relationships
+        </Header3>
         <p>
-          Build Robust Relationships: Build strong, resilient connections that
-          strengthen collaboration, deepen existing partnerships, and enable new
-          relationships to emerge.
+          Build strong, resilient connections that strengthen collaboration,
+          deepen existing partnerships, and enable new relationships to emerge.
         </p>
+
+        <Header3 className="font-serif text-sm">
+          4.4 Inclusive Network Development
+        </Header3>
         <p>
-          Inclusive Network Development: Wherever possible, try to amplify the
-          voice and needs of smaller local organizations that may initially have
-          limited connections as they start to engage new collaborations on the
-          network.
+          Wherever possible, try to amplify the voice and needs of smaller local
+          organizations that may initially have limited connections as they
+          start to engage new collaborations on the Platform.
         </p>
+
+        <Header3 className="font-serif text-sm">
+          4.5 Center Affected Communities
+        </Header3>
         <p>
-          Center Affected Communities (adopted from New Economy Coalition
-          Agreements): Recognize and respect the expertise, leadership, and
-          lived experiences of communities most impacted by economic inequality.
-          Actively make space for their voices, defer to their guidance on
-          issues affecting them directly, and acknowledge their essential role
-          in developing meaningful solutions.
+          (adopted from New Economy Coalition Agreements): Recognize and respect
+          the expertise, leadership, and lived experiences of communities most
+          impacted by economic inequality. Actively make space for their voices,
+          defer to their guidance on issues affecting them directly, and
+          acknowledge their essential role in developing meaningful solutions.
         </p>
+
+        <Header3 className="font-serif text-sm">
+          4.6 Share from Your Own Experiences
+        </Header3>
         <p>
-          Share from Your Own Experiences (adopted from New Economy Coalition
-          Agreements): Be sure to share information and perspectives from your
-          experiences rather than making assumptions about or speaking on behalf
-          of others. When sharing information, clearly distinguish among
-          personal knowledge, organizational position/perspective, and
-          third-party information.
-        </p>
-        <p>
-          These principles are included in our code of conduct which you can
-          find here.
+          (adopted from New Economy Coalition Agreements): Be sure to share
+          information and perspectives from your experiences rather than making
+          assumptions about or speaking on behalf of others. When sharing
+          information, clearly distinguish among personal knowledge,
+          organizational position/perspective, and third-party information.
         </p>
       </FormalSection>
 
@@ -182,23 +197,22 @@ export const ToSContent = () => {
       </FormalSection>
 
       <FormalSection>
-        <Header3 className="font-serif">6. The Code</Header3>
+        <Header3 className="font-serif">6. The Code License</Header3>
         <p>
           In connection with its collaborative mission, One Project endeavors to
           place all intellectual property developed in the course of its
           activities into the protected commons, whenever possible. The code
           developed and owned by One Project on which the Platform runs (the
           "Code") is made available to you under the Apache 2.0 license,
-          modified by the Commons Clause and certain Ethical Provisions (this
-          link is an example of the types of ethical provisions that might be
-          included) (together, the "Code License"). Please review these license
-          terms carefully before using or contributing to the Platform. We
-          reserve the right to change the terms of this license grant at any
-          time, in our sole discretion but always consistent with our mission,
-          by posting notice of such changes on the Platform. For clarity, any
-          content or materials posted on the Platform, by One Project or another
-          user, is not included in the Code and will be subject to the more
-          limited license below in Section 6.
+          modified by the Commons Clause and certain Ethical Provisions
+          (together, the "Code License"). Please review these license terms
+          carefully before using or contributing to the Platform. We reserve the
+          right to change the terms of this license grant at any time, in our
+          sole discretion but always consistent with our mission, by posting
+          notice of such changes on the Platform. For clarity, any content or
+          materials posted on the Platform, by One Project or another user, is
+          not included in the Code and will be subject to the more limited
+          license below in Section 6.
         </p>
       </FormalSection>
 
@@ -242,11 +256,19 @@ export const ToSContent = () => {
           (including the Platform other than the Code) are subject to the
           following restrictions:
         </p>
+
+        <Header3 className="font-serif text-sm">
+          9.1 Modification and Derivative Works
+        </Header3>
         <p>
           You may not copy, modify, adapt, translate into any language,
           distribute, or create derivative works based on the Services or any
           part of it without the prior written consent of One Project.
         </p>
+
+        <Header3 className="font-serif text-sm">
+          9.2 Assignment and Transfer
+        </Header3>
         <p>
           You may not assign these Terms of Service or any of the rights or
           licenses granted under these Terms of Service or rent, lease, or lend
@@ -254,6 +276,10 @@ export const ToSContent = () => {
           sublicense, transfer, or assignment in violation of these Terms of
           Service is void.
         </p>
+
+        <Header3 className="font-serif text-sm">
+          9.3 Reverse Engineering
+        </Header3>
         <p>
           You acknowledge that the Services contain proprietary trade secrets of
           One Project and its suppliers. You agree not to decompile,
@@ -267,6 +293,8 @@ export const ToSContent = () => {
           limitation by accessing or attempting to access any profile, device or
           server that you are not authorized to access.
         </p>
+
+        <Header3 className="font-serif text-sm">9.4 Automated Access</Header3>
         <p>
           You may not use any robot, spider, or other automatic device, process,
           or other means to crawl, scrape, or otherwise access the Services, or
@@ -275,12 +303,16 @@ export const ToSContent = () => {
           copying any of the material on the Services or training any artificial
           intelligence model, without our prior written consent.
         </p>
+
+        <Header3 className="font-serif text-sm">9.5 Impersonation</Header3>
         <p>
           You may not use or copy the Services in order to spam, phish, pharm,
           pretext, or engage in similar acts, including without limitation to
           impersonate or attempt to impersonate One Project, a One Project
           employee, another user, or any other person.
         </p>
+
+        <Header3 className="font-serif text-sm">9.6 Malicious Code</Header3>
         <p>
           You may not introduce into the Services or use the Services to store
           or transmit any viruses, Trojan horses, worms, logic bombs, spyware,
@@ -288,21 +320,31 @@ export const ToSContent = () => {
           that will affect the functionality or operation of the Services or of
           any related website, other websites, hardware, software, or equipment.
         </p>
+
+        <Header3 className="font-serif text-sm">
+          9.7 Intellectual Property Notices
+        </Header3>
         <p>
           You may not remove, delete, alter, or obscure any trademarks or any
           copyright, trademark, patent, or other intellectual property or
           proprietary rights notices from the Services.
         </p>
+
+        <Header3 className="font-serif text-sm">9.8 Competitive Use</Header3>
         <p>
           You may not access any Services in order to build a competitive
           product or service or to conduct benchmarking tests or other analysis
           comparing the Services with a non-One Project product or service.
         </p>
+
+        <Header3 className="font-serif text-sm">9.9 Interference</Header3>
         <p>
           You may not interfere, circumvent or attempt to interfere with or
           circumvent the security, integrity, or performance of the Services in
           any way.
         </p>
+
+        <Header3 className="font-serif text-sm">9.10 Legal Compliance</Header3>
         <p>
           You agree that you will use the Services only in accordance with all
           applicable U.S. and foreign local, state, federal, national, and
@@ -314,12 +356,18 @@ export const ToSContent = () => {
           transmit infringing, libelous, or otherwise unlawful or tortious
           material or material in violation of third-party privacy rights.
         </p>
+
+        <Header3 className="font-serif text-sm">9.11 Harm Prevention</Header3>
         <p>
           You agree not to use the Services for the purpose of exploiting,
           harming, or attempting to exploit or harm anyone, including by
           threatening to expose their personally identifiable information, or
           otherwise.
         </p>
+
+        <Header3 className="font-serif text-sm">
+          9.12 Service Disruption
+        </Header3>
         <p>
           You agree not to use the Services in any manner that could disable,
           overburden, damage, or impair One Project's or its service partners'
@@ -327,6 +375,8 @@ export const ToSContent = () => {
           Services, including without limitation via denial-of-service or
           similar attacks.
         </p>
+
+        <Header3 className="font-serif text-sm">9.13 General Conduct</Header3>
         <p>
           You agree not to use the Services to engage in any other conduct that
           restricts or inhibits anyone's use or enjoyment of the Services, or
@@ -386,30 +436,43 @@ export const ToSContent = () => {
           You agree not to upload information, content or any other material
           that:
         </p>
+
+        <Header3 className="font-serif text-sm">13.1</Header3>
         <p>
-          Is abusive, insulting, threatening, discriminatory, or that promotes
-          or encourages hatred, racism, sexism, or bigotry towards any group.
+          is abusive, insulting, threatening, discriminatory, or that promotes
+          or encourages hatred, racism, sexism, or bigotry towards any group;
         </p>
-        <p>Is intended to harass, upset, embarrass, alarm, or annoy others.</p>
+
+        <Header3 className="font-serif text-sm">13.2</Header3>
+        <p>is intended to harass, upset, embarrass, alarm, or annoy others;</p>
+
+        <Header3 className="font-serif text-sm">13.3</Header3>
         <p>
-          Is Encouraging, depicting, facilitating, or participating in any
-          harmful activities that may endanger platform users and their
-          networks.
+          encourages, depicts, facilitates, or participates in any harmful
+          activities that may endanger platform users and their networks;
         </p>
+
+        <Header3 className="font-serif text-sm">13.4</Header3>
         <p>
-          Is sharing false or misleading information that could damage someone's
-          reputation.
+          contains false or misleading information, including information that
+          could damage someone's reputation, or statements that are otherwise
+          defamatory or libelous;
         </p>
+
+        <Header3 className="font-serif text-sm">13.5</Header3>
         <p>
-          Is sharing the personal information of others without their consent.
+          shares the personal information of others without their consent; or
         </p>
+
+        <Header3 className="font-serif text-sm">13.6</Header3>
         <p>
-          Is engaging in commercial activities (including, without limitation,
+          engages in commercial activities (including, without limitation,
           sales, competitions, promotions, and advertising).
         </p>
+
         <p>
-          For more information about prohibited behavior. See our Code of
-          Conduct here.
+          For more information about prohibited behavior, please refer to our
+          Code of Conduct here.
         </p>
       </FormalSection>
 
@@ -432,36 +495,44 @@ export const ToSContent = () => {
           notification of claimed copyright infringement should be emailed to
           One Project's Copyright Agent at privacy@oneproject.org (Subject line:
           "DMCA Takedown Request"). You may also contact us by mail at: 548
-          Market Street, Suite 85871, San Francisco, California 94104. To be
-          effective, the notification must be in writing and contain the
+          Market Street, Suite 85871, San Francisco, California 94104.
+        </p>
+
+        <Header3 className="font-serif text-sm">
+          14.1 Requirements for Copyright Notices
+        </Header3>
+        <p>
+          To be effective, the notification must be in writing and contain the
           following information:
         </p>
         <p>
-          an electronic or physical signature of the person authorized to act on
-          behalf of the owner of the copyright or other intellectual property
-          interest;
+          (a) an electronic or physical signature of the person authorized to
+          act on behalf of the owner of the copyright or other intellectual
+          property interest;
         </p>
         <p>
-          a description of the copyrighted work or other intellectual property
-          that you claim has been infringed;
+          (b) a description of the copyrighted work or other intellectual
+          property that you claim has been infringed;
         </p>
         <p>
-          a description of where the material that you claim is infringing is
-          located on our Platform or otherwise within our Services, with enough
-          detail that we may find it on our Services;
+          (c) a description of where the material that you claim is infringing
+          is located on our Platform or otherwise within our Services, with
+          enough detail that we may find it on our Services;
         </p>
-        <p>your address, telephone number, and email address;</p>
+        <p>(d) your address, telephone number, and email address;</p>
         <p>
-          a statement by you that you have a good faith belief that the disputed
-          use is not authorized by the copyright or intellectual property owner,
-          its agent, or the law; and
+          (e) a statement by you that you have a good faith belief that the
+          disputed use is not authorized by the copyright or intellectual
+          property owner, its agent, or the law; and
         </p>
         <p>
-          a statement by you, made under penalty of perjury, that the above
+          (f) a statement by you, made under penalty of perjury, that the above
           information in your notice is accurate and that you are the copyright
           or intellectual property owner or authorized to act on the copyright
           or intellectual property owner's behalf.
         </p>
+
+        <Header3 className="font-serif text-sm">14.2 Counter-Notices</Header3>
         <p>
           If Your Content is the subject of a DMCA notice, and you believe that
           your User Content that was removed (or to which access was disabled)
@@ -471,24 +542,28 @@ export const ToSContent = () => {
           written counter-notice containing the following information to One
           Project's Copyright Agent:
         </p>
-        <p>your physical or electronic signature;</p>
+        <p>(a) your physical or electronic signature;</p>
         <p>
-          identification of the content that has been removed or to which access
-          has been disabled and the location at which the content appeared
-          before it was removed or disabled;
+          (b) identification of the content that has been removed or to which
+          access has been disabled and the location at which the content
+          appeared before it was removed or disabled;
         </p>
         <p>
-          a statement that you have a good faith belief that the content was
+          (c) a statement that you have a good faith belief that the content was
           removed or disabled as a result of mistake or a misidentification of
           the content; and
         </p>
         <p>
-          your name, address, telephone number, and email address, a statement
-          that you consent to the jurisdiction of the federal court located
-          within the Northern District of California and a statement that you
-          will accept service of process from the person who provided
+          (d) your name, address, telephone number, and email address, a
+          statement that you consent to the jurisdiction of the federal court
+          located within the Northern District of California and a statement
+          that you will accept service of process from the person who provided
           notification of the alleged infringement.
         </p>
+
+        <Header3 className="font-serif text-sm">
+          14.3 Counter-Notice Process
+        </Header3>
         <p>
           If a counter-notice is received by One Project's Copyright Agent, One
           Project will send a copy of the counter-notice to the original
@@ -499,6 +574,8 @@ export const ToSContent = () => {
           or access to it restored, in 10 to 14 business days or more after
           receipt of the counter-notice, in our sole discretion.
         </p>
+
+        <Header3 className="font-serif text-sm">14.4 Repeat Infringers</Header3>
         <p>
           In accordance with the DMCA and other applicable Law, One Project has
           adopted a policy of terminating, in appropriate circumstances and in
@@ -598,7 +675,7 @@ export const ToSContent = () => {
           DEVICE, OR OTHER PROPRIETARY MATERIAL DUE TO YOUR USE OF THE SERVICES,
           OR TO YOUR DOWNLOADING OF ANY MATERIAL OR DATA POSTED ON THE SERVICES,
           OR TO ANY OTHER WEBSITE, DATA, OR MATERIAL LINKED TO OR ACCESSIBLE
-          FROM THE SERVICES.YOU ACKNOWLEDGE THAT THE PROVISIONS OF THIS SECTION
+          FROM THE SERVICES. YOU ACKNOWLEDGE THAT THE PROVISIONS OF THIS SECTION
           ARE A MATERIAL INDUCEMENT AND CONSIDERATION TO ONE PROJECT TO GRANT
           THE LICENSE CONTAINED IN THESE TERMS OF SERVICE AND TO PROVIDE YOU
           WITH ACCESS TO THE SERVICES.
@@ -754,6 +831,10 @@ export const ToSContent = () => {
           RESPECT TO A CLAIM. OTHER RIGHTS THAT YOU WOULD HAVE IF YOU WENT TO
           COURT MAY ALSO BE UNAVAILABLE OR MAY BE LIMITED IN ARBITRATION.
         </p>
+
+        <Header3 className="font-serif text-sm">
+          28.1 Arbitration Agreement
+        </Header3>
         <p>
           You hereby agree that any claim or dispute between you and One
           Project, whether brought by you or by One Project, arising out of or
@@ -780,6 +861,10 @@ export const ToSContent = () => {
           (including injunctive and declaratory relief and statutory damages),
           and must follow these Terms of Service, as a court would.
         </p>
+
+        <Header3 className="font-serif text-sm">
+          28.2 Class Action Waiver
+        </Header3>
         <p>
           All arbitrations under these Terms of Service shall be conducted on an
           individual, and not on a class-wide, basis, and an arbitrator shall
@@ -802,21 +887,32 @@ export const ToSContent = () => {
           Remedies Act, Ohio's Unfair and Deceptive Trade Practices Act and any
           other state consumer protection laws.
         </p>
+
+        <Header3 className="font-serif text-sm">
+          28.3 Notice Requirements
+        </Header3>
         <p>
           Before commencing any arbitration proceedings under these Terms of
           Service, a party must first send to the other a written notice of
           dispute ("Notice"). Your Notice to One Project must be sent to the
-          address stated in Section 27 below. If a party's claim is not resolved
+          address stated in Section 28 below. If a party's claim is not resolved
           within sixty (60) days of delivery of the applicable Notice, you or we
           may commence arbitration proceedings in accordance with these Terms of
-          Service. The arbitration of any claim or dispute hereunder (including
-          whether a valid arbitration agreement exists and whether it covers the
-          dispute) shall be conducted by a single, neutral arbitrator
-          administered by JAMS or its successor ("JAMS") and conducted pursuant
-          to the then-current Streamlined Arbitration Rules and Procedures
-          (available at https://www.jamsadr.com/rules-streamlined-arbitration/)
-          and, if you are an individual, in accordance with JAMS' Consumer
-          Arbitration Minimum Standards (available at
+          Service.
+        </p>
+
+        <Header3 className="font-serif text-sm">
+          28.4 Arbitration Procedures
+        </Header3>
+        <p>
+          The arbitration of any claim or dispute hereunder (including whether a
+          valid arbitration agreement exists and whether it covers the dispute)
+          shall be conducted by a single, neutral arbitrator administered by
+          JAMS or its successor ("JAMS") and conducted pursuant to the
+          then-current Streamlined Arbitration Rules and Procedures (available
+          at https://www.jamsadr.com/rules-streamlined-arbitration/) and, if you
+          are an individual, in accordance with JAMS' Consumer Arbitration
+          Minimum Standards (available at
           https://www.jamsadr.com/consumer-minimum-standards/) (as applicable,
           the "JAMS Rules"). If the JAMS Rules conflict with any portion of
           these Terms of Service, these Terms of Service shall control. You and
@@ -831,6 +927,10 @@ export const ToSContent = () => {
           location. Payment of all filing, administration, and arbitrator fees
           will be governed by the JAMS Rules.
         </p>
+
+        <Header3 className="font-serif text-sm">
+          28.5 Applicable Law and Awards
+        </Header3>
         <p>
           The arbitrator shall apply the law of the State of California as
           stated above, except that the interpretation and enforcement of this
@@ -850,34 +950,42 @@ export const ToSContent = () => {
           award of the arbitrator may be entered as a judgment in any court of
           competent jurisdiction.
         </p>
+
+        <Header3 className="font-serif text-sm">28.6 Express Waiver</Header3>
         <p>
           YOU AND WE SPECIFICALLY ACKNOWLEDGE AND AGREE THAT EACH OF US
           EXPRESSLY WAIVES THE RIGHT TO BRING A LAWSUIT IN COURT BASED ON ANY
-          CLAIMS OR DISPUTES DESCRIBED IN SECTIONS 26(A) AND (B) ABOVE, AND THAT
+          CLAIMS OR DISPUTES DESCRIBED IN SECTIONS 27(A) AND (B) ABOVE, AND THAT
           YOU AND WE EXPRESSLY WAIVE THE RIGHT TO HAVE SUCH CLAIMS OR DISPUTES
           RESOLVED BY A JUDGE OR JURY OR TO PARTICIPATE IN A CLASS ACTION. AS
           SUCH, YOU AND WE HEREBY AGREE TO RESOLVE ANY AND ALL SUCH CLAIMS
           DESCRIBED ABOVE VIA INDIVIDUAL BINDING ARBITRATION PER THE TERMS AND
-          CONDITIONS SET FORTH IN THIS SECTION 26(A)-(E).
+          CONDITIONS SET FORTH IN THIS SECTION 27(A)-(E).
         </p>
+
+        <Header3 className="font-serif text-sm">28.7 Opt-Out Provision</Header3>
         <p>
-          You may opt-out of Sections 26(a)-(e) by sending a notice ("Rejection
+          You may opt-out of Sections 27(a)-(e) by sending a notice ("Rejection
           Notice") to One Project no later than sixty (60) days after your first
           consent to these Terms of Service or to any subsequent revisions to
-          this Section 26. If you opt out of a subsequent revision, you will
+          this Section 27. If you opt out of a subsequent revision, you will
           remain bound by the prior version of this Section unless you
           previously opted out of that version. You must mail the Rejection
           Notice by certified mail return receipt requested or messenger service
-          (e.g. Federal Express) to the address stated in Section 27 below. In
+          (e.g. Federal Express) to the address stated in Section 28 below. In
           the event of any dispute concerning whether you provided a Rejection
           Notice within sixty (60) days, you must provide a signed receipt
           confirming One Project received the Rejection Notice within sixty (60)
           days. You may opt out of these Terms of Service in their entirety by
           not using the Services.
         </p>
+
+        <Header3 className="font-serif text-sm">
+          28.8 Non-Arbitrable Claims
+        </Header3>
         <p>
           To the extent that a dispute is not subject to arbitration under this
-          Section 26, such dispute must be resolved exclusively through an
+          Section 27, such dispute must be resolved exclusively through an
           action brought in the appropriate state or federal court located in
           San Francisco, California and both parties irrevocably consent to the
           jurisdiction and venue of such courts for the adjudication of any

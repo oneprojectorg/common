@@ -6,6 +6,7 @@ export const PrivacyPolicyContent = () => {
   return (
     <div className="relative flex w-full flex-col gap-8 sm:pb-20">
       <FormalSection>
+        <p>Last Updated June 20, 2025</p>
         <Header3 className="font-serif">1. Who We Are</Header3>
         <p>
           One Project (collectively One Project, we, our, or us) is a non-profit
