@@ -72,7 +72,18 @@ const boxStyles = tv({
   },
 });
 
-const iconStyles = 'w-4 h-4 text-neutral-100 group-disabled:text-neutral-400';
+const iconStyles = tv({
+  base: 'text-neutral-100 group-disabled:text-neutral-400',
+  variants: {
+    size: {
+      small: 'h-3 w-3',
+      default: 'h-4 w-4',
+    },
+  },
+  defaultVariants: {
+    size: 'default',
+  },
+});
 
 type CheckboxVariants = VariantProps<typeof boxStyles>;
 
@@ -94,9 +105,9 @@ export const Checkbox = (props: CheckboxProps & CheckboxVariants) => {
             })}
           >
             {isIndeterminate ? (
-              <Minus aria-hidden className={iconStyles} />
+              <Minus aria-hidden className={iconStyles({ size: props.size })} />
             ) : isSelected ? (
-              <Check aria-hidden className={iconStyles} />
+              <Check aria-hidden className={iconStyles({ size: props.size })} />
             ) : null}
           </div>
           {props.children}
