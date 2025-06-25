@@ -72,8 +72,10 @@ export const MatchingOrganizationsForm = ({
         refetchType: 'all',
       });
 
+      trpcUtil.account.getMyAccount.refetch().then(() => {
+        router.push(`/?new=1`);
+      });
       // Redirect to the main app with new org flag
-      router.push(`/?new=1`);
     } catch (error) {
       console.error('Failed to join organization:', error);
       // Handle error (could show toast notification)
