@@ -115,14 +115,17 @@ const config = {
   skipTrailingSlashRedirect: true,
 };
 
-export default withPostHogConfig(
-  withBundleAnalyzer(withNextIntl(withTranspiledWorkspacesForNext(config))),
-  {
-    posthog: {
-      personalApiKey: process.env.POSTHOG_API_KEY,
-      envId: process.env.POSTHOG_ENV_ID,
-      project: 'common',
-      host: 'https://eu.i.posthog.com',
-    },
-  },
+export default withBundleAnalyzer(
+  withNextIntl(withTranspiledWorkspacesForNext(config)),
 );
+// export default withPostHogConfig(
+// withBundleAnalyzer(withNextIntl(withTranspiledWorkspacesForNext(config))),
+// {
+// posthog: {
+// personalApiKey: process.env.POSTHOG_API_KEY,
+// envId: process.env.POSTHOG_ENV_ID,
+// project: 'common',
+// host: 'https://eu.i.posthog.com',
+// },
+// },
+// );
