@@ -1,5 +1,6 @@
 import { useLocalStorage } from '@/utils/useLocalStorage';
 import { trpc } from '@op/api/client';
+import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { TextField } from '@op/ui/TextField';
 import { cn } from '@op/ui/utils';
 import { useEffect, useRef, useState } from 'react';
@@ -32,14 +33,18 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
-  const { data: organizationResults } = trpc.organization.search.useQuery(
-    {
-      q: debouncedQuery,
-    },
-    {
-      staleTime: 30_000,
-    },
-  );
+
+  const { data: organizationResults, isFetching: isSearching } =
+    trpc.organization.search.useQuery(
+      {
+        q: debouncedQuery,
+      },
+      {
+        staleTime: 30_000,
+        // make sure we don't remove results while continuing to type
+        placeholderData: (prev) => prev,
+      },
+    );
   const [recentSearches, setRecentSearches] = useLocalStorage<Array<string>>(
     'recentSearches',
     [],
@@ -151,7 +156,11 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
           placeholder: 'Search',
           color: 'muted',
           size: 'small',
-          icon: <LuSearch className="size-4 text-neutral-gray4" />,
+          icon: isSearching ? (
+            <LoadingSpinner className="size-4 text-neutral-gray4" />
+          ) : (
+            <LuSearch className="size-4 text-neutral-gray4" />
+          ),
           className: cn(
             'bg-transparent placeholder:text-neutral-gray4 active:bg-white active:text-neutral-gray3 focus:bg-white',
             'active:border-inherit', // override TextField input styles that are used everywhere
