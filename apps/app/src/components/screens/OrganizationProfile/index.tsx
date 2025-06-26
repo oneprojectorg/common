@@ -2,6 +2,7 @@ import { getPublicUrl } from '@/utils';
 import { trpcNext } from '@op/api/vanilla';
 import { cn, getGradientForString } from '@op/ui/utils';
 import Image from 'next/image';
+import { notFound } from 'next/navigation';
 import { LuArrowLeft } from 'react-icons/lu';
 
 import { Link } from '@/lib/i18n';
@@ -10,7 +11,7 @@ import { ImageHeader } from '@/components/ImageHeader';
 import { ProfileGrid, ProfileTabs } from '@/components/Profile/ProfileContent';
 import { ProfileDetails } from '@/components/Profile/ProfileDetails';
 
-const OrganizationProfileSuspense = async ({ slug }: { slug: string }) => {
+const OrganizationProfileWithData = async ({ slug }: { slug: string }) => {
   try {
     const client = await trpcNext();
     const organization = await client.organization.getBySlug.query({
@@ -54,15 +55,7 @@ const OrganizationProfileSuspense = async ({ slug }: { slug: string }) => {
     );
   } catch (e) {
     console.error(e);
-    return (
-      <ImageHeader
-        headerImage={
-          <div className="flex h-full w-full items-center justify-center">
-            Could not load organization
-          </div>
-        }
-      />
-    );
+    notFound();
   }
 };
 
@@ -76,7 +69,7 @@ export const OrganizationProfile = ({ slug }: { slug: string }) => {
         </Link>
       </header>
       <div className="-mt-[3.05rem] flex w-full flex-col gap-3 border-offWhite border-b-transparent sm:mt-0 sm:min-h-[calc(100vh-3.5rem)] sm:gap-4 sm:border">
-        <OrganizationProfileSuspense slug={slug} />
+        <OrganizationProfileWithData slug={slug} />
       </div>
     </>
   );
