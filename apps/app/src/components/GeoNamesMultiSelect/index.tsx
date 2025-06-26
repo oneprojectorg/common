@@ -23,6 +23,7 @@ export const GeoNamesMultiSelect = ({
     },
     {
       enabled: whereWeWorkQuery.length >= 2,
+      placeholderData: (prev) => prev,
     },
   );
 
