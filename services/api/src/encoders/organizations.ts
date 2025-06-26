@@ -14,6 +14,7 @@ export const organizationsEncoder = createSelectSchema(organizations)
     id: true,
     isOfferingFunds: true,
     isReceivingFunds: true,
+    acceptingApplications: true,
     networkOrganization: true,
     orgType: true,
   })
@@ -26,6 +27,7 @@ export const organizationsEncoder = createSelectSchema(organizations)
     strategies: z.array(taxonomyTermsEncoder).optional().default([]),
     headerImage: storageItemEncoder.nullish(),
     avatarImage: storageItemEncoder.nullish(),
+    acceptingApplications: z.boolean().default(false).optional(),
   });
 
 export const organizationsCreateInputEncoder = createSelectSchema(organizations)
@@ -51,6 +53,7 @@ export const organizationsCreateInputEncoder = createSelectSchema(organizations)
 
     isOfferingFunds: true,
     isReceivingFunds: true,
+    acceptingApplications: true,
 
     // Organization Type
     orgType: true,

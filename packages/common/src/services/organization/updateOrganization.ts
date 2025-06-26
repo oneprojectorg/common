@@ -266,6 +266,26 @@ export const updateOrganization = async ({
           }
         });
       },
+      async () => {
+        // Update receiving funds terms if provided
+        await db.transaction(async (tx) => {
+          if (data.receivingFundsTerms !== undefined) {
+            if (data.receivingFundsTerms.length > 0) {
+              await Promise.all(
+                data.receivingFundsTerms.map((term) =>
+                  tx
+                    .insert(organizationsTerms)
+                    .values({
+                      organizationId: orgToUpdate.id,
+                      taxonomyTermId: term.id,
+                    })
+                    .onConflictDoNothing(),
+                ),
+              );
+            }
+          }
+        });
+      },
     ],
     async (update: () => Promise<void>) => await update(),
     { concurrency: 3 },

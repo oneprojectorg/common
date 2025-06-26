@@ -48,6 +48,7 @@ export const organizations = pgTable(
 
     isOfferingFunds: boolean().default(false),
     isReceivingFunds: boolean().default(false),
+    acceptingApplications: boolean().default(false),
 
     // Organization Type
     orgType: orgTypeEnum('org_type').notNull().default(OrgType.OTHER),

@@ -35,6 +35,7 @@ export const baseOrganizationSchema = z.object({
   focusAreas: z.array(multiSelectOptionValidator),
   communitiesServed: z.array(multiSelectOptionValidator),
   strategies: z.array(multiSelectOptionValidator),
+  receivingFundsTerms: z.array(multiSelectOptionValidator),
   networkOrganization: z.boolean(),
   isReceivingFunds: z.boolean(),
   isOfferingFunds: z.boolean(),
