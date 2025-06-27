@@ -15,6 +15,7 @@ export const GET = async (request: NextRequest) => {
 
   // On successful verification, always redirect the user to the app
   const useUrl = OPURLConfig('APP');
+  console.log('SCOTT: useUrl', useUrl);
 
   const errorRedirect = request.nextUrl.clone().origin;
 
@@ -25,13 +26,15 @@ export const GET = async (request: NextRequest) => {
       await supabase.auth.exchangeCodeForSession(code);
 
     if (error) {
-      console.error(error);
+      console.error('SCOTT: HELLOOOOOO', error);
 
       // return the user to an error page with some instructions
       return NextResponse.redirect(
         `${errorRedirect}?error=${error.message || 'There was an error signing you in.'}`,
       );
     }
+
+    console.log('SCOTT: WE ARE HERE', authData);
 
     if (authData.user?.email) {
       // Check if the user is allowed to login

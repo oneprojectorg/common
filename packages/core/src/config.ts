@@ -140,6 +140,8 @@ export const cookieDomains = [
   'web-dev.oneproject.tech',
   'common.oneproject.org',
   'api-common.oneproject.org',
+  '.supabase.co',
+  'supabase.co',
 ];
 
 export const allowedEmailDomains = ['oneproject.org', 'team.oneproject.org'];
