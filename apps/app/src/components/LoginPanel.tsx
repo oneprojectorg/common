@@ -124,6 +124,7 @@ export const LoginPanel = () => {
     if (data.user && data.session && data.user.role === 'authenticated') {
       window.location.reload();
     } else {
+      console.error('ERROR with OTP', error);
       setTokenError(error?.message ?? 'Failed to verify code');
     }
   }, [email, token]);
