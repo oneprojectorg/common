@@ -121,13 +121,9 @@ export const LoginPanel = () => {
       type: 'email',
     });
 
-    console.log('SCOTT: data', JSON.stringify(data), error);
-
     if (data.user && data.session && data.user.role === 'authenticated') {
-      console.log('RELOAD');
       window.location.reload();
     } else {
-      console.error('ERROR with OTP', error);
       setTokenError(error?.message ?? 'Failed to verify code');
     }
   }, [email, token]);

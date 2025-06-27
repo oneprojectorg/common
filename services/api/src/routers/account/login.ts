@@ -72,7 +72,6 @@ const login = router({
         !allowedEmailDomains.includes(emailDomain) &&
         !adminEmails.includes(input.email)
       ) {
-        console.log('User is not invited', input.email);
         throw new TRPCError({
           message: `${APP_NAME} is invite-only! You’re now on the waitlist. Keep an eye on your inbox for updates.`,
           code: 'FORBIDDEN',
