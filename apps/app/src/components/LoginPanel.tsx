@@ -121,6 +121,8 @@ export const LoginPanel = () => {
       type: 'email',
     });
 
+    console.log('SCOTT: data', data, error);
+
     if (data.user && data.session && data.user.role === 'authenticated') {
       window.location.reload();
     } else {
