@@ -126,6 +126,41 @@ export const AddRelationshipModalSuspense = ({
                         />
                       </DialogTrigger>
                     );
+                  case 'fundedBy':
+                    return (
+                      <DialogTrigger>
+                        <Button
+                          className="w-full sm:w-auto"
+                          color={
+                            relationship.pending ? 'unverified' : 'verified'
+                          }
+                        >
+                          {relationship.pending ? (
+                            <LuClock className="size-4 stroke-1" />
+                          ) : (
+                            <LuCheck className="size-4 stroke-1" />
+                          )}
+                          Fundee
+                        </Button>
+                        <Tooltip>
+                          {relationship.pending &&
+                            `Pending confirmation from ${profile.profile.name}`}
+                        </Tooltip>
+                        <RemoveRelationshipModal
+                          relationship={relationship}
+                          onChange={() => {
+                            utils.organization.listRelationships.invalidate({
+                              organizationId: profile.id,
+                            });
+                            utils.organization.listDirectedRelationships.invalidate(
+                              {
+                                to: profile.id,
+                              },
+                            );
+                          }}
+                        />
+                      </DialogTrigger>
+                    );
                   case 'affiliation':
                     return (
                       <DialogTrigger>
