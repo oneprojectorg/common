@@ -174,10 +174,11 @@ export const PostFeed = ({
                       post?.id && (
                         <MenuTrigger>
                           <Button
+                            unstyled
                             color="neutral"
                             variant="icon"
                             size="small"
-                            className="size-4 border-0 p-0 outline-0"
+                            className="size-6 rounded-full border-0 bg-white p-1 outline-0 aria-expanded:bg-neutral-gray1"
                           >
                             <LuEllipsis className="size-4" />
                           </Button>
