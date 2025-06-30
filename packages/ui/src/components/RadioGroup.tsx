@@ -12,7 +12,7 @@ import type {
 } from 'react-aria-components';
 import { tv } from 'tailwind-variants';
 
-import { composeTailwindRenderProps, focusRing } from '../utils';
+import { composeTailwindRenderProps } from '../utils';
 import { Description, FieldError, Label } from './Field';
 
 export interface RadioGroupProps extends Omit<RACRadioGroupProps, 'children'> {
@@ -42,12 +42,12 @@ export const RadioGroup = (props: RadioGroupProps) => {
 };
 
 const styles = tv({
-  extend: focusRing,
-  base: 'size-5 rounded-full border-2 bg-neutral-100 transition-all',
+  // extend: focusRing,
+  base: 'bg-neutral-white mt-1 size-4 rounded-full border border-neutral-gray3 transition-all',
   variants: {
     isSelected: {
       false: 'border group-pressed:border',
-      true: 'border-[7px] group-pressed:border',
+      true: 'border-[0.31rem] border-primary-tealBlack outline outline-1 -outline-offset-1 outline-primary-teal group-pressed:border',
     },
     isInvalid: {
       true: 'border-red-600 group-pressed:border-red-700',
@@ -64,7 +64,7 @@ export const Radio = (props: RadioProps) => {
       {...props}
       className={composeTailwindRenderProps(
         props.className,
-        'group flex items-center gap-2 text-sm text-neutral-800 transition disabled:text-neutral-400',
+        'group flex items-start gap-2 py-2 text-base text-neutral-charcoal transition',
       )}
     >
       {(renderProps) => (

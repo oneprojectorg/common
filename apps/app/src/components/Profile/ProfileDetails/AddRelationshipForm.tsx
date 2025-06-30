@@ -82,8 +82,10 @@ export const AddRelationshipForm = ({
   };
 
   const filteredRelationshipOptions = profile.networkOrganization
-    ? RELATIONSHIP_OPTIONS
-    : RELATIONSHIP_OPTIONS.filter((option) => option.key !== 'memberOf');
+    ? RELATIONSHIP_OPTIONS.filter((option) => option.key !== 'fundee')
+    : RELATIONSHIP_OPTIONS.filter(
+        (option) => option.key !== 'memberOf' && option.key !== 'fundee',
+      );
 
   return (
     <>

@@ -42,24 +42,28 @@ export const FundingRoleModal = ({
           <ModalBody>
             <div>
               <RadioGroup
-                label={`How are you related to ${organizationName} in terms of funding?`}
+                label="How do your organizations support each other?"
                 value={selectedRole || ''}
-                onChange={(value: string) => setSelectedRole(value as FundingRole)}
+                onChange={(value: string) =>
+                  setSelectedRole(value as FundingRole)
+                }
                 orientation="vertical"
               >
                 <Radio value="funder">
                   <div className="flex flex-col">
-                    <div className="font-medium">Funder</div>
+                    <div>Your organization funds {organizationName}</div>
                     <div className="text-sm text-neutral-gray4">
-                      You provide funding to {organizationName}
+                      Your organization provides financial support to{' '}
+                      {organizationName}.
                     </div>
                   </div>
                 </Radio>
                 <Radio value="fundee">
                   <div className="flex flex-col">
-                    <div className="font-medium">Fundee</div>
+                    <div>{organizationName} funds your organization</div>
                     <div className="text-sm text-neutral-gray4">
-                      You receive funding from {organizationName}
+                      {organizationName} provides financial support to your
+                      organization.
                     </div>
                   </div>
                 </Radio>
