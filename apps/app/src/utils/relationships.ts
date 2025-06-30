@@ -14,7 +14,7 @@ export const RELATIONSHIP_OPTIONS = [
       `You’ve either received or given funds to ${orgName}`,
   },
   {
-    key: 'fundee',
+    key: 'fundedBy',
     label: 'Fundee',
     noun: 'Fundee',
     description: (orgName: string) => `You’ve received from ${orgName}`,

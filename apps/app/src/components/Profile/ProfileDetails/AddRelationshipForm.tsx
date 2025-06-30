@@ -75,6 +75,7 @@ export const AddRelationshipForm = ({
     if (role === 'funder') {
       filteredRelationships.add('funding');
     } else if (role === 'fundee') {
+      filteredRelationships.delete('funding');
       filteredRelationships.add('fundedBy');
     } else if (role === 'funderAndFundee') {
       filteredRelationships.add('funding');
@@ -92,9 +93,9 @@ export const AddRelationshipForm = ({
   };
 
   const filteredRelationshipOptions = profile.networkOrganization
-    ? RELATIONSHIP_OPTIONS.filter((option) => option.key !== 'fundee')
+    ? RELATIONSHIP_OPTIONS.filter((option) => option.key !== 'fundedBy')
     : RELATIONSHIP_OPTIONS.filter(
-        (option) => option.key !== 'memberOf' && option.key !== 'fundee',
+        (option) => option.key !== 'memberOf' && option.key !== 'fundedBy',
       );
 
   return (
