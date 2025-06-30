@@ -5,7 +5,7 @@ import { Dialog } from '@op/ui/RAC';
 import { Radio, RadioGroup } from '@op/ui/RadioGroup';
 import { useState, useTransition } from 'react';
 
-export type FundingRole = 'funder' | 'fundee';
+export type FundingRole = 'funder' | 'fundee' | 'funderAndFundee';
 
 interface FundingRoleModalProps {
   organizationName: string;
@@ -37,8 +37,8 @@ export const FundingRoleModal = ({
   return (
     <Dialog>
       {({ close }) => (
-        <div className="contents">
-          <ModalHeader>Funding Relationship</ModalHeader>
+        <div>
+          <ModalHeader>Specify your funding relationship</ModalHeader>
           <ModalBody>
             <div>
               <RadioGroup
@@ -64,6 +64,15 @@ export const FundingRoleModal = ({
                     <div className="text-sm text-neutral-gray4">
                       {organizationName} provides financial support to your
                       organization.
+                    </div>
+                  </div>
+                </Radio>
+                <Radio value="funderAndFundee">
+                  <div className="flex flex-col">
+                    <div>Mutual funding</div>
+                    <div className="text-sm text-neutral-gray4">
+                      Both organizations provide financial support to each
+                      other.
                     </div>
                   </div>
                 </Radio>

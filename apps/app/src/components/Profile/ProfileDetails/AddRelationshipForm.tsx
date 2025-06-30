@@ -66,13 +66,23 @@ export const AddRelationshipForm = ({
     });
   };
 
-  const handleFundingRoleSave = async (_role: FundingRole) => {
+  const handleFundingRoleSave = async (role: FundingRole) => {
     if (!pendingFormData) return;
 
-    // For now, we'll still submit 'funding' as the relationship type
-    // The role information could be stored separately if needed in the future
+    // we process the funding relationship to determine which relationships need to be added
+
+    const filteredRelationships = new Set(pendingFormData.relationships);
+    if (role === 'funder') {
+      filteredRelationships.add('funding');
+    } else if (role === 'fundee') {
+      filteredRelationships.add('fundedBy');
+    } else if (role === 'funderAndFundee') {
+      filteredRelationships.add('funding');
+      filteredRelationships.add('fundedBy');
+    }
+
     submitRelationships(
-      pendingFormData.relationships,
+      Array.from(filteredRelationships),
       pendingFormData.closeModal,
     );
 
