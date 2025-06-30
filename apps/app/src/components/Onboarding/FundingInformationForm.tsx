@@ -61,7 +61,7 @@ export const FundingInformationForm = ({
       }}
       className={className}
     >
-      <FormContainer>
+      <FormContainer className="max-w-lg">
         <FormHeader text="Funding information">
           Specify if your organization is currently seeking funding and offers
           funding.

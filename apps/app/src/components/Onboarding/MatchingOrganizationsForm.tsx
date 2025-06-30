@@ -92,7 +92,7 @@ export const MatchingOrganizationsForm = ({
   }
 
   return (
-    <div className={cn('max-w-md', className)}>
+    <div className={cn('max-w-lg', className)}>
       <FormContainer>
         <FormHeader text={t("We've found your organization")}>
           {t(
