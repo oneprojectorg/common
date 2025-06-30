@@ -124,7 +124,8 @@ export const OPURLConfig: TOPURLConfig = (type) => {
 };
 
 export const urlMatcher = /oneproject\.(tech|org)$/;
-export const cookieOptionsDomain = '.oneproject.org';
+export const cookieOptionsDomain =
+  VERCEL_GIT_BRANCH === 'main' ? '.oneproject.org' : '.oneproject.tech';
 export const cookieDomains = [
   'oneproject.tech',
   '.oneproject.tech',

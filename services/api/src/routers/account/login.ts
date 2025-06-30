@@ -90,7 +90,7 @@ const login = router({
         });
 
         if (authResponse.error) {
-          console.error(authResponse.error);
+          console.error('login error', authResponse.error);
           throw new TRPCError({
             message: `There was an error signing you in. We are currently investigating the issue. Please try again in a few minutes. If you need further assistance, don't hesitate to contact us at ${genericEmail}`,
             code: 'INTERNAL_SERVER_ERROR',

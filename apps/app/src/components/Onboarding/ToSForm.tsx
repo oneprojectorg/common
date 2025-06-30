@@ -40,7 +40,7 @@ export const ToSForm = ({
       }}
       className={className}
     >
-      <FormContainer className="max-w-[32rem]">
+      <FormContainer className="max-w-lg">
         <FormHeader text={t('Terms of Use Overview')}></FormHeader>
         <span className="text-neutral-charcoal">
           {t('Effective Date: March 15, 2025')}

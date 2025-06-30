@@ -37,7 +37,7 @@ export const OrganizationDetailsForm = ({
           }}
           className={className}
         >
-          <FormContainer>
+          <FormContainer className="max-w-lg">
             <FormHeader text={t("Add your organization's details")} />
 
             {formFields}
