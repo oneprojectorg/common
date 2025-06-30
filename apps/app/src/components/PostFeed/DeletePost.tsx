@@ -41,9 +41,12 @@ export const DeletePost = ({
           handleDeletePost(postId, organizationId);
         }
       }}
-      className="rounded-sm"
+      className="min-w-28 p-2"
     >
-      <MenuItem key="delete" className="text-functional-red">
+      <MenuItem
+        key="delete"
+        className="!bg-transparent px-3 py-1 pl-3 pr-3 text-functional-red"
+      >
         Delete
       </MenuItem>
     </Menu>
