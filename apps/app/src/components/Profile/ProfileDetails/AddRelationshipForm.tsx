@@ -4,8 +4,8 @@ import type { Organization } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { Checkbox } from '@op/ui/Checkbox';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { Dialog, DialogTrigger } from '@op/ui/RAC';
+import { ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
+import { Dialog } from '@op/ui/RAC';
 import { toast } from '@op/ui/Toast';
 import { FormEvent, useState, useTransition } from 'react';
 
