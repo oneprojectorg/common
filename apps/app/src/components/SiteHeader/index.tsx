@@ -8,7 +8,9 @@ import { useAuthLogout } from '@op/hooks';
 import { Avatar } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
 import { Menu, MenuItem, MenuItemSimple, MenuSeparator } from '@op/ui/Menu';
-import { Modal, ModalBody } from '@op/ui/Modal';
+import { Modal, ModalBody, ModalHeader, ModalFooter } from '@op/ui/Modal';
+import { TextField } from '@op/ui/TextField';
+import { DialogTrigger } from '@op/ui/Dialog';
 import { Popover } from '@op/ui/Popover';
 import { MenuTrigger } from '@op/ui/RAC';
 import { Skeleton } from '@op/ui/Skeleton';
@@ -21,6 +23,8 @@ import {
   LuCircleHelp,
   LuLogOut,
   LuSearch,
+  LuUserPlus,
+  LuSend,
 } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
@@ -47,6 +51,63 @@ const useMediaQuery = (query: string) => {
   }, [matches, query]);
 
   return matches;
+};
+
+const InviteUserModal = () => {
+  const [email, setEmail] = useState('');
+  const t = useTranslations();
+
+  const handleSendInvite = () => {
+    console.log('Send invite to:', email);
+    setEmail('');
+  };
+
+  return (
+    <DialogTrigger>
+      <Button
+        color="primary"
+        size="medium"
+        className="flex items-center gap-2"
+      >
+        <LuUserPlus className="size-4" />
+        {t('Invite')}
+      </Button>
+      <Modal>
+        <ModalHeader>{t('Send Invitation')}</ModalHeader>
+        <ModalBody>
+          <TextField
+            label={t('Email Address')}
+            value={email}
+            onChange={setEmail}
+            isRequired
+            description={t('Enter the email address to send an invite')}
+            inputProps={{ 
+              type: "email",
+              placeholder: "example@email.com"
+            }}
+          />
+        </ModalBody>
+        <ModalFooter className="flex justify-end gap-2">
+          <Button
+            color="secondary"
+            surface="outline"
+            onPress={() => setEmail('')}
+          >
+            {t('Cancel')}
+          </Button>
+          <Button
+            color="primary"
+            onPress={handleSendInvite}
+            isDisabled={!email}
+            className="flex items-center gap-2"
+          >
+            <LuSend className="size-4" />
+            {t('Send Invite')}
+          </Button>
+        </ModalFooter>
+      </Modal>
+    </DialogTrigger>
+  );
 };
 
 const AvatarMenuContent = ({
@@ -291,21 +352,26 @@ export const SiteHeader = () => {
           </ErrorBoundary>
         </span>
 
-        <ClientOnly>
-          <ErrorBoundary
-            fallback={
-              <div className="size-8 rounded-full border bg-white shadow" />
-            }
-          >
-            <Suspense
+        <div className="flex items-center gap-3">
+          <ClientOnly>
+            <InviteUserModal />
+          </ClientOnly>
+          <ClientOnly>
+            <ErrorBoundary
               fallback={
-                <Skeleton className="size-8 rounded-full border bg-white shadow" />
+                <div className="size-8 rounded-full border bg-white shadow" />
               }
             >
-              <UserAvatarMenu />
-            </Suspense>
-          </ErrorBoundary>
-        </ClientOnly>
+              <Suspense
+                fallback={
+                  <Skeleton className="size-8 rounded-full border bg-white shadow" />
+                }
+              >
+                <UserAvatarMenu />
+              </Suspense>
+            </ErrorBoundary>
+          </ClientOnly>
+        </div>
       </header>
 
       {/* Mobile */}
@@ -346,21 +412,26 @@ export const SiteHeader = () => {
                 <LuSearch className="size-4 text-neutral-gray4" />
               </Button>
 
-              <ClientOnly>
-                <ErrorBoundary
-                  fallback={
-                    <div className="size-8 rounded-full border bg-white shadow" />
-                  }
-                >
-                  <Suspense
+              <div className="flex items-center gap-3">
+                <ClientOnly>
+                  <InviteUserModal />
+                </ClientOnly>
+                <ClientOnly>
+                  <ErrorBoundary
                     fallback={
-                      <Skeleton className="size-8 rounded-full border bg-white shadow" />
+                      <div className="size-8 rounded-full border bg-white shadow" />
                     }
                   >
-                    <UserAvatarMenu />
-                  </Suspense>
-                </ErrorBoundary>
-              </ClientOnly>
+                    <Suspense
+                      fallback={
+                        <Skeleton className="size-8 rounded-full border bg-white shadow" />
+                      }
+                    >
+                      <UserAvatarMenu />
+                    </Suspense>
+                  </ErrorBoundary>
+                </ClientOnly>
+              </div>
             </>
           )}
         </div>
