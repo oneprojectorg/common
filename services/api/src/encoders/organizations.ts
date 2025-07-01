@@ -17,6 +17,7 @@ export const organizationsEncoder = createSelectSchema(organizations)
     acceptingApplications: true,
     networkOrganization: true,
     orgType: true,
+    domain: true,
   })
   .extend({
     profile: profileEncoder,

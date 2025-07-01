@@ -7,7 +7,7 @@ import { DialogTrigger } from '@op/ui/Dialog';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Select, SelectItem } from '@op/ui/Select';
 import { TextField } from '@op/ui/TextField';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { LuSend, LuUserPlus, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -25,9 +25,17 @@ export const InviteUserModal = ({
 }: InviteUserModalProps) => {
   const [emails, setEmails] = useState('');
   const [selectedRole, setSelectedRole] = useState('Admin');
+  const [selectedOrganization, setSelectedOrganization] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const t = useTranslations();
   const { user } = useUser();
+
+  // Initialize selected organization when user data is available
+  useEffect(() => {
+    if (user?.currentOrganization?.id && !selectedOrganization) {
+      setSelectedOrganization(user.currentOrganization.id);
+    }
+  }, [user?.currentOrganization?.id, selectedOrganization]);
 
   const inviteUser = trpc.organization.invite.useMutation({
     onSuccess: () => {
@@ -51,6 +59,7 @@ export const InviteUserModal = ({
         inviteUser.mutate({
           emails: emailList,
           role: selectedRole,
+          organizationId: selectedOrganization,
         });
       }
     }
@@ -66,22 +75,48 @@ export const InviteUserModal = ({
   return (
     <DialogTrigger isOpen={isModalOpen} onOpenChange={setIsModalOpen}>
       {triggerButton}
-      <Modal>
+      <Modal
+        isDismissable
+        className="h-svh max-h-none w-screen max-w-none overflow-y-auto rounded-none sm:h-auto sm:max-h-[39rem] sm:w-[36rem] sm:max-w-[36rem] sm:rounded-md"
+      >
         <ModalHeader className="flex items-center justify-between">
-          {t('Invite others to Common')}
-          <LuX
-            className="size-6 cursor-pointer stroke-1"
-            onClick={() => setIsModalOpen(false)}
-          />
+          {/* Desktop header */}
+          <div className="hidden sm:flex sm:w-full sm:items-center sm:justify-between">
+            {t('Invite others to Common')}
+            <LuX
+              className="size-6 cursor-pointer stroke-1"
+              onClick={() => setIsModalOpen(false)}
+            />
+          </div>
+
+          {/* Mobile header */}
+          <div className="flex w-full items-center justify-between sm:hidden">
+            <Button
+              unstyled
+              onPress={() => {
+                setEmails('');
+                setIsModalOpen(false);
+              }}
+              isDisabled={inviteUser.isPending}
+            >
+              {t('Cancel')}
+            </Button>
+            <h2>{t('Invite others to Common')}</h2>
+            <Button
+              unstyled
+              onPress={handleSendInvite}
+              isDisabled={!emails.trim() || inviteUser.isPending}
+            >
+              {inviteUser.isPending ? t('Sending...') : t('Send')}
+            </Button>
+          </div>
         </ModalHeader>
-        <ModalBody>
+        <ModalBody className="p-6">
           <p>
             {t(
               "Currently, only people with email addresses from your organization's domain can be invited (e.g., @{domain}).",
               {
-                domain:
-                  user?.currentOrganization?.profile?.email?.split('@')[1] ||
-                  'example.org',
+                domain: user?.currentOrganization?.domain || 'example.org',
               },
             )}
           </p>
@@ -93,14 +128,21 @@ export const InviteUserModal = ({
             useTextArea={true}
             textareaProps={{
               rows: 3,
-              placeholder: `name1@${user?.currentOrganization?.profile?.email?.split('@')[1] || 'example.org'}, name2@${user?.currentOrganization?.profile?.email?.split('@')[1] || 'example.org'}, ...`,
+              placeholder: `name1@${user?.currentOrganization?.domain || 'example.org'}, name2@${user?.currentOrganization?.domain || 'example.org'}, ...`,
             }}
           />
 
-          <div>
-            <label>{t('Add to organization')}</label>
-            <p>{user?.currentOrganization?.profile?.name}</p>
-          </div>
+          <Select
+            label={t('Add to organization')}
+            selectedKey={selectedOrganization}
+            onSelectionChange={(key) => setSelectedOrganization(key as string)}
+          >
+            {user?.currentOrganization && (
+              <SelectItem id={user.currentOrganization.id}>
+                {user.currentOrganization.profile?.name}
+              </SelectItem>
+            )}
+          </Select>
 
           <Select
             label={t('Role')}
@@ -112,7 +154,8 @@ export const InviteUserModal = ({
 
           {inviteUser.error && <p>{inviteUser.error.message}</p>}
         </ModalBody>
-        <ModalFooter>
+        {/* Desktop footer - hidden on mobile since actions are in header */}
+        <ModalFooter className="hidden sm:flex">
           <Button
             color="secondary"
             surface="outline"
