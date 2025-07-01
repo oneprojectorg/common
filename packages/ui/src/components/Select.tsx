@@ -63,7 +63,7 @@ export const Select = <T extends object>({
     <AriaSelect
       {...props}
       isInvalid={!!errorMessage && errorMessage.length > 0}
-      className={cn('flex flex-col gap-2', props.className)}
+      className={cn('flex flex-col gap-1', props.className)}
     >
       {label && (
         <Label className="group-data-[invalid=true]:text-functional-red">

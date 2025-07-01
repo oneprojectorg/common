@@ -39,5 +39,6 @@
   "Confirm Administrator Access": "Confirm Administrator Access",
   "For now, we're only supporting administrator accounts. In the future, we’ll be able to support member accounts.": "For now, we're only supporting administrator accounts. In the future, we’ll be able to support member accounts.",
   "Get Started": "Get Started",
-  "Whoops! This is not my organization.": "Whoops! This is not my organization."
+  "Whoops! This is not my organization.": "Whoops! This is not my organization.",
+  "Currently, only people with email addresses from your organization's domain can be invited (e.g., @{domain}).": "Currently, only people with email addresses from your organization's domain can be invited (e.g., {domain})."
 }

@@ -7,7 +7,7 @@ import { DialogTrigger } from '@op/ui/Dialog';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Select, SelectItem } from '@op/ui/Select';
 import { TextField } from '@op/ui/TextField';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { LuSend, LuUserPlus, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -77,7 +77,7 @@ export const InviteUserModal = ({
       {triggerButton}
       <Modal
         isDismissable
-        className="h-svh max-h-none w-screen max-w-none overflow-y-auto rounded-none sm:h-auto sm:max-h-[39rem] sm:w-[36rem] sm:max-w-[36rem] sm:rounded-md"
+        className="h-svh max-h-none w-screen max-w-none overflow-y-auto sm:h-auto"
       >
         <ModalHeader className="flex items-center justify-between">
           {/* Desktop header */}
@@ -111,7 +111,7 @@ export const InviteUserModal = ({
             </Button>
           </div>
         </ModalHeader>
-        <ModalBody className="p-6">
+        <ModalBody className="gap-6 p-6">
           <p>
             {t(
               "Currently, only people with email addresses from your organization's domain can be invited (e.g., @{domain}).",
@@ -121,38 +121,42 @@ export const InviteUserModal = ({
             )}
           </p>
 
-          <TextField
-            label={t('Send to')}
-            value={emails}
-            onChange={setEmails}
-            useTextArea={true}
-            textareaProps={{
-              rows: 3,
-              placeholder: `name1@${user?.currentOrganization?.domain || 'example.org'}, name2@${user?.currentOrganization?.domain || 'example.org'}, ...`,
-            }}
-          />
+          <div className="flex flex-col gap-4">
+            <TextField
+              label={t('Send to')}
+              value={emails}
+              onChange={setEmails}
+              useTextArea={true}
+              textareaProps={{
+                rows: 3,
+                placeholder: `name1@${user?.currentOrganization?.domain || 'example.org'}, name2@${user?.currentOrganization?.domain || 'example.org'}, ...`,
+              }}
+            />
 
-          <Select
-            label={t('Add to organization')}
-            selectedKey={selectedOrganization}
-            onSelectionChange={(key) => setSelectedOrganization(key as string)}
-          >
-            {user?.currentOrganization && (
-              <SelectItem id={user.currentOrganization.id}>
-                {user.currentOrganization.profile?.name}
-              </SelectItem>
-            )}
-          </Select>
+            <Select
+              label={t('Add to organization')}
+              selectedKey={selectedOrganization}
+              onSelectionChange={(key) =>
+                setSelectedOrganization(key as string)
+              }
+            >
+              {user?.currentOrganization && (
+                <SelectItem id={user.currentOrganization.id}>
+                  {user.currentOrganization.profile?.name}
+                </SelectItem>
+              )}
+            </Select>
 
-          <Select
-            label={t('Role')}
-            selectedKey={selectedRole}
-            onSelectionChange={(key) => setSelectedRole(key as string)}
-          >
-            <SelectItem id="Admin">{t('Admin')}</SelectItem>
-          </Select>
+            <Select
+              label={t('Role')}
+              selectedKey={selectedRole}
+              onSelectionChange={(key) => setSelectedRole(key as string)}
+            >
+              <SelectItem id="Admin">{t('Admin')}</SelectItem>
+            </Select>
 
-          {inviteUser.error && <p>{inviteUser.error.message}</p>}
+            {inviteUser.error && <p>{inviteUser.error.message}</p>}
+          </div>
         </ModalBody>
         {/* Desktop footer - hidden on mobile since actions are in header */}
         <ModalFooter className="hidden sm:flex">
