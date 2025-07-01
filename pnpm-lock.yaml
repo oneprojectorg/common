@@ -517,6 +517,9 @@ importers:
 
   packages/common:
     dependencies:
+      '@op/emails':
+        specifier: workspace:*
+        version: link:../../services/emails
       p-map:
         specifier: ^7.0.3
         version: 7.0.3
