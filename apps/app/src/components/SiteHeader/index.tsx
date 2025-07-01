@@ -57,6 +57,7 @@ const InviteUserModal = () => {
   const [email, setEmail] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const t = useTranslations();
+  // const user = useUser();
 
   const inviteUser = trpc.organization.invite.useMutation({
     onSuccess: () => {
