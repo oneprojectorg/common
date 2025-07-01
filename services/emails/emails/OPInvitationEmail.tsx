@@ -10,7 +10,7 @@ interface OPInvitationEmailProps {
   inviteUrl: string;
 }
 
-const OPInvitationEmail = ({
+export const OPInvitationEmail = ({
   inviterName = 'A team member',
   organizationName = 'Common',
   inviteUrl = 'https://common.oneproject.org/signup',
