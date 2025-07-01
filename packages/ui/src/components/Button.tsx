@@ -12,7 +12,7 @@ const buttonStyle = tv({
   variants: {
     variant: {
       primary: '',
-      icon: 'text-sm sm:text-base',
+      icon: 'flex gap-2 text-sm sm:text-base',
     },
     color: {
       primary:
