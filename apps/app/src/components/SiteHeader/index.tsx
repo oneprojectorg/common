@@ -7,13 +7,11 @@ import { trpc } from '@op/api/client';
 import { useAuthLogout } from '@op/hooks';
 import { Avatar } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
-import { DialogTrigger } from '@op/ui/Dialog';
 import { Menu, MenuItem, MenuItemSimple, MenuSeparator } from '@op/ui/Menu';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
+import { Modal, ModalBody } from '@op/ui/Modal';
 import { Popover } from '@op/ui/Popover';
 import { MenuTrigger } from '@op/ui/RAC';
 import { Skeleton } from '@op/ui/Skeleton';
-import { TextField } from '@op/ui/TextField';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -23,8 +21,6 @@ import {
   LuCircleHelp,
   LuLogOut,
   LuSearch,
-  LuSend,
-  LuUserPlus,
 } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
@@ -32,6 +28,7 @@ import { Link, useTranslations } from '@/lib/i18n';
 import { CoCModal } from '../CoCModal';
 import { CommonLogo } from '../CommonLogo';
 import ErrorBoundary from '../ErrorBoundary';
+import { InviteUserModal } from '../InviteUserModal';
 import { PrivacyPolicyModal } from '../PrivacyPolicyModal';
 import { UpdateProfileModal } from '../Profile/ProfileDetails/UpdateProfileModal';
 import { SearchInput } from '../SearchInput';
@@ -53,84 +50,6 @@ const useMediaQuery = (query: string) => {
   return matches;
 };
 
-const InviteUserModal = () => {
-  const [email, setEmail] = useState('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const t = useTranslations();
-  // const user = useUser();
-
-  const inviteUser = trpc.organization.invite.useMutation({
-    onSuccess: () => {
-      setEmail('');
-      setIsModalOpen(false);
-    },
-    onError: (error) => {
-      console.error('Failed to send invite:', error.message);
-    },
-  });
-
-  const handleSendInvite = () => {
-    if (email) {
-      inviteUser.mutate({ email });
-    }
-  };
-
-  return (
-    <DialogTrigger isOpen={isModalOpen} onOpenChange={setIsModalOpen}>
-      <Button
-        color="neutral"
-        variant="icon"
-        className="flex items-center gap-2 text-primary-teal"
-      >
-        <LuUserPlus className="min-h-4 min-w-4" />
-        <div className="text-nowrap">{t('Invite users')}</div>
-      </Button>
-      <Modal>
-        <ModalHeader>{t('Send Invitation')}</ModalHeader>
-        <ModalBody>
-          <TextField
-            label={t('Email Address')}
-            value={email}
-            onChange={setEmail}
-            isRequired
-            description={t('Enter the email address to send an invite')}
-            inputProps={{
-              type: 'email',
-              placeholder: 'example@email.com',
-            }}
-          />
-          {inviteUser.error && (
-            <div className="mt-2 text-sm text-red-600">
-              {inviteUser.error.message}
-            </div>
-          )}
-        </ModalBody>
-        <ModalFooter className="flex justify-end gap-2">
-          <Button
-            color="secondary"
-            surface="outline"
-            onPress={() => {
-              setEmail('');
-              setIsModalOpen(false);
-            }}
-            isDisabled={inviteUser.isPending}
-          >
-            {t('Cancel')}
-          </Button>
-          <Button
-            color="primary"
-            onPress={handleSendInvite}
-            isDisabled={!email || inviteUser.isPending}
-            className="flex items-center gap-2"
-          >
-            <LuSend className="size-4" />
-            {inviteUser.isPending ? t('Sending...') : t('Send Invite')}
-          </Button>
-        </ModalFooter>
-      </Modal>
-    </DialogTrigger>
-  );
-};
 
 const AvatarMenuContent = ({
   onClose,

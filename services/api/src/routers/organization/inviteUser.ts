@@ -22,12 +22,27 @@ const meta: OpenApiMeta = {
 };
 
 const inputSchema = z.object({
-  email: z.string().email('Must be a valid email address'),
-});
+  emails: z
+    .array(z.string().email('Must be a valid email address'))
+    .min(1, 'At least one email address is required'),
+  role: z.string().default('Admin'),
+}).or(
+  z.object({
+    email: z.string().email('Must be a valid email address'),
+    role: z.string().default('Admin').optional(),
+  })
+);
 
 const outputSchema = z.object({
   success: z.boolean(),
   message: z.string(),
+  details: z.object({
+    successful: z.array(z.string()),
+    failed: z.array(z.object({
+      email: z.string(),
+      reason: z.string(),
+    })),
+  }).optional(),
 });
 
 export const inviteUserRouter = router({
@@ -44,7 +59,10 @@ export const inviteUserRouter = router({
       try {
         const { db } = ctx.database;
         const { id: authUserId } = ctx.user;
-        const { email } = input;
+        
+        // Handle both single email and multiple emails input
+        const emailsToProcess = 'emails' in input ? input.emails : [input.email];
+        const role = 'role' in input ? input.role : 'Admin';
 
         // Get the current user's database record with organization details
         const authUser = await db.query.users.findFirst({
@@ -64,47 +82,82 @@ export const inviteUserRouter = router({
           );
         }
 
-        // Check if email is already in the allowList
-        const existingEntry = await db.query.allowList.findFirst({
-          where: (table, { eq }) => eq(table.email, email),
-        });
+        const results = {
+          successful: [] as string[],
+          failed: [] as { email: string; reason: string }[],
+        };
 
-        if (existingEntry) {
-          throw new TRPCError({
-            code: 'CONFLICT',
-            message: 'User is already invited or has access to the platform',
-          });
+        // Process each email
+        for (const email of emailsToProcess) {
+          try {
+            // Check if email is already in the allowList
+            const existingEntry = await db.query.allowList.findFirst({
+              where: (table, { eq }) => eq(table.email, email),
+            });
+
+            if (existingEntry) {
+              results.failed.push({
+                email,
+                reason: 'User is already invited or has access to the platform',
+              });
+              continue;
+            }
+
+            // Add the email to the allowList with the current user's organization
+            await db.insert(allowList).values({
+              email,
+              organizationId: authUser.lastOrgId,
+              metadata: {
+                invitedBy: authUserId,
+                invitedAt: new Date().toISOString(),
+                role,
+              },
+            });
+
+            // Send invitation email
+            try {
+              await sendInvitationEmail({
+                to: email,
+                inviterName: authUser.name || ctx.user.email || 'A team member',
+                organizationName:
+                  (authUser.currentOrganization as any)?.profile?.name ||
+                  'the organization',
+                inviteUrl: OPURLConfig('APP').ENV_URL,
+              });
+              results.successful.push(email);
+            } catch (emailError) {
+              console.error(`Failed to send invitation email to ${email}:`, emailError);
+              // Email failed but database insertion succeeded
+              results.successful.push(email);
+            }
+          } catch (error) {
+            console.error(`Failed to process invitation for ${email}:`, error);
+            results.failed.push({
+              email,
+              reason: error instanceof Error ? error.message : 'Unknown error',
+            });
+          }
         }
 
-        // Add the email to the allowList with the current user's organization
-        await db.insert(allowList).values({
-          email,
-          organizationId: authUser.lastOrgId,
-          metadata: {
-            invitedBy: authUserId,
-            invitedAt: new Date().toISOString(),
-          },
-        });
+        const totalEmails = emailsToProcess.length;
+        const successCount = results.successful.length;
 
-        // Send invitation email
-        try {
-          await sendInvitationEmail({
-            to: email,
-            inviterName: authUser.name || ctx.user.email || 'A team member',
-            organizationName:
-              (authUser.currentOrganization as any)?.profile?.name ||
-              'the organization',
-            inviteUrl: OPURLConfig('APP').ENV_URL,
-          });
-        } catch (emailError) {
-          console.error('Failed to send invitation email:', emailError);
-          // Note: We don't throw here to avoid rolling back the database insertion
-          // The user has been added to the allow list even if email fails
+        let message: string;
+        if (successCount === totalEmails) {
+          message = `All ${totalEmails} invitation${totalEmails > 1 ? 's' : ''} sent successfully`;
+        } else if (successCount > 0) {
+          message = `${successCount} of ${totalEmails} invitations sent successfully`;
+        } else {
+          message = 'No invitations were sent successfully';
         }
 
         return {
-          success: true,
-          message: `Invitation sent to ${email}`,
+          success: successCount > 0,
+          message,
+          details: {
+            successful: results.successful,
+            failed: results.failed,
+          },
         };
       } catch (error) {
         // Re-throw TRPCError as-is
