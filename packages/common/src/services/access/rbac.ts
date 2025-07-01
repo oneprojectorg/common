@@ -1,9 +1,7 @@
 import { UnauthorizedError } from '@/src/utils';
-import { accessRoles } from '@op/db/schema';
+import type { AccessRole } from '@op/db/schema';
 
 import { AccessZone, AccessZonePermission } from './types';
-
-export type AccessRole = typeof accessRoles;
 
 // 0bXXXXX - Admin, Create, Read, Update, Delete
 export const accessMasks = {
@@ -42,6 +40,11 @@ export const hasAccess = (
   );
 };
 
+/**
+ * Asserts access to an AccessZone using the accessMasks
+ * @example
+ *assertAccess({ organization: accessMasks.ADMIN }, orgUser?.roles);
+ */
 export const assertAccess = (
   needed: AccessZonePermission,
   roles: Array<AccessRole>,

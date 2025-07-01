@@ -1,5 +1,6 @@
 import { OPURLConfig, cookieOptionsDomain } from '@op/core';
 import { and, db } from '@op/db/client';
+import { AccessRole, OrganizationUser } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { createServerClient } from '@op/supabase/lib';
 import { cookies } from 'next/headers';
@@ -12,14 +13,13 @@ export const getOrgAccessUser = async ({
   user: User;
   organizationId: string;
 }) => {
-  const orgUser = await db.query.organizationUsers.findFirst({
+  const orgUser = (await db.query.organizationUsers.findFirst({
     where: (table, { eq }) =>
       and(
         eq(table.organizationId, organizationId),
         eq(table.authUserId, user.id),
       ),
-    with: { roles: true },
-  });
+  })) as OrganizationUser & { roles: Array<AccessRole> };
 
   return orgUser;
 };

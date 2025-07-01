@@ -1,4 +1,4 @@
-import { relations, sql } from 'drizzle-orm';
+import { InferModel, relations, sql } from 'drizzle-orm';
 import {
   index,
   pgTable,
@@ -105,3 +105,5 @@ export const organizationUserToAccessRolesRelations = relations(
     }),
   }),
 );
+
+export type OrganizationUser = InferModel<typeof organizationUsers>;

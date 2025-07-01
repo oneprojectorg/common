@@ -8,6 +8,7 @@ import { User } from '@op/supabase/lib';
 
 import { CommonError, UnauthorizedError } from '../../utils';
 import { getOrgAccessUser } from '../access';
+import { accessMasks, assertAccess } from '../access/rbac';
 
 type OrganizationWithProfile = Organization & {
   profile: Profile & { avatarImage: any };
@@ -26,12 +27,11 @@ export const addRelationship = async ({
 }) => {
   const orgUser = await getOrgAccessUser({ user, organizationId: from });
 
-  // TODO: ALL USERS IN THE ORG ARE ADMIN AT THE MOMENT
-  // assertAccess();
-
   if (!orgUser) {
     throw new UnauthorizedError('You are not a member of this organization');
   }
+
+  assertAccess({ organization: accessMasks.ADMIN }, orgUser.roles);
 
   await db.transaction(async (tx) => {
     await Promise.all(

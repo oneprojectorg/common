@@ -1,3 +1,4 @@
+import { InferModel } from 'drizzle-orm';
 import { index, integer, pgTable, varchar } from 'drizzle-orm/pg-core';
 
 import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
@@ -12,3 +13,5 @@ export const accessRoles = pgTable(
   },
   (table) => [...serviceRolePolicies, index().on(table.id).concurrently()],
 );
+
+export type AccessRole = InferModel<typeof accessRoles>;

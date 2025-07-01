@@ -1,5 +1,5 @@
 // Public tables are included in migrations
-export { accessRoles } from './tables/access.sql';
+export { accessRoles, type AccessRole } from './tables/access.sql';
 export { links, linksRelations, linkTypeEnum } from './tables/links.sql';
 export {
   organizations,
@@ -19,6 +19,7 @@ export {
   organizationUserToAccessRoles,
   organizationUserToAccessRolesRelations,
 } from './tables/organizationUsers.sql';
+export type { OrganizationUser } from './tables/organizationUsers.sql';
 
 export {
   posts,
