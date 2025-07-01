@@ -3,6 +3,11 @@
   "version": "0.0.19",
   "private": true,
   "type": "module",
+  "main": "index.tsx",
+  "exports": {
+    ".": "./index.tsx",
+    "./emails/*": "./emails/*"
+  },
   "scripts": {
     "disable-build": "email build",
     "export": "email export",

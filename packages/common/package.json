@@ -17,6 +17,7 @@
     "@op/typescript-config": "workspace:*"
   },
   "dependencies": {
+    "@op/emails": "workspace:*",
     "p-map": "^7.0.3"
   }
 }
