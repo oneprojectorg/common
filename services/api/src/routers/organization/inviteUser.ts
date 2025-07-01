@@ -1,4 +1,5 @@
-import { UnauthorizedError } from '@op/common';
+import { UnauthorizedError, sendInvitationEmail } from '@op/common';
+import { OPURLConfig } from '@op/core';
 import { allowList } from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
@@ -45,12 +46,19 @@ export const inviteUserRouter = router({
         const { id: authUserId } = ctx.user;
         const { email } = input;
 
-        // Get the current user's database record to access lastOrgId
+        // Get the current user's database record with organization details
         const authUser = await db.query.users.findFirst({
           where: (table, { eq }) => eq(table.authUserId, authUserId),
+          with: {
+            currentOrganization: {
+              with: {
+                profile: true,
+              },
+            },
+          },
         });
 
-        if (!authUser?.lastOrgId) {
+        if (!authUser?.lastOrgId || !authUser.currentOrganization) {
           throw new UnauthorizedError(
             'User must be associated with an organization to send invites',
           );
@@ -77,6 +85,22 @@ export const inviteUserRouter = router({
             invitedAt: new Date().toISOString(),
           },
         });
+
+        // Send invitation email
+        try {
+          await sendInvitationEmail({
+            to: email,
+            inviterName: authUser.name || ctx.user.email || 'A team member',
+            organizationName:
+              (authUser.currentOrganization as any)?.profile?.name ||
+              'the organization',
+            inviteUrl: OPURLConfig('APP').ENV_URL,
+          });
+        } catch (emailError) {
+          console.error('Failed to send invitation email:', emailError);
+          // Note: We don't throw here to avoid rolling back the database insertion
+          // The user has been added to the allow list even if email fails
+        }
 
         return {
           success: true,
