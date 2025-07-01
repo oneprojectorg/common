@@ -7,13 +7,13 @@ import { trpc } from '@op/api/client';
 import { useAuthLogout } from '@op/hooks';
 import { Avatar } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
-import { Menu, MenuItem, MenuItemSimple, MenuSeparator } from '@op/ui/Menu';
-import { Modal, ModalBody, ModalHeader, ModalFooter } from '@op/ui/Modal';
-import { TextField } from '@op/ui/TextField';
 import { DialogTrigger } from '@op/ui/Dialog';
+import { Menu, MenuItem, MenuItemSimple, MenuSeparator } from '@op/ui/Menu';
+import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Popover } from '@op/ui/Popover';
 import { MenuTrigger } from '@op/ui/RAC';
 import { Skeleton } from '@op/ui/Skeleton';
+import { TextField } from '@op/ui/TextField';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -23,8 +23,8 @@ import {
   LuCircleHelp,
   LuLogOut,
   LuSearch,
-  LuUserPlus,
   LuSend,
+  LuUserPlus,
 } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
@@ -57,7 +57,7 @@ const InviteUserModal = () => {
   const [email, setEmail] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const t = useTranslations();
-  
+
   const inviteUser = trpc.organization.invite.useMutation({
     onSuccess: () => {
       setEmail('');
@@ -77,12 +77,12 @@ const InviteUserModal = () => {
   return (
     <DialogTrigger isOpen={isModalOpen} onOpenChange={setIsModalOpen}>
       <Button
-        color="primary"
-        size="medium"
-        className="flex items-center gap-2"
+        color="neutral"
+        variant="icon"
+        className="flex items-center gap-2 text-primary-teal"
       >
-        <LuUserPlus className="size-4" />
-        {t('Invite')}
+        <LuUserPlus className="min-h-4 min-w-4" />
+        <div className="text-nowrap">{t('Invite users')}</div>
       </Button>
       <Modal>
         <ModalHeader>{t('Send Invitation')}</ModalHeader>
@@ -93,9 +93,9 @@ const InviteUserModal = () => {
             onChange={setEmail}
             isRequired
             description={t('Enter the email address to send an invite')}
-            inputProps={{ 
-              type: "email",
-              placeholder: "example@email.com"
+            inputProps={{
+              type: 'email',
+              placeholder: 'example@email.com',
             }}
           />
           {inviteUser.error && (
