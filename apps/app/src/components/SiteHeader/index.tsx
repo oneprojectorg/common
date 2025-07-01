@@ -55,15 +55,27 @@ const useMediaQuery = (query: string) => {
 
 const InviteUserModal = () => {
   const [email, setEmail] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const t = useTranslations();
+  
+  const inviteUser = trpc.organization.invite.useMutation({
+    onSuccess: () => {
+      setEmail('');
+      setIsModalOpen(false);
+    },
+    onError: (error) => {
+      console.error('Failed to send invite:', error.message);
+    },
+  });
 
   const handleSendInvite = () => {
-    console.log('Send invite to:', email);
-    setEmail('');
+    if (email) {
+      inviteUser.mutate({ email });
+    }
   };
 
   return (
-    <DialogTrigger>
+    <DialogTrigger isOpen={isModalOpen} onOpenChange={setIsModalOpen}>
       <Button
         color="primary"
         size="medium"
@@ -86,23 +98,32 @@ const InviteUserModal = () => {
               placeholder: "example@email.com"
             }}
           />
+          {inviteUser.error && (
+            <div className="mt-2 text-sm text-red-600">
+              {inviteUser.error.message}
+            </div>
+          )}
         </ModalBody>
         <ModalFooter className="flex justify-end gap-2">
           <Button
             color="secondary"
             surface="outline"
-            onPress={() => setEmail('')}
+            onPress={() => {
+              setEmail('');
+              setIsModalOpen(false);
+            }}
+            isDisabled={inviteUser.isPending}
           >
             {t('Cancel')}
           </Button>
           <Button
             color="primary"
             onPress={handleSendInvite}
-            isDisabled={!email}
+            isDisabled={!email || inviteUser.isPending}
             className="flex items-center gap-2"
           >
             <LuSend className="size-4" />
-            {t('Send Invite')}
+            {inviteUser.isPending ? t('Sending...') : t('Send Invite')}
           </Button>
         </ModalFooter>
       </Modal>
