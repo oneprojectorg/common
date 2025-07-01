@@ -26,10 +26,12 @@ const inputSchema = z.object({
     .array(z.string().email('Must be a valid email address'))
     .min(1, 'At least one email address is required'),
   role: z.string().default('Admin'),
+  organizationId: z.string().uuid().optional(),
 }).or(
   z.object({
     email: z.string().email('Must be a valid email address'),
     role: z.string().default('Admin').optional(),
+    organizationId: z.string().uuid().optional(),
   })
 );
 
@@ -63,6 +65,7 @@ export const inviteUserRouter = router({
         // Handle both single email and multiple emails input
         const emailsToProcess = 'emails' in input ? input.emails : [input.email];
         const role = 'role' in input ? input.role : 'Admin';
+        const targetOrganizationId = 'organizationId' in input ? input.organizationId : undefined;
 
         // Get the current user's database record with organization details
         const authUser = await db.query.users.findFirst({
@@ -103,10 +106,10 @@ export const inviteUserRouter = router({
               continue;
             }
 
-            // Add the email to the allowList with the current user's organization
+            // Add the email to the allowList with the specified or current organization
             await db.insert(allowList).values({
               email,
-              organizationId: authUser.lastOrgId,
+              organizationId: targetOrganizationId || authUser.lastOrgId,
               metadata: {
                 invitedBy: authUserId,
                 invitedAt: new Date().toISOString(),
