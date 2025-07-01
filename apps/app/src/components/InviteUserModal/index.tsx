@@ -113,12 +113,7 @@ export const InviteUserModal = ({
         </ModalHeader>
         <ModalBody className="gap-6 p-6">
           <p>
-            {t(
-              "Currently, only people with email addresses from your organization's domain can be invited (e.g., @{domain}).",
-              {
-                domain: user?.currentOrganization?.domain || 'example.org',
-              },
-            )}
+            {t('Expand your network and collaborate with others on Common.')}
           </p>
 
           <div className="flex flex-col gap-4">
@@ -161,22 +156,10 @@ export const InviteUserModal = ({
         {/* Desktop footer - hidden on mobile since actions are in header */}
         <ModalFooter className="hidden sm:flex">
           <Button
-            color="secondary"
-            surface="outline"
-            onPress={() => {
-              setEmails('');
-              setIsModalOpen(false);
-            }}
-            isDisabled={inviteUser.isPending}
-          >
-            {t('Cancel')}
-          </Button>
-          <Button
             color="primary"
             onPress={handleSendInvite}
             isDisabled={!emails.trim() || inviteUser.isPending}
           >
-            <LuSend />
             {inviteUser.isPending ? t('Sending...') : t('Send')}
           </Button>
         </ModalFooter>
