@@ -31,7 +31,7 @@ export const addRelationship = async ({
     throw new UnauthorizedError('You are not a member of this organization');
   }
 
-  assertAccess({ organization: accessMasks.ADMIN }, orgUser.roles);
+  assertAccess({ organization: accessMasks.ADMIN }, orgUser);
 
   await db.transaction(async (tx) => {
     await Promise.all(

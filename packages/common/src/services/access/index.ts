@@ -5,6 +5,10 @@ import type { User } from '@op/supabase/lib';
 import { createServerClient } from '@op/supabase/lib';
 import { cookies } from 'next/headers';
 
+export type OrgAccessUser = OrganizationUser & {
+  roles: Array<{ accessRole: AccessRole }>;
+};
+
 // gets a user assuming that the user is authenticated
 export const getOrgAccessUser = async ({
   user,
@@ -19,7 +23,14 @@ export const getOrgAccessUser = async ({
         eq(table.organizationId, organizationId),
         eq(table.authUserId, user.id),
       ),
-  })) as OrganizationUser & { roles: Array<AccessRole> };
+    with: {
+      roles: {
+        with: {
+          accessRole: true,
+        },
+      },
+    },
+  })) as OrgAccessUser | null;
 
   return orgUser;
 };

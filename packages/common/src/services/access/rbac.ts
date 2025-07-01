@@ -1,6 +1,7 @@
-import { UnauthorizedError } from '@/src/utils';
 import type { AccessRole } from '@op/db/schema';
 
+import { OrgAccessUser } from '.';
+import { UnauthorizedError } from '../../utils';
 import { AccessZone, AccessZonePermission } from './types';
 
 // 0bXXXXX - Admin, Create, Read, Update, Delete
@@ -32,6 +33,7 @@ export const hasAccess = (
 ) => {
   const currentPermissions = collapseAccessRoles(roles);
 
+  console.log('CURRENT PERMS', roles, currentPermissions, needed);
   // Use a bitwise OR to check collapsed permissions satisfy "needed"
   return Object.entries(needed).every(
     ([section, neededAccessBits]: [string, number]) =>
@@ -47,8 +49,10 @@ export const hasAccess = (
  */
 export const assertAccess = (
   needed: AccessZonePermission,
-  roles: Array<AccessRole>,
+  orgUser: OrgAccessUser,
 ) => {
+  const roles = orgUser?.roles.map((role) => role.accessRole) || [];
+
   if (!hasAccess(needed, roles)) {
     throw new UnauthorizedError('Not authenticated');
   }
