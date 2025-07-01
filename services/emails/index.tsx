@@ -15,7 +15,6 @@ export const OPNodemailer = async ({
   subject: string;
   component: {
     (): React.JSX.Element;
-    subject: string;
   };
   renderOptions?: RenderParameter[1];
 }) => {
@@ -44,3 +43,5 @@ export const OPNodemailer = async ({
 
   await transporter.sendMail(sendMailOptions);
 };
+
+export * from './emails/OPInvitationEmail';
