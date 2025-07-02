@@ -37,31 +37,28 @@ export const PrivacyPolicyContentShort = () => {
           platform. We aim to collect the bare minimum to run the platform. The
           following are the categories of information that we collect:
         </p>
-        <h4 className="mb-2 font-semibold">Basic Information</h4>
-        <p className="mb-4">
-          Profile information including name, username, email, organization
-          details (mission, focus areas, preferred language, locations), and
-          images that you post about your organization.
-        </p>
-        <h4 className="mb-2 font-semibold">Activity Data</h4>
-        <p className="mb-2">
-          Communications with us including when you contact us with feedback or
-          questions
-        </p>
-        <p className="mb-4">
-          Platform usage including posts on the platform, relational
-          connections, visits to a certain page, interaction with a certain
-          function, IP address which may identify your location, etc. All of
-          this data is anonymized and only collected in service of improving the
-          platform.
-        </p>
-        <h4 className="mb-2 font-semibold">
-          Self-Disclosed Financial Information (if applicable)
-        </h4>
-        <p className="mb-4">
-          Funding-related information (i.e., funding relationships, and in the
-          future funding amounts for those that opt-in).
-        </p>
+        <ul className="mb-4 list-disc pl-6">
+          <li className="mb-4">
+            Basic Information - Profile information including name, username,
+            email, organization details (mission, focus areas, preferred
+            language, locations), and images that you post about your
+            organization.
+          </li>
+          <li className="mb-2">
+            Activity Data - Communications with us including when you contact us
+            with feedback or questions. Platform usage including posts on the
+            platform, relational connections, visits to a certain page,
+            interaction with a certain function, IP address which may identify
+            your location, etc. All of this data is anonymized and only
+            collected in service of improving the platform.
+          </li>
+
+          <li className="mb-4">
+            Self-Disclosed Financial Information (if applicable) -
+            Funding-related information (i.e., funding relationships, and in the
+            future funding amounts for those that opt-in).
+          </li>
+        </ul>
       </FormalSection>
 
       <FormalSection>
