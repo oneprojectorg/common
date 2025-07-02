@@ -46,12 +46,7 @@ export const PrivacyPolicyForm = ({
           {t('Effective Date: March 15, 2025')}
         </span>
         <PrivacyPolicyContentShort />
-        <div className="flex flex-col-reverse justify-between gap-4 pb-12 sm:flex-row sm:gap-2">
-          <form.Button color="secondary" onPress={onBack}>
-            {t('Back')}
-          </form.Button>
-          <form.SubmitButton>{t('Accept & Continue')}</form.SubmitButton>
-        </div>
+
         <FormHeader text={t('Privacy Policy')}></FormHeader>
         <PrivacyPolicyContent />
 
