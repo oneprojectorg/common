@@ -32,10 +32,6 @@ export const ToSContentShort = () => {
       <FormalSection>
         <Header3 className="font-serif">Welcome to Common</Header3>
         <p className="mb-4">
-          This is a summarized version of our Terms of Use. Please read the full
-          legal version in the dropdown below for complete details.
-        </p>
-        <p className="mb-4">
           These terms are an agreement between you and One Project that govern
           your use of our website (oneproject.org) and the Common platform.
           Common is a digital platform that connects people, organizations, and
