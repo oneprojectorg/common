@@ -241,27 +241,6 @@ export const PrivacyPolicyContent = () => {
           below the age of 16 without the permission of their parents or legal
           guardians.
         </p>
-
-        <div className="mb-6 overflow-x-auto">
-          <table className="min-w-full border-collapse border border-gray-300">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="border border-gray-300 px-4 py-2 text-left">
-                  Users of the the Platform
-                </th>
-                <th className="border border-gray-300 px-4 py-2 text-left">
-                  Children
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td className="border border-gray-300 px-4 py-2"></td>
-                <td className="border border-gray-300 px-4 py-2"></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
       </FormalSection>
 
       <FormalSection>
