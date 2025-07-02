@@ -8,7 +8,7 @@ import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Select, SelectItem } from '@op/ui/Select';
 import { TextField } from '@op/ui/TextField';
 import { useEffect, useState } from 'react';
-import { LuSend, LuUserPlus, LuX } from 'react-icons/lu';
+import { LuUserPlus, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
