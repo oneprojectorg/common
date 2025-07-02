@@ -199,33 +199,9 @@ export const PrivacyPolicyContent = () => {
                   X^
                 </td>
                 <td className="border border-gray-300 px-4 py-2 text-center"></td>
-                <td className="border border-gray-300 px-4 py-2 text-center"></td>
-              </tr>
-              <tr>
-                <td className="border border-gray-300 px-4 py-2 font-semibold"></td>
-                <td className="border border-gray-300 px-4 py-2 text-center"></td>
-                <td className="border border-gray-300 px-4 py-2 text-center"></td>
-                <td className="border border-gray-300 px-4 py-2 text-center"></td>
-                <td className="border border-gray-300 px-4 py-2 text-center"></td>
-                <td className="border border-gray-300 px-4 py-2 text-center"></td>
-                <td className="border border-gray-300 px-4 py-2 text-center"></td>
-                <td className="border border-gray-300 px-4 py-2 text-center"></td>
                 <td className="border border-gray-300 px-4 py-2 text-center">
                   X
                 </td>
-              </tr>
-              <tr>
-                <td className="border border-gray-300 px-4 py-2 font-semibold">
-                  Children*
-                </td>
-                <td className="border border-gray-300 px-4 py-2 text-center"></td>
-                <td className="border border-gray-300 px-4 py-2 text-center"></td>
-                <td className="border border-gray-300 px-4 py-2 text-center"></td>
-                <td className="border border-gray-300 px-4 py-2 text-center"></td>
-                <td className="border border-gray-300 px-4 py-2 text-center"></td>
-                <td className="border border-gray-300 px-4 py-2 text-center"></td>
-                <td className="border border-gray-300 px-4 py-2 text-center"></td>
-                <td className="border border-gray-300 px-4 py-2 text-center"></td>
               </tr>
             </tbody>
           </table>
