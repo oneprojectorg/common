@@ -92,8 +92,9 @@ export const OrganizationFormFields = ({
         'image/webp',
       ];
       if (!acceptedTypes.includes(file.type)) {
+        const types = acceptedTypes.map((t) => t.split('/')[1]).join(', ');
         toast.error({
-          message: `That file type is not supported. Accepted types: ${acceptedTypes.map((t) => t.split('/')[1]).join(', ')}`,
+          message: t('That file type is not supported. Accepted types: {types}', { types }),
         });
         return;
       }
@@ -101,7 +102,7 @@ export const OrganizationFormFields = ({
       if (file.size > DEFAULT_MAX_SIZE) {
         const maxSizeMB = (DEFAULT_MAX_SIZE / 1024 / 1024).toFixed(2);
         toast.error({
-          message: `File too large. Maximum size: ${maxSizeMB}MB`,
+          message: t('File too large. Maximum size: {maxSizeMB}MB', { maxSizeMB }),
         });
         return;
       }
@@ -171,7 +172,7 @@ export const OrganizationFormFields = ({
             onChange={field.handleChange}
             inputProps={{
               icon: <LuLink className="size-4 text-neutral-black" />,
-              placeholder: "Enter your organization's website here",
+              placeholder: t("Enter your organization's website here"),
             }}
             errorMessage={getFieldErrorMessage(field)}
           />

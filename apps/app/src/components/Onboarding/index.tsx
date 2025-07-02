@@ -8,6 +8,8 @@ import { useRouter } from 'next/navigation';
 import React, { useCallback, useState } from 'react';
 import { z } from 'zod';
 
+import { useTranslations } from '@/lib/i18n';
+
 import { MultiStepForm, ProgressComponentProps } from '../MultiStepForm';
 import { Portal } from '../Portal';
 import {
@@ -58,6 +60,7 @@ export const OnboardingFlow = () => {
   const createOrganization = trpc.organization.create.useMutation();
   void trpc.account.listMatchingDomainOrganizations.usePrefetchQuery();
   const router = useRouter();
+  const t = useTranslations();
   const {
     // reset,
     personalDetails,
@@ -134,8 +137,8 @@ export const OnboardingFlow = () => {
           console.error('ERROR', err);
           setSubmitting(false);
           toast.error({
-            title: "That didn't work",
-            message: 'Something went wrong on our end. Please try again',
+            title: t("That didn't work"),
+            message: t('Something went wrong on our end. Please try again'),
           });
         });
     },

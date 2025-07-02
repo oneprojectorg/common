@@ -15,27 +15,34 @@ import { useOnboardingFormStore } from './useOnboardingFormStore';
 
 type FormFields = z.infer<typeof validator>;
 
-export const validator = z.object({
+export const createValidator = (t: (key: string) => string) => z.object({
   fullName: z
-    .string({ message: 'Enter your full name' })
+    .string({ message: t('Enter your full name') })
     .trim()
     .min(1, {
-      message: 'Enter your full name',
+      message: t('Enter your full name'),
     })
     .max(200, {
-      message: 'Must be at most 200 characters',
+      message: t('Must be at most 200 characters'),
     }),
   title: z
     .string({
-      message: 'Enter your professional title',
+      message: t('Enter your professional title'),
     })
     .trim()
     .min(1, {
-      message: 'Enter your professional title',
+      message: t('Enter your professional title'),
     })
     .max(200, {
-      message: 'Must be at most 200 characters',
+      message: t('Must be at most 200 characters'),
     }),
+  profileImageUrl: z.string().optional(),
+});
+
+// Fallback validator for external use
+export const validator = z.object({
+  fullName: z.string().trim().min(1).max(200),
+  title: z.string().trim().min(1).max(200),
   profileImageUrl: z.string().optional(),
 });
 const DEFAULT_MAX_SIZE = 4 * 1024 * 1024; // 4MB
@@ -47,14 +54,15 @@ const DEFAULT_ACCEPTED_TYPES = [
   'image/webp',
   'application/pdf',
 ];
-const validateFile = (file: File): string | null => {
+const validateFile = (file: File, t: (key: string, params?: any) => string): string | null => {
   if (!DEFAULT_ACCEPTED_TYPES.includes(file.type)) {
-    return `That file type is not supported. Accepted types: ${DEFAULT_ACCEPTED_TYPES.map((t) => t.split('/')[1]).join(', ')}`;
+    const types = DEFAULT_ACCEPTED_TYPES.map((t) => t.split('/')[1]).join(', ');
+    return t('That file type is not supported. Accepted types: {types}', { types });
   }
 
   if (file.size > DEFAULT_MAX_SIZE) {
     const maxSizeMB = (DEFAULT_MAX_SIZE / 1024 / 1024).toFixed(2);
-    return `File too large. Maximum size: ${maxSizeMB}MB`;
+    return t('File too large. Maximum size: {maxSizeMB}MB', { maxSizeMB });
   }
   return null;
 };
@@ -80,7 +88,7 @@ export const PersonalDetailsForm = ({
   const form = useAppForm({
     defaultValues: personalDetails,
     validators: {
-      onSubmit: validator,
+      onSubmit: createValidator(t),
     },
     onSubmit: async ({ value }: { value: FormFields }) => {
       await updateProfile.mutateAsync({
@@ -115,7 +123,7 @@ export const PersonalDetailsForm = ({
               const reader = new FileReader();
 
               reader.onload = async (e) => {
-                const validationError = validateFile(file);
+                const validationError = validateFile(file, t);
                 if (validationError) {
                   toast.status({ code: 500, message: validationError });
                   setProfileImageUrl(undefined);
