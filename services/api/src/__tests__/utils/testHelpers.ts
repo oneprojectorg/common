@@ -91,3 +91,93 @@ export const expectTRPCError = (promise: Promise<any>, code: string, message?: s
     ...(message && { message })
   });
 };
+
+// Create organization test data factories
+export const createMockCreateOrganizationInput = (overrides = {}) => ({
+  name: 'Test Organization',
+  website: 'https://test.org',
+  email: 'contact@test.org',
+  orgType: 'nonprofit',
+  bio: 'A test organization for testing purposes',
+  mission: 'To make testing better',
+  networkOrganization: false,
+  isReceivingFunds: true,
+  isOfferingFunds: false,
+  acceptingApplications: true,
+  focusAreas: [
+    {
+      id: 'education',
+      label: 'Education',
+      isNewValue: false
+    }
+  ],
+  strategies: [
+    {
+      id: 'direct-service',
+      label: 'Direct Service',
+      isNewValue: false
+    }
+  ],
+  whereWeWork: [
+    {
+      id: 'location-1',
+      label: 'San Francisco',
+      isNewValue: false,
+      data: {
+        id: 'sf-123',
+        name: 'San Francisco',
+        latitude: 37.7749,
+        longitude: -122.4194
+      }
+    }
+  ],
+  ...overrides
+});
+
+export const createMockMinimalOrganizationInput = (overrides = {}) => ({
+  website: 'https://minimal.org',
+  orgType: 'nonprofit',
+  bio: 'Minimal organization',
+  ...overrides
+});
+
+export const createMockCreatedOrganization = (overrides = {}) => ({
+  id: 'org-123',
+  slug: 'test-organization',
+  isOfferingFunds: false,
+  isReceivingFunds: true,
+  acceptingApplications: true,
+  networkOrganization: false,
+  orgType: 'nonprofit',
+  profile: {
+    id: 'profile-123',
+    name: 'Test Organization',
+    bio: 'A test organization for testing purposes',
+    email: 'contact@test.org',
+    website: 'https://test.org',
+    mission: 'To make testing better'
+  },
+  projects: [],
+  links: [],
+  whereWeWork: [],
+  receivingFundsTerms: [],
+  strategies: [],
+  headerImage: null,
+  avatarImage: null,
+  ...overrides
+});
+
+// Validation error helpers
+export const createValidationError = (field: string, message: string) => {
+  const error = new Error(`Validation failed`);
+  (error as any).issues = [{ path: [field], message }];
+  return error;
+};
+
+// Mock logger
+export const createMockLogger = () => ({
+  info: jest.fn(),
+  error: jest.fn(),
+  warn: jest.fn(),
+  debug: jest.fn()
+});
