@@ -15,10 +15,53 @@ import { Suspense } from 'react';
 import { LuCopy, LuGlobe, LuMail } from 'react-icons/lu';
 
 import { ContactLink } from '@/components/ContactLink';
+import ErrorBoundary from '@/components/ErrorBoundary';
 import { PostFeedSkeleton } from '@/components/PostFeed';
 import { PostUpdate } from '@/components/PostUpdate';
 
 import { ProfileFeed } from '../ProfileFeed';
+
+const FocusAreas = ({ profileId }: { profileId: string }) => {
+  const [terms] = trpc.organization.getTerms.useSuspenseQuery({
+    id: profileId,
+  });
+
+  const focusAreas = terms['necSimple:focusArea'];
+
+  if (!focusAreas?.length) return null;
+
+  return (
+    <section className="flex flex-col gap-2 text-neutral-charcoal">
+      <Header3>Focus Areas</Header3>
+      <TagGroup>
+        {focusAreas.map((term) => (
+          <Tag key={term.label}>{term.label}</Tag>
+        ))}
+      </TagGroup>
+    </section>
+  );
+};
+
+const CommunitiesServed = ({ profileId }: { profileId: string }) => {
+  const [terms] = trpc.organization.getTerms.useSuspenseQuery({
+    id: profileId,
+  });
+
+  const communitiesServed = terms['candid:POPULATION'];
+
+  if (!communitiesServed?.length) return null;
+
+  return (
+    <section className="flex flex-col gap-2 text-neutral-charcoal">
+      <Header3>Communities We Serve</Header3>
+      <TagGroup>
+        {communitiesServed.map((term) => (
+          <Tag key={term.label}>{term.label}</Tag>
+        ))}
+      </TagGroup>
+    </section>
+  );
+};
 
 const ProfileAbout = ({
   profile,
@@ -29,12 +72,6 @@ const ProfileAbout = ({
 }) => {
   const { mission, email, website } = profile.profile;
   const { orgType, strategies } = profile;
-  const [terms] = trpc.organization.getTerms.useSuspenseQuery({
-    id: profile.id,
-  });
-
-  const communitiesServed = terms['candid:POPULATION'];
-  const focusAreas = terms['necSimple:focusArea'];
 
   return (
     <div className={cn('flex flex-col gap-8', className)}>
@@ -116,26 +153,35 @@ const ProfileAbout = ({
         </section>
       ) : null}
 
-      {focusAreas?.length ? (
-        <section className="flex flex-col gap-2 text-neutral-charcoal">
-          <Header3>Focus Areas</Header3>
-          <TagGroup>
-            {focusAreas.map((term) => (
-              <Tag key={term.label}>{term.label}</Tag>
-            ))}
-          </TagGroup>
-        </section>
-      ) : null}
-      {communitiesServed?.length ? (
-        <section className="flex flex-col gap-2 text-neutral-charcoal">
-          <Header3>Communities We Serve</Header3>
-          <TagGroup>
-            {communitiesServed.map((term) => (
-              <Tag key={term.label}>{term.label}</Tag>
-            ))}
-          </TagGroup>
-        </section>
-      ) : null}
+      <ErrorBoundary fallback={null}>
+        <Suspense fallback={
+          <section className="flex flex-col gap-2 text-neutral-charcoal">
+            <Header3>Focus Areas</Header3>
+            <div className="flex flex-wrap gap-2">
+              <Skeleton className="h-6 w-16" />
+              <Skeleton className="h-6 w-20" />
+              <Skeleton className="h-6 w-14" />
+            </div>
+          </section>
+        }>
+          <FocusAreas profileId={profile.id} />
+        </Suspense>
+      </ErrorBoundary>
+
+      <ErrorBoundary fallback={null}>
+        <Suspense fallback={
+          <section className="flex flex-col gap-2 text-neutral-charcoal">
+            <Header3>Communities We Serve</Header3>
+            <div className="flex flex-wrap gap-2">
+              <Skeleton className="h-6 w-18" />
+              <Skeleton className="h-6 w-24" />
+              <Skeleton className="h-6 w-16" />
+            </div>
+          </section>
+        }>
+          <CommunitiesServed profileId={profile.id} />
+        </Suspense>
+      </ErrorBoundary>
     </div>
   );
 };
