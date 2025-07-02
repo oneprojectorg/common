@@ -61,7 +61,7 @@ export const inviteUserRouter = router({
       try {
         const { db } = ctx.database;
         const { id: authUserId } = ctx.user;
-        
+
         // Handle both single email and multiple emails input
         const emailsToProcess = 'emails' in input ? input.emails : [input.email];
         const role = 'role' in input ? input.role : 'Admin';
