@@ -7,16 +7,29 @@ import {
 } from '@/components/layout/ListPageLayout';
 
 const OrgListingPage = async () => {
-  const client = await trpcNext();
-  const organizations = await client.organization.list.query({ limit: 5 });
+  try {
+    const client = await trpcNext();
+    const organizations = await client.organization.list.query({ limit: 5 });
 
-  return (
-    <ListPageLayout>
-      <ListPageLayoutHeader>Organizations</ListPageLayoutHeader>
+    return (
+      <ListPageLayout>
+        <ListPageLayoutHeader>Organizations</ListPageLayoutHeader>
 
-      <AllOrganizations initialData={organizations} limit={20} />
-    </ListPageLayout>
-  );
+        <AllOrganizations initialData={organizations} limit={20} />
+      </ListPageLayout>
+    );
+  } catch (error) {
+    return (
+      <ListPageLayout>
+        <ListPageLayoutHeader>Organizations</ListPageLayoutHeader>
+
+        <AllOrganizations
+          initialData={{ items: [], hasMore: false }}
+          limit={20}
+        />
+      </ListPageLayout>
+    );
+  }
 };
 
 export default OrgListingPage;
