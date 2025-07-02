@@ -9,15 +9,16 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "dependencies": {
+    "@op/emails": "workspace:*",
+    "p-map": "^7.0.3"
+  },
   "devDependencies": {
     "@op/cache": "workspace:*",
     "@op/core": "workspace:*",
     "@op/db": "workspace:*",
+    "@op/emails": "workspace:*",
     "@op/supabase": "workspace:*",
     "@op/typescript-config": "workspace:*"
-  },
-  "dependencies": {
-    "@op/emails": "workspace:*",
-    "p-map": "^7.0.3"
   }
 }

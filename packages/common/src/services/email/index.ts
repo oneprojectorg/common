@@ -1,5 +1,3 @@
-import { OPInvitationEmail } from '@op/emails';
-
 export interface SendInvitationEmailParams {
   to: string;
   inviterName: string;
@@ -15,6 +13,7 @@ export const sendInvitationEmail = async ({
 }: SendInvitationEmailParams): Promise<void> => {
   // Use dynamic imports to avoid build issues with workspace dependencies
   const { OPNodemailer } = await import('@op/emails');
+  const { OPInvitationEmail } = await import('@op/emails');
 
   await OPNodemailer({
     to,
