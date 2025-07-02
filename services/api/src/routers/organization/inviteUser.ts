@@ -2,7 +2,7 @@ import { UnauthorizedError, sendInvitationEmail } from '@op/common';
 import { OPURLConfig } from '@op/core';
 import { allowList } from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
-import type { OpenApiMeta } from 'trpc-to-openapi';
+// import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import withAuthenticated from '../../middlewares/withAuthenticated';
@@ -10,41 +10,47 @@ import withDB from '../../middlewares/withDB';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
-const meta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'POST',
-    path: `/organization/invite`,
-    protect: true,
-    tags: ['organization'],
-    summary: 'Invite a user to join the organization',
-  },
-};
+// const meta: OpenApiMeta = {
+// openapi: {
+// enabled: true,
+// method: 'POST',
+// path: `/organization/invite`,
+// protect: true,
+// tags: ['organization'],
+// summary: 'Invite a user to join the organization',
+// },
+// };
 
-const inputSchema = z.object({
-  emails: z
-    .array(z.string().email('Must be a valid email address'))
-    .min(1, 'At least one email address is required'),
-  role: z.string().default('Admin'),
-  organizationId: z.string().uuid().optional(),
-}).or(
-  z.object({
-    email: z.string().email('Must be a valid email address'),
-    role: z.string().default('Admin').optional(),
+const inputSchema = z
+  .object({
+    emails: z
+      .array(z.string().email('Must be a valid email address'))
+      .min(1, 'At least one email address is required'),
+    role: z.string().default('Admin'),
     organizationId: z.string().uuid().optional(),
   })
-);
+  .or(
+    z.object({
+      email: z.string().email('Must be a valid email address'),
+      role: z.string().default('Admin').optional(),
+      organizationId: z.string().uuid().optional(),
+    }),
+  );
 
 const outputSchema = z.object({
   success: z.boolean(),
   message: z.string(),
-  details: z.object({
-    successful: z.array(z.string()),
-    failed: z.array(z.object({
-      email: z.string(),
-      reason: z.string(),
-    })),
-  }).optional(),
+  details: z
+    .object({
+      successful: z.array(z.string()),
+      failed: z.array(
+        z.object({
+          email: z.string(),
+          reason: z.string(),
+        }),
+      ),
+    })
+    .optional(),
 });
 
 export const inviteUserRouter = router({
@@ -54,7 +60,7 @@ export const inviteUserRouter = router({
     .use(withAuthenticated)
     .use(withDB)
     // Router
-    .meta(meta)
+    // .meta(meta)
     .input(inputSchema)
     .output(outputSchema)
     .mutation(async ({ ctx, input }) => {
@@ -63,9 +69,11 @@ export const inviteUserRouter = router({
         const { id: authUserId } = ctx.user;
 
         // Handle both single email and multiple emails input
-        const emailsToProcess = 'emails' in input ? input.emails : [input.email];
+        const emailsToProcess =
+          'emails' in input ? input.emails : [input.email];
         const role = 'role' in input ? input.role : 'Admin';
-        const targetOrganizationId = 'organizationId' in input ? input.organizationId : undefined;
+        const targetOrganizationId =
+          'organizationId' in input ? input.organizationId : undefined;
 
         // Get the current user's database record with organization details
         const authUser = await db.query.users.findFirst({
@@ -129,7 +137,10 @@ export const inviteUserRouter = router({
               });
               results.successful.push(email);
             } catch (emailError) {
-              console.error(`Failed to send invitation email to ${email}:`, emailError);
+              console.error(
+                `Failed to send invitation email to ${email}:`,
+                emailError,
+              );
               // Email failed but database insertion succeeded
               results.successful.push(email);
             }
