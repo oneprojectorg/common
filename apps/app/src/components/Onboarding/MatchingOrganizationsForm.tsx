@@ -156,14 +156,14 @@ export const MatchingOrganizationsForm = ({
                 value={'' + termsAccepted}
                 onChange={setTermsAccepted}
               >
-                I have read and accept the
+                {t('I have read and accept the')}
               </Checkbox>
               <a
                 href="/info/tos"
                 target="_blank"
                 className="text-sm text-primary-teal hover:underline"
               >
-                Terms of Use
+                {t('Terms of Use')}
               </a>
             </div>
             <div className="flex items-center gap-1">
@@ -172,7 +172,7 @@ export const MatchingOrganizationsForm = ({
                 value={'' + privacyAccepted}
                 onChange={setPrivacyAccepted}
               >
-                I have read and accept the
+                {t('I have read and accept the')}
               </Checkbox>
               <a
                 href="/info/tos"
@@ -180,7 +180,7 @@ export const MatchingOrganizationsForm = ({
                 className="text-sm text-primary-teal hover:underline"
               >
                 {' '}
-                Privacy Policy
+                {t('Privacy Policy')}
               </a>
             </div>
           </div>

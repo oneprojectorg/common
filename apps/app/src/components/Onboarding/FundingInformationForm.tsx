@@ -62,9 +62,8 @@ export const FundingInformationForm = ({
       className={className}
     >
       <FormContainer className="max-w-lg">
-        <FormHeader text="Funding information">
-          Specify if your organization is currently seeking funding and offers
-          funding.
+        <FormHeader text={t('Funding information')}>
+          {t('Specify if your organization is currently seeking funding and offers funding.')}
         </FormHeader>
 
         <form.AppField
@@ -73,7 +72,7 @@ export const FundingInformationForm = ({
             <>
               <ToggleRow>
                 <span>
-                  Is your organization <i>seeking</i> funding?
+                  {t('Is your organization seeking funding?')}
                 </span>
 
                 <ToggleButton
@@ -101,7 +100,7 @@ export const FundingInformationForm = ({
                     children={(field) => (
                       <div className="flex flex-col gap-2">
                         <field.TextField
-                          label="Where can people contribute to your organization?"
+                          label={t('Where can people contribute to your organization?')}
                           value={field.state.value as string}
                           onBlur={field.handleBlur}
                           onChange={field.handleChange}
@@ -110,13 +109,11 @@ export const FundingInformationForm = ({
                             icon: (
                               <LuLink className="size-4 text-neutral-black" />
                             ),
-                            placeholder: 'Add your contribution page here',
+                            placeholder: t('Add your contribution page here'),
                           }}
                         />
                         <span className="text-sm text-neutral-gray4">
-                          Add a link to your donation page, Open Collective,
-                          GoFundMe or any platform where supporters can
-                          contribute or learn more about how.
+                          {t('Add a link to your donation page, Open Collective, GoFundMe or any platform where supporters can contribute or learn more about how.')}
                         </span>
                       </div>
                     )}
@@ -135,7 +132,7 @@ export const FundingInformationForm = ({
             <>
               <ToggleRow>
                 <span>
-                  Does your organization <i>offer</i> funding?
+                  {t('Does your organization offer funding?')}
                 </span>
                 <ToggleButton
                   isSelected={field.state.value as boolean}
@@ -149,7 +146,7 @@ export const FundingInformationForm = ({
                   children={(acceptingApplicationsField) => (
                     <>
                       <ToggleRow>
-                        Are organizations currently able to apply for funding?
+                        {t('Are organizations currently able to apply for funding?')}
                         <ToggleButton
                           isSelected={
                             acceptingApplicationsField.state.value as boolean
@@ -164,15 +161,14 @@ export const FundingInformationForm = ({
                             children={(field) => (
                               <field.TextField
                                 useTextArea
-                                label="What is your funding process?"
+                                label={t('What is your funding process?')}
                                 value={field.state.value as string}
                                 onBlur={field.handleBlur}
                                 onChange={field.handleChange}
                                 errorMessage={getFieldErrorMessage(field)}
                                 textareaProps={{
                                   className: 'min-h-32',
-                                  placeholder:
-                                    'Enter a description of the type of funding you’re seeking (e.g., grants, integrated capital, etc.)',
+                                  placeholder: t('Enter a description of the type of funding you’re seeking (e.g., grants, integrated capital, etc.)'),
                                 }}
                               />
                             )}
@@ -186,8 +182,8 @@ export const FundingInformationForm = ({
                               <field.TextField
                                 label={
                                   acceptingApplicationsField.state.value
-                                    ? 'Where can organizations apply?'
-                                    : 'Where can organizations learn more?'
+                                    ? t('Where can organizations apply?')
+                                    : t('Where can organizations learn more?')
                                 }
                                 value={field.state.value as string}
                                 onBlur={field.handleBlur}
@@ -196,8 +192,8 @@ export const FundingInformationForm = ({
                                 inputProps={{
                                   placeholder: acceptingApplicationsField.state
                                     .value
-                                    ? 'Add a link where organizations can apply for funding'
-                                    : 'Add a link to learn more about your funding process',
+                                    ? t('Add a link where organizations can apply for funding')
+                                    : t('Add a link to learn more about your funding process'),
                                   icon: (
                                     <LuLink className="size-4 text-neutral-black" />
                                   ),
@@ -206,9 +202,7 @@ export const FundingInformationForm = ({
                               <span className="text-sm text-neutral-gray4">
                                 {acceptingApplicationsField.state.value
                                   ? null
-                                  : `Add a link where others can learn more about how
-                                to they might receive funding from your
-                                organization now or in the future.`}
+                                  : t('Add a link where others can learn more about how to they might receive funding from your organization now or in the future.')}
                               </span>
                             </div>
                           )}
@@ -224,7 +218,7 @@ export const FundingInformationForm = ({
 
         <div className="flex flex-col-reverse justify-between gap-4 sm:flex-row sm:gap-2">
           <form.Button color="secondary" onPress={onBack}>
-            Back
+            {t('Back')}
           </form.Button>
           <form.SubmitButton>{t('Continue')}</form.SubmitButton>
         </div>
