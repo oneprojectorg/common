@@ -9,8 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Build and Quality Checks
 
 - **Build all**: `pnpm build` (uses Turbo for optimized builds)
-- **Lint all workspaces**: `pnpm lint`
-- **Type checking**: `pnpm w:app lint` (for main app typechecking)
+- **Type checking**: `pnpm w:app lint` (for main app typechecking as well as API checking)
 - **Format code**: `pnpm format` or `pnpm format:check`
 
 ## Architecture Overview
@@ -79,3 +78,4 @@ Use `pnpm w:<workspace>` shortcuts:
 - UI components use React Aria for accessibility
 - tRPC provides end-to-end type safety between frontend and backend
 - Tailwind configuration is centralized in `@op/ui` package
+- Only use colors that are present in the tailwind.shared config
