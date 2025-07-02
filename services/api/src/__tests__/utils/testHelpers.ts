@@ -181,3 +181,85 @@ export const createMockLogger = () => ({
   warn: jest.fn(),
   debug: jest.fn()
 });
+
+// Account test data factories
+export const createMockUserProfile = (overrides = {}) => ({
+  id: 'user-123',
+  authUserId: 'auth-123',
+  email: 'test@example.com',
+  name: 'Test User',
+  username: 'testuser',
+  about: 'Software developer',
+  title: 'Senior Engineer',
+  lastOrgId: null,
+  avatarImage: null,
+  organizationUsers: [],
+  currentOrganization: null,
+  ...overrides
+});
+
+export const createMockUpdateProfileInput = (overrides = {}) => ({
+  name: 'Updated Name',
+  about: 'Updated about section',
+  title: 'Updated Title',
+  username: 'updateduser',
+  ...overrides
+});
+
+export const createMockLoginInput = (overrides = {}) => ({
+  email: 'user@example.com',
+  usingOAuth: false,
+  ...overrides
+});
+
+export const createMockStorageUsage = (overrides = {}) => ({
+  usedStorage: 1500000000,
+  maxStorage: 4000000000,
+  ...overrides
+});
+
+export const createMockSupabaseClient = () => ({
+  auth: {
+    signInWithOtp: jest.fn().mockResolvedValue({ error: null })
+  }
+});
+
+export const createMockDatabase = () => ({
+  query: {
+    users: {
+      findFirst: jest.fn()
+    }
+  },
+  insert: jest.fn().mockReturnValue({
+    values: jest.fn().mockReturnValue({
+      returning: jest.fn()
+    })
+  }),
+  update: jest.fn().mockReturnValue({
+    set: jest.fn().mockReturnValue({
+      where: jest.fn().mockReturnValue({
+        returning: jest.fn()
+      })
+    })
+  }),
+  select: jest.fn().mockReturnValue({
+    from: jest.fn().mockReturnValue({
+      where: jest.fn().mockReturnValue({
+        limit: jest.fn()
+      })
+    })
+  })
+});
+
+// Username validation helpers
+export const createValidUsername = () => 'valid_user_123';
+export const createInvalidUsername = () => 'Invalid-User!@#';
+export const createTooLongUsername = () => 'x'.repeat(256);
+export const createTooShortUsername = () => 'abc';
+
+// Email validation helpers
+export const createValidEmail = () => 'user@example.com';
+export const createInvalidEmail = () => 'invalid-email';
+export const createAdminEmail = () => 'admin@test.com';
+export const createAllowedDomainEmail = () => 'user@allowed.com';
+export const createBlockedDomainEmail = () => 'user@blocked.com';
