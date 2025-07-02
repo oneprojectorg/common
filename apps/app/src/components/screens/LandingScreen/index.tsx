@@ -18,11 +18,22 @@ import { PostUpdate } from '@/components/PostUpdate';
 import { Welcome } from './Welcome';
 
 const Feed = async () => {
-  const client = await trpcNext();
-  const { items: posts } = await client.organization.listAllPosts.query({});
-  const user = await client.account.getMyAccount.query();
+  try {
+    const client = await trpcNext();
+    const { items: posts } = await client.organization.listAllPosts.query({});
+    const user = await client.account.getMyAccount.query();
 
-  return <PostFeed user={user} posts={posts} />;
+    return <PostFeed user={user} posts={posts} />;
+  } catch (error) {
+    console.error('Failed to load posts:', error);
+    return (
+      <div className="flex flex-col items-center justify-center py-8">
+        <span className="text-neutral-charcoal">
+          Unable to load posts. Please try refreshing.
+        </span>
+      </div>
+    );
+  }
 };
 
 const LandingScreenFeeds = ({
@@ -127,9 +138,23 @@ export const LandingScreen = async () => {
       </div>
     );
   } catch (e) {
+    console.error('Failed to load landing screen data:', e);
     if ((e as any)?.data?.code === 'NOT_FOUND') {
       redirect('/start');
     }
+    
+    return (
+      <div className="container flex min-h-0 grow flex-col gap-4 pt-8 sm:gap-10 sm:pt-14">
+        <div className="flex flex-col gap-2">
+          <Header1 className="text-center text-title-md sm:text-title-xl">
+            Welcome to Common!
+          </Header1>
+          <span className="text-center text-neutral-charcoal">
+            Unable to load your dashboard. Please try refreshing the page.
+          </span>
+        </div>
+      </div>
+    );
   }
 };
 
