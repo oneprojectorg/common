@@ -44,6 +44,7 @@ export const AddRelationshipModalSuspense = ({
         (relationship) => relationship.id === user?.currentOrganization?.id,
       );
 
+  console.log('RELATIONSHIP', relationshipsToCurrentUserOrg[0]?.relationships);
   return (
     <>
       {relationships.length > 0 ? (
@@ -303,6 +304,50 @@ export const AddRelationshipModalSuspense = ({
                         {relationship.pending &&
                           `Pending confirmation from ${user?.currentOrganization?.profile.name}`}
                       </Tooltip>
+                    </>
+                  );
+                case 'fundedBy':
+                  return (
+                    <>
+                      <Button
+                        color={relationship.pending ? 'unverified' : 'verified'}
+                        className="w-full sm:w-auto"
+                      >
+                        {relationship.pending ? (
+                          <LuClock className="size-4 stroke-1" />
+                        ) : (
+                          <LuCheck className="size-4 stroke-1" />
+                        )}
+                        Fundee
+                      </Button>
+                      {relationship.pending && (
+                        <Tooltip>
+                          Pending confirmation from{' '}
+                          {user?.currentOrganization?.profile.name}
+                        </Tooltip>
+                      )}
+                    </>
+                  );
+                case 'affiliation':
+                  return (
+                    <>
+                      <Button
+                        color={relationship.pending ? 'unverified' : 'verified'}
+                        className="w-full sm:w-auto"
+                      >
+                        {relationship.pending ? (
+                          <LuClock className="size-4 stroke-1" />
+                        ) : (
+                          <LuCheck className="size-4 stroke-1" />
+                        )}
+                        Affiliation
+                      </Button>
+                      {relationship.pending && (
+                        <Tooltip>
+                          Pending confirmation from{' '}
+                          {user?.currentOrganization?.profile.name}
+                        </Tooltip>
+                      )}
                     </>
                   );
                 default:
