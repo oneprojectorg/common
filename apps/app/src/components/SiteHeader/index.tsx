@@ -50,7 +50,6 @@ const useMediaQuery = (query: string) => {
   return matches;
 };
 
-
 const AvatarMenuContent = ({
   onClose,
   setIsProfileOpen = () => {},
@@ -294,9 +293,11 @@ export const SiteHeader = () => {
         </span>
 
         <div className="flex items-center gap-3">
-          <ClientOnly>
-            <InviteUserModal />
-          </ClientOnly>
+          {false ? (
+            <ClientOnly>
+              <InviteUserModal />
+            </ClientOnly>
+          ) : null}
           <ClientOnly>
             <ErrorBoundary
               fallback={
