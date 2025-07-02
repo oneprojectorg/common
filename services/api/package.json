@@ -11,7 +11,10 @@
     "./encoders": "./src/encoders/index.ts"
   },
   "scripts": {
-    "lint": "pnpm tsc --noEmit"
+    "lint": "pnpm tsc --noEmit",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^1.2.1",
@@ -50,6 +53,10 @@
   },
   "devDependencies": {
     "@op/typescript-config": "workspace:*",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^22.13.5",
+    "jest": "^30.0.3",
+    "ts-jest": "^29.4.0",
     "typescript": "5.7.3"
   }
 }
