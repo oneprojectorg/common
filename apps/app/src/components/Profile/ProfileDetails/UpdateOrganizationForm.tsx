@@ -17,6 +17,7 @@ import { forwardRef, useState } from 'react';
 import { LuLink } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
+import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 
 import { GeoNamesMultiSelect } from '../../GeoNamesMultiSelect';
 import { type ImageData } from '../../Onboarding/shared/OrganizationFormFields';
@@ -133,35 +134,63 @@ export const UpdateOrganizationForm = forwardRef<
   const [bannerImage, setBannerImage] = useState<ImageData | undefined>(
     initialBannerImage,
   );
+  const isOnline = useConnectionStatus();
+
+  const submitUpdate = async (formData: any) => {
+    if (!isOnline) {
+      toast.error({
+        title: 'No connection',
+        message: 'Please check your internet connection and try again.',
+      });
+      return;
+    }
+
+    const updateData = {
+      id: profile.id,
+      ...formData,
+      whereWeWork: (formData.whereWeWork as Array<any>)?.map((item) => ({
+        id: item.id || '',
+        label: item.label || '',
+        data: item.data || {},
+        isNewValue: item.isNewValue || false,
+      })),
+      orgAvatarImageId: profileImage?.id,
+      orgBannerImageId: bannerImage?.id,
+    };
+
+    try {
+      await updateOrganization.mutateAsync(updateData);
+
+      // Invalidate relevant queries
+      await utils.organization.getBySlug.invalidate({
+        slug: profile.profile.slug,
+      });
+      router.refresh();
+      
+      onSuccess();
+    } catch (error) {
+      console.error('Failed to update organization:', error);
+      
+      const errorInfo = analyzeError(error);
+      
+      if (errorInfo.isConnectionError) {
+        toast.error({
+          title: 'Connection issue',
+          message: errorInfo.message + ' Please try submitting the form again.',
+        });
+      } else {
+        toast.error({
+          title: 'Update failed',
+          message: errorInfo.message,
+        });
+      }
+    }
+  };
 
   const form = useAppForm({
     defaultValues: initialData,
     onSubmit: async ({ value }) => {
-      try {
-        await updateOrganization.mutateAsync({
-          id: profile.id,
-          ...value,
-          // Convert whereWeWork to the expected format if needed
-          whereWeWork: (value.whereWeWork as Array<any>)?.map((item) => ({
-            id: item.id || '',
-            label: item.label || '',
-            data: item.data || {},
-            isNewValue: item.isNewValue || false,
-          })),
-          orgAvatarImageId: profileImage?.id,
-          orgBannerImageId: bannerImage?.id,
-        });
-
-        // Invalidate relevant queries
-        await utils.organization.getBySlug.invalidate({
-          slug: profile.profile.slug,
-        });
-        router.refresh();
-
-        onSuccess();
-      } catch (error) {
-        console.error('Failed to update organization:', error);
-      }
+      await submitUpdate(value);
     },
   });
 
