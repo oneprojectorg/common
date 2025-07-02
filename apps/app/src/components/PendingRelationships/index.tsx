@@ -70,7 +70,7 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
           return (
             <li
               key={org.id}
-              className={`flex items-center justify-between border-t p-6 transition-colors ${isAccepted ? 'bg-primary-tealWhite' : ''}`}
+              className={`flex flex-col justify-between gap-6 border-t p-6 transition-colors sm:flex-row sm:items-center sm:gap-2 ${isAccepted ? 'bg-primary-tealWhite' : ''}`}
             >
               <div className="flex items-center gap-3">
                 <OrganizationAvatar organization={org} />
@@ -101,6 +101,7 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
                     <Button
                       color="secondary"
                       size="small"
+                      className="w-full sm:w-auto"
                       onPress={() =>
                         remove.mutate({
                           sourceOrganizationId: org.id,
@@ -113,6 +114,7 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
                     </Button>
                     <Button
                       size="small"
+                      className="w-full sm:w-auto"
                       onPress={() =>
                         approve.mutate({
                           sourceOrganizationId: org.id,
