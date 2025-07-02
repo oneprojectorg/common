@@ -27,7 +27,7 @@ export const organizationFormValidator = z.object({
     .min(1, { message: 'Select an organization type' }),
   bio: z
     .string({ message: 'Enter an organization bio' })
-    .max(1500, { message: 'Must be at most 1500 characters' })
+    .max(150, { message: 'Must be at most 1500 characters' })
     .min(1, { message: 'Enter an organization bio' }),
   mission: z
     .string()

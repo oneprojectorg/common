@@ -1,5 +1,6 @@
 'use client';
 
+import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { trpc } from '@op/api/client';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { StepperProgressIndicator } from '@op/ui/Stepper';
@@ -7,8 +8,6 @@ import { toast } from '@op/ui/Toast';
 import { useRouter } from 'next/navigation';
 import React, { useCallback, useState } from 'react';
 import { z } from 'zod';
-
-import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 
 import { MultiStepForm, ProgressComponentProps } from '../MultiStepForm';
 import { Portal } from '../Portal';
@@ -139,13 +138,14 @@ export const OnboardingFlow = () => {
         .catch((err) => {
           console.error('ERROR', err);
           setSubmitting(false);
-          
+
           const errorInfo = analyzeError(err);
-          
+
           if (errorInfo.isConnectionError) {
             toast.error({
               title: 'Connection issue',
-              message: errorInfo.message + ' Please try submitting the form again.',
+              message:
+                errorInfo.message + ' Please try submitting the form again.',
             });
           } else {
             toast.error({
