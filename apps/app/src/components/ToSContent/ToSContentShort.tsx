@@ -8,7 +8,7 @@ export const ToSContentShort = () => {
       <FormalSection>
         <p className="italic">
           This is a summarized version of our Terms of Use. Please read the full
-          legal version in the dropdown below for complete details.
+          legal version below for complete details.
         </p>
       </FormalSection>
       <FormalSection>
@@ -21,7 +21,7 @@ export const ToSContentShort = () => {
           people and planet, not profit. We partner with the rising global
           movement for economic democracy to build core technology, mobilize
           catalytic resources, and show the world that a better system is
-          possible today. You can see the full legal version of our terms of use
+          possible today. You can see the full legal version of our terms of use{' '}
           <a href="/info/tos" target="_blank">
             here
           </a>
