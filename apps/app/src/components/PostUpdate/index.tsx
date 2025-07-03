@@ -2,6 +2,7 @@
 
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { useUser } from '@/utils/UserProvider';
+import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { detectLinks } from '@/utils/linkDetection';
 import { trpc } from '@op/api/client';
 // import type { RouterOutput } from '@op/api/client';
@@ -14,12 +15,12 @@ import { Skeleton } from '@op/ui/Skeleton';
 import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
 import { useRouter } from 'next/navigation';
+import posthog from 'posthog-js';
 import { useEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 import { LuImage, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
-import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 
 import { LinkPreview } from '@/components/LinkPreview';
 import { FeedItem, FeedMain } from '@/components/PostFeed';
@@ -79,24 +80,26 @@ const PostUpdateWithUser = ({
   const createPost = trpc.organization.createPost.useMutation({
     onError: (err) => {
       const errorInfo = analyzeError(err);
-      
+
       if (errorInfo.isConnectionError) {
         // Store failed post data for retry
         setLastFailedPost({
           content: content.trim(),
           attachmentIds: fileUpload.getUploadedAttachmentIds(),
         });
-        
+
         toast.error({
           message: errorInfo.message + ' Use the retry button to try again.',
         });
       } else {
         toast.error({ message: errorInfo.message });
       }
-      
+
       console.log('ERROR', err);
     },
     onSuccess: () => {
+      posthog.capture('user_posted');
+
       // Clear form and failed post on success
       setContent('');
       setDetectedUrls([]);
@@ -131,7 +134,8 @@ const PostUpdateWithUser = ({
       // Check if offline
       if (!isOnline) {
         toast.error({
-          message: 'You are offline. Please check your connection and try again.',
+          message:
+            'You are offline. Please check your connection and try again.',
         });
         return;
       }

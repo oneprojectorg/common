@@ -98,15 +98,15 @@ const config = {
         destination: `${process.env.S3_ASSET_ROOT}/:path*`,
       },
       {
-        source: '/ingest/static/:path*',
+        source: '/a/static/:path*',
         destination: 'https://eu-assets.i.posthog.com/static/:path*',
       },
       {
-        source: '/ingest/:path*',
+        source: '/a/:path*',
         destination: 'https://eu.i.posthog.com/:path*',
       },
       {
-        source: '/ingest/decide',
+        source: '/a/decide',
         destination: 'https://eu.i.posthog.com/decide',
       },
     ];
