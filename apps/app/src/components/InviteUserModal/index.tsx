@@ -7,7 +7,7 @@ import { Button } from '@op/ui/Button';
 import { DialogTrigger } from '@op/ui/Dialog';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Select, SelectItem } from '@op/ui/Select';
-import { TextField } from '@op/ui/TextField';
+import { Tag, TagGroup } from '@op/ui/TagGroup';
 import { toast } from '@op/ui/Toast';
 import { useEffect, useState } from 'react';
 import { LuUserPlus, LuX } from 'react-icons/lu';
@@ -28,6 +28,7 @@ export const InviteUserModal = ({
   children,
 }: InviteUserModalProps) => {
   const [emails, setEmails] = useState('');
+  const [emailBadges, setEmailBadges] = useState<string[]>([]);
   const [selectedRole, setSelectedRole] = useState('Admin');
   const [selectedOrganization, setSelectedOrganization] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -44,19 +45,45 @@ export const InviteUserModal = ({
     }
   }, [user?.currentOrganization?.id, selectedOrganization]);
 
+  const addEmailBadge = (email: string) => {
+    const trimmedEmail = email.trim();
+    if (
+      trimmedEmail &&
+      trimmedEmail.includes('@') &&
+      !emailBadges.includes(trimmedEmail)
+    ) {
+      setEmailBadges([...emailBadges, trimmedEmail]);
+    }
+  };
+
+  const removeEmailBadge = (emailToRemove: string) => {
+    setEmailBadges(emailBadges.filter((email) => email !== emailToRemove));
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === ',' || e.key === 'Enter') {
+      e.preventDefault();
+      if (emails.trim()) {
+        addEmailBadge(emails.trim());
+        setEmails('');
+      }
+    }
+  };
+
   const inviteUser = trpc.organization.invite.useMutation({
     onSuccess: () => {
       // Store the first invited email for display in success modal
-      const emailList = emails
-        .split(/[,\n\r\s]+/)
-        .map((email) => email.trim())
-        .filter((email) => email && email.includes('@'));
+      const allEmails = [...emailBadges];
+      if (emails.trim()) {
+        allEmails.push(emails.trim());
+      }
 
-      if (emailList.length > 0) {
-        setLastInvitedEmail(emailList[0]);
+      if (allEmails.length > 0) {
+        setLastInvitedEmail(allEmails[0] || '');
       }
 
       setEmails('');
+      setEmailBadges([]);
       setIsModalOpen(false);
       setIsSuccessModalOpen(true);
     },
@@ -102,16 +129,13 @@ export const InviteUserModal = ({
   };
 
   const handleSendInvite = () => {
+    const allEmails = [...emailBadges];
     if (emails.trim()) {
-      // Parse multiple emails from textarea
-      const emailList = emails
-        .split(/[,\n\r\s]+/)
-        .map((email) => email.trim())
-        .filter((email) => email && email.includes('@'));
+      allEmails.push(emails.trim());
+    }
 
-      if (emailList.length > 0) {
-        sendInvite(emailList, selectedRole, selectedOrganization);
-      }
+    if (allEmails.length > 0) {
+      sendInvite(allEmails, selectedRole, selectedOrganization);
     }
   };
 
@@ -146,6 +170,7 @@ export const InviteUserModal = ({
                 unstyled
                 onPress={() => {
                   setEmails('');
+                  setEmailBadges([]);
                   setIsModalOpen(false);
                 }}
                 isDisabled={inviteUser.isPending}
@@ -156,7 +181,10 @@ export const InviteUserModal = ({
               <Button
                 unstyled
                 onPress={handleSendInvite}
-                isDisabled={!emails.trim() || inviteUser.isPending}
+                isDisabled={
+                  (!emails.trim() && emailBadges.length === 0) ||
+                  inviteUser.isPending
+                }
               >
                 {inviteUser.isPending ? t('Sending...') : t('Send')}
               </Button>
@@ -168,16 +196,33 @@ export const InviteUserModal = ({
             </p>
 
             <div className="flex flex-col gap-4">
-              <TextField
-                label={t('Send to')}
-                value={emails}
-                onChange={setEmails}
-                useTextArea={true}
-                textareaProps={{
-                  rows: 3,
-                  placeholder: `name1@${user?.currentOrganization?.domain || 'example.org'}, name2@${user?.currentOrganization?.domain || 'example.org'}, ...`,
-                }}
-              />
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium">{t('Send to')}</label>
+                <div className="flex min-h-[80px] flex-wrap gap-2 rounded-md border border-gray-300 p-2">
+                  <TagGroup>
+                    {emailBadges.map((email, index) => (
+                      <Tag className="sm:rounded-sm" key={index}>
+                        {email}
+                        <button onClick={() => removeEmailBadge(email)}>
+                          <LuX className="size-3" />
+                        </button>
+                      </Tag>
+                    ))}
+                  </TagGroup>
+                  <textarea
+                    value={emails}
+                    onChange={(e) => setEmails(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder={
+                      emailBadges.length === 0
+                        ? `name1@${user?.currentOrganization?.domain || 'example.org'}, name2@${user?.currentOrganization?.domain || 'example.org'}, ...`
+                        : 'Type email and press comma or enter...'
+                    }
+                    className="min-w-[200px] flex-1 resize-none border-none pt-1 outline-none"
+                    rows={1}
+                  />
+                </div>
+              </div>
 
               <Select
                 label={t('Add to organization')}
@@ -200,8 +245,6 @@ export const InviteUserModal = ({
               >
                 <SelectItem id="Admin">{t('Admin')}</SelectItem>
               </Select>
-
-              {inviteUser.error && <p>{inviteUser.error.message}</p>}
             </div>
           </ModalBody>
           {/* Desktop footer - hidden on mobile since actions are in header */}
@@ -209,7 +252,10 @@ export const InviteUserModal = ({
             <Button
               color="primary"
               onPress={handleSendInvite}
-              isDisabled={!emails.trim() || inviteUser.isPending}
+              isDisabled={
+                (!emails.trim() && emailBadges.length === 0) ||
+                inviteUser.isPending
+              }
             >
               {inviteUser.isPending ? t('Sending...') : t('Send')}
             </Button>
