@@ -37,7 +37,7 @@ export const OPNodemailer = async ({
   const htmlString = await render(component(), renderOptions);
 
   const sendMailOptions = {
-    from: from ?? `${APP_NAME} <${genericEmail}>`,
+    from: `${from ?? APP_NAME} <${genericEmail}>`,
     to: safeEmail,
     subject,
     html: htmlString,
