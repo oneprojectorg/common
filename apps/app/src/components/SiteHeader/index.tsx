@@ -15,6 +15,7 @@ import { Skeleton } from '@op/ui/Skeleton';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { useFeatureFlagEnabled } from 'posthog-js/react';
 import { Suspense, useEffect, useState } from 'react';
 import {
   LuChevronDown,
@@ -280,6 +281,8 @@ const UserAvatarMenu = () => {
 export const SiteHeader = () => {
   const [isMobileSearchExpanded, setIsMobileSearchExpanded] = useState(false);
 
+  const inviteUserEnabled = useFeatureFlagEnabled('invite_admin_user');
+
   return (
     <>
       <header className="gridCentered hidden h-auto w-full items-center justify-between border-b border-offWhite px-4 py-3 sm:grid md:px-28">
@@ -293,7 +296,7 @@ export const SiteHeader = () => {
         </span>
 
         <div className="flex items-center gap-3">
-          {false ? (
+          {inviteUserEnabled ? (
             <ClientOnly>
               <InviteUserModal />
             </ClientOnly>
@@ -355,7 +358,7 @@ export const SiteHeader = () => {
               </Button>
 
               <div className="flex items-center gap-3">
-                {false ? (
+                {inviteUserEnabled ? (
                   <ClientOnly>
                     <InviteUserModal />
                   </ClientOnly>

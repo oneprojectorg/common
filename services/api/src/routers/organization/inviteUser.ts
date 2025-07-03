@@ -132,7 +132,7 @@ export const inviteUserRouter = router({
                 inviterName: authUser.name || ctx.user.email || 'A team member',
                 organizationName:
                   (authUser.currentOrganization as any)?.profile?.name ||
-                  'the organization',
+                  'this organization',
                 inviteUrl: OPURLConfig('APP').ENV_URL,
               });
               results.successful.push(email);
