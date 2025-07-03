@@ -106,24 +106,18 @@ export const inviteUserRouter = router({
               where: (table, { eq }) => eq(table.email, email),
             });
 
-            if (existingEntry) {
-              results.failed.push({
+            if (!existingEntry) {
+              // Add the email to the allowList with the specified or current organization
+              await db.insert(allowList).values({
                 email,
-                reason: 'User is already invited or has access to the platform',
+                organizationId: targetOrganizationId || authUser.lastOrgId,
+                metadata: {
+                  invitedBy: authUserId,
+                  invitedAt: new Date().toISOString(),
+                  role,
+                },
               });
-              continue;
             }
-
-            // Add the email to the allowList with the specified or current organization
-            await db.insert(allowList).values({
-              email,
-              organizationId: targetOrganizationId || authUser.lastOrgId,
-              metadata: {
-                invitedBy: authUserId,
-                invitedAt: new Date().toISOString(),
-                role,
-              },
-            });
 
             // Send invitation email
             try {
