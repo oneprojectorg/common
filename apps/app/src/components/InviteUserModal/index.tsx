@@ -45,15 +45,24 @@ export const InviteUserModal = ({
     }
   }, [user?.currentOrganization?.id, selectedOrganization]);
 
+  const isValidEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email.trim());
+  };
+
   const addEmailBadge = (email: string) => {
     const trimmedEmail = email.trim();
-    if (
-      trimmedEmail &&
-      trimmedEmail.includes('@') &&
-      !emailBadges.includes(trimmedEmail)
-    ) {
-      setEmailBadges([...emailBadges, trimmedEmail]);
+    if (!trimmedEmail) return;
+
+    if (!isValidEmail(trimmedEmail)) {
+      toast.error({
+        title: 'Invalid email',
+        message: `"${trimmedEmail}" is not a valid email address`,
+      });
+      return;
     }
+
+    setEmailBadges([...emailBadges, trimmedEmail]);
   };
 
   const removeEmailBadge = (emailToRemove: string) => {
@@ -134,9 +143,25 @@ export const InviteUserModal = ({
       allEmails.push(emails.trim());
     }
 
-    if (allEmails.length > 0) {
-      sendInvite(allEmails, selectedRole, selectedOrganization);
+    if (allEmails.length === 0) {
+      return;
     }
+
+    // Validate all emails
+    const invalidEmails = allEmails.filter((email) => !isValidEmail(email));
+
+    if (invalidEmails.length > 0) {
+      toast.error({
+        title:
+          invalidEmails.length === 1
+            ? 'Invalid email address'
+            : 'Invalid email addresses',
+        message: `${invalidEmails.join(', ')}`,
+      });
+      return;
+    }
+
+    sendInvite(allEmails, selectedRole, selectedOrganization);
   };
 
   const triggerButton = children || (
@@ -216,7 +241,7 @@ export const InviteUserModal = ({
                     placeholder={
                       emailBadges.length === 0
                         ? `name1@${user?.currentOrganization?.domain || 'example.org'}, name2@${user?.currentOrganization?.domain || 'example.org'}, ...`
-                        : 'Type email and press comma or enter...'
+                        : 'Type emails followed by a comma...'
                     }
                     className="min-w-[200px] flex-1 resize-none border-none pt-1 outline-none"
                     rows={1}
