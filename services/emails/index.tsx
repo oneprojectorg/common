@@ -7,11 +7,13 @@ type RenderParameter = Parameters<typeof render>;
 
 export const OPNodemailer = async ({
   to,
+  from,
   component,
   subject,
   renderOptions,
 }: {
   to: string;
+  from?: string;
   subject: string;
   component: {
     (): React.JSX.Element;
@@ -35,7 +37,7 @@ export const OPNodemailer = async ({
   const htmlString = await render(component(), renderOptions);
 
   const sendMailOptions = {
-    from: `${APP_NAME} <${genericEmail}>`,
+    from: from ?? `${APP_NAME} <${genericEmail}>`,
     to: safeEmail,
     subject,
     html: htmlString,

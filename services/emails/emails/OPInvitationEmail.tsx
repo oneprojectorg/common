@@ -1,6 +1,7 @@
-import { OP_EMAIL_HELP } from '@op/core';
-import { Button, Heading, Link, Section, Text } from '@react-email/components';
+import { Button, Section, Text } from '@react-email/components';
 import * as React from 'react';
+
+import { Header } from '@/components/Header';
 
 import EmailTemplate from '../components/EmailTemplate';
 
@@ -13,71 +14,40 @@ interface OPInvitationEmailProps {
 export const OPInvitationEmail = ({
   inviterName = 'A team member',
   organizationName = 'Common',
-  inviteUrl = 'https://common.oneproject.org/signup',
+  inviteUrl = 'https://common.oneproject.org/',
 }: OPInvitationEmailProps) => {
   return (
     <EmailTemplate
       previewText={`${inviterName} invited you to join ${organizationName} on Common! 🎉`}
     >
-      <Heading className="!my-0 mx-0 p-0 text-left text-4xl font-normal leading-[48px]">
-        You're invited to join {organizationName}!
-      </Heading>
-      <Text className="mt-4 text-lg">
-        <strong>{inviterName}</strong> has invited you to collaborate with{' '}
-        <strong>{organizationName}</strong> on Common, the platform for
-        connecting organizations and amplifying social impact.
+      <Header className="!my-0 mx-0 mt-2 p-0 text-left font-serif text-[28px] font-light tracking-[-0.02625rem] text-[#222D38]">
+        Join {organizationName}!
+      </Header>
+      <Text className="my-8 text-lg">
+        <strong>{inviterName}</strong> invited you to Common.
       </Text>
 
-      <Section className="mb-6 mt-10 text-center">
+      <Section className="pb-0">
         <Button
           href={inviteUrl}
-          className="rounded-lg bg-[#0396A6] px-8 py-4 text-lg font-semibold text-white no-underline hover:bg-[#0396A6]/90"
+          className="rounded-lg bg-[#0396A6] px-4 py-3 text-white no-underline hover:bg-[#0396A6]/90"
           style={{
-            backgroundColor: '#0396A6',
-            borderRadius: '8px',
-            color: '#ffffff',
-            display: 'inline-block',
-            fontSize: '18px',
-            fontWeight: '600',
-            lineHeight: '1.5',
-            padding: '16px 32px',
+            fontSize: '0.875rem',
             textAlign: 'center',
             textDecoration: 'none',
           }}
         >
-          Accept Invitation & Join Common
+          Accept invite
         </Button>
       </Section>
 
-      <Text className="mt-6 text-base">
-        Common is a platform where organizations can:
-      </Text>
-      <Text className="ml-4 text-base">
-        • Connect and collaborate with like-minded organizations
-        <br />
-        • Share resources and opportunities
-        <br />
-        • Amplify social impact through collective action
-        <br />• Build meaningful partnerships for positive change
-      </Text>
-
-      <Text className="mt-6 text-base">
-        Click the button above to create your account and join{' '}
-        <strong>{organizationName}</strong> in making a difference.
-      </Text>
-
-      <Text className="mt-8 text-center text-sm text-neutral-500">
-        This invitation is valid for 30 days. <br />
-        If you're having problems or have questions, send us an{' '}
-        <Link href={`mailto:${OP_EMAIL_HELP}`} className="text-[#0396A6]/60">
-          email
-        </Link>
-        .
+      <Text className="mb-0 text-xs text-[#606A6C]">
+        This invite will expire after 1 week
       </Text>
     </EmailTemplate>
   );
 };
 
-OPInvitationEmail.subject = "You're invited to join Common!";
+OPInvitationEmail.subject = `Action Required: You've been invited to join Common`;
 
 export default OPInvitationEmail;
