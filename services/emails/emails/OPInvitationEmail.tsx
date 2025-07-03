@@ -1,9 +1,8 @@
 import { Button, Section, Text } from '@react-email/components';
 import * as React from 'react';
 
-import { Header } from '@/components/Header';
-
 import EmailTemplate from '../components/EmailTemplate';
+import { Header } from '../components/Header';
 
 interface OPInvitationEmailProps {
   inviterName: string;
