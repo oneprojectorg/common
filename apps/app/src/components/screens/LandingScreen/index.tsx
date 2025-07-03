@@ -142,19 +142,8 @@ export const LandingScreen = async () => {
     if ((e as any)?.data?.code === 'NOT_FOUND') {
       redirect('/start');
     }
-    
-    return (
-      <div className="container flex min-h-0 grow flex-col gap-4 pt-8 sm:gap-10 sm:pt-14">
-        <div className="flex flex-col gap-2">
-          <Header1 className="text-center text-title-md sm:text-title-xl">
-            Welcome to Common!
-          </Header1>
-          <span className="text-center text-neutral-charcoal">
-            Unable to load your dashboard. Please try refreshing the page.
-          </span>
-        </div>
-      </div>
-    );
+
+    return null;
   }
 };
 
