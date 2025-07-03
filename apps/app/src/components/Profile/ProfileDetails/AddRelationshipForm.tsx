@@ -9,6 +9,8 @@ import { Dialog } from '@op/ui/RAC';
 import { toast } from '@op/ui/Toast';
 import { FormEvent, useState, useTransition } from 'react';
 
+import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
+
 import { FundingRole, FundingRoleModal } from './FundingRoleModal';
 
 export const AddRelationshipForm = ({
@@ -27,6 +29,7 @@ export const AddRelationshipForm = ({
     relationships: string[];
     closeModal: () => void;
   } | null>(null);
+  const isOnline = useConnectionStatus();
 
   const handleSubmit = (e: FormEvent, close: () => void) => {
     e.preventDefault();
@@ -47,6 +50,14 @@ export const AddRelationshipForm = ({
   };
 
   const submitRelationships = (relationships: string[], close: () => void) => {
+    if (!isOnline) {
+      toast.error({
+        title: 'No connection',
+        message: 'Please check your internet connection and try again.',
+      });
+      return;
+    }
+
     startTransition(async () => {
       try {
         await addRelationship.mutateAsync({
@@ -58,11 +69,22 @@ export const AddRelationshipForm = ({
         toast.success({
           message: 'Relationship requested',
         });
+        close();
       } catch (e) {
-        toast.error({ title: 'Could not create relationship' });
+        const errorInfo = analyzeError(e);
+        
+        if (errorInfo.isConnectionError) {
+          toast.error({
+            title: 'Connection issue',
+            message: errorInfo.message + ' Please try submitting again.',
+          });
+        } else {
+          toast.error({ 
+            title: 'Could not create relationship',
+            message: errorInfo.message,
+          });
+        }
       }
-
-      close();
     });
   };
 

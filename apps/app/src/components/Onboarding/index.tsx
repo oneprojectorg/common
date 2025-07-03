@@ -1,5 +1,6 @@
 'use client';
 
+import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { trpc } from '@op/api/client';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { StepperProgressIndicator } from '@op/ui/Stepper';
@@ -7,8 +8,6 @@ import { toast } from '@op/ui/Toast';
 import { useRouter } from 'next/navigation';
 import React, { useCallback, useState } from 'react';
 import { z } from 'zod';
-
-import { useTranslations } from '@/lib/i18n';
 
 import { MultiStepForm, ProgressComponentProps } from '../MultiStepForm';
 import { Portal } from '../Portal';
@@ -60,7 +59,7 @@ export const OnboardingFlow = () => {
   const createOrganization = trpc.organization.create.useMutation();
   void trpc.account.listMatchingDomainOrganizations.usePrefetchQuery();
   const router = useRouter();
-  const t = useTranslations();
+  const isOnline = useConnectionStatus();
   const {
     // reset,
     personalDetails,
@@ -115,17 +114,20 @@ export const OnboardingFlow = () => {
     privacyPolicy,
   ]);
 
-  const onReturn = useCallback<any>(
-    (values: Array<FormValues>) => {
-      const combined: FormValues = values.reduce(
-        (accum, val) => ({ ...accum, ...val }),
-        {} as FormValues,
-      );
+  const submitOrganization = useCallback(
+    (formData: FormValues) => {
+      if (!isOnline) {
+        toast.error({
+          title: 'No connection',
+          message: 'Please check your internet connection and try again.',
+        });
+        return;
+      }
 
       setSubmitting(true);
 
       createOrganization
-        .mutateAsync(processInputs(combined))
+        .mutateAsync(processInputs(formData))
         .then(() => {
           // invalidate account so we refetch organization users again
           trpcUtil.account.getMyAccount.reset();
@@ -136,13 +138,36 @@ export const OnboardingFlow = () => {
         .catch((err) => {
           console.error('ERROR', err);
           setSubmitting(false);
-          toast.error({
-            title: t("That didn't work"),
-            message: t('Something went wrong on our end. Please try again'),
-          });
+
+          const errorInfo = analyzeError(err);
+
+          if (errorInfo.isConnectionError) {
+            toast.error({
+              title: 'Connection issue',
+              message:
+                errorInfo.message + ' Please try submitting the form again.',
+            });
+          } else {
+            toast.error({
+              title: "That didn't work",
+              message: errorInfo.message,
+            });
+          }
         });
     },
-    [createOrganization],
+    [createOrganization, isOnline, router, trpcUtil],
+  );
+
+  const onReturn = useCallback<any>(
+    (values: Array<FormValues>) => {
+      const combined: FormValues = values.reduce(
+        (accum, val) => ({ ...accum, ...val }),
+        {} as FormValues,
+      );
+
+      submitOrganization(combined);
+    },
+    [submitOrganization],
   );
 
   if (submitting) {

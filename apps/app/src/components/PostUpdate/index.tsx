@@ -19,6 +19,7 @@ import type { RefObject } from 'react';
 import { LuImage, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
+import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 
 import { LinkPreview } from '@/components/LinkPreview';
 import { FeedItem, FeedMain } from '@/components/PostFeed';
@@ -54,9 +55,14 @@ const PostUpdateWithUser = ({
 }) => {
   const [content, setContent] = useState('');
   const [detectedUrls, setDetectedUrls] = useState<string[]>([]);
+  const [lastFailedPost, setLastFailedPost] = useState<{
+    content: string;
+    attachmentIds: string[];
+  } | null>(null);
   const t = useTranslations();
   const utils = trpc.useUtils();
   const router = useRouter();
+  const isOnline = useConnectionStatus();
 
   const fileUpload = useFileUpload({
     organizationId: organization.id,
@@ -72,8 +78,30 @@ const PostUpdateWithUser = ({
 
   const createPost = trpc.organization.createPost.useMutation({
     onError: (err) => {
-      toast.error({ message: 'Could not create post' });
+      const errorInfo = analyzeError(err);
+      
+      if (errorInfo.isConnectionError) {
+        // Store failed post data for retry
+        setLastFailedPost({
+          content: content.trim(),
+          attachmentIds: fileUpload.getUploadedAttachmentIds(),
+        });
+        
+        toast.error({
+          message: errorInfo.message + ' Use the retry button to try again.',
+        });
+      } else {
+        toast.error({ message: errorInfo.message });
+      }
+      
       console.log('ERROR', err);
+    },
+    onSuccess: () => {
+      // Clear form and failed post on success
+      setContent('');
+      setDetectedUrls([]);
+      fileUpload.clearFiles();
+      setLastFailedPost(null);
     },
     onSettled: () => {
       void utils.organization.listPosts.invalidate();
@@ -81,6 +109,16 @@ const PostUpdateWithUser = ({
       router.refresh();
     },
   });
+
+  const retryFailedPost = () => {
+    if (lastFailedPost) {
+      createPost.mutate({
+        id: organization.id,
+        content: lastFailedPost.content,
+        attachmentIds: lastFailedPost.attachmentIds,
+      });
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -90,15 +128,19 @@ const PostUpdateWithUser = ({
 
   const createNewPostUpdate = () => {
     if (content.trim() || fileUpload.hasUploadedFiles()) {
+      // Check if offline
+      if (!isOnline) {
+        toast.error({
+          message: 'You are offline. Please check your connection and try again.',
+        });
+        return;
+      }
+
       createPost.mutate({
         id: organization.id,
         content: content.trim() || '',
         attachmentIds: fileUpload.getUploadedAttachmentIds(),
       });
-
-      setContent('');
-      setDetectedUrls([]);
-      fileUpload.clearFiles();
     }
   };
 
@@ -236,15 +278,26 @@ const PostUpdateWithUser = ({
             </button>
             <div className="flex items-center gap-2 text-neutral-charcoal">
               <TextCounter text={content} max={240} />
+              {lastFailedPost && (
+                <Button
+                  size="small"
+                  color="secondary"
+                  onPress={retryFailedPost}
+                  isDisabled={createPost.isPending}
+                >
+                  {createPost.isPending ? 'Retrying...' : 'Retry Failed Post'}
+                </Button>
+              )}
               <Button
                 size="small"
                 isDisabled={
                   !(content.length > 0 || fileUpload.hasUploadedFiles()) ||
-                  content.length > 240
+                  content.length > 240 ||
+                  !isOnline
                 }
                 onPress={createNewPostUpdate}
               >
-                {t('Post')}
+                {createPost.isPending ? 'Posting...' : t('Post')}
               </Button>
             </div>
           </div>

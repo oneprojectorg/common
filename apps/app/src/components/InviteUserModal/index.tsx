@@ -7,10 +7,12 @@ import { DialogTrigger } from '@op/ui/Dialog';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Select, SelectItem } from '@op/ui/Select';
 import { TextField } from '@op/ui/TextField';
+import { toast } from '@op/ui/Toast';
 import { useEffect, useState } from 'react';
 import { LuUserPlus, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
+import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 
 interface InviteUserModalProps {
   /** Custom className for the default trigger button (minimal styling recommended) */
@@ -29,6 +31,7 @@ export const InviteUserModal = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const t = useTranslations();
   const { user } = useUser();
+  const isOnline = useConnectionStatus();
 
   // Initialize selected organization when user data is available
   useEffect(() => {
@@ -44,8 +47,41 @@ export const InviteUserModal = ({
     },
     onError: (error) => {
       console.error('Failed to send invite:', error.message);
+      
+      const errorInfo = analyzeError(error);
+      
+      if (errorInfo.isConnectionError) {
+        toast.error({
+          title: 'Connection issue',
+          message: errorInfo.message + ' Please try sending the invite again.',
+        });
+      } else {
+        toast.error({
+          title: 'Failed to send invite',
+          message: errorInfo.message,
+        });
+      }
     },
   });
+
+  const sendInvite = (emailList: string[], role: string, organizationId: string) => {
+    if (!isOnline) {
+      toast.error({
+        title: 'No connection',
+        message: 'Please check your internet connection and try again.',
+      });
+      return;
+    }
+
+    const inviteData = {
+      emails: emailList,
+      role,
+      organizationId,
+    };
+
+    inviteUser.mutate(inviteData);
+  };
+
 
   const handleSendInvite = () => {
     if (emails.trim()) {
@@ -56,11 +92,7 @@ export const InviteUserModal = ({
         .filter((email) => email && email.includes('@'));
 
       if (emailList.length > 0) {
-        inviteUser.mutate({
-          emails: emailList,
-          role: selectedRole,
-          organizationId: selectedOrganization,
-        });
+        sendInvite(emailList, selectedRole, selectedOrganization);
       }
     }
   };
