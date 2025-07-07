@@ -38,6 +38,7 @@ const robotoMono = Roboto_Mono({
 const robotoSerif = Roboto_Serif({
   subsets: ['latin'],
   weight: ['300', '400'],
+  style: ['normal', 'italic'],
   variable: '--font-serif',
   display: 'swap',
 });
