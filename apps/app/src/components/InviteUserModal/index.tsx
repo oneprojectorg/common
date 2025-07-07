@@ -6,8 +6,7 @@ import { trpc } from '@op/api/client';
 import { Button } from '@op/ui/Button';
 import { DialogTrigger } from '@op/ui/Dialog';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { Select, SelectItem } from '@op/ui/Select';
-import { Tag, TagGroup } from '@op/ui/TagGroup';
+import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { toast } from '@op/ui/Toast';
 import { useEffect, useState } from 'react';
 import { LuUserPlus, LuX } from 'react-icons/lu';
@@ -15,11 +14,11 @@ import { LuUserPlus, LuX } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import { InviteSuccessModal } from '../InviteSuccessModal';
+import { InviteNewOrganization } from './InviteNewOrganization';
+import { InviteToExistingOrganization } from './InviteToExistingOrganization';
 
 interface InviteUserModalProps {
-  /** Custom className for the default trigger button (minimal styling recommended) */
   className?: string;
-  /** Custom trigger element. If not provided, uses default invite button with neutral styling */
   children?: React.ReactNode;
 }
 
@@ -31,9 +30,11 @@ export const InviteUserModal = ({
   const [emailBadges, setEmailBadges] = useState<string[]>([]);
   const [selectedRole, setSelectedRole] = useState('Admin');
   const [selectedOrganization, setSelectedOrganization] = useState('');
+  const [personalMessage, setPersonalMessage] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [lastInvitedEmail, setLastInvitedEmail] = useState('');
+  const [activeTab, setActiveTab] = useState('existing');
   const t = useTranslations();
   const { user } = useUser();
   const isOnline = useConnectionStatus();
@@ -50,76 +51,59 @@ export const InviteUserModal = ({
     return emailRegex.test(email.trim());
   };
 
-  const addEmailBadge = (email: string) => {
-    const trimmedEmail = email.trim();
-    if (!trimmedEmail) return;
-
-    if (!isValidEmail(trimmedEmail)) {
-      toast.error({
-        title: 'Invalid email',
-        message: `"${trimmedEmail}" is not a valid email address`,
-      });
-      return;
-    }
-
-    setEmailBadges([...emailBadges, trimmedEmail]);
-  };
-
-  const removeEmailBadge = (emailToRemove: string) => {
-    setEmailBadges(emailBadges.filter((email) => email !== emailToRemove));
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === ',' || e.key === 'Enter') {
-      e.preventDefault();
-      if (emails.trim()) {
-        addEmailBadge(emails.trim());
-        setEmails('');
-      }
-    }
-  };
-
   const inviteUser = trpc.organization.invite.useMutation({
     onSuccess: () => {
-      // Store the first invited email for display in success modal
-      const allEmails = [...emailBadges];
-      if (emails.trim()) {
-        allEmails.push(emails.trim());
-      }
-
-      if (allEmails.length > 0) {
-        setLastInvitedEmail(allEmails[0] || '');
-      }
-
-      setEmails('');
-      setEmailBadges([]);
-      setIsModalOpen(false);
-      setIsSuccessModalOpen(true);
+      handleInviteSuccess();
     },
     onError: (error) => {
-      console.error('Failed to send invite:', error.message);
-
-      const errorInfo = analyzeError(error);
-
-      if (errorInfo.isConnectionError) {
-        toast.error({
-          title: 'Connection issue',
-          message: errorInfo.message + ' Please try sending the invite again.',
-        });
-      } else {
-        toast.error({
-          title: 'Failed to send invite',
-          message: errorInfo.message,
-        });
-      }
+      handleInviteError(error, 'Failed to send invite');
     },
   });
 
-  const sendInvite = (
-    emailList: string[],
-    role: string,
-    organizationId: string,
-  ) => {
+  const handleInviteSuccess = () => {
+    // Store the first invited email for display in success modal
+    const allEmails = [...emailBadges];
+    if (emails.trim()) {
+      allEmails.push(emails.trim());
+    }
+
+    if (allEmails.length > 0) {
+      setLastInvitedEmail(allEmails[0] || '');
+    }
+
+    setEmails('');
+    setEmailBadges([]);
+    setPersonalMessage('');
+    setIsModalOpen(false);
+    setIsSuccessModalOpen(true);
+  };
+
+  const handleInviteError = (error: any, title: string) => {
+    console.error(title + ':', error.message);
+
+    const errorInfo = analyzeError(error);
+
+    if (errorInfo.isConnectionError) {
+      toast.error({
+        title: 'Connection issue',
+        message: errorInfo.message + ' Please try sending the invite again.',
+      });
+    } else {
+      toast.error({
+        title,
+        message: errorInfo.message,
+      });
+    }
+  };
+
+  const sendInvite = (props: {
+    emails: string[];
+    role: string;
+    organizationId?: string;
+    message?: string;
+  }) => {
+    const { emails, role, organizationId, message } = props;
+
     if (!isOnline) {
       toast.error({
         title: 'No connection',
@@ -128,11 +112,20 @@ export const InviteUserModal = ({
       return;
     }
 
-    const inviteData = {
-      emails: emailList,
-      role,
-      organizationId,
+    const inviteData: any = {
+      emails,
     };
+
+    if (activeTab === 'new') {
+      // New organization invite
+      if (message) {
+        inviteData.personalMessage = message;
+      }
+    } else {
+      // Existing organization invite
+      inviteData.role = role;
+      inviteData.organizationId = organizationId;
+    }
 
     inviteUser.mutate(inviteData);
   };
@@ -161,7 +154,19 @@ export const InviteUserModal = ({
       return;
     }
 
-    sendInvite(allEmails, selectedRole, selectedOrganization);
+    if (activeTab === 'existing') {
+      sendInvite({
+        emails: allEmails,
+        role: selectedRole,
+        organizationId: selectedOrganization,
+      });
+    } else {
+      sendInvite({
+        emails: allEmails,
+        role: selectedRole,
+        message: personalMessage,
+      });
+    }
   };
 
   const triggerButton = children || (
@@ -196,6 +201,7 @@ export const InviteUserModal = ({
                 onPress={() => {
                   setEmails('');
                   setEmailBadges([]);
+                  setPersonalMessage('');
                   setIsModalOpen(false);
                 }}
                 isDisabled={inviteUser.isPending}
@@ -216,61 +222,39 @@ export const InviteUserModal = ({
             </div>
           </ModalHeader>
           <ModalBody className="gap-6 p-6">
-            <p>
-              {t('Expand your network and collaborate with others on Common.')}
-            </p>
+            <Tabs
+              selectedKey={activeTab}
+              onSelectionChange={(key) => setActiveTab(key as string)}
+            >
+              <TabList aria-label="Invite options">
+                <Tab id="existing">{t('Add to my organization')}</Tab>
+                <Tab id="new">{t('Invite a new organization')}</Tab>
+              </TabList>
 
-            <div className="flex flex-col gap-4">
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium">{t('Send to')}</label>
-                <div className="flex min-h-[80px] flex-wrap gap-2 rounded-md border border-gray-300 p-2">
-                  <TagGroup>
-                    {emailBadges.map((email, index) => (
-                      <Tag className="sm:rounded-sm" key={index}>
-                        {email}
-                        <button onClick={() => removeEmailBadge(email)}>
-                          <LuX className="size-3" />
-                        </button>
-                      </Tag>
-                    ))}
-                  </TagGroup>
-                  <textarea
-                    value={emails}
-                    onChange={(e) => setEmails(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder={
-                      emailBadges.length === 0
-                        ? `name1@${user?.currentOrganization?.domain || 'example.org'}, name2@${user?.currentOrganization?.domain || 'example.org'}, ...`
-                        : 'Type emails followed by a comma...'
-                    }
-                    className="min-w-[200px] flex-1 resize-none border-none pt-1 outline-none"
-                    rows={1}
-                  />
-                </div>
-              </div>
+              <TabPanel id="existing">
+                <InviteToExistingOrganization
+                  emails={emails}
+                  setEmails={setEmails}
+                  emailBadges={emailBadges}
+                  setEmailBadges={setEmailBadges}
+                  selectedRole={selectedRole}
+                  setSelectedRole={setSelectedRole}
+                  selectedOrganization={selectedOrganization}
+                  setSelectedOrganization={setSelectedOrganization}
+                />
+              </TabPanel>
 
-              <Select
-                label={t('Add to organization')}
-                selectedKey={selectedOrganization}
-                onSelectionChange={(key) =>
-                  setSelectedOrganization(key as string)
-                }
-              >
-                {user?.currentOrganization && (
-                  <SelectItem id={user.currentOrganization.id}>
-                    {user.currentOrganization.profile?.name}
-                  </SelectItem>
-                )}
-              </Select>
-
-              <Select
-                label={t('Role')}
-                selectedKey={selectedRole}
-                onSelectionChange={(key) => setSelectedRole(key as string)}
-              >
-                <SelectItem id="Admin">{t('Admin')}</SelectItem>
-              </Select>
-            </div>
+              <TabPanel id="new">
+                <InviteNewOrganization
+                  emails={emails}
+                  setEmails={setEmails}
+                  emailBadges={emailBadges}
+                  setEmailBadges={setEmailBadges}
+                  personalMessage={personalMessage}
+                  setPersonalMessage={setPersonalMessage}
+                />
+              </TabPanel>
+            </Tabs>
           </ModalBody>
           {/* Desktop footer - hidden on mobile since actions are in header */}
           <ModalFooter className="hidden sm:flex">
@@ -297,7 +281,9 @@ export const InviteUserModal = ({
         }}
         invitedEmail={lastInvitedEmail}
         organizationName={
-          user?.currentOrganization?.profile?.name || 'Solidarity Seeds'
+          activeTab === 'existing'
+            ? user?.currentOrganization?.profile?.name || 'Common'
+            : 'Common'
         }
       />
     </>
