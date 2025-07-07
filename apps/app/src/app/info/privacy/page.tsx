@@ -5,10 +5,10 @@ import { PrivacyPolicyContentShort } from '@/components/PrivacyPolicyContent/Pri
 import { FormContainer } from '@/components/form/FormContainer';
 import { FormHeader } from '@/components/form/FormHeader';
 
-const ToSPage = () => {
+const PrivacyPage = () => {
   const t = useTranslations();
   return (
-    <FormContainer className="max-w-[32rem]">
+    <FormContainer className="max-w-[100vw] px-4 sm:max-w-[32rem]">
       <FormHeader text={t('Privacy Policy Overview')}></FormHeader>
       <PrivacyPolicyContentShort />
 
@@ -18,4 +18,4 @@ const ToSPage = () => {
   );
 };
 
-export default ToSPage;
+export default PrivacyPage;
