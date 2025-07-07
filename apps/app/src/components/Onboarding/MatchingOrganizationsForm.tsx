@@ -175,7 +175,7 @@ export const MatchingOrganizationsForm = ({
                 {t('I have read and accept the')}
               </Checkbox>
               <a
-                href="/info/tos"
+                href="/info/privacy"
                 target="_blank"
                 className="text-sm text-primary-teal hover:underline"
               >
