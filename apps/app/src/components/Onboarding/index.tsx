@@ -31,8 +31,9 @@ import {
 import { ToSForm, validator as ToSFormValidator } from './ToSForm';
 import { organizationFormValidator as OrganizationDetailsFormValidator } from './shared/organizationValidation';
 import { useOnboardingFormStore } from './useOnboardingFormStore';
+import { sendOnboardingAnalytics } from './utils';
 
-type FormValues = z.infer<typeof PersonalDetailsFormValidator> &
+export type FormValues = z.infer<typeof PersonalDetailsFormValidator> &
   z.infer<typeof MatchingOrganizationsFormValidator> &
   z.infer<typeof OrganizationDetailsFormValidator> &
   z.infer<typeof FundingInformationFormValidator> &
@@ -129,6 +130,7 @@ export const OnboardingFlow = () => {
       createOrganization
         .mutateAsync(processInputs(formData))
         .then(() => {
+          sendOnboardingAnalytics(formData);
           // invalidate account so we refetch organization users again
           trpcUtil.account.getMyAccount.reset();
           trpcUtil.account.getMyAccount.refetch().then(() => {
