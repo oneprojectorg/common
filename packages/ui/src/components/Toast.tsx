@@ -4,7 +4,6 @@ import { ReactNode } from 'react';
 import { LuCircleAlert, LuCircleCheck, LuX } from 'react-icons/lu';
 import { Toaster as Sonner, toast as sonnerToast } from 'sonner';
 
-import { cn } from '../lib/utils';
 import { Button } from './Button';
 
 export const Toast = () => {
@@ -70,7 +69,6 @@ const ToastBody = ({ children }: { children: React.ReactNode }) => {
 };
 
 const ToastTitle = ({
-  className,
   children,
 }: {
   className?: string;
@@ -121,7 +119,7 @@ export const toast = {
     // TODO: some odd behavior with Tailwind text-white an text-title-base conflicting here (the size gets stripped by the compiler).
     return sonnerToast.custom(
       (id) => (
-        <ToastWrapper id={id} dismissable={true}>
+        <ToastWrapper id={id} dismissable={dismissable}>
           <LuCircleAlert className="size-6 stroke-1 text-white" />
           <ToastBody>
             {title ? (
