@@ -26,14 +26,16 @@ const inputSchema = z
     emails: z
       .array(z.string().email('Must be a valid email address'))
       .min(1, 'At least one email address is required'),
-    role: z.string().default('Admin'),
+    role: z.string().default('Admin').optional(),
     organizationId: z.string().uuid().optional(),
+    personalMessage: z.string().optional(),
   })
   .or(
     z.object({
       email: z.string().email('Must be a valid email address'),
       role: z.string().default('Admin').optional(),
       organizationId: z.string().uuid().optional(),
+      personalMessage: z.string().optional(),
     }),
   );
 
@@ -72,8 +74,8 @@ export const inviteUserRouter = router({
         const emailsToProcess =
           'emails' in input ? input.emails : [input.email];
         const role = 'role' in input ? input.role : 'Admin';
-        const targetOrganizationId =
-          'organizationId' in input ? input.organizationId : undefined;
+        const targetOrganizationId = input.organizationId;
+        const personalMessage = input.personalMessage;
 
         // Get the current user's database record with organization details
         const authUser = await db.query.users.findFirst({
@@ -87,6 +89,8 @@ export const inviteUserRouter = router({
           },
         });
 
+        // For new organization invites, we don't need the user to be in an organization
+        // For existing organization invites, we do need it
         if (!authUser?.lastOrgId || !authUser.currentOrganization) {
           throw new UnauthorizedError(
             'User must be associated with an organization to send invites',
@@ -107,15 +111,29 @@ export const inviteUserRouter = router({
             });
 
             if (!existingEntry) {
-              // Add the email to the allowList with the specified or current organization
+              // Determine metadata based on whether it's a new organization invite
+              const metadata = targetOrganizationId
+                ? {
+                    invitedBy: authUserId,
+                    invitedAt: new Date().toISOString(),
+                    inviteType: 'new_organization',
+                    personalMessage: personalMessage,
+                    inviterOrganizationName:
+                      (authUser?.currentOrganization as any)?.profile?.name ||
+                      'Common',
+                  }
+                : {
+                    invitedBy: authUserId,
+                    invitedAt: new Date().toISOString(),
+                    personalMessage: personalMessage,
+                    role,
+                  };
+
+              // Add the email to the allowList
               await db.insert(allowList).values({
                 email,
-                organizationId: targetOrganizationId || authUser.lastOrgId,
-                metadata: {
-                  invitedBy: authUserId,
-                  invitedAt: new Date().toISOString(),
-                  role,
-                },
+                organizationId: targetOrganizationId ?? null,
+                metadata,
               });
             }
 
@@ -123,11 +141,14 @@ export const inviteUserRouter = router({
             try {
               await sendInvitationEmail({
                 to: email,
-                inviterName: authUser.name || ctx.user.email || 'A team member',
-                organizationName:
-                  (authUser.currentOrganization as any)?.profile?.name ||
-                  'this organization',
+                inviterName:
+                  authUser?.name || ctx.user.email || 'A team member',
+                organizationName: targetOrganizationId
+                  ? (authUser?.currentOrganization as any)?.profile?.name ||
+                    'an organization'
+                  : undefined,
                 inviteUrl: OPURLConfig('APP').ENV_URL,
+                message: personalMessage,
               });
               results.successful.push(email);
             } catch (emailError) {

@@ -8,19 +8,21 @@ interface OPInvitationEmailProps {
   inviterName: string;
   organizationName: string;
   inviteUrl: string;
+  message?: string;
 }
 
 export const OPInvitationEmail = ({
-  inviterName = 'A team member',
-  organizationName = 'Common',
+  inviterName = 'A Common user',
+  organizationName,
   inviteUrl = 'https://common.oneproject.org/',
+  message,
 }: OPInvitationEmailProps) => {
   return (
     <EmailTemplate
-      previewText={`${inviterName} invited you to join ${organizationName} on Common! 🎉`}
+      previewText={`${inviterName} invited you to join ${organizationName ? `${organizationName}  on ` : ''} Common! 🎉`}
     >
       <Header className="!my-0 mx-0 mt-2 p-0 text-left font-serif text-[28px] font-light tracking-[-0.02625rem] text-[#222D38]">
-        Join {organizationName}!
+        Join {organizationName ?? 'Common'}!
       </Header>
       <Text className="my-8 text-lg">
         <strong>{inviterName}</strong> invited you to Common.
@@ -38,6 +40,7 @@ export const OPInvitationEmail = ({
         >
           Accept invite
         </Button>
+        {message ? <Text>{message}</Text> : null}
       </Section>
 
       <Text className="mb-0 text-xs text-[#606A6C]">

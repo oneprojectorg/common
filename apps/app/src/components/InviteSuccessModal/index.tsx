@@ -29,8 +29,7 @@ export const InviteSuccessModal = ({
         </div>
         <p>
           You've invited <span className="font-semibold">{invitedEmail}</span>{' '}
-          to join <span className="font-semibold">{organizationName}</span> as
-          an admin.
+          to join <span className="font-semibold">{organizationName}</span>.
         </p>
         <div className="flex w-full flex-col gap-2">
           <Button color="primary" onPress={onClose} className="w-full">
