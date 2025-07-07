@@ -1,5 +1,12 @@
 import { relations } from 'drizzle-orm';
-import { index, jsonb, pgTable, uuid, varchar } from 'drizzle-orm/pg-core';
+import {
+  index,
+  jsonb,
+  pgTable,
+  uniqueIndex,
+  uuid,
+  varchar,
+} from 'drizzle-orm/pg-core';
 
 import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
 import { organizations } from './organizations.sql';
@@ -10,14 +17,20 @@ export const allowList = pgTable(
   'allowList',
   {
     id: autoId().primaryKey(),
-    email: varchar({ length: 256 }).unique().notNull(),
+    email: varchar({ length: 256 }).notNull(),
     metadata: jsonb(),
     organizationId: uuid('organization_id').references(() => organizations.id, {
       onDelete: 'set null',
     }),
     ...timestamps,
   },
-  (table) => [...serviceRolePolicies, index().on(table.email).concurrently()],
+  (table) => [
+    ...serviceRolePolicies,
+    index().on(table.email).concurrently(),
+    uniqueIndex('allowList_email_organizationId_idx')
+      .on(table.email, table.organizationId)
+      .concurrently(),
+  ],
 );
 
 export const allowListRelations = relations(allowList, ({ one }) => ({

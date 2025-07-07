@@ -15,7 +15,7 @@ export const matchingDomainOrganizations = async ({ user }: { user: User }) => {
   }
 
   try {
-    const [results, preMappedOrg] = await Promise.all([
+    const [results, preMappedOrgs] = await Promise.all([
       db.query.organizations.findMany({
         where: eq(organizations.domain, emailDomain),
         with: {
@@ -26,7 +26,7 @@ export const matchingDomainOrganizations = async ({ user }: { user: User }) => {
           },
         },
       }),
-      db.query.allowList.findFirst({
+      db.query.allowList.findMany({
         where: eq(allowList.email, user.email),
         with: {
           organization: {
@@ -42,14 +42,16 @@ export const matchingDomainOrganizations = async ({ user }: { user: User }) => {
       }),
     ]);
 
-    if (preMappedOrg) {
-      const org = preMappedOrg?.organization as unknown as Organization & {
-        profile: Profile;
-      };
+    if (preMappedOrgs.length > 0) {
+      preMappedOrgs.forEach((preMappedOrg) => {
+        const org = preMappedOrg?.organization as unknown as Organization & {
+          profile: Profile;
+        };
 
-      if (org && !results.find((r) => r.id === org.id)) {
-        results.push(org);
-      }
+        if (org && !results.find((r) => r.id === org.id)) {
+          results.push(org);
+        }
+      });
     }
 
     return results;
