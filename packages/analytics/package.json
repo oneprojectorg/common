@@ -1,0 +1,25 @@
+{
+  "name": "@op/analytics",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./client": "./src/client.ts",
+    "./utils": "./src/utils.ts"
+  },
+  "types": "./src/index.ts",
+  "scripts": {
+    "disable-build": "tsc",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "posthog-node": "^4.3.0"
+  },
+  "devDependencies": {
+    "@op/typescript-config": "workspace:*",
+    "@types/node": "^22.13.5",
+    "typescript": "5.7.3"
+  }
+}

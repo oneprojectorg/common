@@ -4,7 +4,7 @@ import { TRPCError } from '@trpc/server';
 import { waitUntil } from '@vercel/functions';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
-import { trackRelationshipAdded } from '../../utils/analytics';
+import { trackRelationshipAdded } from '@op/analytics';
 
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';

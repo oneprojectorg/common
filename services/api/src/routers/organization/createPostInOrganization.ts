@@ -4,7 +4,7 @@ import { TRPCError } from '@trpc/server';
 import { waitUntil } from '@vercel/functions';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
-import { trackUserPost } from '../../utils/analytics';
+import { trackUserPost } from '@op/analytics';
 
 import { postsEncoder } from '../../encoders';
 import withAuthenticated from '../../middlewares/withAuthenticated';

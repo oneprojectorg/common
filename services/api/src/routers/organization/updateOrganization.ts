@@ -3,7 +3,7 @@ import { UnauthorizedError, updateOrganization } from '@op/common';
 import { TRPCError } from '@trpc/server';
 import { waitUntil } from '@vercel/functions';
 import type { OpenApiMeta } from 'trpc-to-openapi';
-import { trackFundingToggle } from '../../utils/analytics';
+import { trackFundingToggle } from '@op/analytics';
 
 import { organizationsEncoder } from '../../encoders/organizations';
 import withAuthenticated from '../../middlewares/withAuthenticated';
@@ -52,8 +52,8 @@ export const updateOrganizationRouter = router({
               isReceivingFunds: input.isReceivingFunds,
             },
             {
-              isOfferingFunds: org.isOfferingFunds,
-              isReceivingFunds: org.isReceivingFunds,
+              isOfferingFunds: org.isOfferingFunds ?? false,
+              isReceivingFunds: org.isReceivingFunds ?? false,
             }
           ));
         }

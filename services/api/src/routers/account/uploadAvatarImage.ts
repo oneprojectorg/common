@@ -7,7 +7,7 @@ import { waitUntil } from '@vercel/functions';
 import { Buffer } from 'buffer';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
-import { trackImageUpload } from '../../utils/analytics';
+import { trackImageUpload } from '@op/analytics';
 
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withDB from '../../middlewares/withDB';

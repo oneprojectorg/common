@@ -515,6 +515,22 @@ importers:
 
   configs/typescript-config: {}
 
+  packages/analytics:
+    dependencies:
+      posthog-node:
+        specifier: ^4.3.0
+        version: 4.18.0
+    devDependencies:
+      '@op/typescript-config':
+        specifier: workspace:*
+        version: link:../../configs/typescript-config
+      '@types/node':
+        specifier: ^22.13.5
+        version: 22.13.14
+      typescript:
+        specifier: 5.7.3
+        version: 5.7.3
+
   packages/common:
     dependencies:
       '@op/emails':
@@ -741,6 +757,9 @@ importers:
       '@axiomhq/pino':
         specifier: ^1.3.1
         version: 1.3.1
+      '@op/analytics':
+        specifier: workspace:*
+        version: link:../../packages/analytics
       '@op/cache':
         specifier: workspace:*
         version: link:../cache
@@ -10892,7 +10911,7 @@ snapshots:
 
   '@types/nodemailer@6.4.17':
     dependencies:
-      '@types/node': 22.13.5
+      '@types/node': 22.13.14
 
   '@types/offscreencanvas@2019.7.3': {}
 
@@ -10943,7 +10962,7 @@ snapshots:
 
   '@types/ws@8.5.13':
     dependencies:
-      '@types/node': 22.13.5
+      '@types/node': 22.13.14
 
   '@ungap/structured-clone@1.2.1': {}
 

@@ -1,14 +1,4 @@
-import { PostHog } from 'posthog-node';
-
-export default function PostHogClient() {
-  const posthogClient = new PostHog(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
-    host: 'https://eu.i.posthog.com',
-    flushAt: 1,
-    flushInterval: 0,
-  });
-
-  return posthogClient;
-}
+import PostHogClient from './client';
 
 /**
  * Analytics utility functions for tracking user events
@@ -38,7 +28,6 @@ export async function trackEvent({ distinctId, event, properties }: AnalyticsEve
   await posthog.shutdown();
 }
 
-
 /**
  * Set person properties
  */
@@ -51,13 +40,12 @@ export async function identifyUser({ distinctId, properties }: AnalyticsIdentify
   await posthog.shutdown();
 }
 
-
 /**
  * Track multiple events in sequence
  */
 export async function trackEvents(events: AnalyticsEvent[]): Promise<void> {
   if (events.length === 0) return;
-
+  
   const posthog = PostHogClient();
   events.forEach(({ distinctId, event, properties }) => {
     posthog.capture({
@@ -69,7 +57,6 @@ export async function trackEvents(events: AnalyticsEvent[]): Promise<void> {
   await posthog.shutdown();
 }
 
-
 /**
  * Track image upload analytics
  */
@@ -77,42 +64,41 @@ export async function trackImageUpload(userId: string, imageType: 'profile' | 'b
   const eventName = imageType === 'profile'
     ? (isEdit ? 'profile_picture_successfully_edited' : 'profile_picture_successfully_uploaded')
     : (isEdit ? 'banner_picture_successfully_edited' : 'banner_picture_successfully_uploaded');
-
+  
   await trackEvent({
     distinctId: userId,
     event: eventName,
   });
 }
 
-
 /**
  * Track user post creation with media analysis
  */
 export async function trackUserPost(
-  userId: string,
-  content: string,
-  attachments: Array<{ metadata: { mimetype: string } }>
+  userId: string, 
+  content: string, 
+  attachments: Array<{ metadata: { mimetype: string } } | any>
 ): Promise<void> {
   const hasFile = attachments.length > 0;
   const hasText = content.trim().length > 0;
-
+  
   let mediaType = 'text_only';
   const properties: Record<string, any> = {};
-
+  
   if (hasFile) {
     const firstFile = attachments[0];
-    const mimeType = firstFile.metadata.mimetype;
-
-    if (mimeType.startsWith('image/')) {
+    const mimeType = firstFile?.metadata?.mimetype;
+    
+    if (mimeType?.startsWith('image/')) {
       mediaType = 'image';
-    } else if (mimeType.startsWith('video/')) {
+    } else if (mimeType?.startsWith('video/')) {
       mediaType = 'video';
     } else if (mimeType === 'application/pdf') {
       mediaType = 'pdf';
     } else {
       mediaType = 'file';
     }
-    properties.file_type = mimeType;
+    if (mimeType) properties.file_type = mimeType;
   } else {
     // Check for links in content
     const linkRegex = /https?:\/\/[^\s]+/g;
@@ -122,10 +108,10 @@ export async function trackUserPost(
       properties.links_count = links.length;
     }
   }
-
+  
   properties.has_text = hasText;
   properties.text_length = content.trim().length;
-
+  
   await trackEvent({
     distinctId: userId,
     event: 'user_posted',
@@ -135,7 +121,6 @@ export async function trackUserPost(
     },
   });
 }
-
 
 /**
  * Track funding toggle changes and update person properties
@@ -152,7 +137,7 @@ export async function trackFundingToggle(
   }
 ): Promise<void> {
   const events: AnalyticsEvent[] = [];
-
+  
   // Track individual toggle events
   if (changes.isOfferingFunds !== undefined) {
     events.push({
@@ -161,7 +146,7 @@ export async function trackFundingToggle(
       properties: { enabled: changes.isOfferingFunds },
     });
   }
-
+  
   if (changes.isReceivingFunds !== undefined) {
     events.push({
       distinctId: userId,
@@ -169,16 +154,16 @@ export async function trackFundingToggle(
       properties: { enabled: changes.isReceivingFunds },
     });
   }
-
+  
   // Track events if any
   if (events.length > 0) {
     await trackEvents(events);
   }
-
+  
   // Update person properties
   const isOffering = changes.isOfferingFunds ?? currentState.isOfferingFunds;
   const isSeeking = changes.isReceivingFunds ?? currentState.isReceivingFunds;
-
+  
   let userFunding = 'Neither';
   if (isOffering && isSeeking) {
     userFunding = 'OfferingandSeeking';
@@ -187,7 +172,7 @@ export async function trackFundingToggle(
   } else if (isSeeking) {
     userFunding = 'Seeking_Funding';
   }
-
+  
   await identifyUser({
     distinctId: userId,
     properties: {
@@ -198,13 +183,12 @@ export async function trackFundingToggle(
   });
 }
 
-
 /**
  * Track relationship events
  */
 export async function trackRelationshipAdded(userId: string, relationships: string[]): Promise<void> {
   const events: AnalyticsEvent[] = [];
-
+  
   // Track general relationship add event
   events.push({
     distinctId: userId,
@@ -214,7 +198,7 @@ export async function trackRelationshipAdded(userId: string, relationships: stri
       relationship_count: relationships.length,
     },
   });
-
+  
   // Track specific funding relationships
   relationships.forEach(relationship => {
     if (relationship === 'funding' || relationship === 'funds') {
@@ -237,10 +221,9 @@ export async function trackRelationshipAdded(userId: string, relationships: stri
       });
     }
   });
-
+  
   await trackEvents(events);
 }
-
 
 /**
  * Track relationship acceptance
@@ -251,4 +234,3 @@ export async function trackRelationshipAccepted(userId: string): Promise<void> {
     event: 'user_accepted_relationship',
   });
 }
-
