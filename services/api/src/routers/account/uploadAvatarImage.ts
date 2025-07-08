@@ -3,9 +3,11 @@ import { eq } from '@op/db/client';
 import { users } from '@op/db/schema';
 import { createServerClient } from '@op/supabase/lib';
 import { TRPCError } from '@trpc/server';
+import { waitUntil } from '@vercel/functions';
 import { Buffer } from 'buffer';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
+import { trackImageUpload } from '@op/analytics';
 
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withDB from '../../middlewares/withDB';
@@ -127,12 +129,23 @@ export const uploadAvatarImage = router({
 
       // assign the avatar image
       if (data) {
+        // Check if user had previous avatar
+        const [existingUser] = await db
+          .select({ avatarImageId: users.avatarImageId })
+          .from(users)
+          .where(eq(users.authUserId, ctx.user.id));
+        
+        const hadPreviousImage = existingUser?.avatarImageId;
+        
         await db
           .update(users)
           .set({
             avatarImageId: data.id,
           })
           .where(eq(users.authUserId, ctx.user.id));
+        
+        // Track analytics (non-blocking)
+        waitUntil(trackImageUpload(ctx.user.id, 'profile', !!hadPreviousImage));
       }
 
       // Get signed URL

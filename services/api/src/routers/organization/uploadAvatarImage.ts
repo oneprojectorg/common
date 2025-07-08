@@ -1,8 +1,10 @@
 import { createServerClient } from '@op/supabase/lib';
 import { TRPCError } from '@trpc/server';
+import { waitUntil } from '@vercel/functions';
 import { Buffer } from 'buffer';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
+import { trackImageUpload } from '@op/analytics';
 
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withDB from '../../middlewares/withDB';
@@ -147,6 +149,11 @@ export const uploadAvatarImage = router({
       logger.info(
         'RETURNING UPLOAD URL' + signedUrlData.signedUrl + ' - ' + filePath,
       );
+      
+      // Track analytics - for organization uploads, we'll track as new uploads since they're temporary (non-blocking)
+      const imageType = filePath.includes('banner') ? 'banner' : 'profile';
+      waitUntil(trackImageUpload(ctx.user.id, imageType, false));
+      
       return {
         url: signedUrlData.signedUrl,
         path: filePath,
