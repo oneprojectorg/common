@@ -4,6 +4,7 @@ import { Checkbox } from '@op/ui/Checkbox';
 import { Header3 } from '@op/ui/Header';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Surface } from '@op/ui/Surface';
+import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
 import { useRouter } from 'next/navigation';
 import { ReactNode, Suspense, useEffect, useState } from 'react';
@@ -38,6 +39,7 @@ export const MatchingOrganizationsForm = ({
 
   const joinOrganization = trpc.organization.join.useMutation();
   const trpcUtil = trpc.useUtils();
+  const [isLoading, setLoading] = useState(false);
   const [selectedOrganizationId, setSelectedOrganizationId] = useState<
     string | undefined
   >();
@@ -63,22 +65,35 @@ export const MatchingOrganizationsForm = ({
     }
 
     try {
+      setLoading(true);
       await joinOrganization.mutateAsync({
         organizationId: selectedOrganizationId,
       });
 
       // Invalidate account data to refetch organization users
-      await trpcUtil.account.getMyAccount.invalidate(undefined, {
-        refetchType: 'all',
-      });
+      await trpcUtil.account.getMyAccount.invalidate(
+        undefined,
+        {
+          refetchType: 'all',
+        },
+        {},
+      );
 
       trpcUtil.account.getMyAccount.refetch().then(() => {
         router.push(`/?new=1`);
       });
       // Redirect to the main app with new org flag
     } catch (error) {
+      setLoading(false);
       console.error('Failed to join organization:', error);
-      // Handle error (could show toast notification)
+      let message = 'Failed to join organization';
+      if (error instanceof Error) {
+        message = `${message} (${error.message})`;
+      }
+
+      toast.error({
+        message,
+      });
     }
   };
 
@@ -202,7 +217,7 @@ export const MatchingOrganizationsForm = ({
                 !privacyAccepted
               }
             >
-              {joinOrganization.isPending ? (
+              {joinOrganization.isPending || isLoading ? (
                 <LoadingSpinner />
               ) : (
                 t('Get Started')

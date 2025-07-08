@@ -108,10 +108,6 @@ export const LandingScreen = async () => {
     const client = await trpcNext();
     const user = await client.account.getMyAccount.query();
 
-    if (user?.organizationUsers?.length === 0) {
-      redirect('/start');
-    }
-
     return (
       <div className="container flex min-h-0 grow flex-col gap-4 pt-8 sm:gap-10 sm:pt-14">
         <div className="flex flex-col gap-2">
