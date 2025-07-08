@@ -18,14 +18,10 @@ import { InviteNewOrganization } from './InviteNewOrganization';
 import { InviteToExistingOrganization } from './InviteToExistingOrganization';
 
 interface InviteUserModalProps {
-  className?: string;
   children?: React.ReactNode;
 }
 
-export const InviteUserModal = ({
-  className,
-  children,
-}: InviteUserModalProps) => {
+export const InviteUserModal = ({ children }: InviteUserModalProps) => {
   const [emails, setEmails] = useState('');
   const [emailBadges, setEmailBadges] = useState<string[]>([]);
   const [selectedRole, setSelectedRole] = useState('Admin');
