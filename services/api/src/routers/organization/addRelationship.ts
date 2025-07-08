@@ -1,10 +1,10 @@
+import { trackRelationshipAdded } from '@op/analytics';
 import { UnauthorizedError, addRelationship } from '@op/common';
 import { getSession } from '@op/common/src/services/access';
 import { TRPCError } from '@trpc/server';
 import { waitUntil } from '@vercel/functions';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
-import { trackRelationshipAdded } from '@op/analytics';
 
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
@@ -42,6 +42,10 @@ export const addRelationshipRouter = router({
         const session = await getSession();
         if (!session) {
           throw new UnauthorizedError('No user found');
+        }
+
+        if (!session.user.lastOrgId) {
+          throw new UnauthorizedError('No user lastOrgId found');
         }
 
         await addRelationship({

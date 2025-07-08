@@ -55,7 +55,7 @@ const createClient = async () => {
   return supabase;
 };
 
-export const getSession = async (): Promise<{ user: any } | null> => {
+export const getSession = async () => {
   const supabase = await createClient();
 
   const sessionUser = await supabase.auth.getUser();
@@ -74,6 +74,10 @@ export const getSession = async (): Promise<{ user: any } | null> => {
         organizationUsers: true,
       },
     });
+
+    if (!dbUser) {
+      return null;
+    }
 
     return { user: dbUser };
   } catch (error) {

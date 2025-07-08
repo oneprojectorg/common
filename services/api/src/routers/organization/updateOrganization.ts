@@ -1,9 +1,9 @@
+import { trackFundingToggle } from '@op/analytics';
 import { invalidate } from '@op/cache';
-import { UnauthorizedError, updateOrganization } from '@op/common';
+import { UnauthorizedError, getSession, updateOrganization } from '@op/common';
 import { TRPCError } from '@trpc/server';
 import { waitUntil } from '@vercel/functions';
 import type { OpenApiMeta } from 'trpc-to-openapi';
-import { trackFundingToggle } from '@op/analytics';
 
 import { organizationsEncoder } from '../../encoders/organizations';
 import withAuthenticated from '../../middlewares/withAuthenticated';
@@ -44,18 +44,28 @@ export const updateOrganizationRouter = router({
         });
 
         // Track funding toggle analytics if funding status changed (non-blocking)
-        if (input.isOfferingFunds !== undefined || input.isReceivingFunds !== undefined) {
-          waitUntil(trackFundingToggle(
-            user.id,
-            {
-              isOfferingFunds: input.isOfferingFunds,
-              isReceivingFunds: input.isReceivingFunds,
-            },
-            {
-              isOfferingFunds: org.isOfferingFunds ?? false,
-              isReceivingFunds: org.isReceivingFunds ?? false,
-            }
-          ));
+        if (
+          input.isOfferingFunds !== undefined ||
+          input.isReceivingFunds !== undefined
+        ) {
+          const sessionUser = await getSession();
+
+          if (sessionUser && 'user' in sessionUser) {
+            waitUntil(
+              trackFundingToggle(
+                user.id,
+                { organizationId: input.id },
+                {
+                  isOfferingFunds: input.isOfferingFunds,
+                  isReceivingFunds: input.isReceivingFunds,
+                },
+                {
+                  isOfferingFunds: org.isOfferingFunds ?? false,
+                  isReceivingFunds: org.isReceivingFunds ?? false,
+                },
+              ),
+            );
+          }
         }
 
         // invalidate cache and wait for a return so FE can then refetch
