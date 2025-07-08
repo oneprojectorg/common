@@ -6,6 +6,7 @@ import { TRPCError } from '@trpc/server';
 import { Buffer } from 'buffer';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
+import { trackImageUpload } from '../../utils/analytics';
 
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withDB from '../../middlewares/withDB';
@@ -127,12 +128,23 @@ export const uploadAvatarImage = router({
 
       // assign the avatar image
       if (data) {
+        // Check if user had previous avatar
+        const [existingUser] = await db
+          .select({ avatarImageId: users.avatarImageId })
+          .from(users)
+          .where(eq(users.authUserId, ctx.user.id));
+        
+        const hadPreviousImage = existingUser?.avatarImageId;
+        
         await db
           .update(users)
           .set({
             avatarImageId: data.id,
           })
           .where(eq(users.authUserId, ctx.user.id));
+        
+        // Track analytics
+        await trackImageUpload(ctx.user.id, 'profile', !!hadPreviousImage);
       }
 
       // Get signed URL

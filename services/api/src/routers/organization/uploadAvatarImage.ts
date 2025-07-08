@@ -3,6 +3,7 @@ import { TRPCError } from '@trpc/server';
 import { Buffer } from 'buffer';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
+import { trackImageUpload } from '../../utils/analytics';
 
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withDB from '../../middlewares/withDB';
@@ -147,6 +148,11 @@ export const uploadAvatarImage = router({
       logger.info(
         'RETURNING UPLOAD URL' + signedUrlData.signedUrl + ' - ' + filePath,
       );
+      
+      // Track analytics - for organization uploads, we'll track as new uploads since they're temporary
+      const imageType = filePath.includes('banner') ? 'banner' : 'profile';
+      await trackImageUpload(ctx.user.id, imageType, false);
+      
       return {
         url: signedUrlData.signedUrl,
         path: filePath,

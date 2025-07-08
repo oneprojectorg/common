@@ -3,6 +3,7 @@ import { getSession } from '@op/common/src/services/access';
 import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
+import { trackRelationshipAdded } from '../../utils/analytics';
 
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
@@ -48,6 +49,9 @@ export const addRelationshipRouter = router({
           to,
           relationships,
         });
+
+        // Track analytics
+        await trackRelationshipAdded(user.id, relationships);
 
         return { success: true };
       } catch (error: unknown) {

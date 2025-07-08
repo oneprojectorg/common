@@ -3,6 +3,7 @@ import { attachments, posts, postsToOrganizations } from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
+import { trackUserPost } from '../../utils/analytics';
 
 import { postsEncoder } from '../../encoders';
 import withAuthenticated from '../../middlewares/withAuthenticated';
@@ -106,6 +107,9 @@ export const createPostInOrganization = router({
 
         // Run attachments and join record in parallel
         await Promise.all(queryPromises);
+
+        // Track analytics
+        await trackUserPost(ctx.user.id, input.content, allStorageObjects);
 
         const newPost = post;
 

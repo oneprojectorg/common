@@ -2,6 +2,7 @@ import { invalidate } from '@op/cache';
 import { UnauthorizedError, updateOrganization } from '@op/common';
 import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
+import { trackFundingToggle } from '../../utils/analytics';
 
 import { organizationsEncoder } from '../../encoders/organizations';
 import withAuthenticated from '../../middlewares/withAuthenticated';
@@ -40,6 +41,21 @@ export const updateOrganizationRouter = router({
           data: input,
           user,
         });
+
+        // Track funding toggle analytics if funding status changed
+        if (input.isOfferingFunds !== undefined || input.isReceivingFunds !== undefined) {
+          await trackFundingToggle(
+            user.id,
+            {
+              isOfferingFunds: input.isOfferingFunds,
+              isReceivingFunds: input.isReceivingFunds,
+            },
+            {
+              isOfferingFunds: org.isOfferingFunds,
+              isReceivingFunds: org.isReceivingFunds,
+            }
+          );
+        }
 
         // invalidate cache and wait for a return so FE can then refetch
         await Promise.all([

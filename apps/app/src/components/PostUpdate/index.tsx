@@ -15,7 +15,6 @@ import { Skeleton } from '@op/ui/Skeleton';
 import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
 import { useRouter } from 'next/navigation';
-import posthog from 'posthog-js';
 import { useEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 import { LuImage, LuX } from 'react-icons/lu';
@@ -98,8 +97,6 @@ const PostUpdateWithUser = ({
       console.log('ERROR', err);
     },
     onSuccess: () => {
-      posthog.capture('user_posted');
-
       // Clear form and failed post on success
       setContent('');
       setDetectedUrls([]);
