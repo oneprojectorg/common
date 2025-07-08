@@ -1,6 +1,7 @@
 import { UnauthorizedError, addRelationship } from '@op/common';
 import { getSession } from '@op/common/src/services/access';
 import { TRPCError } from '@trpc/server';
+import { waitUntil } from '@vercel/functions';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 import { trackRelationshipAdded } from '../../utils/analytics';
@@ -50,8 +51,8 @@ export const addRelationshipRouter = router({
           relationships,
         });
 
-        // Track analytics
-        await trackRelationshipAdded(user.id, relationships);
+        // Track analytics (non-blocking)
+        waitUntil(trackRelationshipAdded(user.id, relationships));
 
         return { success: true };
       } catch (error: unknown) {

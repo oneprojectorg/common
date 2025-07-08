@@ -1,6 +1,7 @@
 import { UnauthorizedError, getOrgAccessUser } from '@op/common';
 import { attachments, posts, postsToOrganizations } from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
+import { waitUntil } from '@vercel/functions';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 import { trackUserPost } from '../../utils/analytics';
@@ -108,8 +109,8 @@ export const createPostInOrganization = router({
         // Run attachments and join record in parallel
         await Promise.all(queryPromises);
 
-        // Track analytics
-        await trackUserPost(ctx.user.id, input.content, allStorageObjects);
+        // Track analytics (non-blocking)
+        waitUntil(trackUserPost(ctx.user.id, input.content, allStorageObjects));
 
         const newPost = post;
 

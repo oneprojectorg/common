@@ -1,6 +1,7 @@
 import { invalidate } from '@op/cache';
 import { UnauthorizedError, updateOrganization } from '@op/common';
 import { TRPCError } from '@trpc/server';
+import { waitUntil } from '@vercel/functions';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { trackFundingToggle } from '../../utils/analytics';
 
@@ -42,9 +43,9 @@ export const updateOrganizationRouter = router({
           user,
         });
 
-        // Track funding toggle analytics if funding status changed
+        // Track funding toggle analytics if funding status changed (non-blocking)
         if (input.isOfferingFunds !== undefined || input.isReceivingFunds !== undefined) {
-          await trackFundingToggle(
+          waitUntil(trackFundingToggle(
             user.id,
             {
               isOfferingFunds: input.isOfferingFunds,
@@ -54,7 +55,7 @@ export const updateOrganizationRouter = router({
               isOfferingFunds: org.isOfferingFunds,
               isReceivingFunds: org.isReceivingFunds,
             }
-          );
+          ));
         }
 
         // invalidate cache and wait for a return so FE can then refetch

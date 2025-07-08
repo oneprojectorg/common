@@ -3,6 +3,7 @@ import { eq } from '@op/db/client';
 import { users } from '@op/db/schema';
 import { createServerClient } from '@op/supabase/lib';
 import { TRPCError } from '@trpc/server';
+import { waitUntil } from '@vercel/functions';
 import { Buffer } from 'buffer';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
@@ -143,8 +144,8 @@ export const uploadAvatarImage = router({
           })
           .where(eq(users.authUserId, ctx.user.id));
         
-        // Track analytics
-        await trackImageUpload(ctx.user.id, 'profile', !!hadPreviousImage);
+        // Track analytics (non-blocking)
+        waitUntil(trackImageUpload(ctx.user.id, 'profile', !!hadPreviousImage));
       }
 
       // Get signed URL
