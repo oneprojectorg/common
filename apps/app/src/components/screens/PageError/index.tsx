@@ -2,6 +2,7 @@
 
 import { Button } from '@op/ui/Button';
 import { Header2 } from '@op/ui/Header';
+import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
 export interface ErrorProps {
@@ -9,7 +10,9 @@ export interface ErrorProps {
   reset: () => void;
 }
 
-export default function PageError({ error, reset }: ErrorProps) {
+export default function PageError({ error }: ErrorProps) {
+  const router = useRouter();
+
   useEffect(() => {
     console.error('Application error:', error);
   }, [error]);
@@ -23,10 +26,10 @@ export default function PageError({ error, reset }: ErrorProps) {
         <p className="text-center">
           Something went wrong on our end. We're working to fix it.
           <br />
-           Please try again in a moment
+          Please try again in a moment
         </p>
       </div>
-      <Button onPress={reset} color="primary">
+      <Button onPress={() => router.refresh()} color="primary">
         Try again
       </Button>
     </div>

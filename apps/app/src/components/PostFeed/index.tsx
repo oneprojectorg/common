@@ -64,7 +64,7 @@ export const FeedItem = ({
   children: ReactNode;
   className?: string;
 }) => {
-  return <div className={cn('flex gap-4', className)}>{children}</div>;
+  return <div className={cn('flex gap-2', className)}>{children}</div>;
 };
 
 export const FeedContent = ({
@@ -76,7 +76,10 @@ export const FeedContent = ({
 }) => {
   return (
     <div
-      className={cn('flex w-full flex-col gap-2 leading-6', className)}
+      className={cn(
+        'flex w-full flex-col gap-2 leading-6 [&>.mediaItem:first-child]:mt-2',
+        className,
+      )}
       style={{ overflowWrap: 'anywhere' }}
     >
       {children}
@@ -92,7 +95,7 @@ const FeedHeader = ({
   className?: string;
 }) => {
   return (
-    <span className={cn('flex items-baseline gap-2', className)}>
+    <span className={cn('flex items-baseline gap-2 align-baseline', className)}>
       {children}
     </span>
   );
@@ -117,7 +120,7 @@ export const FeedMain = ({
   return (
     <div
       className={cn(
-        'flex min-h-16 w-full flex-col items-start justify-start gap-2 overflow-hidden',
+        'flex min-h-16 w-full flex-col items-start justify-start gap-0 overflow-hidden',
         className,
       )}
       {...props}

@@ -3,6 +3,7 @@ import { Surface } from '@op/ui/Surface';
 import { ReactNode } from 'react';
 import { LuFileText, LuGlobe } from 'react-icons/lu';
 
+import { cn } from '../../lib/utils';
 import { formatFileSize } from '../../utils/file';
 
 export const MediaDisplay = ({
@@ -83,7 +84,7 @@ export const MediaDisplay = ({
   }
 
   return (
-    <Surface className={className}>
+    <Surface className={cn('mediaItem', className)}>
       <a href={url} target="_blank" rel="noopener noreferrer" className="block">
         {children}
 

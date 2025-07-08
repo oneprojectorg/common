@@ -68,9 +68,16 @@ const ToastBody = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-const ToastTitle = ({ title }: { title: string }) => {
+const ToastTitle = ({
+  children,
+}: {
+  className?: string;
+  children: React.ReactNode;
+}) => {
   return (
-    <div className="font-serif text-title-base text-neutral-black">{title}</div>
+    <div className="font-serif text-title-base text-neutral-black">
+      {children}
+    </div>
   );
 };
 
@@ -90,7 +97,7 @@ export const toast = {
       <ToastWrapper id={id} dismissable={dismissable}>
         <LuCircleCheck className="size-6 stroke-1 text-functional-green" />
         <ToastBody>
-          {title ? <ToastTitle title={title} /> : null}
+          {title ? <ToastTitle>{title}</ToastTitle> : null}
           {message ? <div>{message}</div> : null}
           {children}
         </ToastBody>
@@ -102,18 +109,23 @@ export const toast = {
     title,
     message,
     children,
+    dismissable = true,
   }: {
     title?: string;
     message?: string;
     children?: React.ReactNode;
+    dismissable?: boolean;
   }) => {
+    // TODO: some odd behavior with Tailwind text-white an text-title-base conflicting here (the size gets stripped by the compiler).
     return sonnerToast.custom(
       (id) => (
-        <ToastWrapper id={id}>
+        <ToastWrapper id={id} dismissable={dismissable}>
           <LuCircleAlert className="size-6 stroke-1 text-white" />
           <ToastBody>
             {title ? (
-              <div className="text-title-base text-white">{title}</div>
+              <ToastTitle>
+                <span className="text-white">{title}</span>
+              </ToastTitle>
             ) : null}
             {message ? <div className="text-white">{message}</div> : null}
             {children}
@@ -122,7 +134,7 @@ export const toast = {
       ),
       {
         style: {
-          background: 'rgb(239 68 68)', // bg-functional-red equivalent
+          background: 'rgb(203 57 5)', // bg-functional-redBlack equivalent
           color: 'white',
           border: 'none',
         },
