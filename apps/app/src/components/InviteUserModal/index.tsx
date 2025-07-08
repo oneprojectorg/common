@@ -170,10 +170,20 @@ export const InviteUserModal = ({
   };
 
   const triggerButton = children || (
-    <Button color="secondary" variant="icon" className={className}>
-      <LuUserPlus className="min-h-4 min-w-4" />
-      <div className="text-nowrap">{t('Invite users')}</div>
-    </Button>
+    <>
+      <Button color="secondary" variant="icon" className="hidden sm:flex">
+        <LuUserPlus className="min-h-4 min-w-4" />
+        <div className="text-nowrap">{t('Invite users')}</div>
+      </Button>
+      <Button
+        color="neutral"
+        unstyled
+        variant="icon"
+        className="flex size-8 items-center justify-center rounded-full bg-neutral-offWhite sm:hidden"
+      >
+        <LuUserPlus className="min-h-4 min-w-4 text-neutral-gray4" />
+      </Button>
+    </>
   );
 
   return (
