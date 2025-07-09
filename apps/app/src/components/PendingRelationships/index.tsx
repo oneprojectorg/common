@@ -1,6 +1,6 @@
 'use client';
 
-import { relationshipMap } from '@/utils/relationships';
+import { relationshipMap } from '@op/types/relationships';
 import { trpc } from '@op/api/client';
 import { Button } from '@op/ui/Button';
 import { Header2 } from '@op/ui/Header';

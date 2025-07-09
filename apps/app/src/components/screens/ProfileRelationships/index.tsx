@@ -1,7 +1,7 @@
 'use client';
 
 import { pluralize } from '@/utils/pluralize';
-import { RELATIONSHIP_OPTIONS, relationshipMap } from '@/utils/relationships';
+import { RELATIONSHIP_OPTIONS, relationshipMap } from '@op/types/relationships';
 import { RouterOutput, trpc } from '@op/api/client';
 import { Breadcrumb, Breadcrumbs } from '@op/ui/Breadcrumbs';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';

@@ -412,6 +412,9 @@ importers:
       '@op/supabase':
         specifier: workspace:*
         version: link:../../services/supabase
+      '@op/types':
+        specifier: workspace:*
+        version: link:../../packages/types
       '@op/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -624,6 +627,18 @@ importers:
       '@op/typescript-config':
         specifier: workspace:*
         version: link:../../configs/typescript-config
+      typescript:
+        specifier: 5.7.3
+        version: 5.7.3
+
+  packages/types:
+    devDependencies:
+      '@op/typescript-config':
+        specifier: workspace:*
+        version: link:../../configs/typescript-config
+      '@types/node':
+        specifier: ^22.13.5
+        version: 22.13.14
       typescript:
         specifier: 5.7.3
         version: 5.7.3
