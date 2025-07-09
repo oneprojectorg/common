@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { useUser } from '@/utils/UserProvider';
 import { Select, SelectItem } from '@op/ui/Select';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
@@ -31,6 +32,13 @@ export const InviteToExistingOrganization = ({
 }: InviteToExistingOrganizationProps) => {
   const t = useTranslations();
   const { user } = useUser();
+
+  // Ensure first organization is selected if no selection exists
+  React.useEffect(() => {
+    if (!selectedOrganization && user?.currentOrganization?.id) {
+      setSelectedOrganization(user.currentOrganization.id);
+    }
+  }, [selectedOrganization, user?.currentOrganization?.id, setSelectedOrganization]);
 
   const isValidEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
