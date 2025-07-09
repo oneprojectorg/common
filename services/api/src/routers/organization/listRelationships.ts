@@ -1,8 +1,8 @@
 import {
   UnauthorizedError,
   getDirectedRelationships,
+  getPendingRelationships,
   getRelatedOrganizations,
-  getRelationshipsTowardsOrganization,
 } from '@op/common';
 import { getSession } from '@op/common/src/services/access';
 import { TRPCError } from '@trpc/server';
@@ -14,8 +14,8 @@ import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
 const directedInputSchema = z.object({
-  // from: z.string().uuid({ message: 'Invalid source organization ID' }),
-  to: z.string().uuid({ message: 'Invalid target organization ID' }),
+  from: z.string().uuid({ message: 'Invalid source organization ID' }),
+  to: z.string().uuid({ message: 'Invalid target organization ID' }).optional(),
   pending: z.boolean().optional(),
 });
 
@@ -48,27 +48,26 @@ const nonDirectedInputSchema = z.object({
 // };
 
 export const listRelationshipsRouter = router({
-  listRelationshipsTowardsOrganization: loggedProcedure
+  listPendingRelationships: loggedProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticated)
     // .meta(directedMeta)
-    .input(z.object({ pending: z.boolean().optional() }))
-    .query(async ({ ctx, input }) => {
+    .input(z.void())
+    .query(async ({ ctx }) => {
       const { user } = ctx;
-      const { pending } = input;
 
       try {
         const session = await getSession();
-        if (!session) {
+        if (!session || !session.user.lastOrgId) {
           throw new UnauthorizedError('No user found');
         }
 
-        const { records: organizations, count } =
-          await getRelationshipsTowardsOrganization({
+        const { records: organizations, count } = await getPendingRelationships(
+          {
             user,
             orgId: session.user.lastOrgId,
-            pending,
-          });
+          },
+        );
 
         return { organizations, count };
       } catch (error: unknown) {
@@ -91,19 +90,19 @@ export const listRelationshipsRouter = router({
     .input(directedInputSchema)
     .query(async ({ ctx, input }) => {
       const { user } = ctx;
-      const { to, pending } = input;
+      const { to, from, pending } = input;
 
       try {
         const session = await getSession();
-        if (!session) {
+        if (!session || !session.user.lastOrgId) {
           throw new UnauthorizedError('No user found');
         }
 
         const { records: relationships, count } =
           await getDirectedRelationships({
             user,
-            from: session.user.lastOrgId,
-            to,
+            from,
+            to: to ?? session.user.lastOrgId,
             pending,
           });
 

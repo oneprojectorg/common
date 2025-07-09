@@ -1,4 +1,4 @@
-import { RELATIONSHIP_OPTIONS, RelationshipType } from '@/utils/relationships';
+import { RELATIONSHIP_OPTIONS, RelationshipType } from '@op/types/relationships';
 import { trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';

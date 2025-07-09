@@ -1,8 +1,10 @@
 import { UnauthorizedError, approveRelationship } from '@op/common';
 import { getSession } from '@op/common/src/services/access';
 import { TRPCError } from '@trpc/server';
+import { waitUntil } from '@vercel/functions';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
+import { trackRelationshipAccepted } from '@op/analytics';
 
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
@@ -48,6 +50,9 @@ export const approveRelationshipRouter = router({
           targetOrganizationId,
           sourceOrganizationId,
         });
+
+        // Track analytics (non-blocking)
+        waitUntil(trackRelationshipAccepted(user.id));
 
         return true;
       } catch (error: unknown) {

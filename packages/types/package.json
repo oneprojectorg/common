@@ -1,0 +1,20 @@
+{
+  "name": "@op/types",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./relationships": "./src/relationships.ts"
+  },
+  "types": "./src/index.ts",
+  "scripts": {
+    "disable-build": "tsc",
+    "lint": "pnpm tsc --noEmit"
+  },
+  "devDependencies": {
+    "@op/typescript-config": "workspace:*",
+    "@types/node": "^22.13.5",
+    "typescript": "5.7.3"
+  }
+}

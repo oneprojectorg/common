@@ -20,7 +20,7 @@ export const sendInvitationEmail = async ({
   await OPNodemailer({
     to,
     from: `${organizationName ?? inviterName} via Common`,
-    subject: `Action Required: ${inviterName} invited you to join ${organizationName} on Common`,
+    subject: `Action Required: ${inviterName} invited you to join ${organizationName ? `${organizationName} on Common` : 'Common'}`,
     component: () =>
       OPInvitationEmail({
         inviterName,

@@ -36,8 +36,8 @@ export const joinOrganization = async ({
     // Retrieve the pre-mapped user to verify that we can still join without domian mapping
     const allowedUserEmail = await cache<ReturnType<typeof getAllowListUser>>({
       type: 'allowList',
-      params: [user.email],
-      fetch: () => getAllowListUser({ email: user.email }),
+      params: [user.email?.toLowerCase()],
+      fetch: () => getAllowListUser({ email: user.email?.toLowerCase() }),
       options: {
         storeNulls: true,
         ttl: 30 * 60 * 1000,

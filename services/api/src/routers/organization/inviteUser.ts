@@ -103,7 +103,8 @@ export const inviteUserRouter = router({
         };
 
         // Process each email
-        for (const email of emailsToProcess) {
+        for (const rawEmail of emailsToProcess) {
+          const email = rawEmail.toLowerCase();
           try {
             // Check if email is already in the allowList
             const existingEntry = await db.query.allowList.findFirst({

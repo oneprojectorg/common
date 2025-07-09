@@ -10,12 +10,12 @@ import type { Organization } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { TextArea } from '@op/ui/Field';
 import { Form } from '@op/ui/Form';
+import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { MediaDisplay } from '@op/ui/MediaDisplay';
 import { Skeleton } from '@op/ui/Skeleton';
 import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
 import { useRouter } from 'next/navigation';
-import posthog from 'posthog-js';
 import { useEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 import { LuImage, LuX } from 'react-icons/lu';
@@ -98,8 +98,6 @@ const PostUpdateWithUser = ({
       console.log('ERROR', err);
     },
     onSuccess: () => {
-      posthog.capture('user_posted');
-
       // Clear form and failed post on success
       setContent('');
       setDetectedUrls([]);
@@ -301,7 +299,7 @@ const PostUpdateWithUser = ({
                 }
                 onPress={createNewPostUpdate}
               >
-                {createPost.isPending ? 'Posting...' : t('Post')}
+                {createPost.isPending ? <LoadingSpinner /> : t('Post')}
               </Button>
             </div>
           </div>

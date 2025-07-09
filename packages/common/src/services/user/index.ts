@@ -53,7 +53,7 @@ export const getAllowListUser = async ({ email }: { email?: string }) => {
       organizationId: allowList.organizationId,
     })
     .from(allowList)
-    .where(eq(allowList.email, email))
+    .where(eq(allowList.email, email.toLowerCase()))
     .limit(1);
 
   return allowedEmail;

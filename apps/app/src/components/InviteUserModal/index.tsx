@@ -8,6 +8,7 @@ import { DialogTrigger } from '@op/ui/Dialog';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { toast } from '@op/ui/Toast';
+import { useFeatureFlagEnabled } from 'posthog-js/react';
 import { useEffect, useState } from 'react';
 import { LuUserPlus, LuX } from 'react-icons/lu';
 
@@ -34,6 +35,8 @@ export const InviteUserModal = ({ children }: InviteUserModalProps) => {
   const t = useTranslations();
   const { user } = useUser();
   const isOnline = useConnectionStatus();
+
+  const inviteUserEnabled = useFeatureFlagEnabled('invite_admin_user');
 
   // Initialize selected organization when user data is available
   useEffect(() => {
@@ -234,7 +237,9 @@ export const InviteUserModal = ({ children }: InviteUserModalProps) => {
             >
               <TabList aria-label="Invite options">
                 <Tab id="existing">{t('Add to my organization')}</Tab>
-                <Tab id="new">{t('Invite a new organization')}</Tab>
+                {inviteUserEnabled ? (
+                  <Tab id="new">{t('Invite a new organization')}</Tab>
+                ) : null}
               </TabList>
 
               <TabPanel id="existing">
@@ -250,16 +255,18 @@ export const InviteUserModal = ({ children }: InviteUserModalProps) => {
                 />
               </TabPanel>
 
-              <TabPanel id="new">
-                <InviteNewOrganization
-                  emails={emails}
-                  setEmails={setEmails}
-                  emailBadges={emailBadges}
-                  setEmailBadges={setEmailBadges}
-                  personalMessage={personalMessage}
-                  setPersonalMessage={setPersonalMessage}
-                />
-              </TabPanel>
+              {inviteUserEnabled ? (
+                <TabPanel id="new">
+                  <InviteNewOrganization
+                    emails={emails}
+                    setEmails={setEmails}
+                    emailBadges={emailBadges}
+                    setEmailBadges={setEmailBadges}
+                    personalMessage={personalMessage}
+                    setPersonalMessage={setPersonalMessage}
+                  />
+                </TabPanel>
+              ) : null}
             </Tabs>
           </ModalBody>
           {/* Desktop footer - hidden on mobile since actions are in header */}
