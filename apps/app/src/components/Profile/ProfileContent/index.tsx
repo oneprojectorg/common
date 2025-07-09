@@ -154,31 +154,35 @@ const ProfileAbout = ({
       ) : null}
 
       <ErrorBoundary fallback={null}>
-        <Suspense fallback={
-          <section className="flex flex-col gap-2 text-neutral-charcoal">
-            <Header3>Focus Areas</Header3>
-            <div className="flex flex-wrap gap-2">
-              <Skeleton className="h-6 w-16" />
-              <Skeleton className="h-6 w-20" />
-              <Skeleton className="h-6 w-14" />
-            </div>
-          </section>
-        }>
+        <Suspense
+          fallback={
+            <section className="flex flex-col gap-2 text-neutral-charcoal">
+              <Header3>Focus Areas</Header3>
+              <div className="flex flex-wrap gap-2">
+                <Skeleton className="h-6 w-16" />
+                <Skeleton className="h-6 w-20" />
+                <Skeleton className="h-6 w-14" />
+              </div>
+            </section>
+          }
+        >
           <FocusAreas profileId={profile.id} />
         </Suspense>
       </ErrorBoundary>
 
       <ErrorBoundary fallback={null}>
-        <Suspense fallback={
-          <section className="flex flex-col gap-2 text-neutral-charcoal">
-            <Header3>Communities We Serve</Header3>
-            <div className="flex flex-wrap gap-2">
-              <Skeleton className="h-6 w-18" />
-              <Skeleton className="h-6 w-24" />
-              <Skeleton className="h-6 w-16" />
-            </div>
-          </section>
-        }>
+        <Suspense
+          fallback={
+            <section className="flex flex-col gap-2 text-neutral-charcoal">
+              <Header3>Communities We Serve</Header3>
+              <div className="flex flex-wrap gap-2">
+                <Skeleton className="h-6 w-18" />
+                <Skeleton className="h-6 w-24" />
+                <Skeleton className="h-6 w-16" />
+              </div>
+            </section>
+          }
+        >
           <CommunitiesServed profileId={profile.id} />
         </Suspense>
       </ErrorBoundary>
@@ -186,9 +190,9 @@ const ProfileAbout = ({
   );
 };
 
-export const ProfileGrid = ({ profile }: { profile: Organization }) => {
+const ProfileGrid = ({ profile }: { profile: Organization }) => {
   return (
-    <div className="hidden flex-grow grid-cols-15 border-t sm:grid">
+    <div className="hidden flex-grow grid-cols-15 sm:grid">
       <div className="col-span-9 flex flex-col gap-8">
         <Suspense fallback={null}>
           <PostUpdate
@@ -208,6 +212,23 @@ export const ProfileGrid = ({ profile }: { profile: Organization }) => {
 };
 
 export const ProfileTabs = ({ profile }: { profile: Organization }) => {
+  return (
+    <Tabs className="hidden gap-0 px-0 pb-8 sm:flex">
+      <TabList className="px-4">
+        <Tab id="home">Home</Tab>
+        <Tab id="relationships">Relationships</Tab>
+      </TabList>
+      <TabPanel id="home" className="sm:p-0">
+        <ProfileGrid profile={profile} />
+      </TabPanel>
+      <TabPanel id="relationships" className="sm:p-0">
+        <ProfileGrid profile={profile} />
+      </TabPanel>
+    </Tabs>
+  );
+};
+
+export const ProfileTabsMobile = ({ profile }: { profile: Organization }) => {
   return (
     <Tabs className="px-0 pb-8 sm:hidden">
       <TabList className="px-4">
