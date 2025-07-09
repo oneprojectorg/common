@@ -28,6 +28,7 @@ export const organizationStatsRouter = router({
         totalOrganizations: z.number(),
         totalRelationships: z.number(),
         newOrganizations: z.number(),
+        totalUsers: z.number(),
       }),
     )
     .query(async ({ ctx }) => {

@@ -143,6 +143,12 @@ export const OrganizationHighlights = () => {
           </HighlightNumber>
           <HighlightLabel>organizations on Common</HighlightLabel>
         </Highlight>
+        <Highlight>
+          <HighlightNumber className="bg-redPurple">
+            {stats.totalUsers}
+          </HighlightNumber>
+          <HighlightLabel>people on Common</HighlightLabel>
+        </Highlight>
       </div>
       <div className="flex flex-col justify-start gap-2 border-0 border-t bg-neutral-offWhite p-6 text-sm text-neutral-charcoal sm:flex-row sm:items-center">
         <Suspense>
