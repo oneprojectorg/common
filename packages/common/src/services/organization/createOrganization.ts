@@ -111,7 +111,7 @@ export const createOrganization = async ({
         val = `https://${val}`;
       }
       const fullDomain = new URL(val);
-      domain = fullDomain.hostname;
+      domain = fullDomain.hostname.toLowerCase();
       if (
         domain &&
         broadDomains.some((broad) => domain?.match(new RegExp(broad)))

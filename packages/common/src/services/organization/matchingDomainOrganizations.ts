@@ -17,7 +17,7 @@ export const matchingDomainOrganizations = async ({ user }: { user: User }) => {
   try {
     const [results, preMappedOrgs] = await Promise.all([
       db.query.organizations.findMany({
-        where: eq(organizations.domain, emailDomain),
+        where: eq(organizations.domain, emailDomain.toLowerCase()),
         with: {
           profile: {
             with: {
@@ -27,7 +27,7 @@ export const matchingDomainOrganizations = async ({ user }: { user: User }) => {
         },
       }),
       db.query.allowList.findMany({
-        where: eq(allowList.email, user.email),
+        where: eq(allowList.email, user.email.toLowerCase()),
         with: {
           organization: {
             with: {
