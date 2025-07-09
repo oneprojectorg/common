@@ -61,8 +61,8 @@ const withAuthenticated: MiddlewareBuilderBase<TContextWithUser> = async ({
     // Only allow users who are invited
     const allowedUserEmail = await cache<ReturnType<typeof getAllowListUser>>({
       type: 'allowList',
-      params: [user.email],
-      fetch: () => getAllowListUser({ email: user.email }),
+      params: [user.email?.toLowerCase()],
+      fetch: () => getAllowListUser({ email: user.email?.toLowerCase() }),
       options: {
         storeNulls: true,
         ttl: 30 * 60 * 1000,
