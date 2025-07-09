@@ -10,6 +10,7 @@ import type { Organization } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { TextArea } from '@op/ui/Field';
 import { Form } from '@op/ui/Form';
+import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { MediaDisplay } from '@op/ui/MediaDisplay';
 import { Skeleton } from '@op/ui/Skeleton';
 import { toast } from '@op/ui/Toast';
@@ -298,7 +299,7 @@ const PostUpdateWithUser = ({
                 }
                 onPress={createNewPostUpdate}
               >
-                {createPost.isPending ? 'Posting...' : t('Post')}
+                {createPost.isPending ? <LoadingSpinner /> : t('Post')}
               </Button>
             </div>
           </div>
