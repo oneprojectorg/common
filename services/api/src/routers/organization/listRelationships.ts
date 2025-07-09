@@ -1,8 +1,8 @@
 import {
   UnauthorizedError,
   getDirectedRelationships,
+  getPendingRelationships,
   getRelatedOrganizations,
-  getRelationshipsTowardsOrganization,
 } from '@op/common';
 import { getSession } from '@op/common/src/services/access';
 import { TRPCError } from '@trpc/server';
@@ -48,14 +48,13 @@ const nonDirectedInputSchema = z.object({
 // };
 
 export const listRelationshipsRouter = router({
-  listRelationshipsTowardsOrganization: loggedProcedure
+  listPendingRelationships: loggedProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticated)
     // .meta(directedMeta)
-    .input(z.object({ pending: z.boolean().optional() }))
-    .query(async ({ ctx, input }) => {
+    .input(z.void())
+    .query(async ({ ctx }) => {
       const { user } = ctx;
-      const { pending } = input;
 
       try {
         const session = await getSession();
@@ -63,12 +62,12 @@ export const listRelationshipsRouter = router({
           throw new UnauthorizedError('No user found');
         }
 
-        const { records: organizations, count } =
-          await getRelationshipsTowardsOrganization({
+        const { records: organizations, count } = await getPendingRelationships(
+          {
             user,
             orgId: session.user.lastOrgId,
-            pending,
-          });
+          },
+        );
 
         return { organizations, count };
       } catch (error: unknown) {

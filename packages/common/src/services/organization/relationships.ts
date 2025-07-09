@@ -1,4 +1,4 @@
-import { and, db, eq, or, sql } from '@op/db/client';
+import { and, db, eq, or } from '@op/db/client';
 import {
   Organization,
   Profile,
@@ -265,34 +265,29 @@ export const getDirectedRelationships = async ({
   };
 };
 
-export const getRelationshipsTowardsOrganization = async ({
-  // user,
+export const getPendingRelationships = async ({
+  user,
   orgId,
-  pending = null,
 }: {
   user: User;
   orgId: string;
-  pending?: boolean | null;
 }) => {
-  // const orgUser = await getOrgAccessUser({ user, organizationId: orgId });
+  const orgUser = await getOrgAccessUser({ user, organizationId: orgId });
 
   // TODO: ALL USERS IN THE ORG ARE ADMIN AT THE MOMENT
   // assertAccess();
 
-  // if (!orgUser) {
-  // throw new UnauthorizedError('You are not a member of this organization');
-  // }
-  //
+  if (!orgUser) {
+    throw new UnauthorizedError('You are not a member of this organization');
+  }
 
   const where = () =>
     and(
       eq(organizationRelationships.targetOrganizationId, orgId),
-      ...(pending !== null
-        ? [eq(organizationRelationships.pending, pending)]
-        : []),
+      eq(organizationRelationships.pending, true),
     );
 
-  const [relationships, count] = await Promise.all([
+  const [relationships] = await Promise.all([
     db.query.organizationRelationships.findMany({
       where,
       with: {
@@ -316,13 +311,6 @@ export const getRelationshipsTowardsOrganization = async ({
         },
       },
     }),
-    // TODO: this doesn't count the right thing. It counts the relationships rather than the orgs in relationship
-    db
-      .select({
-        count: sql<number>`count(*)::int`,
-      })
-      .from(organizationRelationships)
-      .where(where),
   ]);
 
   // At the moment we combine all the relationships into one distinct org record
@@ -367,7 +355,7 @@ export const getRelationshipsTowardsOrganization = async ({
     ([_, val]) => val,
   );
 
-  return { records: organizations, count: count[0]?.count ?? 0 };
+  return { records: organizations, count: organizations.length };
 };
 
 export const removeRelationship = async ({
