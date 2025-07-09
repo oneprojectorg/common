@@ -1,8 +1,8 @@
 'use client';
 
 import { pluralize } from '@/utils/pluralize';
-import { RELATIONSHIP_OPTIONS, relationshipMap } from '@op/types/relationships';
 import { RouterOutput, trpc } from '@op/api/client';
+import { RELATIONSHIP_OPTIONS, relationshipMap } from '@op/types/relationships';
 import { Breadcrumb, Breadcrumbs } from '@op/ui/Breadcrumbs';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
@@ -159,6 +159,16 @@ const OrganizationNameSuspense = ({ slug }: { slug: string }) => {
   );
 };
 
+export const ProfileRelationshipsComponent = ({ slug }: { slug: string }) => (
+  <div className="flex w-full flex-col gap-3 pt-4 sm:min-h-[calc(100vh-3.5rem)] sm:gap-4 sm:pt-8">
+    <ErrorBoundary errorComponent={() => <div>Could not load profile</div>}>
+      <Suspense fallback={<ProfileRelationshipsSkeleton />}>
+        <ProfileRelationshipsSuspense slug={slug} />
+      </Suspense>
+    </ErrorBoundary>
+  </div>
+);
+
 export const ProfileRelationships = ({ slug }: { slug: string }) => {
   return (
     <>
@@ -176,13 +186,7 @@ export const ProfileRelationships = ({ slug }: { slug: string }) => {
           </Suspense>
         </ErrorBoundary>
       </header>
-      <div className="flex w-full flex-col gap-3 pt-4 sm:min-h-[calc(100vh-3.5rem)] sm:gap-4 sm:pt-8">
-        <ErrorBoundary errorComponent={() => <div>Could not load profile</div>}>
-          <Suspense fallback={<ProfileRelationshipsSkeleton />}>
-            <ProfileRelationshipsSuspense slug={slug} />
-          </Suspense>
-        </ErrorBoundary>
-      </div>
+      <ProfileRelationshipsComponent slug={slug} />
     </>
   );
 };

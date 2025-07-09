@@ -18,6 +18,7 @@ import { ContactLink } from '@/components/ContactLink';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { PostFeedSkeleton } from '@/components/PostFeed';
 import { PostUpdate } from '@/components/PostUpdate';
+import { ProfileRelationshipsComponent } from '@/components/screens/ProfileRelationships';
 
 import { ProfileFeed } from '../ProfileFeed';
 
@@ -221,8 +222,8 @@ export const ProfileTabs = ({ profile }: { profile: Organization }) => {
       <TabPanel id="home" className="sm:p-0">
         <ProfileGrid profile={profile} />
       </TabPanel>
-      <TabPanel id="relationships" className="sm:p-0">
-        <ProfileGrid profile={profile} />
+      <TabPanel id="relationships" className="px-4 sm:py-0">
+        <ProfileRelationshipsComponent slug={profile.profile.slug} />
       </TabPanel>
     </Tabs>
   );
