@@ -7,8 +7,8 @@ import { Breadcrumb, Breadcrumbs } from '@op/ui/Breadcrumbs';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
 import { ErrorBoundary } from 'next/dist/client/components/error-boundary';
-import React, { Suspense, useMemo } from 'react';
-import { LuArrowLeft } from 'react-icons/lu';
+import React, { Suspense, useMemo, useState } from 'react';
+import { LuArrowLeft, LuSearch } from 'react-icons/lu';
 
 import { Link } from '@/lib/i18n';
 
@@ -21,64 +21,72 @@ type relationshipOrganization =
 
 const RelationshipList = ({
   organizations,
+  searchTerm,
 }: {
   organizations: Array<relationshipOrganization>;
+  searchTerm?: string;
 }) => {
+  const filteredOrganizations = useMemo(() => {
+    if (!searchTerm) return organizations;
+    
+    return organizations.filter((org) =>
+      org.profile.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      org.profile.bio?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      org.relationships?.some((rel) =>
+        relationshipMap[rel.relationshipType]?.label.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    );
+  }, [organizations, searchTerm]);
+
   return (
-    <ul className="flex flex-col gap-12 pb-6">
-      {organizations.map((relationshipOrg) => (
-        <li className="flex w-full gap-6">
-          <div>
-            <OrganizationAvatar organization={relationshipOrg} />
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-2 pb-6">
+      {filteredOrganizations.map((relationshipOrg) => (
+        <div key={relationshipOrg.id} className="flex w-full gap-4 rounded-lg border border-neutral-gray1 p-4">
+          <div className="flex-shrink-0">
+            <OrganizationAvatar organization={relationshipOrg} className="size-12" />
           </div>
-          <div>
-            <div className="flex flex-col gap-3 text-neutral-black">
-              <div className="flex flex-col gap-2">
+          <div className="flex-1 min-w-0">
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-1">
                 <Link
-                  className="h-4 font-semibold"
+                  className="font-semibold text-neutral-black hover:text-neutral-charcoal truncate"
                   href={`/org/${relationshipOrg.profile.slug}`}
                 >
                   {relationshipOrg.profile.name}
                 </Link>
-                <div className="flex flex-wrap items-center gap-4 gap-x-1 gap-y-2">
-                  {relationshipOrg.relationships?.map(
-                    (relationship, i, arr) => (
-                      <>
-                        <div className="flex items-center gap-1">
-                          {relationshipMap[relationship.relationshipType]
-                            ?.label ?? 'Relationship'}{' '}
-                          {relationship.pending ? (
-                            <TagGroup>
-                              <Tag className="rounded-sm p-1 text-xs sm:rounded-sm">
-                                Pending
-                              </Tag>
-                            </TagGroup>
-                          ) : null}
-                        </div>
-                        {i < arr.length - 1 && (
-                          <span className="text-neutral-gray4">•</span>
-                        )}
-                      </>
-                    ),
-                  )}
+                <div className="text-sm text-neutral-charcoal">
+                  {relationshipOrg.relationships?.map((relationship, i, arr) => (
+                    <React.Fragment key={relationship.id}>
+                      {relationshipMap[relationship.relationshipType]?.label ?? 'Relationship'}
+                      {relationship.pending && (
+                        <TagGroup className="inline-flex ml-1">
+                          <Tag className="rounded-sm px-1 py-0.5 text-xs">
+                            Pending
+                          </Tag>
+                        </TagGroup>
+                      )}
+                      {i < arr.length - 1 && <span className="mx-1">•</span>}
+                    </React.Fragment>
+                  ))}
                 </div>
               </div>
 
-              <div className="flex items-center gap-1 text-neutral-charcoal">
+              <div className="text-sm text-neutral-charcoal line-clamp-3">
                 {relationshipOrg.profile.bio &&
-                relationshipOrg.profile.bio.length > 325
-                  ? `${relationshipOrg.profile.bio.slice(0, 325)}...`
+                relationshipOrg.profile.bio.length > 200
+                  ? `${relationshipOrg.profile.bio.slice(0, 200)}...`
                   : relationshipOrg.profile.bio}
               </div>
             </div>
           </div>
-        </li>
+        </div>
       ))}
-    </ul>
+    </div>
   );
 };
 
 const ProfileRelationshipsSuspense = ({ slug }: { slug: string }) => {
+  const [searchTerm, setSearchTerm] = useState('');
   const [organization] = trpc.organization.getBySlug.useSuspenseQuery({
     slug,
   });
@@ -112,26 +120,31 @@ const ProfileRelationshipsSuspense = ({ slug }: { slug: string }) => {
           </Breadcrumb>
           <Breadcrumb>Relationships</Breadcrumb>
         </Breadcrumbs>
-        <div className="font-serif text-title-sm sm:text-title-lg">
-          {count} {pluralize('relationship', count)}
+        <div className="flex items-center justify-between">
+          <div className="font-serif text-title-sm sm:text-title-lg">
+            {count} {pluralize('Relationship', count)}
+          </div>
+          <div className="w-72">
+            
+          </div>
         </div>
       </div>
       <Tabs>
         <TabList className="px-4 sm:px-0">
           <Tab id="all">All relationships</Tab>
           {relationshipsSegmented.map(([noun, orgs]) =>
-            orgs?.length ? <Tab id={noun}>{noun}s</Tab> : null,
+            orgs?.length ? <Tab id={noun} key={noun}>{noun}s</Tab> : null,
           )}
         </TabList>
 
         <TabPanel id="all" className="px-4 sm:px-0">
-          <RelationshipList organizations={organizations} />
+          <RelationshipList organizations={organizations} searchTerm={searchTerm} />
         </TabPanel>
 
         {relationshipsSegmented.map(([noun, orgs]) =>
           orgs?.length ? (
-            <TabPanel id={noun} className="px-4 sm:px-0">
-              <RelationshipList organizations={orgs} />
+            <TabPanel id={noun} key={noun} className="px-4 sm:px-0">
+              <RelationshipList organizations={orgs} searchTerm={searchTerm} />
             </TabPanel>
           ) : null,
         )}
