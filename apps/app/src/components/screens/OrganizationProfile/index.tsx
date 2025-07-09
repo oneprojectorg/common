@@ -9,7 +9,6 @@ import { Link } from '@/lib/i18n';
 
 import { ImageHeader } from '@/components/ImageHeader';
 import {
-  ProfileGrid,
   ProfileTabs,
   ProfileTabsMobile,
 } from '@/components/Profile/ProfileContent';
