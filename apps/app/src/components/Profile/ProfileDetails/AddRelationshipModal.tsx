@@ -26,7 +26,7 @@ export const AddRelationshipModalSuspense = ({
   // checking for our relationships TOWARDS the profile
   const [{ relationships }] =
     trpc.organization.listDirectedRelationships.useSuspenseQuery({
-      to: profile.id,
+      from: profile.id,
     });
 
   return (

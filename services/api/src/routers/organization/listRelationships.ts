@@ -14,8 +14,8 @@ import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
 const directedInputSchema = z.object({
-  // from: z.string().uuid({ message: 'Invalid source organization ID' }),
-  to: z.string().uuid({ message: 'Invalid target organization ID' }),
+  from: z.string().uuid({ message: 'Invalid source organization ID' }),
+  to: z.string().uuid({ message: 'Invalid target organization ID' }).optional(),
   pending: z.boolean().optional(),
 });
 
@@ -90,7 +90,7 @@ export const listRelationshipsRouter = router({
     .input(directedInputSchema)
     .query(async ({ ctx, input }) => {
       const { user } = ctx;
-      const { to, pending } = input;
+      const { to, from, pending } = input;
 
       try {
         const session = await getSession();
@@ -101,8 +101,8 @@ export const listRelationshipsRouter = router({
         const { records: relationships, count } =
           await getDirectedRelationships({
             user,
-            from: session.user.lastOrgId,
-            to,
+            from,
+            to: to ?? session.user.lastOrgId,
             pending,
           });
 
