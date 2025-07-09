@@ -555,6 +555,9 @@ importers:
       '@op/supabase':
         specifier: workspace:*
         version: link:../../services/supabase
+      '@op/types':
+        specifier: workspace:*
+        version: link:../types
       '@op/typescript-config':
         specifier: workspace:*
         version: link:../../configs/typescript-config

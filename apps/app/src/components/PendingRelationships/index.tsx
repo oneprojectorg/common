@@ -1,7 +1,7 @@
 'use client';
 
-import { relationshipMap } from '@op/types/relationships';
 import { trpc } from '@op/api/client';
+import { relationshipMap } from '@op/types/relationships';
 import { Button } from '@op/ui/Button';
 import { Header2 } from '@op/ui/Header';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
@@ -17,9 +17,7 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
   });
 
   const [{ organizations, count }] =
-    trpc.organization.listRelationshipsTowardsOrganization.useSuspenseQuery({
-      pending: true,
-    });
+    trpc.organization.listPendingRelationships.useSuspenseQuery();
 
   const [acceptedRelationships, setAcceptedRelationships] = useState<
     Set<string>
@@ -28,7 +26,7 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
   const utils = trpc.useUtils();
   const remove = trpc.organization.declineRelationship.useMutation({
     onSuccess: () => {
-      utils.organization.listRelationshipsTowardsOrganization.invalidate();
+      utils.organization.listPendingRelationships.invalidate();
     },
   });
   const approve = trpc.organization.approveRelationship.useMutation({
@@ -41,7 +39,7 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
       // invalidate so we remove it from the list.
       setTimeout(() => {
         utils.organization.invalidate();
-        utils.organization.listRelationshipsTowardsOrganization.invalidate();
+        utils.organization.listPendingRelationships.invalidate();
       }, 5_000);
     },
   });

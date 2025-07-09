@@ -19,6 +19,7 @@
     "@op/db": "workspace:*",
     "@op/emails": "workspace:*",
     "@op/supabase": "workspace:*",
+    "@op/types": "workspace:*",
     "@op/typescript-config": "workspace:*"
   }
 }

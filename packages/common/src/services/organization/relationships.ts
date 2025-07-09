@@ -1,10 +1,11 @@
-import { and, db, eq, or, sql } from '@op/db/client';
+import { and, db, eq, or } from '@op/db/client';
 import {
   Organization,
   Profile,
   organizationRelationships,
 } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
+import { relationshipMap } from '@op/types';
 
 import { CommonError, UnauthorizedError } from '../../utils';
 import { getOrgAccessUser } from '../access';
@@ -169,18 +170,18 @@ export const getDirectedRelationships = async ({
   // throw new UnauthorizedError('You are not a member of this organization');
   // }
   //
-  const where = () =>
-    and(
-      eq(organizationRelationships.sourceOrganizationId, from),
-      ...(to ? [eq(organizationRelationships.targetOrganizationId, to)] : []),
-      ...(pending !== null
-        ? [eq(organizationRelationships.pending, pending)]
-        : []),
-    );
-
-  const [relationships, count] = await Promise.all([
+  const [relationships, inverseRelationships] = await Promise.all([
     db.query.organizationRelationships.findMany({
-      where,
+      where: () =>
+        and(
+          eq(organizationRelationships.sourceOrganizationId, from),
+          ...(to
+            ? [eq(organizationRelationships.targetOrganizationId, to)]
+            : []),
+          ...(pending !== null
+            ? [eq(organizationRelationships.pending, pending)]
+            : []),
+        ),
       with: {
         targetOrganization: {
           with: {
@@ -202,45 +203,91 @@ export const getDirectedRelationships = async ({
         },
       },
     }),
-    db
-      .select({
-        count: sql<number>`count(*)::int`,
-      })
-      .from(organizationRelationships)
-      .where(where),
+    db.query.organizationRelationships.findMany({
+      where: () =>
+        and(
+          eq(organizationRelationships.targetOrganizationId, from),
+          ...(to
+            ? [eq(organizationRelationships.sourceOrganizationId, to)]
+            : []),
+          ...(pending !== null
+            ? [eq(organizationRelationships.pending, pending)]
+            : []),
+        ),
+      with: {
+        targetOrganization: {
+          with: {
+            profile: {
+              with: {
+                avatarImage: true,
+              },
+            },
+          },
+        },
+        sourceOrganization: {
+          with: {
+            profile: {
+              with: {
+                avatarImage: true,
+              },
+            },
+          },
+        },
+      },
+    }),
   ]);
 
-  return { records: relationships, count: count[0]?.count ?? 0 };
+  // transform the inverse relationships to the proper direction
+  // TODO: Store these in the DB for easier traversal
+  const redirectedInverseRelationships = inverseRelationships.map(
+    (relationship) => {
+      const inverse = {
+        ...relationship,
+        // swap the relationship
+        sourceOrganizationId: relationship.targetOrganizationId,
+        sourceOrganization: relationship.targetOrganization,
+        targetOrganizationId: relationship.sourceOrganizationId,
+        targetOrganization: relationship.sourceOrganization,
+
+        relationshipType:
+          relationshipMap[relationship.relationshipType]?.inverse ??
+          relationship.relationshipType,
+      };
+      return inverse;
+    },
+  );
+
+  const allRelationships = relationships.concat(redirectedInverseRelationships);
+
+  return {
+    records: allRelationships,
+    count: allRelationships.length,
+  };
 };
 
-export const getRelationshipsTowardsOrganization = async ({
-  // user,
+export const getPendingRelationships = async ({
+  user,
   orgId,
-  pending = null,
 }: {
   user: User;
   orgId: string;
-  pending?: boolean | null;
 }) => {
-  // const orgUser = await getOrgAccessUser({ user, organizationId: orgId });
+  const orgUser = await getOrgAccessUser({ user, organizationId: orgId });
 
   // TODO: ALL USERS IN THE ORG ARE ADMIN AT THE MOMENT
   // assertAccess();
 
-  // if (!orgUser) {
-  // throw new UnauthorizedError('You are not a member of this organization');
-  // }
-  //
+  if (!orgUser) {
+    throw new UnauthorizedError('You are not a member of this organization');
+  }
 
   const where = () =>
     and(
       eq(organizationRelationships.targetOrganizationId, orgId),
-      ...(pending !== null
-        ? [eq(organizationRelationships.pending, pending)]
-        : []),
+      eq(organizationRelationships.pending, true),
     );
 
-  const [relationships, count] = await Promise.all([
+  const [relationships] = await Promise.all([
     db.query.organizationRelationships.findMany({
       where,
       with: {
@@ -264,13 +311,6 @@ export const getRelationshipsTowardsOrganization = async ({
         },
       },
     }),
-    // TODO: this doesn't count the right thing. It counts the relationships rather than the orgs in relationship
-    db
-      .select({
-        count: sql<number>`count(*)::int`,
-      })
-      .from(organizationRelationships)
-      .where(where),
   ]);
 
   // At the moment we combine all the relationships into one distinct org record
@@ -299,7 +339,9 @@ export const getRelationshipsTowardsOrganization = async ({
 
     const org = distinctRelationships.get(relatedOrg.id);
     const relationshipRecord = {
-      relationshipType: relationship.relationshipType,
+      relationshipType:
+        relationshipMap[relationship.relationshipType]?.inverse ??
+        relationship.relationshipType,
       pending: relationship.pending,
       createdAt: relationship.createdAt,
     };
@@ -315,7 +357,7 @@ export const getRelationshipsTowardsOrganization = async ({
     ([_, val]) => val,
   );
 
-  return { records: organizations, count: count[0]?.count ?? 0 };
+  return { records: organizations, count: organizations.length };
 };
 
 export const removeRelationship = async ({

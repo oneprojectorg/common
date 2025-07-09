@@ -8,7 +8,7 @@ export const RELATIONSHIP_OPTIONS = [
   },
   {
     key: 'funding',
-    label: 'Funding',
+    label: 'Funder',
     noun: 'Funder',
     inverse: 'fundedBy',
     description: (orgName: string) =>
