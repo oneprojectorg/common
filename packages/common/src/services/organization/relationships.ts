@@ -339,7 +339,9 @@ export const getPendingRelationships = async ({
 
     const org = distinctRelationships.get(relatedOrg.id);
     const relationshipRecord = {
-      relationshipType: relationship.relationshipType,
+      relationshipType:
+        relationshipMap[relationship.relationshipType]?.inverse ??
+        relationship.relationshipType,
       pending: relationship.pending,
       createdAt: relationship.createdAt,
     };
