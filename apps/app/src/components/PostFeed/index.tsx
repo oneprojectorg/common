@@ -95,7 +95,7 @@ const FeedHeader = ({
   className?: string;
 }) => {
   return (
-    <span className={cn('flex items-baseline gap-2 align-baseline', className)}>
+    <span className={cn('flex items-center gap-2 align-baseline', className)}>
       {children}
     </span>
   );
@@ -200,31 +200,31 @@ export const PostFeed = ({
                     {post?.content ? linkifyText(post.content) : null}
                     {post.attachments
                       ? post.attachments.map(({ fileName, storageObject }) => {
-                          const { mimetype, size } = storageObject.metadata;
+                        const { mimetype, size } = storageObject.metadata;
 
-                          return (
-                            <MediaDisplay
-                              key={storageObject.id}
-                              title={fileName}
-                              mimeType={mimetype}
-                              url={
-                                getPublicUrl(storageObject.name) ?? undefined
-                              }
-                              size={size}
-                            >
-                              {mimetype.startsWith('image/') ? (
-                                <div className="relative flex aspect-video w-full items-center justify-center rounded bg-neutral-gray1 text-white">
-                                  <Image
-                                    src={getPublicUrl(storageObject.name) ?? ''}
-                                    alt={fileName}
-                                    fill={true}
-                                    className="size-full object-cover"
-                                  />
-                                </div>
-                              ) : null}
-                            </MediaDisplay>
-                          );
-                        })
+                        return (
+                          <MediaDisplay
+                            key={storageObject.id}
+                            title={fileName}
+                            mimeType={mimetype}
+                            url={
+                              getPublicUrl(storageObject.name) ?? undefined
+                            }
+                            size={size}
+                          >
+                            {mimetype.startsWith('image/') ? (
+                              <div className="relative flex aspect-video w-full items-center justify-center rounded bg-neutral-gray1 text-white">
+                                <Image
+                                  src={getPublicUrl(storageObject.name) ?? ''}
+                                  alt={fileName}
+                                  fill={true}
+                                  className="size-full object-cover"
+                                />
+                              </div>
+                            ) : null}
+                          </MediaDisplay>
+                        );
+                      })
                       : null}
                     {urls.length > 0 && (
                       <div>
