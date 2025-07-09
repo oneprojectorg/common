@@ -25,7 +25,7 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
   );
 
   return (
-    <div className="flex flex-wrap gap-3 sm:gap-4">
+    <div className="flex flex-wrap gap-3 sm:max-w-fit sm:justify-between sm:gap-4 sm:py-2">
       {user?.currentOrganization?.id !== profile.id ? (
         <AddRelationshipModal profile={profile} />
       ) : (
@@ -84,7 +84,7 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
 
 export const ProfileDetails = ({ profile }: { profile: Organization }) => {
   return (
-    <div className="flex w-full flex-col gap-3 px-4">
+    <div className="flex w-full flex-col gap-3 px-4 sm:flex-row">
       <ProfileSummary profile={profile} />
       <ProfileInteractions profile={profile} />
     </div>
