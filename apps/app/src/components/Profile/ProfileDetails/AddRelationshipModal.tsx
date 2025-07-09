@@ -22,7 +22,7 @@ export const AddRelationshipModalSuspense = ({
   profile: Organization;
 }) => {
   const utils = trpc.useUtils();
-  const { user } = useUser();
+  // const { user } = useUser();
   // checking for our relationships TOWARDS the profile
   const [{ relationships }] =
     trpc.organization.listDirectedRelationships.useSuspenseQuery({
@@ -30,21 +30,20 @@ export const AddRelationshipModalSuspense = ({
     });
   // TODO: allow to filter in the API
   // checking for relationships FROM the profile
-  const [{ organizations: inverseRelationships }] =
-    trpc.organization.listRelationships.useSuspenseQuery({
-      organizationId: profile.id,
-    });
+  // const [{ organizations: inverseRelationships }] =
+  // trpc.organization.listRelationships.useSuspenseQuery({
+  // organizationId: profile.id,
+  // });
 
-  const relationshipsToCurrentUserOrg = relationships.find(
-    (relationship) =>
-      relationship.sourceOrganizationId === user?.currentOrganization?.id,
-  )
-    ? []
-    : inverseRelationships.filter(
-        (relationship) => relationship.id === user?.currentOrganization?.id,
-      );
+  // const relationshipsToCurrentUserOrg = relationships.find(
+  // (relationship) =>
+  // relationship.sourceOrganizationId === user?.currentOrganization?.id,
+  // )
+  // ? []
+  // : inverseRelationships.filter(
+  // (relationship) => relationship.id === user?.currentOrganization?.id,
+  // );
 
-  console.log('RELATIONSHIP', relationshipsToCurrentUserOrg[0]?.relationships);
   return (
     <>
       {relationships.length > 0 ? (
@@ -237,7 +236,7 @@ export const AddRelationshipModalSuspense = ({
             </TooltipTrigger>
           );
         })
-      ) : relationshipsToCurrentUserOrg.length <= 0 ? (
+      ) : (
         <DialogTrigger>
           <Button className="min-w-full sm:min-w-fit">
             <LuPlus className="size-4 stroke-1" />
@@ -257,9 +256,9 @@ export const AddRelationshipModalSuspense = ({
             />
           </Modal>
         </DialogTrigger>
-      ) : null}
+      )}
 
-      {relationshipsToCurrentUserOrg[0]?.relationships?.map((relationship) => {
+      {/* relationshipsToCurrentUserOrg[0]?.relationships?.map((relationship) => {
         return (
           <TooltipTrigger isDisabled={!relationship.pending}>
             {(() => {
@@ -374,7 +373,7 @@ export const AddRelationshipModalSuspense = ({
             })()}
           </TooltipTrigger>
         );
-      })}
+      }) */}
     </>
   );
 };
