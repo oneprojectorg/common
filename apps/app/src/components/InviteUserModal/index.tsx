@@ -36,7 +36,9 @@ export const InviteUserModal = ({ children }: InviteUserModalProps) => {
   const { user } = useUser();
   const isOnline = useConnectionStatus();
 
-  const inviteUserEnabled = useFeatureFlagEnabled('invite_admin_user');
+  const inviteUserEnabled =
+    useFeatureFlagEnabled('invite_admin_user') ||
+    user?.currentOrganization?.networkOrganization;
 
   // Initialize selected organization when user data is available
   useEffect(() => {
