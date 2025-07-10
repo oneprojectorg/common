@@ -63,7 +63,7 @@ export const AddRelationshipModalSuspense = ({
                       organizationId: profile.id,
                     });
                     utils.organization.listDirectedRelationships.invalidate({
-                      to: profile.id,
+                      from: profile.id,
                     });
                   }}
                 />
@@ -85,7 +85,7 @@ export const AddRelationshipModalSuspense = ({
                   organizationId: profile.id,
                 });
                 utils.organization.listDirectedRelationships.invalidate({
-                  to: profile.id,
+                  from: profile.id,
                 });
               }}
             />
