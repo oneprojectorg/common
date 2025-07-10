@@ -223,7 +223,10 @@ export const ProfileTabs = ({ profile }: { profile: Organization }) => {
         <ProfileGrid profile={profile} />
       </TabPanel>
       <TabPanel id="relationships" className="px-4 sm:py-0">
-        <ProfileRelationshipsComponent slug={profile.profile.slug} />
+        <ProfileRelationshipsComponent
+          slug={profile.profile.slug}
+          showBreadcrumb={false}
+        />
       </TabPanel>
     </Tabs>
   );
