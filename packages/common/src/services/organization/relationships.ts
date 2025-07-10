@@ -456,14 +456,26 @@ export const declineRelationship = async ({
     await db
       .delete(organizationRelationships)
       .where(
-        and(
-          eq(
-            organizationRelationships.targetOrganizationId,
-            targetOrganizationId,
+        or(
+          and(
+            eq(
+              organizationRelationships.targetOrganizationId,
+              targetOrganizationId,
+            ),
+            eq(
+              organizationRelationships.sourceOrganizationId,
+              sourceOrganizationId,
+            ),
           ),
-          eq(
-            organizationRelationships.sourceOrganizationId,
-            sourceOrganizationId,
+          and(
+            eq(
+              organizationRelationships.sourceOrganizationId,
+              targetOrganizationId,
+            ),
+            eq(
+              organizationRelationships.targetOrganizationId,
+              sourceOrganizationId,
+            ),
           ),
         ),
       )
