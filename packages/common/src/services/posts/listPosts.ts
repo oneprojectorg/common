@@ -1,5 +1,5 @@
-import { and, db, eq, lt, or } from '@op/db/client';
-import { organizations, postsToOrganizations, profiles } from '@op/db/schema';
+import { and, db, eq, lt, or, count, sql } from '@op/db/client';
+import { organizations, postsToOrganizations, profiles, postReactions } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
 import {
@@ -73,6 +73,7 @@ export const listPosts = async ({
                 storageObject: true,
               },
             },
+            reactions: true,
           },
         },
         organization: {
@@ -97,8 +98,33 @@ export const listPosts = async ({
         ? encodeCursor(new Date(lastItem.createdAt), lastItem.postId)
         : null;
 
+    // Transform items to include reaction counts and user's reactions
+    const itemsWithReactions = items.map((item) => {
+      const reactionCounts: Record<string, number> = {};
+      const userReactions: string[] = [];
+
+      // Count reactions by type
+      item.post.reactions.forEach((reaction) => {
+        reactionCounts[reaction.reactionType] = (reactionCounts[reaction.reactionType] || 0) + 1;
+        
+        // Track user's reactions
+        if (reaction.userId === user.id) {
+          userReactions.push(reaction.reactionType);
+        }
+      });
+
+      return {
+        ...item,
+        post: {
+          ...item.post,
+          reactionCounts,
+          userReactions,
+        },
+      };
+    });
+
     return {
-      items,
+      items: itemsWithReactions,
       next: nextCursor,
       hasMore,
     };

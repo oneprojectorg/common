@@ -18,6 +18,7 @@ import { updateOrganizationRouter } from './updateOrganization';
 import { uploadAvatarImage } from './uploadAvatarImage';
 import { uploadPostAttachment } from './uploadPostAttachment';
 import { inviteUserRouter } from './inviteUser';
+import { reactionsRouter } from './reactions';
 
 export const organizationRouter = mergeRouters(
   getOrganizationRouter,
@@ -39,4 +40,5 @@ export const organizationRouter = mergeRouters(
   listRelatedOrganizationPostsRouter,
   joinOrganization,
   inviteUserRouter,
+  reactionsRouter,
 );
