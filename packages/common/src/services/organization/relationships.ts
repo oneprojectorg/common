@@ -1,4 +1,4 @@
-import { and, db, eq, or } from '@op/db/client';
+import { and, db, eq, inArray, or } from '@op/db/client';
 import {
   Organization,
   Profile,
@@ -319,6 +319,7 @@ export const getPendingRelationships = async ({
     string,
     OrganizationWithProfile & {
       relationships?: Array<{
+        id: string;
         relationshipType: string;
         pending: boolean | null;
         createdAt: string | null;
@@ -339,6 +340,7 @@ export const getPendingRelationships = async ({
 
     const org = distinctRelationships.get(relatedOrg.id);
     const relationshipRecord = {
+      id: relationship.id,
       relationshipType:
         relationshipMap[relationship.relationshipType]?.inverse ??
         relationship.relationshipType,
@@ -433,12 +435,12 @@ export const approveRelationship = async ({
 
 export const declineRelationship = async ({
   targetOrganizationId,
-  sourceOrganizationId,
+  ids,
   user,
 }: {
   user: User;
   targetOrganizationId: string;
-  sourceOrganizationId: string;
+  ids: string[];
 }) => {
   const orgUser = await getOrgAccessUser({
     user,
@@ -455,19 +457,7 @@ export const declineRelationship = async ({
   try {
     await db
       .delete(organizationRelationships)
-      .where(
-        and(
-          eq(
-            organizationRelationships.targetOrganizationId,
-            targetOrganizationId,
-          ),
-          eq(
-            organizationRelationships.sourceOrganizationId,
-            sourceOrganizationId,
-          ),
-        ),
-      )
-      .execute();
+      .where(inArray(organizationRelationships.id, ids));
 
     return true;
   } catch (e) {
