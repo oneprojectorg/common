@@ -26,6 +26,7 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
   const utils = trpc.useUtils();
   const remove = trpc.organization.declineRelationship.useMutation({
     onSuccess: () => {
+      utils.organization.invalidate();
       utils.organization.listPendingRelationships.invalidate();
     },
   });
@@ -62,8 +63,9 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
           const relationshipKey = `${org.id}-${organization.id}`;
           const isAccepted = acceptedRelationships.has(relationshipKey);
           const isPending =
-            approve.isPending &&
-            approve.variables?.sourceOrganizationId === org.id;
+            (approve.isPending &&
+              approve.variables?.sourceOrganizationId === org.id) ||
+            remove.isPending;
 
           return (
             <li
@@ -100,15 +102,16 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
                       color="secondary"
                       size="small"
                       className="w-full sm:w-auto"
-                      onPress={() =>
+                      onPress={() => {
+                        console.log('organization decline', org, organization);
                         remove.mutate({
-                          sourceOrganizationId: org.id,
                           targetOrganizationId: organization.id,
-                        })
-                      }
+                          ids: org.relationships?.map((r) => r.id) ?? [],
+                        });
+                      }}
                       isDisabled={isPending}
                     >
-                      Decline
+                      {remove.isPending ? <LoadingSpinner /> : 'Decline'}
                     </Button>
                     <Button
                       size="small"
@@ -121,7 +124,7 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
                       }
                       isDisabled={isPending}
                     >
-                      {isPending ? <LoadingSpinner /> : 'Accept'}
+                      {approve.isPending ? <LoadingSpinner /> : 'Accept'}
                     </Button>
                   </>
                 ) : null}
