@@ -151,36 +151,21 @@ export const FundingInformationForm = ({
                   name="acceptingApplications"
                   children={(acceptingApplicationsField) => (
                     <>
-                      <ToggleRow>
-                        {t(
-                          'Are organizations currently able to apply for funding?',
-                        )}
-                        <ToggleButton
-                          isSelected={
-                            acceptingApplicationsField.state.value as boolean
-                          }
-                          onChange={acceptingApplicationsField.handleChange}
-                        />
-                      </ToggleRow>
                       <div className="flex flex-col gap-4">
-                        {!acceptingApplicationsField.state.value ? (
-                          <form.AppField
-                            name="offeringFundsTerms"
-                            children={(field) => (
-                              <TermsMultiSelect
-                                taxonomy="necFunding"
-                                value={
-                                  (field.state.value as Array<Option>) ?? []
-                                }
-                                label={t(
-                                  'What types of funding are you offering?',
-                                )}
-                                onChange={field.handleChange}
-                                errorMessage={getFieldErrorMessage(field)}
-                              />
-                            )}
-                          />
-                        ) : null}
+                        <form.AppField
+                          name="offeringFundsTerms"
+                          children={(field) => (
+                            <TermsMultiSelect
+                              taxonomy="necFunding"
+                              value={(field.state.value as Array<Option>) ?? []}
+                              label={t(
+                                'What types of funding are you offering?',
+                              )}
+                              onChange={field.handleChange}
+                              errorMessage={getFieldErrorMessage(field)}
+                            />
+                          )}
+                        />
 
                         <form.AppField
                           name="offeringFundsLink"
