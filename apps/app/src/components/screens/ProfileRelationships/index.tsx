@@ -204,7 +204,7 @@ export const ProfileRelationshipsComponent = ({
   slug: string;
   showBreadcrumb?: boolean;
 }) => (
-  <div className="flex w-full flex-col gap-3 pt-4 sm:min-h-[calc(100vh-3.5rem)] sm:gap-4 sm:pt-8">
+  <div className="flex w-full flex-col gap-3 pt-4 sm:min-h-[calc(100vh-3.5rem)] sm:gap-8 sm:pt-8">
     <ErrorBoundary errorComponent={() => <div>Could not load profile</div>}>
       <Suspense fallback={<ProfileRelationshipsSkeleton />}>
         <ProfileRelationshipsSuspense
