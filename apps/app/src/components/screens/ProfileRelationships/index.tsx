@@ -1,13 +1,13 @@
 'use client';
 
 import { pluralize } from '@/utils/pluralize';
-import { RELATIONSHIP_OPTIONS, relationshipMap } from '@op/types/relationships';
 import { RouterOutput, trpc } from '@op/api/client';
+import { RELATIONSHIP_OPTIONS, relationshipMap } from '@op/types/relationships';
 import { Breadcrumb, Breadcrumbs } from '@op/ui/Breadcrumbs';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
 import { ErrorBoundary } from 'next/dist/client/components/error-boundary';
-import React, { Suspense, useMemo } from 'react';
+import React, { Suspense, useMemo, useState } from 'react';
 import { LuArrowLeft } from 'react-icons/lu';
 
 import { Link } from '@/lib/i18n';
@@ -21,64 +21,90 @@ type relationshipOrganization =
 
 const RelationshipList = ({
   organizations,
+  searchTerm,
 }: {
   organizations: Array<relationshipOrganization>;
+  searchTerm?: string;
 }) => {
+  const filteredOrganizations = useMemo(() => {
+    if (!searchTerm) return organizations;
+
+    return organizations.filter(
+      (org) =>
+        org.profile.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        org.profile.bio?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        org.relationships?.some((rel) =>
+          relationshipMap[rel.relationshipType]?.label
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase()),
+        ),
+    );
+  }, [organizations, searchTerm]);
+
   return (
-    <ul className="flex flex-col gap-12 pb-6">
-      {organizations.map((relationshipOrg) => (
-        <li className="flex w-full gap-6">
-          <div>
-            <OrganizationAvatar organization={relationshipOrg} />
+    <div className="grid grid-cols-1 gap-8 pb-6 md:grid-cols-2">
+      {filteredOrganizations.map((relationshipOrg) => (
+        <div
+          key={relationshipOrg.id}
+          className="flex w-full gap-4 rounded border border-neutral-gray1 p-6"
+        >
+          <div className="flex-shrink-0">
+            <OrganizationAvatar
+              organization={relationshipOrg}
+              className="size-20"
+            />
           </div>
-          <div>
-            <div className="flex flex-col gap-3 text-neutral-black">
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-col gap-2">
               <div className="flex flex-col gap-2">
                 <Link
-                  className="h-4 font-semibold"
+                  className="truncate font-semibold text-neutral-black"
                   href={`/org/${relationshipOrg.profile.slug}`}
                 >
                   {relationshipOrg.profile.name}
                 </Link>
-                <div className="flex flex-wrap items-center gap-4 gap-x-1 gap-y-2">
+                <div className="text-neutral-black">
                   {relationshipOrg.relationships?.map(
                     (relationship, i, arr) => (
-                      <>
-                        <div className="flex items-center gap-1">
-                          {relationshipMap[relationship.relationshipType]
-                            ?.label ?? 'Relationship'}{' '}
-                          {relationship.pending ? (
-                            <TagGroup>
-                              <Tag className="rounded-sm p-1 text-xs sm:rounded-sm">
-                                Pending
-                              </Tag>
-                            </TagGroup>
-                          ) : null}
-                        </div>
-                        {i < arr.length - 1 && (
-                          <span className="text-neutral-gray4">•</span>
+                      <React.Fragment key={relationship.relationshipType}>
+                        {relationshipMap[relationship.relationshipType]
+                          ?.label ?? 'Relationship'}
+                        {relationship.pending && (
+                          <TagGroup className="ml-1 inline-flex">
+                            <Tag className="rounded-sm px-1 py-0.5 text-xs">
+                              Pending
+                            </Tag>
+                          </TagGroup>
                         )}
-                      </>
+                        {i < arr.length - 1 && <span className="mx-1">•</span>}
+                      </React.Fragment>
                     ),
                   )}
                 </div>
               </div>
 
-              <div className="flex items-center gap-1 text-neutral-charcoal">
+              <div className="line-clamp-3 text-neutral-charcoal">
                 {relationshipOrg.profile.bio &&
-                relationshipOrg.profile.bio.length > 325
-                  ? `${relationshipOrg.profile.bio.slice(0, 325)}...`
+                relationshipOrg.profile.bio.length > 200
+                  ? `${relationshipOrg.profile.bio.slice(0, 200)}...`
                   : relationshipOrg.profile.bio}
               </div>
             </div>
           </div>
-        </li>
+        </div>
       ))}
-    </ul>
+    </div>
   );
 };
 
-const ProfileRelationshipsSuspense = ({ slug }: { slug: string }) => {
+const ProfileRelationshipsSuspense = ({
+  slug,
+  showBreadcrumb = true,
+}: {
+  slug: string;
+  showBreadcrumb?: boolean;
+}) => {
+  const [searchTerm] = useState('');
   const [organization] = trpc.organization.getBySlug.useSuspenseQuery({
     slug,
   });
@@ -106,32 +132,46 @@ const ProfileRelationshipsSuspense = ({ slug }: { slug: string }) => {
   return (
     <>
       <div className="flex flex-col gap-4 px-4 sm:px-0">
-        <Breadcrumbs className="hidden sm:flex">
-          <Breadcrumb href={`/org/${slug}`}>
-            {organization.profile.name}
-          </Breadcrumb>
-          <Breadcrumb>Relationships</Breadcrumb>
-        </Breadcrumbs>
-        <div className="font-serif text-title-sm sm:text-title-lg">
-          {count} {pluralize('relationship', count)}
+        {showBreadcrumb ? (
+          <Breadcrumbs className="hidden sm:flex">
+            <Breadcrumb href={`/org/${slug}`}>
+              {organization.profile.name}
+            </Breadcrumb>
+            <Breadcrumb>Relationships</Breadcrumb>
+          </Breadcrumbs>
+        ) : null}
+        <div className="flex items-center justify-between">
+          <div className="font-serif text-title-sm sm:text-title-lg">
+            {count} {pluralize('Relationship', count)}
+          </div>
+          <div className="w-72"></div>
         </div>
       </div>
       <Tabs>
-        <TabList className="px-4 sm:px-0">
-          <Tab id="all">All relationships</Tab>
+        <TabList className="px-4 sm:px-0" variant="pill">
+          <Tab id="all" variant="pill">
+            All relationships
+          </Tab>
           {relationshipsSegmented.map(([noun, orgs]) =>
-            orgs?.length ? <Tab id={noun}>{noun}s</Tab> : null,
+            orgs?.length ? (
+              <Tab id={noun} key={noun} variant="pill">
+                {noun}s
+              </Tab>
+            ) : null,
           )}
         </TabList>
 
         <TabPanel id="all" className="px-4 sm:px-0">
-          <RelationshipList organizations={organizations} />
+          <RelationshipList
+            organizations={organizations}
+            searchTerm={searchTerm}
+          />
         </TabPanel>
 
         {relationshipsSegmented.map(([noun, orgs]) =>
           orgs?.length ? (
-            <TabPanel id={noun} className="px-4 sm:px-0">
-              <RelationshipList organizations={orgs} />
+            <TabPanel id={noun} key={noun} className="px-4 sm:px-0">
+              <RelationshipList organizations={orgs} searchTerm={searchTerm} />
             </TabPanel>
           ) : null,
         )}
@@ -159,6 +199,25 @@ const OrganizationNameSuspense = ({ slug }: { slug: string }) => {
   );
 };
 
+export const ProfileRelationshipsComponent = ({
+  slug,
+  showBreadcrumb,
+}: {
+  slug: string;
+  showBreadcrumb?: boolean;
+}) => (
+  <div className="flex w-full flex-col gap-3 pt-4 sm:min-h-[calc(100vh-3.5rem)] sm:gap-8 sm:pt-8">
+    <ErrorBoundary errorComponent={() => <div>Could not load profile</div>}>
+      <Suspense fallback={<ProfileRelationshipsSkeleton />}>
+        <ProfileRelationshipsSuspense
+          slug={slug}
+          showBreadcrumb={showBreadcrumb}
+        />
+      </Suspense>
+    </ErrorBoundary>
+  </div>
+);
+
 export const ProfileRelationships = ({ slug }: { slug: string }) => {
   return (
     <>
@@ -176,13 +235,7 @@ export const ProfileRelationships = ({ slug }: { slug: string }) => {
           </Suspense>
         </ErrorBoundary>
       </header>
-      <div className="flex w-full flex-col gap-3 pt-4 sm:min-h-[calc(100vh-3.5rem)] sm:gap-4 sm:pt-8">
-        <ErrorBoundary errorComponent={() => <div>Could not load profile</div>}>
-          <Suspense fallback={<ProfileRelationshipsSkeleton />}>
-            <ProfileRelationshipsSuspense slug={slug} />
-          </Suspense>
-        </ErrorBoundary>
-      </div>
+      <ProfileRelationshipsComponent slug={slug} />
     </>
   );
 };

@@ -304,6 +304,8 @@ const config: Omit<Config, 'content'> = {
           'radial-gradient(154% 99.31% at 0% 0%, #3EC300 0%, #0396A6 51.56%)',
         redTeal:
           'radial-gradient(96.92% 140.1% at 72.02% 100%, #0396A6 0%, #FF613D 92.19%, #FFFBFA 99.99%)',
+        redPurple:
+          'radial-gradient(70.56% 70.56% at 72.75% 33.21%, #6200C3 0%, #FF613D 100%)',
         orange:
           'radial-gradient(96.92% 140.1% at 72.02% 100%, #E35F00 0%, #DE8D00 48.44%, #FF9739 99.99%)',
         blueGreen:
