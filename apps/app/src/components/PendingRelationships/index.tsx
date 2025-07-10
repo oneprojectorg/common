@@ -103,7 +103,6 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
                       size="small"
                       className="w-full sm:w-auto"
                       onPress={() => {
-                        console.log('organization decline', org, organization);
                         remove.mutate({
                           targetOrganizationId: organization.id,
                           ids: org.relationships?.map((r) => r.id) ?? [],
