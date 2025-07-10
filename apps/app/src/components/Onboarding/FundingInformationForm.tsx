@@ -25,6 +25,7 @@ export const validator = z.object({
     .optional(),
   receivingFundsTerms: z.array(multiSelectOptionValidator).optional(),
   receivingFundsLink: zodUrl({ message: 'Enter a valid website address' }),
+  offeringFundsTerms: z.array(multiSelectOptionValidator).optional(),
   offeringFundsDescription: z
     .string()
     .max(200, { message: 'Must be at most 200 characters' })
@@ -164,21 +165,18 @@ export const FundingInformationForm = ({
                       <div className="flex flex-col gap-4">
                         {!acceptingApplicationsField.state.value ? (
                           <form.AppField
-                            name="offeringFundsDescription"
+                            name="offeringFundsTerms"
                             children={(field) => (
-                              <field.TextField
-                                useTextArea
-                                label={t('What is your funding process?')}
-                                value={field.state.value as string}
-                                onBlur={field.handleBlur}
+                              <TermsMultiSelect
+                                taxonomy="necFunding"
+                                value={
+                                  (field.state.value as Array<Option>) ?? []
+                                }
+                                label={t(
+                                  'What types of funding are you offering?',
+                                )}
                                 onChange={field.handleChange}
                                 errorMessage={getFieldErrorMessage(field)}
-                                textareaProps={{
-                                  className: 'min-h-32',
-                                  placeholder: t(
-                                    'Enter a description of the type of funding you’re seeking (e.g., grants, integrated capital, etc.)',
-                                  ),
-                                }}
                               />
                             )}
                           />

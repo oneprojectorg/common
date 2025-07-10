@@ -57,6 +57,14 @@ export const baseOrganizationSchema = z.object({
       }),
     )
     .optional(),
+  offeringFundsTerms: z
+    .array(
+      z.object({
+        id: z.string(),
+        label: z.string(),
+      }),
+    )
+    .optional(),
   communitiesServed: z.array(
     z.object({
       id: z.string(),
