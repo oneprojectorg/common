@@ -156,9 +156,9 @@ export const PostFeed = ({
                   className="!size-8 max-h-8 max-w-8"
                 />
                 <FeedMain>
-                  <FeedHeader className="w-full justify-between">
+                  <FeedHeader className="relative w-full justify-between">
                     <div className="flex items-baseline gap-2">
-                      <Header3 className="pt-2 font-medium leading-3">
+                      <Header3 className="font-medium leading-3">
                         {withLinks ? (
                           <Link href={`/org/${organization?.profile.slug}`}>
                             {organization?.profile.name}
@@ -181,7 +181,7 @@ export const PostFeed = ({
                             color="neutral"
                             variant="icon"
                             size="small"
-                            className="size-6 rounded-full border-0 bg-white p-1 outline-0 aria-expanded:bg-neutral-gray1"
+                            className="absolute right-0 top-0 size-6 rounded-full border-0 bg-white p-1 outline-0 aria-expanded:bg-neutral-gray1"
                           >
                             <LuEllipsis className="size-4" />
                           </Button>
