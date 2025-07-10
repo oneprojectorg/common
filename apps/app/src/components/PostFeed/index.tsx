@@ -120,7 +120,7 @@ export const FeedMain = ({
   return (
     <div
       className={cn(
-        'flex min-h-16 w-full flex-col items-start justify-start gap-0 overflow-hidden',
+        'flex w-full flex-col items-start justify-start gap-0 overflow-hidden',
         className,
       )}
       {...props}
