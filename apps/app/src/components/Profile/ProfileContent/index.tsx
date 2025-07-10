@@ -202,7 +202,7 @@ const ProfileGrid = ({ profile }: { profile: Organization }) => {
           />
         </Suspense>
         <Suspense fallback={<PostFeedSkeleton className="px-4" numPosts={3} />}>
-          <ProfileFeed profile={profile} className="px-4" />
+          <ProfileFeed profile={profile} />
         </Suspense>
       </div>
       <div className="col-span-6 border-l px-4 py-6">

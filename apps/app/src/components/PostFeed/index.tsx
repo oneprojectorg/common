@@ -142,7 +142,7 @@ export const PostFeed = ({
   withLinks?: boolean;
 }) => {
   return (
-    <div className={cn('flex flex-col gap-6 pb-8', className)}>
+    <div className={cn('flex flex-col gap-6 pb-8 sm:px-4', className)}>
       {posts.length > 0 ? (
         posts.map(({ organization, post }, i) => {
           const { urls } = detectLinks(post?.content);
