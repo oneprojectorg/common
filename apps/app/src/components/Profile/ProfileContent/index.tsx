@@ -215,14 +215,14 @@ const ProfileGrid = ({ profile }: { profile: Organization }) => {
 export const ProfileTabs = ({ profile }: { profile: Organization }) => {
   return (
     <Tabs className="hidden gap-0 px-0 pb-8 sm:flex">
-      <TabList className="px-4">
+      <TabList className="px-4 sm:px-6">
         <Tab id="home">Home</Tab>
         <Tab id="relationships">Relationships</Tab>
       </TabList>
       <TabPanel id="home" className="sm:p-0">
         <ProfileGrid profile={profile} />
       </TabPanel>
-      <TabPanel id="relationships" className="px-4 sm:py-0">
+      <TabPanel id="relationships" className="px-4 sm:px-6 sm:py-0">
         <ProfileRelationshipsComponent
           slug={profile.profile.slug}
           showBreadcrumb={false}
