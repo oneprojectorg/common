@@ -3,12 +3,15 @@ import {
   Organization,
   Profile,
   organizationRelationships,
+  organizationUsers,
+  organizations,
 } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 import { relationshipMap } from '@op/types';
 
 import { CommonError, UnauthorizedError } from '../../utils';
 import { getOrgAccessUser } from '../access';
+import { sendRelationshipRequestEmail } from '../email';
 
 type OrganizationWithProfile = Organization & {
   profile: Profile & { avatarImage: any };
@@ -34,6 +37,22 @@ export const addRelationship = async ({
     throw new UnauthorizedError('You are not a member of this organization');
   }
 
+  // Get organization details for email
+  const [sourceOrg, targetOrg] = await Promise.all([
+    db.query.organizations.findFirst({
+      where: eq(organizations.id, from),
+      with: { profile: true },
+    }),
+    db.query.organizations.findFirst({
+      where: eq(organizations.id, to),
+      with: { profile: true },
+    }),
+  ]);
+
+  if (!sourceOrg || !targetOrg) {
+    throw new CommonError('Organization not found');
+  }
+
   await db.transaction(async (tx) => {
     await Promise.all(
       relationships.map((relationship) =>
@@ -49,6 +68,42 @@ export const addRelationship = async ({
       ),
     );
   });
+
+  // Send email notifications to target organization admin users only
+  try {
+    const targetOrgAdmins = await db.query.organizationUsers.findMany({
+      where: eq(organizationUsers.organizationId, to),
+      with: {
+        roles: {
+          with: {
+            accessRole: true,
+          },
+        },
+      },
+    });
+
+    // Filter for users with admin roles
+    const adminUsers = targetOrgAdmins.filter((orgUser) =>
+      orgUser.roles.some((role) => role.accessRole.name === 'Admin'),
+    );
+
+    const approvalUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://common.oneproject.org'}/organizations/${to}/relationships`;
+
+    await Promise.all(
+      adminUsers.map((adminUser) =>
+        sendRelationshipRequestEmail({
+          to: adminUser.email,
+          requesterOrgName: (sourceOrg.profile as any)?.name || 'Unknown Organization',
+          targetOrgName: (targetOrg.profile as any)?.name || 'Unknown Organization',
+          relationshipTypes: relationships,
+          approvalUrl,
+        }),
+      ),
+    );
+  } catch (emailError) {
+    // Log email error but don't fail the relationship creation
+    console.error('Failed to send relationship request emails:', emailError);
+  }
 };
 
 // TODO: this can be a heavy query if we don't watch it

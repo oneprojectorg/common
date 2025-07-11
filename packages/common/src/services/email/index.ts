@@ -30,3 +30,39 @@ export const sendInvitationEmail = async ({
       }),
   });
 };
+
+export interface SendRelationshipRequestEmailParams {
+  to: string;
+  requesterOrgName: string;
+  targetOrgName: string;
+  relationshipTypes: string[];
+  approvalUrl: string;
+  requesterMessage?: string;
+}
+
+export const sendRelationshipRequestEmail = async ({
+  to,
+  requesterOrgName,
+  targetOrgName,
+  relationshipTypes,
+  approvalUrl,
+  requesterMessage,
+}: SendRelationshipRequestEmailParams): Promise<void> => {
+  // Use dynamic imports to avoid build issues with workspace dependencies
+  const { OPNodemailer } = await import('@op/emails');
+  const { OPRelationshipRequestEmail } = await import('@op/emails');
+
+  await OPNodemailer({
+    to,
+    from: `${requesterOrgName} via Common`,
+    subject: `New relationship request from ${requesterOrgName}`,
+    component: () =>
+      OPRelationshipRequestEmail({
+        requesterOrgName,
+        targetOrgName,
+        relationshipTypes,
+        approvalUrl,
+        requesterMessage,
+      }),
+  });
+};
