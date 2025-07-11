@@ -80,15 +80,17 @@ export interface ButtonProps
   extends React.ComponentProps<typeof RACButton>,
     ButtonVariants {
   className?: string;
+  padding?: string;
 }
 
 export const Button = (props: ButtonProps) => {
-  const { unstyled, ...rest } = props;
+  const { unstyled, padding, ...rest } = props;
 
   return (
     <RACButton
       {...rest}
       className={unstyled ? props.className : buttonStyle(props)}
+      style={{ padding, ...rest.style }}
     />
   );
 };
@@ -97,10 +99,12 @@ export interface ButtonLinkProps
   extends React.ComponentProps<typeof RACLink>,
     ButtonVariants {
   className?: string;
+  padding?: string;
 }
 
 export const ButtonLink = (props: ButtonLinkProps) => {
-  return <RACLink {...props} className={buttonStyle(props)} />;
+  const { padding, ...rest } = props;
+  return <RACLink {...rest} className={buttonStyle(props)} style={{ padding, ...rest.style }} />;
 };
 
 export interface ButtonTooltipProps extends ButtonProps {

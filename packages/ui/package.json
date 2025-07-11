@@ -44,6 +44,7 @@
     "./TextField": "./src/components/TextField.tsx",
     "./Toast": "./src/components/Toast.tsx",
     "./ToggleButton": "./src/components/ToggleButton.tsx",
+    "./ReactionButton": "./src/components/ReactionButton.tsx",
     "./Tooltip": "./src/components/Tooltip.tsx",
     "./LoadingSpinner": "./src/components/LoadingSpinner.tsx",
     "./tailwind-config": "./tailwind.shared.ts",
