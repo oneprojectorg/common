@@ -1,6 +1,10 @@
-import { RELATIONSHIP_OPTIONS, RelationshipType } from '@op/types/relationships';
+import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
+import {
+  RELATIONSHIP_OPTIONS,
+  RelationshipType,
+} from '@op/types/relationships';
 import { Button } from '@op/ui/Button';
 import { Checkbox } from '@op/ui/Checkbox';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
@@ -8,8 +12,6 @@ import { ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Dialog } from '@op/ui/RAC';
 import { toast } from '@op/ui/Toast';
 import { FormEvent, useState, useTransition } from 'react';
-
-import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 
 import { FundingRole, FundingRoleModal } from './FundingRoleModal';
 
@@ -72,14 +74,14 @@ export const AddRelationshipForm = ({
         close();
       } catch (e) {
         const errorInfo = analyzeError(e);
-        
+
         if (errorInfo.isConnectionError) {
           toast.error({
             title: 'Connection issue',
             message: errorInfo.message + ' Please try submitting again.',
           });
         } else {
-          toast.error({ 
+          toast.error({
             title: 'Could not create relationship',
             message: errorInfo.message,
           });
@@ -115,9 +117,14 @@ export const AddRelationshipForm = ({
   };
 
   const filteredRelationshipOptions = profile.networkOrganization
-    ? RELATIONSHIP_OPTIONS.filter((option) => option.key !== 'fundedBy')
+    ? RELATIONSHIP_OPTIONS.filter(
+        (option) => option.key !== 'hasMember' && option.key !== 'fundedBy',
+      )
     : RELATIONSHIP_OPTIONS.filter(
-        (option) => option.key !== 'memberOf' && option.key !== 'fundedBy',
+        (option) =>
+          option.key !== 'memberOf' &&
+          option.key !== 'hasMember' &&
+          option.key !== 'fundedBy',
       );
 
   return (

@@ -8,7 +8,7 @@ export function cn(...inputs: ClassValue[]) {
 
 export const GRADIENTS = [
   'bg-gradient',
-  'bg-tealGreen',
+  // 'bg-tealGreen',
   'bg-redTeal',
   'bg-blueGreen',
   'bg-orangePurple',

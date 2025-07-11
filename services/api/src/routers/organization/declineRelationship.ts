@@ -12,7 +12,7 @@ const inputSchema = z.object({
   targetOrganizationId: z
     .string()
     .uuid({ message: 'Invalid target organization ID' }),
-  sourceOrganizationId: z.string().uuid({ message: 'Invalid organization ID' }),
+  ids: z.array(z.string()),
 });
 
 const meta: OpenApiMeta = {
@@ -35,7 +35,7 @@ export const declineRelationshipRouter = router({
     .output(z.boolean())
     .mutation(async ({ ctx, input }) => {
       const { user } = ctx;
-      const { targetOrganizationId, sourceOrganizationId } = input;
+      const { ids, targetOrganizationId } = input;
 
       try {
         const session = await getSession();
@@ -46,7 +46,7 @@ export const declineRelationshipRouter = router({
         await declineRelationship({
           user,
           targetOrganizationId,
-          sourceOrganizationId,
+          ids,
         });
 
         return true;

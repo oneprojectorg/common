@@ -174,7 +174,7 @@ export const createOrganization = async ({
       .where(eq(users.authUserId, user.id)),
   ]);
 
-  console.error('adminRole:', adminRole, 'newOrgUser:', newOrgUser);
+  console.log('adminRole:', adminRole, 'newOrgUser:', newOrgUser);
   // Add admin role to the user creating the organization
   if (!(adminRole && newOrgUser)) {
     throw new CommonError('Failed to create organization');
@@ -184,7 +184,6 @@ export const createOrganization = async ({
     organizationUserId: newOrgUser.id,
     accessRoleId: adminRole.id,
   });
-  console.log('CREATED ALL for NEW ORG');
 
   try {
     // Add funding links
@@ -261,8 +260,13 @@ export const createOrganization = async ({
       );
     }
 
-    const { focusAreas, strategies, communitiesServed, receivingFundsTerms } =
-      data;
+    const {
+      focusAreas,
+      strategies,
+      communitiesServed,
+      receivingFundsTerms,
+      offeringFundsTerms,
+    } = data;
 
     // add all stategy terms to the org (strategy terms already exist in the DB)
     // TODO: parallelize this
@@ -282,10 +286,16 @@ export const createOrganization = async ({
     }
 
     // TODO: this was changed quickly in the process. We are transitioning to this way of doing terms.
-    if (focusAreas || communitiesServed || receivingFundsTerms) {
+    if (
+      focusAreas ||
+      communitiesServed ||
+      receivingFundsTerms ||
+      offeringFundsTerms
+    ) {
       const terms = [
         ...(communitiesServed ?? []),
         ...(receivingFundsTerms ?? []),
+        ...(offeringFundsTerms ?? []),
         ...(focusAreas ?? []),
       ];
 

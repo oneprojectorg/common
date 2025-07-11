@@ -8,7 +8,10 @@ import { LuArrowLeft } from 'react-icons/lu';
 import { Link } from '@/lib/i18n';
 
 import { ImageHeader } from '@/components/ImageHeader';
-import { ProfileGrid, ProfileTabs } from '@/components/Profile/ProfileContent';
+import {
+  ProfileTabs,
+  ProfileTabsMobile,
+} from '@/components/Profile/ProfileContent';
 import { ProfileDetails } from '@/components/Profile/ProfileDetails';
 
 const OrganizationProfileWithData = async ({ slug }: { slug: string }) => {
@@ -49,8 +52,8 @@ const OrganizationProfileWithData = async ({ slug }: { slug: string }) => {
         />
 
         <ProfileDetails profile={organization} />
-        <ProfileGrid profile={organization} />
         <ProfileTabs profile={organization} />
+        <ProfileTabsMobile profile={organization} />
       </>
     );
   } catch (e) {
