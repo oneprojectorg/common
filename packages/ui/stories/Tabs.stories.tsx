@@ -12,7 +12,7 @@ const meta: Meta<typeof Tabs> = {
 
 export default meta;
 
-export const Example = (args: any) => (
+export const Example = () => (
   <Tabs>
     <TabList aria-label="History">
       <Tab id="photos">Photos</Tab>
