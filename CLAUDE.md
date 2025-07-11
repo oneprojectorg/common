@@ -72,30 +72,22 @@ Use `pnpm w:<workspace>` shortcuts:
 - Shared configs in `configs/typescript-config/`
 - Each workspace extends appropriate base config (nextjs.json, react-library.json, etc.)
 
-## Contributing Guidelines
+## AI Assistant Guidelines
 
-### Git Workflow
+### Branch Management
 
 - **ALWAYS** checkout a new branch when making changes if currently on the `dev` branch
 - **Branch naming convention**:
   - Bug fixes: `bug/descriptive-name` (e.g., `bug/fix-login-validation`)
   - Features: `feature/descriptive-name` (e.g., `feature/user-dashboard`)
-- **Claude will NEVER commit, push, or pull** - these actions are always manual
+- **NEVER commit, push, or pull** - these actions are always manual
 
-### Code Quality
+### Code Quality Standards
 
-- Run type checking with `pnpm w:app lint` before any manual commits
-- Format code with `pnpm format` before any manual commits
-- Follow existing code conventions and patterns in the file you're editing
-- Test changes thoroughly
-
-### Development Process
-
-1. Check current branch: `git branch`
-2. If on `dev`, create new branch: `git checkout -b feature/your-feature-name`
-3. Make changes following the architecture patterns
-4. Test and lint code
-5. Manual commit, push, and pull request creation by user
+- Run type checking with `pnpm w:app lint` after making changes
+- Format code with `pnpm format` after making changes
+- Follow existing code conventions and patterns in the file being edited
+- Test changes thoroughly before completion
 
 ## Important Notes
 
