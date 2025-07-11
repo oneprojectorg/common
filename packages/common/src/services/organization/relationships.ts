@@ -87,14 +87,16 @@ export const addRelationship = async ({
       orgUser.roles.some((role) => role.accessRole.name === 'Admin'),
     );
 
-    const approvalUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://common.oneproject.org'}/organizations/${to}/relationships`;
+    const approvalUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://common.oneproject.org'}`;
 
     await Promise.all(
       adminUsers.map((adminUser) =>
         sendRelationshipRequestEmail({
           to: adminUser.email,
-          requesterOrgName: (sourceOrg.profile as any)?.name || 'Unknown Organization',
-          targetOrgName: (targetOrg.profile as any)?.name || 'Unknown Organization',
+          requesterOrgName:
+            (sourceOrg.profile as any)?.name || 'Unknown Organization',
+          targetOrgName:
+            (targetOrg.profile as any)?.name || 'Unknown Organization',
           relationshipTypes: relationships,
           approvalUrl,
         }),

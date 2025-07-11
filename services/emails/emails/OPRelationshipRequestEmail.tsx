@@ -2,7 +2,7 @@ import { Button, Section, Text } from '@react-email/components';
 import * as React from 'react';
 
 import EmailTemplate from '../components/EmailTemplate';
-import { Header } from '../components/Header';
+import { relationshipMap } from '@op/types/relationships';
 
 interface OPRelationshipRequestEmailProps {
   requesterOrgName: string;
@@ -19,20 +19,17 @@ export const OPRelationshipRequestEmail = ({
   approvalUrl,
   requesterMessage,
 }: OPRelationshipRequestEmailProps) => {
-  const relationshipText = relationshipTypes.length === 1 
-    ? `a ${relationshipTypes[0]} relationship`
-    : `${relationshipTypes.length} relationships (${relationshipTypes.join(', ')})`;
+  const relationshipLabels = relationshipTypes.map(type => relationshipMap[type]?.noun || type);
+  const relationshipText = relationshipLabels.length === 1 
+    ? relationshipLabels[0]
+    : relationshipLabels.join('/');
 
   return (
     <EmailTemplate
-      previewText={`${requesterOrgName} wants to establish ${relationshipText} with ${targetOrgName}`}
+      previewText={`Action Required: Accept request for ${requesterOrgName} to add ${targetOrgName} as a/an ${relationshipText} on Common`}
     >
-      <Header className="!my-0 mx-0 mt-2 p-0 text-left font-serif text-[28px] font-light tracking-[-0.02625rem] text-[#222D38]">
-        New Relationship Request
-      </Header>
-      
       <Text className="my-8 text-lg">
-        <strong>{requesterOrgName}</strong> wants to establish {relationshipText} with <strong>{targetOrgName}</strong>.
+        <strong>{requesterOrgName}</strong> is waiting for your approval to add <strong>{targetOrgName}</strong> as a <strong>{relationshipText}</strong> on Common.
       </Text>
 
       {requesterMessage && (
@@ -52,17 +49,17 @@ export const OPRelationshipRequestEmail = ({
             textDecoration: 'none',
           }}
         >
-          Review Request
+          Accept now
         </Button>
       </Section>
 
       <Text className="mb-0 text-xs text-[#606A6C]">
-        You can approve or decline this request from your organization dashboard.
+        Once you accept their request, <strong>{requesterOrgName}</strong> will appear in your relationships on Common.
       </Text>
     </EmailTemplate>
   );
 };
 
-OPRelationshipRequestEmail.subject = `New relationship request from {{requesterOrgName}}`;
+OPRelationshipRequestEmail.subject = `Action Required: Accept request for {{requesterOrgName}} to add {{targetOrgName}} as a/an {{relationshipTypes}} on Common`;
 
 export default OPRelationshipRequestEmail;
