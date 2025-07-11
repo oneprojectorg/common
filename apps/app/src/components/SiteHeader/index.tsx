@@ -263,7 +263,7 @@ const UserAvatarMenu = () => {
     <>
       <MenuTrigger>
         {avatarButton}
-        <Popover className="min-w-[150px]">
+        <Popover className="min-w-[150px]" placement="bottom end">
           <Menu className="flex min-w-72 flex-col p-4 pb-6">
             <AvatarMenuContent
               setIsProfileOpen={setIsProfileOpen}
