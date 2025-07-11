@@ -153,8 +153,10 @@ const AvatarMenuContent = ({
         id="help"
         className="px-0 py-2 text-neutral-charcoal hover:bg-neutral-offWhite focus:bg-neutral-offWhite"
         onAction={() => {
-          router.push(
+          window.open(
             'https://harmonious-peridot-9d5.notion.site/Common-Platform-Feature-Requests-Bug-Submissions-21fa0d01a6d981f48c9cd48a4a63267e',
+            '_blank',
+            'noopener,noreferrer'
           );
 
           onClose?.();
