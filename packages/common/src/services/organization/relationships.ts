@@ -82,9 +82,10 @@ export const addRelationship = async ({
       },
     });
 
-    // Filter for users with admin roles
+    // Filter for users with admin roles and oneproject.org email addresses
     const adminUsers = targetOrgAdmins.filter((orgUser) =>
-      orgUser.roles.some((role) => role.accessRole.name === 'Admin'),
+      orgUser.roles.some((role) => role.accessRole.name === 'Admin') &&
+      orgUser.email.endsWith('@oneproject.org'),
     );
 
     const approvalUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://common.oneproject.org'}`;
