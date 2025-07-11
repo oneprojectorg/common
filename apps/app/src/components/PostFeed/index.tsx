@@ -120,7 +120,7 @@ export const FeedMain = ({
   return (
     <div
       className={cn(
-        'flex min-h-16 w-full flex-col items-start justify-start gap-0 overflow-hidden',
+        'flex w-full flex-col items-start justify-start gap-0 overflow-hidden',
         className,
       )}
       {...props}
@@ -142,23 +142,23 @@ export const PostFeed = ({
   withLinks?: boolean;
 }) => {
   return (
-    <div className={cn('flex flex-col gap-4 pb-8', className)}>
+    <div className={cn('flex flex-col gap-6 pb-8', className)}>
       {posts.length > 0 ? (
         posts.map(({ organization, post }, i) => {
           const { urls } = detectLinks(post?.content);
 
           return (
             <Fragment key={i}>
-              <FeedItem>
+              <FeedItem className="sm:px-4">
                 <OrganizationAvatar
                   organization={organization}
                   withLink={withLinks}
                   className="!size-8 max-h-8 max-w-8"
                 />
                 <FeedMain>
-                  <FeedHeader className="w-full justify-between">
+                  <FeedHeader className="relative w-full justify-between">
                     <div className="flex items-baseline gap-2">
-                      <Header3 className="pt-2 font-medium leading-3">
+                      <Header3 className="font-medium leading-3">
                         {withLinks ? (
                           <Link href={`/org/${organization?.profile.slug}`}>
                             {organization?.profile.name}
@@ -181,7 +181,7 @@ export const PostFeed = ({
                             color="neutral"
                             variant="icon"
                             size="small"
-                            className="size-6 rounded-full border-0 bg-white p-1 outline-0 aria-expanded:bg-neutral-gray1"
+                            className="absolute right-0 top-0 size-6 rounded-full border-0 bg-white p-1 outline-0 aria-expanded:bg-neutral-gray1"
                           >
                             <LuEllipsis className="size-4" />
                           </Button>
@@ -200,31 +200,31 @@ export const PostFeed = ({
                     {post?.content ? linkifyText(post.content) : null}
                     {post.attachments
                       ? post.attachments.map(({ fileName, storageObject }) => {
-                        const { mimetype, size } = storageObject.metadata;
+                          const { mimetype, size } = storageObject.metadata;
 
-                        return (
-                          <MediaDisplay
-                            key={storageObject.id}
-                            title={fileName}
-                            mimeType={mimetype}
-                            url={
-                              getPublicUrl(storageObject.name) ?? undefined
-                            }
-                            size={size}
-                          >
-                            {mimetype.startsWith('image/') ? (
-                              <div className="relative flex aspect-video w-full items-center justify-center rounded bg-neutral-gray1 text-white">
-                                <Image
-                                  src={getPublicUrl(storageObject.name) ?? ''}
-                                  alt={fileName}
-                                  fill={true}
-                                  className="size-full object-cover"
-                                />
-                              </div>
-                            ) : null}
-                          </MediaDisplay>
-                        );
-                      })
+                          return (
+                            <MediaDisplay
+                              key={storageObject.id}
+                              title={fileName}
+                              mimeType={mimetype}
+                              url={
+                                getPublicUrl(storageObject.name) ?? undefined
+                              }
+                              size={size}
+                            >
+                              {mimetype.startsWith('image/') ? (
+                                <div className="relative flex h-fit w-full items-center justify-center rounded bg-neutral-gray1 text-white">
+                                  <Image
+                                    src={getPublicUrl(storageObject.name) ?? ''}
+                                    alt={fileName}
+                                    fill={true}
+                                    className="!relative size-full object-cover"
+                                  />
+                                </div>
+                              ) : null}
+                            </MediaDisplay>
+                          );
+                        })
                       : null}
                     {urls.length > 0 && (
                       <div>

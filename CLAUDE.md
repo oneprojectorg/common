@@ -72,6 +72,23 @@ Use `pnpm w:<workspace>` shortcuts:
 - Shared configs in `configs/typescript-config/`
 - Each workspace extends appropriate base config (nextjs.json, react-library.json, etc.)
 
+## AI Assistant Guidelines
+
+### Branch Management
+
+- **ALWAYS** checkout a new branch when making changes if currently on the `dev` branch
+- **Branch naming convention**:
+  - Bug fixes: `bug/descriptive-name` (e.g., `bug/fix-login-validation`)
+  - Features: `feature/descriptive-name` (e.g., `feature/user-dashboard`)
+- **NEVER commit, push, or pull** - these actions are always manual
+
+### Code Quality Standards
+
+- Run type checking with `pnpm w:app lint` after making changes
+- Format code with `pnpm format` after making changes
+- Follow existing code conventions and patterns in the file being edited
+- Test changes thoroughly before completion
+
 ## Important Notes
 
 - Node.js 18+ required, use `corepack enable` for pnpm version management
