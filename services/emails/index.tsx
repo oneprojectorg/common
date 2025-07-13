@@ -47,3 +47,4 @@ export const OPNodemailer = async ({
 };
 
 export * from './emails/OPInvitationEmail';
+export * from './emails/OPRelationshipRequestEmail';

@@ -1,14 +1,20 @@
+import { OPURLConfig } from '@op/core';
 import { and, db, eq, inArray, or } from '@op/db/client';
 import {
   Organization,
   Profile,
+  accessRoles,
   organizationRelationships,
+  organizationUserToAccessRoles,
+  organizationUsers,
+  organizations,
 } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 import { relationshipMap } from '@op/types';
 
-import { CommonError, UnauthorizedError } from '../../utils';
+import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { getOrgAccessUser } from '../access';
+import { sendRelationshipRequestEmail } from '../email';
 
 type OrganizationWithProfile = Organization & {
   profile: Profile & { avatarImage: any };
@@ -49,6 +55,83 @@ export const addRelationship = async ({
       ),
     );
   });
+};
+
+export const sendRelationshipNotification = async ({
+  to,
+  from,
+  relationships,
+}: {
+  from: string;
+  to: string;
+  relationships: Array<string>;
+}) => {
+  const [sourceOrg, targetOrg] = await Promise.all([
+    db.query.organizations.findFirst({
+      where: eq(organizations.id, from),
+      with: { profile: true },
+    }),
+    db.query.organizations.findFirst({
+      where: eq(organizations.id, to),
+      with: { profile: true },
+    }),
+  ]);
+
+  if (!sourceOrg || !targetOrg) {
+    throw new NotFoundError('Organization not found');
+  }
+
+  // Send email notifications to target organization admin users only
+  try {
+    const adminUsers = await db.query.organizationUsers.findMany({
+      where: and(
+        eq(organizationUsers.organizationId, to),
+        inArray(
+          organizationUsers.id,
+          db
+            .select({
+              userId: organizationUserToAccessRoles.organizationUserId,
+            })
+            .from(organizationUserToAccessRoles)
+            .leftJoin(
+              accessRoles,
+              eq(organizationUserToAccessRoles.accessRoleId, accessRoles.id),
+            )
+            .where(eq(accessRoles.name, 'Admin')),
+        ),
+      ),
+    });
+
+    const appUrlConfig = OPURLConfig('APP');
+
+    // Don't send emails to external users in staging/dev since lots of random fake (maybe real) emails are used that we don't intend to be sent to
+    await Promise.all(
+      adminUsers.map((adminUser) => {
+        if (
+          !appUrlConfig.IS_PRODUCTION &&
+          !adminUser.email.endsWith('oneproject.org')
+        ) {
+          console.log(
+            'Skipping send of external relationship email in staging/development',
+            adminUser.email,
+          );
+          return;
+        }
+
+        sendRelationshipRequestEmail({
+          to: adminUser.email,
+          requesterOrgName:
+            (sourceOrg.profile as any)?.name || 'Unknown Organization',
+          targetOrgName:
+            (targetOrg.profile as any)?.name || 'Unknown Organization',
+          relationshipTypes: relationships,
+          approvalUrl: appUrlConfig.ENV_URL,
+        });
+      }),
+    );
+  } catch (emailError) {
+    console.error('Failed to send relationship request emails:', emailError);
+  }
 };
 
 // TODO: this can be a heavy query if we don't watch it

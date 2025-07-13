@@ -949,6 +949,9 @@ importers:
       '@op/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@op/types':
+        specifier: workspace:*
+        version: link:../../packages/types
       '@react-email/components':
         specifier: ^0.1.0
         version: 0.1.0(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
