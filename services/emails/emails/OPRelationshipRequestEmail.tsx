@@ -1,8 +1,8 @@
+import { relationshipMap } from '@op/types';
 import { Button, Section, Text } from '@react-email/components';
 import * as React from 'react';
 
 import EmailTemplate from '../components/EmailTemplate';
-import { relationshipMap } from '@op/types/relationships';
 
 interface OPRelationshipRequestEmailProps {
   requesterOrgName: string;
@@ -19,22 +19,29 @@ export const OPRelationshipRequestEmail = ({
   approvalUrl,
   requesterMessage,
 }: OPRelationshipRequestEmailProps) => {
-  const relationshipLabels = relationshipTypes.map(type => relationshipMap[type]?.noun || type);
-  const relationshipText = relationshipLabels.length === 1 
-    ? relationshipLabels[0]
-    : relationshipLabels.join('/');
+  const relationshipLabels = relationshipTypes.map(
+    (type) => relationshipMap[type]?.noun || type,
+  );
+  const relationshipText =
+    relationshipLabels.length === 1
+      ? relationshipLabels[0]
+      : relationshipLabels.join('/');
 
   return (
     <EmailTemplate
       previewText={`Action Required: Accept request for ${requesterOrgName} to add ${targetOrgName} as a/an ${relationshipText} on Common`}
     >
       <Text className="my-8 text-lg">
-        <strong>{requesterOrgName}</strong> is waiting for your approval to add <strong>{targetOrgName}</strong> as a <strong>{relationshipText}</strong> on Common.
+        <strong>{requesterOrgName}</strong> is waiting for your approval to add{' '}
+        <strong>{targetOrgName}</strong> as a{' '}
+        <strong>{relationshipText}</strong> on Common.
       </Text>
 
       {requesterMessage && (
         <Section className="my-6 rounded-lg bg-gray-50 p-4">
-          <Text className="mb-2 text-sm font-medium text-gray-700">Message from {requesterOrgName}:</Text>
+          <Text className="mb-2 text-sm font-medium text-gray-700">
+            Message from {requesterOrgName}:
+          </Text>
           <Text className="text-sm text-gray-600">{requesterMessage}</Text>
         </Section>
       )}
@@ -54,7 +61,8 @@ export const OPRelationshipRequestEmail = ({
       </Section>
 
       <Text className="mb-0 text-xs text-[#606A6C]">
-        Once you accept their request, <strong>{requesterOrgName}</strong> will appear in your relationships on Common.
+        Once you accept their request, <strong>{requesterOrgName}</strong> will
+        appear in your relationships on Common.
       </Text>
     </EmailTemplate>
   );

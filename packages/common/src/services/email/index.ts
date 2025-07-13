@@ -1,3 +1,5 @@
+import { relationshipMap } from '@op/types';
+
 export interface SendInvitationEmailParams {
   to: string;
   inviterName: string;
@@ -51,11 +53,18 @@ export const sendRelationshipRequestEmail = async ({
   // Use dynamic imports to avoid build issues with workspace dependencies
   const { OPNodemailer } = await import('@op/emails');
   const { OPRelationshipRequestEmail } = await import('@op/emails');
+  const relationshipLabels = relationshipTypes.map(
+    (type) => relationshipMap[type]?.noun || type,
+  );
+  const relationshipText =
+    relationshipLabels.length === 1
+      ? relationshipLabels[0]
+      : relationshipLabels.join('/');
 
   await OPNodemailer({
     to,
     from: `${requesterOrgName} via Common`,
-    subject: `New relationship request from ${requesterOrgName}`,
+    subject: `Action Required: Accept request for ${targetOrgName} to add ${requesterOrgName} as a/an ${relationshipText} on Common`,
     component: () =>
       OPRelationshipRequestEmail({
         requesterOrgName,
