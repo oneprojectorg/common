@@ -1,5 +1,9 @@
 import { trackRelationshipAdded } from '@op/analytics';
-import { UnauthorizedError, addRelationship } from '@op/common';
+import {
+  UnauthorizedError,
+  addRelationship,
+  sendRelationshipNotification,
+} from '@op/common';
 import { getSession } from '@op/common/src/services/access';
 import { TRPCError } from '@trpc/server';
 import { waitUntil } from '@vercel/functions';
@@ -48,15 +52,27 @@ export const addRelationshipRouter = router({
           throw new UnauthorizedError('No user lastOrgId found');
         }
 
+        // TODO: Don't use this. Use what is passed in
+        const from = session.user.lastOrgId;
+
         await addRelationship({
           user,
-          from: session.user.lastOrgId,
+          from,
           to,
           relationships,
         });
 
-        // Track analytics (non-blocking)
-        waitUntil(trackRelationshipAdded(user.id, relationships));
+        // Track analytics and trigger async processes
+        waitUntil(
+          Promise.all([
+            trackRelationshipAdded(user.id, relationships),
+            sendRelationshipNotification({
+              from,
+              to,
+              relationships,
+            }),
+          ]),
+        );
 
         return { success: true };
       } catch (error: unknown) {
