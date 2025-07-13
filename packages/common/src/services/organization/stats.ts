@@ -7,33 +7,37 @@ export const getOrganizationStats = async ({ user }: { user: User }) => {
   const newOrgThreshold = new Date(lastLogin.setDate(lastLogin.getDate() - 7));
 
   const [orgCount, usersCount, relationshipCount, newOrganizationsCount] =
-    await Promise.all([
-      db
-        .select({
-          count: sql<number>`count(*)::int`,
-        })
-        .from(organizations),
+    await db.transaction(async (tx) => {
+      const results = await Promise.all([
+        tx
+          .select({
+            count: sql<number>`count(*)::int`,
+          })
+          .from(organizations),
 
-      db
-        .select({
-          count: sql<number>`count(*)::int`,
-        })
-        .from(users),
+        tx
+          .select({
+            count: sql<number>`count(*)::int`,
+          })
+          .from(users),
 
-      db
-        .select({
-          count: sql<number>`count(*)::int`,
-        })
-        .from(organizationRelationships)
-        .where(() => eq(organizationRelationships.pending, false)),
+        tx
+          .select({
+            count: sql<number>`count(*)::int`,
+          })
+          .from(organizationRelationships)
+          .where(() => eq(organizationRelationships.pending, false)),
 
-      db
-        .select({
-          count: sql<number>`count(*)::int`,
-        })
-        .from(organizations)
-        .where(gte(organizations.createdAt, newOrgThreshold.toISOString())),
-    ]);
+        tx
+          .select({
+            count: sql<number>`count(*)::int`,
+          })
+          .from(organizations)
+          .where(gte(organizations.createdAt, newOrgThreshold.toISOString())),
+      ]);
+
+      return results;
+    });
 
   const totalOrganizations = orgCount[0]?.count ?? 0;
   const totalUsers = usersCount[0]?.count ?? 0;
