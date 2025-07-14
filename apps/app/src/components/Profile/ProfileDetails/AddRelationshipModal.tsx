@@ -132,7 +132,7 @@ export const AddRelationshipModalSuspense = ({
                   with
                   <OrganizationAvatar
                     organization={user.currentOrganization}
-                    className="size-4"
+                    className="size-6"
                   />
                 </>
               ) : null}
