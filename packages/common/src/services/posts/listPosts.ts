@@ -106,8 +106,9 @@ export const listPosts = async ({
       // Count reactions by type
       if (item.post.reactions) {
         item.post.reactions.forEach((reaction: any) => {
-          reactionCounts[reaction.reactionType] = (reactionCounts[reaction.reactionType] || 0) + 1;
-          
+          reactionCounts[reaction.reactionType] =
+            (reactionCounts[reaction.reactionType] || 0) + 1;
+
           // Track user's reactions
           if (reaction.userId === user.id) {
             userReactions.push(reaction.reactionType);
