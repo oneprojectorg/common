@@ -1,5 +1,5 @@
 import { postReactions } from '@op/db/schema';
-import { VALID_REACTION_TYPES } from '@op/common/constants/reactions';
+import { VALID_REACTION_TYPES } from '@op/types';
 import { TRPCError } from '@trpc/server';
 import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
@@ -36,10 +36,14 @@ export const reactionsRouter = router({
         return { success: true };
       } catch (error) {
         // Handle unique constraint violation (duplicate reaction)
-        if (error instanceof Error && error.message.includes('unique constraint')) {
+        if (
+          error instanceof Error &&
+          error.message.includes('unique constraint')
+        ) {
           throw new TRPCError({
             code: 'CONFLICT',
-            message: 'You have already reacted to this post with this reaction type',
+            message:
+              'You have already reacted to this post with this reaction type',
           });
         }
         throw new TRPCError({
@@ -63,7 +67,7 @@ export const reactionsRouter = router({
       const { postId, reactionType } = input;
       const { user, database } = ctx;
 
-      const result = await database.db
+      await database.db
         .delete(postReactions)
         .where(
           and(
@@ -114,7 +118,7 @@ export const reactionsRouter = router({
               eq(postReactions.reactionType, reactionType),
             ),
           );
-        
+
         return { success: true, action: 'removed' };
       } else {
         // Add new reaction
