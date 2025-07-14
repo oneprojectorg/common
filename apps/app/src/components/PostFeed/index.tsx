@@ -1,7 +1,9 @@
 import { getPublicUrl } from '@/utils';
 import { OrganizationUser } from '@/utils/UserProvider';
 import { detectLinks, linkifyText } from '@/utils/linkDetection';
+import { trpc } from '@op/api/client';
 import type { PostToOrganization } from '@op/api/encoders';
+import { REACTION_OPTIONS } from '@op/types';
 import { AvatarSkeleton } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
 import { Header3 } from '@op/ui/Header';
@@ -10,6 +12,7 @@ import { MenuTrigger } from '@op/ui/Menu';
 import { Popover } from '@op/ui/Popover';
 import { ReactionsButton } from '@op/ui/ReactionsButton';
 import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
+import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';
 import { Fragment, ReactNode } from 'react';
@@ -142,6 +145,32 @@ export const PostFeed = ({
   className?: string;
   withLinks?: boolean;
 }) => {
+  const utils = trpc.useUtils();
+
+  const toggleReaction = trpc.organization.toggleReaction.useMutation({
+    onSuccess: () => {
+      // Invalidate queries to refetch latest data
+      void utils.organization.listPosts.invalidate();
+      void utils.organization.listAllPosts.invalidate();
+    },
+    onError: (err) => {
+      toast.error({ message: err.message || 'Failed to update reaction' });
+    },
+  });
+
+  const handleReactionClick = (postId: string, emoji: string) => {
+    // Convert emoji to reaction type using REACTION_OPTIONS
+    const reactionOption = REACTION_OPTIONS.find(option => option.emoji === emoji);
+    const reactionType = reactionOption?.key;
+    
+    if (!reactionType) {
+      console.error('Unknown emoji:', emoji);
+      return;
+    }
+
+    toggleReaction.mutate({ postId, reactionType });
+  };
+
   return (
     <div className={cn('flex flex-col gap-6 pb-8', className)}>
       {posts.length > 0 ? (
@@ -246,13 +275,12 @@ export const PostFeed = ({
                             }))
                           : []
                       }
+                      reactionOptions={REACTION_OPTIONS}
                       onReactionClick={(emoji) => {
-                        // TODO: Implement reaction toggle logic
-                        console.log('Reaction clicked:', emoji, 'for post:', post.id);
+                        handleReactionClick(post.id!, emoji);
                       }}
-                      onAddReaction={() => {
-                        // TODO: Implement add reaction logic
-                        console.log('Add reaction clicked for post:', post.id);
+                      onAddReaction={(emoji) => {
+                        handleReactionClick(post.id!, emoji);
                       }}
                     />
                   )}
