@@ -1,5 +1,6 @@
 'use client';
 
+import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { Organization } from '@op/api/encoders';
 import { relationshipMap } from '@op/types';
@@ -15,6 +16,7 @@ import { FormEvent, Suspense, useState, useTransition } from 'react';
 import { LuCheck, LuChevronDown, LuClock, LuPlus } from 'react-icons/lu';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
+import { OrganizationAvatar } from '@/components/OrganizationAvatar';
 
 import { AddRelationshipForm } from './AddRelationshipForm';
 import { RemoveRelationshipModal } from './RemoveRelationshipModal';
@@ -89,6 +91,7 @@ export const AddRelationshipModalSuspense = ({
 }: {
   profile: Organization;
 }) => {
+  const { user } = useUser();
   const utils = trpc.useUtils();
   const [selectedRelationshipId, setSelectedRelationshipId] = useState<
     string | null
@@ -121,7 +124,20 @@ export const AddRelationshipModalSuspense = ({
     <>
       {relationships.length > 1 ? (
         <DropDownButton
-          label={`${relationships.length} relationship${relationships.length === 1 ? '' : 's'}`}
+          label={
+            <>
+              {`${relationships.length} relationship${relationships.length === 1 ? '' : 's'}`}{' '}
+              {user?.currentOrganization?.profile ? (
+                <>
+                  with
+                  <OrganizationAvatar
+                    organization={user.currentOrganization}
+                    className="size-4"
+                  />
+                </>
+              ) : null}
+            </>
+          }
           items={dropdownItems}
           chevronIcon={<LuChevronDown className="size-4 stroke-1" />}
           className={cn(

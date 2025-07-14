@@ -38,7 +38,7 @@ export interface DropdownButtonItem {
 export interface DropdownButtonProps
   extends Omit<React.ComponentProps<typeof Button>, 'onPress'>,
     DropdownButtonVariants {
-  label: string;
+  label: string | ReactNode;
   items: DropdownButtonItem[];
   chevronIcon?: ReactNode;
   className?: string;
@@ -46,7 +46,14 @@ export interface DropdownButtonProps
 }
 
 export const DropDownButton = (props: DropdownButtonProps) => {
-  const { label, items, chevronIcon, className, matchTriggerWidth = true, ...rest } = props;
+  const {
+    label,
+    items,
+    chevronIcon,
+    className,
+    matchTriggerWidth = true,
+    ...rest
+  } = props;
 
   return (
     <MenuTrigger>
@@ -57,7 +64,10 @@ export const DropDownButton = (props: DropdownButtonProps) => {
         {label}
         {chevronIcon}
       </Button>
-      <Popover placement="bottom start" className={matchTriggerWidth ? "min-w-[--trigger-width]" : undefined}>
+      <Popover
+        placement="bottom start"
+        className={matchTriggerWidth ? 'min-w-[--trigger-width]' : undefined}
+      >
         <Menu>
           {items.map((item) => (
             <MenuItem key={item.id} onAction={item.onAction} className="pr-3">

@@ -16,7 +16,7 @@ export const OrganizationAvatar = ({
   withLink = true,
   className,
 }: {
-  organization: relationshipOrganization;
+  organization?: relationshipOrganization;
   withLink?: boolean;
   className?: string;
 }) => {
