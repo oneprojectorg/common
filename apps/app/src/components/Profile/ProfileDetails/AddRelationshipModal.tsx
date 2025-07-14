@@ -10,6 +10,7 @@ import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Dialog, DialogTrigger } from '@op/ui/RAC';
 import { toast } from '@op/ui/Toast';
 import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
+import { cn } from '@op/ui/utils';
 import { FormEvent, Suspense, useState, useTransition } from 'react';
 import { LuCheck, LuChevronDown, LuClock, LuPlus } from 'react-icons/lu';
 
@@ -123,7 +124,12 @@ export const AddRelationshipModalSuspense = ({
           label={`${relationships.length} relationship${relationships.length === 1 ? '' : 's'}`}
           items={dropdownItems}
           chevronIcon={<LuChevronDown className="size-4 stroke-1" />}
-          className="min-w-full sm:min-w-fit"
+          className={cn(
+            'min-w-full sm:min-w-fit',
+            relationships.some((r) => r.pending)
+              ? 'bg-transparent'
+              : 'bg-primary-tealWhite',
+          )}
         />
       ) : relationships.length === 1 ? (
         relationships.map((relationship) => (
