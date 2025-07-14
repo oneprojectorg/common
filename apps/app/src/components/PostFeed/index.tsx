@@ -8,6 +8,7 @@ import { Header3 } from '@op/ui/Header';
 import { MediaDisplay } from '@op/ui/MediaDisplay';
 import { MenuTrigger } from '@op/ui/Menu';
 import { Popover } from '@op/ui/Popover';
+import { ReactionsButton } from '@op/ui/ReactionsButton';
 import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';
@@ -234,6 +235,27 @@ export const PostFeed = ({
                       </div>
                     )}
                   </FeedContent>
+                  {post?.id && (
+                    <ReactionsButton
+                      reactions={
+                        post.reactionCounts
+                          ? Object.entries(post.reactionCounts).map(([emoji, count]) => ({
+                              emoji,
+                              count,
+                              isActive: post.userReactions?.includes(emoji) || false,
+                            }))
+                          : []
+                      }
+                      onReactionClick={(emoji) => {
+                        // TODO: Implement reaction toggle logic
+                        console.log('Reaction clicked:', emoji, 'for post:', post.id);
+                      }}
+                      onAddReaction={() => {
+                        // TODO: Implement add reaction logic
+                        console.log('Add reaction clicked for post:', post.id);
+                      }}
+                    />
+                  )}
                 </FeedMain>
               </FeedItem>
               <hr className="bg-neutral-gray1" />
