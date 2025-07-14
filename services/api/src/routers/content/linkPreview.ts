@@ -1,4 +1,4 @@
-import { cache } from '@op/cache';
+// import { cache } from '@op/cache';
 import { z } from 'zod';
 
 import { loggedProcedure, router } from '../../trpcFactory';
@@ -74,15 +74,18 @@ export const linkPreview = router({
     )
     .output(linkPreviewResponseSchema)
     .query(async ({ input }) => {
-      const result = await cache({
-        type: 'linkPreview',
-        params: [input.url],
-        fetch: () => getLinkPreview(input.url),
-        options: {
-          ttl: 30 * 24 * 60 * 60 * 1000,
-        },
-      });
+      // TODO: disabling caching to find a better cache-key
+      // const result = await cache({
+      // type: 'linkPreview',
+      // params: [input.url],
+      // fetch: () => getLinkPreview(input.url),
+      // options: {
+      // ttl: 30 * 24 * 60 * 60 * 1000,
+      // },
+      // });
 
-      return result;
+      const result = await getLinkPreview(input.url);
+
+      return linkPreviewResponseSchema.parse(result);
     }),
 });

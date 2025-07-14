@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@op/core": "workspace:*",
+    "@op/types": "workspace:*",
     "@react-email/components": "^0.1.0",
     "@react-email/render": "^1.1.2",
     "@react-email/tailwind": "^1.0.5",
