@@ -107,16 +107,16 @@ export const sendRelationshipNotification = async ({
     // Don't send emails to external users in staging/dev since lots of random fake (maybe real) emails are used that we don't intend to be sent to
     await Promise.all(
       adminUsers.map((adminUser) => {
-        if (
-          !appUrlConfig.IS_PRODUCTION &&
-          !adminUser.email.endsWith('oneproject.org')
-        ) {
-          console.log(
-            'Skipping send of external relationship email in staging/development',
-            adminUser.email,
-          );
-          return;
-        }
+        // if (
+        // !appUrlConfig.IS_PRODUCTION &&
+        // !adminUser.email.endsWith('oneproject.org')
+        // ) {
+        // console.log(
+        // 'Skipping send of external relationship email in staging/development',
+        // adminUser.email,
+        // );
+        // return;
+        // }
 
         sendRelationshipRequestEmail({
           to: adminUser.email,
