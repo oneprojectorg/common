@@ -6,10 +6,11 @@ import { relationshipMap } from '@op/types';
 import { Button } from '@op/ui/Button';
 import { DropDownButton } from '@op/ui/DropDownButton';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { Modal } from '@op/ui/Modal';
-import { DialogTrigger } from '@op/ui/RAC';
+import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
+import { Dialog, DialogTrigger } from '@op/ui/RAC';
+import { toast } from '@op/ui/Toast';
 import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
-import { Suspense } from 'react';
+import { FormEvent, Suspense, useState, useTransition } from 'react';
 import { LuCheck, LuChevronDown, LuClock, LuPlus } from 'react-icons/lu';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
@@ -17,18 +18,90 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 import { AddRelationshipForm } from './AddRelationshipForm';
 import { RemoveRelationshipModal } from './RemoveRelationshipModal';
 
+const RemoveRelationshipModalContent = ({
+  relationship,
+  utils,
+  profileId,
+  onClose,
+}: {
+  relationship: any;
+  utils: any;
+  profileId: string;
+  onClose: () => void;
+}) => {
+  const removeRelationship = trpc.organization.removeRelationship.useMutation();
+  const [isSubmitting, startTransition] = useTransition();
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+
+    startTransition(async () => {
+      try {
+        await removeRelationship.mutateAsync({
+          id: relationship.id,
+        });
+
+        utils.organization.listRelationships.invalidate({
+          organizationId: profileId,
+        });
+        utils.organization.listDirectedRelationships.invalidate({
+          from: profileId,
+        });
+
+        toast.success({
+          message: 'Relationship removed',
+        });
+        onClose();
+      } catch (e) {
+        toast.error({ message: 'Could not remove relationship' });
+      }
+    });
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="contents">
+      <ModalHeader>Remove relationship</ModalHeader>
+      <ModalBody>
+        <div>
+          Are you sure you want to remove the {relationship.relationshipType}{' '}
+          relationship?
+        </div>
+        <div>
+          You'll need to send a new request to restore this relationship on your
+          profile.
+        </div>
+      </ModalBody>
+      <ModalFooter>
+        <Button onPress={onClose} color="neutral" type="button">
+          Cancel
+        </Button>
+        <Button color="destructive" type="submit" isPending={isSubmitting}>
+          {isSubmitting ? <LoadingSpinner /> : 'Remove'}
+        </Button>
+      </ModalFooter>
+    </form>
+  );
+};
+
 export const AddRelationshipModalSuspense = ({
   profile,
 }: {
   profile: Organization;
 }) => {
   const utils = trpc.useUtils();
+  const [selectedRelationshipId, setSelectedRelationshipId] = useState<
+    string | null
+  >(null);
 
   // checking for our relationships TOWARDS the profile
   const [{ relationships }] =
     trpc.organization.listDirectedRelationships.useSuspenseQuery({
       from: profile.id,
     });
+
+  const selectedRelationship = relationships.find(
+    (r) => r.id === selectedRelationshipId,
+  );
 
   const dropdownItems = relationships.map((relationship) => ({
     id: relationship.id,
@@ -40,9 +113,7 @@ export const AddRelationshipModalSuspense = ({
     ) : (
       <LuCheck className="size-4 stroke-1" />
     ),
-    onAction: () => {
-      // This will be handled by the RemoveRelationshipModal trigger
-    },
+    onAction: () => setSelectedRelationshipId(relationship.id),
   }));
 
   return (
@@ -109,6 +180,28 @@ export const AddRelationshipModalSuspense = ({
             />
           </Modal>
         </DialogTrigger>
+      )}
+
+      {selectedRelationship && (
+        <Modal
+          isOpen={true}
+          onOpenChange={() => setSelectedRelationshipId(null)}
+          className="sm:min-w-[29rem]"
+        >
+          <Dialog>
+            {({ close }) => (
+              <RemoveRelationshipModalContent
+                relationship={selectedRelationship}
+                utils={utils}
+                profileId={profile.id}
+                onClose={() => {
+                  setSelectedRelationshipId(null);
+                  close();
+                }}
+              />
+            )}
+          </Dialog>
+        </Modal>
       )}
     </>
   );
