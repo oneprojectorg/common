@@ -125,10 +125,10 @@ export const getItemsWithReactions = ({
 }: {
   items: any[];
   profileId: string;
-}): Array<any & { post: any & { reactionCounts: Record<string, number>; userReactions: string[] } }> =>
+}): Array<any & { post: any & { reactionCounts: Record<string, number>; userReaction: string | null } }> =>
   items.map((item) => {
     const reactionCounts: Record<string, number> = {};
-    const userReactions: string[] = [];
+    let userReaction: string | null = null;
 
     // Count reactions by type
     if (item.post.reactions) {
@@ -136,9 +136,9 @@ export const getItemsWithReactions = ({
         reactionCounts[reaction.reactionType] =
           (reactionCounts[reaction.reactionType] || 0) + 1;
 
-        // Track user's reactions
+        // Track user's reaction (only one per user)
         if (reaction.profileId === profileId) {
-          userReactions.push(reaction.reactionType);
+          userReaction = reaction.reactionType;
         }
       });
     }
@@ -148,7 +148,7 @@ export const getItemsWithReactions = ({
       post: {
         ...item.post,
         reactionCounts,
-        userReactions,
+        userReaction,
       },
     };
   });

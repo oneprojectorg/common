@@ -170,11 +170,11 @@ export const PostFeed = ({
       // Helper function to update post reactions
       const updatePostReactions = (item: any) => {
         if (item.post.id === postId) {
-          const currentReactions = item.post.userReactions || [];
+          const currentReaction = item.post.userReaction;
           const currentCounts = item.post.reactionCounts || {};
           
           // Check if user already has this reaction
-          const hasReaction = currentReactions.includes(reactionType);
+          const hasReaction = currentReaction === reactionType;
           
           if (hasReaction) {
             // Remove reaction
@@ -182,7 +182,7 @@ export const PostFeed = ({
               ...item,
               post: {
                 ...item.post,
-                userReactions: currentReactions.filter((r: string) => r !== reactionType),
+                userReaction: null,
                 reactionCounts: {
                   ...currentCounts,
                   [reactionType]: Math.max(0, (currentCounts[reactionType] || 0) - 1)
@@ -190,16 +190,23 @@ export const PostFeed = ({
               }
             };
           } else {
-            // Add reaction
+            // Replace or add reaction
+            const newCounts = { ...currentCounts };
+            
+            // If user had a previous reaction, decrement its count
+            if (currentReaction) {
+              newCounts[currentReaction] = Math.max(0, (newCounts[currentReaction] || 0) - 1);
+            }
+            
+            // Increment count for new reaction
+            newCounts[reactionType] = (newCounts[reactionType] || 0) + 1;
+            
             return {
               ...item,
               post: {
                 ...item.post,
-                userReactions: [...currentReactions, reactionType],
-                reactionCounts: {
-                  ...currentCounts,
-                  [reactionType]: (currentCounts[reactionType] || 0) + 1
-                }
+                userReaction: reactionType,
+                reactionCounts: newCounts
               }
             };
           }
@@ -378,9 +385,7 @@ export const PostFeed = ({
                                     emoji,
                                     count,
                                     isActive:
-                                      post.userReactions?.includes(
-                                        reactionType,
-                                      ) || false,
+                                      post.userReaction === reactionType,
                                   };
                                 },
                               )

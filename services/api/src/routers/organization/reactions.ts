@@ -30,6 +30,17 @@ export const reactionsRouter = router({
       try {
         const profileId = await getCurrentProfileId({ database: database.db });
 
+        // First, remove any existing reaction from this user on this post
+        await database.db
+          .delete(postReactions)
+          .where(
+            and(
+              eq(postReactions.postId, postId),
+              eq(postReactions.profileId, profileId),
+            ),
+          );
+
+        // Then add the new reaction
         await database.db.insert(postReactions).values({
           postId,
           profileId,
@@ -38,17 +49,6 @@ export const reactionsRouter = router({
 
         return { success: true };
       } catch (error) {
-        // Handle unique constraint violation (duplicate reaction)
-        if (
-          error instanceof Error &&
-          error.message.includes('unique constraint')
-        ) {
-          throw new TRPCError({
-            code: 'CONFLICT',
-            message:
-              'You have already reacted to this post with this reaction type',
-          });
-        }
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to add reaction',
@@ -63,11 +63,10 @@ export const reactionsRouter = router({
     .input(
       z.object({
         postId: z.string(),
-        reactionType: reactionTypeEnum,
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      const { postId, reactionType } = input;
+      const { postId } = input;
       const { database } = ctx;
 
       const profileId = await getCurrentProfileId({ database: database.db });
@@ -77,7 +76,6 @@ export const reactionsRouter = router({
           and(
             eq(postReactions.postId, postId),
             eq(postReactions.profileId, profileId),
-            eq(postReactions.reactionType, reactionType),
           ),
         );
 
@@ -101,7 +99,7 @@ export const reactionsRouter = router({
       try {
         const profileId = await getCurrentProfileId({ database: database.db });
 
-        // Check if reaction exists
+        // Check if user has any existing reaction on this post
         const existingReaction = await database.db
           .select()
           .from(postReactions)
@@ -109,26 +107,44 @@ export const reactionsRouter = router({
             and(
               eq(postReactions.postId, postId),
               eq(postReactions.profileId, profileId),
-              eq(postReactions.reactionType, reactionType),
             ),
           )
           .limit(1);
 
         if (existingReaction.length > 0) {
-          // Remove existing reaction
-          await database.db
-            .delete(postReactions)
-            .where(
-              and(
-                eq(postReactions.postId, postId),
-                eq(postReactions.profileId, profileId),
-                eq(postReactions.reactionType, reactionType),
-              ),
-            );
+          // If user has the same reaction type, remove it
+          if (existingReaction[0]?.reactionType === reactionType) {
+            await database.db
+              .delete(postReactions)
+              .where(
+                and(
+                  eq(postReactions.postId, postId),
+                  eq(postReactions.profileId, profileId),
+                ),
+              );
 
-          return { success: true, action: 'removed' };
+            return { success: true, action: 'removed' };
+          } else {
+            // If user has a different reaction type, replace it
+            await database.db
+              .delete(postReactions)
+              .where(
+                and(
+                  eq(postReactions.postId, postId),
+                  eq(postReactions.profileId, profileId),
+                ),
+              );
+
+            await database.db.insert(postReactions).values({
+              postId,
+              profileId,
+              reactionType,
+            });
+
+            return { success: true, action: 'replaced' };
+          }
         } else {
-          // Add new reaction
+          // No existing reaction, add new one
           await database.db.insert(postReactions).values({
             postId,
             profileId,
