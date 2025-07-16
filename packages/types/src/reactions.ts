@@ -1,5 +1,6 @@
 export const REACTION_TYPES = {
   LIKE: 'like',
+  DISLIKE: 'dislike',
   LOVE: 'love',
   LAUGH: 'laugh',
   FOLDED_HANDS: 'folded_hands',
@@ -12,7 +13,7 @@ export type ReactionType = (typeof REACTION_TYPES)[keyof typeof REACTION_TYPES];
 
 export const REACTION_OPTIONS = [
   { key: REACTION_TYPES.LIKE, label: 'Like', emoji: '👍' },
-  { key: REACTION_TYPES.LIKE, label: 'Dislike', emoji: '👎' },
+  { key: REACTION_TYPES.DISLIKE, label: 'Dislike', emoji: '👎' },
   { key: REACTION_TYPES.LOVE, label: 'Love', emoji: '❤️' },
   { key: REACTION_TYPES.LAUGH, label: 'Laugh', emoji: '😂' },
   { key: REACTION_TYPES.FOLDED_HANDS, label: 'Folded Hands', emoji: '🙏' },
