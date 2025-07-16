@@ -796,6 +796,9 @@ importers:
       '@op/supabase':
         specifier: workspace:*
         version: link:../supabase
+      '@op/types':
+        specifier: workspace:*
+        version: link:../../packages/types
       '@tanstack/query-sync-storage-persister':
         specifier: 5.66.11
         version: 5.66.11

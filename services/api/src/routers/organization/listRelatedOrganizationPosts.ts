@@ -1,6 +1,8 @@
 import {
   decodeCursor,
   encodeCursor,
+  getCurrentProfileId,
+  getItemsWithReactions,
   getRelatedOrganizations,
 } from '@op/common';
 import { and, eq, inArray, lt, or } from '@op/db/client';
@@ -75,40 +77,44 @@ export const listRelatedOrganizationPostsRouter = router({
       // Build cursor condition for pagination
       const cursorCondition = cursorData
         ? or(
-            lt(postsToOrganizations.createdAt, cursorData.createdAt),
-            and(
-              eq(postsToOrganizations.createdAt, cursorData.createdAt),
-              lt(postsToOrganizations.postId, cursorData.id),
-            ),
-          )
+          lt(postsToOrganizations.createdAt, cursorData.createdAt),
+          and(
+            eq(postsToOrganizations.createdAt, cursorData.createdAt),
+            lt(postsToOrganizations.postId, cursorData.id),
+          ),
+        )
         : undefined;
 
       // Fetch posts for all organizations with pagination
-      const result = await db.query.postsToOrganizations.findMany({
-        where: cursorCondition,
-        with: {
-          post: {
-            with: {
-              attachments: {
-                with: {
-                  storageObject: true,
+      const [result, profileId] = await Promise.all([
+        db.query.postsToOrganizations.findMany({
+          where: cursorCondition,
+          with: {
+            post: {
+              with: {
+                attachments: {
+                  with: {
+                    storageObject: true,
+                  },
+                },
+                reactions: true,
+              },
+            },
+            organization: {
+              with: {
+                profile: {
+                  with: {
+                    avatarImage: true,
+                  },
                 },
               },
             },
           },
-          organization: {
-            with: {
-              profile: {
-                with: {
-                  avatarImage: true,
-                },
-              },
-            },
-          },
-        },
-        orderBy: (table, { desc }) => desc(table.createdAt),
-        limit: limit + 1, // Fetch one extra to check hasMore
-      });
+          orderBy: (table, { desc }) => desc(table.createdAt),
+          limit: limit + 1, // Fetch one extra to check hasMore
+        }),
+        getCurrentProfileId({ database: db }),
+      ]);
 
       const hasMore = result.length > limit;
       const items = hasMore ? result.slice(0, limit) : result;
@@ -119,7 +125,7 @@ export const listRelatedOrganizationPostsRouter = router({
           : null;
 
       return {
-        items: items.map((postToOrg) => ({
+        items: getItemsWithReactions({ items, profileId }).map((postToOrg) => ({
           ...postToOrg,
           organization: organizationsEncoder.parse(postToOrg.organization),
           post: postsEncoder.parse(postToOrg.post),

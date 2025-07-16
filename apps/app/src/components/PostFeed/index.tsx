@@ -1,16 +1,23 @@
+'use client';
+
 import { getPublicUrl } from '@/utils';
 import { OrganizationUser } from '@/utils/UserProvider';
 import { detectLinks, linkifyText } from '@/utils/linkDetection';
+import { trpc } from '@op/api/client';
 import type { PostToOrganization } from '@op/api/encoders';
+import { REACTION_OPTIONS } from '@op/types';
 import { AvatarSkeleton } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
 import { Header3 } from '@op/ui/Header';
 import { MediaDisplay } from '@op/ui/MediaDisplay';
 import { MenuTrigger } from '@op/ui/Menu';
 import { Popover } from '@op/ui/Popover';
+import { ReactionsButton } from '@op/ui/ReactionsButton';
 import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
+import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';
+import { useFeatureFlagEnabled } from 'posthog-js/react';
 import { Fragment, ReactNode } from 'react';
 import { LuEllipsis, LuLeaf } from 'react-icons/lu';
 
@@ -135,12 +142,133 @@ export const PostFeed = ({
   user,
   className,
   withLinks = true,
+  slug,
+  limit = 20,
 }: {
   posts: Array<PostToOrganization>;
   user?: OrganizationUser;
   className?: string;
   withLinks?: boolean;
+  slug?: string;
+  limit?: number;
 }) => {
+  const reactionsEnabled = useFeatureFlagEnabled('reactions');
+  const utils = trpc.useUtils();
+
+  const toggleReaction = trpc.organization.toggleReaction.useMutation({
+    onMutate: async ({ postId, reactionType }) => {
+      // Cancel any outgoing refetches
+      if (slug) {
+        await utils.organization.listPosts.cancel({ slug, limit });
+      }
+      await utils.organization.listAllPosts.cancel({});
+
+      // Snapshot the previous values
+      const previousListPosts = slug ? utils.organization.listPosts.getInfiniteData({ slug, limit }) : undefined;
+      const previousListAllPosts = utils.organization.listAllPosts.getData({});
+
+      // Helper function to update post reactions
+      const updatePostReactions = (item: any) => {
+        if (item.post.id === postId) {
+          const currentReactions = item.post.userReactions || [];
+          const currentCounts = item.post.reactionCounts || {};
+          
+          // Check if user already has this reaction
+          const hasReaction = currentReactions.includes(reactionType);
+          
+          if (hasReaction) {
+            // Remove reaction
+            return {
+              ...item,
+              post: {
+                ...item.post,
+                userReactions: currentReactions.filter((r: string) => r !== reactionType),
+                reactionCounts: {
+                  ...currentCounts,
+                  [reactionType]: Math.max(0, (currentCounts[reactionType] || 0) - 1)
+                }
+              }
+            };
+          } else {
+            // Add reaction
+            return {
+              ...item,
+              post: {
+                ...item.post,
+                userReactions: [...currentReactions, reactionType],
+                reactionCounts: {
+                  ...currentCounts,
+                  [reactionType]: (currentCounts[reactionType] || 0) + 1
+                }
+              }
+            };
+          }
+        }
+        return item;
+      };
+
+      // Optimistically update listPosts cache (if slug is provided)
+      if (slug) {
+        utils.organization.listPosts.setInfiniteData({ slug, limit }, (old: any) => {
+          if (!old) return old;
+          return {
+            ...old,
+            pages: old.pages.map((page: any) => ({
+              ...page,
+              items: page.items.map(updatePostReactions)
+            }))
+          };
+        });
+      }
+
+      // Optimistically update listAllPosts cache
+      utils.organization.listAllPosts.setData({}, (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          items: old.items.map(updatePostReactions)
+        };
+      });
+
+      return { previousListPosts, previousListAllPosts };
+    },
+    onError: (err, _variables, context) => {
+      // Rollback on error
+      if (context?.previousListPosts && slug) {
+        utils.organization.listPosts.setInfiniteData(
+          { slug, limit },
+          context.previousListPosts,
+        );
+      }
+      if (context?.previousListAllPosts) {
+        utils.organization.listAllPosts.setData(
+          {},
+          context.previousListAllPosts,
+        );
+      }
+      toast.error({ message: err.message || 'Failed to update reaction' });
+    },
+    onSuccess: () => {
+      // Skip invalidation to preserve optimistic updates
+      // The optimistic update should be accurate enough
+    },
+  });
+
+  const handleReactionClick = (postId: string, emoji: string) => {
+    // Convert emoji to reaction type using REACTION_OPTIONS
+    const reactionOption = REACTION_OPTIONS.find(
+      (option) => option.emoji === emoji,
+    );
+    const reactionType = reactionOption?.key;
+
+    if (!reactionType) {
+      console.error('Unknown emoji:', emoji);
+      return;
+    }
+
+    toggleReaction.mutate({ postId, reactionType });
+  };
+
   return (
     <div className={cn('flex flex-col gap-6 pb-8', className)}>
       {posts.length > 0 ? (
@@ -232,6 +360,40 @@ export const PostFeed = ({
                           <LinkPreview key={url} url={url} />
                         ))}
                       </div>
+                    )}
+                    {reactionsEnabled && post?.id && (
+                      <ReactionsButton
+                        reactions={
+                          post.reactionCounts
+                            ? Object.entries(post.reactionCounts).map(
+                                ([reactionType, count]) => {
+                                  // Convert reaction type to emoji
+                                  const reactionOption = REACTION_OPTIONS.find(
+                                    (option) => option.key === reactionType,
+                                  );
+                                  const emoji =
+                                    reactionOption?.emoji || reactionType;
+
+                                  return {
+                                    emoji,
+                                    count,
+                                    isActive:
+                                      post.userReactions?.includes(
+                                        reactionType,
+                                      ) || false,
+                                  };
+                                },
+                              )
+                            : []
+                        }
+                        reactionOptions={REACTION_OPTIONS}
+                        onReactionClick={(emoji) => {
+                          handleReactionClick(post.id!, emoji);
+                        }}
+                        onAddReaction={(emoji) => {
+                          handleReactionClick(post.id!, emoji);
+                        }}
+                      />
                     )}
                   </FeedContent>
                 </FeedMain>

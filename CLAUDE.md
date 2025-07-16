@@ -88,6 +88,7 @@ Use `pnpm w:<workspace>` shortcuts:
 - Format code with `pnpm format` after making changes
 - Follow existing code conventions and patterns in the file being edited
 - Test changes thoroughly before completion
+- Using `any` to fix type errors shuold be avoided
 
 ## Important Notes
 

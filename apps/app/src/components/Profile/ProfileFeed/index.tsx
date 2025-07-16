@@ -61,7 +61,7 @@ export const ProfileFeed = ({
 
   return (
     <div className={className}>
-      <PostFeed posts={allPosts} user={user} withLinks={false} />
+      <PostFeed posts={allPosts} user={user} withLinks={false} slug={profile.profile.slug} limit={limit} />
       {shouldShowTrigger && (
         <div
           ref={ref as React.RefObject<HTMLDivElement>}
