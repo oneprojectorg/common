@@ -5,7 +5,7 @@ import { Button as RACButton } from 'react-aria-components';
 import { tv } from 'tailwind-variants';
 import type { VariantProps } from 'tailwind-variants';
 
-import { MenuTrigger } from './Menu';
+import { Menu, MenuItem, MenuTrigger } from './Menu';
 import { Popover } from './Popover';
 
 const reactionButtonStyle = tv({
@@ -28,14 +28,6 @@ const reactionButtonStyle = tv({
 
 const reactionGroupStyle = tv({
   base: 'flex items-center gap-1',
-});
-
-const reactionPickerStyle = tv({
-  base: 'grid grid-cols-4 gap-2 p-2',
-});
-
-const reactionPickerItemStyle = tv({
-  base: 'flex h-8 w-8 items-center justify-center rounded-full border-0 bg-transparent text-lg outline-none transition-colors duration-200 hover:bg-neutral-gray1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 pressed:bg-neutral-gray2',
 });
 
 type ReactionButtonVariants = VariantProps<typeof reactionButtonStyle>;
@@ -119,17 +111,13 @@ const ReactionPicker = ({
   onReactionSelect: (emoji: string) => void;
 }) => {
   return (
-    <div className={reactionPickerStyle()}>
+    <Menu className="flex" onAction={(key) => onReactionSelect(key as string)}>
       {reactionOptions.map((option) => (
-        <RACButton
-          key={option.emoji}
-          className={reactionPickerItemStyle()}
-          onPress={() => onReactionSelect(option.emoji)}
-        >
-          {option.emoji}
-        </RACButton>
+        <MenuItem key={option.emoji} id={option.emoji} textValue={option.label}>
+          <span className="text-lg">{option.emoji}</span>
+        </MenuItem>
       ))}
-    </div>
+    </Menu>
   );
 };
 
@@ -145,7 +133,7 @@ export const ReactionsButton = ({
       <div className={reactionGroupStyle({ className })}>
         <MenuTrigger>
           <ReactionButton size="icon" />
-          <Popover placement="bottom left" className="border bg-white">
+          <Popover placement="bottom left">
             <ReactionPicker
               reactionOptions={reactionOptions}
               onReactionSelect={(emoji) => onAddReaction?.(emoji)}
@@ -158,15 +146,17 @@ export const ReactionsButton = ({
 
   return (
     <div className={reactionGroupStyle({ className })}>
-      {reactions.map((reaction) => (
-        <ReactionButton
-          key={reaction.emoji}
-          emoji={reaction.emoji}
-          count={reaction.count}
-          active={reaction.isActive}
-          onPress={() => onReactionClick?.(reaction.emoji)}
-        />
-      ))}
+      {reactions.map((reaction) =>
+        reaction.count ? (
+          <ReactionButton
+            key={reaction.emoji}
+            emoji={reaction.emoji}
+            count={reaction.count}
+            active={reaction.isActive}
+            onPress={() => onReactionClick?.(reaction.emoji)}
+          />
+        ) : null,
+      )}
       <MenuTrigger>
         <ReactionButton size="icon" />
         <Popover placement="top left">
