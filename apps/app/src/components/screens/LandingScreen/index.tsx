@@ -12,29 +12,11 @@ import { NewlyJoinedModal } from '@/components/NewlyJoinedModal';
 import { OrganizationHighlights } from '@/components/OrganizationHighlights';
 import { OrganizationListSkeleton } from '@/components/OrganizationList';
 import { PendingRelationships } from '@/components/PendingRelationships';
-import { PostFeed, PostFeedSkeleton } from '@/components/PostFeed';
+import { PostFeedSkeleton } from '@/components/PostFeed';
 import { PostUpdate } from '@/components/PostUpdate';
 
+import { Feed } from './Feed';
 import { Welcome } from './Welcome';
-
-const Feed = async () => {
-  try {
-    const client = await trpcNext();
-    const { items: posts } = await client.organization.listAllPosts.query({});
-    const user = await client.account.getMyAccount.query();
-
-    return <PostFeed user={user} posts={posts} />;
-  } catch (error) {
-    console.error('Failed to load posts:', error);
-    return (
-      <div className="flex flex-col items-center justify-center py-8">
-        <span className="text-neutral-charcoal">
-          Unable to load posts. Please try refreshing.
-        </span>
-      </div>
-    );
-  }
-};
 
 const LandingScreenFeeds = ({
   user,

@@ -142,38 +142,161 @@ export const PostFeed = ({
   user,
   className,
   withLinks = true,
+  slug,
+  limit = 20,
 }: {
   posts: Array<PostToOrganization>;
   user?: OrganizationUser;
   className?: string;
   withLinks?: boolean;
+  slug?: string;
+  limit?: number;
 }) => {
   const reactionsEnabled = useFeatureFlagEnabled('reactions');
+  console.log('Reactions enabled:', reactionsEnabled);
   const utils = trpc.useUtils();
 
   const toggleReaction = trpc.organization.toggleReaction.useMutation({
-    onSuccess: () => {
-      // Invalidate queries to refetch latest data
-      void utils.organization.listPosts.invalidate();
-      void utils.organization.listAllPosts.invalidate();
+    onMutate: async ({ postId, reactionType }) => {
+      console.log('Optimistic update triggered for post:', postId, 'reaction:', reactionType);
+      console.log('Query parameters:', { slug, limit });
+      
+      // Cancel any outgoing refetches
+      if (slug) {
+        await utils.organization.listPosts.cancel({ slug, limit });
+      }
+      await utils.organization.listAllPosts.cancel({});
+
+      // Let's also try to get data with different parameter combinations for listAllPosts
+      console.log('Trying different query parameter combinations for listAllPosts...');
+      const testAllPosts1 = utils.organization.listAllPosts.getData({});
+      const testAllPosts2 = utils.organization.listAllPosts.getData({ limit: 200 });
+      console.log('testAllPosts1:', testAllPosts1 ? 'HAS DATA' : 'UNDEFINED');
+      console.log('testAllPosts2:', testAllPosts2 ? 'HAS DATA' : 'UNDEFINED');
+
+      // Snapshot the previous values
+      const previousListPosts = slug ? utils.organization.listPosts.getInfiniteData({ slug, limit }) : undefined;
+      const previousListAllPosts = utils.organization.listAllPosts.getData({});
+      
+      console.log('previousListPosts:', previousListPosts ? 'HAS DATA' : 'UNDEFINED');
+      console.log('previousListAllPosts:', previousListAllPosts ? 'HAS DATA' : 'UNDEFINED');
+
+      // Helper function to update post reactions
+      const updatePostReactions = (item: any) => {
+        if (item.post.id === postId) {
+          console.log('Found matching post for update:', item.post.id);
+          const currentReactions = item.post.userReactions || [];
+          const currentCounts = item.post.reactionCounts || {};
+          
+          // Check if user already has this reaction
+          const hasReaction = currentReactions.includes(reactionType);
+          console.log('Current reactions:', currentReactions, 'hasReaction:', hasReaction);
+          
+          if (hasReaction) {
+            // Remove reaction
+            const updated = {
+              ...item,
+              post: {
+                ...item.post,
+                userReactions: currentReactions.filter((r: string) => r !== reactionType),
+                reactionCounts: {
+                  ...currentCounts,
+                  [reactionType]: Math.max(0, (currentCounts[reactionType] || 0) - 1)
+                }
+              }
+            };
+            console.log('Removing reaction, updated item:', updated);
+            return updated;
+          } else {
+            // Add reaction
+            const updated = {
+              ...item,
+              post: {
+                ...item.post,
+                userReactions: [...currentReactions, reactionType],
+                reactionCounts: {
+                  ...currentCounts,
+                  [reactionType]: (currentCounts[reactionType] || 0) + 1
+                }
+              }
+            };
+            console.log('Adding reaction, updated item:', updated);
+            return updated;
+          }
+        }
+        return item;
+      };
+
+      // Optimistically update listPosts cache (if slug is provided)
+      if (slug) {
+        console.log('Updating infinite query for slug:', slug, 'limit:', limit);
+        utils.organization.listPosts.setInfiniteData({ slug, limit }, (old: any) => {
+          if (!old) {
+            console.log('No previous infinite data found');
+            return old;
+          }
+          console.log('Previous infinite data:', old);
+          const updated = {
+            ...old,
+            pages: old.pages.map((page: any) => ({
+              ...page,
+              items: page.items.map(updatePostReactions)
+            }))
+          };
+          console.log('Updated infinite data:', updated);
+          return updated;
+        });
+      }
+
+      // Optimistically update listAllPosts cache
+      utils.organization.listAllPosts.setData({}, (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          items: old.items.map(updatePostReactions)
+        };
+      });
+
+      return { previousListPosts, previousListAllPosts };
     },
-    onError: (err) => {
+    onError: (err, _variables, context) => {
+      // Rollback on error
+      if (context?.previousListPosts && slug) {
+        utils.organization.listPosts.setInfiniteData(
+          { slug, limit },
+          context.previousListPosts,
+        );
+      }
+      if (context?.previousListAllPosts) {
+        utils.organization.listAllPosts.setData(
+          {},
+          context.previousListAllPosts,
+        );
+      }
       toast.error({ message: err.message || 'Failed to update reaction' });
+    },
+    onSuccess: (data) => {
+      console.log('Reaction mutation successful:', data);
+      // Skip invalidation to preserve optimistic updates
+      // The optimistic update should be accurate enough
     },
   });
 
   const handleReactionClick = (postId: string, emoji: string) => {
+    console.log('handleReactionClick called with:', { postId, emoji });
     // Convert emoji to reaction type using REACTION_OPTIONS
     const reactionOption = REACTION_OPTIONS.find(
       (option) => option.emoji === emoji,
     );
     const reactionType = reactionOption?.key;
+    console.log('Found reaction type:', reactionType);
 
     if (!reactionType) {
       console.error('Unknown emoji:', emoji);
       return;
     }
 
+    console.log('Calling toggleReaction.mutate with:', { postId, reactionType });
     toggleReaction.mutate({ postId, reactionType });
   };
 

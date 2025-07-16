@@ -9,7 +9,7 @@ import { MenuTrigger } from './Menu';
 import { Popover } from './Popover';
 
 const reactionButtonStyle = tv({
-  base: 'flex items-center justify-center gap-1 rounded-full border-0 bg-neutral-offWhite p-1 text-xs font-normal leading-6 outline-none transition-colors duration-200 hover:bg-neutral-gray1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 pressed:bg-neutral-gray2',
+  base: 'flex items-center justify-center gap-1 rounded-full border-0 bg-neutral-offWhite p-1 text-xs font-normal leading-6 outline-none transition-colors duration-200 hover:bg-neutral-gray1 focus-visible:outline-1 focus-visible:-outline-offset-1 focus-visible:outline-data-blue pressed:bg-neutral-gray2',
   variants: {
     size: {
       small: 'h-8 min-w-8 px-2',
@@ -122,7 +122,7 @@ const ReactionPicker = ({
     <div className={reactionPickerStyle()}>
       {reactionOptions.map((option) => (
         <RACButton
-          key={option.key}
+          key={option.emoji}
           className={reactionPickerItemStyle()}
           onPress={() => onReactionSelect(option.emoji)}
         >
@@ -145,7 +145,7 @@ export const ReactionsButton = ({
       <div className={reactionGroupStyle({ className })}>
         <MenuTrigger>
           <ReactionButton size="icon" />
-          <Popover placement="top">
+          <Popover placement="bottom left" className="border bg-white">
             <ReactionPicker
               reactionOptions={reactionOptions}
               onReactionSelect={(emoji) => onAddReaction?.(emoji)}
@@ -169,7 +169,7 @@ export const ReactionsButton = ({
       ))}
       <MenuTrigger>
         <ReactionButton size="icon" />
-        <Popover placement="top">
+        <Popover placement="top left">
           <ReactionPicker
             reactionOptions={reactionOptions}
             onReactionSelect={(emoji) => onAddReaction?.(emoji)}
