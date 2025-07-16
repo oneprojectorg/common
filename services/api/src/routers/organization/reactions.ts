@@ -1,4 +1,4 @@
-import { getCurrentProfileId } from '@op/common';
+import { CommonError, getCurrentProfileId } from '@op/common';
 import { postReactions } from '@op/db/schema';
 import { VALID_REACTION_TYPES } from '@op/types';
 import { TRPCError } from '@trpc/server';
@@ -98,43 +98,47 @@ export const reactionsRouter = router({
       const { postId, reactionType } = input;
       const { database } = ctx;
 
-      const profileId = await getCurrentProfileId({ database: database.db });
+      try {
+        const profileId = await getCurrentProfileId({ database: database.db });
 
-      // Check if reaction exists
-      const existingReaction = await database.db
-        .select()
-        .from(postReactions)
-        .where(
-          and(
-            eq(postReactions.postId, postId),
-            eq(postReactions.profileId, profileId),
-            eq(postReactions.reactionType, reactionType),
-          ),
-        )
-        .limit(1);
-
-      if (existingReaction.length > 0) {
-        // Remove existing reaction
-        await database.db
-          .delete(postReactions)
+        // Check if reaction exists
+        const existingReaction = await database.db
+          .select()
+          .from(postReactions)
           .where(
             and(
               eq(postReactions.postId, postId),
               eq(postReactions.profileId, profileId),
               eq(postReactions.reactionType, reactionType),
             ),
-          );
+          )
+          .limit(1);
 
-        return { success: true, action: 'removed' };
-      } else {
-        // Add new reaction
-        await database.db.insert(postReactions).values({
-          postId,
-          profileId,
-          reactionType,
-        });
+        if (existingReaction.length > 0) {
+          // Remove existing reaction
+          await database.db
+            .delete(postReactions)
+            .where(
+              and(
+                eq(postReactions.postId, postId),
+                eq(postReactions.profileId, profileId),
+                eq(postReactions.reactionType, reactionType),
+              ),
+            );
 
-        return { success: true, action: 'added' };
+          return { success: true, action: 'removed' };
+        } else {
+          // Add new reaction
+          await database.db.insert(postReactions).values({
+            postId,
+            profileId,
+            reactionType,
+          });
+
+          return { success: true, action: 'added' };
+        }
+      } catch (e) {
+        throw new CommonError('Failed to toggle reaction');
       }
     }),
 });
