@@ -8,6 +8,7 @@ import {
   decodeCursor,
   encodeCursor,
 } from '../../utils';
+import { getCurrentProfileId } from '../access';
 
 export const listPosts = async ({
   user,
@@ -98,32 +99,11 @@ export const listPosts = async ({
         ? encodeCursor(new Date(lastItem.createdAt), lastItem.postId)
         : null;
 
+    const actorProfileId = await getCurrentProfileId({ database: db });
     // Transform items to include reaction counts and user's reactions
-    const itemsWithReactions = items.map((item: any) => {
-      const reactionCounts: Record<string, number> = {};
-      const userReactions: string[] = [];
-
-      // Count reactions by type
-      if (item.post.reactions) {
-        item.post.reactions.forEach((reaction: any) => {
-          reactionCounts[reaction.reactionType] =
-            (reactionCounts[reaction.reactionType] || 0) + 1;
-
-          // Track user's reactions
-          if (reaction.userId === user.id) {
-            userReactions.push(reaction.reactionType);
-          }
-        });
-      }
-
-      return {
-        ...item,
-        post: {
-          ...item.post,
-          reactionCounts,
-          userReactions,
-        },
-      };
+    const itemsWithReactions = getItemsWithReactions({
+      items,
+      profileId: actorProfileId,
     });
 
     return {
@@ -136,3 +116,39 @@ export const listPosts = async ({
     throw e;
   }
 };
+
+// Using `any` here because the Drizzle query result has a complex nested structure
+// that's difficult to type precisely. The function is type-safe internally.
+export const getItemsWithReactions = ({
+  items,
+  profileId,
+}: {
+  items: any[];
+  profileId: string;
+}): Array<any & { post: any & { reactionCounts: Record<string, number>; userReactions: string[] } }> =>
+  items.map((item) => {
+    const reactionCounts: Record<string, number> = {};
+    const userReactions: string[] = [];
+
+    // Count reactions by type
+    if (item.post.reactions) {
+      item.post.reactions.forEach((reaction: { reactionType: string; profileId: string }) => {
+        reactionCounts[reaction.reactionType] =
+          (reactionCounts[reaction.reactionType] || 0) + 1;
+
+        // Track user's reactions
+        if (reaction.profileId === profileId) {
+          userReactions.push(reaction.reactionType);
+        }
+      });
+    }
+
+    return {
+      ...item,
+      post: {
+        ...item.post,
+        reactionCounts,
+        userReactions,
+      },
+    };
+  });

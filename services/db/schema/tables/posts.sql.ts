@@ -1,4 +1,4 @@
-import { relations } from 'drizzle-orm';
+import { InferModel, relations } from 'drizzle-orm';
 import { index, pgTable, primaryKey, text, uuid } from 'drizzle-orm/pg-core';
 
 import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
@@ -56,3 +56,6 @@ export const postsToOrganizationsRelations = relations(
     }),
   }),
 );
+
+export type Post = InferModel<typeof posts>;
+export type PostToOrganization = InferModel<typeof postsToOrganizations>;

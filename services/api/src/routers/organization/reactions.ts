@@ -1,3 +1,4 @@
+import { getCurrentProfileId } from '@op/common';
 import { postReactions } from '@op/db/schema';
 import { VALID_REACTION_TYPES } from '@op/types';
 import { TRPCError } from '@trpc/server';
@@ -24,12 +25,14 @@ export const reactionsRouter = router({
     )
     .mutation(async ({ input, ctx }) => {
       const { postId, reactionType } = input;
-      const { user, database } = ctx;
+      const { database } = ctx;
 
       try {
+        const profileId = await getCurrentProfileId({ database: database.db });
+
         await database.db.insert(postReactions).values({
           postId,
-          userId: user.id,
+          profileId,
           reactionType,
         });
 
@@ -65,14 +68,15 @@ export const reactionsRouter = router({
     )
     .mutation(async ({ input, ctx }) => {
       const { postId, reactionType } = input;
-      const { user, database } = ctx;
+      const { database } = ctx;
 
+      const profileId = await getCurrentProfileId({ database: database.db });
       await database.db
         .delete(postReactions)
         .where(
           and(
             eq(postReactions.postId, postId),
-            eq(postReactions.userId, user.id),
+            eq(postReactions.profileId, profileId),
             eq(postReactions.reactionType, reactionType),
           ),
         );
@@ -92,7 +96,9 @@ export const reactionsRouter = router({
     )
     .mutation(async ({ input, ctx }) => {
       const { postId, reactionType } = input;
-      const { user, database } = ctx;
+      const { database } = ctx;
+
+      const profileId = await getCurrentProfileId({ database: database.db });
 
       // Check if reaction exists
       const existingReaction = await database.db
@@ -101,7 +107,7 @@ export const reactionsRouter = router({
         .where(
           and(
             eq(postReactions.postId, postId),
-            eq(postReactions.userId, user.id),
+            eq(postReactions.profileId, profileId),
             eq(postReactions.reactionType, reactionType),
           ),
         )
@@ -114,7 +120,7 @@ export const reactionsRouter = router({
           .where(
             and(
               eq(postReactions.postId, postId),
-              eq(postReactions.userId, user.id),
+              eq(postReactions.profileId, profileId),
               eq(postReactions.reactionType, reactionType),
             ),
           );
@@ -124,7 +130,7 @@ export const reactionsRouter = router({
         // Add new reaction
         await database.db.insert(postReactions).values({
           postId,
-          userId: user.id,
+          profileId,
           reactionType,
         });
 

@@ -1,9 +1,9 @@
-import { relations } from 'drizzle-orm';
+import { InferModel, relations } from 'drizzle-orm';
 import { index, pgTable, uniqueIndex, varchar } from 'drizzle-orm/pg-core';
 
 import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
 import { posts } from './posts.sql';
-import { users } from './users.sql';
+import { profiles } from './profiles.sql';
 
 export const postReactions = pgTable(
   'post_reactions',
@@ -14,9 +14,9 @@ export const postReactions = pgTable(
       .references(() => posts.id, {
         onDelete: 'cascade',
       }),
-    userId: autoId()
+    profileId: autoId()
       .notNull()
-      .references(() => users.id, {
+      .references(() => profiles.id, {
         onDelete: 'cascade',
       }),
     reactionType: varchar({ length: 50 }).notNull(),
@@ -25,9 +25,9 @@ export const postReactions = pgTable(
   (table) => [
     ...serviceRolePolicies,
     index().on(table.postId).concurrently(),
-    index().on(table.userId).concurrently(),
+    index().on(table.profileId).concurrently(),
     index().on(table.reactionType).concurrently(),
-    uniqueIndex().on(table.postId, table.userId, table.reactionType),
+    uniqueIndex().on(table.postId, table.profileId, table.reactionType),
   ],
 );
 
@@ -36,8 +36,10 @@ export const postReactionsRelations = relations(postReactions, ({ one }) => ({
     fields: [postReactions.postId],
     references: [posts.id],
   }),
-  user: one(users, {
-    fields: [postReactions.userId],
-    references: [users.id],
+  profile: one(profiles, {
+    fields: [postReactions.profileId],
+    references: [profiles.id],
   }),
 }));
+
+export type PostReaction = InferModel<typeof postReactions>;

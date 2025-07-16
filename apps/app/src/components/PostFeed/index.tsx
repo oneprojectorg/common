@@ -1,3 +1,5 @@
+'use client';
+
 import { getPublicUrl } from '@/utils';
 import { OrganizationUser } from '@/utils/UserProvider';
 import { detectLinks, linkifyText } from '@/utils/linkDetection';
@@ -15,6 +17,7 @@ import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
 import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';
+import { useFeatureFlagEnabled } from 'posthog-js/react';
 import { Fragment, ReactNode } from 'react';
 import { LuEllipsis, LuLeaf } from 'react-icons/lu';
 
@@ -145,6 +148,7 @@ export const PostFeed = ({
   className?: string;
   withLinks?: boolean;
 }) => {
+  const reactionsEnabled = useFeatureFlagEnabled('reactions');
   const utils = trpc.useUtils();
 
   const toggleReaction = trpc.organization.toggleReaction.useMutation({
@@ -160,9 +164,11 @@ export const PostFeed = ({
 
   const handleReactionClick = (postId: string, emoji: string) => {
     // Convert emoji to reaction type using REACTION_OPTIONS
-    const reactionOption = REACTION_OPTIONS.find(option => option.emoji === emoji);
+    const reactionOption = REACTION_OPTIONS.find(
+      (option) => option.emoji === emoji,
+    );
     const reactionType = reactionOption?.key;
-    
+
     if (!reactionType) {
       console.error('Unknown emoji:', emoji);
       return;
@@ -263,27 +269,41 @@ export const PostFeed = ({
                         ))}
                       </div>
                     )}
+                    {reactionsEnabled && post?.id && (
+                      <ReactionsButton
+                        reactions={
+                          post.reactionCounts
+                            ? Object.entries(post.reactionCounts).map(
+                                ([reactionType, count]) => {
+                                  // Convert reaction type to emoji
+                                  const reactionOption = REACTION_OPTIONS.find(
+                                    (option) => option.key === reactionType,
+                                  );
+                                  const emoji =
+                                    reactionOption?.emoji || reactionType;
+
+                                  return {
+                                    emoji,
+                                    count,
+                                    isActive:
+                                      post.userReactions?.includes(
+                                        reactionType,
+                                      ) || false,
+                                  };
+                                },
+                              )
+                            : []
+                        }
+                        reactionOptions={REACTION_OPTIONS}
+                        onReactionClick={(emoji) => {
+                          handleReactionClick(post.id!, emoji);
+                        }}
+                        onAddReaction={(emoji) => {
+                          handleReactionClick(post.id!, emoji);
+                        }}
+                      />
+                    )}
                   </FeedContent>
-                  {post?.id && (
-                    <ReactionsButton
-                      reactions={
-                        post.reactionCounts
-                          ? Object.entries(post.reactionCounts).map(([emoji, count]) => ({
-                              emoji,
-                              count,
-                              isActive: post.userReactions?.includes(emoji) || false,
-                            }))
-                          : []
-                      }
-                      reactionOptions={REACTION_OPTIONS}
-                      onReactionClick={(emoji) => {
-                        handleReactionClick(post.id!, emoji);
-                      }}
-                      onAddReaction={(emoji) => {
-                        handleReactionClick(post.id!, emoji);
-                      }}
-                    />
-                  )}
                 </FeedMain>
               </FeedItem>
               <hr className="bg-neutral-gray1" />
