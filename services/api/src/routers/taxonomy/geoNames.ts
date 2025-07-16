@@ -54,6 +54,17 @@ const getGeonames = async ({ q }: { q: string }) => {
     if (data.places) {
       for (const place of data.places) {
         if (place.location && place.formattedAddress) {
+          const isAddress = place.addressComponents?.find(
+            (component: any) =>
+              component.types.includes('street_number') ||
+              component.types.includes('route') ||
+              component.types.includes('postal_code'),
+          );
+
+          if (isAddress) {
+            continue;
+          }
+
           const countryComponent = place.addressComponents?.find(
             (component: any) => component.types.includes('country'),
           );
@@ -118,11 +129,12 @@ export const getGeoNames = router({
     .query(async ({ input }) => {
       const { q } = input;
 
-      const geonames = await cache({
-        type: 'geonames',
-        params: [q],
-        fetch: () => getGeonames({ q }),
-      });
+      const geonames = await getGeonames({ q });
+      // const geonames = await cache({
+      // type: 'geonames',
+      // params: [q],
+      // fetch: () => getGeonames({ q }),
+      // });
 
       return {
         geonames,
