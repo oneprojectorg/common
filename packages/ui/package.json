@@ -31,6 +31,7 @@
     "./NumberField": "./src/components/NumberField.tsx",
     "./Popover": "./src/components/Popover.tsx",
     "./RadioGroup": "./src/components/RadioGroup.tsx",
+    "./ReactionsButton": "./src/components/ReactionsButton.tsx",
     "./Surface": "./src/components/Surface.tsx",
     "./RAC": "./src/RAC.ts",
     "./RAH": "./src/RAH.ts",

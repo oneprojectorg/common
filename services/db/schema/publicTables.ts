@@ -27,6 +27,8 @@ export {
   postsToOrganizationsRelations,
 } from './tables/posts.sql';
 
+export { postReactions, postReactionsRelations } from './tables/postReactions.sql';
+
 export { attachments, attachmentsRelations } from './tables/attachments.sql';
 
 export {

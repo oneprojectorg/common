@@ -1,9 +1,10 @@
-import { relations } from 'drizzle-orm';
+import { InferModel, relations } from 'drizzle-orm';
 import { index, pgTable, primaryKey, text, uuid } from 'drizzle-orm/pg-core';
 
 import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
 import { attachments } from './attachments.sql';
 import { organizations } from './organizations.sql';
+import { postReactions } from './postReactions.sql';
 
 export const posts = pgTable(
   'posts',
@@ -39,6 +40,7 @@ export const postsToOrganizations = pgTable(
 export const postsRelations = relations(posts, ({ many }) => ({
   organization: many(organizations),
   attachments: many(attachments),
+  reactions: many(postReactions),
 }));
 
 export const postsToOrganizationsRelations = relations(
@@ -54,3 +56,6 @@ export const postsToOrganizationsRelations = relations(
     }),
   }),
 );
+
+export type Post = InferModel<typeof posts>;
+export type PostToOrganization = InferModel<typeof postsToOrganizations>;

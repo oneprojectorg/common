@@ -1,8 +1,11 @@
 import { OPURLConfig, cookieOptionsDomain } from '@op/core';
-import { and, db } from '@op/db/client';
+import { and, db, eq } from '@op/db/client';
+import { organizations } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { createServerClient } from '@op/supabase/lib';
 import { cookies } from 'next/headers';
+
+import { NotFoundError, UnauthorizedError } from '../../utils/error';
 
 // gets a user assuming that the user is authenticated
 export const getOrgAccessUser = async ({
@@ -84,4 +87,27 @@ export const getSession = async () => {
     console.error('ERROR');
     return null;
   }
+};
+
+export const getCurrentProfileId = async ({
+  database,
+}: {
+  database: typeof db;
+}) => {
+  const { user } = (await getSession()) ?? {};
+
+  if (!user || !user.lastOrgId) {
+    throw new UnauthorizedError("You don't have access to do this");
+  }
+  const [sourceOrg] = await database
+    .select({ profileId: organizations.profileId })
+    .from(organizations)
+    .where(eq(organizations.id, user.lastOrgId))
+    .limit(1);
+
+  if (!sourceOrg) {
+    throw new NotFoundError('Organization not found');
+  }
+
+  return sourceOrg.profileId;
 };
