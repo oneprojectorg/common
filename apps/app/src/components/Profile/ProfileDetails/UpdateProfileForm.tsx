@@ -75,6 +75,7 @@ export const UpdateProfileForm = forwardRef<
         title: value.title,
       });
       utils.account.getMyAccount.invalidate();
+      utils.account.getUserProfiles.invalidate();
       utils.organization.listPosts.invalidate();
       onSuccess();
     },
@@ -133,6 +134,7 @@ export const UpdateProfileForm = forwardRef<
                   {
                     onSuccess: () => {
                       utils.account.getMyAccount.invalidate();
+                      utils.account.getUserProfiles.invalidate();
                     },
                   },
                 );

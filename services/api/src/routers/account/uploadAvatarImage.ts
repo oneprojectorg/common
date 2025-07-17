@@ -1,7 +1,7 @@
 import { trackImageUpload } from '@op/analytics';
 import { CommonError } from '@op/common';
 import { eq } from '@op/db/client';
-import { users } from '@op/db/schema';
+import { users, profiles } from '@op/db/schema';
 import { createServerClient } from '@op/supabase/lib';
 import { TRPCError } from '@trpc/server';
 import { waitUntil } from '@vercel/functions';
@@ -129,20 +129,34 @@ export const uploadAvatarImage = router({
 
       // assign the avatar image
       if (data) {
-        // Check if user had previous avatar
+        // Check if user had previous avatar and get their profile ID
         const [existingUser] = await db
-          .select({ avatarImageId: users.avatarImageId })
+          .select({ 
+            avatarImageId: users.avatarImageId,
+            profileId: users.profileId 
+          })
           .from(users)
           .where(eq(users.authUserId, ctx.user.id));
 
         const hadPreviousImage = existingUser?.avatarImageId;
 
+        // Update user avatar
         await db
           .update(users)
           .set({
             avatarImageId: data.id,
           })
           .where(eq(users.authUserId, ctx.user.id));
+
+        // Update personal profile avatar if user has a profile
+        if (existingUser?.profileId) {
+          await db
+            .update(profiles)
+            .set({
+              avatarImageId: data.id,
+            })
+            .where(eq(profiles.id, existingUser.profileId));
+        }
 
         // Track analytics (non-blocking)
         waitUntil(trackImageUpload(ctx.user.id, 'profile', !!hadPreviousImage));
