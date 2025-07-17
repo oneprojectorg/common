@@ -31,6 +31,7 @@ import ErrorBoundary from '../ErrorBoundary';
 import { InviteUserModal } from '../InviteUserModal';
 import { PrivacyPolicyModal } from '../PrivacyPolicyModal';
 import { UpdateProfileModal } from '../Profile/ProfileDetails/UpdateProfileModal';
+import { ProfileSwitchingModal } from '../ProfileSwitchingModal';
 import { SearchInput } from '../SearchInput';
 import { ToSModal } from '../ToSModal';
 
@@ -62,13 +63,21 @@ const AvatarMenuContent = ({
   const router = useRouter();
   const utils = trpc.useUtils();
   const t = useTranslations();
+  const [isSwitchingProfile, setIsSwitchingProfile] = useState(false);
+  const [switchingToProfile, setSwitchingToProfile] = useState<{
+    name: string;
+    avatarImage?: { name: string } | null;
+  } | null>(null);
+
   const switchProfile = trpc.account.switchProfile.useMutation({
     onSuccess: () => {
       utils.account.getMyAccount.invalidate();
       utils.invalidate();
+      setIsSwitchingProfile(false);
+      setSwitchingToProfile(null);
     },
   });
-  
+
   const { data: userProfiles } = trpc.account.getUserProfiles.useQuery();
 
   return (
@@ -112,21 +121,29 @@ const AvatarMenuContent = ({
           key={profile.id}
           className={cn(
             'min-h-[60px] px-4 py-4 text-neutral-charcoal',
-            user?.currentProfile?.id === profile.id &&
-              'bg-neutral-offWhite',
+            user?.currentProfile?.id === profile.id && 'bg-neutral-offWhite',
           )}
           onAction={() => {
             if (user?.currentProfile?.id === profile.id) {
-              const profilePath = profile.type === 'user' ? `/profile/${profile.slug}` : `/org/${profile.slug}`;
+              const profilePath =
+                profile.type === 'user'
+                  ? `/profile/${profile.slug}`
+                  : `/org/${profile.slug}`;
               router.push(profilePath);
               onClose?.();
               return;
             }
 
+            setSwitchingToProfile({
+              name: profile.name,
+              avatarImage: profile.avatarImage,
+            });
+            setIsSwitchingProfile(true);
+            onClose?.();
+
             void switchProfile.mutate({
               profileId: profile.id,
             });
-            onClose?.();
           }}
         >
           <Avatar placeholder={profile.name}>
@@ -155,7 +172,7 @@ const AvatarMenuContent = ({
           window.open(
             'https://harmonious-peridot-9d5.notion.site/Common-Platform-Feature-Requests-Bug-Submissions-21fa0d01a6d981f48c9cd48a4a63267e',
             '_blank',
-            'noopener,noreferrer'
+            'noopener,noreferrer',
           );
 
           onClose?.();
@@ -195,6 +212,12 @@ const AvatarMenuContent = ({
           Ethical Open Source • One Project • {new Date().getFullYear()}
         </div>
       </MenuItemSimple>
+      <ProfileSwitchingModal
+        isOpen={isSwitchingProfile}
+        avatarImage={switchingToProfile?.avatarImage}
+        profileName={switchingToProfile?.name}
+        onOpenChange={setIsSwitchingProfile}
+      />
     </>
   );
 };
@@ -214,11 +237,7 @@ const UserAvatarMenu = () => {
       <Avatar placeholder={user?.currentProfile?.name}>
         {user?.currentProfile?.avatarImage?.name ? (
           <Image
-            src={
-              getPublicUrl(
-                user?.currentProfile?.avatarImage.name,
-              ) ?? ''
-            }
+            src={getPublicUrl(user?.currentProfile?.avatarImage.name) ?? ''}
             alt="User avatar"
             fill
             className="object-cover"
