@@ -5,6 +5,7 @@ import { storageItemEncoder } from './storageItem';
 
 export const profileEncoder = createSelectSchema(profiles)
   .pick({
+    id: true,
     slug: true,
     name: true,
     city: true,

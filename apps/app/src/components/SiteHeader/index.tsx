@@ -62,12 +62,14 @@ const AvatarMenuContent = ({
   const router = useRouter();
   const utils = trpc.useUtils();
   const t = useTranslations();
-  const switchOrganization = trpc.account.switchOrganization.useMutation({
+  const switchProfile = trpc.account.switchProfile.useMutation({
     onSuccess: () => {
       utils.account.getMyAccount.invalidate();
       utils.invalidate();
     },
   });
+  
+  const { data: userProfiles } = trpc.account.getUserProfiles.useQuery();
 
   return (
     <>
@@ -101,49 +103,46 @@ const AvatarMenuContent = ({
           </span>
 
           <span className="text-sm text-neutral-gray4 sm:text-xs">
-            Admin for {user?.currentProfile?.name}
+            Current profile: {user?.currentProfile?.name}
           </span>
         </div>
       </MenuItemSimple>
-      {user?.organizationUsers?.map((orgUser) => (
+      {userProfiles?.map((profile) => (
         <MenuItem
-          key={orgUser.organizationId}
+          key={profile.id}
           className={cn(
             'min-h-[60px] px-4 py-4 text-neutral-charcoal',
-            user.currentOrganization?.id === orgUser.organizationId &&
+            user?.currentProfile?.id === profile.id &&
               'bg-neutral-offWhite',
           )}
           onAction={() => {
-            if (user.currentOrganization?.id === orgUser.organizationId) {
-              router.push(`/org/${orgUser.organization?.profile.slug}`);
+            if (user?.currentProfile?.id === profile.id) {
+              const profilePath = profile.type === 'user' ? `/profile/${profile.slug}` : `/org/${profile.slug}`;
+              router.push(profilePath);
               onClose?.();
               return;
             }
 
-            void switchOrganization.mutate({
-              // @ts-expect-error this is a backend issue to be resolved
-              organizationId: orgUser.organization?.id,
+            void switchProfile.mutate({
+              profileId: profile.id,
             });
             onClose?.();
           }}
         >
-          <Avatar placeholder={orgUser.organization?.profile.name}>
-            {orgUser.organization?.profile.avatarImage?.name ? (
+          <Avatar placeholder={profile.name}>
+            {profile.avatarImage?.name ? (
               <Image
-                src={
-                  getPublicUrl(orgUser.organization.profile.avatarImage.name) ??
-                  ''
-                }
-                alt="User avatar"
+                src={getPublicUrl(profile.avatarImage.name) ?? ''}
+                alt="Profile avatar"
                 fill
                 className="object-cover"
               />
             ) : null}
           </Avatar>
           <div className="flex flex-col">
-            <div>{orgUser.organization?.profile.name}</div>
+            <div>{profile.name}</div>
             <div className="text-sm capitalize text-neutral-gray4">
-              {orgUser.organization?.orgType}
+              {profile.type === 'user' ? 'Personal' : 'Organization'}
             </div>
           </div>
         </MenuItem>
