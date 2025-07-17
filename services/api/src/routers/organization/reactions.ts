@@ -28,7 +28,7 @@ export const reactionsRouter = router({
       const { database } = ctx;
 
       try {
-        const profileId = await getCurrentProfileId({ database: database.db });
+        const profileId = await getCurrentProfileId();
 
         await database.db.insert(postReactions).values({
           postId,
@@ -70,7 +70,7 @@ export const reactionsRouter = router({
       const { postId, reactionType } = input;
       const { database } = ctx;
 
-      const profileId = await getCurrentProfileId({ database: database.db });
+      const profileId = await getCurrentProfileId();
       await database.db
         .delete(postReactions)
         .where(
@@ -98,7 +98,7 @@ export const reactionsRouter = router({
       const { postId, reactionType } = input;
       const { database } = ctx;
 
-      const profileId = await getCurrentProfileId({ database: database.db });
+      const profileId = await getCurrentProfileId();
 
       // Check if reaction exists
       const existingReaction = await database.db

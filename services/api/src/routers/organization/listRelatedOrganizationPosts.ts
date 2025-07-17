@@ -113,7 +113,7 @@ export const listRelatedOrganizationPostsRouter = router({
           orderBy: (table, { desc }) => desc(table.createdAt),
           limit: limit + 1, // Fetch one extra to check hasMore
         }),
-        getCurrentProfileId({ database: db }),
+        getCurrentProfileId(),
       ]);
 
       const hasMore = result.length > limit;
