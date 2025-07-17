@@ -92,7 +92,7 @@ export const inviteUserRouter = router({
 
         // For new organization invites, we don't need the user to be in an organization
         // For existing organization invites, we do need it
-        if ((!authUser?.lastProfileId && !authUser?.lastOrgId) || !authUser.currentOrganization) {
+        if ((!authUser?.currentProfileId && !authUser?.lastOrgId) || !authUser.currentOrganization) {
           throw new UnauthorizedError(
             'User must be associated with an organization to send invites',
           );

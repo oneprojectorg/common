@@ -36,7 +36,7 @@ export const users = pgTable(
     lastOrgId: uuid().references(() => organizations.id, {
       onDelete: 'set null',
     }),
-    lastProfileId: uuid().references(() => profiles.id, {
+    currentProfileId: uuid().references(() => profiles.id, {
       onDelete: 'set null',
     }),
     tos: boolean(),
@@ -64,7 +64,7 @@ export const usersRelations = relations(users, ({ many, one }) => ({
     references: [organizations.id],
   }),
   currentProfile: one(profiles, {
-    fields: [users.lastProfileId],
+    fields: [users.currentProfileId],
     references: [profiles.id],
   }),
   avatarImage: one(objectsInStorage, {

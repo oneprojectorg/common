@@ -74,10 +74,10 @@ export const updateUserProfile = async ({
         throw new Error('Failed to create profile');
       }
 
-      // Update user's lastProfileId to point to the new profile
+      // Update user's currentProfileId to point to the new profile
       await dbClient
         .update(users)
-        .set({ lastProfileId: newProfile.id })
+        .set({ currentProfileId: newProfile.id })
         .where(eq(users.authUserId, user.id));
     }
   }

@@ -97,10 +97,10 @@ export const joinOrganization = async ({
       });
     }
 
-    // Update user's lastProfileId to this organization's profile
+    // Update user's currentProfileId to this organization's profile
     await tx
       .update(users)
-      .set({ lastProfileId: organization.profileId })
+      .set({ currentProfileId: organization.profileId })
       .where(eq(users.authUserId, user.id));
 
     return newOrgUser;

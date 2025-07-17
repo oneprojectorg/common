@@ -51,14 +51,14 @@ export const switchOrganization = router({
 
         result = await db
           .update(users)
-          .set({ lastProfileId: organization.profileId })
+          .set({ currentProfileId: organization.profileId })
           .where(eq(users.authUserId, id))
           .returning();
       } catch (error) {
         console.error(error);
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to update lastProfileId',
+          message: 'Failed to update currentProfileId',
         });
       }
 

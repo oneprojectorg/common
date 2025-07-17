@@ -59,7 +59,7 @@ export const listRelationshipsRouter = router({
 
       try {
         const session = await getSession();
-        if (!session || (!session.user.lastProfileId && !session.user.lastOrgId)) {
+        if (!session || (!session.user.currentProfileId && !session.user.lastOrgId)) {
           throw new UnauthorizedError('No user found');
         }
 
@@ -96,7 +96,7 @@ export const listRelationshipsRouter = router({
 
       try {
         const session = await getSession();
-        if (!session || (!session.user.lastProfileId && !session.user.lastOrgId)) {
+        if (!session || (!session.user.currentProfileId && !session.user.lastOrgId)) {
           throw new UnauthorizedError('No user found');
         }
 

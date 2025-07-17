@@ -82,8 +82,8 @@ export const getSession = async () => {
       return null;
     }
 
-    // Backwards compatibility: migrate lastOrgId to lastProfileId if needed
-    if (dbUser.lastOrgId && !dbUser.lastProfileId) {
+    // Backwards compatibility: migrate lastOrgId to currentProfileId if needed
+    if (dbUser.lastOrgId && !dbUser.currentProfileId) {
       try {
         const [org] = await db
           .select({ profileId: organizations.profileId })
@@ -95,11 +95,11 @@ export const getSession = async () => {
           // Update the user with the profile ID
           await db
             .update(users)
-            .set({ lastProfileId: org.profileId })
+            .set({ currentProfileId: org.profileId })
             .where(eq(users.authUserId, user.id));
 
           // Return the updated user object
-          return { user: { ...dbUser, lastProfileId: org.profileId } };
+          return { user: { ...dbUser, currentProfileId: org.profileId } };
         }
       } catch (migrationError) {
         console.error('Migration error:', migrationError);
@@ -121,12 +121,12 @@ export const getCurrentProfileId = async () => {
     throw new UnauthorizedError("You don't have access to do this");
   }
 
-  // Primary: use lastProfileId if available
-  if (user.lastProfileId) {
-    return user.lastProfileId;
+  // Primary: use currentProfileId if available
+  if (user.currentProfileId) {
+    return user.currentProfileId;
   }
 
-  // Fallback: if lastOrgId exists but lastProfileId doesn't, convert it
+  // Fallback: if lastOrgId exists but currentProfileId doesn't, convert it
   if (user.lastOrgId) {
     try {
       const [org] = await db
@@ -157,12 +157,12 @@ export const getCurrentOrgId = async ({
     throw new UnauthorizedError("You don't have access to do this");
   }
 
-  // Primary: use lastProfileId if available
-  if (user.lastProfileId) {
+  // Primary: use currentProfileId if available
+  if (user.currentProfileId) {
     const [org] = await database
       .select({ id: organizations.id })
       .from(organizations)
-      .where(eq(organizations.profileId, user.lastProfileId))
+      .where(eq(organizations.profileId, user.currentProfileId))
       .limit(1);
 
     if (org) {
@@ -170,7 +170,7 @@ export const getCurrentOrgId = async ({
     }
   }
 
-  // Fallback: use lastOrgId directly if lastProfileId doesn't work
+  // Fallback: use lastOrgId directly if currentProfileId doesn't work
   if (user.lastOrgId) {
     return user.lastOrgId;
   }
