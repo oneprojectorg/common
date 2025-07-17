@@ -1,13 +1,13 @@
-import { OrganizationProfile } from '@/components/screens/OrganizationProfile';
+import { Profile } from '@/components/screens/Profile';
 
-const OrganizationPage = async ({
+const ProfilePage = async ({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) => {
   const { slug } = await params;
 
-  return <OrganizationProfile slug={slug} />;
+  return <Profile slug={slug} />;
 };
 
-export default OrganizationPage;
+export default ProfilePage;

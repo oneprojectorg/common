@@ -91,6 +91,10 @@ Use `pnpm w:<workspace>` shortcuts:
 - Test changes thoroughly before completion
 - Using `any` to fix type errors shuold be avoided
 
+### Coding Conventions
+
+- If statements should never be all on one line, rather you should always use K&R style for if statements
+
 ## Important Notes
 
 - Node.js 18+ required, use `corepack enable` for pnpm version management
