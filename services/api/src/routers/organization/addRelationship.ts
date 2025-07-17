@@ -53,7 +53,7 @@ export const addRelationshipRouter = router({
           throw new UnauthorizedError('No user lastProfileId or lastOrgId found');
         }
 
-        // TODO: Don't use this. Use what is passed in
+        // TODO: We pull the org ID to add ORG relationships. We are transitioning to profile relationships. This should go away eventually
         const from = await getCurrentOrgId({ database: db });
 
         await addRelationship({

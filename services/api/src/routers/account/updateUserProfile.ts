@@ -1,6 +1,5 @@
-import { users } from '@op/db/schema';
+import { updateUserProfile as updateUserProfileService } from '@op/common';
 import { TRPCError } from '@trpc/server';
-import { eq } from 'drizzle-orm';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { ZodError, z } from 'zod';
 
@@ -51,18 +50,16 @@ const updateUserProfile = router({
     .output(userEncoder)
     .mutation(async ({ input, ctx }) => {
       const { db } = ctx.database;
-      const { id } = ctx.user;
-
-      let result;
+      const { user } = ctx;
 
       try {
-        result = await db
-          .update(users)
-          .set({
-            ...input,
-          })
-          .where(eq(users.authUserId, id))
-          .returning();
+        const result = await updateUserProfileService({
+          input,
+          user,
+          db,
+        });
+
+        return userEncoder.parse(result);
       } catch (error) {
         console.error(error);
         if (error instanceof Error && error.message.includes('duplicate')) {
@@ -81,15 +78,6 @@ const updateUserProfile = router({
           message: 'Failed to update profile',
         });
       }
-
-      if (!result.length || !result[0]) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Profile not found',
-        });
-      }
-
-      return result[0];
     }),
 });
 

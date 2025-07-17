@@ -2,12 +2,11 @@
  * This route is used to handle the callback from OAuth providers.
  */
 import { trpcVanilla } from '@op/api/vanilla';
+import { createUserByEmail } from '@op/common';
 import { OPURLConfig } from '@op/core';
 import { createSBServerClient } from '@op/supabase/server';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-
-import { createUserByEmail } from '../../../../../../../packages/common/src';
 
 export const GET = async (request: NextRequest) => {
   const { searchParams } = new URL(request.url);
