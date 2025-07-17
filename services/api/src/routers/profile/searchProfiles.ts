@@ -1,5 +1,6 @@
 import { cache } from '@op/cache';
 import { searchProfiles } from '@op/common';
+import { EntityType } from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
@@ -30,15 +31,16 @@ export const searchProfilesRouter = router({
     .input(
       dbFilter.extend({
         q: z.string(),
+        types: z.array(z.nativeEnum(EntityType)).optional(),
       }),
     )
     .output(z.array(z.any()))
     .query(async ({ ctx, input }) => {
-      const { q, limit = 10 } = input;
+      const { q, limit = 10, types } = input;
 
       const result = await cache<ReturnType<typeof searchProfiles>>({
         type: 'search',
-        params: [q, ctx.user.id],
+        params: [q, ctx.user.id, types],
         options: {
           ttl: 30 * 1000,
         },
@@ -47,6 +49,7 @@ export const searchProfilesRouter = router({
             query: q,
             limit,
             user: ctx.user,
+            types,
           }),
       });
 

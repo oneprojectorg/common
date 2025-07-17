@@ -1,15 +1,17 @@
-import { aliasedTable, db, eq, getTableColumns, sql } from '@op/db/client';
-import { objectsInStorage, organizations, profiles, users } from '@op/db/schema';
+import { aliasedTable, db, eq, getTableColumns, sql, inArray } from '@op/db/client';
+import { objectsInStorage, organizations, profiles, users, EntityType } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
 export const searchProfiles = async ({
   user,
   query = '',
   limit = 10,
+  types,
 }: {
   user: User;
   query?: string;
   limit?: number;
+  types?: EntityType[];
 }) => {
   if (!user) {
     return [];
@@ -67,7 +69,11 @@ export const searchProfiles = async ({
     .leftJoin(organizations, eq(organizations.profileId, profiles.id))
     .leftJoin(users, eq(users.profileId, profiles.id))
     .where(
-      sql`${profiles.search} @@ ${searchQueries.englishQuery} OR ${profiles.search} @@ ${searchQueries.simpleQuery}`,
+      sql`(${profiles.search} @@ ${searchQueries.englishQuery} OR ${profiles.search} @@ ${searchQueries.simpleQuery})${
+        types && types.length > 0 
+          ? sql` AND ${inArray(profiles.type, types)}`
+          : sql``
+      }`,
     )
     .limit(limit)
     .orderBy(sql`rank DESC`);
