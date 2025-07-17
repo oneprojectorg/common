@@ -1,11 +1,11 @@
 import { OPURLConfig, cookieOptionsDomain } from '@op/core';
 import { and, db, eq } from '@op/db/client';
-import { organizations } from '@op/db/schema';
+import { organizations, users } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { createServerClient } from '@op/supabase/lib';
 import { cookies } from 'next/headers';
 
-import { NotFoundError, UnauthorizedError } from '../../utils/error';
+import { UnauthorizedError } from '../../utils/error';
 
 // gets a user assuming that the user is authenticated
 export const getOrgAccessUser = async ({
@@ -82,6 +82,31 @@ export const getSession = async () => {
       return null;
     }
 
+    // Backwards compatibility: migrate lastOrgId to lastProfileId if needed
+    if (dbUser.lastOrgId && !dbUser.lastProfileId) {
+      try {
+        const [org] = await db
+          .select({ profileId: organizations.profileId })
+          .from(organizations)
+          .where(eq(organizations.id, dbUser.lastOrgId))
+          .limit(1);
+
+        if (org) {
+          // Update the user with the profile ID
+          await db
+            .update(users)
+            .set({ lastProfileId: org.profileId })
+            .where(eq(users.authUserId, user.id));
+
+          // Return the updated user object
+          return { user: { ...dbUser, lastProfileId: org.profileId } };
+        }
+      } catch (migrationError) {
+        console.error('Migration error:', migrationError);
+        // Continue with the original user object if migration fails
+      }
+    }
+
     return { user: dbUser };
   } catch (error) {
     console.error('ERROR');
@@ -89,25 +114,66 @@ export const getSession = async () => {
   }
 };
 
-export const getCurrentProfileId = async ({
+export const getCurrentProfileId = async () => {
+  const { user } = (await getSession()) ?? {};
+
+  if (!user) {
+    throw new UnauthorizedError("You don't have access to do this");
+  }
+
+  // Primary: use lastProfileId if available
+  if (user.lastProfileId) {
+    return user.lastProfileId;
+  }
+
+  // Fallback: if lastOrgId exists but lastProfileId doesn't, convert it
+  if (user.lastOrgId) {
+    try {
+      const [org] = await db
+        .select({ profileId: organizations.profileId })
+        .from(organizations)
+        .where(eq(organizations.id, user.lastOrgId))
+        .limit(1);
+
+      if (org) {
+        return org.profileId;
+      }
+    } catch (error) {
+      console.error('Error converting lastOrgId to profileId:', error);
+    }
+  }
+
+  throw new UnauthorizedError("You don't have access to do this");
+};
+
+export const getCurrentOrgId = async ({
   database,
 }: {
   database: typeof db;
 }) => {
   const { user } = (await getSession()) ?? {};
 
-  if (!user || !user.lastOrgId) {
+  if (!user) {
     throw new UnauthorizedError("You don't have access to do this");
   }
-  const [sourceOrg] = await database
-    .select({ profileId: organizations.profileId })
-    .from(organizations)
-    .where(eq(organizations.id, user.lastOrgId))
-    .limit(1);
 
-  if (!sourceOrg) {
-    throw new NotFoundError('Organization not found');
+  // Primary: use lastProfileId if available
+  if (user.lastProfileId) {
+    const [org] = await database
+      .select({ id: organizations.id })
+      .from(organizations)
+      .where(eq(organizations.profileId, user.lastProfileId))
+      .limit(1);
+
+    if (org) {
+      return org.id;
+    }
   }
 
-  return sourceOrg.profileId;
+  // Fallback: use lastOrgId directly if lastProfileId doesn't work
+  if (user.lastOrgId) {
+    return user.lastOrgId;
+  }
+
+  throw new UnauthorizedError("You don't have access to do this");
 };
