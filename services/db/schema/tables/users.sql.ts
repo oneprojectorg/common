@@ -36,6 +36,9 @@ export const users = pgTable(
     lastOrgId: uuid().references(() => organizations.id, {
       onDelete: 'set null',
     }),
+    profileId: uuid().references(() => profiles.id, {
+      onDelete: 'set null',
+    }),
     currentProfileId: uuid().references(() => profiles.id, {
       onDelete: 'set null',
     }),
@@ -48,6 +51,7 @@ export const users = pgTable(
     index().on(table.id).concurrently(),
     index().on(table.email).concurrently(),
     index().on(table.username).concurrently(),
+    index().on(table.profileId).concurrently(),
     index('users_email_gin_index')
       .using('gin', sql`to_tsvector('english', ${table.email})`)
       .concurrently(),
@@ -62,6 +66,10 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   currentOrganization: one(organizations, {
     fields: [users.lastOrgId],
     references: [organizations.id],
+  }),
+  profile: one(profiles, {
+    fields: [users.profileId],
+    references: [profiles.id],
   }),
   currentProfile: one(profiles, {
     fields: [users.currentProfileId],

@@ -1,7 +1,7 @@
 import { db, eq } from '@op/db/client';
-import { users, profiles, EntityType } from '@op/db/schema';
-import { randomUUID } from 'crypto';
+import { EntityType, profiles, users } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
+import { randomUUID } from 'crypto';
 
 export interface UpdateUserProfileInput {
   name?: string;
@@ -27,7 +27,7 @@ export const updateUserProfile = async ({
   const currentUser = await dbClient.query.users.findFirst({
     where: eq(users.authUserId, user.id),
     with: {
-      currentProfile: true,
+      profile: true,
     },
   });
 
@@ -39,27 +39,27 @@ export const updateUserProfile = async ({
   const profileData: any = {};
   if (name !== undefined) profileData.name = name;
   if (about !== undefined) profileData.bio = about; // Map 'about' to 'bio' in profiles
-  
+
   // Prepare user data (username and title stay in users table)
   const userData: any = {};
   if (username !== undefined) userData.username = username;
   if (title !== undefined) userData.title = title;
 
   // Check if user already has a profile
-  if (currentUser.currentProfile && 'id' in currentUser.currentProfile) {
+  if (currentUser.profile && 'id' in currentUser.profile) {
     // Update existing profile
     if (Object.keys(profileData).length > 0) {
       await dbClient
         .update(profiles)
         .set(profileData)
-        .where(eq(profiles.id, currentUser.currentProfile.id));
+        .where(eq(profiles.id, currentUser.profile.id));
     }
   } else {
     // Create new profile for user
     if (Object.keys(profileData).length > 0) {
       // For now, use UUID as slug (same as organization profiles)
       const slug = randomUUID();
-      
+
       const [newProfile] = await dbClient
         .insert(profiles)
         .values({
@@ -74,10 +74,10 @@ export const updateUserProfile = async ({
         throw new Error('Failed to create profile');
       }
 
-      // Update user's currentProfileId to point to the new profile
+      // Update user's profileId and currentProfileId to point to the new profile
       await dbClient
         .update(users)
-        .set({ currentProfileId: newProfile.id })
+        .set({ currentProfileId: newProfile.id, profileId: newProfile.id })
         .where(eq(users.authUserId, user.id));
     }
   }
@@ -118,6 +118,11 @@ export const updateUserProfile = async ({
         },
       },
       currentProfile: {
+        with: {
+          avatarImage: true,
+        },
+      },
+      profile: {
         with: {
           avatarImage: true,
         },

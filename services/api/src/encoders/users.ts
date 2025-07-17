@@ -15,6 +15,7 @@ export const userEncoder = createSelectSchema(users).extend({
     .nullish(),
   currentOrganization: organizationsEncoder.nullish(),
   currentProfile: profileEncoder.nullish(),
+  profile: profileEncoder.nullish(),
 });
 
 export type CommonUser = z.infer<typeof userEncoder>;
