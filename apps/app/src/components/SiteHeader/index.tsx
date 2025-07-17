@@ -15,7 +15,7 @@ import { Skeleton } from '@op/ui/Skeleton';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import {
   LuChevronDown,
   LuCircleHelp,
@@ -54,27 +54,23 @@ const useMediaQuery = (query: string) => {
 const AvatarMenuContent = ({
   onClose,
   setIsProfileOpen = () => {},
+  onProfileSwitch,
 }: {
   onClose?: () => void;
   setIsProfileOpen?: (isOpen: boolean) => void;
+  onProfileSwitch?: (profile: {
+    name: string;
+    avatarImage?: { name: string } | null;
+  }) => void;
 }) => {
   const { user } = useUser();
   const logout = useAuthLogout();
   const router = useRouter();
   const utils = trpc.useUtils();
   const t = useTranslations();
-  const [isSwitchingProfile, setIsSwitchingProfile] = useState(false);
-  const [switchingToProfile, setSwitchingToProfile] = useState<{
-    name: string;
-    avatarImage?: { name: string } | null;
-  } | null>(null);
-
   const switchProfile = trpc.account.switchProfile.useMutation({
     onSuccess: () => {
-      utils.account.getMyAccount.invalidate();
       utils.invalidate();
-      setIsSwitchingProfile(false);
-      setSwitchingToProfile(null);
     },
   });
 
@@ -134,11 +130,10 @@ const AvatarMenuContent = ({
               return;
             }
 
-            setSwitchingToProfile({
+            onProfileSwitch?.({
               name: profile.name,
               avatarImage: profile.avatarImage,
             });
-            setIsSwitchingProfile(true);
             onClose?.();
 
             void switchProfile.mutate({
@@ -212,12 +207,6 @@ const AvatarMenuContent = ({
           Ethical Open Source • One Project • {new Date().getFullYear()}
         </div>
       </MenuItemSimple>
-      <ProfileSwitchingModal
-        isOpen={isSwitchingProfile}
-        avatarImage={switchingToProfile?.avatarImage}
-        profileName={switchingToProfile?.name}
-        onOpenChange={setIsSwitchingProfile}
-      />
     </>
   );
 };
@@ -227,6 +216,36 @@ const UserAvatarMenu = () => {
   const isMobile = useMediaQuery('(max-width: 640px)');
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isSwitchingProfile, setIsSwitchingProfile] = useState(false);
+  const [switchingToProfile, setSwitchingToProfile] = useState<{
+    name: string;
+    avatarImage?: { name: string } | null;
+  } | null>(null);
+  const previousProfileId = useRef<string | undefined>(
+    user?.currentProfile?.id,
+  );
+
+  const handleProfileSwitch = (profile: {
+    name: string;
+    avatarImage?: { name: string } | null;
+  }) => {
+    setSwitchingToProfile(profile);
+    setIsSwitchingProfile(true);
+  };
+
+  // Hide modal when profile actually changes
+  useEffect(() => {
+    if (
+      isSwitchingProfile &&
+      user?.currentProfile?.id &&
+      previousProfileId.current &&
+      user.currentProfile.id !== previousProfileId.current
+    ) {
+      setIsSwitchingProfile(false);
+      setSwitchingToProfile(null);
+    }
+    previousProfileId.current = user?.currentProfile?.id;
+  }, [user?.currentProfile?.id, isSwitchingProfile]);
 
   const avatarButton = (
     <Button
@@ -267,6 +286,7 @@ const UserAvatarMenu = () => {
               <AvatarMenuContent
                 setIsProfileOpen={setIsProfileOpen}
                 onClose={() => setIsDrawerOpen(false)}
+                onProfileSwitch={handleProfileSwitch}
               />
             </Menu>
           </ModalBody>
@@ -274,6 +294,12 @@ const UserAvatarMenu = () => {
         <UpdateProfileModal
           isOpen={isProfileOpen}
           setIsOpen={setIsProfileOpen}
+        />
+        <ProfileSwitchingModal
+          isOpen={isSwitchingProfile}
+          avatarImage={switchingToProfile?.avatarImage}
+          profileName={switchingToProfile?.name}
+          onOpenChange={setIsSwitchingProfile}
         />
       </>
     );
@@ -288,11 +314,18 @@ const UserAvatarMenu = () => {
             <AvatarMenuContent
               setIsProfileOpen={setIsProfileOpen}
               onClose={() => setIsProfileOpen(false)}
+              onProfileSwitch={handleProfileSwitch}
             />
           </Menu>
         </Popover>
       </MenuTrigger>
       <UpdateProfileModal isOpen={isProfileOpen} setIsOpen={setIsProfileOpen} />
+      <ProfileSwitchingModal
+        isOpen={isSwitchingProfile}
+        avatarImage={switchingToProfile?.avatarImage}
+        profileName={switchingToProfile?.name}
+        onOpenChange={setIsSwitchingProfile}
+      />
     </>
   );
 };

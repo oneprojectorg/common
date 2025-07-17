@@ -37,10 +37,10 @@ export const ProfileSwitchingModal = ({
       onOpenChange={onOpenChange}
       isDismissable={false}
       isKeyboardDismissDisabled={true}
-      className="max-w-md rounded-lg border border-neutral-gray1 bg-white shadow-[0px_0px_48px_0px_rgba(20,35,38,0.08)]"
+      className="max-w-md rounded border border-neutral-offWhite bg-white shadow"
     >
-      <div className="flex flex-col items-center justify-center p-12">
-        <div className="relative mb-6 size-[120px]">
+      <div className="flex flex-col items-center justify-center gap-6 p-12">
+        <div className="relative flex size-28">
           <Avatar placeholder={profileName} className="size-full">
             {avatarContent}
           </Avatar>
@@ -49,9 +49,7 @@ export const ProfileSwitchingModal = ({
           </div>
         </div>
         <div className="text-center">
-          <p className="text-sm font-normal leading-[1.5] text-neutral-black">
-            Switching to {profileName}…
-          </p>
+          <p className="text-neutral-black">Switching to {profileName}…</p>
         </div>
       </div>
     </Modal>
