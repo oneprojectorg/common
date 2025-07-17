@@ -107,8 +107,8 @@ export const LandingScreen = async () => {
         >
           <OrganizationHighlights />
         </Suspense>
-        {user.currentOrganization ? (
-          <PendingRelationships slug={user.currentOrganization.profile.slug} />
+        {user.currentProfile ? (
+          <PendingRelationships slug={user.currentProfile.slug} />
         ) : null}
         <hr />
         <LandingScreenFeeds user={user} />

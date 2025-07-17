@@ -60,6 +60,11 @@ export const getMyAccount = router({
               },
             },
           },
+          currentProfile: {
+            with: {
+              avatarImage: true,
+            },
+          },
         },
       });
 
@@ -105,6 +110,11 @@ export const getMyAccount = router({
                     avatarImage: true,
                   },
                 },
+              },
+            },
+            currentProfile: {
+              with: {
+                avatarImage: true,
               },
             },
           },

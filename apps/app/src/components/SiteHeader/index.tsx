@@ -101,7 +101,7 @@ const AvatarMenuContent = ({
           </span>
 
           <span className="text-sm text-neutral-gray4 sm:text-xs">
-            Admin for {user?.currentOrganization?.profile.name}
+            Admin for {user?.currentProfile?.name}
           </span>
         </div>
       </MenuItemSimple>
@@ -212,12 +212,12 @@ const UserAvatarMenu = () => {
       className="relative"
       onPress={() => (isMobile ? setIsDrawerOpen(true) : undefined)}
     >
-      <Avatar placeholder={user?.currentOrganization?.profile.name}>
-        {user?.currentOrganization?.profile.avatarImage?.name ? (
+      <Avatar placeholder={user?.currentProfile?.name}>
+        {user?.currentProfile?.avatarImage?.name ? (
           <Image
             src={
               getPublicUrl(
-                user?.currentOrganization.profile.avatarImage.name,
+                user?.currentProfile?.avatarImage.name,
               ) ?? ''
             }
             alt="User avatar"

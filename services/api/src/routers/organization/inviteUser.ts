@@ -86,6 +86,7 @@ export const inviteUserRouter = router({
                 profile: true,
               },
             },
+            currentProfile: true,
           },
         });
 
