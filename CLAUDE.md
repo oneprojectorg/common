@@ -97,3 +97,7 @@ Use `pnpm w:<workspace>` shortcuts:
 - tRPC provides end-to-end type safety between frontend and backend
 - Tailwind configuration is centralized in `@op/ui` package
 - Only use colors that are present in the tailwind.shared config
+
+## Workflow Warnings
+
+- Don't run pnpm format unless specifically asked to do so
