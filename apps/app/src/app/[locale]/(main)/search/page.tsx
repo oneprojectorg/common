@@ -1,4 +1,4 @@
-import { OrganizationSearchResults } from '@/components/OrganizationsSearchResults';
+import { ProfileSearchResults } from '@/components/OrganizationsSearchResults';
 import { ListPageLayout } from '@/components/layout/ListPageLayout';
 
 const SearchListingPage = async ({
@@ -10,7 +10,7 @@ const SearchListingPage = async ({
 
   return (
     <ListPageLayout>
-      <OrganizationSearchResults query={q} />
+      <ProfileSearchResults query={q} />
     </ListPageLayout>
   );
 };

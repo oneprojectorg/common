@@ -9,7 +9,7 @@ import { useDebounce } from 'use-debounce';
 
 import { Link, useRouter } from '@/lib/i18n';
 
-import { OrganizationResults } from './OrganizationResults';
+import { ProfileResults } from './ProfileResults';
 import { RecentSearches } from './RecentSearches';
 import { SearchResultItem } from './SearchResultItem';
 
@@ -34,8 +34,8 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  const { data: organizationResults, isFetching: isSearching } =
-    trpc.organization.search.useQuery(
+  const { data: profileResults, isFetching: isSearching } =
+    trpc.profile.search.useQuery(
       {
         q: debouncedQuery,
       },
@@ -52,7 +52,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
 
   const dropdownShowing = !!(
     showResults &&
-    (organizationResults?.length || recentSearches.length)
+    (profileResults?.length || recentSearches.length)
   );
 
   useEffect(() => {
@@ -80,7 +80,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
 
   useEffect(() => {
     setSelectedIndex(-1);
-  }, [organizationResults]);
+  }, [profileResults]);
 
   const recordSearch = (query: string) => {
     setShowResults(false);
@@ -95,7 +95,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
     const isInteractingwWithDropdown =
-      !showResults || !organizationResults?.length;
+      !showResults || !profileResults?.length;
 
     switch (event.key) {
       case 'ArrowDown':
@@ -106,7 +106,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
         }
 
         setSelectedIndex((prev) =>
-          prev < organizationResults.length ? prev + 1 : 0,
+          prev < profileResults.length ? prev + 1 : 0,
         );
         break;
       case 'ArrowUp':
@@ -117,7 +117,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
         }
 
         setSelectedIndex((prev) =>
-          prev > 0 ? prev - 1 : organizationResults.length - 1,
+          prev > 0 ? prev - 1 : profileResults.length - 1,
         );
         break;
       case 'Enter':
@@ -127,13 +127,14 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
 
         if (
           isInteractingwWithDropdown &&
-          organizationResults &&
+          profileResults &&
           selectedIndex > 0
         ) {
-          const selectedOrg = organizationResults[selectedIndex - 1];
+          const selectedProfile = profileResults[selectedIndex - 1];
 
-          if (selectedOrg) {
-            router.push(`/org/${selectedOrg.profile.slug}`);
+          if (selectedProfile) {
+            const profilePath = selectedProfile.type === 'user' ? `/profile/${selectedProfile.slug}` : `/org/${selectedProfile.slug}`;
+            router.push(profilePath);
             break;
           }
         }
@@ -201,7 +202,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
                   selected={selectedIndex === 0}
                   className={cn(
                     'py-2',
-                    organizationResults?.length && 'border-b',
+                    profileResults?.length && 'border-b',
                   )}
                 >
                   <Link
@@ -214,10 +215,10 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
                   </Link>
                 </SearchResultItem>
               )}
-              {query?.length && organizationResults?.length ? (
-                <OrganizationResults
+              {query?.length && profileResults?.length ? (
+                <ProfileResults
                   query={query}
-                  organizationResults={organizationResults}
+                  profileResults={profileResults}
                   selectedIndex={selectedIndex}
                   onSearch={recordSearch}
                 />
@@ -247,7 +248,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
                 selected={selectedIndex === 0}
                 className={cn(
                   'py-2',
-                  organizationResults?.length && 'border-b',
+                  profileResults?.length && 'border-b',
                 )}
               >
                 <Link
@@ -259,10 +260,10 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
                 </Link>
               </SearchResultItem>
             )}
-            {query?.length && organizationResults?.length ? (
-              <OrganizationResults
+            {query?.length && profileResults?.length ? (
+              <ProfileResults
                 query={query}
-                organizationResults={organizationResults}
+                profileResults={profileResults}
                 selectedIndex={selectedIndex}
                 onSearch={recordSearch}
               />
