@@ -32,13 +32,7 @@ export const ProfileSwitchingModal = ({
   ) : null;
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onOpenChange={onOpenChange}
-      isDismissable={false}
-      isKeyboardDismissDisabled={true}
-      className="max-w-md rounded border border-neutral-offWhite bg-white shadow"
-    >
+    <Modal isOpen={isOpen} onOpenChange={onOpenChange} isDismissable={false}>
       <div className="flex flex-col items-center justify-center gap-6 p-12">
         <div className="relative flex size-28">
           <Avatar placeholder={profileName} className="size-full">
