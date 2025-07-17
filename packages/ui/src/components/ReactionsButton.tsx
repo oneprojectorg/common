@@ -112,10 +112,12 @@ const ReactionPicker = ({
   onReactionSelect: (emoji: string) => void;
   existingReactions?: Reaction[];
 }) => {
-  // Filter out emojis that already have reactions
-  const existingEmojis = new Set(existingReactions.map((r) => r.emoji));
+  // Filter out emojis that the current user has already reacted with (isActive = true)
+  const userReactedEmojis = new Set(
+    existingReactions.filter((r) => r.isActive).map((r) => r.emoji),
+  );
   const availableOptions = reactionOptions.filter(
-    (option) => !existingEmojis.has(option.emoji),
+    (option) => !userReactedEmojis.has(option.emoji),
   );
 
   return (
