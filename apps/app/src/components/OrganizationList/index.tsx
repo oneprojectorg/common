@@ -113,6 +113,49 @@ export const OrganizationList = ({
   );
 };
 
+export const OrganizationCardList = ({
+  organizations,
+}: {
+  organizations: Array<Organization>;
+}) => {
+  return (
+    <div className="grid grid-cols-1 gap-8 pb-6 md:grid-cols-2">
+      {organizations.map((relationshipOrg) => (
+        <div
+          key={relationshipOrg.id}
+          className="flex w-full gap-4 rounded border border-neutral-gray1 p-6"
+        >
+          <div className="flex-shrink-0">
+            <OrganizationAvatar
+              organization={relationshipOrg}
+              className="size-20"
+            />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-2">
+                <Link
+                  className="truncate font-semibold text-neutral-black"
+                  href={`/org/${relationshipOrg.profile.slug}`}
+                >
+                  {relationshipOrg.profile.name}
+                </Link>
+              </div>
+
+              <div className="line-clamp-3 text-neutral-charcoal">
+                {relationshipOrg.profile.bio &&
+                relationshipOrg.profile.bio.length > 200
+                  ? `${relationshipOrg.profile.bio.slice(0, 200)}...`
+                  : relationshipOrg.profile.bio}
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 export const OrganizationSummaryList = ({
   organizations,
 }: {
