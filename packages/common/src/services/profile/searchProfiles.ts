@@ -1,5 +1,18 @@
-import { aliasedTable, db, eq, getTableColumns, sql, inArray } from '@op/db/client';
-import { objectsInStorage, organizations, profiles, users, EntityType } from '@op/db/schema';
+import {
+  aliasedTable,
+  db,
+  eq,
+  getTableColumns,
+  inArray,
+  sql,
+} from '@op/db/client';
+import {
+  EntityType,
+  objectsInStorage,
+  organizations,
+  profiles,
+  users,
+} from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
 export const searchProfiles = async ({
@@ -70,7 +83,7 @@ export const searchProfiles = async ({
     .leftJoin(users, eq(users.profileId, profiles.id))
     .where(
       sql`(${profiles.search} @@ ${searchQueries.englishQuery} OR ${profiles.search} @@ ${searchQueries.simpleQuery})${
-        types && types.length > 0 
+        types && types.length > 0
           ? sql` AND ${inArray(profiles.type, types)}`
           : sql``
       }`,

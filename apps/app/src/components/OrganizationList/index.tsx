@@ -2,6 +2,7 @@
 
 import { getPublicUrl } from '@/utils';
 import { Organization } from '@op/api/encoders';
+import { Avatar } from '@op/ui/Avatar';
 import { SkeletonLine } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
 import { cn, getGradientForString } from '@op/ui/utils';
@@ -164,9 +165,10 @@ export const OrganizationSummaryList = ({
   return (
     <div className="flex flex-col gap-6">
       {organizations?.map((org) => {
-        const whereWeWork = org.whereWeWork
-          .map((location) => location.name)
-          .join(' • ');
+        console.log('ORG', org);
+        const whereWeWork =
+          org.whereWeWork?.map((location: any) => location.name).join(' • ') ??
+          [];
 
         const trimmedBio =
           org.profile.bio && org.profile.bio.length > 325
@@ -176,10 +178,29 @@ export const OrganizationSummaryList = ({
         return (
           <div key={org.id}>
             <div className="flex items-start gap-2 py-2 sm:gap-6">
-              <OrganizationAvatar
-                organization={org}
-                className="size-8 sm:size-12"
-              />
+              <Link
+                href={`/org/${org.profile.slug}`}
+                className="hover:no-underline"
+              >
+                <Avatar
+                  className="size-8 hover:opacity-80 sm:size-12"
+                  placeholder={org.profile.name ?? ''}
+                >
+                  {org.profile?.name ? (
+                    <Image
+                      src={
+                        getPublicUrl(
+                          org.profile.avatarImage?.name ??
+                            org.avatarImage?.name,
+                        ) ?? ''
+                      }
+                      alt={org.profile.name ?? ''}
+                      fill
+                      className="object-cover"
+                    />
+                  ) : null}
+                </Avatar>
+              </Link>
 
               <div className="flex flex-col gap-3 text-neutral-black">
                 <div className="flex flex-col gap-2">
@@ -189,7 +210,7 @@ export const OrganizationSummaryList = ({
                   >
                     {org.profile.name}
                   </Link>
-                  {whereWeWork.length > 0 ? (
+                  {org.whereWeWork?.length > 0 ? (
                     <span className="text-sm text-neutral-gray4 sm:text-base">
                       {whereWeWork}
                     </span>

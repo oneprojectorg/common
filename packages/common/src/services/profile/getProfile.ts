@@ -8,7 +8,6 @@ import { NotFoundError } from '../../utils';
 export interface GetProfileParams {
   slug: string;
   user?: User;
-  database?: typeof db;
 }
 
 const profileResultSchema = z.object({
@@ -22,16 +21,20 @@ const profileResultSchema = z.object({
   website: z.string().nullable(),
   city: z.string().nullable(),
   state: z.string().nullable(),
-  avatarImage: z.object({
-    id: z.string(),
-    name: z.string().nullable(),
-    metadata: z.any(),
-  }).nullable(),
-  headerImage: z.object({
-    id: z.string(),
-    name: z.string().nullable(),
-    metadata: z.any(),
-  }).nullable(),
+  avatarImage: z
+    .object({
+      id: z.string(),
+      name: z.string().nullable(),
+      metadata: z.any(),
+    })
+    .nullable(),
+  headerImage: z
+    .object({
+      id: z.string(),
+      name: z.string().nullable(),
+      metadata: z.any(),
+    })
+    .nullable(),
 });
 
 export type ProfileResult = z.infer<typeof profileResultSchema>;
@@ -39,11 +42,10 @@ export type ProfileResult = z.infer<typeof profileResultSchema>;
 export const getProfile = async ({
   slug,
   user: _user, // Currently unused but kept for future extensibility
-  database = db,
 }: GetProfileParams) => {
   try {
     // Find the profile by slug
-    const profile = await database.query.profiles.findFirst({
+    const profile = await db.query.profiles.findFirst({
       where: eq(profiles.slug, slug),
       with: {
         avatarImage: true,
