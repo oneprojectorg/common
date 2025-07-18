@@ -1,36 +1,39 @@
 'use client';
 
-import { makeArray } from '@/utils';
 import { trpc } from '@op/api/client';
+import { EntityType } from '@op/api/encoders';
 import { useInfiniteScroll } from '@op/hooks';
 import { SkeletonLine } from '@op/ui/Skeleton';
-import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
-import { OrganizationSummaryList } from '@/components/OrganizationList';
+import { ProfileSummaryList } from '@/components/ProfileList';
 
-import { OrganizationListResponse } from '../types';
+type ProfileListResponse = {
+  items: Array<any>;
+  next?: string | null;
+  hasMore: boolean;
+};
 
 export const AllOrganizationsSuspense = ({
   limit = 20,
   initialData,
+  types,
 }: {
   limit?: number;
-  initialData?: OrganizationListResponse;
+  initialData?: ProfileListResponse;
+  types?: EntityType[];
 }) => {
-  const searchParams = useSearchParams();
-  const termsFilter = makeArray(searchParams.get('terms'));
-
+  console.log('TYPES', types);
   const {
     data: paginatedData,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = trpc.organization.list.useInfiniteQuery(
+  } = trpc.profile.list.useInfiniteQuery(
     {
       limit,
-      terms: termsFilter,
+      types: types ?? [EntityType.ORG],
     },
     initialData
       ? {
@@ -50,12 +53,11 @@ export const AllOrganizationsSuspense = ({
     rootMargin: '100px',
   });
 
-  const allOrganizations =
-    paginatedData?.pages.flatMap((page) => page.items) || [];
+  const allProfiles = paginatedData?.pages.flatMap((page) => page.items) || [];
 
   return (
     <div className="flex flex-col gap-4">
-      <OrganizationSummaryList organizations={allOrganizations} />
+      <ProfileSummaryList profiles={allProfiles} />
       {shouldShowTrigger && (
         <div
           ref={ref as React.RefObject<HTMLDivElement>}
@@ -74,7 +76,8 @@ export const AllOrganizationsSuspense = ({
 
 export const AllOrganizations = (props: {
   limit?: number;
-  initialData?: OrganizationListResponse;
+  initialData?: ProfileListResponse;
+  types?: EntityType[];
 }) => {
   return (
     <ErrorBoundary fallback={<div>Could not load organizations</div>}>

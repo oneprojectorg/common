@@ -1,5 +1,5 @@
-import { trpcNext } from '@op/api/vanilla';
 import { EntityType } from '@op/api/encoders';
+import { trpcNext } from '@op/api/vanilla';
 
 import { AllOrganizations } from '@/components/Organizations/AllOrganizations';
 import {
@@ -7,19 +7,23 @@ import {
   ListPageLayoutHeader,
 } from '@/components/layout/ListPageLayout';
 
-const OrgListingPage = async () => {
+const ProfileListingPage = async () => {
   try {
     const client = await trpcNext();
-    const organizations = await client.profile.list.query({ 
-      limit: 5, 
-      types: [EntityType.USER] 
+    const organizations = await client.profile.list.query({
+      limit: 5,
+      types: [EntityType.USER],
     });
 
     return (
       <ListPageLayout>
         <ListPageLayoutHeader>Organizations</ListPageLayoutHeader>
 
-        <AllOrganizations initialData={organizations} limit={20} />
+        <AllOrganizations
+          initialData={organizations}
+          types={[EntityType.USER]}
+          limit={20}
+        />
       </ListPageLayout>
     );
   } catch (error) {
@@ -29,6 +33,7 @@ const OrgListingPage = async () => {
 
         <AllOrganizations
           initialData={{ items: [], hasMore: false, next: null }}
+          types={[EntityType.USER]}
           limit={20}
         />
       </ListPageLayout>
@@ -36,4 +41,4 @@ const OrgListingPage = async () => {
   }
 };
 
-export default OrgListingPage;
+export default ProfileListingPage;
