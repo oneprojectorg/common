@@ -4,6 +4,7 @@ export * from './components/Breadcrumbs';
 export * from './components/Button';
 export * from './components/Calendar';
 export * from './components/Checkbox';
+export * from './components/Chip';
 export * from './components/ColorArea';
 export * from './components/ColorField';
 export * from './components/ColorPicker';

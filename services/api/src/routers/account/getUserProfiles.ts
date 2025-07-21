@@ -19,16 +19,18 @@ const meta: OpenApiMeta = {
   },
 };
 
-const profileSchema = z.object({
+export const userProfileSchema = z.object({
   id: z.string(),
   type: z.enum(['user', 'org']),
   name: z.string(),
   slug: z.string(),
   bio: z.string().nullable(),
-  avatarImage: z.object({
-    id: z.string(),
-    name: z.string(),
-  }).nullable(),
+  avatarImage: z
+    .object({
+      id: z.string(),
+      name: z.string(),
+    })
+    .nullable(),
 });
 
 export const getUserProfiles = router({
@@ -38,7 +40,7 @@ export const getUserProfiles = router({
     .use(withDB)
     .meta(meta)
     .input(z.undefined())
-    .output(z.array(profileSchema))
+    .output(z.array(userProfileSchema))
     .query(async ({ ctx }) => {
       const { db } = ctx.database;
       const { id: authUserId } = ctx.user;
@@ -90,10 +92,12 @@ export const getUserProfiles = router({
           name: profile.name,
           slug: profile.slug,
           bio: profile.bio,
-          avatarImage: profile.avatarImage ? {
-            id: profile.avatarImage.id,
-            name: profile.avatarImage.name,
-          } : null,
+          avatarImage: profile.avatarImage
+            ? {
+                id: profile.avatarImage.id,
+                name: profile.avatarImage.name,
+              }
+            : null,
         });
       }
 
@@ -107,10 +111,12 @@ export const getUserProfiles = router({
             name: profile.name,
             slug: profile.slug,
             bio: profile.bio,
-            avatarImage: profile.avatarImage ? {
-              id: profile.avatarImage.id,
-              name: profile.avatarImage.name,
-            } : null,
+            avatarImage: profile.avatarImage
+              ? {
+                  id: profile.avatarImage.id,
+                  name: profile.avatarImage.name,
+                }
+              : null,
           });
         }
       }
