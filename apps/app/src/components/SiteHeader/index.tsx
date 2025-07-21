@@ -56,6 +56,7 @@ const ProfileMenuItem = ({
   profile,
   onClose,
   onProfileSwitch,
+  children,
 }: {
   profile: Profile;
   onClose?: () => void;
@@ -63,6 +64,7 @@ const ProfileMenuItem = ({
     name: string;
     avatarImage?: { name: string | null } | null;
   }) => void;
+  children?: React.ReactNode;
 }) => {
   const { user } = useUser();
   const utils = trpc.useUtils();
@@ -75,7 +77,7 @@ const ProfileMenuItem = ({
   return (
     <MenuItem
       key={profile.id}
-      className="min-h-[60px]"
+      className="min-h-[60px] w-72"
       selected={user?.currentProfile?.id === profile.id}
       onAction={() => {
         if (user?.currentProfile?.id === profile.id) {
@@ -105,19 +107,11 @@ const ProfileMenuItem = ({
             src={getPublicUrl(profile.avatarImage.name) ?? ''}
             alt="Profile avatar"
             fill
-            className="object-cover"
+            className="aspect-square object-cover"
           />
         ) : null}
       </Avatar>
-      <div className="flex flex-col">
-        <div className="flex items-center gap-1">
-          {profile.name}{' '}
-          {user?.currentProfile?.id === profile.id ? <Chip>Active</Chip> : null}
-        </div>
-        <div className="text-sm capitalize text-neutral-gray4">
-          {profile.type === 'user' ? 'Personal' : 'Organization'}
-        </div>
-      </div>
+      {children}
     </MenuItem>
   );
 };
@@ -133,6 +127,7 @@ const AvatarMenuContent = ({
     avatarImage?: { name: string | null } | null;
   }) => void;
 }) => {
+  const { user } = useUser();
   const logout = useAuthLogout();
   const router = useRouter();
   const t = useTranslations();
@@ -167,7 +162,22 @@ const AvatarMenuContent = ({
           profile={profile}
           onClose={onClose}
           onProfileSwitch={onProfileSwitch}
-        />
+        >
+          <div className="flex max-w-52 flex-col">
+            <div className="flex items-center gap-1">
+              {profile.name}{' '}
+              {user?.currentProfile?.id === profile.id ? (
+                <Chip>Active</Chip>
+              ) : null}
+            </div>
+            <div className="relative overflow-hidden truncate text-sm text-neutral-gray4">
+              {user?.organizationUsers
+                ?.map((orgUser) => orgUser.organization?.profile?.name)
+                .filter(Boolean)
+                .join(' • ')}
+            </div>
+          </div>
+        </ProfileMenuItem>
       ))}
       <MenuSeparator className="pt-4" />
       {orgProfiles?.map((profile) => (
@@ -176,7 +186,19 @@ const AvatarMenuContent = ({
           profile={profile}
           onClose={onClose}
           onProfileSwitch={onProfileSwitch}
-        />
+        >
+          <div className="flex flex-col">
+            <div className="flex items-center gap-1">
+              {profile.name}{' '}
+              {user?.currentProfile?.id === profile.id ? (
+                <Chip>Active</Chip>
+              ) : null}
+            </div>
+            <div className="text-sm capitalize text-neutral-gray4">
+              Organization
+            </div>
+          </div>
+        </ProfileMenuItem>
       ))}
       <MenuSeparator className="pt-4" />
       <MenuItem
