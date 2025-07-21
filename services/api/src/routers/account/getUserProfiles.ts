@@ -19,7 +19,7 @@ const meta: OpenApiMeta = {
   },
 };
 
-const profileSchema = z.object({
+export const userProfileSchema = z.object({
   id: z.string(),
   type: z.enum(['user', 'org']),
   name: z.string(),
@@ -40,7 +40,7 @@ export const getUserProfiles = router({
     .use(withDB)
     .meta(meta)
     .input(z.undefined())
-    .output(z.array(profileSchema))
+    .output(z.array(userProfileSchema))
     .query(async ({ ctx }) => {
       const { db } = ctx.database;
       const { id: authUserId } = ctx.user;

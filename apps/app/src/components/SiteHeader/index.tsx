@@ -62,7 +62,7 @@ const ProfileMenuItem = ({
   onClose?: () => void;
   onProfileSwitch?: (profile: {
     name: string;
-    avatarImage?: { name: string | null } | null;
+    avatarImage?: { name: string } | null;
   }) => void;
   children?: React.ReactNode;
 }) => {
@@ -124,7 +124,7 @@ const AvatarMenuContent = ({
   setIsProfileOpen?: (isOpen: boolean) => void;
   onProfileSwitch?: (profile: {
     name: string;
-    avatarImage?: { name: string | null } | null;
+    avatarImage?: { name: string } | null;
   }) => void;
 }) => {
   const { user } = useUser();
@@ -134,24 +134,29 @@ const AvatarMenuContent = ({
 
   const { data: profiles } = trpc.account.getUserProfiles.useQuery();
 
-  const {
-    userProfiles,
-    orgProfiles,
-  }: {
-    userProfiles: Profile[];
-    orgProfiles: Profile[];
-  } =
-    profiles?.reduce(
+  const { userProfiles, orgProfiles } =
+    profiles?.reduce<{
+      userProfiles: Profile[];
+      orgProfiles: Profile[];
+    }>(
       (acc, profile) => {
+        if (!profile) {
+          return acc;
+        }
+
         if (profile.type === 'user') {
-          acc.userProfiles.push(profile);
+          // TODO: typing here needs to be fixed. Will be easier with new profile types
+          acc.userProfiles.push(profile as Profile);
         } else {
-          acc.orgProfiles.push(profile);
+          acc.orgProfiles.push(profile as Profile);
         }
 
         return acc;
       },
-      { userProfiles: [], orgProfiles: [] },
+      {
+        userProfiles: [],
+        orgProfiles: [],
+      },
     ) ?? {};
 
   return (
