@@ -112,8 +112,6 @@ export const listProfiles = async ({
       limit: limit + 1, // Fetch one extra to check hasMore
     });
 
-    console.log('RESULTS', result);
-
     result.forEach(
       (profile) =>
         // @ts-ignore

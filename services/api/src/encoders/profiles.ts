@@ -32,3 +32,5 @@ export const profileEncoder = baseProfileEncoder.extend({
     >(() => require('./organizations').organizationsEncoder)
     .nullish(),
 });
+
+export type Profile = z.infer<typeof profileEncoder>;

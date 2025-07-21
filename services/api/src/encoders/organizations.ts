@@ -31,6 +31,10 @@ export const organizationsEncoder = createSelectSchema(organizations)
     acceptingApplications: z.boolean().default(false).optional(),
   });
 
+export const organizationsWithProfileEncoder = organizationsEncoder.extend({
+  profile: baseProfileEncoder,
+});
+
 export const organizationsCreateInputEncoder = createSelectSchema(organizations)
   .merge(createSelectSchema(profiles))
   .pick({
@@ -78,6 +82,6 @@ export type OrganizationCreateInput = z.infer<
   typeof organizationsCreateInputEncoder
 >;
 
-export type Organization = z.infer<typeof organizationsEncoder>;
+export type Organization = z.infer<typeof organizationsWithProfileEncoder>;
 
 export const orgUserEncoder = createSelectSchema(organizationUsers);
