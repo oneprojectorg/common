@@ -442,7 +442,7 @@ export const PostFeedSkeleton = ({
           <AvatarSkeleton className="!size-8 max-h-8 max-w-8 rounded-full" />
           <FeedMain>
             <FeedHeader className="w-1/2">
-              <Header3 className="w-full font-medium leading-5">
+              <Header3 className="w-full pb-1 font-medium leading-5">
                 <Skeleton />
               </Header3>
               <Skeleton />
