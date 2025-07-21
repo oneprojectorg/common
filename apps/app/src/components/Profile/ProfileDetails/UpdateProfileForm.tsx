@@ -153,7 +153,6 @@ export const UpdateProfileForm = forwardRef<
         {/* Header Images */}
         <div className="relative w-full pb-12 sm:pb-20">
           <BannerUploader
-            label={t('Banner Image')}
             className="relative aspect-[128/55] w-full bg-offWhite"
             value={bannerImageUrl ?? undefined}
             onChange={(file: File) =>
@@ -208,7 +207,9 @@ export const UpdateProfileForm = forwardRef<
       </FormContainer>
       <ModalFooter className="hidden sm:flex">
         <form.SubmitButton className="sm:w-auto">
-          {updateProfile.isPending || uploadImage.isPending || uploadBannerImage.isPending ? (
+          {updateProfile.isPending ||
+          uploadImage.isPending ||
+          uploadBannerImage.isPending ? (
             <LoadingSpinner />
           ) : (
             t('Save')
