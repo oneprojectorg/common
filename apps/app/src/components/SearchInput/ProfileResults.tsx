@@ -1,28 +1,15 @@
+import { getPublicUrl } from '@/utils';
+import { Profile } from '@op/api/encoders';
 import { Avatar } from '@op/ui/Avatar';
 import Image from 'next/image';
 
-import { getPublicUrl } from '@/utils';
 import { Link } from '@/lib/i18n';
 
 import { SearchResultItem } from './SearchResultItem';
 
 interface ProfileResultsProps {
   query: string;
-  profileResults: Array<{
-    id: string;
-    type: 'user' | 'org';
-    name: string;
-    slug: string;
-    bio?: string | null;
-    city?: string | null;
-    avatarImage?: {
-      id: string;
-      name: string;
-      path: string;
-      size: number;
-      mimetype: string;
-    } | null;
-  }>;
+  profileResults: Array<Profile>;
   selectedIndex: number;
   onSearch: (query: string) => void;
 }
@@ -36,13 +23,23 @@ export const ProfileResults = ({
   return (
     <div className="pb-4">
       {profileResults.map((profile, index) => (
-        <SearchResultItem key={profile.id} selected={selectedIndex === index + 1}>
+        <SearchResultItem
+          key={profile.id}
+          selected={selectedIndex === index + 1}
+        >
           <Link
             className="group/result flex w-full items-center gap-4 hover:no-underline"
-            href={profile.type === 'user' ? `/profile/${profile.slug}` : `/org/${profile.slug}`}
+            href={
+              profile.type === 'user'
+                ? `/profile/${profile.slug}`
+                : `/org/${profile.slug}`
+            }
             onClick={() => onSearch(query)}
           >
-            <Avatar placeholder={profile.name} className="size-8 group-hover/result:no-underline">
+            <Avatar
+              placeholder={profile.name}
+              className="size-8 group-hover/result:no-underline"
+            >
               {profile.avatarImage?.name ? (
                 <Image
                   src={getPublicUrl(profile.avatarImage.name) ?? ''}
@@ -55,7 +52,7 @@ export const ProfileResults = ({
 
             <div className="flex flex-col font-semibold text-neutral-charcoal group-hover/result:underline">
               <span>{profile.name}</span>
-              <span className="text-sm text-neutral-gray4 capitalize">
+              <span className="text-sm capitalize text-neutral-gray4">
                 {profile.type === 'user' ? 'Personal' : 'Organization'}
                 {profile.city && ` • ${profile.city}`}
               </span>
