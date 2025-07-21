@@ -1,11 +1,14 @@
-import { RouterOutput } from '@op/api/client';
-import { trpcNext } from '@op/api/vanilla';
+'use client';
+
+import { RouterOutput, trpc } from '@op/api/client';
 import { Header1, Header3 } from '@op/ui/Header';
 import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
-import { redirect } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { Suspense } from 'react';
+
+import { useTranslations } from '@/lib/i18n';
 
 import { NewOrganizations } from '@/components/NewOrganizations';
 import { NewlyJoinedModal } from '@/components/NewlyJoinedModal';
@@ -23,11 +26,12 @@ const LandingScreenFeeds = ({
 }: {
   user: RouterOutput['account']['getMyAccount'];
 }) => {
+  const t = useTranslations();
   const NewOrganizationsList = () => {
     return (
       <Surface className="flex flex-col gap-6 border-0 sm:border sm:p-6">
         <Header3 className="font-serif text-title-sm">
-          New Organizations
+          {t('New Organizations')}
         </Header3>
         <NewOrganizations />
       </Surface>
@@ -68,10 +72,10 @@ const LandingScreenFeeds = ({
       <Tabs className="gap-8 pb-8 sm:hidden">
         <TabList variant="pill">
           <Tab id="discover" variant="pill">
-            Discover
+{t('Discover')}
           </Tab>
           <Tab id="recent" variant="pill">
-            Recent
+            {t('Recent')}
           </Tab>
         </TabList>
         <TabPanel id="discover" className="p-0">
@@ -85,17 +89,29 @@ const LandingScreenFeeds = ({
   );
 };
 
-export const LandingScreen = async () => {
-  try {
-    const client = await trpcNext();
-    const user = await client.account.getMyAccount.query();
+export const LandingScreen = () => {
+  const t = useTranslations();
+  const router = useRouter();
+  const { data: user, error } = trpc.account.getMyAccount.useQuery();
 
-    return (
+  if (error) {
+    console.error('Failed to load landing screen data:', error);
+    if ((error as any)?.data?.code === 'NOT_FOUND') {
+      router.push('/start');
+    }
+    return null;
+  }
+
+  if (!user) {
+    return <LandingScreenSkeleton />;
+  }
+
+  return (
       <div className="container flex min-h-0 grow flex-col gap-4 pt-8 sm:gap-10 sm:pt-14">
         <div className="flex flex-col gap-2">
           <Welcome user={user} />
           <span className="text-center text-neutral-charcoal">
-            Explore new connections and strengthen existing relationships.
+            {t('Explore new connections and strengthen existing relationships.')}
           </span>
         </div>
         <Suspense
@@ -115,27 +131,20 @@ export const LandingScreen = async () => {
         <NewlyJoinedModal />
       </div>
     );
-  } catch (e) {
-    console.error('Failed to load landing screen data:', e);
-    if ((e as any)?.data?.code === 'NOT_FOUND') {
-      redirect('/start');
-    }
-
-    return null;
-  }
 };
 
 export const LandingScreenSkeleton: React.FC = () => {
+  const t = useTranslations();
   return (
     <div className="container flex min-h-0 grow flex-col gap-4 pt-8 sm:gap-10 sm:pt-14">
       <div className="flex flex-col gap-2">
         <Skeleton>
           <Header1 className="text-center text-title-md text-transparent sm:text-title-xl">
-            Welcome back, to Common!
+{t('Welcome back, to Common!')}
           </Header1>
         </Skeleton>
         <Skeleton className="text-center text-transparent">
-          Explore new connections and strengthen existing relationships.
+          {t('Explore new connections and strengthen existing relationships.')}
         </Skeleton>
       </div>
 
@@ -152,7 +161,7 @@ export const LandingScreenSkeleton: React.FC = () => {
         <span />
         <div className="col-span-5">
           <Surface className="flex flex-col gap-6 border-0 sm:border sm:p-6">
-            <Skeleton className="text-title-sm">New Organizations</Skeleton>
+            <Skeleton className="text-title-sm">{t('New Organizations')}</Skeleton>
             <OrganizationListSkeleton />
           </Surface>
         </div>
@@ -161,16 +170,16 @@ export const LandingScreenSkeleton: React.FC = () => {
       <Tabs className="pb-8 sm:hidden">
         <TabList variant="pill">
           <Tab id="discover" variant="pill">
-            Discover
+{t('Discover')}
           </Tab>
           <Tab id="recent" variant="pill">
-            Recent
+            {t('Recent')}
           </Tab>
         </TabList>
 
         <TabPanel id="discover" className="p-0">
           <Surface className="flex flex-col gap-6 border-0 sm:border sm:p-6">
-            <Skeleton className="text-title-sm">New Organizations</Skeleton>
+            <Skeleton className="text-title-sm">{t('New Organizations')}</Skeleton>
             <SkeletonLine lines={5} />
           </Surface>
         </TabPanel>
