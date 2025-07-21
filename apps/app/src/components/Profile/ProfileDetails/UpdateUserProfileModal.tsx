@@ -1,7 +1,7 @@
 'use client';
 
 import { useUser } from '@/utils/UserProvider';
-import type { Organization } from '@op/api/encoders';
+import type { Profile } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { Modal, ModalHeader } from '@op/ui/Modal';
 import { DialogTrigger } from '@op/ui/RAC';
@@ -10,22 +10,22 @@ import { LuPencil, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { UpdateOrganizationForm } from './UpdateOrganizationForm';
+import { UpdateProfileForm } from './UpdateProfileForm';
 
-interface UpdateOrganizationModalProps {
-  organization: Organization;
+interface UpdateUserProfileModalProps {
+  profile: Profile;
 }
 
-export const UpdateOrganizationModal = ({
-  organization,
-}: UpdateOrganizationModalProps) => {
+export const UpdateUserProfileModal = ({
+  profile,
+}: UpdateUserProfileModalProps) => {
   const { user } = useUser();
   const t = useTranslations();
   const [isOpen, setIsOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
-  // Only show edit button if user belongs to this organization
-  const canEdit = user?.currentProfile?.id === organization.profile.id;
+  // Only show edit button if this is the user's own profile
+  const canEdit = user?.currentProfile?.id === profile.id;
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -88,15 +88,15 @@ export const UpdateOrganizationModal = ({
               type="submit"
               className="font-sans text-base text-primary-teal"
               unstyled
-              form="update-organization-form"
+              form="update-profile-form"
             >
               {t('Save')}
             </Button>
           </div>
         </ModalHeader>
-        <UpdateOrganizationForm
+        <UpdateProfileForm
           ref={formRef}
-          profile={organization}
+          profile={user}
           onSuccess={() => setIsOpen(false)}
           className="p-6"
         />
