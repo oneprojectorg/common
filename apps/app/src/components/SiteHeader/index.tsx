@@ -108,7 +108,7 @@ const AvatarMenuContent = ({
           </span>
 
           <span className="text-sm text-neutral-gray4 sm:text-xs">
-            Current profile: {user?.currentProfile?.name}
+            Admin for {user?.currentProfile?.name}
           </span>
         </div>
       </MenuItemSimple>
