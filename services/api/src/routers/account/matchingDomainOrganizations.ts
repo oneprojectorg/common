@@ -2,7 +2,7 @@ import { matchingDomainOrganizations as getMatchingDomainOrganizations } from '@
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
-import { organizationsEncoder } from '../../encoders';
+import { organizationsWithProfileEncoder } from '../../encoders';
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
@@ -26,12 +26,12 @@ export const matchingDomainOrganizations = router({
     // Router
     .meta(meta)
     .input(z.undefined())
-    .output(z.array(organizationsEncoder))
+    .output(z.array(organizationsWithProfileEncoder))
     .query(async ({ ctx }) => {
       const result = await getMatchingDomainOrganizations({
         user: ctx.user,
       });
 
-      return result.map((org) => organizationsEncoder.parse(org));
+      return result.map((org) => organizationsWithProfileEncoder.parse(org));
     }),
 });

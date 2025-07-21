@@ -82,11 +82,15 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
   );
 };
 
-export const ProfileDetails = ({ profile }: { profile: Organization }) => {
+export const ProfileDetails = ({
+  organization,
+}: {
+  organization: Organization;
+}) => {
   return (
     <div className="flex w-full flex-col gap-3 px-4 sm:flex-row sm:justify-between sm:px-6">
-      <ProfileSummary profile={profile} />
-      <ProfileInteractions profile={profile} />
+      <ProfileSummary profile={organization} />
+      <ProfileInteractions profile={organization} />
     </div>
   );
 };

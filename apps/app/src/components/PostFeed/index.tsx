@@ -164,7 +164,9 @@ export const PostFeed = ({
       await utils.organization.listAllPosts.cancel({});
 
       // Snapshot the previous values
-      const previousListPosts = slug ? utils.organization.listPosts.getInfiniteData({ slug, limit }) : undefined;
+      const previousListPosts = slug
+        ? utils.organization.listPosts.getInfiniteData({ slug, limit })
+        : undefined;
       const previousListAllPosts = utils.organization.listAllPosts.getData({});
 
       // Helper function to update post reactions
@@ -172,22 +174,27 @@ export const PostFeed = ({
         if (item.post.id === postId) {
           const currentReactions = item.post.userReactions || [];
           const currentCounts = item.post.reactionCounts || {};
-          
+
           // Check if user already has this reaction
           const hasReaction = currentReactions.includes(reactionType);
-          
+
           if (hasReaction) {
             // Remove reaction
             return {
               ...item,
               post: {
                 ...item.post,
-                userReactions: currentReactions.filter((r: string) => r !== reactionType),
+                userReactions: currentReactions.filter(
+                  (r: string) => r !== reactionType,
+                ),
                 reactionCounts: {
                   ...currentCounts,
-                  [reactionType]: Math.max(0, (currentCounts[reactionType] || 0) - 1)
-                }
-              }
+                  [reactionType]: Math.max(
+                    0,
+                    (currentCounts[reactionType] || 0) - 1,
+                  ),
+                },
+              },
             };
           } else {
             // Add reaction
@@ -198,9 +205,9 @@ export const PostFeed = ({
                 userReactions: [...currentReactions, reactionType],
                 reactionCounts: {
                   ...currentCounts,
-                  [reactionType]: (currentCounts[reactionType] || 0) + 1
-                }
-              }
+                  [reactionType]: (currentCounts[reactionType] || 0) + 1,
+                },
+              },
             };
           }
         }
@@ -209,16 +216,19 @@ export const PostFeed = ({
 
       // Optimistically update listPosts cache (if slug is provided)
       if (slug) {
-        utils.organization.listPosts.setInfiniteData({ slug, limit }, (old: any) => {
-          if (!old) return old;
-          return {
-            ...old,
-            pages: old.pages.map((page: any) => ({
-              ...page,
-              items: page.items.map(updatePostReactions)
-            }))
-          };
-        });
+        utils.organization.listPosts.setInfiniteData(
+          { slug, limit },
+          (old: any) => {
+            if (!old) return old;
+            return {
+              ...old,
+              pages: old.pages.map((page: any) => ({
+                ...page,
+                items: page.items.map(updatePostReactions),
+              })),
+            };
+          },
+        );
       }
 
       // Optimistically update listAllPosts cache
@@ -226,7 +236,7 @@ export const PostFeed = ({
         if (!old) return old;
         return {
           ...old,
-          items: old.items.map(updatePostReactions)
+          items: old.items.map(updatePostReactions),
         };
       });
 
@@ -432,7 +442,7 @@ export const PostFeedSkeleton = ({
           <AvatarSkeleton className="!size-8 max-h-8 max-w-8 rounded-full" />
           <FeedMain>
             <FeedHeader className="w-1/2">
-              <Header3 className="w-full font-medium leading-5">
+              <Header3 className="w-full pb-1 font-medium leading-5">
                 <Skeleton />
               </Header3>
               <Skeleton />

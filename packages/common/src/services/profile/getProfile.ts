@@ -44,7 +44,6 @@ export const getProfile = async ({
   user: _user, // Currently unused but kept for future extensibility
 }: GetProfileParams) => {
   try {
-    // Find the profile by slug
     const profile = await db.query.profiles.findFirst({
       where: eq(profiles.slug, slug),
       with: {
@@ -57,33 +56,7 @@ export const getProfile = async ({
       throw new NotFoundError('Profile not found');
     }
 
-    // Return the profile data using Zod schema validation
-    return profileResultSchema.parse({
-      id: profile.id,
-      type: profile.type as 'user' | 'org',
-      name: profile.name,
-      slug: profile.slug,
-      bio: profile.bio,
-      mission: profile.mission,
-      email: profile.email,
-      website: profile.website,
-      city: profile.city,
-      state: profile.state,
-      avatarImage: profile.avatarImage
-        ? {
-            id: (profile.avatarImage as any).id,
-            name: (profile.avatarImage as any).name,
-            metadata: (profile.avatarImage as any).metadata,
-          }
-        : null,
-      headerImage: profile.headerImage
-        ? {
-            id: (profile.headerImage as any).id,
-            name: (profile.headerImage as any).name,
-            metadata: (profile.headerImage as any).metadata,
-          }
-        : null,
-    });
+    return profileResultSchema.parse(profile);
   } catch (error) {
     if (error instanceof NotFoundError) {
       throw error;

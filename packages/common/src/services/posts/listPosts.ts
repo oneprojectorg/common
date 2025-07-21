@@ -9,6 +9,7 @@ import {
   encodeCursor,
 } from '../../utils';
 import { getCurrentProfileId } from '../access';
+import { getReactionCounts } from './utils';
 
 export const listPosts = async ({
   user,
@@ -125,23 +126,19 @@ export const getItemsWithReactions = ({
 }: {
   items: any[];
   profileId: string;
-}): Array<any & { post: any & { reactionCounts: Record<string, number>; userReactions: string[] } }> =>
+}): Array<
+  any & {
+    post: any & {
+      reactionCounts: Record<string, number>;
+      userReactions: string[];
+    };
+  }
+> =>
   items.map((item) => {
-    const reactionCounts: Record<string, number> = {};
-    const userReactions: string[] = [];
-
-    // Count reactions by type
-    if (item.post.reactions) {
-      item.post.reactions.forEach((reaction: { reactionType: string; profileId: string }) => {
-        reactionCounts[reaction.reactionType] =
-          (reactionCounts[reaction.reactionType] || 0) + 1;
-
-        // Track user's reactions
-        if (reaction.profileId === profileId) {
-          userReactions.push(reaction.reactionType);
-        }
-      });
-    }
+    const { reactionCounts, userReactions } = getReactionCounts({
+      reactions: item.post.reactions,
+      profileId,
+    });
 
     return {
       ...item,

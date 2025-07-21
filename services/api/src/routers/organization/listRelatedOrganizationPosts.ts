@@ -10,7 +10,10 @@ import { postsToOrganizations } from '@op/db/schema';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
-import { organizationsEncoder } from '../../encoders';
+import {
+  organizationsEncoder,
+  organizationsWithProfileEncoder,
+} from '../../encoders';
 import {
   postsEncoder,
   postsToOrganizationsEncoder,
@@ -77,12 +80,12 @@ export const listRelatedOrganizationPostsRouter = router({
       // Build cursor condition for pagination
       const cursorCondition = cursorData
         ? or(
-          lt(postsToOrganizations.createdAt, cursorData.createdAt),
-          and(
-            eq(postsToOrganizations.createdAt, cursorData.createdAt),
-            lt(postsToOrganizations.postId, cursorData.id),
-          ),
-        )
+            lt(postsToOrganizations.createdAt, cursorData.createdAt),
+            and(
+              eq(postsToOrganizations.createdAt, cursorData.createdAt),
+              lt(postsToOrganizations.postId, cursorData.id),
+            ),
+          )
         : undefined;
 
       // Fetch posts for all organizations with pagination
@@ -184,7 +187,9 @@ export const listRelatedOrganizationPostsRouter = router({
 
       return result.map((postToOrg) => ({
         ...postToOrg,
-        organization: organizationsEncoder.parse(postToOrg.organization),
+        organization: organizationsWithProfileEncoder.parse(
+          postToOrg.organization,
+        ),
         post: postsEncoder.parse(postToOrg.post),
       }));
     }),
