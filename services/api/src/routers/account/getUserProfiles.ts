@@ -25,10 +25,12 @@ const profileSchema = z.object({
   name: z.string(),
   slug: z.string(),
   bio: z.string().nullable(),
-  avatarImage: z.object({
-    id: z.string(),
-    name: z.string(),
-  }).nullable(),
+  avatarImage: z
+    .object({
+      id: z.string(),
+      name: z.string(),
+    })
+    .nullable(),
 });
 
 export const getUserProfiles = router({
@@ -90,10 +92,12 @@ export const getUserProfiles = router({
           name: profile.name,
           slug: profile.slug,
           bio: profile.bio,
-          avatarImage: profile.avatarImage ? {
-            id: profile.avatarImage.id,
-            name: profile.avatarImage.name,
-          } : null,
+          avatarImage: profile.avatarImage
+            ? {
+                id: profile.avatarImage.id,
+                name: profile.avatarImage.name,
+              }
+            : null,
         });
       }
 
@@ -107,10 +111,12 @@ export const getUserProfiles = router({
             name: profile.name,
             slug: profile.slug,
             bio: profile.bio,
-            avatarImage: profile.avatarImage ? {
-              id: profile.avatarImage.id,
-              name: profile.avatarImage.name,
-            } : null,
+            avatarImage: profile.avatarImage
+              ? {
+                  id: profile.avatarImage.id,
+                  name: profile.avatarImage.name,
+                }
+              : null,
           });
         }
       }

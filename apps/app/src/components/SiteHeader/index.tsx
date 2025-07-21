@@ -4,15 +4,16 @@ import { getPublicUrl } from '@/utils';
 import { ClientOnly } from '@/utils/ClientOnly';
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
+import { Profile } from '@op/api/encoders';
 import { useAuthLogout } from '@op/hooks';
 import { Avatar } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
+import { Chip } from '@op/ui/Chip';
 import { Menu, MenuItem, MenuItemSimple, MenuSeparator } from '@op/ui/Menu';
 import { Modal, ModalBody } from '@op/ui/Modal';
 import { Popover } from '@op/ui/Popover';
 import { MenuTrigger } from '@op/ui/RAC';
 import { Skeleton } from '@op/ui/Skeleton';
-import { cn } from '@op/ui/utils';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Suspense, useEffect, useRef, useState } from 'react';
@@ -51,113 +52,131 @@ const useMediaQuery = (query: string) => {
   return matches;
 };
 
+const ProfileMenuItem = ({
+  profile,
+  onClose,
+  onProfileSwitch,
+}: {
+  profile: Profile;
+  onClose?: () => void;
+  onProfileSwitch?: (profile: {
+    name: string;
+    avatarImage?: { name: string | null } | null;
+  }) => void;
+}) => {
+  const { user } = useUser();
+  const utils = trpc.useUtils();
+  const switchProfile = trpc.account.switchProfile.useMutation({
+    onSuccess: () => {
+      utils.invalidate();
+    },
+  });
+  const router = useRouter();
+  return (
+    <MenuItem
+      key={profile.id}
+      className="min-h-[60px]"
+      selected={user?.currentProfile?.id === profile.id}
+      onAction={() => {
+        if (user?.currentProfile?.id === profile.id) {
+          const profilePath =
+            profile.type === 'user'
+              ? `/profile/${profile.slug}`
+              : `/org/${profile.slug}`;
+          router.push(profilePath);
+          onClose?.();
+          return;
+        }
+
+        onProfileSwitch?.({
+          name: profile.name,
+          avatarImage: profile.avatarImage,
+        });
+        onClose?.();
+
+        void switchProfile.mutate({
+          profileId: profile.id,
+        });
+      }}
+    >
+      <Avatar placeholder={profile.name}>
+        {profile.avatarImage?.name ? (
+          <Image
+            src={getPublicUrl(profile.avatarImage.name) ?? ''}
+            alt="Profile avatar"
+            fill
+            className="object-cover"
+          />
+        ) : null}
+      </Avatar>
+      <div className="flex flex-col">
+        <div className="flex items-center gap-1">
+          {profile.name}{' '}
+          {user?.currentProfile?.id === profile.id ? <Chip>Active</Chip> : null}
+        </div>
+        <div className="text-sm capitalize text-neutral-gray4">
+          {profile.type === 'user' ? 'Personal' : 'Organization'}
+        </div>
+      </div>
+    </MenuItem>
+  );
+};
+
 const AvatarMenuContent = ({
   onClose,
-  setIsProfileOpen = () => {},
   onProfileSwitch,
 }: {
   onClose?: () => void;
   setIsProfileOpen?: (isOpen: boolean) => void;
   onProfileSwitch?: (profile: {
     name: string;
-    avatarImage?: { name: string } | null;
+    avatarImage?: { name: string | null } | null;
   }) => void;
 }) => {
-  const { user } = useUser();
   const logout = useAuthLogout();
   const router = useRouter();
-  const utils = trpc.useUtils();
   const t = useTranslations();
-  const switchProfile = trpc.account.switchProfile.useMutation({
-    onSuccess: () => {
-      utils.invalidate();
-    },
-  });
 
-  const { data: userProfiles } = trpc.account.getUserProfiles.useQuery();
+  const { data: profiles } = trpc.account.getUserProfiles.useQuery();
+
+  const {
+    userProfiles,
+    orgProfiles,
+  }: {
+    userProfiles: Profile[];
+    orgProfiles: Profile[];
+  } =
+    profiles?.reduce(
+      (acc, profile) => {
+        if (profile.type === 'user') {
+          acc.userProfiles.push(profile);
+        } else {
+          acc.orgProfiles.push(profile);
+        }
+
+        return acc;
+      },
+      { userProfiles: [], orgProfiles: [] },
+    ) ?? {};
 
   return (
     <>
-      <MenuItemSimple
-        isDisabled
-        className="flex cursor-default items-center gap-2 p-0 px-0 pb-4 text-neutral-charcoal hover:bg-transparent"
-      >
-        <Avatar className="size-6" placeholder={user?.name ?? ''}>
-          {user?.avatarImage?.name ? (
-            <Image
-              src={getPublicUrl(user?.avatarImage?.name) ?? ''}
-              fill
-              className="object-cover"
-              alt={user?.name ?? 'User avatar'}
-            />
-          ) : null}
-        </Avatar>
-        <div className="flex flex-col">
-          <span className="sm:text-sm">
-            Logged in as {user?.name} (
-            <Button
-              onPress={() => setIsProfileOpen(true)}
-              unstyled
-              className=""
-            >
-              <span className="text-primary-teal hover:underline">
-                {t('Edit Profile')}
-              </span>
-            </Button>
-            )
-          </span>
-
-          <span className="text-sm text-neutral-gray4 sm:text-xs">
-            Admin for {user?.currentProfile?.name}
-          </span>
-        </div>
-      </MenuItemSimple>
       {userProfiles?.map((profile) => (
-        <MenuItem
+        <ProfileMenuItem
           key={profile.id}
-          className={cn(
-            'min-h-[60px] px-4 py-4 text-neutral-charcoal',
-            user?.currentProfile?.id === profile.id && 'bg-neutral-offWhite',
-          )}
-          onAction={() => {
-            if (user?.currentProfile?.id === profile.id) {
-              const profilePath =
-                profile.type === 'user'
-                  ? `/profile/${profile.slug}`
-                  : `/org/${profile.slug}`;
-              router.push(profilePath);
-              onClose?.();
-              return;
-            }
-
-            onProfileSwitch?.({
-              name: profile.name,
-              avatarImage: profile.avatarImage,
-            });
-            onClose?.();
-
-            void switchProfile.mutate({
-              profileId: profile.id,
-            });
-          }}
-        >
-          <Avatar placeholder={profile.name}>
-            {profile.avatarImage?.name ? (
-              <Image
-                src={getPublicUrl(profile.avatarImage.name) ?? ''}
-                alt="Profile avatar"
-                fill
-                className="object-cover"
-              />
-            ) : null}
-          </Avatar>
-          <div className="flex flex-col">
-            <div>{profile.name}</div>
-            <div className="text-sm capitalize text-neutral-gray4">
-              {profile.type === 'user' ? 'Personal' : 'Organization'}
-            </div>
-          </div>
-        </MenuItem>
+          profile={profile}
+          onClose={onClose}
+          onProfileSwitch={onProfileSwitch}
+        />
+      ))}
+      <MenuSeparator className="pt-4" />
+      {orgProfiles?.map((profile) => (
+        <ProfileMenuItem
+          key={profile.id}
+          profile={profile}
+          onClose={onClose}
+          onProfileSwitch={onProfileSwitch}
+        />
       ))}
       <MenuSeparator className="pt-4" />
       <MenuItem
