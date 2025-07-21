@@ -165,7 +165,6 @@ export const OrganizationSummaryList = ({
   return (
     <div className="flex flex-col gap-6">
       {organizations?.map((org) => {
-        console.log('ORG', org);
         const whereWeWork =
           org.whereWeWork?.map((location: any) => location.name).join(' • ') ??
           [];

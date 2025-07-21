@@ -13,7 +13,7 @@ export const ProfileSummaryList = ({ profiles }: { profiles: Profiles }) => {
       {profiles.map((profile) => {
         const whereWeWork =
           profile.organization?.whereWeWork
-            ?.map(({ location }) => location.name)
+            ?.map((location) => location.name)
             .join(' • ') ?? [];
 
         const trimmedBio =

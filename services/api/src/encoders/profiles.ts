@@ -2,6 +2,7 @@ import { profiles } from '@op/db/schema';
 import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
+import { type organizationsEncoder } from './organizations';
 import { storageItemEncoder } from './storageItem';
 
 // Base profile encoder without organization reference
@@ -26,6 +27,8 @@ export const baseProfileEncoder = createSelectSchema(profiles)
 // Profile encoder with organization reference (will be extended in organizations.ts)
 export const profileEncoder = baseProfileEncoder.extend({
   organization: z
-    .lazy(() => require('./organizations').organizationsEncoder)
+    .lazy<
+      typeof organizationsEncoder
+    >(() => require('./organizations').organizationsEncoder)
     .nullish(),
 });

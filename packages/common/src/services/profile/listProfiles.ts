@@ -114,6 +114,14 @@ export const listProfiles = async ({
 
     console.log('RESULTS', result);
 
+    result.forEach(
+      (profile) =>
+        // @ts-ignore
+        (profile.organization.whereWeWork =
+          // @ts-ignore
+          profile.organization.whereWeWork.map((item: any) => item.location)),
+    );
+
     if (!result) {
       throw new NotFoundError('Profiles not found');
     }
