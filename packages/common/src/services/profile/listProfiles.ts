@@ -1,5 +1,5 @@
-import { and, db, eq, inArray, lt, or } from '@op/db/client';
-import { EntityType, profiles } from '@op/db/schema';
+import { and, db, eq, inArray, lt, or, sql } from '@op/db/client';
+import { EntityType, locations, profiles } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
 import {
@@ -75,11 +75,44 @@ export const listProfiles = async ({
       with: {
         headerImage: true,
         avatarImage: true,
+        organization: {
+          with: {
+            projects: true,
+            links: true,
+            profile: {
+              with: {
+                headerImage: true,
+                avatarImage: true,
+              },
+            },
+            whereWeWork: {
+              with: {
+                location: {
+                  extras: {
+                    x: sql<number>`ST_X(${locations.location})`.as('x'),
+                    y: sql<number>`ST_Y(${locations.location})`.as('y'),
+                  },
+                  columns: {
+                    id: true,
+                    name: true,
+                    placeId: true,
+                    countryCode: true,
+                    countryName: true,
+                    metadata: true,
+                    latLng: false,
+                  },
+                },
+              },
+            },
+          },
+        },
       },
       orderBy: (_, { asc, desc }) =>
         dir === 'asc' ? asc(orderByColumn) : desc(orderByColumn),
       limit: limit + 1, // Fetch one extra to check hasMore
     });
+
+    console.log('RESULTS', result);
 
     if (!result) {
       throw new NotFoundError('Profiles not found');

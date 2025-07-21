@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 import { linksEncoder } from './links';
 import { locationEncoder } from './locations';
-import { profileEncoder } from './profiles';
+import { baseProfileEncoder } from './profiles';
 import { projectEncoder } from './projects';
 import { storageItemEncoder } from './storageItem';
 import { taxonomyTermsEncoder } from './taxonomyTerms';
@@ -20,7 +20,7 @@ export const organizationsEncoder = createSelectSchema(organizations)
     domain: true,
   })
   .extend({
-    profile: profileEncoder,
+    profile: baseProfileEncoder.optional(),
     projects: z.array(projectEncoder).optional(),
     links: z.array(linksEncoder).optional().default([]),
     whereWeWork: z.array(locationEncoder).optional().default([]),

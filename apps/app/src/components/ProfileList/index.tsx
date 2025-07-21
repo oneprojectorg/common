@@ -1,44 +1,19 @@
 import { getPublicUrl } from '@/utils';
+import { RouterOutput } from '@op/api/client';
 import { Avatar } from '@op/ui/Avatar';
 import Image from 'next/image';
 
 import { Link } from '@/lib/i18n';
 
-interface ProfileSummaryListProps {
-  profiles: Array<{
-    id: string;
-    type: string;
-    name: string;
-    slug: string;
-    bio?: string | null;
-    city?: string | null;
-    state?: string | null;
-    mission?: string | null;
-    email?: string | null;
-    website?: string | null;
-    avatarImage?: {
-      id: string;
-      name: string | null;
-      metadata: {
-        size: number;
-        eTag: string;
-        mimetype: string;
-        cacheControl: string;
-        lastModified: string;
-        contentLength: number;
-        httpStatusCode: number;
-      };
-    } | null;
-  }>;
-}
+type Profiles = RouterOutput['profile']['list']['items'];
 
-export const ProfileSummaryList = ({ profiles }: ProfileSummaryListProps) => {
+export const ProfileSummaryList = ({ profiles }: { profiles: Profiles }) => {
   return (
     <div className="flex flex-col gap-6">
       {profiles.map((profile) => {
         const whereWeWork =
-          profile.whereWeWork
-            ?.map((location: any) => location.name)
+          profile.organization?.whereWeWork
+            ?.map(({ location }) => location.name)
             .join(' • ') ?? [];
 
         const trimmedBio =
