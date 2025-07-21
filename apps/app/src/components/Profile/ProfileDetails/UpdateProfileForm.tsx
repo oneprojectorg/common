@@ -3,6 +3,7 @@ import { getPublicUrl } from '@/utils';
 import { OrganizationUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { AvatarUploader } from '@op/ui/AvatarUploader';
+import { BannerUploader } from '@op/ui/BannerUploader';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { ModalFooter } from '@op/ui/Modal';
 import { toast } from '@op/ui/Toast';
@@ -54,11 +55,15 @@ export const UpdateProfileForm = forwardRef<
   const t = useTranslations();
   const utils = trpc.useUtils();
   const uploadImage = trpc.account.uploadImage.useMutation();
+  const uploadBannerImage = trpc.account.uploadBannerImage.useMutation();
   const updateProfile = trpc.account.updateUserProfile.useMutation();
 
   // Initialize with current profile data
   const [profileImageUrl, setProfileImageUrl] = useState<string | undefined>(
     getPublicUrl(profile.avatarImage?.name) || undefined,
+  );
+  const [bannerImageUrl, setBannerImageUrl] = useState<string | undefined>(
+    getPublicUrl(profile.currentProfile?.headerImage?.name) || undefined,
   );
 
   const form = useAppForm({
@@ -81,6 +86,60 @@ export const UpdateProfileForm = forwardRef<
     },
   });
 
+  const handleImageUpload = async (
+    file: File,
+    setImageUrl: (url: string | undefined) => void,
+    uploadMutation: any,
+  ): Promise<void> => {
+    const reader = new FileReader();
+
+    reader.onload = async (e) => {
+      const base64 = (e.target?.result as string)?.split(',')[1];
+
+      if (!base64) {
+        return;
+      }
+
+      if (!acceptedTypes.includes(file.type)) {
+        toast.error({
+          message: `That file type is not supported. Accepted types: ${acceptedTypes.map((t) => t.split('/')[1]).join(', ')}`,
+        });
+        return;
+      }
+
+      if (file.size > DEFAULT_MAX_SIZE) {
+        const maxSizeMB = (DEFAULT_MAX_SIZE / 1024 / 1024).toFixed(2);
+        toast.error({
+          message: `File too large. Maximum size: ${maxSizeMB}MB`,
+        });
+        return;
+      }
+
+      const dataUrl = `data:${file.type};base64,${base64}`;
+      setImageUrl(dataUrl);
+
+      const res = await uploadMutation.mutateAsync(
+        {
+          file: base64,
+          fileName: file.name,
+          mimeType: file.type,
+        },
+        {
+          onSuccess: () => {
+            utils.account.getMyAccount.invalidate();
+            utils.account.getUserProfiles.invalidate();
+          },
+        },
+      );
+
+      if (res?.url) {
+        setImageUrl(res.url);
+      }
+    };
+
+    reader.readAsDataURL(file);
+  };
+
   return (
     <form
       ref={ref}
@@ -91,61 +150,25 @@ export const UpdateProfileForm = forwardRef<
       }}
     >
       <FormContainer className={className}>
-        <div className="flex items-center justify-center">
+        {/* Header Images */}
+        <div className="relative w-full pb-12 sm:pb-20">
+          <BannerUploader
+            label={t('Banner Image')}
+            className="relative aspect-[128/55] w-full bg-offWhite"
+            value={bannerImageUrl ?? undefined}
+            onChange={(file: File) =>
+              handleImageUpload(file, setBannerImageUrl, uploadBannerImage)
+            }
+            uploading={uploadBannerImage.isPending}
+            error={uploadBannerImage.error?.message || undefined}
+          />
           <AvatarUploader
             label={t('Profile Picture')}
+            className="absolute bottom-0 left-4 aspect-square size-20 sm:size-28"
             value={profileImageUrl ?? undefined}
-            className="min-w-32"
-            onChange={async (file: File): Promise<void> => {
-              const reader = new FileReader();
-
-              reader.onload = async (e) => {
-                const base64 = (e.target?.result as string)?.split(',')[1];
-
-                if (!base64) {
-                  return;
-                }
-
-                if (!acceptedTypes.includes(file.type)) {
-                  toast.error({
-                    message: `That file type is not supported. Accepted types: ${acceptedTypes.map((t) => t.split('/')[1]).join(', ')}`,
-                  });
-                  return;
-                }
-
-                if (file.size > DEFAULT_MAX_SIZE) {
-                  const maxSizeMB = (DEFAULT_MAX_SIZE / 1024 / 1024).toFixed(2);
-                  toast.error({
-                    message: `File too large. Maximum size: ${maxSizeMB}MB`,
-                  });
-                  return;
-                }
-
-                const dataUrl = `data:${file.type};base64,${base64}`;
-
-                setProfileImageUrl(dataUrl);
-
-                const res = await uploadImage.mutateAsync(
-                  {
-                    file: base64,
-                    fileName: file.name,
-                    mimeType: file.type,
-                  },
-                  {
-                    onSuccess: () => {
-                      utils.account.getMyAccount.invalidate();
-                      utils.account.getUserProfiles.invalidate();
-                    },
-                  },
-                );
-
-                if (res?.url) {
-                  setProfileImageUrl(res.url);
-                }
-              };
-
-              reader.readAsDataURL(file);
-            }}
+            onChange={(file: File) =>
+              handleImageUpload(file, setProfileImageUrl, uploadImage)
+            }
             uploading={uploadImage.isPending}
             error={uploadImage.error?.message || undefined}
           />
@@ -185,7 +208,7 @@ export const UpdateProfileForm = forwardRef<
       </FormContainer>
       <ModalFooter className="hidden sm:flex">
         <form.SubmitButton className="sm:w-auto">
-          {updateProfile.isPending || uploadImage.isPending ? (
+          {updateProfile.isPending || uploadImage.isPending || uploadBannerImage.isPending ? (
             <LoadingSpinner />
           ) : (
             t('Save')

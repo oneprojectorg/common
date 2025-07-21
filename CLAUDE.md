@@ -10,8 +10,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - **Build all**: `pnpm build` (uses Turbo for optimized builds)
 - **Type checking**: `pnpm w:app lint` (for main app typechecking as well as API checking)
-- **Format code**: `pnpm format` or `pnpm format:check`
 - Never run database migrations
+- NEVER run `pnpm format`
 
 ## Architecture Overview
 

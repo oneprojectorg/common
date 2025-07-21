@@ -7,6 +7,7 @@ import { switchOrganization } from './updateLastOrgId';
 import { switchProfile } from './switchProfile';
 import updateUserProfile from './updateUserProfile';
 import { uploadAvatarImage } from './uploadAvatarImage';
+import { uploadBannerImage } from './uploadBannerImage';
 import usedStorage from './usedStorage';
 import usernameAvailable from './usernameAvailable';
 
@@ -18,6 +19,7 @@ const accountRouter = mergeRouters(
   usernameAvailable,
   usedStorage,
   uploadAvatarImage,
+  uploadBannerImage,
   switchOrganization,
   switchProfile,
   matchingDomainOrganizations,
