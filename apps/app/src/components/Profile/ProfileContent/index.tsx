@@ -201,7 +201,7 @@ export const ProfileGridWrapper = ({ children }: { children: ReactNode }) => {
 export const ProfileGrid = ({ profile }: { profile: Organization }) => {
   return (
     <ProfileGridWrapper>
-      <div className="col-span-6 px-4 py-6">
+      <div className="col-span-6 p-6">
         <ProfileAbout profile={profile} />
       </div>
     </ProfileGridWrapper>
