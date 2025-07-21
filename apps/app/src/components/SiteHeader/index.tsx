@@ -174,6 +174,7 @@ const AvatarMenuContent = ({
               {user?.organizationUsers
                 ?.map((orgUser) => orgUser.organization?.profile?.name)
                 .filter(Boolean)
+                .map((name) => (user.title ? `${user.title}, ${name}` : name))
                 .join(' • ')}
             </div>
           </div>
