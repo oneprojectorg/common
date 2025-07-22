@@ -96,7 +96,8 @@ export const reactionsRouter = router({
       const { postId, reactionType } = input;
       const { database } = ctx;
 
-      const profileId = await getCurrentProfileId();
+      try {
+        const profileId = await getCurrentProfileId();
 
         // Check if user has any existing reaction on this post
         const existingReaction = await database.db

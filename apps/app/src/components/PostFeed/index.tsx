@@ -176,7 +176,7 @@ export const PostFeed = ({
           const currentCounts = item.post.reactionCounts || {};
 
           // Check if user already has this reaction
-          const hasReaction = currentReactions.includes(reactionType);
+          const hasReaction = currentReaction === reactionType;
 
           if (hasReaction) {
             // Remove reaction
@@ -184,9 +184,7 @@ export const PostFeed = ({
               ...item,
               post: {
                 ...item.post,
-                userReactions: currentReactions.filter(
-                  (r: string) => r !== reactionType,
-                ),
+                userReaction: null,
                 reactionCounts: {
                   ...currentCounts,
                   [reactionType]: Math.max(
@@ -199,24 +197,24 @@ export const PostFeed = ({
           } else {
             // Replace or add reaction
             const newCounts = { ...currentCounts };
-            
+
             // If user had a previous reaction, decrement its count
             if (currentReaction) {
-              newCounts[currentReaction] = Math.max(0, (newCounts[currentReaction] || 0) - 1);
+              newCounts[currentReaction] = Math.max(
+                0,
+                (newCounts[currentReaction] || 0) - 1,
+              );
             }
-            
+
             // Increment count for new reaction
             newCounts[reactionType] = (newCounts[reactionType] || 0) + 1;
-            
+
             return {
               ...item,
               post: {
                 ...item.post,
-                userReactions: [...currentReactions, reactionType],
-                reactionCounts: {
-                  ...currentCounts,
-                  [reactionType]: (currentCounts[reactionType] || 0) + 1,
-                },
+                userReaction: reactionType,
+                reactionCounts: newCounts,
               },
             };
           }
