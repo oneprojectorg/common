@@ -1,6 +1,7 @@
 export * from './attachments';
 export * from './links';
 export * from './organizations';
+export * from './individuals';
 export * from './projects';
 export * from './users';
 export * from './posts';

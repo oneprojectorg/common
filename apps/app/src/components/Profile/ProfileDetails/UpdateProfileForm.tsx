@@ -7,6 +7,7 @@ import { BannerUploader } from '@op/ui/BannerUploader';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { ModalFooter } from '@op/ui/Modal';
 import { toast } from '@op/ui/Toast';
+import type { Option } from '@op/ui/MultiSelectComboBox';
 import { ReactNode, forwardRef, useState } from 'react';
 import { z } from 'zod';
 
@@ -14,6 +15,7 @@ import { useTranslations } from '@/lib/i18n';
 
 import { FormContainer } from '../../form/FormContainer';
 import { getFieldErrorMessage, useAppForm } from '../../form/utils';
+import { TermsMultiSelect } from '../../TermsMultiSelect';
 
 export const validator = z.object({
   fullName: z
@@ -46,6 +48,10 @@ export const validator = z.object({
       message: 'Must be at most 255 characters',
     }),
   website: zodUrl({ message: 'Enter a valid website address' }),
+  focusAreas: z.array(z.object({
+    id: z.string(),
+    label: z.string(),
+  })).optional(),
 });
 
 type FormFields = z.infer<typeof validator>;
@@ -81,6 +87,7 @@ export const UpdateProfileForm = forwardRef<
       title: profile.bio ?? '',
       email: profile.email ?? '',
       website: profile.website ?? '',
+      focusAreas: [] as Option[],
     },
     validators: {
       // @ts-expect-error - zodUrl is not returning the right type here
@@ -92,6 +99,7 @@ export const UpdateProfileForm = forwardRef<
         bio: value.title,
         email: value.email || undefined,
         website: value.website || undefined,
+        focusAreas: value.focusAreas || undefined,
       });
       utils.account.getMyAccount.invalidate();
       utils.account.getUserProfiles.invalidate();
@@ -250,6 +258,18 @@ export const UpdateProfileForm = forwardRef<
               inputProps={{
                 placeholder: t('Enter your website URL'),
               }}
+            />
+          )}
+        />
+        <form.AppField
+          name="focusAreas"
+          children={(field) => (
+            <TermsMultiSelect
+              label={t('Focus Areas')}
+              taxonomy="necSimple:focusArea"
+              value={(field.state.value as Array<Option>) ?? []}
+              onChange={field.handleChange}
+              errorMessage={getFieldErrorMessage(field)}
             />
           )}
         />
