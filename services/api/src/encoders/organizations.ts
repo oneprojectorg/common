@@ -6,6 +6,7 @@ import { linksEncoder } from './links';
 import { locationEncoder } from './locations';
 import { baseProfileEncoder } from './profiles';
 import { projectEncoder } from './projects';
+import { entityTermsEncoder } from './shared';
 import { storageItemEncoder } from './storageItem';
 import { taxonomyTermsEncoder } from './taxonomyTerms';
 
@@ -65,18 +66,7 @@ export const organizationsCreateInputEncoder = createSelectSchema(organizations)
   })
   .partial();
 
-export const organizationsTermsEncoder = z.record(
-  z.string(),
-  z.array(
-    z.object({
-      termUri: z.string(),
-      taxonomyUri: z.string(),
-      id: z.string(),
-      label: z.string(),
-      facet: z.string().nullish(),
-    }),
-  ),
-);
+export const organizationsTermsEncoder = entityTermsEncoder;
 
 export type OrganizationCreateInput = z.infer<
   typeof organizationsCreateInputEncoder
