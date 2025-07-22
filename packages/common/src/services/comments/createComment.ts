@@ -1,5 +1,5 @@
 import { db } from '@op/db/client';
-import { comments, commentsToPost, commentsToProjects } from '@op/db/schema';
+import { comments, commentsToPost } from '@op/db/schema';
 import type { CreateCommentInput } from '@op/types';
 
 import { CommonError, NotFoundError } from '../../utils';
