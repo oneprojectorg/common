@@ -12,7 +12,7 @@ const ProfileListingPage = async () => {
     const client = await trpcNext();
     const organizations = await client.profile.list.query({
       limit: 5,
-      types: [EntityType.USER],
+      types: [EntityType.INDIVIDUAL],
     });
 
     return (
@@ -21,7 +21,7 @@ const ProfileListingPage = async () => {
 
         <AllOrganizations
           initialData={organizations}
-          types={[EntityType.USER]}
+          types={[EntityType.INDIVIDUAL]}
           limit={20}
         />
       </ListPageLayout>

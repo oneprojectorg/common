@@ -4,7 +4,7 @@ import { getPublicUrl } from '@/utils';
 import { ClientOnly } from '@/utils/ClientOnly';
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import { Profile } from '@op/api/encoders';
+import { EntityType, Profile } from '@op/api/encoders';
 import { useAuthLogout } from '@op/hooks';
 import { Avatar } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
@@ -85,7 +85,7 @@ const ProfileMenuItem = ({
       onAction={() => {
         if (user?.currentProfile?.id === profile.id) {
           const profilePath =
-            profile.type === 'user'
+            profile.type === EntityType.INDIVIDUAL
               ? `/profile/${profile.slug}`
               : `/org/${profile.slug}`;
           router.push(profilePath);
@@ -151,7 +151,7 @@ const AvatarMenuContent = ({
           return acc;
         }
 
-        if (profile.type === 'user') {
+        if (profile.type === EntityType.INDIVIDUAL) {
           // TODO: typing here needs to be fixed. Will be easier with new profile types
           acc.userProfiles.push(profile as Profile);
         } else {

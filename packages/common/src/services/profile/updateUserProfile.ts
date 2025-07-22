@@ -67,7 +67,7 @@ export const updateUserProfile = async ({
       const [newProfile] = await dbClient
         .insert(profiles)
         .values({
-          type: EntityType.USER,
+          type: EntityType.INDIVIDUAL,
           name: name || currentUser.name || 'Unnamed User',
           slug,
           bio,

@@ -1,5 +1,6 @@
 import { getPublicUrl } from '@/utils';
 import { RouterOutput } from '@op/api/client';
+import { EntityType } from '@op/api/encoders';
 import { Avatar } from '@op/ui/Avatar';
 import Image from 'next/image';
 
@@ -26,7 +27,7 @@ export const ProfileSummaryList = ({ profiles }: { profiles: Profiles }) => {
             <div className="flex items-start gap-2 py-2 sm:gap-6">
               <Link
                 href={
-                  profile.type === 'user'
+                  profile.type === EntityType.INDIVIDUAL
                     ? `/profile/${profile.slug}`
                     : `/org/${profile.slug}`
                 }

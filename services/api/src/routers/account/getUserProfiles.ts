@@ -21,7 +21,7 @@ const meta: OpenApiMeta = {
 
 export const userProfileSchema = z.object({
   id: z.string(),
-  type: z.enum(['user', 'org']),
+  type: z.enum([EntityType.INDIVIDUAL, EntityType.ORG]),
   name: z.string(),
   slug: z.string(),
   bio: z.string().nullable(),
@@ -76,7 +76,7 @@ export const getUserProfiles = router({
 
       const userProfiles: Array<{
         id: string;
-        type: 'user' | 'org';
+        type: EntityType.INDIVIDUAL | EntityType.ORG;
         name: string;
         slug: string;
         bio: string | null;
@@ -88,7 +88,7 @@ export const getUserProfiles = router({
         const profile = user.profile as any;
         userProfiles.push({
           id: profile.id,
-          type: EntityType.USER as const,
+          type: EntityType.INDIVIDUAL,
           name: profile.name,
           slug: profile.slug,
           bio: profile.bio,
