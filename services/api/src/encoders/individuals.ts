@@ -21,3 +21,4 @@ export const individualsTermsEncoder = z.record(
 );
 
 export type Individual = z.infer<typeof individualsEncoder>;
+export type IndividualTerms = z.infer<typeof individualsTermsEncoder>;

@@ -6,16 +6,17 @@ import { AvatarUploader } from '@op/ui/AvatarUploader';
 import { BannerUploader } from '@op/ui/BannerUploader';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { ModalFooter } from '@op/ui/Modal';
-import { toast } from '@op/ui/Toast';
 import type { Option } from '@op/ui/MultiSelectComboBox';
-import { ReactNode, forwardRef, useState } from 'react';
+import { Skeleton } from '@op/ui/Skeleton';
+import { toast } from '@op/ui/Toast';
+import { ReactNode, Suspense, forwardRef, useState } from 'react';
 import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { FormContainer } from '../../form/FormContainer';
 import { getFieldErrorMessage, useAppForm } from '../../form/utils';
-import { TermsMultiSelect } from '../../TermsMultiSelect';
+import { FocusAreasField } from './FocusAreasField';
 
 export const validator = z.object({
   fullName: z
@@ -48,10 +49,14 @@ export const validator = z.object({
       message: 'Must be at most 255 characters',
     }),
   website: zodUrl({ message: 'Enter a valid website address' }),
-  focusAreas: z.array(z.object({
-    id: z.string(),
-    label: z.string(),
-  })).optional(),
+  focusAreas: z
+    .array(
+      z.object({
+        id: z.string(),
+        label: z.string(),
+      }),
+    )
+    .optional(),
 });
 
 type FormFields = z.infer<typeof validator>;
@@ -72,6 +77,10 @@ export const UpdateProfileForm = forwardRef<
   const uploadImage = trpc.account.uploadImage.useMutation();
   const uploadBannerImage = trpc.account.uploadBannerImage.useMutation();
   const updateProfile = trpc.account.updateUserProfile.useMutation();
+
+  // Get current user's profile ID for the focus areas component
+  const { data: userAccount } = trpc.account.getMyAccount.useQuery();
+  const profileId = userAccount?.profile?.id;
 
   // Initialize with current profile data
   const [profileImageUrl, setProfileImageUrl] = useState<string | undefined>(
@@ -261,18 +270,16 @@ export const UpdateProfileForm = forwardRef<
             />
           )}
         />
-        <form.AppField
-          name="focusAreas"
-          children={(field) => (
-            <TermsMultiSelect
-              label={t('Focus Areas')}
-              taxonomy="necSimple:focusArea"
-              value={(field.state.value as Array<Option>) ?? []}
-              onChange={field.handleChange}
-              errorMessage={getFieldErrorMessage(field)}
-            />
-          )}
-        />
+        {profileId && (
+          <form.AppField
+            name="focusAreas"
+            children={(field) => (
+              <Suspense fallback={<Skeleton className="h-8 w-full" />}>
+                <FocusAreasField profileId={profileId} field={field} />
+              </Suspense>
+            )}
+          />
+        )}
       </FormContainer>
       <ModalFooter className="hidden sm:flex">
         <form.SubmitButton className="sm:w-auto">

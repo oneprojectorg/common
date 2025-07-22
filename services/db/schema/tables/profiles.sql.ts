@@ -9,6 +9,7 @@ import {
   tsvector,
 } from '../../helpers';
 import { EntityType, entityTypeEnum } from './entities.sql';
+import { individuals } from './individuals.sql';
 import { organizations } from './organizations.sql';
 import { posts } from './posts.sql';
 import { objectsInStorage } from './storage.sql';
@@ -71,6 +72,10 @@ export const profilesRelations = relations(profiles, ({ many, one }) => ({
   organization: one(organizations, {
     fields: [profiles.id],
     references: [organizations.profileId],
+  }),
+  individual: one(individuals, {
+    fields: [profiles.id],
+    references: [individuals.profileId],
   }),
 }));
 
