@@ -112,7 +112,9 @@ export const UpdateProfileForm = forwardRef<
       });
       utils.account.getMyAccount.invalidate();
       utils.account.getUserProfiles.invalidate();
-      utils.organization.listPosts.invalidate();
+      utils.individual.getTermsByProfile.invalidate({
+        profileId,
+      });
       onSuccess();
     },
   });

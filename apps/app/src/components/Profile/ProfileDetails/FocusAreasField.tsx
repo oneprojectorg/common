@@ -2,12 +2,12 @@
 
 import { trpc } from '@op/api/client';
 import type { Option } from '@op/ui/MultiSelectComboBox';
-import { useMemo, useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { getFieldErrorMessage } from '../../form/utils';
 import { TermsMultiSelect } from '../../TermsMultiSelect';
+import { getFieldErrorMessage } from '../../form/utils';
 
 interface FocusAreasFieldProps {
   profileId: string;
@@ -17,15 +17,17 @@ interface FocusAreasFieldProps {
 export const FocusAreasField = ({ profileId, field }: FocusAreasFieldProps) => {
   const t = useTranslations();
 
-  // Use suspense query to load individual terms
-  const [individualTermsData] = trpc.individual.getTermsByProfile.useSuspenseQuery({
-    profileId,
-  });
+  const [individualTermsData] =
+    trpc.individual.getTermsByProfile.useSuspenseQuery({
+      profileId,
+    });
 
   // Transform individual terms into Options for the form
   const currentFocusAreas = useMemo((): Option[] => {
-    if (!individualTermsData?.['necSimple:focusArea']) return [];
-    
+    if (!individualTermsData?.['necSimple:focusArea']) {
+      return [];
+    }
+
     return individualTermsData['necSimple:focusArea'].map((term: any) => ({
       id: term.id,
       label: term.label,
@@ -34,7 +36,10 @@ export const FocusAreasField = ({ profileId, field }: FocusAreasFieldProps) => {
 
   // Update form field when focus areas load
   useEffect(() => {
-    if (currentFocusAreas.length > 0 && (!field.state.value || field.state.value.length === 0)) {
+    if (
+      currentFocusAreas.length > 0 &&
+      (!field.state.value || field.state.value.length === 0)
+    ) {
       field.handleChange(currentFocusAreas);
     }
   }, [currentFocusAreas, field]);
