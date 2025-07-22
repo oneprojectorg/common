@@ -21,12 +21,22 @@ import { PostUpdate } from '@/components/PostUpdate';
 
 import { ProfileFeed } from '../ProfileFeed';
 
-const FocusAreas = ({ focusAreas }: { focusAreas: Array<{ id: string; label: string; termUri: string; taxonomyUri: string; facet?: string | null }> }) => {
+const FocusAreas = ({
+  focusAreas,
+}: {
+  focusAreas: Array<{
+    id: string;
+    label: string;
+    termUri: string;
+    taxonomyUri: string;
+    facet?: string | null;
+  }>;
+}) => {
   return (
     <section className="flex flex-col gap-2 text-neutral-charcoal">
       <Header3>Focus Areas</Header3>
       <TagGroup>
-        {focusAreas.map((term: any) => (
+        {focusAreas.map((term) => (
           <Tag key={term.label}>{term.label}</Tag>
         ))}
       </TagGroup>
