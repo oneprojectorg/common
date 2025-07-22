@@ -1,12 +1,11 @@
-import { comments } from '@op/db/schema';
+import { getComments as getCommentsService } from '@op/common';
 import { getCommentsSchema } from '@op/types';
 import { TRPCError } from '@trpc/server';
-import { desc } from 'drizzle-orm';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { commentsEncoder } from '../../encoders';
-import withDB from '../../middlewares/withDB';
+import withAuthenticated from '../../middlewares/withAuthenticated';
 import { loggedProcedure, router } from '../../trpcFactory';
 
 const meta: OpenApiMeta = {
@@ -14,7 +13,7 @@ const meta: OpenApiMeta = {
     enabled: true,
     method: 'GET',
     path: '/comments',
-    protect: false,
+    protect: true,
     tags: ['comments'],
     summary: 'Get comments for a post',
   },
@@ -24,26 +23,13 @@ const outputSchema = z.array(commentsEncoder.strip());
 
 export const getComments = router({
   getComments: loggedProcedure
-    .use(withDB)
+    .use(withAuthenticated)
     .meta(meta)
     .input(getCommentsSchema)
     .output(outputSchema)
-    .query(async ({ input, ctx }) => {
-      const { db } = ctx.database;
-
+    .query(async ({ input }) => {
       try {
-        const commentsData = await db.query.comments.findMany({
-          where: (table, { eq }) => eq(table.postId, input.postId),
-          orderBy: [desc(comments.createdAt)],
-          limit: input.limit,
-          offset: input.offset,
-          with: {
-            profile: true,
-            parentComment: true,
-            childComments: true,
-          },
-        });
-
+        const commentsData = await getCommentsService(input);
         const output = outputSchema.parse(commentsData);
         return output;
       } catch (error) {
