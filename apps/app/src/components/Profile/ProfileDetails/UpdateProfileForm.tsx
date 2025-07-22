@@ -197,10 +197,11 @@ export const UpdateProfileForm = forwardRef<
               onBlur={field.handleBlur}
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
+              description={t(
+                'Add a descriptive headline for your profile. This could be your professional title at your organization or your focus areas.',
+              )}
               inputProps={{
-                placeholder: t(
-                  'Add a descriptive headline for your profile. This could be your professional title at your organization or your focus areas.',
-                ),
+                placeholder: t('Enter your headline'),
               }}
             />
           )}
