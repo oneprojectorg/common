@@ -60,9 +60,9 @@ export const switchProfile = router({
       }
 
       // Check if the profile ID is valid for this user
-      const hasAccess = 
+      const hasAccess =
         (user.profile && (user.profile as any).id === input.profileId) ||
-        user.organizationUsers.some(orgUser => {
+        user.organizationUsers.some((orgUser) => {
           const profile = orgUser.organization?.profile as any;
           return profile && profile.id === input.profileId;
         });
@@ -74,11 +74,19 @@ export const switchProfile = router({
         });
       }
 
+      const org = user.organizationUsers.find((orgUser) => {
+        const profile = orgUser.organization?.profile as any;
+        return profile && profile.id === input.profileId;
+      });
+
       let result;
       try {
         result = await db
           .update(users)
-          .set({ currentProfileId: input.profileId })
+          .set({
+            currentProfileId: input.profileId,
+            ...(org ? { lastOrgId: org.organization?.id } : {}),
+          })
           .where(eq(users.authUserId, id))
           .returning();
       } catch (error) {
