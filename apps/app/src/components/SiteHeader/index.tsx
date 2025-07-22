@@ -224,7 +224,7 @@ const AvatarMenuContent = ({
                 ) : null}
               </div>
               <div className="relative overflow-hidden truncate text-sm text-neutral-gray4">
-                {user?.currentProfile?.bio}
+                {profile.bio}
               </div>
             </div>
           </ProfileMenuItem>
