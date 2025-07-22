@@ -16,6 +16,7 @@ import { MenuTrigger } from '@op/ui/RAC';
 import { Skeleton } from '@op/ui/Skeleton';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { useFeatureFlagEnabled } from 'posthog-js/react';
 import { Suspense, useEffect, useRef, useState } from 'react';
 import {
   LuChevronDown,
@@ -119,9 +120,10 @@ const ProfileMenuItem = ({
 const AvatarMenuContent = ({
   onClose,
   onProfileSwitch,
+  setIsProfileOpen,
 }: {
   onClose?: () => void;
-  setIsProfileOpen?: (isOpen: boolean) => void;
+  setIsProfileOpen: (isOpen: boolean) => void;
   onProfileSwitch?: (profile: {
     name: string;
     avatarImage?: { name: string } | null;
@@ -131,6 +133,9 @@ const AvatarMenuContent = ({
   const logout = useAuthLogout();
   const router = useRouter();
   const t = useTranslations();
+  const individualProfilesEnabled = useFeatureFlagEnabled(
+    'individual_profiles',
+  );
 
   const { data: profiles } = trpc.account.getUserProfiles.useQuery();
 
@@ -161,31 +166,67 @@ const AvatarMenuContent = ({
 
   return (
     <>
-      {userProfiles?.map((profile) => (
-        <ProfileMenuItem
-          key={profile.id}
-          profile={profile}
-          onClose={onClose}
-          onProfileSwitch={onProfileSwitch}
-        >
-          <div className="flex max-w-52 flex-col">
-            <div className="flex items-center gap-1">
-              {profile.name}{' '}
-              {user?.currentProfile?.id === profile.id ? (
-                <Chip>Active</Chip>
-              ) : null}
+      <MenuItemSimple
+        isDisabled
+        className="flex cursor-default items-center gap-2 p-0 px-0 pb-4 text-neutral-charcoal hover:bg-transparent"
+      >
+        <Avatar className="size-6" placeholder={user?.name ?? ''}>
+          {user?.avatarImage?.name ? (
+            <Image
+              src={getPublicUrl(user?.avatarImage?.name) ?? ''}
+              fill
+              className="object-cover"
+              alt={user?.name ?? 'User avatar'}
+            />
+          ) : null}
+        </Avatar>
+        <div className="flex flex-col">
+          <span className="sm:text-sm">
+            Logged in as {user?.name} (
+            <Button
+              onPress={() => setIsProfileOpen(true)}
+              unstyled
+              className=""
+            >
+              <span className="text-primary-teal hover:underline">
+                {t('Edit Profile')}
+              </span>
+            </Button>
+            )
+          </span>
+          <span className="text-sm text-neutral-gray4 sm:text-xs">
+            Admin for {user?.currentOrganization?.profile.name}
+          </span>
+        </div>
+      </MenuItemSimple>
+
+      {individualProfilesEnabled &&
+        userProfiles?.map((profile) => (
+          <ProfileMenuItem
+            key={profile.id}
+            profile={profile}
+            onClose={onClose}
+            onProfileSwitch={onProfileSwitch}
+          >
+            <div className="flex max-w-52 flex-col">
+              <div className="flex items-center gap-1">
+                {profile.name}{' '}
+                {user?.currentProfile?.id === profile.id ? (
+                  <Chip>Active</Chip>
+                ) : null}
+              </div>
+              <div className="relative overflow-hidden truncate text-sm text-neutral-gray4">
+                {user?.organizationUsers
+                  ?.map((orgUser) => orgUser.organization?.profile?.name)
+                  .filter(Boolean)
+                  .map((name) => (user.title ? `${user.title}, ${name}` : name))
+                  .join(' • ')}
+              </div>
             </div>
-            <div className="relative overflow-hidden truncate text-sm text-neutral-gray4">
-              {user?.organizationUsers
-                ?.map((orgUser) => orgUser.organization?.profile?.name)
-                .filter(Boolean)
-                .map((name) => (user.title ? `${user.title}, ${name}` : name))
-                .join(' • ')}
-            </div>
-          </div>
-        </ProfileMenuItem>
-      ))}
-      <MenuSeparator className="pt-4" />
+          </ProfileMenuItem>
+        ))}
+
+      {individualProfilesEnabled && <MenuSeparator className="pt-4" />}
       {orgProfiles?.map((profile) => (
         <ProfileMenuItem
           key={profile.id}

@@ -1,8 +1,10 @@
 import { useLocalStorage } from '@/utils/useLocalStorage';
 import { trpc } from '@op/api/client';
+import { EntityType } from '@op/api/encoders';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { TextField } from '@op/ui/TextField';
 import { cn } from '@op/ui/utils';
+import { useFeatureFlagEnabled } from 'posthog-js/react';
 import { useEffect, useRef, useState } from 'react';
 import { LuSearch } from 'react-icons/lu';
 import { useDebounce } from 'use-debounce';
@@ -15,6 +17,9 @@ import { SearchResultItem } from './SearchResultItem';
 
 export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
   const router = useRouter();
+  const individualProfilesEnabled = useFeatureFlagEnabled(
+    'individual_profiles',
+  );
 
   const [query, setQuery] = useState<string>('');
   const [debouncedQuery, setImmediateQuery] = useDebounce(query, 200);
@@ -38,6 +43,9 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
     trpc.profile.search.useQuery(
       {
         q: debouncedQuery,
+        types: individualProfilesEnabled
+          ? [EntityType.USER, EntityType.ORG]
+          : [EntityType.ORG],
       },
       {
         staleTime: 30_000,
@@ -94,8 +102,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
   };
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
-    const isInteractingwWithDropdown =
-      !showResults || !profileResults?.length;
+    const isInteractingwWithDropdown = !showResults || !profileResults?.length;
 
     switch (event.key) {
       case 'ArrowDown':
@@ -125,15 +132,14 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
 
         recordSearch(query);
 
-        if (
-          isInteractingwWithDropdown &&
-          profileResults &&
-          selectedIndex > 0
-        ) {
+        if (isInteractingwWithDropdown && profileResults && selectedIndex > 0) {
           const selectedProfile = profileResults[selectedIndex - 1];
 
           if (selectedProfile) {
-            const profilePath = selectedProfile.type === 'user' ? `/profile/${selectedProfile.slug}` : `/org/${selectedProfile.slug}`;
+            const profilePath =
+              selectedProfile.type === 'user'
+                ? `/profile/${selectedProfile.slug}`
+                : `/org/${selectedProfile.slug}`;
             router.push(profilePath);
             break;
           }
@@ -200,10 +206,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
               {query.length > 0 && (
                 <SearchResultItem
                   selected={selectedIndex === 0}
-                  className={cn(
-                    'py-2',
-                    profileResults?.length && 'border-b',
-                  )}
+                  className={cn('py-2', profileResults?.length && 'border-b')}
                 >
                   <Link
                     className="flex w-full items-center gap-2"
@@ -246,10 +249,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
             {false && query.length > 0 && (
               <SearchResultItem
                 selected={selectedIndex === 0}
-                className={cn(
-                  'py-2',
-                  profileResults?.length && 'border-b',
-                )}
+                className={cn('py-2', profileResults?.length && 'border-b')}
               >
                 <Link
                   className="flex w-full items-center gap-2"
