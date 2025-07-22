@@ -9,7 +9,6 @@ import {
   encodeCursor,
 } from '../../utils';
 import { getCurrentProfileId } from '../access';
-import { getReactionCounts } from './utils';
 
 export const listPosts = async ({
   user,
