@@ -135,16 +135,16 @@ export const MatchingOrganizationsForm = ({
                 />
                 <div className="flex flex-col gap-2">
                   <Header3 className="text-base text-neutral-charcoal">
-                    {org.profile.name}
+                    {org.profile?.name}
                   </Header3>
                   <div className="flex flex-col gap-1 text-teal">
-                    {org.profile.website ? (
+                    {org.profile?.website ? (
                       <ContactLink className="h-auto">
                         <LuGlobe className="size-4" />
                         <div>{org.profile.website}</div>
                       </ContactLink>
                     ) : null}
-                    {org.profile.email ? (
+                    {org.profile?.email ? (
                       <ContactLink className="h-auto">
                         <LuMail className="min-w-4" />
                         <div>{org.profile.email}</div>

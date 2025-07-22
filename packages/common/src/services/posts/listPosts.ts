@@ -99,7 +99,7 @@ export const listPosts = async ({
         ? encodeCursor(new Date(lastItem.createdAt), lastItem.postId)
         : null;
 
-    const actorProfileId = await getCurrentProfileId({ database: db });
+    const actorProfileId = await getCurrentProfileId();
     // Transform items to include reaction counts and user's reactions
     const itemsWithReactions = getItemsWithReactions({
       items,

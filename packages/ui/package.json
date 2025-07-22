@@ -16,6 +16,7 @@
     "./Command": "./src/components/Command.tsx",
     "./CheckIcon": "./src/components/icons/CheckIcon.tsx",
     "./Checkbox": "./src/components/Checkbox.tsx",
+    "./Chip": "./src/components/Chip.tsx",
     "./Dialog": "./src/components/Dialog.tsx",
     "./DropDownButton": "./src/components/DropDownButton.tsx",
     "./EditableText": "./src/components/EditableText.tsx",

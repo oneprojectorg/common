@@ -1,10 +1,10 @@
+import { trackUserPost } from '@op/analytics';
 import { UnauthorizedError, getOrgAccessUser } from '@op/common';
 import { attachments, posts, postsToOrganizations } from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
 import { waitUntil } from '@vercel/functions';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
-import { trackUserPost } from '@op/analytics';
 
 import { postsEncoder } from '../../encoders';
 import withAuthenticated from '../../middlewares/withAuthenticated';
@@ -114,13 +114,17 @@ export const createPostInOrganization = router({
 
         const newPost = post;
 
-        const output = outputSchema.parse(newPost);
+        const output = outputSchema.parse({
+          ...newPost,
+          reactionCounts: {},
+          userReactions: [],
+        });
         return output;
       } catch (error) {
         console.log('ERROR', error);
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to add post to organization',
+          message: 'Something went wrong when adding post to organization',
         });
       }
     }),

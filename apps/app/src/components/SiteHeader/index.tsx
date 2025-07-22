@@ -4,18 +4,20 @@ import { getPublicUrl } from '@/utils';
 import { ClientOnly } from '@/utils/ClientOnly';
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
+import { Profile } from '@op/api/encoders';
 import { useAuthLogout } from '@op/hooks';
 import { Avatar } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
+import { Chip } from '@op/ui/Chip';
 import { Menu, MenuItem, MenuItemSimple, MenuSeparator } from '@op/ui/Menu';
 import { Modal, ModalBody } from '@op/ui/Modal';
 import { Popover } from '@op/ui/Popover';
 import { MenuTrigger } from '@op/ui/RAC';
 import { Skeleton } from '@op/ui/Skeleton';
-import { cn } from '@op/ui/utils';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Suspense, useEffect, useState } from 'react';
+import { useFeatureFlagEnabled } from 'posthog-js/react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import {
   LuChevronDown,
   LuCircleHelp,
@@ -31,6 +33,7 @@ import ErrorBoundary from '../ErrorBoundary';
 import { InviteUserModal } from '../InviteUserModal';
 import { PrivacyPolicyModal } from '../PrivacyPolicyModal';
 import { UpdateProfileModal } from '../Profile/ProfileDetails/UpdateProfileModal';
+import { ProfileSwitchingModal } from '../ProfileSwitchingModal';
 import { SearchInput } from '../SearchInput';
 import { ToSModal } from '../ToSModal';
 
@@ -50,24 +53,116 @@ const useMediaQuery = (query: string) => {
   return matches;
 };
 
+const ProfileMenuItem = ({
+  profile,
+  onClose,
+  onProfileSwitch,
+  children,
+}: {
+  profile: Profile;
+  onClose?: () => void;
+  onProfileSwitch?: (profile: {
+    name: string;
+    avatarImage?: { name: string } | null;
+  }) => void;
+  children?: React.ReactNode;
+}) => {
+  const { user } = useUser();
+  const utils = trpc.useUtils();
+  const switchProfile = trpc.account.switchProfile.useMutation({
+    onSuccess: () => {
+      utils.invalidate();
+    },
+  });
+  const router = useRouter();
+  return (
+    <MenuItem
+      key={profile.id}
+      className="min-h-[60px] w-72"
+      selected={user?.currentProfile?.id === profile.id}
+      onAction={() => {
+        if (user?.currentProfile?.id === profile.id) {
+          const profilePath =
+            profile.type === 'user'
+              ? `/profile/${profile.slug}`
+              : `/org/${profile.slug}`;
+          router.push(profilePath);
+          onClose?.();
+          return;
+        }
+
+        onProfileSwitch?.({
+          name: profile.name,
+          avatarImage: profile.avatarImage,
+        });
+        onClose?.();
+
+        void switchProfile.mutate({
+          profileId: profile.id,
+        });
+      }}
+    >
+      <Avatar placeholder={profile.name}>
+        {profile.avatarImage?.name ? (
+          <Image
+            src={getPublicUrl(profile.avatarImage.name) ?? ''}
+            alt="Profile avatar"
+            fill
+            className="aspect-square object-cover"
+          />
+        ) : null}
+      </Avatar>
+      {children}
+    </MenuItem>
+  );
+};
+
 const AvatarMenuContent = ({
   onClose,
-  setIsProfileOpen = () => {},
+  onProfileSwitch,
+  setIsProfileOpen,
 }: {
   onClose?: () => void;
-  setIsProfileOpen?: (isOpen: boolean) => void;
+  setIsProfileOpen: (isOpen: boolean) => void;
+  onProfileSwitch?: (profile: {
+    name: string;
+    avatarImage?: { name: string } | null;
+  }) => void;
 }) => {
   const { user } = useUser();
   const logout = useAuthLogout();
   const router = useRouter();
-  const utils = trpc.useUtils();
   const t = useTranslations();
-  const switchOrganization = trpc.account.switchOrganization.useMutation({
-    onSuccess: () => {
-      utils.account.getMyAccount.invalidate();
-      utils.invalidate();
-    },
-  });
+  const individualProfilesEnabled = useFeatureFlagEnabled(
+    'individual_profiles',
+  );
+
+  const { data: profiles } = trpc.account.getUserProfiles.useQuery();
+
+  const { userProfiles, orgProfiles } =
+    profiles?.reduce<{
+      userProfiles: Profile[];
+      orgProfiles: Profile[];
+    }>(
+      (acc, profile) => {
+        if (!profile) {
+          return acc;
+        }
+
+        if (profile.type === 'user') {
+          // TODO: typing here needs to be fixed. Will be easier with new profile types
+          acc.userProfiles.push(profile as Profile);
+        } else {
+          acc.orgProfiles.push(profile as Profile);
+        }
+
+        return acc;
+      },
+      {
+        userProfiles: [],
+        orgProfiles: [],
+      },
+    ) ?? {};
 
   return (
     <>
@@ -99,54 +194,58 @@ const AvatarMenuContent = ({
             </Button>
             )
           </span>
-
           <span className="text-sm text-neutral-gray4 sm:text-xs">
             Admin for {user?.currentOrganization?.profile.name}
           </span>
         </div>
       </MenuItemSimple>
-      {user?.organizationUsers?.map((orgUser) => (
-        <MenuItem
-          key={orgUser.organizationId}
-          className={cn(
-            'min-h-[60px] px-4 py-4 text-neutral-charcoal',
-            user.currentOrganization?.id === orgUser.organizationId &&
-              'bg-neutral-offWhite',
-          )}
-          onAction={() => {
-            if (user.currentOrganization?.id === orgUser.organizationId) {
-              router.push(`/org/${orgUser.organization?.profile.slug}`);
-              onClose?.();
-              return;
-            }
 
-            void switchOrganization.mutate({
-              // @ts-expect-error this is a backend issue to be resolved
-              organizationId: orgUser.organization?.id,
-            });
-            onClose?.();
-          }}
+      {individualProfilesEnabled &&
+        userProfiles?.map((profile) => (
+          <ProfileMenuItem
+            key={profile.id}
+            profile={profile}
+            onClose={onClose}
+            onProfileSwitch={onProfileSwitch}
+          >
+            <div className="flex max-w-52 flex-col">
+              <div className="flex items-center gap-1">
+                {profile.name}{' '}
+                {user?.currentProfile?.id === profile.id ? (
+                  <Chip>Active</Chip>
+                ) : null}
+              </div>
+              <div className="relative overflow-hidden truncate text-sm text-neutral-gray4">
+                {user?.organizationUsers
+                  ?.map((orgUser) => orgUser.organization?.profile?.name)
+                  .filter(Boolean)
+                  .map((name) => (user.title ? `${user.title}, ${name}` : name))
+                  .join(' • ')}
+              </div>
+            </div>
+          </ProfileMenuItem>
+        ))}
+
+      {individualProfilesEnabled && <MenuSeparator className="pt-4" />}
+      {orgProfiles?.map((profile) => (
+        <ProfileMenuItem
+          key={profile.id}
+          profile={profile}
+          onClose={onClose}
+          onProfileSwitch={onProfileSwitch}
         >
-          <Avatar placeholder={orgUser.organization?.profile.name}>
-            {orgUser.organization?.profile.avatarImage?.name ? (
-              <Image
-                src={
-                  getPublicUrl(orgUser.organization.profile.avatarImage.name) ??
-                  ''
-                }
-                alt="User avatar"
-                fill
-                className="object-cover"
-              />
-            ) : null}
-          </Avatar>
           <div className="flex flex-col">
-            <div>{orgUser.organization?.profile.name}</div>
+            <div className="flex items-center gap-1">
+              {profile.name}{' '}
+              {user?.currentProfile?.id === profile.id ? (
+                <Chip>Active</Chip>
+              ) : null}
+            </div>
             <div className="text-sm capitalize text-neutral-gray4">
-              {orgUser.organization?.orgType}
+              Organization
             </div>
           </div>
-        </MenuItem>
+        </ProfileMenuItem>
       ))}
       <MenuSeparator className="pt-4" />
       <MenuItem
@@ -156,7 +255,7 @@ const AvatarMenuContent = ({
           window.open(
             'https://harmonious-peridot-9d5.notion.site/Common-Platform-Feature-Requests-Bug-Submissions-21fa0d01a6d981f48c9cd48a4a63267e',
             '_blank',
-            'noopener,noreferrer'
+            'noopener,noreferrer',
           );
 
           onClose?.();
@@ -205,6 +304,36 @@ const UserAvatarMenu = () => {
   const isMobile = useMediaQuery('(max-width: 640px)');
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isSwitchingProfile, setIsSwitchingProfile] = useState(false);
+  const [switchingToProfile, setSwitchingToProfile] = useState<{
+    name: string;
+    avatarImage?: { name: string } | null;
+  } | null>(null);
+  const previousProfileId = useRef<string | undefined>(
+    user?.currentProfile?.id,
+  );
+
+  const handleProfileSwitch = (profile: {
+    name: string;
+    avatarImage?: { name: string } | null;
+  }) => {
+    setSwitchingToProfile(profile);
+    setIsSwitchingProfile(true);
+  };
+
+  // Hide modal when profile actually changes
+  useEffect(() => {
+    if (
+      isSwitchingProfile &&
+      user?.currentProfile?.id &&
+      previousProfileId.current &&
+      user.currentProfile.id !== previousProfileId.current
+    ) {
+      setIsSwitchingProfile(false);
+      setSwitchingToProfile(null);
+    }
+    previousProfileId.current = user?.currentProfile?.id;
+  }, [user?.currentProfile?.id, isSwitchingProfile]);
 
   const avatarButton = (
     <Button
@@ -212,14 +341,10 @@ const UserAvatarMenu = () => {
       className="relative"
       onPress={() => (isMobile ? setIsDrawerOpen(true) : undefined)}
     >
-      <Avatar placeholder={user?.currentOrganization?.profile.name}>
-        {user?.currentOrganization?.profile.avatarImage?.name ? (
+      <Avatar placeholder={user?.currentProfile?.name}>
+        {user?.currentProfile?.avatarImage?.name ? (
           <Image
-            src={
-              getPublicUrl(
-                user?.currentOrganization.profile.avatarImage.name,
-              ) ?? ''
-            }
+            src={getPublicUrl(user?.currentProfile?.avatarImage.name) ?? ''}
             alt="User avatar"
             fill
             className="object-cover"
@@ -249,6 +374,7 @@ const UserAvatarMenu = () => {
               <AvatarMenuContent
                 setIsProfileOpen={setIsProfileOpen}
                 onClose={() => setIsDrawerOpen(false)}
+                onProfileSwitch={handleProfileSwitch}
               />
             </Menu>
           </ModalBody>
@@ -256,6 +382,12 @@ const UserAvatarMenu = () => {
         <UpdateProfileModal
           isOpen={isProfileOpen}
           setIsOpen={setIsProfileOpen}
+        />
+        <ProfileSwitchingModal
+          isOpen={isSwitchingProfile}
+          avatarImage={switchingToProfile?.avatarImage}
+          profileName={switchingToProfile?.name}
+          onOpenChange={setIsSwitchingProfile}
         />
       </>
     );
@@ -270,11 +402,18 @@ const UserAvatarMenu = () => {
             <AvatarMenuContent
               setIsProfileOpen={setIsProfileOpen}
               onClose={() => setIsProfileOpen(false)}
+              onProfileSwitch={handleProfileSwitch}
             />
           </Menu>
         </Popover>
       </MenuTrigger>
       <UpdateProfileModal isOpen={isProfileOpen} setIsOpen={setIsProfileOpen} />
+      <ProfileSwitchingModal
+        isOpen={isSwitchingProfile}
+        avatarImage={switchingToProfile?.avatarImage}
+        profileName={switchingToProfile?.name}
+        onOpenChange={setIsSwitchingProfile}
+      />
     </>
   );
 };

@@ -28,7 +28,7 @@ export const reactionsRouter = router({
       const { database } = ctx;
 
       try {
-        const profileId = await getCurrentProfileId({ database: database.db });
+        const profileId = await getCurrentProfileId();
 
         // First, remove any existing reaction from this user on this post
         await database.db
@@ -69,7 +69,7 @@ export const reactionsRouter = router({
       const { postId } = input;
       const { database } = ctx;
 
-      const profileId = await getCurrentProfileId({ database: database.db });
+      const profileId = await getCurrentProfileId();
       await database.db
         .delete(postReactions)
         .where(
@@ -97,7 +97,7 @@ export const reactionsRouter = router({
       const { database } = ctx;
 
       try {
-        const profileId = await getCurrentProfileId({ database: database.db });
+        const profileId = await getCurrentProfileId();
 
         // Check if user has any existing reaction on this post
         const existingReaction = await database.db

@@ -2,7 +2,7 @@ import { listOrganizations } from '@op/common';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
-import { organizationsEncoder } from '../../encoders/organizations';
+import { organizationsWithProfileEncoder } from '../../encoders/organizations';
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
@@ -35,7 +35,7 @@ export const listOrganizationsRouter = router({
     )
     .output(
       z.object({
-        items: z.array(organizationsEncoder),
+        items: z.array(organizationsWithProfileEncoder),
         next: z.string().nullish(),
         hasMore: z.boolean(),
       }),
@@ -52,7 +52,7 @@ export const listOrganizationsRouter = router({
       });
 
       return {
-        items: items.map((org) => organizationsEncoder.parse(org)),
+        items: items.map((org) => organizationsWithProfileEncoder.parse(org)),
         next,
         hasMore,
       };

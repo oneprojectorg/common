@@ -11,6 +11,7 @@ import { LuArrowUpRight, LuInfo } from 'react-icons/lu';
 import { ProfileSummary } from '../ProfileSummary';
 import { AddRelationshipModal } from './AddRelationshipModal';
 import { UpdateOrganizationModal } from './UpdateOrganizationModal';
+import { UpdateUserProfileModal } from './UpdateUserProfileModal';
 
 const ProfileInteractions = ({ profile }: { profile: Organization }) => {
   const { user } = useUser();
@@ -24,12 +25,20 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
     (fundingLink) => fundingLink.type === 'offering',
   );
 
+  const isOrganizationProfile = profile.profile?.type === 'org';
+  const isViewingOwnProfile =
+    user?.currentProfile?.id ===
+    (isOrganizationProfile ? profile.profile.id : profile.id);
+  console.log('profle', profile, isOrganizationProfile);
+
   return (
     <div className="flex flex-wrap gap-3 sm:h-fit sm:max-w-fit sm:justify-end sm:gap-4 sm:py-2">
-      {user?.currentOrganization?.id !== profile.id ? (
+      {!isViewingOwnProfile ? (
         <AddRelationshipModal profile={profile} />
+      ) : isOrganizationProfile ? (
+        <UpdateOrganizationModal organization={profile} />
       ) : (
-        <UpdateOrganizationModal profile={profile} />
+        <UpdateUserProfileModal profile={profile.profile} />
       )}
       {isReceivingFunds
         ? receivingFundingLinks.map((link) => (
@@ -82,11 +91,15 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
   );
 };
 
-export const ProfileDetails = ({ profile }: { profile: Organization }) => {
+export const ProfileDetails = ({
+  organization,
+}: {
+  organization: Organization;
+}) => {
   return (
     <div className="flex w-full flex-col gap-3 px-4 sm:flex-row sm:justify-between sm:px-6">
-      <ProfileSummary profile={profile} />
-      <ProfileInteractions profile={profile} />
+      <ProfileSummary profile={organization} />
+      <ProfileInteractions profile={organization} />
     </div>
   );
 };

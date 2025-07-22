@@ -2,7 +2,11 @@ import { objectsInStorage, organizationUsers, users } from '@op/db/schema';
 import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
-import { organizationsEncoder } from './organizations';
+import {
+  organizationsEncoder,
+  organizationsWithProfileEncoder,
+} from './organizations';
+import { profileEncoder } from './profiles';
 
 export const userEncoder = createSelectSchema(users).extend({
   avatarImage: createSelectSchema(objectsInStorage).nullish(),
@@ -12,7 +16,9 @@ export const userEncoder = createSelectSchema(users).extend({
     })
     .array()
     .nullish(),
-  currentOrganization: organizationsEncoder.nullish(),
+  currentOrganization: organizationsWithProfileEncoder.nullish(),
+  currentProfile: profileEncoder.nullish(),
+  profile: profileEncoder.nullish(),
 });
 
 export type CommonUser = z.infer<typeof userEncoder>;

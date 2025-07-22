@@ -14,7 +14,10 @@ import { Link } from '@/lib/i18n';
 
 import { OrganizationAvatar } from '@/components/OrganizationAvatar';
 
-import { ProfileRelationshipsSkeleton } from './Skeleton';
+import {
+  OrganizationNameSuspense,
+  ProfileOrganizations,
+} from '../ProfileOrganizations';
 
 type relationshipOrganization =
   RouterOutput['organization']['listRelationships']['organizations'][number];
@@ -97,7 +100,7 @@ const RelationshipList = ({
   );
 };
 
-const ProfileRelationshipsSuspense = ({
+export const ProfileRelationshipsSuspense = ({
   slug,
   showBreadcrumb = true,
 }: {
@@ -180,44 +183,6 @@ const ProfileRelationshipsSuspense = ({
   );
 };
 
-const OrganizationNameSuspense = ({ slug }: { slug: string }) => {
-  const [organization] = trpc.organization.getBySlug.useSuspenseQuery({
-    slug,
-  });
-
-  return (
-    <Link
-      href={`/org/${organization.profile.slug}`}
-      className="flex items-center gap-2"
-    >
-      <LuArrowLeft className="size-6 stroke-1 text-neutral-black" />
-      <div className="flex items-center gap-1 text-sm font-semibold text-neutral-black">
-        <OrganizationAvatar organization={organization} className="size-6" />
-        {organization.profile.name}
-      </div>
-    </Link>
-  );
-};
-
-export const ProfileRelationshipsComponent = ({
-  slug,
-  showBreadcrumb,
-}: {
-  slug: string;
-  showBreadcrumb?: boolean;
-}) => (
-  <div className="flex w-full flex-col gap-3 pt-4 sm:min-h-[calc(100vh-3.5rem)] sm:gap-8 sm:pt-8">
-    <ErrorBoundary errorComponent={() => <div>Could not load profile</div>}>
-      <Suspense fallback={<ProfileRelationshipsSkeleton />}>
-        <ProfileRelationshipsSuspense
-          slug={slug}
-          showBreadcrumb={showBreadcrumb}
-        />
-      </Suspense>
-    </ErrorBoundary>
-  </div>
-);
-
 export const ProfileRelationships = ({ slug }: { slug: string }) => {
   return (
     <>
@@ -235,7 +200,9 @@ export const ProfileRelationships = ({ slug }: { slug: string }) => {
           </Suspense>
         </ErrorBoundary>
       </header>
-      <ProfileRelationshipsComponent slug={slug} />
+      <ProfileOrganizations>
+        <ProfileRelationshipsSuspense slug={slug} />
+      </ProfileOrganizations>
     </>
   );
 };

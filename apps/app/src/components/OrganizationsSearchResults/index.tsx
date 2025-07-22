@@ -6,30 +6,30 @@ import { Suspense } from 'react';
 import ErrorBoundary from '@/components/ErrorBoundary';
 
 import {
-  OrganizationListSkeleton,
-  OrganizationSummaryList,
-} from '../OrganizationList';
+  ProfileListSkeleton,
+  ProfileSummaryList,
+} from '../ProfileList';
 import { ListPageLayoutHeader } from '../layout/ListPageLayout';
 
-export const OrganizationSearchResultsSuspense = ({
+export const ProfileSearchResultsSuspense = ({
   query,
   limit = 10,
 }: {
   query: string;
   limit?: number;
 }) => {
-  const [organizations] = trpc.organization.search.useSuspenseQuery({
+  const [profiles] = trpc.profile.search.useSuspenseQuery({
     limit,
     q: query,
   });
 
-  return organizations.length > 0 ? (
+  return profiles.length > 0 ? (
     <>
       <ListPageLayoutHeader>
         <span className="text-neutral-gray4">Results for</span>{' '}
         <span className="text-neutral-black">{query}</span>
       </ListPageLayoutHeader>
-      <OrganizationSummaryList organizations={organizations} />
+      <ProfileSummaryList profiles={profiles} />
     </>
   ) : (
     <>
@@ -47,7 +47,7 @@ export const OrganizationSearchResultsSuspense = ({
   );
 };
 
-export const OrganizationSearchResults = ({
+export const ProfileSearchResults = ({
   limit,
   query,
 }: {
@@ -56,9 +56,12 @@ export const OrganizationSearchResults = ({
 }) => {
   return (
     <ErrorBoundary fallback={<div>Could not load search results</div>}>
-      <Suspense fallback={<OrganizationListSkeleton />}>
-        <OrganizationSearchResultsSuspense query={query} limit={limit} />
+      <Suspense fallback={<ProfileListSkeleton />}>
+        <ProfileSearchResultsSuspense query={query} limit={limit} />
       </Suspense>
     </ErrorBoundary>
   );
 };
+
+// Keep the old export for backward compatibility
+export const OrganizationSearchResults = ProfileSearchResults;

@@ -10,7 +10,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - **Build all**: `pnpm build` (uses Turbo for optimized builds)
 - **Type checking**: `pnpm w:app lint` (for main app typechecking as well as API checking)
-- **Format code**: `pnpm format` or `pnpm format:check`
+- Never run database migrations
+- NEVER run `pnpm format`
 
 ## Architecture Overview
 
@@ -89,6 +90,10 @@ Use `pnpm w:<workspace>` shortcuts:
 - Follow existing code conventions and patterns in the file being edited
 - Test changes thoroughly before completion
 - Using `any` to fix type errors shuold be avoided
+
+### Coding Conventions
+
+- If statements should never be all on one line, rather you should always use K&R style for if statements
 
 ## Important Notes
 

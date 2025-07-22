@@ -1,4 +1,4 @@
-import { OrganizationProfile } from '@/components/screens/OrganizationProfile';
+import { Profile } from '@/components/screens/Profile';
 
 const OrganizationPage = async ({
   params,
@@ -7,7 +7,7 @@ const OrganizationPage = async ({
 }) => {
   const { slug } = await params;
 
-  return <OrganizationProfile slug={slug} />;
+  return <Profile slug={slug} />;
 };
 
 export default OrganizationPage;
