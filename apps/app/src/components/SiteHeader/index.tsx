@@ -216,7 +216,9 @@ const AvatarMenuContent = ({
           >
             <div className="flex max-w-52 flex-col">
               <div className="flex items-center gap-1">
-                {profile.name}{' '}
+                <span className="overflow-hidden truncate">
+                  {profile.name}{' '}
+                </span>
                 {user?.currentProfile?.id === profile.id ? (
                   <Chip>Active</Chip>
                 ) : null}
@@ -236,14 +238,14 @@ const AvatarMenuContent = ({
           onClose={onClose}
           onProfileSwitch={onProfileSwitch}
         >
-          <div className="flex flex-col">
-            <div className="flex items-center gap-1">
-              {profile.name}{' '}
+          <div className="flex max-w-52 flex-col">
+            <div className="relative flex items-center gap-1">
+              <span className="overflow-hidden truncate">{profile.name} </span>
               {user?.currentProfile?.id === profile.id ? (
                 <Chip>Active</Chip>
               ) : null}
             </div>
-            <div className="text-sm capitalize text-neutral-gray4">
+            <div className="relative overflow-hidden truncate text-sm capitalize text-neutral-gray4">
               Organization
             </div>
           </div>
