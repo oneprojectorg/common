@@ -1,5 +1,11 @@
 import { db, eq } from '@op/db/client';
-import { EntityType, profiles, users, individuals, individualsTerms } from '@op/db/schema';
+import {
+  EntityType,
+  individuals,
+  individualsTerms,
+  profiles,
+  users,
+} from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { randomUUID } from 'crypto';
 
@@ -99,6 +105,7 @@ export const updateUserProfile = async ({
 
   // Handle focus areas if provided
   if (focusAreas !== undefined) {
+    // TODO: optimize this
     // First, ensure the user has an individual record
     const updatedCurrentUser = await dbClient.query.users.findFirst({
       where: eq(users.authUserId, user.id),
@@ -110,7 +117,10 @@ export const updateUserProfile = async ({
     if (updatedCurrentUser?.profile) {
       // Check if individual record exists
       let individualRecord = await dbClient.query.individuals.findFirst({
-        where: eq(individuals.profileId, (updatedCurrentUser.profile as any).id),
+        where: eq(
+          individuals.profileId,
+          (updatedCurrentUser.profile as any).id,
+        ),
       });
 
       // Create individual record if it doesn't exist
@@ -121,7 +131,7 @@ export const updateUserProfile = async ({
             profileId: (updatedCurrentUser.profile as any).id,
           })
           .returning();
-        
+
         if (newIndividual) {
           individualRecord = newIndividual;
         }
