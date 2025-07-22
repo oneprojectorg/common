@@ -4,7 +4,6 @@ import { index, pgTable, primaryKey, text, uuid } from 'drizzle-orm/pg-core';
 import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
 import { posts } from './posts.sql';
 import { profiles } from './profiles.sql';
-import { projects } from './projects.sql';
 
 export const comments = pgTable(
   'comments',
@@ -49,28 +48,6 @@ export const commentsToPost = pgTable(
   ],
 );
 
-export const commentsToProjects = pgTable(
-  'comments_to_projects',
-  {
-    commentId: uuid()
-      .notNull()
-      .references(() => comments.id, {
-        onDelete: 'cascade',
-      }),
-    projectId: uuid()
-      .notNull()
-      .references(() => projects.id, {
-        onDelete: 'cascade',
-      }),
-    ...timestamps,
-  },
-  (table) => [
-    ...serviceRolePolicies,
-    primaryKey({ columns: [table.commentId, table.projectId] }),
-    index('comments_to_projects_comment_id_idx').on(table.commentId).concurrently(),
-    index('comments_to_projects_project_id_idx').on(table.projectId).concurrently(),
-  ],
-);
 
 export const commentsRelations = relations(comments, ({ one, many }) => ({
   profile: one(profiles, {
@@ -86,7 +63,6 @@ export const commentsRelations = relations(comments, ({ one, many }) => ({
     relationName: 'parentChild',
   }),
   commentsToPost: many(commentsToPost),
-  commentsToProjects: many(commentsToProjects),
 }));
 
 export const commentsToPostRelations = relations(commentsToPost, ({ one }) => ({
@@ -100,20 +76,9 @@ export const commentsToPostRelations = relations(commentsToPost, ({ one }) => ({
   }),
 }));
 
-export const commentsToProjectsRelations = relations(commentsToProjects, ({ one }) => ({
-  comment: one(comments, {
-    fields: [commentsToProjects.commentId],
-    references: [comments.id],
-  }),
-  project: one(projects, {
-    fields: [commentsToProjects.projectId],
-    references: [projects.id],
-  }),
-}));
 
 // Add foreign key constraint for self-reference after table definition
 // This is handled by the references() call above
 
 export type Comment = InferModel<typeof comments>;
 export type CommentToPost = InferModel<typeof commentsToPost>;
-export type CommentToProject = InferModel<typeof commentsToProjects>;

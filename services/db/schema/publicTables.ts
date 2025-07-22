@@ -42,11 +42,9 @@ export {
   comments, 
   commentsRelations,
   commentsToPost,
-  commentsToPostRelations,
-  commentsToProjects,
-  commentsToProjectsRelations
+  commentsToPostRelations
 } from './tables/comments.sql';
-export type { Comment, CommentToPost, CommentToProject } from './tables/comments.sql';
+export type { Comment, CommentToPost } from './tables/comments.sql';
 
 export { attachments, attachmentsRelations } from './tables/attachments.sql';
 
