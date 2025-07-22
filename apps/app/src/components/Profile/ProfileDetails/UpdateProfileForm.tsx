@@ -1,5 +1,5 @@
 import { DEFAULT_MAX_SIZE } from '@/hooks/useFileUpload';
-import { getPublicUrl } from '@/utils';
+import { getPublicUrl, zodUrl } from '@/utils';
 import { trpc } from '@op/api/client';
 import type { Profile } from '@op/api/encoders';
 import { AvatarUploader } from '@op/ui/AvatarUploader';
@@ -36,6 +36,16 @@ export const validator = z.object({
     .max(200, {
       message: 'Must be at most 200 characters',
     }),
+  email: z
+    .string()
+    .trim()
+    .refine((val) => val === '' || z.string().email().safeParse(val).success, {
+      message: 'Invalid email',
+    })
+    .refine((val) => val.length <= 255, {
+      message: 'Must be at most 255 characters',
+    }),
+  website: zodUrl({ message: 'Enter a valid website address' }),
 });
 
 type FormFields = z.infer<typeof validator>;
@@ -69,6 +79,8 @@ export const UpdateProfileForm = forwardRef<
     defaultValues: {
       fullName: profile.name ?? '',
       title: profile.bio ?? '',
+      email: profile.email ?? '',
+      website: profile.website ?? '',
     },
     validators: {
       onSubmit: validator,
@@ -77,6 +89,8 @@ export const UpdateProfileForm = forwardRef<
       await updateProfile.mutateAsync({
         name: value.fullName,
         bio: value.title,
+        email: value.email || undefined,
+        website: value.website || undefined,
       });
       utils.account.getMyAccount.invalidate();
       utils.account.getUserProfiles.invalidate();
@@ -206,12 +220,44 @@ export const UpdateProfileForm = forwardRef<
             />
           )}
         />
+        <form.AppField
+          name="email"
+          children={(field) => (
+            <field.TextField
+              label={t('Email')}
+              value={field.state.value}
+              onBlur={field.handleBlur}
+              onChange={field.handleChange}
+              errorMessage={getFieldErrorMessage(field)}
+              isRequired
+              inputProps={{
+                placeholder: t('Enter your email address'),
+                type: 'email',
+              }}
+            />
+          )}
+        />
+        <form.AppField
+          name="website"
+          children={(field) => (
+            <field.TextField
+              label={t('Website')}
+              value={field.state.value}
+              onBlur={field.handleBlur}
+              onChange={field.handleChange}
+              errorMessage={getFieldErrorMessage(field)}
+              inputProps={{
+                placeholder: t('Enter your website URL'),
+              }}
+            />
+          )}
+        />
       </FormContainer>
       <ModalFooter className="hidden sm:flex">
         <form.SubmitButton className="sm:w-auto">
           {updateProfile.isPending ||
-          uploadImage.isPending ||
-          uploadBannerImage.isPending ? (
+            uploadImage.isPending ||
+            uploadBannerImage.isPending ? (
             <LoadingSpinner />
           ) : (
             t('Save')

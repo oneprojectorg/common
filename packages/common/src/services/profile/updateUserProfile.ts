@@ -8,6 +8,8 @@ export interface UpdateUserProfileInput {
   bio?: string;
   title?: string;
   username?: string;
+  email?: string;
+  website?: string;
 }
 
 export interface UpdateUserProfileParams {
@@ -21,7 +23,7 @@ export const updateUserProfile = async ({
   user,
   db: dbClient = db, // Use provided db or fall back to imported client
 }: UpdateUserProfileParams) => {
-  const { name, bio, title, username } = input;
+  const { name, bio, title, username, email, website } = input;
 
   // Get the current user to check if they have a profile
   const currentUser = await dbClient.query.users.findFirst({
@@ -39,6 +41,8 @@ export const updateUserProfile = async ({
   const profileData: any = {};
   if (name !== undefined) profileData.name = name;
   if (bio !== undefined) profileData.bio = bio;
+  if (email !== undefined) profileData.email = email;
+  if (website !== undefined) profileData.website = website;
 
   // Prepare user data (username and title stay in users table)
   const userData: any = {};
@@ -67,6 +71,8 @@ export const updateUserProfile = async ({
           name: name || currentUser.name || 'Unnamed User',
           slug,
           bio,
+          email,
+          website,
         })
         .returning();
 

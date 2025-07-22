@@ -44,6 +44,14 @@ const updateUserProfile = router({
             .max(255)
             .toLowerCase()
             .regex(/^[a-z0-9_]+$/),
+          email: z
+            .string()
+            .email({ message: 'Invalid email' })
+            .max(255, { message: 'Must be at most 255 characters' }),
+          website: z
+            .string()
+            .trim()
+            .max(255, { message: 'Must be at most 255 characters' }),
         })
         .partial(),
     )

@@ -164,6 +164,8 @@ const AvatarMenuContent = ({
       },
     ) ?? {};
 
+  const avatarUrl = user?.profile?.avatarImage?.name || user?.avatarImage?.name;
+
   return (
     <>
       <MenuItemSimple
@@ -171,9 +173,9 @@ const AvatarMenuContent = ({
         className="flex cursor-default items-center gap-2 p-0 px-0 pb-4 text-neutral-charcoal hover:bg-transparent"
       >
         <Avatar className="size-6" placeholder={user?.name ?? ''}>
-          {user?.avatarImage?.name ? (
+          {avatarUrl ? (
             <Image
-              src={getPublicUrl(user?.avatarImage?.name) ?? ''}
+              src={getPublicUrl(avatarUrl) ?? ''}
               fill
               className="object-cover"
               alt={user?.name ?? 'User avatar'}
@@ -182,7 +184,7 @@ const AvatarMenuContent = ({
         </Avatar>
         <div className="flex flex-col">
           <span className="sm:text-sm">
-            Logged in as {user?.currentProfile?.name ?? user?.name} (
+            Logged in as {user?.profile?.name ?? user?.name} (
             <Button
               onPress={() => setIsProfileOpen(true)}
               unstyled
@@ -195,7 +197,9 @@ const AvatarMenuContent = ({
             )
           </span>
           <span className="text-sm text-neutral-gray4 sm:text-xs">
-            Admin for {user?.currentOrganization?.profile.name}
+            Admin for{' '}
+            {user?.currentProfile?.name ??
+              user?.currentOrganization?.profile.name}
           </span>
         </div>
       </MenuItemSimple>

@@ -82,7 +82,7 @@ export const UpdateProfileModal = ({
         {user.currentProfile && (
           <UpdateProfileForm
             ref={formRef}
-            profile={user.currentProfile}
+            profile={user.profile}
             onSuccess={() => setIsOpen(false)}
             className="p-6"
           />
