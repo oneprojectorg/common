@@ -21,7 +21,32 @@ import { PostUpdate } from '@/components/PostUpdate';
 
 import { ProfileFeed } from '../ProfileFeed';
 
-const FocusAreas = ({ profileId }: { profileId: string }) => {
+const FocusAreas = ({ focusAreas }: { focusAreas: Array<{ id: string; label: string; termUri: string; taxonomyUri: string; facet?: string | null }> }) => {
+  return (
+    <section className="flex flex-col gap-2 text-neutral-charcoal">
+      <Header3>Focus Areas</Header3>
+      <TagGroup>
+        {focusAreas.map((term: any) => (
+          <Tag key={term.label}>{term.label}</Tag>
+        ))}
+      </TagGroup>
+    </section>
+  );
+};
+
+const IndividualFocusAreas = ({ profileId }: { profileId: string }) => {
+  const [terms] = trpc.individual.getTermsByProfile.useSuspenseQuery({
+    profileId,
+  });
+
+  const focusAreas = terms['necSimple:focusArea'];
+
+  if (!focusAreas?.length) return null;
+
+  return <FocusAreas focusAreas={focusAreas} />;
+};
+
+const OrganizationFocusAreas = ({ profileId }: { profileId: string }) => {
   const [terms] = trpc.organization.getTerms.useSuspenseQuery({
     id: profileId,
   });
@@ -30,16 +55,7 @@ const FocusAreas = ({ profileId }: { profileId: string }) => {
 
   if (!focusAreas?.length) return null;
 
-  return (
-    <section className="flex flex-col gap-2 text-neutral-charcoal">
-      <Header3>Focus Areas</Header3>
-      <TagGroup>
-        {focusAreas.map((term) => (
-          <Tag key={term.label}>{term.label}</Tag>
-        ))}
-      </TagGroup>
-    </section>
-  );
+  return <FocusAreas focusAreas={focusAreas} />;
 };
 
 const CommunitiesServed = ({ profileId }: { profileId: string }) => {
@@ -168,7 +184,11 @@ const ProfileAbout = ({
             </section>
           }
         >
-          <FocusAreas profileId={profile.id} />
+          {orgType ? (
+            <OrganizationFocusAreas profileId={profile.id} />
+          ) : (
+            <IndividualFocusAreas profileId={profile.id} />
+          )}
         </Suspense>
       </ErrorBoundary>
 
