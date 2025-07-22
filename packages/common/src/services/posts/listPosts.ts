@@ -75,6 +75,11 @@ export const listPosts = async ({
               },
             },
             reactions: true,
+            commentsToPost: {
+              with: {
+                comment: true,
+              },
+            },
           },
         },
         organization: {
@@ -100,14 +105,14 @@ export const listPosts = async ({
         : null;
 
     const actorProfileId = await getCurrentProfileId();
-    // Transform items to include reaction counts and user's reactions
-    const itemsWithReactions = getItemsWithReactions({
+    // Transform items to include reaction counts, user's reactions, and comment counts
+    const itemsWithReactionsAndComments = getItemsWithReactionsAndComments({
       items,
       profileId: actorProfileId,
     });
 
     return {
-      items: itemsWithReactions,
+      items: itemsWithReactionsAndComments,
       next: nextCursor,
       hasMore,
     };
@@ -119,7 +124,7 @@ export const listPosts = async ({
 
 // Using `any` here because the Drizzle query result has a complex nested structure
 // that's difficult to type precisely. The function is type-safe internally.
-export const getItemsWithReactions = ({
+export const getItemsWithReactionsAndComments = ({
   items,
   profileId,
 }: {
@@ -130,6 +135,7 @@ export const getItemsWithReactions = ({
     post: any & {
       reactionCounts: Record<string, number>;
       userReaction: string | null;
+      commentCount: number;
     };
   }
 > =>
@@ -152,12 +158,19 @@ export const getItemsWithReactions = ({
       );
     }
 
+    // Count comments
+    const commentCount = item.post.commentsToPost?.length || 0;
+
     return {
       ...item,
       post: {
         ...item.post,
         reactionCounts,
         userReaction,
+        commentCount,
       },
     };
   });
+
+// Legacy function for backward compatibility
+export const getItemsWithReactions = getItemsWithReactionsAndComments;

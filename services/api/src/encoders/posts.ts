@@ -14,6 +14,7 @@ export const postsEncoder = createSelectSchema(posts)
     attachments: z.array(postAttachmentEncoder).nullish(),
     reactionCounts: z.record(z.string(), z.number()),
     userReaction: z.string().nullish(),
+    commentCount: z.number(),
   })
   .strip();
 

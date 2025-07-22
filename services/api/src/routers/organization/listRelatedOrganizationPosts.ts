@@ -2,7 +2,7 @@ import {
   decodeCursor,
   encodeCursor,
   getCurrentProfileId,
-  getItemsWithReactions,
+  getItemsWithReactionsAndComments,
   getRelatedOrganizations,
 } from '@op/common';
 import { and, eq, inArray, lt, or } from '@op/db/client';
@@ -101,6 +101,11 @@ export const listRelatedOrganizationPostsRouter = router({
                   },
                 },
                 reactions: true,
+                commentsToPost: {
+                  with: {
+                    comment: true,
+                  },
+                },
               },
             },
             organization: {
@@ -128,7 +133,7 @@ export const listRelatedOrganizationPostsRouter = router({
           : null;
 
       return {
-        items: getItemsWithReactions({ items, profileId }).map((postToOrg) => ({
+        items: getItemsWithReactionsAndComments({ items, profileId }).map((postToOrg) => ({
           ...postToOrg,
           organization: organizationsEncoder.parse(postToOrg.organization),
           post: postsEncoder.parse(postToOrg.post),
@@ -168,6 +173,11 @@ export const listRelatedOrganizationPostsRouter = router({
               attachments: {
                 with: {
                   storageObject: true,
+                },
+              },
+              commentsToPost: {
+                with: {
+                  comment: true,
                 },
               },
             },

@@ -18,17 +18,42 @@ import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';
 import { useFeatureFlagEnabled } from 'posthog-js/react';
-import { Fragment, ReactNode } from 'react';
-import { LuEllipsis, LuLeaf } from 'react-icons/lu';
+import { Fragment, ReactNode, useState } from 'react';
+import { LuEllipsis, LuLeaf, LuMessageCircle } from 'react-icons/lu';
 
 import { Link } from '@/lib/i18n';
 
+import { CommentModal } from '../CommentModal';
 import { LinkPreview } from '../LinkPreview';
 import { OrganizationAvatar } from '../OrganizationAvatar';
 import { DeletePost } from './DeletePost';
 
+const CommentButton = ({
+  commentCount,
+  onCommentClick,
+}: {
+  commentCount: number;
+  onCommentClick: () => void;
+}) => {
+  return (
+    <Button
+      variant="icon"
+      size="small"
+      onPress={onCommentClick}
+      className="bg-neutral-offwhite flex items-center gap-1 rounded px-2 py-1 text-neutral-gray4 transition-colors hover:bg-neutral-gray1 hover:text-neutral-charcoal"
+    >
+      <LuMessageCircle className="size-4" />
+      <span className="text-xs font-normal">
+        {commentCount === 1 ? '1 comment' : `${commentCount} comments`}
+      </span>
+    </Button>
+  );
+};
+
 // TODO: generated this quick with AI. refactor it!
-const formatRelativeTime = (timestamp: Date | string | number): string => {
+export const formatRelativeTime = (
+  timestamp: Date | string | number,
+): string => {
   const now = new Date();
   const date = new Date(timestamp);
   const diff = Math.floor((now.getTime() - date.getTime()) / 1000); // difference in seconds
@@ -154,6 +179,9 @@ export const PostFeed = ({
 }) => {
   const reactionsEnabled = useFeatureFlagEnabled('reactions');
   const utils = trpc.useUtils();
+  const [openCommentModals, setOpenCommentModals] = useState<
+    Record<string, boolean>
+  >({});
 
   const toggleReaction = trpc.organization.toggleReaction.useMutation({
     onMutate: async ({ postId, reactionType }) => {
@@ -287,6 +315,14 @@ export const PostFeed = ({
     toggleReaction.mutate({ postId, reactionType });
   };
 
+  const openCommentModal = (postId: string) => {
+    setOpenCommentModals((prev) => ({ ...prev, [postId]: true }));
+  };
+
+  const closeCommentModal = (postId: string) => {
+    setOpenCommentModals((prev) => ({ ...prev, [postId]: false }));
+  };
+
   return (
     <div className={cn('flex flex-col gap-6 pb-8', className)}>
       {posts.length > 0 ? (
@@ -379,42 +415,63 @@ export const PostFeed = ({
                         ))}
                       </div>
                     )}
-                    {reactionsEnabled && post?.id && (
-                      <ReactionsButton
-                        reactions={
-                          post.reactionCounts
-                            ? Object.entries(post.reactionCounts).map(
-                                ([reactionType, count]) => {
-                                  // Convert reaction type to emoji
-                                  const reactionOption = REACTION_OPTIONS.find(
-                                    (option) => option.key === reactionType,
-                                  );
-                                  const emoji =
-                                    reactionOption?.emoji || reactionType;
+                    <div className="flex items-center gap-3">
+                      {reactionsEnabled && post?.id && (
+                        <ReactionsButton
+                          reactions={
+                            post.reactionCounts
+                              ? Object.entries(post.reactionCounts).map(
+                                  ([reactionType, count]) => {
+                                    // Convert reaction type to emoji
+                                    const reactionOption =
+                                      REACTION_OPTIONS.find(
+                                        (option) => option.key === reactionType,
+                                      );
+                                    const emoji =
+                                      reactionOption?.emoji || reactionType;
 
-                                  return {
-                                    emoji,
-                                    count,
-                                    isActive:
-                                      post.userReaction === reactionType,
-                                  };
-                                },
-                              )
-                            : []
-                        }
-                        reactionOptions={REACTION_OPTIONS}
-                        onReactionClick={(emoji) => {
-                          handleReactionClick(post.id!, emoji);
-                        }}
-                        onAddReaction={(emoji) => {
-                          handleReactionClick(post.id!, emoji);
-                        }}
-                      />
-                    )}
+                                    return {
+                                      emoji,
+                                      count,
+                                      isActive:
+                                        post.userReaction === reactionType,
+                                    };
+                                  },
+                                )
+                              : []
+                          }
+                          reactionOptions={REACTION_OPTIONS}
+                          onReactionClick={(emoji) => {
+                            handleReactionClick(post.id!, emoji);
+                          }}
+                          onAddReaction={(emoji) => {
+                            handleReactionClick(post.id!, emoji);
+                          }}
+                        />
+                      )}
+                      {post?.id && (
+                        <CommentButton
+                          commentCount={post.commentCount || 0}
+                          onCommentClick={() => openCommentModal(post.id!)}
+                        />
+                      )}
+                    </div>
                   </FeedContent>
                 </FeedMain>
               </FeedItem>
               <hr className="bg-neutral-gray1" />
+              {post?.id && openCommentModals[post.id] && (
+                <CommentModal
+                  isOpen={!!openCommentModals[post.id]}
+                  onClose={() => closeCommentModal(post.id!)}
+                  post={{
+                    id: post.id,
+                    content: post.content || '',
+                    createdAt: new Date(post.createdAt || Date.now()),
+                  }}
+                  user={user}
+                />
+              )}
             </Fragment>
           );
         })
