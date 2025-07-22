@@ -29,8 +29,15 @@ export {
 
 export { postReactions, postReactionsRelations } from './tables/postReactions.sql';
 
-export { comments, commentsRelations } from './tables/comments.sql';
-export type { Comment } from './tables/comments.sql';
+export { 
+  comments, 
+  commentsRelations,
+  commentsToPost,
+  commentsToPostRelations,
+  commentsToProjects,
+  commentsToProjectsRelations
+} from './tables/comments.sql';
+export type { Comment, CommentToPost, CommentToProject } from './tables/comments.sql';
 
 export { attachments, attachmentsRelations } from './tables/attachments.sql';
 

@@ -1,19 +1,19 @@
 import { db } from '@op/db/client';
-import { comments } from '@op/db/schema';
+import { comments, commentsToPost, commentsToProjects } from '@op/db/schema';
 import type { CreateCommentInput } from '@op/types';
 
-import { NotFoundError } from '../../utils';
+import { CommonError, NotFoundError } from '../../utils';
 import { getCurrentProfileId } from '../access';
 
 export const createComment = async (input: CreateCommentInput) => {
   const profileId = await getCurrentProfileId();
 
   try {
+    // Create the comment first
     const [comment] = await db
       .insert(comments)
       .values({
         content: input.content,
-        postId: input.postId,
         profileId,
         parentCommentId: input.parentCommentId || null,
       })
@@ -21,6 +21,18 @@ export const createComment = async (input: CreateCommentInput) => {
 
     if (!comment) {
       throw new NotFoundError('Failed to create comment');
+    }
+
+    // Create the join table entry based on commentableType
+    if (input.commentableType === 'post') {
+      await db.insert(commentsToPost).values({
+        commentId: comment.id,
+        postId: input.commentableId,
+      });
+    } else {
+      throw new CommonError(
+        `Unsupported commentable type: ${input.commentableType}`,
+      );
     }
 
     return comment;
