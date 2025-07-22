@@ -1,5 +1,11 @@
 import { db, eq } from '@op/db/client';
-import { EntityType, profiles, users } from '@op/db/schema';
+import {
+  EntityType,
+  individuals,
+  individualsTerms,
+  profiles,
+  users,
+} from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { randomUUID } from 'crypto';
 
@@ -10,6 +16,7 @@ export interface UpdateUserProfileInput {
   username?: string;
   email?: string;
   website?: string;
+  focusAreas?: Array<{ id: string; label: string }>;
 }
 
 export interface UpdateUserProfileParams {
@@ -23,7 +30,7 @@ export const updateUserProfile = async ({
   user,
   db: dbClient = db, // Use provided db or fall back to imported client
 }: UpdateUserProfileParams) => {
-  const { name, bio, title, username, email, website } = input;
+  const { name, bio, title, username, email, website, focusAreas } = input;
 
   // Get the current user to check if they have a profile
   const currentUser = await dbClient.query.users.findFirst({
@@ -94,6 +101,67 @@ export const updateUserProfile = async ({
       .update(users)
       .set(userData)
       .where(eq(users.authUserId, user.id));
+  }
+
+  // Handle focus areas if provided
+  if (focusAreas !== undefined) {
+    // TODO: optimize this
+    // First, ensure the user has an individual record
+    const updatedCurrentUser = await dbClient.query.users.findFirst({
+      where: eq(users.authUserId, user.id),
+      with: {
+        profile: true,
+      },
+    });
+
+    if (updatedCurrentUser?.profile) {
+      // Check if individual record exists
+      let individualRecord = await dbClient.query.individuals.findFirst({
+        where: eq(
+          individuals.profileId,
+          (updatedCurrentUser.profile as any).id,
+        ),
+      });
+
+      // Create individual record if it doesn't exist
+      if (!individualRecord) {
+        const [newIndividual] = await dbClient
+          .insert(individuals)
+          .values({
+            profileId: (updatedCurrentUser.profile as any).id,
+          })
+          .returning();
+
+        if (newIndividual) {
+          individualRecord = newIndividual;
+        }
+      }
+
+      if (individualRecord) {
+        // Update focus areas in transaction
+        await dbClient.transaction(async (tx) => {
+          // Remove existing focus areas
+          await tx
+            .delete(individualsTerms)
+            .where(eq(individualsTerms.individualId, individualRecord.id));
+
+          // Add new focus areas
+          if (focusAreas.length > 0) {
+            await Promise.all(
+              focusAreas.map((term) =>
+                tx
+                  .insert(individualsTerms)
+                  .values({
+                    individualId: individualRecord.id,
+                    taxonomyTermId: term.id,
+                  })
+                  .onConflictDoNothing(),
+              ),
+            );
+          }
+        });
+      }
+    }
   }
 
   // Return the updated user with all relations

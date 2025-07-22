@@ -6,14 +6,17 @@ import { AvatarUploader } from '@op/ui/AvatarUploader';
 import { BannerUploader } from '@op/ui/BannerUploader';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { ModalFooter } from '@op/ui/Modal';
+import type { Option } from '@op/ui/MultiSelectComboBox';
+import { Skeleton } from '@op/ui/Skeleton';
 import { toast } from '@op/ui/Toast';
-import { ReactNode, forwardRef, useState } from 'react';
+import { ReactNode, Suspense, forwardRef, useState } from 'react';
 import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { FormContainer } from '../../form/FormContainer';
 import { getFieldErrorMessage, useAppForm } from '../../form/utils';
+import { FocusAreasField } from './FocusAreasField';
 
 export const validator = z.object({
   fullName: z
@@ -46,6 +49,14 @@ export const validator = z.object({
       message: 'Must be at most 255 characters',
     }),
   website: zodUrl({ message: 'Enter a valid website address' }),
+  focusAreas: z
+    .array(
+      z.object({
+        id: z.string(),
+        label: z.string(),
+      }),
+    )
+    .optional(),
 });
 
 type FormFields = z.infer<typeof validator>;
@@ -67,6 +78,10 @@ export const UpdateProfileForm = forwardRef<
   const uploadBannerImage = trpc.account.uploadBannerImage.useMutation();
   const updateProfile = trpc.account.updateUserProfile.useMutation();
 
+  // Get current user's profile ID for the focus areas component
+  const { data: userAccount } = trpc.account.getMyAccount.useQuery();
+  const profileId = userAccount?.profile?.id;
+
   // Initialize with current profile data
   const [profileImageUrl, setProfileImageUrl] = useState<string | undefined>(
     getPublicUrl(profile.avatarImage?.name) || undefined,
@@ -81,6 +96,7 @@ export const UpdateProfileForm = forwardRef<
       title: profile.bio ?? '',
       email: profile.email ?? '',
       website: profile.website ?? '',
+      focusAreas: [] as Option[],
     },
     validators: {
       // @ts-expect-error - zodUrl is not returning the right type here
@@ -92,10 +108,13 @@ export const UpdateProfileForm = forwardRef<
         bio: value.title,
         email: value.email || undefined,
         website: value.website || undefined,
+        focusAreas: value.focusAreas || undefined,
       });
       utils.account.getMyAccount.invalidate();
       utils.account.getUserProfiles.invalidate();
-      utils.organization.listPosts.invalidate();
+      utils.individual.getTermsByProfile.invalidate({
+        profileId,
+      });
       onSuccess();
     },
   });
@@ -253,6 +272,16 @@ export const UpdateProfileForm = forwardRef<
             />
           )}
         />
+        {profileId && (
+          <form.AppField
+            name="focusAreas"
+            children={(field) => (
+              <Suspense fallback={<Skeleton className="h-8 w-full" />}>
+                <FocusAreasField profileId={profileId} field={field} />
+              </Suspense>
+            )}
+          />
+        )}
       </FormContainer>
       <ModalFooter className="hidden sm:flex">
         <form.SubmitButton className="sm:w-auto">
