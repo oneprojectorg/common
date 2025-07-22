@@ -83,6 +83,7 @@ export const UpdateProfileForm = forwardRef<
       website: profile.website ?? '',
     },
     validators: {
+      // @ts-expect-error - zodUrl is not returning the right type here
       onSubmit: validator,
     },
     onSubmit: async ({ value }: { value: FormFields }) => {
@@ -256,8 +257,8 @@ export const UpdateProfileForm = forwardRef<
       <ModalFooter className="hidden sm:flex">
         <form.SubmitButton className="sm:w-auto">
           {updateProfile.isPending ||
-            uploadImage.isPending ||
-            uploadBannerImage.isPending ? (
+          uploadImage.isPending ||
+          uploadBannerImage.isPending ? (
             <LoadingSpinner />
           ) : (
             t('Save')

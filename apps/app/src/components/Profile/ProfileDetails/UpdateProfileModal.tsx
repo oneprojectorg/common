@@ -79,7 +79,7 @@ export const UpdateProfileModal = ({
             </Button>
           </div>
         </ModalHeader>
-        {user.currentProfile && (
+        {user.profile && (
           <UpdateProfileForm
             ref={formRef}
             profile={user.profile}
