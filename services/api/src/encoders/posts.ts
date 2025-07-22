@@ -13,7 +13,7 @@ export const postsEncoder = createSelectSchema(posts)
   .extend({
     attachments: z.array(postAttachmentEncoder).nullish(),
     reactionCounts: z.record(z.string(), z.number()),
-    userReactions: z.array(z.any()),
+    userReaction: z.string().nullish(),
   })
   .strip();
 

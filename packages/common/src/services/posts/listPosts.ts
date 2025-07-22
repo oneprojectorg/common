@@ -145,7 +145,7 @@ export const getItemsWithReactions = ({
       post: {
         ...item.post,
         reactionCounts,
-        userReactions,
+        userReaction,
       },
     };
   });

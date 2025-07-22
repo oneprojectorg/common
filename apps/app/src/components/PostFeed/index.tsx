@@ -172,7 +172,7 @@ export const PostFeed = ({
       // Helper function to update post reactions
       const updatePostReactions = (item: any) => {
         if (item.post.id === postId) {
-          const currentReactions = item.post.userReactions || [];
+          const currentReaction = item.post.userReaction;
           const currentCounts = item.post.reactionCounts || {};
 
           // Check if user already has this reaction
@@ -197,7 +197,17 @@ export const PostFeed = ({
               },
             };
           } else {
-            // Add reaction
+            // Replace or add reaction
+            const newCounts = { ...currentCounts };
+            
+            // If user had a previous reaction, decrement its count
+            if (currentReaction) {
+              newCounts[currentReaction] = Math.max(0, (newCounts[currentReaction] || 0) - 1);
+            }
+            
+            // Increment count for new reaction
+            newCounts[reactionType] = (newCounts[reactionType] || 0) + 1;
+            
             return {
               ...item,
               post: {
@@ -388,9 +398,7 @@ export const PostFeed = ({
                                     emoji,
                                     count,
                                     isActive:
-                                      post.userReactions?.includes(
-                                        reactionType,
-                                      ) || false,
+                                      post.userReaction === reactionType,
                                   };
                                 },
                               )
