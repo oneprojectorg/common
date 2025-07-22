@@ -1,5 +1,5 @@
 import { getPublicUrl } from '@/utils';
-import { Profile } from '@op/api/encoders';
+import { EntityType, Profile } from '@op/api/encoders';
 import { Avatar } from '@op/ui/Avatar';
 import Image from 'next/image';
 
@@ -30,7 +30,7 @@ export const ProfileResults = ({
           <Link
             className="group/result flex w-full items-center gap-4 hover:no-underline"
             href={
-              profile.type === 'user'
+              profile.type === EntityType.INDIVIDUAL
                 ? `/profile/${profile.slug}`
                 : `/org/${profile.slug}`
             }
@@ -53,7 +53,9 @@ export const ProfileResults = ({
             <div className="flex flex-col font-semibold text-neutral-charcoal group-hover/result:underline">
               <span>{profile.name}</span>
               <span className="text-sm capitalize text-neutral-gray4">
-                {profile.type === 'user' ? 'Personal' : 'Organization'}
+                {profile.type === EntityType.INDIVIDUAL
+                  ? 'Individual'
+                  : 'Organization'}
                 {profile.city && ` • ${profile.city}`}
               </span>
             </div>

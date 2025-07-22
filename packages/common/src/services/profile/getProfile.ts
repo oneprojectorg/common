@@ -1,5 +1,5 @@
 import { db, eq } from '@op/db/client';
-import { profiles } from '@op/db/schema';
+import { EntityType, profiles } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { z } from 'zod';
 
@@ -12,7 +12,7 @@ export interface GetProfileParams {
 
 const profileResultSchema = z.object({
   id: z.string(),
-  type: z.enum(['user', 'org']),
+  type: z.enum([EntityType.INDIVIDUAL, EntityType.ORG]),
   name: z.string(),
   slug: z.string(),
   bio: z.string().nullable(),
