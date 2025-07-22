@@ -68,13 +68,15 @@ const ProfileMenuItem = ({
   children?: React.ReactNode;
 }) => {
   const { user } = useUser();
+  const router = useRouter();
   const utils = trpc.useUtils();
   const switchProfile = trpc.account.switchProfile.useMutation({
     onSuccess: () => {
       utils.invalidate();
+      // Reset all SSR fetches as well
+      router.refresh();
     },
   });
-  const router = useRouter();
   return (
     <MenuItem
       key={profile.id}
