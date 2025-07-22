@@ -5,7 +5,7 @@ import { randomUUID } from 'crypto';
 
 export interface UpdateUserProfileInput {
   name?: string;
-  about?: string;
+  bio?: string;
   title?: string;
   username?: string;
 }
@@ -21,7 +21,7 @@ export const updateUserProfile = async ({
   user,
   db: dbClient = db, // Use provided db or fall back to imported client
 }: UpdateUserProfileParams) => {
-  const { name, about, title, username } = input;
+  const { name, bio, title, username } = input;
 
   // Get the current user to check if they have a profile
   const currentUser = await dbClient.query.users.findFirst({
@@ -38,7 +38,7 @@ export const updateUserProfile = async ({
   // Prepare profile data
   const profileData: any = {};
   if (name !== undefined) profileData.name = name;
-  if (about !== undefined) profileData.bio = about; // Map 'about' to 'bio' in profiles
+  if (bio !== undefined) profileData.bio = bio;
 
   // Prepare user data (username and title stay in users table)
   const userData: any = {};
@@ -66,7 +66,7 @@ export const updateUserProfile = async ({
           type: EntityType.USER,
           name: name || currentUser.name || 'Unnamed User',
           slug,
-          bio: about,
+          bio,
         })
         .returning();
 

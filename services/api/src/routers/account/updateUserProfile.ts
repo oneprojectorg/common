@@ -34,7 +34,7 @@ const updateUserProfile = router({
       z
         .object({
           name: z.string().trim().min(1).max(255),
-          about: z.string().trim().max(255),
+          bio: z.string().trim().max(255),
           title: z.string().trim().min(1).max(255),
           // underscore, numbers, lowercase letters
           username: z

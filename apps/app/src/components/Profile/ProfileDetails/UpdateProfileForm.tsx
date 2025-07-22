@@ -1,7 +1,7 @@
 import { DEFAULT_MAX_SIZE } from '@/hooks/useFileUpload';
 import { getPublicUrl } from '@/utils';
-import { OrganizationUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
+import type { Profile } from '@op/api/encoders';
 import { AvatarUploader } from '@op/ui/AvatarUploader';
 import { BannerUploader } from '@op/ui/BannerUploader';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
@@ -40,20 +40,19 @@ export const validator = z.object({
 
 type FormFields = z.infer<typeof validator>;
 
-interface UpdateProfileFormProps {
-  profile: OrganizationUser;
-  onSuccess: () => void;
-  className?: string;
-}
-
 const acceptedTypes = ['image/gif', 'image/png', 'image/jpeg', 'image/webp'];
 
 export const UpdateProfileForm = forwardRef<
   HTMLFormElement,
-  UpdateProfileFormProps
+  {
+    profile: Profile;
+    onSuccess: () => void;
+    className?: string;
+  }
 >(({ profile, onSuccess, className }, ref): ReactNode => {
   const t = useTranslations();
   const utils = trpc.useUtils();
+
   const uploadImage = trpc.account.uploadImage.useMutation();
   const uploadBannerImage = trpc.account.uploadBannerImage.useMutation();
   const updateProfile = trpc.account.updateUserProfile.useMutation();
@@ -63,13 +62,13 @@ export const UpdateProfileForm = forwardRef<
     getPublicUrl(profile.avatarImage?.name) || undefined,
   );
   const [bannerImageUrl, setBannerImageUrl] = useState<string | undefined>(
-    getPublicUrl(profile.currentProfile?.headerImage?.name) || undefined,
+    getPublicUrl(profile.headerImage?.name) || undefined,
   );
 
   const form = useAppForm({
     defaultValues: {
       fullName: profile.name ?? '',
-      title: profile.title ?? '',
+      title: profile.bio ?? '',
     },
     validators: {
       onSubmit: validator,
@@ -77,7 +76,7 @@ export const UpdateProfileForm = forwardRef<
     onSubmit: async ({ value }: { value: FormFields }) => {
       await updateProfile.mutateAsync({
         name: value.fullName,
-        title: value.title,
+        bio: value.title,
       });
       utils.account.getMyAccount.invalidate();
       utils.account.getUserProfiles.invalidate();
@@ -177,7 +176,7 @@ export const UpdateProfileForm = forwardRef<
           children={(field) => (
             <field.TextField
               isRequired
-              label={t('Full Name')}
+              label={t('Name')}
               value={field.state.value}
               onBlur={field.handleBlur}
               onChange={field.handleChange}
@@ -193,13 +192,15 @@ export const UpdateProfileForm = forwardRef<
           children={(field) => (
             <field.TextField
               isRequired
-              label={t('Professional title')}
+              label={t('Headline')}
               value={field.state.value}
               onBlur={field.handleBlur}
               onChange={field.handleChange}
               errorMessage={getFieldErrorMessage(field)}
               inputProps={{
-                placeholder: t('Enter your professional title'),
+                placeholder: t(
+                  'Add a descriptive headline for your profile. This could be your professional title at your organization or your focus areas.',
+                ),
               }}
             />
           )}

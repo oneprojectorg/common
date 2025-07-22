@@ -182,7 +182,7 @@ const AvatarMenuContent = ({
         </Avatar>
         <div className="flex flex-col">
           <span className="sm:text-sm">
-            Logged in as {user?.name} (
+            Logged in as {user?.currentProfile?.name ?? user?.name} (
             <Button
               onPress={() => setIsProfileOpen(true)}
               unstyled
@@ -216,11 +216,7 @@ const AvatarMenuContent = ({
                 ) : null}
               </div>
               <div className="relative overflow-hidden truncate text-sm text-neutral-gray4">
-                {user?.organizationUsers
-                  ?.map((orgUser) => orgUser.organization?.profile?.name)
-                  .filter(Boolean)
-                  .map((name) => (user.title ? `${user.title}, ${name}` : name))
-                  .join(' • ')}
+                {user?.currentProfile?.bio}
               </div>
             </div>
           </ProfileMenuItem>
