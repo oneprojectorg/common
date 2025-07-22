@@ -137,7 +137,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
 
           if (selectedProfile) {
             const profilePath =
-              selectedProfile.type === 'user'
+              selectedProfile.type === EntityType.INDIVIDUAL
                 ? `/profile/${selectedProfile.slug}`
                 : `/org/${selectedProfile.slug}`;
             router.push(profilePath);

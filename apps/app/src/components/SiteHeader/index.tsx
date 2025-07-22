@@ -4,7 +4,7 @@ import { getPublicUrl } from '@/utils';
 import { ClientOnly } from '@/utils/ClientOnly';
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import { Profile } from '@op/api/encoders';
+import { EntityType, Profile } from '@op/api/encoders';
 import { useAuthLogout } from '@op/hooks';
 import { Avatar } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
@@ -68,13 +68,15 @@ const ProfileMenuItem = ({
   children?: React.ReactNode;
 }) => {
   const { user } = useUser();
+  const router = useRouter();
   const utils = trpc.useUtils();
   const switchProfile = trpc.account.switchProfile.useMutation({
     onSuccess: () => {
       utils.invalidate();
+      // Reset all SSR fetches as well
+      router.refresh();
     },
   });
-  const router = useRouter();
   return (
     <MenuItem
       key={profile.id}
@@ -83,7 +85,7 @@ const ProfileMenuItem = ({
       onAction={() => {
         if (user?.currentProfile?.id === profile.id) {
           const profilePath =
-            profile.type === 'user'
+            profile.type === EntityType.INDIVIDUAL
               ? `/profile/${profile.slug}`
               : `/org/${profile.slug}`;
           router.push(profilePath);
@@ -149,7 +151,7 @@ const AvatarMenuContent = ({
           return acc;
         }
 
-        if (profile.type === 'user') {
+        if (profile.type === EntityType.INDIVIDUAL) {
           // TODO: typing here needs to be fixed. Will be easier with new profile types
           acc.userProfiles.push(profile as Profile);
         } else {
@@ -164,6 +166,8 @@ const AvatarMenuContent = ({
       },
     ) ?? {};
 
+  const avatarUrl = user?.profile?.avatarImage?.name || user?.avatarImage?.name;
+
   return (
     <>
       <MenuItemSimple
@@ -171,9 +175,9 @@ const AvatarMenuContent = ({
         className="flex cursor-default items-center gap-2 p-0 px-0 pb-4 text-neutral-charcoal hover:bg-transparent"
       >
         <Avatar className="size-6" placeholder={user?.name ?? ''}>
-          {user?.avatarImage?.name ? (
+          {avatarUrl ? (
             <Image
-              src={getPublicUrl(user?.avatarImage?.name) ?? ''}
+              src={getPublicUrl(avatarUrl) ?? ''}
               fill
               className="object-cover"
               alt={user?.name ?? 'User avatar'}
@@ -182,7 +186,7 @@ const AvatarMenuContent = ({
         </Avatar>
         <div className="flex flex-col">
           <span className="sm:text-sm">
-            Logged in as {user?.name} (
+            Logged in as {user?.profile?.name ?? user?.name} (
             <Button
               onPress={() => setIsProfileOpen(true)}
               unstyled
@@ -195,7 +199,9 @@ const AvatarMenuContent = ({
             )
           </span>
           <span className="text-sm text-neutral-gray4 sm:text-xs">
-            Admin for {user?.currentOrganization?.profile.name}
+            Admin for{' '}
+            {user?.currentProfile?.name ??
+              user?.currentOrganization?.profile.name}
           </span>
         </div>
       </MenuItemSimple>
@@ -210,17 +216,15 @@ const AvatarMenuContent = ({
           >
             <div className="flex max-w-52 flex-col">
               <div className="flex items-center gap-1">
-                {profile.name}{' '}
+                <span className="overflow-hidden truncate">
+                  {profile.name}{' '}
+                </span>
                 {user?.currentProfile?.id === profile.id ? (
                   <Chip>Active</Chip>
                 ) : null}
               </div>
               <div className="relative overflow-hidden truncate text-sm text-neutral-gray4">
-                {user?.organizationUsers
-                  ?.map((orgUser) => orgUser.organization?.profile?.name)
-                  .filter(Boolean)
-                  .map((name) => (user.title ? `${user.title}, ${name}` : name))
-                  .join(' • ')}
+                {profile.bio}
               </div>
             </div>
           </ProfileMenuItem>
@@ -234,14 +238,14 @@ const AvatarMenuContent = ({
           onClose={onClose}
           onProfileSwitch={onProfileSwitch}
         >
-          <div className="flex flex-col">
-            <div className="flex items-center gap-1">
-              {profile.name}{' '}
+          <div className="flex max-w-52 flex-col">
+            <div className="relative flex items-center gap-1">
+              <span className="overflow-hidden truncate">{profile.name} </span>
               {user?.currentProfile?.id === profile.id ? (
                 <Chip>Active</Chip>
               ) : null}
             </div>
-            <div className="text-sm capitalize text-neutral-gray4">
+            <div className="relative overflow-hidden truncate text-sm capitalize text-neutral-gray4">
               Organization
             </div>
           </div>

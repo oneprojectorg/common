@@ -3,6 +3,7 @@ export * from './access';
 export * from './comments';
 export * from './email';
 export * from './organization';
+export * from './individual';
 export * from './user';
 export * from './posts';
 export * from './reactions';

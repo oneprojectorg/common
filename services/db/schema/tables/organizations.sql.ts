@@ -33,7 +33,7 @@ export enum OrgType {
 
 export const orgTypeEnum = pgEnum('org_type', enumToPgEnum(OrgType));
 
-// An organization represents a tenant in the system
+// An organization represents a fields specific to organization type profiles
 export const organizations = pgTable(
   'organizations',
   {
