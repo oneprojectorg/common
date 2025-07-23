@@ -15,6 +15,7 @@ export * from './components/ColorThumb';
 export * from './components/ColorWheel';
 export * from './components/ComboBox';
 export * from './components/Command';
+export * from './components/CommentButton';
 export * from './components/DateField';
 export * from './components/DatePicker';
 export * from './components/DateRangePicker';
