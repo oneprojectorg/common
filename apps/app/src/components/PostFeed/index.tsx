@@ -12,7 +12,7 @@ import type {
 } from '@op/api/encoders';
 import { REACTION_OPTIONS } from '@op/types';
 import { AvatarSkeleton } from '@op/ui/Avatar';
-import { Button } from '@op/ui/Button';
+import { IconButton } from '@op/ui/IconButton';
 import { CommentButton } from '@op/ui/CommentButton';
 import { Header3 } from '@op/ui/Header';
 import { MediaDisplay } from '@op/ui/MediaDisplay';
@@ -315,15 +315,13 @@ const PostMenu = ({
 
   return (
     <MenuTrigger>
-      <Button
-        unstyled
-        color="neutral"
-        variant="icon"
+      <IconButton
+        variant="ghost"
         size="small"
-        className="absolute right-0 top-0 size-6 rounded-full border-0 bg-white p-1 outline-0 aria-expanded:bg-neutral-gray1"
+        className="absolute right-0 top-0 aria-expanded:bg-neutral-gray1"
       >
         <LuEllipsis className="size-4" />
-      </Button>
+      </IconButton>
       <Popover placement="bottom end">
         <PostMenuContent
           postId={post.id}
