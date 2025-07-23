@@ -6,12 +6,17 @@ import { attachments } from './attachments.sql';
 import { comments } from './comments.sql';
 import { organizations } from './organizations.sql';
 import { postReactions } from './postReactions.sql';
+import { profiles } from './profiles.sql';
 
-export const posts = pgTable(
+export const posts: any = pgTable(
   'posts',
   {
     id: autoId().primaryKey(),
     content: text().notNull(),
+    parentPostId: uuid().references((): any => posts.id, {
+      onDelete: 'cascade',
+    }),
+    profileId: uuid().references(() => profiles.id, { onDelete: 'cascade' }),
     ...timestamps,
   },
   (table) => [...serviceRolePolicies, index().on(table.id).concurrently()],
@@ -38,11 +43,23 @@ export const postsToOrganizations = pgTable(
   ],
 );
 
-export const postsRelations = relations(posts, ({ many }) => ({
+export const postsRelations = relations(posts, ({ one, many }) => ({
   organization: many(organizations),
   attachments: many(attachments),
   reactions: many(postReactions),
   comments: many(comments),
+  profile: one(profiles, {
+    fields: [posts.profileId],
+    references: [profiles.id],
+  }),
+  parentPost: one(posts, {
+    fields: [posts.parentPostId],
+    references: [posts.id],
+    relationName: 'PostToParent',
+  }),
+  childPosts: many(posts, {
+    relationName: 'PostToParent',
+  }),
 }));
 
 export const postsToOrganizationsRelations = relations(

@@ -3,17 +3,21 @@ import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
 import { organizationsWithProfileEncoder } from './organizations';
+import { profileWithAvatarEncoder } from './profiles';
 import { storageItemEncoder } from './storageItem';
 
 export const postAttachmentEncoder = createSelectSchema(attachments).extend({
   storageObject: storageItemEncoder,
 });
 
-export const postsEncoder = createSelectSchema(posts)
+export const postsEncoder: z.ZodType<any> = createSelectSchema(posts)
   .extend({
     attachments: z.array(postAttachmentEncoder).nullish(),
     reactionCounts: z.record(z.string(), z.number()),
     userReaction: z.string().nullish(),
+    profile: profileWithAvatarEncoder.nullish(),
+    childPosts: z.array(z.lazy(() => postsEncoder)).nullish(),
+    parentPost: z.lazy(() => postsEncoder).nullish(),
   })
   .strip();
 
