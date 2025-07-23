@@ -2,21 +2,9 @@
 
 import { Button as RACButton } from 'react-aria-components';
 import { tv } from 'tailwind-variants';
-import type { VariantProps } from 'tailwind-variants';
 
 const commentButtonStyle = tv({
-  base: 'flex h-8 items-center justify-center gap-1 px-2 py-1 rounded text-xs font-normal leading-[1.5] text-nowrap outline-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0046c2]',
-  variants: {
-    variant: {
-      default: 'bg-neutral-offWhite text-neutral-gray4',
-      hover: 'bg-neutral-gray1 text-neutral-charcoal',
-      pressed: 'bg-neutral-gray2 text-neutral-black',
-      focus: 'bg-neutral-offWhite text-neutral-gray4 outline outline-2 outline-[#0046c2]',
-    },
-  },
-  defaultVariants: {
-    variant: 'default',
-  },
+  base: 'flex h-8 items-center justify-center gap-1 px-2 py-1 rounded text-xs font-normal leading-[1.5] text-nowrap outline-none transition-colors bg-neutral-offWhite text-neutral-gray4 hover:bg-neutral-gray1 hover:text-neutral-charcoal pressed:bg-neutral-gray2 pressed:text-neutral-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0046c2]',
 });
 
 const iconStyle = tv({
@@ -44,17 +32,13 @@ const MessageCircleIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-type CommentButtonVariants = VariantProps<typeof commentButtonStyle>;
-
 export interface CommentButtonProps
-  extends Omit<React.ComponentProps<typeof RACButton>, 'children'>,
-    CommentButtonVariants {
+  extends Omit<React.ComponentProps<typeof RACButton>, 'children'> {
   count?: number;
   className?: string;
 }
 
 export const CommentButton = ({
-  variant = 'default',
   count = 0,
   className,
   ...props
@@ -62,7 +46,7 @@ export const CommentButton = ({
   return (
     <RACButton
       {...props}
-      className={commentButtonStyle({ variant, className })}
+      className={commentButtonStyle({ className })}
     >
       <MessageCircleIcon className={iconStyle()} />
       <span>{count} comments</span>
