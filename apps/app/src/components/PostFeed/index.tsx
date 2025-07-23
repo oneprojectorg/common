@@ -13,6 +13,7 @@ import type {
 import { REACTION_OPTIONS } from '@op/types';
 import { AvatarSkeleton } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
+import { CommentButton } from '@op/ui/CommentButton';
 import { Header3 } from '@op/ui/Header';
 import { MediaDisplay } from '@op/ui/MediaDisplay';
 import { MenuTrigger } from '@op/ui/Menu';
@@ -23,7 +24,7 @@ import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';
 import { Fragment, ReactNode, useState } from 'react';
-import { LuEllipsis, LuLeaf, LuMessageCircle } from 'react-icons/lu';
+import { LuEllipsis, LuLeaf } from 'react-icons/lu';
 
 import { Link } from '@/lib/i18n';
 
@@ -287,15 +288,10 @@ const PostCommentButton = ({
   if (!post?.id || isComment) return null;
 
   return (
-    <Button
-      variant="icon"
-      size="small"
-      className="hover:text-neutral-gray5 flex items-center gap-1 px-2 py-1 text-neutral-gray4"
+    <CommentButton
+      count={0} // TODO: Add comment count when available in API
       onPress={onCommentClick}
-    >
-      <LuMessageCircle className="size-4" />
-      <span className="text-sm">Comment</span>
-    </Button>
+    />
   );
 };
 
