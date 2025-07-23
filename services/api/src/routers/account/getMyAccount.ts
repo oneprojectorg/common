@@ -20,44 +20,48 @@ const ensureProfileAndIndividual = async (
 
   // Create profile if it doesn't exist and migrate properties
   if (!profileId) {
-    const slug = randomUUID();
+    await db.transaction(async (tx) => {
+      const slug = randomUUID();
 
-    const [newProfile] = await db
-      .insert(profiles)
-      .values({
-        type: EntityType.INDIVIDUAL,
-        name: user.name || user.email || 'Unnamed User',
-        slug,
-        email: user.email,
-        avatarImageId: user.avatarImageId,
-        bio: user.title,
-      })
-      .returning();
+      const [newProfile] = await tx
+        .insert(profiles)
+        .values({
+          type: EntityType.INDIVIDUAL,
+          name: user.name || 
+                (user.email ? user.email.split('@')[0] : null) || 
+                'Unnamed User',
+          slug,
+          email: user.email,
+          avatarImageId: user.avatarImageId,
+          bio: user.title,
+        })
+        .returning();
 
-    if (!newProfile) {
-      throw new CommonError('Failed to create profile');
-    }
+      if (!newProfile) {
+        throw new CommonError('Failed to create profile');
+      }
 
-    // Update user's profileId
-    await db
-      .update(users)
-      .set({ profileId: newProfile.id })
-      .where(eq(users.authUserId, user.authUserId));
+      // Update user's profileId
+      await tx
+        .update(users)
+        .set({ profileId: newProfile.id })
+        .where(eq(users.authUserId, user.authUserId));
 
-    profileId = newProfile.id;
+      profileId = newProfile.id;
 
-    // Update the user object to reflect the new profile
-    user.profile = newProfile;
-    user.profileId = newProfile.id;
+      // Update the user object to reflect the new profile
+      user.profile = newProfile;
+      user.profileId = newProfile.id;
+    });
   }
 
   // Check if individual record exists
   const individualRecord = await db.query.individuals.findFirst({
-    where: (table: any, { eq }: any) => eq(table.profileId, profileId),
+    where: eq(individuals.profileId, profileId!),
   });
 
   // Create individual record if it doesn't exist
-  if (!individualRecord) {
+  if (!individualRecord && profileId) {
     await db
       .insert(individuals)
       .values({
@@ -67,6 +71,53 @@ const ensureProfileAndIndividual = async (
   }
 
   return user;
+};
+
+// Reusable function for user query with all relations
+const getUserWithRelations = async (
+  db: typeof Database, 
+  condition: (table: any, ops: any) => any
+) => {
+  return await db.query.users.findFirst({
+    where: condition,
+    with: {
+      avatarImage: true,
+      organizationUsers: {
+        with: {
+          organization: {
+            with: {
+              profile: {
+                with: {
+                  avatarImage: true,
+                },
+              },
+            },
+          },
+        },
+      },
+      currentOrganization: {
+        with: {
+          profile: {
+            with: {
+              avatarImage: true,
+            },
+          },
+        },
+      },
+      currentProfile: {
+        with: {
+          avatarImage: true,
+          headerImage: true,
+        },
+      },
+      profile: {
+        with: {
+          avatarImage: true,
+          headerImage: true,
+        },
+      },
+    },
+  });
 };
 
 const meta: OpenApiMeta = {
@@ -94,46 +145,10 @@ export const getMyAccount = router({
       const { db } = ctx.database;
       const { id, email } = ctx.user;
 
-      const result = await db.query.users.findFirst({
-        where: (table, { eq }) => eq(table.authUserId, id),
-        with: {
-          avatarImage: true,
-          organizationUsers: {
-            with: {
-              organization: {
-                with: {
-                  profile: {
-                    with: {
-                      avatarImage: true,
-                    },
-                  },
-                },
-              },
-            },
-          },
-          currentOrganization: {
-            with: {
-              profile: {
-                with: {
-                  avatarImage: true,
-                },
-              },
-            },
-          },
-          currentProfile: {
-            with: {
-              avatarImage: true,
-              headerImage: true,
-            },
-          },
-          profile: {
-            with: {
-              avatarImage: true,
-              headerImage: true,
-            },
-          },
-        },
-      });
+      const result = await getUserWithRelations(
+        db,
+        (table, { eq }) => eq(table.authUserId, id)
+      );
 
       if (!result) {
         if (!email) {
@@ -153,46 +168,10 @@ export const getMyAccount = router({
           throw new CommonError('Could not create user');
         }
 
-        const newUserWithRelations = await db.query.users.findFirst({
-          where: (table, { eq }) => eq(table.id, newUser.id),
-          with: {
-            avatarImage: true,
-            organizationUsers: {
-              with: {
-                organization: {
-                  with: {
-                    profile: {
-                      with: {
-                        avatarImage: true,
-                      },
-                    },
-                  },
-                },
-              },
-            },
-            currentOrganization: {
-              with: {
-                profile: {
-                  with: {
-                    avatarImage: true,
-                  },
-                },
-              },
-            },
-            currentProfile: {
-              with: {
-                avatarImage: true,
-                headerImage: true,
-              },
-            },
-            profile: {
-              with: {
-                avatarImage: true,
-                headerImage: true,
-              },
-            },
-          },
-        });
+        const newUserWithRelations = await getUserWithRelations(
+          db,
+          (table, { eq }) => eq(table.id, newUser.id)
+        );
 
         const profileUser = await ensureProfileAndIndividual(
           db,
