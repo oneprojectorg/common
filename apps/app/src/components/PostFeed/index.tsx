@@ -4,7 +4,12 @@ import { getPublicUrl } from '@/utils';
 import { OrganizationUser } from '@/utils/UserProvider';
 import { detectLinks, linkifyText } from '@/utils/linkDetection';
 import { trpc } from '@op/api/client';
-import type { PostToOrganization } from '@op/api/encoders';
+import type {
+  Organization,
+  Post,
+  PostToOrganization,
+  Profile,
+} from '@op/api/encoders';
 import { REACTION_OPTIONS } from '@op/types';
 import { AvatarSkeleton } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
@@ -17,12 +22,12 @@ import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
 import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';
-import { useFeatureFlagEnabled } from 'posthog-js/react';
-import { Fragment, ReactNode } from 'react';
-import { LuEllipsis, LuLeaf } from 'react-icons/lu';
+import { Fragment, ReactNode, useState } from 'react';
+import { LuEllipsis, LuLeaf, LuMessageCircle } from 'react-icons/lu';
 
 import { Link } from '@/lib/i18n';
 
+import { DiscussionModal } from '../DiscussionModal';
 import { LinkPreview } from '../LinkPreview';
 import { OrganizationAvatar } from '../OrganizationAvatar';
 import { DeletePost } from './DeletePost';
@@ -127,13 +132,344 @@ export const FeedMain = ({
   return (
     <div
       className={cn(
-        'flex w-full flex-col items-start justify-start gap-0 overflow-hidden',
+        'flex w-full flex-col items-start justify-start gap-2 overflow-hidden',
         className,
       )}
       {...props}
     >
       {children}
     </div>
+  );
+};
+
+const PostDisplayName = ({
+  displayName,
+  displaySlug,
+  withLinks,
+  isComment,
+}: {
+  displayName?: string;
+  displaySlug?: string;
+  withLinks: boolean;
+  isComment: boolean;
+}) => {
+  if (!displayName) return null;
+
+  if (withLinks && !isComment) {
+    return <Link href={`/org/${displaySlug}`}>{displayName}</Link>;
+  }
+
+  return <>{displayName}</>;
+};
+
+const PostTimestamp = ({ createdAt }: { createdAt?: Date | string }) => {
+  if (!createdAt) return null;
+
+  return (
+    <span className="text-sm text-neutral-gray4">
+      {formatRelativeTime(createdAt)}
+    </span>
+  );
+};
+
+const PostContent = ({ content }: { content?: string }) => {
+  if (!content) return null;
+
+  return <>{linkifyText(content)}</>;
+};
+
+const PostAttachments = ({ attachments }: { attachments?: any[] }) => {
+  if (!attachments) return null;
+
+  return (
+    <>
+      {attachments.map(({ fileName, storageObject }: any) => {
+        const { mimetype, size } = storageObject.metadata;
+
+        return (
+          <MediaDisplay
+            key={storageObject.id}
+            title={fileName}
+            mimeType={mimetype}
+            url={getPublicUrl(storageObject.name) ?? undefined}
+            size={size}
+          >
+            <AttachmentImage
+              mimetype={mimetype}
+              fileName={fileName}
+              storageObjectName={storageObject.name}
+            />
+          </MediaDisplay>
+        );
+      })}
+    </>
+  );
+};
+
+const AttachmentImage = ({
+  mimetype,
+  fileName,
+  storageObjectName,
+}: {
+  mimetype: string;
+  fileName: string;
+  storageObjectName: string;
+}) => {
+  if (!mimetype.startsWith('image/')) return null;
+
+  return (
+    <div className="relative flex h-fit w-full items-center justify-center rounded bg-neutral-gray1 text-white">
+      <Image
+        src={getPublicUrl(storageObjectName) ?? ''}
+        alt={fileName}
+        fill={true}
+        className="!relative size-full object-cover"
+      />
+    </div>
+  );
+};
+
+const PostUrls = ({ urls }: { urls: string[] }) => {
+  if (urls.length === 0) return null;
+
+  return (
+    <div>
+      {urls.map((url) => (
+        <LinkPreview key={url} url={url} />
+      ))}
+    </div>
+  );
+};
+
+const PostReactions = ({
+  post,
+  onReactionClick,
+}: {
+  post: any;
+  onReactionClick: (postId: string, emoji: string) => void;
+}) => {
+  if (!post?.id) return null;
+
+  const reactions = post.reactionCounts
+    ? Object.entries(post.reactionCounts).map(([reactionType, count]) => {
+        const reactionOption = REACTION_OPTIONS.find(
+          (option) => option.key === reactionType,
+        );
+        const emoji = reactionOption?.emoji || reactionType;
+
+        return {
+          emoji,
+          count: count as number,
+          isActive: post.userReaction === reactionType,
+        };
+      })
+    : [];
+
+  return (
+    <ReactionsButton
+      reactions={reactions}
+      reactionOptions={REACTION_OPTIONS}
+      onReactionClick={(emoji) => onReactionClick(post.id!, emoji)}
+      onAddReaction={(emoji) => onReactionClick(post.id!, emoji)}
+    />
+  );
+};
+
+const PostCommentButton = ({
+  post,
+  isComment,
+  onCommentClick,
+}: {
+  post: any;
+  isComment: boolean;
+  onCommentClick: () => void;
+}) => {
+  if (!post?.id || isComment) return null;
+
+  return (
+    <Button
+      variant="icon"
+      size="small"
+      className="hover:text-neutral-gray5 flex items-center gap-1 px-2 py-1 text-neutral-gray4"
+      onPress={onCommentClick}
+    >
+      <LuMessageCircle className="size-4" />
+      <span className="text-sm">Comment</span>
+    </Button>
+  );
+};
+
+const PostMenu = ({
+  organization,
+  post,
+  user,
+  isComment,
+}: {
+  organization: any;
+  post: any;
+  user?: OrganizationUser;
+  isComment: boolean;
+}) => {
+  const canShowMenu =
+    (organization?.id === user?.currentOrganization?.id ||
+      (isComment && post?.profile?.id === user?.profile?.id)) &&
+    post?.id;
+
+  if (!canShowMenu) return null;
+
+  return (
+    <MenuTrigger>
+      <Button
+        unstyled
+        color="neutral"
+        variant="icon"
+        size="small"
+        className="absolute right-0 top-0 size-6 rounded-full border-0 bg-white p-1 outline-0 aria-expanded:bg-neutral-gray1"
+      >
+        <LuEllipsis className="size-4" />
+      </Button>
+      <Popover placement="bottom end">
+        <PostMenuContent
+          postId={post.id}
+          organizationId={organization?.id || ''}
+          canDelete={organization?.id || isComment}
+        />
+      </Popover>
+    </MenuTrigger>
+  );
+};
+
+const PostMenuContent = ({
+  postId,
+  organizationId,
+  canDelete,
+}: {
+  postId: string;
+  organizationId: string;
+  canDelete: boolean;
+}) => {
+  if (!canDelete) return null;
+
+  return <DeletePost postId={postId} organizationId={organizationId} />;
+};
+
+const EmptyPostsState = () => (
+  <FeedItem>
+    <FeedMain className="flex w-full flex-col items-center justify-center py-6">
+      <FeedContent className="flex flex-col items-center justify-center text-neutral-gray4">
+        <div className="flex size-10 items-center justify-center gap-4 rounded-full bg-neutral-gray1">
+          <LuLeaf />
+        </div>
+        <span>{'No posts yet.'}</span>
+      </FeedContent>
+    </FeedMain>
+  </FeedItem>
+);
+
+const PostsList = ({
+  posts,
+  user,
+  withLinks,
+  onReactionClick,
+  onCommentClick,
+}: {
+  posts: Array<PostToOrganization>;
+  user?: OrganizationUser;
+  withLinks: boolean;
+  onReactionClick: (postId: string, emoji: string) => void;
+  onCommentClick: (post: Post, org?: Organization | null) => void;
+}) => (
+  <>
+    {posts.map(({ organization, post }, i) => {
+      const { urls } = detectLinks(post?.content);
+
+      // For comments (posts without organization), show the post author
+      const isComment = !organization;
+      const displayName = isComment
+        ? post?.profile?.name
+        : organization?.profile.name;
+      const displaySlug = isComment
+        ? post?.profile?.slug
+        : organization?.profile.slug;
+      const avatarData = isComment
+        ? { profile: post?.profile as Profile }
+        : organization;
+
+      if (organization && post.content === 'happy wednesday everyone!') {
+        console.log('ORGPOST', organization, post, displayName);
+      }
+
+      return (
+        <Fragment key={i}>
+          <FeedItem className="sm:px-4">
+            <OrganizationAvatar
+              organization={avatarData}
+              withLink={withLinks && !isComment}
+              className="!size-8 max-h-8 max-w-8"
+            />
+            <FeedMain>
+              <FeedHeader className="relative w-full justify-between">
+                <div className="flex items-baseline gap-2">
+                  <Header3 className="font-medium leading-3">
+                    <PostDisplayName
+                      displayName={displayName}
+                      displaySlug={displaySlug}
+                      withLinks={withLinks}
+                      isComment={isComment}
+                    />
+                  </Header3>
+                  <PostTimestamp createdAt={post?.createdAt} />
+                </div>
+                <PostMenu
+                  organization={organization}
+                  post={post}
+                  user={user}
+                  isComment={isComment}
+                />
+              </FeedHeader>
+              <FeedContent>
+                <PostContent content={post?.content} />
+                <PostAttachments attachments={post.attachments} />
+                <PostUrls urls={urls} />
+                <div className="flex items-center gap-2">
+                  <PostReactions
+                    post={post}
+                    onReactionClick={onReactionClick}
+                  />
+                  <PostCommentButton
+                    post={post}
+                    isComment={isComment}
+                    onCommentClick={() => onCommentClick(post, organization)}
+                  />
+                </div>
+              </FeedContent>
+            </FeedMain>
+          </FeedItem>
+          <hr className="bg-neutral-gray1" />
+        </Fragment>
+      );
+    })}
+  </>
+);
+
+const DiscussionModalContainer = ({
+  discussionModal,
+  onClose,
+}: {
+  discussionModal: { isOpen: boolean; post: Post; org?: Organization | null };
+  onClose: () => void;
+}) => {
+  if (!discussionModal.isOpen || !discussionModal.post) {
+    return null;
+  }
+
+  return (
+    <DiscussionModal
+      post={discussionModal.post}
+      organization={discussionModal.org}
+      isOpen={discussionModal.isOpen}
+      onClose={onClose}
+    />
   );
 };
 
@@ -152,8 +488,16 @@ export const PostFeed = ({
   slug?: string;
   limit?: number;
 }) => {
-  const reactionsEnabled = useFeatureFlagEnabled('reactions');
   const utils = trpc.useUtils();
+  const [discussionModal, setDiscussionModal] = useState<{
+    isOpen: boolean;
+    post: any;
+    org?: Organization | null;
+  }>({
+    isOpen: false,
+    post: null,
+    org: null,
+  });
 
   const toggleReaction = trpc.organization.toggleReaction.useMutation({
     onMutate: async ({ postId, reactionType }) => {
@@ -287,149 +631,32 @@ export const PostFeed = ({
     toggleReaction.mutate({ postId, reactionType });
   };
 
+  const handleCommentClick = (post: Post, org?: Organization) => {
+    setDiscussionModal({ isOpen: true, post, org });
+  };
+
+  const handleModalClose = () => {
+    setDiscussionModal({ isOpen: false, post: null, org: null });
+  };
+
   return (
     <div className={cn('flex flex-col gap-6 pb-8', className)}>
       {posts.length > 0 ? (
-        posts.map(({ organization, post }, i) => {
-          const { urls } = detectLinks(post?.content);
-
-          return (
-            <Fragment key={i}>
-              <FeedItem className="sm:px-4">
-                <OrganizationAvatar
-                  organization={organization}
-                  withLink={withLinks}
-                  className="!size-8 max-h-8 max-w-8"
-                />
-                <FeedMain>
-                  <FeedHeader className="relative w-full justify-between">
-                    <div className="flex items-baseline gap-2">
-                      <Header3 className="font-medium leading-3">
-                        {withLinks ? (
-                          <Link href={`/org/${organization?.profile.slug}`}>
-                            {organization?.profile.name}
-                          </Link>
-                        ) : (
-                          organization?.profile.name
-                        )}
-                      </Header3>
-                      {post?.createdAt ? (
-                        <span className="text-sm text-neutral-gray4">
-                          {formatRelativeTime(post?.createdAt)}
-                        </span>
-                      ) : null}
-                    </div>
-                    {organization?.id === user?.currentOrganization?.id &&
-                      post?.id && (
-                        <MenuTrigger>
-                          <Button
-                            unstyled
-                            color="neutral"
-                            variant="icon"
-                            size="small"
-                            className="absolute right-0 top-0 size-6 rounded-full border-0 bg-white p-1 outline-0 aria-expanded:bg-neutral-gray1"
-                          >
-                            <LuEllipsis className="size-4" />
-                          </Button>
-                          <Popover placement="bottom end">
-                            {post?.id && organization?.id ? (
-                              <DeletePost
-                                postId={post.id}
-                                organizationId={organization.id}
-                              />
-                            ) : null}
-                          </Popover>
-                        </MenuTrigger>
-                      )}
-                  </FeedHeader>
-                  <FeedContent>
-                    {post?.content ? linkifyText(post.content) : null}
-                    {post.attachments
-                      ? post.attachments.map(({ fileName, storageObject }) => {
-                          const { mimetype, size } = storageObject.metadata;
-
-                          return (
-                            <MediaDisplay
-                              key={storageObject.id}
-                              title={fileName}
-                              mimeType={mimetype}
-                              url={
-                                getPublicUrl(storageObject.name) ?? undefined
-                              }
-                              size={size}
-                            >
-                              {mimetype.startsWith('image/') ? (
-                                <div className="relative flex h-fit w-full items-center justify-center rounded bg-neutral-gray1 text-white">
-                                  <Image
-                                    src={getPublicUrl(storageObject.name) ?? ''}
-                                    alt={fileName}
-                                    fill={true}
-                                    className="!relative size-full object-cover"
-                                  />
-                                </div>
-                              ) : null}
-                            </MediaDisplay>
-                          );
-                        })
-                      : null}
-                    {urls.length > 0 && (
-                      <div>
-                        {urls.map((url) => (
-                          <LinkPreview key={url} url={url} />
-                        ))}
-                      </div>
-                    )}
-                    {reactionsEnabled && post?.id && (
-                      <ReactionsButton
-                        reactions={
-                          post.reactionCounts
-                            ? Object.entries(post.reactionCounts).map(
-                                ([reactionType, count]) => {
-                                  // Convert reaction type to emoji
-                                  const reactionOption = REACTION_OPTIONS.find(
-                                    (option) => option.key === reactionType,
-                                  );
-                                  const emoji =
-                                    reactionOption?.emoji || reactionType;
-
-                                  return {
-                                    emoji,
-                                    count,
-                                    isActive:
-                                      post.userReaction === reactionType,
-                                  };
-                                },
-                              )
-                            : []
-                        }
-                        reactionOptions={REACTION_OPTIONS}
-                        onReactionClick={(emoji) => {
-                          handleReactionClick(post.id!, emoji);
-                        }}
-                        onAddReaction={(emoji) => {
-                          handleReactionClick(post.id!, emoji);
-                        }}
-                      />
-                    )}
-                  </FeedContent>
-                </FeedMain>
-              </FeedItem>
-              <hr className="bg-neutral-gray1" />
-            </Fragment>
-          );
-        })
+        <PostsList
+          posts={posts}
+          user={user}
+          withLinks={withLinks}
+          onReactionClick={handleReactionClick}
+          onCommentClick={handleCommentClick}
+        />
       ) : (
-        <FeedItem>
-          <FeedMain className="flex w-full flex-col items-center justify-center py-6">
-            <FeedContent className="flex flex-col items-center justify-center text-neutral-gray4">
-              <div className="flex size-10 items-center justify-center gap-4 rounded-full bg-neutral-gray1">
-                <LuLeaf />
-              </div>
-              <span>{'No posts yet.'}</span>
-            </FeedContent>
-          </FeedMain>
-        </FeedItem>
+        <EmptyPostsState />
       )}
+
+      <DiscussionModalContainer
+        discussionModal={discussionModal}
+        onClose={handleModalClose}
+      />
     </div>
   );
 };

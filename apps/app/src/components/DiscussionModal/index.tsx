@@ -2,7 +2,7 @@
 
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import type { Post } from '@op/api/encoders';
+import type { Organization, Post } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { Modal, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Surface } from '@op/ui/Surface';
@@ -14,12 +14,14 @@ import { PostUpdate } from '../PostUpdate';
 
 interface DiscussionModalProps {
   post: Post;
+  organization?: Organization | null;
   isOpen: boolean;
   onClose: () => void;
 }
 
 export function DiscussionModal({
   post,
+  organization,
   isOpen,
   onClose,
 }: DiscussionModalProps) {
@@ -59,6 +61,9 @@ export function DiscussionModal({
     });
   };
 
+  // Get the post author's name for the header
+  const authorName = post?.profile?.name || 'Unknown';
+
   // Transform comments data to match PostFeed expected format
   const comments =
     commentsData?.map((comment) => ({
@@ -81,7 +86,7 @@ export function DiscussionModal({
       <ModalHeader className="flex items-center justify-between">
         {/* Desktop header */}
         <div className="hidden sm:flex sm:w-full sm:items-center sm:justify-between">
-          Discussion
+          {organization?.profile.name}'s Post
           <LuX className="size-6 cursor-pointer stroke-1" onClick={onClose} />
         </div>
 
@@ -94,14 +99,14 @@ export function DiscussionModal({
           >
             Close
           </Button>
-          <h2 className="text-title-sm">Discussion</h2>
+          <h2 className="text-title-sm">{authorName}'s Post</h2>
           <div className="w-12" /> {/* Spacer for center alignment */}
         </div>
       </ModalHeader>
 
-      <div className="flex flex-col gap-4 py-6">
-        {/* Original Post Display */}
-        <div className="border-b pb-4">
+      <div className="flex flex-col gap-4">
+        <div className="max-h-96 flex-1 overflow-y-auto pt-6">
+          {/* Original Post Display */}
           <PostFeed
             posts={[
               {
@@ -109,18 +114,15 @@ export function DiscussionModal({
                 updatedAt: post.updatedAt,
                 deletedAt: null,
                 postId: post.id,
-                organizationId: '',
+                organizationId: post.organizationId || '',
                 post,
-                organization: null,
+                organization: post.organization || organization || null,
               },
             ]}
             withLinks={false}
-            className="border-none p-0"
+            className="border-none"
           />
-        </div>
-
-        {/* Comments Display */}
-        <div className="max-h-96 flex-1 overflow-y-auto">
+          {/* Comments Display */}
           {isLoading ? (
             <div className="py-8 text-center text-gray-500">
               Loading discussion...
