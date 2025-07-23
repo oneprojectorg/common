@@ -7,7 +7,7 @@ import { DropDownButton } from '@op/ui/DropDownButton';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { toast } from '@op/ui/Toast';
 import { Suspense } from 'react';
-import { LuCheck, LuChevronDown, LuUserPlus, LuX } from 'react-icons/lu';
+import { LuCheck, LuUserPlus, LuX } from 'react-icons/lu';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
 
