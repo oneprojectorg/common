@@ -4,11 +4,11 @@ import { Button as RACButton } from 'react-aria-components';
 import { tv } from 'tailwind-variants';
 
 const commentButtonStyle = tv({
-  base: 'flex h-8 items-center justify-center gap-1 px-2 py-1 rounded text-xs font-normal leading-[1.5] text-nowrap outline-none transition-colors bg-neutral-offWhite text-neutral-gray4 hover:bg-neutral-gray1 hover:text-neutral-charcoal pressed:bg-neutral-gray2 pressed:text-neutral-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0046c2]',
+  base: 'flex h-8 items-center justify-center gap-1 text-nowrap rounded-sm bg-neutral-offWhite px-2 py-1 text-sm text-neutral-gray4 outline-none transition-colors hover:bg-neutral-gray1 hover:text-neutral-charcoal focus-visible:bg-neutral-offWhite focus-visible:outline-1 focus-visible:-outline-offset-1 focus-visible:outline-data-blue pressed:bg-neutral-gray2 pressed:text-neutral-black',
 });
 
 const iconStyle = tv({
-  base: 'w-4 h-4 shrink-0',
+  base: 'h-4 w-4 shrink-0',
 });
 
 // Message Circle Icon SVG
@@ -44,10 +44,7 @@ export const CommentButton = ({
   ...props
 }: CommentButtonProps) => {
   return (
-    <RACButton
-      {...props}
-      className={commentButtonStyle({ className })}
-    >
+    <RACButton {...props} className={commentButtonStyle({ className })}>
       <MessageCircleIcon className={iconStyle()} />
       <span>{count} comments</span>
     </RACButton>
