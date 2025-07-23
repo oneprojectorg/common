@@ -19,11 +19,17 @@ import { LuEllipsis, LuMessageCircle } from 'react-icons/lu';
 
 import { Link } from '@/lib/i18n';
 
-import { formatRelativeTime } from '../PostFeed';
-import { FeedItem, FeedMain, FeedHeader, FeedContent, FeedAvatar } from '../FeedComponents';
+import {
+  FeedAvatar,
+  FeedContent,
+  FeedHeader,
+  FeedItem,
+  FeedMain,
+} from '../Feed';
 import { LinkPreview } from '../LinkPreview';
 import { OrganizationAvatar } from '../OrganizationAvatar';
 import { DeletePost } from '../PostFeed/DeletePost';
+import { formatRelativeTime } from '../utils';
 
 interface PostItemProps {
   organization: PostToOrganization['organization'];
@@ -213,7 +219,8 @@ export const PostItem = ({
               </span>
             ) : null}
           </div>
-          {withActions && organization?.id === user?.currentOrganization?.id &&
+          {withActions &&
+            organization?.id === user?.currentOrganization?.id &&
             post?.id && (
               <MenuTrigger>
                 <Button
@@ -247,9 +254,7 @@ export const PostItem = ({
                     key={storageObject.id}
                     title={fileName}
                     mimeType={mimetype}
-                    url={
-                      getPublicUrl(storageObject.name) ?? undefined
-                    }
+                    url={getPublicUrl(storageObject.name) ?? undefined}
                     size={size}
                   >
                     {mimetype.startsWith('image/') ? (
@@ -282,18 +287,15 @@ export const PostItem = ({
                       ? Object.entries(post.reactionCounts).map(
                           ([reactionType, count]) => {
                             // Convert reaction type to emoji
-                            const reactionOption =
-                              REACTION_OPTIONS.find(
-                                (option) => option.key === reactionType,
-                              );
-                            const emoji =
-                              reactionOption?.emoji || reactionType;
+                            const reactionOption = REACTION_OPTIONS.find(
+                              (option) => option.key === reactionType,
+                            );
+                            const emoji = reactionOption?.emoji || reactionType;
 
                             return {
                               emoji,
                               count,
-                              isActive:
-                                post.userReaction === reactionType,
+                              isActive: post.userReaction === reactionType,
                             };
                           },
                         )
@@ -317,7 +319,9 @@ export const PostItem = ({
                 >
                   <LuMessageCircle className="size-4" />
                   <span className="text-xs font-normal">
-                    {commentCount === 1 ? '1 comment' : `${commentCount || 0} comments`}
+                    {commentCount === 1
+                      ? '1 comment'
+                      : `${commentCount || 0} comments`}
                   </span>
                 </Button>
               )}

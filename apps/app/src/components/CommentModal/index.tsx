@@ -4,16 +4,16 @@ import { getPublicUrl } from '@/utils';
 import { OrganizationUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { Button } from '@op/ui/Button';
-import { Header3 } from '@op/ui/Header';
-import { Modal, ModalHeader, ModalBody } from '@op/ui/Modal';
 import { DialogTrigger } from '@op/ui/Dialog';
 import { TextArea } from '@op/ui/Field';
+import { Header3 } from '@op/ui/Header';
+import { Modal, ModalBody, ModalHeader } from '@op/ui/Modal';
 import { toast } from '@op/ui/Toast';
 import { RefObject, useEffect, useRef, useState } from 'react';
-import { LuX, LuMessageCircle, LuSend } from 'react-icons/lu';
+import { LuMessageCircle, LuSend, LuX } from 'react-icons/lu';
 
-import { formatRelativeTime } from '../PostFeed';
 import { PostItem } from '../PostItem';
+import { formatRelativeTime } from '../utils';
 
 interface Comment {
   id: string;
@@ -23,11 +23,14 @@ interface Comment {
     id: string;
     name: string;
     slug: string;
-    avatarImage: {
-      id: string;
-      name: string;
-      metadata: any;
-    } | null | undefined;
+    avatarImage:
+      | {
+          id: string;
+          name: string;
+          metadata: any;
+        }
+      | null
+      | undefined;
   } | null;
   parentCommentId: string | null;
 }
@@ -42,12 +45,12 @@ interface CommentModalProps {
   user?: OrganizationUser;
 }
 
-const CommentInput = ({ 
-  postId, 
-  user, 
-  onCommentCreated 
-}: { 
-  postId: string; 
+const CommentInput = ({
+  postId,
+  user,
+  onCommentCreated,
+}: {
+  postId: string;
   user?: OrganizationUser;
   onCommentCreated: () => void;
 }) => {
@@ -59,7 +62,10 @@ const CommentInput = ({
     onSuccess: () => {
       setContent('');
       onCommentCreated();
-      utils.comments.getComments.invalidate({ commentableType: 'post', commentableId: postId });
+      utils.comments.getComments.invalidate({
+        commentableType: 'post',
+        commentableId: postId,
+      });
       toast.success({ message: 'Comment posted!' });
     },
     onError: (error) => {
@@ -76,7 +82,7 @@ const CommentInput = ({
 
   const handleSubmit = () => {
     if (!content.trim()) return;
-    
+
     createComment.mutate({
       content: content.trim(),
       commentableType: 'post',
@@ -91,7 +97,7 @@ const CommentInput = ({
         textarea.style.height = '1.5rem';
         textarea.style.height = `${textarea.scrollHeight}px`;
       };
-      
+
       textarea.addEventListener('input', adjustHeight);
       return () => textarea.removeEventListener('input', adjustHeight);
     }
@@ -103,7 +109,11 @@ const CommentInput = ({
         <div className="size-8 min-w-8 overflow-hidden rounded-full bg-primary-teal">
           {user.currentOrganization.profile.avatarImage ? (
             <img
-              src={getPublicUrl(user.currentOrganization.profile.avatarImage.name) || ''}
+              src={
+                getPublicUrl(
+                  user.currentOrganization.profile.avatarImage.name,
+                ) || ''
+              }
               alt={user.currentOrganization.profile.name}
               className="size-full object-cover"
             />
@@ -117,7 +127,7 @@ const CommentInput = ({
       <div className="flex w-full items-start gap-2">
         <div className="flex-1">
           <TextArea
-            className="w-full min-h-[2rem] resize-none border border-neutral-gray1 rounded-lg px-3 py-2 text-sm placeholder-neutral-gray4 focus:outline-none focus:ring-2 focus:ring-primary-teal focus:border-primary-teal"
+            className="min-h-[2rem] w-full resize-none rounded-lg border border-neutral-gray1 px-3 py-2 text-sm placeholder-neutral-gray4 focus:border-primary-teal focus:outline-none focus:ring-2 focus:ring-primary-teal"
             variant="borderless"
             ref={textareaRef as RefObject<HTMLTextAreaElement>}
             placeholder="Write a comment…"
@@ -157,7 +167,7 @@ const CommentItem = ({ comment }: { comment: Comment }) => {
           </div>
         )}
       </div>
-      <div className="flex flex-col gap-1 min-w-0 flex-1">
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-neutral-black">
             {comment.profile?.name}
@@ -166,7 +176,7 @@ const CommentItem = ({ comment }: { comment: Comment }) => {
             {comment.createdAt ? formatRelativeTime(comment.createdAt) : ''}
           </span>
         </div>
-        <p className="text-sm text-neutral-charcoal leading-normal break-words">
+        <p className="break-words text-sm leading-normal text-neutral-charcoal">
           {comment.content}
         </p>
       </div>
@@ -174,11 +184,11 @@ const CommentItem = ({ comment }: { comment: Comment }) => {
   );
 };
 
-export const CommentModal = ({ 
-  isOpen, 
-  onClose, 
-  postData, 
-  user 
+export const CommentModal = ({
+  isOpen,
+  onClose,
+  postData,
+  user,
 }: CommentModalProps) => {
   const { data: comments, refetch } = trpc.comments.getComments.useQuery(
     {
@@ -186,7 +196,7 @@ export const CommentModal = ({
       commentableId: postData.post.id,
       limit: 50,
     },
-    { enabled: isOpen }
+    { enabled: isOpen },
   );
 
   const handleCommentCreated = () => {
@@ -198,7 +208,7 @@ export const CommentModal = ({
   return (
     <DialogTrigger isOpen={isOpen}>
       <Button style={{ display: 'none' }}>Hidden Trigger</Button>
-      <Modal 
+      <Modal
         onOpenChange={(open) => {
           if (!open) {
             onClose();
@@ -206,10 +216,10 @@ export const CommentModal = ({
         }}
         className="w-full max-w-lg"
       >
-        <ModalHeader className="flex items-center justify-between p-4 border-b border-neutral-gray1">
+        <ModalHeader className="flex items-center justify-between border-b border-neutral-gray1 p-4">
           <Header3 className="font-medium text-neutral-black">Comments</Header3>
           <Button
-            variant="icon" 
+            variant="icon"
             size="small"
             onPress={onClose}
             className="size-8 rounded-full p-2 hover:bg-neutral-gray1"
@@ -218,7 +228,7 @@ export const CommentModal = ({
           </Button>
         </ModalHeader>
 
-        <ModalBody className="flex flex-col max-h-[70vh] p-0">
+        <ModalBody className="flex max-h-[70vh] flex-col p-0">
           {/* Full Post Display */}
           <div className="border-b border-neutral-gray1 p-4">
             <PostItem
@@ -229,7 +239,7 @@ export const CommentModal = ({
               withActions={false}
             />
           </div>
-          
+
           {/* Comments List */}
           <div className="flex-1 overflow-y-auto p-4">
             {comments && comments.length > 0 ? (
@@ -240,18 +250,20 @@ export const CommentModal = ({
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center py-12 text-neutral-gray4">
-                <LuMessageCircle className="size-12 mb-4" />
-                <p className="text-sm">No comments yet. Be the first to comment!</p>
+                <LuMessageCircle className="mb-4 size-12" />
+                <p className="text-sm">
+                  No comments yet. Be the first to comment!
+                </p>
               </div>
             )}
           </div>
 
           {/* Comment Input */}
           <div className="border-t border-neutral-gray1 p-4">
-            <CommentInput 
-              postId={postData.post.id} 
-              user={user} 
-              onCommentCreated={handleCommentCreated} 
+            <CommentInput
+              postId={postData.post.id}
+              user={user}
+              onCommentCreated={handleCommentCreated}
             />
           </div>
         </ModalBody>
