@@ -93,8 +93,8 @@ export const listPosts = async ({
     });
 
     // Filter out any items where post is null (due to parentPostId filtering)
-    const filteredResult = result.filter(item => item.post !== null);
-    
+    const filteredResult = result.filter((item) => item.post !== null);
+
     const hasMore = filteredResult.length > limit;
     const items = hasMore ? filteredResult.slice(0, limit) : filteredResult;
     const lastItem = items[items.length - 1];

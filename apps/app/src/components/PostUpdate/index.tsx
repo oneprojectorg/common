@@ -48,9 +48,15 @@ const TextCounter = ({ text, max }: { text: string; max: number }) => {
 const PostUpdateWithUser = ({
   organization,
   className,
+  parentPostId,
+  placeholder,
+  onSuccess,
 }: {
   organization: Organization;
   className?: string;
+  parentPostId?: string; // If provided, this becomes a comment
+  placeholder?: string;
+  onSuccess?: () => void;
 }) => {
   const [content, setContent] = useState('');
   const [detectedUrls, setDetectedUrls] = useState<string[]>([]);
@@ -75,7 +81,7 @@ const PostUpdateWithUser = ({
     maxFiles: 1,
   });
 
-  const createPost = trpc.organization.createPost.useMutation({
+  const createPost = trpc.posts.createPost.useMutation({
     onError: (err) => {
       const errorInfo = analyzeError(err);
 
@@ -101,6 +107,11 @@ const PostUpdateWithUser = ({
       setDetectedUrls([]);
       fileUpload.clearFiles();
       setLastFailedPost(null);
+      
+      // Call onSuccess callback if provided (for comments)
+      if (onSuccess) {
+        onSuccess();
+      }
     },
     onSettled: () => {
       void utils.organization.listPosts.invalidate();
@@ -112,9 +123,10 @@ const PostUpdateWithUser = ({
   const retryFailedPost = () => {
     if (lastFailedPost) {
       createPost.mutate({
-        id: organization.id,
         content: lastFailedPost.content,
-        attachmentIds: lastFailedPost.attachmentIds,
+        organizationId: organization.id,
+        parentPostId,
+        // TODO: Handle attachmentIds in the new API
       });
     }
   };
@@ -137,9 +149,10 @@ const PostUpdateWithUser = ({
       }
 
       createPost.mutate({
-        id: organization.id,
         content: content.trim() || '',
-        attachmentIds: fileUpload.getUploadedAttachmentIds(),
+        organizationId: organization.id,
+        parentPostId,
+        // TODO: Handle attachmentIds in the new API
       });
     }
   };
@@ -183,7 +196,7 @@ const PostUpdateWithUser = ({
               className="size-full h-6 overflow-y-hidden"
               variant="borderless"
               ref={textareaRef as RefObject<HTMLTextAreaElement>}
-              placeholder={`Post an update…`}
+              placeholder={placeholder || `Post an update…`}
               value={content}
               onChange={(e) => handleContentChange(e.target.value ?? '')}
               onKeyDown={handleKeyDown}
@@ -310,9 +323,15 @@ const PostUpdateWithUser = ({
 export const PostUpdate = ({
   organization,
   className,
+  parentPostId,
+  placeholder,
+  onSuccess,
 }: {
   organization?: Organization;
   className?: string;
+  parentPostId?: string;
+  placeholder?: string;
+  onSuccess?: () => void;
 }) => {
   const { user } = useUser();
   const currentOrg = user?.currentOrganization;
@@ -328,6 +347,9 @@ export const PostUpdate = ({
     <PostUpdateWithUser
       organization={organization ?? currentOrg}
       className={className}
+      parentPostId={parentPostId}
+      placeholder={placeholder}
+      onSuccess={onSuccess}
     />
   );
 };

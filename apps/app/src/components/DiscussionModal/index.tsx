@@ -1,9 +1,11 @@
 'use client';
 
+import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import type { Post } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
-import { Modal, ModalHeader } from '@op/ui/Modal';
+import { Modal, ModalFooter, ModalHeader } from '@op/ui/Modal';
+import { Surface } from '@op/ui/Surface';
 import { useEffect } from 'react';
 import { LuX } from 'react-icons/lu';
 
@@ -16,8 +18,13 @@ interface DiscussionModalProps {
   onClose: () => void;
 }
 
-export function DiscussionModal({ post, isOpen, onClose }: DiscussionModalProps) {
+export function DiscussionModal({
+  post,
+  isOpen,
+  onClose,
+}: DiscussionModalProps) {
   const utils = trpc.useUtils();
+  const { user } = useUser();
 
   const { data: commentsData, isLoading } = trpc.posts.getPosts.useQuery(
     {
@@ -92,7 +99,7 @@ export function DiscussionModal({ post, isOpen, onClose }: DiscussionModalProps)
         </div>
       </ModalHeader>
 
-      <div className="flex flex-col gap-4 p-6">
+      <div className="flex flex-col gap-4 py-6">
         {/* Original Post Display */}
         <div className="border-b pb-4">
           <PostFeed
@@ -132,14 +139,15 @@ export function DiscussionModal({ post, isOpen, onClose }: DiscussionModalProps)
         </div>
 
         {/* Comment Input using PostUpdate */}
-        <div className="border-t pt-4">
-          <PostUpdate
-            parentPostId={post.id}
-            placeholder="Write a comment..."
-            onSuccess={handleCommentSuccess}
-            className="border-none shadow-none"
-          />
-        </div>
+        <ModalFooter className="hidden sm:flex">
+          <Surface className="w-full border-0 p-0 pt-5 sm:border sm:p-4">
+            <PostUpdate
+              parentPostId={post.id}
+              placeholder={`Comment${user?.currentProfile?.name ? ` as ${user?.currentProfile?.name}` : ''}...`}
+              onSuccess={handleCommentSuccess}
+            />
+          </Surface>
+        </ModalFooter>
       </div>
     </Modal>
   );
