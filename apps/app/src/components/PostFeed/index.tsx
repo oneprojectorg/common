@@ -12,9 +12,9 @@ import type {
 } from '@op/api/encoders';
 import { REACTION_OPTIONS } from '@op/types';
 import { AvatarSkeleton } from '@op/ui/Avatar';
-import { IconButton } from '@op/ui/IconButton';
 import { CommentButton } from '@op/ui/CommentButton';
 import { Header3 } from '@op/ui/Header';
+import { IconButton } from '@op/ui/IconButton';
 import { MediaDisplay } from '@op/ui/MediaDisplay';
 import { MenuTrigger } from '@op/ui/Menu';
 import { Popover } from '@op/ui/Popover';
@@ -23,6 +23,7 @@ import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
 import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';
+import { useFeatureFlagEnabled } from 'posthog-js/react';
 import { Fragment, ReactNode, useState } from 'react';
 import { LuEllipsis, LuLeaf } from 'react-icons/lu';
 
@@ -285,13 +286,11 @@ const PostCommentButton = ({
   isComment: boolean;
   onCommentClick: () => void;
 }) => {
-  if (!post?.id || isComment) return null;
+  const commentsEnabled = useFeatureFlagEnabled('comments');
+  if (!commentsEnabled || !post?.id || isComment) return null;
 
   return (
-    <CommentButton
-      count={post.commentCount || 0}
-      onPress={onCommentClick}
-    />
+    <CommentButton count={post.commentCount || 0} onPress={onCommentClick} />
   );
 };
 
