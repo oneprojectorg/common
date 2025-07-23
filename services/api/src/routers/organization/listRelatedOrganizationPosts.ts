@@ -94,6 +94,7 @@ export const listRelatedOrganizationPostsRouter = router({
           where: cursorCondition,
           with: {
             post: {
+              where: (table, { isNull }) => isNull(table.parentPostId), // Only show top-level posts
               with: {
                 attachments: {
                   with: {
@@ -119,8 +120,11 @@ export const listRelatedOrganizationPostsRouter = router({
         getCurrentProfileId(),
       ]);
 
-      const hasMore = result.length > limit;
-      const items = hasMore ? result.slice(0, limit) : result;
+      // Filter out any items where post is null (due to parentPostId filtering)
+      const filteredResult = result.filter(item => item.post !== null);
+      
+      const hasMore = filteredResult.length > limit;
+      const items = hasMore ? filteredResult.slice(0, limit) : filteredResult;
       const lastItem = items[items.length - 1];
       const nextCursor =
         hasMore && lastItem && lastItem.createdAt
@@ -164,6 +168,7 @@ export const listRelatedOrganizationPostsRouter = router({
         where: () => inArray(postsToOrganizations.organizationId, orgIds),
         with: {
           post: {
+            where: (table, { isNull }) => isNull(table.parentPostId), // Only show top-level posts
             with: {
               attachments: {
                 with: {
@@ -185,7 +190,10 @@ export const listRelatedOrganizationPostsRouter = router({
         orderBy: (table, { desc }) => desc(table.createdAt),
       });
 
-      return result.map((postToOrg) => ({
+      // Filter out any items where post is null (due to parentPostId filtering)
+      const filteredResult = result.filter(item => item.post !== null);
+      
+      return filteredResult.map((postToOrg) => ({
         ...postToOrg,
         organization: organizationsWithProfileEncoder.parse(
           postToOrg.organization,

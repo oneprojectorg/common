@@ -57,12 +57,16 @@ export const createPost = async (input: CreatePostInput) => {
           parentOrganizations.map((org) => ({
             postId: newPost.id,
             organizationId: org.organizationId,
-          }))
+          })),
         );
       }
     }
 
-    return newPost;
+    return {
+      ...newPost,
+      reactionCounts: {},
+      userReactions: [],
+    };
   } catch (error) {
     console.error('Error creating post:', error);
     throw error;

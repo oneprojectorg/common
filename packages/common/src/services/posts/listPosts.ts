@@ -68,6 +68,7 @@ export const listPosts = async ({
         : (table, { eq }) => eq(table.organizationId, org.id),
       with: {
         post: {
+          where: (table, { isNull }) => isNull(table.parentPostId), // Only show top-level posts
           with: {
             attachments: {
               with: {
@@ -91,8 +92,11 @@ export const listPosts = async ({
       limit: limit + 1, // Fetch one extra to check hasMore
     });
 
-    const hasMore = result.length > limit;
-    const items = hasMore ? result.slice(0, limit) : result;
+    // Filter out any items where post is null (due to parentPostId filtering)
+    const filteredResult = result.filter(item => item.post !== null);
+    
+    const hasMore = filteredResult.length > limit;
+    const items = hasMore ? filteredResult.slice(0, limit) : filteredResult;
     const lastItem = items[items.length - 1];
     const nextCursor =
       hasMore && lastItem && lastItem.createdAt
