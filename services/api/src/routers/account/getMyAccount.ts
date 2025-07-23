@@ -42,9 +42,7 @@ const ensureProfileAndIndividual = async (
     await db
       .update(users)
       .set({ profileId: newProfile.id })
-      // TODO: quick hack to get a patch out. resolve this
-      // @ts-ignore
-      .where(() => eq(users.authUserId, user.authUserId));
+      .where(eq(users.authUserId, user.authUserId));
 
     profileId = newProfile.id;
 
