@@ -12,6 +12,8 @@ const dropdownButtonStyle = tv({
   base: 'flex h-10 w-fit items-center justify-center gap-1 rounded-lg border border-solid p-4 text-center text-sm font-normal leading-6 shadow-md outline-none duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lightGray',
   variants: {
     color: {
+      primary:
+        'bg-primary-teal text-neutral-offWhite hover:bg-primary-tealBlack pressed:bg-primary-tealBlack pressed:text-neutral-gray2',
       secondary:
         'border-primary-teal bg-white text-primary-teal hover:bg-neutral-50 pressed:bg-white',
     },

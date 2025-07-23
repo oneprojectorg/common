@@ -7,15 +7,11 @@ import { DropDownButton } from '@op/ui/DropDownButton';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { toast } from '@op/ui/Toast';
 import { Suspense } from 'react';
-import { LuCheck, LuChevronDown, LuX } from 'react-icons/lu';
+import { LuCheck, LuChevronDown, LuUserPlus, LuX } from 'react-icons/lu';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
 
-const RespondButtonSuspense = ({
-  profile,
-}: {
-  profile: Organization;
-}) => {
+const RespondButtonSuspense = ({ profile }: { profile: Organization }) => {
   const { user } = useUser();
   const utils = trpc.useUtils();
 
@@ -28,9 +24,9 @@ const RespondButtonSuspense = ({
     trpc.organization.listPendingRelationships.useSuspenseQuery();
 
   // Filter to only show requests from the profile we're viewing
-  const pendingFromProfile = pendingOrgs.find(org => org.id === profile.id);
-  
-  if (!pendingFromProfile?.relationships?.some(r => r.pending)) {
+  const pendingFromProfile = pendingOrgs.find((org) => org.id === profile.id);
+
+  if (!pendingFromProfile?.relationships?.some((r) => r.pending)) {
     return null;
   }
 
@@ -70,7 +66,7 @@ const RespondButtonSuspense = ({
 
   const handleApprove = () => {
     if (!user?.currentOrganization?.id) return;
-    
+
     approve.mutate({
       sourceOrganizationId: profile.id,
       targetOrganizationId: user.currentOrganization.id,
@@ -78,13 +74,14 @@ const RespondButtonSuspense = ({
   };
 
   const handleDecline = () => {
-    if (!user?.currentOrganization?.id || !pendingFromProfile?.relationships) return;
-    
+    if (!user?.currentOrganization?.id || !pendingFromProfile?.relationships)
+      return;
+
     decline.mutate({
       targetOrganizationId: user.currentOrganization.id,
       ids: pendingFromProfile.relationships
-        .filter(r => r.pending)
-        .map(r => r.id),
+        .filter((r) => r.pending)
+        .map((r) => r.id),
     });
   };
 
@@ -92,11 +89,11 @@ const RespondButtonSuspense = ({
     {
       id: 'accept',
       label: 'Accept',
-      icon: <LuCheck className="size-4 stroke-1 text-functional-green" />,
+      icon: <LuCheck className="size-4 stroke-1" />,
       onAction: handleApprove,
     },
     {
-      id: 'decline', 
+      id: 'decline',
       label: 'Decline',
       icon: <LuX className="size-4 stroke-1 text-functional-red" />,
       onAction: handleDecline,
@@ -107,26 +104,25 @@ const RespondButtonSuspense = ({
 
   return (
     <DropDownButton
+      color="primary"
       label={
         isPending ? (
           <LoadingSpinner />
         ) : (
-          'Respond'
+          <>
+            <LuUserPlus className="size-4" />
+            Respond
+          </>
         )
       }
       items={dropdownItems}
-      chevronIcon={<LuChevronDown className="size-4 stroke-1" />}
-      className="bg-primary-teal text-neutral-offWhite min-w-full sm:min-w-fit"
+      className="min-w-full bg-primary-teal text-neutral-offWhite sm:min-w-fit"
       isDisabled={isPending}
     />
   );
 };
 
-export const RespondButton = ({
-  profile,
-}: {
-  profile: Organization;
-}) => {
+export const RespondButton = ({ profile }: { profile: Organization }) => {
   return (
     <ErrorBoundary fallback={null}>
       <Suspense fallback={null}>
