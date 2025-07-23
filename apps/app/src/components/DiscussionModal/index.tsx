@@ -10,13 +10,13 @@ import { LuX } from 'react-icons/lu';
 import { PostFeed } from '../PostFeed';
 import { PostUpdate } from '../PostUpdate';
 
-interface CommentModalProps {
+interface DiscussionModalProps {
   post: Post;
   isOpen: boolean;
   onClose: () => void;
 }
 
-export function CommentModal({ post, isOpen, onClose }: CommentModalProps) {
+export function DiscussionModal({ post, isOpen, onClose }: DiscussionModalProps) {
   const utils = trpc.useUtils();
 
   const { data: commentsData, isLoading } = trpc.posts.getPosts.useQuery(
@@ -74,7 +74,7 @@ export function CommentModal({ post, isOpen, onClose }: CommentModalProps) {
       <ModalHeader className="flex items-center justify-between">
         {/* Desktop header */}
         <div className="hidden sm:flex sm:w-full sm:items-center sm:justify-between">
-          Comments
+          Discussion
           <LuX className="size-6 cursor-pointer stroke-1" onClick={onClose} />
         </div>
 
@@ -87,7 +87,7 @@ export function CommentModal({ post, isOpen, onClose }: CommentModalProps) {
           >
             Close
           </Button>
-          <h2 className="text-title-sm">Comments</h2>
+          <h2 className="text-title-sm">Discussion</h2>
           <div className="w-12" /> {/* Spacer for center alignment */}
         </div>
       </ModalHeader>
@@ -116,7 +116,7 @@ export function CommentModal({ post, isOpen, onClose }: CommentModalProps) {
         <div className="max-h-96 flex-1 overflow-y-auto">
           {isLoading ? (
             <div className="py-8 text-center text-gray-500">
-              Loading comments...
+              Loading discussion...
             </div>
           ) : comments.length > 0 ? (
             <PostFeed
