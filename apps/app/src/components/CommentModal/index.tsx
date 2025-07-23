@@ -13,6 +13,7 @@ import { RefObject, useEffect, useRef, useState } from 'react';
 import { LuX, LuMessageCircle, LuSend } from 'react-icons/lu';
 
 import { formatRelativeTime } from '../PostFeed';
+import { PostItem } from '../PostItem';
 
 interface Comment {
   id: string;
@@ -34,10 +35,9 @@ interface Comment {
 interface CommentModalProps {
   isOpen: boolean;
   onClose: () => void;
-  post: {
-    id: string;
-    content: string;
-    createdAt: Date;
+  postData: {
+    organization: any;
+    post: any;
   };
   user?: OrganizationUser;
 }
@@ -177,13 +177,13 @@ const CommentItem = ({ comment }: { comment: Comment }) => {
 export const CommentModal = ({ 
   isOpen, 
   onClose, 
-  post, 
+  postData, 
   user 
 }: CommentModalProps) => {
   const { data: comments, refetch } = trpc.comments.getComments.useQuery(
     {
       commentableType: 'post',
-      commentableId: post.id,
+      commentableId: postData.post.id,
       limit: 50,
     },
     { enabled: isOpen }
@@ -219,6 +219,17 @@ export const CommentModal = ({
         </ModalHeader>
 
         <ModalBody className="flex flex-col max-h-[70vh] p-0">
+          {/* Full Post Display */}
+          <div className="border-b border-neutral-gray1 p-4">
+            <PostItem
+              organization={postData.organization}
+              post={postData.post}
+              user={user}
+              withLinks={false}
+              withActions={false}
+            />
+          </div>
+          
           {/* Comments List */}
           <div className="flex-1 overflow-y-auto p-4">
             {comments && comments.length > 0 ? (
@@ -238,7 +249,7 @@ export const CommentModal = ({
           {/* Comment Input */}
           <div className="border-t border-neutral-gray1 p-4">
             <CommentInput 
-              postId={post.id} 
+              postId={postData.post.id} 
               user={user} 
               onCommentCreated={handleCommentCreated} 
             />
