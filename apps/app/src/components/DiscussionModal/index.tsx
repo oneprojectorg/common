@@ -38,6 +38,7 @@ export function DiscussionModal({
     { enabled: isOpen },
   );
 
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && isOpen) {
@@ -60,6 +61,7 @@ export function DiscussionModal({
       parentPostId: post.id ?? null, // Invalidate comments for this post
     });
   };
+
 
   // Get the post author's name for the header
   const authorName = post?.profile?.name || 'Unknown';
@@ -119,8 +121,10 @@ export function DiscussionModal({
                 organization: post.organization || organization || null,
               },
             ]}
+            user={user}
             withLinks={false}
             className="border-none"
+            slug={organization?.profile?.slug || post.organization?.profile?.slug}
           />
           {/* Comments Display */}
           {isLoading ? (
@@ -130,8 +134,10 @@ export function DiscussionModal({
           ) : comments.length > 0 ? (
             <PostFeed
               posts={comments}
+              user={user}
               withLinks={false}
               className="border-none"
+              slug={organization?.profile?.slug || post.organization?.profile?.slug}
             />
           ) : (
             <div className="py-8 text-center text-gray-500">

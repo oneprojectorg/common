@@ -396,6 +396,7 @@ const PostsList = ({
         <Fragment key={i}>
           <FeedItem className="sm:px-4">
             <OrganizationAvatar
+              // @ts-ignore
               organization={avatarData}
               withLink={withLinks && !isComment}
               className="!size-8 max-h-8 max-w-8"
@@ -624,7 +625,7 @@ export const PostFeed = ({
     toggleReaction.mutate({ postId, reactionType });
   };
 
-  const handleCommentClick = (post: Post, org?: Organization) => {
+  const handleCommentClick = (post: Post, org?: Organization | null) => {
     setDiscussionModal({ isOpen: true, post, org });
   };
 
