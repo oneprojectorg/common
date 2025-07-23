@@ -12,6 +12,12 @@ export {
   organizationsTerms,
   organizationsTermsRelations,
 } from './tables/organizations.sql';
+export {
+  individuals,
+  individualsTerms,
+  individualsRelations,
+  individualsTermsRelations,
+} from './tables/individuals.sql';
 export type { Organization } from './tables/organizations.sql';
 export {
   organizationUsers,
@@ -27,7 +33,18 @@ export {
   postsToOrganizationsRelations,
 } from './tables/posts.sql';
 
-export { postReactions, postReactionsRelations } from './tables/postReactions.sql';
+export {
+  postReactions,
+  postReactionsRelations,
+} from './tables/postReactions.sql';
+
+export { 
+  comments, 
+  commentsRelations,
+  commentsToPost,
+  commentsToPostRelations
+} from './tables/comments.sql';
+export type { Comment, CommentToPost } from './tables/comments.sql';
 
 export { attachments, attachmentsRelations } from './tables/attachments.sql';
 

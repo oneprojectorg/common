@@ -11,26 +11,27 @@ import { Tag, TagGroup } from '@op/ui/TagGroup';
 import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
 import Link from 'next/link';
-import { Suspense } from 'react';
+import { ReactNode, Suspense } from 'react';
 import { LuCopy, LuGlobe, LuMail } from 'react-icons/lu';
 
 import { ContactLink } from '@/components/ContactLink';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { PostFeedSkeleton } from '@/components/PostFeed';
 import { PostUpdate } from '@/components/PostUpdate';
-import { ProfileRelationshipsComponent } from '@/components/screens/ProfileRelationships';
 
 import { ProfileFeed } from '../ProfileFeed';
 
-const FocusAreas = ({ profileId }: { profileId: string }) => {
-  const [terms] = trpc.organization.getTerms.useSuspenseQuery({
-    id: profileId,
-  });
-
-  const focusAreas = terms['necSimple:focusArea'];
-
-  if (!focusAreas?.length) return null;
-
+const FocusAreas = ({
+  focusAreas,
+}: {
+  focusAreas: Array<{
+    id: string;
+    label: string;
+    termUri: string;
+    taxonomyUri: string;
+    facet?: string | null;
+  }>;
+}) => {
   return (
     <section className="flex flex-col gap-2 text-neutral-charcoal">
       <Header3>Focus Areas</Header3>
@@ -41,6 +42,30 @@ const FocusAreas = ({ profileId }: { profileId: string }) => {
       </TagGroup>
     </section>
   );
+};
+
+const IndividualFocusAreas = ({ profileId }: { profileId: string }) => {
+  const [terms] = trpc.individual.getTermsByProfile.useSuspenseQuery({
+    profileId,
+  });
+
+  const focusAreas = terms['necSimple:focusArea'];
+
+  if (!focusAreas?.length) return null;
+
+  return <FocusAreas focusAreas={focusAreas} />;
+};
+
+const OrganizationFocusAreas = ({ profileId }: { profileId: string }) => {
+  const [terms] = trpc.organization.getTerms.useSuspenseQuery({
+    id: profileId,
+  });
+
+  const focusAreas = terms['necSimple:focusArea'];
+
+  if (!focusAreas?.length) return null;
+
+  return <FocusAreas focusAreas={focusAreas} />;
 };
 
 const CommunitiesServed = ({ profileId }: { profileId: string }) => {
@@ -124,12 +149,14 @@ const ProfileAbout = ({
         </section>
       ) : null}
 
-      <section className="flex flex-col gap-2 text-neutral-charcoal">
-        <Header3>Organizational Status</Header3>
-        <TagGroup>
-          <Tag className="capitalize">{orgType}</Tag>
-        </TagGroup>
-      </section>
+      {orgType ? (
+        <section className="flex flex-col gap-2 text-neutral-charcoal">
+          <Header3>Organizational Status</Header3>
+          <TagGroup>
+            <Tag className="capitalize">{orgType}</Tag>
+          </TagGroup>
+        </section>
+      ) : null}
 
       {mission ? (
         <section className="flex flex-col gap-2 text-neutral-charcoal">
@@ -167,7 +194,11 @@ const ProfileAbout = ({
             </section>
           }
         >
-          <FocusAreas profileId={profile.id} />
+          {orgType ? (
+            <OrganizationFocusAreas profileId={profile.id} />
+          ) : (
+            <IndividualFocusAreas profileId={profile.id} />
+          )}
         </Suspense>
       </ErrorBoundary>
 
@@ -191,9 +222,29 @@ const ProfileAbout = ({
   );
 };
 
-const ProfileGrid = ({ profile }: { profile: Organization }) => {
+export const ProfileGridWrapper = ({ children }: { children: ReactNode }) => {
   return (
-    <div className="hidden flex-grow grid-cols-15 sm:grid">
+    <div className="hidden flex-grow grid-cols-15 sm:grid">{children}</div>
+  );
+};
+
+export const ProfileGrid = ({ profile }: { profile: Organization }) => {
+  return (
+    <ProfileGridWrapper>
+      <div className="col-span-6 p-6">
+        <ProfileAbout profile={profile} />
+      </div>
+    </ProfileGridWrapper>
+  );
+};
+
+export const OrganizationProfileGrid = ({
+  profile,
+}: {
+  profile: Organization;
+}) => {
+  return (
+    <ProfileGridWrapper>
       <div className="col-span-9 flex flex-col gap-8">
         <Suspense fallback={null}>
           <PostUpdate
@@ -208,28 +259,16 @@ const ProfileGrid = ({ profile }: { profile: Organization }) => {
       <div className="col-span-6 border-l px-4 py-6">
         <ProfileAbout profile={profile} />
       </div>
-    </div>
+    </ProfileGridWrapper>
   );
 };
 
-export const ProfileTabs = ({ profile }: { profile: Organization }) => {
-  return (
-    <Tabs className="hidden gap-0 px-0 pb-8 sm:flex">
-      <TabList className="px-4 sm:px-6">
-        <Tab id="home">Home</Tab>
-        <Tab id="relationships">Relationships</Tab>
-      </TabList>
-      <TabPanel id="home" className="sm:p-0">
-        <ProfileGrid profile={profile} />
-      </TabPanel>
-      <TabPanel id="relationships" className="px-4 sm:px-6 sm:py-0">
-        <ProfileRelationshipsComponent
-          slug={profile.profile.slug}
-          showBreadcrumb={false}
-        />
-      </TabPanel>
-    </Tabs>
-  );
+export const ProfileTabList = ({ children }: { children: React.ReactNode }) => (
+  <TabList className="px-4 sm:px-6">{children}</TabList>
+);
+
+export const ProfileTabs = ({ children }: { children: React.ReactNode }) => {
+  return <Tabs className="hidden gap-0 px-0 pb-8 sm:flex">{children}</Tabs>;
 };
 
 export const ProfileTabsMobile = ({ profile }: { profile: Organization }) => {

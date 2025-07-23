@@ -13,7 +13,7 @@ export const Feed = () => {
   } = trpc.organization.listAllPosts.useQuery({});
 
   if (isLoading) {
-    return <PostFeedSkeleton />;
+    return <PostFeedSkeleton numPosts={4} />;
   }
 
   if (error) {
@@ -28,7 +28,7 @@ export const Feed = () => {
   }
 
   if (!postsData || !user) {
-    return <PostFeedSkeleton />;
+    return <PostFeedSkeleton numPosts={4} />;
   }
 
   return <PostFeed user={user} posts={postsData.items} />;

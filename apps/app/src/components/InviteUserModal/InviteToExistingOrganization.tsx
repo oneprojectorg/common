@@ -114,7 +114,7 @@ export const InviteToExistingOrganization = ({
         >
           {user?.currentOrganization && (
             <SelectItem id={user.currentOrganization.id}>
-              {user.currentOrganization.profile?.name}
+              {user.currentProfile?.name}
             </SelectItem>
           )}
         </Select>

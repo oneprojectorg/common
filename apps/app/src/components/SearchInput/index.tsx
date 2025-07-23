@@ -1,20 +1,25 @@
 import { useLocalStorage } from '@/utils/useLocalStorage';
 import { trpc } from '@op/api/client';
+import { EntityType } from '@op/api/encoders';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { TextField } from '@op/ui/TextField';
 import { cn } from '@op/ui/utils';
+import { useFeatureFlagEnabled } from 'posthog-js/react';
 import { useEffect, useRef, useState } from 'react';
 import { LuSearch } from 'react-icons/lu';
 import { useDebounce } from 'use-debounce';
 
 import { Link, useRouter } from '@/lib/i18n';
 
-import { OrganizationResults } from './OrganizationResults';
+import { ProfileResults } from './ProfileResults';
 import { RecentSearches } from './RecentSearches';
 import { SearchResultItem } from './SearchResultItem';
 
 export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
   const router = useRouter();
+  const individualProfilesEnabled = useFeatureFlagEnabled(
+    'individual_profiles',
+  );
 
   const [query, setQuery] = useState<string>('');
   const [debouncedQuery, setImmediateQuery] = useDebounce(query, 200);
@@ -34,10 +39,13 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  const { data: organizationResults, isFetching: isSearching } =
-    trpc.organization.search.useQuery(
+  const { data: profileResults, isFetching: isSearching } =
+    trpc.profile.search.useQuery(
       {
         q: debouncedQuery,
+        types: individualProfilesEnabled
+          ? [EntityType.USER, EntityType.ORG]
+          : [EntityType.ORG],
       },
       {
         staleTime: 30_000,
@@ -52,7 +60,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
 
   const dropdownShowing = !!(
     showResults &&
-    (organizationResults?.length || recentSearches.length)
+    (profileResults?.length || recentSearches.length)
   );
 
   useEffect(() => {
@@ -80,7 +88,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
 
   useEffect(() => {
     setSelectedIndex(-1);
-  }, [organizationResults]);
+  }, [profileResults]);
 
   const recordSearch = (query: string) => {
     setShowResults(false);
@@ -94,8 +102,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
   };
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
-    const isInteractingwWithDropdown =
-      !showResults || !organizationResults?.length;
+    const isInteractingwWithDropdown = !showResults || !profileResults?.length;
 
     switch (event.key) {
       case 'ArrowDown':
@@ -106,7 +113,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
         }
 
         setSelectedIndex((prev) =>
-          prev < organizationResults.length ? prev + 1 : 0,
+          prev < profileResults.length ? prev + 1 : 0,
         );
         break;
       case 'ArrowUp':
@@ -117,7 +124,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
         }
 
         setSelectedIndex((prev) =>
-          prev > 0 ? prev - 1 : organizationResults.length - 1,
+          prev > 0 ? prev - 1 : profileResults.length - 1,
         );
         break;
       case 'Enter':
@@ -125,15 +132,15 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
 
         recordSearch(query);
 
-        if (
-          isInteractingwWithDropdown &&
-          organizationResults &&
-          selectedIndex > 0
-        ) {
-          const selectedOrg = organizationResults[selectedIndex - 1];
+        if (isInteractingwWithDropdown && profileResults && selectedIndex > 0) {
+          const selectedProfile = profileResults[selectedIndex - 1];
 
-          if (selectedOrg) {
-            router.push(`/org/${selectedOrg.profile.slug}`);
+          if (selectedProfile) {
+            const profilePath =
+              selectedProfile.type === EntityType.INDIVIDUAL
+                ? `/profile/${selectedProfile.slug}`
+                : `/org/${selectedProfile.slug}`;
+            router.push(profilePath);
             break;
           }
         }
@@ -199,10 +206,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
               {query.length > 0 && (
                 <SearchResultItem
                   selected={selectedIndex === 0}
-                  className={cn(
-                    'py-2',
-                    organizationResults?.length && 'border-b',
-                  )}
+                  className={cn('py-2', profileResults?.length && 'border-b')}
                 >
                   <Link
                     className="flex w-full items-center gap-2"
@@ -214,10 +218,10 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
                   </Link>
                 </SearchResultItem>
               )}
-              {query?.length && organizationResults?.length ? (
-                <OrganizationResults
+              {query?.length && profileResults?.length ? (
+                <ProfileResults
                   query={query}
-                  organizationResults={organizationResults}
+                  profileResults={profileResults}
                   selectedIndex={selectedIndex}
                   onSearch={recordSearch}
                 />
@@ -245,10 +249,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
             {false && query.length > 0 && (
               <SearchResultItem
                 selected={selectedIndex === 0}
-                className={cn(
-                  'py-2',
-                  organizationResults?.length && 'border-b',
-                )}
+                className={cn('py-2', profileResults?.length && 'border-b')}
               >
                 <Link
                   className="flex w-full items-center gap-2"
@@ -259,10 +260,10 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
                 </Link>
               </SearchResultItem>
             )}
-            {query?.length && organizationResults?.length ? (
-              <OrganizationResults
+            {query?.length && profileResults?.length ? (
+              <ProfileResults
                 query={query}
-                organizationResults={organizationResults}
+                profileResults={profileResults}
                 selectedIndex={selectedIndex}
                 onSearch={recordSearch}
               />

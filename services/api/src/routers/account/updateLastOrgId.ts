@@ -1,4 +1,4 @@
-import { users } from '@op/db/schema';
+import { users, organizations } from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
 import { eq } from 'drizzle-orm';
 import type { OpenApiMeta } from 'trpc-to-openapi';
@@ -37,16 +37,28 @@ export const switchOrganization = router({
 
       let result;
       try {
+        // First, get the organization to find its profile ID
+        const organization = await db.query.organizations.findFirst({
+          where: eq(organizations.id, input.organizationId),
+        });
+
+        if (!organization) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'Organization not found',
+          });
+        }
+
         result = await db
           .update(users)
-          .set({ lastOrgId: input.organizationId })
+          .set({ currentProfileId: organization.profileId })
           .where(eq(users.authUserId, id))
           .returning();
       } catch (error) {
         console.error(error);
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to update lastOrgId',
+          message: 'Failed to update currentProfileId',
         });
       }
 

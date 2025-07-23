@@ -297,7 +297,7 @@ export const InviteUserModal = ({ children }: InviteUserModalProps) => {
         invitedEmail={lastInvitedEmail}
         organizationName={
           activeTab === 'existing'
-            ? user?.currentOrganization?.profile?.name || 'Common'
+            ? user?.currentProfile?.name || 'Common'
             : 'Common'
         }
       />

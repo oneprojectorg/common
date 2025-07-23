@@ -13,11 +13,11 @@ import { useTranslations } from '@/lib/i18n';
 import { UpdateOrganizationForm } from './UpdateOrganizationForm';
 
 interface UpdateOrganizationModalProps {
-  profile: Organization;
+  organization: Organization;
 }
 
 export const UpdateOrganizationModal = ({
-  profile,
+  organization,
 }: UpdateOrganizationModalProps) => {
   const { user } = useUser();
   const t = useTranslations();
@@ -25,7 +25,7 @@ export const UpdateOrganizationModal = ({
   const formRef = useRef<HTMLFormElement>(null);
 
   // Only show edit button if user belongs to this organization
-  const canEdit = user?.currentOrganization?.id === profile.id;
+  const canEdit = user?.currentProfile?.id === organization.profile.id;
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -96,7 +96,7 @@ export const UpdateOrganizationModal = ({
         </ModalHeader>
         <UpdateOrganizationForm
           ref={formRef}
-          profile={profile}
+          profile={organization}
           onSuccess={() => setIsOpen(false)}
           className="p-6"
         />

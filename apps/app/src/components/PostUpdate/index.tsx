@@ -5,7 +5,6 @@ import { useUser } from '@/utils/UserProvider';
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { detectLinks } from '@/utils/linkDetection';
 import { trpc } from '@op/api/client';
-// import type { RouterOutput } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { TextArea } from '@op/ui/Field';
@@ -27,7 +26,6 @@ import { FeedItem, FeedMain } from '@/components/PostFeed';
 
 import { OrganizationAvatar } from '../OrganizationAvatar';
 
-// type PaginatedPostToOrganizations = RouterOutput['organization']['listPosts'];
 const TextCounter = ({ text, max }: { text: string; max: number }) => {
   if (!text || text.length === 0) {
     return null;
@@ -317,18 +315,18 @@ export const PostUpdate = ({
   className?: string;
 }) => {
   const { user } = useUser();
-  const profile = user?.currentOrganization;
+  const currentOrg = user?.currentOrganization;
 
   if (
-    !(profile && !organization) &&
-    (!profile || organization?.id !== profile.id)
+    !(currentOrg && !organization) &&
+    (!currentOrg || organization?.id !== currentOrg.id)
   ) {
     return <div className={cn(className, 'border-none p-0')} />;
   }
 
   return (
     <PostUpdateWithUser
-      organization={organization ?? profile}
+      organization={organization ?? currentOrg}
       className={className}
     />
   );

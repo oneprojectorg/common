@@ -16,7 +16,7 @@ export const Welcome = ({
     return searchParams.get('new') === '1';
   }, []);
 
-  const orgName = user.currentOrganization?.profile.name;
+  const orgName = user.currentProfile?.name;
   const name = orgName ? `, ${orgName}` : ` to Common`;
 
   return (
