@@ -3,7 +3,7 @@ import { posts, postsToOrganizations } from '@op/db/schema';
 import { and, desc, eq, isNull } from 'drizzle-orm';
 
 import { getCurrentProfileId } from '../access';
-import { getItemsWithReactions } from './listPosts';
+import { getItemsWithReactionsAndComments } from './listPosts';
 
 export interface GetPostsInput {
   organizationId?: string;
@@ -151,12 +151,12 @@ export const getPosts = async (input: GetPostsInput) => {
 
       // Transform to match expected format and add reaction data
       const actorProfileId = await getCurrentProfileId();
-      const itemsWithReactions = getItemsWithReactions({
+      const itemsWithReactionsAndComments = await getItemsWithReactionsAndComments({
         items: orgPosts,
         profileId: actorProfileId,
       });
 
-      return itemsWithReactions;
+      return itemsWithReactionsAndComments;
     }
 
     // Execute query for non-organization posts
@@ -164,12 +164,12 @@ export const getPosts = async (input: GetPostsInput) => {
 
     // Add reaction counts and user reactions
     const actorProfileId = await getCurrentProfileId();
-    const itemsWithReactions = getItemsWithReactions({
+    const itemsWithReactionsAndComments = await getItemsWithReactionsAndComments({
       items: result.map(post => ({ post })),
       profileId: actorProfileId,
     });
 
-    return itemsWithReactions.map(item => item.post);
+    return itemsWithReactionsAndComments.map(item => item.post);
   } catch (error) {
     console.error('Error fetching posts:', error);
     throw error;

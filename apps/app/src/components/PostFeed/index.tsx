@@ -289,7 +289,7 @@ const PostCommentButton = ({
 
   return (
     <CommentButton
-      count={0} // TODO: Add comment count when available in API
+      count={post.commentCount || 0}
       onPress={onCommentClick}
     />
   );
@@ -427,7 +427,7 @@ const PostsList = ({
                 <PostContent content={post?.content} />
                 <PostAttachments attachments={post.attachments} />
                 <PostUrls urls={urls} />
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-between gap-2">
                   <PostReactions
                     post={post}
                     onReactionClick={onReactionClick}

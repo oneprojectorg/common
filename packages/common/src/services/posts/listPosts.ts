@@ -1,5 +1,5 @@
-import { and, db, eq, lt, or } from '@op/db/client';
-import { organizations, postsToOrganizations, profiles } from '@op/db/schema';
+import { and, count, db, eq, inArray, isNotNull, lt, or } from '@op/db/client';
+import { organizations, posts, postsToOrganizations, profiles } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
 import {
@@ -104,14 +104,14 @@ export const listPosts = async ({
         : null;
 
     const actorProfileId = await getCurrentProfileId();
-    // Transform items to include reaction counts and user's reactions
-    const itemsWithReactions = getItemsWithReactions({
+    // Transform items to include reaction counts, user's reactions, and comment counts
+    const itemsWithReactionsAndComments = await getItemsWithReactionsAndComments({
       items,
       profileId: actorProfileId,
     });
 
     return {
-      items: itemsWithReactions,
+      items: itemsWithReactionsAndComments,
       next: nextCursor,
       hasMore,
     };
@@ -123,21 +123,47 @@ export const listPosts = async ({
 
 // Using `any` here because the Drizzle query result has a complex nested structure
 // that's difficult to type precisely. The function is type-safe internally.
-export const getItemsWithReactions = ({
+export const getItemsWithReactionsAndComments = async ({
   items,
   profileId,
 }: {
   items: any[];
   profileId: string;
-}): Array<
+}): Promise<Array<
   any & {
     post: any & {
       reactionCounts: Record<string, number>;
       userReaction: string | null;
+      commentCount: number;
     };
   }
-> =>
-  items.map((item) => {
+>> => {
+  // Get all post IDs to fetch comment counts
+  const postIds = items.map((item) => item.post.id).filter(Boolean);
+  
+  // Fetch comment counts for all posts in a single query
+  const commentCountMap: Record<string, number> = {};
+  if (postIds.length > 0) {
+    const commentCounts = await db
+      .select({
+        parentPostId: posts.parentPostId,
+        count: count(posts.id)
+      })
+      .from(posts)
+      .where(and(
+        isNotNull(posts.parentPostId),
+        inArray(posts.parentPostId, postIds)
+      ))
+      .groupBy(posts.parentPostId);
+
+    commentCounts.forEach((row) => {
+      if (row.parentPostId) {
+        commentCountMap[row.parentPostId] = Number(row.count);
+      }
+    });
+  }
+
+  return items.map((item) => {
     const reactionCounts: Record<string, number> = {};
     let userReaction: string | null = null;
 
@@ -156,12 +182,17 @@ export const getItemsWithReactions = ({
       );
     }
 
+    // Get comment count for this post
+    const commentCount = commentCountMap[item.post.id] || 0;
+
     return {
       ...item,
       post: {
         ...item.post,
         reactionCounts,
         userReaction,
+        commentCount,
       },
     };
   });
+};

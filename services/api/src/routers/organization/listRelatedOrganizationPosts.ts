@@ -2,7 +2,7 @@ import {
   decodeCursor,
   encodeCursor,
   getCurrentProfileId,
-  getItemsWithReactions,
+  getItemsWithReactionsAndComments,
   getRelatedOrganizations,
 } from '@op/common';
 import { and, eq, inArray, lt, or } from '@op/db/client';
@@ -131,8 +131,10 @@ export const listRelatedOrganizationPostsRouter = router({
           ? encodeCursor(new Date(lastItem.createdAt), lastItem.postId)
           : null;
 
+      const itemsWithReactionsAndComments = await getItemsWithReactionsAndComments({ items, profileId });
+      
       return {
-        items: getItemsWithReactions({ items, profileId }).map((postToOrg) => ({
+        items: itemsWithReactionsAndComments.map((postToOrg) => ({
           ...postToOrg,
           organization: organizationsEncoder.parse(postToOrg.organization),
           post: postsEncoder.parse(postToOrg.post),

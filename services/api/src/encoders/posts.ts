@@ -15,6 +15,7 @@ export const postsEncoder: z.ZodType<any> = createSelectSchema(posts)
     attachments: z.array(postAttachmentEncoder).nullish(),
     reactionCounts: z.record(z.string(), z.number()),
     userReaction: z.string().nullish(),
+    commentCount: z.number(),
     profile: profileWithAvatarEncoder.nullish(),
     childPosts: z.array(z.lazy(() => postsEncoder)).nullish(),
     parentPost: z.lazy(() => postsEncoder).nullish(),

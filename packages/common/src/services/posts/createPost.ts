@@ -66,6 +66,7 @@ export const createPost = async (input: CreatePostInput) => {
       ...newPost,
       reactionCounts: {},
       userReactions: [],
+      commentCount: 0,
     };
   } catch (error) {
     console.error('Error creating post:', error);
