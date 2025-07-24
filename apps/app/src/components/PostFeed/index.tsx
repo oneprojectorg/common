@@ -32,44 +32,8 @@ import { Link } from '@/lib/i18n';
 import { DiscussionModal } from '../DiscussionModal';
 import { LinkPreview } from '../LinkPreview';
 import { OrganizationAvatar } from '../OrganizationAvatar';
+import { formatRelativeTime } from '../utils';
 import { DeletePost } from './DeletePost';
-
-// TODO: generated this quick with AI. refactor it!
-const formatRelativeTime = (timestamp: Date | string | number): string => {
-  const now = new Date();
-  const date = new Date(timestamp);
-  const diff = Math.floor((now.getTime() - date.getTime()) / 1000); // difference in seconds
-
-  // Future dates handling
-  if (diff < 0) {
-    return 'in the future';
-  }
-
-  // For very recent times
-  if (diff < 5) {
-    return 'just now';
-  }
-
-  const intervals = [
-    { unit: 'year', seconds: 31557600 },
-    { unit: 'month', seconds: 2629800 },
-    { unit: 'week', seconds: 604800 },
-    { unit: 'day', seconds: 86400 },
-    { unit: 'hour', seconds: 3600 },
-    { unit: 'minute', seconds: 60 },
-    { unit: 'second', seconds: 1 },
-  ];
-
-  for (const interval of intervals) {
-    if (diff >= interval.seconds) {
-      const count = Math.floor(diff / interval.seconds);
-
-      return `${count} ${interval.unit}${count !== 1 ? 's' : ''}`;
-    }
-  }
-
-  return 'just now';
-};
 
 export const FeedItem = ({
   children,
@@ -383,6 +347,7 @@ const PostsList = ({
       const { urls } = detectLinks(post?.content);
 
       // For comments (posts without organization), show the post author
+      // TODO: this is too complex. We need to refactor this
       const isComment = !organization;
       const displayName = isComment
         ? post?.profile?.name
@@ -398,7 +363,6 @@ const PostsList = ({
         <Fragment key={i}>
           <FeedItem className="sm:px-4">
             <OrganizationAvatar
-              // @ts-ignore
               organization={avatarData}
               withLink={withLinks && !isComment}
               className="!size-8 max-h-8 max-w-8"
