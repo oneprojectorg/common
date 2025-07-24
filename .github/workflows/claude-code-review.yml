@@ -14,6 +14,8 @@ jobs:
   claude-review:
     # Filter by PR author
     if: |
+      !github.event.pull_request.draft &&
+      !contains(github.event.pull_request.title, '[WIP]') &&
       (github.event.pull_request.author_association == 'MEMBER' ||
        github.event.pull_request.author_association == 'COLLABORATOR' ||
        github.event.pull_request.author_association == 'OWNER')
