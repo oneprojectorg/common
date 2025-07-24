@@ -19,7 +19,11 @@ export const posts = pgTable(
     profileId: uuid().references(() => profiles.id, { onDelete: 'cascade' }),
     ...timestamps,
   },
-  (table) => [...serviceRolePolicies, index().on(table.id).concurrently()],
+  (table) => [
+    ...serviceRolePolicies,
+    index().on(table.id).concurrently(),
+    index().on(table.parentPostId).concurrently(),
+  ],
 );
 
 export const postsToOrganizations = pgTable(
