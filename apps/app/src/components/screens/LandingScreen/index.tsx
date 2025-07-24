@@ -7,6 +7,8 @@ import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
+import { useTranslations } from '@/lib/i18n';
+
 import { NewOrganizations } from '@/components/NewOrganizations';
 import { NewlyJoinedModal } from '@/components/NewlyJoinedModal';
 import { OrganizationHighlights } from '@/components/OrganizationHighlights';
@@ -35,11 +37,13 @@ const LandingScreenFeeds = ({
   };
 
   const PostFeed = () => {
+    const t = useTranslations();
+
     return (
       <>
         <Suspense fallback={<Skeleton className="h-full w-full" />}>
           <Surface className="mb-8 border-0 p-0 pt-5 sm:mb-4 sm:border sm:p-4">
-            <PostUpdate />
+            <PostUpdate label={t('Post')} />
           </Surface>
         </Suspense>
         <hr />

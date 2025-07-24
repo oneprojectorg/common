@@ -38,11 +38,11 @@ export {
   postReactionsRelations,
 } from './tables/postReactions.sql';
 
-export { 
-  comments, 
+export {
+  comments,
   commentsRelations,
   commentsToPost,
-  commentsToPostRelations
+  commentsToPostRelations,
 } from './tables/comments.sql';
 export type { Comment, CommentToPost } from './tables/comments.sql';
 
@@ -67,3 +67,5 @@ export { profiles, profilesRelations } from './tables/profiles.sql';
 export type { Profile } from './tables/profiles.sql';
 export { EntityType, entityTypeEnum } from './tables/entities.sql';
 export { allowList, allowListRelations } from './tables/allowList.sql';
+
+export type { ObjectsInStorage } from './tables/storage.sql';

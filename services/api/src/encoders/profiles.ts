@@ -33,4 +33,6 @@ export const profileEncoder = baseProfileEncoder.extend({
     .nullish(),
 });
 
+export const profileWithAvatarEncoder = baseProfileEncoder;
+
 export type Profile = z.infer<typeof profileEncoder>;

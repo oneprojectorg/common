@@ -23,7 +23,7 @@ const meta: OpenApiMeta = {
   },
 };
 
-const outputSchema = postsEncoder.strip();
+const outputSchema = postsEncoder;
 
 export const createPostInOrganization = router({
   createPost: loggedProcedure
