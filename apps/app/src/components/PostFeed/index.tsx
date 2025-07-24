@@ -83,7 +83,7 @@ const PostAttachments = ({
     return null;
   }
 
-  return attachments.map(({ fileName, storageObject }: any) => {
+  return attachments.map(({ fileName, storageObject }) => {
     const { mimetype, size } = storageObject.metadata;
 
     return (
@@ -150,17 +150,17 @@ const PostReactions = ({
 
   const reactions = post.reactionCounts
     ? Object.entries(post.reactionCounts).map(([reactionType, count]) => {
-        const reactionOption = REACTION_OPTIONS.find(
-          (option) => option.key === reactionType,
-        );
-        const emoji = reactionOption?.emoji || reactionType;
+      const reactionOption = REACTION_OPTIONS.find(
+        (option) => option.key === reactionType,
+      );
+      const emoji = reactionOption?.emoji || reactionType;
 
-        return {
-          emoji,
-          count: count as number,
-          isActive: post.userReaction === reactionType,
-        };
-      })
+      return {
+        emoji,
+        count: count as number,
+        isActive: post.userReaction === reactionType,
+      };
+    })
     : [];
 
   return (
