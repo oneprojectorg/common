@@ -8,11 +8,9 @@ import { Modal, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Surface } from '@op/ui/Surface';
 import { LuX } from 'react-icons/lu';
 
-import { 
-  PostFeed, 
-  PostItem,
-  usePostFeedActions 
-} from '../PostFeed';
+import { useTranslations } from '@/lib/i18n';
+
+import { PostFeed, PostItem, usePostFeedActions } from '../PostFeed';
 import { PostUpdate } from '../PostUpdate';
 
 export function DiscussionModal({
@@ -26,12 +24,12 @@ export function DiscussionModal({
 }) {
   const utils = trpc.useUtils();
   const { user } = useUser();
+  const t = useTranslations();
   const { post, organization } = postToOrg;
 
-  const { 
-    handleReactionClick, 
-    handleCommentClick 
-  } = usePostFeedActions({ slug: organization?.profile?.slug });
+  const { handleReactionClick, handleCommentClick } = usePostFeedActions({
+    slug: organization?.profile?.slug,
+  });
 
   const { data: commentsData, isLoading } = trpc.posts.getPosts.useQuery(
     {
@@ -95,7 +93,7 @@ export function DiscussionModal({
       </ModalHeader>
 
       <div className="flex flex-col gap-4">
-        <div className="max-h-96 flex-1 overflow-y-auto pt-6">
+        <div className="max-h-96 flex-1 overflow-y-auto px-4 pt-6">
           {/* Original Post Display */}
           <PostFeed className="border-none">
             <PostItem
@@ -103,7 +101,6 @@ export function DiscussionModal({
               user={user}
               withLinks={false}
               onReactionClick={handleReactionClick}
-              onCommentClick={handleCommentClick}
             />
           </PostFeed>
           {/* Comments Display */}
@@ -138,6 +135,7 @@ export function DiscussionModal({
               parentPostId={post.id}
               placeholder={`Comment${user?.currentProfile?.name ? ` as ${user?.currentProfile?.name}` : ''}...`}
               onSuccess={handleCommentSuccess}
+              label={t('Comment')}
             />
           </Surface>
         </ModalFooter>

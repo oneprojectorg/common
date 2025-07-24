@@ -252,6 +252,7 @@ const PostCommentButton = ({
   onCommentClick: () => void;
 }) => {
   const commentsEnabled = useFeatureFlagEnabled('comments');
+
   if (!commentsEnabled || !post?.id || isComment) return null;
 
   return (
@@ -335,7 +336,7 @@ export const PostItem = ({
   user?: OrganizationUser;
   withLinks: boolean;
   onReactionClick: (postId: string, emoji: string) => void;
-  onCommentClick: (post: PostToOrganization) => void;
+  onCommentClick?: (post: PostToOrganization) => void;
 }) => {
   const { organization, post } = postToOrg;
   const { urls } = detectLinks(post?.content);
@@ -386,15 +387,14 @@ export const PostItem = ({
             <PostAttachments attachments={post.attachments} />
             <PostUrls urls={urls} />
             <div className="flex items-center justify-between gap-2">
-              <PostReactions
-                post={post}
-                onReactionClick={onReactionClick}
-              />
-              <PostCommentButton
-                post={post}
-                isComment={isComment}
-                onCommentClick={() => onCommentClick(postToOrg)}
-              />
+              <PostReactions post={post} onReactionClick={onReactionClick} />
+              {onCommentClick ? (
+                <PostCommentButton
+                  post={post}
+                  isComment={isComment}
+                  onCommentClick={() => onCommentClick(postToOrg)}
+                />
+              ) : null}
             </div>
           </FeedContent>
         </FeedMain>
@@ -403,7 +403,6 @@ export const PostItem = ({
     </>
   );
 };
-
 
 export const DiscussionModalContainer = ({
   discussionModal,
@@ -600,9 +599,7 @@ export const PostFeed = ({
   className?: string;
 }) => {
   return (
-    <div className={cn('flex flex-col gap-6 pb-8', className)}>
-      {children}
-    </div>
+    <div className={cn('flex flex-col gap-6 pb-8', className)}>{children}</div>
   );
 };
 

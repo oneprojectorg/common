@@ -51,12 +51,14 @@ const PostUpdateWithUser = ({
   parentPostId,
   placeholder,
   onSuccess,
+  label,
 }: {
   organization: Organization;
   className?: string;
   parentPostId?: string; // If provided, this becomes a comment
   placeholder?: string;
   onSuccess?: () => void;
+  label: string;
 }) => {
   const [content, setContent] = useState('');
   const [detectedUrls, setDetectedUrls] = useState<string[]>([]);
@@ -107,7 +109,7 @@ const PostUpdateWithUser = ({
       setDetectedUrls([]);
       fileUpload.clearFiles();
       setLastFailedPost(null);
-      
+
       // Call onSuccess callback if provided (for comments)
       if (onSuccess) {
         onSuccess();
@@ -310,7 +312,7 @@ const PostUpdateWithUser = ({
                 }
                 onPress={createNewPostUpdate}
               >
-                {createPost.isPending ? <LoadingSpinner /> : t('Post')}
+                {createPost.isPending ? <LoadingSpinner /> : label}
               </Button>
             </div>
           </div>
@@ -326,12 +328,14 @@ export const PostUpdate = ({
   parentPostId,
   placeholder,
   onSuccess,
+  label,
 }: {
   organization?: Organization;
   className?: string;
   parentPostId?: string;
   placeholder?: string;
   onSuccess?: () => void;
+  label: string;
 }) => {
   const { user } = useUser();
   const currentOrg = user?.currentOrganization;
@@ -350,6 +354,7 @@ export const PostUpdate = ({
       parentPostId={parentPostId}
       placeholder={placeholder}
       onSuccess={onSuccess}
+      label={label}
     />
   );
 };

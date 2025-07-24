@@ -7,12 +7,12 @@ import { useInfiniteScroll } from '@op/hooks';
 import { SkeletonLine } from '@op/ui/Skeleton';
 import { useCallback } from 'react';
 
-import { 
-  PostFeed, 
-  PostItem,
-  EmptyPostsState,
+import {
   DiscussionModalContainer,
-  usePostFeedActions 
+  EmptyPostsState,
+  PostFeed,
+  PostItem,
+  usePostFeedActions,
 } from '@/components/PostFeed';
 
 export const ProfileFeed = ({
@@ -46,11 +46,11 @@ export const ProfileFeed = ({
 
   const allPosts = paginatedData?.pages.flatMap((page) => page.items) || [];
 
-  const { 
-    discussionModal, 
-    handleReactionClick, 
-    handleCommentClick, 
-    handleModalClose 
+  const {
+    discussionModal,
+    handleReactionClick,
+    handleCommentClick,
+    handleModalClose,
   } = usePostFeedActions({ slug: profile.profile.slug, limit });
 
   // Prevent infinite loops. Make sure this is a stable function
@@ -91,7 +91,7 @@ export const ProfileFeed = ({
         ) : (
           <EmptyPostsState />
         )}
-        
+
         <DiscussionModalContainer
           discussionModal={discussionModal}
           onClose={handleModalClose}
