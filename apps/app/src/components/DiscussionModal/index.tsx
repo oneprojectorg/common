@@ -8,7 +8,11 @@ import { Modal, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Surface } from '@op/ui/Surface';
 import { LuX } from 'react-icons/lu';
 
-import { PostFeed } from '../PostFeed';
+import { 
+  PostFeed, 
+  PostsList, 
+  usePostFeedActions 
+} from '../PostFeed';
 import { PostUpdate } from '../PostUpdate';
 
 export function DiscussionModal({
@@ -22,7 +26,12 @@ export function DiscussionModal({
 }) {
   const utils = trpc.useUtils();
   const { user } = useUser();
-  const { post, organizationId, organization } = postToOrg;
+  const { post, organization } = postToOrg;
+
+  const { 
+    handleReactionClick, 
+    handleCommentClick 
+  } = usePostFeedActions({ slug: organization?.profile?.slug });
 
   const { data: commentsData, isLoading } = trpc.posts.getPosts.useQuery(
     {
@@ -88,26 +97,30 @@ export function DiscussionModal({
       <div className="flex flex-col gap-4">
         <div className="max-h-96 flex-1 overflow-y-auto pt-6">
           {/* Original Post Display */}
-          <PostFeed
-            posts={[postToOrg]}
-            user={user}
-            withLinks={false}
-            className="border-none"
-            slug={organization?.profile?.slug}
-          />
+          <PostFeed className="border-none">
+            <PostsList
+              posts={[postToOrg]}
+              user={user}
+              withLinks={false}
+              onReactionClick={handleReactionClick}
+              onCommentClick={handleCommentClick}
+            />
+          </PostFeed>
           {/* Comments Display */}
           {isLoading ? (
             <div className="py-8 text-center text-gray-500">
               Loading discussion...
             </div>
           ) : comments.length > 0 ? (
-            <PostFeed
-              posts={comments}
-              user={user}
-              withLinks={false}
-              className="border-none"
-              slug={organization?.profile?.slug}
-            />
+            <PostFeed className="border-none">
+              <PostsList
+                posts={comments}
+                user={user}
+                withLinks={false}
+                onReactionClick={handleReactionClick}
+                onCommentClick={handleCommentClick}
+              />
+            </PostFeed>
           ) : (
             <div className="py-8 text-center text-gray-500">
               No comments yet. Be the first to comment!

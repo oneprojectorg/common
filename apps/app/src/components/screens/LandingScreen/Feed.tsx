@@ -2,7 +2,14 @@
 
 import { trpc } from '@op/api/client';
 
-import { PostFeed, PostFeedSkeleton } from '@/components/PostFeed';
+import { 
+  PostFeed, 
+  PostFeedSkeleton, 
+  PostsList, 
+  EmptyPostsState,
+  DiscussionModalContainer,
+  usePostFeedActions 
+} from '@/components/PostFeed';
 
 export const Feed = () => {
   const { data: user } = trpc.account.getMyAccount.useQuery();
@@ -11,6 +18,13 @@ export const Feed = () => {
     isLoading,
     error,
   } = trpc.organization.listAllPosts.useQuery({});
+
+  const { 
+    discussionModal, 
+    handleReactionClick, 
+    handleCommentClick, 
+    handleModalClose 
+  } = usePostFeedActions();
 
   if (isLoading) {
     return <PostFeedSkeleton numPosts={4} />;
@@ -31,5 +45,24 @@ export const Feed = () => {
     return <PostFeedSkeleton numPosts={4} />;
   }
 
-  return <PostFeed user={user} posts={postsData.items} />;
+  return (
+    <PostFeed>
+      {postsData.items.length > 0 ? (
+        <PostsList
+          posts={postsData.items}
+          user={user}
+          withLinks={true}
+          onReactionClick={handleReactionClick}
+          onCommentClick={handleCommentClick}
+        />
+      ) : (
+        <EmptyPostsState />
+      )}
+      
+      <DiscussionModalContainer
+        discussionModal={discussionModal}
+        onClose={handleModalClose}
+      />
+    </PostFeed>
+  );
 };

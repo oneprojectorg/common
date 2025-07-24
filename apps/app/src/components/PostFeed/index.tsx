@@ -311,7 +311,7 @@ const PostMenuContent = ({
   return <DeletePost postId={postId} organizationId={organizationId} />;
 };
 
-const EmptyPostsState = () => (
+export const EmptyPostsState = () => (
   <FeedItem>
     <FeedMain className="flex w-full flex-col items-center justify-center py-6">
       <FeedContent className="flex flex-col items-center justify-center text-neutral-gray4">
@@ -324,7 +324,7 @@ const EmptyPostsState = () => (
   </FeedItem>
 );
 
-const PostsList = ({
+export const PostsList = ({
   posts,
   user,
   withLinks,
@@ -408,7 +408,7 @@ const PostsList = ({
   </>
 );
 
-const DiscussionModalContainer = ({
+export const DiscussionModalContainer = ({
   discussionModal,
   onClose,
 }: {
@@ -431,21 +431,13 @@ const DiscussionModalContainer = ({
   );
 };
 
-export const PostFeed = ({
-  posts,
-  user,
-  className,
-  withLinks = true,
+export const usePostFeedActions = ({
   slug,
   limit = 20,
 }: {
-  posts: Array<PostToOrganization>;
-  user?: OrganizationUser;
-  className?: string;
-  withLinks?: boolean;
   slug?: string;
   limit?: number;
-}) => {
+} = {}) => {
   const utils = trpc.useUtils();
   const [discussionModal, setDiscussionModal] = useState<{
     isOpen: boolean;
@@ -595,24 +587,24 @@ export const PostFeed = ({
     setDiscussionModal({ isOpen: false, post: null });
   };
 
+  return {
+    discussionModal,
+    handleReactionClick,
+    handleCommentClick,
+    handleModalClose,
+  };
+};
+
+export const PostFeed = ({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) => {
   return (
     <div className={cn('flex flex-col gap-6 pb-8', className)}>
-      {posts.length > 0 ? (
-        <PostsList
-          posts={posts}
-          user={user}
-          withLinks={withLinks}
-          onReactionClick={handleReactionClick}
-          onCommentClick={handleCommentClick}
-        />
-      ) : (
-        <EmptyPostsState />
-      )}
-
-      <DiscussionModalContainer
-        discussionModal={discussionModal}
-        onClose={handleModalClose}
-      />
+      {children}
     </div>
   );
 };
