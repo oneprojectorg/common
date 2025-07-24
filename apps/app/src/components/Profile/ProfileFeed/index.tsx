@@ -9,7 +9,7 @@ import { useCallback } from 'react';
 
 import { 
   PostFeed, 
-  PostsList, 
+  PostItem,
   EmptyPostsState,
   DiscussionModalContainer,
   usePostFeedActions 
@@ -76,13 +76,18 @@ export const ProfileFeed = ({
     <div className={className}>
       <PostFeed>
         {allPosts.length > 0 ? (
-          <PostsList
-            posts={allPosts}
-            user={user}
-            withLinks={false}
-            onReactionClick={handleReactionClick}
-            onCommentClick={handleCommentClick}
-          />
+          <>
+            {allPosts.map((postToOrg, i) => (
+              <PostItem
+                key={i}
+                postToOrg={postToOrg}
+                user={user}
+                withLinks={false}
+                onReactionClick={handleReactionClick}
+                onCommentClick={handleCommentClick}
+              />
+            ))}
+          </>
         ) : (
           <EmptyPostsState />
         )}

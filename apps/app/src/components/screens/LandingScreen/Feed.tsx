@@ -5,7 +5,7 @@ import { trpc } from '@op/api/client';
 import { 
   PostFeed, 
   PostFeedSkeleton, 
-  PostsList, 
+  PostItem,
   EmptyPostsState,
   DiscussionModalContainer,
   usePostFeedActions 
@@ -48,13 +48,18 @@ export const Feed = () => {
   return (
     <PostFeed>
       {postsData.items.length > 0 ? (
-        <PostsList
-          posts={postsData.items}
-          user={user}
-          withLinks={true}
-          onReactionClick={handleReactionClick}
-          onCommentClick={handleCommentClick}
-        />
+        <>
+          {postsData.items.map((postToOrg, i) => (
+            <PostItem
+              key={i}
+              postToOrg={postToOrg}
+              user={user}
+              withLinks={true}
+              onReactionClick={handleReactionClick}
+              onCommentClick={handleCommentClick}
+            />
+          ))}
+        </>
       ) : (
         <EmptyPostsState />
       )}

@@ -19,7 +19,7 @@ import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';
 import { useFeatureFlagEnabled } from 'posthog-js/react';
-import { Fragment, ReactNode, useState } from 'react';
+import { ReactNode, useState } from 'react';
 import { LuEllipsis, LuLeaf } from 'react-icons/lu';
 
 import { Link } from '@/lib/i18n';
@@ -324,89 +324,86 @@ export const EmptyPostsState = () => (
   </FeedItem>
 );
 
-export const PostsList = ({
-  posts,
+export const PostItem = ({
+  postToOrg,
   user,
   withLinks,
   onReactionClick,
   onCommentClick,
 }: {
-  posts: Array<PostToOrganization>;
+  postToOrg: PostToOrganization;
   user?: OrganizationUser;
   withLinks: boolean;
   onReactionClick: (postId: string, emoji: string) => void;
   onCommentClick: (post: PostToOrganization) => void;
-}) => (
-  <>
-    {posts.map((postToOrg, i) => {
-      const { organization, post } = postToOrg;
-      const { urls } = detectLinks(post?.content);
+}) => {
+  const { organization, post } = postToOrg;
+  const { urls } = detectLinks(post?.content);
 
-      // For comments (posts without organization), show the post author
-      // TODO: this is too complex. We need to refactor this
-      const isComment = !organization;
-      const displayName = isComment
-        ? post?.profile?.name
-        : organization?.profile.name;
-      const displaySlug = isComment
-        ? post?.profile?.slug
-        : organization?.profile.slug;
-      const avatarData = isComment
-        ? { profile: post?.profile as Profile }
-        : organization;
+  // For comments (posts without organization), show the post author
+  // TODO: this is too complex. We need to refactor this
+  const isComment = !organization;
+  const displayName = isComment
+    ? post?.profile?.name
+    : organization?.profile.name;
+  const displaySlug = isComment
+    ? post?.profile?.slug
+    : organization?.profile.slug;
+  const avatarData = isComment
+    ? { profile: post?.profile as Profile }
+    : organization;
 
-      return (
-        <Fragment key={i}>
-          <FeedItem className="sm:px-4">
-            <OrganizationAvatar
-              organization={avatarData}
-              withLink={withLinks && !isComment}
-              className="!size-8 max-h-8 max-w-8"
-            />
-            <FeedMain>
-              <FeedHeader className="relative w-full justify-between">
-                <div className="flex items-baseline gap-2">
-                  <Header3 className="font-medium leading-3">
-                    <PostDisplayName
-                      displayName={displayName}
-                      displaySlug={displaySlug}
-                      withLinks={withLinks}
-                      isComment={isComment}
-                    />
-                  </Header3>
-                  <PostTimestamp createdAt={post?.createdAt} />
-                </div>
-                <PostMenu
-                  organization={organization}
-                  post={post}
-                  user={user}
+  return (
+    <>
+      <FeedItem className="sm:px-4">
+        <OrganizationAvatar
+          organization={avatarData}
+          withLink={withLinks && !isComment}
+          className="!size-8 max-h-8 max-w-8"
+        />
+        <FeedMain>
+          <FeedHeader className="relative w-full justify-between">
+            <div className="flex items-baseline gap-2">
+              <Header3 className="font-medium leading-3">
+                <PostDisplayName
+                  displayName={displayName}
+                  displaySlug={displaySlug}
+                  withLinks={withLinks}
                   isComment={isComment}
                 />
-              </FeedHeader>
-              <FeedContent>
-                <PostContent content={post?.content} />
-                <PostAttachments attachments={post.attachments} />
-                <PostUrls urls={urls} />
-                <div className="flex items-center justify-between gap-2">
-                  <PostReactions
-                    post={post}
-                    onReactionClick={onReactionClick}
-                  />
-                  <PostCommentButton
-                    post={post}
-                    isComment={isComment}
-                    onCommentClick={() => onCommentClick(postToOrg)}
-                  />
-                </div>
-              </FeedContent>
-            </FeedMain>
-          </FeedItem>
-          <hr className="bg-neutral-gray1" />
-        </Fragment>
-      );
-    })}
-  </>
-);
+              </Header3>
+              <PostTimestamp createdAt={post?.createdAt} />
+            </div>
+            <PostMenu
+              organization={organization}
+              post={post}
+              user={user}
+              isComment={isComment}
+            />
+          </FeedHeader>
+          <FeedContent>
+            <PostContent content={post?.content} />
+            <PostAttachments attachments={post.attachments} />
+            <PostUrls urls={urls} />
+            <div className="flex items-center justify-between gap-2">
+              <PostReactions
+                post={post}
+                onReactionClick={onReactionClick}
+              />
+              <PostCommentButton
+                post={post}
+                isComment={isComment}
+                onCommentClick={() => onCommentClick(postToOrg)}
+              />
+            </div>
+          </FeedContent>
+        </FeedMain>
+      </FeedItem>
+      <hr className="bg-neutral-gray1" />
+    </>
+  );
+};
+
 
 export const DiscussionModalContainer = ({
   discussionModal,

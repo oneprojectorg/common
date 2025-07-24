@@ -10,7 +10,7 @@ import { LuX } from 'react-icons/lu';
 
 import { 
   PostFeed, 
-  PostsList, 
+  PostItem,
   usePostFeedActions 
 } from '../PostFeed';
 import { PostUpdate } from '../PostUpdate';
@@ -98,8 +98,8 @@ export function DiscussionModal({
         <div className="max-h-96 flex-1 overflow-y-auto pt-6">
           {/* Original Post Display */}
           <PostFeed className="border-none">
-            <PostsList
-              posts={[postToOrg]}
+            <PostItem
+              postToOrg={postToOrg}
               user={user}
               withLinks={false}
               onReactionClick={handleReactionClick}
@@ -113,13 +113,16 @@ export function DiscussionModal({
             </div>
           ) : comments.length > 0 ? (
             <PostFeed className="border-none">
-              <PostsList
-                posts={comments}
-                user={user}
-                withLinks={false}
-                onReactionClick={handleReactionClick}
-                onCommentClick={handleCommentClick}
-              />
+              {comments.map((comment, i) => (
+                <PostItem
+                  key={i}
+                  postToOrg={comment}
+                  user={user}
+                  withLinks={false}
+                  onReactionClick={handleReactionClick}
+                  onCommentClick={handleCommentClick}
+                />
+              ))}
             </PostFeed>
           ) : (
             <div className="py-8 text-center text-gray-500">
