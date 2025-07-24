@@ -3,7 +3,7 @@ import { UnauthorizedError, getOrgAccessUser } from '@op/common';
 import { attachments, posts, postsToOrganizations } from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
 import { waitUntil } from '@vercel/functions';
-import type { OpenApiMeta } from 'trpc-to-openapi';
+// import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { postsEncoder } from '../../encoders';
@@ -12,16 +12,16 @@ import withDB from '../../middlewares/withDB';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
-const meta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'POST',
-    path: '/organization/{id}/posts',
-    protect: true,
-    tags: ['organization', 'post'],
-    summary: 'Add a post to an organization',
-  },
-};
+// const meta: OpenApiMeta = {
+// openapi: {
+// enabled: true,
+// method: 'POST',
+// path: '/organization/{id}/posts',
+// protect: true,
+// tags: ['organization', 'post'],
+// summary: 'Add a post to an organization',
+// },
+// };
 
 const outputSchema = postsEncoder;
 
@@ -32,7 +32,7 @@ export const createPostInOrganization = router({
     .use(withAuthenticated)
     .use(withDB)
     // Router
-    .meta(meta)
+    // .meta(meta)
     .input(
       z.object({
         id: z.string(),

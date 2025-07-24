@@ -7,7 +7,7 @@ import {
 } from '@op/common';
 import { and, eq, inArray, lt, or } from '@op/db/client';
 import { postsToOrganizations } from '@op/db/schema';
-import type { OpenApiMeta } from 'trpc-to-openapi';
+// import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import {
@@ -28,34 +28,34 @@ const inputSchema = z.object({
   organizationId: z.string().uuid({ message: 'Invalid organization ID' }),
 });
 
-const meta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'GET',
-    path: '/organization/{organizationId}/feed',
-    protect: true,
-    tags: ['organization', 'posts', 'relationships'],
-    summary: 'List posts for organizations related to a given organization',
-  },
-};
+// const meta: OpenApiMeta = {
+// openapi: {
+// enabled: true,
+// method: 'GET',
+// path: '/organization/{organizationId}/feed',
+// protect: true,
+// tags: ['organization', 'posts', 'relationships'],
+// summary: 'List posts for organizations related to a given organization',
+// },
+// };
 
-const metaAllPosts: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'GET',
-    path: '/organization/feed',
-    protect: true,
-    tags: ['organization', 'posts', 'relationships'],
-    summary: 'List posts for organizations related to a given organization',
-  },
-};
+// const metaAllPosts: OpenApiMeta = {
+// openapi: {
+// enabled: true,
+// method: 'GET',
+// path: '/organization/feed',
+// protect: true,
+// tags: ['organization', 'posts', 'relationships'],
+// summary: 'List posts for organizations related to a given organization',
+// },
+// };
 
 export const listRelatedOrganizationPostsRouter = router({
   listAllPosts: loggedProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticated)
     .use(withDB)
-    .meta(metaAllPosts)
+    // .meta(metaAllPosts)
     .input(
       dbFilter
         .extend({
@@ -121,8 +121,8 @@ export const listRelatedOrganizationPostsRouter = router({
       ]);
 
       // Filter out any items where post is null (due to parentPostId filtering)
-      const filteredResult = result.filter(item => item.post !== null);
-      
+      const filteredResult = result.filter((item) => item.post !== null);
+
       const hasMore = filteredResult.length > limit;
       const items = hasMore ? filteredResult.slice(0, limit) : filteredResult;
       const lastItem = items[items.length - 1];
@@ -131,8 +131,9 @@ export const listRelatedOrganizationPostsRouter = router({
           ? encodeCursor(new Date(lastItem.createdAt), lastItem.postId)
           : null;
 
-      const itemsWithReactionsAndComments = await getItemsWithReactionsAndComments({ items, profileId });
-      
+      const itemsWithReactionsAndComments =
+        await getItemsWithReactionsAndComments({ items, profileId });
+
       return {
         items: itemsWithReactionsAndComments.map((postToOrg) => ({
           ...postToOrg,
@@ -147,7 +148,7 @@ export const listRelatedOrganizationPostsRouter = router({
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticated)
     .use(withDB)
-    .meta(meta)
+    // .meta(meta)
     .input(inputSchema)
     .output(z.array(postsToOrganizationsEncoder))
     .query(async ({ ctx, input }) => {
@@ -193,8 +194,8 @@ export const listRelatedOrganizationPostsRouter = router({
       });
 
       // Filter out any items where post is null (due to parentPostId filtering)
-      const filteredResult = result.filter(item => item.post !== null);
-      
+      const filteredResult = result.filter((item) => item.post !== null);
+
       return filteredResult.map((postToOrg) => ({
         ...postToOrg,
         organization: organizationsWithProfileEncoder.parse(
