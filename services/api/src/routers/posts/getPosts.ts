@@ -1,7 +1,7 @@
 import { getPosts as getPostsService } from '@op/common';
 import { getPostsSchema } from '@op/types';
 import { TRPCError } from '@trpc/server';
-import type { OpenApiMeta } from 'trpc-to-openapi';
+// import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { postsEncoder } from '../../encoders';
@@ -9,16 +9,16 @@ import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
-const meta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'GET',
-    path: '/posts',
-    protect: true,
-    tags: ['posts'],
-    summary: 'Get posts (with optional children/comments)',
-  },
-};
+// const meta: OpenApiMeta = {
+// openapi: {
+// enabled: true,
+// method: 'GET',
+// path: '/posts',
+// protect: true,
+// tags: ['posts'],
+// summary: 'Get posts (with optional children/comments)',
+// },
+// };
 
 const outputSchema = z.array(postsEncoder);
 
@@ -26,7 +26,7 @@ export const getPosts = router({
   getPosts: loggedProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticated)
-    .meta(meta)
+    // .meta(meta)
     .input(getPostsSchema)
     .output(outputSchema)
     .query(async ({ input }) => {
