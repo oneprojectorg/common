@@ -4,7 +4,13 @@ import { getPublicUrl } from '@/utils';
 import { OrganizationUser } from '@/utils/UserProvider';
 import { detectLinks, linkifyText } from '@/utils/linkDetection';
 import { trpc } from '@op/api/client';
-import type { PostToOrganization, Profile } from '@op/api/encoders';
+import type {
+  Organization,
+  Post,
+  PostAttachment,
+  PostToOrganization,
+  Profile,
+} from '@op/api/encoders';
 import { REACTION_OPTIONS } from '@op/types';
 import { AvatarSkeleton } from '@op/ui/Avatar';
 import { CommentButton } from '@op/ui/CommentButton';
@@ -143,7 +149,11 @@ const PostContent = ({ content }: { content?: string }) => {
   return <>{linkifyText(content)}</>;
 };
 
-const PostAttachments = ({ attachments }: { attachments?: any[] }) => {
+const PostAttachments = ({
+  attachments,
+}: {
+  attachments?: PostAttachment[];
+}) => {
   if (!attachments) {
     return null;
   }
@@ -212,7 +222,7 @@ const PostReactions = ({
   post,
   onReactionClick,
 }: {
-  post: any;
+  post: Post;
   onReactionClick: (postId: string, emoji: string) => void;
 }) => {
   if (!post?.id) return null;
@@ -247,7 +257,7 @@ const PostCommentButton = ({
   isComment,
   onCommentClick,
 }: {
-  post: any;
+  post: Post;
   isComment: boolean;
   onCommentClick: () => void;
 }) => {
@@ -266,17 +276,19 @@ const PostMenu = ({
   user,
   isComment,
 }: {
-  organization: any;
-  post: any;
+  organization: Organization;
+  post: Post;
   user?: OrganizationUser;
   isComment: boolean;
 }) => {
   const canShowMenu =
     (organization?.id === user?.currentOrganization?.id ||
       (isComment && post?.profile?.id === user?.profile?.id)) &&
-    post?.id;
+    !!post?.id;
 
-  if (!canShowMenu) return null;
+  if (!canShowMenu) {
+    return null;
+  }
 
   return (
     <MenuTrigger>
@@ -291,7 +303,7 @@ const PostMenu = ({
         <PostMenuContent
           postId={post.id}
           organizationId={organization?.id || ''}
-          canDelete={organization?.id || isComment}
+          canDelete={canShowMenu}
         />
       </Popover>
     </MenuTrigger>
@@ -307,7 +319,9 @@ const PostMenuContent = ({
   organizationId: string;
   canDelete: boolean;
 }) => {
-  if (!canDelete) return null;
+  if (!canDelete) {
+    return null;
+  }
 
   return <DeletePost postId={postId} organizationId={organizationId} />;
 };
@@ -375,12 +389,14 @@ export const PostItem = ({
               </Header3>
               <PostTimestamp createdAt={post?.createdAt} />
             </div>
-            <PostMenu
-              organization={organization}
-              post={post}
-              user={user}
-              isComment={isComment}
-            />
+            {organization ? (
+              <PostMenu
+                organization={organization}
+                post={post}
+                user={user}
+                isComment={isComment}
+              />
+            ) : null}
           </FeedHeader>
           <FeedContent>
             <PostContent content={post?.content} />
@@ -458,7 +474,7 @@ export const usePostFeedActions = ({
       const previousListAllPosts = utils.organization.listAllPosts.getData({});
 
       // Helper function to update post reactions
-      const updatePostReactions = (item: any) => {
+      const updatePostReactions = (item: PostToOrganization) => {
         if (item.post.id === postId) {
           const currentReaction = item.post.userReaction;
           const currentCounts = item.post.reactionCounts || {};
@@ -512,24 +528,27 @@ export const usePostFeedActions = ({
 
       // Optimistically update listPosts cache (if slug is provided)
       if (slug) {
-        utils.organization.listPosts.setInfiniteData(
-          { slug, limit },
-          (old: any) => {
-            if (!old) return old;
-            return {
-              ...old,
-              pages: old.pages.map((page: any) => ({
-                ...page,
-                items: page.items.map(updatePostReactions),
-              })),
-            };
-          },
-        );
+        utils.organization.listPosts.setInfiniteData({ slug, limit }, (old) => {
+          if (!old) {
+            return old;
+          }
+
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              items: page.items.map(updatePostReactions),
+            })),
+          };
+        });
       }
 
       // Optimistically update listAllPosts cache
-      utils.organization.listAllPosts.setData({}, (old: any) => {
-        if (!old) return old;
+      utils.organization.listAllPosts.setData({}, (old) => {
+        if (!old) {
+          return old;
+        }
+
         return {
           ...old,
           items: old.items.map(updatePostReactions),

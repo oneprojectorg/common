@@ -32,4 +32,5 @@ export const postsToOrganizationsEncoder = createSelectSchema(
   organization: organizationsWithProfileEncoder.nullish(),
 });
 
+export type PostAttachment = z.infer<typeof postAttachmentEncoder>;
 export type PostToOrganization = z.infer<typeof postsToOrganizationsEncoder>;
