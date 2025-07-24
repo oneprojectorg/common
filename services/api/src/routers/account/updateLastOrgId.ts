@@ -1,4 +1,4 @@
-import { users, organizations } from '@op/db/schema';
+import { organizations, users } from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
 import { eq } from 'drizzle-orm';
 import type { OpenApiMeta } from 'trpc-to-openapi';
@@ -51,7 +51,10 @@ export const switchOrganization = router({
 
         result = await db
           .update(users)
-          .set({ currentProfileId: organization.profileId })
+          .set({
+            lastOrgId: organization.id,
+            currentProfileId: organization.profileId,
+          })
           .where(eq(users.authUserId, id))
           .returning();
       } catch (error) {
@@ -72,4 +75,3 @@ export const switchOrganization = router({
       return userEncoder.parse(result[0]);
     }),
 });
-
