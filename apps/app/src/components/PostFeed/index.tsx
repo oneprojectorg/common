@@ -265,12 +265,14 @@ export const PostItem = ({
   withLinks,
   onReactionClick,
   onCommentClick,
+  className,
 }: {
   postToOrg: PostToOrganization;
   user?: OrganizationUser;
   withLinks: boolean;
   onReactionClick: (postId: string, emoji: string) => void;
   onCommentClick?: (post: PostToOrganization) => void;
+  className?: string;
 }) => {
   const { organization, post } = postToOrg;
   const { urls } = detectLinks(post?.content);
@@ -278,53 +280,50 @@ export const PostItem = ({
   // For comments (posts without organization), show the post author
   // TODO: this is too complex. We need to refactor this
   const displayName =
-    post?.profile?.name ?? organization?.profile.name ?? 'Unkown User';
+    post?.profile?.name ?? organization?.profile.name ?? 'Unknown User';
   const displaySlug =
-    post?.profile?.slug ?? organization?.profile.slug ?? 'Unkown User';
+    post?.profile?.slug ?? organization?.profile.slug ?? 'Unknown User';
   const profile = post.profile ?? organization?.profile;
 
   return (
-    <>
-      <FeedItem className="sm:px-4">
-        <OrganizationAvatar
-          profile={profile}
-          withLink={withLinks}
-          className="!size-8 max-h-8 max-w-8"
-        />
-        <FeedMain>
-          <FeedHeader className="relative w-full justify-between">
-            <div className="flex items-baseline gap-2">
-              <Header3 className="font-medium leading-3">
-                <PostDisplayName
-                  displayName={displayName}
-                  displaySlug={displaySlug}
-                  withLinks={withLinks}
-                />
-              </Header3>
-              <PostTimestamp createdAt={post?.createdAt} />
-            </div>
-            {organization ? (
-              <PostMenu organization={organization} post={post} user={user} />
+    <FeedItem className={cn('sm:px-4', className)}>
+      <OrganizationAvatar
+        profile={profile}
+        withLink={withLinks}
+        className="!size-8 max-h-8 max-w-8"
+      />
+      <FeedMain>
+        <FeedHeader className="relative w-full justify-between">
+          <div className="flex items-baseline gap-2">
+            <Header3 className="font-medium leading-3">
+              <PostDisplayName
+                displayName={displayName}
+                displaySlug={displaySlug}
+                withLinks={withLinks}
+              />
+            </Header3>
+            <PostTimestamp createdAt={post?.createdAt} />
+          </div>
+          {organization ? (
+            <PostMenu organization={organization} post={post} user={user} />
+          ) : null}
+        </FeedHeader>
+        <FeedContent>
+          <PostContent content={post?.content} />
+          <PostAttachments attachments={post.attachments} />
+          <PostUrls urls={urls} />
+          <div className="flex items-center justify-between gap-2">
+            <PostReactions post={post} onReactionClick={onReactionClick} />
+            {onCommentClick ? (
+              <PostCommentButton
+                post={post}
+                onCommentClick={() => onCommentClick(postToOrg)}
+              />
             ) : null}
-          </FeedHeader>
-          <FeedContent>
-            <PostContent content={post?.content} />
-            <PostAttachments attachments={post.attachments} />
-            <PostUrls urls={urls} />
-            <div className="flex items-center justify-between gap-2">
-              <PostReactions post={post} onReactionClick={onReactionClick} />
-              {onCommentClick ? (
-                <PostCommentButton
-                  post={post}
-                  onCommentClick={() => onCommentClick(postToOrg)}
-                />
-              ) : null}
-            </div>
-          </FeedContent>
-        </FeedMain>
-      </FeedItem>
-      <hr className="bg-neutral-gray1" />
-    </>
+          </div>
+        </FeedContent>
+      </FeedMain>
+    </FeedItem>
   );
 };
 
@@ -526,7 +525,7 @@ export const PostFeed = ({
   className?: string;
 }) => {
   return (
-    <div className={cn('flex flex-col gap-6 pb-8', className)}>{children}</div>
+    <div className={cn('flex flex-col gap-4 pb-8', className)}>{children}</div>
   );
 };
 

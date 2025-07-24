@@ -102,6 +102,7 @@ export function DiscussionModal({
               withLinks={false}
               onReactionClick={handleReactionClick}
             />
+            <hr className="bg-neutral-gray1" />
           </PostFeed>
           {/* Comments Display */}
           {isLoading ? (
@@ -111,14 +112,20 @@ export function DiscussionModal({
           ) : comments.length > 0 ? (
             <PostFeed className="border-none">
               {comments.map((comment, i) => (
-                <PostItem
-                  key={i}
-                  postToOrg={comment}
-                  user={user}
-                  withLinks={false}
-                  onReactionClick={handleReactionClick}
-                  onCommentClick={handleCommentClick}
-                />
+                <>
+                  <PostItem
+                    key={i}
+                    postToOrg={comment}
+                    user={user}
+                    withLinks={false}
+                    onReactionClick={handleReactionClick}
+                    onCommentClick={handleCommentClick}
+                    className="sm:px-0"
+                  />
+                  {comments.length !== i + 1 && (
+                    <hr className="bg-neutral-gray1" />
+                  )}
+                </>
               ))}
             </PostFeed>
           ) : (
@@ -129,7 +136,7 @@ export function DiscussionModal({
         </div>
 
         {/* Comment Input using PostUpdate */}
-        <ModalFooter className="hidden sm:flex">
+        <ModalFooter className="hidden px-4 sm:flex">
           <Surface className="w-full border-0 p-0 pt-5 sm:border sm:p-4">
             <PostUpdate
               parentPostId={post.id}

@@ -21,8 +21,13 @@ export const getPosts = async (input: GetPostsInput) => {
     limit = 20,
     offset = 0,
     includeChildren = false,
-    maxDepth = 3,
   } = input;
+  let { maxDepth = 3 } = input;
+
+  // enforcing a max depth to prevent infinite cycles
+  if (maxDepth > 2) {
+    maxDepth = 2;
+  }
 
   try {
     // Build where conditions
@@ -57,40 +62,44 @@ export const getPosts = async (input: GetPostsInput) => {
         },
         reactions: true,
         // Recursively include child posts if requested
-        ...(includeChildren && maxDepth > 0 ? {
-          childPosts: {
-            limit: 50, // Reasonable limit for child posts
-            orderBy: [desc(posts.createdAt)],
-            with: {
-              profile: {
+        ...(includeChildren && maxDepth > 0
+          ? {
+              childPosts: {
+                limit: 50, // Reasonable limit for child posts
+                orderBy: [desc(posts.createdAt)],
                 with: {
-                  avatarImage: true,
-                },
-              },
-              attachments: {
-                with: {
-                  storageObject: true,
-                },
-              },
-              reactions: true,
-              // One level of nesting for now (can be expanded recursively)
-              ...(maxDepth > 1 ? {
-                childPosts: {
-                  limit: 20,
-                  orderBy: [desc(posts.createdAt)],
-                  with: {
-                    profile: {
-                      with: {
-                        avatarImage: true,
-                      },
+                  profile: {
+                    with: {
+                      avatarImage: true,
                     },
-                    reactions: true,
                   },
+                  attachments: {
+                    with: {
+                      storageObject: true,
+                    },
+                  },
+                  reactions: true,
+                  // One level of nesting for now (can be expanded recursively)
+                  ...(maxDepth > 1
+                    ? {
+                        childPosts: {
+                          limit: 20,
+                          orderBy: [desc(posts.createdAt)],
+                          with: {
+                            profile: {
+                              with: {
+                                avatarImage: true,
+                              },
+                            },
+                            reactions: true,
+                          },
+                        },
+                      }
+                    : {}),
                 },
-              } : {}),
-            },
-          },
-        } : {}),
+              },
+            }
+          : {}),
       },
     });
 
@@ -113,25 +122,27 @@ export const getPosts = async (input: GetPostsInput) => {
                 },
               },
               reactions: true,
-              ...(includeChildren && maxDepth > 0 ? {
-                childPosts: {
-                  limit: 50,
-                  orderBy: [desc(posts.createdAt)],
-                  with: {
-                    profile: {
+              ...(includeChildren && maxDepth > 0
+                ? {
+                    childPosts: {
+                      limit: 50,
+                      orderBy: [desc(posts.createdAt)],
                       with: {
-                        avatarImage: true,
+                        profile: {
+                          with: {
+                            avatarImage: true,
+                          },
+                        },
+                        attachments: {
+                          with: {
+                            storageObject: true,
+                          },
+                        },
+                        reactions: true,
                       },
                     },
-                    attachments: {
-                      with: {
-                        storageObject: true,
-                      },
-                    },
-                    reactions: true,
-                  },
-                },
-              } : {}),
+                  }
+                : {}),
             },
           },
           organization: {
@@ -151,10 +162,11 @@ export const getPosts = async (input: GetPostsInput) => {
 
       // Transform to match expected format and add reaction data
       const actorProfileId = await getCurrentProfileId();
-      const itemsWithReactionsAndComments = await getItemsWithReactionsAndComments({
-        items: orgPosts,
-        profileId: actorProfileId,
-      });
+      const itemsWithReactionsAndComments =
+        await getItemsWithReactionsAndComments({
+          items: orgPosts,
+          profileId: actorProfileId,
+        });
 
       return itemsWithReactionsAndComments;
     }
@@ -164,12 +176,13 @@ export const getPosts = async (input: GetPostsInput) => {
 
     // Add reaction counts and user reactions
     const actorProfileId = await getCurrentProfileId();
-    const itemsWithReactionsAndComments = await getItemsWithReactionsAndComments({
-      items: result.map(post => ({ post })),
-      profileId: actorProfileId,
-    });
+    const itemsWithReactionsAndComments =
+      await getItemsWithReactionsAndComments({
+        items: result.map((post) => ({ post })),
+        profileId: actorProfileId,
+      });
 
-    return itemsWithReactionsAndComments.map(item => item.post);
+    return itemsWithReactionsAndComments.map((item) => item.post);
   } catch (error) {
     console.error('Error fetching posts:', error);
     throw error;

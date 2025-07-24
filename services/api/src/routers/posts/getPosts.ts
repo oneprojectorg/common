@@ -6,6 +6,7 @@ import { z } from 'zod';
 
 import { postsEncoder } from '../../encoders';
 import withAuthenticated from '../../middlewares/withAuthenticated';
+import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
 const meta: OpenApiMeta = {
@@ -23,6 +24,7 @@ const outputSchema = z.array(postsEncoder);
 
 export const getPosts = router({
   getPosts: loggedProcedure
+    .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticated)
     .meta(meta)
     .input(getPostsSchema)
