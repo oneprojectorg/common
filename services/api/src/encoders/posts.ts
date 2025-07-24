@@ -10,15 +10,16 @@ export const postAttachmentEncoder = createSelectSchema(attachments).extend({
   storageObject: storageItemEncoder,
 });
 
-export const postsEncoder: z.ZodType<any> = createSelectSchema(posts)
+export const postsEncoder = createSelectSchema(posts)
   .extend({
-    attachments: z.array(postAttachmentEncoder).nullish(),
+    attachments: z.array(postAttachmentEncoder).default([]),
     reactionCounts: z.record(z.string(), z.number()),
     userReaction: z.string().nullish(),
     commentCount: z.number(),
     profile: profileWithAvatarEncoder.nullish(),
-    childPosts: z.array(z.lazy(() => postsEncoder)).nullish(),
-    parentPost: z.lazy(() => postsEncoder).nullish(),
+    // TODO: circular references produce issues in zod so are typed as any for now
+    childPosts: z.array(z.lazy((): z.ZodType<any> => postsEncoder)).nullish(),
+    parentPost: z.lazy((): z.ZodType<any> => postsEncoder).nullish(),
   })
   .strip();
 

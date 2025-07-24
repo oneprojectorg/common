@@ -1,5 +1,5 @@
 import { UnauthorizedError } from '@op/common';
-import { EntityType } from '@op/db/schema';
+import { EntityType, ObjectsInStorage, Profile } from '@op/db/schema';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
@@ -40,7 +40,18 @@ export const getUserProfiles = router({
     .use(withDB)
     .meta(meta)
     .input(z.undefined())
-    .output(z.array(userProfileSchema))
+    .output(
+      z.array(
+        userProfileSchema.extend({
+          avatarImage: z
+            .object({
+              id: z.string(),
+              name: z.string().nullable(),
+            })
+            .nullable(),
+        }),
+      ),
+    )
     .query(async ({ ctx }) => {
       const { db } = ctx.database;
       const { id: authUserId } = ctx.user;
@@ -80,12 +91,14 @@ export const getUserProfiles = router({
         name: string;
         slug: string;
         bio: string | null;
-        avatarImage: { id: string; name: string } | null;
+        avatarImage: { id: string; name: string | null } | null;
       }> = [];
 
       // Add user's personal profile if it exists
       if (user.profile) {
-        const profile = user.profile as any;
+        const profile = user.profile as Profile & {
+          avatarImage: ObjectsInStorage;
+        };
         userProfiles.push({
           id: profile.id,
           type: EntityType.INDIVIDUAL,

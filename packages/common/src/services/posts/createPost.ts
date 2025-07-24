@@ -39,6 +39,10 @@ export const createPost = async (input: CreatePostInput) => {
       })
       .returning();
 
+    if (!newPost) {
+      throw new CommonError('Failed to create post');
+    }
+
     // If organizationId is provided, create the organization association
     if (organizationId) {
       await db.insert(postsToOrganizations).values({

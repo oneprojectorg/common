@@ -164,8 +164,10 @@ const PostDisplayName = ({
   return <>{displayName}</>;
 };
 
-const PostTimestamp = ({ createdAt }: { createdAt?: Date | string }) => {
-  if (!createdAt) return null;
+const PostTimestamp = ({ createdAt }: { createdAt?: Date | string | null }) => {
+  if (!createdAt) {
+    return null;
+  }
 
   return (
     <span className="text-sm text-neutral-gray4">
@@ -175,13 +177,17 @@ const PostTimestamp = ({ createdAt }: { createdAt?: Date | string }) => {
 };
 
 const PostContent = ({ content }: { content?: string }) => {
-  if (!content) return null;
+  if (!content) {
+    return null;
+  }
 
   return <>{linkifyText(content)}</>;
 };
 
 const PostAttachments = ({ attachments }: { attachments?: any[] }) => {
-  if (!attachments) return null;
+  if (!attachments) {
+    return null;
+  }
 
   return (
     <>
@@ -387,10 +393,6 @@ const PostsList = ({
       const avatarData = isComment
         ? { profile: post?.profile as Profile }
         : organization;
-
-      if (organization && post.content === 'happy wednesday everyone!') {
-        console.log('ORGPOST', organization, post, displayName);
-      }
 
       return (
         <Fragment key={i}>
