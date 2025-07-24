@@ -8,7 +8,7 @@ import { organizations } from './organizations.sql';
 import { postReactions } from './postReactions.sql';
 import { profiles } from './profiles.sql';
 
-export const posts: any = pgTable(
+export const posts = pgTable(
   'posts',
   {
     id: autoId().primaryKey(),
