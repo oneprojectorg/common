@@ -164,43 +164,58 @@ export const PostFeed = ({
       await utils.organization.listAllPosts.cancel({});
 
       // Snapshot the previous values
-      const previousListPosts = slug ? utils.organization.listPosts.getInfiniteData({ slug, limit }) : undefined;
+      const previousListPosts = slug
+        ? utils.organization.listPosts.getInfiniteData({ slug, limit })
+        : undefined;
       const previousListAllPosts = utils.organization.listAllPosts.getData({});
 
       // Helper function to update post reactions
       const updatePostReactions = (item: any) => {
         if (item.post.id === postId) {
-          const currentReactions = item.post.userReactions || [];
+          const currentReaction = item.post.userReaction;
           const currentCounts = item.post.reactionCounts || {};
-          
+
           // Check if user already has this reaction
-          const hasReaction = currentReactions.includes(reactionType);
-          
+          const hasReaction = currentReaction === reactionType;
+
           if (hasReaction) {
             // Remove reaction
             return {
               ...item,
               post: {
                 ...item.post,
-                userReactions: currentReactions.filter((r: string) => r !== reactionType),
+                userReaction: null,
                 reactionCounts: {
                   ...currentCounts,
-                  [reactionType]: Math.max(0, (currentCounts[reactionType] || 0) - 1)
-                }
-              }
+                  [reactionType]: Math.max(
+                    0,
+                    (currentCounts[reactionType] || 0) - 1,
+                  ),
+                },
+              },
             };
           } else {
-            // Add reaction
+            // Replace or add reaction
+            const newCounts = { ...currentCounts };
+
+            // If user had a previous reaction, decrement its count
+            if (currentReaction) {
+              newCounts[currentReaction] = Math.max(
+                0,
+                (newCounts[currentReaction] || 0) - 1,
+              );
+            }
+
+            // Increment count for new reaction
+            newCounts[reactionType] = (newCounts[reactionType] || 0) + 1;
+
             return {
               ...item,
               post: {
                 ...item.post,
-                userReactions: [...currentReactions, reactionType],
-                reactionCounts: {
-                  ...currentCounts,
-                  [reactionType]: (currentCounts[reactionType] || 0) + 1
-                }
-              }
+                userReaction: reactionType,
+                reactionCounts: newCounts,
+              },
             };
           }
         }
@@ -209,16 +224,19 @@ export const PostFeed = ({
 
       // Optimistically update listPosts cache (if slug is provided)
       if (slug) {
-        utils.organization.listPosts.setInfiniteData({ slug, limit }, (old: any) => {
-          if (!old) return old;
-          return {
-            ...old,
-            pages: old.pages.map((page: any) => ({
-              ...page,
-              items: page.items.map(updatePostReactions)
-            }))
-          };
-        });
+        utils.organization.listPosts.setInfiniteData(
+          { slug, limit },
+          (old: any) => {
+            if (!old) return old;
+            return {
+              ...old,
+              pages: old.pages.map((page: any) => ({
+                ...page,
+                items: page.items.map(updatePostReactions),
+              })),
+            };
+          },
+        );
       }
 
       // Optimistically update listAllPosts cache
@@ -226,7 +244,7 @@ export const PostFeed = ({
         if (!old) return old;
         return {
           ...old,
-          items: old.items.map(updatePostReactions)
+          items: old.items.map(updatePostReactions),
         };
       });
 
@@ -378,9 +396,7 @@ export const PostFeed = ({
                                     emoji,
                                     count,
                                     isActive:
-                                      post.userReactions?.includes(
-                                        reactionType,
-                                      ) || false,
+                                      post.userReaction === reactionType,
                                   };
                                 },
                               )
@@ -432,7 +448,7 @@ export const PostFeedSkeleton = ({
           <AvatarSkeleton className="!size-8 max-h-8 max-w-8 rounded-full" />
           <FeedMain>
             <FeedHeader className="w-1/2">
-              <Header3 className="w-full font-medium leading-5">
+              <Header3 className="w-full pb-1 font-medium leading-5">
                 <Skeleton />
               </Header3>
               <Skeleton />

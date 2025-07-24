@@ -44,11 +44,12 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
 
     // If it's an organization profile, query organization-specific data separately
     if (profile.type === 'org') {
+      // Get the org with profile attached
       const organization = await client.organization.getBySlug.query({
         slug,
       });
 
-      return (
+      return organization ? (
         <>
           <ImageHeader
             headerImage={
@@ -67,7 +68,7 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
             }
           />
 
-          <ProfileDetails profile={organization as any} />
+          <ProfileDetails organization={organization} />
           <ProfileTabs>
             <ProfileTabList>
               <Tab id="home">Home</Tab>
@@ -80,7 +81,7 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
             <TabPanel id="relationships" className="px-4 sm:px-6 sm:py-0">
               <ProfileOrganizations>
                 <ProfileRelationshipsSuspense
-                  slug={organization.profile.slug}
+                  slug={profile.slug}
                   showBreadcrumb={false}
                 />
               </ProfileOrganizations>
@@ -88,26 +89,14 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
           </ProfileTabs>
           <ProfileTabsMobile profile={organization as any} />
         </>
-      );
+      ) : null;
     }
 
     // For user profiles, create a simplified profile object based on the profile data
     // TODO: this is jammed in until we update the individual profile and a better typing
     const userProfile = {
       id: profile.id,
-      profile: {
-        id: profile.id,
-        name: profile.name,
-        slug: profile.slug,
-        bio: profile.bio,
-        mission: profile.mission,
-        email: profile.email,
-        website: profile.website,
-        city: profile.city,
-        state: profile.state,
-        avatarImage: profile.avatarImage,
-        headerImage: profile.headerImage,
-      },
+      profile,
       // Add minimal required properties for existing components
       links: [],
       networkOrganization: null,
@@ -119,7 +108,7 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
       whereWeWork: [],
       strategies: [],
       receivingFundsTerms: [],
-      orgType: undefined,
+      orgType: '',
       domain: null,
       isVerified: false,
       relationshipCounts: {
@@ -149,7 +138,7 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
           }
         />
 
-        <ProfileDetails profile={userProfile as any} />
+        <ProfileDetails organization={userProfile} />
         <ProfileTabs>
           <ProfileTabList>
             <Tab id="about">About</Tab>
@@ -157,18 +146,18 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
           </ProfileTabList>
 
           <TabPanel id="about" className="sm:p-0">
-            <ProfileGrid profile={userProfile as any} />
+            <ProfileGrid profile={userProfile} />
           </TabPanel>
           <TabPanel id="organizations" className="px-4 sm:px-6 sm:py-0">
             <ProfileOrganizations>
               <ProfileOrganizationsSuspense
-                slug={userProfile.profile.slug}
+                slug={profile.slug}
                 showBreadcrumb={false}
               />
             </ProfileOrganizations>
           </TabPanel>
         </ProfileTabs>
-        <ProfileTabsMobile profile={userProfile as any} />
+        <ProfileTabsMobile profile={userProfile} />
       </>
     );
   } catch (e) {

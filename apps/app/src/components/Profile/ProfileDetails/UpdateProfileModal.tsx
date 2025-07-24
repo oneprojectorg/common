@@ -79,12 +79,14 @@ export const UpdateProfileModal = ({
             </Button>
           </div>
         </ModalHeader>
-        <UpdateProfileForm
-          ref={formRef}
-          profile={user}
-          onSuccess={() => setIsOpen(false)}
-          className="p-6"
-        />
+        {user.profile && (
+          <UpdateProfileForm
+            ref={formRef}
+            profile={user.profile}
+            onSuccess={() => setIsOpen(false)}
+            className="p-6"
+          />
+        )}
       </Modal>
     </DialogTrigger>
   );

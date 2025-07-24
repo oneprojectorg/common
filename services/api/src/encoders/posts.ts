@@ -2,7 +2,7 @@ import { attachments, posts, postsToOrganizations } from '@op/db/schema';
 import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
-import { organizationsEncoder } from './organizations';
+import { organizationsWithProfileEncoder } from './organizations';
 import { storageItemEncoder } from './storageItem';
 
 export const postAttachmentEncoder = createSelectSchema(attachments).extend({
@@ -13,7 +13,7 @@ export const postsEncoder = createSelectSchema(posts)
   .extend({
     attachments: z.array(postAttachmentEncoder).nullish(),
     reactionCounts: z.record(z.string(), z.number()),
-    userReactions: z.array(z.any()),
+    userReaction: z.string().nullish(),
   })
   .strip();
 
@@ -23,7 +23,7 @@ export const postsToOrganizationsEncoder = createSelectSchema(
   postsToOrganizations,
 ).extend({
   post: postsEncoder,
-  organization: organizationsEncoder.nullish(),
+  organization: organizationsWithProfileEncoder.nullish(),
 });
 
 export type PostToOrganization = z.infer<typeof postsToOrganizationsEncoder>;

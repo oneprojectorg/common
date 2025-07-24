@@ -4,7 +4,7 @@ import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
-import { organizationsEncoder } from '../../encoders/organizations';
+import { organizationsWithProfileEncoder } from '../../encoders/organizations';
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withDB from '../../middlewares/withDB';
 import withRateLimited from '../../middlewares/withRateLimited';
@@ -28,7 +28,7 @@ export const getOrganizationsByProfileRouter = router({
     .use(withDB)
     .meta(meta)
     .input(z.object({ profileId: z.string().uuid() }))
-    .output(z.array(organizationsEncoder))
+    .output(z.array(organizationsWithProfileEncoder))
     .query(async ({ input, ctx }) => {
       const { db } = ctx.database;
       const { profileId } = input;
@@ -102,7 +102,9 @@ export const getOrganizationsByProfileRouter = router({
 
         const organizations = Array.from(organizationMap.values());
 
-        return organizations.map((org) => organizationsEncoder.parse(org));
+        return organizations.map((org) =>
+          organizationsWithProfileEncoder.parse(org),
+        );
       } catch (error) {
         console.error('Error getting organizations by profile:', error);
         throw new TRPCError({

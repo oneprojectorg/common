@@ -106,13 +106,23 @@ export const ReactionButton = ({
 const ReactionPicker = ({
   reactionOptions = DEFAULT_REACTION_OPTIONS,
   onReactionSelect,
+  existingReactions = [],
 }: {
   reactionOptions?: readonly ReactionOption[];
   onReactionSelect: (emoji: string) => void;
+  existingReactions?: Reaction[];
 }) => {
+  // Filter out emojis that the current user has already reacted with (isActive = true)
+  const userReactedEmojis = new Set(
+    existingReactions.filter((r) => r.isActive).map((r) => r.emoji),
+  );
+  const availableOptions = reactionOptions.filter(
+    (option) => !userReactedEmojis.has(option.emoji),
+  );
+
   return (
     <Menu className="flex" onAction={(key) => onReactionSelect(key as string)}>
-      {reactionOptions.map((option) => (
+      {availableOptions.map((option) => (
         <MenuItem key={option.emoji} id={option.emoji} textValue={option.label}>
           <span className="text-lg">{option.emoji}</span>
         </MenuItem>
@@ -137,6 +147,7 @@ export const ReactionsButton = ({
             <ReactionPicker
               reactionOptions={reactionOptions}
               onReactionSelect={(emoji) => onAddReaction?.(emoji)}
+              existingReactions={reactions}
             />
           </Popover>
         </MenuTrigger>
@@ -163,6 +174,7 @@ export const ReactionsButton = ({
           <ReactionPicker
             reactionOptions={reactionOptions}
             onReactionSelect={(emoji) => onAddReaction?.(emoji)}
+            existingReactions={reactions}
           />
         </Popover>
       </MenuTrigger>

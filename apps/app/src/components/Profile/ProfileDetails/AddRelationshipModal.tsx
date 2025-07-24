@@ -20,6 +20,7 @@ import { OrganizationAvatar } from '@/components/OrganizationAvatar';
 
 import { AddRelationshipForm } from './AddRelationshipForm';
 import { RemoveRelationshipModal } from './RemoveRelationshipModal';
+import { RespondButton } from './RespondButton';
 
 const RemoveRelationshipModalContent = ({
   relationship,
@@ -122,6 +123,7 @@ export const AddRelationshipModalSuspense = ({
 
   return (
     <>
+      <RespondButton profile={profile} />
       {relationships.length > 1 ? (
         <DropDownButton
           label={

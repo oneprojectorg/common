@@ -4,8 +4,9 @@ import { z } from 'zod';
 
 import { linksEncoder } from './links';
 import { locationEncoder } from './locations';
-import { profileEncoder } from './profiles';
+import { baseProfileEncoder } from './profiles';
 import { projectEncoder } from './projects';
+import { entityTermsEncoder } from './shared';
 import { storageItemEncoder } from './storageItem';
 import { taxonomyTermsEncoder } from './taxonomyTerms';
 
@@ -20,7 +21,7 @@ export const organizationsEncoder = createSelectSchema(organizations)
     domain: true,
   })
   .extend({
-    profile: profileEncoder,
+    profile: baseProfileEncoder.optional(),
     projects: z.array(projectEncoder).optional(),
     links: z.array(linksEncoder).optional().default([]),
     whereWeWork: z.array(locationEncoder).optional().default([]),
@@ -30,6 +31,10 @@ export const organizationsEncoder = createSelectSchema(organizations)
     avatarImage: storageItemEncoder.nullish(),
     acceptingApplications: z.boolean().default(false).optional(),
   });
+
+export const organizationsWithProfileEncoder = organizationsEncoder.extend({
+  profile: baseProfileEncoder,
+});
 
 export const organizationsCreateInputEncoder = createSelectSchema(organizations)
   .merge(createSelectSchema(profiles))
@@ -61,23 +66,12 @@ export const organizationsCreateInputEncoder = createSelectSchema(organizations)
   })
   .partial();
 
-export const organizationsTermsEncoder = z.record(
-  z.string(),
-  z.array(
-    z.object({
-      termUri: z.string(),
-      taxonomyUri: z.string(),
-      id: z.string(),
-      label: z.string(),
-      facet: z.string().nullish(),
-    }),
-  ),
-);
+export const organizationsTermsEncoder = entityTermsEncoder;
 
 export type OrganizationCreateInput = z.infer<
   typeof organizationsCreateInputEncoder
 >;
 
-export type Organization = z.infer<typeof organizationsEncoder>;
+export type Organization = z.infer<typeof organizationsWithProfileEncoder>;
 
 export const orgUserEncoder = createSelectSchema(organizationUsers);

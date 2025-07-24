@@ -24,7 +24,6 @@ export const AllOrganizationsSuspense = ({
   initialData?: ProfileListResponse;
   types?: EntityType[];
 }) => {
-  console.log('TYPES', types);
   const {
     data: paginatedData,
     fetchNextPage,

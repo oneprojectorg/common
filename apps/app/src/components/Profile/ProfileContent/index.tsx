@@ -21,15 +21,17 @@ import { PostUpdate } from '@/components/PostUpdate';
 
 import { ProfileFeed } from '../ProfileFeed';
 
-const FocusAreas = ({ profileId }: { profileId: string }) => {
-  const [terms] = trpc.organization.getTerms.useSuspenseQuery({
-    id: profileId,
-  });
-
-  const focusAreas = terms['necSimple:focusArea'];
-
-  if (!focusAreas?.length) return null;
-
+const FocusAreas = ({
+  focusAreas,
+}: {
+  focusAreas: Array<{
+    id: string;
+    label: string;
+    termUri: string;
+    taxonomyUri: string;
+    facet?: string | null;
+  }>;
+}) => {
   return (
     <section className="flex flex-col gap-2 text-neutral-charcoal">
       <Header3>Focus Areas</Header3>
@@ -40,6 +42,30 @@ const FocusAreas = ({ profileId }: { profileId: string }) => {
       </TagGroup>
     </section>
   );
+};
+
+const IndividualFocusAreas = ({ profileId }: { profileId: string }) => {
+  const [terms] = trpc.individual.getTermsByProfile.useSuspenseQuery({
+    profileId,
+  });
+
+  const focusAreas = terms['necSimple:focusArea'];
+
+  if (!focusAreas?.length) return null;
+
+  return <FocusAreas focusAreas={focusAreas} />;
+};
+
+const OrganizationFocusAreas = ({ profileId }: { profileId: string }) => {
+  const [terms] = trpc.organization.getTerms.useSuspenseQuery({
+    id: profileId,
+  });
+
+  const focusAreas = terms['necSimple:focusArea'];
+
+  if (!focusAreas?.length) return null;
+
+  return <FocusAreas focusAreas={focusAreas} />;
 };
 
 const CommunitiesServed = ({ profileId }: { profileId: string }) => {
@@ -168,7 +194,11 @@ const ProfileAbout = ({
             </section>
           }
         >
-          <FocusAreas profileId={profile.id} />
+          {orgType ? (
+            <OrganizationFocusAreas profileId={profile.id} />
+          ) : (
+            <IndividualFocusAreas profileId={profile.id} />
+          )}
         </Suspense>
       </ErrorBoundary>
 
@@ -201,7 +231,7 @@ export const ProfileGridWrapper = ({ children }: { children: ReactNode }) => {
 export const ProfileGrid = ({ profile }: { profile: Organization }) => {
   return (
     <ProfileGridWrapper>
-      <div className="col-span-6 px-4 py-6">
+      <div className="col-span-6 p-6">
         <ProfileAbout profile={profile} />
       </div>
     </ProfileGridWrapper>

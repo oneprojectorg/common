@@ -3,6 +3,7 @@ import { index, pgTable, primaryKey, text, uuid } from 'drizzle-orm/pg-core';
 
 import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
 import { attachments } from './attachments.sql';
+import { comments } from './comments.sql';
 import { organizations } from './organizations.sql';
 import { postReactions } from './postReactions.sql';
 
@@ -41,6 +42,7 @@ export const postsRelations = relations(posts, ({ many }) => ({
   organization: many(organizations),
   attachments: many(attachments),
   reactions: many(postReactions),
+  comments: many(comments),
 }));
 
 export const postsToOrganizationsRelations = relations(
