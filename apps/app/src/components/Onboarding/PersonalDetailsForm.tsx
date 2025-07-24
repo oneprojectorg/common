@@ -115,7 +115,7 @@ export const PersonalDetailsForm = ({
   const handleImageUpload = async (
     file: File,
     setImageUrl: (url: string | undefined) => void,
-    uploadMutation: any,
+    uploadMutation: typeof uploadBannerImage | typeof uploadImage,
   ): Promise<void> => {
     const reader = new FileReader();
 
