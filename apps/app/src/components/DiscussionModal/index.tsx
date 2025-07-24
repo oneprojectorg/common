@@ -2,35 +2,31 @@
 
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import type { Organization, Post } from '@op/api/encoders';
+import type { PostToOrganization } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { Modal, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Surface } from '@op/ui/Surface';
-import { useEffect } from 'react';
 import { LuX } from 'react-icons/lu';
 
 import { PostFeed } from '../PostFeed';
 import { PostUpdate } from '../PostUpdate';
 
-interface DiscussionModalProps {
-  post: Post;
-  organization?: Organization | null;
-  isOpen: boolean;
-  onClose: () => void;
-}
-
 export function DiscussionModal({
-  post,
-  organization,
+  postToOrg,
   isOpen,
   onClose,
-}: DiscussionModalProps) {
+}: {
+  postToOrg: PostToOrganization;
+  isOpen: boolean;
+  onClose: () => void;
+}) {
   const utils = trpc.useUtils();
   const { user } = useUser();
+  const { post, organizationId, organization } = postToOrg;
 
   const { data: commentsData, isLoading } = trpc.posts.getPosts.useQuery(
     {
-      parentPostId: post.id ?? null, // Get comments (child posts) of this post
+      parentPostId: post.id, // Get comments (child posts) of this post
       limit: 50,
       offset: 0,
       includeChildren: false,
@@ -38,35 +34,18 @@ export function DiscussionModal({
     { enabled: isOpen },
   );
 
-
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && isOpen) {
-        event.preventDefault();
-        onClose();
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener('keydown', handleKeyDown);
-    }
-
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [isOpen, onClose]);
-
   const handleCommentSuccess = () => {
     utils.posts.getPosts.invalidate({
-      parentPostId: post.id ?? null, // Invalidate comments for this post
+      parentPostId: post.id, // Invalidate comments for this post
     });
   };
 
+  const sourcePostProfile = post.profile;
 
   // Get the post author's name for the header
-  const authorName = post?.profile?.name || 'Unknown';
+  const authorName = sourcePostProfile?.name || 'Unknown';
 
-  // Transform comments data to match PostFeed expected format
+  // Transform comments data to match PostFeeds expected PostToOrganizaion format
   const comments =
     commentsData?.map((comment) => ({
       createdAt: comment.createdAt,
@@ -110,21 +89,11 @@ export function DiscussionModal({
         <div className="max-h-96 flex-1 overflow-y-auto pt-6">
           {/* Original Post Display */}
           <PostFeed
-            posts={[
-              {
-                createdAt: post.createdAt,
-                updatedAt: post.updatedAt,
-                deletedAt: null,
-                postId: post.id,
-                organizationId: post.organizationId || '',
-                post,
-                organization: post.organization || organization || null,
-              },
-            ]}
+            posts={[postToOrg]}
             user={user}
             withLinks={false}
             className="border-none"
-            slug={organization?.profile?.slug || post.organization?.profile?.slug}
+            slug={organization?.profile?.slug}
           />
           {/* Comments Display */}
           {isLoading ? (
@@ -137,7 +106,7 @@ export function DiscussionModal({
               user={user}
               withLinks={false}
               className="border-none"
-              slug={organization?.profile?.slug || post.organization?.profile?.slug}
+              slug={organization?.profile?.slug}
             />
           ) : (
             <div className="py-8 text-center text-gray-500">

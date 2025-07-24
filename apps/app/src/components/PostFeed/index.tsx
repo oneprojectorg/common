@@ -4,12 +4,7 @@ import { getPublicUrl } from '@/utils';
 import { OrganizationUser } from '@/utils/UserProvider';
 import { detectLinks, linkifyText } from '@/utils/linkDetection';
 import { trpc } from '@op/api/client';
-import type {
-  Organization,
-  Post,
-  PostToOrganization,
-  Profile,
-} from '@op/api/encoders';
+import type { PostToOrganization, Profile } from '@op/api/encoders';
 import { REACTION_OPTIONS } from '@op/types';
 import { AvatarSkeleton } from '@op/ui/Avatar';
 import { CommentButton } from '@op/ui/CommentButton';
@@ -340,10 +335,11 @@ const PostsList = ({
   user?: OrganizationUser;
   withLinks: boolean;
   onReactionClick: (postId: string, emoji: string) => void;
-  onCommentClick: (post: Post, org?: Organization | null) => void;
+  onCommentClick: (post: PostToOrganization) => void;
 }) => (
   <>
-    {posts.map(({ organization, post }, i) => {
+    {posts.map((postToOrg, i) => {
+      const { organization, post } = postToOrg;
       const { urls } = detectLinks(post?.content);
 
       // For comments (posts without organization), show the post author
@@ -399,7 +395,7 @@ const PostsList = ({
                   <PostCommentButton
                     post={post}
                     isComment={isComment}
-                    onCommentClick={() => onCommentClick(post, organization)}
+                    onCommentClick={() => onCommentClick(postToOrg)}
                   />
                 </div>
               </FeedContent>
@@ -416,7 +412,10 @@ const DiscussionModalContainer = ({
   discussionModal,
   onClose,
 }: {
-  discussionModal: { isOpen: boolean; post: Post; org?: Organization | null };
+  discussionModal: {
+    isOpen: boolean;
+    post?: PostToOrganization | null;
+  };
   onClose: () => void;
 }) => {
   if (!discussionModal.isOpen || !discussionModal.post) {
@@ -425,8 +424,7 @@ const DiscussionModalContainer = ({
 
   return (
     <DiscussionModal
-      post={discussionModal.post}
-      organization={discussionModal.org}
+      postToOrg={discussionModal.post}
       isOpen={discussionModal.isOpen}
       onClose={onClose}
     />
@@ -451,12 +449,10 @@ export const PostFeed = ({
   const utils = trpc.useUtils();
   const [discussionModal, setDiscussionModal] = useState<{
     isOpen: boolean;
-    post: any;
-    org?: Organization | null;
+    post?: PostToOrganization | null;
   }>({
     isOpen: false,
     post: null,
-    org: null,
   });
 
   const toggleReaction = trpc.organization.toggleReaction.useMutation({
@@ -591,12 +587,12 @@ export const PostFeed = ({
     toggleReaction.mutate({ postId, reactionType });
   };
 
-  const handleCommentClick = (post: Post, org?: Organization | null) => {
-    setDiscussionModal({ isOpen: true, post, org });
+  const handleCommentClick = (post: PostToOrganization) => {
+    setDiscussionModal({ isOpen: true, post });
   };
 
   const handleModalClose = () => {
-    setDiscussionModal({ isOpen: false, post: null, org: null });
+    setDiscussionModal({ isOpen: false, post: null });
   };
 
   return (
