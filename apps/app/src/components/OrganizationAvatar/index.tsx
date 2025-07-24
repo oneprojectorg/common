@@ -7,19 +7,17 @@ import Image from 'next/image';
 import { Link } from '@/lib/i18n';
 
 export const OrganizationAvatar = ({
-  organization,
+  profile,
   withLink = true,
   className,
 }: {
-  organization?: { profile?: Profile };
+  profile?: Profile;
   withLink?: boolean;
   className?: string;
 }) => {
-  if (!organization) {
+  if (!profile) {
     return null;
   }
-
-  const profile = 'profile' in organization ? organization.profile : null;
 
   const name = profile?.name ?? '';
   const avatarImage = profile?.avatarImage;

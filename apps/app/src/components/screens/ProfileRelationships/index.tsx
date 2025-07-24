@@ -53,7 +53,7 @@ const RelationshipList = ({
         >
           <div className="flex-shrink-0">
             <OrganizationAvatar
-              organization={relationshipOrg}
+              profile={relationshipOrg.profile}
               className="size-20"
             />
           </div>

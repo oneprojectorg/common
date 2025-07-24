@@ -129,7 +129,7 @@ export const MatchingOrganizationsForm = ({
                   className="hidden"
                 />
                 <OrganizationAvatar
-                  organization={org}
+                  profile={org.profile}
                   withLink={false}
                   className="size-12"
                 />

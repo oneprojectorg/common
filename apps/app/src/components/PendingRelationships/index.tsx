@@ -73,7 +73,7 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
               className={`flex flex-col justify-between gap-6 border-t p-6 transition-colors sm:flex-row sm:items-center sm:gap-2 ${isAccepted ? 'bg-primary-tealWhite' : ''}`}
             >
               <div className="flex items-center gap-3">
-                <OrganizationAvatar organization={org} />
+                <OrganizationAvatar profile={org.profile} />
                 <div className="flex h-full flex-col">
                   <span className="font-bold">
                     {org.profile.name}

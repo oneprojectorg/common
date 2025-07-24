@@ -65,7 +65,7 @@ export const OrganizationNameSuspense = ({ slug }: { slug: string }) => {
     >
       <LuArrowLeft className="size-6 stroke-1 text-neutral-black" />
       <div className="flex items-center gap-1 text-sm font-semibold text-neutral-black">
-        <OrganizationAvatar organization={organization} className="size-6" />
+        <OrganizationAvatar profile={organization.profile} className="size-6" />
         {organization.profile.name}
       </div>
     </Link>

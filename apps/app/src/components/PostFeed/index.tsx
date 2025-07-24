@@ -9,7 +9,6 @@ import type {
   Post,
   PostAttachment,
   PostToOrganization,
-  Profile,
 } from '@op/api/encoders';
 import { REACTION_OPTIONS } from '@op/types';
 import { AvatarSkeleton } from '@op/ui/Avatar';
@@ -31,98 +30,24 @@ import { LuEllipsis, LuLeaf } from 'react-icons/lu';
 import { Link } from '@/lib/i18n';
 
 import { DiscussionModal } from '../DiscussionModal';
+import { FeedContent, FeedHeader, FeedItem, FeedMain } from '../Feed';
 import { LinkPreview } from '../LinkPreview';
 import { OrganizationAvatar } from '../OrganizationAvatar';
 import { formatRelativeTime } from '../utils';
 import { DeletePost } from './DeletePost';
 
-export const FeedItem = ({
-  children,
-  className,
-}: {
-  children: ReactNode;
-  className?: string;
-}) => {
-  return <div className={cn('flex gap-2', className)}>{children}</div>;
-};
-
-export const FeedContent = ({
-  children,
-  className,
-}: {
-  children: ReactNode;
-  className?: string;
-}) => {
-  return (
-    <div
-      className={cn(
-        'flex w-full flex-col gap-2 leading-6 [&>.mediaItem:first-child]:mt-2',
-        className,
-      )}
-      style={{ overflowWrap: 'anywhere' }}
-    >
-      {children}
-    </div>
-  );
-};
-
-const FeedHeader = ({
-  children,
-  className,
-}: {
-  children: ReactNode;
-  className?: string;
-}) => {
-  return (
-    <span className={cn('flex items-center gap-2 align-baseline', className)}>
-      {children}
-    </span>
-  );
-};
-
-export const FeedAvatar = ({ children }: { children?: ReactNode }) => {
-  return (
-    <div className="shadown relative w-8 min-w-8 overflow-hidden">
-      {children}
-    </div>
-  );
-};
-
-export const FeedMain = ({
-  children,
-  className,
-  ...props
-}: {
-  children: ReactNode;
-  className?: string;
-} & React.HTMLAttributes<HTMLDivElement>) => {
-  return (
-    <div
-      className={cn(
-        'flex w-full flex-col items-start justify-start gap-2 overflow-hidden',
-        className,
-      )}
-      {...props}
-    >
-      {children}
-    </div>
-  );
-};
-
 const PostDisplayName = ({
   displayName,
   displaySlug,
   withLinks,
-  isComment,
 }: {
   displayName?: string;
   displaySlug?: string;
   withLinks: boolean;
-  isComment: boolean;
 }) => {
   if (!displayName) return null;
 
-  if (withLinks && !isComment) {
+  if (withLinks) {
     return <Link href={`/org/${displaySlug}`}>{displayName}</Link>;
   }
 
@@ -158,29 +83,25 @@ const PostAttachments = ({
     return null;
   }
 
-  return (
-    <>
-      {attachments.map(({ fileName, storageObject }: any) => {
-        const { mimetype, size } = storageObject.metadata;
+  return attachments.map(({ fileName, storageObject }: any) => {
+    const { mimetype, size } = storageObject.metadata;
 
-        return (
-          <MediaDisplay
-            key={storageObject.id}
-            title={fileName}
-            mimeType={mimetype}
-            url={getPublicUrl(storageObject.name) ?? undefined}
-            size={size}
-          >
-            <AttachmentImage
-              mimetype={mimetype}
-              fileName={fileName}
-              storageObjectName={storageObject.name}
-            />
-          </MediaDisplay>
-        );
-      })}
-    </>
-  );
+    return (
+      <MediaDisplay
+        key={storageObject.id}
+        title={fileName}
+        mimeType={mimetype}
+        url={getPublicUrl(storageObject.name) ?? undefined}
+        size={size}
+      >
+        <AttachmentImage
+          mimetype={mimetype}
+          fileName={fileName}
+          storageObjectName={storageObject.name}
+        />
+      </MediaDisplay>
+    );
+  });
 };
 
 const AttachmentImage = ({
@@ -254,16 +175,17 @@ const PostReactions = ({
 
 const PostCommentButton = ({
   post,
-  isComment,
   onCommentClick,
 }: {
   post: Post;
-  isComment: boolean;
   onCommentClick: () => void;
 }) => {
   const commentsEnabled = useFeatureFlagEnabled('comments');
 
-  if (!commentsEnabled || !post?.id || isComment) return null;
+  // we can disable this to allow for threads in the future
+  if (!commentsEnabled || !post?.id || post.parentPostId) {
+    return null;
+  }
 
   return (
     <CommentButton count={post.commentCount || 0} onPress={onCommentClick} />
@@ -274,16 +196,14 @@ const PostMenu = ({
   organization,
   post,
   user,
-  isComment,
 }: {
   organization: Organization;
   post: Post;
   user?: OrganizationUser;
-  isComment: boolean;
 }) => {
   const canShowMenu =
     (organization?.id === user?.currentOrganization?.id ||
-      (isComment && post?.profile?.id === user?.profile?.id)) &&
+      post?.profile?.id === user?.profile?.id) &&
     !!post?.id;
 
   if (!canShowMenu) {
@@ -357,23 +277,18 @@ export const PostItem = ({
 
   // For comments (posts without organization), show the post author
   // TODO: this is too complex. We need to refactor this
-  const isComment = !organization;
-  const displayName = isComment
-    ? post?.profile?.name
-    : organization?.profile.name;
-  const displaySlug = isComment
-    ? post?.profile?.slug
-    : organization?.profile.slug;
-  const avatarData = isComment
-    ? { profile: post?.profile as Profile }
-    : organization;
+  const displayName =
+    post?.profile?.name ?? organization?.profile.name ?? 'Unkown User';
+  const displaySlug =
+    post?.profile?.slug ?? organization?.profile.slug ?? 'Unkown User';
+  const profile = post.profile ?? organization?.profile;
 
   return (
     <>
       <FeedItem className="sm:px-4">
         <OrganizationAvatar
-          organization={avatarData}
-          withLink={withLinks && !isComment}
+          profile={profile}
+          withLink={withLinks}
           className="!size-8 max-h-8 max-w-8"
         />
         <FeedMain>
@@ -384,18 +299,12 @@ export const PostItem = ({
                   displayName={displayName}
                   displaySlug={displaySlug}
                   withLinks={withLinks}
-                  isComment={isComment}
                 />
               </Header3>
               <PostTimestamp createdAt={post?.createdAt} />
             </div>
             {organization ? (
-              <PostMenu
-                organization={organization}
-                post={post}
-                user={user}
-                isComment={isComment}
-              />
+              <PostMenu organization={organization} post={post} user={user} />
             ) : null}
           </FeedHeader>
           <FeedContent>
@@ -407,7 +316,6 @@ export const PostItem = ({
               {onCommentClick ? (
                 <PostCommentButton
                   post={post}
-                  isComment={isComment}
                   onCommentClick={() => onCommentClick(postToOrg)}
                 />
               ) : null}

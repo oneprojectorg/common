@@ -21,8 +21,8 @@ import { LuImage, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { FeedItem, FeedMain } from '@/components/Feed';
 import { LinkPreview } from '@/components/LinkPreview';
-import { FeedItem, FeedMain } from '@/components/PostFeed';
 
 import { OrganizationAvatar } from '../OrganizationAvatar';
 
@@ -189,7 +189,7 @@ const PostUpdateWithUser = ({
     <div className={cn('flex flex-col gap-8', className)}>
       <FeedItem>
         <OrganizationAvatar
-          organization={organization}
+          profile={organization.profile}
           className="size-8 bg-white"
         />
         <FeedMain className="relative">
