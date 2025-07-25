@@ -24,7 +24,7 @@ import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';
 import { useFeatureFlagEnabled } from 'posthog-js/react';
-import { ReactNode, useState } from 'react';
+import { ReactNode, forwardRef, useState } from 'react';
 import { LuEllipsis, LuLeaf } from 'react-icons/lu';
 
 import { Link } from '@/lib/i18n';
@@ -150,17 +150,17 @@ const PostReactions = ({
 
   const reactions = post.reactionCounts
     ? Object.entries(post.reactionCounts).map(([reactionType, count]) => {
-      const reactionOption = REACTION_OPTIONS.find(
-        (option) => option.key === reactionType,
-      );
-      const emoji = reactionOption?.emoji || reactionType;
+        const reactionOption = REACTION_OPTIONS.find(
+          (option) => option.key === reactionType,
+        );
+        const emoji = reactionOption?.emoji || reactionType;
 
-      return {
-        emoji,
-        count: count as number,
-        isActive: post.userReaction === reactionType,
-      };
-    })
+        return {
+          emoji,
+          count: count as number,
+          isActive: post.userReaction === reactionType,
+        };
+      })
     : [];
 
   return (
@@ -517,17 +517,14 @@ export const usePostFeedActions = ({
   };
 };
 
-export const PostFeed = ({
-  children,
-  className,
-}: {
-  children: ReactNode;
-  className?: string;
-}) => {
+export const PostFeed = forwardRef<
+  HTMLDivElement,
+  { children: ReactNode; className?: string }
+>(({ children, className }: { children: ReactNode; className?: string }) => {
   return (
     <div className={cn('flex flex-col gap-4 pb-8', className)}>{children}</div>
   );
-};
+});
 
 export const PostFeedSkeleton = ({
   className,

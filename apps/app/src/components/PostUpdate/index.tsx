@@ -60,6 +60,7 @@ const PostUpdateWithUser = ({
   onSuccess?: () => void;
   label: string;
 }) => {
+  const { user } = useUser();
   const [content, setContent] = useState('');
   const [detectedUrls, setDetectedUrls] = useState<string[]>([]);
   const [lastFailedPost, setLastFailedPost] = useState<{
@@ -84,8 +85,75 @@ const PostUpdateWithUser = ({
   });
 
   const createPost = trpc.posts.createPost.useMutation({
-    onError: (err) => {
+    onMutate: async (variables) => {
+      // For comments (when parentPostId exists), add optimistic update
+      if (variables.parentPostId) {
+        // Cancel any outgoing refetches
+        await utils.posts.getPosts.cancel({
+          parentPostId: variables.parentPostId,
+        });
+
+        // Snapshot the previous value
+        const previousComments = utils.posts.getPosts.getData({
+          parentPostId: variables.parentPostId,
+          limit: 50,
+          offset: 0,
+          includeChildren: false,
+        });
+
+        // Create optimistic comment
+        const now = new Date().toISOString();
+        const optimisticComment = {
+          id: `optimistic-${Date.now()}`,
+          content: variables.content,
+          createdAt: now,
+          updatedAt: now,
+          deletedAt: null,
+          parentPostId: variables.parentPostId,
+          profileId: user?.currentProfile?.id || '',
+          reactionCounts: {},
+          userReaction: null,
+          commentCount: 0,
+          attachments: [],
+          profile: user?.currentProfile || null,
+          childPosts: null,
+          parentPost: null,
+        };
+
+        // Optimistically update the comments cache
+        utils.posts.getPosts.setData(
+          {
+            parentPostId: variables.parentPostId,
+            limit: 50,
+            offset: 0,
+            includeChildren: false,
+          },
+          (old) => {
+            if (!old) return [optimisticComment];
+            return [optimisticComment, ...old];
+          }
+        );
+
+        return { previousComments, parentPostId: variables.parentPostId };
+      }
+
+      return {};
+    },
+    onError: (err, _variables, context) => {
       const errorInfo = analyzeError(err);
+
+      // Rollback optimistic update on error
+      if (context?.previousComments && context?.parentPostId) {
+        utils.posts.getPosts.setData(
+          {
+            parentPostId: context.parentPostId,
+            limit: 50,
+            offset: 0,
+            includeChildren: false,
+          },
+          context.previousComments
+        );
+      }
 
       if (errorInfo.isConnectionError) {
         // Store failed post data for retry
@@ -103,22 +171,55 @@ const PostUpdateWithUser = ({
 
       console.log('ERROR', err);
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       // Clear form and failed post on success
       setContent('');
       setDetectedUrls([]);
       fileUpload.clearFiles();
       setLastFailedPost(null);
 
+      // For comments, just update the optimistic comment ID with the real one
+      if (variables.parentPostId && data) {
+        utils.posts.getPosts.setData(
+          {
+            parentPostId: variables.parentPostId,
+            limit: 50,
+            offset: 0,
+            includeChildren: false,
+          },
+          (old) => {
+            if (!old) return [data];
+            // Update optimistic comment with real ID, keep all other data intact
+            return old.map(comment => {
+              if (comment.id.toString().startsWith('optimistic-')) {
+                return {
+                  ...comment,
+                  id: data.id, // Update with real ID from server
+                };
+              }
+              return comment;
+            });
+          }
+        );
+      }
+
       // Call onSuccess callback if provided (for comments)
       if (onSuccess) {
         onSuccess();
       }
     },
-    onSettled: () => {
-      void utils.organization.listPosts.invalidate();
-      void utils.organization.listAllPosts.invalidate();
-      router.refresh();
+    onSettled: (_data, _error, variables) => {
+      // For comments, don't invalidate the specific comments query since we handle it optimistically
+      if (!variables.parentPostId) {
+        void utils.organization.listPosts.invalidate();
+        void utils.organization.listAllPosts.invalidate();
+        router.refresh();
+      } else {
+        // For comments, only invalidate the broader queries but not the specific comments
+        void utils.organization.listPosts.invalidate();
+        void utils.organization.listAllPosts.invalidate();
+        // Don't refresh router for comments to avoid layout shifts
+      }
     },
   });
 

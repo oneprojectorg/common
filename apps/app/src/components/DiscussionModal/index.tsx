@@ -23,7 +23,7 @@ export function DiscussionModal({
   isOpen: boolean;
   onClose: () => void;
 }) {
-  const utils = trpc.useUtils();
+  // const utils = trpc.useUtils();
   const { user } = useUser();
   const t = useTranslations();
   const { post, organization } = postToOrg;
@@ -44,19 +44,10 @@ export function DiscussionModal({
   );
 
   const handleCommentSuccess = () => {
-    utils.posts.getPosts.invalidate({
-      parentPostId: post.id, // Invalidate threads for this post
-    });
-    
-    // Scroll to the top comment after successful submission
-    setTimeout(() => {
-      if (commentsContainerRef.current) {
-        const firstComment = commentsContainerRef.current.querySelector('[data-comment-item]');
-        if (firstComment) {
-          firstComment.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      }
-    }, 100);
+    // No need to invalidate - optimistic updates handle this
+    // utils.posts.getPosts.invalidate({
+    //   parentPostId: post.id, // Invalidate threads for this post
+    // });
   };
 
   const sourcePostProfile = post.profile;
@@ -105,7 +96,10 @@ export function DiscussionModal({
       </ModalHeader>
 
       <div className="flex flex-col gap-4">
-        <div className="flex-1 overflow-y-auto px-4 pt-6">
+        <div
+          className="flex-1 overflow-y-auto px-4 pt-6"
+          ref={commentsContainerRef}
+        >
           {/* Original Post Display */}
           <PostFeed className="border-none">
             <PostItem
@@ -122,21 +116,19 @@ export function DiscussionModal({
               Loading discussion...
             </div>
           ) : comments.length > 0 ? (
-            <div ref={commentsContainerRef}>
+            <div>
               <PostFeed className="border-none">
                 {comments.map((comment, i) => (
                   <>
-                    <div data-comment-item>
-                      <PostItem
-                        key={i}
-                        postToOrg={comment}
-                        user={user}
-                        withLinks={false}
-                        onReactionClick={handleReactionClick}
-                        onCommentClick={handleCommentClick}
-                        className="sm:px-0"
-                      />
-                    </div>
+                    <PostItem
+                      key={i}
+                      postToOrg={comment}
+                      user={user}
+                      withLinks={false}
+                      onReactionClick={handleReactionClick}
+                      onCommentClick={handleCommentClick}
+                      className="sm:px-0"
+                    />
                     {comments.length !== i + 1 && (
                       <hr className="bg-neutral-gray1" />
                     )}
