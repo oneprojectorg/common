@@ -85,75 +85,8 @@ const PostUpdateWithUser = ({
   });
 
   const createPost = trpc.posts.createPost.useMutation({
-    onMutate: async (variables) => {
-      // For comments (when parentPostId exists), add optimistic update
-      if (variables.parentPostId) {
-        // Cancel any outgoing refetches
-        await utils.posts.getPosts.cancel({
-          parentPostId: variables.parentPostId,
-        });
-
-        // Snapshot the previous value
-        const previousComments = utils.posts.getPosts.getData({
-          parentPostId: variables.parentPostId,
-          limit: 50,
-          offset: 0,
-          includeChildren: false,
-        });
-
-        // Create optimistic comment
-        const now = new Date().toISOString();
-        const optimisticComment = {
-          id: `optimistic-${Date.now()}`,
-          content: variables.content,
-          createdAt: now,
-          updatedAt: now,
-          deletedAt: null,
-          parentPostId: variables.parentPostId,
-          profileId: user?.currentProfile?.id || '',
-          reactionCounts: {},
-          userReaction: null,
-          commentCount: 0,
-          attachments: [],
-          profile: user?.currentProfile || null,
-          childPosts: null,
-          parentPost: null,
-        };
-
-        // Optimistically update the comments cache
-        utils.posts.getPosts.setData(
-          {
-            parentPostId: variables.parentPostId,
-            limit: 50,
-            offset: 0,
-            includeChildren: false,
-          },
-          (old) => {
-            if (!old) return [optimisticComment];
-            return [optimisticComment, ...old];
-          }
-        );
-
-        return { previousComments, parentPostId: variables.parentPostId };
-      }
-
-      return {};
-    },
-    onError: (err, _variables, context) => {
+    onError: (err) => {
       const errorInfo = analyzeError(err);
-
-      // Rollback optimistic update on error
-      if (context?.previousComments && context?.parentPostId) {
-        utils.posts.getPosts.setData(
-          {
-            parentPostId: context.parentPostId,
-            limit: 50,
-            offset: 0,
-            includeChildren: false,
-          },
-          context.previousComments
-        );
-      }
 
       if (errorInfo.isConnectionError) {
         // Store failed post data for retry
@@ -178,8 +111,14 @@ const PostUpdateWithUser = ({
       fileUpload.clearFiles();
       setLastFailedPost(null);
 
-      // For comments, just update the optimistic comment ID with the real one
+      // For comments, optimistically update the cache with enhanced server data
       if (variables.parentPostId && data) {
+        // Enhance server data with user profile if not present
+        const enhancedData = {
+          ...data,
+          profile: data.profile || user?.currentProfile || null,
+        };
+
         utils.posts.getPosts.setData(
           {
             parentPostId: variables.parentPostId,
@@ -188,17 +127,9 @@ const PostUpdateWithUser = ({
             includeChildren: false,
           },
           (old) => {
-            if (!old) return [data];
-            // Update optimistic comment with real ID, keep all other data intact
-            return old.map(comment => {
-              if (comment.id.toString().startsWith('optimistic-')) {
-                return {
-                  ...comment,
-                  id: data.id, // Update with real ID from server
-                };
-              }
-              return comment;
-            });
+            if (!old) return [enhancedData];
+            // Add the new comment to the beginning
+            return [enhancedData, ...old];
           }
         );
       }
@@ -209,7 +140,7 @@ const PostUpdateWithUser = ({
       }
     },
     onSettled: (_data, _error, variables) => {
-      // For comments, don't invalidate the specific comments query since we handle it optimistically
+      // For comments, don't invalidate since we handle updates optimistically in onSuccess
       if (!variables.parentPostId) {
         void utils.organization.listPosts.invalidate();
         void utils.organization.listAllPosts.invalidate();

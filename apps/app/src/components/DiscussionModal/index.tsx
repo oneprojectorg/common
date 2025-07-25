@@ -44,10 +44,22 @@ export function DiscussionModal({
   );
 
   const handleCommentSuccess = () => {
-    // No need to invalidate - optimistic updates handle this
+    // No need to invalidate - onSuccess optimistic update handles this
     // utils.posts.getPosts.invalidate({
-    //   parentPostId: post.id, // Invalidate threads for this post
+    //   parentPostId: post.id,
     // });
+
+    // Scroll to the first comment immediately since optimistic update happens in onSuccess
+    setTimeout(() => {
+      if (commentsContainerRef.current) {
+        const firstComment = commentsContainerRef.current.querySelector(
+          '[data-is-first-comment="true"]',
+        );
+        if (firstComment) {
+          firstComment.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }
+    }, 50); // Reduced timeout since update is immediate
   };
 
   const sourcePostProfile = post.profile;
@@ -120,15 +132,21 @@ export function DiscussionModal({
               <PostFeed className="border-none">
                 {comments.map((comment, i) => (
                   <>
-                    <PostItem
-                      key={i}
-                      postToOrg={comment}
-                      user={user}
-                      withLinks={false}
-                      onReactionClick={handleReactionClick}
-                      onCommentClick={handleCommentClick}
-                      className="sm:px-0"
-                    />
+                    <div 
+                      data-comment-item 
+                      data-comment-id={comment.post.id}
+                      data-is-first-comment={i === 0}
+                    >
+                      <PostItem
+                        key={i}
+                        postToOrg={comment}
+                        user={user}
+                        withLinks={false}
+                        onReactionClick={handleReactionClick}
+                        onCommentClick={handleCommentClick}
+                        className="sm:px-0"
+                      />
+                    </div>
                     {comments.length !== i + 1 && (
                       <hr className="bg-neutral-gray1" />
                     )}
