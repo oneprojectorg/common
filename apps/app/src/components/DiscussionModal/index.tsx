@@ -23,7 +23,7 @@ export function DiscussionModal({
   isOpen: boolean;
   onClose: () => void;
 }) {
-  // const utils = trpc.useUtils();
+  const utils = trpc.useUtils();
   const { user } = useUser();
   const t = useTranslations();
   const { post, organization } = postToOrg;
@@ -45,21 +45,9 @@ export function DiscussionModal({
 
   const handleCommentSuccess = () => {
     // No need to invalidate - onSuccess optimistic update handles this
-    // utils.posts.getPosts.invalidate({
-    //   parentPostId: post.id,
-    // });
-
-    // Scroll to the first comment immediately since optimistic update happens in onSuccess
-    setTimeout(() => {
-      if (commentsContainerRef.current) {
-        const firstComment = commentsContainerRef.current.querySelector(
-          '[data-is-first-comment="true"]',
-        );
-        if (firstComment) {
-          firstComment.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      }
-    }, 50); // Reduced timeout since update is immediate
+    utils.posts.getPosts.invalidate({
+      parentPostId: post.id,
+    });
   };
 
   const sourcePostProfile = post.profile;
@@ -132,8 +120,8 @@ export function DiscussionModal({
               <PostFeed className="border-none">
                 {comments.map((comment, i) => (
                   <>
-                    <div 
-                      data-comment-item 
+                    <div
+                      data-comment-item
                       data-comment-id={comment.post.id}
                       data-is-first-comment={i === 0}
                     >
