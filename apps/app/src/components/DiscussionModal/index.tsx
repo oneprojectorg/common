@@ -33,7 +33,7 @@ export function DiscussionModal({
 
   const { data: commentsData, isLoading } = trpc.posts.getPosts.useQuery(
     {
-      parentPostId: post.id, // Get comments (child posts) of this post
+      parentPostId: post.id, // Get threads (child posts) of this post
       limit: 50,
       offset: 0,
       includeChildren: false,
@@ -43,7 +43,7 @@ export function DiscussionModal({
 
   const handleCommentSuccess = () => {
     utils.posts.getPosts.invalidate({
-      parentPostId: post.id, // Invalidate comments for this post
+      parentPostId: post.id, // Invalidate threads for this post
     });
   };
 
@@ -69,7 +69,7 @@ export function DiscussionModal({
       isOpen={isOpen}
       onOpenChange={onClose}
       isDismissable
-      className="h-svh max-h-none w-screen max-w-none overflow-y-auto rounded-none text-left sm:h-auto sm:max-h-[75vh] sm:w-[36rem] sm:max-w-[36rem] sm:rounded-md"
+      className="sm:max-h-auto h-svh max-h-none w-screen max-w-none overflow-y-auto rounded-none text-left sm:h-auto sm:w-[36rem] sm:max-w-[36rem]"
     >
       <ModalHeader className="flex items-center justify-between">
         {/* Desktop header */}
@@ -93,7 +93,7 @@ export function DiscussionModal({
       </ModalHeader>
 
       <div className="flex flex-col gap-4">
-        <div className="max-h-96 flex-1 overflow-y-auto px-4 pt-6">
+        <div className="flex-1 overflow-y-auto px-4 pt-6">
           {/* Original Post Display */}
           <PostFeed className="border-none">
             <PostItem

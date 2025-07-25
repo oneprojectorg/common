@@ -38,10 +38,7 @@ export const UpdateUserProfileModal = ({
         <LuPencil className="size-4" />
         {t('Edit Profile')}
       </Button>
-      <Modal
-        isDismissable
-        className="h-svh max-h-none w-screen max-w-none overflow-y-auto rounded-none sm:h-auto sm:max-h-[75vh] sm:w-[36rem] sm:max-w-[36rem] sm:rounded-md"
-      >
+      <Modal isDismissable className="sm:max-h-[75vh]">
         <ModalHeader className="flex items-center justify-between">
           {/* Desktop header */}
           <div className="hidden sm:flex sm:w-full sm:items-center sm:justify-between">

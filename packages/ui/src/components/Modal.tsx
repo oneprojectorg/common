@@ -14,7 +14,7 @@ const overlayStyles = tv({
 });
 
 const modalStyles = tv({
-  base: 'isolate z-[999999] max-h-full w-full max-w-md overflow-hidden rounded-none border border-offWhite bg-white bg-clip-padding backdrop-blur-lg backdrop-brightness-50 backdrop-saturate-50 entering:duration-500 entering:ease-out entering:animate-in entering:fade-in exiting:duration-500 exiting:ease-in exiting:animate-out exiting:fade-out sm:h-auto sm:max-h-[39rem] sm:max-w-[29rem] sm:rounded-md',
+  base: 'isolate z-[999999] max-h-full w-full max-w-md overflow-hidden rounded-none border border-offWhite bg-white bg-clip-padding backdrop-blur-lg backdrop-brightness-50 backdrop-saturate-50 entering:duration-500 entering:ease-out entering:animate-in entering:fade-in exiting:duration-500 exiting:ease-in exiting:animate-out exiting:fade-out sm:h-auto sm:max-h-[calc(100svh-2rem)] sm:max-w-[26rem] sm:rounded-md',
 });
 
 export const ModalHeader = ({

@@ -5,23 +5,19 @@ import { useButton } from 'react-aria';
 import { cn } from '../lib/utils';
 import { LoadingSpinner } from './LoadingSpinner';
 
-interface ImageUploaderProps {
-  label?: string;
-  value?: string | null;
-  onChange?: (file: File) => Promise<void> | void;
-  uploading?: boolean;
-  error?: string | null;
-  className?: string;
-}
-
 export const BannerUploader = ({
   label,
   value,
   onChange,
   uploading = false,
-  className,
   error = null,
-}: ImageUploaderProps) => {
+}: {
+  label?: string;
+  value?: string | null;
+  onChange?: (file: File) => Promise<void> | void;
+  uploading?: boolean;
+  error?: string | null;
+}) => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
 
@@ -42,7 +38,7 @@ export const BannerUploader = ({
   };
 
   return (
-    <div className={cn('flex flex-col items-center justify-center', className)}>
+    <div className="relative flex aspect-[128/55] w-full flex-col items-center justify-center bg-offWhite">
       <div className="size-full">
         <div className="relative flex size-full items-center justify-center bg-redTeal bg-center">
           {value ? (

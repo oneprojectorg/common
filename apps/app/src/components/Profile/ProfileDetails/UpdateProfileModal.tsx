@@ -47,7 +47,7 @@ export const UpdateProfileModal = ({
         isOpen={isOpen}
         onOpenChange={setIsOpen}
         isDismissable
-        className="h-svh max-h-none w-screen max-w-none overflow-y-auto"
+        className="overflow-y-auto sm:max-h-[75vh]"
       >
         <ModalHeader className="flex items-center justify-between">
           {/* Desktop header */}
