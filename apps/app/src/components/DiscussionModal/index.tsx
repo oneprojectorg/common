@@ -6,6 +6,7 @@ import type { PostToOrganization } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { Modal, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Surface } from '@op/ui/Surface';
+import { useRef } from 'react';
 import { LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -26,6 +27,7 @@ export function DiscussionModal({
   const { user } = useUser();
   const t = useTranslations();
   const { post, organization } = postToOrg;
+  const commentsContainerRef = useRef<HTMLDivElement>(null);
 
   const { handleReactionClick, handleCommentClick } = usePostFeedActions({
     slug: organization?.profile?.slug,
@@ -45,6 +47,16 @@ export function DiscussionModal({
     utils.posts.getPosts.invalidate({
       parentPostId: post.id, // Invalidate threads for this post
     });
+    
+    // Scroll to the top comment after successful submission
+    setTimeout(() => {
+      if (commentsContainerRef.current) {
+        const firstComment = commentsContainerRef.current.querySelector('[data-comment-item]');
+        if (firstComment) {
+          firstComment.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }
+    }, 100);
   };
 
   const sourcePostProfile = post.profile;
@@ -110,24 +122,28 @@ export function DiscussionModal({
               Loading discussion...
             </div>
           ) : comments.length > 0 ? (
-            <PostFeed className="border-none">
-              {comments.map((comment, i) => (
-                <>
-                  <PostItem
-                    key={i}
-                    postToOrg={comment}
-                    user={user}
-                    withLinks={false}
-                    onReactionClick={handleReactionClick}
-                    onCommentClick={handleCommentClick}
-                    className="sm:px-0"
-                  />
-                  {comments.length !== i + 1 && (
-                    <hr className="bg-neutral-gray1" />
-                  )}
-                </>
-              ))}
-            </PostFeed>
+            <div ref={commentsContainerRef}>
+              <PostFeed className="border-none">
+                {comments.map((comment, i) => (
+                  <>
+                    <div data-comment-item>
+                      <PostItem
+                        key={i}
+                        postToOrg={comment}
+                        user={user}
+                        withLinks={false}
+                        onReactionClick={handleReactionClick}
+                        onCommentClick={handleCommentClick}
+                        className="sm:px-0"
+                      />
+                    </div>
+                    {comments.length !== i + 1 && (
+                      <hr className="bg-neutral-gray1" />
+                    )}
+                  </>
+                ))}
+              </PostFeed>
+            </div>
           ) : (
             <div className="py-8 text-center text-gray-500">
               No comments yet. Be the first to comment!
