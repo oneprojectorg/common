@@ -1,14 +1,9 @@
-import { trackUserPost } from '@op/analytics';
-import { UnauthorizedError, getOrgAccessUser } from '@op/common';
-import { attachments, posts, postsToOrganizations } from '@op/db/schema';
-import { TRPCError } from '@trpc/server';
-import { waitUntil } from '@vercel/functions';
+import { createPostInOrganization } from '@op/common';
 // import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { postsEncoder } from '../../encoders';
 import withAuthenticated from '../../middlewares/withAuthenticated';
-import withDB from '../../middlewares/withDB';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
@@ -25,12 +20,11 @@ import { loggedProcedure, router } from '../../trpcFactory';
 
 const outputSchema = postsEncoder;
 
-export const createPostInOrganization = router({
+export const createPostInOrganizationRouter = router({
   createPost: loggedProcedure
     // Middlewares
     .use(withRateLimited({ windowSize: 10, maxRequests: 3 }))
     .use(withAuthenticated)
-    .use(withDB)
     // Router
     // .meta(meta)
     .input(
@@ -42,90 +36,28 @@ export const createPostInOrganization = router({
     )
     .output(outputSchema)
     .mutation(async ({ input, ctx }) => {
-      const { db } = ctx.database;
-
-      const user = await getOrgAccessUser({
-        organizationId: input.id,
+      const result = await createPostInOrganization({
+        id: input.id,
+        content: input.content,
+        attachmentIds: input.attachmentIds,
         user: ctx.user,
       });
 
-      if (!user) {
-        throw new UnauthorizedError();
-      }
-
-      try {
-        // Get all storage objects that were attached to the post
-        const allStorageObjects =
-          input.attachmentIds.length > 0
-            ? await db.query.objectsInStorage.findMany({
-                where: (table, { inArray }) =>
-                  inArray(table.id, input.attachmentIds),
-              })
-            : [];
-
-        const [post] = await db
-          .insert(posts)
-          .values({
-            content: input.content,
-          })
-          .returning();
-
-        if (!post) {
-          throw new TRPCError({
-            code: 'INTERNAL_SERVER_ERROR',
-            message: 'Failed to add post to organization',
-          });
-        }
-
-        // Create the join record associating the post with the organization
-        const queryPromises: Promise<any>[] = [
-          db.insert(postsToOrganizations).values({
-            organizationId: input.id,
-            postId: post.id,
-          }),
-        ];
-
-        // Create attachment records if any attachments were uploaded
-        if (allStorageObjects.length > 0) {
-          const attachmentValues = allStorageObjects.map((storageObject) => ({
-            postId: post.id,
-            storageObjectId: storageObject.id,
-            uploadedBy: user.id,
-            fileName:
-              // @ts-expect-error - We check for this existence first. TODO: find the source of this TS error
-              storageObject?.name
-                ?.split('/')
-                .slice(-1)[0]
-                .split('_')
-                .slice(1)
-                .join('_') ?? '',
-            mimeType: (storageObject.metadata as { mimetype: string }).mimetype,
-          }));
-
-          // @ts-ignore
-          queryPromises.push(db.insert(attachments).values(attachmentValues));
-        }
-
-        // Run attachments and join record in parallel
-        await Promise.all(queryPromises);
-
-        // Track analytics (non-blocking)
+      // Handle analytics tracking here in router since it's API-specific
+      const { trackUserPost } = await import('@op/analytics');
+      const { waitUntil } = await import('@vercel/functions');
+      
+      // We need to fetch attachments for analytics if they exist
+      if (input.attachmentIds.length > 0) {
+        const { db } = await import('@op/db/client');
+        const allStorageObjects = await db.query.objectsInStorage.findMany({
+          where: (table, { inArray }) => inArray(table.id, input.attachmentIds),
+        });
         waitUntil(trackUserPost(ctx.user.id, input.content, allStorageObjects));
-
-        const newPost = post;
-
-        const output = outputSchema.parse({
-          ...newPost,
-          reactionCounts: {},
-          userReactions: [],
-        });
-        return output;
-      } catch (error) {
-        console.log('ERROR', error);
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Something went wrong when adding post to organization',
-        });
+      } else {
+        waitUntil(trackUserPost(ctx.user.id, input.content, []));
       }
+
+      return outputSchema.parse(result);
     }),
 });
