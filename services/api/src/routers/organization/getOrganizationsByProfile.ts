@@ -1,12 +1,10 @@
-import { sql } from '@op/db/client';
-import { locations } from '@op/db/schema';
+import { getOrganizationsByProfile } from '@op/common';
 import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { organizationsWithProfileEncoder } from '../../encoders/organizations';
 import withAuthenticated from '../../middlewares/withAuthenticated';
-import withDB from '../../middlewares/withDB';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
@@ -25,82 +23,14 @@ export const getOrganizationsByProfileRouter = router({
   getOrganizationsByProfile: loggedProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticated)
-    .use(withDB)
     .meta(meta)
     .input(z.object({ profileId: z.string().uuid() }))
     .output(z.array(organizationsWithProfileEncoder))
-    .query(async ({ input, ctx }) => {
-      const { db } = ctx.database;
+    .query(async ({ input }) => {
       const { profileId } = input;
 
       try {
-        // Find all users who have access to this profile
-        // Either as their personal profile or as their current profile
-        const usersWithProfile = await db.query.users.findMany({
-          where: (table, { eq, or }) =>
-            or(
-              eq(table.profileId, profileId),
-              eq(table.currentProfileId, profileId),
-            ),
-          with: {
-            organizationUsers: {
-              with: {
-                organization: {
-                  with: {
-                    projects: true,
-                    links: true,
-                    profile: {
-                      with: {
-                        headerImage: true,
-                        avatarImage: true,
-                      },
-                    },
-                    whereWeWork: {
-                      with: {
-                        location: {
-                          extras: {
-                            x: sql<number>`ST_X(${locations.location})`.as('x'),
-                            y: sql<number>`ST_Y(${locations.location})`.as('y'),
-                          },
-                          columns: {
-                            id: true,
-                            name: true,
-                            placeId: true,
-                            countryCode: true,
-                            countryName: true,
-                            metadata: true,
-                            latLng: false,
-                          },
-                        },
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        });
-
-        // Collect all unique organizations
-        const organizationMap = new Map();
-
-        for (const user of usersWithProfile) {
-          for (const orgUser of user.organizationUsers) {
-            if (orgUser.organization) {
-              const org = orgUser.organization;
-
-              // Transform whereWeWork to match expected format
-              const transformedOrg = {
-                ...org,
-                whereWeWork: org.whereWeWork.map((item: any) => item.location),
-              };
-
-              organizationMap.set(org.id, transformedOrg);
-            }
-          }
-        }
-
-        const organizations = Array.from(organizationMap.values());
+        const organizations = await getOrganizationsByProfile(profileId);
 
         return organizations.map((org) =>
           organizationsWithProfileEncoder.parse(org),
