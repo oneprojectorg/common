@@ -8,7 +8,6 @@ import { z } from 'zod';
 
 import { postsEncoder } from '../../encoders';
 import withAuthenticated from '../../middlewares/withAuthenticated';
-import withDB from '../../middlewares/withDB';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
@@ -30,7 +29,6 @@ export const createPostInOrganization = router({
     // Middlewares
     .use(withRateLimited({ windowSize: 10, maxRequests: 3 }))
     .use(withAuthenticated)
-    .use(withDB)
     // Router
     // .meta(meta)
     .input(
