@@ -294,3 +294,103 @@ export const MultipleToasts = () => (
     </div>
   </div>
 );
+
+export const ToastWithActions = () => (
+  <div className="space-y-4">
+    <Toast />
+    <div className="flex flex-wrap gap-4">
+      <Button
+        onPress={() =>
+          toast.success({
+            title: 'File Upload Complete',
+            message: 'Your document has been successfully uploaded.',
+            actions: [<Button color="primary">View File</Button>],
+          })
+        }
+      >
+        Toast with One Action
+      </Button>
+
+      <Button
+        onPress={() =>
+          toast.success({
+            title: 'Connection Restored',
+            message: 'Your internet connection has been restored.',
+            dismissable: true,
+            actions: [
+              <Button color="primary">Retry</Button>,
+              <Button color="secondary">Dismiss</Button>,
+            ],
+          })
+        }
+      >
+        Toast with Two Actions
+      </Button>
+    </div>
+  </div>
+);
+
+export const SingleLineToasts = () => (
+  <div className="space-y-4">
+    <Toast />
+    <div className="flex flex-wrap gap-4">
+      <Button
+        onPress={() =>
+          toast.success({
+            message:
+              'Cooperativum mutualitas communis, equitatis prosperum. Societas nostra fundata est super principia cooperationis et mutuae auxilii.',
+            actions: [
+              <Button color="primary" size="small">
+                View profile
+              </Button>,
+            ],
+          })
+        }
+      >
+        Single Line Success with Action
+      </Button>
+
+      <Button
+        onPress={() =>
+          toast.success({
+            message:
+              'Cooperativum mutualitas communis, equitatis prosperum. Societas nostra fundata est super principia cooperationis et mutuae auxilii.',
+            actions: [
+              <Button color="primary" size="small">
+                View profile
+              </Button>,
+              <Button color="secondary" size="small">
+                Undo
+              </Button>,
+            ],
+          })
+        }
+      >
+        Single Line Success with Two Actions
+      </Button>
+
+      <Button
+        color="destructive"
+        onPress={() =>
+          toast.error({
+            message:
+              'Cooperativum mutualitas communis, equitatis prosperum. Societas nostra fundata est super principia cooperationis et mutuae auxilii.',
+            dismissable: true,
+          })
+        }
+      >
+        Single Line Error with Dismiss
+      </Button>
+
+      <Button
+        onPress={() =>
+          toast.success({
+            message: 'Message without actions. '.repeat(4),
+          })
+        }
+      >
+        Single Line No Actions
+      </Button>
+    </div>
+  </div>
+);
