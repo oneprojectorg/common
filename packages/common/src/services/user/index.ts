@@ -58,3 +58,156 @@ export const getAllowListUser = async ({ email }: { email?: string }) => {
 
   return allowedEmail;
 };
+
+export const getUserByAuthId = async (authUserId: string) => {
+  return await db.query.users.findFirst({
+    where: (table, { eq }) => eq(table.authUserId, authUserId),
+    with: {
+      avatarImage: true,
+      organizationUsers: {
+        with: {
+          organization: {
+            with: {
+              profile: {
+                with: {
+                  avatarImage: true,
+                },
+              },
+            },
+          },
+        },
+      },
+      currentOrganization: {
+        with: {
+          profile: {
+            with: {
+              avatarImage: true,
+            },
+          },
+        },
+      },
+      currentProfile: {
+        with: {
+          avatarImage: true,
+          headerImage: true,
+        },
+      },
+      profile: {
+        with: {
+          avatarImage: true,
+          headerImage: true,
+        },
+      },
+    },
+  });
+};
+
+export const createUserByAuthId = async ({ authUserId, email }: { authUserId: string; email: string }) => {
+  const [newUser] = await db
+    .insert(users)
+    .values({
+      authUserId,
+      email,
+    })
+    .returning();
+
+  if (!newUser) {
+    throw new Error('Could not create user');
+  }
+
+  return await db.query.users.findFirst({
+    where: (table, { eq }) => eq(table.id, newUser.id),
+    with: {
+      avatarImage: true,
+      organizationUsers: {
+        with: {
+          organization: {
+            with: {
+              profile: {
+                with: {
+                  avatarImage: true,
+                },
+              },
+            },
+          },
+        },
+      },
+      currentOrganization: {
+        with: {
+          profile: {
+            with: {
+              avatarImage: true,
+            },
+          },
+        },
+      },
+      currentProfile: {
+        with: {
+          avatarImage: true,
+          headerImage: true,
+        },
+      },
+      profile: {
+        with: {
+          avatarImage: true,
+          headerImage: true,
+        },
+      },
+    },
+  });
+};
+
+export const getUserWithProfiles = async (authUserId: string) => {
+  return await db.query.users.findFirst({
+    where: (table, { eq }) => eq(table.authUserId, authUserId),
+    with: {
+      profile: {
+        with: {
+          avatarImage: true,
+        },
+      },
+      organizationUsers: {
+        with: {
+          organization: {
+            with: {
+              profile: {
+                with: {
+                  avatarImage: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+};
+
+export const getUserForProfileSwitch = async (authUserId: string) => {
+  return await db.query.users.findFirst({
+    where: (table, { eq }) => eq(table.authUserId, authUserId),
+    with: {
+      profile: true,
+      organizationUsers: {
+        with: {
+          organization: {
+            with: {
+              profile: true,
+            },
+          },
+        },
+      },
+    },
+  });
+};
+
+export const updateUserCurrentProfile = async (authUserId: string, profileId: string, orgId?: number) => {
+  return await db
+    .update(users)
+    .set({
+      currentProfileId: profileId,
+      ...(orgId ? { lastOrgId: orgId.toString() } : {}),
+    })
+    .where(eq(users.authUserId, authUserId))
+    .returning();
+};

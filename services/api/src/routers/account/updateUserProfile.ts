@@ -5,7 +5,6 @@ import { ZodError, z } from 'zod';
 
 import { userEncoder } from '../../encoders';
 import withAuthenticated from '../../middlewares/withAuthenticated';
-import withDB from '../../middlewares/withDB';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
@@ -27,7 +26,6 @@ const updateUserProfile = router({
     // Middlewares
     .use(withRateLimited({ windowSize: 10, maxRequests: 3 }))
     .use(withAuthenticated)
-    .use(withDB)
     // Router
     .meta(meta)
     .input(
@@ -61,14 +59,12 @@ const updateUserProfile = router({
     )
     .output(userEncoder)
     .mutation(async ({ input, ctx }) => {
-      const { db } = ctx.database;
       const { user } = ctx;
 
       try {
         const result = await updateUserProfileService({
           input,
           user,
-          db,
         });
 
         return userEncoder.parse(result);
