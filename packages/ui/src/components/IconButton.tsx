@@ -5,12 +5,12 @@ import { tv } from 'tailwind-variants';
 import type { VariantProps } from 'tailwind-variants';
 
 const iconButtonStyle = tv({
-  base: 'flex items-center justify-center rounded-full outline-none duration-200 focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-teal-600',
+  base: 'flex items-center justify-center outline-none duration-200 focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-teal-600',
   variants: {
     size: {
-      small: 'h-6 w-6 p-1',
-      medium: 'h-8 w-8 p-1',
-      large: 'h-10 w-10 p-2',
+      small: 'h-6 w-6 rounded-full',
+      medium: 'h-8 w-8 rounded-lg',
+      large: 'h-10 w-10 rounded-lg',
     },
     variant: {
       ghost: 'bg-white/80 hover:bg-neutral-gray1 pressed:bg-neutral-gray2',
