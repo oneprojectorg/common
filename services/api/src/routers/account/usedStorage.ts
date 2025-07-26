@@ -1,10 +1,8 @@
-import { usersUsedStorage } from '@op/db/schema';
-import { and, eq } from 'drizzle-orm';
+import { getUserStorageUsage } from '@op/common';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import withAuthenticated from '../../middlewares/withAuthenticated';
-import withDB from '../../middlewares/withDB';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
@@ -26,7 +24,6 @@ const usedStorage = router({
     // Middlewares
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticated)
-    .use(withDB)
     // Router
     .meta(meta)
     .input(z.undefined())
@@ -37,25 +34,7 @@ const usedStorage = router({
       }),
     )
     .query(async ({ ctx }) => {
-      const { db } = ctx.database;
-
-      const result = await db
-        .select()
-        .from(usersUsedStorage)
-        .where(and(eq(usersUsedStorage.userId, ctx.user.id)))
-        .limit(1);
-
-      if (!result.length || !result[0]) {
-        return {
-          usedStorage: 0,
-          maxStorage: 4000000000,
-        };
-      }
-
-      return {
-        usedStorage: Number.parseInt(result[0].totalSize as string),
-        maxStorage: 4000000000,
-      };
+      return await getUserStorageUsage(ctx.user.id);
     }),
 });
 

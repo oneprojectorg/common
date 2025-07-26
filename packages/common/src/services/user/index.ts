@@ -1,5 +1,5 @@
-import { db, eq } from '@op/db/client';
-import { allowList, users } from '@op/db/schema';
+import { db, eq, sql, and } from '@op/db/client';
+import { allowList, users, organizationUsers, usersUsedStorage, organizations } from '@op/db/schema';
 
 export interface User {
   id: number;
@@ -210,4 +210,70 @@ export const updateUserCurrentProfile = async (authUserId: string, profileId: st
     })
     .where(eq(users.authUserId, authUserId))
     .returning();
+};
+
+export const checkUsernameAvailability = async (username: string) => {
+  if (username === '') {
+    return { available: true };
+  }
+
+  const result = await db
+    .select({
+      exists: sql<boolean>`true`,
+    })
+    .from(organizationUsers)
+    .where(eq(users.username, username))
+    .limit(1);
+
+  if (!result.length || !result[0]) {
+    return { available: true };
+  }
+
+  return { available: false };
+};
+
+export const getUserStorageUsage = async (userId: string) => {
+  const result = await db
+    .select()
+    .from(usersUsedStorage)
+    .where(and(eq(usersUsedStorage.userId, userId)))
+    .limit(1);
+
+  if (!result.length || !result[0]) {
+    return {
+      usedStorage: 0,
+      maxStorage: 4000000000 as const,
+    };
+  }
+
+  return {
+    usedStorage: Number.parseInt(result[0].totalSize as string),
+    maxStorage: 4000000000 as const,
+  };
+};
+
+export const switchUserOrganization = async (authUserId: string, organizationId: string) => {
+  // First, get the organization to find its profile ID
+  const organization = await db.query.organizations.findFirst({
+    where: eq(organizations.id, organizationId),
+  });
+
+  if (!organization) {
+    throw new Error('Organization not found');
+  }
+
+  const result = await db
+    .update(users)
+    .set({
+      lastOrgId: organization.id,
+      currentProfileId: organization.profileId,
+    })
+    .where(eq(users.authUserId, authUserId))
+    .returning();
+
+  if (!result.length || !result[0]) {
+    throw new Error('User not found');
+  }
+
+  return result[0];
 };
