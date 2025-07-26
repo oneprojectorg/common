@@ -1,4 +1,6 @@
+import { trackUserPost } from '@op/analytics';
 import { createPostInOrganization } from '@op/common';
+import { waitUntil } from '@vercel/functions';
 // import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
@@ -36,27 +38,14 @@ export const createPostInOrganizationRouter = router({
     )
     .output(outputSchema)
     .mutation(async ({ input, ctx }) => {
-      const result = await createPostInOrganization({
+      const { result, allStorageObjects } = await createPostInOrganization({
         id: input.id,
         content: input.content,
         attachmentIds: input.attachmentIds,
         user: ctx.user,
       });
 
-      // Handle analytics tracking here in router since it's API-specific
-      const { trackUserPost } = await import('@op/analytics');
-      const { waitUntil } = await import('@vercel/functions');
-      
-      // We need to fetch attachments for analytics if they exist
-      if (input.attachmentIds.length > 0) {
-        const { db } = await import('@op/db/client');
-        const allStorageObjects = await db.query.objectsInStorage.findMany({
-          where: (table, { inArray }) => inArray(table.id, input.attachmentIds),
-        });
-        waitUntil(trackUserPost(ctx.user.id, input.content, allStorageObjects));
-      } else {
-        waitUntil(trackUserPost(ctx.user.id, input.content, []));
-      }
+      waitUntil(trackUserPost(ctx.user.id, input.content, allStorageObjects));
 
       return outputSchema.parse(result);
     }),

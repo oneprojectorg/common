@@ -1,9 +1,10 @@
-import { getOrgAccessUser } from '../';
-import { UnauthorizedError } from '../../utils/error';
 import { db } from '@op/db/client';
 import { attachments, posts, postsToOrganizations } from '@op/db/schema';
-import { TRPCError } from '@trpc/server';
 import type { User } from '@supabase/supabase-js';
+import { TRPCError } from '@trpc/server';
+
+import { getOrgAccessUser } from '../';
+import { UnauthorizedError } from '../../utils/error';
 
 export interface CreatePostInOrganizationOptions {
   id: string;
@@ -12,7 +13,9 @@ export interface CreatePostInOrganizationOptions {
   user: User;
 }
 
-export const createPostInOrganization = async (options: CreatePostInOrganizationOptions) => {
+export const createPostInOrganization = async (
+  options: CreatePostInOrganizationOptions,
+) => {
   const { id, content, attachmentIds = [], user } = options;
 
   const orgUser = await getOrgAccessUser({
@@ -29,8 +32,7 @@ export const createPostInOrganization = async (options: CreatePostInOrganization
     const allStorageObjects =
       attachmentIds.length > 0
         ? await db.query.objectsInStorage.findMany({
-            where: (table, { inArray }) =>
-              inArray(table.id, attachmentIds),
+            where: (table, { inArray }) => inArray(table.id, attachmentIds),
           })
         : [];
 
@@ -73,7 +75,6 @@ export const createPostInOrganization = async (options: CreatePostInOrganization
         mimeType: (storageObject.metadata as { mimetype: string }).mimetype,
       }));
 
-      // @ts-ignore
       queryPromises.push(db.insert(attachments).values(attachmentValues));
     }
 
@@ -81,9 +82,12 @@ export const createPostInOrganization = async (options: CreatePostInOrganization
     await Promise.all(queryPromises);
 
     return {
-      ...post,
-      reactionCounts: {},
-      userReactions: [],
+      result: {
+        ...post,
+        reactionCounts: {},
+        userReactions: [],
+      },
+      allStorageObjects,
     };
   } catch (error) {
     console.log('ERROR', error);
