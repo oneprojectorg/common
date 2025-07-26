@@ -24,7 +24,7 @@ export const reactionsRouter = router({
 
       try {
         const profileId = await getCurrentProfileId();
-        await addReaction(postId, profileId, reactionType);
+        await addReaction({ postId, profileId, reactionType });
         return { success: true };
       } catch (error) {
         throw new TRPCError({
@@ -46,7 +46,7 @@ export const reactionsRouter = router({
       const { postId } = input;
 
       const profileId = await getCurrentProfileId();
-      await removeReaction(postId, profileId);
+      await removeReaction({ postId, profileId });
 
       return { success: true };
     }),
@@ -65,7 +65,7 @@ export const reactionsRouter = router({
 
       try {
         const profileId = await getCurrentProfileId();
-        return await toggleReaction(postId, profileId, reactionType);
+        return await toggleReaction({ postId, profileId, reactionType });
       } catch (e) {
         throw new CommonError('Failed to toggle reaction');
       }

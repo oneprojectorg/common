@@ -59,7 +59,7 @@ export const getAllowListUser = async ({ email }: { email?: string }) => {
   return allowedEmail;
 };
 
-export const getUserByAuthId = async (authUserId: string) => {
+export const getUserByAuthId = async ({ authUserId }: { authUserId: string }) => {
   return await db.query.users.findFirst({
     where: (table, { eq }) => eq(table.authUserId, authUserId),
     with: {
@@ -157,7 +157,7 @@ export const createUserByAuthId = async ({ authUserId, email }: { authUserId: st
   });
 };
 
-export const getUserWithProfiles = async (authUserId: string) => {
+export const getUserWithProfiles = async ({ authUserId }: { authUserId: string }) => {
   return await db.query.users.findFirst({
     where: (table, { eq }) => eq(table.authUserId, authUserId),
     with: {
@@ -183,7 +183,7 @@ export const getUserWithProfiles = async (authUserId: string) => {
   });
 };
 
-export const getUserForProfileSwitch = async (authUserId: string) => {
+export const getUserForProfileSwitch = async ({ authUserId }: { authUserId: string }) => {
   return await db.query.users.findFirst({
     where: (table, { eq }) => eq(table.authUserId, authUserId),
     with: {
@@ -201,7 +201,14 @@ export const getUserForProfileSwitch = async (authUserId: string) => {
   });
 };
 
-export const updateUserCurrentProfile = async (authUserId: string, profileId: string, orgId?: number) => {
+export interface UpdateUserCurrentProfileOptions {
+  authUserId: string;
+  profileId: string;
+  orgId?: number;
+}
+
+export const updateUserCurrentProfile = async (options: UpdateUserCurrentProfileOptions) => {
+  const { authUserId, profileId, orgId } = options;
   return await db
     .update(users)
     .set({
@@ -212,7 +219,7 @@ export const updateUserCurrentProfile = async (authUserId: string, profileId: st
     .returning();
 };
 
-export const checkUsernameAvailability = async (username: string) => {
+export const checkUsernameAvailability = async ({ username }: { username: string }) => {
   if (username === '') {
     return { available: true };
   }
@@ -232,7 +239,7 @@ export const checkUsernameAvailability = async (username: string) => {
   return { available: false };
 };
 
-export const getUserStorageUsage = async (userId: string) => {
+export const getUserStorageUsage = async ({ userId }: { userId: string }) => {
   const result = await db
     .select()
     .from(usersUsedStorage)
@@ -252,7 +259,13 @@ export const getUserStorageUsage = async (userId: string) => {
   };
 };
 
-export const switchUserOrganization = async (authUserId: string, organizationId: string) => {
+export interface SwitchUserOrganizationOptions {
+  authUserId: string;
+  organizationId: string;
+}
+
+export const switchUserOrganization = async (options: SwitchUserOrganizationOptions) => {
+  const { authUserId, organizationId } = options;
   // First, get the organization to find its profile ID
   const organization = await db.query.organizations.findFirst({
     where: eq(organizations.id, organizationId),

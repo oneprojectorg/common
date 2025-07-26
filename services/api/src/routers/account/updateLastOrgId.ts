@@ -32,7 +32,7 @@ export const switchOrganization = router({
       const { id } = ctx.user;
 
       try {
-        const result = await switchUserOrganization(id, input.organizationId);
+        const result = await switchUserOrganization({ authUserId: id, organizationId: input.organizationId });
         return userEncoder.parse(result);
       } catch (error) {
         console.error(error);

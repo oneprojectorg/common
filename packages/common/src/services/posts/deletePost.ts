@@ -1,7 +1,13 @@
 import { db, eq, and } from '@op/db/client';
 import { posts, postsToOrganizations } from '@op/db/schema';
 
-export const deletePostById = async (postId: string, organizationId: string) => {
+export interface DeletePostByIdOptions {
+  postId: string;
+  organizationId: string;
+}
+
+export const deletePostById = async (options: DeletePostByIdOptions) => {
+  const { postId, organizationId } = options;
   // Verify the post exists and belongs to the organization
   const postExists = await db
     .select()

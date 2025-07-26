@@ -32,7 +32,7 @@ export const switchProfile = router({
       const { id } = ctx.user;
 
       // Verify the profile exists and the user has access to it
-      const user = await getUserForProfileSwitch(id);
+      const user = await getUserForProfileSwitch({ authUserId: id });
 
       if (!user) {
         throw new TRPCError({
@@ -63,7 +63,7 @@ export const switchProfile = router({
 
       let result;
       try {
-        result = await updateUserCurrentProfile(id, input.profileId, org?.organization?.id);
+        result = await updateUserCurrentProfile({ authUserId: id, profileId: input.profileId, orgId: org?.organization?.id });
       } catch (error) {
         console.error(error);
         throw new TRPCError({

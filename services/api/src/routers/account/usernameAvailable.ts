@@ -41,7 +41,7 @@ const usernameAvailable = router({
     )
     .query(async ({ input }) => {
       const { username } = input;
-      return await checkUsernameAvailability(username);
+      return await checkUsernameAvailability({ username });
     }),
 });
 

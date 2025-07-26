@@ -30,7 +30,7 @@ export const getMyAccount = router({
     .query(async ({ ctx }) => {
       const { id, email } = ctx.user;
 
-      const result = await getUserByAuthId(id);
+      const result = await getUserByAuthId({ authUserId: id });
 
       if (!result) {
         if (!email) {

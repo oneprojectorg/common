@@ -46,7 +46,7 @@ export const deletePost = router({
       }
 
       try {
-        return await deletePostById(id, organizationId);
+        return await deletePostById({ postId: id, organizationId });
       } catch (error) {
         if (error instanceof Error && error.message.includes('Post not found')) {
           throw new TRPCError({

@@ -54,7 +54,7 @@ export const getUserProfiles = router({
       const { id: authUserId } = ctx.user;
 
       // Get the user's database record
-      const user = await getUserWithProfiles(authUserId);
+      const user = await getUserWithProfiles({ authUserId });
 
       if (!user) {
         throw new UnauthorizedError('User not found');

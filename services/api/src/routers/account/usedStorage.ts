@@ -34,7 +34,7 @@ const usedStorage = router({
       }),
     )
     .query(async ({ ctx }) => {
-      return await getUserStorageUsage(ctx.user.id);
+      return await getUserStorageUsage({ userId: ctx.user.id });
     }),
 });
 

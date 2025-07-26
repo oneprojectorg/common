@@ -1,11 +1,14 @@
 import { and, db, eq } from '@op/db/client';
 import { postReactions } from '@op/db/schema';
 
-export const addReaction = async (
-  postId: string,
-  profileId: string,
-  reactionType: string,
-) => {
+export interface AddReactionOptions {
+  postId: string;
+  profileId: string;
+  reactionType: string;
+}
+
+export const addReaction = async (options: AddReactionOptions) => {
+  const { postId, profileId, reactionType } = options;
   // First, remove any existing reaction from this user on this post
   await db
     .delete(postReactions)
