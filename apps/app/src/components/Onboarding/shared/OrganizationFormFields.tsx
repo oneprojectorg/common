@@ -94,7 +94,10 @@ export const OrganizationFormFields = ({
       if (!acceptedTypes.includes(file.type)) {
         const types = acceptedTypes.map((t) => t.split('/')[1]).join(', ');
         toast.error({
-          message: t('That file type is not supported. Accepted types: {types}', { types }),
+          message: t(
+            'That file type is not supported. Accepted types: {types}',
+            { types },
+          ),
         });
         return;
       }
@@ -102,7 +105,9 @@ export const OrganizationFormFields = ({
       if (file.size > DEFAULT_MAX_SIZE) {
         const maxSizeMB = (DEFAULT_MAX_SIZE / 1024 / 1024).toFixed(2);
         toast.error({
-          message: t('File too large. Maximum size: {maxSizeMB}MB', { maxSizeMB }),
+          message: t('File too large. Maximum size: {maxSizeMB}MB', {
+            maxSizeMB,
+          }),
         });
         return;
       }
@@ -128,7 +133,6 @@ export const OrganizationFormFields = ({
     <>
       <div className="relative w-full pb-12 sm:pb-20">
         <BannerUploader
-          className="relative aspect-[128/55] w-full bg-offWhite"
           value={bannerImage?.url ?? undefined}
           onChange={(file: File) =>
             handleImageUpload(file, setBannerImage, uploadImage)
