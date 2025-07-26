@@ -9,20 +9,22 @@ export interface AddReactionOptions {
 
 export const addReaction = async (options: AddReactionOptions) => {
   const { postId, profileId, reactionType } = options;
-  // First, remove any existing reaction from this user on this post
-  await db
-    .delete(postReactions)
-    .where(
-      and(
-        eq(postReactions.postId, postId),
-        eq(postReactions.profileId, profileId),
-      ),
-    );
+  await db.transaction(async (tx) => {
+    // First, remove any existing reaction from this user on this post
+    await tx
+      .delete(postReactions)
+      .where(
+        and(
+          eq(postReactions.postId, postId),
+          eq(postReactions.profileId, profileId),
+        ),
+      );
 
-  // Then add the new reaction
-  await db.insert(postReactions).values({
-    postId,
-    profileId,
-    reactionType,
+    // Then add the new reaction
+    await tx.insert(postReactions).values({
+      postId,
+      profileId,
+      reactionType,
+    });
   });
 };

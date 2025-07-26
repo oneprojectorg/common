@@ -65,11 +65,10 @@ export const createPostInOrganization = async (
         storageObjectId: storageObject.id,
         uploadedBy: orgUser.id,
         fileName:
-          // @ts-expect-error - We check for this existence first. TODO: find the source of this TS error
           storageObject?.name
             ?.split('/')
             .slice(-1)[0]
-            .split('_')
+            ?.split('_')
             .slice(1)
             .join('_') ?? '',
         mimeType: (storageObject.metadata as { mimetype: string }).mimetype,
