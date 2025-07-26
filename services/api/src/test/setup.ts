@@ -1,4 +1,15 @@
-import { vi } from "vitest"
+import { vi, beforeEach } from "vitest"
+
+// Mock Next.js server
+vi.mock("next/server", () => ({
+  NextRequest: vi.fn(),
+  NextResponse: vi.fn(),
+}))
+
+// Mock Axiom NextJS
+vi.mock("@axiomhq/nextjs", () => ({
+  withAxiom: vi.fn((handler) => handler),
+}))
 
 // Mock environment variables
 vi.mock("@op/core", async () => {
