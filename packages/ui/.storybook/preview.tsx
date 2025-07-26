@@ -22,7 +22,7 @@ const preview: Preview = {
   ],
   parameters: {
     docs: {
-      theme: themes.dark,
+      theme: themes.light
     },
     controls: {
       matchers: {
