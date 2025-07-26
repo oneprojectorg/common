@@ -38,7 +38,7 @@ export const Menu = <T extends object>(props: MenuProps<T>) => {
 };
 
 export const menuItemStyles = tv({
-  base: '-outline-offset-1 group flex cursor-pointer select-none items-center gap-4 rounded px-4 py-2 py-4 pl-3 pr-1.5 text-neutral-charcoal outline outline-0 forced-color-adjust-none',
+  base: 'group flex cursor-pointer select-none items-center gap-4 rounded px-4 py-2 py-4 pl-3 pr-1.5 text-neutral-charcoal outline outline-0 -outline-offset-1 forced-color-adjust-none',
   variants: {
     selected: {
       true: 'bg-primary-tealWhite outline-1 outline-primary-teal',

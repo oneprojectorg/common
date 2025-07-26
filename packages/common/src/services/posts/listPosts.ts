@@ -1,5 +1,10 @@
 import { and, count, db, eq, inArray, isNotNull, lt, or } from '@op/db/client';
-import { organizations, posts, postsToOrganizations, profiles } from '@op/db/schema';
+import {
+  organizations,
+  posts,
+  postsToOrganizations,
+  profiles,
+} from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
 import {
@@ -105,10 +110,11 @@ export const listPosts = async ({
 
     const actorProfileId = await getCurrentProfileId();
     // Transform items to include reaction counts, user's reactions, and comment counts
-    const itemsWithReactionsAndComments = await getItemsWithReactionsAndComments({
-      items,
-      profileId: actorProfileId,
-    });
+    const itemsWithReactionsAndComments =
+      await getItemsWithReactionsAndComments({
+        items,
+        profileId: actorProfileId,
+      });
 
     return {
       items: itemsWithReactionsAndComments,
@@ -129,31 +135,35 @@ export const getItemsWithReactionsAndComments = async ({
 }: {
   items: any[];
   profileId: string;
-}): Promise<Array<
-  any & {
-    post: any & {
-      reactionCounts: Record<string, number>;
-      userReaction: string | null;
-      commentCount: number;
-    };
-  }
->> => {
+}): Promise<
+  Array<
+    any & {
+      post: any & {
+        reactionCounts: Record<string, number>;
+        userReaction: string | null;
+        commentCount: number;
+      };
+    }
+  >
+> => {
   // Get all post IDs to fetch comment counts
   const postIds = items.map((item) => item.post.id).filter(Boolean);
-  
+
   // Fetch comment counts for all posts in a single query
   const commentCountMap: Record<string, number> = {};
   if (postIds.length > 0) {
     const commentCounts = await db
       .select({
         parentPostId: posts.parentPostId,
-        count: count(posts.id)
+        count: count(posts.id),
       })
       .from(posts)
-      .where(and(
-        isNotNull(posts.parentPostId),
-        inArray(posts.parentPostId, postIds)
-      ))
+      .where(
+        and(
+          isNotNull(posts.parentPostId),
+          inArray(posts.parentPostId, postIds),
+        ),
+      )
       .groupBy(posts.parentPostId);
 
     commentCounts.forEach((row) => {

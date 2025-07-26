@@ -1,4 +1,7 @@
-import { listAllRelatedOrganizationPosts, listRelatedOrganizationPosts } from '@op/common';
+import {
+  listAllRelatedOrganizationPosts,
+  listRelatedOrganizationPosts,
+} from '@op/common';
 // import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 

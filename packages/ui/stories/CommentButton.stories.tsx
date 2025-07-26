@@ -1,4 +1,5 @@
 import type { Meta } from '@storybook/react';
+
 import { CommentButton } from '../src/components/CommentButton';
 
 const meta: Meta<typeof CommentButton> = {

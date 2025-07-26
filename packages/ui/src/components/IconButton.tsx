@@ -15,7 +15,8 @@ const iconButtonStyle = tv({
     variant: {
       ghost: 'bg-white/80 hover:bg-neutral-gray1 pressed:bg-neutral-gray2',
       solid: 'bg-neutral-gray1 hover:bg-neutral-gray2 pressed:bg-neutral-gray3',
-      outline: 'border border-neutral-gray1 bg-transparent hover:bg-neutral-gray1 pressed:bg-neutral-gray2',
+      outline:
+        'border border-neutral-gray1 bg-transparent hover:bg-neutral-gray1 pressed:bg-neutral-gray2',
     },
     isDisabled: {
       true: 'pointer-events-none opacity-30',

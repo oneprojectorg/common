@@ -130,7 +130,7 @@ const PostUpdateWithUser = ({
             if (!old) return [enhancedData];
             // Add the new comment to the beginning
             return [enhancedData, ...old];
-          }
+          },
         );
       }
 

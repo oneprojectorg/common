@@ -1,11 +1,11 @@
-import { 
-  Modal, 
-  ModalBody, 
-  ModalFooter, 
-  ModalHeader 
-} from '../src/components/Modal';
 import { Button } from '../src/components/Button';
 import { DialogTrigger } from '../src/components/Dialog';
+import {
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+} from '../src/components/Modal';
 
 export default {
   title: 'Modal',
@@ -64,14 +64,14 @@ export const Example = () => (
               <div className="space-y-2">
                 <h4 className="font-medium">Section 1</h4>
                 <p className="text-sm text-neutral-600">
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
-                  Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+                  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed
+                  do eiusmod tempor incididunt ut labore et dolore magna aliqua.
                 </p>
               </div>
               <div className="space-y-2">
                 <h4 className="font-medium">Section 2</h4>
                 <p className="text-sm text-neutral-600">
-                  Ut enim ad minim veniam, quis nostrud exercitation ullamco 
+                  Ut enim ad minim veniam, quis nostrud exercitation ullamco
                   laboris nisi ut aliquip ex ea commodo consequat.
                 </p>
               </div>
@@ -79,10 +79,10 @@ export const Example = () => (
             <div className="space-y-2">
               <h4 className="font-medium">Additional Content</h4>
               <p className="text-sm text-neutral-600">
-                Duis aute irure dolor in reprehenderit in voluptate velit esse 
-                cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat 
-                cupidatat non proident, sunt in culpa qui officia deserunt mollit 
-                anim id est laborum.
+                Duis aute irure dolor in reprehenderit in voluptate velit esse
+                cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat
+                cupidatat non proident, sunt in culpa qui officia deserunt
+                mollit anim id est laborum.
               </p>
             </div>
           </div>
@@ -136,23 +136,27 @@ export const WithForm = () => (
       <ModalBody>
         <form className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Project Name</label>
-            <input 
-              type="text" 
+            <label className="mb-1 block text-sm font-medium">
+              Project Name
+            </label>
+            <input
+              type="text"
               className="w-full rounded-md border border-neutral-gray3 px-3 py-2"
               placeholder="Enter project name"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Description</label>
-            <textarea 
+            <label className="mb-1 block text-sm font-medium">
+              Description
+            </label>
+            <textarea
               className="w-full rounded-md border border-neutral-gray3 px-3 py-2"
               rows={3}
               placeholder="Enter project description"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Category</label>
+            <label className="mb-1 block text-sm font-medium">Category</label>
             <select className="w-full rounded-md border border-neutral-gray3 px-3 py-2">
               <option>Select category</option>
               <option>Web Development</option>
@@ -180,7 +184,7 @@ export const LargeModal = () => (
         <div className="space-y-6">
           <div className="grid grid-cols-3 gap-4">
             {Array.from({ length: 6 }, (_, i) => (
-              <div key={i} className="border border-neutral-gray3 rounded p-4">
+              <div key={i} className="rounded border border-neutral-gray3 p-4">
                 <h4 className="font-medium">Item {i + 1}</h4>
                 <p className="text-sm text-neutral-600">
                   This is item {i + 1} with some sample content.
@@ -189,10 +193,10 @@ export const LargeModal = () => (
             ))}
           </div>
           <div>
-            <h3 className="font-medium mb-2">Additional Information</h3>
+            <h3 className="mb-2 font-medium">Additional Information</h3>
             <p className="text-sm text-neutral-600">
-              This modal demonstrates how content can be organized in a larger modal 
-              with multiple sections and complex layouts.
+              This modal demonstrates how content can be organized in a larger
+              modal with multiple sections and complex layouts.
             </p>
           </div>
         </div>

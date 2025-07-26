@@ -1,4 +1,9 @@
-import { CommonError, NotFoundError, getUserByAuthId, createUserByAuthId } from '@op/common';
+import {
+  CommonError,
+  NotFoundError,
+  createUserByAuthId,
+  getUserByAuthId,
+} from '@op/common';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 

@@ -1,12 +1,11 @@
 'use client';
 
 import { Search, X } from 'lucide-react';
-
-import { LoadingSpinner } from './LoadingSpinner';
 import { useEffect, useRef, useState } from 'react';
 import type { ValidationResult } from 'react-aria-components';
 
 import { FieldError, Label } from './Field';
+import { LoadingSpinner } from './LoadingSpinner';
 
 export interface Option {
   id: string;

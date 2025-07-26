@@ -1,5 +1,10 @@
 import { db, eq } from '@op/db/client';
-import { individuals, individualsTerms, taxonomies, taxonomyTerms } from '@op/db/schema';
+import {
+  individuals,
+  individualsTerms,
+  taxonomies,
+  taxonomyTerms,
+} from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
 import { UnauthorizedError } from '../../utils';

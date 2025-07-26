@@ -6,7 +6,9 @@ export interface GetExistingReactionOptions {
   profileId: string;
 }
 
-export const getExistingReaction = async (options: GetExistingReactionOptions) => {
+export const getExistingReaction = async (
+  options: GetExistingReactionOptions,
+) => {
   const { postId, profileId } = options;
   const existingReaction = await db
     .select()

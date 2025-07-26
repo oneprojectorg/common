@@ -1,12 +1,13 @@
+import { and, db, eq, inArray, lt, or } from '@op/db/client';
+import { postsToOrganizations } from '@op/db/schema';
+import type { User } from '@supabase/supabase-js';
+
 import {
   getCurrentProfileId,
   getItemsWithReactionsAndComments,
   getRelatedOrganizations,
 } from '../';
 import { decodeCursor, encodeCursor } from '../../utils';
-import { and, eq, inArray, lt, or, db } from '@op/db/client';
-import { postsToOrganizations } from '@op/db/schema';
-import type { User } from '@supabase/supabase-js';
 
 export interface ListAllPostsOptions {
   limit?: number;
@@ -18,7 +19,9 @@ export interface ListRelatedPostsOptions {
   user: User;
 }
 
-export const listAllRelatedOrganizationPosts = async (options: ListAllPostsOptions = {}) => {
+export const listAllRelatedOrganizationPosts = async (
+  options: ListAllPostsOptions = {},
+) => {
   const { limit = 200, cursor } = options;
 
   // Parse cursor
@@ -78,8 +81,10 @@ export const listAllRelatedOrganizationPosts = async (options: ListAllPostsOptio
       ? encodeCursor(new Date(lastItem.createdAt), lastItem.postId)
       : null;
 
-  const itemsWithReactionsAndComments =
-    await getItemsWithReactionsAndComments({ items, profileId });
+  const itemsWithReactionsAndComments = await getItemsWithReactionsAndComments({
+    items,
+    profileId,
+  });
 
   return {
     items: itemsWithReactionsAndComments,
@@ -88,7 +93,9 @@ export const listAllRelatedOrganizationPosts = async (options: ListAllPostsOptio
   };
 };
 
-export const listRelatedOrganizationPosts = async (options: ListRelatedPostsOptions) => {
+export const listRelatedOrganizationPosts = async (
+  options: ListRelatedPostsOptions,
+) => {
   const { organizationId, user } = options;
 
   // Get related organizations

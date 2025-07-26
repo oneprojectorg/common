@@ -54,16 +54,19 @@ We use a feature branch workflow based on the `dev` branch:
 This is a **Turborepo monorepo** using **pnpm workspaces**:
 
 ### Applications (`apps/`)
+
 - **`apps/app`**: Main Next.js 15 frontend
 - **`apps/api`**: tRPC API server
 
 ### Packages (`packages/`)
+
 - **`@op/ui`**: React Aria Components library
 - **`@op/core`**: Core utilities and configuration
 - **`@op/hooks`**: Reusable React hooks
 - **`@op/common`**: Shared business logic
 
 ### Services (`services/`)
+
 - **`@op/db`**: Drizzle ORM schema and migrations
 - **`@op/api`**: tRPC routers and procedures
 - **`@op/supabase`**: Supabase client configuration
@@ -88,6 +91,7 @@ This is a **Turborepo monorepo** using **pnpm workspaces**:
 ### Database Changes
 
 After making schema changes:
+
 1. Run `pnpm w:db generate`
 2. Run `pnpm w:db migrate`
 

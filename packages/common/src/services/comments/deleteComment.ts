@@ -27,12 +27,16 @@ export const deleteComment = async (input: DeleteCommentInput) => {
     }
 
     // Check if user can delete this comment
-    const canDelete = 
+    const canDelete =
       comment.profileId === profileId || // User is the comment author
-      (comment.parentComment && 'profileId' in comment.parentComment && comment.parentComment.profileId === profileId); // User is the parent comment author
+      (comment.parentComment &&
+        'profileId' in comment.parentComment &&
+        comment.parentComment.profileId === profileId); // User is the parent comment author
 
     if (!canDelete) {
-      throw new UnauthorizedError('You do not have permission to delete this comment');
+      throw new UnauthorizedError(
+        'You do not have permission to delete this comment',
+      );
     }
 
     // Delete the comment

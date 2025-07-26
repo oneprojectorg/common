@@ -1,5 +1,11 @@
-import { db, eq, sql, and } from '@op/db/client';
-import { allowList, users, organizationUsers, usersUsedStorage, organizations } from '@op/db/schema';
+import { and, db, eq, sql } from '@op/db/client';
+import {
+  allowList,
+  organizationUsers,
+  organizations,
+  users,
+  usersUsedStorage,
+} from '@op/db/schema';
 
 export interface User {
   id: number;
@@ -59,7 +65,11 @@ export const getAllowListUser = async ({ email }: { email?: string }) => {
   return allowedEmail;
 };
 
-export const getUserByAuthId = async ({ authUserId }: { authUserId: string }) => {
+export const getUserByAuthId = async ({
+  authUserId,
+}: {
+  authUserId: string;
+}) => {
   return await db.query.users.findFirst({
     where: (table, { eq }) => eq(table.authUserId, authUserId),
     with: {
@@ -102,7 +112,13 @@ export const getUserByAuthId = async ({ authUserId }: { authUserId: string }) =>
   });
 };
 
-export const createUserByAuthId = async ({ authUserId, email }: { authUserId: string; email: string }) => {
+export const createUserByAuthId = async ({
+  authUserId,
+  email,
+}: {
+  authUserId: string;
+  email: string;
+}) => {
   const [newUser] = await db
     .insert(users)
     .values({
@@ -157,7 +173,11 @@ export const createUserByAuthId = async ({ authUserId, email }: { authUserId: st
   });
 };
 
-export const getUserWithProfiles = async ({ authUserId }: { authUserId: string }) => {
+export const getUserWithProfiles = async ({
+  authUserId,
+}: {
+  authUserId: string;
+}) => {
   return await db.query.users.findFirst({
     where: (table, { eq }) => eq(table.authUserId, authUserId),
     with: {
@@ -183,7 +203,11 @@ export const getUserWithProfiles = async ({ authUserId }: { authUserId: string }
   });
 };
 
-export const getUserForProfileSwitch = async ({ authUserId }: { authUserId: string }) => {
+export const getUserForProfileSwitch = async ({
+  authUserId,
+}: {
+  authUserId: string;
+}) => {
   return await db.query.users.findFirst({
     where: (table, { eq }) => eq(table.authUserId, authUserId),
     with: {
@@ -207,7 +231,9 @@ export interface UpdateUserCurrentProfileOptions {
   orgId?: number;
 }
 
-export const updateUserCurrentProfile = async (options: UpdateUserCurrentProfileOptions) => {
+export const updateUserCurrentProfile = async (
+  options: UpdateUserCurrentProfileOptions,
+) => {
   const { authUserId, profileId, orgId } = options;
   return await db
     .update(users)
@@ -219,7 +245,11 @@ export const updateUserCurrentProfile = async (options: UpdateUserCurrentProfile
     .returning();
 };
 
-export const checkUsernameAvailability = async ({ username }: { username: string }) => {
+export const checkUsernameAvailability = async ({
+  username,
+}: {
+  username: string;
+}) => {
   if (username === '') {
     return { available: true };
   }
@@ -264,7 +294,9 @@ export interface SwitchUserOrganizationOptions {
   organizationId: string;
 }
 
-export const switchUserOrganization = async (options: SwitchUserOrganizationOptions) => {
+export const switchUserOrganization = async (
+  options: SwitchUserOrganizationOptions,
+) => {
   const { authUserId, organizationId } = options;
   // First, get the organization to find its profile ID
   const organization = await db.query.organizations.findFirst({

@@ -1,4 +1,8 @@
-import { UnauthorizedError, getOrgAccessUser, deletePostById } from '@op/common';
+import {
+  UnauthorizedError,
+  deletePostById,
+  getOrgAccessUser,
+} from '@op/common';
 import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
@@ -48,7 +52,10 @@ export const deletePost = router({
       try {
         return await deletePostById({ postId: id, organizationId });
       } catch (error) {
-        if (error instanceof Error && error.message.includes('Post not found')) {
+        if (
+          error instanceof Error &&
+          error.message.includes('Post not found')
+        ) {
           throw new TRPCError({
             code: 'NOT_FOUND',
             message: error.message,

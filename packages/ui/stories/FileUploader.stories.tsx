@@ -27,8 +27,8 @@ export default {
 // Mock upload function for stories
 const mockUpload = async (file: File) => {
   // Simulate upload delay
-  await new Promise(resolve => setTimeout(resolve, 2000));
-  
+  await new Promise((resolve) => setTimeout(resolve, 2000));
+
   return {
     id: Math.random().toString(36).substr(2, 9),
     url: URL.createObjectURL(file),
@@ -41,7 +41,7 @@ const mockUpload = async (file: File) => {
 export const Example = () => (
   <div className="w-full max-w-2xl space-y-8">
     <Toast />
-    
+
     <div className="space-y-4">
       <h3 className="font-medium">Basic File Uploader</h3>
       <FileUploader
@@ -52,7 +52,7 @@ export const Example = () => (
         }}
       />
     </div>
-    
+
     <div className="space-y-4">
       <h3 className="font-medium">With Custom Limits</h3>
       <FileUploader
@@ -65,7 +65,7 @@ export const Example = () => (
         }}
       />
     </div>
-    
+
     <div className="space-y-4">
       <h3 className="font-medium">Images Only</h3>
       <FileUploader
@@ -78,16 +78,14 @@ export const Example = () => (
         }}
       />
     </div>
-    
+
     <div className="space-y-4">
       <h3 className="font-medium">With Drag and Drop</h3>
       <FileUploader
         onUpload={mockUpload}
         enableDragAndDrop={true}
         dragOverlay={
-          <div className="text-center text-teal">
-            Drop files here to upload
-          </div>
+          <div className="text-center text-teal">Drop files here to upload</div>
         }
         onRemove={(id) => {
           console.log('Removing file:', id);
@@ -133,8 +131,8 @@ export const WithDragAndDrop = () => (
       onUpload={mockUpload}
       enableDragAndDrop={true}
       dragOverlay={
-        <div className="border-2 border-dashed border-teal rounded-lg p-8 text-center">
-          <div className="text-teal font-medium">Drop files here</div>
+        <div className="rounded-lg border-2 border-dashed border-teal p-8 text-center">
+          <div className="font-medium text-teal">Drop files here</div>
           <div className="text-sm text-neutral-600">or click to browse</div>
         </div>
       }

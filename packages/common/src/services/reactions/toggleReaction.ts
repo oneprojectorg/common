@@ -10,7 +10,7 @@ export interface ToggleReactionOptions {
 
 export const toggleReaction = async (options: ToggleReactionOptions) => {
   const { postId, profileId, reactionType } = options;
-  
+
   const existingReaction = await getExistingReaction({ postId, profileId });
 
   if (existingReaction) {

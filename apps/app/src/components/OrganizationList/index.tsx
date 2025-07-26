@@ -145,7 +145,7 @@ export const OrganizationCardList = ({
 
               <div className="line-clamp-3 text-neutral-charcoal">
                 {relationshipOrg.profile.bio &&
-                  relationshipOrg.profile.bio.length > 200
+                relationshipOrg.profile.bio.length > 200
                   ? `${relationshipOrg.profile.bio.slice(0, 200)}...`
                   : relationshipOrg.profile.bio}
               </div>
@@ -190,7 +190,7 @@ export const OrganizationSummaryList = ({
                       src={
                         getPublicUrl(
                           org.profile.avatarImage?.name ??
-                          org.avatarImage?.name,
+                            org.avatarImage?.name,
                         ) ?? ''
                       }
                       alt={org.profile.name ?? ''}

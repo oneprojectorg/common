@@ -1,7 +1,6 @@
 /**
  * Utilities for detecting and handling connection errors in tRPC mutations
  */
-
 import React from 'react';
 
 export interface ConnectionErrorInfo {
@@ -40,11 +39,12 @@ export const isConnectionError = (error: any): boolean => {
  */
 export const analyzeError = (error: any): ConnectionErrorInfo => {
   const isConn = isConnectionError(error);
-  
+
   if (isConn) {
     return {
       isConnectionError: true,
-      message: 'Connection issue. Please check your internet connection and try again.',
+      message:
+        'Connection issue. Please check your internet connection and try again.',
       shouldRetry: true,
       retryDelay: 2000,
     };
@@ -70,7 +70,7 @@ export const getRetryDelay = (attempt: number, baseDelay = 1000): number => {
  */
 export const useConnectionStatus = () => {
   const [isOnline, setIsOnline] = React.useState(
-    typeof navigator !== 'undefined' ? navigator.onLine : true
+    typeof navigator !== 'undefined' ? navigator.onLine : true,
   );
 
   React.useEffect(() => {

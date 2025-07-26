@@ -32,11 +32,14 @@ export const switchOrganization = router({
       const { id } = ctx.user;
 
       try {
-        const result = await switchUserOrganization({ authUserId: id, organizationId: input.organizationId });
+        const result = await switchUserOrganization({
+          authUserId: id,
+          organizationId: input.organizationId,
+        });
         return userEncoder.parse(result);
       } catch (error) {
         console.error(error);
-        
+
         if (error instanceof Error) {
           if (error.message === 'Organization not found') {
             throw new TRPCError({
@@ -51,7 +54,7 @@ export const switchOrganization = router({
             });
           }
         }
-        
+
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to update currentProfileId',

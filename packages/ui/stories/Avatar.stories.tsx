@@ -28,30 +28,30 @@ export const Example = () => (
       <Avatar placeholder="Bob Johnson" />
       <Avatar placeholder="Alice Brown" />
     </div>
-    
+
     <div className="flex items-center gap-4">
       <Avatar placeholder="Single" />
       <Avatar placeholder="" />
       <Avatar />
     </div>
-    
+
     <div className="flex items-center gap-4">
       <Avatar placeholder="John Doe" className="size-12" />
       <Avatar placeholder="Jane Smith" className="size-16" />
       <Avatar placeholder="Bob Johnson" className="size-20" />
     </div>
-    
+
     <div className="flex items-center gap-4">
       <Avatar placeholder="John Doe">
-        <img 
-          src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" 
+        <img
+          src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
           alt="John Doe"
           className="size-full object-cover"
         />
       </Avatar>
       <Avatar placeholder="Jane Smith">
-        <img 
-          src="https://images.unsplash.com/photo-1494790108755-2616b612b5bc?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" 
+        <img
+          src="https://images.unsplash.com/photo-1494790108755-2616b612b5bc?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
           alt="Jane Smith"
           className="size-full object-cover"
         />
@@ -70,8 +70,8 @@ export const WithImage = {
   args: {
     placeholder: 'John Doe',
     children: (
-      <img 
-        src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" 
+      <img
+        src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
         alt="John Doe"
         className="size-full object-cover"
       />

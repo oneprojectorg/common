@@ -1,12 +1,12 @@
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTrigger 
-} from '../src/components/Dialog';
 import { Button } from '../src/components/Button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTrigger,
+} from '../src/components/Dialog';
 import { Modal } from '../src/components/Modal';
 
 export default {
@@ -62,7 +62,8 @@ export const Example = () => (
               <div>
                 <h4 className="font-medium">Section 2</h4>
                 <p className="text-sm text-neutral-600">
-                  More information about the second section with additional details.
+                  More information about the second section with additional
+                  details.
                 </p>
               </div>
             </div>
@@ -85,9 +86,7 @@ export const BasicDialog = () => (
       <Dialog>
         <DialogHeader>Basic Dialog</DialogHeader>
         <DialogContent>
-          <DialogDescription>
-            This is a basic dialog example.
-          </DialogDescription>
+          <DialogDescription>This is a basic dialog example.</DialogDescription>
         </DialogContent>
         <DialogFooter>
           <Button color="secondary">Cancel</Button>
@@ -111,15 +110,15 @@ export const WithForm = () => (
           <form className="mt-4 space-y-4">
             <div>
               <label className="block text-sm font-medium">Name</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 className="mt-1 block w-full rounded-md border border-neutral-gray3 px-3 py-2"
                 placeholder="Enter name"
               />
             </div>
             <div>
               <label className="block text-sm font-medium">Description</label>
-              <textarea 
+              <textarea
                 className="mt-1 block w-full rounded-md border border-neutral-gray3 px-3 py-2"
                 rows={3}
                 placeholder="Enter description"
@@ -144,7 +143,8 @@ export const DestructiveAction = () => (
         <DialogHeader>Confirm Deletion</DialogHeader>
         <DialogContent>
           <DialogDescription>
-            Are you sure you want to delete this item? This action cannot be undone.
+            Are you sure you want to delete this item? This action cannot be
+            undone.
           </DialogDescription>
         </DialogContent>
         <DialogFooter>

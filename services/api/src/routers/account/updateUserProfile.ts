@@ -50,10 +50,12 @@ const updateUserProfile = router({
             .string()
             .trim()
             .max(255, { message: 'Must be at most 255 characters' }),
-          focusAreas: z.array(z.object({
-            id: z.string(),
-            label: z.string(),
-          })),
+          focusAreas: z.array(
+            z.object({
+              id: z.string(),
+              label: z.string(),
+            }),
+          ),
         })
         .partial(),
     )

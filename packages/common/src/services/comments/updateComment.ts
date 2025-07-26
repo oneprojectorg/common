@@ -23,7 +23,9 @@ export const updateComment = async (input: UpdateCommentInput) => {
       .returning();
 
     if (!comment) {
-      throw new NotFoundError('Comment not found or you do not have permission to update it');
+      throw new NotFoundError(
+        'Comment not found or you do not have permission to update it',
+      );
     }
 
     return comment;

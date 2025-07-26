@@ -1,7 +1,8 @@
+import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
 import { allowList } from '@op/db/schema';
+
 import { sendInvitationEmail } from '../email';
-import { OPURLConfig } from '@op/core';
 
 export interface InviteUsersInput {
   emails: string[];
@@ -21,8 +22,17 @@ export interface InviteResult {
   };
 }
 
-export const inviteUsersToOrganization = async (input: InviteUsersInput): Promise<InviteResult> => {
-  const { emails, role = 'Admin', organizationId, personalMessage, authUserId, authUserEmail } = input;
+export const inviteUsersToOrganization = async (
+  input: InviteUsersInput,
+): Promise<InviteResult> => {
+  const {
+    emails,
+    role = 'Admin',
+    organizationId,
+    personalMessage,
+    authUserId,
+    authUserEmail,
+  } = input;
 
   // Get the current user's database record with organization details
   const authUser = await db.query.users.findFirst({
@@ -43,12 +53,13 @@ export const inviteUsersToOrganization = async (input: InviteUsersInput): Promis
     (!authUser?.currentProfileId && !authUser?.lastOrgId) ||
     (!authUser.currentOrganization && !authUser.currentProfile)
   ) {
-    throw new Error('User must be associated with an organization to send invites');
+    throw new Error(
+      'User must be associated with an organization to send invites',
+    );
   }
 
   const currentProfile =
-    authUser.currentProfile ??
-    (authUser.currentOrganization as any)?.profile;
+    authUser.currentProfile ?? (authUser.currentOrganization as any)?.profile;
 
   const results = {
     successful: [] as string[],
@@ -94,8 +105,7 @@ export const inviteUsersToOrganization = async (input: InviteUsersInput): Promis
       try {
         await sendInvitationEmail({
           to: email,
-          inviterName:
-            authUser?.name || authUserEmail || 'A team member',
+          inviterName: authUser?.name || authUserEmail || 'A team member',
           organizationName: organizationId
             ? (authUser?.currentOrganization as any)?.profile?.name ||
               'an organization'

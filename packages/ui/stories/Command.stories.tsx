@@ -22,7 +22,7 @@ export const Example = () => (
   <div className="w-full max-w-md space-y-8">
     <div className="space-y-4">
       <h3 className="font-medium">Basic Command Menu</h3>
-      <div className="border border-neutral-gray3 rounded-lg">
+      <div className="rounded-lg border border-neutral-gray3">
         <Command>
           <CommandInput placeholder="Type a command or search..." />
           <CommandList>
@@ -57,10 +57,10 @@ export const Example = () => (
         </Command>
       </div>
     </div>
-    
+
     <div className="space-y-4">
       <h3 className="font-medium">File Actions</h3>
-      <div className="border border-neutral-gray3 rounded-lg">
+      <div className="rounded-lg border border-neutral-gray3">
         <Command>
           <CommandInput placeholder="Search files..." />
           <CommandList>
@@ -98,10 +98,10 @@ export const Example = () => (
         </Command>
       </div>
     </div>
-    
+
     <div className="space-y-4">
       <h3 className="font-medium">Navigation Menu</h3>
-      <div className="border border-neutral-gray3 rounded-lg">
+      <div className="rounded-lg border border-neutral-gray3">
         <Command>
           <CommandInput placeholder="Go to page..." />
           <CommandList>
@@ -147,7 +147,7 @@ export const Example = () => (
 );
 
 export const BasicCommand = () => (
-  <div className="w-full max-w-sm border border-neutral-gray3 rounded-lg">
+  <div className="w-full max-w-sm rounded-lg border border-neutral-gray3">
     <Command>
       <CommandInput placeholder="Type a command..." />
       <CommandList>
@@ -163,7 +163,7 @@ export const BasicCommand = () => (
 );
 
 export const WithShortcuts = () => (
-  <div className="w-full max-w-sm border border-neutral-gray3 rounded-lg">
+  <div className="w-full max-w-sm rounded-lg border border-neutral-gray3">
     <Command>
       <CommandInput placeholder="Search commands..." />
       <CommandList>
@@ -211,7 +211,7 @@ export const WithShortcuts = () => (
 );
 
 export const MultipleGroups = () => (
-  <div className="w-full max-w-sm border border-neutral-gray3 rounded-lg">
+  <div className="w-full max-w-sm rounded-lg border border-neutral-gray3">
     <Command>
       <CommandInput placeholder="Search..." />
       <CommandList>
@@ -261,7 +261,7 @@ export const MultipleGroups = () => (
 );
 
 export const WithIcons = () => (
-  <div className="w-full max-w-sm border border-neutral-gray3 rounded-lg">
+  <div className="w-full max-w-sm rounded-lg border border-neutral-gray3">
     <Command>
       <CommandInput placeholder="Search actions..." />
       <CommandList>

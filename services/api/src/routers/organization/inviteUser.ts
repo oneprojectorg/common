@@ -87,7 +87,10 @@ export const inviteUserRouter = router({
         }
 
         // Handle specific errors
-        if (error instanceof Error && error.message.includes('User must be associated')) {
+        if (
+          error instanceof Error &&
+          error.message.includes('User must be associated')
+        ) {
           throw new UnauthorizedError(error.message);
         }
 

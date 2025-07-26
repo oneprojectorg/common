@@ -63,7 +63,11 @@ export const switchProfile = router({
 
       let result;
       try {
-        result = await updateUserCurrentProfile({ authUserId: id, profileId: input.profileId, orgId: org?.organization?.id });
+        result = await updateUserCurrentProfile({
+          authUserId: id,
+          profileId: input.profileId,
+          orgId: org?.organization?.id,
+        });
       } catch (error) {
         console.error(error);
         throw new TRPCError({

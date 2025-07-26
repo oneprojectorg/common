@@ -6,10 +6,7 @@ export const getOrganizationsByProfile = async (profileId: string) => {
   // Either as their personal profile or as their current profile
   const usersWithProfile = await db.query.users.findMany({
     where: (table, { eq, or }) =>
-      or(
-        eq(table.profileId, profileId),
-        eq(table.currentProfileId, profileId),
-      ),
+      or(eq(table.profileId, profileId), eq(table.currentProfileId, profileId)),
     with: {
       organizationUsers: {
         with: {
