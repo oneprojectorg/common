@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 import { Button } from '../src/components/Button';
 import { DialogTrigger } from '../src/components/Dialog';
 import {
@@ -5,6 +7,7 @@ import {
   ModalBody,
   ModalFooter,
   ModalHeader,
+  ModalStepper,
 } from '../src/components/Modal';
 
 export default {
@@ -206,5 +209,84 @@ export const LargeModal = () => (
         <Button>Save All</Button>
       </ModalFooter>
     </Modal>
+  </DialogTrigger>
+);
+
+const ModalStepperExample = () => {
+  const [currentStep, setCurrentStep] = useState(1);
+  const totalSteps = 3;
+
+  const handleNext = (step: number) => {
+    setCurrentStep(step);
+    console.log(`Next step ${step}`);
+  };
+
+  const handlePrevious = (step: number) => {
+    setCurrentStep(step);
+    console.log(`Previous step ${step}`);
+  };
+
+  const handleFinish = () => {
+    console.log('Finished');
+  };
+
+  const getStepContent = (step: number) => {
+    const stepData = {
+      1: {
+        title: 'Welcome',
+        description: 'This is the first step. Click Next to continue.',
+      },
+      2: {
+        title: 'Step 2',
+        description:
+          'You can now go back to the previous step or continue forward.',
+      },
+      3: {
+        title: 'Final Step',
+        description: "You've reached the final step. Click Finish to complete.",
+      },
+    };
+
+    const currentStep = stepData[step as keyof typeof stepData];
+
+    if (!currentStep) {
+      return { header: null, content: null };
+    }
+
+    return {
+      header: (
+        <h3 className="text-title-sm text-neutral-black">
+          {currentStep.title}
+        </h3>
+      ),
+      content: (
+        <p className="text-base text-neutral-charcoal">
+          {currentStep.description}
+        </p>
+      ),
+    };
+  };
+
+  const { header, content } = getStepContent(currentStep);
+
+  return (
+    <Modal className="min-w-[500px]">
+      <ModalHeader>{header}</ModalHeader>
+      <ModalBody className="min-w-[400px]">{content}</ModalBody>
+      <ModalStepper
+        totalSteps={totalSteps}
+        onNext={handleNext}
+        onPrevious={handlePrevious}
+        onFinish={handleFinish}
+        initialStep={1}
+      />
+    </Modal>
+  );
+};
+
+export const WithStepper = () => (
+  <DialogTrigger>
+    <Button>Open Modal with Stepper</Button>
+    <ModalStepperExample />
   </DialogTrigger>
 );
