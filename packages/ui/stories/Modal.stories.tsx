@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 import { Button } from '../src/components/Button';
 import { DialogTrigger } from '../src/components/Dialog';
 import {
@@ -127,6 +129,26 @@ export const WithConfetti = () => (
     </Modal>
   </DialogTrigger>
 );
+
+export const DismissableModal = () => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <DialogTrigger>
+      <Button onPress={() => setIsOpen(true)}>Open Dismissable Modal</Button>
+      <Modal isDismissable onOpenChange={setIsOpen} isOpen={isOpen}>
+        <ModalHeader>Dismissable Modal</ModalHeader>
+        <ModalBody className="min-w-[400px]">
+          <p>This modal is dismissable.</p>
+        </ModalBody>
+        <ModalFooter>
+          <Button color="secondary">Cancel</Button>
+          <Button>Confirm</Button>
+        </ModalFooter>
+      </Modal>
+    </DialogTrigger>
+  );
+};
 
 export const WithForm = () => (
   <DialogTrigger>
