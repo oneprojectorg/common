@@ -11,13 +11,40 @@ const meta: Meta<typeof NumberField> = {
   },
   tags: ['autodocs'],
   args: {
-    label: 'Cookies',
+    label: 'Age',
   },
 };
 
 export default meta;
 
-export const Example = (args: any) => <NumberField {...args} />;
+export const Example = () => (
+  <div className="flex w-96 flex-col gap-8">
+    <NumberField
+      inputProps={{ placeholder: 'Enter your age' }}
+      description="Helper text"
+      label="Normal state"
+    />
+    <NumberField
+      isDisabled
+      label="Disabled state"
+      isRequired
+      inputProps={{ placeholder: 'Enter your age' }}
+    />
+
+    <NumberField
+      label="With value"
+      value={25}
+      inputProps={{ placeholder: 'Enter your age' }}
+    />
+
+    <NumberField
+      isDisabled
+      label="Disabled with value"
+      value={30}
+      inputProps={{ placeholder: 'Enter your age' }}
+    />
+  </div>
+);
 
 export const Validation = (args: any) => (
   <Form className="flex flex-col items-start gap-2">
@@ -28,4 +55,5 @@ export const Validation = (args: any) => (
 
 Validation.args = {
   isRequired: true,
+  inputProps: { placeholder: 'Enter your age' },
 };
