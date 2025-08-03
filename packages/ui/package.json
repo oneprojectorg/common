@@ -87,6 +87,7 @@
   },
   "devDependencies": {
     "@iconify/json": "2.2.311",
+    "@internationalized/date": "^3.8.2",
     "@op/typescript-config": "workspace:*",
     "@storybook/addon-essentials": "^8.6.2",
     "@storybook/addon-interactions": "^8.6.2",
