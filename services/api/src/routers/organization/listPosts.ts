@@ -1,5 +1,5 @@
 import { listPosts } from '@op/common';
-import type { OpenApiMeta } from 'trpc-to-openapi';
+// import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { organizationsWithProfileEncoder } from '../../encoders';
@@ -16,16 +16,16 @@ const inputSchema = dbFilter.extend({
   slug: z.string(),
   cursor: z.string().nullish(),
 });
-const meta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'GET',
-    path: '/organization/{slug}/feed/posts',
-    protect: true,
-    tags: ['organization'],
-    summary: 'List posts for an organization',
-  },
-};
+// const meta: OpenApiMeta = {
+// openapi: {
+// enabled: true,
+// method: 'GET',
+// path: '/organization/{slug}/feed/posts',
+// protect: true,
+// tags: ['organization'],
+// summary: 'List posts for an organization',
+// },
+// };
 
 export const listOrganizationPostsRouter = router({
   listPosts: loggedProcedure
@@ -33,7 +33,7 @@ export const listOrganizationPostsRouter = router({
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticated)
     // Router
-    .meta(meta)
+    // .meta(meta)
     .input(inputSchema)
     .output(
       z.object({

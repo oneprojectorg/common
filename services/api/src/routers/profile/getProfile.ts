@@ -44,9 +44,13 @@ export const getProfileRouter = router({
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticated)
     .meta(listMeta)
-    .input(dbFilter.extend({
-      types: z.array(z.nativeEnum(EntityType)).optional(),
-    }).optional())
+    .input(
+      dbFilter
+        .extend({
+          types: z.array(z.nativeEnum(EntityType)).optional(),
+        })
+        .optional(),
+    )
     .output(
       z.object({
         items: z.array(universalProfileSchema),

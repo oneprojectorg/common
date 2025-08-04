@@ -14,6 +14,8 @@ import Link from 'next/link';
 import { ReactNode, Suspense } from 'react';
 import { LuCopy, LuGlobe, LuMail } from 'react-icons/lu';
 
+import { useTranslations } from '@/lib/i18n';
+
 import { ContactLink } from '@/components/ContactLink';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { PostFeedSkeleton } from '@/components/PostFeed';
@@ -243,12 +245,15 @@ export const OrganizationProfileGrid = ({
 }: {
   profile: Organization;
 }) => {
+  const t = useTranslations();
+
   return (
     <ProfileGridWrapper>
       <div className="col-span-9 flex flex-col gap-8">
         <Suspense fallback={null}>
           <PostUpdate
             organization={profile}
+            label={t('Post')}
             className="border-b px-4 pb-8 pt-6"
           />
         </Suspense>
@@ -272,15 +277,21 @@ export const ProfileTabs = ({ children }: { children: React.ReactNode }) => {
 };
 
 export const ProfileTabsMobile = ({ profile }: { profile: Organization }) => {
+  const t = useTranslations();
+
   return (
     <Tabs className="px-0 pb-8 sm:hidden">
       <TabList className="px-4">
-        <Tab id="updates">Updates</Tab>
-        <Tab id="about">About</Tab>
+        <Tab id="updates">{t('Updates')}</Tab>
+        <Tab id="about">{t('About')}</Tab>
       </TabList>
       <TabPanel id="updates" className="px-0">
         <Suspense fallback={<Skeleton className="w-full" />}>
-          <PostUpdate organization={profile} className="border-b px-4 py-6" />
+          <PostUpdate
+            organization={profile}
+            label={t('Post')}
+            className="border-b px-4 py-6"
+          />
         </Suspense>
         <Suspense fallback={<Skeleton className="min-h-20 w-full" />}>
           <ProfileFeed profile={profile} className="px-4 py-2 sm:py-6" />

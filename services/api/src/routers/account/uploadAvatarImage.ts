@@ -1,7 +1,7 @@
 import { trackImageUpload } from '@op/analytics';
 import { CommonError } from '@op/common';
 import { eq } from '@op/db/client';
-import { users, profiles } from '@op/db/schema';
+import { profiles, users } from '@op/db/schema';
 import { createServerClient } from '@op/supabase/lib';
 import { TRPCError } from '@trpc/server';
 import { waitUntil } from '@vercel/functions';
@@ -131,9 +131,9 @@ export const uploadAvatarImage = router({
       if (data) {
         // Check if user had previous avatar and get their profile ID
         const [existingUser] = await db
-          .select({ 
+          .select({
             avatarImageId: users.avatarImageId,
-            profileId: users.profileId 
+            profileId: users.profileId,
           })
           .from(users)
           .where(eq(users.authUserId, ctx.user.id));

@@ -4,11 +4,17 @@ import { getPublicUrl } from '@/utils';
 import { OrganizationUser } from '@/utils/UserProvider';
 import { detectLinks, linkifyText } from '@/utils/linkDetection';
 import { trpc } from '@op/api/client';
-import type { PostToOrganization } from '@op/api/encoders';
+import type {
+  Organization,
+  Post,
+  PostAttachment,
+  PostToOrganization,
+} from '@op/api/encoders';
 import { REACTION_OPTIONS } from '@op/types';
 import { AvatarSkeleton } from '@op/ui/Avatar';
-import { Button } from '@op/ui/Button';
+import { CommentButton } from '@op/ui/CommentButton';
 import { Header3 } from '@op/ui/Header';
+import { IconButton } from '@op/ui/IconButton';
 import { MediaDisplay } from '@op/ui/MediaDisplay';
 import { MenuTrigger } from '@op/ui/Menu';
 import { Popover } from '@op/ui/Popover';
@@ -18,142 +24,341 @@ import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';
 import { useFeatureFlagEnabled } from 'posthog-js/react';
-import { Fragment, ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 import { LuEllipsis, LuLeaf } from 'react-icons/lu';
 
 import { Link } from '@/lib/i18n';
 
+import { DiscussionModal } from '../DiscussionModal';
+import { FeedContent, FeedHeader, FeedItem, FeedMain } from '../Feed';
 import { LinkPreview } from '../LinkPreview';
 import { OrganizationAvatar } from '../OrganizationAvatar';
+import { formatRelativeTime } from '../utils';
 import { DeletePost } from './DeletePost';
 
-// TODO: generated this quick with AI. refactor it!
-const formatRelativeTime = (timestamp: Date | string | number): string => {
-  const now = new Date();
-  const date = new Date(timestamp);
-  const diff = Math.floor((now.getTime() - date.getTime()) / 1000); // difference in seconds
+const PostDisplayName = ({
+  displayName,
+  displaySlug,
+  withLinks,
+}: {
+  displayName?: string;
+  displaySlug?: string;
+  withLinks: boolean;
+}) => {
+  if (!displayName) return null;
 
-  // Future dates handling
-  if (diff < 0) {
-    return 'in the future';
+  if (withLinks) {
+    return <Link href={`/org/${displaySlug}`}>{displayName}</Link>;
   }
 
-  // For very recent times
-  if (diff < 5) {
-    return 'just now';
-  }
-
-  const intervals = [
-    { unit: 'year', seconds: 31557600 },
-    { unit: 'month', seconds: 2629800 },
-    { unit: 'week', seconds: 604800 },
-    { unit: 'day', seconds: 86400 },
-    { unit: 'hour', seconds: 3600 },
-    { unit: 'minute', seconds: 60 },
-    { unit: 'second', seconds: 1 },
-  ];
-
-  for (const interval of intervals) {
-    if (diff >= interval.seconds) {
-      const count = Math.floor(diff / interval.seconds);
-
-      return `${count} ${interval.unit}${count !== 1 ? 's' : ''}`;
-    }
-  }
-
-  return 'just now';
+  return <>{displayName}</>;
 };
 
-export const FeedItem = ({
-  children,
-  className,
-}: {
-  children: ReactNode;
-  className?: string;
-}) => {
-  return <div className={cn('flex gap-2', className)}>{children}</div>;
-};
+const PostTimestamp = ({ createdAt }: { createdAt?: Date | string | null }) => {
+  if (!createdAt) {
+    return null;
+  }
 
-export const FeedContent = ({
-  children,
-  className,
-}: {
-  children: ReactNode;
-  className?: string;
-}) => {
   return (
-    <div
-      className={cn(
-        'flex w-full flex-col gap-2 leading-6 [&>.mediaItem:first-child]:mt-2',
-        className,
-      )}
-      style={{ overflowWrap: 'anywhere' }}
-    >
-      {children}
-    </div>
-  );
-};
-
-const FeedHeader = ({
-  children,
-  className,
-}: {
-  children: ReactNode;
-  className?: string;
-}) => {
-  return (
-    <span className={cn('flex items-center gap-2 align-baseline', className)}>
-      {children}
+    <span className="text-sm text-neutral-gray4">
+      {formatRelativeTime(createdAt)}
     </span>
   );
 };
 
-export const FeedAvatar = ({ children }: { children?: ReactNode }) => {
-  return (
-    <div className="shadown relative w-8 min-w-8 overflow-hidden">
-      {children}
-    </div>
-  );
+const PostContent = ({ content }: { content?: string }) => {
+  if (!content) {
+    return null;
+  }
+
+  return linkifyText(content);
 };
 
-export const FeedMain = ({
-  children,
-  className,
-  ...props
+const PostAttachments = ({
+  attachments,
 }: {
-  children: ReactNode;
-  className?: string;
-} & React.HTMLAttributes<HTMLDivElement>) => {
+  attachments?: PostAttachment[];
+}) => {
+  if (!attachments) {
+    return null;
+  }
+
+  return attachments.map(({ fileName, storageObject }) => {
+    const { mimetype, size } = storageObject.metadata;
+
+    return (
+      <MediaDisplay
+        key={storageObject.id}
+        title={fileName}
+        mimeType={mimetype}
+        url={getPublicUrl(storageObject.name) ?? undefined}
+        size={size}
+      >
+        <AttachmentImage
+          mimetype={mimetype}
+          fileName={fileName}
+          storageObjectName={storageObject.name}
+        />
+      </MediaDisplay>
+    );
+  });
+};
+
+const AttachmentImage = ({
+  mimetype,
+  fileName,
+  storageObjectName,
+}: {
+  mimetype: string;
+  fileName: string;
+  storageObjectName: string;
+}) => {
+  if (!mimetype.startsWith('image/')) return null;
+
   return (
-    <div
-      className={cn(
-        'flex w-full flex-col items-start justify-start gap-0 overflow-hidden',
-        className,
-      )}
-      {...props}
-    >
-      {children}
+    <div className="relative flex h-fit w-full items-center justify-center rounded bg-neutral-gray1 text-white">
+      <Image
+        src={getPublicUrl(storageObjectName) ?? ''}
+        alt={fileName}
+        fill={true}
+        className="!relative size-full object-cover"
+      />
     </div>
   );
 };
 
-export const PostFeed = ({
-  posts,
+const PostUrls = ({ urls }: { urls: string[] }) => {
+  if (urls.length === 0) return null;
+
+  return (
+    <div>
+      {urls.map((url) => (
+        <LinkPreview key={url} url={url} />
+      ))}
+    </div>
+  );
+};
+
+const PostReactions = ({
+  post,
+  onReactionClick,
+}: {
+  post: Post;
+  onReactionClick: (postId: string, emoji: string) => void;
+}) => {
+  if (!post?.id) return null;
+
+  const reactions = post.reactionCounts
+    ? Object.entries(post.reactionCounts).map(([reactionType, count]) => {
+        const reactionOption = REACTION_OPTIONS.find(
+          (option) => option.key === reactionType,
+        );
+        const emoji = reactionOption?.emoji || reactionType;
+
+        return {
+          emoji,
+          count: count as number,
+          isActive: post.userReaction === reactionType,
+        };
+      })
+    : [];
+
+  return (
+    <ReactionsButton
+      reactions={reactions}
+      reactionOptions={REACTION_OPTIONS}
+      onReactionClick={(emoji) => onReactionClick(post.id!, emoji)}
+      onAddReaction={(emoji) => onReactionClick(post.id!, emoji)}
+    />
+  );
+};
+
+const PostCommentButton = ({
+  post,
+  onCommentClick,
+}: {
+  post: Post;
+  onCommentClick: () => void;
+}) => {
+  const commentsEnabled = useFeatureFlagEnabled('comments');
+
+  // we can disable this to allow for threads in the future
+  if (!commentsEnabled || !post?.id || post.parentPostId) {
+    return null;
+  }
+
+  return (
+    <CommentButton count={post.commentCount || 0} onPress={onCommentClick} />
+  );
+};
+
+const PostMenu = ({
+  post,
   user,
+}: {
+  organization?: Organization;
+  post: Post;
+  user?: OrganizationUser;
+}) => {
+  const canShowMenu = post?.profileId === user?.currentProfileId && !!post?.id;
+
+  if (!canShowMenu) {
+    return null;
+  }
+
+  return (
+    <MenuTrigger>
+      <IconButton
+        variant="ghost"
+        size="small"
+        className="absolute right-0 top-0 aria-expanded:bg-neutral-gray1"
+      >
+        <LuEllipsis className="size-4" />
+      </IconButton>
+      <Popover placement="bottom end">
+        <PostMenuContent
+          postId={post.id}
+          profileId={user?.currentProfileId || ''}
+          canDelete={canShowMenu}
+        />
+      </Popover>
+    </MenuTrigger>
+  );
+};
+
+const PostMenuContent = ({
+  postId,
+  profileId,
+  canDelete,
+}: {
+  postId: string;
+  profileId: string;
+  canDelete: boolean;
+}) => {
+  if (!canDelete) {
+    return null;
+  }
+
+  return <DeletePost postId={postId} profileId={profileId} />;
+};
+
+export const EmptyPostsState = () => (
+  <FeedItem>
+    <FeedMain className="flex w-full flex-col items-center justify-center py-6">
+      <FeedContent className="flex flex-col items-center justify-center text-neutral-gray4">
+        <div className="flex size-10 items-center justify-center gap-4 rounded-full bg-neutral-gray1">
+          <LuLeaf />
+        </div>
+        <span>{'No posts yet.'}</span>
+      </FeedContent>
+    </FeedMain>
+  </FeedItem>
+);
+
+export const PostItem = ({
+  postToOrg,
+  user,
+  withLinks,
+  onReactionClick,
+  onCommentClick,
   className,
-  withLinks = true,
+}: {
+  postToOrg: PostToOrganization;
+  user?: OrganizationUser;
+  withLinks: boolean;
+  onReactionClick: (postId: string, emoji: string) => void;
+  onCommentClick?: (post: PostToOrganization) => void;
+  className?: string;
+}) => {
+  const { organization, post } = postToOrg;
+  const { urls } = detectLinks(post?.content);
+
+  // For comments (posts without organization), show the post author
+  // TODO: this is too complex. We need to refactor this
+  const displayName =
+    post?.profile?.name ?? organization?.profile.name ?? 'Unknown User';
+  const displaySlug =
+    post?.profile?.slug ?? organization?.profile.slug ?? 'Unknown User';
+  const profile = post.profile ?? organization?.profile;
+
+  return (
+    <FeedItem className={cn('sm:px-4', className)}>
+      <OrganizationAvatar
+        profile={profile}
+        withLink={withLinks}
+        className="!size-8 max-h-8 max-w-8"
+      />
+      <FeedMain>
+        <FeedHeader className="relative w-full justify-between">
+          <div className="flex items-baseline gap-2">
+            <Header3 className="font-medium leading-3">
+              <PostDisplayName
+                displayName={displayName}
+                displaySlug={displaySlug}
+                withLinks={withLinks}
+              />
+            </Header3>
+            <PostTimestamp createdAt={post?.createdAt} />
+          </div>
+          <PostMenu post={post} user={user} />
+        </FeedHeader>
+        <FeedContent>
+          <PostContent content={post?.content} />
+          <PostAttachments attachments={post.attachments} />
+          <PostUrls urls={urls} />
+          <div className="flex items-center justify-between gap-2">
+            <PostReactions post={post} onReactionClick={onReactionClick} />
+            {onCommentClick ? (
+              <PostCommentButton
+                post={post}
+                onCommentClick={() => onCommentClick(postToOrg)}
+              />
+            ) : null}
+          </div>
+        </FeedContent>
+      </FeedMain>
+    </FeedItem>
+  );
+};
+
+export const DiscussionModalContainer = ({
+  discussionModal,
+  onClose,
+}: {
+  discussionModal: {
+    isOpen: boolean;
+    post?: PostToOrganization | null;
+  };
+  onClose: () => void;
+}) => {
+  if (!discussionModal.isOpen || !discussionModal.post) {
+    return null;
+  }
+
+  return (
+    <DiscussionModal
+      postToOrg={discussionModal.post}
+      isOpen={discussionModal.isOpen}
+      onClose={onClose}
+    />
+  );
+};
+
+export const usePostFeedActions = ({
   slug,
   limit = 20,
 }: {
-  posts: Array<PostToOrganization>;
-  user?: OrganizationUser;
-  className?: string;
-  withLinks?: boolean;
   slug?: string;
   limit?: number;
-}) => {
-  const reactionsEnabled = useFeatureFlagEnabled('reactions');
+} = {}) => {
   const utils = trpc.useUtils();
+  const [discussionModal, setDiscussionModal] = useState<{
+    isOpen: boolean;
+    post?: PostToOrganization | null;
+  }>({
+    isOpen: false,
+    post: null,
+  });
 
   const toggleReaction = trpc.organization.toggleReaction.useMutation({
     onMutate: async ({ postId, reactionType }) => {
@@ -170,7 +375,7 @@ export const PostFeed = ({
       const previousListAllPosts = utils.organization.listAllPosts.getData({});
 
       // Helper function to update post reactions
-      const updatePostReactions = (item: any) => {
+      const updatePostReactions = (item: PostToOrganization) => {
         if (item.post.id === postId) {
           const currentReaction = item.post.userReaction;
           const currentCounts = item.post.reactionCounts || {};
@@ -224,24 +429,27 @@ export const PostFeed = ({
 
       // Optimistically update listPosts cache (if slug is provided)
       if (slug) {
-        utils.organization.listPosts.setInfiniteData(
-          { slug, limit },
-          (old: any) => {
-            if (!old) return old;
-            return {
-              ...old,
-              pages: old.pages.map((page: any) => ({
-                ...page,
-                items: page.items.map(updatePostReactions),
-              })),
-            };
-          },
-        );
+        utils.organization.listPosts.setInfiniteData({ slug, limit }, (old) => {
+          if (!old) {
+            return old;
+          }
+
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              items: page.items.map(updatePostReactions),
+            })),
+          };
+        });
       }
 
       // Optimistically update listAllPosts cache
-      utils.organization.listAllPosts.setData({}, (old: any) => {
-        if (!old) return old;
+      utils.organization.listAllPosts.setData({}, (old) => {
+        if (!old) {
+          return old;
+        }
+
         return {
           ...old,
           items: old.items.map(updatePostReactions),
@@ -287,150 +495,31 @@ export const PostFeed = ({
     toggleReaction.mutate({ postId, reactionType });
   };
 
+  const handleCommentClick = (post: PostToOrganization) => {
+    setDiscussionModal({ isOpen: true, post });
+  };
+
+  const handleModalClose = () => {
+    setDiscussionModal({ isOpen: false, post: null });
+  };
+
+  return {
+    discussionModal,
+    handleReactionClick,
+    handleCommentClick,
+    handleModalClose,
+  };
+};
+
+export const PostFeed = ({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) => {
   return (
-    <div className={cn('flex flex-col gap-6 pb-8', className)}>
-      {posts.length > 0 ? (
-        posts.map(({ organization, post }, i) => {
-          const { urls } = detectLinks(post?.content);
-
-          return (
-            <Fragment key={i}>
-              <FeedItem className="sm:px-4">
-                <OrganizationAvatar
-                  organization={organization}
-                  withLink={withLinks}
-                  className="!size-8 max-h-8 max-w-8"
-                />
-                <FeedMain>
-                  <FeedHeader className="relative w-full justify-between">
-                    <div className="flex items-baseline gap-2">
-                      <Header3 className="font-medium leading-3">
-                        {withLinks ? (
-                          <Link href={`/org/${organization?.profile.slug}`}>
-                            {organization?.profile.name}
-                          </Link>
-                        ) : (
-                          organization?.profile.name
-                        )}
-                      </Header3>
-                      {post?.createdAt ? (
-                        <span className="text-sm text-neutral-gray4">
-                          {formatRelativeTime(post?.createdAt)}
-                        </span>
-                      ) : null}
-                    </div>
-                    {organization?.id === user?.currentOrganization?.id &&
-                      post?.id && (
-                        <MenuTrigger>
-                          <Button
-                            unstyled
-                            color="neutral"
-                            variant="icon"
-                            size="small"
-                            className="absolute right-0 top-0 size-6 rounded-full border-0 bg-white p-1 outline-0 aria-expanded:bg-neutral-gray1"
-                          >
-                            <LuEllipsis className="size-4" />
-                          </Button>
-                          <Popover placement="bottom end">
-                            {post?.id && organization?.id ? (
-                              <DeletePost
-                                postId={post.id}
-                                organizationId={organization.id}
-                              />
-                            ) : null}
-                          </Popover>
-                        </MenuTrigger>
-                      )}
-                  </FeedHeader>
-                  <FeedContent>
-                    {post?.content ? linkifyText(post.content) : null}
-                    {post.attachments
-                      ? post.attachments.map(({ fileName, storageObject }) => {
-                          const { mimetype, size } = storageObject.metadata;
-
-                          return (
-                            <MediaDisplay
-                              key={storageObject.id}
-                              title={fileName}
-                              mimeType={mimetype}
-                              url={
-                                getPublicUrl(storageObject.name) ?? undefined
-                              }
-                              size={size}
-                            >
-                              {mimetype.startsWith('image/') ? (
-                                <div className="relative flex h-fit w-full items-center justify-center rounded bg-neutral-gray1 text-white">
-                                  <Image
-                                    src={getPublicUrl(storageObject.name) ?? ''}
-                                    alt={fileName}
-                                    fill={true}
-                                    className="!relative size-full object-cover"
-                                  />
-                                </div>
-                              ) : null}
-                            </MediaDisplay>
-                          );
-                        })
-                      : null}
-                    {urls.length > 0 && (
-                      <div>
-                        {urls.map((url) => (
-                          <LinkPreview key={url} url={url} />
-                        ))}
-                      </div>
-                    )}
-                    {reactionsEnabled && post?.id && (
-                      <ReactionsButton
-                        reactions={
-                          post.reactionCounts
-                            ? Object.entries(post.reactionCounts).map(
-                                ([reactionType, count]) => {
-                                  // Convert reaction type to emoji
-                                  const reactionOption = REACTION_OPTIONS.find(
-                                    (option) => option.key === reactionType,
-                                  );
-                                  const emoji =
-                                    reactionOption?.emoji || reactionType;
-
-                                  return {
-                                    emoji,
-                                    count,
-                                    isActive:
-                                      post.userReaction === reactionType,
-                                  };
-                                },
-                              )
-                            : []
-                        }
-                        reactionOptions={REACTION_OPTIONS}
-                        onReactionClick={(emoji) => {
-                          handleReactionClick(post.id!, emoji);
-                        }}
-                        onAddReaction={(emoji) => {
-                          handleReactionClick(post.id!, emoji);
-                        }}
-                      />
-                    )}
-                  </FeedContent>
-                </FeedMain>
-              </FeedItem>
-              <hr className="bg-neutral-gray1" />
-            </Fragment>
-          );
-        })
-      ) : (
-        <FeedItem>
-          <FeedMain className="flex w-full flex-col items-center justify-center py-6">
-            <FeedContent className="flex flex-col items-center justify-center text-neutral-gray4">
-              <div className="flex size-10 items-center justify-center gap-4 rounded-full bg-neutral-gray1">
-                <LuLeaf />
-              </div>
-              <span>{'No posts yet.'}</span>
-            </FeedContent>
-          </FeedMain>
-        </FeedItem>
-      )}
-    </div>
+    <div className={cn('flex flex-col gap-4 pb-8', className)}>{children}</div>
   );
 };
 

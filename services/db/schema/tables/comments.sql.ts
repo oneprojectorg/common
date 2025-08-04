@@ -21,7 +21,9 @@ export const comments = pgTable(
   (table) => [
     ...serviceRolePolicies,
     index('comments_profile_id_idx').on(table.profileId).concurrently(),
-    index('comments_parent_comment_id_idx').on(table.parentCommentId).concurrently(),
+    index('comments_parent_comment_id_idx')
+      .on(table.parentCommentId)
+      .concurrently(),
   ],
 );
 
@@ -43,11 +45,12 @@ export const commentsToPost = pgTable(
   (table) => [
     ...serviceRolePolicies,
     primaryKey({ columns: [table.commentId, table.postId] }),
-    index('comments_to_posts_comment_id_idx').on(table.commentId).concurrently(),
+    index('comments_to_posts_comment_id_idx')
+      .on(table.commentId)
+      .concurrently(),
     index('comments_to_posts_post_id_idx').on(table.postId).concurrently(),
   ],
 );
-
 
 export const commentsRelations = relations(comments, ({ one, many }) => ({
   profile: one(profiles, {
@@ -75,7 +78,6 @@ export const commentsToPostRelations = relations(commentsToPost, ({ one }) => ({
     references: [posts.id],
   }),
 }));
-
 
 // Add foreign key constraint for self-reference after table definition
 // This is handled by the references() call above

@@ -1,6 +1,7 @@
 # Common Monorepo
 
 Welcome to the **Common** project monorepo! This repository contains the source code for the main frontend application, the backend API, shared UI components, core utilities, and services. It's structured using [Turborepo](https://turbo.build/repo) and `pnpm` workspaces.
+It's not quite ready to fork or contribute to yet as we are working fast on it but soon!
 
 ## Quick Start & Setup
 
@@ -85,3 +86,9 @@ The root `package.json` includes several scripts prefixed with `deps:` to help m
   - **Note**: This script incorrectly removes certain **Storybook** addons and plugins. Double check before committing.
 - **`pnpm deps:override`**: Identifies external dependencies used in two or more workspaces. If such a dependency is not already present in the root `package.json`, this script adds it to the root `devDependencies` and creates a corresponding entry in `pnpm.overrides`. This enforces version consistency for shared dependencies across the monorepo. It then formats all `package.json` files. **Important:** Ensure you have no uncommitted/staged changes before running.
 - **`pnpm deps:viz`**: Generates an interactive D3.js visualization of the Turborepo task dependency graph (based on the `build` task) and opens it automatically in your default browser. Useful for understanding the relationships and build order between workspaces.
+
+## Big TODOs
+
+[] Test coverage
+[] Storybook coverage
+[] RBAC usage

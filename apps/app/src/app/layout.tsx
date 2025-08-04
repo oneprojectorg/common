@@ -5,7 +5,7 @@ import { Toast } from '@op/ui/Toast';
 import '@op/ui/tailwind-styles';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import type { Metadata, Viewport } from 'next';
-import { Inter, Roboto, Roboto_Mono, Roboto_Serif } from 'next/font/google';
+import { Roboto, Roboto_Mono, Roboto_Serif } from 'next/font/google';
 import Script from 'next/script';
 
 import { register } from '../../instrumentation';
@@ -18,13 +18,6 @@ const roboto = Roboto({
   subsets: ['latin'],
   weight: ['100', '300', '400', '500', '700', '900'],
   variable: '--font-sans',
-  display: 'swap',
-});
-
-const inter = Inter({
-  subsets: ['latin'],
-  weight: 'variable',
-  variable: '--font-inter',
   display: 'swap',
 });
 
@@ -88,7 +81,7 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
       <WebVitals />
       <TRPCProvider>
         <body
-          className={`${roboto.variable} ${robotoMono.variable} ${robotoSerif.variable} ${inter.variable} overflow-x-hidden text-base text-neutral-black antialiased`}
+          className={`${roboto.variable} ${robotoMono.variable} ${robotoSerif.variable} overflow-x-hidden text-base text-neutral-black antialiased`}
         >
           <PostHogProvider>{children}</PostHogProvider>
           <ReactQueryDevtools initialIsOpen={false} />

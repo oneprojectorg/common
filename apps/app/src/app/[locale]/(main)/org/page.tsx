@@ -1,5 +1,5 @@
-import { trpcNext } from '@op/api/vanilla';
 import { EntityType } from '@op/api/encoders';
+import { trpcNext } from '@op/api/vanilla';
 
 import { AllOrganizations } from '@/components/Organizations/AllOrganizations';
 import {
@@ -10,9 +10,9 @@ import {
 const OrgListingPage = async () => {
   try {
     const client = await trpcNext();
-    const organizations = await client.profile.list.query({ 
-      limit: 5, 
-      types: [EntityType.ORG] 
+    const organizations = await client.profile.list.query({
+      limit: 5,
+      types: [EntityType.ORG],
     });
 
     return (

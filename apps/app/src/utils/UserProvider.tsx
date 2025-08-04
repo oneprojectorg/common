@@ -4,6 +4,7 @@ import { RouterOutput, trpc } from '@op/api/client';
 import { useRouter } from 'next/navigation';
 import posthog from 'posthog-js';
 import React, { Suspense, createContext, useContext } from 'react';
+
 import ErrorBoundary from '@/components/ErrorBoundary';
 
 // Type for the user data returned by getMyAccount
@@ -42,11 +43,13 @@ export const UserProviderSuspense = ({
 
 export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   return (
-    <ErrorBoundary fallback={
-      <UserContext.Provider value={{ user: undefined }}>
-        {children}
-      </UserContext.Provider>
-    }>
+    <ErrorBoundary
+      fallback={
+        <UserContext.Provider value={{ user: undefined }}>
+          {children}
+        </UserContext.Provider>
+      }
+    >
       <Suspense fallback={null}>
         <UserProviderSuspense>{children}</UserProviderSuspense>
       </Suspense>

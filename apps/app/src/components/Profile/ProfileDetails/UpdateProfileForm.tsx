@@ -186,7 +186,6 @@ export const UpdateProfileForm = forwardRef<
         {/* Header Images */}
         <div className="relative w-full pb-12 sm:pb-20">
           <BannerUploader
-            className="relative aspect-[128/55] w-full bg-offWhite"
             value={bannerImageUrl ?? undefined}
             onChange={(file: File) =>
               handleImageUpload(file, setBannerImageUrl, uploadBannerImage)

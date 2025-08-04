@@ -1,10 +1,10 @@
 'use client';
 
-import React from 'react';
 import { useUser } from '@/utils/UserProvider';
 import { Select, SelectItem } from '@op/ui/Select';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
 import { toast } from '@op/ui/Toast';
+import React from 'react';
 import { LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -38,7 +38,11 @@ export const InviteToExistingOrganization = ({
     if (!selectedOrganization && user?.currentOrganization?.id) {
       setSelectedOrganization(user.currentOrganization.id);
     }
-  }, [selectedOrganization, user?.currentOrganization?.id, setSelectedOrganization]);
+  }, [
+    selectedOrganization,
+    user?.currentOrganization?.id,
+    setSelectedOrganization,
+  ]);
 
   const isValidEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

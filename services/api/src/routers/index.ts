@@ -5,6 +5,7 @@ import { contentRouter } from './content';
 import individualRouter from './individual';
 import llmRouter from './llm';
 import { organizationRouter } from './organization';
+import { postsRouter } from './posts';
 import profileRouter from './profile';
 import { taxonomyRouter } from './taxonomy';
 
@@ -17,6 +18,7 @@ export const appRouter = router({
   taxonomy: taxonomyRouter,
   content: contentRouter,
   comments: commentsRouter,
+  posts: postsRouter,
 });
 
 export type AppRouter = typeof appRouter;

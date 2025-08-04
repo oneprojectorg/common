@@ -31,7 +31,7 @@ export const OrganizationList = ({
         {organizations?.map((org) => {
           return (
             <div key={org.id} className="flex items-center gap-2">
-              <OrganizationAvatar organization={org} className="size-8" />
+              <OrganizationAvatar profile={org.profile} className="size-8" />
 
               <div className="flex min-w-0 flex-col text-sm sm:text-base">
                 <Link
@@ -128,7 +128,7 @@ export const OrganizationCardList = ({
         >
           <div className="flex-shrink-0">
             <OrganizationAvatar
-              organization={relationshipOrg}
+              profile={relationshipOrg.profile}
               className="size-20"
             />
           </div>

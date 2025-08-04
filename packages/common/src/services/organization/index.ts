@@ -9,3 +9,5 @@ export * from './searchOrganizations';
 export * from './matchingDomainOrganizations';
 export * from './joinOrganization';
 export * from './validators';
+export * from './inviteUsers';
+export * from './getOrganizationsByProfile';

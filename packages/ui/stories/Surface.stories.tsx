@@ -20,51 +20,55 @@ export const Example = () => (
       <h3 className="font-medium">Basic Surface</h3>
       <Surface>
         <div className="p-6">
-          <h4 className="font-medium mb-2">Card Title</h4>
+          <h4 className="mb-2 font-medium">Card Title</h4>
           <p className="text-sm text-neutral-600">
             This is a basic surface component with some content inside.
           </p>
         </div>
       </Surface>
     </div>
-    
+
     <div className="space-y-4">
       <h3 className="font-medium">Different Sizes</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <Surface>
           <div className="p-4">
-            <h4 className="font-medium mb-2">Small Card</h4>
-            <p className="text-sm text-neutral-600">Compact surface with minimal padding.</p>
+            <h4 className="mb-2 font-medium">Small Card</h4>
+            <p className="text-sm text-neutral-600">
+              Compact surface with minimal padding.
+            </p>
           </div>
         </Surface>
-        
+
         <Surface>
           <div className="p-8">
-            <h4 className="font-medium mb-2">Large Card</h4>
-            <p className="text-sm text-neutral-600">Spacious surface with generous padding.</p>
+            <h4 className="mb-2 font-medium">Large Card</h4>
+            <p className="text-sm text-neutral-600">
+              Spacious surface with generous padding.
+            </p>
           </div>
         </Surface>
       </div>
     </div>
-    
+
     <div className="space-y-4">
       <h3 className="font-medium">With Custom Styling</h3>
       <Surface className="shadow-lg">
         <div className="p-6">
-          <h4 className="font-medium mb-2">Enhanced Surface</h4>
+          <h4 className="mb-2 font-medium">Enhanced Surface</h4>
           <p className="text-sm text-neutral-600">
             This surface has additional shadow styling applied.
           </p>
         </div>
       </Surface>
     </div>
-    
+
     <div className="space-y-4">
       <h3 className="font-medium">Complex Content</h3>
       <Surface>
         <div className="p-6">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="size-12 bg-teal rounded-full flex items-center justify-center text-white font-medium">
+          <div className="mb-4 flex items-center gap-4">
+            <div className="flex size-12 items-center justify-center rounded-full bg-teal font-medium text-white">
               JS
             </div>
             <div>
@@ -72,7 +76,7 @@ export const Example = () => (
               <p className="text-sm text-neutral-600">john.doe@example.com</p>
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-4 mb-4">
+          <div className="mb-4 grid grid-cols-3 gap-4">
             <div className="text-center">
               <div className="text-lg font-bold">127</div>
               <div className="text-xs text-neutral-600">Posts</div>
@@ -86,7 +90,7 @@ export const Example = () => (
               <div className="text-xs text-neutral-600">Following</div>
             </div>
           </div>
-          <button className="w-full bg-teal text-white py-2 px-4 rounded-md text-sm font-medium">
+          <button className="w-full rounded-md bg-teal px-4 py-2 text-sm font-medium text-white">
             Follow
           </button>
         </div>
@@ -99,10 +103,8 @@ export const Basic = {
   args: {
     children: (
       <div className="p-6">
-        <h4 className="font-medium mb-2">Basic Surface</h4>
-        <p className="text-sm text-neutral-600">
-          Simple surface with content.
-        </p>
+        <h4 className="mb-2 font-medium">Basic Surface</h4>
+        <p className="text-sm text-neutral-600">Simple surface with content.</p>
       </div>
     ),
   },
@@ -112,13 +114,13 @@ export const WithImage = {
   args: {
     children: (
       <div>
-        <img 
+        <img
           src="https://images.unsplash.com/photo-1557804506-669a67965ba0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80"
           alt="Office space"
-          className="w-full aspect-video object-cover"
+          className="aspect-video w-full object-cover"
         />
         <div className="p-6">
-          <h4 className="font-medium mb-2">Office Space</h4>
+          <h4 className="mb-2 font-medium">Office Space</h4>
           <p className="text-sm text-neutral-600">
             A modern office environment with clean design.
           </p>
@@ -133,7 +135,7 @@ export const CustomStyling = {
     className: 'shadow-lg border-teal',
     children: (
       <div className="p-6">
-        <h4 className="font-medium mb-2">Custom Styled Surface</h4>
+        <h4 className="mb-2 font-medium">Custom Styled Surface</h4>
         <p className="text-sm text-neutral-600">
           This surface has custom border and shadow styling.
         </p>
@@ -146,15 +148,17 @@ export const List = () => (
   <div className="w-full max-w-md space-y-4">
     {Array.from({ length: 3 }, (_, i) => (
       <Surface key={i}>
-        <div className="p-4 flex items-center gap-4">
-          <div className="size-10 bg-neutral-gray1 rounded-full flex items-center justify-center">
+        <div className="flex items-center gap-4 p-4">
+          <div className="flex size-10 items-center justify-center rounded-full bg-neutral-gray1">
             {i + 1}
           </div>
           <div className="flex-1">
             <h4 className="font-medium">Item {i + 1}</h4>
-            <p className="text-sm text-neutral-600">Description for item {i + 1}</p>
+            <p className="text-sm text-neutral-600">
+              Description for item {i + 1}
+            </p>
           </div>
-          <button className="text-teal text-sm">Edit</button>
+          <button className="text-sm text-teal">Edit</button>
         </div>
       </Surface>
     ))}
@@ -162,14 +166,14 @@ export const List = () => (
 );
 
 export const Grid = () => (
-  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+  <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
     {Array.from({ length: 6 }, (_, i) => (
       <Surface key={i}>
         <div className="p-4">
-          <div className="aspect-square bg-neutral-gray1 rounded-lg mb-4 flex items-center justify-center">
+          <div className="mb-4 flex aspect-square items-center justify-center rounded-lg bg-neutral-gray1">
             <div className="text-2xl">📊</div>
           </div>
-          <h4 className="font-medium mb-2">Chart {i + 1}</h4>
+          <h4 className="mb-2 font-medium">Chart {i + 1}</h4>
           <p className="text-sm text-neutral-600">
             Data visualization component {i + 1}
           </p>

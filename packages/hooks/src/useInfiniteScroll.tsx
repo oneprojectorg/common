@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+
 import { useIntersectionObserver } from './useIntersectionObserver';
 
 interface UseInfiniteScrollOptions {
@@ -11,7 +12,7 @@ interface UseInfiniteScrollOptions {
 
 export const useInfiniteScroll = (
   fetchNextPage: () => void,
-  options: UseInfiniteScrollOptions = {}
+  options: UseInfiniteScrollOptions = {},
 ) => {
   const {
     hasNextPage = false,

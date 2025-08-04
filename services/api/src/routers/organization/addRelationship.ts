@@ -4,7 +4,7 @@ import {
   addRelationship,
   sendRelationshipNotification,
 } from '@op/common';
-import { getSession, getCurrentOrgId } from '@op/common/src/services/access';
+import { getCurrentOrgId, getSession } from '@op/common/src/services/access';
 import { db } from '@op/db/client';
 import { TRPCError } from '@trpc/server';
 import { waitUntil } from '@vercel/functions';
@@ -50,7 +50,9 @@ export const addRelationshipRouter = router({
         }
 
         if (!session.user.currentProfileId && !session.user.lastOrgId) {
-          throw new UnauthorizedError('No user currentProfileId or lastOrgId found');
+          throw new UnauthorizedError(
+            'No user currentProfileId or lastOrgId found',
+          );
         }
 
         // TODO: We pull the org ID to add ORG relationships. We are transitioning to profile relationships. This should go away eventually

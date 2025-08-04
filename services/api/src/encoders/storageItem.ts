@@ -20,3 +20,5 @@ export const storageItemEncoder = createSelectSchema(objectsInStorage)
       httpStatusCode: z.number(),
     }),
   });
+
+export type StorageItem = z.infer<typeof storageItemEncoder>;

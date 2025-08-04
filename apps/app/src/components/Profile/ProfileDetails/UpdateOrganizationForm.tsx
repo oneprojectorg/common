@@ -2,6 +2,7 @@
 
 import { DEFAULT_MAX_SIZE } from '@/hooks/useFileUpload';
 import { getPublicUrl } from '@/utils';
+import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
 import { AvatarUploader } from '@op/ui/AvatarUploader';
@@ -17,7 +18,6 @@ import { forwardRef, useState } from 'react';
 import { LuLink } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
-import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 
 import { GeoNamesMultiSelect } from '../../GeoNamesMultiSelect';
 import { type ImageData } from '../../Onboarding/shared/OrganizationFormFields';
@@ -166,13 +166,13 @@ export const UpdateOrganizationForm = forwardRef<
         slug: profile.profile.slug,
       });
       router.refresh();
-      
+
       onSuccess();
     } catch (error) {
       console.error('Failed to update organization:', error);
-      
+
       const errorInfo = analyzeError(error);
-      
+
       if (errorInfo.isConnectionError) {
         toast.error({
           title: 'Connection issue',
@@ -260,7 +260,6 @@ export const UpdateOrganizationForm = forwardRef<
         {/* Header Images */}
         <div className="relative w-full pb-12 sm:pb-20">
           <BannerUploader
-            className="relative aspect-[128/55] w-full bg-offWhite"
             value={bannerImage?.url ?? undefined}
             onChange={(file: File) =>
               handleImageUpload(file, setBannerImage, uploadImage)

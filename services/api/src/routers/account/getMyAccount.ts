@@ -1,11 +1,14 @@
-import { CommonError, NotFoundError } from '@op/common';
-import { users } from '@op/db/schema';
+import {
+  CommonError,
+  NotFoundError,
+  createUserByAuthId,
+  getUserByAuthId,
+} from '@op/common';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { userEncoder } from '../../encoders';
 import withAuthenticated from '../../middlewares/withAuthenticated';
-import withDB from '../../middlewares/withDB';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
@@ -25,55 +28,14 @@ export const getMyAccount = router({
     // Middlewares
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticated)
-    .use(withDB)
     // Router
     .meta(meta)
     .input(z.undefined())
     .output(userEncoder)
     .query(async ({ ctx }) => {
-      const { db } = ctx.database;
       const { id, email } = ctx.user;
 
-      const result = await db.query.users.findFirst({
-        where: (table, { eq }) => eq(table.authUserId, id),
-        with: {
-          avatarImage: true,
-          organizationUsers: {
-            with: {
-              organization: {
-                with: {
-                  profile: {
-                    with: {
-                      avatarImage: true,
-                    },
-                  },
-                },
-              },
-            },
-          },
-          currentOrganization: {
-            with: {
-              profile: {
-                with: {
-                  avatarImage: true,
-                },
-              },
-            },
-          },
-          currentProfile: {
-            with: {
-              avatarImage: true,
-              headerImage: true,
-            },
-          },
-          profile: {
-            with: {
-              avatarImage: true,
-              headerImage: true,
-            },
-          },
-        },
-      });
+      const result = await getUserByAuthId({ authUserId: id });
 
       if (!result) {
         if (!email) {
@@ -81,58 +43,14 @@ export const getMyAccount = router({
         }
 
         // if there is no user but the user is authenticated, create one
-        const [newUser] = await db
-          .insert(users)
-          .values({
-            authUserId: id,
-            email: ctx.user.email!,
-          })
-          .returning();
+        const newUserWithRelations = await createUserByAuthId({
+          authUserId: id,
+          email: ctx.user.email!,
+        });
 
-        if (!newUser) {
+        if (!newUserWithRelations) {
           throw new CommonError('Could not create user');
         }
-
-        const newUserWithRelations = await db.query.users.findFirst({
-          where: (table, { eq }) => eq(table.id, newUser.id),
-          with: {
-            avatarImage: true,
-            organizationUsers: {
-              with: {
-                organization: {
-                  with: {
-                    profile: {
-                      with: {
-                        avatarImage: true,
-                      },
-                    },
-                  },
-                },
-              },
-            },
-            currentOrganization: {
-              with: {
-                profile: {
-                  with: {
-                    avatarImage: true,
-                  },
-                },
-              },
-            },
-            currentProfile: {
-              with: {
-                avatarImage: true,
-                headerImage: true,
-              },
-            },
-            profile: {
-              with: {
-                avatarImage: true,
-                headerImage: true,
-              },
-            },
-          },
-        });
 
         return userEncoder.parse(newUserWithRelations);
       }

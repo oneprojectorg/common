@@ -5,10 +5,7 @@ import { Suspense } from 'react';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
 
-import {
-  ProfileListSkeleton,
-  ProfileSummaryList,
-} from '../ProfileList';
+import { ProfileListSkeleton, ProfileSummaryList } from '../ProfileList';
 import { ListPageLayoutHeader } from '../layout/ListPageLayout';
 
 export const ProfileSearchResultsSuspense = ({

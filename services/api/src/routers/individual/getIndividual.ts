@@ -9,7 +9,6 @@ import { z } from 'zod';
 
 import { individualsTermsEncoder } from '../../encoders/individuals';
 import withAuthenticated from '../../middlewares/withAuthenticated';
-import withDB from '../../middlewares/withDB';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
@@ -29,7 +28,6 @@ export const getIndividualRouter = router({
     // Middlewares
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticated)
-    .use(withDB)
     // Router
     .meta(meta)
     .input(z.object({ id: z.string(), termUri: z.string().optional() }))
@@ -71,7 +69,6 @@ export const getIndividualRouter = router({
     // Middlewares
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticated)
-    .use(withDB)
     // Router
     .input(z.object({ profileId: z.string(), termUri: z.string().optional() }))
     .output(individualsTermsEncoder)

@@ -1,10 +1,9 @@
-import { UnauthorizedError } from '@op/common';
-import { EntityType } from '@op/db/schema';
+import { UnauthorizedError, getUserWithProfiles } from '@op/common';
+import { EntityType, ObjectsInStorage, Profile } from '@op/db/schema';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import withAuthenticated from '../../middlewares/withAuthenticated';
-import withDB from '../../middlewares/withDB';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
@@ -37,38 +36,25 @@ export const getUserProfiles = router({
   getUserProfiles: loggedProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticated)
-    .use(withDB)
     .meta(meta)
     .input(z.undefined())
-    .output(z.array(userProfileSchema))
+    .output(
+      z.array(
+        userProfileSchema.extend({
+          avatarImage: z
+            .object({
+              id: z.string(),
+              name: z.string().nullable(),
+            })
+            .nullable(),
+        }),
+      ),
+    )
     .query(async ({ ctx }) => {
-      const { db } = ctx.database;
       const { id: authUserId } = ctx.user;
 
       // Get the user's database record
-      const user = await db.query.users.findFirst({
-        where: (table, { eq }) => eq(table.authUserId, authUserId),
-        with: {
-          profile: {
-            with: {
-              avatarImage: true,
-            },
-          },
-          organizationUsers: {
-            with: {
-              organization: {
-                with: {
-                  profile: {
-                    with: {
-                      avatarImage: true,
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-      });
+      const user = await getUserWithProfiles({ authUserId });
 
       if (!user) {
         throw new UnauthorizedError('User not found');
@@ -80,12 +66,14 @@ export const getUserProfiles = router({
         name: string;
         slug: string;
         bio: string | null;
-        avatarImage: { id: string; name: string } | null;
+        avatarImage: { id: string; name: string | null } | null;
       }> = [];
 
       // Add user's personal profile if it exists
       if (user.profile) {
-        const profile = user.profile as any;
+        const profile = user.profile as Profile & {
+          avatarImage: ObjectsInStorage;
+        };
         userProfiles.push({
           id: profile.id,
           type: EntityType.INDIVIDUAL,

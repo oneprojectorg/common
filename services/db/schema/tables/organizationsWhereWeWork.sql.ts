@@ -1,8 +1,8 @@
 import { pgTable, primaryKey, uuid } from 'drizzle-orm/pg-core';
 import { serviceRolePolicies } from 'helpers';
 
-import { organizations } from './organizations.sql';
 import { locations } from './locations.sql';
+import { organizations } from './organizations.sql';
 
 export const organizationsWhereWeWork = pgTable(
   'organizations_where_we_work',

@@ -4,7 +4,7 @@ import {
   getPendingRelationships,
   getRelatedOrganizations,
 } from '@op/common';
-import { getSession, getCurrentOrgId } from '@op/common/src/services/access';
+import { getCurrentOrgId, getSession } from '@op/common/src/services/access';
 import { db } from '@op/db/client';
 import { TRPCError } from '@trpc/server';
 // import type { OpenApiMeta } from 'trpc-to-openapi';
@@ -59,7 +59,10 @@ export const listRelationshipsRouter = router({
 
       try {
         const session = await getSession();
-        if (!session || (!session.user.currentProfileId && !session.user.lastOrgId)) {
+        if (
+          !session ||
+          (!session.user.currentProfileId && !session.user.lastOrgId)
+        ) {
           throw new UnauthorizedError('No user found');
         }
 
@@ -96,7 +99,10 @@ export const listRelationshipsRouter = router({
 
       try {
         const session = await getSession();
-        if (!session || (!session.user.currentProfileId && !session.user.lastOrgId)) {
+        if (
+          !session ||
+          (!session.user.currentProfileId && !session.user.lastOrgId)
+        ) {
           throw new UnauthorizedError('No user found');
         }
 

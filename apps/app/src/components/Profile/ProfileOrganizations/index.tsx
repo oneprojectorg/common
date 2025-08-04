@@ -7,14 +7,15 @@ import { Suspense } from 'react';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { OrganizationSummaryList } from '@/components/OrganizationList';
 
-export const ProfileOrganizationsSuspense = ({ 
-  profileId 
-}: { 
-  profileId: string 
+export const ProfileOrganizationsSuspense = ({
+  profileId,
+}: {
+  profileId: string;
 }) => {
-  const [organizations] = trpc.organization.getOrganizationsByProfile.useSuspenseQuery({
-    profileId,
-  });
+  const [organizations] =
+    trpc.organization.getOrganizationsByProfile.useSuspenseQuery({
+      profileId,
+    });
 
   if (!organizations || organizations.length === 0) {
     return (
@@ -31,11 +32,7 @@ export const ProfileOrganizationsSuspense = ({
   );
 };
 
-export const ProfileOrganizations = ({ 
-  profileId 
-}: { 
-  profileId: string 
-}) => {
+export const ProfileOrganizations = ({ profileId }: { profileId: string }) => {
   return (
     <ErrorBoundary fallback={<div>Could not load organizations</div>}>
       <Suspense fallback={<SkeletonLine lines={5} />}>

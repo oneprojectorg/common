@@ -45,7 +45,7 @@ We use a feature branch workflow based on the `dev` branch:
 
 ### Commit Guidelines
 
-- Use descriptive commit messages that explain the "why" not just the "what"
+- Use descriptive commit messages that explain the "what" but use PRs to explain the "why"
 - Keep commits focused and atomic
 - Follow conventional commit format when possible
 
@@ -54,16 +54,19 @@ We use a feature branch workflow based on the `dev` branch:
 This is a **Turborepo monorepo** using **pnpm workspaces**:
 
 ### Applications (`apps/`)
+
 - **`apps/app`**: Main Next.js 15 frontend
 - **`apps/api`**: tRPC API server
 
 ### Packages (`packages/`)
+
 - **`@op/ui`**: React Aria Components library
 - **`@op/core`**: Core utilities and configuration
 - **`@op/hooks`**: Reusable React hooks
 - **`@op/common`**: Shared business logic
 
 ### Services (`services/`)
+
 - **`@op/db`**: Drizzle ORM schema and migrations
 - **`@op/api`**: tRPC routers and procedures
 - **`@op/supabase`**: Supabase client configuration
@@ -76,7 +79,7 @@ This is a **Turborepo monorepo** using **pnpm workspaces**:
 
 - Follow existing code conventions in the file you're editing
 - Use TypeScript strictly (no `any` types)
-- Write self-documenting code with clear variable names
+- Write "self-documenting" code with clear variable names
 - Only use colors present in the tailwind.shared config
 
 ### UI Components
@@ -88,6 +91,7 @@ This is a **Turborepo monorepo** using **pnpm workspaces**:
 ### Database Changes
 
 After making schema changes:
+
 1. Run `pnpm w:db generate`
 2. Run `pnpm w:db migrate`
 
@@ -105,7 +109,7 @@ Use these shortcuts for common operations:
 pnpm w:app      # Work with apps/app
 pnpm w:api      # Work with apps/api
 pnpm w:db       # Work with services/db
-pnpm w:ui       # Work with packages/ui
+pnpm w:ui       # Work with packages/ui (usually Storybook)
 pnpm w:emails   # Work with services/emails
 ```
 
@@ -131,4 +135,4 @@ pnpm w:emails   # Work with services/emails
 
 ## Code of Conduct
 
-Please be respectful and constructive in all interactions. We're building something great together!
+Please be respectful and constructive in all interactions.

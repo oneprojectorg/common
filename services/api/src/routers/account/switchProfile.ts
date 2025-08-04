@@ -1,12 +1,10 @@
-import { users } from '@op/db/schema';
+import { getUserForProfileSwitch, updateUserCurrentProfile } from '@op/common';
 import { TRPCError } from '@trpc/server';
-import { eq } from 'drizzle-orm';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { userEncoder } from '../../encoders';
 import withAuthenticated from '../../middlewares/withAuthenticated';
-import withDB from '../../middlewares/withDB';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
@@ -27,30 +25,14 @@ export const switchProfile = router({
   switchProfile: loggedProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticated)
-    .use(withDB)
     .meta(meta)
     .input(z.object({ profileId: z.string().uuid() }))
     .output(userEncoder)
     .mutation(async ({ input, ctx }) => {
-      const { db } = ctx.database;
       const { id } = ctx.user;
 
       // Verify the profile exists and the user has access to it
-      const user = await db.query.users.findFirst({
-        where: eq(users.authUserId, id),
-        with: {
-          profile: true,
-          organizationUsers: {
-            with: {
-              organization: {
-                with: {
-                  profile: true,
-                },
-              },
-            },
-          },
-        },
-      });
+      const user = await getUserForProfileSwitch({ authUserId: id });
 
       if (!user) {
         throw new TRPCError({
@@ -81,14 +63,11 @@ export const switchProfile = router({
 
       let result;
       try {
-        result = await db
-          .update(users)
-          .set({
-            currentProfileId: input.profileId,
-            ...(org ? { lastOrgId: org.organization?.id } : {}),
-          })
-          .where(eq(users.authUserId, id))
-          .returning();
+        result = await updateUserCurrentProfile({
+          authUserId: id,
+          profileId: input.profileId,
+          orgId: org?.organization?.id,
+        });
       } catch (error) {
         console.error(error);
         throw new TRPCError({

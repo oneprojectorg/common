@@ -21,8 +21,8 @@ import { LuImage, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { FeedItem, FeedMain } from '@/components/Feed';
 import { LinkPreview } from '@/components/LinkPreview';
-import { FeedItem, FeedMain } from '@/components/PostFeed';
 
 import { OrganizationAvatar } from '../OrganizationAvatar';
 
@@ -48,10 +48,19 @@ const TextCounter = ({ text, max }: { text: string; max: number }) => {
 const PostUpdateWithUser = ({
   organization,
   className,
+  parentPostId,
+  placeholder,
+  onSuccess,
+  label,
 }: {
   organization: Organization;
   className?: string;
+  parentPostId?: string; // If provided, this becomes a comment
+  placeholder?: string;
+  onSuccess?: () => void;
+  label: string;
 }) => {
+  const { user } = useUser();
   const [content, setContent] = useState('');
   const [detectedUrls, setDetectedUrls] = useState<string[]>([]);
   const [lastFailedPost, setLastFailedPost] = useState<{
@@ -75,7 +84,7 @@ const PostUpdateWithUser = ({
     maxFiles: 1,
   });
 
-  const createPost = trpc.organization.createPost.useMutation({
+  const createPost = trpc.posts.createPost.useMutation({
     onError: (err) => {
       const errorInfo = analyzeError(err);
 
@@ -95,26 +104,63 @@ const PostUpdateWithUser = ({
 
       console.log('ERROR', err);
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       // Clear form and failed post on success
       setContent('');
       setDetectedUrls([]);
       fileUpload.clearFiles();
       setLastFailedPost(null);
+
+      // For comments, optimistically update the cache with enhanced server data
+      if (variables.parentPostId && data) {
+        // Enhance server data with user profile if not present
+        const enhancedData = {
+          ...data,
+          profile: data.profile || user?.currentProfile || null,
+        };
+
+        utils.posts.getPosts.setData(
+          {
+            parentPostId: variables.parentPostId,
+            limit: 50,
+            offset: 0,
+            includeChildren: false,
+          },
+          (old) => {
+            if (!old) return [enhancedData];
+            // Add the new comment to the beginning
+            return [enhancedData, ...old];
+          },
+        );
+      }
+
+      // Call onSuccess callback if provided (for comments)
+      if (onSuccess) {
+        onSuccess();
+      }
     },
-    onSettled: () => {
-      void utils.organization.listPosts.invalidate();
-      void utils.organization.listAllPosts.invalidate();
-      router.refresh();
+    onSettled: (_data, _error, variables) => {
+      // For comments, don't invalidate since we handle updates optimistically in onSuccess
+      if (!variables.parentPostId) {
+        void utils.organization.listPosts.invalidate();
+        void utils.organization.listAllPosts.invalidate();
+        router.refresh();
+      } else {
+        // For comments, only invalidate the broader queries but not the specific comments
+        void utils.organization.listPosts.invalidate();
+        void utils.organization.listAllPosts.invalidate();
+        // Don't refresh router for comments to avoid layout shifts
+      }
     },
   });
 
   const retryFailedPost = () => {
     if (lastFailedPost) {
       createPost.mutate({
-        id: organization.id,
         content: lastFailedPost.content,
-        attachmentIds: lastFailedPost.attachmentIds,
+        organizationId: organization.id,
+        parentPostId,
+        // TODO: Handle attachmentIds in the new API
       });
     }
   };
@@ -137,9 +183,10 @@ const PostUpdateWithUser = ({
       }
 
       createPost.mutate({
-        id: organization.id,
         content: content.trim() || '',
-        attachmentIds: fileUpload.getUploadedAttachmentIds(),
+        organizationId: organization.id,
+        parentPostId,
+        // TODO: Handle attachmentIds in the new API
       });
     }
   };
@@ -174,7 +221,7 @@ const PostUpdateWithUser = ({
     <div className={cn('flex flex-col gap-8', className)}>
       <FeedItem>
         <OrganizationAvatar
-          organization={organization}
+          profile={organization.profile}
           className="size-8 bg-white"
         />
         <FeedMain className="relative">
@@ -183,7 +230,7 @@ const PostUpdateWithUser = ({
               className="size-full h-6 overflow-y-hidden"
               variant="borderless"
               ref={textareaRef as RefObject<HTMLTextAreaElement>}
-              placeholder={`Post an update…`}
+              placeholder={placeholder || `Post an update…`}
               value={content}
               onChange={(e) => handleContentChange(e.target.value ?? '')}
               onKeyDown={handleKeyDown}
@@ -297,7 +344,7 @@ const PostUpdateWithUser = ({
                 }
                 onPress={createNewPostUpdate}
               >
-                {createPost.isPending ? <LoadingSpinner /> : t('Post')}
+                {createPost.isPending ? <LoadingSpinner /> : label}
               </Button>
             </div>
           </div>
@@ -310,9 +357,17 @@ const PostUpdateWithUser = ({
 export const PostUpdate = ({
   organization,
   className,
+  parentPostId,
+  placeholder,
+  onSuccess,
+  label,
 }: {
   organization?: Organization;
   className?: string;
+  parentPostId?: string;
+  placeholder?: string;
+  onSuccess?: () => void;
+  label: string;
 }) => {
   const { user } = useUser();
   const currentOrg = user?.currentOrganization;
@@ -328,6 +383,10 @@ export const PostUpdate = ({
     <PostUpdateWithUser
       organization={organization ?? currentOrg}
       className={className}
+      parentPostId={parentPostId}
+      placeholder={placeholder}
+      onSuccess={onSuccess}
+      label={label}
     />
   );
 };

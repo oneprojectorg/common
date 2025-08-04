@@ -2,6 +2,7 @@
   "name": "@op/api",
   "version": "0.0.0",
   "private": true,
+  "license": "SEE LICENSE in /LICENSE",
   "type": "module",
   "exports": {
     ".": "./index.ts",
@@ -11,7 +12,11 @@
     "./encoders": "./src/encoders/index.ts"
   },
   "scripts": {
-    "lint": "pnpm tsc --noEmit"
+    "lint": "pnpm tsc --noEmit",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage",
+    "test:ui": "vitest --ui",
+    "test:watch": "vitest --watch"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^1.2.1",
@@ -52,6 +57,9 @@
   },
   "devDependencies": {
     "@op/typescript-config": "workspace:*",
-    "typescript": "5.7.3"
+    "@vitest/coverage-v8": "^3.2.4",
+    "@vitest/ui": "^3.2.4",
+    "typescript": "5.7.3",
+    "vitest": "^3.2.4"
   }
 }

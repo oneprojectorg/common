@@ -87,7 +87,8 @@ const tabProps = tv({
     {
       variant: 'pill',
       isSelected: true,
-      class: 'border-none bg-neutral-gray1 sm:bg-neutral-gray1 text-neutral-charcoal',
+      class:
+        'border-none bg-neutral-gray1 text-neutral-charcoal sm:bg-neutral-gray1',
     },
   ],
   defaultVariants: {

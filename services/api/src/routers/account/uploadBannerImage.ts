@@ -1,7 +1,7 @@
 import { trackImageUpload } from '@op/analytics';
 import { CommonError } from '@op/common';
 import { eq } from '@op/db/client';
-import { users, profiles } from '@op/db/schema';
+import { profiles, users } from '@op/db/schema';
 import { createServerClient } from '@op/supabase/lib';
 import { TRPCError } from '@trpc/server';
 import { waitUntil } from '@vercel/functions';
@@ -131,8 +131,8 @@ export const uploadBannerImage = router({
       if (data) {
         // Check if user has a profile and get their profile ID
         const [existingUser] = await db
-          .select({ 
-            profileId: users.profileId 
+          .select({
+            profileId: users.profileId,
           })
           .from(users)
           .where(eq(users.authUserId, ctx.user.id));
@@ -155,7 +155,9 @@ export const uploadBannerImage = router({
             .where(eq(profiles.id, existingUser.profileId));
 
           // Track analytics (non-blocking)
-          waitUntil(trackImageUpload(ctx.user.id, 'banner', !!hadPreviousImage));
+          waitUntil(
+            trackImageUpload(ctx.user.id, 'banner', !!hadPreviousImage),
+          );
         } else {
           throw new TRPCError({
             code: 'NOT_FOUND',
