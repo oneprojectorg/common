@@ -1,25 +1,39 @@
 import { and, db, eq } from '@op/db/client';
-import { posts, postsToOrganizations } from '@op/db/schema';
+import { organizations, posts, postsToOrganizations } from '@op/db/schema';
 
 export interface DeletePostByIdOptions {
   postId: string;
-  organizationId: string;
+  profileId?: string;
+  organizationId?: string;
 }
 
 export const deletePostById = async (options: DeletePostByIdOptions) => {
-  const { postId, organizationId } = options;
-  // Verify the post exists and belongs to the organization
-  const postExists = await db
-    .select()
+  const { postId, profileId, organizationId } = options;
+
+  if (!profileId && !organizationId) {
+    throw new Error('Either profileId or organizationId must be provided');
+  }
+
+  let query = db
+    .select({ postId: posts.id })
     .from(posts)
-    .innerJoin(postsToOrganizations, eq(posts.id, postsToOrganizations.postId))
-    .where(
-      and(
-        eq(posts.id, postId),
-        eq(postsToOrganizations.organizationId, organizationId),
-      ),
-    )
-    .limit(1);
+    .innerJoin(postsToOrganizations, eq(posts.id, postsToOrganizations.postId));
+
+  let whereConditions = [eq(posts.id, postId)];
+
+  if (organizationId) {
+    whereConditions.push(
+      eq(postsToOrganizations.organizationId, organizationId),
+    );
+  } else if (profileId) {
+    query = query.innerJoin(
+      organizations,
+      eq(postsToOrganizations.organizationId, organizations.id),
+    );
+    whereConditions.push(eq(organizations.profileId, profileId));
+  }
+
+  const postExists = await query.where(and(...whereConditions)).limit(1);
 
   if (!postExists.length) {
     throw new Error(

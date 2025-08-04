@@ -71,7 +71,7 @@ const PostContent = ({ content }: { content?: string }) => {
     return null;
   }
 
-  return <>{linkifyText(content)}</>;
+  return linkifyText(content);
 };
 
 const PostAttachments = ({
@@ -193,18 +193,14 @@ const PostCommentButton = ({
 };
 
 const PostMenu = ({
-  organization,
   post,
   user,
 }: {
-  organization: Organization;
+  organization?: Organization;
   post: Post;
   user?: OrganizationUser;
 }) => {
-  const canShowMenu =
-    (organization?.id === user?.currentOrganization?.id ||
-      post?.profile?.id === user?.profile?.id) &&
-    !!post?.id;
+  const canShowMenu = post?.profileId === user?.currentProfileId && !!post?.id;
 
   if (!canShowMenu) {
     return null;
@@ -222,7 +218,7 @@ const PostMenu = ({
       <Popover placement="bottom end">
         <PostMenuContent
           postId={post.id}
-          organizationId={organization?.id || ''}
+          profileId={user?.currentProfileId || ''}
           canDelete={canShowMenu}
         />
       </Popover>
@@ -232,18 +228,18 @@ const PostMenu = ({
 
 const PostMenuContent = ({
   postId,
-  organizationId,
+  profileId,
   canDelete,
 }: {
   postId: string;
-  organizationId: string;
+  profileId: string;
   canDelete: boolean;
 }) => {
   if (!canDelete) {
     return null;
   }
 
-  return <DeletePost postId={postId} organizationId={organizationId} />;
+  return <DeletePost postId={postId} profileId={profileId} />;
 };
 
 export const EmptyPostsState = () => (
@@ -304,9 +300,7 @@ export const PostItem = ({
             </Header3>
             <PostTimestamp createdAt={post?.createdAt} />
           </div>
-          {organization ? (
-            <PostMenu organization={organization} post={post} user={user} />
-          ) : null}
+          <PostMenu post={post} user={user} />
         </FeedHeader>
         <FeedContent>
           <PostContent content={post?.content} />

@@ -7,10 +7,10 @@ import { useRouter } from 'next/navigation';
 
 export const DeletePost = ({
   postId,
-  organizationId,
+  profileId,
 }: {
   postId: string;
-  organizationId: string;
+  profileId: string;
 }) => {
   const utils = trpc.useUtils();
   const router = useRouter();
@@ -27,18 +27,18 @@ export const DeletePost = ({
     },
   });
 
-  const handleDeletePost = (postId: string, organizationId: string) => {
+  const handleDeletePost = (postId: string, profileId: string) => {
     deletePost.mutate({
       id: postId,
-      organizationId,
+      profileId: profileId,
     });
   };
 
   return (
     <Menu
       onAction={() => {
-        if (postId && organizationId) {
-          handleDeletePost(postId, organizationId);
+        if (postId && profileId) {
+          handleDeletePost(postId, profileId);
         }
       }}
       className="min-w-28 p-2"

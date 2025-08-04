@@ -3,6 +3,8 @@ import {
   deletePostById,
   getOrgAccessUser,
 } from '@op/common';
+import { db, eq } from '@op/db/client';
+import { organizations } from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
@@ -31,14 +33,30 @@ export const deletePost = router({
     .input(
       z.object({
         id: z.string().describe('The ID of the post to delete'),
-        organizationId: z
+        profileId: z
           .string()
-          .describe('The ID of the organization the post belongs to'),
+          .describe('The ID of the profile the post belongs to'),
       }),
     )
     .output(z.object({ success: z.boolean() }))
     .mutation(async ({ input, ctx }) => {
-      const { id, organizationId } = input;
+      const { id, profileId } = input;
+
+      // Look up the organization by profileId for access control
+      const organization = await db
+        .select({ id: organizations.id })
+        .from(organizations)
+        .where(eq(organizations.profileId, profileId))
+        .limit(1);
+
+      if (!organization.length) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Organization not found for the specified profileId',
+        });
+      }
+
+      const organizationId = organization[0]!.id;
 
       const user = await getOrgAccessUser({
         organizationId,
