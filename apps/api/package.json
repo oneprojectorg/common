@@ -2,6 +2,7 @@
   "name": "api",
   "version": "1.0.0",
   "private": true,
+  "license": "SEE LICENSE in /LICENSE",
   "type": "module",
   "scripts": {
     "build": "next build",
