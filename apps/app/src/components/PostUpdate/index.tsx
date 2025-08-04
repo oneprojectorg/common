@@ -160,7 +160,7 @@ const PostUpdateWithUser = ({
         content: lastFailedPost.content,
         organizationId: organization.id,
         parentPostId,
-        // TODO: Handle attachmentIds in the new API
+        attachmentIds: lastFailedPost.attachmentIds,
       });
     }
   };
@@ -186,7 +186,7 @@ const PostUpdateWithUser = ({
         content: content.trim() || '',
         organizationId: organization.id,
         parentPostId,
-        // TODO: Handle attachmentIds in the new API
+        attachmentIds: fileUpload.getUploadedAttachmentIds(),
       });
     }
   };

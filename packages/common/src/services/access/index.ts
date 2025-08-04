@@ -177,3 +177,22 @@ export const getCurrentOrgId = async ({
 
   throw new UnauthorizedError("You don't have access to do this");
 };
+
+export const getCurrentOrgUserId = async (organizationId: string) => {
+  const session = await getSession();
+  
+  if (!session?.user) {
+    throw new UnauthorizedError("You don't have access to do this");
+  }
+
+  const orgUser = await getOrgAccessUser({
+    user: { id: session.user.authUserId } as User,
+    organizationId,
+  });
+
+  if (!orgUser) {
+    throw new UnauthorizedError("You don't have access to this organization");
+  }
+
+  return orgUser.id;
+};
