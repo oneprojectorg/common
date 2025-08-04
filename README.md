@@ -1,6 +1,7 @@
 # Common Monorepo
 
 Welcome to the **Common** project monorepo! This repository contains the source code for the main frontend application, the backend API, shared UI components, core utilities, and services. It's structured using [Turborepo](https://turbo.build/repo) and `pnpm` workspaces.
+It's not quite ready to fork or contribute to yet as we are working fast on it but soon!
 
 ## Quick Start & Setup
 
