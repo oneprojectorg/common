@@ -17,9 +17,9 @@ const meta: OpenApiMeta = {
   openapi: {
     enabled: true,
     method: 'DELETE',
-    path: '/organization/{organizationId}/posts/{id}',
+    path: '/profile/{profileId}/posts/{id}',
     protect: true,
-    tags: ['organization', 'post'],
+    tags: ['profile', 'post'],
     summary: 'Delete a post from an organization',
     description: 'Delete a post from an organization',
   },
