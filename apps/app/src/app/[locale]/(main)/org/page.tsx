@@ -11,7 +11,7 @@ const OrgListingPage = async () => {
   try {
     const client = await trpcNext();
     const organizations = await client.profile.list.query({
-      limit: 5,
+      limit: 50,
       types: [EntityType.ORG],
     });
 
