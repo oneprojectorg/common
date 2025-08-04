@@ -45,7 +45,7 @@ We use a feature branch workflow based on the `dev` branch:
 
 ### Commit Guidelines
 
-- Use descriptive commit messages that explain the "why" not just the "what"
+- Use descriptive commit messages that explain the "what" but use PRs to explain the "why"
 - Keep commits focused and atomic
 - Follow conventional commit format when possible
 
@@ -79,7 +79,7 @@ This is a **Turborepo monorepo** using **pnpm workspaces**:
 
 - Follow existing code conventions in the file you're editing
 - Use TypeScript strictly (no `any` types)
-- Write self-documenting code with clear variable names
+- Write "self-documenting" code with clear variable names
 - Only use colors present in the tailwind.shared config
 
 ### UI Components
@@ -109,7 +109,7 @@ Use these shortcuts for common operations:
 pnpm w:app      # Work with apps/app
 pnpm w:api      # Work with apps/api
 pnpm w:db       # Work with services/db
-pnpm w:ui       # Work with packages/ui
+pnpm w:ui       # Work with packages/ui (usually Storybook)
 pnpm w:emails   # Work with services/emails
 ```
 
@@ -135,4 +135,4 @@ pnpm w:emails   # Work with services/emails
 
 ## Code of Conduct
 
-Please be respectful and constructive in all interactions. We're building something great together!
+Please be respectful and constructive in all interactions.
