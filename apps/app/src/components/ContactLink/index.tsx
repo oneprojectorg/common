@@ -11,9 +11,7 @@ export const ContactLink = ({
 }) => {
   return (
     <div className={cn('flex h-8 items-center gap-2', className)}>
-      <div className="flex w-full items-center gap-1 overflow-hidden">
-        {children}
-      </div>
+      <div className="flex items-center gap-1 overflow-hidden">{children}</div>
       {button}
     </div>
   );
