@@ -89,6 +89,6 @@ The root `package.json` includes several scripts prefixed with `deps:` to help m
 
 ## Big TODOs
 
-[] Test coverage
-[] Storybook coverage
-[] RBAC usage
+[ ] Test coverage
+[ ] Storybook coverage
+[ ] RBAC usage
