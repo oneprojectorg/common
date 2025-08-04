@@ -1,4 +1,5 @@
 import { listOrganizations } from '@op/common';
+import { EntityType } from '@op/db/schema';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 

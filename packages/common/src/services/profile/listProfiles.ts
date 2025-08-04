@@ -1,5 +1,5 @@
 import { and, db, eq, inArray, lt, or, sql } from '@op/db/client';
-import { EntityType, locations, profiles } from '@op/db/schema';
+import { type EntityType, locations, profiles } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
 import {
@@ -112,13 +112,13 @@ export const listProfiles = async ({
       limit: limit + 1, // Fetch one extra to check hasMore
     });
 
-    result.forEach(
-      (profile) =>
-        // @ts-ignore
-        (profile.organization.whereWeWork =
-          // @ts-ignore
-          profile.organization.whereWeWork.map((item: any) => item.location)),
-    );
+    result.forEach((profile) => {
+      if (profile.organization) {
+        // @ts-expect-error - transitionary issue from org to profiles
+        profile.organization.whereWeWork = // @ts-ignore - transitionary issue from org to profiles
+          profile.organization?.whereWeWork.map((item: any) => item.location);
+      }
+    });
 
     if (!result) {
       throw new NotFoundError('Profiles not found');
