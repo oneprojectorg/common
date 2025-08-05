@@ -24,13 +24,19 @@ export const WithInitialCategories = () => {
   return (
     <CategoryList
       className="w-96"
-      initialCategories={['Budget', 'Policies', 'Board of Directors']}
+      initialCategories={[
+        { id: 'budget', label: 'Budget' },
+        { id: 'policies', label: 'Policies' },
+        { id: 'board', label: 'Board of Directors' },
+      ]}
     />
   );
 };
 
 export const Controlled = () => {
-  const [categories, setCategories] = useState<string[]>([]);
+  const [categories, setCategories] = useState<
+    Array<{ id: string; label: string }>
+  >([]);
 
   return (
     <div className="space-y-4">
@@ -40,7 +46,8 @@ export const Controlled = () => {
         onUpdateList={setCategories}
       />
       <div className="text-sm text-neutral-gray4">
-        <strong>Current categories:</strong> {categories.join(', ')}
+        <strong>Current categories:</strong>{' '}
+        {categories.map((c) => c.label).join(', ')}
       </div>
     </div>
   );
