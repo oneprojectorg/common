@@ -3,6 +3,7 @@
 import { getPublicUrl } from '@/utils';
 import { OrganizationUser } from '@/utils/UserProvider';
 import { detectLinks, linkifyText } from '@/utils/linkDetection';
+import { createCommentsQueryKey } from '@/utils/queryKeys';
 import { trpc } from '@op/api/client';
 import type {
   Organization,
@@ -217,7 +218,7 @@ const PostMenu = ({
       </IconButton>
       <Popover placement="bottom end">
         <PostMenuContent
-          postId={post.id}
+          post={post}
           profileId={user?.currentProfileId || ''}
           canDelete={canShowMenu}
         />
@@ -227,11 +228,11 @@ const PostMenu = ({
 };
 
 const PostMenuContent = ({
-  postId,
+  post,
   profileId,
   canDelete,
 }: {
-  postId: string;
+  post: Post;
   profileId: string;
   canDelete: boolean;
 }) => {
@@ -239,7 +240,7 @@ const PostMenuContent = ({
     return null;
   }
 
-  return <DeletePost postId={postId} profileId={profileId} />;
+  return <DeletePost post={post} profileId={profileId} />;
 };
 
 export const EmptyPostsState = () => (
@@ -347,9 +348,11 @@ export const DiscussionModalContainer = ({
 export const usePostFeedActions = ({
   slug,
   limit = 20,
+  parentPostId,
 }: {
   slug?: string;
   limit?: number;
+  parentPostId?: string;
 } = {}) => {
   const utils = trpc.useUtils();
   const [discussionModal, setDiscussionModal] = useState<{
@@ -367,18 +370,27 @@ export const usePostFeedActions = ({
         await utils.organization.listPosts.cancel({ slug, limit });
       }
       await utils.organization.listAllPosts.cancel({});
+      
+      // Cancel comments cache if we're in a modal context
+      if (parentPostId) {
+        const commentsQueryKey = createCommentsQueryKey(parentPostId);
+        await utils.posts.getPosts.cancel(commentsQueryKey);
+      }
 
       // Snapshot the previous values
       const previousListPosts = slug
         ? utils.organization.listPosts.getInfiniteData({ slug, limit })
         : undefined;
       const previousListAllPosts = utils.organization.listAllPosts.getData({});
+      const previousComments = parentPostId
+        ? utils.posts.getPosts.getData(createCommentsQueryKey(parentPostId))
+        : undefined;
 
       // Helper function to update post reactions
       const updatePostReactions = (item: PostToOrganization) => {
         if (item.post.id === postId) {
           const currentReaction = item.post.userReaction;
-          const currentCounts = item.post.reactionCounts || {};
+          const currentCounts: Record<string, number> = item.post.reactionCounts || {};
 
           // Check if user already has this reaction
           const hasReaction = currentReaction === reactionType;
@@ -401,7 +413,7 @@ export const usePostFeedActions = ({
             };
           } else {
             // Replace or add reaction
-            const newCounts = { ...currentCounts };
+            const newCounts: Record<string, number> = { ...currentCounts };
 
             // If user had a previous reaction, decrement its count
             if (currentReaction) {
@@ -455,8 +467,34 @@ export const usePostFeedActions = ({
           items: old.items.map(updatePostReactions),
         };
       });
+      
+      // Optimistically update comments cache if we're in a modal context
+      if (parentPostId) {
+        const commentsQueryKey = createCommentsQueryKey(parentPostId);
+        utils.posts.getPosts.setData(commentsQueryKey, (old) => {
+          if (!old) {
+            return old;
+          }
+          
+          // Transform comments to PostToOrganization format and apply updates
+          return old.map((comment) => {
+            const postToOrg: PostToOrganization = {
+              createdAt: comment.createdAt,
+              updatedAt: comment.updatedAt,
+              deletedAt: null,
+              postId: comment.id,
+              organizationId: '',
+              post: comment,
+              organization: null,
+            };
+            
+            const updated = updatePostReactions(postToOrg);
+            return updated.post;
+          });
+        });
+      }
 
-      return { previousListPosts, previousListAllPosts };
+      return { previousListPosts, previousListAllPosts, previousComments };
     },
     onError: (err, _variables, context) => {
       // Rollback on error
@@ -471,6 +509,10 @@ export const usePostFeedActions = ({
           {},
           context.previousListAllPosts,
         );
+      }
+      if (context?.previousComments && parentPostId) {
+        const commentsQueryKey = createCommentsQueryKey(parentPostId);
+        utils.posts.getPosts.setData(commentsQueryKey, context.previousComments);
       }
       toast.error({ message: err.message || 'Failed to update reaction' });
     },
