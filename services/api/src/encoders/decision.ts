@@ -19,43 +19,72 @@ const processSchemaEncoder = z.object({
   description: z.string().optional(),
   budget: z.number().optional(),
   fields: jsonSchemaEncoder.optional(),
-  states: z.array(z.object({
-    id: z.string(),
-    name: z.string(),
-    description: z.string().optional(),
-    fields: jsonSchemaEncoder.optional(),
-    phase: z.object({
-      startDate: z.string().optional(),
-      endDate: z.string().optional(),
-      sortOrder: z.number().optional(),
-    }).optional(),
-    type: z.enum(['initial', 'intermediate', 'final']).optional(),
-    config: z.object({
-      allowProposals: z.boolean().optional(),
-      allowDecisions: z.boolean().optional(),
-      visibleComponents: z.array(z.string()).optional(),
-    }).optional(),
-  })),
-  transitions: z.array(z.object({
-    id: z.string(),
-    name: z.string(),
-    from: z.union([z.string(), z.array(z.string())]),
-    to: z.string(),
-    rules: z.object({
-      type: z.enum(['manual', 'automatic']),
-      conditions: z.array(z.object({
-        type: z.enum(['time', 'proposalCount', 'participationCount', 'approvalRate', 'customField']),
-        operator: z.enum(['equals', 'greaterThan', 'lessThan', 'between']),
-        value: z.unknown().optional(),
-        field: z.string().optional(),
-      })).optional(),
-      requireAll: z.boolean().optional(),
-    }).optional(),
-    actions: z.array(z.object({
-      type: z.enum(['notify', 'updateField', 'createRecord']),
-      config: z.record(z.unknown()),
-    })).optional(),
-  })),
+  states: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      description: z.string().optional(),
+      fields: jsonSchemaEncoder.optional(),
+      phase: z
+        .object({
+          startDate: z.string().optional(),
+          endDate: z.string().optional(),
+          sortOrder: z.number().optional(),
+        })
+        .optional(),
+      type: z.enum(['initial', 'intermediate', 'final']).optional(),
+      config: z
+        .object({
+          allowProposals: z.boolean().optional(),
+          allowDecisions: z.boolean().optional(),
+          visibleComponents: z.array(z.string()).optional(),
+        })
+        .optional(),
+    }),
+  ),
+  transitions: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      from: z.union([z.string(), z.array(z.string())]),
+      to: z.string(),
+      rules: z
+        .object({
+          type: z.enum(['manual', 'automatic']),
+          conditions: z
+            .array(
+              z.object({
+                type: z.enum([
+                  'time',
+                  'proposalCount',
+                  'participationCount',
+                  'approvalRate',
+                  'customField',
+                ]),
+                operator: z.enum([
+                  'equals',
+                  'greaterThan',
+                  'lessThan',
+                  'between',
+                ]),
+                value: z.unknown().optional(),
+                field: z.string().optional(),
+              }),
+            )
+            .optional(),
+          requireAll: z.boolean().optional(),
+        })
+        .optional(),
+      actions: z
+        .array(
+          z.object({
+            type: z.enum(['notify', 'updateField', 'createRecord']),
+            config: z.record(z.unknown()),
+          }),
+        )
+        .optional(),
+    }),
+  ),
   initialState: z.string(),
   decisionDefinition: jsonSchemaEncoder,
   proposalTemplate: jsonSchemaEncoder,
@@ -66,17 +95,25 @@ const instanceDataEncoder = z.object({
   budget: z.number().optional(),
   fieldValues: z.record(z.unknown()).optional(),
   currentStateId: z.string(),
-  stateData: z.record(z.object({
-    enteredAt: z.string().optional(),
-    metadata: z.record(z.unknown()).optional(),
-  })).optional(),
-  phases: z.array(z.object({
-    stateId: z.string(),
-    actualStartDate: z.string().optional(),
-    actualEndDate: z.string().optional(),
-    plannedStartDate: z.string().optional(),
-    plannedEndDate: z.string().optional(),
-  })).optional(),
+  stateData: z
+    .record(
+      z.object({
+        enteredAt: z.string().optional(),
+        metadata: z.record(z.unknown()).optional(),
+      }),
+    )
+    .optional(),
+  phases: z
+    .array(
+      z.object({
+        stateId: z.string(),
+        actualStartDate: z.string().optional(),
+        actualEndDate: z.string().optional(),
+        plannedStartDate: z.string().optional(),
+        plannedEndDate: z.string().optional(),
+      }),
+    )
+    .optional(),
 });
 
 // Decision Process Encoder
@@ -261,7 +298,9 @@ export const instanceFilterSchema = z
   .object({
     processId: z.string().uuid().optional(),
     ownerProfileId: z.string().uuid().optional(),
-    status: z.enum(['draft', 'active', 'paused', 'completed', 'cancelled']).optional(),
+    status: z
+      .enum(['draft', 'active', 'paused', 'completed', 'cancelled'])
+      .optional(),
     search: z.string().optional(),
   })
   .merge(paginationInputSchema);

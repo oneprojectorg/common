@@ -44,7 +44,8 @@ export const createInstance = async ({
 
     // Get initial state from process schema
     const processSchema = process.processSchema as ProcessSchema;
-    const initialStateId = processSchema.initialState || processSchema.states?.[0]?.id;
+    const initialStateId =
+      processSchema.initialState || processSchema.states?.[0]?.id;
 
     const [instance] = await db
       .insert(processInstances)

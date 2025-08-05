@@ -22,10 +22,15 @@ export const listProcesses = async ({
     }
 
     if (createdByProfileId) {
-      conditions.push(eq(decisionProcesses.createdByProfileId, createdByProfileId));
+      conditions.push(
+        eq(decisionProcesses.createdByProfileId, createdByProfileId),
+      );
     }
 
-    const whereClause = conditions.length > 0 ? sql`${sql.raw(conditions.map(() => '?').join(' AND '))}` : undefined;
+    const whereClause =
+      conditions.length > 0
+        ? sql`${sql.raw(conditions.map(() => '?').join(' AND '))}`
+        : undefined;
 
     const [processes, totalResult] = await Promise.all([
       db.query.decisionProcesses.findMany({
