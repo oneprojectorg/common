@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "rg:*"
+    ],
+    "deny": [
+      "pnpm w:db:*"
+    ]
+  }
+}
