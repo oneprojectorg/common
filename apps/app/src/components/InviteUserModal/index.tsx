@@ -237,7 +237,7 @@ export const InviteUserModal = ({ children }: InviteUserModalProps) => {
               selectedKey={activeTab}
               onSelectionChange={(key) => setActiveTab(key as string)}
             >
-              <TabList aria-label="Invite options">
+              <TabList aria-label={t('Invite options')}>
                 <Tab id="existing">{t('Add to my organization')}</Tab>
                 {inviteUserEnabled ? (
                   <Tab id="new">{t('Invite a new organization')}</Tab>

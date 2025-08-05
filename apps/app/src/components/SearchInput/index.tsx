@@ -9,13 +9,14 @@ import { useEffect, useRef, useState } from 'react';
 import { LuSearch } from 'react-icons/lu';
 import { useDebounce } from 'use-debounce';
 
-import { Link, useRouter } from '@/lib/i18n';
+import { Link, useRouter, useTranslations } from '@/lib/i18n';
 
 import { ProfileResults } from './ProfileResults';
 import { RecentSearches } from './RecentSearches';
 import { SearchResultItem } from './SearchResultItem';
 
 export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
+  const t = useTranslations();
   const router = useRouter();
   const individualProfilesEnabled = useFeatureFlagEnabled(
     'individual_profiles',
@@ -160,7 +161,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
       <TextField
         ref={inputRef}
         inputProps={{
-          placeholder: 'Search',
+          placeholder: t('Search'),
           color: 'muted',
           size: 'small',
           icon: isSearching ? (
@@ -194,13 +195,13 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
         }}
         value={query}
         className={cn('relative z-20', isMobile ? 'w-full' : 'w-96')}
-        aria-label="Search"
+        aria-label={t('Search')}
       >
         {dropdownShowing ? (
           <div
             className="absolute top-10 z-10 hidden !max-h-80 w-[--trigger-width] min-w-96 overflow-y-auto rounded-b border border-t-0 bg-white group-hover:border-neutral-gray2 sm:block"
             role="listbox"
-            aria-label="Search results"
+            aria-label={t('Search results')}
           >
             <div>
               {query.length > 0 && (

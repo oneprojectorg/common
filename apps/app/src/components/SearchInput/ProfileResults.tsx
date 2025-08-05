@@ -3,7 +3,7 @@ import { EntityType, Profile } from '@op/api/encoders';
 import { Avatar } from '@op/ui/Avatar';
 import Image from 'next/image';
 
-import { Link } from '@/lib/i18n';
+import { Link, useTranslations } from '@/lib/i18n';
 
 import { SearchResultItem } from './SearchResultItem';
 
@@ -20,6 +20,8 @@ export const ProfileResults = ({
   selectedIndex,
   onSearch,
 }: ProfileResultsProps) => {
+  const t = useTranslations();
+  
   return (
     <div className="pb-4">
       {profileResults.map((profile, index) => (
@@ -43,7 +45,7 @@ export const ProfileResults = ({
               {profile.avatarImage?.name ? (
                 <Image
                   src={getPublicUrl(profile.avatarImage.name) ?? ''}
-                  alt={`${profile.name} avatar`}
+                  alt={`${profile.name} ${t('avatar')}`}
                   fill
                   className="object-cover"
                 />
@@ -54,8 +56,8 @@ export const ProfileResults = ({
               <span>{profile.name}</span>
               <span className="text-sm capitalize text-neutral-gray4">
                 {profile.type === EntityType.INDIVIDUAL
-                  ? 'Individual'
-                  : 'Organization'}
+                  ? t('Individual')
+                  : t('Organization')}
                 {profile.city && ` • ${profile.city}`}
               </span>
             </div>

@@ -67,6 +67,7 @@ const ProfileMenuItem = ({
   }) => void;
   children?: React.ReactNode;
 }) => {
+  const t = useTranslations();
   const { user } = useUser();
   const router = useRouter();
   const utils = trpc.useUtils();
@@ -108,7 +109,7 @@ const ProfileMenuItem = ({
         {profile.avatarImage?.name ? (
           <Image
             src={getPublicUrl(profile.avatarImage.name) ?? ''}
-            alt="Profile avatar"
+            alt={t('Profile avatar')}
             fill
             className="aspect-square object-cover"
           />
@@ -180,7 +181,7 @@ const AvatarMenuContent = ({
               src={getPublicUrl(avatarUrl) ?? ''}
               fill
               className="object-cover"
-              alt={user?.name ?? 'User avatar'}
+              alt={user?.name ?? t('User avatar')}
             />
           ) : null}
         </Avatar>
@@ -304,6 +305,7 @@ const AvatarMenuContent = ({
 };
 
 const UserAvatarMenu = () => {
+  const t = useTranslations();
   const { user } = useUser();
   const isMobile = useMediaQuery('(max-width: 640px)');
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -349,7 +351,7 @@ const UserAvatarMenu = () => {
         {user?.currentProfile?.avatarImage?.name ? (
           <Image
             src={getPublicUrl(user?.currentProfile?.avatarImage.name) ?? ''}
-            alt="User avatar"
+            alt={t('User avatar')}
             fill
             className="object-cover"
           />

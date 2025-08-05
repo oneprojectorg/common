@@ -81,5 +81,18 @@
   "Could not load organizations": "Could not load organizations",
   "avatar": "avatar",
   "No organizations found for this profile": "No organizations found for this profile",
-  "No posts yet.": "No posts yet."
+  "No posts yet.": "No posts yet.",
+  "People": "People",
+  "Results for": "Results for",
+  "No results for": "No results for",
+  "You may want to try using different keywords, checking for typos, or adjusting your filters.": "You may want to try using different keywords, checking for typos, or adjusting your filters.",
+  "Could not load search results": "Could not load search results",
+  "Search": "Search",
+  "Search results": "Search results",
+  "Recent Searches": "Recent Searches",
+  "Individual": "Individual",
+  "Organization": "Organization",
+  "Profile avatar": "Profile avatar",
+  "User avatar": "User avatar",
+  "Invite options": "Invite options"
 }

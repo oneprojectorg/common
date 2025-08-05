@@ -1,6 +1,8 @@
 import { EntityType } from '@op/api/encoders';
 import { trpcNext } from '@op/api/vanilla';
 
+import { useTranslations } from '@/lib/i18n';
+
 import { AllOrganizations } from '@/components/Organizations/AllOrganizations';
 import {
   ListPageLayout,
@@ -8,6 +10,8 @@ import {
 } from '@/components/layout/ListPageLayout';
 
 const ProfileListingPage = async () => {
+  const t = useTranslations();
+  
   try {
     const client = await trpcNext();
     const organizations = await client.profile.list.query({
@@ -17,7 +21,7 @@ const ProfileListingPage = async () => {
 
     return (
       <ListPageLayout>
-        <ListPageLayoutHeader>Organizations</ListPageLayoutHeader>
+        <ListPageLayoutHeader>{t('People')}</ListPageLayoutHeader>
 
         <AllOrganizations
           initialData={organizations}
@@ -29,7 +33,7 @@ const ProfileListingPage = async () => {
   } catch (error) {
     return (
       <ListPageLayout>
-        <ListPageLayoutHeader>Organizations</ListPageLayoutHeader>
+        <ListPageLayoutHeader>{t('People')}</ListPageLayoutHeader>
 
         <AllOrganizations
           initialData={{ items: [], hasMore: false, next: null }}
