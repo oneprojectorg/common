@@ -6,7 +6,8 @@ import type { PostToOrganization } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { Modal, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Surface } from '@op/ui/Surface';
-import { useRef } from 'react';
+import { useMemo, useRef } from 'react';
+import React from 'react';
 import { LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -30,6 +31,7 @@ export function DiscussionModal({
 
   const { handleReactionClick, handleCommentClick } = usePostFeedActions({
     slug: organization?.profile?.slug,
+    parentPostId: post.id,
   });
 
   const { data: commentsData, isLoading } = trpc.posts.getPosts.useQuery(
@@ -42,23 +44,25 @@ export function DiscussionModal({
     { enabled: isOpen },
   );
 
-
   const sourcePostProfile = post.profile;
 
   // Get the post author's name for the header
   const authorName = sourcePostProfile?.name || 'Unknown';
 
   // Transform comments data to match PostFeeds expected PostToOrganizaion format
-  const comments =
-    commentsData?.map((comment) => ({
-      createdAt: comment.createdAt,
-      updatedAt: comment.updatedAt,
-      deletedAt: null,
-      postId: comment.id,
-      organizationId: '', // Not needed for comments
-      post: comment,
-      organization: null, // Comments don't need organization context in the modal
-    })) || [];
+  const comments = useMemo(
+    () =>
+      commentsData?.map((comment) => ({
+        createdAt: comment.createdAt,
+        updatedAt: comment.updatedAt,
+        deletedAt: null,
+        postId: comment.id,
+        organizationId: '', // Not needed for comments
+        post: comment,
+        organization: null, // Comments don't need organization context in the modal
+      })) || [],
+    [commentsData],
+  );
 
   return (
     <Modal
@@ -105,21 +109,24 @@ export function DiscussionModal({
           </PostFeed>
           {/* Comments Display */}
           {isLoading ? (
-            <div className="py-8 text-center text-gray-500">
+            <div
+              className="py-8 text-center text-gray-500"
+              role="status"
+              aria-label="Loading discussion"
+            >
               Loading discussion...
             </div>
           ) : comments.length > 0 ? (
-            <div>
+            <div role="feed" aria-label={`${comments.length} comments`}>
               <PostFeed className="border-none">
                 {comments.map((comment, i) => (
-                  <>
+                  <React.Fragment key={comment.post.id}>
                     <div
                       data-comment-item
                       data-comment-id={comment.post.id}
                       data-is-first-comment={i === 0}
                     >
                       <PostItem
-                        key={i}
                         postToOrg={comment}
                         user={user}
                         withLinks={false}
@@ -131,12 +138,16 @@ export function DiscussionModal({
                     {comments.length !== i + 1 && (
                       <hr className="bg-neutral-gray1" />
                     )}
-                  </>
+                  </React.Fragment>
                 ))}
               </PostFeed>
             </div>
           ) : (
-            <div className="py-8 text-center text-gray-500">
+            <div
+              className="py-8 text-center text-gray-500"
+              role="status"
+              aria-label="No comments"
+            >
               No comments yet. Be the first to comment!
             </div>
           )}
