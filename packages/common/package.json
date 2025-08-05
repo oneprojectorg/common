@@ -20,6 +20,7 @@
     "@op/emails": "workspace:*",
     "@op/supabase": "workspace:*",
     "@op/types": "workspace:*",
-    "@op/typescript-config": "workspace:*"
+    "@op/typescript-config": "workspace:*",
+    "@types/json-schema": "^7.0.15"
   }
 }
