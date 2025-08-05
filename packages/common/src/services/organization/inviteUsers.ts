@@ -49,10 +49,7 @@ export const inviteUsersToOrganization = async (
 
   // For new organization invites, we don't need the user to be in an organization
   // For existing organization invites, we do need it
-  if (
-    (!authUser?.currentProfileId && !authUser?.lastOrgId) ||
-    (!authUser.currentOrganization && !authUser.currentProfile)
-  ) {
+  if (!authUser?.currentProfileId || !authUser.currentProfile) {
     throw new Error(
       'User must be associated with an organization to send invites',
     );

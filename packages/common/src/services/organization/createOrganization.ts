@@ -170,7 +170,11 @@ export const createOrganization = async ({
     }),
     db
       .update(users)
-      .set({ lastOrgId: newOrg.id, currentProfileId: profile.id })
+      .set({ 
+        // Keep lastOrgId for backwards compatibility
+        lastOrgId: newOrg.id, 
+        currentProfileId: profile.id 
+      })
       .where(eq(users.authUserId, user.id)),
   ]);
 

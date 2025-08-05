@@ -17,7 +17,7 @@ const meta: OpenApiMeta = {
     path: `/account/${endpoint}`,
     protect: true,
     tags: ['account'],
-    summary: 'Update user lastOrgId',
+    summary: 'Switch user organization',
   },
 };
 

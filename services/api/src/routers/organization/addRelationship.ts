@@ -49,10 +49,8 @@ export const addRelationshipRouter = router({
           throw new UnauthorizedError('No user found');
         }
 
-        if (!session.user.currentProfileId && !session.user.lastOrgId) {
-          throw new UnauthorizedError(
-            'No user currentProfileId or lastOrgId found',
-          );
+        if (!session.user.currentProfileId) {
+          throw new UnauthorizedError('No user currentProfileId found');
         }
 
         // TODO: We pull the org ID to add ORG relationships. We are transitioning to profile relationships. This should go away eventually

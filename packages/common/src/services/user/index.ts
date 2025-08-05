@@ -239,6 +239,7 @@ export const updateUserCurrentProfile = async (
     .update(users)
     .set({
       currentProfileId: profileId,
+      // Keep lastOrgId for backwards compatibility
       ...(orgId ? { lastOrgId: orgId.toString() } : {}),
     })
     .where(eq(users.authUserId, authUserId))
@@ -310,6 +311,7 @@ export const switchUserOrganization = async (
   const result = await db
     .update(users)
     .set({
+      // Keep lastOrgId for backwards compatibility
       lastOrgId: organization.id,
       currentProfileId: organization.profileId,
     })
