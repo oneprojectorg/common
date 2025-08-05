@@ -915,6 +915,9 @@ importers:
       '@op/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@op/supabase':
+        specifier: workspace:^
+        version: link:../supabase
       '@types/pg':
         specifier: ^8.11.11
         version: 8.11.11
@@ -12487,7 +12490,7 @@ snapshots:
   gel@2.0.0:
     dependencies:
       '@petamoriken/float16': 3.9.1
-      debug: 4.4.0
+      debug: 4.4.1
       env-paths: 3.0.0
       semver: 7.7.1
       shell-quote: 1.8.2
@@ -13552,7 +13555,7 @@ snapshots:
   micromark@3.2.0:
     dependencies:
       '@types/debug': 4.1.12
-      debug: 4.4.0
+      debug: 4.4.1
       decode-named-character-reference: 1.0.2
       micromark-core-commonmark: 1.1.0
       micromark-factory-space: 1.1.0

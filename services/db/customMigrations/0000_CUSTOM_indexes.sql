@@ -1,3 +1,8 @@
+-- pg_trgm is used for the search function and text similarity
+CREATE EXTENSION IF NOT EXISTS pg_trgm SCHEMA extensions;
+CREATE EXTENSION IF NOT EXISTS postgis SCHEMA extensions;
+CREATE EXTENSION IF NOT EXISTS vector SCHEMA extensions;
+
 --> statement-breakpoint
 CREATE INDEX CONCURRENTLY "access_roles_id_index" ON "access_roles" USING btree ("id");
 
