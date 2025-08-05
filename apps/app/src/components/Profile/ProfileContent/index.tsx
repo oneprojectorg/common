@@ -276,14 +276,26 @@ export const ProfileTabs = ({ children }: { children: React.ReactNode }) => {
   return <Tabs className="hidden gap-0 px-0 pb-8 sm:flex">{children}</Tabs>;
 };
 
-export const ProfileTabsMobile = ({ profile }: { profile: Organization }) => {
+export const ProfileTabsMobile = ({ 
+  profile,
+  children,
+  decisionsContent 
+}: { 
+  profile: Organization;
+  children?: React.ReactNode;
+  decisionsContent?: React.ReactNode;
+}) => {
   const t = useTranslations();
 
   return (
     <Tabs className="px-0 pb-8 sm:hidden">
-      <TabList className="px-4">
+      <TabList className="overflow-x-auto px-4">
         <Tab id="updates">{t('Updates')}</Tab>
         <Tab id="about">{t('About')}</Tab>
+        <Tab id="relationships">{t('Relationships')}</Tab>
+        <Tab id="followers">{t('Followers')}</Tab>
+        <Tab id="members">{t('Members')}</Tab>
+        <Tab id="decisions">{t('Decisions')}</Tab>
       </TabList>
       <TabPanel id="updates" className="px-0">
         <Suspense fallback={<Skeleton className="w-full" />}>
@@ -299,6 +311,18 @@ export const ProfileTabsMobile = ({ profile }: { profile: Organization }) => {
       </TabPanel>
       <TabPanel id="about">
         <ProfileAbout profile={profile} className="px-4 py-2" />
+      </TabPanel>
+      <TabPanel id="relationships" className="px-4 py-2">
+        {children}
+      </TabPanel>
+      <TabPanel id="followers" className="px-4 py-2">
+        <div className="text-center text-neutral-gray4">Followers content coming soon</div>
+      </TabPanel>
+      <TabPanel id="members" className="px-4 py-2">
+        <div className="text-center text-neutral-gray4">Members content coming soon</div>
+      </TabPanel>
+      <TabPanel id="decisions" className="px-0">
+        {decisionsContent}
       </TabPanel>
     </Tabs>
   );

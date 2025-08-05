@@ -23,6 +23,7 @@ import {
   ProfileOrganizationsSuspense,
 } from '../ProfileOrganizations';
 import { ProfileRelationshipsSuspense } from '../ProfileRelationships';
+import { ProfileDecisionsSuspense } from '@/components/Profile/ProfileDecisions';
 
 const ProfileWithData = async ({ slug }: { slug: string }) => {
   try {
@@ -73,6 +74,7 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
             <ProfileTabList>
               <Tab id="home">Home</Tab>
               <Tab id="relationships">Relationships</Tab>
+              <Tab id="decisions">Decisions</Tab>
             </ProfileTabList>
 
             <TabPanel id="home" className="sm:p-0">
@@ -86,8 +88,19 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
                 />
               </ProfileOrganizations>
             </TabPanel>
+            <TabPanel id="decisions" className="px-4 sm:px-6 sm:py-0">
+              <ProfileDecisionsSuspense />
+            </TabPanel>
           </ProfileTabs>
-          <ProfileTabsMobile profile={organization as any} />
+          <ProfileTabsMobile 
+            profile={organization as any}
+            decisionsContent={<ProfileDecisionsSuspense />}
+          >
+            <ProfileRelationshipsSuspense
+              slug={profile.slug}
+              showBreadcrumb={false}
+            />
+          </ProfileTabsMobile>
         </>
       ) : null;
     }
