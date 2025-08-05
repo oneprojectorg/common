@@ -68,4 +68,41 @@ export type { Profile } from './tables/profiles.sql';
 export { EntityType, entityTypeEnum } from './tables/entities.sql';
 export { allowList, allowListRelations } from './tables/allowList.sql';
 
+// Decision system tables
+export {
+  decisionProcesses,
+  decisionProcessesRelations,
+} from './tables/decisionProcesses.sql';
+export type { DecisionProcess } from './tables/decisionProcesses.sql';
+
+export {
+  processInstances,
+  processInstancesRelations,
+  ProcessStatus,
+  processStatusEnum,
+} from './tables/processInstances.sql';
+export type { ProcessInstance } from './tables/processInstances.sql';
+
+export {
+  proposals,
+  proposalsRelations,
+  proposalCategories,
+  proposalCategoriesRelations,
+  ProposalStatus,
+  proposalStatusEnum,
+} from './tables/proposals.sql';
+export type { Proposal, ProposalCategory } from './tables/proposals.sql';
+
+export {
+  decisions,
+  decisionsRelations,
+} from './tables/decisions.sql';
+export type { Decision } from './tables/decisions.sql';
+
+export {
+  stateTransitionHistory,
+  stateTransitionHistoryRelations,
+} from './tables/stateTransitionHistory.sql';
+export type { StateTransitionHistory } from './tables/stateTransitionHistory.sql';
+
 export type { ObjectsInStorage } from './tables/storage.sql';
