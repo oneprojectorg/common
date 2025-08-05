@@ -23,7 +23,6 @@ export function DiscussionModal({
   isOpen: boolean;
   onClose: () => void;
 }) {
-  const utils = trpc.useUtils();
   const { user } = useUser();
   const t = useTranslations();
   const { post, organization } = postToOrg;
@@ -43,12 +42,6 @@ export function DiscussionModal({
     { enabled: isOpen },
   );
 
-  const handleCommentSuccess = () => {
-    // No need to invalidate - onSuccess optimistic update handles this
-    utils.posts.getPosts.invalidate({
-      parentPostId: post.id,
-    });
-  };
 
   const sourcePostProfile = post.profile;
 
@@ -155,7 +148,6 @@ export function DiscussionModal({
             <PostUpdate
               parentPostId={post.id}
               placeholder={`Comment${user?.currentProfile?.name ? ` as ${user?.currentProfile?.name}` : ''}...`}
-              onSuccess={handleCommentSuccess}
               label={t('Comment')}
             />
           </Surface>

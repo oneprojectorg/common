@@ -84,9 +84,29 @@ const PostUpdateWithUser = ({
     maxFiles: 1,
   });
 
+
   const createPost = trpc.posts.createPost.useMutation({
-    onError: (err) => {
+    onError: (err, variables) => {
       const errorInfo = analyzeError(err);
+
+      // Rollback optimistic comment updates on error
+      if (variables.parentPostId) {
+        // Remove the optimistically added comment
+        utils.posts.getPosts.setData({
+          parentPostId: variables.parentPostId,
+          limit: 50,
+          offset: 0,
+          includeChildren: false,
+        }, (old) => {
+          if (!old || old.length === 0) return old;
+          // Remove the first item (the optimistic comment)
+          return old.slice(1);
+        });
+        
+        // Revert parent post comment count - invalidate to be safe
+        void utils.organization.listPosts.invalidate();
+        void utils.organization.listAllPosts.invalidate();
+      }
 
       if (errorInfo.isConnectionError) {
         // Store failed post data for retry
@@ -132,6 +152,11 @@ const PostUpdateWithUser = ({
             return [enhancedData, ...old];
           },
         );
+        
+        // Update parent post's comment count - use invalidation to ensure consistency
+        // The optimistic comment update above is the most important for immediate feedback
+        void utils.organization.listPosts.invalidate();
+        void utils.organization.listAllPosts.invalidate();
       }
 
       // Call onSuccess callback if provided (for comments)
@@ -139,16 +164,24 @@ const PostUpdateWithUser = ({
         onSuccess();
       }
     },
-    onSettled: (_data, _error, variables) => {
-      // For comments, don't invalidate since we handle updates optimistically in onSuccess
+    onSettled: (_data, error, variables) => {
       if (!variables.parentPostId) {
+        // For top-level posts, keep existing behavior
         void utils.organization.listPosts.invalidate();
         void utils.organization.listAllPosts.invalidate();
         router.refresh();
       } else {
-        // For comments, only invalidate the broader queries but not the specific comments
+        // For comments: NO invalidation, rely on optimistic updates
+        // Only invalidate broader queries for consistency
         void utils.organization.listPosts.invalidate();
         void utils.organization.listAllPosts.invalidate();
+        
+        // Only invalidate comments on ERROR to trigger recovery
+        if (error) {
+          void utils.posts.getPosts.invalidate({ 
+            parentPostId: variables.parentPostId 
+          });
+        }
         // Don't refresh router for comments to avoid layout shifts
       }
     },
