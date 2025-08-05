@@ -78,5 +78,8 @@
   "to Common": "to Common",
   "Unable to load posts. Please try refreshing.": "Unable to load posts. Please try refreshing.",
   "Organizations": "Organizations",
-  "Could not load organizations": "Could not load organizations"
+  "Could not load organizations": "Could not load organizations",
+  "avatar": "avatar",
+  "No organizations found for this profile": "No organizations found for this profile",
+  "No posts yet.": "No posts yet."
 }

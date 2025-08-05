@@ -8,7 +8,7 @@ import { Surface } from '@op/ui/Surface';
 import { cn, getGradientForString } from '@op/ui/utils';
 import Image from 'next/image';
 
-import { Link } from '@/lib/i18n';
+import { Link, useTranslations } from '@/lib/i18n';
 
 import { ImageHeader } from '@/components/ImageHeader';
 import {
@@ -25,6 +25,8 @@ export const OrganizationList = ({
 }: {
   organizations: Array<Organization>;
 }) => {
+  const t = useTranslations();
+  
   return (
     <>
       <div className="hidden flex-col gap-6 sm:flex">
@@ -49,7 +51,7 @@ export const OrganizationList = ({
 
       {/* mobile */}
       <div className="flex flex-col gap-6 sm:hidden">
-        <OrganizationCarousel label="New Organizations" itemWidth={192}>
+        <OrganizationCarousel label={t('New Organizations')} itemWidth={192}>
           <>
             {organizations?.map((org) => {
               const { avatarImage, headerImage } = org.profile;

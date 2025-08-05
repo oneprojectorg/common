@@ -27,7 +27,7 @@ import { useFeatureFlagEnabled } from 'posthog-js/react';
 import { ReactNode, useState } from 'react';
 import { LuEllipsis, LuLeaf } from 'react-icons/lu';
 
-import { Link } from '@/lib/i18n';
+import { Link, useTranslations } from '@/lib/i18n';
 
 import { DiscussionModal } from '../DiscussionModal';
 import { FeedContent, FeedHeader, FeedItem, FeedMain } from '../Feed';
@@ -242,18 +242,22 @@ const PostMenuContent = ({
   return <DeletePost postId={postId} profileId={profileId} />;
 };
 
-export const EmptyPostsState = () => (
-  <FeedItem>
-    <FeedMain className="flex w-full flex-col items-center justify-center py-6">
-      <FeedContent className="flex flex-col items-center justify-center text-neutral-gray4">
-        <div className="flex size-10 items-center justify-center gap-4 rounded-full bg-neutral-gray1">
-          <LuLeaf />
-        </div>
-        <span>{'No posts yet.'}</span>
-      </FeedContent>
-    </FeedMain>
-  </FeedItem>
-);
+export const EmptyPostsState = () => {
+  const t = useTranslations();
+  
+  return (
+    <FeedItem>
+      <FeedMain className="flex w-full flex-col items-center justify-center py-6">
+        <FeedContent className="flex flex-col items-center justify-center text-neutral-gray4">
+          <div className="flex size-10 items-center justify-center gap-4 rounded-full bg-neutral-gray1">
+            <LuLeaf />
+          </div>
+          <span>{t('No posts yet.')}</span>
+        </FeedContent>
+      </FeedMain>
+    </FeedItem>
+  );
+};
 
 export const PostItem = ({
   postToOrg,

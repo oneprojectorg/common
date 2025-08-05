@@ -4,11 +4,13 @@ import { EntityType } from '@op/api/encoders';
 import { Avatar } from '@op/ui/Avatar';
 import Image from 'next/image';
 
-import { Link } from '@/lib/i18n';
+import { Link, useTranslations } from '@/lib/i18n';
 
 type Profiles = RouterOutput['profile']['list']['items'];
 
 export const ProfileSummaryList = ({ profiles }: { profiles: Profiles }) => {
+  const t = useTranslations();
+  
   return (
     <div className="flex flex-col gap-6">
       {profiles.map((profile) => {
@@ -40,7 +42,7 @@ export const ProfileSummaryList = ({ profiles }: { profiles: Profiles }) => {
                   {profile.avatarImage?.name ? (
                     <Image
                       src={getPublicUrl(profile.avatarImage.name) ?? ''}
-                      alt={`${profile.name} avatar`}
+                      alt={`${profile.name} ${t('avatar')}`}
                       fill
                       className="object-cover"
                     />
