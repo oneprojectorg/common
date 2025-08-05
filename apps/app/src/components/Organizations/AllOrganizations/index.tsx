@@ -6,6 +6,8 @@ import { useInfiniteScroll } from '@op/hooks';
 import { SkeletonLine } from '@op/ui/Skeleton';
 import { Suspense } from 'react';
 
+import { useTranslations } from '@/lib/i18n';
+
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { ProfileSummaryList } from '@/components/ProfileList';
 
@@ -78,8 +80,10 @@ export const AllOrganizations = (props: {
   initialData?: ProfileListResponse;
   types?: EntityType[];
 }) => {
+  const t = useTranslations();
+  
   return (
-    <ErrorBoundary fallback={<div>Could not load organizations</div>}>
+    <ErrorBoundary fallback={<div>{t('Could not load organizations')}</div>}>
       <Suspense fallback={<SkeletonLine lines={5} />}>
         <AllOrganizationsSuspense {...props} />
       </Suspense>
