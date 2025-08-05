@@ -4,6 +4,7 @@ import { Header1, Header3 } from '@op/ui/Header';
 import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
+import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
@@ -26,7 +27,7 @@ const LandingScreenFeeds = ({
   user: RouterOutput['account']['getMyAccount'];
 }) => {
   const t = useTranslations();
-  
+
   const NewOrganizationsList = () => {
     return (
       <Surface className="flex flex-col gap-6 border-0 sm:border sm:p-6">
@@ -91,7 +92,7 @@ const LandingScreenFeeds = ({
 
 export const LandingScreen = async () => {
   const t = useTranslations();
-  
+
   try {
     const client = await trpcNext();
     const user = await client.account.getMyAccount.query();
@@ -101,7 +102,9 @@ export const LandingScreen = async () => {
         <div className="flex flex-col gap-2">
           <Welcome user={user} />
           <span className="text-center text-neutral-charcoal">
-            {t('Explore new connections and strengthen existing relationships.')}
+            {t(
+              'Explore new connections and strengthen existing relationships.',
+            )}
           </span>
         </div>
         <Suspense
@@ -132,8 +135,8 @@ export const LandingScreen = async () => {
 };
 
 export const LandingScreenSkeleton: React.FC = () => {
-  const t = useTranslations();
-  
+  const t = getTranslations();
+
   return (
     <div className="container flex min-h-0 grow flex-col gap-4 pt-8 sm:gap-10 sm:pt-14">
       <div className="flex flex-col gap-2">
@@ -160,7 +163,9 @@ export const LandingScreenSkeleton: React.FC = () => {
         <span />
         <div className="col-span-5">
           <Surface className="flex flex-col gap-6 border-0 sm:border sm:p-6">
-            <Skeleton className="text-title-sm">{t('New Organizations')}</Skeleton>
+            <Skeleton className="text-title-sm">
+              {t('New Organizations')}
+            </Skeleton>
             <OrganizationListSkeleton />
           </Surface>
         </div>
@@ -178,7 +183,9 @@ export const LandingScreenSkeleton: React.FC = () => {
 
         <TabPanel id="discover" className="p-0">
           <Surface className="flex flex-col gap-6 border-0 sm:border sm:p-6">
-            <Skeleton className="text-title-sm">{t('New Organizations')}</Skeleton>
+            <Skeleton className="text-title-sm">
+              {t('New Organizations')}
+            </Skeleton>
             <SkeletonLine lines={5} />
           </Surface>
         </TabPanel>
