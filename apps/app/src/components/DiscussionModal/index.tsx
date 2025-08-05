@@ -6,7 +6,7 @@ import type { PostToOrganization } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { Modal, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Surface } from '@op/ui/Surface';
-import { useMemo, useRef } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import React from 'react';
 import { LuX } from 'react-icons/lu';
 
@@ -43,6 +43,28 @@ export function DiscussionModal({
     },
     { enabled: isOpen },
   );
+
+  // Function to scroll to show the bottom of the original post after adding a comment
+  const scrollToOriginalPost = useCallback(() => {
+    if (commentsContainerRef.current) {
+      // Small delay to ensure DOM has updated with new comment
+      setTimeout(() => {
+        const container = commentsContainerRef.current;
+        if (container) {
+          const originalPostContainer =
+            container.querySelector('.originalPost');
+          if (originalPostContainer) {
+            // Scroll to show the bottom of the original post with some padding
+            originalPostContainer.scrollIntoView({
+              behavior: 'smooth',
+              block: 'start',
+              inline: 'nearest',
+            });
+          }
+        }
+      }, 100);
+    }
+  }, []);
 
   const sourcePostProfile = post.profile;
 
@@ -98,7 +120,7 @@ export function DiscussionModal({
           ref={commentsContainerRef}
         >
           {/* Original Post Display */}
-          <PostFeed className="border-none">
+          <PostFeed className="originalPost border-none">
             <PostItem
               postToOrg={postToOrg}
               user={user}
@@ -160,6 +182,7 @@ export function DiscussionModal({
               parentPostId={post.id}
               placeholder={`Comment${user?.currentProfile?.name ? ` as ${user?.currentProfile?.name}` : ''}...`}
               label={t('Comment')}
+              onSuccess={scrollToOriginalPost}
             />
           </Surface>
         </ModalFooter>
