@@ -25,11 +25,13 @@ const LandingScreenFeeds = ({
 }: {
   user: RouterOutput['account']['getMyAccount'];
 }) => {
+  const t = useTranslations();
+  
   const NewOrganizationsList = () => {
     return (
       <Surface className="flex flex-col gap-6 border-0 sm:border sm:p-6">
         <Header3 className="font-serif text-title-sm">
-          New Organizations
+          {t('New Organizations')}
         </Header3>
         <NewOrganizations />
       </Surface>
@@ -37,8 +39,6 @@ const LandingScreenFeeds = ({
   };
 
   const PostFeed = () => {
-    const t = useTranslations();
-
     return (
       <>
         <Suspense fallback={<Skeleton className="h-full w-full" />}>
@@ -72,10 +72,10 @@ const LandingScreenFeeds = ({
       <Tabs className="gap-8 pb-8 sm:hidden">
         <TabList variant="pill">
           <Tab id="discover" variant="pill">
-            Discover
+            {t('Discover')}
           </Tab>
           <Tab id="recent" variant="pill">
-            Recent
+            {t('Recent')}
           </Tab>
         </TabList>
         <TabPanel id="discover" className="p-0">
@@ -90,6 +90,8 @@ const LandingScreenFeeds = ({
 };
 
 export const LandingScreen = async () => {
+  const t = useTranslations();
+  
   try {
     const client = await trpcNext();
     const user = await client.account.getMyAccount.query();
@@ -99,7 +101,7 @@ export const LandingScreen = async () => {
         <div className="flex flex-col gap-2">
           <Welcome user={user} />
           <span className="text-center text-neutral-charcoal">
-            Explore new connections and strengthen existing relationships.
+            {t('Explore new connections and strengthen existing relationships.')}
           </span>
         </div>
         <Suspense
@@ -130,16 +132,18 @@ export const LandingScreen = async () => {
 };
 
 export const LandingScreenSkeleton: React.FC = () => {
+  const t = useTranslations();
+  
   return (
     <div className="container flex min-h-0 grow flex-col gap-4 pt-8 sm:gap-10 sm:pt-14">
       <div className="flex flex-col gap-2">
         <Skeleton>
           <Header1 className="text-center text-title-md text-transparent sm:text-title-xl">
-            Welcome back, to Common!
+            {t('Welcome back')}, {t('to Common')}!
           </Header1>
         </Skeleton>
         <Skeleton className="text-center text-transparent">
-          Explore new connections and strengthen existing relationships.
+          {t('Explore new connections and strengthen existing relationships.')}
         </Skeleton>
       </div>
 
@@ -156,7 +160,7 @@ export const LandingScreenSkeleton: React.FC = () => {
         <span />
         <div className="col-span-5">
           <Surface className="flex flex-col gap-6 border-0 sm:border sm:p-6">
-            <Skeleton className="text-title-sm">New Organizations</Skeleton>
+            <Skeleton className="text-title-sm">{t('New Organizations')}</Skeleton>
             <OrganizationListSkeleton />
           </Surface>
         </div>
@@ -165,16 +169,16 @@ export const LandingScreenSkeleton: React.FC = () => {
       <Tabs className="pb-8 sm:hidden">
         <TabList variant="pill">
           <Tab id="discover" variant="pill">
-            Discover
+            {t('Discover')}
           </Tab>
           <Tab id="recent" variant="pill">
-            Recent
+            {t('Recent')}
           </Tab>
         </TabList>
 
         <TabPanel id="discover" className="p-0">
           <Surface className="flex flex-col gap-6 border-0 sm:border sm:p-6">
-            <Skeleton className="text-title-sm">New Organizations</Skeleton>
+            <Skeleton className="text-title-sm">{t('New Organizations')}</Skeleton>
             <SkeletonLine lines={5} />
           </Surface>
         </TabPanel>

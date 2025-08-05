@@ -2,6 +2,8 @@
 
 import { trpc } from '@op/api/client';
 
+import { useTranslations } from '@/lib/i18n';
+
 import {
   DiscussionModalContainer,
   EmptyPostsState,
@@ -12,6 +14,7 @@ import {
 } from '@/components/PostFeed';
 
 export const Feed = () => {
+  const t = useTranslations();
   const { data: user } = trpc.account.getMyAccount.useQuery();
   const {
     data: postsData,
@@ -35,7 +38,7 @@ export const Feed = () => {
     return (
       <div className="flex flex-col items-center justify-center py-8">
         <span className="text-neutral-charcoal">
-          Unable to load posts. Please try refreshing.
+          {t('Unable to load posts. Please try refreshing.')}
         </span>
       </div>
     );
