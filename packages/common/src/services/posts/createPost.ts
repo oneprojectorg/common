@@ -1,21 +1,24 @@
 import { db } from '@op/db/client';
-import { posts, postsToOrganizations } from '@op/db/schema';
+import { attachments, posts, postsToOrganizations } from '@op/db/schema';
+import { CreatePostInput } from '@op/types';
 import { eq } from 'drizzle-orm';
 
 import { CommonError } from '../../utils';
 import { getCurrentProfileId } from '../access';
 
-export interface CreatePostInput {
-  content: string;
-  parentPostId?: string; // If provided, this becomes a comment/reply
-  organizationId?: string; // For organization posts
-}
-
 export const createPost = async (input: CreatePostInput) => {
-  const { content, parentPostId, organizationId } = input;
+  const { content, attachmentIds = [], parentPostId, organizationId } = input;
   const profileId = await getCurrentProfileId();
 
   try {
+    // Get all storage objects that were attached to the post
+    const allStorageObjects =
+      attachmentIds.length > 0
+        ? await db.query.objectsInStorage.findMany({
+            where: (table, { inArray }) => inArray(table.id, attachmentIds),
+          })
+        : [];
+
     // If parentPostId is provided, verify the parent post exists
     if (parentPostId) {
       const parentPost = await db
@@ -64,6 +67,25 @@ export const createPost = async (input: CreatePostInput) => {
           })),
         );
       }
+    }
+
+    // Create attachment records if any attachments were uploaded
+    if (allStorageObjects.length > 0) {
+      const attachmentValues = allStorageObjects.map((storageObject) => ({
+        postId: newPost.id,
+        storageObjectId: storageObject.id,
+        profileId,
+        fileName:
+          storageObject?.name
+            ?.split('/')
+            .slice(-1)[0]
+            ?.split('_')
+            .slice(1)
+            .join('_') ?? '',
+        mimeType: (storageObject.metadata as { mimetype: string }).mimetype,
+      }));
+
+      await db.insert(attachments).values(attachmentValues);
     }
 
     return {

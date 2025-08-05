@@ -4,6 +4,7 @@ import { bigint, index, pgTable, text, uuid } from 'drizzle-orm/pg-core';
 import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
 import { organizationUsers } from './organizationUsers.sql';
 import { posts } from './posts.sql';
+import { profiles } from './profiles.sql';
 import { objectsInStorage } from './storage.sql';
 
 export const attachments = pgTable(
@@ -23,11 +24,12 @@ export const attachments = pgTable(
     fileName: text().notNull(),
     mimeType: text().notNull(),
     fileSize: bigint({ mode: 'number' }),
-    uploadedBy: uuid()
-      .notNull()
-      .references(() => organizationUsers.id, {
-        onDelete: 'cascade',
-      }),
+    uploadedBy: uuid().references(() => organizationUsers.id, {
+      onDelete: 'cascade',
+    }),
+    profileId: uuid().references(() => profiles.id, {
+      onDelete: 'cascade',
+    }),
     ...timestamps,
   },
   (table) => [
@@ -36,6 +38,7 @@ export const attachments = pgTable(
     index().on(table.postId).concurrently(),
     index().on(table.storageObjectId).concurrently(),
     index().on(table.uploadedBy).concurrently(),
+    index().on(table.profileId).concurrently(),
   ],
 );
 

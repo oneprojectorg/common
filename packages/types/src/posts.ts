@@ -2,9 +2,10 @@ import { z } from 'zod';
 
 // Unified post creation schema
 export const createPostSchema = z.object({
-  content: z.string().min(1).max(10000),
+  content: z.string().min(0).max(10000),
   parentPostId: z.string().uuid().optional(), // If provided, this becomes a comment/reply
   organizationId: z.string().uuid().optional(), // For organization posts
+  attachmentIds: z.array(z.string()).optional().default([]),
 });
 
 // Unified post fetching schema

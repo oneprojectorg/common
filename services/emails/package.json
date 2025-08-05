@@ -2,12 +2,13 @@
   "name": "@op/emails",
   "version": "0.0.19",
   "private": true,
+  "license": "SEE LICENSE in /LICENSE",
   "type": "module",
-  "main": "index.tsx",
   "exports": {
     ".": "./index.tsx",
     "./emails/*": "./emails/*"
   },
+  "main": "index.tsx",
   "scripts": {
     "disable-build": "email build",
     "export": "email export",

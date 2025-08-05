@@ -1,12 +1,13 @@
 'use client';
 
-import { ReactNode, createContext, useContext } from 'react';
+import { ReactNode, memo, useCallback, useState } from 'react';
 import { ModalOverlay, Modal as RACModal } from 'react-aria-components';
 import type { ModalOverlayProps } from 'react-aria-components';
 import { LuX } from 'react-icons/lu';
 import { tv } from 'tailwind-variants';
 
 import { cn } from '../lib/utils';
+import { Button } from './Button';
 import { Confetti } from './Confetti';
 import { Header1 } from './Header';
 
@@ -102,6 +103,73 @@ export const ModalFooter = ({
     </div>
   );
 };
+
+export const ModalStepper = memo(
+  ({
+    initialStep = 1,
+    totalSteps,
+    onNext,
+    onPrevious,
+    onFinish,
+  }: {
+    initialStep?: number;
+    totalSteps: number;
+    onNext: (currentStep: number) => void;
+    onPrevious: (currentStep: number) => void;
+    onFinish?: () => void;
+  }) => {
+    const [currentStep, setCurrentStep] = useState(initialStep);
+    const isFirstStep = currentStep === 1;
+    const isLastStep = currentStep === totalSteps;
+
+    const handleNext = useCallback(() => {
+      if (currentStep < totalSteps) {
+        const nextStep = currentStep + 1;
+        setCurrentStep(nextStep);
+        onNext(nextStep);
+      } else if (currentStep === totalSteps && onFinish) {
+        onFinish();
+      }
+    }, [currentStep, totalSteps, onNext, onFinish]);
+
+    const handlePrevious = useCallback(() => {
+      if (currentStep > 1) {
+        const previousStep = currentStep - 1;
+        setCurrentStep(previousStep);
+        onPrevious(previousStep);
+      }
+    }, [currentStep, onPrevious]);
+
+    return (
+      <footer
+        className={cn(
+          'sticky bottom-0',
+          'flex w-full items-center justify-between',
+          'px-6 py-3',
+          'border-t border-neutral-gray1 bg-white',
+        )}
+      >
+        <span className="flex-1">
+          {!isFirstStep && (
+            <Button color="secondary" onPress={handlePrevious}>
+              Back
+            </Button>
+          )}
+        </span>
+        <span className="flex-1 text-center text-sm text-neutral-gray4">
+          Step {currentStep} of {totalSteps}
+        </span>
+        <div className="flex flex-1 justify-end">
+          <Button type={isLastStep ? 'submit' : 'button'} onPress={handleNext}>
+            {isLastStep ? 'Finish' : 'Next'}
+          </Button>
+        </div>
+      </footer>
+    );
+  },
+);
+
+ModalStepper.displayName = 'ModalStepper';
 
 export const ModalInContext = ({
   className,

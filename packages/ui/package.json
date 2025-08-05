@@ -2,6 +2,7 @@
   "name": "@op/ui",
   "version": "0.0.0",
   "private": true,
+  "license": "SEE LICENSE in /LICENSE",
   "type": "module",
   "exports": {
     "./AlertDialog": "./src/components/AlertDialog.tsx",
@@ -12,6 +13,7 @@
     "./BannerUploader": "./src/components/BannerUploader.tsx",
     "./FileUploader": "./src/components/FileUploader.tsx",
     "./Button": "./src/components/Button.tsx",
+    "./CategoryList": "./src/components/CategoryList.tsx",
     "./ComboBox": "./src/components/ComboBox.tsx",
     "./Command": "./src/components/Command.tsx",
     "./CheckIcon": "./src/components/icons/CheckIcon.tsx",

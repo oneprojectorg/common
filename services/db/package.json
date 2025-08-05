@@ -2,6 +2,7 @@
   "name": "@op/db",
   "version": "0.0.0",
   "private": true,
+  "license": "SEE LICENSE in /LICENSE",
   "type": "module",
   "exports": {
     "./client": "./client.ts",
@@ -22,6 +23,7 @@
   },
   "dependencies": {
     "@op/core": "workspace:*",
+    "@op/supabase": "workspace:^",
     "@types/pg": "^8.11.11",
     "dotenv": "^16.4.7",
     "drizzle-orm": "^0.40.0",
