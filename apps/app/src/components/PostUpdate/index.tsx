@@ -204,8 +204,40 @@ const PostUpdateWithUser = ({
           },
         );
         
-        // Note: We don't invalidate main feeds here since optimistic updates handle the UI
-        // The parent post's comment count will be updated when the user refreshes or navigates
+        // Update parent post's comment count in main feed caches
+        const updateCommentCount = (item: any) => {
+          if (item.post.id === variables.parentPostId) {
+            return {
+              ...item,
+              post: {
+                ...item.post,
+                commentCount: (item.post.commentCount || 0) + 1,
+              },
+            };
+          }
+          return item;
+        };
+
+        // Update organization.listPosts cache
+        utils.organization.listPosts.setInfiniteData({ slug: organization.profile.slug }, (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              items: page.items.map(updateCommentCount),
+            })),
+          };
+        });
+
+        // Update organization.listAllPosts cache
+        utils.organization.listAllPosts.setData({}, (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            items: old.items.map(updateCommentCount),
+          };
+        });
       }
 
       // Call onSuccess callback if provided (for comments)
