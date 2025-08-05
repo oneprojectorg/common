@@ -1,12 +1,16 @@
 import { relations } from 'drizzle-orm';
 import type { InferModel } from 'drizzle-orm';
-import { index, jsonb, pgTable, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
-
 import {
-  autoId,
-  serviceRolePolicies,
-} from '../../helpers';
+  index,
+  jsonb,
+  pgTable,
+  timestamp,
+  uuid,
+  varchar,
+} from 'drizzle-orm/pg-core';
+
+import { autoId, serviceRolePolicies } from '../../helpers';
 import { processInstances } from './processInstances.sql';
 import { profiles } from './profiles.sql';
 
@@ -20,13 +24,13 @@ export const stateTransitionHistory = pgTable(
         onUpdate: 'cascade',
         onDelete: 'cascade',
       }),
-    
+
     fromStateId: varchar('from_state_id', { length: 256 }),
     toStateId: varchar('to_state_id', { length: 256 }).notNull(),
-    
+
     // Transition metadata
     transitionData: jsonb('transition_data'),
-    
+
     triggeredByProfileId: uuid('triggered_by_profile_id').references(
       () => profiles.id,
       {
@@ -34,7 +38,7 @@ export const stateTransitionHistory = pgTable(
         onDelete: 'set null',
       },
     ),
-    
+
     transitionedAt: timestamp('transitioned_at', { withTimezone: true })
       .notNull()
       .default(sql`(now() AT TIME ZONE 'utc'::text)`),

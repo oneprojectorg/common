@@ -43,19 +43,19 @@ export const proposals = pgTable(
         onUpdate: 'cascade',
         onDelete: 'cascade',
       }),
-    
+
     // Proposal data following the template schema
     proposalData: jsonb('proposal_data').notNull(),
-    
+
     submittedByProfileId: uuid('submitted_by_profile_id')
       .notNull()
       .references(() => profiles.id, {
         onUpdate: 'cascade',
         onDelete: 'cascade',
       }),
-    
+
     status: proposalStatusEnum('status').default(ProposalStatus.DRAFT),
-    
+
     ...timestamps,
   },
   (table) => [
