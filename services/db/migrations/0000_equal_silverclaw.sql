@@ -343,56 +343,7 @@ ALTER TABLE "posts_to_organizations" ADD CONSTRAINT "posts_to_organizations_orga
 ALTER TABLE "posts_to_organizations" ADD CONSTRAINT "posts_to_organizations_post_id_posts_id_fk" FOREIGN KEY ("post_id") REFERENCES "public"."posts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "comments_to_posts" ADD CONSTRAINT "comments_to_posts_comment_id_comments_id_fk" FOREIGN KEY ("comment_id") REFERENCES "public"."comments"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "comments_to_posts" ADD CONSTRAINT "comments_to_posts_post_id_posts_id_fk" FOREIGN KEY ("post_id") REFERENCES "public"."posts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
---  CREATE INDEX "locations_id_index" ON "locations" USING btree ("id" uuid_ops);--> statement-breakpoint
---  CREATE INDEX "locations_place_id_index" ON "locations" USING btree ("place_id" text_ops);--> statement-breakpoint
---  CREATE INDEX "spatial_index" ON "locations" USING gist ("location" gist_geometry_ops_2d);--> statement-breakpoint
---  CREATE INDEX "organizationUsers_auth_user_id_idx" ON "organization_users" USING btree ("auth_user_id" uuid_ops);--> statement-breakpoint
---  CREATE INDEX "organizationUsers_email_gin_index" ON "organization_users" USING gin (to_tsvector('english'::regconfig, (email)::text) tsvector_ops);--> statement-breakpoint
---  CREATE INDEX "organizationUsers_organizations_idx" ON "organization_users" USING btree ("organization_id" uuid_ops);--> statement-breakpoint
---  CREATE INDEX "organization_users_email_index" ON "organization_users" USING btree ("email" text_ops);--> statement-breakpoint
---  CREATE INDEX "organization_users_id_index" ON "organization_users" USING btree ("id" uuid_ops);--> statement-breakpoint
---  CREATE INDEX "organizations_id_index" ON "organizations" USING btree ("id" uuid_ops);--> statement-breakpoint
---  CREATE INDEX "access_roles_id_index" ON "access_roles" USING btree ("id" uuid_ops);--> statement-breakpoint
---  CREATE INDEX "allowList_email_index" ON "allowList" USING btree ("email" text_ops);--> statement-breakpoint
---  CREATE UNIQUE INDEX "allowList_email_organizationId_idx" ON "allowList" USING btree ("email" text_ops,"organization_id" text_ops);--> statement-breakpoint
---  CREATE INDEX "links_id_index" ON "links" USING btree ("id" uuid_ops);--> statement-breakpoint
---  CREATE INDEX "links_organization_id_idx" ON "links" USING btree ("organization_id" uuid_ops);--> statement-breakpoint
---  CREATE INDEX "posts_id_index" ON "posts" USING btree ("id" uuid_ops);--> statement-breakpoint
---  CREATE INDEX "posts_parent_post_id_index" ON "posts" USING btree ("parent_post_id" uuid_ops);--> statement-breakpoint
---  CREATE INDEX "taxonomyTerms_data_gin_index" ON "taxonomyTerms" USING gin (to_tsvector('english'::regconfig, (label)::text) tsvector_ops);--> statement-breakpoint
---  CREATE INDEX "organization_relationships_relationship_type_index" ON "organization_relationships" USING btree ("relationship_type" text_ops);--> statement-breakpoint
---  CREATE INDEX "organization_relationships_relationship_type_pending_index" ON "organization_relationships" USING btree ("relationship_type" text_ops,"pending" text_ops);--> statement-breakpoint
---  CREATE INDEX "organization_relationships_source_organization_id_index" ON "organization_relationships" USING btree ("source_organization_id" uuid_ops);--> statement-breakpoint
---  CREATE INDEX "organization_relationships_source_organization_id_pending_index" ON "organization_relationships" USING btree ("source_organization_id" bool_ops,"pending" uuid_ops);--> statement-breakpoint
---  CREATE UNIQUE INDEX "organization_relationships_source_organization_id_target_organi" ON "organization_relationships" USING btree ("source_organization_id" text_ops,"target_organization_id" uuid_ops,"relationship_type" uuid_ops);--> statement-breakpoint
---  CREATE INDEX "organization_relationships_target_organization_id_index" ON "organization_relationships" USING btree ("target_organization_id" uuid_ops);--> statement-breakpoint
---  CREATE INDEX "organization_relationships_target_organization_id_pending_index" ON "organization_relationships" USING btree ("target_organization_id" uuid_ops,"pending" bool_ops);--> statement-breakpoint
---  CREATE INDEX "profiles_id_index" ON "profiles" USING btree ("id" uuid_ops);--> statement-breakpoint
---  CREATE INDEX "profiles_search_gin_index" ON "profiles" USING gin ("search" tsvector_ops);--> statement-breakpoint
---  CREATE INDEX "profiles_slug_index" ON "profiles" USING btree ("slug" text_ops);--> statement-breakpoint
---  CREATE INDEX "projects_id_index" ON "projects" USING btree ("id" uuid_ops);--> statement-breakpoint
---  CREATE INDEX "projects_organization_id_idx" ON "projects" USING btree ("organization_id" uuid_ops);--> statement-breakpoint
---  CREATE INDEX "projects_slug_index" ON "projects" USING btree ("slug" text_ops);--> statement-breakpoint
---  CREATE INDEX "users_email_gin_index" ON "users" USING gin (to_tsvector('english'::regconfig, (email)::text) tsvector_ops);--> statement-breakpoint
---  CREATE INDEX "users_email_index" ON "users" USING btree ("email" text_ops);--> statement-breakpoint
---  CREATE INDEX "users_id_index" ON "users" USING btree ("id" uuid_ops);--> statement-breakpoint
---  CREATE INDEX "users_profile_id_index" ON "users" USING btree ("profile_id" uuid_ops);--> statement-breakpoint
---  CREATE INDEX "users_username_gin_index" ON "users" USING gin (to_tsvector('english'::regconfig, (username)::text) tsvector_ops);--> statement-breakpoint
---  CREATE INDEX "users_username_index" ON "users" USING btree ("username" text_ops);--> statement-breakpoint
---  CREATE INDEX "attachments_id_index" ON "attachments" USING btree ("id" uuid_ops);--> statement-breakpoint
---  CREATE INDEX "attachments_post_id_index" ON "attachments" USING btree ("post_id" uuid_ops);--> statement-breakpoint
---  CREATE INDEX "attachments_profile_id_index" ON "attachments" USING btree ("profile_id" uuid_ops);--> statement-breakpoint
---  CREATE INDEX "attachments_storage_object_id_index" ON "attachments" USING btree ("storage_object_id" uuid_ops);--> statement-breakpoint
---  CREATE INDEX "attachments_uploaded_by_index" ON "attachments" USING btree ("uploaded_by" uuid_ops);--> statement-breakpoint
---  CREATE INDEX "post_reactions_post_id_index" ON "post_reactions" USING btree ("post_id" uuid_ops);--> statement-breakpoint
---  CREATE UNIQUE INDEX "post_reactions_post_id_profile_id_reaction_type_index" ON "post_reactions" USING btree ("post_id" uuid_ops,"profile_id" text_ops,"reaction_type" uuid_ops);--> statement-breakpoint
---  CREATE INDEX "post_reactions_profile_id_index" ON "post_reactions" USING btree ("profile_id" uuid_ops);--> statement-breakpoint
---  CREATE INDEX "post_reactions_reaction_type_index" ON "post_reactions" USING btree ("reaction_type" text_ops);--> statement-breakpoint
---  CREATE INDEX "individuals_id_index" ON "individuals" USING btree ("id" uuid_ops);--> statement-breakpoint
---  CREATE INDEX "comments_parent_comment_id_idx" ON "comments" USING btree ("parent_comment_id" uuid_ops);--> statement-breakpoint
---  CREATE INDEX "comments_profile_id_idx" ON "comments" USING btree ("profile_id" uuid_ops);--> statement-breakpoint
---  CREATE INDEX "comments_to_posts_comment_id_idx" ON "comments_to_posts" USING btree ("comment_id" uuid_ops);--> statement-breakpoint
---  CREATE INDEX "comments_to_posts_post_id_idx" ON "comments_to_posts" USING btree ("post_id" uuid_ops);--> statement-breakpoint
+
 CREATE VIEW "public"."users_used_storage" WITH (security_invoker = false) AS (SELECT (storage.foldername(objects.name))[1] AS user_id, COALESCE(sum((objects.metadata ->> 'size'::text)::bigint), 0::numeric) AS total_size FROM storage.objects WHERE objects.bucket_id = 'assets'::text GROUP BY ((storage.foldername(objects.name))[1]));--> statement-breakpoint
 CREATE POLICY "service-role" ON "locations" AS PERMISSIVE FOR ALL TO "service_role";--> statement-breakpoint
 CREATE POLICY "service-role" ON "organization_users" AS PERMISSIVE FOR ALL TO "service_role";--> statement-breakpoint
