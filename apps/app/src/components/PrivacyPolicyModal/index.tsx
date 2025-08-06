@@ -29,13 +29,7 @@ export const PrivacyPolicyModal = () => {
         isOpen={isOpen}
       >
         <Dialog>
-          <ModalHeader className="flex items-center justify-between">
-            {t('Privacy Policy')}
-            <LuX
-              className="size-6 cursor-pointer stroke-1"
-              onClick={() => setIsOpen(false)}
-            />
-          </ModalHeader>
+          <ModalHeader>{t('Privacy Policy')}</ModalHeader>
           <ModalBody>
             <PrivacyPolicyContent />
           </ModalBody>

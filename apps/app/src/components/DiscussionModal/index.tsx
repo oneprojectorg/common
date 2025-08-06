@@ -91,7 +91,7 @@ export function DiscussionModal({
       isOpen={isOpen}
       onOpenChange={onClose}
       isDismissable
-      className="sm:max-h-auto h-svh max-h-none w-screen max-w-none overflow-y-auto rounded-none text-left sm:h-auto sm:w-[36rem] sm:max-w-[36rem]"
+      className="h-svh overflow-y-auto text-left"
     >
       <ModalHeader>{organization?.profile.name}'s Post</ModalHeader>
 
