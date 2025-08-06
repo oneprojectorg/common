@@ -93,26 +93,7 @@ export function DiscussionModal({
       isDismissable
       className="sm:max-h-auto h-svh max-h-none w-screen max-w-none overflow-y-auto rounded-none text-left sm:h-auto sm:w-[36rem] sm:max-w-[36rem]"
     >
-      <ModalHeader className="flex items-center justify-between">
-        {/* Desktop header */}
-        <div className="hidden sm:flex sm:w-full sm:items-center sm:justify-between">
-          {organization?.profile.name}'s Post
-          <LuX className="size-6 cursor-pointer stroke-1" onClick={onClose} />
-        </div>
-
-        {/* Mobile header */}
-        <div className="flex w-full items-center justify-between sm:hidden">
-          <Button
-            unstyled
-            className="font-sans text-base text-primary-teal"
-            onPress={onClose}
-          >
-            Close
-          </Button>
-          <h2 className="text-title-sm">{authorName}'s Post</h2>
-          <div className="w-12" /> {/* Spacer for center alignment */}
-        </div>
-      </ModalHeader>
+      <ModalHeader>{organization?.profile.name}'s Post</ModalHeader>
 
       <div className="flex flex-col gap-4">
         <div
