@@ -3,12 +3,10 @@
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import type { PostToOrganization } from '@op/api/encoders';
-import { Button } from '@op/ui/Button';
 import { Modal, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Surface } from '@op/ui/Surface';
 import { useCallback, useMemo, useRef } from 'react';
 import React from 'react';
-import { LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -69,7 +67,8 @@ export function DiscussionModal({
   const sourcePostProfile = post.profile;
 
   // Get the post author's name for the header
-  const authorName = sourcePostProfile?.name || 'Unknown';
+  const authorName =
+    sourcePostProfile?.name ?? organization?.profile.name ?? '';
 
   // Transform comments data to match PostFeeds expected PostToOrganizaion format
   const comments = useMemo(
@@ -91,9 +90,9 @@ export function DiscussionModal({
       isOpen={isOpen}
       onOpenChange={onClose}
       isDismissable
-      className="h-svh overflow-y-auto text-left"
+      className="h-svh text-left"
     >
-      <ModalHeader>{organization?.profile.name}'s Post</ModalHeader>
+      <ModalHeader>{authorName}'s Post</ModalHeader>
 
       <div className="flex flex-col gap-4">
         <div

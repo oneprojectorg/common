@@ -10,7 +10,7 @@ import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { toast } from '@op/ui/Toast';
 import { useFeatureFlagEnabled } from 'posthog-js/react';
 import { useEffect, useState } from 'react';
-import { LuUserPlus, LuX } from 'react-icons/lu';
+import { LuUserPlus } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 

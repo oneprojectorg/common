@@ -1,9 +1,7 @@
 import { useUser } from '@/utils/UserProvider';
-import { Button } from '@op/ui/Button';
 import { Modal, ModalHeader } from '@op/ui/Modal';
 import { DialogTrigger } from '@op/ui/RAC';
 import { useEffect, useRef } from 'react';
-import { LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
