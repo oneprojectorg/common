@@ -2,7 +2,6 @@ import { Button } from '@op/ui/Button';
 import { Modal, ModalBody, ModalHeader } from '@op/ui/Modal';
 import { Dialog, DialogTrigger } from '@op/ui/RAC';
 import { useState } from 'react';
-import { LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -29,13 +28,7 @@ export const PrivacyPolicyModal = () => {
         isOpen={isOpen}
       >
         <Dialog>
-          <ModalHeader className="flex items-center justify-between">
-            {t('Privacy Policy')}
-            <LuX
-              className="size-6 cursor-pointer stroke-1"
-              onClick={() => setIsOpen(false)}
-            />
-          </ModalHeader>
+          <ModalHeader>{t('Privacy Policy')}</ModalHeader>
           <ModalBody>
             <PrivacyPolicyContent />
           </ModalBody>

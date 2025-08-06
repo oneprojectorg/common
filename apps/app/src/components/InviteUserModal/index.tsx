@@ -10,7 +10,7 @@ import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { toast } from '@op/ui/Toast';
 import { useFeatureFlagEnabled } from 'posthog-js/react';
 import { useEffect, useState } from 'react';
-import { LuUserPlus, LuX } from 'react-icons/lu';
+import { LuUserPlus } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -191,47 +191,8 @@ export const InviteUserModal = ({ children }: InviteUserModalProps) => {
     <>
       <DialogTrigger isOpen={isModalOpen} onOpenChange={setIsModalOpen}>
         {triggerButton}
-        <Modal
-          isDismissable
-          className="h-svh max-h-none w-screen max-w-none overflow-y-auto sm:h-auto"
-        >
-          <ModalHeader className="flex items-center justify-between">
-            {/* Desktop header */}
-            <div className="hidden sm:flex sm:w-full sm:items-center sm:justify-between">
-              {t('Invite others to Common')}
-              <LuX
-                className="size-6 cursor-pointer stroke-1"
-                onClick={() => setIsModalOpen(false)}
-              />
-            </div>
-
-            {/* Mobile header */}
-            <div className="flex w-full items-center justify-between sm:hidden">
-              <Button
-                unstyled
-                onPress={() => {
-                  setEmails('');
-                  setEmailBadges([]);
-                  setPersonalMessage('');
-                  setIsModalOpen(false);
-                }}
-                isDisabled={inviteUser.isPending}
-              >
-                {t('Cancel')}
-              </Button>
-              <h2>{t('Invite others to Common')}</h2>
-              <Button
-                unstyled
-                onPress={handleSendInvite}
-                isDisabled={
-                  (!emails.trim() && emailBadges.length === 0) ||
-                  inviteUser.isPending
-                }
-              >
-                {inviteUser.isPending ? t('Sending...') : t('Send')}
-              </Button>
-            </div>
-          </ModalHeader>
+        <Modal isDismissable isOpen={isModalOpen} onOpenChange={setIsModalOpen}>
+          <ModalHeader>{t('Invite others to Common')}</ModalHeader>
           <ModalBody className="gap-6 p-6">
             <Tabs
               selectedKey={activeTab}
@@ -271,10 +232,10 @@ export const InviteUserModal = ({ children }: InviteUserModalProps) => {
               ) : null}
             </Tabs>
           </ModalBody>
-          {/* Desktop footer - hidden on mobile since actions are in header */}
-          <ModalFooter className="hidden sm:flex">
+          <ModalFooter>
             <Button
               color="primary"
+              className="w-full sm:w-fit"
               onPress={handleSendInvite}
               isDisabled={
                 (!emails.trim() && emailBadges.length === 0) ||

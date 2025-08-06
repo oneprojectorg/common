@@ -3,12 +3,10 @@
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import type { PostToOrganization } from '@op/api/encoders';
-import { Button } from '@op/ui/Button';
 import { Modal, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Surface } from '@op/ui/Surface';
 import { useCallback, useMemo, useRef } from 'react';
 import React from 'react';
-import { LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -69,7 +67,8 @@ export function DiscussionModal({
   const sourcePostProfile = post.profile;
 
   // Get the post author's name for the header
-  const authorName = sourcePostProfile?.name || 'Unknown';
+  const authorName =
+    sourcePostProfile?.name ?? organization?.profile.name ?? '';
 
   // Transform comments data to match PostFeeds expected PostToOrganizaion format
   const comments = useMemo(
@@ -91,9 +90,9 @@ export function DiscussionModal({
       isOpen={isOpen}
       onOpenChange={onClose}
       isDismissable
-      className="sm:max-h-auto h-svh max-h-none w-screen max-w-none overflow-y-auto rounded-none text-left sm:h-auto sm:w-[36rem] sm:max-w-[36rem]"
+      className="h-svh text-left"
     >
-      <ModalHeader>{organization?.profile.name}'s Post</ModalHeader>
+      <ModalHeader>{authorName}'s Post</ModalHeader>
 
       <div className="flex flex-col gap-4">
         <div
@@ -157,7 +156,7 @@ export function DiscussionModal({
         </div>
 
         {/* Comment Input using PostUpdate */}
-        <ModalFooter className="hidden px-4 sm:flex">
+        <ModalFooter>
           <Surface className="w-full border-0 p-0 pt-5 sm:border sm:p-4">
             <PostUpdate
               parentPostId={post.id}
