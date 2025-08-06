@@ -232,9 +232,10 @@ export const InviteUserModal = ({ children }: InviteUserModalProps) => {
               ) : null}
             </Tabs>
           </ModalBody>
-          <ModalFooter className="sm:flex">
+          <ModalFooter>
             <Button
               color="primary"
+              className="w-full sm:w-fit"
               onPress={handleSendInvite}
               isDisabled={
                 (!emails.trim() && emailBadges.length === 0) ||
