@@ -14,17 +14,22 @@ const basePostsEncoder = createSelectSchema(posts)
   .extend({
     attachments: z.array(postAttachmentEncoder).default([]),
     reactionCounts: z.record(z.string(), z.number()),
+    reactionUsers: z.record(z.string(), z.array(z.object({
+      id: z.string(),
+      name: z.string(),
+      timestamp: z.date(),
+    }))).optional(),
     userReaction: z.string().nullish(),
     commentCount: z.number(),
     profile: profileWithAvatarEncoder.nullish(),
   })
   .strip();
 
-// @ts-ignore
-export const postsEncoder: z.ZodType<Post> = basePostsEncoder.extend({
+// Define the recursive relationship properly
+export const postsEncoder: z.ZodSchema<Post> = basePostsEncoder.extend({
   childPosts: z.array(z.lazy(() => postsEncoder)).nullish(),
   parentPost: z.lazy(() => postsEncoder).nullish(),
-});
+}) as z.ZodSchema<Post>;
 
 export type Post = z.infer<typeof basePostsEncoder> & {
   childPosts: Post[] | null;
