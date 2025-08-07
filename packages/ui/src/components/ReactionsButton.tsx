@@ -7,6 +7,7 @@ import type { VariantProps } from 'tailwind-variants';
 
 import { Menu, MenuItem, MenuTrigger } from './Menu';
 import { Popover } from './Popover';
+import { ReactionTooltip } from './ReactionTooltip';
 
 const reactionButtonStyle = tv({
   base: 'flex items-center justify-center gap-1 rounded-full border-0 bg-neutral-offWhite p-1 text-xs font-normal leading-6 outline-none transition-colors duration-200 hover:bg-neutral-gray1 focus-visible:outline-1 focus-visible:-outline-offset-1 focus-visible:outline-data-blue pressed:bg-neutral-gray2',
@@ -36,6 +37,7 @@ interface Reaction {
   emoji: string;
   count: number;
   isActive?: boolean;
+  users?: Array<{ id: string; name: string; timestamp: Date }>; // Added for tooltip
 }
 
 interface ReactionOption {
@@ -50,6 +52,7 @@ interface ReactionButtonProps
   emoji?: string;
   count?: number;
   className?: string;
+  users?: Array<{ id: string; name: string; timestamp: Date }>; // Added for tooltip
 }
 
 interface ReactionsButtonProps {
@@ -76,6 +79,7 @@ export const ReactionButton = ({
   active,
   size = 'small',
   className,
+  users,
   ...props
 }: ReactionButtonProps) => {
   if (size === 'icon') {
@@ -89,17 +93,21 @@ export const ReactionButton = ({
     );
   }
 
+  const reactionData = emoji ? [{ emoji, users: users || [] }] : [];
+
   return (
-    <RACButton
-      {...props}
-      className={reactionButtonStyle({ size, active, className })}
-    >
-      {emoji && count !== undefined && (
-        <span className="text-black">
-          {emoji} {count}
-        </span>
-      )}
-    </RACButton>
+    <ReactionTooltip reactions={reactionData}>
+      <RACButton
+        {...props}
+        className={reactionButtonStyle({ size, active, className })}
+      >
+        {emoji && count !== undefined && (
+          <span className="text-black">
+            {emoji} {count}
+          </span>
+        )}
+      </RACButton>
+    </ReactionTooltip>
   );
 };
 
@@ -170,6 +178,7 @@ export const ReactionsButton = ({
             emoji={reaction.emoji}
             count={reaction.count}
             active={reaction.isActive}
+            users={reaction.users}
             onPress={() => onReactionClick?.(reaction.emoji)}
           />
         ) : null,

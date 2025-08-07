@@ -80,7 +80,11 @@ export const listPosts = async ({
                 storageObject: true,
               },
             },
-            reactions: true,
+            reactions: {
+              with: {
+                profile: true,
+              },
+            },
           },
         },
         organization: {
@@ -140,6 +144,10 @@ export const getItemsWithReactionsAndComments = async ({
     any & {
       post: any & {
         reactionCounts: Record<string, number>;
+        reactionUsers: Record<
+          string,
+          Array<{ id: string; name: string; timestamp: Date }>
+        >;
         userReaction: string | null;
         commentCount: number;
       };
@@ -175,21 +183,46 @@ export const getItemsWithReactionsAndComments = async ({
 
   return items.map((item) => {
     const reactionCounts: Record<string, number> = {};
+    const reactionUsers: Record<
+      string,
+      Array<{ id: string; name: string; timestamp: Date }>
+    > = {};
     let userReaction: string | null = null;
 
-    // Count reactions by type
+    // Count reactions by type and collect user info
     if (item.post.reactions) {
-      item.post.reactions.forEach(
-        (reaction: { reactionType: string; profileId: string }) => {
-          reactionCounts[reaction.reactionType] =
-            (reactionCounts[reaction.reactionType] || 0) + 1;
+      item.post.reactions.forEach((reaction: any) => {
+        reactionCounts[reaction.reactionType] =
+          (reactionCounts[reaction.reactionType] || 0) + 1;
 
-          // Track user's reaction (only one per user)
-          if (reaction.profileId === profileId) {
-            userReaction = reaction.reactionType;
-          }
-        },
-      );
+        // Collect user data for each reaction type
+        if (!reactionUsers[reaction.reactionType]) {
+          reactionUsers[reaction.reactionType] = [];
+        }
+
+        // Only add user data if profile exists
+        if (reaction.profile) {
+          const timestamp = reaction.createdAt
+            ? new Date(reaction.createdAt)
+            : new Date();
+
+          // Ensure the date is valid
+          const validTimestamp = isNaN(timestamp.getTime())
+            ? new Date()
+            : timestamp;
+
+          reactionUsers[reaction.reactionType]?.push({
+            id: reaction.profile.id,
+            name: reaction.profile.name,
+            timestamp: validTimestamp,
+          });
+        }
+
+        // Track user's reaction (only one per user)
+        if (reaction.profileId === profileId) {
+          userReaction = reaction.reactionType;
+        }
+      });
     }
 
     // Get comment count for this post
@@ -200,6 +233,7 @@ export const getItemsWithReactionsAndComments = async ({
       post: {
         ...item.post,
         reactionCounts,
+        reactionUsers, // Add user data grouped by reaction type
         userReaction,
         commentCount,
       },
