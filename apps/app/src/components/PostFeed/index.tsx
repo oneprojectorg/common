@@ -1,6 +1,7 @@
 'use client';
 
 import { getPublicUrl } from '@/utils';
+import { createOptimisticUpdater, type PostFeedUser } from '@/utils/optimisticUpdates';
 import { OrganizationUser } from '@/utils/UserProvider';
 import { detectLinks, linkifyText } from '@/utils/linkDetection';
 import { createCommentsQueryKey } from '@/utils/queryKeys';
@@ -351,15 +352,6 @@ export const DiscussionModalContainer = ({
   );
 };
 
-interface UserProfile {
-  id: string;
-  name: string;
-}
-
-interface PostFeedUser {
-  currentProfile?: UserProfile | null;
-}
-
 export const usePostFeedActions = ({
   slug,
   limit = 20,
@@ -403,97 +395,10 @@ export const usePostFeedActions = ({
         ? utils.posts.getPosts.getData(createCommentsQueryKey(parentPostId))
         : undefined;
 
-      // Helper function to update post reactions
-      const updatePostReactions = (item: PostToOrganization) => {
-        if (item.post.id === postId) {
-          const currentReaction = item.post.userReaction;
-          const currentCounts: Record<string, number> =
-            item.post.reactionCounts || {};
-          const currentReactionUsers = { ...(item.post.reactionUsers || {}) };
-
-          // Check if user already has this reaction
-          const hasReaction = currentReaction === reactionType;
-
-          if (hasReaction) {
-            // Remove reaction - decrease count and remove user from users list
-            const newCount = Math.max(0, (currentCounts[reactionType] || 1) - 1);
-            const newCounts = { ...currentCounts };
-            if (newCount === 0) {
-              delete newCounts[reactionType];
-              delete currentReactionUsers[reactionType];
-            } else {
-              newCounts[reactionType] = newCount;
-              // Remove current user from the reaction users list
-              if (currentReactionUsers[reactionType] && user?.currentProfile) {
-                currentReactionUsers[reactionType] = currentReactionUsers[reactionType].filter(
-                  (u) => u.id !== user.currentProfile!.id
-                );
-              }
-            }
-
-            return {
-              ...item,
-              post: {
-                ...item.post,
-                userReaction: null,
-                reactionCounts: newCounts,
-                reactionUsers: currentReactionUsers,
-              },
-            };
-          } else {
-            // Add/replace reaction
-            const newCounts: Record<string, number> = { ...currentCounts };
-            const newReactionUsers = { ...currentReactionUsers };
-
-            // If user had a previous reaction, remove it
-            if (currentReaction) {
-              const prevCount = Math.max(0, (newCounts[currentReaction] || 1) - 1);
-              if (prevCount === 0) {
-                delete newCounts[currentReaction];
-                delete newReactionUsers[currentReaction];
-              } else {
-                newCounts[currentReaction] = prevCount;
-                // Remove current user from previous reaction users
-                if (newReactionUsers[currentReaction] && user?.currentProfile) {
-                  newReactionUsers[currentReaction] = newReactionUsers[currentReaction].filter(
-                    (u) => u.id !== user.currentProfile!.id
-                  );
-                }
-              }
-            }
-
-            // Add new reaction
-            newCounts[reactionType] = (newCounts[reactionType] || 0) + 1;
-            
-            // Add current user to new reaction users
-            if (user?.currentProfile) {
-              if (!newReactionUsers[reactionType]) {
-                newReactionUsers[reactionType] = [];
-              }
-              // Add user at the beginning (most recent)
-              newReactionUsers[reactionType] = [
-                {
-                  id: user.currentProfile.id,
-                  name: user.currentProfile.name,
-                  timestamp: new Date(),
-                },
-                ...newReactionUsers[reactionType].filter((u) => u.id !== user.currentProfile!.id),
-              ];
-            }
-
-            return {
-              ...item,
-              post: {
-                ...item.post,
-                userReaction: reactionType,
-                reactionCounts: newCounts,
-                reactionUsers: newReactionUsers,
-              },
-            };
-          }
-        }
-        return item;
-      };
+      // Use optimistic updater service for cleaner code
+      const optimisticUpdater = createOptimisticUpdater(user);
+      const updatePostReactions = (item: PostToOrganization) =>
+        optimisticUpdater.updatePostReactions(item, postId, reactionType);
 
       // Optimistically update listPosts cache (if slug is provided)
       if (slug) {

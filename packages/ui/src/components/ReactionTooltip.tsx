@@ -20,7 +20,6 @@ export interface ReactionTooltipProps extends Omit<TooltipProps, 'children'> {
   children: React.ReactNode;
 }
 
-// Helper functions for better code organization
 const processReactionUsers = (reactions: ReactionData[]) => {
   return reactions
     .filter(
@@ -29,7 +28,17 @@ const processReactionUsers = (reactions: ReactionData[]) => {
     .flatMap((reaction) =>
       reaction.users.map((user) => ({ ...user, emoji: reaction.emoji })),
     )
-    .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+    .sort((a, b) => {
+      try {
+        const aTime = a.timestamp instanceof Date ? a.timestamp.getTime() : new Date(a.timestamp).getTime();
+        const bTime = b.timestamp instanceof Date ? b.timestamp.getTime() : new Date(b.timestamp).getTime();
+        return bTime - aTime;
+      } catch (error) {
+        // Fallback if date parsing fails
+        console.warn('Error sorting reaction users by timestamp:', error);
+        return 0;
+      }
+    });
 };
 
 const formatTooltipContent = (
@@ -71,12 +80,17 @@ const ReactionTooltip = ({
   ...props
 }: ReactionTooltipProps) => {
   const tooltipContent = useMemo(() => {
-    if (!reactions?.length) {
+    try {
+      if (!reactions?.length) {
+        return null;
+      }
+
+      const processedUsers = processReactionUsers(reactions);
+      return formatTooltipContent(processedUsers);
+    } catch (error) {
+      console.warn('Error processing reaction tooltip data:', error);
       return null;
     }
-
-    const processedUsers = processReactionUsers(reactions);
-    return formatTooltipContent(processedUsers);
   }, [reactions]);
 
   if (!tooltipContent) {
