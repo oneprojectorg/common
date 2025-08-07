@@ -159,11 +159,13 @@ const PostReactions = ({
         (option) => option.key === reactionType,
       );
       const emoji = reactionOption?.emoji || reactionType;
+      const users = post.reactionUsers?.[reactionType] || [];
 
       return {
         emoji,
         count: count as number,
         isActive: post.userReaction === reactionType,
+        users,
       };
     })
     : [];

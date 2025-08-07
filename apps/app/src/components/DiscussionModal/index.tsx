@@ -32,6 +32,7 @@ export function DiscussionModal({
     parentPostId: post.id,
   });
 
+  // Get comments for the post
   const { data: commentsData, isLoading } = trpc.posts.getPosts.useQuery(
     {
       parentPostId: post.id, // Get threads (child posts) of this post
