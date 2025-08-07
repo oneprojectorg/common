@@ -123,7 +123,13 @@ const ReactionPicker = ({
   return (
     <Menu className="flex" onAction={(key) => onReactionSelect(key as string)}>
       {availableOptions.map((option) => (
-        <MenuItem key={option.emoji} id={option.emoji} textValue={option.label}>
+        <MenuItem
+          unstyled
+          className="p-2"
+          key={option.emoji}
+          id={option.emoji}
+          textValue={option.label}
+        >
           <span className="text-lg">{option.emoji}</span>
         </MenuItem>
       ))}
