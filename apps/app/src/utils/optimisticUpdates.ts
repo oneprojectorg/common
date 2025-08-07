@@ -34,7 +34,12 @@ export class OptimisticReactionUpdater {
     const hasReaction = currentReaction === reactionType;
 
     if (hasReaction) {
-      return this.removeReaction(item, reactionType, currentCounts, currentReactionUsers);
+      return this.removeReaction(
+        item,
+        reactionType,
+        currentCounts,
+        currentReactionUsers,
+      );
     } else {
       return this.addOrReplaceReaction(
         item,
@@ -53,7 +58,7 @@ export class OptimisticReactionUpdater {
     currentReactionUsers: Record<string, any[]>,
   ): PostToOrganization => {
     const newCount = Math.max(0, (currentCounts[reactionType] || 1) - 1);
-    
+
     if (newCount === 0) {
       delete currentCounts[reactionType];
       delete currentReactionUsers[reactionType];
@@ -61,9 +66,9 @@ export class OptimisticReactionUpdater {
       currentCounts[reactionType] = newCount;
       // Remove current user from the reaction users list
       if (currentReactionUsers[reactionType] && this.user?.currentProfile) {
-        currentReactionUsers[reactionType] = currentReactionUsers[reactionType].filter(
-          (u) => u.id !== this.user!.currentProfile!.id
-        );
+        currentReactionUsers[reactionType] = currentReactionUsers[
+          reactionType
+        ].filter((u) => u.id !== this.user!.currentProfile!.id);
       }
     }
 
@@ -87,18 +92,22 @@ export class OptimisticReactionUpdater {
   ): PostToOrganization => {
     // Remove previous reaction if exists
     if (currentReaction) {
-      this.removePreviousReaction(currentReaction, currentCounts, currentReactionUsers);
+      this.removePreviousReaction(
+        currentReaction,
+        currentCounts,
+        currentReactionUsers,
+      );
     }
 
     // Add new reaction
     currentCounts[reactionType] = (currentCounts[reactionType] || 0) + 1;
-    
+
     // Add current user to new reaction users
     if (this.user?.currentProfile) {
       if (!currentReactionUsers[reactionType]) {
         currentReactionUsers[reactionType] = [];
       }
-      
+
       // Add user at the beginning (most recent)
       currentReactionUsers[reactionType] = [
         {
@@ -107,7 +116,7 @@ export class OptimisticReactionUpdater {
           timestamp: new Date(),
         },
         ...currentReactionUsers[reactionType].filter(
-          (u) => u.id !== this.user!.currentProfile!.id
+          (u) => u.id !== this.user!.currentProfile!.id,
         ),
       ];
     }
@@ -129,7 +138,7 @@ export class OptimisticReactionUpdater {
     currentReactionUsers: Record<string, any[]>,
   ) => {
     const prevCount = Math.max(0, (currentCounts[currentReaction] || 1) - 1);
-    
+
     if (prevCount === 0) {
       delete currentCounts[currentReaction];
       delete currentReactionUsers[currentReaction];
@@ -137,9 +146,9 @@ export class OptimisticReactionUpdater {
       currentCounts[currentReaction] = prevCount;
       // Remove current user from previous reaction users
       if (currentReactionUsers[currentReaction] && this.user?.currentProfile) {
-        currentReactionUsers[currentReaction] = currentReactionUsers[currentReaction].filter(
-          (u) => u.id !== this.user!.currentProfile!.id
-        );
+        currentReactionUsers[currentReaction] = currentReactionUsers[
+          currentReaction
+        ].filter((u) => u.id !== this.user!.currentProfile!.id);
       }
     }
   };
@@ -148,5 +157,5 @@ export class OptimisticReactionUpdater {
 /**
  * Factory function to create an optimistic updater
  */
-export const createOptimisticUpdater = (user?: PostFeedUser) => 
+export const createOptimisticUpdater = (user?: PostFeedUser) =>
   new OptimisticReactionUpdater(user);

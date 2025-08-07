@@ -14,11 +14,18 @@ const basePostsEncoder = createSelectSchema(posts)
   .extend({
     attachments: z.array(postAttachmentEncoder).default([]),
     reactionCounts: z.record(z.string(), z.number()),
-    reactionUsers: z.record(z.string(), z.array(z.object({
-      id: z.string(),
-      name: z.string(),
-      timestamp: z.date(),
-    }))).optional(),
+    reactionUsers: z
+      .record(
+        z.string(),
+        z.array(
+          z.object({
+            id: z.string(),
+            name: z.string(),
+            timestamp: z.date(),
+          }),
+        ),
+      )
+      .optional(),
     userReaction: z.string().nullish(),
     commentCount: z.number(),
     profile: profileWithAvatarEncoder.nullish(),

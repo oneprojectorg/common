@@ -83,10 +83,10 @@ export const getPosts = async (input: GetPostsInput) => {
                     },
                   },
                   reactions: {
-          with: {
-            profile: true,
-          },
-        },
+                    with: {
+                      profile: true,
+                    },
+                  },
                   // One level of nesting for now (can be expanded recursively)
                   ...(maxDepth > 1
                     ? {
@@ -100,10 +100,10 @@ export const getPosts = async (input: GetPostsInput) => {
                               },
                             },
                             reactions: {
-          with: {
-            profile: true,
-          },
-        },
+                              with: {
+                                profile: true,
+                              },
+                            },
                           },
                         },
                       }
@@ -134,10 +134,10 @@ export const getPosts = async (input: GetPostsInput) => {
                 },
               },
               reactions: {
-          with: {
-            profile: true,
-          },
-        },
+                with: {
+                  profile: true,
+                },
+              },
               ...(includeChildren && maxDepth > 0
                 ? {
                     childPosts: {
@@ -155,10 +155,10 @@ export const getPosts = async (input: GetPostsInput) => {
                           },
                         },
                         reactions: {
-          with: {
-            profile: true,
-          },
-        },
+                          with: {
+                            profile: true,
+                          },
+                        },
                       },
                     },
                   }
