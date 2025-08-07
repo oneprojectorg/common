@@ -14,6 +14,16 @@ export type { ListProcessesInput } from './listProcesses';
 export { createInstance } from './createInstance';
 export type { CreateInstanceInput } from './createInstance';
 
+// Transition management
+export { checkTransitions } from './checkTransitions';
+export type { CheckTransitionsInput } from './checkTransitions';
+
+export { executeTransition } from './executeTransition';
+export type { ExecuteTransitionInput } from './executeTransition';
+
+export { TransitionEngine } from './transitionEngine';
+export type { TransitionCheckResult } from './transitionEngine';
+
 // Types
 export type {
   ProcessSchema,
