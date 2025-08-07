@@ -632,7 +632,7 @@ export const UpdateOrganizationForm = forwardRef<
         </div>
       </FormContainer>
 
-      <ModalFooter>
+      <ModalFooter className="sticky">
         <div className="flex flex-col-reverse justify-end gap-4 sm:flex-row sm:gap-2">
           <form.SubmitButton
             className="w-full sm:max-w-fit"

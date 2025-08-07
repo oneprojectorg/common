@@ -193,7 +193,7 @@ export const InviteUserModal = ({ children }: InviteUserModalProps) => {
         {triggerButton}
         <Modal isDismissable isOpen={isModalOpen} onOpenChange={setIsModalOpen}>
           <ModalHeader>{t('Invite others to Common')}</ModalHeader>
-          <ModalBody className="gap-6 p-6">
+          <ModalBody className="h-auto gap-6 p-6">
             <Tabs
               selectedKey={activeTab}
               onSelectionChange={(key) => setActiveTab(key as string)}

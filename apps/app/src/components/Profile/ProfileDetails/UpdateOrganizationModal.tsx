@@ -58,12 +58,7 @@ export const UpdateOrganizationModal = ({
         <LuPencil className="size-4" />
         {t('Edit Profile')}
       </Button>
-      <Modal
-        isOpen={isOpen}
-        onOpenChange={setIsOpen}
-        isDismissable
-        className="h-svh max-h-none w-screen max-w-none overflow-y-auto rounded-none sm:h-auto sm:max-h-[75vh] sm:w-[36rem] sm:max-w-[36rem] sm:rounded-md"
-      >
+      <Modal isOpen={isOpen} onOpenChange={setIsOpen} isDismissable>
         <ModalHeader>{t('Edit Profile')}</ModalHeader>
         <UpdateOrganizationForm
           ref={formRef}

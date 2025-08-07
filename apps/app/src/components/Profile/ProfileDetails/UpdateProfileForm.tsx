@@ -282,7 +282,7 @@ export const UpdateProfileForm = forwardRef<
           />
         )}
       </FormContainer>
-      <ModalFooter>
+      <ModalFooter className="sticky">
         <form.SubmitButton className="sm:w-auto">
           {updateProfile.isPending ||
           uploadImage.isPending ||
