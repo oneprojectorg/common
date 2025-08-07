@@ -56,13 +56,19 @@ export const RemoveRelationshipModal = ({
               </div>
             </ModalBody>
             <ModalFooter>
-              <Button onPress={close} color="neutral" type="button">
+              <Button
+                onPress={close}
+                color="neutral"
+                type="button"
+                className="w-full sm:w-fit"
+              >
                 Cancel
               </Button>
               <Button
                 color="destructive"
                 type="submit"
                 isPending={isSubmitting}
+                className="w-full sm:w-fit"
               >
                 {isSubmitting ? <LoadingSpinner /> : 'Remove'}
               </Button>

@@ -173,10 +173,20 @@ export const AddRelationshipForm = ({
                 </div>
               </ModalBody>
               <ModalFooter>
-                <Button onPress={close} color="secondary" type="button">
+                <Button
+                  onPress={close}
+                  className="w-full sm:w-fit"
+                  color="secondary"
+                  type="button"
+                >
                   Cancel
                 </Button>
-                <Button color="primary" type="submit" isPending={isSubmitting}>
+                <Button
+                  color="primary"
+                  type="submit"
+                  className="w-full sm:w-fit"
+                  isPending={isSubmitting}
+                >
                   {isSubmitting ? <LoadingSpinner /> : 'Add'}
                 </Button>
               </ModalFooter>
