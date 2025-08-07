@@ -25,7 +25,7 @@ import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';
 import { useFeatureFlagEnabled } from 'posthog-js/react';
-import { ReactNode, useState } from 'react';
+import { ReactNode, memo, useMemo, useState } from 'react';
 import { LuEllipsis, LuLeaf } from 'react-icons/lu';
 
 import { Link } from '@/lib/i18n';
@@ -128,8 +128,10 @@ const AttachmentImage = ({
   );
 };
 
-const PostUrls = ({ urls }: { urls: string[] }) => {
-  if (urls.length === 0) return null;
+const PostUrls = memo(({ urls }: { urls: string[] }) => {
+  if (urls.length === 0) {
+    return null;
+  }
 
   return (
     <div>
@@ -138,7 +140,9 @@ const PostUrls = ({ urls }: { urls: string[] }) => {
       ))}
     </div>
   );
-};
+});
+
+PostUrls.displayName = 'PostUrls';
 
 const PostReactions = ({
   post,
@@ -151,17 +155,17 @@ const PostReactions = ({
 
   const reactions = post.reactionCounts
     ? Object.entries(post.reactionCounts).map(([reactionType, count]) => {
-        const reactionOption = REACTION_OPTIONS.find(
-          (option) => option.key === reactionType,
-        );
-        const emoji = reactionOption?.emoji || reactionType;
+      const reactionOption = REACTION_OPTIONS.find(
+        (option) => option.key === reactionType,
+      );
+      const emoji = reactionOption?.emoji || reactionType;
 
-        return {
-          emoji,
-          count: count as number,
-          isActive: post.userReaction === reactionType,
-        };
-      })
+      return {
+        emoji,
+        count: count as number,
+        isActive: post.userReaction === reactionType,
+      };
+    })
     : [];
 
   return (
@@ -272,7 +276,7 @@ export const PostItem = ({
   className?: string;
 }) => {
   const { organization, post } = postToOrg;
-  const { urls } = detectLinks(post?.content);
+  const { urls } = useMemo(() => detectLinks(post?.content), [post?.content]);
 
   // For comments (posts without organization), show the post author
   // TODO: this is too complex. We need to refactor this
@@ -370,7 +374,7 @@ export const usePostFeedActions = ({
         await utils.organization.listPosts.cancel({ slug, limit });
       }
       await utils.organization.listAllPosts.cancel({});
-      
+
       // Cancel comments cache if we're in a modal context
       if (parentPostId) {
         const commentsQueryKey = createCommentsQueryKey(parentPostId);
@@ -390,7 +394,8 @@ export const usePostFeedActions = ({
       const updatePostReactions = (item: PostToOrganization) => {
         if (item.post.id === postId) {
           const currentReaction = item.post.userReaction;
-          const currentCounts: Record<string, number> = item.post.reactionCounts || {};
+          const currentCounts: Record<string, number> =
+            item.post.reactionCounts || {};
 
           // Check if user already has this reaction
           const hasReaction = currentReaction === reactionType;
@@ -467,7 +472,7 @@ export const usePostFeedActions = ({
           items: old.items.map(updatePostReactions),
         };
       });
-      
+
       // Optimistically update comments cache if we're in a modal context
       if (parentPostId) {
         const commentsQueryKey = createCommentsQueryKey(parentPostId);
@@ -475,7 +480,7 @@ export const usePostFeedActions = ({
           if (!old) {
             return old;
           }
-          
+
           // Transform comments to PostToOrganization format and apply updates
           return old.map((comment) => {
             const postToOrg: PostToOrganization = {
@@ -487,7 +492,7 @@ export const usePostFeedActions = ({
               post: comment,
               organization: null,
             };
-            
+
             const updated = updatePostReactions(postToOrg);
             return updated.post;
           });
@@ -512,7 +517,10 @@ export const usePostFeedActions = ({
       }
       if (context?.previousComments && parentPostId) {
         const commentsQueryKey = createCommentsQueryKey(parentPostId);
-        utils.posts.getPosts.setData(commentsQueryKey, context.previousComments);
+        utils.posts.getPosts.setData(
+          commentsQueryKey,
+          context.previousComments,
+        );
       }
       toast.error({ message: err.message || 'Failed to update reaction' });
     },
