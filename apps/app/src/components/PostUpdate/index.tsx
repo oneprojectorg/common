@@ -115,6 +115,7 @@ const PostUpdateWithUser = ({
           parentPostId: variables.parentPostId,
           attachments: [],
           reactionCounts: {},
+          reactionUsers: {},
           userReaction: null,
           commentCount: 0,
           childPosts: null,
