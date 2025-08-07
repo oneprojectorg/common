@@ -30,8 +30,14 @@ const processReactionUsers = (reactions: ReactionData[]) => {
     )
     .sort((a, b) => {
       try {
-        const aTime = a.timestamp instanceof Date ? a.timestamp.getTime() : new Date(a.timestamp).getTime();
-        const bTime = b.timestamp instanceof Date ? b.timestamp.getTime() : new Date(b.timestamp).getTime();
+        const aTime =
+          a.timestamp instanceof Date
+            ? a.timestamp.getTime()
+            : new Date(a.timestamp).getTime();
+        const bTime =
+          b.timestamp instanceof Date
+            ? b.timestamp.getTime()
+            : new Date(b.timestamp).getTime();
         return bTime - aTime;
       } catch (error) {
         // Fallback if date parsing fails
