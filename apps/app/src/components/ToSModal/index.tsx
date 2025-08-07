@@ -2,7 +2,6 @@ import { Button } from '@op/ui/Button';
 import { Modal, ModalBody, ModalHeader } from '@op/ui/Modal';
 import { Dialog, DialogTrigger } from '@op/ui/RAC';
 import { useState } from 'react';
-import { LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -25,17 +24,11 @@ export const ToSModal = () => {
       <Modal
         className="h-screen max-h-none w-screen max-w-none overflow-y-auto sm:h-auto sm:max-h-[75vh] sm:w-[36rem] sm:max-w-[36rem]"
         onOpenChange={setIsToSOpen}
-        isDismissable
         isOpen={isToSOpen}
+        isDismissable
       >
         <Dialog>
-          <ModalHeader className="flex items-center justify-between">
-            {t('Terms of Use')}
-            <LuX
-              className="size-6 cursor-pointer stroke-1"
-              onClick={() => setIsToSOpen(false)}
-            />
-          </ModalHeader>
+          <ModalHeader>{t('Terms of Use')}</ModalHeader>
           <ModalBody>
             <ToSContent />
           </ModalBody>

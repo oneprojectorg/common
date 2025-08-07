@@ -1,471 +1,471 @@
-CREATE EXTENSION IF NOT EXISTS pg_trgm SCHEMA extensions;
-CREATE EXTENSION IF NOT EXISTS postgis SCHEMA extensions;
-CREATE EXTENSION IF NOT EXISTS vector SCHEMA extensions;
-
 -- Current sql file was generated after introspecting the database
 -- If you want to run this migration please uncomment this code before executing migrations
-CREATE TYPE "public"."entity_type" AS ENUM('org', 'user', 'individual');--> statement-breakpoint
-CREATE TYPE "public"."link_type" AS ENUM('offering', 'receiving', 'website', 'social');--> statement-breakpoint
-CREATE TYPE "public"."org_type" AS ENUM('nonprofit', 'forprofit', 'government', 'other');--> statement-breakpoint
-CREATE TABLE "locations" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"name" varchar(256),
-	"place_id" varchar(512) NOT NULL,
-	"address" text,
-	"plus_code" varchar(128),
-	"location" geometry(Point),
-	"country_code" varchar(2),
-	"country_name" varchar(256),
-	"metadata" jsonb,
-	"created_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
-	"updated_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
-	"deleted_at" timestamp with time zone,
-	CONSTRAINT "locations_placeId_unique" UNIQUE("place_id")
-);
---> statement-breakpoint
-ALTER TABLE "locations" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
-CREATE TABLE "organization_users" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"auth_user_id" uuid NOT NULL,
-	"name" varchar(256),
-	"email" varchar NOT NULL,
-	"about" text,
-	"organization_id" uuid NOT NULL,
-	"created_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
-	"updated_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
-	"deleted_at" timestamp with time zone
-);
---> statement-breakpoint
-ALTER TABLE "organization_users" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
-CREATE TABLE "organizations" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"domain" varchar(255),
-	"is_verified" boolean DEFAULT false,
-	"network_organization" boolean DEFAULT false,
-	"is_offering_funds" boolean DEFAULT false,
-	"is_receiving_funds" boolean DEFAULT false,
-	"accepting_applications" boolean DEFAULT false,
-	"org_type" "org_type" DEFAULT 'other' NOT NULL,
-	"profile_id" uuid NOT NULL,
-	"created_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
-	"updated_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
-	"deleted_at" timestamp with time zone
-);
---> statement-breakpoint
-ALTER TABLE "organizations" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
-CREATE TABLE "access_roles" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"name" varchar(255),
-	"access" integer,
-	"created_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
-	"updated_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
-	"deleted_at" timestamp with time zone
-);
---> statement-breakpoint
-ALTER TABLE "access_roles" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
-CREATE TABLE "allowList" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"email" varchar(256) NOT NULL,
-	"metadata" jsonb,
-	"organization_id" uuid,
-	"created_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
-	"updated_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
-	"deleted_at" timestamp with time zone
-);
---> statement-breakpoint
-ALTER TABLE "allowList" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
-CREATE TABLE "links" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"name" varchar(256),
-	"description" varchar(256),
-	"href" varchar(256) NOT NULL,
-	"link_type" "link_type" DEFAULT 'offering' NOT NULL,
-	"metadata" jsonb,
-	"organization_id" uuid NOT NULL,
-	"created_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
-	"updated_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
-	"deleted_at" timestamp with time zone
-);
---> statement-breakpoint
-ALTER TABLE "links" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
-CREATE TABLE "posts" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"content" text NOT NULL,
-	"created_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
-	"updated_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
-	"deleted_at" timestamp with time zone,
-	"parent_post_id" uuid,
-	"profile_id" uuid
-);
---> statement-breakpoint
-ALTER TABLE "posts" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
-CREATE TABLE "taxonomyTerms" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"taxonomy_id" uuid,
-	"term_uri" varchar(255) NOT NULL,
-	"facet" varchar(255),
-	"label" varchar(255) NOT NULL,
-	"definition" text,
-	"parent_id" uuid,
-	"data" jsonb,
-	"created_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
-	"updated_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
-	"deleted_at" timestamp with time zone,
-	CONSTRAINT "taxonomyTerms_taxonomy_id_term_uri_unique" UNIQUE("taxonomy_id","term_uri")
-);
---> statement-breakpoint
-ALTER TABLE "taxonomyTerms" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
-CREATE TABLE "taxonomies" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"name" varchar(255) NOT NULL,
-	"description" text,
-	"namespace_uri" varchar(255),
-	"created_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
-	"updated_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
-	"deleted_at" timestamp with time zone,
-	CONSTRAINT "taxonomies_name_unique" UNIQUE("name")
-);
---> statement-breakpoint
-ALTER TABLE "taxonomies" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
-CREATE TABLE "organization_relationships" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"source_organization_id" uuid NOT NULL,
-	"target_organization_id" uuid NOT NULL,
-	"relationship_type" varchar(255) NOT NULL,
-	"pending" boolean,
-	"metadata" jsonb,
-	"created_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
-	"updated_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
-	"deleted_at" timestamp with time zone
-);
---> statement-breakpoint
-ALTER TABLE "organization_relationships" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
-CREATE TABLE "profiles" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"entity_type" "entity_type" DEFAULT 'org' NOT NULL,
-	"name" varchar(256) NOT NULL,
-	"slug" varchar(256) NOT NULL,
-	"bio" text,
-	"mission" text,
-	"email" varchar(255),
-	"phone" varchar(50),
-	"website" varchar(255),
-	"address" varchar(255),
-	"city" varchar(100),
-	"state" varchar(50),
-	"postal_code" varchar(20),
-	"header_image_id" uuid,
-	"avatar_image_id" uuid,
-	"search" "tsvector" GENERATED ALWAYS AS (((((setweight(to_tsvector('simple'::regconfig, (name)::text), 'A'::"char") || ''::tsvector) || setweight(to_tsvector('english'::regconfig, COALESCE(bio, ''::text)), 'B'::"char")) || ''::tsvector) || setweight(to_tsvector('english'::regconfig, COALESCE(mission, ''::text)), 'C'::"char"))) STORED,
-	"created_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
-	"updated_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
-	"deleted_at" timestamp with time zone,
-	CONSTRAINT "profiles_slug_unique" UNIQUE("slug")
-);
---> statement-breakpoint
-ALTER TABLE "profiles" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
-CREATE TABLE "projects" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"name" varchar(256) NOT NULL,
-	"slug" varchar(256) NOT NULL,
-	"description" varchar(256),
-	"organization_id" uuid,
-	"created_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
-	"updated_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
-	"deleted_at" timestamp with time zone,
-	CONSTRAINT "projects_slug_unique" UNIQUE("slug")
-);
---> statement-breakpoint
-ALTER TABLE "projects" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
-CREATE TABLE "users" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"auth_user_id" uuid NOT NULL,
-	"username" varchar(256),
-	"name" varchar(256),
-	"email" varchar NOT NULL,
-	"about" text,
-	"title" varchar(256),
-	"avatar_image_id" uuid,
-	"last_org_id" uuid,
-	"tos" boolean,
-	"privacy" boolean,
-	"created_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
-	"updated_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
-	"deleted_at" timestamp with time zone,
-	"current_profile_id" uuid,
-	"profile_id" uuid,
-	CONSTRAINT "users_email_unique" UNIQUE("email")
-);
---> statement-breakpoint
-ALTER TABLE "users" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
-CREATE TABLE "attachments" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"post_id" uuid NOT NULL,
-	"storage_object_id" uuid NOT NULL,
-	"file_name" text NOT NULL,
-	"mime_type" text NOT NULL,
-	"file_size" bigint,
-	"uploaded_by" uuid,
-	"created_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
-	"updated_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
-	"deleted_at" timestamp with time zone,
-	"profile_id" uuid
-);
---> statement-breakpoint
-ALTER TABLE "attachments" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
-CREATE TABLE "post_reactions" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"post_id" uuid DEFAULT gen_random_uuid() NOT NULL,
-	"profile_id" uuid DEFAULT gen_random_uuid() NOT NULL,
-	"reaction_type" varchar(50) NOT NULL,
-	"created_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
-	"updated_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
-	"deleted_at" timestamp with time zone
-);
---> statement-breakpoint
-ALTER TABLE "post_reactions" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
-CREATE TABLE "individuals" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"profile_id" uuid NOT NULL,
-	"created_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
-	"updated_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
-	"deleted_at" timestamp with time zone
-);
---> statement-breakpoint
-ALTER TABLE "individuals" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
-CREATE TABLE "comments" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"content" text NOT NULL,
-	"profile_id" uuid NOT NULL,
-	"parent_comment_id" uuid,
-	"created_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
-	"updated_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
-	"deleted_at" timestamp with time zone
-);
---> statement-breakpoint
-ALTER TABLE "comments" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
-CREATE TABLE "organizations_strategies" (
-	"organization_id" uuid NOT NULL,
-	"taxonomy_term_id" uuid NOT NULL,
-	CONSTRAINT "organizations_strategies_organization_id_taxonomy_term_id_pk" PRIMARY KEY("organization_id","taxonomy_term_id")
-);
---> statement-breakpoint
-ALTER TABLE "organizations_strategies" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
-CREATE TABLE "organizations_terms" (
-	"organization_id" uuid NOT NULL,
-	"taxonomy_term_id" uuid NOT NULL,
-	CONSTRAINT "organizations_terms_organization_id_taxonomy_term_id_pk" PRIMARY KEY("organization_id","taxonomy_term_id")
-);
---> statement-breakpoint
-ALTER TABLE "organizations_terms" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
-CREATE TABLE "organizations_where_we_work" (
-	"organization_id" uuid NOT NULL,
-	"location_id" uuid NOT NULL,
-	CONSTRAINT "organizations_where_we_work_organization_id_location_id_pk" PRIMARY KEY("organization_id","location_id")
-);
---> statement-breakpoint
-ALTER TABLE "organizations_where_we_work" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
-CREATE TABLE "individuals_terms" (
-	"individual_id" uuid NOT NULL,
-	"taxonomy_term_id" uuid NOT NULL,
-	CONSTRAINT "individuals_terms_individual_id_taxonomy_term_id_pk" PRIMARY KEY("individual_id","taxonomy_term_id")
-);
---> statement-breakpoint
-ALTER TABLE "individuals_terms" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
-CREATE TABLE "organizationUser_to_access_roles" (
-	"organization_user_id" uuid NOT NULL,
-	"access_role_id" uuid NOT NULL,
-	"created_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
-	"updated_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
-	"deleted_at" timestamp with time zone,
-	CONSTRAINT "organizationUser_to_access_roles_organization_user_id_access_ro" PRIMARY KEY("organization_user_id","access_role_id")
-);
---> statement-breakpoint
-ALTER TABLE "organizationUser_to_access_roles" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
-CREATE TABLE "posts_to_organizations" (
-	"post_id" uuid NOT NULL,
-	"organization_id" uuid NOT NULL,
-	"created_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
-	"updated_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
-	"deleted_at" timestamp with time zone,
-	CONSTRAINT "posts_to_organizations_organization_id_post_id_pk" PRIMARY KEY("post_id","organization_id")
-);
---> statement-breakpoint
-ALTER TABLE "posts_to_organizations" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
-CREATE TABLE "comments_to_posts" (
-	"comment_id" uuid NOT NULL,
-	"post_id" uuid NOT NULL,
-	"created_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
-	"updated_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
-	"deleted_at" timestamp with time zone,
-	CONSTRAINT "comments_to_posts_comment_id_post_id_pk" PRIMARY KEY("comment_id","post_id")
-);
---> statement-breakpoint
-ALTER TABLE "comments_to_posts" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
-ALTER TABLE "organization_users" ADD CONSTRAINT "organization_users_auth_user_id_users_id_fk" FOREIGN KEY ("auth_user_id") REFERENCES "auth"."users"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
-ALTER TABLE "organization_users" ADD CONSTRAINT "organization_users_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
-ALTER TABLE "organizations" ADD CONSTRAINT "organizations_profile_id_profiles_id_fk" FOREIGN KEY ("profile_id") REFERENCES "public"."profiles"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
-ALTER TABLE "allowList" ADD CONSTRAINT "allowList_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "links" ADD CONSTRAINT "links_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
-ALTER TABLE "posts" ADD CONSTRAINT "posts_parent_post_id_posts_id_fk" FOREIGN KEY ("parent_post_id") REFERENCES "public"."posts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "posts" ADD CONSTRAINT "posts_profile_id_profiles_id_fk" FOREIGN KEY ("profile_id") REFERENCES "public"."profiles"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "taxonomyTerms" ADD CONSTRAINT "taxonomyTerms_parent_id_taxonomyTerms_id_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."taxonomyTerms"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "taxonomyTerms" ADD CONSTRAINT "taxonomyTerms_taxonomy_id_taxonomies_id_fk" FOREIGN KEY ("taxonomy_id") REFERENCES "public"."taxonomies"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "organization_relationships" ADD CONSTRAINT "organization_relationships_source_organization_id_organizations" FOREIGN KEY ("source_organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "organization_relationships" ADD CONSTRAINT "organization_relationships_target_organization_id_organizations" FOREIGN KEY ("target_organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "profiles" ADD CONSTRAINT "profiles_avatar_image_id_objects_id_fk" FOREIGN KEY ("avatar_image_id") REFERENCES "storage"."objects"("id") ON DELETE no action ON UPDATE cascade;--> statement-breakpoint
-ALTER TABLE "profiles" ADD CONSTRAINT "profiles_header_image_id_objects_id_fk" FOREIGN KEY ("header_image_id") REFERENCES "storage"."objects"("id") ON DELETE no action ON UPDATE cascade;--> statement-breakpoint
-ALTER TABLE "projects" ADD CONSTRAINT "projects_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE set null ON UPDATE cascade;--> statement-breakpoint
-ALTER TABLE "users" ADD CONSTRAINT "users_auth_user_id_users_id_fk" FOREIGN KEY ("auth_user_id") REFERENCES "auth"."users"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
-ALTER TABLE "users" ADD CONSTRAINT "users_avatar_image_id_objects_id_fk" FOREIGN KEY ("avatar_image_id") REFERENCES "storage"."objects"("id") ON DELETE no action ON UPDATE cascade;--> statement-breakpoint
-ALTER TABLE "users" ADD CONSTRAINT "users_current_profile_id_profiles_id_fk" FOREIGN KEY ("current_profile_id") REFERENCES "public"."profiles"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "users" ADD CONSTRAINT "users_last_org_id_organizations_id_fk" FOREIGN KEY ("last_org_id") REFERENCES "public"."organizations"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "users" ADD CONSTRAINT "users_profile_id_profiles_id_fk" FOREIGN KEY ("profile_id") REFERENCES "public"."profiles"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "attachments" ADD CONSTRAINT "attachments_post_id_posts_id_fk" FOREIGN KEY ("post_id") REFERENCES "public"."posts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "attachments" ADD CONSTRAINT "attachments_profile_id_profiles_id_fk" FOREIGN KEY ("profile_id") REFERENCES "public"."profiles"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "attachments" ADD CONSTRAINT "attachments_storage_object_id_objects_id_fk" FOREIGN KEY ("storage_object_id") REFERENCES "storage"."objects"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "attachments" ADD CONSTRAINT "attachments_uploaded_by_organization_users_id_fk" FOREIGN KEY ("uploaded_by") REFERENCES "public"."organization_users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "post_reactions" ADD CONSTRAINT "post_reactions_post_id_posts_id_fk" FOREIGN KEY ("post_id") REFERENCES "public"."posts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "post_reactions" ADD CONSTRAINT "post_reactions_profile_id_profiles_id_fk" FOREIGN KEY ("profile_id") REFERENCES "public"."profiles"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "individuals" ADD CONSTRAINT "individuals_profile_id_profiles_id_fk" FOREIGN KEY ("profile_id") REFERENCES "public"."profiles"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
-ALTER TABLE "comments" ADD CONSTRAINT "comments_profile_id_profiles_id_fk" FOREIGN KEY ("profile_id") REFERENCES "public"."profiles"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "organizations_strategies" ADD CONSTRAINT "organizations_strategies_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
-ALTER TABLE "organizations_strategies" ADD CONSTRAINT "organizations_strategies_taxonomy_term_id_taxonomyTerms_id_fk" FOREIGN KEY ("taxonomy_term_id") REFERENCES "public"."taxonomyTerms"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
-ALTER TABLE "organizations_terms" ADD CONSTRAINT "organizations_terms_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
-ALTER TABLE "organizations_terms" ADD CONSTRAINT "organizations_terms_taxonomy_term_id_taxonomyTerms_id_fk" FOREIGN KEY ("taxonomy_term_id") REFERENCES "public"."taxonomyTerms"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
-ALTER TABLE "organizations_where_we_work" ADD CONSTRAINT "organizations_where_we_work_location_id_locations_id_fk" FOREIGN KEY ("location_id") REFERENCES "public"."locations"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
-ALTER TABLE "organizations_where_we_work" ADD CONSTRAINT "organizations_where_we_work_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
-ALTER TABLE "individuals_terms" ADD CONSTRAINT "individuals_terms_individual_id_individuals_id_fk" FOREIGN KEY ("individual_id") REFERENCES "public"."individuals"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
-ALTER TABLE "individuals_terms" ADD CONSTRAINT "individuals_terms_taxonomy_term_id_taxonomyTerms_id_fk" FOREIGN KEY ("taxonomy_term_id") REFERENCES "public"."taxonomyTerms"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
-ALTER TABLE "organizationUser_to_access_roles" ADD CONSTRAINT "organizationUser_to_access_roles_access_role_id_access_roles_id" FOREIGN KEY ("access_role_id") REFERENCES "public"."access_roles"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "organizationUser_to_access_roles" ADD CONSTRAINT "organizationUser_to_access_roles_organization_user_id_organizat" FOREIGN KEY ("organization_user_id") REFERENCES "public"."organization_users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "posts_to_organizations" ADD CONSTRAINT "posts_to_organizations_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "posts_to_organizations" ADD CONSTRAINT "posts_to_organizations_post_id_posts_id_fk" FOREIGN KEY ("post_id") REFERENCES "public"."posts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "comments_to_posts" ADD CONSTRAINT "comments_to_posts_comment_id_comments_id_fk" FOREIGN KEY ("comment_id") REFERENCES "public"."comments"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "comments_to_posts" ADD CONSTRAINT "comments_to_posts_post_id_posts_id_fk" FOREIGN KEY ("post_id") REFERENCES "public"."posts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+--  CREATE EXTENSION IF NOT EXISTS pg_trgm SCHEMA extensions;
+--  CREATE EXTENSION IF NOT EXISTS postgis SCHEMA extensions;
+--  CREATE EXTENSION IF NOT EXISTS vector SCHEMA extensions;
 
-CREATE VIEW "public"."users_used_storage" WITH (security_invoker = false) AS (SELECT (storage.foldername(objects.name))[1] AS user_id, COALESCE(sum((objects.metadata ->> 'size'::text)::bigint), 0::numeric) AS total_size FROM storage.objects WHERE objects.bucket_id = 'assets'::text GROUP BY ((storage.foldername(objects.name))[1]));--> statement-breakpoint
-CREATE POLICY "service-role" ON "locations" AS PERMISSIVE FOR ALL TO "service_role";--> statement-breakpoint
-CREATE POLICY "service-role" ON "organization_users" AS PERMISSIVE FOR ALL TO "service_role";--> statement-breakpoint
-CREATE POLICY "service-role" ON "organizations" AS PERMISSIVE FOR ALL TO "service_role";--> statement-breakpoint
-CREATE POLICY "service-role" ON "access_roles" AS PERMISSIVE FOR ALL TO "service_role";--> statement-breakpoint
-CREATE POLICY "service-role" ON "allowList" AS PERMISSIVE FOR ALL TO "service_role";--> statement-breakpoint
-CREATE POLICY "service-role" ON "links" AS PERMISSIVE FOR ALL TO "service_role";--> statement-breakpoint
-CREATE POLICY "service-role" ON "posts" AS PERMISSIVE FOR ALL TO "service_role";--> statement-breakpoint
-CREATE POLICY "service-role" ON "taxonomyTerms" AS PERMISSIVE FOR ALL TO "service_role";--> statement-breakpoint
-CREATE POLICY "service-role" ON "taxonomies" AS PERMISSIVE FOR ALL TO "service_role";--> statement-breakpoint
-CREATE POLICY "service-role" ON "organization_relationships" AS PERMISSIVE FOR ALL TO "service_role";--> statement-breakpoint
-CREATE POLICY "service-role" ON "profiles" AS PERMISSIVE FOR ALL TO "service_role";--> statement-breakpoint
-CREATE POLICY "service-role" ON "projects" AS PERMISSIVE FOR ALL TO "service_role";--> statement-breakpoint
-CREATE POLICY "service-role" ON "users" AS PERMISSIVE FOR ALL TO "service_role";--> statement-breakpoint
-CREATE POLICY "service-role" ON "attachments" AS PERMISSIVE FOR ALL TO "service_role";--> statement-breakpoint
-CREATE POLICY "service-role" ON "post_reactions" AS PERMISSIVE FOR ALL TO "service_role";--> statement-breakpoint
-CREATE POLICY "service-role" ON "individuals" AS PERMISSIVE FOR ALL TO "service_role";--> statement-breakpoint
-CREATE POLICY "service-role" ON "comments" AS PERMISSIVE FOR ALL TO "service_role";--> statement-breakpoint
-CREATE POLICY "service-role" ON "organizations_strategies" AS PERMISSIVE FOR ALL TO "service_role";--> statement-breakpoint
-CREATE POLICY "service-role" ON "organizations_terms" AS PERMISSIVE FOR ALL TO "service_role";--> statement-breakpoint
-CREATE POLICY "service-role" ON "organizations_where_we_work" AS PERMISSIVE FOR ALL TO "service_role";--> statement-breakpoint
-CREATE POLICY "service-role" ON "individuals_terms" AS PERMISSIVE FOR ALL TO "service_role";--> statement-breakpoint
-CREATE POLICY "service-role" ON "organizationUser_to_access_roles" AS PERMISSIVE FOR ALL TO "service_role";--> statement-breakpoint
-CREATE POLICY "service-role" ON "posts_to_organizations" AS PERMISSIVE FOR ALL TO "service_role";--> statement-breakpoint
-CREATE POLICY "service-role" ON "comments_to_posts" AS PERMISSIVE FOR ALL TO "service_role";
+--  CREATE TYPE "public"."entity_type" AS ENUM('org', 'user', 'individual');--> statement-breakpoint
+--  CREATE TYPE "public"."link_type" AS ENUM('offering', 'receiving', 'website', 'social');--> statement-breakpoint
+--  CREATE TYPE "public"."org_type" AS ENUM('nonprofit', 'forprofit', 'government', 'other');--> statement-breakpoint
+--  CREATE TABLE "locations" (
+	--  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	--  "name" varchar(256),
+	--  "place_id" varchar(512) NOT NULL,
+	--  "address" text,
+	--  "plus_code" varchar(128),
+	--  "location" geometry(Point),
+	--  "country_code" varchar(2),
+	--  "country_name" varchar(256),
+	--  "metadata" jsonb,
+	--  "created_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
+	--  "updated_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
+	--  "deleted_at" timestamp with time zone,
+	--  CONSTRAINT "locations_placeId_unique" UNIQUE("place_id")
+--  );
+--  --> statement-breakpoint
+--  ALTER TABLE "locations" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+--  CREATE TABLE "organization_users" (
+	--  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	--  "auth_user_id" uuid NOT NULL,
+	--  "name" varchar(256),
+	--  "email" varchar NOT NULL,
+	--  "about" text,
+	--  "organization_id" uuid NOT NULL,
+	--  "created_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
+	--  "updated_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
+	--  "deleted_at" timestamp with time zone
+--  );
+--  --> statement-breakpoint
+--  ALTER TABLE "organization_users" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+--  CREATE TABLE "organizations" (
+	--  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	--  "domain" varchar(255),
+	--  "is_verified" boolean DEFAULT false,
+	--  "network_organization" boolean DEFAULT false,
+	--  "is_offering_funds" boolean DEFAULT false,
+	--  "is_receiving_funds" boolean DEFAULT false,
+	--  "accepting_applications" boolean DEFAULT false,
+	--  "org_type" "org_type" DEFAULT 'other' NOT NULL,
+	--  "profile_id" uuid NOT NULL,
+	--  "created_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
+	--  "updated_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
+	--  "deleted_at" timestamp with time zone
+--  );
+--  --> statement-breakpoint
+--  ALTER TABLE "organizations" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+--  CREATE TABLE "access_roles" (
+	--  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	--  "name" varchar(255),
+	--  "access" integer,
+	--  "created_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
+	--  "updated_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
+	--  "deleted_at" timestamp with time zone
+--  );
+--  --> statement-breakpoint
+--  ALTER TABLE "access_roles" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+--  CREATE TABLE "allowList" (
+	--  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	--  "email" varchar(256) NOT NULL,
+	--  "metadata" jsonb,
+	--  "organization_id" uuid,
+	--  "created_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
+	--  "updated_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
+	--  "deleted_at" timestamp with time zone
+--  );
+--  --> statement-breakpoint
+--  ALTER TABLE "allowList" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+--  CREATE TABLE "links" (
+	--  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	--  "name" varchar(256),
+	--  "description" varchar(256),
+	--  "href" varchar(256) NOT NULL,
+	--  "link_type" "link_type" DEFAULT 'offering' NOT NULL,
+	--  "metadata" jsonb,
+	--  "organization_id" uuid NOT NULL,
+	--  "created_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
+	--  "updated_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
+	--  "deleted_at" timestamp with time zone
+--  );
+--  --> statement-breakpoint
+--  ALTER TABLE "links" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+--  CREATE TABLE "posts" (
+	--  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	--  "content" text NOT NULL,
+	--  "created_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
+	--  "updated_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
+	--  "deleted_at" timestamp with time zone,
+	--  "parent_post_id" uuid,
+	--  "profile_id" uuid
+--  );
+--  --> statement-breakpoint
+--  ALTER TABLE "posts" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+--  CREATE TABLE "taxonomyTerms" (
+	--  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	--  "taxonomy_id" uuid,
+	--  "term_uri" varchar(255) NOT NULL,
+	--  "facet" varchar(255),
+	--  "label" varchar(255) NOT NULL,
+	--  "definition" text,
+	--  "parent_id" uuid,
+	--  "data" jsonb,
+	--  "created_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
+	--  "updated_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
+	--  "deleted_at" timestamp with time zone,
+	--  CONSTRAINT "taxonomyTerms_taxonomy_id_term_uri_unique" UNIQUE("taxonomy_id","term_uri")
+--  );
+--  --> statement-breakpoint
+--  ALTER TABLE "taxonomyTerms" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+--  CREATE TABLE "taxonomies" (
+	--  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	--  "name" varchar(255) NOT NULL,
+	--  "description" text,
+	--  "namespace_uri" varchar(255),
+	--  "created_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
+	--  "updated_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
+	--  "deleted_at" timestamp with time zone,
+	--  CONSTRAINT "taxonomies_name_unique" UNIQUE("name")
+--  );
+--  --> statement-breakpoint
+--  ALTER TABLE "taxonomies" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+--  CREATE TABLE "organization_relationships" (
+	--  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	--  "source_organization_id" uuid NOT NULL,
+	--  "target_organization_id" uuid NOT NULL,
+	--  "relationship_type" varchar(255) NOT NULL,
+	--  "pending" boolean,
+	--  "metadata" jsonb,
+	--  "created_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
+	--  "updated_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
+	--  "deleted_at" timestamp with time zone
+--  );
+--  --> statement-breakpoint
+--  ALTER TABLE "organization_relationships" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+--  CREATE TABLE "profiles" (
+	--  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	--  "entity_type" "entity_type" DEFAULT 'org' NOT NULL,
+	--  "name" varchar(256) NOT NULL,
+	--  "slug" varchar(256) NOT NULL,
+	--  "bio" text,
+	--  "mission" text,
+	--  "email" varchar(255),
+	--  "phone" varchar(50),
+	--  "website" varchar(255),
+	--  "address" varchar(255),
+	--  "city" varchar(100),
+	--  "state" varchar(50),
+	--  "postal_code" varchar(20),
+	--  "header_image_id" uuid,
+	--  "avatar_image_id" uuid,
+	--  "search" "tsvector" GENERATED ALWAYS AS (((((setweight(to_tsvector('simple'::regconfig, (name)::text), 'A'::"char") || ''::tsvector) || setweight(to_tsvector('english'::regconfig, COALESCE(bio, ''::text)), 'B'::"char")) || ''::tsvector) || setweight(to_tsvector('english'::regconfig, COALESCE(mission, ''::text)), 'C'::"char"))) STORED,
+	--  "created_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
+	--  "updated_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
+	--  "deleted_at" timestamp with time zone,
+	--  CONSTRAINT "profiles_slug_unique" UNIQUE("slug")
+--  );
+--  --> statement-breakpoint
+--  ALTER TABLE "profiles" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+--  CREATE TABLE "projects" (
+	--  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	--  "name" varchar(256) NOT NULL,
+	--  "slug" varchar(256) NOT NULL,
+	--  "description" varchar(256),
+	--  "organization_id" uuid,
+	--  "created_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
+	--  "updated_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
+	--  "deleted_at" timestamp with time zone,
+	--  CONSTRAINT "projects_slug_unique" UNIQUE("slug")
+--  );
+--  --> statement-breakpoint
+--  ALTER TABLE "projects" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+--  CREATE TABLE "users" (
+	--  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	--  "auth_user_id" uuid NOT NULL,
+	--  "username" varchar(256),
+	--  "name" varchar(256),
+	--  "email" varchar NOT NULL,
+	--  "about" text,
+	--  "title" varchar(256),
+	--  "avatar_image_id" uuid,
+	--  "last_org_id" uuid,
+	--  "tos" boolean,
+	--  "privacy" boolean,
+	--  "created_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
+	--  "updated_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
+	--  "deleted_at" timestamp with time zone,
+	--  "current_profile_id" uuid,
+	--  "profile_id" uuid,
+	--  CONSTRAINT "users_email_unique" UNIQUE("email")
+--  );
+--  --> statement-breakpoint
+--  ALTER TABLE "users" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+--  CREATE TABLE "attachments" (
+	--  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	--  "post_id" uuid NOT NULL,
+	--  "storage_object_id" uuid NOT NULL,
+	--  "file_name" text NOT NULL,
+	--  "mime_type" text NOT NULL,
+	--  "file_size" bigint,
+	--  "uploaded_by" uuid,
+	--  "created_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
+	--  "updated_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
+	--  "deleted_at" timestamp with time zone,
+	--  "profile_id" uuid
+--  );
+--  --> statement-breakpoint
+--  ALTER TABLE "attachments" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+--  CREATE TABLE "post_reactions" (
+	--  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	--  "post_id" uuid DEFAULT gen_random_uuid() NOT NULL,
+	--  "profile_id" uuid DEFAULT gen_random_uuid() NOT NULL,
+	--  "reaction_type" varchar(50) NOT NULL,
+	--  "created_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
+	--  "updated_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
+	--  "deleted_at" timestamp with time zone
+--  );
+--  --> statement-breakpoint
+--  ALTER TABLE "post_reactions" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+--  CREATE TABLE "individuals" (
+	--  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	--  "profile_id" uuid NOT NULL,
+	--  "created_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
+	--  "updated_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
+	--  "deleted_at" timestamp with time zone
+--  );
+--  --> statement-breakpoint
+--  ALTER TABLE "individuals" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+--  CREATE TABLE "comments" (
+	--  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	--  "content" text NOT NULL,
+	--  "profile_id" uuid NOT NULL,
+	--  "parent_comment_id" uuid,
+	--  "created_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
+	--  "updated_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
+	--  "deleted_at" timestamp with time zone
+--  );
+--  --> statement-breakpoint
+--  ALTER TABLE "comments" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+--  CREATE TABLE "organizations_strategies" (
+	--  "organization_id" uuid NOT NULL,
+	--  "taxonomy_term_id" uuid NOT NULL,
+	--  CONSTRAINT "organizations_strategies_organization_id_taxonomy_term_id_pk" PRIMARY KEY("organization_id","taxonomy_term_id")
+--  );
+--  --> statement-breakpoint
+--  ALTER TABLE "organizations_strategies" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+--  CREATE TABLE "organizations_terms" (
+	--  "organization_id" uuid NOT NULL,
+	--  "taxonomy_term_id" uuid NOT NULL,
+	--  CONSTRAINT "organizations_terms_organization_id_taxonomy_term_id_pk" PRIMARY KEY("organization_id","taxonomy_term_id")
+--  );
+--  --> statement-breakpoint
+--  ALTER TABLE "organizations_terms" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+--  CREATE TABLE "organizations_where_we_work" (
+	--  "organization_id" uuid NOT NULL,
+	--  "location_id" uuid NOT NULL,
+	--  CONSTRAINT "organizations_where_we_work_organization_id_location_id_pk" PRIMARY KEY("organization_id","location_id")
+--  );
+--  --> statement-breakpoint
+--  ALTER TABLE "organizations_where_we_work" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+--  CREATE TABLE "individuals_terms" (
+	--  "individual_id" uuid NOT NULL,
+	--  "taxonomy_term_id" uuid NOT NULL,
+	--  CONSTRAINT "individuals_terms_individual_id_taxonomy_term_id_pk" PRIMARY KEY("individual_id","taxonomy_term_id")
+--  );
+--  --> statement-breakpoint
+--  ALTER TABLE "individuals_terms" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+--  CREATE TABLE "organizationUser_to_access_roles" (
+	--  "organization_user_id" uuid NOT NULL,
+	--  "access_role_id" uuid NOT NULL,
+	--  "created_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
+	--  "updated_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
+	--  "deleted_at" timestamp with time zone,
+	--  CONSTRAINT "organizationUser_to_access_roles_organization_user_id_access_ro" PRIMARY KEY("organization_user_id","access_role_id")
+--  );
+--  --> statement-breakpoint
+--  ALTER TABLE "organizationUser_to_access_roles" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+--  CREATE TABLE "posts_to_organizations" (
+	--  "post_id" uuid NOT NULL,
+	--  "organization_id" uuid NOT NULL,
+	--  "created_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
+	--  "updated_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
+	--  "deleted_at" timestamp with time zone,
+	--  CONSTRAINT "posts_to_organizations_organization_id_post_id_pk" PRIMARY KEY("post_id","organization_id")
+--  );
+--  --> statement-breakpoint
+--  ALTER TABLE "posts_to_organizations" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+--  CREATE TABLE "comments_to_posts" (
+	--  "comment_id" uuid NOT NULL,
+	--  "post_id" uuid NOT NULL,
+	--  "created_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
+	--  "updated_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
+	--  "deleted_at" timestamp with time zone,
+	--  CONSTRAINT "comments_to_posts_comment_id_post_id_pk" PRIMARY KEY("comment_id","post_id")
+--  );
+--  --> statement-breakpoint
+--  ALTER TABLE "comments_to_posts" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+--  ALTER TABLE "organization_users" ADD CONSTRAINT "organization_users_auth_user_id_users_id_fk" FOREIGN KEY ("auth_user_id") REFERENCES "auth"."users"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
+--  ALTER TABLE "organization_users" ADD CONSTRAINT "organization_users_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
+--  ALTER TABLE "organizations" ADD CONSTRAINT "organizations_profile_id_profiles_id_fk" FOREIGN KEY ("profile_id") REFERENCES "public"."profiles"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
+--  ALTER TABLE "allowList" ADD CONSTRAINT "allowList_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+--  ALTER TABLE "links" ADD CONSTRAINT "links_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
+--  ALTER TABLE "posts" ADD CONSTRAINT "posts_parent_post_id_posts_id_fk" FOREIGN KEY ("parent_post_id") REFERENCES "public"."posts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+--  ALTER TABLE "posts" ADD CONSTRAINT "posts_profile_id_profiles_id_fk" FOREIGN KEY ("profile_id") REFERENCES "public"."profiles"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+--  ALTER TABLE "taxonomyTerms" ADD CONSTRAINT "taxonomyTerms_parent_id_taxonomyTerms_id_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."taxonomyTerms"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+--  ALTER TABLE "taxonomyTerms" ADD CONSTRAINT "taxonomyTerms_taxonomy_id_taxonomies_id_fk" FOREIGN KEY ("taxonomy_id") REFERENCES "public"."taxonomies"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+--  ALTER TABLE "organization_relationships" ADD CONSTRAINT "organization_relationships_source_organization_id_organizations" FOREIGN KEY ("source_organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+--  ALTER TABLE "organization_relationships" ADD CONSTRAINT "organization_relationships_target_organization_id_organizations" FOREIGN KEY ("target_organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+--  ALTER TABLE "profiles" ADD CONSTRAINT "profiles_avatar_image_id_objects_id_fk" FOREIGN KEY ("avatar_image_id") REFERENCES "storage"."objects"("id") ON DELETE no action ON UPDATE cascade;--> statement-breakpoint
+--  ALTER TABLE "profiles" ADD CONSTRAINT "profiles_header_image_id_objects_id_fk" FOREIGN KEY ("header_image_id") REFERENCES "storage"."objects"("id") ON DELETE no action ON UPDATE cascade;--> statement-breakpoint
+--  ALTER TABLE "projects" ADD CONSTRAINT "projects_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE set null ON UPDATE cascade;--> statement-breakpoint
+--  ALTER TABLE "users" ADD CONSTRAINT "users_auth_user_id_users_id_fk" FOREIGN KEY ("auth_user_id") REFERENCES "auth"."users"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
+--  ALTER TABLE "users" ADD CONSTRAINT "users_avatar_image_id_objects_id_fk" FOREIGN KEY ("avatar_image_id") REFERENCES "storage"."objects"("id") ON DELETE no action ON UPDATE cascade;--> statement-breakpoint
+--  ALTER TABLE "users" ADD CONSTRAINT "users_current_profile_id_profiles_id_fk" FOREIGN KEY ("current_profile_id") REFERENCES "public"."profiles"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+--  ALTER TABLE "users" ADD CONSTRAINT "users_last_org_id_organizations_id_fk" FOREIGN KEY ("last_org_id") REFERENCES "public"."organizations"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+--  ALTER TABLE "users" ADD CONSTRAINT "users_profile_id_profiles_id_fk" FOREIGN KEY ("profile_id") REFERENCES "public"."profiles"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+--  ALTER TABLE "attachments" ADD CONSTRAINT "attachments_post_id_posts_id_fk" FOREIGN KEY ("post_id") REFERENCES "public"."posts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+--  ALTER TABLE "attachments" ADD CONSTRAINT "attachments_profile_id_profiles_id_fk" FOREIGN KEY ("profile_id") REFERENCES "public"."profiles"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+--  ALTER TABLE "attachments" ADD CONSTRAINT "attachments_storage_object_id_objects_id_fk" FOREIGN KEY ("storage_object_id") REFERENCES "storage"."objects"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+--  ALTER TABLE "attachments" ADD CONSTRAINT "attachments_uploaded_by_organization_users_id_fk" FOREIGN KEY ("uploaded_by") REFERENCES "public"."organization_users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+--  ALTER TABLE "post_reactions" ADD CONSTRAINT "post_reactions_post_id_posts_id_fk" FOREIGN KEY ("post_id") REFERENCES "public"."posts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+--  ALTER TABLE "post_reactions" ADD CONSTRAINT "post_reactions_profile_id_profiles_id_fk" FOREIGN KEY ("profile_id") REFERENCES "public"."profiles"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+--  ALTER TABLE "individuals" ADD CONSTRAINT "individuals_profile_id_profiles_id_fk" FOREIGN KEY ("profile_id") REFERENCES "public"."profiles"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
+--  ALTER TABLE "comments" ADD CONSTRAINT "comments_profile_id_profiles_id_fk" FOREIGN KEY ("profile_id") REFERENCES "public"."profiles"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+--  ALTER TABLE "organizations_strategies" ADD CONSTRAINT "organizations_strategies_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
+--  ALTER TABLE "organizations_strategies" ADD CONSTRAINT "organizations_strategies_taxonomy_term_id_taxonomyTerms_id_fk" FOREIGN KEY ("taxonomy_term_id") REFERENCES "public"."taxonomyTerms"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
+--  ALTER TABLE "organizations_terms" ADD CONSTRAINT "organizations_terms_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
+--  ALTER TABLE "organizations_terms" ADD CONSTRAINT "organizations_terms_taxonomy_term_id_taxonomyTerms_id_fk" FOREIGN KEY ("taxonomy_term_id") REFERENCES "public"."taxonomyTerms"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
+--  ALTER TABLE "organizations_where_we_work" ADD CONSTRAINT "organizations_where_we_work_location_id_locations_id_fk" FOREIGN KEY ("location_id") REFERENCES "public"."locations"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
+--  ALTER TABLE "organizations_where_we_work" ADD CONSTRAINT "organizations_where_we_work_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
+--  ALTER TABLE "individuals_terms" ADD CONSTRAINT "individuals_terms_individual_id_individuals_id_fk" FOREIGN KEY ("individual_id") REFERENCES "public"."individuals"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
+--  ALTER TABLE "individuals_terms" ADD CONSTRAINT "individuals_terms_taxonomy_term_id_taxonomyTerms_id_fk" FOREIGN KEY ("taxonomy_term_id") REFERENCES "public"."taxonomyTerms"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
+--  ALTER TABLE "organizationUser_to_access_roles" ADD CONSTRAINT "organizationUser_to_access_roles_access_role_id_access_roles_id" FOREIGN KEY ("access_role_id") REFERENCES "public"."access_roles"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+--  ALTER TABLE "organizationUser_to_access_roles" ADD CONSTRAINT "organizationUser_to_access_roles_organization_user_id_organizat" FOREIGN KEY ("organization_user_id") REFERENCES "public"."organization_users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+--  ALTER TABLE "posts_to_organizations" ADD CONSTRAINT "posts_to_organizations_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+--  ALTER TABLE "posts_to_organizations" ADD CONSTRAINT "posts_to_organizations_post_id_posts_id_fk" FOREIGN KEY ("post_id") REFERENCES "public"."posts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+--  ALTER TABLE "comments_to_posts" ADD CONSTRAINT "comments_to_posts_comment_id_comments_id_fk" FOREIGN KEY ("comment_id") REFERENCES "public"."comments"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+--  ALTER TABLE "comments_to_posts" ADD CONSTRAINT "comments_to_posts_post_id_posts_id_fk" FOREIGN KEY ("post_id") REFERENCES "public"."posts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 
-CREATE
-OR REPLACE FUNCTION public.create_user_on_signup () 
-RETURNS trigger 
-LANGUAGE plpgsql 
-SECURITY DEFINER 
-SET search_path = ''
-AS $function$
-BEGIN
-  insert into public.users (auth_user_id, email, created_at, updated_at)
-  values (new.id, new.email, new.created_at, new.updated_at);
-  return new;
-END;
-$function$;
+--  CREATE VIEW "public"."users_used_storage" WITH (security_invoker = false) AS (SELECT (storage.foldername(objects.name))[1] AS user_id, COALESCE(sum((objects.metadata ->> 'size'::text)::bigint), 0::numeric) AS total_size FROM storage.objects WHERE objects.bucket_id = 'assets'::text GROUP BY ((storage.foldername(objects.name))[1]));--> statement-breakpoint
+--  CREATE POLICY "service-role" ON "locations" AS PERMISSIVE FOR ALL TO "service_role";--> statement-breakpoint
+--  CREATE POLICY "service-role" ON "organization_users" AS PERMISSIVE FOR ALL TO "service_role";--> statement-breakpoint
+--  CREATE POLICY "service-role" ON "organizations" AS PERMISSIVE FOR ALL TO "service_role";--> statement-breakpoint
+--  CREATE POLICY "service-role" ON "access_roles" AS PERMISSIVE FOR ALL TO "service_role";--> statement-breakpoint
+--  CREATE POLICY "service-role" ON "allowList" AS PERMISSIVE FOR ALL TO "service_role";--> statement-breakpoint
+--  CREATE POLICY "service-role" ON "links" AS PERMISSIVE FOR ALL TO "service_role";--> statement-breakpoint
+--  CREATE POLICY "service-role" ON "posts" AS PERMISSIVE FOR ALL TO "service_role";--> statement-breakpoint
+--  CREATE POLICY "service-role" ON "taxonomyTerms" AS PERMISSIVE FOR ALL TO "service_role";--> statement-breakpoint
+--  CREATE POLICY "service-role" ON "taxonomies" AS PERMISSIVE FOR ALL TO "service_role";--> statement-breakpoint
+--  CREATE POLICY "service-role" ON "organization_relationships" AS PERMISSIVE FOR ALL TO "service_role";--> statement-breakpoint
+--  CREATE POLICY "service-role" ON "profiles" AS PERMISSIVE FOR ALL TO "service_role";--> statement-breakpoint
+--  CREATE POLICY "service-role" ON "projects" AS PERMISSIVE FOR ALL TO "service_role";--> statement-breakpoint
+--  CREATE POLICY "service-role" ON "users" AS PERMISSIVE FOR ALL TO "service_role";--> statement-breakpoint
+--  CREATE POLICY "service-role" ON "attachments" AS PERMISSIVE FOR ALL TO "service_role";--> statement-breakpoint
+--  CREATE POLICY "service-role" ON "post_reactions" AS PERMISSIVE FOR ALL TO "service_role";--> statement-breakpoint
+--  CREATE POLICY "service-role" ON "individuals" AS PERMISSIVE FOR ALL TO "service_role";--> statement-breakpoint
+--  CREATE POLICY "service-role" ON "comments" AS PERMISSIVE FOR ALL TO "service_role";--> statement-breakpoint
+--  CREATE POLICY "service-role" ON "organizations_strategies" AS PERMISSIVE FOR ALL TO "service_role";--> statement-breakpoint
+--  CREATE POLICY "service-role" ON "organizations_terms" AS PERMISSIVE FOR ALL TO "service_role";--> statement-breakpoint
+--  CREATE POLICY "service-role" ON "organizations_where_we_work" AS PERMISSIVE FOR ALL TO "service_role";--> statement-breakpoint
+--  CREATE POLICY "service-role" ON "individuals_terms" AS PERMISSIVE FOR ALL TO "service_role";--> statement-breakpoint
+--  CREATE POLICY "service-role" ON "organizationUser_to_access_roles" AS PERMISSIVE FOR ALL TO "service_role";--> statement-breakpoint
+--  CREATE POLICY "service-role" ON "posts_to_organizations" AS PERMISSIVE FOR ALL TO "service_role";--> statement-breakpoint
+--  CREATE POLICY "service-role" ON "comments_to_posts" AS PERMISSIVE FOR ALL TO "service_role";
 
-DO $$ 
-BEGIN
-  CREATE TRIGGER on_auth_signup_create_user
-  AFTER INSERT ON auth.users 
-  FOR EACH ROW
-  EXECUTE FUNCTION create_user_on_signup();
-EXCEPTION
-  WHEN duplicate_object THEN null;
-END $$;
+--  CREATE
+--  OR REPLACE FUNCTION public.create_user_on_signup () 
+--  RETURNS trigger 
+--  LANGUAGE plpgsql 
+--  SECURITY DEFINER 
+--  SET search_path = ''
+--  AS $function$
+--  BEGIN
+  --  insert into public.users (auth_user_id, email, created_at, updated_at)
+  --  values (new.id, new.email, new.created_at, new.updated_at);
+  --  return new;
+--  END;
+--  $function$;
 
--- Custom SQL migration file, put you code below! --
-CREATE
-OR REPLACE FUNCTION public.sync_user_email () RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER AS $function$begin
-  update public.users
-  set email = new.email,
-      updated_at = new.updated_at
-  where id = new.id;
-  return new;
-end;$function$;
+--  DO $$ 
+--  BEGIN
+  --  CREATE TRIGGER on_auth_signup_create_user
+  --  AFTER INSERT ON auth.users 
+  --  FOR EACH ROW
+  --  EXECUTE FUNCTION create_user_on_signup();
+--  EXCEPTION
+  --  WHEN duplicate_object THEN null;
+--  END $$;
 
-DO $$ BEGIN
-  CREATE TRIGGER on_auth_update_email_sync_user
-  AFTER
-  UPDATE OF email ON auth.users FOR EACH ROW
-  EXECUTE FUNCTION sync_user_email ();
-EXCEPTION
-  WHEN duplicate_object THEN null;
-END $$;
+--  -- Custom SQL migration file, put you code below! --
+--  CREATE
+--  OR REPLACE FUNCTION public.sync_user_email () RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER AS $function$begin
+  --  update public.users
+  --  set email = new.email,
+      --  updated_at = new.updated_at
+  --  where id = new.id;
+  --  return new;
+--  end;$function$;
 
--- This migration creates policies for the storage.objects table in the Supabase storage schema.
--- Bucket creation is handled in the migrate.ts file via the supabase.storage.createBucket() function.
--- createBucket() automatically handles the creation of storage.bucket tables.
+--  DO $$ BEGIN
+  --  CREATE TRIGGER on_auth_update_email_sync_user
+  --  AFTER
+  --  UPDATE OF email ON auth.users FOR EACH ROW
+  --  EXECUTE FUNCTION sync_user_email ();
+--  EXCEPTION
+  --  WHEN duplicate_object THEN null;
+--  END $$;
 
--- When seeding, the buckets are simply emptied, rather than deleted and recreated.
--- This is done in the seed.ts file.
+--  -- This migration creates policies for the storage.objects table in the Supabase storage schema.
+--  -- Bucket creation is handled in the migrate.ts file via the supabase.storage.createBucket() function.
+--  -- createBucket() automatically handles the creation of storage.bucket tables.
 
--- First, drop all existing policies
-DO $$ 
-DECLARE 
-    pol RECORD;
-BEGIN
-    FOR pol IN SELECT policyname 
-               FROM pg_policies 
-               WHERE tablename = 'objects' 
-               AND schemaname = 'storage'
-    LOOP
-        EXECUTE format('DROP POLICY IF EXISTS %I ON storage.objects', pol.policyname);
-    END LOOP;
-END $$;
+--  -- When seeding, the buckets are simply emptied, rather than deleted and recreated.
+--  -- This is done in the seed.ts file.
 
-CREATE POLICY "Insert access to user's folder" ON storage.objects FOR INSERT TO public
-WITH CHECK (
-	bucket_id = 'assets'
-	AND (
-		select
-			auth.uid ()::text
-	) = (storage.foldername (name)) [1]
-);
+--  -- First, drop all existing policies
+--  DO $$ 
+--  DECLARE 
+    --  pol RECORD;
+--  BEGIN
+    --  FOR pol IN SELECT policyname 
+               --  FROM pg_policies 
+               --  WHERE tablename = 'objects' 
+               --  AND schemaname = 'storage'
+    --  LOOP
+        --  EXECUTE format('DROP POLICY IF EXISTS %I ON storage.objects', pol.policyname);
+    --  END LOOP;
+--  END $$;
 
-CREATE POLICY "Select access to user's folder (req for thumbnail upsert)" ON storage.objects FOR
-SELECT TO public USING (
-	bucket_id = 'assets'
-	AND (
-		select
-			auth.uid ()::text
-	) = (storage.foldername (name)) [1]
-);
+--  CREATE POLICY "Insert access to user's folder" ON storage.objects FOR INSERT TO public
+--  WITH CHECK (
+	--  bucket_id = 'assets'
+	--  AND (
+		--  select
+			--  auth.uid ()::text
+	--  ) = (storage.foldername (name)) [1]
+--  );
 
-CREATE POLICY "Update access to user's folder" ON storage.objects FOR
-UPDATE TO public USING (
-	bucket_id = 'assets'
-	AND (
-		select
-			auth.uid ()::text
-	) = (storage.foldername (name)) [1]
-);
+--  CREATE POLICY "Select access to user's folder (req for thumbnail upsert)" ON storage.objects FOR
+--  SELECT TO public USING (
+	--  bucket_id = 'assets'
+	--  AND (
+		--  select
+			--  auth.uid ()::text
+	--  ) = (storage.foldername (name)) [1]
+--  );
+
+--  CREATE POLICY "Update access to user's folder" ON storage.objects FOR
+--  UPDATE TO public USING (
+	--  bucket_id = 'assets'
+	--  AND (
+		--  select
+			--  auth.uid ()::text
+	--  ) = (storage.foldername (name)) [1]
+--  );
 
 
-CREATE POLICY "Delete access to user's folder" ON storage.objects FOR DELETE TO public USING (
-	bucket_id = 'assets'
-	AND (
-		select
-			auth.uid ()::text
-	) = (storage.foldername (name)) [1]
-);
+--  CREATE POLICY "Delete access to user's folder" ON storage.objects FOR DELETE TO public USING (
+	--  bucket_id = 'assets'
+	--  AND (
+		--  select
+			--  auth.uid ()::text
+	--  ) = (storage.foldername (name)) [1]
+--  );
