@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "@op/core": "workspace:*",
+    "@op/supabase": "workspace:^",
     "@types/pg": "^8.11.11",
     "dotenv": "^16.4.7",
     "drizzle-orm": "^0.40.0",

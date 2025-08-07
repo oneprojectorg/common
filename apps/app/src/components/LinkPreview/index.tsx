@@ -4,7 +4,7 @@ import { trpc } from '@op/api/client';
 import { Header3 } from '@op/ui/Header';
 import { Skeleton } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
-import { useEffect } from 'react';
+import { memo, useEffect } from 'react';
 import { LuGlobe } from 'react-icons/lu';
 
 declare global {
@@ -20,7 +20,7 @@ interface LinkPreviewProps {
   className?: string;
 }
 
-export const LinkPreview = ({ url, className }: LinkPreviewProps) => {
+export const LinkPreview = memo(({ url, className }: LinkPreviewProps) => {
   const {
     data: previewData,
     isLoading: loading,
@@ -86,4 +86,6 @@ export const LinkPreview = ({ url, className }: LinkPreviewProps) => {
       </a>
     </Surface>
   );
-};
+});
+
+LinkPreview.displayName = 'LinkPreview';
