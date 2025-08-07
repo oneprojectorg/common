@@ -156,7 +156,7 @@ export function DiscussionModal({
         </div>
 
         {/* Comment Input using PostUpdate */}
-        <ModalFooter>
+        <ModalFooter className="sticky">
           <Surface className="w-full border-0 p-0 pt-5 sm:border sm:p-4">
             <PostUpdate
               parentPostId={post.id}
