@@ -296,7 +296,21 @@ const AvatarMenuContent = ({
         className="flex flex-col items-start justify-start gap-2 px-0 text-sm text-neutral-gray4 hover:bg-transparent"
       >
         <div className="text-sm sm:text-xs">
-          Ethical Open Source • One Project • {new Date().getFullYear()}
+          <span
+            className="pointer text-primary-teal hover:underline"
+            onClick={() => {
+              window.open(
+                'https://github.com/oneprojectorg/common',
+                '_blank',
+                'noopener,noreferrer',
+              );
+
+              onClose?.();
+            }}
+          >
+            Ethical Open Source
+          </span>{' '}
+          • One Project • {new Date().getFullYear()}
         </div>
       </MenuItemSimple>
     </>
