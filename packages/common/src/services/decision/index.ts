@@ -24,6 +24,20 @@ export type { ExecuteTransitionInput } from './executeTransition';
 export { TransitionEngine } from './transitionEngine';
 export type { TransitionCheckResult } from './transitionEngine';
 
+// Proposal management
+export { createProposal } from './createProposal';
+export type { CreateProposalInput } from './createProposal';
+
+export { updateProposal } from './updateProposal';
+export type { UpdateProposalInput } from './updateProposal';
+
+export { getProposal } from './getProposal';
+
+export { listProposals } from './listProposals';
+export type { ListProposalsInput } from './listProposals';
+
+export { deleteProposal } from './deleteProposal';
+
 // Types
 export type {
   ProcessSchema,

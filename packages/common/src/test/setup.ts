@@ -14,6 +14,7 @@ export const mockDb = {
     },
     proposals: {
       findFirst: vi.fn(),
+      findMany: vi.fn(),
     },
     decisions: {
       findFirst: vi.fn(),
@@ -29,6 +30,11 @@ export const mockDb = {
       where: vi.fn().mockReturnValue({
         returning: vi.fn(),
       }),
+    }),
+  }),
+  delete: vi.fn().mockReturnValue({
+    where: vi.fn().mockReturnValue({
+      returning: vi.fn(),
     }),
   }),
   select: vi.fn().mockReturnValue({
@@ -58,15 +64,26 @@ export const mockDb = {
     insert: vi.fn().mockReturnValue({
       values: vi.fn(),
     }),
+    delete: vi.fn().mockReturnValue({
+      where: vi.fn(),
+    }),
   })),
 };
 
 export const mockEq = vi.fn();
+export const mockAnd = vi.fn();
+export const mockDesc = vi.fn();
+export const mockAsc = vi.fn();
+export const mockSql = vi.fn();
 
 // Mock the database client module
 vi.mock('@op/db/client', () => ({
   db: mockDb,
   eq: mockEq,
+  and: mockAnd,
+  desc: mockDesc,
+  asc: mockAsc,
+  sql: mockSql,
 }));
 
 // Mock Supabase User type
