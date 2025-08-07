@@ -51,7 +51,11 @@ export const listAllRelatedOrganizationPosts = async (
                 storageObject: true,
               },
             },
-            reactions: true,
+            reactions: {
+              with: {
+                profile: true,
+              },
+            },
           },
         },
         organization: {
