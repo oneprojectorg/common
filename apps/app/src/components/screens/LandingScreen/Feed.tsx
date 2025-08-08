@@ -24,7 +24,7 @@ export const Feed = () => {
     handleReactionClick,
     handleCommentClick,
     handleModalClose,
-  } = usePostFeedActions();
+  } = usePostFeedActions({ user });
 
   if (isLoading) {
     return <PostFeedSkeleton numPosts={4} />;

@@ -40,6 +40,10 @@ export const Menu = <T extends object>(props: MenuProps<T>) => {
 export const menuItemStyles = tv({
   base: 'group flex cursor-pointer select-none items-center gap-4 rounded px-4 py-2 py-4 pl-3 pr-1.5 text-neutral-charcoal outline outline-0 -outline-offset-1 forced-color-adjust-none',
   variants: {
+    unstyled: {
+      true: 'group flex cursor-pointer select-none items-center px-0 py-0 pb-0 pl-0 pr-0 pt-0 text-neutral-charcoal outline outline-0 -outline-offset-1 forced-color-adjust-none',
+      false: '',
+    },
     selected: {
       true: 'bg-primary-tealWhite outline-1 outline-primary-teal',
       false: '',
@@ -75,6 +79,7 @@ export const MenuItem = (
           ...renderProps,
           selected: props.selected,
           className: props.className,
+          unstyled: props.unstyled,
         })
       }
     >
