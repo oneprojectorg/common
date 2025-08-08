@@ -16,7 +16,17 @@
     "test": "vitest",
     "test:coverage": "vitest --coverage",
     "test:ui": "vitest --ui",
-    "test:watch": "vitest --watch"
+    "test:watch": "vitest --watch",
+    "test:integration": "tsx src/test/check-supabase.ts && vitest run src/test/integration/",
+    "test:integration:watch": "tsx src/test/check-supabase.ts && vitest watch src/test/integration/",
+    "test:integration:migrate": "tsx src/test/check-supabase.ts --migrations && vitest run src/test/integration/",
+    "test:check-supabase": "tsx src/test/check-supabase.ts",
+    "test:migrate": "tsx src/test/check-supabase.ts --migrations",
+    "test:supabase:start": "tsx src/test/supabase-test.ts start",
+    "test:supabase:stop": "tsx src/test/supabase-test.ts stop",
+    "test:supabase:status": "tsx src/test/supabase-test.ts status",
+    "test:supabase:reset": "tsx src/test/supabase-test.ts reset",
+    "test:db:reset": "pnpm test:supabase:reset && pnpm test:migrate"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^1.2.1",
@@ -29,6 +39,7 @@
     "@op/logging": "workspace:*",
     "@op/supabase": "workspace:*",
     "@op/types": "workspace:*",
+    "@supabase/supabase-js": "^2.49.3",
     "@tanstack/query-sync-storage-persister": "5.66.11",
     "@tanstack/react-query": "5.66.11",
     "@tanstack/react-query-persist-client": "5.66.11",
