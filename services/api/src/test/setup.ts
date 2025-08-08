@@ -60,7 +60,7 @@ beforeAll(async () => {
 });
 
 /**
- * Run database migrations using Drizzle
+ * Run database migrations and seed data using Drizzle
  */
 async function runMigrations() {
   try {
@@ -80,10 +80,27 @@ async function runMigrations() {
     });
     
     console.log('✅ Drizzle migrations completed successfully');
+    
+    // Run seed command after migrations (optional)
+    try {
+      console.log('🌱 Running database seed...');
+      const seedCommand = 'pnpm w:db seed:test';
+      
+      execSync(seedCommand, { 
+        cwd: projectRoot,
+        stdio: 'pipe' // Suppress output unless there's an error
+      });
+      
+      console.log('✅ Database seed completed successfully');
+    } catch (seedError: any) {
+      // Seeding is optional - don't fail tests if it doesn't work
+      console.warn('⚠️  Seeding warning:', seedError.message.split('\n')[0]);
+      console.warn('   Tests will continue without seed data');
+    }
   } catch (error: any) {
-    // Don't fail tests if migrations fail - just warn
-    console.warn('⚠️  Migration warning:', error.message);
-    console.warn('   Tests will continue, but some may fail if schema is outdated');
+    // Don't fail tests if migrations/seeding fail - just warn
+    console.warn('⚠️  Migration/seed warning:', error.message);
+    console.warn('   Tests will continue, but some may fail if schema is outdated or data is missing');
   }
 }
 

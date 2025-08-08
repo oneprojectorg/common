@@ -53,11 +53,12 @@ This script checks if the **test instance** (port 55321) is accessible.
 ### 3. Run Database Migrations (Optional)
 
 ```bash
-# Check test Supabase and run migrations
+# Check test Supabase and run migrations + seed
 pnpm w:api test:migrate
 
-# Or run test migrations manually
+# Or run test migrations and seed manually
 pnpm w:db migrate:test
+pnpm w:db seed:test
 ```
 
 ### 4. Run Integration Tests
@@ -88,6 +89,9 @@ pnpm w:api test:supabase:status
 # Reset test database (clean slate)
 pnpm w:api test:supabase:reset
 
+# Complete database reset with fresh migrations and seed
+pnpm w:api test:db:reset
+
 # Stop test instance
 pnpm w:api test:supabase:stop
 ```
@@ -107,7 +111,7 @@ The test setup automatically configures these environment variables for the **te
 
 The setup file:
 - Initializes a Supabase test client
-- **Automatically runs Drizzle migrations** before tests
+- **Automatically runs Drizzle migrations and seeds** before tests
 - Mocks environment variables
 - Provides global setup/teardown hooks
 - Configures test isolation

@@ -63,9 +63,26 @@ async function runMigrations() {
     });
     
     console.log('✅ Drizzle migrations completed successfully');
+    
+    // Run seed command after migrations (optional)
+    try {
+      console.log('🌱 Running database seed...');
+      const seedCommand = 'pnpm w:db seed:test';
+      
+      execSync(seedCommand, { 
+        cwd: projectRoot,
+        stdio: 'inherit' // Show seed output
+      });
+      
+      console.log('✅ Database seed completed successfully');
+    } catch (seedError: any) {
+      console.warn('⚠️  Seeding warning:', seedError.message.split('\n')[0]);
+      console.warn('   Continuing without fresh seed data');
+    }
+    
     return true;
   } catch (error: any) {
-    console.error('❌ Migration failed:', error.message);
+    console.error('❌ Migration/seed failed:', error.message);
     return false;
   }
 }
