@@ -47,22 +47,22 @@ async function checkSupabase() {
 }
 
 async function runMigrations() {
-  console.log('🔄 Running database migrations...');
+  console.log('🔄 Running Drizzle migrations...');
   
   try {
     const { execSync } = await import('child_process');
     const path = await import('path');
     
-    // Navigate to project root and run migrations
+    // Navigate to project root and run Drizzle migrations
     const projectRoot = path.resolve(process.cwd(), '../..');
-    const migrationCommand = 'supabase db push --local';
+    const migrationCommand = 'pnpm w:db migrate';
     
     execSync(migrationCommand, { 
       cwd: projectRoot,
       stdio: 'inherit' // Show migration output
     });
     
-    console.log('✅ Database migrations completed successfully');
+    console.log('✅ Drizzle migrations completed successfully');
     return true;
   } catch (error: any) {
     console.error('❌ Migration failed:', error.message);

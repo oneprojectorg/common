@@ -37,11 +37,11 @@ This script checks if Supabase is accessible and ready for testing.
 ### 3. Run Database Migrations (Optional)
 
 ```bash
-# Check Supabase and run migrations
+# Check Supabase and run Drizzle migrations
 pnpm w:api test:migrate
 
-# Or run migrations manually
-supabase db push --local
+# Or run Drizzle migrations manually
+pnpm w:db migrate
 ```
 
 ### 4. Run Integration Tests
@@ -77,7 +77,7 @@ The test setup automatically configures these environment variables:
 
 The setup file:
 - Initializes a Supabase test client
-- **Automatically runs database migrations** before tests
+- **Automatically runs Drizzle migrations** before tests
 - Mocks environment variables
 - Provides global setup/teardown hooks
 - Configures test isolation

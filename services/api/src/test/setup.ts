@@ -60,26 +60,26 @@ beforeAll(async () => {
 });
 
 /**
- * Run database migrations using Supabase CLI
+ * Run database migrations using Drizzle
  */
 async function runMigrations() {
   try {
-    console.log('🔄 Running database migrations...');
+    console.log('🔄 Running Drizzle migrations...');
     
     // Import necessary modules for running shell commands
     const { execSync } = await import('child_process');
     const path = await import('path');
     
-    // Navigate to project root and run migrations
+    // Navigate to project root and run Drizzle migrations
     const projectRoot = path.resolve(process.cwd(), '../..');
-    const migrationCommand = 'supabase db push --local';
+    const migrationCommand = 'pnpm w:db migrate';
     
     execSync(migrationCommand, { 
       cwd: projectRoot,
       stdio: 'pipe' // Suppress output unless there's an error
     });
     
-    console.log('✅ Database migrations completed successfully');
+    console.log('✅ Drizzle migrations completed successfully');
   } catch (error: any) {
     // Don't fail tests if migrations fail - just warn
     console.warn('⚠️  Migration warning:', error.message);
