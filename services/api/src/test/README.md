@@ -1,60 +1,73 @@
 # Vitest + Supabase Integration Testing
 
-This directory contains the setup for running integration tests with Vitest against a local Supabase Docker instance.
+This directory contains the setup for running integration tests with Vitest against an **isolated test Supabase instance**.
+
+## Isolated Test Environment
+
+The test setup uses a **separate Supabase instance** running on different ports:
+
+| Service | Development | Testing |
+|---------|------------|---------|
+| API | 54321 | **55321** |
+| Database | 54322 | **55322** |
+| Studio | 54323 | **55323** |
+| Inbucket | 54324 | **55324** |
+| Analytics | 54327 | **55327** |
+
+This allows you to:
+- ✅ Keep your development Supabase running
+- ✅ Run tests in complete isolation 
+- ✅ Avoid port conflicts
+- ✅ Reset test data without affecting development
 
 ## Prerequisites
 
 1. **Docker** - Make sure Docker is installed and running
 2. **Supabase CLI** - Install the Supabase CLI
-3. **Local Supabase instance** - Start your local Supabase instance
 
 ## Getting Started
 
-### 1. Start Supabase
-
-From the project root:
+### 1. Start Test Supabase Instance
 
 ```bash
-supabase start
+# Start the isolated test instance
+pnpm w:api test:supabase:start
+
+# Check status
+pnpm w:api test:supabase:status
+
+# Stop when done (optional)
+pnpm w:api test:supabase:stop
 ```
 
-This will start all Supabase services locally, including:
-- PostgreSQL database (port 54322)
-- API server (port 54321) 
-- Studio (port 54323)
-- Auth server
-- Storage
-- Edge Functions
+This starts a completely separate Supabase instance for testing.
 
-### 2. Verify Supabase is Running
+### 2. Verify Test Supabase is Running
 
 ```bash
 pnpm w:api test:check-supabase
 ```
 
-This script checks if Supabase is accessible and ready for testing.
+This script checks if the **test instance** (port 55321) is accessible.
 
 ### 3. Run Database Migrations (Optional)
 
 ```bash
-# Check Supabase and run Drizzle migrations
+# Check test Supabase and run migrations
 pnpm w:api test:migrate
 
-# Or run Drizzle migrations manually
-pnpm w:db migrate
+# Or run test migrations manually
+pnpm w:db migrate:test
 ```
 
 ### 4. Run Integration Tests
 
 ```bash
-# Run all integration tests once
+# Run all integration tests (with auto-migrations)
 pnpm w:api test:integration
 
 # Run integration tests in watch mode
 pnpm w:api test:integration:watch
-
-# Run integration tests with automatic migrations
-pnpm w:api test:integration:migrate
 
 # Run all tests (unit + integration)
 pnpm w:api test
@@ -63,14 +76,31 @@ pnpm w:api test
 pnpm w:api test:coverage
 ```
 
+### 5. Manage Test Supabase Instance
+
+```bash
+# Start test instance
+pnpm w:api test:supabase:start
+
+# Check status
+pnpm w:api test:supabase:status
+
+# Reset test database (clean slate)
+pnpm w:api test:supabase:reset
+
+# Stop test instance
+pnpm w:api test:supabase:stop
+```
+
 ## Test Configuration
 
 ### Environment Variables
 
-The test setup automatically configures these environment variables:
+The test setup automatically configures these environment variables for the **test instance**:
 
-- `NEXT_PUBLIC_SUPABASE_URL`: `http://127.0.0.1:54321`
+- `NEXT_PUBLIC_SUPABASE_URL`: `http://127.0.0.1:55321` *(test port)*
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Default Supabase demo key
+- `DATABASE_URL`: `postgresql://postgres:postgres@127.0.0.1:55322/postgres` *(test port)*
 - `NODE_ENV`: `test`
 
 ### Test Setup (`setup.ts`)

@@ -13,6 +13,7 @@
     "generate": "pnpm drizzle-kit generate",
     "lint": "pnpm tsc --noEmit",
     "migrate": "cross-env DB_MIGRATING=true tsx ./migrate.ts",
+    "migrate:test": "cross-env DB_MIGRATING=true DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:55322/postgres tsx ./migrate.ts",
     "push": "pnpm drizzle-kit push",
     "reset": "pnpx supabase db reset",
     "seed": "cross-env DB_SEEDING=true tsx ./seed.ts",

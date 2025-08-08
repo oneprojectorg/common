@@ -1,8 +1,8 @@
 import { vi, beforeAll, beforeEach, afterAll } from 'vitest';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
-// Test environment configuration for local Supabase
-const TEST_SUPABASE_URL = 'http://127.0.0.1:54321';
+// Test environment configuration for isolated test Supabase instance
+const TEST_SUPABASE_URL = 'http://127.0.0.1:55321';  // Test instance port
 const TEST_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0';
 
 let testSupabase: SupabaseClient;
@@ -72,7 +72,7 @@ async function runMigrations() {
     
     // Navigate to project root and run Drizzle migrations
     const projectRoot = path.resolve(process.cwd(), '../..');
-    const migrationCommand = 'pnpm w:db migrate';
+    const migrationCommand = 'pnpm w:db migrate:test';
     
     execSync(migrationCommand, { 
       cwd: projectRoot,

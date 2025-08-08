@@ -21,7 +21,11 @@
     "test:integration:watch": "tsx src/test/check-supabase.ts && vitest watch src/test/integration/",
     "test:integration:migrate": "tsx src/test/check-supabase.ts --migrations && vitest run src/test/integration/",
     "test:check-supabase": "tsx src/test/check-supabase.ts",
-    "test:migrate": "tsx src/test/check-supabase.ts --migrations"
+    "test:migrate": "tsx src/test/check-supabase.ts --migrations",
+    "test:supabase:start": "tsx src/test/supabase-test.ts start",
+    "test:supabase:stop": "tsx src/test/supabase-test.ts stop",
+    "test:supabase:status": "tsx src/test/supabase-test.ts status",
+    "test:supabase:reset": "tsx src/test/supabase-test.ts reset"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^1.2.1",
