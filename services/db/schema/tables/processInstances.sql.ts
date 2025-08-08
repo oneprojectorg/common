@@ -44,10 +44,10 @@ export const processInstances = pgTable(
         onUpdate: 'cascade',
         onDelete: 'cascade',
       }),
-    
+
     name: varchar({ length: 256 }).notNull(),
     description: text(),
-    
+
     // Instance configuration with filled values
     instanceData: jsonb('instance_data').notNull(),
     /* instanceData contains:
@@ -59,19 +59,19 @@ export const processInstances = pgTable(
         "stateData": { ...state-specific data }
       }
     */
-    
+
     // Current state tracking
     currentStateId: varchar({ length: 256 }),
-    
+
     ownerProfileId: uuid('owner_profile_id')
       .notNull()
       .references(() => profiles.id, {
         onUpdate: 'cascade',
         onDelete: 'cascade',
       }),
-    
+
     status: processStatusEnum('status').default(ProcessStatus.DRAFT),
-    
+
     ...timestamps,
   },
   (table) => [

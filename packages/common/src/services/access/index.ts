@@ -180,7 +180,7 @@ export const getCurrentOrgId = async ({
 
 export const getCurrentOrgUserId = async (organizationId: string) => {
   const session = await getSession();
-  
+
   if (!session?.user) {
     throw new UnauthorizedError("You don't have access to do this");
   }

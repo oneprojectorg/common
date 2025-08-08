@@ -1,14 +1,17 @@
 import { relations } from 'drizzle-orm';
 import type { InferModel } from 'drizzle-orm';
-import { index, jsonb, pgTable, text, uuid, varchar } from 'drizzle-orm/pg-core';
-
 import {
-  autoId,
-  serviceRolePolicies,
-  timestamps,
-} from '../../helpers';
-import { profiles } from './profiles.sql';
+  index,
+  jsonb,
+  pgTable,
+  text,
+  uuid,
+  varchar,
+} from 'drizzle-orm/pg-core';
+
+import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
 import { processInstances } from './processInstances.sql';
+import { profiles } from './profiles.sql';
 
 export const decisionProcesses = pgTable(
   'decision_processes',
@@ -16,7 +19,7 @@ export const decisionProcesses = pgTable(
     id: autoId().primaryKey(),
     name: varchar({ length: 256 }).notNull(),
     description: text(),
-    
+
     // Complete process definition as JSON Schema
     processSchema: jsonb('process_schema').notNull(),
     /* processSchema contains:
@@ -29,14 +32,14 @@ export const decisionProcesses = pgTable(
         "proposalTemplate": { ...JSONSchema }
       }
     */
-    
+
     createdByProfileId: uuid('created_by_profile_id')
       .notNull()
       .references(() => profiles.id, {
         onUpdate: 'cascade',
         onDelete: 'cascade',
       }),
-    
+
     ...timestamps,
   },
   (table) => [

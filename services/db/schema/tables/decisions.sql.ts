@@ -2,11 +2,7 @@ import { relations } from 'drizzle-orm';
 import type { InferModel } from 'drizzle-orm';
 import { index, jsonb, pgTable, unique, uuid } from 'drizzle-orm/pg-core';
 
-import {
-  autoId,
-  serviceRolePolicies,
-  timestamps,
-} from '../../helpers';
+import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
 import { profiles } from './profiles.sql';
 import { proposals } from './proposals.sql';
 
@@ -20,17 +16,17 @@ export const decisions = pgTable(
         onUpdate: 'cascade',
         onDelete: 'cascade',
       }),
-    
+
     // Decision data following the voting definition schema
     decisionData: jsonb('decision_data').notNull(),
-    
+
     decidedByProfileId: uuid('decided_by_profile_id')
       .notNull()
       .references(() => profiles.id, {
         onUpdate: 'cascade',
         onDelete: 'cascade',
       }),
-    
+
     ...timestamps,
   },
   (table) => [

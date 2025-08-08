@@ -106,3 +106,4 @@ Use `pnpm w:<workspace>` shortcuts:
 ## Workflow Warnings
 
 - Don't run pnpm format unless specifically asked to do so
+- We should never do database calls directly in the API routes, we should always create a service for it in the @op/common package instead
