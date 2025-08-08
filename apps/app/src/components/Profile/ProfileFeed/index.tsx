@@ -51,7 +51,7 @@ export const ProfileFeed = ({
     handleReactionClick,
     handleCommentClick,
     handleModalClose,
-  } = usePostFeedActions({ slug: profile.profile.slug, limit });
+  } = usePostFeedActions({ slug: profile.profile.slug, limit, user });
 
   // Prevent infinite loops. Make sure this is a stable function
   const stableFetchNextPage = useCallback(() => {

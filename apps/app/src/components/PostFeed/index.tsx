@@ -1,6 +1,7 @@
 'use client';
 
 import { getPublicUrl } from '@/utils';
+import { createOptimisticUpdater, type PostFeedUser } from '@/utils/optimisticUpdates';
 import { OrganizationUser } from '@/utils/UserProvider';
 import { detectLinks, linkifyText } from '@/utils/linkDetection';
 import { createCommentsQueryKey } from '@/utils/queryKeys';
@@ -159,11 +160,13 @@ const PostReactions = ({
         (option) => option.key === reactionType,
       );
       const emoji = reactionOption?.emoji || reactionType;
+      const users = post.reactionUsers?.[reactionType] || [];
 
       return {
         emoji,
         count: count as number,
         isActive: post.userReaction === reactionType,
+        users,
       };
     })
     : [];
@@ -353,10 +356,12 @@ export const usePostFeedActions = ({
   slug,
   limit = 20,
   parentPostId,
+  user,
 }: {
   slug?: string;
   limit?: number;
   parentPostId?: string;
+  user?: PostFeedUser;
 } = {}) => {
   const utils = trpc.useUtils();
   const [discussionModal, setDiscussionModal] = useState<{
@@ -390,59 +395,10 @@ export const usePostFeedActions = ({
         ? utils.posts.getPosts.getData(createCommentsQueryKey(parentPostId))
         : undefined;
 
-      // Helper function to update post reactions
-      const updatePostReactions = (item: PostToOrganization) => {
-        if (item.post.id === postId) {
-          const currentReaction = item.post.userReaction;
-          const currentCounts: Record<string, number> =
-            item.post.reactionCounts || {};
-
-          // Check if user already has this reaction
-          const hasReaction = currentReaction === reactionType;
-
-          if (hasReaction) {
-            // Remove reaction
-            return {
-              ...item,
-              post: {
-                ...item.post,
-                userReaction: null,
-                reactionCounts: {
-                  ...currentCounts,
-                  [reactionType]: Math.max(
-                    0,
-                    (currentCounts[reactionType] || 0) - 1,
-                  ),
-                },
-              },
-            };
-          } else {
-            // Replace or add reaction
-            const newCounts: Record<string, number> = { ...currentCounts };
-
-            // If user had a previous reaction, decrement its count
-            if (currentReaction) {
-              newCounts[currentReaction] = Math.max(
-                0,
-                (newCounts[currentReaction] || 0) - 1,
-              );
-            }
-
-            // Increment count for new reaction
-            newCounts[reactionType] = (newCounts[reactionType] || 0) + 1;
-
-            return {
-              ...item,
-              post: {
-                ...item.post,
-                userReaction: reactionType,
-                reactionCounts: newCounts,
-              },
-            };
-          }
-        }
-        return item;
-      };
+      // Use optimistic updater service for cleaner code
+      const optimisticUpdater = createOptimisticUpdater(user);
+      const updatePostReactions = (item: PostToOrganization) =>
+        optimisticUpdater.updatePostReactions(item, postId, reactionType);
 
       // Optimistically update listPosts cache (if slug is provided)
       if (slug) {
