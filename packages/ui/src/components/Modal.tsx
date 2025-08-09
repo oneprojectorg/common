@@ -1,11 +1,20 @@
 'use client';
 
-import { ReactNode } from 'react';
+import {
+  ReactNode,
+  createContext,
+  memo,
+  useCallback,
+  useContext,
+  useState,
+} from 'react';
 import { ModalOverlay, Modal as RACModal } from 'react-aria-components';
 import type { ModalOverlayProps } from 'react-aria-components';
+import { LuX } from 'react-icons/lu';
 import { tv } from 'tailwind-variants';
 
 import { cn } from '../lib/utils';
+import { Button } from './Button';
 import { Confetti } from './Confetti';
 import { Header1 } from './Header';
 
@@ -14,8 +23,15 @@ const overlayStyles = tv({
 });
 
 const modalStyles = tv({
-  base: 'isolate z-[999999] max-h-full w-full max-w-md overflow-hidden rounded-none border border-offWhite bg-white bg-clip-padding backdrop-blur-lg backdrop-brightness-50 backdrop-saturate-50 entering:duration-500 entering:ease-out entering:animate-in entering:fade-in exiting:duration-500 exiting:ease-in exiting:animate-out exiting:fade-out sm:h-auto sm:max-h-[39rem] sm:max-w-[29rem] sm:rounded-md',
+  base: 'isolate z-[999999] h-svh max-h-svh w-screen max-w-md overflow-hidden overflow-y-auto rounded-none border border-offWhite bg-white bg-clip-padding backdrop-blur-lg backdrop-brightness-50 backdrop-saturate-50 entering:duration-500 entering:ease-out entering:animate-in entering:fade-in exiting:duration-500 exiting:ease-in exiting:animate-out exiting:fade-out sm:h-auto sm:max-h-[calc(100svh-2rem)] sm:max-w-[29rem] sm:rounded-md',
 });
+
+type ModalContextType = {
+  isDismissable?: boolean;
+  onClose?: () => void;
+};
+
+const ModalContext = createContext<ModalContextType>({});
 
 export const ModalHeader = ({
   className,
@@ -24,11 +40,35 @@ export const ModalHeader = ({
   className?: string;
   children: ReactNode;
 }) => {
+  const { isDismissable, onClose } = useContext(ModalContext);
+
   return (
-    <div className="sticky top-0 z-30 w-full border-b border-neutral-gray1 bg-white p-6 text-left">
-      <Header1 className={cn('font-serif sm:text-title-sm', className)}>
-        {children}
-      </Header1>
+    <div className="sticky top-0 z-30 flex min-h-16 w-full items-center border-b border-neutral-gray1 bg-white">
+      <div className="relative flex w-full items-center justify-center">
+        {isDismissable && (
+          <button
+            type="button"
+            aria-label="Close modal"
+            onClick={onClose}
+            className={cn(
+              'absolute left-6 flex h-6 w-6',
+              'items-center justify-center',
+              'rounded-sm hover:bg-neutral-gray1 focus:outline-none focus:ring-2 focus:ring-primary-teal focus:ring-offset-2',
+              'text-neutral-charcoal',
+            )}
+          >
+            <LuX className="h-6 w-6 stroke-1" aria-hidden="true" />
+          </button>
+        )}
+        <Header1
+          className={cn(
+            'w-full text-center font-serif sm:text-title-sm',
+            className,
+          )}
+        >
+          {children}
+        </Header1>
+      </div>
     </div>
   );
 };
@@ -62,7 +102,7 @@ export const ModalFooter = ({
   return (
     <div
       className={cn(
-        'sticky bottom-0 flex w-full justify-end gap-4 border-t border-neutral-gray1 bg-white px-6 py-3',
+        'absolute bottom-0 flex w-full flex-col-reverse justify-end gap-4 border-t border-neutral-gray1 bg-white px-6 py-3 sm:sticky sm:flex-row',
         className,
       )}
     >
@@ -71,11 +111,81 @@ export const ModalFooter = ({
   );
 };
 
+export const ModalStepper = memo(
+  ({
+    initialStep = 1,
+    totalSteps,
+    onNext,
+    onPrevious,
+    onFinish,
+  }: {
+    initialStep?: number;
+    totalSteps: number;
+    onNext: (currentStep: number) => void;
+    onPrevious: (currentStep: number) => void;
+    onFinish?: () => void;
+  }) => {
+    const [currentStep, setCurrentStep] = useState(initialStep);
+    const isFirstStep = currentStep === 1;
+    const isLastStep = currentStep === totalSteps;
+
+    const handleNext = useCallback(() => {
+      if (currentStep < totalSteps) {
+        const nextStep = currentStep + 1;
+        setCurrentStep(nextStep);
+        onNext(nextStep);
+      } else if (currentStep === totalSteps && onFinish) {
+        onFinish();
+      }
+    }, [currentStep, totalSteps, onNext, onFinish]);
+
+    const handlePrevious = useCallback(() => {
+      if (currentStep > 1) {
+        const previousStep = currentStep - 1;
+        setCurrentStep(previousStep);
+        onPrevious(previousStep);
+      }
+    }, [currentStep, onPrevious]);
+
+    return (
+      <footer
+        className={cn(
+          'sticky bottom-0',
+          'flex w-full items-center justify-between',
+          'px-6 py-3',
+          'border-t border-neutral-gray1 bg-white',
+        )}
+      >
+        <span className="flex-1">
+          {!isFirstStep && (
+            <Button color="secondary" onPress={handlePrevious}>
+              Back
+            </Button>
+          )}
+        </span>
+        <span className="flex-1 text-center text-sm text-neutral-gray4">
+          Step {currentStep} of {totalSteps}
+        </span>
+        <div className="flex flex-1 justify-end">
+          <Button type={isLastStep ? 'submit' : 'button'} onPress={handleNext}>
+            {isLastStep ? 'Finish' : 'Next'}
+          </Button>
+        </div>
+      </footer>
+    );
+  },
+);
+
+ModalStepper.displayName = 'ModalStepper';
+
 export const ModalInContext = ({
   className,
   wrapperClassName,
   overlayClassName,
   confetti,
+  isDismissable,
+  onOpenChange,
+  children,
   ...props
 }: ModalOverlayProps & {
   className?: string;
@@ -83,18 +193,27 @@ export const ModalInContext = ({
   overlayClassName?: string;
   confetti?: boolean;
 }) => {
+  const contextValue = {
+    isDismissable,
+    onClose: isDismissable ? () => onOpenChange?.(false) : undefined,
+  };
+
   return (
-    <ModalOverlay
-      {...props}
-      className={overlayStyles({
-        className: cn(overlayClassName),
-      })}
-    >
-      {confetti && <Confetti />}
-      <div className={wrapperClassName}>
-        <RACModal {...props} className={modalStyles({ className })} />
-      </div>
-    </ModalOverlay>
+    <ModalContext.Provider value={contextValue}>
+      <ModalOverlay
+        {...props}
+        isDismissable={isDismissable}
+        onOpenChange={onOpenChange}
+        className={overlayStyles({
+          className: cn(overlayClassName),
+        })}
+      >
+        {confetti && <Confetti />}
+        <div className={wrapperClassName}>
+          <RACModal className={modalStyles({ className })}>{children}</RACModal>
+        </div>
+      </ModalOverlay>
+    </ModalContext.Provider>
   );
 };
 

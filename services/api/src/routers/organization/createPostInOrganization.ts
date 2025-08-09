@@ -1,38 +1,34 @@
-import { UnauthorizedError, getOrgAccessUser } from '@op/common';
-import { attachments, posts, postsToOrganizations } from '@op/db/schema';
-import { TRPCError } from '@trpc/server';
-import { waitUntil } from '@vercel/functions';
-import type { OpenApiMeta } from 'trpc-to-openapi';
-import { z } from 'zod';
 import { trackUserPost } from '@op/analytics';
+import { createPostInOrganization } from '@op/common';
+import { waitUntil } from '@vercel/functions';
+// import type { OpenApiMeta } from 'trpc-to-openapi';
+import { z } from 'zod';
 
 import { postsEncoder } from '../../encoders';
 import withAuthenticated from '../../middlewares/withAuthenticated';
-import withDB from '../../middlewares/withDB';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
-const meta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'POST',
-    path: '/organization/{id}/posts',
-    protect: true,
-    tags: ['organization', 'post'],
-    summary: 'Add a post to an organization',
-  },
-};
+// const meta: OpenApiMeta = {
+// openapi: {
+// enabled: true,
+// method: 'POST',
+// path: '/organization/{id}/posts',
+// protect: true,
+// tags: ['organization', 'post'],
+// summary: 'Add a post to an organization',
+// },
+// };
 
-const outputSchema = postsEncoder.strip();
+const outputSchema = postsEncoder;
 
-export const createPostInOrganization = router({
+export const createPostInOrganizationRouter = router({
   createPost: loggedProcedure
     // Middlewares
     .use(withRateLimited({ windowSize: 10, maxRequests: 3 }))
     .use(withAuthenticated)
-    .use(withDB)
     // Router
-    .meta(meta)
+    // .meta(meta)
     .input(
       z.object({
         id: z.string(),
@@ -42,86 +38,15 @@ export const createPostInOrganization = router({
     )
     .output(outputSchema)
     .mutation(async ({ input, ctx }) => {
-      const { db } = ctx.database;
-
-      const user = await getOrgAccessUser({
-        organizationId: input.id,
+      const { result, allStorageObjects } = await createPostInOrganization({
+        id: input.id,
+        content: input.content,
+        attachmentIds: input.attachmentIds,
         user: ctx.user,
       });
 
-      if (!user) {
-        throw new UnauthorizedError();
-      }
+      waitUntil(trackUserPost(ctx.user.id, input.content, allStorageObjects));
 
-      try {
-        // Get all storage objects that were attached to the post
-        const allStorageObjects =
-          input.attachmentIds.length > 0
-            ? await db.query.objectsInStorage.findMany({
-                where: (table, { inArray }) =>
-                  inArray(table.id, input.attachmentIds),
-              })
-            : [];
-
-        const [post] = await db
-          .insert(posts)
-          .values({
-            content: input.content,
-          })
-          .returning();
-
-        if (!post) {
-          throw new TRPCError({
-            code: 'INTERNAL_SERVER_ERROR',
-            message: 'Failed to add post to organization',
-          });
-        }
-
-        // Create the join record associating the post with the organization
-        const queryPromises: Promise<any>[] = [
-          db.insert(postsToOrganizations).values({
-            organizationId: input.id,
-            postId: post.id,
-          }),
-        ];
-
-        // Create attachment records if any attachments were uploaded
-        if (allStorageObjects.length > 0) {
-          const attachmentValues = allStorageObjects.map((storageObject) => ({
-            postId: post.id,
-            storageObjectId: storageObject.id,
-            uploadedBy: user.id,
-            fileName:
-              // @ts-expect-error - We check for this existence first. TODO: find the source of this TS error
-              storageObject?.name
-                ?.split('/')
-                .slice(-1)[0]
-                .split('_')
-                .slice(1)
-                .join('_') ?? '',
-            mimeType: (storageObject.metadata as { mimetype: string }).mimetype,
-          }));
-
-          // @ts-ignore
-          queryPromises.push(db.insert(attachments).values(attachmentValues));
-        }
-
-        // Run attachments and join record in parallel
-        await Promise.all(queryPromises);
-
-        // Track analytics (non-blocking)
-        waitUntil(trackUserPost(ctx.user.id, input.content, allStorageObjects));
-
-        const newPost = post;
-
-        const output = outputSchema.parse(newPost);
-        return output;
-      } catch (error) {
-        console.log('ERROR', error);
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to add post to organization',
-        });
-      }
+      return outputSchema.parse(result);
     }),
 });

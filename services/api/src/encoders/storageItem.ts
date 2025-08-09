@@ -9,6 +9,7 @@ export const storageItemEncoder = createSelectSchema(objectsInStorage)
     // TODO: add metadata but make sure TRPC can resolve the type properly
   })
   .extend({
+    name: z.string(),
     metadata: z.object({
       eTag: z.string(),
       size: z.number(),
@@ -19,3 +20,5 @@ export const storageItemEncoder = createSelectSchema(objectsInStorage)
       httpStatusCode: z.number(),
     }),
   });
+
+export type StorageItem = z.infer<typeof storageItemEncoder>;

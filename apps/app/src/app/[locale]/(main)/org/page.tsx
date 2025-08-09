@@ -1,3 +1,4 @@
+import { EntityType } from '@op/api/encoders';
 import { trpcNext } from '@op/api/vanilla';
 
 import { AllOrganizations } from '@/components/Organizations/AllOrganizations';
@@ -9,7 +10,10 @@ import {
 const OrgListingPage = async () => {
   try {
     const client = await trpcNext();
-    const organizations = await client.organization.list.query({ limit: 5 });
+    const organizations = await client.profile.list.query({
+      limit: 50,
+      types: [EntityType.ORG],
+    });
 
     return (
       <ListPageLayout>
@@ -24,7 +28,7 @@ const OrgListingPage = async () => {
         <ListPageLayoutHeader>Organizations</ListPageLayoutHeader>
 
         <AllOrganizations
-          initialData={{ items: [], hasMore: false }}
+          initialData={{ items: [], hasMore: false, next: null }}
           limit={20}
         />
       </ListPageLayout>

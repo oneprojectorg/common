@@ -1,18 +1,29 @@
-import { relations } from 'drizzle-orm';
+import { InferModel, relations } from 'drizzle-orm';
 import { index, pgTable, primaryKey, text, uuid } from 'drizzle-orm/pg-core';
 
 import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
 import { attachments } from './attachments.sql';
+import { comments } from './comments.sql';
 import { organizations } from './organizations.sql';
+import { postReactions } from './postReactions.sql';
+import { profiles } from './profiles.sql';
 
 export const posts = pgTable(
   'posts',
   {
     id: autoId().primaryKey(),
     content: text().notNull(),
+    parentPostId: uuid().references((): any => posts.id, {
+      onDelete: 'cascade',
+    }),
+    profileId: uuid().references(() => profiles.id, { onDelete: 'cascade' }),
     ...timestamps,
   },
-  (table) => [...serviceRolePolicies, index().on(table.id).concurrently()],
+  (table) => [
+    ...serviceRolePolicies,
+    index().on(table.id).concurrently(),
+    index().on(table.parentPostId).concurrently(),
+  ],
 );
 
 export const postsToOrganizations = pgTable(
@@ -36,9 +47,23 @@ export const postsToOrganizations = pgTable(
   ],
 );
 
-export const postsRelations = relations(posts, ({ many }) => ({
+export const postsRelations = relations(posts, ({ one, many }) => ({
   organization: many(organizations),
   attachments: many(attachments),
+  reactions: many(postReactions),
+  comments: many(comments),
+  profile: one(profiles, {
+    fields: [posts.profileId],
+    references: [profiles.id],
+  }),
+  parentPost: one(posts, {
+    fields: [posts.parentPostId],
+    references: [posts.id],
+    relationName: 'PostToParent',
+  }),
+  childPosts: many(posts, {
+    relationName: 'PostToParent',
+  }),
 }));
 
 export const postsToOrganizationsRelations = relations(
@@ -54,3 +79,6 @@ export const postsToOrganizationsRelations = relations(
     }),
   }),
 );
+
+export type Post = InferModel<typeof posts>;
+export type PostToOrganization = InferModel<typeof postsToOrganizations>;

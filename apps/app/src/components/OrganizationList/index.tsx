@@ -2,6 +2,7 @@
 
 import { getPublicUrl } from '@/utils';
 import { Organization } from '@op/api/encoders';
+import { Avatar } from '@op/ui/Avatar';
 import { SkeletonLine } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
 import { cn, getGradientForString } from '@op/ui/utils';
@@ -30,7 +31,7 @@ export const OrganizationList = ({
         {organizations?.map((org) => {
           return (
             <div key={org.id} className="flex items-center gap-2">
-              <OrganizationAvatar organization={org} className="size-8" />
+              <OrganizationAvatar profile={org.profile} className="size-8" />
 
               <div className="flex min-w-0 flex-col text-sm sm:text-base">
                 <Link
@@ -113,6 +114,49 @@ export const OrganizationList = ({
   );
 };
 
+export const OrganizationCardList = ({
+  organizations,
+}: {
+  organizations: Array<Organization>;
+}) => {
+  return (
+    <div className="grid grid-cols-1 gap-8 pb-6 md:grid-cols-2">
+      {organizations.map((relationshipOrg) => (
+        <div
+          key={relationshipOrg.id}
+          className="flex w-full gap-4 rounded border border-neutral-gray1 p-6"
+        >
+          <div className="flex-shrink-0">
+            <OrganizationAvatar
+              profile={relationshipOrg.profile}
+              className="size-20"
+            />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-2">
+                <Link
+                  className="truncate font-semibold text-neutral-black"
+                  href={`/org/${relationshipOrg.profile.slug}`}
+                >
+                  {relationshipOrg.profile.name}
+                </Link>
+              </div>
+
+              <div className="line-clamp-3 text-neutral-charcoal">
+                {relationshipOrg.profile.bio &&
+                relationshipOrg.profile.bio.length > 200
+                  ? `${relationshipOrg.profile.bio.slice(0, 200)}...`
+                  : relationshipOrg.profile.bio}
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 export const OrganizationSummaryList = ({
   organizations,
 }: {
@@ -121,9 +165,9 @@ export const OrganizationSummaryList = ({
   return (
     <div className="flex flex-col gap-6">
       {organizations?.map((org) => {
-        const whereWeWork = org.whereWeWork
-          .map((location) => location.name)
-          .join(' • ');
+        const whereWeWork =
+          org.whereWeWork?.map((location: any) => location.name).join(' • ') ??
+          [];
 
         const trimmedBio =
           org.profile.bio && org.profile.bio.length > 325
@@ -133,10 +177,29 @@ export const OrganizationSummaryList = ({
         return (
           <div key={org.id}>
             <div className="flex items-start gap-2 py-2 sm:gap-6">
-              <OrganizationAvatar
-                organization={org}
-                className="size-8 sm:size-12"
-              />
+              <Link
+                href={`/org/${org.profile.slug}`}
+                className="hover:no-underline"
+              >
+                <Avatar
+                  className="size-8 hover:opacity-80 sm:size-12"
+                  placeholder={org.profile.name ?? ''}
+                >
+                  {org.profile?.name ? (
+                    <Image
+                      src={
+                        getPublicUrl(
+                          org.profile.avatarImage?.name ??
+                            org.avatarImage?.name,
+                        ) ?? ''
+                      }
+                      alt={org.profile.name ?? ''}
+                      fill
+                      className="object-cover"
+                    />
+                  ) : null}
+                </Avatar>
+              </Link>
 
               <div className="flex flex-col gap-3 text-neutral-black">
                 <div className="flex flex-col gap-2">
@@ -146,7 +209,7 @@ export const OrganizationSummaryList = ({
                   >
                     {org.profile.name}
                   </Link>
-                  {whereWeWork.length > 0 ? (
+                  {org.whereWeWork?.length > 0 ? (
                     <span className="text-sm text-neutral-gray4 sm:text-base">
                       {whereWeWork}
                     </span>

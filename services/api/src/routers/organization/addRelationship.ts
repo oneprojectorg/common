@@ -1,6 +1,11 @@
 import { trackRelationshipAdded } from '@op/analytics';
-import { UnauthorizedError, addRelationship } from '@op/common';
-import { getSession } from '@op/common/src/services/access';
+import {
+  UnauthorizedError,
+  addRelationship,
+  sendRelationshipNotification,
+} from '@op/common';
+import { getCurrentOrgId, getSession } from '@op/common/src/services/access';
+import { db } from '@op/db/client';
 import { TRPCError } from '@trpc/server';
 import { waitUntil } from '@vercel/functions';
 import type { OpenApiMeta } from 'trpc-to-openapi';
@@ -44,19 +49,33 @@ export const addRelationshipRouter = router({
           throw new UnauthorizedError('No user found');
         }
 
-        if (!session.user.lastOrgId) {
-          throw new UnauthorizedError('No user lastOrgId found');
+        if (!session.user.currentProfileId && !session.user.lastOrgId) {
+          throw new UnauthorizedError(
+            'No user currentProfileId or lastOrgId found',
+          );
         }
+
+        // TODO: We pull the org ID to add ORG relationships. We are transitioning to profile relationships. This should go away eventually
+        const from = await getCurrentOrgId({ database: db });
 
         await addRelationship({
           user,
-          from: session.user.lastOrgId,
+          from,
           to,
           relationships,
         });
 
-        // Track analytics (non-blocking)
-        waitUntil(trackRelationshipAdded(user.id, relationships));
+        // Track analytics and trigger async processes
+        waitUntil(
+          Promise.all([
+            trackRelationshipAdded(user.id, relationships),
+            sendRelationshipNotification({
+              from,
+              to,
+              relationships,
+            }),
+          ]),
+        );
 
         return { success: true };
       } catch (error: unknown) {

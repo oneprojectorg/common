@@ -41,7 +41,10 @@ export const Description = (props: TextProps) => {
     <Text
       {...props}
       slot="description"
-      className={twMerge('text-xs text-neutral-gray4', props.className)}
+      className={twMerge(
+        'text-left text-sm text-neutral-gray4',
+        props.className,
+      )}
     />
   );
 };

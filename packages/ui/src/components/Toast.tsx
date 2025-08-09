@@ -1,9 +1,10 @@
 'use client';
 
-import { ReactNode } from 'react';
+import React from 'react';
 import { LuCircleAlert, LuCircleCheck, LuX } from 'react-icons/lu';
 import { Toaster as Sonner, toast as sonnerToast } from 'sonner';
 
+import { cn } from '../lib/utils';
 import { Button } from './Button';
 
 export const Toast = () => {
@@ -15,9 +16,13 @@ export const Toast = () => {
       visibleToasts={3}
       duration={3000}
       icons={{
-        success: <LuCircleCheck className="size-6 text-functional-green" />,
-        close: <LuX className="size-6 text-neutral-black" />,
-        error: <LuCircleAlert className="size-6 text-functional-red" />,
+        success: (
+          <LuCircleCheck className="size-6 shrink-0 text-functional-green" />
+        ),
+        close: <LuX className="size-6 shrink-0 text-neutral-black" />,
+        error: (
+          <LuCircleAlert className="size-6 shrink-0 text-functional-red" />
+        ),
       }}
       toastOptions={{
         classNames: {
@@ -39,13 +44,20 @@ const ToastWrapper = ({
   id,
   dismissable = false,
   children,
+  isSingleLine = false,
 }: {
   id: string | number;
   dismissable?: boolean;
   children: React.ReactNode;
+  isSingleLine?: boolean;
 }) => {
   return (
-    <div className="flex w-full items-start gap-2">
+    <div
+      className={cn(
+        'flex w-full items-start gap-2',
+        isSingleLine && 'items-center',
+      )}
+    >
       {children}
       {dismissable && (
         <Button
@@ -60,12 +72,53 @@ const ToastWrapper = ({
   );
 };
 
-const ToastBody = ({ children }: { children: React.ReactNode }) => {
+const ToastBody = ({
+  children,
+  isSingleLine = false,
+}: {
+  children: React.ReactNode;
+  isSingleLine?: boolean;
+}) => {
+  if (isSingleLine) {
+    return (
+      <div className="flex w-full min-w-0 items-center gap-2 text-base text-neutral-charcoal">
+        {children}
+      </div>
+    );
+  }
+
   return (
     <div className="flex w-full flex-col gap-2 px-1 pt-1 text-base text-neutral-charcoal">
       {children}
     </div>
   );
+};
+
+const ToastActions = ({
+  children,
+  isSingleLine = false,
+}: {
+  children: React.ReactNode;
+  isSingleLine?: boolean;
+}) => {
+  const renderActions = () => {
+    if (Array.isArray(children)) {
+      return children.map((action, index) => (
+        <React.Fragment key={index}>{action}</React.Fragment>
+      ));
+    }
+    return children;
+  };
+
+  if (isSingleLine) {
+    return (
+      <div className="ml-auto flex shrink-0 items-center gap-2">
+        {renderActions()}
+      </div>
+    );
+  }
+
+  return <div className="mt-2 flex gap-4">{renderActions()}</div>;
 };
 
 const ToastTitle = ({
@@ -81,25 +134,53 @@ const ToastTitle = ({
   );
 };
 
+const SingleLineMessage = ({
+  className,
+  children,
+}: {
+  className?: string;
+  children: React.ReactNode;
+}) => {
+  return (
+    <span className={cn('min-w-0 flex-1 truncate', className)}>{children}</span>
+  );
+};
+
 export const toast = {
   success: ({
     title,
     message,
     dismissable,
     children,
+    actions,
   }: {
     title?: string;
-    message?: ReactNode;
+    message?: React.ReactNode;
     dismissable?: boolean;
     children?: React.ReactNode;
+    actions?: [React.ReactNode, React.ReactNode?];
   }) => {
+    const isSingleLine = !title;
+
     return sonnerToast.custom((id) => (
-      <ToastWrapper id={id} dismissable={dismissable}>
-        <LuCircleCheck className="size-6 stroke-1 text-functional-green" />
-        <ToastBody>
-          {title ? <ToastTitle>{title}</ToastTitle> : null}
-          {message ? <div>{message}</div> : null}
+      <ToastWrapper
+        id={id}
+        dismissable={dismissable}
+        isSingleLine={isSingleLine}
+      >
+        <LuCircleCheck className="size-6 shrink-0 stroke-1 text-functional-green" />
+        <ToastBody isSingleLine={isSingleLine}>
+          {title && <ToastTitle>{title}</ToastTitle>}
+          {message &&
+            (isSingleLine ? (
+              <SingleLineMessage>{message}</SingleLineMessage>
+            ) : (
+              <span>{message}</span>
+            ))}
           {children}
+          {actions && (
+            <ToastActions isSingleLine={isSingleLine}>{actions}</ToastActions>
+          )}
         </ToastBody>
       </ToastWrapper>
     ));
@@ -110,25 +191,43 @@ export const toast = {
     message,
     children,
     dismissable = true,
+    actions,
   }: {
     title?: string;
-    message?: string;
+    message?: React.ReactNode;
     children?: React.ReactNode;
     dismissable?: boolean;
+    actions?: [React.ReactNode, React.ReactNode?];
   }) => {
+    const isSingleLine = !title;
+
     // TODO: some odd behavior with Tailwind text-white an text-title-base conflicting here (the size gets stripped by the compiler).
     return sonnerToast.custom(
       (id) => (
-        <ToastWrapper id={id} dismissable={dismissable}>
-          <LuCircleAlert className="size-6 stroke-1 text-white" />
-          <ToastBody>
-            {title ? (
+        <ToastWrapper
+          id={id}
+          dismissable={dismissable}
+          isSingleLine={isSingleLine}
+        >
+          <LuCircleAlert className="size-6 shrink-0 stroke-1 text-white" />
+          <ToastBody isSingleLine={isSingleLine}>
+            {title && (
               <ToastTitle>
                 <span className="text-white">{title}</span>
               </ToastTitle>
-            ) : null}
-            {message ? <div className="text-white">{message}</div> : null}
+            )}
+            {message &&
+              (isSingleLine ? (
+                <SingleLineMessage className="text-white">
+                  {message}
+                </SingleLineMessage>
+              ) : (
+                <div className="text-white">{message}</div>
+              ))}
             {children}
+            {actions && (
+              <ToastActions isSingleLine={isSingleLine}>{actions}</ToastActions>
+            )}
           </ToastBody>
         </ToastWrapper>
       ),

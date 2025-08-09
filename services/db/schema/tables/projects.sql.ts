@@ -21,7 +21,9 @@ export const projects = pgTable(
     ...serviceRolePolicies,
     index().on(table.id).concurrently(),
     index().on(table.slug).concurrently(),
-    index('projects_organization_id_idx').on(table.organizationId).concurrently(),
+    index('projects_organization_id_idx')
+      .on(table.organizationId)
+      .concurrently(),
   ],
 );
 

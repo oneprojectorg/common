@@ -1,10 +1,8 @@
-import { organizationUsers, users } from '@op/db/schema';
-import { eq, sql } from 'drizzle-orm';
+import { checkUsernameAvailability } from '@op/common';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import withAuthenticated from '../../middlewares/withAuthenticated';
-import withDB from '../../middlewares/withDB';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
@@ -26,7 +24,6 @@ const usernameAvailable = router({
     // Middlewares
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticated)
-    .use(withDB)
     // Router
     .meta(meta)
     .input(
@@ -42,33 +39,9 @@ const usernameAvailable = router({
         available: z.boolean(),
       }),
     )
-    .query(async ({ input, ctx }) => {
-      const { db } = ctx.database;
+    .query(async ({ input }) => {
       const { username } = input;
-
-      if (username === '') {
-        return {
-          available: true,
-        };
-      }
-
-      const result = await db
-        .select({
-          exists: sql<boolean>`true`,
-        })
-        .from(organizationUsers)
-        .where(eq(users.username, username))
-        .limit(1);
-
-      if (!result.length || !result[0]) {
-        return {
-          available: true,
-        };
-      }
-
-      return {
-        available: false,
-      };
+      return await checkUsernameAvailability({ username });
     }),
 });
 

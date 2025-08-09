@@ -2,6 +2,7 @@
   "name": "@op/logging",
   "version": "0.1.0",
   "description": "Axiom logging utilities for OP",
+  "license": "SEE LICENSE in /LICENSE",
   "type": "module",
   "exports": {
     ".": "./src/index.ts"

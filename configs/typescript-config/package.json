@@ -2,7 +2,7 @@
   "name": "@op/typescript-config",
   "version": "0.0.0",
   "private": true,
-  "license": "MIT",
+  "license": "SEE LICENSE in /LICENSE",
   "publishConfig": {
     "access": "public"
   }

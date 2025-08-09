@@ -2,7 +2,7 @@
   "name": "@op/core",
   "version": "0.0.0",
   "private": true,
-  "license": "MIT",
+  "license": "SEE LICENSE in /LICENSE",
   "type": "module",
   "exports": {
     ".": "./src/config.ts",

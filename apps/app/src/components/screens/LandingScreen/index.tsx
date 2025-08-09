@@ -7,34 +7,18 @@ import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
+import { useTranslations } from '@/lib/i18n';
+
 import { NewOrganizations } from '@/components/NewOrganizations';
 import { NewlyJoinedModal } from '@/components/NewlyJoinedModal';
 import { OrganizationHighlights } from '@/components/OrganizationHighlights';
 import { OrganizationListSkeleton } from '@/components/OrganizationList';
 import { PendingRelationships } from '@/components/PendingRelationships';
-import { PostFeed, PostFeedSkeleton } from '@/components/PostFeed';
+import { PostFeedSkeleton } from '@/components/PostFeed';
 import { PostUpdate } from '@/components/PostUpdate';
 
+import { Feed } from './Feed';
 import { Welcome } from './Welcome';
-
-const Feed = async () => {
-  try {
-    const client = await trpcNext();
-    const { items: posts } = await client.organization.listAllPosts.query({});
-    const user = await client.account.getMyAccount.query();
-
-    return <PostFeed user={user} posts={posts} />;
-  } catch (error) {
-    console.error('Failed to load posts:', error);
-    return (
-      <div className="flex flex-col items-center justify-center py-8">
-        <span className="text-neutral-charcoal">
-          Unable to load posts. Please try refreshing.
-        </span>
-      </div>
-    );
-  }
-};
 
 const LandingScreenFeeds = ({
   user,
@@ -53,11 +37,13 @@ const LandingScreenFeeds = ({
   };
 
   const PostFeed = () => {
+    const t = useTranslations();
+
     return (
       <>
         <Suspense fallback={<Skeleton className="h-full w-full" />}>
           <Surface className="mb-8 border-0 p-0 pt-5 sm:mb-4 sm:border sm:p-4">
-            <PostUpdate />
+            <PostUpdate label={t('Post')} />
           </Surface>
         </Suspense>
         <hr />
@@ -125,8 +111,8 @@ export const LandingScreen = async () => {
         >
           <OrganizationHighlights />
         </Suspense>
-        {user.currentOrganization ? (
-          <PendingRelationships slug={user.currentOrganization.profile.slug} />
+        {user.currentProfile ? (
+          <PendingRelationships slug={user.currentProfile.slug} />
         ) : null}
         <hr />
         <LandingScreenFeeds user={user} />

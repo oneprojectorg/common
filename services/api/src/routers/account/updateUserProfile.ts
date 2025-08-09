@@ -1,12 +1,10 @@
-import { users } from '@op/db/schema';
+import { updateUserProfile as updateUserProfileService } from '@op/common';
 import { TRPCError } from '@trpc/server';
-import { eq } from 'drizzle-orm';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { ZodError, z } from 'zod';
 
 import { userEncoder } from '../../encoders';
 import withAuthenticated from '../../middlewares/withAuthenticated';
-import withDB from '../../middlewares/withDB';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
@@ -28,14 +26,13 @@ const updateUserProfile = router({
     // Middlewares
     .use(withRateLimited({ windowSize: 10, maxRequests: 3 }))
     .use(withAuthenticated)
-    .use(withDB)
     // Router
     .meta(meta)
     .input(
       z
         .object({
           name: z.string().trim().min(1).max(255),
-          about: z.string().trim().max(255),
+          bio: z.string().trim().max(255),
           title: z.string().trim().min(1).max(255),
           // underscore, numbers, lowercase letters
           username: z
@@ -45,24 +42,34 @@ const updateUserProfile = router({
             .max(255)
             .toLowerCase()
             .regex(/^[a-z0-9_]+$/),
+          email: z
+            .string()
+            .email({ message: 'Invalid email' })
+            .max(255, { message: 'Must be at most 255 characters' }),
+          website: z
+            .string()
+            .trim()
+            .max(255, { message: 'Must be at most 255 characters' }),
+          focusAreas: z.array(
+            z.object({
+              id: z.string(),
+              label: z.string(),
+            }),
+          ),
         })
         .partial(),
     )
     .output(userEncoder)
     .mutation(async ({ input, ctx }) => {
-      const { db } = ctx.database;
-      const { id } = ctx.user;
-
-      let result;
+      const { user } = ctx;
 
       try {
-        result = await db
-          .update(users)
-          .set({
-            ...input,
-          })
-          .where(eq(users.authUserId, id))
-          .returning();
+        const result = await updateUserProfileService({
+          input,
+          user,
+        });
+
+        return userEncoder.parse(result);
       } catch (error) {
         console.error(error);
         if (error instanceof Error && error.message.includes('duplicate')) {
@@ -81,15 +88,6 @@ const updateUserProfile = router({
           message: 'Failed to update profile',
         });
       }
-
-      if (!result.length || !result[0]) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Profile not found',
-        });
-      }
-
-      return result[0];
     }),
 });
 

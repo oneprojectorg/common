@@ -1,31 +1,23 @@
 import { getPublicUrl } from '@/utils';
-import { RouterOutput } from '@op/api/client';
+import { Profile } from '@op/api/encoders';
 import { Avatar, AvatarSkeleton } from '@op/ui/Avatar';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';
 
 import { Link } from '@/lib/i18n';
 
-type relationshipOrganization =
-  | RouterOutput['organization']['listRelationships']['organizations'][number]
-  | RouterOutput['organization']['list']['items'][number]
-  | RouterOutput['organization']['listPosts']['items'][number]['organization'];
-
 export const OrganizationAvatar = ({
-  organization,
+  profile,
   withLink = true,
   className,
 }: {
-  organization: relationshipOrganization;
+  profile?: Profile;
   withLink?: boolean;
   className?: string;
 }) => {
-  if (!organization) {
+  if (!profile) {
     return null;
   }
-
-  // TODO: fix type resolution in drizzle.
-  const profile = 'profile' in organization ? organization.profile : null;
 
   const name = profile?.name ?? '';
   const avatarImage = profile?.avatarImage;

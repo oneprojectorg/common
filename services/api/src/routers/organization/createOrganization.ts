@@ -4,7 +4,6 @@ import type { OpenApiMeta } from 'trpc-to-openapi';
 
 import { organizationsEncoder } from '../../encoders/organizations';
 import withAuthenticated from '../../middlewares/withAuthenticated';
-import withDB from '../../middlewares/withDB';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 import { createOrganizationInputSchema } from './validators';
@@ -25,7 +24,6 @@ export const createOrganizationRouter = router({
     // Middlewares
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticated)
-    .use(withDB)
     // Router
     .meta(meta)
     .input(createOrganizationInputSchema)

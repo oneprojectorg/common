@@ -4,7 +4,8 @@ import {
   getPendingRelationships,
   getRelatedOrganizations,
 } from '@op/common';
-import { getSession } from '@op/common/src/services/access';
+import { getCurrentOrgId, getSession } from '@op/common/src/services/access';
+import { db } from '@op/db/client';
 import { TRPCError } from '@trpc/server';
 // import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
@@ -58,14 +59,18 @@ export const listRelationshipsRouter = router({
 
       try {
         const session = await getSession();
-        if (!session || !session.user.lastOrgId) {
+        if (
+          !session ||
+          (!session.user.currentProfileId && !session.user.lastOrgId)
+        ) {
           throw new UnauthorizedError('No user found');
         }
 
+        const orgId = await getCurrentOrgId({ database: db });
         const { records: organizations, count } = await getPendingRelationships(
           {
             user,
-            orgId: session.user.lastOrgId,
+            orgId,
           },
         );
 
@@ -94,15 +99,19 @@ export const listRelationshipsRouter = router({
 
       try {
         const session = await getSession();
-        if (!session || !session.user.lastOrgId) {
+        if (
+          !session ||
+          (!session.user.currentProfileId && !session.user.lastOrgId)
+        ) {
           throw new UnauthorizedError('No user found');
         }
 
+        const defaultOrgId = await getCurrentOrgId({ database: db });
         const { records: relationships, count } =
           await getDirectedRelationships({
             user,
             from,
-            to: to ?? session.user.lastOrgId,
+            to: to ?? defaultOrgId,
             pending,
           });
 

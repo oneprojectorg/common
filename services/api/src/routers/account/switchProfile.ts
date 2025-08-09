@@ -1,0 +1,88 @@
+import { getUserForProfileSwitch, updateUserCurrentProfile } from '@op/common';
+import { TRPCError } from '@trpc/server';
+import type { OpenApiMeta } from 'trpc-to-openapi';
+import { z } from 'zod';
+
+import { userEncoder } from '../../encoders';
+import withAuthenticated from '../../middlewares/withAuthenticated';
+import withRateLimited from '../../middlewares/withRateLimited';
+import { loggedProcedure, router } from '../../trpcFactory';
+
+const endpoint = 'switchProfile';
+
+const meta: OpenApiMeta = {
+  openapi: {
+    enabled: true,
+    method: 'PUT',
+    path: `/account/${endpoint}`,
+    protect: true,
+    tags: ['account'],
+    summary: 'Switch user current profile',
+  },
+};
+
+export const switchProfile = router({
+  switchProfile: loggedProcedure
+    .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
+    .use(withAuthenticated)
+    .meta(meta)
+    .input(z.object({ profileId: z.string().uuid() }))
+    .output(userEncoder)
+    .mutation(async ({ input, ctx }) => {
+      const { id } = ctx.user;
+
+      // Verify the profile exists and the user has access to it
+      const user = await getUserForProfileSwitch({ authUserId: id });
+
+      if (!user) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'User not found',
+        });
+      }
+
+      // Check if the profile ID is valid for this user
+      const hasAccess =
+        (user.profile && (user.profile as any).id === input.profileId) ||
+        user.organizationUsers.some((orgUser) => {
+          const profile = orgUser.organization?.profile as any;
+          return profile && profile.id === input.profileId;
+        });
+
+      if (!hasAccess) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Access denied to this profile',
+        });
+      }
+
+      const org = user.organizationUsers.find((orgUser) => {
+        const profile = orgUser.organization?.profile as any;
+        return profile && profile.id === input.profileId;
+      });
+
+      let result;
+      try {
+        result = await updateUserCurrentProfile({
+          authUserId: id,
+          profileId: input.profileId,
+          orgId: org?.organization?.id,
+        });
+      } catch (error) {
+        console.error(error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to update current profile',
+        });
+      }
+
+      if (!result.length || !result[0]) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'User not found',
+        });
+      }
+
+      return userEncoder.parse(result[0]);
+    }),
+});

@@ -9,11 +9,10 @@ import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import {
-  organizationsEncoder,
   organizationsTermsEncoder,
+  organizationsWithProfileEncoder,
 } from '../../encoders/organizations';
 import withAuthenticated from '../../middlewares/withAuthenticated';
-import withDB from '../../middlewares/withDB';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
@@ -37,11 +36,10 @@ export const getOrganizationRouter = router({
     // Middlewares
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticated)
-    .use(withDB)
     // Router
     .meta(meta)
     .input(inputSchema)
-    .output(organizationsEncoder)
+    .output(organizationsWithProfileEncoder)
     .query(async ({ ctx, input }) => {
       const { slug } = input;
       const { user } = ctx;
@@ -60,7 +58,7 @@ export const getOrganizationRouter = router({
           });
         }
 
-        return organizationsEncoder.parse(result);
+        return organizationsWithProfileEncoder.parse(result);
       } catch (error: unknown) {
         console.log(error);
         if (error instanceof UnauthorizedError) {
@@ -80,11 +78,10 @@ export const getOrganizationRouter = router({
     // Middlewares
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticated)
-    .use(withDB)
     // Router
     // .meta(meta)
     .input(z.object({ id: z.string() }))
-    .output(organizationsEncoder)
+    .output(organizationsWithProfileEncoder)
     .query(async ({ ctx, input }) => {
       const { id } = input;
       const { user } = ctx;
@@ -103,7 +100,7 @@ export const getOrganizationRouter = router({
           });
         }
 
-        return organizationsEncoder.parse(result);
+        return organizationsWithProfileEncoder.parse(result);
       } catch (error: unknown) {
         console.log(error);
         if (error instanceof UnauthorizedError) {
@@ -123,7 +120,6 @@ export const getOrganizationRouter = router({
     // Middlewares
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticated)
-    .use(withDB)
     // Router
     // .meta(meta)
     .input(z.object({ id: z.string(), termUri: z.string().optional() }))

@@ -1,4 +1,4 @@
-import { sql } from 'drizzle-orm';
+import { InferModel, sql } from 'drizzle-orm';
 import {
   bigint,
   boolean,
@@ -81,3 +81,5 @@ export const objectsInStorage = storageSchema.table(
     index('idx_objects_bucket_id_name').on(table.bucketId, table.name),
   ],
 );
+
+export type ObjectsInStorage = InferModel<typeof objectsInStorage>;

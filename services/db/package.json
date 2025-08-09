@@ -2,6 +2,7 @@
   "name": "@op/db",
   "version": "0.0.0",
   "private": true,
+  "license": "SEE LICENSE in /LICENSE",
   "type": "module",
   "exports": {
     "./client": "./client.ts",
@@ -12,6 +13,8 @@
     "generate": "pnpm drizzle-kit generate",
     "lint": "pnpm tsc --noEmit",
     "migrate": "cross-env DB_MIGRATING=true tsx ./migrate.ts",
+    "migrate:test": "cross-env DB_MIGRATING=true DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:55322/postgres tsx ./migrate.ts",
+    "seed:test": "cross-env DB_SEEDING=true DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:55322/postgres tsx ./seed.ts",
     "push": "pnpm drizzle-kit push",
     "reset": "pnpx supabase db reset",
     "seed": "cross-env DB_SEEDING=true tsx ./seed.ts",
@@ -22,6 +25,7 @@
   },
   "dependencies": {
     "@op/core": "workspace:*",
+    "@op/supabase": "workspace:^",
     "@types/pg": "^8.11.11",
     "dotenv": "^16.4.7",
     "drizzle-orm": "^0.40.0",

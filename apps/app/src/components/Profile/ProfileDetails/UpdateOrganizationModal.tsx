@@ -6,18 +6,18 @@ import { Button } from '@op/ui/Button';
 import { Modal, ModalHeader } from '@op/ui/Modal';
 import { DialogTrigger } from '@op/ui/RAC';
 import { useEffect, useRef, useState } from 'react';
-import { LuPencil, LuX } from 'react-icons/lu';
+import { LuPencil } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { UpdateOrganizationForm } from './UpdateOrganizationForm';
 
 interface UpdateOrganizationModalProps {
-  profile: Organization;
+  organization: Organization;
 }
 
 export const UpdateOrganizationModal = ({
-  profile,
+  organization,
 }: UpdateOrganizationModalProps) => {
   const { user } = useUser();
   const t = useTranslations();
@@ -25,7 +25,7 @@ export const UpdateOrganizationModal = ({
   const formRef = useRef<HTMLFormElement>(null);
 
   // Only show edit button if user belongs to this organization
-  const canEdit = user?.currentOrganization?.id === profile.id;
+  const canEdit = user?.currentProfile?.id === organization.profile.id;
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -58,45 +58,11 @@ export const UpdateOrganizationModal = ({
         <LuPencil className="size-4" />
         {t('Edit Profile')}
       </Button>
-      <Modal
-        isOpen={isOpen}
-        onOpenChange={setIsOpen}
-        isDismissable
-        className="h-svh max-h-none w-screen max-w-none overflow-y-auto rounded-none sm:h-auto sm:max-h-[75vh] sm:w-[36rem] sm:max-w-[36rem] sm:rounded-md"
-      >
-        <ModalHeader className="flex items-center justify-between">
-          {/* Desktop header */}
-          <div className="hidden sm:flex sm:w-full sm:items-center sm:justify-between">
-            {t('Edit Profile')}
-            <LuX
-              className="size-6 cursor-pointer stroke-1"
-              onClick={() => setIsOpen(false)}
-            />
-          </div>
-
-          {/* Mobile header */}
-          <div className="flex w-full items-center justify-between sm:hidden">
-            <Button
-              unstyled
-              className="font-sans text-base text-primary-teal"
-              onPress={() => setIsOpen(false)}
-            >
-              {t('Cancel')}
-            </Button>
-            <h2 className="text-title-sm">{t('Edit Profile')}</h2>
-            <Button
-              type="submit"
-              className="font-sans text-base text-primary-teal"
-              unstyled
-              form="update-organization-form"
-            >
-              {t('Save')}
-            </Button>
-          </div>
-        </ModalHeader>
+      <Modal isOpen={isOpen} onOpenChange={setIsOpen} isDismissable>
+        <ModalHeader>{t('Edit Profile')}</ModalHeader>
         <UpdateOrganizationForm
           ref={formRef}
-          profile={profile}
+          profile={organization}
           onSuccess={() => setIsOpen(false)}
           className="p-6"
         />

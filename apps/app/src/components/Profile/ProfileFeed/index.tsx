@@ -7,7 +7,13 @@ import { useInfiniteScroll } from '@op/hooks';
 import { SkeletonLine } from '@op/ui/Skeleton';
 import { useCallback } from 'react';
 
-import { PostFeed } from '@/components/PostFeed';
+import {
+  DiscussionModalContainer,
+  EmptyPostsState,
+  PostFeed,
+  PostItem,
+  usePostFeedActions,
+} from '@/components/PostFeed';
 
 export const ProfileFeed = ({
   profile,
@@ -40,6 +46,13 @@ export const ProfileFeed = ({
 
   const allPosts = paginatedData?.pages.flatMap((page) => page.items) || [];
 
+  const {
+    discussionModal,
+    handleReactionClick,
+    handleCommentClick,
+    handleModalClose,
+  } = usePostFeedActions({ slug: profile.profile.slug, limit, user });
+
   // Prevent infinite loops. Make sure this is a stable function
   const stableFetchNextPage = useCallback(() => {
     fetchNextPage();
@@ -61,7 +74,30 @@ export const ProfileFeed = ({
 
   return (
     <div className={className}>
-      <PostFeed posts={allPosts} user={user} withLinks={false} />
+      <PostFeed>
+        {allPosts.length > 0 ? (
+          allPosts.map((postToOrg, i) => (
+            <>
+              <PostItem
+                key={i}
+                postToOrg={postToOrg}
+                user={user}
+                withLinks={false}
+                onReactionClick={handleReactionClick}
+                onCommentClick={handleCommentClick}
+              />
+              <hr className="bg-neutral-gray1" />
+            </>
+          ))
+        ) : (
+          <EmptyPostsState />
+        )}
+
+        <DiscussionModalContainer
+          discussionModal={discussionModal}
+          onClose={handleModalClose}
+        />
+      </PostFeed>
       {shouldShowTrigger && (
         <div
           ref={ref as React.RefObject<HTMLDivElement>}

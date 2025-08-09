@@ -10,7 +10,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - **Build all**: `pnpm build` (uses Turbo for optimized builds)
 - **Type checking**: `pnpm w:app lint` (for main app typechecking as well as API checking)
-- **Format code**: `pnpm format` or `pnpm format:check`
+- Never run database migrations
+- NEVER run `pnpm format`
 
 ## Architecture Overview
 
@@ -72,6 +73,28 @@ Use `pnpm w:<workspace>` shortcuts:
 - Shared configs in `configs/typescript-config/`
 - Each workspace extends appropriate base config (nextjs.json, react-library.json, etc.)
 
+## AI Assistant Guidelines
+
+### Branch Management
+
+- **ALWAYS** checkout a new branch when making changes if currently on the `dev` branch
+- **Branch naming convention**:
+  - Bug fixes: `bug/descriptive-name` (e.g., `bug/fix-login-validation`)
+  - Features: `feature/descriptive-name` (e.g., `feature/user-dashboard`)
+- **NEVER commit, push, or pull** - these actions are always manual
+
+### Code Quality Standards
+
+- Run type checking with `pnpm w:app lint` after making changes
+- Format code with `pnpm format` after making changes
+- Follow existing code conventions and patterns in the file being edited
+- Test changes thoroughly before completion
+- Using `any` to fix type errors shuold be avoided
+
+### Coding Conventions
+
+- If statements should never be all on one line, rather you should always use K&R style for if statements
+
 ## Important Notes
 
 - Node.js 18+ required, use `corepack enable` for pnpm version management
@@ -79,3 +102,7 @@ Use `pnpm w:<workspace>` shortcuts:
 - tRPC provides end-to-end type safety between frontend and backend
 - Tailwind configuration is centralized in `@op/ui` package
 - Only use colors that are present in the tailwind.shared config
+
+## Workflow Warnings
+
+- Don't run pnpm format unless specifically asked to do so

@@ -170,11 +170,10 @@ export const createOrganization = async ({
     }),
     db
       .update(users)
-      .set({ lastOrgId: newOrg.id })
+      .set({ lastOrgId: newOrg.id, currentProfileId: profile.id })
       .where(eq(users.authUserId, user.id)),
   ]);
 
-  console.log('adminRole:', adminRole, 'newOrgUser:', newOrgUser);
   // Add admin role to the user creating the organization
   if (!(adminRole && newOrgUser)) {
     throw new CommonError('Failed to create organization');

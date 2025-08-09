@@ -2,6 +2,7 @@
   "name": "@op/cache",
   "version": "0.0.0",
   "private": true,
+  "license": "SEE LICENSE in /LICENSE",
   "type": "module",
   "scripts": {
     "lint": "pnpm tsc --noEmit"
