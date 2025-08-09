@@ -226,7 +226,9 @@ const ProfileAbout = ({
 
 export const ProfileGridWrapper = ({ children }: { children: ReactNode }) => {
   return (
-    <div className="hidden h-full flex-grow grid-cols-15 sm:grid">{children}</div>
+    <div className="hidden h-full flex-grow grid-cols-15 sm:grid">
+      {children}
+    </div>
   );
 };
 
@@ -269,11 +271,15 @@ export const OrganizationProfileGrid = ({
 };
 
 export const ProfileTabList = ({ children }: { children: React.ReactNode }) => (
-  <TabList className="px-4 sm:px-6">{children}</TabList>
+  <TabList className="flex-shrink-0 px-4 sm:px-6">{children}</TabList>
 );
 
 export const ProfileTabs = ({ children }: { children: React.ReactNode }) => {
-  return <Tabs className="hidden gap-0 px-0 pb-8 sm:flex">{children}</Tabs>;
+  return (
+    <Tabs className="hidden flex-grow gap-0 px-0 sm:flex sm:h-full sm:flex-col">
+      {children}
+    </Tabs>
+  );
 };
 
 export const ProfileTabsMobile = ({ profile }: { profile: Organization }) => {
