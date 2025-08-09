@@ -6,7 +6,7 @@ import type { Organization } from '@op/api/encoders';
 import { ButtonLink } from '@op/ui/Button';
 import { SkeletonLine } from '@op/ui/Skeleton';
 import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
-import { LuArrowUpRight, LuInfo } from 'react-icons/lu';
+import { LuInfo, LuHandCoins } from 'react-icons/lu';
 
 import { ProfileSummary } from '../ProfileSummary';
 import { AddRelationshipModal } from './AddRelationshipModal';
@@ -50,8 +50,8 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
                   target="_blank"
                   className="min-w-full sm:min-w-fit"
                 >
-                  <LuArrowUpRight className="size-4 stroke-1" />
-                  Contribute
+                  <LuHandCoins className="size-4 stroke-1" />
+                  Fund
                 </ButtonLink>
                 <Tooltip>{link.description ?? 'Click to learn more'}</Tooltip>
 

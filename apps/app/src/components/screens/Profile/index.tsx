@@ -75,10 +75,13 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
               <Tab id="relationships">Relationships</Tab>
             </ProfileTabList>
 
-            <TabPanel id="home" className="sm:p-0">
+            <TabPanel id="home" className="flex flex-grow flex-col sm:p-0">
               <OrganizationProfileGrid profile={organization} />
             </TabPanel>
-            <TabPanel id="relationships" className="px-4 sm:px-6 sm:py-0">
+            <TabPanel
+              id="relationships"
+              className="flex-grow px-4 sm:px-6 sm:py-0"
+            >
               <ProfileOrganizations>
                 <ProfileRelationshipsSuspense
                   slug={profile.slug}
