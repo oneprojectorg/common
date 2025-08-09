@@ -193,7 +193,7 @@ const ProfileAbout = ({
 
 const ProfileGrid = ({ profile }: { profile: Organization }) => {
   return (
-    <div className="hidden flex-grow grid-cols-15 sm:grid">
+    <div className="hidden h-full flex-grow grid-cols-15 sm:grid">
       <div className="col-span-9 flex flex-col gap-8">
         <Suspense fallback={null}>
           <PostUpdate
@@ -205,7 +205,7 @@ const ProfileGrid = ({ profile }: { profile: Organization }) => {
           <ProfileFeed profile={profile} />
         </Suspense>
       </div>
-      <div className="col-span-6 border-l px-4 py-6 min-h-[50vh]">
+      <div className="col-span-6 h-full border-l px-4 py-6">
         <ProfileAbout profile={profile} />
       </div>
     </div>
@@ -214,15 +214,15 @@ const ProfileGrid = ({ profile }: { profile: Organization }) => {
 
 export const ProfileTabs = ({ profile }: { profile: Organization }) => {
   return (
-    <Tabs className="hidden gap-0 px-0 sm:flex">
-      <TabList className="px-4 sm:px-6">
+    <Tabs className="hidden flex-grow gap-0 px-0 sm:flex sm:h-full sm:flex-col">
+      <TabList className="flex-shrink-0 px-4 sm:px-6">
         <Tab id="home">Home</Tab>
         <Tab id="relationships">Relationships</Tab>
       </TabList>
-      <TabPanel id="home" className="sm:p-0">
+      <TabPanel id="home" className="flex flex-grow flex-col sm:p-0">
         <ProfileGrid profile={profile} />
       </TabPanel>
-      <TabPanel id="relationships" className="px-4 sm:px-6 sm:py-0">
+      <TabPanel id="relationships" className="flex-grow px-4 sm:px-6 sm:py-0">
         <ProfileRelationshipsComponent
           slug={profile.profile.slug}
           showBreadcrumb={false}
