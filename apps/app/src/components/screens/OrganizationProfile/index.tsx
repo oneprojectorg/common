@@ -52,9 +52,7 @@ const OrganizationProfileWithData = async ({ slug }: { slug: string }) => {
         />
 
         <ProfileDetails profile={organization} />
-        <div className="flex-grow flex flex-col">
-          <ProfileTabs profile={organization} />
-        </div>
+        <ProfileTabs profile={organization} />
         <ProfileTabsMobile profile={organization} />
       </>
     );
