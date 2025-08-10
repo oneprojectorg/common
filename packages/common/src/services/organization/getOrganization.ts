@@ -1,8 +1,14 @@
 import { db, eq, sql } from '@op/db/client';
 import { locations, profiles } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
+import {
+  type NormalizedRole,
+  assertAccess,
+  permissionMask,
+} from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
+import { getOrgAccessUser } from '../access';
 
 export const getOrganization = async ({
   slug,
@@ -79,6 +85,10 @@ export const getOrganization = async ({
     if (!org) {
       throw new NotFoundError('Could not find organization');
     }
+
+    const orgUser = await getOrgAccessUser({ user, organizationId: org.id });
+
+    assertAccess({ profile: permissionMask.READ }, orgUser?.roles || []);
 
     org.whereWeWork = org.whereWeWork.map((record) => record.location);
     org.strategies = org.strategies.map((record) => record.term);

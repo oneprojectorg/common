@@ -4,7 +4,8 @@ export {
   accessZones, 
   accessZonesRelations,
   accessRolePermissionsOnAccessZones,
-  accessRolePermissionsOnAccessZonesRelations
+  accessRolePermissionsOnAccessZonesRelations,
+  accessRolesRelations
 } from './tables/accessZones.sql';
 export { links, linksRelations, linkTypeEnum } from './tables/links.sql';
 export {

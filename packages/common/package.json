@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@op/emails": "workspace:*",
-    "access-zones": "github:scazan/access-zones",
+    "access-zones": "1.0.0",
     "next": "^15.0.0",
     "p-map": "^7.0.3"
   },

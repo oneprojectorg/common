@@ -4,11 +4,16 @@ import { index, integer, pgTable, uuid, varchar } from 'drizzle-orm/pg-core';
 import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
 import { accessRoles } from './access.sql';
 
+/**
+ * Access Zones table - defines permission zones/areas in the application
+ * Matches AccessZoneSchema from access-zones library
+ * 
+ */
 export const accessZones = pgTable(
   'access_zones',
   {
     id: autoId().primaryKey(),
-    name: varchar({ length: 255 }).notNull(),
+    name: varchar({ length: 255 }).notNull().unique(), // Zone identifier (e.g., 'profiles', 'content')
     description: varchar({ length: 500 }),
     ...timestamps,
   },
@@ -22,6 +27,7 @@ export const accessZonesRelations = relations(
   }),
 );
 
+// Junction table matching AccessRolePermissionOnAccessZoneSchema from access-zones library
 export const accessRolePermissionsOnAccessZones = pgTable(
   'access_role_permissions_on_access_zones',
   {
@@ -36,7 +42,7 @@ export const accessRolePermissionsOnAccessZones = pgTable(
       .references(() => accessZones.id, {
         onDelete: 'cascade',
       }),
-    permission: integer().notNull(),
+    permission: integer().notNull(), // Bitfield: CREATE=8, READ=4, UPDATE=2, DELETE=1
     ...timestamps,
   },
   (table) => [
@@ -45,6 +51,13 @@ export const accessRolePermissionsOnAccessZones = pgTable(
     index().on(table.accessZoneId).concurrently(),
     index().on(table.accessRoleId, table.accessZoneId).concurrently(),
   ],
+);
+
+export const accessRolesRelations = relations(
+  accessRoles,
+  ({ many }) => ({
+    zonePermissions: many(accessRolePermissionsOnAccessZones),
+  }),
 );
 
 export const accessRolePermissionsOnAccessZonesRelations = relations(
