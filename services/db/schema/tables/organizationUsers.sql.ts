@@ -89,6 +89,12 @@ export const organizationUserToAccessRoles = pgTable(
   (table) => [
     ...serviceRolePolicies,
     primaryKey({ columns: [table.organizationUserId, table.accessRoleId] }),
+    index('organizationUser_to_access_roles_org_user_idx')
+      .on(table.organizationUserId)
+      .concurrently(),
+    index('organizationUser_to_access_roles_role_idx')
+      .on(table.accessRoleId)
+      .concurrently(),
   ],
 );
 
