@@ -1,4 +1,8 @@
-import { UnauthorizedError, inviteUsersToOrganization } from '@op/common';
+import {
+  UnauthorizedError,
+  inviteNewUsers,
+  inviteUsersToOrganization,
+} from '@op/common';
 import { TRPCError } from '@trpc/server';
 // import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
@@ -23,17 +27,30 @@ const inputSchema = z
     emails: z
       .array(z.string().email('Must be a valid email address'))
       .min(1, 'At least one email address is required'),
-    role: z.string().default('Admin').optional(),
+    roleId: z.string().uuid('Role ID must be a valid UUID').optional(),
     organizationId: z.string().uuid().optional(),
     personalMessage: z.string().optional(),
   })
   .or(
     z.object({
       email: z.string().email('Must be a valid email address'),
-      role: z.string().default('Admin').optional(),
+      roleId: z.string().uuid('Role ID must be a valid UUID'),
       organizationId: z.string().uuid().optional(),
       personalMessage: z.string().optional(),
     }),
+  )
+  .refine(
+    (data) => {
+      // If organizationId is provided, roleId must also be provided
+      if (data.organizationId && !data.roleId) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message: 'Role ID is required when inviting to an organization',
+      path: ['roleId'],
+    },
   );
 
 const outputSchema = z.object({
@@ -63,25 +80,30 @@ export const inviteUserRouter = router({
     .output(outputSchema)
     .mutation(async ({ ctx, input }) => {
       try {
-        const { id: authUserId } = ctx.user;
+        const { user } = ctx;
 
-        // Handle both single email and multiple emails input
         const emailsToProcess =
           'emails' in input ? input.emails : [input.email];
-        const role = 'role' in input ? input.role : 'Admin';
+        const roleId = input.roleId;
         const targetOrganizationId = input.organizationId;
         const personalMessage = input.personalMessage;
 
-        return await inviteUsersToOrganization({
-          emails: emailsToProcess,
-          role,
-          organizationId: targetOrganizationId,
-          personalMessage,
-          authUserId,
-          authUserEmail: ctx.user.email,
-        });
+        if (targetOrganizationId && roleId) {
+          return inviteUsersToOrganization({
+            emails: emailsToProcess,
+            roleId: roleId,
+            organizationId: targetOrganizationId,
+            personalMessage,
+            user,
+          });
+        } else {
+          return inviteNewUsers({
+            emails: emailsToProcess,
+            personalMessage,
+            user,
+          });
+        }
       } catch (error) {
-        // Re-throw TRPCError as-is
         if (error instanceof TRPCError) {
           throw error;
         }
