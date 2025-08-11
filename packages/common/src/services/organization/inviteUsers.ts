@@ -1,12 +1,16 @@
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
-import { allowList } from '@op/db/schema';
+import {
+  allowList,
+  organizationUserToAccessRoles,
+  organizationUsers,
+} from '@op/db/schema';
 
 import { sendInvitationEmail } from '../email';
 
 export interface InviteUsersInput {
   emails: string[];
-  role?: string;
+  roleId: string;
   organizationId?: string;
   personalMessage?: string;
   authUserId: string;
@@ -27,7 +31,7 @@ export const inviteUsersToOrganization = async (
 ): Promise<InviteResult> => {
   const {
     emails,
-    role = 'Admin',
+    roleId,
     organizationId,
     personalMessage,
     authUserId,
@@ -70,6 +74,63 @@ export const inviteUsersToOrganization = async (
   for (const rawEmail of emails) {
     const email = rawEmail.toLowerCase();
     try {
+      // Only handle existing organization invites (not new organization invites)
+      if (organizationId) {
+        // Check if user already exists in the system
+        const existingUser = await db.query.users.findFirst({
+          where: (table, { eq }) => eq(table.email, email),
+          with: {
+            organizationUsers: {
+              where: (table, { eq }) =>
+                eq(table.organizationId, organizationId),
+            },
+          },
+        });
+
+        if (existingUser) {
+          // User exists - check if they're already in this organization
+          if (existingUser.organizationUsers.length === 0) {
+            // User exists but not in this organization - add them directly
+            const targetRole = await db.query.accessRoles.findFirst({
+              where: (table, { eq }) => eq(table.id, roleId),
+            });
+
+            if (targetRole) {
+              await db.transaction(async (tx) => {
+                // Add user to organization
+                const [newOrgUser] = await tx
+                  .insert(organizationUsers)
+                  .values({
+                    authUserId: existingUser.authUserId,
+                    organizationId,
+                    email: existingUser.email,
+                    name: existingUser.name || existingUser.email.split('@')[0],
+                  })
+                  .returning();
+
+                // Assign role
+                if (newOrgUser) {
+                  await tx.insert(organizationUserToAccessRoles).values({
+                    organizationUserId: newOrgUser.id,
+                    accessRoleId: targetRole.id,
+                  });
+                }
+              });
+
+              results.successful.push(email);
+              continue; // Skip email sending for existing users
+            }
+          } else {
+            // User already in organization
+            results.failed.push({
+              email,
+              reason: 'User is already a member of this organization',
+            });
+            continue;
+          }
+        }
+      }
+
       // Check if email is already in the allowList
       const existingEntry = await db.query.allowList.findFirst({
         where: (table, { eq }) => eq(table.email, email),
@@ -81,16 +142,18 @@ export const inviteUsersToOrganization = async (
           ? {
               invitedBy: authUserId,
               invitedAt: new Date().toISOString(),
-              inviteType: 'new_organization',
+              inviteType: 'existing_organization',
               personalMessage: personalMessage,
-              inviterOrganizationName:
-                (currentProfile as any)?.profile?.name || 'Common',
+              roleId,
+              organizationId,
             }
           : {
               invitedBy: authUserId,
               invitedAt: new Date().toISOString(),
+              inviteType: 'new_organization',
               personalMessage: personalMessage,
-              role,
+              inviterOrganizationName:
+                currentProfile?.profile?.name || 'Common',
             };
 
         // Add the email to the allowList

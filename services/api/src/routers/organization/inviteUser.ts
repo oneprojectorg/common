@@ -23,14 +23,14 @@ const inputSchema = z
     emails: z
       .array(z.string().email('Must be a valid email address'))
       .min(1, 'At least one email address is required'),
-    role: z.string().default('Admin').optional(),
+    roleId: z.string().uuid('Role ID must be a valid UUID'),
     organizationId: z.string().uuid().optional(),
     personalMessage: z.string().optional(),
   })
   .or(
     z.object({
       email: z.string().email('Must be a valid email address'),
-      role: z.string().default('Admin').optional(),
+      roleId: z.string().uuid('Role ID must be a valid UUID'),
       organizationId: z.string().uuid().optional(),
       personalMessage: z.string().optional(),
     }),
@@ -68,13 +68,13 @@ export const inviteUserRouter = router({
         // Handle both single email and multiple emails input
         const emailsToProcess =
           'emails' in input ? input.emails : [input.email];
-        const role = 'role' in input ? input.role : 'Admin';
+        const roleId = input.roleId;
         const targetOrganizationId = input.organizationId;
         const personalMessage = input.personalMessage;
 
         return await inviteUsersToOrganization({
           emails: emailsToProcess,
-          role,
+          roleId,
           organizationId: targetOrganizationId,
           personalMessage,
           authUserId,

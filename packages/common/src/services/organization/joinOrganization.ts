@@ -30,20 +30,20 @@ export const joinOrganization = async ({
     throw new NotFoundError('Organization not found');
   }
 
+  // Retrieve the pre-mapped user to check for invite-based access
+  const allowedUserEmail = await cache<ReturnType<typeof getAllowListUser>>({
+    type: 'allowList',
+    params: [user.email?.toLowerCase()],
+    fetch: () => getAllowListUser({ email: user.email?.toLowerCase() }),
+    options: {
+      storeNulls: true,
+      ttl: 30 * 60 * 1000,
+    },
+  });
+
   // Verify user's email domain matches organization domain
   const userEmailDomain = user.email.split('@')[1];
   if (userEmailDomain !== organization.domain) {
-    // Retrieve the pre-mapped user to verify that we can still join without domian mapping
-    const allowedUserEmail = await cache<ReturnType<typeof getAllowListUser>>({
-      type: 'allowList',
-      params: [user.email?.toLowerCase()],
-      fetch: () => getAllowListUser({ email: user.email?.toLowerCase() }),
-      options: {
-        storeNulls: true,
-        ttl: 30 * 60 * 1000,
-      },
-    });
-
     if (
       !allowedUserEmail?.organizationId ||
       allowedUserEmail?.organizationId !== organizationId
@@ -68,13 +68,29 @@ export const joinOrganization = async ({
     return { id: existingMembership.id };
   }
 
-  // Get the Admin role (default role for domain-based joins)
-  const adminRole = await db.query.accessRoles.findFirst({
-    where: (table, { eq }) => eq(table.name, 'Admin'),
-  });
+  // Determine the role to assign
+  let targetRole;
+  
+  // If user joined via invite (allowedUserEmail exists), use the roleId from the invite
+  if (allowedUserEmail?.metadata && typeof allowedUserEmail.metadata === 'object') {
+    const metadata = allowedUserEmail.metadata as { roleId?: string };
+    
+    if (metadata.roleId) {
+      targetRole = await db.query.accessRoles.findFirst({
+        where: (table, { eq }) => eq(table.id, metadata.roleId),
+      });
+    }
+  }
 
-  if (!adminRole) {
-    throw new CommonError('Role not found');
+  // Fallback to Admin role for domain-based joins or if invited role doesn't exist
+  if (!targetRole) {
+    targetRole = await db.query.accessRoles.findFirst({
+      where: (table, { eq }) => eq(table.name, 'Admin'),
+    });
+    
+    if (!targetRole) {
+      throw new CommonError('Role not found');
+    }
   }
 
   return await db.transaction(async (tx) => {
@@ -89,11 +105,11 @@ export const joinOrganization = async ({
       })
       .returning();
 
-    // Assign Admin role to the user
+    // Assign the determined role to the user
     if (newOrgUser) {
       await tx.insert(organizationUserToAccessRoles).values({
         organizationUserId: newOrgUser.id,
-        accessRoleId: adminRole.id,
+        accessRoleId: targetRole.id,
       });
     }
 

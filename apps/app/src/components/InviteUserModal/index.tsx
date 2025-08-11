@@ -15,7 +15,6 @@ import { LuUserPlus } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import ErrorBoundary from '../ErrorBoundary';
-import { ErrorMessage } from '../ErrorMessage';
 import { InviteSuccessModal } from '../InviteSuccessModal';
 import { InviteNewOrganization } from './InviteNewOrganization';
 import { InviteToExistingOrganization } from './InviteToExistingOrganization';
@@ -28,6 +27,7 @@ export const InviteUserModal = ({ children }: InviteUserModalProps) => {
   const [emails, setEmails] = useState('');
   const [emailBadges, setEmailBadges] = useState<string[]>([]);
   const [selectedRole, setSelectedRole] = useState('');
+  const [selectedRoleId, setSelectedRoleId] = useState('');
   const [selectedOrganization, setSelectedOrganization] = useState('');
   const [personalMessage, setPersonalMessage] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -101,11 +101,11 @@ export const InviteUserModal = ({ children }: InviteUserModalProps) => {
 
   const sendInvite = (props: {
     emails: string[];
-    role: string;
+    roleId: string;
     organizationId?: string;
     message?: string;
   }) => {
-    const { emails, role, organizationId, message } = props;
+    const { emails, roleId, organizationId, message } = props;
 
     if (!isOnline) {
       toast.error({
@@ -126,7 +126,7 @@ export const InviteUserModal = ({ children }: InviteUserModalProps) => {
       }
     } else {
       // Existing organization invite
-      inviteData.role = role;
+      inviteData.roleId = roleId;
       inviteData.organizationId = organizationId;
     }
 
@@ -160,13 +160,15 @@ export const InviteUserModal = ({ children }: InviteUserModalProps) => {
     if (activeTab === 'existing') {
       sendInvite({
         emails: allEmails,
-        role: selectedRole,
+        roleId: selectedRoleId,
         organizationId: selectedOrganization,
       });
     } else {
+      // For new organization invites, we need to handle this differently
+      // since roleId might not be applicable
       sendInvite({
         emails: allEmails,
-        role: selectedRole,
+        roleId: selectedRoleId, // This might need special handling for new orgs
         message: personalMessage,
       });
     }
@@ -221,6 +223,8 @@ export const InviteUserModal = ({ children }: InviteUserModalProps) => {
                       setEmailBadges={setEmailBadges}
                       selectedRole={selectedRole}
                       setSelectedRole={setSelectedRole}
+                      selectedRoleId={selectedRoleId}
+                      setSelectedRoleId={setSelectedRoleId}
                       selectedOrganization={selectedOrganization}
                       setSelectedOrganization={setSelectedOrganization}
                     />

@@ -17,6 +17,8 @@ interface InviteToExistingOrganizationProps {
   setEmailBadges: (badges: string[]) => void;
   selectedRole: string;
   setSelectedRole: (role: string) => void;
+  selectedRoleId: string;
+  setSelectedRoleId: (roleId: string) => void;
   selectedOrganization: string;
   setSelectedOrganization: (orgId: string) => void;
 }
@@ -28,6 +30,8 @@ export const InviteToExistingOrganization = ({
   setEmailBadges,
   selectedRole,
   setSelectedRole,
+  selectedRoleId,
+  setSelectedRoleId,
   selectedOrganization,
   setSelectedOrganization,
 }: InviteToExistingOrganizationProps) => {
@@ -44,9 +48,10 @@ export const InviteToExistingOrganization = ({
       const defaultRole = adminRole || rolesData.roles[0];
       if (defaultRole) {
         setSelectedRole(defaultRole.name);
+        setSelectedRoleId(defaultRole.id);
       }
     }
-  }, [selectedRole, setSelectedRole]);
+  }, [selectedRole, setSelectedRole, setSelectedRoleId]);
 
   // Ensure first organization is selected if no selection exists
   React.useEffect(() => {
@@ -141,7 +146,14 @@ export const InviteToExistingOrganization = ({
         <Select
           label={t('Role')}
           selectedKey={selectedRole}
-          onSelectionChange={(key) => setSelectedRole(key as string)}
+          onSelectionChange={(key) => {
+            const roleName = key as string;
+            const selectedRoleData = rolesData.roles.find((role: any) => role.name === roleName);
+            setSelectedRole(roleName);
+            if (selectedRoleData) {
+              setSelectedRoleId(selectedRoleData.id);
+            }
+          }}
         >
           {rolesData.roles.map((role: any) => (
             <SelectItem key={role.name} id={role.name}>
