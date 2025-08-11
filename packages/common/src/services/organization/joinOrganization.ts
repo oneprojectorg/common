@@ -1,6 +1,7 @@
 import { cache } from '@op/cache';
 import { db, eq } from '@op/db/client';
 import {
+  accessRoles,
   organizationUserToAccessRoles,
   organizationUsers,
   users,
@@ -70,14 +71,17 @@ export const joinOrganization = async ({
 
   // Determine the role to assign
   let targetRole;
-  
+
   // If user joined via invite (allowedUserEmail exists), use the roleId from the invite
-  if (allowedUserEmail?.metadata && typeof allowedUserEmail.metadata === 'object') {
-    const metadata = allowedUserEmail.metadata as { roleId?: string };
-    
+  if (
+    allowedUserEmail?.metadata &&
+    typeof allowedUserEmail.metadata === 'object'
+  ) {
+    const metadata = allowedUserEmail.metadata as { roleId?: string }; // JSON object fromt the DB
+
     if (metadata.roleId) {
       targetRole = await db.query.accessRoles.findFirst({
-        where: (table, { eq }) => eq(table.id, metadata.roleId),
+        where: eq(accessRoles.id, metadata.roleId),
       });
     }
   }
@@ -87,7 +91,7 @@ export const joinOrganization = async ({
     targetRole = await db.query.accessRoles.findFirst({
       where: (table, { eq }) => eq(table.name, 'Admin'),
     });
-    
+
     if (!targetRole) {
       throw new CommonError('Role not found');
     }

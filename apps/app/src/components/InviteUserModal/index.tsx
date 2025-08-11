@@ -222,7 +222,6 @@ export const InviteUserModal = ({ children }: InviteUserModalProps) => {
                       setEmailBadges={setEmailBadges}
                       selectedRole={selectedRole}
                       setSelectedRole={setSelectedRole}
-                      selectedRoleId={selectedRoleId}
                       setSelectedRoleId={setSelectedRoleId}
                       selectedOrganization={selectedOrganization}
                       setSelectedOrganization={setSelectedOrganization}

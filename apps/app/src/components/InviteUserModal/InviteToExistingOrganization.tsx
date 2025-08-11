@@ -5,6 +5,7 @@ import { trpc } from '@op/api/client';
 import { Select, SelectItem } from '@op/ui/Select';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
 import { toast } from '@op/ui/Toast';
+import { useFeatureFlagEnabled } from 'posthog-js/react';
 import React from 'react';
 import { LuX } from 'react-icons/lu';
 
@@ -17,7 +18,6 @@ interface InviteToExistingOrganizationProps {
   setEmailBadges: (badges: string[]) => void;
   selectedRole: string;
   setSelectedRole: (role: string) => void;
-  selectedRoleId: string;
   setSelectedRoleId: (roleId: string) => void;
   selectedOrganization: string;
   setSelectedOrganization: (orgId: string) => void;
@@ -30,13 +30,13 @@ export const InviteToExistingOrganization = ({
   setEmailBadges,
   selectedRole,
   setSelectedRole,
-  selectedRoleId,
   setSelectedRoleId,
   selectedOrganization,
   setSelectedOrganization,
 }: InviteToExistingOrganizationProps) => {
   const t = useTranslations();
   const { user } = useUser();
+  const membershipsEnabled = useFeatureFlagEnabled('memberships');
 
   const [rolesData] = trpc.organization.getRoles.useSuspenseQuery();
 
@@ -148,18 +148,24 @@ export const InviteToExistingOrganization = ({
           selectedKey={selectedRole}
           onSelectionChange={(key) => {
             const roleName = key as string;
-            const selectedRoleData = rolesData.roles.find((role: any) => role.name === roleName);
+            const selectedRoleData = rolesData.roles.find(
+              (role: any) => role.name === roleName,
+            );
             setSelectedRole(roleName);
             if (selectedRoleData) {
               setSelectedRoleId(selectedRoleData.id);
             }
           }}
         >
-          {rolesData.roles.map((role: any) => (
-            <SelectItem key={role.name} id={role.name}>
-              {role.name}
-            </SelectItem>
-          ))}
+          {membershipsEnabled ? (
+            rolesData.roles.map((role) => (
+              <SelectItem key={role.name} id={role.name}>
+                {role.name}
+              </SelectItem>
+            ))
+          ) : (
+            <SelectItem id="Admin">Admin</SelectItem>
+          )}
         </Select>
       </div>
     </div>
