@@ -1,123 +1,123 @@
 
-DROP VIEW "public"."users_used_storage";--> statement-breakpoint
-ALTER TABLE "organization_relationships" DROP CONSTRAINT "organization_relationships_source_organization_id_organizations";
---> statement-breakpoint
-ALTER TABLE "organization_relationships" DROP CONSTRAINT "organization_relationships_target_organization_id_organizations";
---> statement-breakpoint
-ALTER TABLE "organizationUser_to_access_roles" DROP CONSTRAINT "organizationUser_to_access_roles_access_role_id_access_roles_id";
---> statement-breakpoint
-ALTER TABLE "organizationUser_to_access_roles" DROP CONSTRAINT "organizationUser_to_access_roles_organization_user_id_organizat";
---> statement-breakpoint
-DROP INDEX IF EXISTS "organization_relationships_source_organization_id_target_organi";--> statement-breakpoint
-DROP INDEX IF EXISTS "locations_id_index";--> statement-breakpoint
-DROP INDEX IF EXISTS "locations_place_id_index";--> statement-breakpoint
-DROP INDEX IF EXISTS "spatial_index";--> statement-breakpoint
-DROP INDEX IF EXISTS "organizationUsers_auth_user_id_idx";--> statement-breakpoint
-DROP INDEX IF EXISTS "organizationUsers_email_gin_index";--> statement-breakpoint
-DROP INDEX IF EXISTS "organizationUsers_organizations_idx";--> statement-breakpoint
-DROP INDEX IF EXISTS "organization_users_email_index";--> statement-breakpoint
-DROP INDEX IF EXISTS "organization_users_id_index";--> statement-breakpoint
-DROP INDEX IF EXISTS "organizations_id_index";--> statement-breakpoint
-DROP INDEX IF EXISTS "access_roles_id_index";--> statement-breakpoint
-DROP INDEX IF EXISTS "allowList_email_index";--> statement-breakpoint
-DROP INDEX IF EXISTS "allowList_email_organizationId_idx";--> statement-breakpoint
-DROP INDEX IF EXISTS "links_id_index";--> statement-breakpoint
-DROP INDEX IF EXISTS "links_organization_id_idx";--> statement-breakpoint
-DROP INDEX IF EXISTS "posts_id_index";--> statement-breakpoint
-DROP INDEX IF EXISTS "posts_parent_post_id_index";--> statement-breakpoint
-DROP INDEX IF EXISTS "taxonomyTerms_data_gin_index";--> statement-breakpoint
-DROP INDEX IF EXISTS "organization_relationships_relationship_type_index";--> statement-breakpoint
-DROP INDEX IF EXISTS "organization_relationships_relationship_type_pending_index";--> statement-breakpoint
-DROP INDEX IF EXISTS "organization_relationships_source_organization_id_index";--> statement-breakpoint
-DROP INDEX IF EXISTS "organization_relationships_source_organization_id_pending_index";--> statement-breakpoint
-DROP INDEX IF EXISTS "organization_relationships_target_organization_id_index";--> statement-breakpoint
-DROP INDEX IF EXISTS "organization_relationships_target_organization_id_pending_index";--> statement-breakpoint
-DROP INDEX IF EXISTS "profiles_id_index";--> statement-breakpoint
-DROP INDEX IF EXISTS "profiles_search_gin_index";--> statement-breakpoint
-DROP INDEX IF EXISTS "profiles_slug_index";--> statement-breakpoint
-DROP INDEX IF EXISTS "projects_id_index";--> statement-breakpoint
-DROP INDEX IF EXISTS "projects_organization_id_idx";--> statement-breakpoint
-DROP INDEX IF EXISTS "projects_slug_index";--> statement-breakpoint
-DROP INDEX IF EXISTS "users_email_gin_index";--> statement-breakpoint
-DROP INDEX IF EXISTS "users_email_index";--> statement-breakpoint
-DROP INDEX IF EXISTS "users_id_index";--> statement-breakpoint
-DROP INDEX IF EXISTS "users_profile_id_index";--> statement-breakpoint
-DROP INDEX IF EXISTS "users_username_gin_index";--> statement-breakpoint
-DROP INDEX IF EXISTS "users_username_index";--> statement-breakpoint
-DROP INDEX IF EXISTS "attachments_id_index";--> statement-breakpoint
-DROP INDEX IF EXISTS "attachments_post_id_index";--> statement-breakpoint
-DROP INDEX IF EXISTS "attachments_profile_id_index";--> statement-breakpoint
-DROP INDEX IF EXISTS "attachments_storage_object_id_index";--> statement-breakpoint
-DROP INDEX IF EXISTS "attachments_uploaded_by_index";--> statement-breakpoint
-DROP INDEX IF EXISTS "post_reactions_post_id_index";--> statement-breakpoint
-DROP INDEX IF EXISTS "post_reactions_post_id_profile_id_reaction_type_index";--> statement-breakpoint
-DROP INDEX IF EXISTS "post_reactions_profile_id_index";--> statement-breakpoint
-DROP INDEX IF EXISTS "post_reactions_reaction_type_index";--> statement-breakpoint
-DROP INDEX IF EXISTS "individuals_id_index";--> statement-breakpoint
-DROP INDEX IF EXISTS "comments_parent_comment_id_idx";--> statement-breakpoint
-DROP INDEX IF EXISTS "comments_profile_id_idx";--> statement-breakpoint
-DROP INDEX IF EXISTS "comments_to_posts_comment_id_idx";--> statement-breakpoint
-DROP INDEX IF EXISTS "comments_to_posts_post_id_idx";--> statement-breakpoint
-ALTER TABLE "organizationUser_to_access_roles" DROP CONSTRAINT "organizationUser_to_access_roles_organization_user_id_access_ro";--> statement-breakpoint
-ALTER TABLE "locations" ALTER COLUMN "location" SET DATA TYPE geometry(point);--> statement-breakpoint
-ALTER TABLE "profiles" drop column "search";--> statement-breakpoint
-ALTER TABLE "profiles" ADD COLUMN "search" "tsvector" GENERATED ALWAYS AS (setweight(to_tsvector('simple', "profiles"."name"), 'A') || ' ' || setweight(to_tsvector('english', COALESCE("profiles"."bio", '')), 'B') || ' ' || setweight(to_tsvector('english', COALESCE("profiles"."mission", '')), 'C')::tsvector) STORED;--> statement-breakpoint
-ALTER TABLE "organizationUser_to_access_roles" ADD CONSTRAINT "organizationUser_to_access_roles_organization_user_id_access_role_id_pk" PRIMARY KEY("organization_user_id","access_role_id");--> statement-breakpoint
-ALTER TABLE "organization_relationships" ADD CONSTRAINT "organization_relationships_source_organization_id_organizations_id_fk" FOREIGN KEY ("source_organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "organization_relationships" ADD CONSTRAINT "organization_relationships_target_organization_id_organizations_id_fk" FOREIGN KEY ("target_organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "organizationUser_to_access_roles" ADD CONSTRAINT "organizationUser_to_access_roles_organization_user_id_organization_users_id_fk" FOREIGN KEY ("organization_user_id") REFERENCES "public"."organization_users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "organizationUser_to_access_roles" ADD CONSTRAINT "organizationUser_to_access_roles_access_role_id_access_roles_id_fk" FOREIGN KEY ("access_role_id") REFERENCES "public"."access_roles"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-CREATE UNIQUE INDEX "organization_relationships_source_organization_id_target_organization_id_relationship_type_index" ON "organization_relationships" USING btree ("source_organization_id","target_organization_id","relationship_type");--> statement-breakpoint
-CREATE INDEX "locations_id_index" ON "locations" USING btree ("id");--> statement-breakpoint
-CREATE INDEX "locations_place_id_index" ON "locations" USING btree ("place_id");--> statement-breakpoint
-CREATE INDEX "spatial_index" ON "locations" USING gist ("location");--> statement-breakpoint
-CREATE INDEX "organizationUsers_auth_user_id_idx" ON "organization_users" USING btree ("auth_user_id");--> statement-breakpoint
-CREATE INDEX "organizationUsers_email_gin_index" ON "organization_users" USING gin (to_tsvector('english', "email"));--> statement-breakpoint
-CREATE INDEX "organizationUsers_organizations_idx" ON "organization_users" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "organization_users_email_index" ON "organization_users" USING btree ("email");--> statement-breakpoint
-CREATE INDEX "organization_users_id_index" ON "organization_users" USING btree ("id");--> statement-breakpoint
-CREATE INDEX "organizations_id_index" ON "organizations" USING btree ("id");--> statement-breakpoint
-CREATE INDEX "access_roles_id_index" ON "access_roles" USING btree ("id");--> statement-breakpoint
-CREATE INDEX "allowList_email_index" ON "allowList" USING btree ("email");--> statement-breakpoint
-CREATE UNIQUE INDEX "allowList_email_organizationId_idx" ON "allowList" USING btree ("email","organization_id");--> statement-breakpoint
-CREATE INDEX "links_id_index" ON "links" USING btree ("id");--> statement-breakpoint
-CREATE INDEX "links_organization_id_idx" ON "links" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "posts_id_index" ON "posts" USING btree ("id");--> statement-breakpoint
-CREATE INDEX "posts_parent_post_id_index" ON "posts" USING btree ("parent_post_id");--> statement-breakpoint
-CREATE INDEX "taxonomyTerms_data_gin_index" ON "taxonomyTerms" USING gin (to_tsvector('english', "label"));--> statement-breakpoint
-CREATE INDEX "organization_relationships_relationship_type_index" ON "organization_relationships" USING btree ("relationship_type");--> statement-breakpoint
-CREATE INDEX "organization_relationships_relationship_type_pending_index" ON "organization_relationships" USING btree ("relationship_type","pending");--> statement-breakpoint
-CREATE INDEX "organization_relationships_source_organization_id_index" ON "organization_relationships" USING btree ("source_organization_id");--> statement-breakpoint
-CREATE INDEX "organization_relationships_source_organization_id_pending_index" ON "organization_relationships" USING btree ("source_organization_id","pending");--> statement-breakpoint
-CREATE INDEX "organization_relationships_target_organization_id_index" ON "organization_relationships" USING btree ("target_organization_id");--> statement-breakpoint
-CREATE INDEX "organization_relationships_target_organization_id_pending_index" ON "organization_relationships" USING btree ("target_organization_id","pending");--> statement-breakpoint
-CREATE INDEX "profiles_id_index" ON "profiles" USING btree ("id");--> statement-breakpoint
-CREATE INDEX "profiles_search_gin_index" ON "profiles" USING gin ("search");--> statement-breakpoint
-CREATE INDEX "profiles_slug_index" ON "profiles" USING btree ("slug");--> statement-breakpoint
-CREATE INDEX "projects_id_index" ON "projects" USING btree ("id");--> statement-breakpoint
-CREATE INDEX "projects_organization_id_idx" ON "projects" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "projects_slug_index" ON "projects" USING btree ("slug");--> statement-breakpoint
-CREATE INDEX "users_email_gin_index" ON "users" USING gin (to_tsvector('english', "email"));--> statement-breakpoint
-CREATE INDEX "users_email_index" ON "users" USING btree ("email");--> statement-breakpoint
-CREATE INDEX "users_id_index" ON "users" USING btree ("id");--> statement-breakpoint
-CREATE INDEX "users_profile_id_index" ON "users" USING btree ("profile_id");--> statement-breakpoint
-CREATE INDEX "users_username_gin_index" ON "users" USING gin (to_tsvector('english', "username"));--> statement-breakpoint
-CREATE INDEX "users_username_index" ON "users" USING btree ("username");--> statement-breakpoint
-CREATE INDEX "attachments_id_index" ON "attachments" USING btree ("id");--> statement-breakpoint
-CREATE INDEX "attachments_post_id_index" ON "attachments" USING btree ("post_id");--> statement-breakpoint
-CREATE INDEX "attachments_profile_id_index" ON "attachments" USING btree ("profile_id");--> statement-breakpoint
-CREATE INDEX "attachments_storage_object_id_index" ON "attachments" USING btree ("storage_object_id");--> statement-breakpoint
-CREATE INDEX "attachments_uploaded_by_index" ON "attachments" USING btree ("uploaded_by");--> statement-breakpoint
-CREATE INDEX "post_reactions_post_id_index" ON "post_reactions" USING btree ("post_id");--> statement-breakpoint
-CREATE UNIQUE INDEX "post_reactions_post_id_profile_id_reaction_type_index" ON "post_reactions" USING btree ("post_id","profile_id","reaction_type");--> statement-breakpoint
-CREATE INDEX "post_reactions_profile_id_index" ON "post_reactions" USING btree ("profile_id");--> statement-breakpoint
-CREATE INDEX "post_reactions_reaction_type_index" ON "post_reactions" USING btree ("reaction_type");--> statement-breakpoint
-CREATE INDEX "individuals_id_index" ON "individuals" USING btree ("id");--> statement-breakpoint
-CREATE INDEX "comments_parent_comment_id_idx" ON "comments" USING btree ("parent_comment_id");--> statement-breakpoint
-CREATE INDEX "comments_profile_id_idx" ON "comments" USING btree ("profile_id");--> statement-breakpoint
-CREATE INDEX "comments_to_posts_comment_id_idx" ON "comments_to_posts" USING btree ("comment_id");--> statement-breakpoint
-CREATE INDEX "comments_to_posts_post_id_idx" ON "comments_to_posts" USING btree ("post_id");--> statement-breakpoint
-ALTER TABLE "posts_to_organizations" DROP CONSTRAINT "posts_to_organizations_organization_id_post_id_pk";
---> statement-breakpoint
-ALTER TABLE "posts_to_organizations" ADD CONSTRAINT "posts_to_organizations_organization_id_post_id_pk" PRIMARY KEY("organization_id","post_id");--> statement-breakpoint
-CREATE VIEW "public"."users_used_storage" WITH (security_invoker = false) AS (select (storage.foldername("name"))[1] as "user_id", COALESCE(SUM(("metadata"->>'size')::bigint), 0) as "total_size" from "storage"."objects" where "storage"."objects"."bucket_id" = 'assets' group by (storage.foldername("storage"."objects"."name"))[1]);
+--  DROP VIEW "public"."users_used_storage";--> statement-breakpoint
+--  ALTER TABLE "organization_relationships" DROP CONSTRAINT "organization_relationships_source_organization_id_organizations";
+--  --> statement-breakpoint
+--  ALTER TABLE "organization_relationships" DROP CONSTRAINT "organization_relationships_target_organization_id_organizations";
+--  --> statement-breakpoint
+--  ALTER TABLE "organizationUser_to_access_roles" DROP CONSTRAINT "organizationUser_to_access_roles_access_role_id_access_roles_id";
+--  --> statement-breakpoint
+--  ALTER TABLE "organizationUser_to_access_roles" DROP CONSTRAINT "organizationUser_to_access_roles_organization_user_id_organizat";
+--  --> statement-breakpoint
+--  DROP INDEX IF EXISTS "organization_relationships_source_organization_id_target_organi";--> statement-breakpoint
+--  DROP INDEX IF EXISTS "locations_id_index";--> statement-breakpoint
+--  DROP INDEX IF EXISTS "locations_place_id_index";--> statement-breakpoint
+--  DROP INDEX IF EXISTS "spatial_index";--> statement-breakpoint
+--  DROP INDEX IF EXISTS "organizationUsers_auth_user_id_idx";--> statement-breakpoint
+--  DROP INDEX IF EXISTS "organizationUsers_email_gin_index";--> statement-breakpoint
+--  DROP INDEX IF EXISTS "organizationUsers_organizations_idx";--> statement-breakpoint
+--  DROP INDEX IF EXISTS "organization_users_email_index";--> statement-breakpoint
+--  DROP INDEX IF EXISTS "organization_users_id_index";--> statement-breakpoint
+--  DROP INDEX IF EXISTS "organizations_id_index";--> statement-breakpoint
+--  DROP INDEX IF EXISTS "access_roles_id_index";--> statement-breakpoint
+--  DROP INDEX IF EXISTS "allowList_email_index";--> statement-breakpoint
+--  DROP INDEX IF EXISTS "allowList_email_organizationId_idx";--> statement-breakpoint
+--  DROP INDEX IF EXISTS "links_id_index";--> statement-breakpoint
+--  DROP INDEX IF EXISTS "links_organization_id_idx";--> statement-breakpoint
+--  DROP INDEX IF EXISTS "posts_id_index";--> statement-breakpoint
+--  DROP INDEX IF EXISTS "posts_parent_post_id_index";--> statement-breakpoint
+--  DROP INDEX IF EXISTS "taxonomyTerms_data_gin_index";--> statement-breakpoint
+--  DROP INDEX IF EXISTS "organization_relationships_relationship_type_index";--> statement-breakpoint
+--  DROP INDEX IF EXISTS "organization_relationships_relationship_type_pending_index";--> statement-breakpoint
+--  DROP INDEX IF EXISTS "organization_relationships_source_organization_id_index";--> statement-breakpoint
+--  DROP INDEX IF EXISTS "organization_relationships_source_organization_id_pending_index";--> statement-breakpoint
+--  DROP INDEX IF EXISTS "organization_relationships_target_organization_id_index";--> statement-breakpoint
+--  DROP INDEX IF EXISTS "organization_relationships_target_organization_id_pending_index";--> statement-breakpoint
+--  DROP INDEX IF EXISTS "profiles_id_index";--> statement-breakpoint
+--  DROP INDEX IF EXISTS "profiles_search_gin_index";--> statement-breakpoint
+--  DROP INDEX IF EXISTS "profiles_slug_index";--> statement-breakpoint
+--  DROP INDEX IF EXISTS "projects_id_index";--> statement-breakpoint
+--  DROP INDEX IF EXISTS "projects_organization_id_idx";--> statement-breakpoint
+--  DROP INDEX IF EXISTS "projects_slug_index";--> statement-breakpoint
+--  DROP INDEX IF EXISTS "users_email_gin_index";--> statement-breakpoint
+--  DROP INDEX IF EXISTS "users_email_index";--> statement-breakpoint
+--  DROP INDEX IF EXISTS "users_id_index";--> statement-breakpoint
+--  DROP INDEX IF EXISTS "users_profile_id_index";--> statement-breakpoint
+--  DROP INDEX IF EXISTS "users_username_gin_index";--> statement-breakpoint
+--  DROP INDEX IF EXISTS "users_username_index";--> statement-breakpoint
+--  DROP INDEX IF EXISTS "attachments_id_index";--> statement-breakpoint
+--  DROP INDEX IF EXISTS "attachments_post_id_index";--> statement-breakpoint
+--  DROP INDEX IF EXISTS "attachments_profile_id_index";--> statement-breakpoint
+--  DROP INDEX IF EXISTS "attachments_storage_object_id_index";--> statement-breakpoint
+--  DROP INDEX IF EXISTS "attachments_uploaded_by_index";--> statement-breakpoint
+--  DROP INDEX IF EXISTS "post_reactions_post_id_index";--> statement-breakpoint
+--  DROP INDEX IF EXISTS "post_reactions_post_id_profile_id_reaction_type_index";--> statement-breakpoint
+--  DROP INDEX IF EXISTS "post_reactions_profile_id_index";--> statement-breakpoint
+--  DROP INDEX IF EXISTS "post_reactions_reaction_type_index";--> statement-breakpoint
+--  DROP INDEX IF EXISTS "individuals_id_index";--> statement-breakpoint
+--  DROP INDEX IF EXISTS "comments_parent_comment_id_idx";--> statement-breakpoint
+--  DROP INDEX IF EXISTS "comments_profile_id_idx";--> statement-breakpoint
+--  DROP INDEX IF EXISTS "comments_to_posts_comment_id_idx";--> statement-breakpoint
+--  DROP INDEX IF EXISTS "comments_to_posts_post_id_idx";--> statement-breakpoint
+--  ALTER TABLE "organizationUser_to_access_roles" DROP CONSTRAINT "organizationUser_to_access_roles_organization_user_id_access_ro";--> statement-breakpoint
+--  ALTER TABLE "locations" ALTER COLUMN "location" SET DATA TYPE geometry(point);--> statement-breakpoint
+--  ALTER TABLE "profiles" drop column "search";--> statement-breakpoint
+--  ALTER TABLE "profiles" ADD COLUMN "search" "tsvector" GENERATED ALWAYS AS (setweight(to_tsvector('simple', "profiles"."name"), 'A') || ' ' || setweight(to_tsvector('english', COALESCE("profiles"."bio", '')), 'B') || ' ' || setweight(to_tsvector('english', COALESCE("profiles"."mission", '')), 'C')::tsvector) STORED;--> statement-breakpoint
+--  ALTER TABLE "organizationUser_to_access_roles" ADD CONSTRAINT "organizationUser_to_access_roles_organization_user_id_access_role_id_pk" PRIMARY KEY("organization_user_id","access_role_id");--> statement-breakpoint
+--  ALTER TABLE "organization_relationships" ADD CONSTRAINT "organization_relationships_source_organization_id_organizations_id_fk" FOREIGN KEY ("source_organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+--  ALTER TABLE "organization_relationships" ADD CONSTRAINT "organization_relationships_target_organization_id_organizations_id_fk" FOREIGN KEY ("target_organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+--  ALTER TABLE "organizationUser_to_access_roles" ADD CONSTRAINT "organizationUser_to_access_roles_organization_user_id_organization_users_id_fk" FOREIGN KEY ("organization_user_id") REFERENCES "public"."organization_users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+--  ALTER TABLE "organizationUser_to_access_roles" ADD CONSTRAINT "organizationUser_to_access_roles_access_role_id_access_roles_id_fk" FOREIGN KEY ("access_role_id") REFERENCES "public"."access_roles"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+--  CREATE UNIQUE INDEX "organization_relationships_source_organization_id_target_organization_id_relationship_type_index" ON "organization_relationships" USING btree ("source_organization_id","target_organization_id","relationship_type");--> statement-breakpoint
+--  CREATE INDEX "locations_id_index" ON "locations" USING btree ("id");--> statement-breakpoint
+--  CREATE INDEX "locations_place_id_index" ON "locations" USING btree ("place_id");--> statement-breakpoint
+--  CREATE INDEX "spatial_index" ON "locations" USING gist ("location");--> statement-breakpoint
+--  CREATE INDEX "organizationUsers_auth_user_id_idx" ON "organization_users" USING btree ("auth_user_id");--> statement-breakpoint
+--  CREATE INDEX "organizationUsers_email_gin_index" ON "organization_users" USING gin (to_tsvector('english', "email"));--> statement-breakpoint
+--  CREATE INDEX "organizationUsers_organizations_idx" ON "organization_users" USING btree ("organization_id");--> statement-breakpoint
+--  CREATE INDEX "organization_users_email_index" ON "organization_users" USING btree ("email");--> statement-breakpoint
+--  CREATE INDEX "organization_users_id_index" ON "organization_users" USING btree ("id");--> statement-breakpoint
+--  CREATE INDEX "organizations_id_index" ON "organizations" USING btree ("id");--> statement-breakpoint
+--  CREATE INDEX "access_roles_id_index" ON "access_roles" USING btree ("id");--> statement-breakpoint
+--  CREATE INDEX "allowList_email_index" ON "allowList" USING btree ("email");--> statement-breakpoint
+--  CREATE UNIQUE INDEX "allowList_email_organizationId_idx" ON "allowList" USING btree ("email","organization_id");--> statement-breakpoint
+--  CREATE INDEX "links_id_index" ON "links" USING btree ("id");--> statement-breakpoint
+--  CREATE INDEX "links_organization_id_idx" ON "links" USING btree ("organization_id");--> statement-breakpoint
+--  CREATE INDEX "posts_id_index" ON "posts" USING btree ("id");--> statement-breakpoint
+--  CREATE INDEX "posts_parent_post_id_index" ON "posts" USING btree ("parent_post_id");--> statement-breakpoint
+--  CREATE INDEX "taxonomyTerms_data_gin_index" ON "taxonomyTerms" USING gin (to_tsvector('english', "label"));--> statement-breakpoint
+--  CREATE INDEX "organization_relationships_relationship_type_index" ON "organization_relationships" USING btree ("relationship_type");--> statement-breakpoint
+--  CREATE INDEX "organization_relationships_relationship_type_pending_index" ON "organization_relationships" USING btree ("relationship_type","pending");--> statement-breakpoint
+--  CREATE INDEX "organization_relationships_source_organization_id_index" ON "organization_relationships" USING btree ("source_organization_id");--> statement-breakpoint
+--  CREATE INDEX "organization_relationships_source_organization_id_pending_index" ON "organization_relationships" USING btree ("source_organization_id","pending");--> statement-breakpoint
+--  CREATE INDEX "organization_relationships_target_organization_id_index" ON "organization_relationships" USING btree ("target_organization_id");--> statement-breakpoint
+--  CREATE INDEX "organization_relationships_target_organization_id_pending_index" ON "organization_relationships" USING btree ("target_organization_id","pending");--> statement-breakpoint
+--  CREATE INDEX "profiles_id_index" ON "profiles" USING btree ("id");--> statement-breakpoint
+--  CREATE INDEX "profiles_search_gin_index" ON "profiles" USING gin ("search");--> statement-breakpoint
+--  CREATE INDEX "profiles_slug_index" ON "profiles" USING btree ("slug");--> statement-breakpoint
+--  CREATE INDEX "projects_id_index" ON "projects" USING btree ("id");--> statement-breakpoint
+--  CREATE INDEX "projects_organization_id_idx" ON "projects" USING btree ("organization_id");--> statement-breakpoint
+--  CREATE INDEX "projects_slug_index" ON "projects" USING btree ("slug");--> statement-breakpoint
+--  CREATE INDEX "users_email_gin_index" ON "users" USING gin (to_tsvector('english', "email"));--> statement-breakpoint
+--  CREATE INDEX "users_email_index" ON "users" USING btree ("email");--> statement-breakpoint
+--  CREATE INDEX "users_id_index" ON "users" USING btree ("id");--> statement-breakpoint
+--  CREATE INDEX "users_profile_id_index" ON "users" USING btree ("profile_id");--> statement-breakpoint
+--  CREATE INDEX "users_username_gin_index" ON "users" USING gin (to_tsvector('english', "username"));--> statement-breakpoint
+--  CREATE INDEX "users_username_index" ON "users" USING btree ("username");--> statement-breakpoint
+--  CREATE INDEX "attachments_id_index" ON "attachments" USING btree ("id");--> statement-breakpoint
+--  CREATE INDEX "attachments_post_id_index" ON "attachments" USING btree ("post_id");--> statement-breakpoint
+--  CREATE INDEX "attachments_profile_id_index" ON "attachments" USING btree ("profile_id");--> statement-breakpoint
+--  CREATE INDEX "attachments_storage_object_id_index" ON "attachments" USING btree ("storage_object_id");--> statement-breakpoint
+--  CREATE INDEX "attachments_uploaded_by_index" ON "attachments" USING btree ("uploaded_by");--> statement-breakpoint
+--  CREATE INDEX "post_reactions_post_id_index" ON "post_reactions" USING btree ("post_id");--> statement-breakpoint
+--  CREATE UNIQUE INDEX "post_reactions_post_id_profile_id_reaction_type_index" ON "post_reactions" USING btree ("post_id","profile_id","reaction_type");--> statement-breakpoint
+--  CREATE INDEX "post_reactions_profile_id_index" ON "post_reactions" USING btree ("profile_id");--> statement-breakpoint
+--  CREATE INDEX "post_reactions_reaction_type_index" ON "post_reactions" USING btree ("reaction_type");--> statement-breakpoint
+--  CREATE INDEX "individuals_id_index" ON "individuals" USING btree ("id");--> statement-breakpoint
+--  CREATE INDEX "comments_parent_comment_id_idx" ON "comments" USING btree ("parent_comment_id");--> statement-breakpoint
+--  CREATE INDEX "comments_profile_id_idx" ON "comments" USING btree ("profile_id");--> statement-breakpoint
+--  CREATE INDEX "comments_to_posts_comment_id_idx" ON "comments_to_posts" USING btree ("comment_id");--> statement-breakpoint
+--  CREATE INDEX "comments_to_posts_post_id_idx" ON "comments_to_posts" USING btree ("post_id");--> statement-breakpoint
+--  ALTER TABLE "posts_to_organizations" DROP CONSTRAINT "posts_to_organizations_organization_id_post_id_pk";
+--  --> statement-breakpoint
+--  ALTER TABLE "posts_to_organizations" ADD CONSTRAINT "posts_to_organizations_organization_id_post_id_pk" PRIMARY KEY("organization_id","post_id");--> statement-breakpoint
+--  CREATE VIEW "public"."users_used_storage" WITH (security_invoker = false) AS (select (storage.foldername("name"))[1] as "user_id", COALESCE(SUM(("metadata"->>'size')::bigint), 0) as "total_size" from "storage"."objects" where "storage"."objects"."bucket_id" = 'assets' group by (storage.foldername("storage"."objects"."name"))[1]);

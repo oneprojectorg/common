@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "build": "next build",
+    "build:prod": "pnpm run w:db migrate && next build",
     "dev": "next dev -p 3300",
     "lint": "pnpm tsc --noEmit",
     "start": "next start"

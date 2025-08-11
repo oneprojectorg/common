@@ -540,8 +540,8 @@ importers:
         specifier: workspace:*
         version: link:../../services/emails
       access-zones:
-        specifier: github:scazan/access-zones
-        version: git+https://git@github.com:scazan/access-zones.git#398b4f22019afdfcb9d731d5f533501fcfc4bb4e
+        specifier: 0.0.1
+        version: 0.0.1
       next:
         specifier: ^15.0.0
         version: 15.3.4(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.85.1)
@@ -4089,9 +4089,8 @@ packages:
     resolution: {integrity: sha512-PYAthTa2m2VKxuvSD3DPC/Gy+U+sOA1LAuT8mkmRuvw+NACSaeXEQ+NHcVF7rONl6qcaxV3Uuemwawk+7+SJLw==}
     engines: {node: '>= 0.6'}
 
-  access-zones@git+https://git@github.com:scazan/access-zones.git#398b4f22019afdfcb9d731d5f533501fcfc4bb4e:
-    resolution: {commit: 398b4f22019afdfcb9d731d5f533501fcfc4bb4e, repo: git@github.com:scazan/access-zones.git, type: git}
-    version: 1.0.0
+  access-zones@0.0.1:
+    resolution: {integrity: sha512-or5Ys9+sWUfJA4HOQoXNAOe/2d504PJmJrWmgNCVOtQiCZRNTkB8zqYMmzzUjdlFXbwoOnjp1D76711aVGx52w==}
     engines: {node: '>=16.0.0'}
 
   acorn-walk@8.3.4:
@@ -11413,7 +11412,7 @@ snapshots:
       mime-types: 2.1.35
       negotiator: 0.6.3
 
-  access-zones@git+https://git@github.com:scazan/access-zones.git#398b4f22019afdfcb9d731d5f533501fcfc4bb4e:
+  access-zones@0.0.1:
     dependencies:
       zod: 3.24.2
 

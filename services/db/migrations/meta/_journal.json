@@ -15,6 +15,13 @@
       "when": 1754395925200,
       "tag": "0001_fast_the_hood",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1754905865196,
+      "tag": "0002_grey_marten_broadcloak",
+      "breakpoints": true
     }
   ]
 }
