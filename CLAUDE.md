@@ -12,6 +12,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Type checking**: `pnpm w:app lint` (for main app typechecking as well as API checking)
 - Never run database migrations
 - NEVER run `pnpm format`
+- Almost always prefer suspense queries over a query with useEffect
+- When using Suspense Queries, be careful to have proper error boundaries as well
 
 ## Architecture Overview
 
