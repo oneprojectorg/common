@@ -101,7 +101,7 @@ export const InviteUserModal = ({ children }: InviteUserModalProps) => {
 
   const sendInvite = (props: {
     emails: string[];
-    roleId: string;
+    roleId?: string;
     organizationId?: string;
     message?: string;
   }) => {
@@ -168,7 +168,6 @@ export const InviteUserModal = ({ children }: InviteUserModalProps) => {
       // since roleId might not be applicable
       sendInvite({
         emails: allEmails,
-        roleId: selectedRoleId, // This might need special handling for new orgs
         message: personalMessage,
       });
     }
