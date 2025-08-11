@@ -13,5 +13,9 @@ const meta: Meta<typeof Calendar> = {
 export default meta;
 
 export const Example = (args: any) => (
-  <Calendar aria-label="Event date" {...args} />
+  <Calendar
+    aria-label="Event date"
+    {...args}
+    onChange={(date) => console.log(date)}
+  />
 );
