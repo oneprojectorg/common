@@ -3,9 +3,23 @@ import { and, db, eq } from '@op/db/client';
 import { organizations, users } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { createServerClient } from '@op/supabase/lib';
+import type { NormalizedRole } from 'access-zones';
 import { cookies } from 'next/headers';
 
 import { UnauthorizedError } from '../../utils/error';
+
+type OrgUserWithNormalizedRoles = {
+  id: string;
+  authUserId: string;
+  name: string | null;
+  email: string;
+  about: string | null;
+  organizationId: string;
+  createdAt: string | Date | null;
+  updatedAt: string | Date | null;
+  deletedAt?: string | Date | null;
+  roles: NormalizedRole[];
+};
 
 // gets a user assuming that the user is authenticated
 export const getOrgAccessUser = async ({
@@ -14,17 +28,62 @@ export const getOrgAccessUser = async ({
 }: {
   user: User;
   organizationId: string;
-}) => {
+}): Promise<OrgUserWithNormalizedRoles | undefined> => {
   const orgUser = await db.query.organizationUsers.findFirst({
     where: (table, { eq }) =>
       and(
         eq(table.organizationId, organizationId),
         eq(table.authUserId, user.id),
       ),
-    with: { roles: true },
+    with: {
+      roles: {
+        with: {
+          accessRole: {
+            with: {
+              zonePermissions: {
+                with: {
+                  accessZone: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
   });
 
-  return orgUser;
+  if (orgUser) {
+    // Transform the relational data into normalized format for access-zones library
+    const normalizedRoles: NormalizedRole[] = orgUser.roles.map(
+      (roleJunction) => {
+        const role = roleJunction.accessRole;
+
+        // Build the access object with zone names as keys and permission bitfields as values
+        const access: Record<string, number> = {};
+
+        if (role.zonePermissions) {
+          role.zonePermissions.forEach((zonePermission: any) => {
+            // Use zone name as key, permission bitfield as value
+            access[zonePermission.accessZone.name] = zonePermission.permission;
+          });
+        }
+
+        return {
+          id: role.id,
+          name: role.name,
+          access,
+        };
+      },
+    );
+
+    // Replace roles with normalized format
+    return {
+      ...orgUser,
+      roles: normalizedRoles,
+    } as OrgUserWithNormalizedRoles;
+  }
+
+  return orgUser as OrgUserWithNormalizedRoles | undefined;
 };
 
 const useUrl = OPURLConfig('APP');
@@ -180,7 +239,7 @@ export const getCurrentOrgId = async ({
 
 export const getCurrentOrgUserId = async (organizationId: string) => {
   const session = await getSession();
-  
+
   if (!session?.user) {
     throw new UnauthorizedError("You don't have access to do this");
   }
