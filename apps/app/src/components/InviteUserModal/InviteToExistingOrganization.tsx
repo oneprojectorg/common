@@ -1,6 +1,7 @@
 'use client';
 
 import { useUser } from '@/utils/UserProvider';
+import { trpc } from '@op/api/client';
 import { Select, SelectItem } from '@op/ui/Select';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
 import { toast } from '@op/ui/Toast';
@@ -32,6 +33,20 @@ export const InviteToExistingOrganization = ({
 }: InviteToExistingOrganizationProps) => {
   const t = useTranslations();
   const { user } = useUser();
+
+  const [rolesData] = trpc.organization.getRoles.useSuspenseQuery();
+
+  React.useEffect(() => {
+    if (!selectedRole) {
+      // Initialize default role if none selected
+      // Default to Admin if available, otherwise first role
+      const adminRole = rolesData.roles.find((role) => role.name === 'Admin');
+      const defaultRole = adminRole || rolesData.roles[0];
+      if (defaultRole) {
+        setSelectedRole(defaultRole.name);
+      }
+    }
+  }, [selectedRole, setSelectedRole]);
 
   // Ensure first organization is selected if no selection exists
   React.useEffect(() => {
@@ -128,7 +143,11 @@ export const InviteToExistingOrganization = ({
           selectedKey={selectedRole}
           onSelectionChange={(key) => setSelectedRole(key as string)}
         >
-          <SelectItem id="Admin">{t('Admin')}</SelectItem>
+          {rolesData.roles.map((role: any) => (
+            <SelectItem key={role.name} id={role.name}>
+              {role.name}
+            </SelectItem>
+          ))}
         </Select>
       </div>
     </div>

@@ -57,6 +57,7 @@ export const getAllowListUser = async ({ email }: { email?: string }) => {
     .select({
       email: allowList.email,
       organizationId: allowList.organizationId,
+      metadata: allowList.metadata,
     })
     .from(allowList)
     .where(eq(allowList.email, email.toLowerCase()))
