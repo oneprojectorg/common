@@ -9,6 +9,7 @@ import {
   profiles,
 } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
+import { assertAccess, permission } from 'access-zones';
 import pMap from 'p-map';
 
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
@@ -33,17 +34,19 @@ export const updateOrganization = async ({
   user: User;
 }) => {
   const organizationId = id;
+  if (!organizationId) {
+    throw new CommonError('Organization ID is required');
+  }
+
   const orgUser = await getOrgAccessUser({ user, organizationId });
 
   if (!orgUser) {
     throw new UnauthorizedError('You are not a member of this organization');
   }
 
-  const { ...updateData } = data;
+  assertAccess({ profile: permission.UPDATE }, orgUser?.roles || []);
 
-  if (!organizationId) {
-    throw new CommonError('Organization ID is required');
-  }
+  const { ...updateData } = data;
 
   // Check if user has permission to update this organization
   const existingOrg = await db.query.organizations.findFirst({
