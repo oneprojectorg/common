@@ -1,4 +1,5 @@
 import { Checkbox } from '@op/ui/Checkbox';
+import { DatePicker } from '@op/ui/DatePicker';
 import { Radio, RadioGroup } from '@op/ui/RadioGroup';
 import { TextField } from '@op/ui/TextField';
 import { WidgetProps } from '@rjsf/utils';
@@ -76,22 +77,29 @@ export const DateWidget = (props: WidgetProps) => {
   const { id, value, required, onChange, onBlur, onFocus, schema, rawErrors } =
     props;
 
+  const handleDateChange = (dateValue: any) => {
+    if (dateValue) {
+      // Convert the DateValue to ISO string format for the form
+      const isoString = `${dateValue.year}-${String(dateValue.month).padStart(2, '0')}-${String(dateValue.day).padStart(2, '0')}`;
+      onChange(isoString);
+    } else {
+      onChange('');
+    }
+  };
+
   return (
-    <TextField
-      id={id}
+    <DatePicker
       label={schema.title || ''}
-      value={value || ''}
+      value={value}
       isRequired={required}
-      inputProps={{
-        type: 'date',
-        placeholder: 'MM/DD/YYYY',
-      }}
+      placeholder="Select date"
       description={schema.description}
-      onChange={(val) => onChange(val)}
-      onBlur={() => onBlur(id, value)}
-      onFocus={() => onFocus(id, value)}
+      onChange={handleDateChange}
       errorMessage={rawErrors?.join(', ')}
-      isInvalid={!!rawErrors && rawErrors.length > 0}
+      inputProps={{
+        onBlur: () => onBlur(id, value),
+        onFocus: () => onFocus(id, value),
+      }}
     />
   );
 };
