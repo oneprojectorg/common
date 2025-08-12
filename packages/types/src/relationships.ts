@@ -26,7 +26,7 @@ export const RELATIONSHIP_OPTIONS = [
 
   {
     key: 'memberOf',
-    label: 'Membership',
+    label: 'Member',
     noun: 'Member',
     inverse: 'hasMember',
     description: (orgName: string) =>
@@ -35,9 +35,9 @@ export const RELATIONSHIP_OPTIONS = [
   {
     key: 'hasMember',
     label: 'Membership',
-    noun: 'Member',
+    noun: 'Membership',
     reverse: 'memberOf',
-    inverse: 'Member',
+    inverse: 'member',
     description: () => 'This person is a member of your network',
   },
 
