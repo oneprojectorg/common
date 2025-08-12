@@ -56,6 +56,9 @@ export const sendRelationshipRequestEmail = async ({
   const relationshipLabels = relationshipTypes.map(
     (type) => relationshipMap[type]?.noun || type,
   );
+  const inverseRelationshipLabels = relationshipTypes.map(
+    (type) => relationshipMap[type]?.inverse || type,
+  );
   const relationshipText =
     relationshipLabels.length === 1
       ? relationshipLabels[0]
@@ -64,12 +67,12 @@ export const sendRelationshipRequestEmail = async ({
   await OPNodemailer({
     to,
     from: `${requesterOrgName} via Common`,
-    subject: `Action Required: Accept request for ${targetOrgName} to add ${requesterOrgName} as a/an ${relationshipText} on Common`,
+    subject: `Action Required: Accept request for ${targetOrgName} to add ${requesterOrgName} as a ${relationshipText} on Common`,
     component: () =>
       OPRelationshipRequestEmail({
         requesterOrgName,
         targetOrgName,
-        relationshipTypes,
+        relationshipTypes: inverseRelationshipLabels,
         approvalUrl,
         requesterMessage,
       }),
