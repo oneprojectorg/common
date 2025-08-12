@@ -51,148 +51,172 @@ const stepSchemas: Record<number, { schema: RJSFSchema; uiSchema: UiSchema }> =
     2: {
       schema: {
         type: 'object',
-        title: 'Timeline',
-        required: ['startDate', 'endDate', 'votingPeriod'],
+        title: 'Set up your decision-making phases',
+        required: [
+          'submissionsOpen',
+          'submissionsClose',
+          'reviewOpen',
+          'reviewClose',
+          'votingOpen',
+          'votingClose',
+          'resultsDate',
+        ],
         properties: {
-          startDate: {
+          submissionsOpen: {
             type: 'string',
             format: 'date',
-            title: 'Start Date',
+            title: 'Submissions Open',
           },
-          endDate: {
+          submissionsClose: {
             type: 'string',
             format: 'date',
-            title: 'End Date',
+            title: 'Submissions Close',
           },
-          votingPeriod: {
+          reviewOpen: {
             type: 'string',
-            title: 'Voting Period',
-            description: 'How long will the voting period last?',
+            format: 'date',
+            title: 'Review Open',
+          },
+          reviewClose: {
+            type: 'string',
+            format: 'date',
+            title: 'Review Close',
+          },
+          votingOpen: {
+            type: 'string',
+            format: 'date',
+            title: 'Voting Open',
+          },
+          votingClose: {
+            type: 'string',
+            format: 'date',
+            title: 'Voting Close',
+          },
+          resultsDate: {
+            type: 'string',
+            format: 'date',
+            title: 'Results Announcement Date',
           },
         },
       },
       uiSchema: {
-        startDate: {
+        submissionsOpen: {
           'ui:widget': 'date',
         },
-        endDate: {
+        submissionsClose: {
           'ui:widget': 'date',
         },
-        votingPeriod: {
-          'ui:placeholder': 'e.g., 7 days',
+        reviewOpen: {
+          'ui:widget': 'date',
+        },
+        reviewClose: {
+          'ui:widget': 'date',
+        },
+        votingOpen: {
+          'ui:widget': 'date',
+        },
+        votingClose: {
+          'ui:widget': 'date',
+        },
+        resultsDate: {
+          'ui:widget': 'date',
         },
       },
     },
     3: {
       schema: {
         type: 'object',
-        title: 'Eligibility',
-        required: ['eligibilityCriteria'],
+        title: 'Configure your voting settings',
+        required: ['maxVotesPerMember'],
         properties: {
-          eligibilityCriteria: {
+          maxVotesPerMember: {
             type: 'string',
-            title: 'Eligibility Criteria',
-          },
-          maxRequestAmount: {
-            type: 'string',
-            title: 'Maximum Request Amount',
-            description: 'Leave blank for no limit',
-          },
-          requiresProposal: {
-            type: 'boolean',
-            title: 'Requires proposal submission',
-            default: false,
+            title: 'Maximum Votes Per Member',
+            minLength: 1,
+            description: 'How many proposals can each member vote for?',
           },
         },
       },
       uiSchema: {
-        eligibilityCriteria: {
-          'ui:widget': 'textarea',
-          'ui:placeholder': 'Who can participate in this process?',
-        },
-        maxRequestAmount: {
-          'ui:placeholder': '$0.00',
+        maxVotesPerMember: {
+          'ui:placeholder': 'e.g., 5',
         },
       },
     },
     4: {
       schema: {
         type: 'object',
-        title: 'Review Settings',
-        required: ['reviewers', 'approvalThreshold'],
+        title: 'Configure proposal categories',
         properties: {
-          reviewers: {
+          categories: {
             type: 'array',
-            title: 'Reviewers',
-            minItems: 1,
+            title: 'Categories',
             items: {
               type: 'string',
-              format: 'email',
             },
-            description: 'Who will review and approve submissions?',
-          },
-          approvalThreshold: {
-            type: 'string',
-            title: 'Approval Threshold',
-            description: 'Minimum percentage of votes needed for approval',
-          },
-          allowComments: {
-            type: 'boolean',
-            title: 'Allow reviewers to leave comments',
-            default: true,
+            default: [],
+            description:
+              'Categories help organize proposals. You can add or remove categories as needed.',
           },
         },
       },
       uiSchema: {
-        reviewers: {
+        categories: {
+          'ui:widget': 'CategoryList',
           'ui:options': {
             addable: true,
             removable: true,
           },
-        },
-        approvalThreshold: {
-          'ui:placeholder': 'e.g., 51%',
         },
       },
     },
     5: {
       schema: {
         type: 'object',
-        title: 'Notifications & Visibility',
-        required: ['visibility'],
+        title: 'Setup proposal template',
+        required: ['budgetCapAmount', 'descriptionGuidance'],
         properties: {
-          notificationSettings: {
-            type: 'object',
-            title: 'Notifications',
-            properties: {
-              emailNotifications: {
-                type: 'boolean',
-                title: 'Send email notifications',
-                default: true,
-              },
-              slackNotifications: {
-                type: 'boolean',
-                title: 'Send Slack notifications',
-                default: false,
-              },
-            },
-          },
-          visibility: {
+          budgetCapAmount: {
             type: 'string',
-            title: 'Visibility',
-            enum: ['public', 'private', 'invited'],
-            enumNames: [
-              'Public - Anyone can view this process',
-              'Private - Only reviewers can view',
-              'Invited - Only invited participants can view',
-            ],
-            default: 'public',
+            title: 'Budget cap amount',
+            minLength: 1,
+            description: 'Maximum budget amount participants can request',
+          },
+          descriptionGuidance: {
+            type: 'string',
+            title: 'Description guidance',
+            description:
+              'Placeholder text that appears in the proposal description area.',
           },
         },
       },
       uiSchema: {
-        visibility: {
-          'ui:widget': 'radio',
+        budgetCapAmount: {
+          'ui:placeholder': '$0.00 USD',
+        },
+        descriptionGuidance: {
+          'ui:widget': 'textarea',
+          'ui:placeholder':
+            "e.g., Start with the problem you're addressing, explain your solution, and describe the expected impact on our community.",
+        },
+      },
+    },
+    6: {
+      schema: {
+        type: 'object',
+        title: 'Review and launch',
+        properties: {
+          summary: {
+            type: 'object',
+            title: 'Summary',
+            properties: {},
+            description: 'Confirm your settings before creating the process.',
+          },
+        },
+      },
+      uiSchema: {
+        summary: {
+          'ui:widget': 'ReviewSummary',
         },
       },
     },
@@ -204,24 +228,22 @@ export const CreateProcessModal = () => {
     processName: '',
     description: '',
     totalBudget: '',
-    startDate: '',
-    endDate: '',
-    votingPeriod: '',
-    eligibilityCriteria: '',
-    maxRequestAmount: '',
-    requiresProposal: false,
-    reviewers: [],
-    approvalThreshold: '',
-    allowComments: true,
-    notificationSettings: {
-      emailNotifications: true,
-      slackNotifications: false,
-    },
-    visibility: 'public',
+    submissionsOpen: '',
+    submissionsClose: '',
+    reviewOpen: '',
+    reviewClose: '',
+    votingOpen: '',
+    votingClose: '',
+    resultsDate: '',
+    maxVotesPerMember: '',
+    categories: [],
+    budgetCapAmount: '',
+    descriptionGuidance: '',
+    summary: {},
   });
   const [errors, setErrors] = useState<Record<number, any>>({});
 
-  const totalSteps = 5;
+  const totalSteps = 6;
 
   const handleNext = (step: number) => {
     // Validate current step before proceeding
@@ -288,12 +310,14 @@ export const CreateProcessModal = () => {
       currentStep === 1
         ? 'Define the key details for your decision process.'
         : currentStep === 2
-          ? 'Set the timeline for your decision process.'
+          ? 'Members submit proposals and ideas for funding consideration.'
           : currentStep === 3
-            ? 'Define eligibility and requirements.'
+            ? 'Set up how members will participate in the voting process.'
             : currentStep === 4
-              ? 'Configure review and approval settings.'
-              : 'Configure notifications and visibility.';
+              ? 'Categories help organize proposals. You can add or remove categories as needed.'
+              : currentStep === 5
+                ? 'Configure guidance and budget limits'
+                : 'Confirm your settings before creating the process.';
 
     return (
       <div className="flex flex-col gap-6">

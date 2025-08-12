@@ -1,3 +1,4 @@
+import { CategoryList } from '@op/ui/CategoryList';
 import { Checkbox } from '@op/ui/Checkbox';
 import { DatePicker } from '@op/ui/DatePicker';
 import { Radio, RadioGroup } from '@op/ui/RadioGroup';
@@ -145,15 +146,52 @@ export const RadioWidget = (props: WidgetProps) => {
   );
 };
 
+export const CategoryListWidget = (props: WidgetProps) => {
+  const { value, onChange, schema } = props;
+
+  // Convert string array to CategoryItem format expected by CategoryList
+  const categoryItems = (value || []).map((label: string, index: number) => ({
+    id: `category_${index}`,
+    label,
+  }));
+
+  const handleUpdateList = (categories: { id: string; label: string }[]) => {
+    // Convert back to string array for RJSF
+    const stringArray = categories
+      .map(cat => cat.label)
+      .filter(label => label.trim() !== ''); // Filter out empty labels
+    onChange(stringArray);
+  };
+
+  return (
+    <div className="flex flex-col gap-2">
+      <label className="text-sm font-medium text-neutral-charcoal">
+        {schema.title}
+      </label>
+      {schema.description && (
+        <p className="text-sm text-neutral-charcoal">{schema.description}</p>
+      )}
+      <CategoryList
+        initialCategories={categoryItems}
+        placeholder="Enter category name..."
+        onUpdateList={handleUpdateList}
+        className="rounded-lg"
+      />
+    </div>
+  );
+};
+
 export const CustomWidgets = {
   TextWidget,
   TextareaWidget,
   DateWidget,
   CheckboxWidget,
   RadioWidget,
+  CategoryListWidget,
   text: TextWidget,
   textarea: TextareaWidget,
   date: DateWidget,
   checkbox: CheckboxWidget,
   radio: RadioWidget,
+  CategoryList: CategoryListWidget,
 };
