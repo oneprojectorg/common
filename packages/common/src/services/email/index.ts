@@ -3,7 +3,7 @@ import { relationshipMap } from '@op/types';
 export interface SendInvitationEmailParams {
   to: string;
   inviterName: string;
-  organizationName: string;
+  organizationName?: string;
   inviteUrl?: string;
   message?: string;
 }
@@ -26,7 +26,7 @@ export const sendInvitationEmail = async ({
     component: () =>
       OPInvitationEmail({
         inviterName,
-        organizationName,
+        organizationName: organizationName || 'Common',
         inviteUrl,
         message,
       }),

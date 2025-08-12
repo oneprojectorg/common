@@ -1,5 +1,6 @@
 'use client';
 
+import { getLocalTimeZone, isToday } from '@internationalized/date';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import {
   Calendar as AriaCalendar,
@@ -23,14 +24,17 @@ import { Button } from './Button';
 
 const cellStyles = tv({
   extend: focusRing,
-  base: 'flex size-9 cursor-default items-center justify-center rounded-full text-sm forced-color-adjust-none',
+  base: 'focus-within:outline-blueGreen flex size-8 cursor-default items-center justify-center text-base outline-offset-2 outline-transparent forced-color-adjust-none hover:bg-neutral-offWhite',
   variants: {
     isSelected: {
-      false: 'text-neutral-800 hover:bg-neutral-300 pressed:bg-neutral-400',
-      true: 'bg-neutral-400 text-white invalid:bg-red-600',
+      false: 'text-neutral-charcoal',
+      true: 'bg-primary-teal text-white hover:bg-primary-teal',
     },
     isDisabled: {
-      true: 'text-neutral-400',
+      true: 'text-neutral-gray3',
+    },
+    isOutsideMonth: {
+      true: 'text-neutral-gray4',
     },
   },
 });
@@ -45,19 +49,27 @@ export const CalendarHeader = () => {
 
   return (
     <header className="flex w-full items-center justify-between gap-2 px-1 pb-4">
-      <Button variant="icon" slot="previous">
+      <Button
+        variant="icon"
+        slot="previous"
+        className="h-8 w-8 rounded-none bg-white p-0 text-neutral-charcoal shadow-none hover:bg-neutral-offWhite pressed:bg-neutral-offWhite pressed:shadow-none"
+      >
         {direction === 'rtl' ? (
-          <ChevronRight aria-hidden />
+          <ChevronRight className="size-4" aria-hidden />
         ) : (
-          <ChevronLeft aria-hidden />
+          <ChevronLeft className="size-4" aria-hidden />
         )}
       </Button>
-      <Heading className="text-center text-xl font-semibold text-neutral-800" />
-      <Button variant="icon" slot="next">
+      <Heading className="text-center text-base text-neutral-charcoal" />
+      <Button
+        variant="icon"
+        slot="next"
+        className="h-8 w-8 rounded-none bg-white p-0 text-neutral-charcoal shadow-none hover:bg-neutral-offWhite pressed:bg-neutral-offWhite pressed:shadow-none"
+      >
         {direction === 'rtl' ? (
-          <ChevronLeft aria-hidden />
+          <ChevronLeft className="size-4" aria-hidden />
         ) : (
-          <ChevronRight aria-hidden />
+          <ChevronRight className="size-4" aria-hidden />
         )}
       </Button>
     </header>
@@ -68,7 +80,7 @@ export const CalendarGridHeader = () => {
   return (
     <AriaCalendarGridHeader>
       {(day) => (
-        <CalendarHeaderCell className="text-xs font-semibold text-neutral-500">
+        <CalendarHeaderCell className="text-base text-neutral-charcoal">
           {day}
         </CalendarHeaderCell>
       )}
@@ -81,12 +93,29 @@ export const Calendar = <T extends DateValue>({
   ...props
 }: CalendarProps<T>) => {
   return (
-    <AriaCalendar {...props}>
+    <AriaCalendar
+      {...props}
+      className="rounded-md border border-solid border-neutral-gray1 bg-white p-1"
+    >
       <CalendarHeader />
       <CalendarGrid>
         <CalendarGridHeader />
         <CalendarGridBody>
-          {(date) => <CalendarCell date={date} className={cellStyles} />}
+          {(date) => {
+            const isTodayCell = isToday(date, getLocalTimeZone());
+            const cell = <CalendarCell date={date} className={cellStyles} />;
+
+            if (isTodayCell) {
+              return (
+                <span className="relative flex flex-col">
+                  {cell}
+                  <span className="absolute bottom-1 left-0 right-0 m-auto size-1 rounded-full bg-primary-teal"></span>
+                </span>
+              );
+            }
+
+            return cell;
+          }}
         </CalendarGridBody>
       </CalendarGrid>
       {errorMessage && (
