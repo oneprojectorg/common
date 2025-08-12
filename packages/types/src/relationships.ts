@@ -3,6 +3,7 @@ export const RELATIONSHIP_OPTIONS = [
     key: 'partnership',
     label: 'Partnership',
     noun: 'Partner',
+    inverse: 'Partner',
     description: (orgName: string) =>
       `You've partnered with ${orgName} on projects/programs`,
   },
@@ -34,12 +35,14 @@ export const RELATIONSHIP_OPTIONS = [
     label: 'Membership',
     noun: 'Member',
     reverse: 'memberOf',
+    inverse: 'Member',
     description: () => 'This person is a member of your network',
   },
   {
     key: 'affiliation',
     label: 'Affiliation',
     noun: 'Affiliate',
+    inverse: 'Affiliate',
     description: (orgName: string) =>
       `Your organization informally supports or collaborates with  ${orgName}`,
   },
