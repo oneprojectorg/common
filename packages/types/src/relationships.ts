@@ -37,7 +37,7 @@ export const RELATIONSHIP_OPTIONS = [
     label: 'Membership',
     noun: 'Membership',
     reverse: 'memberOf',
-    inverse: 'member',
+    inverse: 'memberOf',
     description: () => 'This person is a member of your network',
   },
 
