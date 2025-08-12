@@ -7,6 +7,7 @@ import { declineRelationshipRouter } from './declineRelationship';
 import { deletePost } from './deletePost';
 import { getOrganizationRouter } from './getOrganization';
 import { getOrganizationsByProfileRouter } from './getOrganizationsByProfile';
+import { getRolesRouter } from './getRoles';
 import { inviteUserRouter } from './inviteUser';
 import { joinOrganization } from './joinOrganization';
 import { listOrganizationsRouter } from './listOrganizations';
@@ -24,6 +25,7 @@ import { uploadPostAttachment } from './uploadPostAttachment';
 export const organizationRouter = mergeRouters(
   getOrganizationRouter,
   getOrganizationsByProfileRouter,
+  getRolesRouter,
   listOrganizationsRouter,
   listOrganizationPostsRouter,
   searchOrganizationsRouter,
