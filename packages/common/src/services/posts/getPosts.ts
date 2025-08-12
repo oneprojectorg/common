@@ -60,7 +60,11 @@ export const getPosts = async (input: GetPostsInput) => {
             storageObject: true,
           },
         },
-        reactions: true,
+        reactions: {
+          with: {
+            profile: true,
+          },
+        },
         // Recursively include child posts if requested
         ...(includeChildren && maxDepth > 0
           ? {
@@ -78,7 +82,11 @@ export const getPosts = async (input: GetPostsInput) => {
                       storageObject: true,
                     },
                   },
-                  reactions: true,
+                  reactions: {
+                    with: {
+                      profile: true,
+                    },
+                  },
                   // One level of nesting for now (can be expanded recursively)
                   ...(maxDepth > 1
                     ? {
@@ -91,7 +99,11 @@ export const getPosts = async (input: GetPostsInput) => {
                                 avatarImage: true,
                               },
                             },
-                            reactions: true,
+                            reactions: {
+                              with: {
+                                profile: true,
+                              },
+                            },
                           },
                         },
                       }
@@ -121,7 +133,11 @@ export const getPosts = async (input: GetPostsInput) => {
                   storageObject: true,
                 },
               },
-              reactions: true,
+              reactions: {
+                with: {
+                  profile: true,
+                },
+              },
               ...(includeChildren && maxDepth > 0
                 ? {
                     childPosts: {
@@ -138,7 +154,11 @@ export const getPosts = async (input: GetPostsInput) => {
                             storageObject: true,
                           },
                         },
-                        reactions: true,
+                        reactions: {
+                          with: {
+                            profile: true,
+                          },
+                        },
                       },
                     },
                   }

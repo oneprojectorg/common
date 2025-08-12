@@ -296,7 +296,21 @@ const AvatarMenuContent = ({
         className="flex flex-col items-start justify-start gap-2 px-0 text-sm text-neutral-gray4 hover:bg-transparent"
       >
         <div className="text-sm sm:text-xs">
-          Ethical Open Source • One Project • {new Date().getFullYear()}
+          <span
+            className="pointer text-primary-teal hover:underline"
+            onClick={() => {
+              window.open(
+                'https://github.com/oneprojectorg/common',
+                '_blank',
+                'noopener,noreferrer',
+              );
+
+              onClose?.();
+            }}
+          >
+            Ethical Open Source
+          </span>{' '}
+          • One Project • {new Date().getFullYear()}
         </div>
       </MenuItemSimple>
     </>
@@ -371,7 +385,7 @@ const UserAvatarMenu = () => {
           isDismissable={true}
           isKeyboardDismissDisabled={false}
           overlayClassName="p-0 items-end justify-center animate-in fade-in-0 duration-300"
-          className="m-0 w-screen max-w-none rounded-b-none rounded-t border-0 outline-0 duration-300 ease-out animate-in slide-in-from-bottom-full"
+          className="m-0 h-auto w-screen max-w-none rounded-b-none rounded-t border-0 outline-0 duration-300 ease-out animate-in slide-in-from-bottom-full"
         >
           <ModalBody className="pb-safe p-0">
             <Menu className="flex min-w-full flex-col border-t-0 p-4 pb-8">

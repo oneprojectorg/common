@@ -56,6 +56,7 @@ export * from './components/ToggleButton';
 export * from './components/ToggleButtonGroup';
 export * from './components/Toolbar';
 export * from './components/Tooltip';
+export * from './components/ReactionTooltip';
 export * from './components/LoadingSpinner';
 export * from './components/Toast';
 export * from './components/AvatarUploader';

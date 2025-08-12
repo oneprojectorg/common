@@ -1,8 +1,10 @@
 'use client';
 
 import { getPublicUrl } from '@/utils';
+import { createOptimisticUpdater, type PostFeedUser } from '@/utils/optimisticUpdates';
 import { OrganizationUser } from '@/utils/UserProvider';
 import { detectLinks, linkifyText } from '@/utils/linkDetection';
+import { createCommentsQueryKey } from '@/utils/queryKeys';
 import { trpc } from '@op/api/client';
 import type {
   Organization,
@@ -24,7 +26,7 @@ import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';
 import { useFeatureFlagEnabled } from 'posthog-js/react';
-import { ReactNode, useState } from 'react';
+import { ReactNode, memo, useMemo, useState } from 'react';
 import { LuEllipsis, LuLeaf } from 'react-icons/lu';
 
 import { Link } from '@/lib/i18n';
@@ -127,8 +129,10 @@ const AttachmentImage = ({
   );
 };
 
-const PostUrls = ({ urls }: { urls: string[] }) => {
-  if (urls.length === 0) return null;
+const PostUrls = memo(({ urls }: { urls: string[] }) => {
+  if (urls.length === 0) {
+    return null;
+  }
 
   return (
     <div>
@@ -137,7 +141,9 @@ const PostUrls = ({ urls }: { urls: string[] }) => {
       ))}
     </div>
   );
-};
+});
+
+PostUrls.displayName = 'PostUrls';
 
 const PostReactions = ({
   post,
@@ -150,17 +156,19 @@ const PostReactions = ({
 
   const reactions = post.reactionCounts
     ? Object.entries(post.reactionCounts).map(([reactionType, count]) => {
-        const reactionOption = REACTION_OPTIONS.find(
-          (option) => option.key === reactionType,
-        );
-        const emoji = reactionOption?.emoji || reactionType;
+      const reactionOption = REACTION_OPTIONS.find(
+        (option) => option.key === reactionType,
+      );
+      const emoji = reactionOption?.emoji || reactionType;
+      const users = post.reactionUsers?.[reactionType] || [];
 
-        return {
-          emoji,
-          count: count as number,
-          isActive: post.userReaction === reactionType,
-        };
-      })
+      return {
+        emoji,
+        count: count as number,
+        isActive: post.userReaction === reactionType,
+        users,
+      };
+    })
     : [];
 
   return (
@@ -217,7 +225,7 @@ const PostMenu = ({
       </IconButton>
       <Popover placement="bottom end">
         <PostMenuContent
-          postId={post.id}
+          post={post}
           profileId={user?.currentProfileId || ''}
           canDelete={canShowMenu}
         />
@@ -227,11 +235,11 @@ const PostMenu = ({
 };
 
 const PostMenuContent = ({
-  postId,
+  post,
   profileId,
   canDelete,
 }: {
-  postId: string;
+  post: Post;
   profileId: string;
   canDelete: boolean;
 }) => {
@@ -239,7 +247,7 @@ const PostMenuContent = ({
     return null;
   }
 
-  return <DeletePost postId={postId} profileId={profileId} />;
+  return <DeletePost post={post} profileId={profileId} />;
 };
 
 export const EmptyPostsState = () => (
@@ -271,7 +279,7 @@ export const PostItem = ({
   className?: string;
 }) => {
   const { organization, post } = postToOrg;
-  const { urls } = detectLinks(post?.content);
+  const { urls } = useMemo(() => detectLinks(post?.content), [post?.content]);
 
   // For comments (posts without organization), show the post author
   // TODO: this is too complex. We need to refactor this
@@ -347,9 +355,13 @@ export const DiscussionModalContainer = ({
 export const usePostFeedActions = ({
   slug,
   limit = 20,
+  parentPostId,
+  user,
 }: {
   slug?: string;
   limit?: number;
+  parentPostId?: string;
+  user?: PostFeedUser;
 } = {}) => {
   const utils = trpc.useUtils();
   const [discussionModal, setDiscussionModal] = useState<{
@@ -368,64 +380,25 @@ export const usePostFeedActions = ({
       }
       await utils.organization.listAllPosts.cancel({});
 
+      // Cancel comments cache if we're in a modal context
+      if (parentPostId) {
+        const commentsQueryKey = createCommentsQueryKey(parentPostId);
+        await utils.posts.getPosts.cancel(commentsQueryKey);
+      }
+
       // Snapshot the previous values
       const previousListPosts = slug
         ? utils.organization.listPosts.getInfiniteData({ slug, limit })
         : undefined;
       const previousListAllPosts = utils.organization.listAllPosts.getData({});
+      const previousComments = parentPostId
+        ? utils.posts.getPosts.getData(createCommentsQueryKey(parentPostId))
+        : undefined;
 
-      // Helper function to update post reactions
-      const updatePostReactions = (item: PostToOrganization) => {
-        if (item.post.id === postId) {
-          const currentReaction = item.post.userReaction;
-          const currentCounts = item.post.reactionCounts || {};
-
-          // Check if user already has this reaction
-          const hasReaction = currentReaction === reactionType;
-
-          if (hasReaction) {
-            // Remove reaction
-            return {
-              ...item,
-              post: {
-                ...item.post,
-                userReaction: null,
-                reactionCounts: {
-                  ...currentCounts,
-                  [reactionType]: Math.max(
-                    0,
-                    (currentCounts[reactionType] || 0) - 1,
-                  ),
-                },
-              },
-            };
-          } else {
-            // Replace or add reaction
-            const newCounts = { ...currentCounts };
-
-            // If user had a previous reaction, decrement its count
-            if (currentReaction) {
-              newCounts[currentReaction] = Math.max(
-                0,
-                (newCounts[currentReaction] || 0) - 1,
-              );
-            }
-
-            // Increment count for new reaction
-            newCounts[reactionType] = (newCounts[reactionType] || 0) + 1;
-
-            return {
-              ...item,
-              post: {
-                ...item.post,
-                userReaction: reactionType,
-                reactionCounts: newCounts,
-              },
-            };
-          }
-        }
-        return item;
-      };
+      // Use optimistic updater service for cleaner code
+      const optimisticUpdater = createOptimisticUpdater(user);
+      const updatePostReactions = (item: PostToOrganization) =>
+        optimisticUpdater.updatePostReactions(item, postId, reactionType);
 
       // Optimistically update listPosts cache (if slug is provided)
       if (slug) {
@@ -456,7 +429,33 @@ export const usePostFeedActions = ({
         };
       });
 
-      return { previousListPosts, previousListAllPosts };
+      // Optimistically update comments cache if we're in a modal context
+      if (parentPostId) {
+        const commentsQueryKey = createCommentsQueryKey(parentPostId);
+        utils.posts.getPosts.setData(commentsQueryKey, (old) => {
+          if (!old) {
+            return old;
+          }
+
+          // Transform comments to PostToOrganization format and apply updates
+          return old.map((comment) => {
+            const postToOrg: PostToOrganization = {
+              createdAt: comment.createdAt,
+              updatedAt: comment.updatedAt,
+              deletedAt: null,
+              postId: comment.id,
+              organizationId: '',
+              post: comment,
+              organization: null,
+            };
+
+            const updated = updatePostReactions(postToOrg);
+            return updated.post;
+          });
+        });
+      }
+
+      return { previousListPosts, previousListAllPosts, previousComments };
     },
     onError: (err, _variables, context) => {
       // Rollback on error
@@ -470,6 +469,13 @@ export const usePostFeedActions = ({
         utils.organization.listAllPosts.setData(
           {},
           context.previousListAllPosts,
+        );
+      }
+      if (context?.previousComments && parentPostId) {
+        const commentsQueryKey = createCommentsQueryKey(parentPostId);
+        utils.posts.getPosts.setData(
+          commentsQueryKey,
+          context.previousComments,
         );
       }
       toast.error({ message: err.message || 'Failed to update reaction' });

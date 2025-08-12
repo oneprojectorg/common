@@ -7,7 +7,7 @@ import { Modal, ModalHeader } from '@op/ui/Modal';
 import { DialogTrigger } from '@op/ui/RAC';
 import { useOverlayTriggerState } from '@op/ui/RAS';
 import { useRef } from 'react';
-import { LuPencil, LuX } from 'react-icons/lu';
+import { LuPencil } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -38,30 +38,9 @@ export const UpdateUserProfileModal = ({
         <LuPencil className="size-4" />
         {t('Edit Profile')}
       </Button>
-      <Modal isDismissable className="sm:max-h-[75vh]">
-        <ModalHeader className="flex items-center justify-between">
-          {/* Desktop header */}
-          <div className="hidden sm:flex sm:w-full sm:items-center sm:justify-between">
-            {t('Edit Profile')}
-            <LuX className="size-6 cursor-pointer stroke-1" />
-          </div>
+      <Modal isDismissable>
+        <ModalHeader>{t('Edit Profile')}</ModalHeader>
 
-          {/* Mobile header */}
-          <div className="flex w-full items-center justify-between sm:hidden">
-            <Button unstyled className="font-sans text-base text-primary-teal">
-              {t('Cancel')}
-            </Button>
-            <h2 className="text-title-sm">{t('Edit Profile')}</h2>
-            <Button
-              type="submit"
-              className="font-sans text-base text-primary-teal"
-              unstyled
-              form="update-profile-form"
-            >
-              {t('Save')}
-            </Button>
-          </div>
-        </ModalHeader>
         {user?.currentProfile && (
           <UpdateProfileForm
             ref={formRef}

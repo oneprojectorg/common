@@ -36,10 +36,12 @@ if (!process.env.DB_SEEDING) {
   throw new Error('You must set DB_SEEDING to "true" when truncating');
 }
 
-if (
-  process.env.DATABASE_URL !==
-  'postgresql://postgres:postgres@127.0.0.1:54322/postgres'
-) {
+const allowedDatabaseUrls = [
+  'postgresql://postgres:postgres@127.0.0.1:54322/postgres', // Development database
+  'postgresql://postgres:postgres@127.0.0.1:55322/postgres'  // Test database
+];
+
+if (!allowedDatabaseUrls.includes(process.env.DATABASE_URL || '')) {
   throw new Error('You are truncating in production');
 }
 
