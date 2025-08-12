@@ -1,0 +1,151 @@
+import { Checkbox } from '@op/ui/Checkbox';
+import { Radio, RadioGroup } from '@op/ui/RadioGroup';
+import { TextField } from '@op/ui/TextField';
+import { WidgetProps } from '@rjsf/utils';
+
+export const TextWidget = (props: WidgetProps) => {
+  const {
+    id,
+    value,
+    required,
+    placeholder,
+    onChange,
+    onBlur,
+    onFocus,
+    schema,
+    uiSchema,
+    rawErrors,
+  } = props;
+  const inputType = schema.format === 'email' ? 'email' : 'text';
+
+  return (
+    <TextField
+      id={id}
+      label={schema.title || ''}
+      value={value || ''}
+      isRequired={required}
+      inputProps={{
+        placeholder: uiSchema?.['ui:placeholder'] || placeholder,
+        type: inputType,
+      }}
+      description={schema.description}
+      onChange={(val) => onChange(val)}
+      onBlur={() => onBlur(id, value)}
+      onFocus={() => onFocus(id, value)}
+      errorMessage={rawErrors?.join(', ')}
+      isInvalid={!!rawErrors && rawErrors.length > 0}
+    />
+  );
+};
+
+export const TextareaWidget = (props: WidgetProps) => {
+  const {
+    id,
+    value,
+    required,
+    placeholder,
+    onChange,
+    onBlur,
+    onFocus,
+    schema,
+    uiSchema,
+    rawErrors,
+  } = props;
+
+  return (
+    <TextField
+      id={id}
+      label={schema.title || ''}
+      value={value || ''}
+      isRequired={required}
+      useTextArea
+      textareaProps={{
+        placeholder: uiSchema?.['ui:placeholder'] || placeholder,
+      }}
+      description={schema.description}
+      onChange={(val) => onChange(val)}
+      onBlur={() => onBlur(id, value)}
+      onFocus={() => onFocus(id, value)}
+      errorMessage={rawErrors?.join(', ')}
+      isInvalid={!!rawErrors && rawErrors.length > 0}
+    />
+  );
+};
+
+export const DateWidget = (props: WidgetProps) => {
+  const { id, value, required, onChange, onBlur, onFocus, schema, rawErrors } =
+    props;
+
+  return (
+    <TextField
+      id={id}
+      label={schema.title || ''}
+      value={value || ''}
+      isRequired={required}
+      inputProps={{
+        type: 'date',
+        placeholder: 'MM/DD/YYYY',
+      }}
+      description={schema.description}
+      onChange={(val) => onChange(val)}
+      onBlur={() => onBlur(id, value)}
+      onFocus={() => onFocus(id, value)}
+      errorMessage={rawErrors?.join(', ')}
+      isInvalid={!!rawErrors && rawErrors.length > 0}
+    />
+  );
+};
+
+export const CheckboxWidget = (props: WidgetProps) => {
+  const { id, value, onChange, schema } = props;
+
+  return (
+    <Checkbox
+      id={id}
+      isSelected={value || false}
+      onChange={(val) => onChange(val)}
+    >
+      {schema.title}
+    </Checkbox>
+  );
+};
+
+export const RadioWidget = (props: WidgetProps) => {
+  const { value, onChange, schema, options } = props;
+  const { enumOptions } = options;
+
+  return (
+    <div className="flex flex-col gap-2">
+      <label className="text-sm font-medium text-neutral-charcoal">
+        {schema.title}
+      </label>
+      <RadioGroup
+        value={value || ''}
+        onChange={(val) => onChange(val)}
+        aria-label={schema.title || ''}
+      >
+        {enumOptions?.map((option: any) => (
+          <Radio key={option.value} value={option.value}>
+            <span className="text-sm">{option.label}</span>
+          </Radio>
+        ))}
+      </RadioGroup>
+      {schema.description && (
+        <p className="text-xs text-neutral-gray4">{schema.description}</p>
+      )}
+    </div>
+  );
+};
+
+export const CustomWidgets = {
+  TextWidget,
+  TextareaWidget,
+  DateWidget,
+  CheckboxWidget,
+  RadioWidget,
+  text: TextWidget,
+  textarea: TextareaWidget,
+  date: DateWidget,
+  checkbox: CheckboxWidget,
+  radio: RadioWidget,
+};
