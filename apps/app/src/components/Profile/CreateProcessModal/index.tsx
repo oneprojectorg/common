@@ -12,213 +12,221 @@ import { CustomWidgets } from './CustomWidgets';
 // Define schemas for each step
 const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
   {
-      schema: {
-        type: 'object',
-        title: 'Basic Information',
-        required: ['processName', 'totalBudget'],
-        properties: {
-          processName: {
-            type: 'string',
-            title: 'Process Name',
-            minLength: 1,
-          },
-          description: {
-            type: 'string',
-            title: 'Description',
-          },
-          totalBudget: {
-            type: 'string',
-            title: 'Total Budget Available',
-            minLength: 1,
-            description: 'The total amount available this funding round.',
-          },
-        },
-      },
-      uiSchema: {
+    schema: {
+      type: 'object',
+      title: 'Basic Information',
+      description: 'Define the key details for your decision process.',
+      required: ['processName', 'totalBudget'],
+      properties: {
         processName: {
-          'ui:placeholder': 'e.g., 2025 Community Budget',
+          type: 'string',
+          title: 'Process Name',
+          minLength: 1,
         },
         description: {
-          'ui:widget': 'textarea',
-          'ui:placeholder': 'Description for your decision-making process',
+          type: 'string',
+          title: 'Description',
         },
         totalBudget: {
-          'ui:placeholder': '$0.00',
+          type: 'string',
+          title: 'Total Budget Available',
+          minLength: 1,
+          description: 'The total amount available this funding round.',
         },
       },
     },
-  {
-      schema: {
-        type: 'object',
-        title: 'Set up your decision-making phases',
-        required: [
-          'submissionsOpen',
-          'submissionsClose',
-          'reviewOpen',
-          'reviewClose',
-          'votingOpen',
-          'votingClose',
-          'resultsDate',
-        ],
-        properties: {
-          submissionsOpen: {
-            type: 'string',
-            format: 'date',
-            title: 'Submissions Open',
-          },
-          submissionsClose: {
-            type: 'string',
-            format: 'date',
-            title: 'Submissions Close',
-          },
-          reviewOpen: {
-            type: 'string',
-            format: 'date',
-            title: 'Review Open',
-          },
-          reviewClose: {
-            type: 'string',
-            format: 'date',
-            title: 'Review Close',
-          },
-          votingOpen: {
-            type: 'string',
-            format: 'date',
-            title: 'Voting Open',
-          },
-          votingClose: {
-            type: 'string',
-            format: 'date',
-            title: 'Voting Close',
-          },
-          resultsDate: {
-            type: 'string',
-            format: 'date',
-            title: 'Results Announcement Date',
-          },
-        },
+    uiSchema: {
+      processName: {
+        'ui:placeholder': 'e.g., 2025 Community Budget',
       },
-      uiSchema: {
+      description: {
+        'ui:widget': 'textarea',
+        'ui:placeholder': 'Description for your decision-making process',
+      },
+      totalBudget: {
+        'ui:placeholder': '$0.00',
+      },
+    },
+  },
+  {
+    schema: {
+      type: 'object',
+      title: 'Set up your decision-making phases',
+      description:
+        'Members submit proposals and ideas for funding consideration.',
+      required: [
+        'submissionsOpen',
+        'submissionsClose',
+        'reviewOpen',
+        'reviewClose',
+        'votingOpen',
+        'votingClose',
+        'resultsDate',
+      ],
+      properties: {
         submissionsOpen: {
-          'ui:widget': 'date',
+          type: 'string',
+          format: 'date',
+          title: 'Submissions Open',
         },
         submissionsClose: {
-          'ui:widget': 'date',
+          type: 'string',
+          format: 'date',
+          title: 'Submissions Close',
         },
         reviewOpen: {
-          'ui:widget': 'date',
+          type: 'string',
+          format: 'date',
+          title: 'Review Open',
         },
         reviewClose: {
-          'ui:widget': 'date',
+          type: 'string',
+          format: 'date',
+          title: 'Review Close',
         },
         votingOpen: {
-          'ui:widget': 'date',
+          type: 'string',
+          format: 'date',
+          title: 'Voting Open',
         },
         votingClose: {
-          'ui:widget': 'date',
+          type: 'string',
+          format: 'date',
+          title: 'Voting Close',
         },
         resultsDate: {
-          'ui:widget': 'date',
+          type: 'string',
+          format: 'date',
+          title: 'Results Announcement Date',
         },
       },
     },
-  {
-      schema: {
-        type: 'object',
-        title: 'Configure your voting settings',
-        required: ['maxVotesPerMember'],
-        properties: {
-          maxVotesPerMember: {
-            type: 'string',
-            title: 'Maximum Votes Per Member',
-            minLength: 1,
-            description: 'How many proposals can each member vote for?',
-          },
-        },
+    uiSchema: {
+      submissionsOpen: {
+        'ui:widget': 'date',
       },
-      uiSchema: {
+      submissionsClose: {
+        'ui:widget': 'date',
+      },
+      reviewOpen: {
+        'ui:widget': 'date',
+      },
+      reviewClose: {
+        'ui:widget': 'date',
+      },
+      votingOpen: {
+        'ui:widget': 'date',
+      },
+      votingClose: {
+        'ui:widget': 'date',
+      },
+      resultsDate: {
+        'ui:widget': 'date',
+      },
+    },
+  },
+  {
+    schema: {
+      type: 'object',
+      title: 'Configure your voting settings',
+      description: 'Set up how members will participate in the voting process.',
+      required: ['maxVotesPerMember'],
+      properties: {
         maxVotesPerMember: {
-          'ui:placeholder': 'e.g., 5',
+          type: 'string',
+          title: 'Maximum Votes Per Member',
+          minLength: 1,
+          description: 'How many proposals can each member vote for?',
         },
       },
     },
-  {
-      schema: {
-        type: 'object',
-        title: 'Configure proposal categories',
-        properties: {
-          categories: {
-            type: 'array',
-            title: 'Categories',
-            items: {
-              type: 'string',
-            },
-            default: [],
-            description:
-              'Categories help organize proposals. You can add or remove categories as needed.',
-          },
-        },
+    uiSchema: {
+      maxVotesPerMember: {
+        'ui:placeholder': 'e.g., 5',
       },
-      uiSchema: {
+    },
+  },
+  {
+    schema: {
+      type: 'object',
+      title: 'Configure proposal categories',
+      description:
+        'Categories help organize proposals. You can add or remove categories as needed.',
+      properties: {
         categories: {
-          'ui:widget': 'CategoryList',
-          'ui:options': {
-            addable: true,
-            removable: true,
+          type: 'array',
+          title: 'Categories',
+          items: {
+            type: 'string',
           },
+          default: [],
+          description:
+            'Categories help organize proposals. You can add or remove categories as needed.',
         },
       },
     },
-  {
-      schema: {
-        type: 'object',
-        title: 'Setup proposal template',
-        required: ['budgetCapAmount', 'descriptionGuidance'],
-        properties: {
-          budgetCapAmount: {
-            type: 'string',
-            title: 'Budget cap amount',
-            minLength: 1,
-            description: 'Maximum budget amount participants can request',
-          },
-          descriptionGuidance: {
-            type: 'string',
-            title: 'Description guidance',
-            description:
-              'Placeholder text that appears in the proposal description area.',
-          },
+    uiSchema: {
+      categories: {
+        'ui:widget': 'CategoryList',
+        'ui:options': {
+          addable: true,
+          removable: true,
         },
       },
-      uiSchema: {
+    },
+  },
+  {
+    schema: {
+      type: 'object',
+      title: 'Setup proposal template',
+      description: 'Configure guidance and budget limits',
+      required: ['budgetCapAmount', 'descriptionGuidance'],
+      properties: {
         budgetCapAmount: {
-          'ui:placeholder': '$0.00 USD',
+          type: 'string',
+          title: 'Budget cap amount',
+          minLength: 1,
+          description: 'Maximum budget amount participants can request',
         },
         descriptionGuidance: {
-          'ui:widget': 'textarea',
-          'ui:placeholder':
-            "e.g., Start with the problem you're addressing, explain your solution, and describe the expected impact on our community.",
+          type: 'string',
+          title: 'Description guidance',
+          description:
+            'Placeholder text that appears in the proposal description area.',
         },
       },
     },
+    uiSchema: {
+      budgetCapAmount: {
+        'ui:placeholder': '$0.00 USD',
+      },
+      descriptionGuidance: {
+        'ui:widget': 'textarea',
+        'ui:placeholder':
+          "e.g., Start with the problem you're addressing, explain your solution, and describe the expected impact on our community.",
+      },
+    },
+  },
   {
-      schema: {
-        type: 'object',
-        title: 'Review and launch',
-        properties: {
-          summary: {
-            type: 'object',
-            title: 'Summary',
-            properties: {},
-            description: 'Confirm your settings before creating the process.',
-          },
-        },
-      },
-      uiSchema: {
+    schema: {
+      type: 'object',
+      title: 'Review and launch',
+      description: 'Confirm your settings before creating the process.',
+      properties: {
         summary: {
-          'ui:widget': 'ReviewSummary',
+          type: 'object',
+          title: 'Summary',
+          properties: {},
+          description: 'Confirm your settings before creating the process.',
         },
       },
     },
+    uiSchema: {
+      summary: {
+        'ui:widget': 'ReviewSummary',
+      },
+    },
+  },
 ];
 
 export const CreateProcessModal = () => {
@@ -306,22 +314,13 @@ export const CreateProcessModal = () => {
     const stepConfig = stepSchemas[currentStep - 1];
     if (!stepConfig) return null;
 
-    const description =
-      currentStep === 1
-        ? 'Define the key details for your decision process.'
-        : currentStep === 2
-          ? 'Members submit proposals and ideas for funding consideration.'
-          : currentStep === 3
-            ? 'Set up how members will participate in the voting process.'
-            : currentStep === 4
-              ? 'Categories help organize proposals. You can add or remove categories as needed.'
-              : currentStep === 5
-                ? 'Configure guidance and budget limits'
-                : 'Confirm your settings before creating the process.';
-
     return (
       <div className="flex flex-col gap-6">
-        <p className="text-base text-neutral-charcoal">{description}</p>
+        {stepConfig.schema.description && (
+          <p className="text-base text-neutral-charcoal">
+            {stepConfig.schema.description}
+          </p>
+        )}
 
         <Form
           schema={stepConfig.schema}
