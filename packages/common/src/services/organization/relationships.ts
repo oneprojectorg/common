@@ -20,6 +20,27 @@ type OrganizationWithProfile = Organization & {
   profile: Profile & { avatarImage: any };
 };
 
+const invertRelationship = <T, C>(
+  relationship: {
+    sourceOrganizationId: string;
+    sourceOrganization: C;
+    targetOrganizationId: string;
+    targetOrganization: C;
+    relationshipType: string;
+  } & T,
+) => ({
+  ...relationship,
+  // swap the relationship
+  sourceOrganizationId: relationship.targetOrganizationId,
+  sourceOrganization: relationship.targetOrganization,
+  targetOrganizationId: relationship.sourceOrganizationId,
+  targetOrganization: relationship.sourceOrganization,
+
+  relationshipType:
+    relationshipMap[relationship.relationshipType]?.inverse ??
+    relationship.relationshipType,
+});
+
 export const addRelationship = async ({
   user,
   from,
@@ -202,8 +223,9 @@ export const getRelatedOrganizations = async ({
   >();
 
   relationships.forEach((relationship) => {
+    const isInverseRelationship = relationship.sourceOrganizationId === orgId;
     const relatedOrg = (
-      relationship.sourceOrganizationId === orgId
+      isInverseRelationship
         ? relationship.targetOrganization
         : relationship.sourceOrganization
     ) as OrganizationWithProfile;
@@ -213,8 +235,12 @@ export const getRelatedOrganizations = async ({
     }
 
     const org = distinctRelationships.get(relatedOrg.id);
+    // make sure that the relationship is inverted if we found an edge that is in the opposite direction from the one we are looking for
     const relationshipRecord = {
-      relationshipType: relationship.relationshipType,
+      relationshipType: isInverseRelationship
+        ? (relationshipMap[relationship.relationshipType]?.inverse ??
+          'Affiliation')
+        : relationship.relationshipType,
       pending: relationship.pending,
       createdAt: relationship.createdAt,
     };
@@ -321,23 +347,12 @@ export const getDirectedRelationships = async ({
   ]);
 
   // transform the inverse relationships to the proper direction
-  // TODO: Store these in the DB for easier traversal
   const redirectedInverseRelationships = inverseRelationships.map(
-    (relationship) => {
-      const inverse = {
-        ...relationship,
-        // swap the relationship
-        sourceOrganizationId: relationship.targetOrganizationId,
-        sourceOrganization: relationship.targetOrganization,
-        targetOrganizationId: relationship.sourceOrganizationId,
-        targetOrganization: relationship.sourceOrganization,
-
-        relationshipType:
-          relationshipMap[relationship.relationshipType]?.inverse ??
-          relationship.relationshipType,
-      };
-      return inverse;
-    },
+    (relationship) =>
+      invertRelationship<
+        typeof relationship,
+        (typeof relationship)['sourceOrganization']
+      >(relationship),
   );
 
   const allRelationships = relationships.concat(redirectedInverseRelationships);
