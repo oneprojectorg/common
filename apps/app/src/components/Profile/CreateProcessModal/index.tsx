@@ -10,9 +10,8 @@ import { CustomTemplates } from './CustomTemplates';
 import { CustomWidgets } from './CustomWidgets';
 
 // Define schemas for each step
-const stepSchemas: Record<number, { schema: RJSFSchema; uiSchema: UiSchema }> =
+const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
   {
-    1: {
       schema: {
         type: 'object',
         title: 'Basic Information',
@@ -48,7 +47,7 @@ const stepSchemas: Record<number, { schema: RJSFSchema; uiSchema: UiSchema }> =
         },
       },
     },
-    2: {
+  {
       schema: {
         type: 'object',
         title: 'Set up your decision-making phases',
@@ -123,7 +122,7 @@ const stepSchemas: Record<number, { schema: RJSFSchema; uiSchema: UiSchema }> =
         },
       },
     },
-    3: {
+  {
       schema: {
         type: 'object',
         title: 'Configure your voting settings',
@@ -143,7 +142,7 @@ const stepSchemas: Record<number, { schema: RJSFSchema; uiSchema: UiSchema }> =
         },
       },
     },
-    4: {
+  {
       schema: {
         type: 'object',
         title: 'Configure proposal categories',
@@ -170,7 +169,7 @@ const stepSchemas: Record<number, { schema: RJSFSchema; uiSchema: UiSchema }> =
         },
       },
     },
-    5: {
+  {
       schema: {
         type: 'object',
         title: 'Setup proposal template',
@@ -201,7 +200,7 @@ const stepSchemas: Record<number, { schema: RJSFSchema; uiSchema: UiSchema }> =
         },
       },
     },
-    6: {
+  {
       schema: {
         type: 'object',
         title: 'Review and launch',
@@ -220,7 +219,7 @@ const stepSchemas: Record<number, { schema: RJSFSchema; uiSchema: UiSchema }> =
         },
       },
     },
-  };
+];
 
 export const CreateProcessModal = () => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -243,11 +242,11 @@ export const CreateProcessModal = () => {
   });
   const [errors, setErrors] = useState<Record<number, any>>({});
 
-  const totalSteps = 6;
+  const totalSteps = stepSchemas.length;
 
   const handleNext = (step: number) => {
-    // Validate current step before proceeding
-    const currentSchema = stepSchemas[currentStep];
+    // Validate current step before proceeding (convert 1-based to 0-based for array access)
+    const currentSchema = stepSchemas[currentStep - 1];
     if (!currentSchema) {
       return;
     }
@@ -276,8 +275,8 @@ export const CreateProcessModal = () => {
   };
 
   const handleFinish = () => {
-    // Validate the last step
-    const currentSchema = stepSchemas[currentStep];
+    // Validate the last step (convert 1-based to 0-based for array access)
+    const currentSchema = stepSchemas[currentStep - 1];
     if (!currentSchema) return;
 
     const currentStepData = Object.keys(
@@ -303,7 +302,8 @@ export const CreateProcessModal = () => {
   };
 
   const renderStepContent = () => {
-    const stepConfig = stepSchemas[currentStep];
+    // Convert 1-based to 0-based for array access
+    const stepConfig = stepSchemas[currentStep - 1];
     if (!stepConfig) return null;
 
     const description =
