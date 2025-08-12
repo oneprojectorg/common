@@ -343,10 +343,15 @@ export const CreateProcessModal = () => {
     );
   };
 
+  const getCurrentStepTitle = () => {
+    const stepConfig = stepSchemas[currentStep - 1];
+    return stepConfig?.schema.title || 'Set up your decision-making process';
+  };
+
   return (
     <Modal isDismissable>
       <div className="flex h-full max-h-[90vh] w-full max-w-lg flex-col">
-        <ModalHeader>Set up your decision-making process</ModalHeader>
+        <ModalHeader>{getCurrentStepTitle()}</ModalHeader>
 
         <ModalBody className="flex-1 overflow-y-auto">
           {renderStepContent()}
