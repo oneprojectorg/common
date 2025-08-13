@@ -282,11 +282,11 @@ export const ProfileTabs = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-export const ProfileTabsMobile = ({ 
+export const ProfileTabsMobile = ({
   profile,
   children,
-  decisionsContent 
-}: { 
+  decisionsContent,
+}: {
   profile: Organization;
   children?: React.ReactNode;
   decisionsContent?: React.ReactNode;
@@ -301,7 +301,7 @@ export const ProfileTabsMobile = ({
         <Tab id="relationships">{t('Relationships')}</Tab>
         <Tab id="followers">{t('Followers')}</Tab>
         <Tab id="members">{t('Members')}</Tab>
-        <Tab id="decisions">{t('Decisions')}</Tab>
+        {false ? <Tab id="decisions">{t('Decisions')}</Tab> : null}
       </TabList>
       <TabPanel id="updates" className="px-0">
         <Suspense fallback={<Skeleton className="w-full" />}>
@@ -322,14 +322,20 @@ export const ProfileTabsMobile = ({
         {children}
       </TabPanel>
       <TabPanel id="followers" className="px-4 py-2">
-        <div className="text-center text-neutral-gray4">Followers content coming soon</div>
+        <div className="text-center text-neutral-gray4">
+          Followers content coming soon
+        </div>
       </TabPanel>
       <TabPanel id="members" className="px-4 py-2">
-        <div className="text-center text-neutral-gray4">Members content coming soon</div>
+        <div className="text-center text-neutral-gray4">
+          Members content coming soon
+        </div>
       </TabPanel>
-      <TabPanel id="decisions" className="px-0">
-        {decisionsContent}
-      </TabPanel>
+      {false ? (
+        <TabPanel id="decisions" className="px-0">
+          {decisionsContent}
+        </TabPanel>
+      ) : null}
     </Tabs>
   );
 };
