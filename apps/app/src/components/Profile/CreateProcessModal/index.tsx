@@ -3,9 +3,9 @@
 import { Modal, ModalBody, ModalHeader, ModalStepper } from '@op/ui/Modal';
 import Form from '@rjsf/core';
 import { RJSFSchema, UiSchema } from '@rjsf/utils';
+import type { RJSFValidationError } from '@rjsf/utils';
 import validator from '@rjsf/validator-ajv8';
 import { useState } from 'react';
-import type { RJSFValidationError } from '@rjsf/utils';
 
 import { CustomTemplates } from './CustomTemplates';
 import { CustomWidgets } from './CustomWidgets';
@@ -55,19 +55,17 @@ const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
       description:
         'Members submit proposals and ideas for funding consideration.',
       required: [
-        'submissionsOpen',
-        'submissionsClose',
-        'reviewOpen',
-        'reviewClose',
-        'votingOpen',
-        'votingClose',
-        'resultsDate',
+        'proposalSubmissionPhase',
+        'reviewShortlistingPhase',
+        'votingPhase',
+        'resultsAnnouncement',
       ],
       properties: {
         proposalSubmissionPhase: {
           type: 'object',
           title: 'Proposal Submission Phase',
-          description: 'Members submit proposals and ideas for funding consideration.',
+          description:
+            'Members submit proposals and ideas for funding consideration.',
           properties: {
             submissionsOpen: {
               type: 'string',
@@ -85,7 +83,8 @@ const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
         reviewShortlistingPhase: {
           type: 'object',
           title: 'Review & Shortlisting Phase',
-          description: 'Reviewers create a shortlist of eligible proposals for voting.',
+          description:
+            'Reviewers create a shortlist of eligible proposals for voting.',
           properties: {
             reviewOpen: {
               type: 'string',
@@ -103,7 +102,8 @@ const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
         votingPhase: {
           type: 'object',
           title: 'Voting Phase',
-          description: 'All members vote on shortlisted proposals to decide which projects receive funding.',
+          description:
+            'All members vote on shortlisted proposals to decide which projects receive funding.',
           properties: {
             votingOpen: {
               type: 'string',
@@ -304,15 +304,15 @@ export const CreateProcessModal = () => {
   // Validate date ordering for step 2 (phases)
   const validatePhaseSequence = (): string[] => {
     const errors: string[] = [];
-    
+
     if (currentStep !== 2) return errors;
-    
+
     const phases = formData as any;
     const proposalPhase = phases.proposalSubmissionPhase || {};
     const reviewPhase = phases.reviewShortlistingPhase || {};
     const votingPhase = phases.votingPhase || {};
     const resultsPhase = phases.resultsAnnouncement || {};
-    
+
     const submissionOpen = proposalPhase.submissionsOpen;
     const submissionClose = proposalPhase.submissionsClose;
     const reviewOpen = reviewPhase.reviewOpen;
@@ -320,32 +320,40 @@ export const CreateProcessModal = () => {
     const votingOpen = votingPhase.votingOpen;
     const votingClose = votingPhase.votingClose;
     const resultsDate = resultsPhase.resultsDate;
-    
+
     const dates = [
-      { name: 'Submissions Open', value: submissionOpen, key: 'submissionsOpen' },
-      { name: 'Submissions Close', value: submissionClose, key: 'submissionsClose' },
+      {
+        name: 'Submissions Open',
+        value: submissionOpen,
+        key: 'submissionsOpen',
+      },
+      {
+        name: 'Submissions Close',
+        value: submissionClose,
+        key: 'submissionsClose',
+      },
       { name: 'Review Open', value: reviewOpen, key: 'reviewOpen' },
       { name: 'Review Close', value: reviewClose, key: 'reviewClose' },
       { name: 'Voting Open', value: votingOpen, key: 'votingOpen' },
       { name: 'Voting Close', value: votingClose, key: 'votingClose' },
       { name: 'Results Date', value: resultsDate, key: 'resultsDate' },
-    ].filter(d => d.value); // Only validate dates that are set
-    
+    ].filter((d) => d.value); // Only validate dates that are set
+
     // Check chronological order
     for (let i = 0; i < dates.length - 1; i++) {
       const currentDate = dates[i];
       const nextDate = dates[i + 1];
-      
+
       if (currentDate && nextDate) {
         const current = new Date(currentDate.value);
         const next = new Date(nextDate.value);
-        
+
         if (current >= next) {
           errors.push(`${currentDate.name} must be before ${nextDate.name}`);
         }
       }
     }
-    
+
     return errors;
   };
 
@@ -356,7 +364,10 @@ export const CreateProcessModal = () => {
 
     const currentStepData = Object.keys(
       currentSchema.schema.properties || {},
-    ).reduce<Record<string, unknown>>((acc, key) => ({ ...acc, [key]: formData[key] }), {});
+    ).reduce<Record<string, unknown>>(
+      (acc, key) => ({ ...acc, [key]: formData[key] }),
+      {},
+    );
 
     const result = validator.rawValidation(
       currentSchema.schema,
@@ -364,7 +375,7 @@ export const CreateProcessModal = () => {
     );
 
     const fieldErrors: Record<string, string[]> = {};
-    
+
     // Add JSON Schema validation errors
     if (result.errors && result.errors.length > 0) {
       result.errors.forEach((error) => {
@@ -383,43 +394,43 @@ export const CreateProcessModal = () => {
         }
       });
     }
-    
+
     // Add custom phase sequence validation for step 2
     const phaseErrors = validatePhaseSequence();
     if (phaseErrors.length > 0) {
       // Add phase sequence errors to the form-level errors
       fieldErrors['_phases'] = phaseErrors;
     }
-    
+
     const hasErrors = Object.keys(fieldErrors).length > 0;
     return { isValid: !hasErrors, errors: fieldErrors };
   };
 
   const handleNext = (): boolean => {
     const validation = validateCurrentStep();
-    
+
     if (!validation.isValid) {
-      setErrors(prev => ({ ...prev, [currentStep]: validation.errors }));
+      setErrors((prev) => ({ ...prev, [currentStep]: validation.errors }));
       return false;
     }
 
     // Clear errors and proceed to next step
-    setErrors(prev => ({ ...prev, [currentStep]: null }));
-    setCurrentStep(prev => prev + 1);
+    setErrors((prev) => ({ ...prev, [currentStep]: null }));
+    setCurrentStep((prev) => prev + 1);
     return true;
   };
 
   const handlePrevious = (): void => {
     // Clear errors when going back
-    setErrors(prev => ({ ...prev, [currentStep]: null }));
-    setCurrentStep(prev => prev - 1);
+    setErrors((prev) => ({ ...prev, [currentStep]: null }));
+    setCurrentStep((prev) => prev - 1);
   };
 
   const handleFinish = (): void => {
     const validation = validateCurrentStep();
-    
+
     if (!validation.isValid) {
-      setErrors(prev => ({ ...prev, [currentStep]: validation.errors }));
+      setErrors((prev) => ({ ...prev, [currentStep]: validation.errors }));
       return;
     }
 
@@ -433,7 +444,7 @@ export const CreateProcessModal = () => {
     }
     // Clear field-level errors when user starts making changes
     if (errors[currentStep]) {
-      setErrors(prev => ({ ...prev, [currentStep]: null }));
+      setErrors((prev) => ({ ...prev, [currentStep]: null }));
     }
   };
 
@@ -478,7 +489,7 @@ export const CreateProcessModal = () => {
 
   const getCurrentStepTitle = () => {
     const stepConfig = stepSchemas[currentStep - 1];
-      return stepConfig?.schema.title || 'Set up your decision-making process';
+    return stepConfig?.schema.title || 'Set up your decision-making process';
   };
 
   return (
