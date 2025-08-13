@@ -8,6 +8,7 @@ export const mockDb = {
     },
     decisionProcesses: {
       findFirst: vi.fn(),
+      findMany: vi.fn(),
     },
     processInstances: {
       findFirst: vi.fn(),
@@ -74,7 +75,9 @@ export const mockEq = vi.fn();
 export const mockAnd = vi.fn();
 export const mockDesc = vi.fn();
 export const mockAsc = vi.fn();
-export const mockSql = vi.fn();
+export const mockSql = vi.fn().mockReturnValue({
+  raw: vi.fn(),
+});
 
 // Mock the database client module
 vi.mock('@op/db/client', () => ({
@@ -84,6 +87,8 @@ vi.mock('@op/db/client', () => ({
   desc: mockDesc,
   asc: mockAsc,
   sql: mockSql,
+  ilike: vi.fn(),
+  and: mockAnd,
 }));
 
 // Mock Supabase User type
