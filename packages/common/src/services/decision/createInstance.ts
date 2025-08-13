@@ -61,7 +61,7 @@ export const createInstance = async ({
       .returning();
 
     if (!instance) {
-      throw new CommonError('Failed to create process instance');
+      throw new CommonError('Failed to create decision process instance');
     }
 
     return instance;
