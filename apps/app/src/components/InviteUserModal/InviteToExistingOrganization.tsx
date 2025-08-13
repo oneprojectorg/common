@@ -1,9 +1,11 @@
 'use client';
 
 import { useUser } from '@/utils/UserProvider';
+import { trpc } from '@op/api/client';
 import { Select, SelectItem } from '@op/ui/Select';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
 import { toast } from '@op/ui/Toast';
+import { useFeatureFlagEnabled } from 'posthog-js/react';
 import React from 'react';
 import { LuX } from 'react-icons/lu';
 
@@ -16,6 +18,7 @@ interface InviteToExistingOrganizationProps {
   setEmailBadges: (badges: string[]) => void;
   selectedRole: string;
   setSelectedRole: (role: string) => void;
+  setSelectedRoleId: (roleId: string) => void;
   selectedOrganization: string;
   setSelectedOrganization: (orgId: string) => void;
 }
@@ -27,11 +30,28 @@ export const InviteToExistingOrganization = ({
   setEmailBadges,
   selectedRole,
   setSelectedRole,
+  setSelectedRoleId,
   selectedOrganization,
   setSelectedOrganization,
 }: InviteToExistingOrganizationProps) => {
   const t = useTranslations();
   const { user } = useUser();
+  const membershipsEnabled = useFeatureFlagEnabled('memberships');
+
+  const [rolesData] = trpc.organization.getRoles.useSuspenseQuery();
+
+  React.useEffect(() => {
+    if (!selectedRole) {
+      // Initialize default role if none selected
+      // Default to Admin if available, otherwise first role
+      const adminRole = rolesData.roles.find((role) => role.name === 'Admin');
+      const defaultRole = adminRole || rolesData.roles[0];
+      if (defaultRole) {
+        setSelectedRole(defaultRole.name);
+        setSelectedRoleId(defaultRole.id);
+      }
+    }
+  }, [selectedRole, setSelectedRole, setSelectedRoleId]);
 
   // Ensure first organization is selected if no selection exists
   React.useEffect(() => {
@@ -126,9 +146,26 @@ export const InviteToExistingOrganization = ({
         <Select
           label={t('Role')}
           selectedKey={selectedRole}
-          onSelectionChange={(key) => setSelectedRole(key as string)}
+          onSelectionChange={(key) => {
+            const roleName = key as string;
+            const selectedRoleData = rolesData.roles.find(
+              (role: any) => role.name === roleName,
+            );
+            setSelectedRole(roleName);
+            if (selectedRoleData) {
+              setSelectedRoleId(selectedRoleData.id);
+            }
+          }}
         >
-          <SelectItem id="Admin">{t('Admin')}</SelectItem>
+          {membershipsEnabled ? (
+            rolesData.roles.map((role) => (
+              <SelectItem key={role.name} id={role.name}>
+                {role.name}
+              </SelectItem>
+            ))
+          ) : (
+            <SelectItem id="Admin">Admin</SelectItem>
+          )}
         </Select>
       </div>
     </div>

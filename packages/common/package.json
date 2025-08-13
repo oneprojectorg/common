@@ -13,6 +13,8 @@
   },
   "dependencies": {
     "@op/emails": "workspace:*",
+    "access-zones": "0.0.1",
+    "next": "^15.0.0",
     "p-map": "^7.0.3"
   },
   "devDependencies": {

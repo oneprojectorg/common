@@ -9,6 +9,7 @@ import {
   profiles,
 } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
+import { assertAccess, permission } from 'access-zones';
 import pMap from 'p-map';
 
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
@@ -26,24 +27,26 @@ export const updateOrganization = async ({
 }: {
   id: string;
   data: UpdateOrganizationInput &
-    FundingLinksInput & {
-      orgAvatarImageId?: string;
-      orgBannerImageId?: string;
-    };
+  FundingLinksInput & {
+    orgAvatarImageId?: string;
+    orgBannerImageId?: string;
+  };
   user: User;
 }) => {
   const organizationId = id;
+  if (!organizationId) {
+    throw new CommonError('Organization ID is required');
+  }
+
   const orgUser = await getOrgAccessUser({ user, organizationId });
 
   if (!orgUser) {
     throw new UnauthorizedError('You are not a member of this organization');
   }
 
-  const { ...updateData } = data;
+  assertAccess({ profile: permission.UPDATE }, orgUser?.roles || []);
 
-  if (!organizationId) {
-    throw new CommonError('Organization ID is required');
-  }
+  const { ...updateData } = data;
 
   // Check if user has permission to update this organization
   const existingOrg = await db.query.organizations.findFirst({
@@ -106,23 +109,23 @@ export const updateOrganization = async ({
             await Promise.all([
               ...(data.receivingFundsLink
                 ? [
-                    tx.insert(links).values({
-                      organizationId: orgToUpdate.id,
-                      href: data.receivingFundsLink,
-                      description: data.receivingFundsDescription,
-                      type: 'receiving',
-                    }),
-                  ]
+                  tx.insert(links).values({
+                    organizationId: orgToUpdate.id,
+                    href: data.receivingFundsLink,
+                    description: data.receivingFundsDescription,
+                    type: 'receiving',
+                  }),
+                ]
                 : []),
               ...(data.offeringFundsLink
                 ? [
-                    tx.insert(links).values({
-                      organizationId: orgToUpdate.id,
-                      href: data.offeringFundsLink,
-                      description: data.offeringFundsDescription,
-                      type: 'offering',
-                    }),
-                  ]
+                  tx.insert(links).values({
+                    organizationId: orgToUpdate.id,
+                    href: data.offeringFundsLink,
+                    description: data.offeringFundsDescription,
+                    type: 'offering',
+                  }),
+                ]
                 : []),
             ]);
           });
