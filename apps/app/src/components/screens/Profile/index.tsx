@@ -16,6 +16,7 @@ import {
   ProfileTabs,
   ProfileTabsMobile,
 } from '@/components/Profile/ProfileContent';
+import { ProfileDecisionsSuspense } from '@/components/Profile/ProfileDecisions';
 import { ProfileDetails } from '@/components/Profile/ProfileDetails';
 
 import {
@@ -23,7 +24,6 @@ import {
   ProfileOrganizationsSuspense,
 } from '../ProfileOrganizations';
 import { ProfileRelationshipsSuspense } from '../ProfileRelationships';
-import { ProfileDecisionsSuspense } from '@/components/Profile/ProfileDecisions';
 
 const ProfileWithData = async ({ slug }: { slug: string }) => {
   try {
@@ -74,7 +74,7 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
             <ProfileTabList>
               <Tab id="home">Home</Tab>
               <Tab id="relationships">Relationships</Tab>
-              <Tab id="decisions">Decisions</Tab>
+              {false ? <Tab id="decisions">Decisions</Tab> : null}
             </ProfileTabList>
 
             <TabPanel id="home" className="flex flex-grow flex-col sm:p-0">
@@ -91,11 +91,13 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
                 />
               </ProfileOrganizations>
             </TabPanel>
-            <TabPanel id="decisions" className="px-4 sm:px-6 sm:py-0">
-              <ProfileDecisionsSuspense />
-            </TabPanel>
+            {false ? (
+              <TabPanel id="decisions" className="px-4 sm:px-6 sm:py-0">
+                <ProfileDecisionsSuspense />
+              </TabPanel>
+            ) : null}
           </ProfileTabs>
-          <ProfileTabsMobile 
+          <ProfileTabsMobile
             profile={organization as any}
             decisionsContent={<ProfileDecisionsSuspense />}
           >
