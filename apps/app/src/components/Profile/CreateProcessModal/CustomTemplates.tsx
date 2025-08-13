@@ -18,16 +18,14 @@ export const ObjectFieldTemplate = (props: ObjectFieldTemplateProps) => {
   // Special handling for the decision-making phases step
   if (title === 'Set up your decision-making phases') {
     return (
-      <div className="space-y-6">
-        {properties.map((prop: any) => prop.content)}
-      </div>
+      <div className="space-y-6">{properties.map((prop) => prop.content)}</div>
     );
   }
 
   // Special handling for individual phase groups (nested objects within phases step)
   // Check if this is a nested object that contains date fields
   const isPhaseGroup = properties.every(
-    (prop: any) =>
+    (prop) =>
       prop.name &&
       (prop.name.includes('Open') ||
         prop.name.includes('Close') ||
@@ -46,7 +44,7 @@ export const ObjectFieldTemplate = (props: ObjectFieldTemplateProps) => {
         <div
           className={properties.length === 2 ? 'grid grid-cols-2 gap-4' : ''}
         >
-          {properties.map((prop: any) => prop.content)}
+          {properties.map((prop) => prop.content)}
         </div>
       </div>
     );
@@ -61,7 +59,7 @@ export const ObjectFieldTemplate = (props: ObjectFieldTemplateProps) => {
       {description && (
         <p className="text-sm text-neutral-gray4">{description}</p>
       )}
-      {properties.map((prop: any) => prop.content)}
+      {properties.map((prop) => prop.content)}
     </div>
   );
 };
@@ -80,7 +78,7 @@ export const ArrayFieldTemplate = (props: ArrayFieldTemplateProps) => {
         <p className="text-xs text-neutral-gray4">{schema.description}</p>
       )}
       <div className="space-y-2">
-        {items.map((element: any) => (
+        {items.map((element) => (
           <div key={element.key} className="flex items-center gap-2">
             <div className="flex-1">{element.children}</div>
             {element.hasRemove && (
