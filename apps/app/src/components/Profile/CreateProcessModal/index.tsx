@@ -9,6 +9,7 @@ import { useState } from 'react';
 
 import { CustomTemplates } from './CustomTemplates';
 import { CustomWidgets } from './CustomWidgets';
+import ErrorBoundary from '../../ErrorBoundary';
 
 const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
   {
@@ -449,8 +450,12 @@ export const CreateProcessModal = () => {
   };
 
   const handleError = (errors: RJSFValidationError[]) => {
-    console.log('Validation errors:', errors);
+    // Handle live validation errors from RJSF
+    if (errors.length > 0) {
+      console.warn('Live validation errors:', errors);
+    }
   };
+
 
   const renderStepContent = () => {
     // Convert 1-based to 0-based for array access
@@ -465,24 +470,39 @@ export const CreateProcessModal = () => {
           </p>
         )}
 
-        <Form
-          schema={stepConfig.schema}
-          uiSchema={stepConfig.uiSchema}
-          formData={formData}
-          onChange={handleChange}
-          onError={handleError}
-          validator={validator}
-          widgets={CustomWidgets}
-          templates={CustomTemplates}
-          showErrorList={false}
-          liveValidate={true}
-          noHtml5Validate
-          omitExtraData
-          extraErrors={errors[currentStep] as any}
+        <ErrorBoundary
+          fallback={
+            <div className="flex flex-col items-center gap-4 rounded-lg border border-functional-orange/20 bg-functional-orange/5 p-6 text-center">
+              <div className="flex flex-col gap-2">
+                <h3 className="text-lg font-medium text-functional-orange">
+                  Step {currentStep} Error
+                </h3>
+                <p className="text-sm text-neutral-charcoal">
+                  Unable to render this form step. Please try going back and forward again, or restart the form.
+                </p>
+              </div>
+            </div>
+          }
         >
-          {/* Hide submit button - we'll use our own stepper */}
-          <div style={{ display: 'none' }} />
-        </Form>
+          <Form
+            schema={stepConfig.schema}
+            uiSchema={stepConfig.uiSchema}
+            formData={formData}
+            onChange={handleChange}
+            onError={handleError}
+            validator={validator}
+            widgets={CustomWidgets}
+            templates={CustomTemplates}
+            showErrorList={false}
+            liveValidate={true}
+            noHtml5Validate
+            omitExtraData
+            extraErrors={errors[currentStep] as any}
+          >
+            {/* Hide submit button - we'll use our own stepper */}
+            <div style={{ display: 'none' }} />
+          </Form>
+        </ErrorBoundary>
       </div>
     );
   };

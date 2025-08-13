@@ -5,6 +5,45 @@ import { NumberField } from '@op/ui/NumberField';
 import { Radio, RadioGroup } from '@op/ui/RadioGroup';
 import { TextField } from '@op/ui/TextField';
 import { WidgetProps } from '@rjsf/utils';
+import React from 'react';
+
+// Higher-order component to wrap widgets with error boundaries
+const withWidgetErrorBoundary = <P extends WidgetProps>(
+  WrappedWidget: React.ComponentType<P>,
+  widgetName: string
+) => {
+  return class extends React.Component<P, { hasError: boolean }> {
+    constructor(props: P) {
+      super(props);
+      this.state = { hasError: false };
+    }
+
+    static getDerivedStateFromError() {
+      return { hasError: true };
+    }
+
+    componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+      console.error(`Widget error in ${widgetName}:`, error, errorInfo);
+    }
+
+    render() {
+      if (this.state.hasError) {
+        return (
+          <div className="rounded border border-functional-red/20 bg-functional-red/5 p-3">
+            <p className="text-sm text-functional-red">
+              Error rendering {widgetName} widget
+            </p>
+            <p className="text-xs text-neutral-gray4 mt-1">
+              Field: {this.props.schema?.title || 'Unknown'}
+            </p>
+          </div>
+        );
+      }
+
+      return <WrappedWidget {...this.props} />;
+    }
+  };
+};
 
 export const TextWidget = (props: WidgetProps) => {
   const {
@@ -291,19 +330,28 @@ export const CategoryListWidget = (props: WidgetProps) => {
   );
 };
 
+// Wrap widgets with error boundaries
+const SafeTextWidget = withWidgetErrorBoundary(TextWidget, 'Text');
+const SafeTextareaWidget = withWidgetErrorBoundary(TextareaWidget, 'Textarea');
+const SafeNumberWidget = withWidgetErrorBoundary(NumberWidget, 'Number');
+const SafeDateWidget = withWidgetErrorBoundary(DateWidget, 'Date');
+const SafeCheckboxWidget = withWidgetErrorBoundary(CheckboxWidget, 'Checkbox');
+const SafeRadioWidget = withWidgetErrorBoundary(RadioWidget, 'Radio');
+const SafeCategoryListWidget = withWidgetErrorBoundary(CategoryListWidget, 'CategoryList');
+
 export const CustomWidgets = {
-  TextWidget,
-  TextareaWidget,
-  NumberWidget,
-  DateWidget,
-  CheckboxWidget,
-  RadioWidget,
-  CategoryListWidget,
-  text: TextWidget,
-  textarea: TextareaWidget,
-  number: NumberWidget,
-  date: DateWidget,
-  checkbox: CheckboxWidget,
-  radio: RadioWidget,
-  CategoryList: CategoryListWidget,
+  TextWidget: SafeTextWidget,
+  TextareaWidget: SafeTextareaWidget,
+  NumberWidget: SafeNumberWidget,
+  DateWidget: SafeDateWidget,
+  CheckboxWidget: SafeCheckboxWidget,
+  RadioWidget: SafeRadioWidget,
+  CategoryListWidget: SafeCategoryListWidget,
+  text: SafeTextWidget,
+  textarea: SafeTextareaWidget,
+  number: SafeNumberWidget,
+  date: SafeDateWidget,
+  checkbox: SafeCheckboxWidget,
+  radio: SafeRadioWidget,
+  CategoryList: SafeCategoryListWidget,
 };
