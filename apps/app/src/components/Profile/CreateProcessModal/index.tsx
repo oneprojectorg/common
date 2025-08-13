@@ -5,6 +5,7 @@ import Form from '@rjsf/core';
 import { RJSFSchema, UiSchema } from '@rjsf/utils';
 import validator from '@rjsf/validator-ajv8';
 import { useState } from 'react';
+import type { RJSFValidationError } from '@rjsf/utils';
 
 import { CustomTemplates } from './CustomTemplates';
 import { CustomWidgets } from './CustomWidgets';
@@ -271,7 +272,7 @@ const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
 
 export const CreateProcessModal = () => {
   const [currentStep, setCurrentStep] = useState(1);
-  const [formData, setFormData] = useState<Record<string, any>>({
+  const [formData, setFormData] = useState<Record<string, unknown>>({
     processName: '',
     description: '',
     totalBudget: null,
@@ -300,95 +301,125 @@ export const CreateProcessModal = () => {
 
   const totalSteps = stepSchemas.length;
 
-  const handleNext = (step: number) => {
-    // Validate current step before proceeding (convert 1-based to 0-based for array access)
-    const currentSchema = stepSchemas[currentStep - 1];
-    if (!currentSchema) {
-      return false;
+  // Validate date ordering for step 2 (phases)
+  const validatePhaseSequence = (): string[] => {
+    const errors: string[] = [];
+    
+    if (currentStep !== 2) return errors;
+    
+    const phases = formData as any;
+    const proposalPhase = phases.proposalSubmissionPhase || {};
+    const reviewPhase = phases.reviewShortlistingPhase || {};
+    const votingPhase = phases.votingPhase || {};
+    const resultsPhase = phases.resultsAnnouncement || {};
+    
+    const submissionOpen = proposalPhase.submissionsOpen;
+    const submissionClose = proposalPhase.submissionsClose;
+    const reviewOpen = reviewPhase.reviewOpen;
+    const reviewClose = reviewPhase.reviewClose;
+    const votingOpen = votingPhase.votingOpen;
+    const votingClose = votingPhase.votingClose;
+    const resultsDate = resultsPhase.resultsDate;
+    
+    const dates = [
+      { name: 'Submissions Open', value: submissionOpen, key: 'submissionsOpen' },
+      { name: 'Submissions Close', value: submissionClose, key: 'submissionsClose' },
+      { name: 'Review Open', value: reviewOpen, key: 'reviewOpen' },
+      { name: 'Review Close', value: reviewClose, key: 'reviewClose' },
+      { name: 'Voting Open', value: votingOpen, key: 'votingOpen' },
+      { name: 'Voting Close', value: votingClose, key: 'votingClose' },
+      { name: 'Results Date', value: resultsDate, key: 'resultsDate' },
+    ].filter(d => d.value); // Only validate dates that are set
+    
+    // Check chronological order
+    for (let i = 0; i < dates.length - 1; i++) {
+      const currentDate = dates[i];
+      const nextDate = dates[i + 1];
+      
+      if (currentDate && nextDate) {
+        const current = new Date(currentDate.value);
+        const next = new Date(nextDate.value);
+        
+        if (current >= next) {
+          errors.push(`${currentDate.name} must be before ${nextDate.name}`);
+        }
+      }
     }
+    
+    return errors;
+  };
+
+  // Extract validation logic to avoid duplication
+  const validateCurrentStep = (): { isValid: boolean; errors: any } => {
+    const currentSchema = stepSchemas[currentStep - 1];
+    if (!currentSchema) return { isValid: false, errors: {} };
 
     const currentStepData = Object.keys(
       currentSchema.schema.properties || {},
-    ).reduce((acc, key) => ({ ...acc, [key]: formData[key] }), {});
+    ).reduce<Record<string, unknown>>((acc, key) => ({ ...acc, [key]: formData[key] }), {});
 
-    // Use the validator to check the current step data
     const result = validator.rawValidation(
       currentSchema.schema,
       currentStepData,
     );
 
+    const fieldErrors: Record<string, string[]> = {};
+    
+    // Add JSON Schema validation errors
     if (result.errors && result.errors.length > 0) {
-      // Convert validation errors to field-level errors for RJSF
-      const fieldErrors: Record<string, any> = {};
-      result.errors.forEach((error: any) => {
+      result.errors.forEach((error) => {
         if (error.instancePath) {
-          // Remove leading slash and convert to field name
           const fieldName = error.instancePath.substring(1);
           if (!fieldErrors[fieldName]) {
             fieldErrors[fieldName] = [];
           }
           fieldErrors[fieldName].push(error.message);
         } else if (error.property) {
-          // Handle property-based errors
-          const fieldName = error.property.substring(9); // Remove 'instance.' prefix if present
+          const fieldName = error.property.substring(9);
           if (!fieldErrors[fieldName]) {
             fieldErrors[fieldName] = [];
           }
           fieldErrors[fieldName].push(error.message);
         }
       });
+    }
+    
+    // Add custom phase sequence validation for step 2
+    const phaseErrors = validatePhaseSequence();
+    if (phaseErrors.length > 0) {
+      // Add phase sequence errors to the form-level errors
+      fieldErrors['_phases'] = phaseErrors;
+    }
+    
+    const hasErrors = Object.keys(fieldErrors).length > 0;
+    return { isValid: !hasErrors, errors: fieldErrors };
+  };
 
-      setErrors({ ...errors, [currentStep]: fieldErrors });
+  const handleNext = (): boolean => {
+    const validation = validateCurrentStep();
+    
+    if (!validation.isValid) {
+      setErrors(prev => ({ ...prev, [currentStep]: validation.errors }));
       return false;
     }
 
     // Clear errors and proceed to next step
-    setErrors({ ...errors, [currentStep]: null });
-    setCurrentStep(step);
+    setErrors(prev => ({ ...prev, [currentStep]: null }));
+    setCurrentStep(prev => prev + 1);
+    return true;
   };
 
-  const handlePrevious = (step: number) => {
+  const handlePrevious = (): void => {
     // Clear errors when going back
-    setErrors({ ...errors, [step]: null });
-    setCurrentStep(step);
+    setErrors(prev => ({ ...prev, [currentStep]: null }));
+    setCurrentStep(prev => prev - 1);
   };
 
-  const handleFinish = () => {
-    // Validate the last step (convert 1-based to 0-based for array access)
-    const currentSchema = stepSchemas[currentStep - 1];
-    if (!currentSchema) return;
-
-    const currentStepData = Object.keys(
-      currentSchema.schema.properties || {},
-    ).reduce((acc, key) => ({ ...acc, [key]: formData[key] }), {});
-
-    const result = validator.rawValidation(
-      currentSchema.schema,
-      currentStepData,
-    );
-
-    if (result.errors && result.errors.length > 0) {
-      // Convert validation errors to field-level errors for RJSF
-      const fieldErrors: Record<string, any> = {};
-      result.errors.forEach((error: any) => {
-        if (error.instancePath) {
-          // Remove leading slash and convert to field name
-          const fieldName = error.instancePath.substring(1);
-          if (!fieldErrors[fieldName]) {
-            fieldErrors[fieldName] = [];
-          }
-          fieldErrors[fieldName].push(error.message);
-        } else if (error.property) {
-          // Handle property-based errors
-          const fieldName = error.property.substring(9); // Remove 'instance.' prefix if present
-          if (!fieldErrors[fieldName]) {
-            fieldErrors[fieldName] = [];
-          }
-          fieldErrors[fieldName].push(error.message);
-        }
-      });
-
-      setErrors({ ...errors, [currentStep]: fieldErrors });
+  const handleFinish = (): void => {
+    const validation = validateCurrentStep();
+    
+    if (!validation.isValid) {
+      setErrors(prev => ({ ...prev, [currentStep]: validation.errors }));
       return;
     }
 
@@ -397,16 +428,16 @@ export const CreateProcessModal = () => {
   };
 
   const handleChange = (data: any) => {
-    setFormData({ ...formData, ...data.formData });
+    if (data.formData) {
+      setFormData({ ...formData, ...data.formData });
+    }
     // Clear field-level errors when user starts making changes
     if (errors[currentStep]) {
-      setErrors({ ...errors, [currentStep]: null });
+      setErrors(prev => ({ ...prev, [currentStep]: null }));
     }
   };
 
-  const handleError = (errors: any) => {
-    // This gets called when live validation finds errors
-    // We can use this to update our error state in real-time
+  const handleError = (errors: RJSFValidationError[]) => {
     console.log('Validation errors:', errors);
   };
 
@@ -423,7 +454,6 @@ export const CreateProcessModal = () => {
           </p>
         )}
 
-        <pre>{JSON.stringify(stepConfig.uiSchema, null, 2)}</pre>
         <Form
           schema={stepConfig.schema}
           uiSchema={stepConfig.uiSchema}
@@ -437,7 +467,7 @@ export const CreateProcessModal = () => {
           liveValidate={true}
           noHtml5Validate
           omitExtraData
-          extraErrors={errors[currentStep]}
+          extraErrors={errors[currentStep] as any}
         >
           {/* Hide submit button - we'll use our own stepper */}
           <div style={{ display: 'none' }} />
@@ -448,7 +478,7 @@ export const CreateProcessModal = () => {
 
   const getCurrentStepTitle = () => {
     const stepConfig = stepSchemas[currentStep - 1];
-    return stepConfig?.schema.title || 'Set up your decision-making process';
+      return stepConfig?.schema.title || 'Set up your decision-making process';
   };
 
   return (
@@ -461,7 +491,7 @@ export const CreateProcessModal = () => {
         </ModalBody>
 
         <ModalStepper
-          initialStep={1}
+          currentStep={currentStep}
           totalSteps={totalSteps}
           onNext={handleNext}
           onPrevious={handlePrevious}

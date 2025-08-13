@@ -79,25 +79,98 @@ export const DateWidget = (props: WidgetProps) => {
   const { id, value, required, onChange, onBlur, onFocus, schema, rawErrors } =
     props;
 
-  const handleDateChange = (dateValue: any) => {
-    if (dateValue) {
+  // Helper function to create a DateValue-like object from ISO string
+  const parseISOString = (isoString: string) => {
+    if (!isoString) return undefined;
+    
+    try {
+      const match = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(isoString.trim());
+      if (match) {
+        const [, yearStr, monthStr, dayStr] = match;
+        if (yearStr && monthStr && dayStr) {
+          const year = parseInt(yearStr, 10);
+          const month = parseInt(monthStr, 10);
+          const day = parseInt(dayStr, 10);
+        
+        // Validate the date is real
+        const testDate = new Date(year, month - 1, day);
+        if (
+          testDate.getFullYear() === year &&
+          testDate.getMonth() === month - 1 &&
+          testDate.getDate() === day
+        ) {
+          return { year, month, day };
+        }
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to parse date value:', isoString, error);
+    }
+    
+    return undefined;
+  };
+
+  const dateValue = parseISOString(value as string);
+
+  const handleDateChange = (newDateValue: any) => {
+    if (newDateValue && newDateValue.year && newDateValue.month && newDateValue.day) {
       // Convert the DateValue to ISO string format for the form
-      const isoString = `${dateValue.year}-${String(dateValue.month).padStart(2, '0')}-${String(dateValue.day).padStart(2, '0')}`;
+      const isoString = `${newDateValue.year}-${String(newDateValue.month).padStart(2, '0')}-${String(newDateValue.day).padStart(2, '0')}`;
       onChange(isoString);
     } else {
       onChange('');
     }
   };
 
+  // Add date range validation for business logic
+  const validateDateRanges = (selectedDate: string): string[] => {
+    const errors: string[] = [];
+    if (!selectedDate) return errors;
+    
+    try {
+      const selected = new Date(selectedDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      // Check if date is valid
+      if (isNaN(selected.getTime())) {
+        errors.push('Invalid date format');
+        return errors;
+      }
+      
+      // Business rule: dates should not be in the past
+      if (selected < today) {
+        errors.push('Date cannot be in the past');
+      }
+      
+      // Business rule: dates should be within reasonable future range (2 years)
+      const twoYearsFromNow = new Date();
+      twoYearsFromNow.setFullYear(twoYearsFromNow.getFullYear() + 2);
+      if (selected > twoYearsFromNow) {
+        errors.push('Date cannot be more than 2 years in the future');
+      }
+    } catch (error) {
+      errors.push('Invalid date format');
+    }
+    
+    return errors;
+  };
+
+  // Combine RJSF validation errors with our custom validation
+  const allErrors = [
+    ...(rawErrors || []),
+    ...validateDateRanges(value as string)
+  ];
+
   return (
     <DatePicker
       label={schema.title || ''}
-      value={value}
+      value={dateValue as any}
       isRequired={required}
       placeholder="Select date"
       description={schema.description}
       onChange={handleDateChange}
-      errorMessage={rawErrors?.join(', ')}
+      errorMessage={allErrors.length > 0 ? allErrors.join(', ') : undefined}
       inputProps={{
         onBlur: () => onBlur(id, value),
         onFocus: () => onFocus(id, value),

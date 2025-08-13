@@ -6,7 +6,6 @@ import {
   memo,
   useCallback,
   useContext,
-  useState,
 } from 'react';
 import { ModalOverlay, Modal as RACModal } from 'react-aria-components';
 import type { ModalOverlayProps } from 'react-aria-components';
@@ -113,30 +112,25 @@ export const ModalFooter = ({
 
 export const ModalStepper = memo(
   ({
-    initialStep = 1,
+    currentStep,
     totalSteps,
     onNext,
     onPrevious,
     onFinish,
   }: {
-    initialStep?: number;
+    currentStep: number;
     totalSteps: number;
-    onNext: (currentStep: number) => boolean | undefined;
-    onPrevious: (currentStep: number) => void;
+    onNext: () => boolean | undefined;
+    onPrevious: () => void;
     onFinish?: () => void;
   }) => {
-    const [currentStep, setCurrentStep] = useState(initialStep);
     const isFirstStep = currentStep === 1;
     const isLastStep = currentStep === totalSteps;
 
     const handleNext = useCallback(() => {
       if (currentStep < totalSteps) {
-        const nextStep = currentStep + 1;
         // run validation to be sure we CAN move to the next step
-        const isValid = onNext(nextStep) ?? true; // undefined should indicate success while false indicates failure
-        if (isValid) {
-          setCurrentStep(nextStep);
-        }
+        onNext(); // Parent component handles step advancement if validation passes
       } else if (currentStep === totalSteps && onFinish) {
         onFinish();
       }
@@ -144,9 +138,7 @@ export const ModalStepper = memo(
 
     const handlePrevious = useCallback(() => {
       if (currentStep > 1) {
-        const previousStep = currentStep - 1;
-        setCurrentStep(previousStep);
-        onPrevious(previousStep);
+        onPrevious();
       }
     }, [currentStep, onPrevious]);
 
