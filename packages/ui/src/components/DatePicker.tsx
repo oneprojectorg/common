@@ -1,60 +1,221 @@
 'use client';
 
+import { parseDate } from '@internationalized/date';
 import { CalendarIcon } from 'lucide-react';
-import { DatePicker as AriaDatePicker } from 'react-aria-components';
-import type {
-  DatePickerProps as AriaDatePickerProps,
-  DateValue,
-  ValidationResult,
-} from 'react-aria-components';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import type { DateValue } from 'react-aria-components';
 
-import { composeTailwindRenderProps } from '../utils';
-import { Button } from './Button';
+import { cn } from '../lib/utils';
 import { Calendar } from './Calendar';
-import { DateInput } from './DateField';
-import { Dialog } from './Dialog';
-import { Description, FieldError, FieldGroup, Label } from './Field';
-import { Popover } from './Popover';
+import type { InputWithVariantsProps } from './Field';
+import { TextField } from './TextField';
 
-export interface DatePickerProps<T extends DateValue>
-  extends AriaDatePickerProps<T> {
+export type DatePickerProps<T extends DateValue> = {
+  value?: T;
+  onChange?: (value: T) => void;
+  minValue?: DateValue;
+  maxValue?: DateValue;
+  isDisabled?: boolean;
+  isReadOnly?: boolean;
+  isRequired?: boolean;
+  className?: string;
   label?: string;
   description?: string;
-  errorMessage?: string | ((validation: ValidationResult) => string);
-}
+  errorMessage?: string;
+  placeholder?: string;
+  fieldClassName?: string;
+  descriptionClassName?: string;
+  labelClassName?: string;
+  inputProps?: InputWithVariantsProps & { className?: string };
+};
 
 export const DatePicker = <T extends DateValue>({
   label,
   description,
   errorMessage,
+  placeholder = 'Select date',
+  fieldClassName,
+  descriptionClassName,
+  labelClassName,
+  isRequired,
+  inputProps,
   ...props
 }: DatePickerProps<T>) => {
+  const initialInputValue = useMemo(() => {
+    if (props.value) {
+      return new Date(
+        props.value.year,
+        props.value.month - 1,
+        props.value.day,
+      ).toLocaleDateString('en-US', {
+        month: '2-digit',
+        day: '2-digit',
+        year: 'numeric',
+      });
+    }
+    return '';
+  }, [props.value]);
+
+  const [inputValue, setInputValue] = useState<string>(initialInputValue);
+
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const parseInputDate = useCallback((input: string): DateValue | null => {
+    try {
+      // Try parsing MM/DD/YYYY format
+      const mmddyyyy = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(input.trim());
+      if (mmddyyyy) {
+        const [, month = '', day = '', year = ''] = mmddyyyy;
+        if (month && day && year) {
+          const date = new Date(
+            parseInt(year),
+            parseInt(month) - 1,
+            parseInt(day),
+          );
+          if (
+            date.getFullYear() === parseInt(year) &&
+            date.getMonth() === parseInt(month) - 1 &&
+            date.getDate() === parseInt(day)
+          ) {
+            return parseDate(
+              `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`,
+            );
+          }
+        }
+      }
+
+      // Try parsing YYYY-MM-DD format
+      const yyyymmdd = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(input.trim());
+      if (yyyymmdd) {
+        const [, year = '', month = '', day = ''] = yyyymmdd;
+        if (month && day && year) {
+          const date = new Date(
+            parseInt(year),
+            parseInt(month) - 1,
+            parseInt(day),
+          );
+          if (
+            date.getFullYear() === parseInt(year) &&
+            date.getMonth() === parseInt(month) - 1 &&
+            date.getDate() === parseInt(day)
+          ) {
+            return parseDate(
+              `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`,
+            );
+          }
+        }
+      }
+
+      return null;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const handleInputChange = useCallback(
+    (value: string) => {
+      setInputValue(value);
+      const parsedDate = parseInputDate(value);
+      if (parsedDate && props.onChange) {
+        props.onChange(parsedDate as T);
+      }
+    },
+    [parseInputDate],
+  );
+
+  const handleInputFocus = useCallback(() => {
+    setIsCalendarOpen(true);
+  }, []);
+
+  const handleInputBlur = useCallback(() => {
+    // Small delay to allow calendar interaction
+    setTimeout(() => {
+      if (!inputRef.current?.contains(document.activeElement)) {
+        setIsCalendarOpen(false);
+      }
+    }, 100);
+  }, []);
+
+  const handleCalendarChange = useCallback((newValue: DateValue) => {
+    if (props.onChange) {
+      props.onChange(newValue as T);
+    }
+    if (newValue) {
+      const formattedValue = new Date(
+        newValue.year,
+        newValue.month - 1,
+        newValue.day,
+      ).toLocaleDateString('en-US', {
+        month: '2-digit',
+        day: '2-digit',
+        year: 'numeric',
+      });
+      setInputValue(formattedValue);
+    }
+    setIsCalendarOpen(false);
+  }, []);
+
+  const handleCalendarIconClick = () => {
+    setIsCalendarOpen((prev) => !prev);
+  };
+
   return (
-    <AriaDatePicker
-      {...props}
-      className={composeTailwindRenderProps(
-        props.className,
-        'group flex flex-col gap-1',
-      )}
-    >
-      {label && <Label>{label}</Label>}
-      <FieldGroup className="w-auto min-w-[208px]">
-        <DateInput className="min-w-[150px] flex-1 px-2 py-1.5 text-sm" />
-        <Button
-          variant="icon"
-          padding="none"
-          className="mr-1 aspect-square w-6 rounded outline-offset-0"
+    <div className="relative">
+      <div className="relative">
+        <TextField
+          ref={inputRef}
+          label={label}
+          description={description}
+          errorMessage={errorMessage}
+          fieldClassName={fieldClassName}
+          descriptionClassName={descriptionClassName}
+          labelClassName={labelClassName}
+          isRequired={isRequired}
+          value={inputValue}
+          onChange={handleInputChange}
+          isDisabled={props.isDisabled}
+          inputProps={{
+            ...inputProps,
+            className: cn('pr-10', inputProps?.className),
+            placeholder: placeholder,
+            onFocus: handleInputFocus,
+            onBlur: handleInputBlur,
+          }}
+        />
+        <button
+          type="button"
+          onClick={handleCalendarIconClick}
+          disabled={props.isDisabled}
+          className={cn(
+            'absolute bottom-0 right-3 m-auto',
+            'h-10',
+            'flex items-center justify-center',
+            'text-black',
+            props.isDisabled && 'cursor-not-allowed text-lightGray',
+          )}
+          style={{ marginTop: label ? '12px' : '0' }}
         >
-          <CalendarIcon aria-hidden className="size-4" />
-        </Button>
-      </FieldGroup>
-      {description && <Description>{description}</Description>}
-      <FieldError>{errorMessage}</FieldError>
-      <Popover>
-        <Dialog>
-          <Calendar />
-        </Dialog>
-      </Popover>
-    </AriaDatePicker>
+          <CalendarIcon className="size-4" />
+        </button>
+      </div>
+      {isCalendarOpen && (
+        <div
+          className="absolute top-full z-50 mt-1 w-full max-w-[15.5rem]"
+          role="dialog"
+          aria-modal="true"
+        >
+          <Calendar
+            value={props.value}
+            onChange={handleCalendarChange}
+            minValue={props.minValue}
+            maxValue={props.maxValue}
+            isDisabled={props.isDisabled}
+            isReadOnly={props.isReadOnly}
+            errorMessage={errorMessage}
+          />
+        </div>
+      )}
+    </div>
   );
 };

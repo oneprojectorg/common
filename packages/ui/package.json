@@ -20,6 +20,7 @@
     "./Checkbox": "./src/components/Checkbox.tsx",
     "./Chip": "./src/components/Chip.tsx",
     "./CommentButton": "./src/components/CommentButton.tsx",
+    "./DatePicker": "./src/components/DatePicker.tsx",
     "./Dialog": "./src/components/Dialog.tsx",
     "./DropDownButton": "./src/components/DropDownButton.tsx",
     "./EditableText": "./src/components/EditableText.tsx",
