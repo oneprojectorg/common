@@ -67,29 +67,31 @@ const DecisionProcessList = ({ profileId }: { profileId: string }) => {
           >
             <div className="flex flex-col gap-2">
               <div className="flex flex-col gap-1">
-                <h3 className="font-bold text-base text-neutral-black">
+                <h3 className="text-base font-bold text-neutral-black">
                   {instance.name}
                 </h3>
                 <div className="flex items-start gap-1 text-sm text-neutral-charcoal">
                   {instance.instanceData?.budget && (
                     <>
-                      <span>${instance.instanceData.budget.toLocaleString()} Budget</span>
+                      <span>
+                        ${instance.instanceData.budget.toLocaleString()} Budget
+                      </span>
                       <span>•</span>
                     </>
                   )}
-                  <span>0 Proposals</span>
+                  <span>NUMBER Proposals</span>
                   <span>•</span>
-                  <span>48 Participants</span>
+                  <span>NUMBER Participants</span>
                 </div>
               </div>
               {instance.description && (
-                <p className="max-w-[640px] overflow-hidden text-ellipsis text-base text-neutral-charcoal">
+                <p className="max-w-[40rem] overflow-hidden text-ellipsis text-base text-neutral-charcoal">
                   {instance.description}
                 </p>
               )}
             </div>
 
-            <div className="flex flex-col gap-2.5 w-[147px]">
+            <div className="flex w-36 flex-col gap-2.5">
               <Button
                 color="secondary"
                 size="medium"
@@ -136,7 +138,7 @@ export const ProfileDecisions = ({ profileId }: { profileId: string }) => {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-[400px] items-center justify-center">
+        <div className="flex min-h-96 items-center justify-center">
           <div className="animate-pulse text-base text-neutral-charcoal">
             Loading...
           </div>
