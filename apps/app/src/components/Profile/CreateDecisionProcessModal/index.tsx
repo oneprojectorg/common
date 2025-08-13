@@ -7,9 +7,9 @@ import type { RJSFValidationError } from '@rjsf/utils';
 import validator from '@rjsf/validator-ajv8';
 import { useState } from 'react';
 
+import ErrorBoundary from '../../ErrorBoundary';
 import { CustomTemplates } from './CustomTemplates';
 import { CustomWidgets } from './CustomWidgets';
-import ErrorBoundary from '../../ErrorBoundary';
 
 const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
   {
@@ -271,7 +271,7 @@ const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
   },
 ];
 
-export const CreateProcessModal = () => {
+export const CreateDecisionProcessModal = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<Record<string, unknown>>({
     processName: '',
@@ -456,7 +456,6 @@ export const CreateProcessModal = () => {
     }
   };
 
-
   const renderStepContent = () => {
     // Convert 1-based to 0-based for array access
     const stepConfig = stepSchemas[currentStep - 1];
@@ -472,13 +471,14 @@ export const CreateProcessModal = () => {
 
         <ErrorBoundary
           fallback={
-            <div className="flex flex-col items-center gap-4 rounded-lg border border-functional-orange/20 bg-functional-orange/5 p-6 text-center">
+            <div className="border-functional-orange/20 bg-functional-orange/5 flex flex-col items-center gap-4 rounded-lg border p-6 text-center">
               <div className="flex flex-col gap-2">
-                <h3 className="text-lg font-medium text-functional-orange">
+                <h3 className="text-functional-orange text-lg font-medium">
                   Step {currentStep} Error
                 </h3>
                 <p className="text-sm text-neutral-charcoal">
-                  Unable to render this form step. Please try going back and forward again, or restart the form.
+                  Unable to render this form step. Please try going back and
+                  forward again, or restart the form.
                 </p>
               </div>
             </div>

@@ -2,7 +2,7 @@ import { Button } from '@op/ui/Button';
 import { DialogTrigger } from '@op/ui/Dialog';
 import { LuLeaf, LuPlus } from 'react-icons/lu';
 
-import { CreateProcessModal } from '../CreateProcessModal';
+import { CreateDecisionProcessModal } from '../CreateDecisionProcessModal';
 
 export const ProfileDecisions = () => {
   return (
@@ -27,7 +27,7 @@ export const ProfileDecisions = () => {
             <LuPlus className="size-4" />
             Create Process
           </Button>
-          <CreateProcessModal />
+          <CreateDecisionProcessModal />
         </DialogTrigger>
       </div>
     </>
