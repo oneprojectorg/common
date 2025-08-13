@@ -121,7 +121,7 @@ export const ModalStepper = memo(
   }: {
     initialStep?: number;
     totalSteps: number;
-    onNext: (currentStep: number) => void;
+    onNext: (currentStep: number) => boolean | undefined;
     onPrevious: (currentStep: number) => void;
     onFinish?: () => void;
   }) => {
@@ -132,8 +132,11 @@ export const ModalStepper = memo(
     const handleNext = useCallback(() => {
       if (currentStep < totalSteps) {
         const nextStep = currentStep + 1;
-        setCurrentStep(nextStep);
-        onNext(nextStep);
+        // run validation to be sure we CAN move to the next step
+        const isValid = onNext(nextStep) ?? true; // undefined should indicate success while false indicates failure
+        if (isValid) {
+          setCurrentStep(nextStep);
+        }
       } else if (currentStep === totalSteps && onFinish) {
         onFinish();
       }

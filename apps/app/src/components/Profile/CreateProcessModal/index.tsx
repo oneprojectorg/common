@@ -9,7 +9,6 @@ import { useState } from 'react';
 import { CustomTemplates } from './CustomTemplates';
 import { CustomWidgets } from './CustomWidgets';
 
-// Define schemas for each step
 const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
   {
     schema: {
@@ -28,9 +27,8 @@ const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
           title: 'Description',
         },
         totalBudget: {
-          type: 'string',
+          type: 'number',
           title: 'Total Budget Available',
-          minLength: 1,
           description: 'The total amount available this funding round.',
         },
       },
@@ -44,7 +42,8 @@ const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
         'ui:placeholder': 'Description for your decision-making process',
       },
       totalBudget: {
-        'ui:placeholder': '$0.00',
+        'ui:widget': 'number',
+        'ui:placeholder': '0',
       },
     },
   },
@@ -64,64 +63,103 @@ const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
         'resultsDate',
       ],
       properties: {
-        submissionsOpen: {
-          type: 'string',
-          format: 'date',
-          title: 'Submissions Open',
+        proposalSubmissionPhase: {
+          type: 'object',
+          title: 'Proposal Submission Phase',
+          description: 'Members submit proposals and ideas for funding consideration.',
+          properties: {
+            submissionsOpen: {
+              type: 'string',
+              format: 'date',
+              title: 'Submissions Open',
+            },
+            submissionsClose: {
+              type: 'string',
+              format: 'date',
+              title: 'Submissions Close',
+            },
+          },
+          required: ['submissionsOpen', 'submissionsClose'],
         },
-        submissionsClose: {
-          type: 'string',
-          format: 'date',
-          title: 'Submissions Close',
+        reviewShortlistingPhase: {
+          type: 'object',
+          title: 'Review & Shortlisting Phase',
+          description: 'Reviewers create a shortlist of eligible proposals for voting.',
+          properties: {
+            reviewOpen: {
+              type: 'string',
+              format: 'date',
+              title: 'Review Open',
+            },
+            reviewClose: {
+              type: 'string',
+              format: 'date',
+              title: 'Review Close',
+            },
+          },
+          required: ['reviewOpen', 'reviewClose'],
         },
-        reviewOpen: {
-          type: 'string',
-          format: 'date',
-          title: 'Review Open',
+        votingPhase: {
+          type: 'object',
+          title: 'Voting Phase',
+          description: 'All members vote on shortlisted proposals to decide which projects receive funding.',
+          properties: {
+            votingOpen: {
+              type: 'string',
+              format: 'date',
+              title: 'Voting Open',
+            },
+            votingClose: {
+              type: 'string',
+              format: 'date',
+              title: 'Voting Close',
+            },
+          },
+          required: ['votingOpen', 'votingClose'],
         },
-        reviewClose: {
-          type: 'string',
-          format: 'date',
-          title: 'Review Close',
-        },
-        votingOpen: {
-          type: 'string',
-          format: 'date',
-          title: 'Voting Open',
-        },
-        votingClose: {
-          type: 'string',
-          format: 'date',
-          title: 'Voting Close',
-        },
-        resultsDate: {
-          type: 'string',
-          format: 'date',
-          title: 'Results Announcement Date',
+        resultsAnnouncement: {
+          type: 'object',
+          title: 'Results Announcement',
+          properties: {
+            resultsDate: {
+              type: 'string',
+              format: 'date',
+              title: 'Results Announcement Date',
+            },
+          },
+          required: ['resultsDate'],
         },
       },
     },
     uiSchema: {
-      submissionsOpen: {
-        'ui:widget': 'date',
+      proposalSubmissionPhase: {
+        submissionsOpen: {
+          'ui:widget': 'date',
+        },
+        submissionsClose: {
+          'ui:widget': 'date',
+        },
       },
-      submissionsClose: {
-        'ui:widget': 'date',
+      reviewShortlistingPhase: {
+        reviewOpen: {
+          'ui:widget': 'date',
+        },
+        reviewClose: {
+          'ui:widget': 'date',
+        },
       },
-      reviewOpen: {
-        'ui:widget': 'date',
+      votingPhase: {
+        votingOpen: {
+          'ui:widget': 'date',
+        },
+        votingClose: {
+          'ui:widget': 'date',
+        },
       },
-      reviewClose: {
-        'ui:widget': 'date',
-      },
-      votingOpen: {
-        'ui:widget': 'date',
-      },
-      votingClose: {
-        'ui:widget': 'date',
-      },
-      resultsDate: {
-        'ui:widget': 'date',
+      resultsAnnouncement: {
+        resultsDate: {
+          'ui:widget': 'date',
+        },
       },
     },
   },
@@ -133,16 +171,17 @@ const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
       required: ['maxVotesPerMember'],
       properties: {
         maxVotesPerMember: {
-          type: 'string',
+          type: 'number',
           title: 'Maximum Votes Per Member',
-          minLength: 1,
+          minimum: 1,
           description: 'How many proposals can each member vote for?',
         },
       },
     },
     uiSchema: {
       maxVotesPerMember: {
-        'ui:placeholder': 'e.g., 5',
+        'ui:widget': 'number',
+        'ui:placeholder': '5',
       },
     },
   },
@@ -183,9 +222,9 @@ const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
       required: ['budgetCapAmount', 'descriptionGuidance'],
       properties: {
         budgetCapAmount: {
-          type: 'string',
+          type: 'number',
           title: 'Budget cap amount',
-          minLength: 1,
+          minimum: 0,
           description: 'Maximum budget amount participants can request',
         },
         descriptionGuidance: {
@@ -198,7 +237,8 @@ const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
     },
     uiSchema: {
       budgetCapAmount: {
-        'ui:placeholder': '$0.00 USD',
+        'ui:widget': 'number',
+        'ui:placeholder': '0',
       },
       descriptionGuidance: {
         'ui:widget': 'textarea',
@@ -234,17 +274,25 @@ export const CreateProcessModal = () => {
   const [formData, setFormData] = useState<Record<string, any>>({
     processName: '',
     description: '',
-    totalBudget: '',
-    submissionsOpen: '',
-    submissionsClose: '',
-    reviewOpen: '',
-    reviewClose: '',
-    votingOpen: '',
-    votingClose: '',
-    resultsDate: '',
-    maxVotesPerMember: '',
+    totalBudget: null,
+    proposalSubmissionPhase: {
+      submissionsOpen: '',
+      submissionsClose: '',
+    },
+    reviewShortlistingPhase: {
+      reviewOpen: '',
+      reviewClose: '',
+    },
+    votingPhase: {
+      votingOpen: '',
+      votingClose: '',
+    },
+    resultsAnnouncement: {
+      resultsDate: '',
+    },
+    maxVotesPerMember: null,
     categories: [],
-    budgetCapAmount: '',
+    budgetCapAmount: null,
     descriptionGuidance: '',
     summary: {},
   });
@@ -256,7 +304,7 @@ export const CreateProcessModal = () => {
     // Validate current step before proceeding (convert 1-based to 0-based for array access)
     const currentSchema = stepSchemas[currentStep - 1];
     if (!currentSchema) {
-      return;
+      return false;
     }
 
     const currentStepData = Object.keys(
@@ -270,15 +318,38 @@ export const CreateProcessModal = () => {
     );
 
     if (result.errors && result.errors.length > 0) {
-      setErrors({ ...errors, [currentStep]: result.errors });
-      return;
+      // Convert validation errors to field-level errors for RJSF
+      const fieldErrors: Record<string, any> = {};
+      result.errors.forEach((error: any) => {
+        if (error.instancePath) {
+          // Remove leading slash and convert to field name
+          const fieldName = error.instancePath.substring(1);
+          if (!fieldErrors[fieldName]) {
+            fieldErrors[fieldName] = [];
+          }
+          fieldErrors[fieldName].push(error.message);
+        } else if (error.property) {
+          // Handle property-based errors
+          const fieldName = error.property.substring(9); // Remove 'instance.' prefix if present
+          if (!fieldErrors[fieldName]) {
+            fieldErrors[fieldName] = [];
+          }
+          fieldErrors[fieldName].push(error.message);
+        }
+      });
+
+      setErrors({ ...errors, [currentStep]: fieldErrors });
+      return false;
     }
 
+    // Clear errors and proceed to next step
     setErrors({ ...errors, [currentStep]: null });
     setCurrentStep(step);
   };
 
   const handlePrevious = (step: number) => {
+    // Clear errors when going back
+    setErrors({ ...errors, [step]: null });
     setCurrentStep(step);
   };
 
@@ -297,7 +368,27 @@ export const CreateProcessModal = () => {
     );
 
     if (result.errors && result.errors.length > 0) {
-      setErrors({ ...errors, [currentStep]: result.errors });
+      // Convert validation errors to field-level errors for RJSF
+      const fieldErrors: Record<string, any> = {};
+      result.errors.forEach((error: any) => {
+        if (error.instancePath) {
+          // Remove leading slash and convert to field name
+          const fieldName = error.instancePath.substring(1);
+          if (!fieldErrors[fieldName]) {
+            fieldErrors[fieldName] = [];
+          }
+          fieldErrors[fieldName].push(error.message);
+        } else if (error.property) {
+          // Handle property-based errors
+          const fieldName = error.property.substring(9); // Remove 'instance.' prefix if present
+          if (!fieldErrors[fieldName]) {
+            fieldErrors[fieldName] = [];
+          }
+          fieldErrors[fieldName].push(error.message);
+        }
+      });
+
+      setErrors({ ...errors, [currentStep]: fieldErrors });
       return;
     }
 
@@ -307,6 +398,16 @@ export const CreateProcessModal = () => {
 
   const handleChange = (data: any) => {
     setFormData({ ...formData, ...data.formData });
+    // Clear field-level errors when user starts making changes
+    if (errors[currentStep]) {
+      setErrors({ ...errors, [currentStep]: null });
+    }
+  };
+
+  const handleError = (errors: any) => {
+    // This gets called when live validation finds errors
+    // We can use this to update our error state in real-time
+    console.log('Validation errors:', errors);
   };
 
   const renderStepContent = () => {
@@ -322,18 +423,21 @@ export const CreateProcessModal = () => {
           </p>
         )}
 
+        <pre>{JSON.stringify(stepConfig.uiSchema, null, 2)}</pre>
         <Form
           schema={stepConfig.schema}
           uiSchema={stepConfig.uiSchema}
           formData={formData}
           onChange={handleChange}
+          onError={handleError}
           validator={validator}
           widgets={CustomWidgets}
           templates={CustomTemplates}
           showErrorList={false}
-          liveValidate={false}
+          liveValidate={true}
           noHtml5Validate
           omitExtraData
+          extraErrors={errors[currentStep]}
         >
           {/* Hide submit button - we'll use our own stepper */}
           <div style={{ display: 'none' }} />

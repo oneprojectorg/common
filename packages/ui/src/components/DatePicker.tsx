@@ -201,7 +201,7 @@ export const DatePicker = <T extends DateValue>({
       </div>
       {isCalendarOpen && (
         <div
-          className="absolute top-full mt-1 w-full max-w-[15.5rem]"
+          className="absolute top-full z-50 mt-1 w-full max-w-[15.5rem]"
           role="dialog"
           aria-modal="true"
         >

@@ -1,6 +1,7 @@
 import { CategoryList } from '@op/ui/CategoryList';
 import { Checkbox } from '@op/ui/Checkbox';
 import { DatePicker } from '@op/ui/DatePicker';
+import { NumberField } from '@op/ui/NumberField';
 import { Radio, RadioGroup } from '@op/ui/RadioGroup';
 import { TextField } from '@op/ui/TextField';
 import { WidgetProps } from '@rjsf/utils';
@@ -146,6 +147,42 @@ export const RadioWidget = (props: WidgetProps) => {
   );
 };
 
+export const NumberWidget = (props: WidgetProps) => {
+  const {
+    id,
+    value,
+    required,
+    placeholder,
+    onChange,
+    onBlur,
+    onFocus,
+    schema,
+    uiSchema,
+    rawErrors,
+  } = props;
+
+  const handleChange = (numericValue: number | null) => {
+    onChange(numericValue);
+  };
+
+  return (
+    <NumberField
+      id={id}
+      label={schema.title || ''}
+      value={value || null}
+      isRequired={required}
+      inputProps={{
+        placeholder: uiSchema?.['ui:placeholder'] || placeholder,
+        onBlur: () => onBlur(id, value),
+        onFocus: () => onFocus(id, value),
+      }}
+      description={schema.description}
+      onChange={handleChange}
+      errorMessage={rawErrors?.join(', ')}
+    />
+  );
+};
+
 export const CategoryListWidget = (props: WidgetProps) => {
   const { value, onChange, schema } = props;
 
@@ -184,12 +221,14 @@ export const CategoryListWidget = (props: WidgetProps) => {
 export const CustomWidgets = {
   TextWidget,
   TextareaWidget,
+  NumberWidget,
   DateWidget,
   CheckboxWidget,
   RadioWidget,
   CategoryListWidget,
   text: TextWidget,
   textarea: TextareaWidget,
+  number: NumberWidget,
   date: DateWidget,
   checkbox: CheckboxWidget,
   radio: RadioWidget,
