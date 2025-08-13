@@ -1,8 +1,13 @@
 'use client';
 
+// TODO: This file is a prototype of a dynamic form for decision-making. There is lots to cleanup here in terms of structure and reusability.
+// We'll continue to iterate on this but one can consider this part of the code as being in "beta"
+//
+import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
+import { trpc } from '@op/api/client';
 import { Modal, ModalBody, ModalHeader, ModalStepper } from '@op/ui/Modal';
+import { toast } from '@op/ui/Toast';
 import Form from '@rjsf/core';
-import { RJSFSchema, UiSchema } from '@rjsf/utils';
 import type { RJSFValidationError } from '@rjsf/utils';
 import validator from '@rjsf/validator-ajv8';
 import { useState } from 'react';
@@ -10,303 +15,117 @@ import { useState } from 'react';
 import ErrorBoundary from '../../ErrorBoundary';
 import { CustomTemplates } from './CustomTemplates';
 import { CustomWidgets } from './CustomWidgets';
+import {
+  schemaDefaults,
+  stepSchemas,
+  transformFormDataToProcessSchema,
+} from './schemas/simple';
 
-const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
-  {
-    schema: {
-      type: 'object',
-      title: 'Basic Information',
-      description: 'Define the key details for your decision process.',
-      required: ['processName', 'totalBudget'],
-      properties: {
-        processName: {
-          type: 'string',
-          title: 'Process Name',
-          minLength: 1,
-        },
-        description: {
-          type: 'string',
-          title: 'Description',
-        },
-        totalBudget: {
-          type: 'number',
-          title: 'Total Budget Available',
-          description: 'The total amount available this funding round.',
-        },
-      },
+const transformFormDataToInstanceData = (data: Record<string, unknown>) => {
+  return {
+    budget: data.totalBudget as number,
+    currentStateId: 'submission',
+    fieldValues: {
+      categories: data.categories,
+      budgetCapAmount: data.budgetCapAmount,
+      descriptionGuidance: data.descriptionGuidance,
+      maxVotesPerMember: data.maxVotesPerMember,
     },
-    uiSchema: {
-      processName: {
-        'ui:placeholder': 'e.g., 2025 Community Budget',
+    phases: [
+      {
+        stateId: 'submission',
+        plannedStartDate: (data.proposalSubmissionPhase as any)
+          ?.submissionsOpen,
+        plannedEndDate: (data.proposalSubmissionPhase as any)?.submissionsClose,
       },
-      description: {
-        'ui:widget': 'textarea',
-        'ui:placeholder': 'Description for your decision-making process',
+      {
+        stateId: 'review',
+        plannedStartDate: (data.reviewShortlistingPhase as any)?.reviewOpen,
+        plannedEndDate: (data.reviewShortlistingPhase as any)?.reviewClose,
       },
-      totalBudget: {
-        'ui:widget': 'number',
-        'ui:placeholder': '0',
+      {
+        stateId: 'voting',
+        plannedStartDate: (data.votingPhase as any)?.votingOpen,
+        plannedEndDate: (data.votingPhase as any)?.votingClose,
       },
-    },
-  },
-  {
-    schema: {
-      type: 'object',
-      title: 'Set up your decision-making phases',
-      description:
-        'Members submit proposals and ideas for funding consideration.',
-      required: [
-        'proposalSubmissionPhase',
-        'reviewShortlistingPhase',
-        'votingPhase',
-        'resultsAnnouncement',
-      ],
-      properties: {
-        proposalSubmissionPhase: {
-          type: 'object',
-          title: 'Proposal Submission Phase',
-          description:
-            'Members submit proposals and ideas for funding consideration.',
-          properties: {
-            submissionsOpen: {
-              type: 'string',
-              format: 'date',
-              title: 'Submissions Open',
-            },
-            submissionsClose: {
-              type: 'string',
-              format: 'date',
-              title: 'Submissions Close',
-            },
-          },
-          required: ['submissionsOpen', 'submissionsClose'],
-        },
-        reviewShortlistingPhase: {
-          type: 'object',
-          title: 'Review & Shortlisting Phase',
-          description:
-            'Reviewers create a shortlist of eligible proposals for voting.',
-          properties: {
-            reviewOpen: {
-              type: 'string',
-              format: 'date',
-              title: 'Review Open',
-            },
-            reviewClose: {
-              type: 'string',
-              format: 'date',
-              title: 'Review Close',
-            },
-          },
-          required: ['reviewOpen', 'reviewClose'],
-        },
-        votingPhase: {
-          type: 'object',
-          title: 'Voting Phase',
-          description:
-            'All members vote on shortlisted proposals to decide which projects receive funding.',
-          properties: {
-            votingOpen: {
-              type: 'string',
-              format: 'date',
-              title: 'Voting Open',
-            },
-            votingClose: {
-              type: 'string',
-              format: 'date',
-              title: 'Voting Close',
-            },
-          },
-          required: ['votingOpen', 'votingClose'],
-        },
-        resultsAnnouncement: {
-          type: 'object',
-          title: 'Results Announcement',
-          properties: {
-            resultsDate: {
-              type: 'string',
-              format: 'date',
-              title: 'Results Announcement Date',
-            },
-          },
-          required: ['resultsDate'],
-        },
+      {
+        stateId: 'results',
+        plannedStartDate: (data.resultsAnnouncement as any)?.resultsDate,
       },
-    },
-    uiSchema: {
-      proposalSubmissionPhase: {
-        submissionsOpen: {
-          'ui:widget': 'date',
-        },
-        submissionsClose: {
-          'ui:widget': 'date',
-        },
-      },
-      reviewShortlistingPhase: {
-        reviewOpen: {
-          'ui:widget': 'date',
-        },
-        reviewClose: {
-          'ui:widget': 'date',
-        },
-      },
-      votingPhase: {
-        votingOpen: {
-          'ui:widget': 'date',
-        },
-        votingClose: {
-          'ui:widget': 'date',
-        },
-      },
-      resultsAnnouncement: {
-        resultsDate: {
-          'ui:widget': 'date',
-        },
-      },
-    },
-  },
-  {
-    schema: {
-      type: 'object',
-      title: 'Configure your voting settings',
-      description: 'Set up how members will participate in the voting process.',
-      required: ['maxVotesPerMember'],
-      properties: {
-        maxVotesPerMember: {
-          type: 'number',
-          title: 'Maximum Votes Per Member',
-          minimum: 1,
-          description: 'How many proposals can each member vote for?',
-        },
-      },
-    },
-    uiSchema: {
-      maxVotesPerMember: {
-        'ui:widget': 'number',
-        'ui:placeholder': '5',
-      },
-    },
-  },
-  {
-    schema: {
-      type: 'object',
-      title: 'Configure proposal categories',
-      description:
-        'Categories help organize proposals. You can add or remove categories as needed.',
-      properties: {
-        categories: {
-          type: 'array',
-          title: 'Categories',
-          items: {
-            type: 'string',
-          },
-          default: [],
-          description:
-            'Categories help organize proposals. You can add or remove categories as needed.',
-        },
-      },
-    },
-    uiSchema: {
-      categories: {
-        'ui:widget': 'CategoryList',
-        'ui:options': {
-          addable: true,
-          removable: true,
-        },
-      },
-    },
-  },
-  {
-    schema: {
-      type: 'object',
-      title: 'Setup proposal template',
-      description: 'Configure guidance and budget limits',
-      required: ['budgetCapAmount', 'descriptionGuidance'],
-      properties: {
-        budgetCapAmount: {
-          type: 'number',
-          title: 'Budget cap amount',
-          minimum: 0,
-          description: 'Maximum budget amount participants can request',
-        },
-        descriptionGuidance: {
-          type: 'string',
-          title: 'Description guidance',
-          description:
-            'Placeholder text that appears in the proposal description area.',
-        },
-      },
-    },
-    uiSchema: {
-      budgetCapAmount: {
-        'ui:widget': 'number',
-        'ui:placeholder': '0',
-      },
-      descriptionGuidance: {
-        'ui:widget': 'textarea',
-        'ui:placeholder':
-          "e.g., Start with the problem you're addressing, explain your solution, and describe the expected impact on our community.",
-      },
-    },
-  },
-  {
-    schema: {
-      type: 'object',
-      title: 'Review and launch',
-      description: 'Confirm your settings before creating the process.',
-      properties: {
-        summary: {
-          type: 'object',
-          title: 'Summary',
-          properties: {},
-          description: 'Confirm your settings before creating the process.',
-        },
-      },
-    },
-    uiSchema: {
-      summary: {
-        'ui:widget': 'ReviewSummary',
-      },
-    },
-  },
-];
+    ],
+  };
+};
 
 export const CreateDecisionProcessModal = () => {
+  const utils = trpc.useUtils();
   const [currentStep, setCurrentStep] = useState(1);
-  const [formData, setFormData] = useState<Record<string, unknown>>({
-    processName: '',
-    description: '',
-    totalBudget: null,
-    proposalSubmissionPhase: {
-      submissionsOpen: '',
-      submissionsClose: '',
-    },
-    reviewShortlistingPhase: {
-      reviewOpen: '',
-      reviewClose: '',
-    },
-    votingPhase: {
-      votingOpen: '',
-      votingClose: '',
-    },
-    resultsAnnouncement: {
-      resultsDate: '',
-    },
-    maxVotesPerMember: null,
-    categories: [],
-    budgetCapAmount: null,
-    descriptionGuidance: '',
-    summary: {},
-  });
+  const [formData, setFormData] =
+    useState<Record<string, unknown>>(schemaDefaults);
   const [errors, setErrors] = useState<Record<number, any>>({});
 
+  const isOnline = useConnectionStatus();
+
+  // tRPC mutations for creating process and instance
+  const createProcess = trpc.decision.createProcess.useMutation({
+    onSuccess: (process) => {
+      // After process is created, create an instance
+      createInstance.mutate({
+        processId: process.id,
+        name: formData.processName as string,
+        description: formData.description as string,
+        instanceData: transformFormDataToInstanceData(formData),
+      });
+    },
+    onError: (error) => {
+      handleCreateError(error, 'Failed to create decision process template');
+    },
+  });
+
+  const createInstance = trpc.decision.createInstance.useMutation({
+    onSuccess: (instance) => {
+      toast.success({
+        title: 'Decision process created successfully!',
+        message: `"${instance.name}" is now ready for proposals.`,
+      });
+
+      // Invalidate the processes list to refresh the UI
+      utils.decision.listProcesses.invalidate();
+
+      // TODO: Close modal and optionally redirect to the new process
+      console.log('Process instance created:', instance);
+    },
+    onError: (error) => {
+      handleCreateError(error, 'Failed to create decision process instance');
+    },
+  });
+
   const totalSteps = stepSchemas.length;
+
+  const handleCreateError = (error: unknown, title: string) => {
+    console.error(title + ':', error);
+
+    const errorInfo = analyzeError(error);
+
+    if (errorInfo.isConnectionError) {
+      toast.error({
+        title: 'Connection issue',
+        message: errorInfo.message + ' Please try creating the process again.',
+      });
+    } else {
+      toast.error({
+        title,
+        message: errorInfo.message,
+      });
+    }
+  };
 
   // Validate date ordering for step 2 (phases)
   const validatePhaseSequence = (): string[] => {
     const errors: string[] = [];
 
-    if (currentStep !== 2) return errors;
+    if (currentStep !== 2) {
+      return errors;
+    }
 
     const phases = formData as any;
     const proposalPhase = phases.proposalSubmissionPhase || {};
@@ -435,8 +254,27 @@ export const CreateDecisionProcessModal = () => {
       return;
     }
 
-    // Submit form data
-    console.log('Form submitted:', formData);
+    if (!isOnline) {
+      toast.error({
+        title: 'No connection',
+        message: 'Please check your internet connection and try again.',
+      });
+      return;
+    }
+
+    // Prevent multiple submissions
+    if (createProcess.isPending || createInstance.isPending) {
+      return;
+    }
+
+    // Transform and submit form data
+    const processSchema = transformFormDataToProcessSchema(formData);
+
+    createProcess.mutate({
+      name: formData.processName as string,
+      description: formData.description as string,
+      processSchema,
+    });
   };
 
   const handleChange = (data: any) => {

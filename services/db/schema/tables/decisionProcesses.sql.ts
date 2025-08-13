@@ -1,4 +1,4 @@
-import { relations } from 'drizzle-orm';
+import { relations, sql } from 'drizzle-orm';
 import type { InferModel } from 'drizzle-orm';
 import {
   index,
@@ -47,7 +47,7 @@ export const decisionProcesses = pgTable(
     index().on(table.id).concurrently(),
     index().on(table.createdByProfileId).concurrently(),
     index('decision_processes_name_gin_index')
-      .using('gin', table.name)
+      .using('gin', sql`to_tsvector('english', ${table.name})`)
       .concurrently(),
   ],
 );
