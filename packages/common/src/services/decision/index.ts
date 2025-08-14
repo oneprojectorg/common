@@ -14,6 +14,9 @@ export type { ListProcessesInput } from './listProcesses';
 export { createInstance } from './createInstance';
 export type { CreateInstanceInput } from './createInstance';
 
+export { updateInstance } from './updateInstance';
+export type { UpdateInstanceInput } from './updateInstance';
+
 export { listInstances } from './listInstances';
 export type { ListInstancesInput } from './listInstances';
 

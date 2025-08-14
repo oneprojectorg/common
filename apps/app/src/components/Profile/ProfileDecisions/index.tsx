@@ -7,6 +7,7 @@ import { Suspense } from 'react';
 import { LuLeaf, LuPlus } from 'react-icons/lu';
 
 import { CreateDecisionProcessModal } from '../CreateDecisionProcessModal';
+import { EditDecisionProcessModal } from '../EditDecisionProcessModal';
 
 const DecisionProcessList = ({ profileId }: { profileId: string }) => {
   const [data] = trpc.decision.listInstances.useSuspenseQuery({
@@ -102,16 +103,17 @@ const DecisionProcessList = ({ profileId }: { profileId: string }) => {
               >
                 View Details
               </Button>
-              <Button
-                color="secondary"
-                size="medium"
-                onPress={() => {
-                  // TODO: Navigate to edit process page
-                  console.log('Edit process:', instance.id);
-                }}
-              >
-                Edit Process
-              </Button>
+              <DialogTrigger>
+                <Button
+                  color="secondary"
+                  size="medium"
+                >
+                  Edit Process
+                </Button>
+                <EditDecisionProcessModal 
+                  instance={instance}
+                />
+              </DialogTrigger>
             </div>
           </div>
         ))}
@@ -130,6 +132,7 @@ const DecisionProcessList = ({ profileId }: { profileId: string }) => {
           </Button>
         </div>
       )}
+
     </div>
   );
 };
