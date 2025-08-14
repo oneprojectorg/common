@@ -1,7 +1,7 @@
 'use client';
 
-import type { ZonePermissions } from 'access-zones';
 import { RouterOutput, trpc } from '@op/api/client';
+import type { ZonePermissions } from 'access-zones';
 import { useRouter } from 'next/navigation';
 import posthog from 'posthog-js';
 import React, { Suspense, createContext, useContext } from 'react';
@@ -28,7 +28,6 @@ export const UserProviderSuspense = ({
 }) => {
   const router = useRouter();
   const [user] = trpc.account.getMyAccount.useSuspenseQuery();
-  console.log('USER', user);
 
   if (user.organizationUsers?.length === 0) {
     router.push('/start');
@@ -40,14 +39,16 @@ export const UserProviderSuspense = ({
   }
 
   // Utility function to get permissions for a specific profile
-  const getPermissionsForProfile = (profileId: string): ZonePermissions | null => {
+  const getPermissionsForProfile = (
+    profileId: string,
+  ): ZonePermissions | null => {
     if (!user?.organizationUsers) {
       return null;
     }
 
     // Find the organizationUser that has an organization with a profile matching the profileId
     const matchingOrgUser = user.organizationUsers.find(
-      (orgUser) => orgUser.organization?.profile?.id === profileId
+      (orgUser) => orgUser.organization?.profile?.id === profileId,
     );
 
     return matchingOrgUser?.permissions || null;
