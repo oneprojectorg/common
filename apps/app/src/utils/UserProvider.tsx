@@ -87,7 +87,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         <UserContext.Provider
           value={{
             user: undefined,
-            getPermissionsForProfile: () => null,
+            getPermissionsForProfile: () => defaultPermissions,
           }}
         >
           {children}

@@ -1,5 +1,5 @@
 import { db, eq } from '@op/db/client';
-import { processInstances, users } from '@op/db/schema';
+import { processInstances } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 import { z } from 'zod';
 

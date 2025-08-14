@@ -6,7 +6,6 @@ import { assertAccess, permission } from 'access-zones';
 import { UnauthorizedError } from '../../utils';
 import {
   getCurrentOrgId,
-  getCurrentOrgUserId,
   getOrgAccessUser,
 } from '../access';
 
@@ -46,7 +45,6 @@ export const listInstances = async ({
 
   assertAccess({ decisions: permission.READ }, orgUser?.roles ?? []);
 
-  console.log('passed');
   try {
     // Build filter conditions
     const conditions = [];
