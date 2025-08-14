@@ -5,12 +5,12 @@
 //
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { trpc } from '@op/api/client';
-import { Modal, ModalBody, ModalHeader, ModalStepper } from '@op/ui/Modal';
+import { Modal, ModalBody, ModalHeader, ModalStepper, ModalContext } from '@op/ui/Modal';
 import { toast } from '@op/ui/Toast';
 import Form from '@rjsf/core';
 import type { RJSFValidationError } from '@rjsf/utils';
 import validator from '@rjsf/validator-ajv8';
-import { useState } from 'react';
+import { useContext, useState } from 'react';
 
 import ErrorBoundary from '../../ErrorBoundary';
 import { CustomTemplates } from './CustomTemplates';
@@ -64,6 +64,7 @@ export const CreateDecisionProcessModal = () => {
   const [errors, setErrors] = useState<Record<number, any>>({});
 
   const isOnline = useConnectionStatus();
+  const { onClose } = useContext(ModalContext);
 
   // tRPC mutations for creating process and instance
   const createProcess = trpc.decision.createProcess.useMutation({
@@ -91,8 +92,8 @@ export const CreateDecisionProcessModal = () => {
       // Invalidate the processes list to refresh the UI
       utils.decision.listProcesses.invalidate();
 
-      // TODO: Close modal and optionally redirect to the new process
-      console.log('Process instance created:', instance);
+      // Close the modal after successful creation
+      onClose?.();
     },
     onError: (error) => {
       handleCreateError(error, 'Failed to create decision process instance');

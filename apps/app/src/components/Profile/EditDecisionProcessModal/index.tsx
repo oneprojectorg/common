@@ -11,12 +11,13 @@ import {
   type ProcessInstance,
 } from '@/utils/decisionProcessTransforms';
 import { trpc } from '@op/api/client';
-import { Modal, ModalBody, ModalHeader, ModalStepper } from '@op/ui/Modal';
+import { Modal, ModalBody, ModalHeader, ModalStepper, ModalContext } from '@op/ui/Modal';
 import { toast } from '@op/ui/Toast';
 import Form from '@rjsf/core';
 import type { RJSFValidationError } from '@rjsf/utils';
 import validator from '@rjsf/validator-ajv8';
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
+import { OverlayTriggerStateContext } from 'react-aria-components';
 
 import ErrorBoundary from '../../ErrorBoundary';
 import { CustomTemplates } from '../CreateDecisionProcessModal/CustomTemplates';
@@ -54,6 +55,10 @@ export const EditDecisionProcessModal = ({
 
   const isOnline = useConnectionStatus();
   const isEditing = !!instance;
+  
+  // Get the dialog close function from React Aria Components context
+  const overlayTriggerState = useContext(OverlayTriggerStateContext);
+  const { onClose } = useContext(ModalContext);
 
   useEffect(() => {
     if (instance) {
@@ -94,6 +99,13 @@ export const EditDecisionProcessModal = ({
       // Invalidate the lists to refresh the UI
       utils.decision.listProcesses.invalidate();
       utils.decision.listInstances.invalidate();
+
+      // Close the modal after successful creation
+      if (overlayTriggerState?.close) {
+        overlayTriggerState.close();
+      } else {
+        onClose?.();
+      }
     },
     onError: (error) => {
       handleCreateError(
@@ -114,6 +126,13 @@ export const EditDecisionProcessModal = ({
 
       // Invalidate the lists to refresh the UI
       utils.decision.listInstances.invalidate();
+
+      // Close the modal after successful update
+      if (overlayTriggerState?.close) {
+        overlayTriggerState.close();
+      } else {
+        onClose?.();
+      }
     },
     onError: (error) => {
       handleCreateError(error, 'Failed to update decision process');
