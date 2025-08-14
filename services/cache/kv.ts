@@ -131,6 +131,26 @@ export const invalidate = async ({
   }
 };
 
+export const invalidateMultiple = async ({
+  type,
+  appKey,
+  paramsList,
+}: {
+  type: keyof typeof TypeMap;
+  appKey?: string;
+  paramsList: any[][];
+}) => {
+  await Promise.all(
+    paramsList.map((params) =>
+      invalidate({
+        type,
+        appKey,
+        params,
+      })
+    )
+  );
+};
+
 const get = async (key: string) => {
   if (!redis) {
     return null;
