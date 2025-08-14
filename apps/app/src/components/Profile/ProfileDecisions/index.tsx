@@ -4,6 +4,7 @@ import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { Button, ButtonLink } from '@op/ui/Button';
 import { DialogTrigger } from '@op/ui/Dialog';
+import { useParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { LuLeaf, LuPlus } from 'react-icons/lu';
 
@@ -11,6 +12,7 @@ import { CreateDecisionProcessModal } from '../CreateDecisionProcessModal';
 import { EditDecisionProcessModal } from '../EditDecisionProcessModal';
 
 const DecisionProcessList = ({ profileId }: { profileId: string }) => {
+  const { slug } = useParams();
   const [data] = trpc.decision.listInstances.useSuspenseQuery({
     ownerProfileId: profileId,
     limit: 20,
@@ -105,12 +107,12 @@ const DecisionProcessList = ({ profileId }: { profileId: string }) => {
               {decisionPermission.update ? (
                 <ButtonLink
                   color="secondary"
-                  href={`/decisions/${instance.id}`}
+                  href={`/profile/${slug}/decisions/${instance.id}`}
                 >
                   View Details
                 </ButtonLink>
               ) : (
-                <ButtonLink href={`/decisions/${instance.id}`}>
+                <ButtonLink href={`/profile/${slug}/decisions/${instance.id}`}>
                   Participate
                 </ButtonLink>
               )}
