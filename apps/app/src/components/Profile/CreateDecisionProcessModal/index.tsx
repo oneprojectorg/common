@@ -11,6 +11,7 @@ import Form from '@rjsf/core';
 import type { RJSFValidationError } from '@rjsf/utils';
 import validator from '@rjsf/validator-ajv8';
 import { useContext, useState } from 'react';
+import { OverlayTriggerStateContext } from 'react-aria-components';
 
 import ErrorBoundary from '../../ErrorBoundary';
 import { CustomTemplates } from './CustomTemplates';
@@ -64,6 +65,9 @@ export const CreateDecisionProcessModal = () => {
   const [errors, setErrors] = useState<Record<number, any>>({});
 
   const isOnline = useConnectionStatus();
+  
+  // Get the dialog close function from React Aria Components context
+  const overlayTriggerState = useContext(OverlayTriggerStateContext);
   const { onClose } = useContext(ModalContext);
 
   // tRPC mutations for creating process and instance
@@ -93,7 +97,11 @@ export const CreateDecisionProcessModal = () => {
       utils.decision.listProcesses.invalidate();
 
       // Close the modal after successful creation
-      onClose?.();
+      if (overlayTriggerState?.close) {
+        overlayTriggerState.close();
+      } else {
+        onClose?.();
+      }
     },
     onError: (error) => {
       handleCreateError(error, 'Failed to create decision process instance');

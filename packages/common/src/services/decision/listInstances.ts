@@ -79,14 +79,35 @@ export const listInstances = async ({
       with: {
         process: true,
         owner: true,
+        proposals: {
+          columns: {
+            id: true,
+            submittedByProfileId: true,
+          },
+        },
       },
       limit,
       offset,
       orderBy: orderFn(orderColumn),
     });
 
+    // Transform instances to include proposal and participant counts
+    const instancesWithCounts = instanceList.map((instance) => {
+      const proposalCount = instance.proposals?.length || 0;
+      const uniqueParticipants = new Set(
+        instance.proposals?.map((p) => p.submittedByProfileId)
+      );
+      const participantCount = uniqueParticipants.size;
+
+      return {
+        ...instance,
+        proposalCount,
+        participantCount,
+      };
+    });
+
     return {
-      instances: instanceList,
+      instances: instancesWithCounts,
       total: Number(count),
       hasMore: offset + limit < Number(count),
     };

@@ -146,6 +146,8 @@ export const processInstanceEncoder = createSelectSchema(processInstances)
     instanceData: instanceDataEncoder,
     process: decisionProcessEncoder.optional(),
     owner: baseProfileEncoder.optional(),
+    proposalCount: z.number().optional(),
+    participantCount: z.number().optional(),
   });
 
 // Proposal Encoder

@@ -80,9 +80,9 @@ const DecisionProcessList = ({ profileId }: { profileId: string }) => {
                       <span>•</span>
                     </>
                   )}
-                  <span>NUMBER Proposals</span>
+                  <span>{instance.proposalCount || 0} Proposals</span>
                   <span>•</span>
-                  <span>NUMBER Participants</span>
+                  <span>{instance.participantCount || 0} Participants</span>
                 </div>
               </div>
               {instance.description && (
@@ -104,15 +104,10 @@ const DecisionProcessList = ({ profileId }: { profileId: string }) => {
                 View Details
               </Button>
               <DialogTrigger>
-                <Button
-                  color="secondary"
-                  size="medium"
-                >
+                <Button color="secondary" size="medium">
                   Edit Process
                 </Button>
-                <EditDecisionProcessModal 
-                  instance={instance}
-                />
+                <EditDecisionProcessModal instance={instance} />
               </DialogTrigger>
             </div>
           </div>
@@ -132,7 +127,6 @@ const DecisionProcessList = ({ profileId }: { profileId: string }) => {
           </Button>
         </div>
       )}
-
     </div>
   );
 };

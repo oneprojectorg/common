@@ -43,6 +43,8 @@ export const listInstancesRouter = router({
                 >,
               }
             : undefined,
+          proposalCount: instance.proposalCount,
+          participantCount: instance.participantCount,
         })),
         total: result.total,
         hasMore: result.hasMore,
