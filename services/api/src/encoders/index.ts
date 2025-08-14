@@ -1,5 +1,6 @@
 export * from './attachments';
 export * from './comments';
+export * from './decision';
 export * from './links';
 export * from './organizations';
 export * from './individuals';

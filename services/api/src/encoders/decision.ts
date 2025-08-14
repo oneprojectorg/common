@@ -13,6 +13,21 @@ import { baseProfileEncoder } from './profiles';
 // JSON Schema types
 const jsonSchemaEncoder = z.record(z.unknown());
 
+// Shared process phase schema
+export const processPhaseSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().optional(),
+  phase: z
+    .object({
+      startDate: z.string().optional(),
+      endDate: z.string().optional(),
+      sortOrder: z.number().optional(),
+    })
+    .optional(),
+  type: z.enum(['initial', 'intermediate', 'final']).optional(),
+});
+
 // Process Schema Encoder
 const processSchemaEncoder = z.object({
   name: z.string(),
@@ -20,19 +35,8 @@ const processSchemaEncoder = z.object({
   budget: z.number().optional(),
   fields: jsonSchemaEncoder.optional(),
   states: z.array(
-    z.object({
-      id: z.string(),
-      name: z.string(),
-      description: z.string().optional(),
+    processPhaseSchema.extend({
       fields: jsonSchemaEncoder.optional(),
-      phase: z
-        .object({
-          startDate: z.string().optional(),
-          endDate: z.string().optional(),
-          sortOrder: z.number().optional(),
-        })
-        .optional(),
-      type: z.enum(['initial', 'intermediate', 'final']).optional(),
       config: z
         .object({
           allowProposals: z.boolean().optional(),
@@ -160,7 +164,7 @@ export const proposalEncoder = createSelectSchema(proposals)
     updatedAt: true,
   })
   .extend({
-    proposalData: z.record(z.unknown()), // Matches proposal template schema
+    proposalData: z.unknown(), // Keep as unknown to match database schema
     processInstance: processInstanceEncoder.optional(),
     submittedBy: baseProfileEncoder.optional(),
     decisionCount: z.number().optional(),

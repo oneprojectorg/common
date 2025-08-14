@@ -2,9 +2,9 @@ import { trpcNext } from '@op/api/vanilla';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
-import { DecisionInstanceContent } from '@/components/DecisionInstanceContent';
-import { DecisionInstanceHeader } from '@/components/DecisionInstanceHeader';
-import { DecisionProcessStepper } from '@/components/DecisionProcessStepper';
+import { DecisionInstanceContent } from '@/components/decisions/DecisionInstanceContent';
+import { DecisionInstanceHeader } from '@/components/decisions/DecisionInstanceHeader';
+import { DecisionProcessStepper } from '@/components/decisions/DecisionProcessStepper';
 
 interface ProcessPhase {
   id: string;
@@ -27,9 +27,17 @@ async function DecisionInstancePageContent({
 }) {
   try {
     const client = await trpcNext();
-    const instance = await client.decision.getInstance.query({
-      instanceId,
-    });
+    
+    // Fetch both instance and proposals in parallel
+    const [instance, proposalsData] = await Promise.all([
+      client.decision.getInstance.query({
+        instanceId,
+      }),
+      client.decision.listProposals.query({
+        processInstanceId: instanceId,
+        limit: 20,
+      }),
+    ]);
 
     if (!instance) {
       notFound();
@@ -74,6 +82,8 @@ async function DecisionInstancePageContent({
           budget={budget}
           currentPhase={currentPhase}
           proposalCount={instance.proposalCount || 0}
+          createProposalHref={`/profile/${slug}/decisions/${instanceId}/proposal/create`}
+          proposals={proposalsData?.proposals || []}
         />
       </>
     );
