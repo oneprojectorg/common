@@ -240,8 +240,14 @@ export const updateInstanceInputSchema = createInstanceInputSchema
   .partial()
   .extend({
     instanceId: z.string().uuid(),
-    status: z.enum(['draft', 'active', 'paused', 'completed', 'cancelled']).optional(),
+    status: z
+      .enum(['draft', 'active', 'paused', 'completed', 'cancelled'])
+      .optional(),
   });
+
+export const getInstanceInputSchema = z.object({
+  instanceId: z.string().uuid(),
+});
 
 export const createProposalInputSchema = z.object({
   processInstanceId: z.string().uuid(),

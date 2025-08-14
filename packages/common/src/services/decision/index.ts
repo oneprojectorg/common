@@ -20,6 +20,9 @@ export type { UpdateInstanceInput } from './updateInstance';
 export { listInstances } from './listInstances';
 export type { ListInstancesInput } from './listInstances';
 
+export { getInstance } from './getInstance';
+export type { GetInstanceInput } from './getInstance';
+
 // Transition management
 export { checkTransitions } from './checkTransitions';
 export type { CheckTransitionsInput } from './checkTransitions';
