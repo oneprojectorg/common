@@ -1,4 +1,4 @@
-import { invalidate, invalidateMultiple } from '@op/cache';
+import { invalidateMultiple } from '@op/cache';
 import {
   UnauthorizedError,
   inviteNewUsers,
