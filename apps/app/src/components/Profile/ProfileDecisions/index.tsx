@@ -1,5 +1,6 @@
 'use client';
 
+import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { Button } from '@op/ui/Button';
 import { DialogTrigger } from '@op/ui/Dialog';
@@ -15,6 +16,10 @@ const DecisionProcessList = ({ profileId }: { profileId: string }) => {
     limit: 20,
     offset: 0,
   });
+  const user = useUser();
+
+  const permission = user.getPermissionsForProfile(profileId);
+  const decisionPermission = permission.decisions;
 
   if (!data.instances || data.instances.length === 0) {
     return (
@@ -33,13 +38,15 @@ const DecisionProcessList = ({ profileId }: { profileId: string }) => {
           </p>
         </div>
 
-        <DialogTrigger>
-          <Button color="primary" size="medium" variant="icon">
-            <LuPlus className="size-4" />
-            Create Process
-          </Button>
-          <CreateDecisionProcessModal />
-        </DialogTrigger>
+        {decisionPermission.create ? (
+          <DialogTrigger>
+            <Button color="primary" size="medium" variant="icon">
+              <LuPlus className="size-4" />
+              Create Process
+            </Button>
+            <CreateDecisionProcessModal />
+          </DialogTrigger>
+        ) : null}
       </div>
     );
   }
@@ -51,13 +58,15 @@ const DecisionProcessList = ({ profileId }: { profileId: string }) => {
           All processes
         </h2>
 
-        <DialogTrigger>
-          <Button color="primary" size="medium" variant="icon">
-            <LuPlus className="size-4" />
-            Create Process
-          </Button>
-          <CreateDecisionProcessModal />
-        </DialogTrigger>
+        {decisionPermission.create ? (
+          <DialogTrigger>
+            <Button color="primary" size="medium" variant="icon">
+              <LuPlus className="size-4" />
+              Create Process
+            </Button>
+            <CreateDecisionProcessModal />
+          </DialogTrigger>
+        ) : null}
       </div>
 
       <div className="flex flex-col gap-4">
@@ -103,12 +112,15 @@ const DecisionProcessList = ({ profileId }: { profileId: string }) => {
               >
                 View Details
               </Button>
-              <DialogTrigger>
-                <Button color="secondary" size="medium">
-                  Edit Process
-                </Button>
-                <EditDecisionProcessModal instance={instance} />
-              </DialogTrigger>
+
+              {decisionPermission.update ? (
+                <DialogTrigger>
+                  <Button color="secondary" size="medium">
+                    Edit Process
+                  </Button>
+                  <EditDecisionProcessModal instance={instance} />
+                </DialogTrigger>
+              ) : null}
             </div>
           </div>
         ))}

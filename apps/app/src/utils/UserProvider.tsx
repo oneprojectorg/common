@@ -1,12 +1,28 @@
 'use client';
 
 import { RouterOutput, trpc } from '@op/api/client';
-import type { ZonePermissions } from 'access-zones';
+import type { Permission } from 'access-zones';
 import { useRouter } from 'next/navigation';
 import posthog from 'posthog-js';
 import React, { Suspense, createContext, useContext } from 'react';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
+
+const AccessZones = ['decisions', 'profile'] as const;
+
+type CommonZonePermissions = Record<(typeof AccessZones)[number], Permission>;
+const defaultPermissions = AccessZones.reduce<CommonZonePermissions>(
+  (accum, key) => ({
+    ...accum,
+    [key]: {
+      create: false,
+      read: false,
+      update: false,
+      delete: false,
+    },
+  }),
+  {} as CommonZonePermissions,
+);
 
 // Type for the user data returned by getMyAccount
 // You can refine this type by importing the correct type from your trpc/encoders if available
@@ -16,7 +32,7 @@ export type OrganizationUser = RouterOutput['account']['getMyAccount'];
 
 interface UserContextValue {
   user: OrganizationUser | undefined;
-  getPermissionsForProfile: (profileId: string) => ZonePermissions | null;
+  getPermissionsForProfile: (profileId: string) => CommonZonePermissions;
 }
 
 const UserContext = createContext<UserContextValue | undefined>(undefined);
@@ -41,9 +57,9 @@ export const UserProviderSuspense = ({
   // Utility function to get permissions for a specific profile
   const getPermissionsForProfile = (
     profileId: string,
-  ): ZonePermissions | null => {
+  ): CommonZonePermissions => {
     if (!user?.organizationUsers) {
-      return null;
+      return defaultPermissions;
     }
 
     // Find the organizationUser that has an organization with a profile matching the profileId
@@ -51,7 +67,7 @@ export const UserProviderSuspense = ({
       (orgUser) => orgUser.organization?.profile?.id === profileId,
     );
 
-    return matchingOrgUser?.permissions || null;
+    return { ...defaultPermissions, ...(matchingOrgUser?.permissions || {}) };
   };
 
   const contextValue = {

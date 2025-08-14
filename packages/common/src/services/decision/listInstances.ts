@@ -1,8 +1,14 @@
 import { and, asc, db, desc, eq, sql } from '@op/db/client';
 import { processInstances } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
+import { assertAccess, permission } from 'access-zones';
 
 import { UnauthorizedError } from '../../utils';
+import {
+  getCurrentOrgId,
+  getCurrentOrgUserId,
+  getOrgAccessUser,
+} from '../access';
 
 export interface ListInstancesInput {
   ownerProfileId?: string;
@@ -31,8 +37,16 @@ export const listInstances = async ({
     throw new UnauthorizedError('User must be authenticated');
   }
 
-  // TODO: ASSERT VIEW ACCESS ON ORGUSER
+  // ASSERT VIEW ACCESS ON ORGUSER
+  const orgUserId = await getCurrentOrgId({ database: db });
+  const orgUser = await getOrgAccessUser({
+    user,
+    organizationId: orgUserId,
+  });
 
+  assertAccess({ decisions: permission.READ }, orgUser?.roles ?? []);
+
+  console.log('passed');
   try {
     // Build filter conditions
     const conditions = [];
@@ -95,7 +109,7 @@ export const listInstances = async ({
     const instancesWithCounts = instanceList.map((instance) => {
       const proposalCount = instance.proposals?.length || 0;
       const uniqueParticipants = new Set(
-        instance.proposals?.map((p) => p.submittedByProfileId)
+        instance.proposals?.map((p) => p.submittedByProfileId),
       );
       const participantCount = uniqueParticipants.size;
 

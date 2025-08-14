@@ -28,7 +28,9 @@ export const listInstancesRouter = router({
     .input(instanceFilterSchema)
     .output(processInstanceListEncoder)
     .query(async ({ input, ctx }) => {
-      const result = await listInstances({ ...input, user: ctx.user });
+      const { user } = ctx;
+
+      const result = await listInstances({ ...input, user });
 
       return processInstanceListEncoder.parse({
         instances: result.instances.map((instance) => ({
