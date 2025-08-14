@@ -7,7 +7,9 @@
   "author": "",
   "main": "src/index.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@op/emails": "workspace:*",
@@ -22,6 +24,9 @@
     "@op/emails": "workspace:*",
     "@op/supabase": "workspace:*",
     "@op/types": "workspace:*",
-    "@op/typescript-config": "workspace:*"
+    "@op/typescript-config": "workspace:*",
+    "@types/json-schema": "^7.0.15",
+    "vitest": "^1.0.0",
+    "@vitest/coverage-v8": "^1.0.0"
   }
 }

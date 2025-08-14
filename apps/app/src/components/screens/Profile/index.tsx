@@ -50,7 +50,7 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
         slug,
       });
 
-      const decisionsEnabled = false;
+      const decisionsEnabled = true;
 
       return organization ? (
         <>
@@ -95,13 +95,13 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
             </TabPanel>
             {decisionsEnabled ? (
               <TabPanel id="decisions" className="px-4 sm:px-6 sm:py-0">
-                <ProfileDecisionsSuspense />
+                <ProfileDecisionsSuspense profileId={profile.id} />
               </TabPanel>
             ) : null}
           </ProfileTabs>
           <ProfileTabsMobile
             profile={organization as any}
-            decisionsContent={<ProfileDecisionsSuspense />}
+            decisionsContent={<ProfileDecisionsSuspense profileId={profile.id} />}
           >
             <ProfileRelationshipsSuspense
               slug={profile.slug}

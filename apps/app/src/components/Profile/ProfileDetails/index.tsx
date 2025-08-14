@@ -6,7 +6,7 @@ import type { Organization } from '@op/api/encoders';
 import { ButtonLink } from '@op/ui/Button';
 import { SkeletonLine } from '@op/ui/Skeleton';
 import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
-import { LuInfo, LuHandCoins } from 'react-icons/lu';
+import { LuHandCoins, LuInfo } from 'react-icons/lu';
 
 import { ProfileSummary } from '../ProfileSummary';
 import { AddRelationshipModal } from './AddRelationshipModal';
@@ -29,7 +29,6 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
   const isViewingOwnProfile =
     user?.currentProfile?.id ===
     (isOrganizationProfile ? profile.profile.id : profile.id);
-  console.log('profle', profile, isOrganizationProfile);
 
   return (
     <div className="flex flex-wrap gap-3 sm:h-fit sm:max-w-fit sm:justify-end sm:gap-4 sm:py-2">

@@ -1,5 +1,5 @@
-import { relations } from 'drizzle-orm';
-import type { InferModel } from 'drizzle-orm';
+import { relations, sql } from 'drizzle-orm';
+import type { InferModel, SQL } from 'drizzle-orm';
 import {
   index,
   jsonb,
@@ -15,6 +15,7 @@ import {
   enumToPgEnum,
   serviceRolePolicies,
   timestamps,
+  tsvector,
 } from '../../helpers';
 import { decisionProcesses } from './decisionProcesses.sql';
 import { profiles } from './profiles.sql';
@@ -44,10 +45,10 @@ export const processInstances = pgTable(
         onUpdate: 'cascade',
         onDelete: 'cascade',
       }),
-    
+
     name: varchar({ length: 256 }).notNull(),
     description: text(),
-    
+
     // Instance configuration with filled values
     instanceData: jsonb('instance_data').notNull(),
     /* instanceData contains:
@@ -59,19 +60,23 @@ export const processInstances = pgTable(
         "stateData": { ...state-specific data }
       }
     */
-    
+
     // Current state tracking
     currentStateId: varchar({ length: 256 }),
-    
+
     ownerProfileId: uuid('owner_profile_id')
       .notNull()
       .references(() => profiles.id, {
         onUpdate: 'cascade',
         onDelete: 'cascade',
       }),
-    
+
     status: processStatusEnum('status').default(ProcessStatus.DRAFT),
-    
+    search: tsvector('search').generatedAlwaysAs(
+      (): SQL =>
+        sql`setweight(to_tsvector('simple', ${processInstances.name}), 'A') || ' ' || setweight(to_tsvector('english', COALESCE(${processInstances.description}, '')), 'B')::tsvector`,
+    ),
+
     ...timestamps,
   },
   (table) => [
@@ -80,9 +85,7 @@ export const processInstances = pgTable(
     index().on(table.processId).concurrently(),
     index().on(table.ownerProfileId).concurrently(),
     index().on(table.currentStateId).concurrently(),
-    index('process_instances_name_gin_index')
-      .using('gin', table.name)
-      .concurrently(),
+    index('process_instances_search_gin_index').using('gin', table.search),
   ],
 );
 

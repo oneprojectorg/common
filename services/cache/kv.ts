@@ -28,6 +28,7 @@ const TypeMap = {
   organization: 'org',
   allowList: 'allowList',
   linkPreview: 'linkPreview',
+  user: 'user',
 };
 
 const getCacheKey = (
@@ -128,6 +129,26 @@ export const invalidate = async ({
     memCache.delete(cacheKey);
     set(cacheKey, null, 1000);
   }
+};
+
+export const invalidateMultiple = async ({
+  type,
+  appKey,
+  paramsList,
+}: {
+  type: keyof typeof TypeMap;
+  appKey?: string;
+  paramsList: any[][];
+}) => {
+  await Promise.all(
+    paramsList.map((params) =>
+      invalidate({
+        type,
+        appKey,
+        params,
+      })
+    )
+  );
 };
 
 const get = async (key: string) => {

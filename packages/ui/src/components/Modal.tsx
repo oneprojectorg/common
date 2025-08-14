@@ -224,3 +224,6 @@ export const Modal = (
 };
 
 export { type ModalOverlayProps };
+
+// Export context for components that need to programmatically close the modal
+export { ModalContext };

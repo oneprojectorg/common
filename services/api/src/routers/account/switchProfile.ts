@@ -1,3 +1,4 @@
+import { invalidate } from '@op/cache';
 import { getUserForProfileSwitch, updateUserCurrentProfile } from '@op/common';
 import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
@@ -82,6 +83,13 @@ export const switchProfile = router({
           message: 'User not found',
         });
       }
+
+      // Invalidate user cache since current profile/organization context has changed
+      // We should wait for invalidation as we want to switch profiles immediately and want to fail if cache doesn't properly invalidate
+      await invalidate({
+        type: 'user',
+        params: [id],
+      });
 
       return userEncoder.parse(result[0]);
     }),

@@ -1,12 +1,30 @@
-import { Button } from '@op/ui/Button';
+'use client';
+
+import { useUser } from '@/utils/UserProvider';
+import { trpc } from '@op/api/client';
+import { Button, ButtonLink } from '@op/ui/Button';
 import { DialogTrigger } from '@op/ui/Dialog';
+import { useParams } from 'next/navigation';
+import { Suspense } from 'react';
 import { LuLeaf, LuPlus } from 'react-icons/lu';
 
 import { CreateDecisionProcessModal } from '../CreateDecisionProcessModal';
+import { EditDecisionProcessModal } from '../EditDecisionProcessModal';
 
-export const ProfileDecisions = () => {
-  return (
-    <>
+const DecisionProcessList = ({ profileId }: { profileId: string }) => {
+  const { slug } = useParams();
+  const [data] = trpc.decision.listInstances.useSuspenseQuery({
+    ownerProfileId: profileId,
+    limit: 20,
+    offset: 0,
+  });
+  const user = useUser();
+
+  const permission = user.getPermissionsForProfile(profileId);
+  const decisionPermission = permission.decisions;
+
+  if (!data.instances || data.instances.length === 0) {
+    return (
       <div className="flex min-h-[400px] flex-col items-center justify-center gap-6 px-6 py-16 text-center">
         <div className="flex size-10 items-center justify-center rounded-full bg-neutral-gray1">
           <LuLeaf className="size-6 text-neutral-gray4" />
@@ -22,18 +40,131 @@ export const ProfileDecisions = () => {
           </p>
         </div>
 
-        <DialogTrigger>
-          <Button color="primary" size="medium" variant="icon">
-            <LuPlus className="size-4" />
-            Create Process
-          </Button>
-          <CreateDecisionProcessModal />
-        </DialogTrigger>
+        {decisionPermission.create ? (
+          <DialogTrigger>
+            <Button color="primary" size="medium" variant="icon">
+              <LuPlus className="size-4" />
+              Create Process
+            </Button>
+            <CreateDecisionProcessModal />
+          </DialogTrigger>
+        ) : null}
       </div>
-    </>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-6 p-6">
+      <div className="flex items-center justify-between">
+        <h2 className="font-serif text-title-sm text-neutral-black">
+          All processes
+        </h2>
+
+        {decisionPermission.create ? (
+          <DialogTrigger>
+            <Button color="primary" size="medium" variant="icon">
+              <LuPlus className="size-4" />
+              Create Process
+            </Button>
+            <CreateDecisionProcessModal />
+          </DialogTrigger>
+        ) : null}
+      </div>
+
+      <div className="flex flex-col gap-4">
+        {data.instances.map((instance) => (
+          <div
+            key={instance.id}
+            className="flex items-center justify-between border-b border-neutral-gray1 px-0 py-6"
+          >
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-1">
+                <h3 className="text-base font-bold text-neutral-black">
+                  {instance.name}
+                </h3>
+                <div className="flex items-start gap-1 text-sm text-neutral-charcoal">
+                  {instance.instanceData?.budget && (
+                    <>
+                      <span>
+                        ${instance.instanceData.budget.toLocaleString()} Budget
+                      </span>
+                      <span>•</span>
+                    </>
+                  )}
+                  <span>{instance.proposalCount || 0} Proposals</span>
+                  <span>•</span>
+                  <span>{instance.participantCount || 0} Participants</span>
+                </div>
+              </div>
+              {instance.description && (
+                <p className="max-w-[40rem] overflow-hidden text-ellipsis text-base text-neutral-charcoal">
+                  {instance.description}
+                </p>
+              )}
+            </div>
+
+            <div className="flex w-36 flex-col gap-2.5">
+              {decisionPermission.update ? (
+                <ButtonLink
+                  color="secondary"
+                  href={`/profile/${slug}/decisions/${instance.id}`}
+                >
+                  View Details
+                </ButtonLink>
+              ) : (
+                <ButtonLink href={`/profile/${slug}/decisions/${instance.id}`}>
+                  Participate
+                </ButtonLink>
+              )}
+
+              {decisionPermission.update ? (
+                <DialogTrigger>
+                  <Button color="secondary">Edit Process</Button>
+                  <EditDecisionProcessModal instance={instance} />
+                </DialogTrigger>
+              ) : null}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {data.hasMore && (
+        <div className="flex justify-center">
+          <Button
+            color="neutral"
+            onPress={() => {
+              // TODO: Load more instances
+              console.log('Load more instances');
+            }}
+          >
+            Load More
+          </Button>
+        </div>
+      )}
+    </div>
   );
 };
 
-export const ProfileDecisionsSuspense = () => {
-  return <ProfileDecisions />;
+export const ProfileDecisions = ({ profileId }: { profileId: string }) => {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-96 items-center justify-center">
+          <div className="animate-pulse text-base text-neutral-charcoal">
+            Loading...
+          </div>
+        </div>
+      }
+    >
+      <DecisionProcessList profileId={profileId} />
+    </Suspense>
+  );
+};
+
+export const ProfileDecisionsSuspense = ({
+  profileId,
+}: {
+  profileId: string;
+}) => {
+  return <ProfileDecisions profileId={profileId} />;
 };
