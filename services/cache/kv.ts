@@ -28,6 +28,7 @@ const TypeMap = {
   organization: 'org',
   allowList: 'allowList',
   linkPreview: 'linkPreview',
+  user: 'user',
 };
 
 const getCacheKey = (
