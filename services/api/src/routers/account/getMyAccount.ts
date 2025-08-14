@@ -35,7 +35,7 @@ export const getMyAccount = router({
     .query(async ({ ctx }) => {
       const { id, email } = ctx.user;
 
-      const result = await getUserByAuthId({ authUserId: id });
+      const result = await getUserByAuthId({ authUserId: id, includePermissions: true });
 
       if (!result) {
         if (!email) {

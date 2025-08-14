@@ -1,5 +1,6 @@
 'use client';
 
+import type { ZonePermissions } from 'access-zones';
 import { RouterOutput, trpc } from '@op/api/client';
 import { useRouter } from 'next/navigation';
 import posthog from 'posthog-js';
@@ -15,6 +16,7 @@ export type OrganizationUser = RouterOutput['account']['getMyAccount'];
 
 interface UserContextValue {
   user: OrganizationUser | undefined;
+  getPermissionsForProfile: (profileId: string) => ZonePermissions | null;
 }
 
 const UserContext = createContext<UserContextValue | undefined>(undefined);
@@ -26,6 +28,7 @@ export const UserProviderSuspense = ({
 }) => {
   const router = useRouter();
   const [user] = trpc.account.getMyAccount.useSuspenseQuery();
+  console.log('USER', user);
 
   if (user.organizationUsers?.length === 0) {
     router.push('/start');
@@ -36,8 +39,27 @@ export const UserProviderSuspense = ({
     posthog.identify(user.id, { email: user.email, name: user.name });
   }
 
+  // Utility function to get permissions for a specific profile
+  const getPermissionsForProfile = (profileId: string): ZonePermissions | null => {
+    if (!user?.organizationUsers) {
+      return null;
+    }
+
+    // Find the organizationUser that has an organization with a profile matching the profileId
+    const matchingOrgUser = user.organizationUsers.find(
+      (orgUser) => orgUser.organization?.profile?.id === profileId
+    );
+
+    return matchingOrgUser?.permissions || null;
+  };
+
+  const contextValue = {
+    user,
+    getPermissionsForProfile,
+  };
+
   return (
-    <UserContext.Provider value={{ user }}>{children}</UserContext.Provider>
+    <UserContext.Provider value={contextValue}>{children}</UserContext.Provider>
   );
 };
 
@@ -45,7 +67,12 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   return (
     <ErrorBoundary
       fallback={
-        <UserContext.Provider value={{ user: undefined }}>
+        <UserContext.Provider
+          value={{
+            user: undefined,
+            getPermissionsForProfile: () => null,
+          }}
+        >
           {children}
         </UserContext.Provider>
       }
