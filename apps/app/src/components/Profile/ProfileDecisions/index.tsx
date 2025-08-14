@@ -102,29 +102,25 @@ const DecisionProcessList = ({ profileId }: { profileId: string }) => {
             </div>
 
             <div className="flex w-36 flex-col gap-2.5">
-              <Button
-                color="secondary"
-                size="medium"
-                onPress={() => {
-                  // TODO: Navigate to instance details page
-                  console.log('View details:', instance.id);
-                }}
-              >
-                View Details
-              </Button>
-
               {decisionPermission.update ? (
-                <DialogTrigger>
-                  <Button color="secondary" size="medium">
-                    Edit Process
-                  </Button>
-                  <EditDecisionProcessModal instance={instance} />
-                </DialogTrigger>
+                <ButtonLink
+                  color="secondary"
+                  href={`/decisions/${instance.id}`}
+                >
+                  View Details
+                </ButtonLink>
               ) : (
                 <ButtonLink href={`/decisions/${instance.id}`}>
                   Participate
                 </ButtonLink>
               )}
+
+              {decisionPermission.update ? (
+                <DialogTrigger>
+                  <Button color="secondary">Edit Process</Button>
+                  <EditDecisionProcessModal instance={instance} />
+                </DialogTrigger>
+              ) : null}
             </div>
           </div>
         ))}
