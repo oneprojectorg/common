@@ -23,7 +23,7 @@ async function CreateProposalPageContent({
 
     return (
       <ProposalEditor
-        instanceId={instanceId}
+        instance={instance}
         backHref={`/profile/${slug}/decisions/${instanceId}`}
       />
     );
@@ -51,7 +51,10 @@ function CreateProposalPageLoading() {
       <div className="border-b border-gray-200 bg-white px-6 py-2">
         <div className="flex items-center gap-2">
           {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-            <div key={i} className="h-8 w-8 animate-pulse rounded bg-gray-200" />
+            <div
+              key={i}
+              className="h-8 w-8 animate-pulse rounded bg-gray-200"
+            />
           ))}
         </div>
       </div>
