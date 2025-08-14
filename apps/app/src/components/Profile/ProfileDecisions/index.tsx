@@ -2,7 +2,7 @@
 
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import { Button } from '@op/ui/Button';
+import { Button, ButtonLink } from '@op/ui/Button';
 import { DialogTrigger } from '@op/ui/Dialog';
 import { Suspense } from 'react';
 import { LuLeaf, LuPlus } from 'react-icons/lu';
@@ -120,7 +120,11 @@ const DecisionProcessList = ({ profileId }: { profileId: string }) => {
                   </Button>
                   <EditDecisionProcessModal instance={instance} />
                 </DialogTrigger>
-              ) : null}
+              ) : (
+                <ButtonLink href={`/decisions/${instance.id}`}>
+                  Participate
+                </ButtonLink>
+              )}
             </div>
           </div>
         ))}
