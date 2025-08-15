@@ -13,7 +13,6 @@ interface ProposalEditorLayoutProps {
   children: ReactNode;
   backHref: string;
   title: string;
-  onTitleChange: (title: string) => void;
   onSubmitProposal: () => void;
   isSubmitting: boolean;
 }
@@ -22,7 +21,6 @@ export function ProposalEditorLayout({
   children,
   backHref,
   title,
-  onTitleChange,
   onSubmitProposal,
   isSubmitting,
 }: ProposalEditorLayoutProps) {
@@ -40,12 +38,9 @@ export function ProposalEditorLayout({
           Back
         </button>
 
-        <input
-          value={title}
-          onChange={(e) => onTitleChange(e.target.value)}
-          className="rounded border-none bg-transparent px-2 py-1 text-center text-lg font-medium focus:outline-none focus:ring-2 focus:ring-primary-teal"
-          placeholder="Untitled Proposal"
-        />
+        <div className="flex-1 text-center text-lg font-medium text-neutral-black">
+          {title}
+        </div>
 
         <div className="flex items-center gap-8">
           <Button

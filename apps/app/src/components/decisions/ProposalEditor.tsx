@@ -2,7 +2,8 @@
 
 import { ProcessInstance } from '@/utils/decisionProcessTransforms';
 import { trpc } from '@op/api/client';
-import { Button } from '@op/ui/Button';
+import { Select, SelectItem } from '@op/ui/Select';
+import { TextField } from '@op/ui/TextField';
 import Link from '@tiptap/extension-link';
 import TextAlign from '@tiptap/extension-text-align';
 import { EditorContent, useEditor } from '@tiptap/react';
@@ -12,7 +13,6 @@ import {
   AlignLeft,
   AlignRight,
   Bold,
-  ChevronLeft,
   Code,
   Italic,
   Link as LinkIcon,
@@ -24,7 +24,7 @@ import {
 import { useRouter } from 'next/navigation';
 import { useCallback, useState } from 'react';
 
-import { formatRelativeTime } from '../utils';
+import { ProposalEditorLayout } from './layout';
 
 interface ProposalEditorProps {
   instance: ProcessInstance;
@@ -34,12 +34,56 @@ interface ProposalEditorProps {
 export function ProposalEditor({ instance, backHref }: ProposalEditorProps) {
   const router = useRouter();
   const [title, setTitle] = useState('Untitled Proposal');
-  const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [budget, setBudget] = useState<number | null>(null);
 
   const createProposalMutation = trpc.decision.createProposal.useMutation();
+
+  // Extract template data from the instance
+  const proposalTemplate = instance.process?.processSchema?.proposalTemplate;
+  const descriptionGuidance = instance.instanceData?.fieldValues
+    ?.descriptionGuidance as string | undefined;
+
+  // Get categories from instance data and budget cap from template
+  const categories = instance.instanceData?.fieldValues?.categories as
+    | string[]
+    | undefined;
+  let budgetCapAmount: number | undefined;
+
+  // Extract budget cap from the template if available
+  if (
+    proposalTemplate &&
+    typeof proposalTemplate === 'object' &&
+    'properties' in proposalTemplate
+  ) {
+    const properties = proposalTemplate.properties;
+    if (
+      properties &&
+      typeof properties === 'object' &&
+      'budget' in properties
+    ) {
+      const budgetProp = properties.budget;
+      if (
+        budgetProp &&
+        typeof budgetProp === 'object' &&
+        'maximum' in budgetProp
+      ) {
+        budgetCapAmount = budgetProp.maximum as number;
+      }
+    }
+  }
+
+  // Also check for budgetCapAmount in instance data
+  if (!budgetCapAmount && instance.instanceData?.fieldValues?.budgetCapAmount) {
+    budgetCapAmount = instance.instanceData.fieldValues
+      .budgetCapAmount as number;
+  }
+
+  // Use descriptionGuidance as placeholder content if available
+  const placeholderContent = descriptionGuidance
+    ? `<p>${descriptionGuidance}</p>`
+    : "<p>Start with the problem you're addressing, explain your solution, and describe the expected impact on our community...</p>";
 
   const editor = useEditor({
     extensions: [
@@ -51,8 +95,7 @@ export function ProposalEditor({ instance, backHref }: ProposalEditorProps) {
         types: ['heading', 'paragraph'],
       }),
     ],
-    content:
-      "<p>Start with the problem you're addressing, explain your solution, and describe the expected impact on our community...</p>",
+    content: placeholderContent,
     editorProps: {
       attributes: {
         class:
@@ -61,7 +104,6 @@ export function ProposalEditor({ instance, backHref }: ProposalEditorProps) {
     },
     onUpdate: () => {
       // Auto-save functionality could go here
-      setLastSaved(new Date());
     },
     immediatelyRender: false,
   });
@@ -129,64 +171,27 @@ export function ProposalEditor({ instance, backHref }: ProposalEditorProps) {
 
   if (!editor) {
     return (
-      <div className="flex min-h-screen flex-col bg-white">
-        {/* Header skeleton */}
-        <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
-          <div className="h-6 w-16 animate-pulse rounded bg-gray-200" />
-          <div className="h-8 w-48 animate-pulse rounded bg-gray-200" />
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-32 animate-pulse rounded bg-gray-200" />
-            <div className="h-8 w-8 animate-pulse rounded-full bg-gray-200" />
-          </div>
-        </div>
-
+      <ProposalEditorLayout
+        backHref={backHref}
+        title={title}
+        onSubmitProposal={handleSubmitProposal}
+        isSubmitting={isSubmitting}
+      >
         {/* Loading message */}
         <div className="flex flex-1 items-center justify-center">
           <div className="text-gray-500">Loading editor...</div>
         </div>
-      </div>
+      </ProposalEditorLayout>
     );
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-white">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
-        <button
-          onClick={() => router.push(backHref)}
-          className="flex items-center gap-2 text-sm text-primary-teal hover:text-primary-tealBlack"
-        >
-          <ChevronLeft className="h-4 w-4" />
-          Back
-        </button>
-
-        <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          className="rounded border-none bg-transparent px-2 py-1 text-center text-lg font-medium focus:outline-none focus:ring-2 focus:ring-primary-teal"
-          placeholder="Untitled Proposal"
-        />
-
-        <div className="flex items-center gap-3">
-          {lastSaved && (
-            <span className="text-xs text-gray-500">
-              Saved {formatRelativeTime(lastSaved)} ago
-            </span>
-          )}
-          <Button
-            color="primary"
-            onPress={handleSubmitProposal}
-            isDisabled={isSubmitting}
-            className="px-4 py-2"
-          >
-            {isSubmitting ? 'Submitting...' : 'Submit Proposal'}
-          </Button>
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200">
-            <span className="text-xs font-medium text-gray-600">U</span>
-          </div>
-        </div>
-      </div>
-
+    <ProposalEditorLayout
+      backHref={backHref}
+      title={title}
+      onSubmitProposal={handleSubmitProposal}
+      isSubmitting={isSubmitting}
+    >
       {/* Toolbar */}
       <div className="flex justify-evenly border-b border-gray-200 px-6 py-2">
         <div className="flex items-center gap-1">
@@ -286,43 +291,74 @@ export function ProposalEditor({ instance, backHref }: ProposalEditorProps) {
 
       {/* Content */}
       <div className="flex-1 px-6 py-8">
-        <div className="mx-auto max-w-4xl">
+        <div className="mx-auto flex max-w-4xl flex-col gap-6">
+          {/* Title input */}
+          <TextField
+            type="text"
+            value={title}
+            onChange={(value) => setTitle(value)}
+            inputProps={{
+              placeholder: 'Untitled Proposal',
+              className: 'border-0 p-0 font-serif text-title-lg',
+            }}
+          />
+
           {/* Category and Budget selectors */}
-          <div className="mb-6 flex gap-4">
+          <div className="flex gap-6">
+            {categories && categories.length > 0 ? (
+              <Select
+                variant="pill"
+                placeholder="Select category"
+                selectedKey={selectedCategory}
+                onSelectionChange={(key) => setSelectedCategory(key as string)}
+                className="w-auto"
+              >
+                {categories.map((cat) => (
+                  <SelectItem key={cat} id={cat}>
+                    {cat}
+                  </SelectItem>
+                ))}
+              </Select>
+            ) : null}
             <button
               onClick={() => {
-                const category = window.prompt(
-                  'Enter category:',
-                  selectedCategory || '',
-                );
-                if (category) setSelectedCategory(category);
-              }}
-              className="text-sm font-medium text-primary-teal hover:text-primary-tealBlack"
-            >
-              {selectedCategory || 'Select category'}
-            </button>
-            <button
-              onClick={() => {
+                const maxBudgetMsg = budgetCapAmount
+                  ? ` (max: $${budgetCapAmount.toLocaleString()})`
+                  : '';
+                // TODO: replace with an input field
                 const budgetStr = window.prompt(
-                  'Enter budget amount (USD):',
+                  `Enter budget amount (USD)${maxBudgetMsg}:`,
                   budget?.toString() || '',
                 );
                 if (budgetStr && !isNaN(Number(budgetStr))) {
-                  setBudget(Number(budgetStr));
+                  const newBudget = Number(budgetStr);
+                  if (budgetCapAmount && newBudget > budgetCapAmount) {
+                    alert(
+                      `Budget cannot exceed $${budgetCapAmount.toLocaleString()}`,
+                    );
+                    return;
+                  }
+                  setBudget(newBudget);
                 }
               }}
               className="text-sm font-medium text-primary-teal hover:text-primary-tealBlack"
             >
               {budget ? `Budget: $${budget.toLocaleString()}` : 'Add budget'}
+              {budgetCapAmount && (
+                <span className="ml-1 text-xs text-gray-500">
+                  (max: ${budgetCapAmount.toLocaleString()})
+                </span>
+              )}
             </button>
           </div>
 
           {/* Editor */}
-          <div>
-            <EditorContent editor={editor} />
-          </div>
+          <EditorContent
+            className="[&>div]:px-0 [&>div]:py-0"
+            editor={editor}
+          />
         </div>
       </div>
-    </div>
+    </ProposalEditorLayout>
   );
 }
