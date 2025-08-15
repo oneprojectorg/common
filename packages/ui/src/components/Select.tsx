@@ -28,8 +28,29 @@ const selectStyles = tv({
       true: 'bg-neutral-gray1 text-neutral-gray4',
       false: '',
     },
+    variant: {
+      default: '',
+      pill: 'h-auto border-0 bg-primary-tealWhite p-2 text-primary-teal active:bg-teal-50 active:text-primary-tealBlack hover:bg-teal-50 hover:text-primary-tealBlack focus-visible:outline-data-blue',
+    },
+  },
+  defaultVariants: {
+    variant: 'default',
   },
 });
+
+const chevronStyles = tv({
+  base: 'ml-2 size-4',
+  variants: {
+    variant: {
+      default: 'text-neutral-charcoal group-disabled:text-neutral-gray4',
+      pill: 'hidden',
+    },
+  },
+  defaultVariants: {
+    variant: 'default',
+  },
+});
+
 export type SelectVariantsProps = VariantProps<typeof selectStyles>;
 
 export interface SelectProps<T extends object>
@@ -47,6 +68,7 @@ export interface SelectProps<T extends object>
   customTrigger?: React.ReactNode;
   popoverProps?: Omit<PopoverProps, 'children'>;
   selectionMode?: 'single' | 'multiple';
+  variant?: 'default' | 'pill';
 }
 
 export const Select = <T extends object>({
@@ -57,6 +79,7 @@ export const Select = <T extends object>({
   items,
   selectionMode = 'single',
   isRequired,
+  variant = 'default',
   ...props
 }: SelectProps<T>) => {
   return (
@@ -77,15 +100,12 @@ export const Select = <T extends object>({
       ) : (
         <Button
           className={cn(
-            selectStyles({ ...props } as SelectVariantsProps),
+            selectStyles({ ...props, variant } as SelectVariantsProps),
             props.buttonClassName,
           )}
         >
           <SelectValue className={cn(props.selectValueClassName)} />
-          <ChevronDown
-            aria-hidden
-            className="ml-2 size-4 text-neutral-charcoal group-disabled:text-neutral-gray4"
-          />
+          <ChevronDown aria-hidden className={chevronStyles({ variant })} />
         </Button>
       )}
       {description && <Description>{description}</Description>}

@@ -79,3 +79,27 @@ export const Validation = (args: any) => (
 Validation.args = {
   isRequired: true,
 };
+
+export const PillVariant = (args: any) => (
+  <div className="flex flex-col gap-4">
+    <Select {...args} variant="pill" placeholder="Select category">
+      <SelectItem>Planning</SelectItem>
+      <SelectItem>Design</SelectItem>
+      <SelectItem>Development</SelectItem>
+      <SelectItem>Testing</SelectItem>
+      <SelectItem>Deployment</SelectItem>
+    </Select>
+    
+    <Select {...args} variant="pill" placeholder="Select category" isDisabled>
+      <SelectItem>Planning</SelectItem>
+      <SelectItem>Design</SelectItem>
+      <SelectItem>Development</SelectItem>
+      <SelectItem>Testing</SelectItem>
+      <SelectItem>Deployment</SelectItem>
+    </Select>
+  </div>
+);
+
+PillVariant.args = {
+  label: undefined,
+};
