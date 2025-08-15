@@ -27,7 +27,7 @@ async function DecisionInstancePageContent({
 }) {
   try {
     const client = await trpcNext();
-    
+
     // Fetch both instance and proposals in parallel
     const [instance, proposalsData] = await Promise.all([
       client.decision.getInstance.query({

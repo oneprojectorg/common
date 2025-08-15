@@ -1,12 +1,17 @@
 'use client';
 
-import type { proposalEncoder, processPhaseSchema } from '@op/api/encoders';
-import { GradientHeader } from '@op/ui/Header';
+import type { processPhaseSchema, proposalEncoder } from '@op/api/encoders';
+import { Avatar } from '@op/ui/Avatar';
+import { Button } from '@op/ui/Button';
+import { FacePile } from '@op/ui/FacePile';
+import { GradientHeader, Header3 } from '@op/ui/Header';
+import { Select, SelectItem } from '@op/ui/Select';
 import { Surface } from '@op/ui/Surface';
 import { useLocale } from 'next-intl';
+import Image from 'next/image';
+import Link from 'next/link';
 import type { z } from 'zod';
 
-import { DecisionStats } from './DecisionStats';
 import { EmptyProposalsState } from './EmptyProposalsState';
 import { ProposalsList } from './ProposalsList';
 
@@ -71,9 +76,23 @@ export function DecisionInstanceContent({
     console.log('Follow proposal:', proposalId);
   };
 
+  // Get unique submitters for the FacePile
+  const uniqueSubmitters = proposals.reduce(
+    (acc, proposal) => {
+      if (
+        proposal.submittedBy &&
+        !acc.some((s) => s.id === proposal.submittedBy?.id)
+      ) {
+        acc.push(proposal.submittedBy);
+      }
+      return acc;
+    },
+    [] as Array<NonNullable<(typeof proposals)[0]['submittedBy']>>,
+  );
+
   return (
-    <div className="min-h-full bg-gray-50 px-6 py-12">
-      <div className="mx-auto max-w-6xl">
+    <div className="min-h-full bg-gray-50 py-12">
+      <div className="mx-auto">
         {/* heading */}
         <div className="mb-12 text-center">
           <GradientHeader className="items-center align-middle">
@@ -83,51 +102,155 @@ export function DecisionInstanceContent({
             Help determine how we invest our{' '}
             {budget ? formatCurrency(budget) : '$25,000'} community budget.
           </p>
+
+          {/* Member avatars showing who submitted proposals */}
+          {uniqueSubmitters.length > 0 && (
+            <div className="mt-6 flex items-center justify-center gap-2">
+              <FacePile
+                items={uniqueSubmitters.slice(0, 4).map((submitter) => (
+                  <Avatar
+                    key={submitter.id}
+                    placeholder={submitter.name || submitter.slug || 'U'}
+                    className="border-2 border-white"
+                  >
+                    {submitter.avatarUrl ? (
+                      <Image
+                        src={submitter.avatarUrl}
+                        alt={submitter.name || submitter.slug || ''}
+                        width={32}
+                        height={32}
+                        className="rounded-full"
+                      />
+                    ) : null}
+                  </Avatar>
+                ))}
+              />
+              <span className="ml-3 text-sm text-gray-600">
+                {uniqueSubmitters.length} member
+                {uniqueSubmitters.length !== 1 ? 's' : ''} have submitted
+                proposals
+              </span>
+            </div>
+          )}
         </div>
 
-        {/* Main content card */}
-        <Surface className="p-8">
-          <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-            {/* Left column - Process Info */}
-            <div>
-              <h2 className="text-2xl font-semibold text-neutral-charcoal">
-                {name}
-              </h2>
-              <p className="mt-4 leading-relaxed text-neutral-gray3">
-                {description ||
-                  'Help decide how we allocate our $25,000 community budget. Submit proposals for initiatives that advance our mission of food justice through labor organizing.'}
-              </p>
+        {/* Main layout with sidebar and content */}
+        <div className="flex w-full justify-center bg-white">
+          <div className="grid w-full max-w-6xl grid-cols-1 gap-8 p-8 lg:grid-cols-4">
+            {/* Left sidebar - Process Info */}
+            <div className="lg:col-span-1">
+              <div className="flex flex-col gap-4">
+                <Header3 className="font-serif !text-title-base text-neutral-black">
+                  {name}
+                </Header3>
+                <p className="text-sm">
+                  {description ||
+                    'Help decide how we allocate our $25,000 community budget. Submit proposals for initiatives that advance our mission of food justice through labor organizing.'}
+                </p>
 
-              <div className="mt-8">
-                <a
-                  href={createProposalHref}
-                  className="inline-flex items-center justify-center rounded-md bg-primary-teal px-8 py-3 text-base font-medium text-white shadow-sm transition-colors hover:bg-primary-tealBlack focus:outline-none focus:ring-2 focus:ring-primary-teal focus:ring-offset-2"
-                >
-                  Submit a proposal
-                </a>
+                <div className="mb-6">
+                  <Link href={createProposalHref} className="block">
+                    <Button color="primary" className="w-full">
+                      Submit a proposal
+                    </Button>
+                  </Link>
+                </div>
+
+                <Surface variant="filled">
+                  <div className="mb-2 text-sm font-medium uppercase tracking-wide text-neutral-gray3">
+                    Current Phase
+                  </div>
+                  <div className="mb-4 text-lg font-semibold text-neutral-charcoal">
+                    {currentPhase?.name || 'Proposal Submissions'}
+                  </div>
+
+                  {currentPhase?.phase?.startDate &&
+                    currentPhase?.phase?.endDate && (
+                      <div className="mb-4 text-sm text-neutral-gray3">
+                        {new Date(
+                          currentPhase.phase.startDate,
+                        ).toLocaleDateString()}{' '}
+                        -{' '}
+                        {new Date(
+                          currentPhase.phase.endDate,
+                        ).toLocaleDateString()}
+                      </div>
+                    )}
+
+                  <div className="space-y-3">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-neutral-gray3">Total Budget</span>
+                      <span className="font-medium text-neutral-charcoal">
+                        {budget ? formatCurrency(budget) : '$25,000'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-neutral-gray3">
+                        Proposals Submitted
+                      </span>
+                      <span className="font-medium text-neutral-charcoal">
+                        {proposalCount}
+                      </span>
+                    </div>
+                    {remainingDays !== null && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-neutral-gray3">
+                          Days Remaining
+                        </span>
+                        <span className="font-medium text-neutral-charcoal">
+                          {remainingDays}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </Surface>
               </div>
             </div>
 
-            {/* Right column  */}
-            <div className="space-y-6">
-              <DecisionStats
-                currentPhase={currentPhase}
-                budget={budget}
-                proposalCount={proposalCount}
-                daysRemaining={remainingDays}
-              />
+            {/* Main content area - Proposals */}
+            <div className="lg:col-span-3">
+              {proposals.length === 0 ? (
+                <EmptyProposalsState />
+              ) : (
+                <div>
+                  {/* Filter bar */}
+                  <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                      <span className="text-lg font-medium text-neutral-charcoal">
+                        My proposals • {proposals.length}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <Select defaultSelectedKey="my" className="w-36">
+                        <SelectItem id="my">My proposals</SelectItem>
+                        <SelectItem id="all">All proposals</SelectItem>
+                      </Select>
+                      <Select
+                        defaultSelectedKey="all-categories"
+                        className="w-40"
+                      >
+                        <SelectItem id="all-categories">
+                          All categories
+                        </SelectItem>
+                      </Select>
+                      <Select defaultSelectedKey="newest" className="w-36">
+                        <SelectItem id="newest">Newest First</SelectItem>
+                        <SelectItem id="oldest">Oldest First</SelectItem>
+                      </Select>
+                    </div>
+                  </div>
 
-              {proposals.length === 0 && <EmptyProposalsState />}
+                  {/* Proposals list */}
+                  <ProposalsList
+                    proposals={proposals}
+                    onProposalLike={handleProposalLike}
+                    onProposalFollow={handleProposalFollow}
+                  />
+                </div>
+              )}
             </div>
           </div>
-        </Surface>
-
-        {/* Proposals Section - outside the main card */}
-        <ProposalsList
-          proposals={proposals}
-          onProposalLike={handleProposalLike}
-          onProposalFollow={handleProposalFollow}
-        />
+        </div>
       </div>
     </div>
   );
