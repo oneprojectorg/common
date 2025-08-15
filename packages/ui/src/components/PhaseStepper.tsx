@@ -57,11 +57,11 @@ const Step = ({
         className={cn(
           'flex size-6 items-center justify-center rounded-full font-serif',
           stepState === 'completed' &&
-            'bg-functional-greenWhite text-functional-green',
+          'bg-functional-greenWhite text-functional-green',
           stepState === 'current' &&
-            'bg-neutral-charcoal text-neutral-offWhite',
+          'bg-neutral-charcoal text-neutral-offWhite',
           stepState === 'upcoming' &&
-            'border border-neutral-charcoal bg-transparent text-neutral-charcoal',
+          'border border-neutral-charcoal bg-transparent text-neutral-charcoal',
         )}
       >
         {stepState === 'completed' ? <Check className="size-4" /> : index + 1}
@@ -99,7 +99,7 @@ export function PhaseStepper({
 
   return (
     <div className={cn('w-full', className)}>
-      <div className="flex justify-evenly gap-2">
+      <div className="flex justify-center gap-2">
         {sortedPhases.map((phase, index) => {
           const stepState = getStepState(index);
 
