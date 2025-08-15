@@ -111,7 +111,7 @@ export const Select = <T extends object>({
       {description && <Description>{description}</Description>}
       <FieldError>{errorMessage}</FieldError>
       <Popover
-        className="absolute z-10 !max-h-60 w-[--trigger-width] min-w-[--trigger-width] rounded border border-neutral-gray1 bg-white p-2 shadow"
+        className="absolute z-10 !max-h-60 min-w-[--trigger-width] max-w-56 overflow-hidden rounded border border-neutral-gray1 bg-white p-2 shadow"
         {...props.popoverProps}
       >
         <ListBox
