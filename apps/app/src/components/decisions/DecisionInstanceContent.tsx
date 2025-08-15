@@ -1,5 +1,6 @@
 'use client';
 
+import { getPublicUrl } from '@/utils';
 import type { processPhaseSchema, proposalEncoder } from '@op/api/encoders';
 import { Avatar } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
@@ -113,13 +114,13 @@ export function DecisionInstanceContent({
                     placeholder={submitter.name || submitter.slug || 'U'}
                     className="border-2 border-white"
                   >
-                    {submitter.avatarUrl ? (
+                    {submitter.avatarImage?.name ? (
                       <Image
-                        src={submitter.avatarUrl}
+                        src={getPublicUrl(submitter.avatarImage.name) ?? ''}
                         alt={submitter.name || submitter.slug || ''}
                         width={32}
                         height={32}
-                        className="rounded-full"
+                        className="rounded-full object-cover"
                       />
                     ) : null}
                   </Avatar>
@@ -213,33 +214,6 @@ export function DecisionInstanceContent({
                 <EmptyProposalsState />
               ) : (
                 <div>
-                  {/* Filter bar */}
-                  <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                      <span className="text-lg font-medium text-neutral-charcoal">
-                        My proposals • {proposals.length}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <Select defaultSelectedKey="my" className="w-36">
-                        <SelectItem id="my">My proposals</SelectItem>
-                        <SelectItem id="all">All proposals</SelectItem>
-                      </Select>
-                      <Select
-                        defaultSelectedKey="all-categories"
-                        className="w-40"
-                      >
-                        <SelectItem id="all-categories">
-                          All categories
-                        </SelectItem>
-                      </Select>
-                      <Select defaultSelectedKey="newest" className="w-36">
-                        <SelectItem id="newest">Newest First</SelectItem>
-                        <SelectItem id="oldest">Oldest First</SelectItem>
-                      </Select>
-                    </div>
-                  </div>
-
                   {/* Proposals list */}
                   <ProposalsList
                     proposals={proposals}

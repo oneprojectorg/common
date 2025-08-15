@@ -1,12 +1,12 @@
 'use client';
 
-import Link from 'next/link';
-import { ChevronLeft } from 'lucide-react';
 import { Avatar } from '@op/ui/Avatar';
+import { ChevronLeft } from 'lucide-react';
+import Link from 'next/link';
 
 interface DecisionInstanceHeaderProps {
   backTo: {
-    label: string;
+    label?: string;
     href: string;
   };
   title: string;
@@ -29,7 +29,7 @@ export function DecisionInstanceHeader({
           className="flex items-center gap-2 text-sm text-primary-teal hover:text-primary-tealBlack"
         >
           <ChevronLeft className="h-4 w-4" />
-          <span>Back to {backTo.label}</span>
+          <span>Back {backTo.label ? `to ${backTo.label}` : ''}</span>
         </Link>
       </div>
 

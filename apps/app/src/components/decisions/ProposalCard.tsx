@@ -1,9 +1,11 @@
 'use client';
 
+import { getPublicUrl } from '@/utils';
+import type { proposalEncoder } from '@op/api/encoders';
 import { Avatar } from '@op/ui/Avatar';
 import { Surface } from '@op/ui/Surface';
 import { Heart, MessageCircle, Users } from 'lucide-react';
-import type { proposalEncoder } from '@op/api/encoders';
+import Image from 'next/image';
 import { z } from 'zod';
 
 type Proposal = z.infer<typeof proposalEncoder>;
@@ -64,11 +66,20 @@ export function ProposalCard({ proposal, onLike, onFollow }: ProposalCardProps) 
         {proposal.submittedBy && (
           <>
             <Avatar
-              placeholder={proposal.submittedBy.name}
+              placeholder={proposal.submittedBy.name || proposal.submittedBy.slug || 'U'}
               className="h-6 w-6"
-            />
+            >
+              {proposal.submittedBy.avatarImage?.name ? (
+                <Image
+                  src={getPublicUrl(proposal.submittedBy.avatarImage.name) ?? ''}
+                  alt={proposal.submittedBy.name || proposal.submittedBy.slug || ''}
+                  fill
+                  className="aspect-square object-cover"
+                />
+              ) : null}
+            </Avatar>
             <span className="text-sm text-neutral-charcoal">
-              {proposal.submittedBy.name}
+              {proposal.submittedBy.name || proposal.submittedBy.slug}
             </span>
             <span className="text-sm text-neutral-gray2">•</span>
           </>

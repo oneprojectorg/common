@@ -57,7 +57,7 @@ async function DecisionInstancePageContent({
       <>
         <DecisionInstanceHeader
           backTo={{
-            label: 'Solidarity Seeds',
+            label: instance.owner?.name,
             href: `/profile/${slug}`,
           }}
           title={instance.process?.name || instance.name}
