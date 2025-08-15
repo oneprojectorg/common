@@ -33,7 +33,7 @@ async function CreateProposalPageContent({
   }
 }
 
-function CreateProposalPageLoading() {
+function CreateProposalPageSkeleton() {
   return (
     <div className="flex min-h-screen flex-col">
       {/* Header loading */}
@@ -86,7 +86,7 @@ const CreateProposalPage = async ({
   const { id, slug } = await params;
 
   return (
-    <Suspense fallback={<CreateProposalPageLoading />}>
+    <Suspense fallback={<CreateProposalPageSkeleton />}>
       <CreateProposalPageContent instanceId={id} slug={slug} />
     </Suspense>
   );

@@ -41,7 +41,7 @@ export function ProposalCard({ proposal, onLike, onFollow }: ProposalCardProps) 
 
   // Parse proposal data with Zod for type safety
   const proposalDataResult = proposalDataSchema.safeParse(proposal.proposalData);
-  const proposalData = proposalDataResult.success ? proposalDataResult.data : {};
+  const proposalData = proposalDataResult.success ? proposalDataResult.data : (proposal.proposalData as any) || {};
   
   const { title, budget, category, content } = proposalData;
 

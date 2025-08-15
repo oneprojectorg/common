@@ -39,7 +39,7 @@ export function ProposalEditorLayout({
         </button>
 
         <div className="flex-1 text-center text-lg font-medium text-neutral-black">
-          {title}
+          {title ? title : 'Untitled Proposal'}
         </div>
 
         <div className="flex items-center gap-8">

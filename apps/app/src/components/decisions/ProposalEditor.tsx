@@ -33,7 +33,7 @@ interface ProposalEditorProps {
 
 export function ProposalEditor({ instance, backHref }: ProposalEditorProps) {
   const router = useRouter();
-  const [title, setTitle] = useState('Untitled Proposal');
+  const [title, setTitle] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [budget, setBudget] = useState<number | null>(null);
