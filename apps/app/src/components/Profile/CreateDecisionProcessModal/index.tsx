@@ -93,8 +93,8 @@ export const CreateDecisionProcessModal = () => {
         message: `"${instance.name}" is now ready for proposals.`,
       });
 
-      // Invalidate the processes list to refresh the UI
-      utils.decision.listProcesses.invalidate();
+      // Invalidate the instances list to refresh the UI
+      utils.decision.listInstances.invalidate();
 
       // Close the modal after successful creation
       if (overlayTriggerState?.close) {

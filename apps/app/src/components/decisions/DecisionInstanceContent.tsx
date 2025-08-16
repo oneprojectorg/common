@@ -143,10 +143,7 @@ export function DecisionInstanceContent({
                 <Header3 className="font-serif !text-title-base text-neutral-black">
                   {name}
                 </Header3>
-                <p className="text-sm">
-                  {description ||
-                    'Help decide how we allocate our $25,000 community budget. Submit proposals for initiatives that advance our mission of food justice through labor organizing.'}
-                </p>
+                {description ? <p className="text-sm">{description}</p> : null}
 
                 <div className="mb-6">
                   <Link href={createProposalHref} className="block">
