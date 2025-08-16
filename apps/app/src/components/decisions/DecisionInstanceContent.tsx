@@ -6,7 +6,6 @@ import { Avatar } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
 import { FacePile } from '@op/ui/FacePile';
 import { GradientHeader, Header3 } from '@op/ui/Header';
-import { Select, SelectItem } from '@op/ui/Select';
 import { Surface } from '@op/ui/Surface';
 import { useLocale } from 'next-intl';
 import Image from 'next/image';
