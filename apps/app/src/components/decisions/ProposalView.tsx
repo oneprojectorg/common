@@ -3,16 +3,21 @@
 import { getPublicUrl } from '@/utils';
 import { useUser } from '@/utils/UserProvider';
 import { formatCurrency, formatDate, parseProposalData } from '@/utils/proposalUtils';
+import { trpc } from '@op/api/client';
 import type { proposalEncoder } from '@op/api/encoders';
 import { Avatar } from '@op/ui/Avatar';
+import { Surface } from '@op/ui/Surface';
 import Link from '@tiptap/extension-link';
 import TextAlign from '@tiptap/extension-text-align';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Heart, MessageCircle, Users } from 'lucide-react';
 import Image from 'next/image';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState, useRef } from 'react';
 import { z } from 'zod';
+
+import { PostFeed, PostItem, usePostFeedActions } from '../PostFeed';
+import { PostUpdate } from '../PostUpdate';
 
 import { ProposalViewLayout } from './ProposalViewLayout';
 
@@ -26,6 +31,7 @@ interface ProposalViewProps {
 export function ProposalView({ proposal, backHref }: ProposalViewProps) {
   const [isLiked, setIsLiked] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
+  const commentsContainerRef = useRef<HTMLDivElement>(null);
   
   // Get current user to check edit permissions
   const { user } = useUser();
@@ -35,6 +41,51 @@ export function ProposalView({ proposal, backHref }: ProposalViewProps) {
   
   // Generate edit href
   const editHref = canEdit ? `${backHref}/edit` : undefined;
+
+  // Get comments for the proposal using the posts API
+  const { data: commentsData, isLoading: commentsLoading } = trpc.posts.getPosts.useQuery({
+    profileId: proposal.profileId || undefined,
+    parentPostId: null, // Get top-level comments only
+    limit: 50,
+    offset: 0,
+    includeChildren: false,
+  });
+
+  // Post feed actions for comments
+  const { handleReactionClick } = usePostFeedActions({
+    user,
+  });
+
+  // Transform comments data to match PostToOrganization format expected by PostItem
+  const comments = useMemo(
+    () =>
+      commentsData?.map((comment) => ({
+        createdAt: comment.createdAt,
+        updatedAt: comment.updatedAt,
+        deletedAt: null,
+        postId: comment.id,
+        organizationId: '', // Not needed for proposal comments
+        post: comment,
+        organization: null, // Comments don't need organization context
+      })) || [],
+    [commentsData],
+  );
+
+  // Function to scroll to show comments after adding a new one
+  const scrollToComments = useCallback(() => {
+    if (commentsContainerRef.current) {
+      setTimeout(() => {
+        const container = commentsContainerRef.current;
+        if (container) {
+          container.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+            inline: 'nearest',
+          });
+        }
+      }, 100);
+    }
+  }, []);
 
   // Parse proposal data using shared utility
   const { title, budget, category, content } = parseProposalData(proposal.proposalData);
@@ -168,7 +219,7 @@ export function ProposalView({ proposal, backHref }: ProposalViewProps) {
             </div>
             <div className="flex items-center gap-1 text-sm text-neutral-gray2">
               <MessageCircle className="h-4 w-4" />
-              <span>0 Comments</span>
+              <span>{comments.length} Comment{comments.length !== 1 ? 's' : ''}</span>
             </div>
             <div className="flex items-center gap-1 text-sm text-neutral-gray2">
               <Users className="h-4 w-4" />
@@ -182,6 +233,65 @@ export function ProposalView({ proposal, backHref }: ProposalViewProps) {
               className="[&>div]:px-0 [&>div]:py-0"
               editor={editor}
             />
+          </div>
+
+          {/* Comments Section */}
+          <div className="mt-12" ref={commentsContainerRef}>
+            <div className="border-t border-neutral-gray1 pt-8">
+              <h3 className="mb-6 text-lg font-semibold text-neutral-charcoal">
+                Comments ({comments.length})
+              </h3>
+              
+              {/* Comment Input */}
+              <div className="mb-8">
+                <Surface className="border-0 p-0 sm:border sm:p-4">
+                  <PostUpdate
+                    profileId={proposal.profileId || undefined}
+                    placeholder={`Comment${user?.currentProfile?.name ? ` as ${user?.currentProfile?.name}` : ''}...`}
+                    label="Comment"
+                    onSuccess={scrollToComments}
+                  />
+                </Surface>
+              </div>
+
+              {/* Comments Display */}
+              {commentsLoading ? (
+                <div
+                  className="py-8 text-center text-gray-500"
+                  role="status"
+                  aria-label="Loading comments"
+                >
+                  Loading comments...
+                </div>
+              ) : comments.length > 0 ? (
+                <div role="feed" aria-label={`${comments.length} comments`}>
+                  <PostFeed>
+                    {comments.map((comment, i) => (
+                      <div key={comment.post.id}>
+                        <PostItem
+                          postToOrg={comment}
+                          user={user}
+                          withLinks={false}
+                          onReactionClick={handleReactionClick}
+                          className="sm:px-0"
+                        />
+                        {comments.length !== i + 1 && (
+                          <hr className="my-4 bg-neutral-gray1" />
+                        )}
+                      </div>
+                    ))}
+                  </PostFeed>
+                </div>
+              ) : (
+                <div
+                  className="py-8 text-center text-gray-500"
+                  role="status"
+                  aria-label="No comments"
+                >
+                  No comments yet. Be the first to comment!
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

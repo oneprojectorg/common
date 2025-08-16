@@ -50,13 +50,15 @@ const PostUpdateWithUser = ({
   organization,
   className,
   parentPostId,
+  profileId,
   placeholder,
   onSuccess,
   label,
 }: {
-  organization: Organization;
+  organization?: Organization;
   className?: string;
   parentPostId?: string; // If provided, this becomes a comment
+  profileId?: string; // Profile ID to associate the post with (can be any profile type)
   placeholder?: string;
   onSuccess?: () => void;
   label: string;
@@ -68,7 +70,9 @@ const PostUpdateWithUser = ({
     content: string;
     attachmentIds: string[];
   } | null>(null);
-  const [optimisticCommentId, setOptimisticCommentId] = useState<string | null>(null);
+  const [optimisticCommentId, setOptimisticCommentId] = useState<string | null>(
+    null,
+  );
   const optimisticCommentRef = useRef<string | null>(null);
   const t = useTranslations();
   const utils = trpc.useUtils();
@@ -76,7 +80,7 @@ const PostUpdateWithUser = ({
   const isOnline = useConnectionStatus();
 
   const fileUpload = useFileUpload({
-    organizationId: organization.id,
+    organizationId: organization?.id || '',
     acceptedTypes: [
       'image/gif',
       'image/png',
@@ -87,7 +91,6 @@ const PostUpdateWithUser = ({
     maxFiles: 1,
   });
 
-
   const createPost = trpc.posts.createPost.useMutation({
     onMutate: async (variables) => {
       // Generate optimistic ID for comments and add optimistic comment immediately
@@ -95,14 +98,14 @@ const PostUpdateWithUser = ({
         const tempId = `optimistic-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         optimisticCommentRef.current = tempId;
         setOptimisticCommentId(tempId);
-        
+
         // Cancel any outgoing refetches
         const queryKey = createCommentsQueryKey(variables.parentPostId);
         await utils.posts.getPosts.cancel(queryKey);
-        
+
         // Snapshot previous value
         const previousComments = utils.posts.getPosts.getData(queryKey);
-        
+
         // Add optimistic comment immediately
         const optimisticComment: Post = {
           id: tempId,
@@ -121,31 +124,35 @@ const PostUpdateWithUser = ({
           childPosts: null,
           parentPost: null,
         };
-        
+
         // Add optimistic comment
         utils.posts.getPosts.setData(queryKey, (old) => {
           if (!old) return [optimisticComment];
           return [optimisticComment, ...old];
         });
-        
+
         return { previousComments, tempId };
       }
-      
+
       return {};
     },
     onError: (err, variables, context) => {
       const errorInfo = analyzeError(err);
 
       // Rollback optimistic comment updates on error
-      if (variables.parentPostId && context?.tempId && optimisticCommentRef.current === context.tempId) {
+      if (
+        variables.parentPostId &&
+        context?.tempId &&
+        optimisticCommentRef.current === context.tempId
+      ) {
         // Restore previous comments state
         const queryKey = createCommentsQueryKey(variables.parentPostId);
         utils.posts.getPosts.setData(queryKey, context.previousComments);
-        
+
         // Clear the optimistic comment ID
         optimisticCommentRef.current = null;
         setOptimisticCommentId(null);
-        
+
         // Revert parent post comment count - invalidate to be safe
         void utils.organization.listPosts.invalidate();
         void utils.organization.listAllPosts.invalidate();
@@ -179,7 +186,7 @@ const PostUpdateWithUser = ({
         // Clear the optimistic comment ID since we have real data
         optimisticCommentRef.current = null;
         setOptimisticCommentId(null);
-        
+
         // Enhance server data with user profile if not present
         const enhancedData = {
           ...data,
@@ -187,24 +194,23 @@ const PostUpdateWithUser = ({
         };
 
         const queryKey = createCommentsQueryKey(variables.parentPostId);
-        utils.posts.getPosts.setData(
-          queryKey,
-          (old) => {
-            if (!old) return [enhancedData];
-            // Replace optimistic comment with real data, or add if not found
-            if (optimisticCommentId) {
-              const index = old.findIndex(comment => comment.id === optimisticCommentId);
-              if (index >= 0) {
-                const newComments = [...old];
-                newComments[index] = enhancedData;
-                return newComments;
-              }
+        utils.posts.getPosts.setData(queryKey, (old) => {
+          if (!old) return [enhancedData];
+          // Replace optimistic comment with real data, or add if not found
+          if (optimisticCommentId) {
+            const index = old.findIndex(
+              (comment) => comment.id === optimisticCommentId,
+            );
+            if (index >= 0) {
+              const newComments = [...old];
+              newComments[index] = enhancedData;
+              return newComments;
             }
-            // Add the new comment to the beginning if no optimistic comment to replace
-            return [enhancedData, ...old];
-          },
-        );
-        
+          }
+          // Add the new comment to the beginning if no optimistic comment to replace
+          return [enhancedData, ...old];
+        });
+
         // Update parent post's comment count in main feed caches
         const updateCommentCount = (item: any) => {
           if (item.post.id === variables.parentPostId) {
@@ -219,26 +225,31 @@ const PostUpdateWithUser = ({
           return item;
         };
 
-        // Update organization.listPosts cache
-        utils.organization.listPosts.setInfiniteData({ slug: organization.profile.slug }, (old) => {
-          if (!old) return old;
-          return {
-            ...old,
-            pages: old.pages.map((page) => ({
-              ...page,
-              items: page.items.map(updateCommentCount),
-            })),
-          };
-        });
+        // Update organization.listPosts cache only if organization exists
+        if (organization?.profile?.slug) {
+          utils.organization.listPosts.setInfiniteData(
+            { slug: organization.profile.slug },
+            (old) => {
+              if (!old) return old;
+              return {
+                ...old,
+                pages: old.pages.map((page) => ({
+                  ...page,
+                  items: page.items.map(updateCommentCount),
+                })),
+              };
+            },
+          );
 
-        // Update organization.listAllPosts cache
-        utils.organization.listAllPosts.setData({}, (old) => {
-          if (!old) return old;
-          return {
-            ...old,
-            items: old.items.map(updateCommentCount),
-          };
-        });
+          // Update organization.listAllPosts cache
+          utils.organization.listAllPosts.setData({}, (old) => {
+            if (!old) return old;
+            return {
+              ...old,
+              items: old.items.map(updateCommentCount),
+            };
+          });
+        }
       }
 
       // Call onSuccess callback if provided (for comments)
@@ -269,12 +280,18 @@ const PostUpdateWithUser = ({
 
   const retryFailedPost = () => {
     if (lastFailedPost) {
-      createPost.mutate({
+      const mutationData: any = {
         content: lastFailedPost.content,
-        organizationId: organization.id,
         parentPostId,
         attachmentIds: lastFailedPost.attachmentIds,
-      });
+      };
+
+      // Add profile association if provided
+      if (profileId) {
+        mutationData.profileId = profileId;
+      }
+
+      createPost.mutate(mutationData);
     }
   };
 
@@ -302,12 +319,18 @@ const PostUpdateWithUser = ({
 
       // Optimistic updates are now handled in onMutate
 
-      createPost.mutate({
+      const mutationData: any = {
         content: content.trim() || '',
-        organizationId: organization.id,
         parentPostId,
         attachmentIds: fileUpload.getUploadedAttachmentIds(),
-      });
+      };
+
+      // Add profile association if provided
+      if (profileId) {
+        mutationData.profileId = profileId;
+      }
+
+      createPost.mutate(mutationData);
     }
   };
 
@@ -333,9 +356,9 @@ const PostUpdateWithUser = ({
         textarea.style.height = '1.5rem'; // Reset to min height
         textarea.style.height = `${textarea.scrollHeight}px`; // Set to scrollHeight
       };
-      
+
       textarea.addEventListener('input', handleInput);
-      
+
       // Cleanup function to remove event listener
       return () => {
         textarea.removeEventListener('input', handleInput);
@@ -346,10 +369,19 @@ const PostUpdateWithUser = ({
   return (
     <div className={cn('flex flex-col gap-8', className)}>
       <FeedItem>
-        <OrganizationAvatar
-          profile={organization.profile}
-          className="size-8 bg-white"
-        />
+        {organization ? (
+          <OrganizationAvatar
+            profile={organization.profile}
+            className="size-8 bg-white"
+          />
+        ) : user?.currentProfile ? (
+          <OrganizationAvatar
+            profile={user.currentProfile}
+            className="size-8 bg-white"
+          />
+        ) : (
+          <div className="size-8 rounded-full bg-neutral-gray1" />
+        )}
         <FeedMain className="relative">
           <Form onSubmit={handleSubmit} className="flex w-full flex-col gap-4">
             <TextArea
@@ -484,6 +516,7 @@ export const PostUpdate = ({
   organization,
   className,
   parentPostId,
+  profileId,
   placeholder,
   onSuccess,
   label,
@@ -491,12 +524,28 @@ export const PostUpdate = ({
   organization?: Organization;
   className?: string;
   parentPostId?: string;
+  profileId?: string;
   placeholder?: string;
   onSuccess?: () => void;
   label: string;
 }) => {
   const { user } = useUser();
   const currentOrg = user?.currentOrganization;
+
+  // For profile-based associations (like proposals), we don't need an organization
+  if (profileId) {
+    return (
+      <PostUpdateWithUser
+        organization={undefined}
+        className={className}
+        parentPostId={parentPostId}
+        profileId={profileId}
+        placeholder={placeholder}
+        onSuccess={onSuccess}
+        label={label}
+      />
+    );
+  }
 
   if (
     !(currentOrg && !organization) &&
@@ -510,6 +559,7 @@ export const PostUpdate = ({
       organization={organization ?? currentOrg}
       className={className}
       parentPostId={parentPostId}
+      profileId={profileId}
       placeholder={placeholder}
       onSuccess={onSuccess}
       label={label}
