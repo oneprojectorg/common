@@ -38,7 +38,10 @@ export {
   postsRelations,
   postsToOrganizations,
   postsToOrganizationsRelations,
+  postsToProfiles,
+  postsToProfilesRelations,
 } from './tables/posts.sql';
+export type { Post, PostToOrganization, PostToProfile } from './tables/posts.sql';
 
 export {
   postReactions,

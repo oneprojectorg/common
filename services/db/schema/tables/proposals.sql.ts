@@ -54,6 +54,11 @@ export const proposals = pgTable(
         onDelete: 'cascade',
       }),
 
+    profileId: uuid('profile_id').references(() => profiles.id, {
+      onUpdate: 'cascade',
+      onDelete: 'cascade',
+    }),
+
     status: proposalStatusEnum('status').default(ProposalStatus.DRAFT),
 
     ...timestamps,
@@ -63,6 +68,7 @@ export const proposals = pgTable(
     index().on(table.id).concurrently(),
     index().on(table.processInstanceId).concurrently(),
     index().on(table.submittedByProfileId).concurrently(),
+    index().on(table.profileId).concurrently(),
     index().on(table.status).concurrently(),
   ],
 );
@@ -97,6 +103,10 @@ export const proposalsRelations = relations(proposals, ({ one, many }) => ({
   }),
   submittedBy: one(profiles, {
     fields: [proposals.submittedByProfileId],
+    references: [profiles.id],
+  }),
+  profile: one(profiles, {
+    fields: [proposals.profileId],
     references: [profiles.id],
   }),
   decisions: many(decisions),
