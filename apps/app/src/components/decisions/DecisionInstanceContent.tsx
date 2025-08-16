@@ -6,12 +6,12 @@ import { Avatar } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
 import { FacePile } from '@op/ui/FacePile';
 import { GradientHeader, Header3 } from '@op/ui/Header';
-import { Surface } from '@op/ui/Surface';
 import { useLocale } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { z } from 'zod';
 
+import { CurrentPhaseSurface } from './CurrentPhaseSurface';
 import { EmptyProposalsState } from './EmptyProposalsState';
 import { ProposalsList } from './ProposalsList';
 
@@ -49,22 +49,6 @@ export function DecisionInstanceContent({
       minimumFractionDigits: 0,
     }).format(amount);
   };
-
-  const calculateDaysRemaining = () => {
-    if (daysRemaining !== undefined) return daysRemaining;
-
-    if (currentPhase?.phase?.endDate) {
-      const endDate = new Date(currentPhase.phase.endDate);
-      const today = new Date();
-      const diffTime = endDate.getTime() - today.getTime();
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      return Math.max(0, diffDays);
-    }
-
-    return null;
-  };
-
-  const remainingDays = calculateDaysRemaining();
 
   const handleProposalLike = (proposalId: string) => {
     // TODO
@@ -153,54 +137,12 @@ export function DecisionInstanceContent({
                   </Link>
                 </div>
 
-                <Surface variant="filled">
-                  <div className="mb-2 text-sm font-medium uppercase tracking-wide text-neutral-gray3">
-                    Current Phase
-                  </div>
-                  <div className="mb-4 text-lg font-semibold text-neutral-charcoal">
-                    {currentPhase?.name || 'Proposal Submissions'}
-                  </div>
-
-                  {currentPhase?.phase?.startDate &&
-                    currentPhase?.phase?.endDate && (
-                      <div className="mb-4 text-sm text-neutral-gray3">
-                        {new Date(
-                          currentPhase.phase.startDate,
-                        ).toLocaleDateString()}{' '}
-                        -{' '}
-                        {new Date(
-                          currentPhase.phase.endDate,
-                        ).toLocaleDateString()}
-                      </div>
-                    )}
-
-                  <div className="space-y-3">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-neutral-gray3">Total Budget</span>
-                      <span className="font-medium text-neutral-charcoal">
-                        {budget ? formatCurrency(budget) : '$25,000'}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-neutral-gray3">
-                        Proposals Submitted
-                      </span>
-                      <span className="font-medium text-neutral-charcoal">
-                        {proposalCount}
-                      </span>
-                    </div>
-                    {remainingDays !== null && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-neutral-gray3">
-                          Days Remaining
-                        </span>
-                        <span className="font-medium text-neutral-charcoal">
-                          {remainingDays}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </Surface>
+                <CurrentPhaseSurface
+                  currentPhase={currentPhase}
+                  budget={budget}
+                  proposalCount={proposalCount}
+                  daysRemaining={daysRemaining}
+                />
               </div>
             </div>
 
