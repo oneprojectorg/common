@@ -1,19 +1,22 @@
-'use client';
-
-import { Search } from 'lucide-react';
+import { Header3 } from '@op/ui/Header';
+import { LuLeaf } from 'react-icons/lu';
 
 export function EmptyProposalsState() {
   return (
-    <div className="rounded-lg bg-neutral-gray1 p-6 text-center">
-      <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-neutral-gray2">
-        <Search className="h-6 w-6 text-neutral-gray3" />
+    <div className="flex h-full flex-col items-center justify-center gap-4 px-0 py-8">
+      <div className="flex size-10 items-center justify-center rounded-full bg-neutral-gray1">
+        <LuLeaf className="size-6 text-neutral-gray4" />
       </div>
-      <h3 className="text-base font-medium text-neutral-charcoal">
-        No proposals yet.
-      </h3>
-      <p className="mt-1 text-sm text-neutral-gray3">
-        You could be the first one to submit a proposal! 💡
-      </p>
+      <div className="flex flex-col items-center justify-start gap-6">
+        <div className="flex flex-col items-center justify-start gap-2 text-center">
+          <Header3 className="font-serif !text-title-base font-light text-neutral-black">
+            No proposals yet.
+          </Header3>
+          <p className="text-base text-neutral-charcoal">
+            You could be the first one to submit a proposal! 😉
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
