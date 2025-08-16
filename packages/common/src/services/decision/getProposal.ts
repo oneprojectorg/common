@@ -26,6 +26,7 @@ export const getProposal = async ({
           },
         },
         submittedBy: true,
+        profile: true,
         decisions: {
           with: {
             decidedBy: true,

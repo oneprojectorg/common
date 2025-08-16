@@ -101,6 +101,7 @@ export const listProposals = async ({
           },
         },
         submittedBy: true,
+        profile: true,
         decisions: true, // Include decisions to calculate count
       },
       limit,
@@ -117,6 +118,9 @@ export const listProposals = async ({
       const submittedBy = Array.isArray(proposal.submittedBy)
         ? proposal.submittedBy[0]
         : proposal.submittedBy;
+      const profile = Array.isArray(proposal.profile)
+        ? proposal.profile[0]
+        : proposal.profile;
       const decisions = Array.isArray(proposal.decisions)
         ? proposal.decisions
         : [];
@@ -127,6 +131,7 @@ export const listProposals = async ({
         status: proposal.status,
         createdAt: proposal.createdAt,
         updatedAt: proposal.updatedAt,
+        profileId: proposal.profileId,
         processInstance: processInstance
           ? {
               id: processInstance.id,
@@ -150,6 +155,7 @@ export const listProposals = async ({
             }
           : undefined,
         submittedBy: submittedBy,
+        profile: profile,
         decisionCount: decisions.length,
       };
     });

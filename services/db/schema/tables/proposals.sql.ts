@@ -111,6 +111,7 @@ export const proposalsRelations = relations(proposals, ({ one, many }) => ({
   }),
   decisions: many(decisions),
   categories: many(proposalCategories),
+  // posts relationship will be handled from the posts side to avoid circular dependencies
 }));
 
 export const proposalCategoriesRelations = relations(

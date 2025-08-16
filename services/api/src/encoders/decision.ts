@@ -162,11 +162,13 @@ export const proposalEncoder = createSelectSchema(proposals)
     status: true,
     createdAt: true,
     updatedAt: true,
+    profileId: true,
   })
   .extend({
     proposalData: z.unknown(), // Keep as unknown to match database schema
     processInstance: processInstanceEncoder.optional(),
     submittedBy: baseProfileEncoder.optional(),
+    profile: baseProfileEncoder.optional(),
     decisionCount: z.number().optional(),
   });
 

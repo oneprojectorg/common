@@ -74,6 +74,7 @@ export const postsToProfiles = pgTable(
   ],
 );
 
+
 export const postsRelations = relations(posts, ({ one, many }) => ({
   organization: many(organizations),
   attachments: many(attachments),
