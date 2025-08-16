@@ -1,7 +1,9 @@
 'use client';
 
 import { ProcessInstance } from '@/utils/decisionProcessTransforms';
+import { parseProposalData } from '@/utils/proposalUtils';
 import { trpc } from '@op/api/client';
+import type { proposalEncoder } from '@op/api/encoders';
 import { Select, SelectItem } from '@op/ui/Select';
 import { TextField } from '@op/ui/TextField';
 import Link from '@tiptap/extension-link';
@@ -22,16 +24,26 @@ import {
   Undo,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { z } from 'zod';
 
 import { ProposalEditorLayout } from './layout';
+
+type Proposal = z.infer<typeof proposalEncoder>;
 
 interface ProposalEditorProps {
   instance: ProcessInstance;
   backHref: string;
+  existingProposal?: Proposal;
+  isEditMode?: boolean;
 }
 
-export function ProposalEditor({ instance, backHref }: ProposalEditorProps) {
+export function ProposalEditor({
+  instance,
+  backHref,
+  existingProposal,
+  isEditMode = false,
+}: ProposalEditorProps) {
   const router = useRouter();
   const [title, setTitle] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -39,6 +51,7 @@ export function ProposalEditor({ instance, backHref }: ProposalEditorProps) {
   const [budget, setBudget] = useState<number | null>(null);
 
   const createProposalMutation = trpc.decision.createProposal.useMutation();
+  const updateProposalMutation = trpc.decision.updateProposal.useMutation();
 
   // Extract template data from the instance
   const proposalTemplate = instance.process?.processSchema?.proposalTemplate;
@@ -108,12 +121,40 @@ export function ProposalEditor({ instance, backHref }: ProposalEditorProps) {
     immediatelyRender: false,
   });
 
+  // Initialize form with existing proposal data if in edit mode
+  useEffect(() => {
+    if (isEditMode && existingProposal && editor) {
+      const {
+        title: existingTitle,
+        content: existingContent,
+        category: existingCategory,
+        budget: existingBudget,
+      } = parseProposalData(existingProposal.proposalData);
+
+      if (existingTitle) {
+        setTitle(existingTitle);
+      }
+      if (existingCategory) {
+        setSelectedCategory(existingCategory);
+      }
+      if (existingBudget) {
+        setBudget(existingBudget);
+      }
+
+      // Set editor content
+      if (existingContent) {
+        editor.commands.setContent(existingContent);
+      }
+    }
+  }, [isEditMode, existingProposal, editor]);
+
   const handleSubmitProposal = useCallback(async () => {
     if (!editor) {
       return;
     }
 
     setIsSubmitting(true);
+
     try {
       const content = editor.getHTML();
 
@@ -126,15 +167,29 @@ export function ProposalEditor({ instance, backHref }: ProposalEditorProps) {
         // Add any additional fields that match the process's proposal template
       };
 
-      await createProposalMutation.mutateAsync({
-        processInstanceId: instance.id,
-        proposalData,
-      });
+      if (isEditMode && existingProposal) {
+        // Update existing proposal
+        await updateProposalMutation.mutateAsync({
+          proposalId: existingProposal.id,
+          data: {
+            proposalData,
+          },
+        });
+      } else {
+        // Create new proposal
+        await createProposalMutation.mutateAsync({
+          processInstanceId: instance.id,
+          proposalData,
+        });
+      }
 
-      // Navigate back to decision instance page
+      // Navigate back to appropriate page
       router.push(backHref);
     } catch (error) {
-      console.error('Failed to submit proposal:', error);
+      console.error(
+        `Failed to ${isEditMode ? 'update' : 'submit'} proposal:`,
+        error,
+      );
       // TODO: Show error message to user
     } finally {
       setIsSubmitting(false);
@@ -146,6 +201,9 @@ export function ProposalEditor({ instance, backHref }: ProposalEditorProps) {
     budget,
     instance,
     createProposalMutation,
+    updateProposalMutation,
+    isEditMode,
+    existingProposal,
     backHref,
     router,
   ]);
@@ -154,7 +212,9 @@ export function ProposalEditor({ instance, backHref }: ProposalEditorProps) {
     const previousUrl = editor?.getAttributes('link').href;
     const url = window.prompt('URL', previousUrl);
 
-    if (url === null) return;
+    if (url === null) {
+      return;
+    }
 
     if (url === '') {
       editor?.chain().focus().extendMarkRange('link').unsetLink().run();
@@ -176,6 +236,7 @@ export function ProposalEditor({ instance, backHref }: ProposalEditorProps) {
         title={title}
         onSubmitProposal={handleSubmitProposal}
         isSubmitting={isSubmitting}
+        isEditMode={isEditMode}
       >
         {/* Loading message */}
         <div className="flex flex-1 items-center justify-center">
@@ -191,9 +252,10 @@ export function ProposalEditor({ instance, backHref }: ProposalEditorProps) {
       title={title}
       onSubmitProposal={handleSubmitProposal}
       isSubmitting={isSubmitting}
+      isEditMode={isEditMode}
     >
       {/* Toolbar */}
-      <div className="flex justify-evenly border-b border-gray-200 px-6 py-2">
+      <div className="flex justify-evenly border-b border-neutral-gray1 px-6 py-2">
         <div className="flex items-center gap-1">
           <button
             onClick={() => editor.chain().focus().undo().run()}

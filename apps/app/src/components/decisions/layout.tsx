@@ -15,6 +15,7 @@ interface ProposalEditorLayoutProps {
   title: string;
   onSubmitProposal: () => void;
   isSubmitting: boolean;
+  isEditMode?: boolean;
 }
 
 export function ProposalEditorLayout({
@@ -23,6 +24,7 @@ export function ProposalEditorLayout({
   title,
   onSubmitProposal,
   isSubmitting,
+  isEditMode = false,
 }: ProposalEditorLayoutProps) {
   const router = useRouter();
 
@@ -51,7 +53,7 @@ export function ProposalEditorLayout({
             className="px-4 py-2"
           >
             {isSubmitting ? <LoadingSpinner /> : <LuCheck />}
-            Submit Proposal
+            {isEditMode ? 'Update Proposal' : 'Submit Proposal'}
           </Button>
           <UserAvatarMenu />
         </div>

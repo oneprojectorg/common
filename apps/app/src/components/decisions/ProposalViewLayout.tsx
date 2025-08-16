@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@op/ui/Button';
-import { ChevronLeft, Heart, Users } from 'lucide-react';
+import { ChevronLeft, Heart, Users, Edit } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { ReactNode } from 'react';
 
@@ -15,6 +15,8 @@ interface ProposalViewLayoutProps {
   onFollow?: () => void;
   isLiked?: boolean;
   isFollowing?: boolean;
+  editHref?: string;
+  canEdit?: boolean;
 }
 
 export function ProposalViewLayout({
@@ -25,6 +27,8 @@ export function ProposalViewLayout({
   onFollow,
   isLiked = false,
   isFollowing = false,
+  editHref,
+  canEdit = false,
 }: ProposalViewLayoutProps) {
   const router = useRouter();
 
@@ -45,6 +49,17 @@ export function ProposalViewLayout({
         </div>
 
         <div className="flex items-center gap-4">
+          {canEdit && editHref && (
+            <Button
+              color="secondary"
+              surface="outline"
+              onPress={() => router.push(editHref)}
+              className="px-4 py-2"
+            >
+              <Edit className="h-4 w-4" />
+              Edit
+            </Button>
+          )}
           <Button
             color="primary"
             surface="outline"

@@ -1,6 +1,7 @@
 'use client';
 
 import { getPublicUrl } from '@/utils';
+import { useUser } from '@/utils/UserProvider';
 import { formatCurrency, formatDate, parseProposalData } from '@/utils/proposalUtils';
 import type { proposalEncoder } from '@op/api/encoders';
 import { Avatar } from '@op/ui/Avatar';
@@ -25,6 +26,15 @@ interface ProposalViewProps {
 export function ProposalView({ proposal, backHref }: ProposalViewProps) {
   const [isLiked, setIsLiked] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
+  
+  // Get current user to check edit permissions
+  const { user } = useUser();
+  
+  // Check if current user can edit (only submitter can edit for now)
+  const canEdit = Boolean(user?.currentProfile && proposal.submittedBy && user.currentProfile.id === proposal.submittedBy.id);
+  
+  // Generate edit href
+  const editHref = canEdit ? `${backHref}/edit` : undefined;
 
   // Parse proposal data using shared utility
   const { title, budget, category, content } = parseProposalData(proposal.proposalData);
@@ -73,6 +83,8 @@ export function ProposalView({ proposal, backHref }: ProposalViewProps) {
         onFollow={handleFollow}
         isLiked={isLiked}
         isFollowing={isFollowing}
+        editHref={editHref}
+        canEdit={canEdit}
       >
         <div className="flex flex-1 items-center justify-center">
           <div className="text-gray-500">Loading proposal...</div>
@@ -89,6 +101,8 @@ export function ProposalView({ proposal, backHref }: ProposalViewProps) {
       onFollow={handleFollow}
       isLiked={isLiked}
       isFollowing={isFollowing}
+      editHref={editHref}
+      canEdit={canEdit}
     >
       {/* Content */}
       <div className="flex-1 px-6 py-8">
