@@ -1,4 +1,4 @@
-import { db, eq, and, desc, asc, sql } from '@op/db/client';
+import { and, asc, db, desc, eq, sql } from '@op/db/client';
 import { proposals, users } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
@@ -65,7 +65,7 @@ export const listProposals = async ({
     if (search) {
       // Search in proposal data (JSONB)
       conditions.push(
-        sql`${proposals.proposalData}::text ILIKE ${`%${search}%`}`
+        sql`${proposals.proposalData}::text ILIKE ${`%${search}%`}`,
       );
     }
 
@@ -77,15 +77,18 @@ export const listProposals = async ({
       .select({ count: sql<number>`count(*)` })
       .from(proposals)
       .where(whereClause);
-    
+
     const count = countResult[0]?.count || 0;
 
-    // Get proposals with relations
-    const orderColumn = 
-      orderBy === 'createdAt' ? proposals.createdAt :
-      orderBy === 'updatedAt' ? proposals.updatedAt :
-      orderBy === 'status' ? proposals.status :
-      proposals.createdAt;
+    // Get proposals using Drizzle's declarative relational query style
+    const orderColumn =
+      orderBy === 'createdAt'
+        ? proposals.createdAt
+        : orderBy === 'updatedAt'
+          ? proposals.updatedAt
+          : orderBy === 'status'
+            ? proposals.status
+            : proposals.createdAt;
 
     const orderFn = orderDirection === 'asc' ? asc : desc;
 
@@ -98,28 +101,58 @@ export const listProposals = async ({
           },
         },
         submittedBy: true,
+        decisions: true, // Include decisions to calculate count
       },
       limit,
       offset,
       orderBy: orderFn(orderColumn),
     });
 
-    // Add decision count to each proposal
-    const proposalsWithCounts = await Promise.all(
-      proposalList.map(async (proposal) => {
-        const decisionCountResult = await db
-          .select({ decisionCount: sql<number>`count(*)` })
-          .from(proposals)
-          .where(eq(proposals.id, proposal.id));
+    // Transform the results to match the expected structure and add decision counts
+    // TODO: improve this with more streamlined types
+    const proposalsWithCounts = proposalList.map((proposal) => {
+      const processInstance = Array.isArray(proposal.processInstance)
+        ? proposal.processInstance[0]
+        : proposal.processInstance;
+      const submittedBy = Array.isArray(proposal.submittedBy)
+        ? proposal.submittedBy[0]
+        : proposal.submittedBy;
+      const decisions = Array.isArray(proposal.decisions)
+        ? proposal.decisions
+        : [];
 
-        const decisionCount = decisionCountResult[0]?.decisionCount || 0;
-
-        return {
-          ...proposal,
-          decisionCount: Number(decisionCount),
-        };
-      })
-    );
+      return {
+        id: proposal.id,
+        proposalData: proposal.proposalData,
+        status: proposal.status,
+        createdAt: proposal.createdAt,
+        updatedAt: proposal.updatedAt,
+        processInstance: processInstance
+          ? {
+              id: processInstance.id,
+              name: processInstance.name,
+              description: processInstance.description,
+              instanceData: processInstance.instanceData,
+              currentStateId: processInstance.currentStateId,
+              status: processInstance.status,
+              createdAt: processInstance.createdAt,
+              updatedAt: processInstance.updatedAt,
+              process: processInstance.process
+                ? {
+                    id: processInstance.process.id,
+                    name: processInstance.process.name,
+                    description: processInstance.process.description,
+                    createdAt: processInstance.process.createdAt,
+                    updatedAt: processInstance.process.updatedAt,
+                    processSchema: processInstance.process.processSchema,
+                  }
+                : undefined,
+            }
+          : undefined,
+        submittedBy: submittedBy,
+        decisionCount: decisions.length,
+      };
+    });
 
     return {
       proposals: proposalsWithCounts,
@@ -131,6 +164,6 @@ export const listProposals = async ({
       throw error;
     }
     console.error('Error listing proposals:', error);
-    throw new UnauthorizedError('Failed to list proposals');
+    throw new Error('Failed to list proposals');
   }
 };
