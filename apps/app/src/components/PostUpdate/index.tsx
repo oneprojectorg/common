@@ -93,14 +93,14 @@ const PostUpdateWithUser = ({
 
   const createPost = trpc.posts.createPost.useMutation({
     onMutate: async (variables) => {
-      // Generate optimistic ID for comments and add optimistic comment immediately
-      if (variables.parentPostId) {
-        const tempId = `optimistic-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        optimisticCommentRef.current = tempId;
-        setOptimisticCommentId(tempId);
+      const tempId = `optimistic-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      optimisticCommentRef.current = tempId;
+      setOptimisticCommentId(tempId);
 
+      // For comments (posts with parentPostId)
+      if (variables.parentPostId) {
         // Cancel any outgoing refetches
-        const queryKey = createCommentsQueryKey(variables.parentPostId);
+        const queryKey = createCommentsQueryKey(variables.parentPostId, profileId);
         await utils.posts.getPosts.cancel(queryKey);
 
         // Snapshot previous value
@@ -131,7 +131,50 @@ const PostUpdateWithUser = ({
           return [optimisticComment, ...old];
         });
 
-        return { previousComments, tempId };
+        return { previousComments, tempId, isComment: true };
+      }
+
+      // For top-level posts (profile posts like proposal comments)
+      if (profileId) {
+        // Cancel any outgoing refetches for profile posts
+        const queryKey = {
+          profileId,
+          parentPostId: null,
+          limit: 50,
+          offset: 0,
+          includeChildren: false,
+        };
+        await utils.posts.getPosts.cancel(queryKey);
+
+        // Snapshot previous value
+        const previousPosts = utils.posts.getPosts.getData(queryKey);
+
+        // Add optimistic post immediately
+        const optimisticPost: Post = {
+          id: tempId,
+          content: variables.content,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          deletedAt: null,
+          profile: user?.currentProfile || null,
+          profileId: user?.currentProfileId || null,
+          parentPostId: null,
+          attachments: [],
+          reactionCounts: {},
+          reactionUsers: {},
+          userReaction: null,
+          commentCount: 0,
+          childPosts: null,
+          parentPost: null,
+        };
+
+        // Add optimistic post
+        utils.posts.getPosts.setData(queryKey, (old) => {
+          if (!old) return [optimisticPost];
+          return [optimisticPost, ...old];
+        });
+
+        return { previousPosts, tempId, isComment: false };
       }
 
       return {};
@@ -139,23 +182,37 @@ const PostUpdateWithUser = ({
     onError: (err, variables, context) => {
       const errorInfo = analyzeError(err);
 
-      // Rollback optimistic comment updates on error
-      if (
-        variables.parentPostId &&
-        context?.tempId &&
-        optimisticCommentRef.current === context.tempId
-      ) {
-        // Restore previous comments state
-        const queryKey = createCommentsQueryKey(variables.parentPostId);
-        utils.posts.getPosts.setData(queryKey, context.previousComments);
+      // Rollback optimistic updates on error
+      if (context?.tempId && optimisticCommentRef.current === context.tempId) {
+        // For comments (posts with parentPostId)
+        if (variables.parentPostId && context.isComment) {
+          // Restore previous comments state
+          const queryKey = createCommentsQueryKey(variables.parentPostId, profileId);
+          utils.posts.getPosts.setData(queryKey, context.previousComments);
+
+          // Revert parent post comment count - only for organization posts
+          if (organization?.profile?.slug) {
+            void utils.organization.listPosts.invalidate();
+            void utils.organization.listAllPosts.invalidate();
+          }
+        }
+
+        // For top-level posts (profile posts)
+        if (profileId && !context.isComment) {
+          // Restore previous posts state
+          const queryKey = {
+            profileId,
+            parentPostId: null,
+            limit: 50,
+            offset: 0,
+            includeChildren: false,
+          };
+          utils.posts.getPosts.setData(queryKey, context.previousPosts);
+        }
 
         // Clear the optimistic comment ID
         optimisticCommentRef.current = null;
         setOptimisticCommentId(null);
-
-        // Revert parent post comment count - invalidate to be safe
-        void utils.organization.listPosts.invalidate();
-        void utils.organization.listAllPosts.invalidate();
       }
 
       if (errorInfo.isConnectionError) {
@@ -181,8 +238,7 @@ const PostUpdateWithUser = ({
       fileUpload.clearFiles();
       setLastFailedPost(null);
 
-      // For comments, optimistically update the cache with enhanced server data
-      if (variables.parentPostId && data && optimisticCommentRef.current) {
+      if (data && optimisticCommentRef.current) {
         // Clear the optimistic comment ID since we have real data
         optimisticCommentRef.current = null;
         setOptimisticCommentId(null);
@@ -193,87 +249,136 @@ const PostUpdateWithUser = ({
           profile: data.profile || user?.currentProfile || null,
         };
 
-        const queryKey = createCommentsQueryKey(variables.parentPostId);
-        utils.posts.getPosts.setData(queryKey, (old) => {
-          if (!old) return [enhancedData];
-          // Replace optimistic comment with real data, or add if not found
-          if (optimisticCommentId) {
-            const index = old.findIndex(
-              (comment) => comment.id === optimisticCommentId,
-            );
-            if (index >= 0) {
-              const newComments = [...old];
-              newComments[index] = enhancedData;
-              return newComments;
+        // For comments (posts with parentPostId)
+        if (variables.parentPostId) {
+          const queryKey = createCommentsQueryKey(variables.parentPostId, profileId);
+          utils.posts.getPosts.setData(queryKey, (old) => {
+            if (!old) return [enhancedData];
+            // Replace optimistic comment with real data, or add if not found
+            if (optimisticCommentId) {
+              const index = old.findIndex(
+                (comment) => comment.id === optimisticCommentId,
+              );
+              if (index >= 0) {
+                const newComments = [...old];
+                newComments[index] = enhancedData;
+                return newComments;
+              }
             }
-          }
-          // Add the new comment to the beginning if no optimistic comment to replace
-          return [enhancedData, ...old];
-        });
+            // Add the new comment to the beginning if no optimistic comment to replace
+            return [enhancedData, ...old];
+          });
 
-        // Update parent post's comment count in main feed caches
-        const updateCommentCount = (item: any) => {
-          if (item.post.id === variables.parentPostId) {
-            return {
-              ...item,
-              post: {
-                ...item.post,
-                commentCount: (item.post.commentCount || 0) + 1,
+          // Update parent post's comment count in main feed caches
+          const updateCommentCount = (item: any) => {
+            if (item.post.id === variables.parentPostId) {
+              return {
+                ...item,
+                post: {
+                  ...item.post,
+                  commentCount: (item.post.commentCount || 0) + 1,
+                },
+              };
+            }
+            return item;
+          };
+
+          // Update organization.listPosts cache only if organization exists
+          if (organization?.profile?.slug) {
+            utils.organization.listPosts.setInfiniteData(
+              { slug: organization.profile.slug },
+              (old) => {
+                if (!old) return old;
+                return {
+                  ...old,
+                  pages: old.pages.map((page) => ({
+                    ...page,
+                    items: page.items.map(updateCommentCount),
+                  })),
+                };
               },
-            };
-          }
-          return item;
-        };
+            );
 
-        // Update organization.listPosts cache only if organization exists
-        if (organization?.profile?.slug) {
-          utils.organization.listPosts.setInfiniteData(
-            { slug: organization.profile.slug },
-            (old) => {
+            // Update organization.listAllPosts cache
+            utils.organization.listAllPosts.setData({}, (old) => {
               if (!old) return old;
               return {
                 ...old,
-                pages: old.pages.map((page) => ({
-                  ...page,
-                  items: page.items.map(updateCommentCount),
-                })),
+                items: old.items.map(updateCommentCount),
               };
-            },
-          );
+            });
+          }
+        }
 
-          // Update organization.listAllPosts cache
-          utils.organization.listAllPosts.setData({}, (old) => {
-            if (!old) return old;
-            return {
-              ...old,
-              items: old.items.map(updateCommentCount),
-            };
+        // For top-level posts (profile posts like proposal comments)
+        if (profileId && !variables.parentPostId) {
+          const queryKey = {
+            profileId,
+            parentPostId: null,
+            limit: 50,
+            offset: 0,
+            includeChildren: false,
+          };
+          utils.posts.getPosts.setData(queryKey, (old) => {
+            if (!old) return [enhancedData];
+            // Replace optimistic post with real data, or add if not found
+            if (optimisticCommentId) {
+              const index = old.findIndex(
+                (post) => post.id === optimisticCommentId,
+              );
+              if (index >= 0) {
+                const newPosts = [...old];
+                newPosts[index] = enhancedData;
+                return newPosts;
+              }
+            }
+            // Add the new post to the beginning if no optimistic post to replace
+            return [enhancedData, ...old];
           });
         }
       }
 
-      // Call onSuccess callback if provided (for comments)
+      // Call onSuccess callback if provided
       if (onSuccess) {
         onSuccess();
       }
     },
     onSettled: (_data, error, variables) => {
-      if (!variables.parentPostId) {
-        // For top-level posts, keep existing behavior
-        void utils.organization.listPosts.invalidate();
-        void utils.organization.listAllPosts.invalidate();
-        router.refresh();
-      } else {
-        // For comments: minimal invalidation since optimistic updates handle UI
+      // For comments (posts with parentPostId)
+      if (variables.parentPostId) {
+        // Minimal invalidation since optimistic updates handle UI
         // Only invalidate on ERROR to trigger recovery
         if (error) {
-          const queryKey = createCommentsQueryKey(variables.parentPostId);
+          const queryKey = createCommentsQueryKey(variables.parentPostId, profileId);
           void utils.posts.getPosts.invalidate(queryKey);
-          // Also invalidate main feeds on error to refresh comment counts
-          void utils.organization.listPosts.invalidate();
-          void utils.organization.listAllPosts.invalidate();
+          // Also invalidate main feeds on error to refresh comment counts - only for organization posts
+          if (organization?.profile?.slug) {
+            void utils.organization.listPosts.invalidate();
+            void utils.organization.listAllPosts.invalidate();
+          }
         }
         // Don't refresh router for comments to avoid layout shifts
+      } else {
+        // For top-level posts
+        if (profileId) {
+          // For profile posts (like proposal comments), only invalidate on error
+          if (error) {
+            const queryKey = {
+              profileId,
+              parentPostId: null,
+              limit: 50,
+              offset: 0,
+              includeChildren: false,
+            };
+            void utils.posts.getPosts.invalidate(queryKey);
+          }
+          // Don't refresh router for profile posts to avoid layout shifts
+        } else if (organization?.profile?.slug) {
+          // For organization posts, invalidate organization caches
+          void utils.organization.listPosts.invalidate();
+          void utils.organization.listAllPosts.invalidate();
+          router.refresh();
+        }
       }
     },
   });

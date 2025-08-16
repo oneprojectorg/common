@@ -51,9 +51,10 @@ export function ProposalView({ proposal, backHref }: ProposalViewProps) {
     includeChildren: false,
   });
 
-  // Post feed actions for comments
+  // Post feed actions for comments with profile-specific optimistic updates
   const { handleReactionClick } = usePostFeedActions({
     user,
+    profileId: proposal.profileId || undefined, // Add profileId for optimistic updates
   });
 
   // Transform comments data to match PostToOrganization format expected by PostItem
