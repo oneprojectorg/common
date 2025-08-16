@@ -2,7 +2,11 @@
 
 import { getPublicUrl } from '@/utils';
 import { useUser } from '@/utils/UserProvider';
-import { formatCurrency, formatDate, parseProposalData } from '@/utils/proposalUtils';
+import {
+  formatCurrency,
+  formatDate,
+  parseProposalData,
+} from '@/utils/proposalUtils';
 import { trpc } from '@op/api/client';
 import type { proposalEncoder } from '@op/api/encoders';
 import { Avatar } from '@op/ui/Avatar';
@@ -13,12 +17,11 @@ import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Heart, MessageCircle, Users } from 'lucide-react';
 import Image from 'next/image';
-import { useCallback, useMemo, useState, useRef } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { z } from 'zod';
 
 import { PostFeed, PostItem, usePostFeedActions } from '../PostFeed';
 import { PostUpdate } from '../PostUpdate';
-
 import { ProposalViewLayout } from './ProposalViewLayout';
 
 type Proposal = z.infer<typeof proposalEncoder>;
@@ -32,24 +35,31 @@ export function ProposalView({ proposal, backHref }: ProposalViewProps) {
   const [isLiked, setIsLiked] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
   const commentsContainerRef = useRef<HTMLDivElement>(null);
-  
+
   // Get current user to check edit permissions
   const { user } = useUser();
-  
+
   // Check if current user can edit (only submitter can edit for now)
-  const canEdit = Boolean(user?.currentProfile && proposal.submittedBy && user.currentProfile.id === proposal.submittedBy.id);
-  
+  const canEdit = Boolean(
+    user?.currentProfile &&
+      proposal.submittedBy &&
+      user.currentProfile.id === proposal.submittedBy.id,
+  );
+
   // Generate edit href
-  const editHref = canEdit ? `${backHref}/edit` : undefined;
+  const editHref = canEdit
+    ? `${backHref}/proposal/${proposal.id}/edit`
+    : undefined;
 
   // Get comments for the proposal using the posts API
-  const { data: commentsData, isLoading: commentsLoading } = trpc.posts.getPosts.useQuery({
-    profileId: proposal.profileId || undefined,
-    parentPostId: null, // Get top-level comments only
-    limit: 50,
-    offset: 0,
-    includeChildren: false,
-  });
+  const { data: commentsData, isLoading: commentsLoading } =
+    trpc.posts.getPosts.useQuery({
+      profileId: proposal.profileId || undefined,
+      parentPostId: null, // Get top-level comments only
+      limit: 50,
+      offset: 0,
+      includeChildren: false,
+    });
 
   // Post feed actions for comments with profile-specific optimistic updates
   const { handleReactionClick } = usePostFeedActions({
@@ -89,28 +99,34 @@ export function ProposalView({ proposal, backHref }: ProposalViewProps) {
   }, []);
 
   // Parse proposal data using shared utility
-  const { title, budget, category, content } = parseProposalData(proposal.proposalData);
+  const { title, budget, category, content } = parseProposalData(
+    proposal.proposalData,
+  );
 
   // Memoize editor configuration for performance
-  const editorConfig = useMemo(() => ({
-    extensions: [
-      StarterKit,
-      Link.configure({
-        openOnClick: true, // Allow clicking links in view mode
-      }),
-      TextAlign.configure({
-        types: ['heading', 'paragraph'],
-      }),
-    ],
-    content: content || '<p>No content available</p>',
-    editable: false, // Make editor read-only
-    editorProps: {
-      attributes: {
-        class: 'prose prose-lg max-w-none focus:outline-none min-h-96 px-4 py-4',
+  const editorConfig = useMemo(
+    () => ({
+      extensions: [
+        StarterKit,
+        Link.configure({
+          openOnClick: true, // Allow clicking links in view mode
+        }),
+        TextAlign.configure({
+          types: ['heading', 'paragraph'],
+        }),
+      ],
+      content: content || '<p>No content available</p>',
+      editable: false, // Make editor read-only
+      editorProps: {
+        attributes: {
+          class:
+            'prose prose-lg max-w-none focus:outline-none min-h-96 px-4 py-4',
+        },
       },
-    },
-    immediatelyRender: false,
-  }), [content]);
+      immediatelyRender: false,
+    }),
+    [content],
+  );
 
   // Create read-only editor for content display
   const editor = useEditor(editorConfig);
@@ -124,7 +140,6 @@ export function ProposalView({ proposal, backHref }: ProposalViewProps) {
     setIsFollowing(!isFollowing);
     // TODO: Implement follow API call
   }, [isFollowing]);
-
 
   if (!editor) {
     return (
@@ -169,7 +184,9 @@ export function ProposalView({ proposal, backHref }: ProposalViewProps) {
             <div className="flex items-center gap-4">
               {budget && (
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-neutral-charcoal">Budget</span>
+                  <span className="text-sm font-medium text-neutral-charcoal">
+                    Budget
+                  </span>
                   <span className="rounded-md bg-neutral-gray1 px-3 py-1 text-sm font-semibold text-neutral-charcoal">
                     {formatCurrency(budget)}
                   </span>
@@ -188,13 +205,24 @@ export function ProposalView({ proposal, backHref }: ProposalViewProps) {
             {proposal.submittedBy && (
               <>
                 <Avatar
-                  placeholder={proposal.submittedBy.name || proposal.submittedBy.slug || 'U'}
+                  placeholder={
+                    proposal.submittedBy.name ||
+                    proposal.submittedBy.slug ||
+                    'U'
+                  }
                   className="h-8 w-8"
                 >
                   {proposal.submittedBy.avatarImage?.name ? (
                     <Image
-                      src={getPublicUrl(proposal.submittedBy.avatarImage.name) ?? ''}
-                      alt={proposal.submittedBy.name || proposal.submittedBy.slug || ''}
+                      src={
+                        getPublicUrl(proposal.submittedBy.avatarImage.name) ??
+                        ''
+                      }
+                      alt={
+                        proposal.submittedBy.name ||
+                        proposal.submittedBy.slug ||
+                        ''
+                      }
                       fill
                       className="aspect-square object-cover"
                     />
@@ -220,7 +248,9 @@ export function ProposalView({ proposal, backHref }: ProposalViewProps) {
             </div>
             <div className="flex items-center gap-1 text-sm text-neutral-gray2">
               <MessageCircle className="h-4 w-4" />
-              <span>{comments.length} Comment{comments.length !== 1 ? 's' : ''}</span>
+              <span>
+                {comments.length} Comment{comments.length !== 1 ? 's' : ''}
+              </span>
             </div>
             <div className="flex items-center gap-1 text-sm text-neutral-gray2">
               <Users className="h-4 w-4" />
@@ -242,7 +272,7 @@ export function ProposalView({ proposal, backHref }: ProposalViewProps) {
               <h3 className="mb-6 text-lg font-semibold text-neutral-charcoal">
                 Comments ({comments.length})
               </h3>
-              
+
               {/* Comment Input */}
               <div className="mb-8">
                 <Surface className="border-0 p-0 sm:border sm:p-4">
