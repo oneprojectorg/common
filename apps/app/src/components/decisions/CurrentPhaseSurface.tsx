@@ -1,3 +1,8 @@
+import {
+  calculateDaysRemaining,
+  formatCurrency,
+  formatDateRange,
+} from '@/utils/formatting';
 import type { processPhaseSchema } from '@op/api/encoders';
 import { Surface } from '@op/ui/Surface';
 import { useLocale } from 'next-intl';
@@ -9,41 +14,16 @@ interface CurrentPhaseSurfaceProps {
   currentPhase?: ProcessPhase;
   budget?: number;
   proposalCount: number;
-  daysRemaining?: number;
 }
 
 export function CurrentPhaseSurface({
   currentPhase,
   budget,
   proposalCount,
-  daysRemaining,
 }: CurrentPhaseSurfaceProps) {
   const locale = useLocale();
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat(locale, {
-      style: 'currency',
-      // TODO: this needs to come from the configuration
-      currency: 'USD',
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  const calculateDaysRemaining = () => {
-    if (daysRemaining !== undefined) return daysRemaining;
-
-    if (currentPhase?.phase?.endDate) {
-      const endDate = new Date(currentPhase.phase.endDate);
-      const today = new Date();
-      const diffTime = endDate.getTime() - today.getTime();
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      return Math.max(0, diffDays);
-    }
-
-    return null;
-  };
-
-  const remainingDays = calculateDaysRemaining();
+  const remainingDays = calculateDaysRemaining(currentPhase?.phase?.endDate);
 
   return (
     <Surface variant="filled" className="flex flex-col gap-4">
@@ -55,17 +35,13 @@ export function CurrentPhaseSurface({
         <div className="text-sm font-bold leading-[1.5] text-neutral-black">
           {currentPhase?.name || 'Proposal Submissions'}
         </div>
-        {currentPhase?.phase?.startDate && currentPhase?.phase?.endDate && (
+        {(currentPhase?.phase?.startDate || currentPhase?.phase?.endDate) && (
           <div className="text-sm font-normal leading-[1.5] text-neutral-black">
-            {new Date(currentPhase.phase.startDate).toLocaleDateString(locale, {
-              month: 'short',
-              day: 'numeric',
-            })}{' '}
-            -{' '}
-            {new Date(currentPhase.phase.endDate).toLocaleDateString(locale, {
-              day: 'numeric',
-              year: 'numeric',
-            })}
+            {formatDateRange(
+              currentPhase.phase?.startDate,
+              currentPhase.phase?.endDate,
+              locale,
+            )}
           </div>
         )}
       </div>
@@ -78,7 +54,7 @@ export function CurrentPhaseSurface({
         <div className="flex items-start justify-between text-sm font-normal leading-[1.5]">
           <span className="text-neutral-charcoal">Total Budget</span>
           <span className="text-neutral-black">
-            {budget ? formatCurrency(budget) : '$25,000'}
+            {budget ? formatCurrency(budget, locale) : '$0'}
           </span>
         </div>
         <div className="flex items-start justify-between text-sm font-normal leading-[1.5]">

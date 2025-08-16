@@ -1,59 +1,38 @@
 'use client';
 
 import { getPublicUrl } from '@/utils';
+import { formatCurrency, getTextPreview, parseProposalData } from '@/utils/proposalUtils';
 import type { proposalEncoder } from '@op/api/encoders';
 import { Avatar } from '@op/ui/Avatar';
 import { Surface } from '@op/ui/Surface';
 import { Heart, MessageCircle, Users } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { z } from 'zod';
 
 type Proposal = z.infer<typeof proposalEncoder>;
-
-// Define the expected structure of proposalData
-const proposalDataSchema = z.object({
-  title: z.string().optional(),
-  content: z.string().optional(),
-  category: z.string().optional(),
-  budget: z.number().optional(),
-}).passthrough(); // Allow additional fields
 
 interface ProposalCardProps {
   proposal: Proposal;
   onLike?: () => void;
   onFollow?: () => void;
+  viewHref: string;
 }
 
-export function ProposalCard({ proposal, onLike, onFollow }: ProposalCardProps) {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  // Strip HTML tags for preview
-  const getTextPreview = (html: string, maxLength = 300) => {
-    const temp = document.createElement('div');
-    temp.innerHTML = html;
-    const text = temp.textContent || temp.innerText || '';
-    return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
-  };
-
-  // Parse proposal data with Zod for type safety
-  const proposalDataResult = proposalDataSchema.safeParse(proposal.proposalData);
-  const proposalData = proposalDataResult.success ? proposalDataResult.data : (proposal.proposalData as any) || {};
-  
-  const { title, budget, category, content } = proposalData;
+export function ProposalCard({ proposal, onLike, onFollow, viewHref }: ProposalCardProps) {
+  // Parse proposal data using shared utility
+  const { title, budget, category, content } = parseProposalData(proposal.proposalData);
 
   return (
     <Surface className="p-6">
       {/* Header with title and budget */}
       <div className="mb-3 flex items-start justify-between">
-        <h3 className="text-lg font-semibold text-neutral-charcoal">
+        <Link 
+          href={viewHref}
+          className="text-lg font-semibold text-neutral-charcoal hover:text-primary-teal transition-colors"
+        >
           {title || 'Untitled Proposal'}
-        </h3>
+        </Link>
         {budget && (
           <span className="text-lg font-semibold text-neutral-charcoal">
             {formatCurrency(budget)}

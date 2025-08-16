@@ -1,5 +1,6 @@
 'use client';
 
+import { formatCurrency, formatDateRange } from '@/utils/formatting';
 import type { processPhaseSchema } from '@op/api/encoders';
 import type { z } from 'zod';
 
@@ -18,28 +19,6 @@ export function DecisionStats({
   proposalCount,
   daysRemaining,
 }: DecisionStatsProps) {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  const formatDateRange = (startDate?: string, endDate?: string) => {
-    if (!startDate || !endDate) return null;
-    
-    const start = new Date(startDate).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-    });
-    const end = new Date(endDate).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-    });
-    
-    return `${start} - ${end}`;
-  };
 
   return (
     <div className="space-y-6">

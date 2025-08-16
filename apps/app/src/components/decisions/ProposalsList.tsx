@@ -12,12 +12,16 @@ interface ProposalsListProps {
   proposals: Proposal[];
   onProposalLike?: (proposalId: string) => void;
   onProposalFollow?: (proposalId: string) => void;
+  slug: string;
+  instanceId: string;
 }
 
 export function ProposalsList({
   proposals,
   onProposalLike,
   onProposalFollow,
+  slug,
+  instanceId,
 }: ProposalsListProps) {
   if (proposals.length === 0) {
     return null;
@@ -55,6 +59,7 @@ export function ProposalsList({
             proposal={proposal}
             onLike={() => onProposalLike?.(proposal.id)}
             onFollow={() => onProposalFollow?.(proposal.id)}
+            viewHref={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.id}`}
           />
         ))}
       </div>

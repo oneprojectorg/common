@@ -84,6 +84,8 @@ async function DecisionInstancePageContent({
           proposalCount={instance.proposalCount || 0}
           createProposalHref={`/profile/${slug}/decisions/${instanceId}/proposal/create`}
           proposals={proposalsData?.proposals || []}
+          slug={slug}
+          instanceId={instanceId}
         />
       </>
     );

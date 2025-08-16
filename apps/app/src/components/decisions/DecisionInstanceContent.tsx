@@ -1,6 +1,7 @@
 'use client';
 
 import { getPublicUrl } from '@/utils';
+import { formatCurrency, getUniqueSubmitters } from '@/utils/proposalUtils';
 import type { processPhaseSchema, proposalEncoder } from '@op/api/encoders';
 import { Avatar } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
@@ -24,9 +25,10 @@ interface DecisionInstanceContentProps {
   budget?: number;
   currentPhase?: ProcessPhase;
   proposalCount: number;
-  daysRemaining?: number;
   createProposalHref: string;
   proposals: Proposal[];
+  slug: string;
+  instanceId: string;
 }
 
 export function DecisionInstanceContent({
@@ -35,20 +37,12 @@ export function DecisionInstanceContent({
   budget,
   currentPhase,
   proposalCount,
-  daysRemaining,
   createProposalHref,
   proposals,
+  slug,
+  instanceId,
 }: DecisionInstanceContentProps) {
   const locale = useLocale();
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat(locale, {
-      style: 'currency',
-      // TODO: this needs to come from the configuration
-      currency: 'USD',
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
 
   const handleProposalLike = (proposalId: string) => {
     // TODO
@@ -60,19 +54,7 @@ export function DecisionInstanceContent({
     console.log('Follow proposal:', proposalId);
   };
 
-  // Get unique submitters for the FacePile
-  const uniqueSubmitters = proposals.reduce(
-    (acc, proposal) => {
-      if (
-        proposal.submittedBy &&
-        !acc.some((s) => s.id === proposal.submittedBy?.id)
-      ) {
-        acc.push(proposal.submittedBy);
-      }
-      return acc;
-    },
-    [] as Array<NonNullable<(typeof proposals)[0]['submittedBy']>>,
-  );
+  const uniqueSubmitters = getUniqueSubmitters(proposals);
 
   return (
     <div className="min-h-full bg-gray-50 py-12">
@@ -84,7 +66,7 @@ export function DecisionInstanceContent({
           </GradientHeader>
           <p className="mt-4 text-base text-gray-700">
             Help determine how we invest our{' '}
-            {budget ? formatCurrency(budget) : '$25,000'} community budget.
+            {budget ? formatCurrency(budget, locale) : '$0'} community budget.
           </p>
 
           {/* Member avatars showing who submitted proposals */}
@@ -141,7 +123,6 @@ export function DecisionInstanceContent({
                   currentPhase={currentPhase}
                   budget={budget}
                   proposalCount={proposalCount}
-                  daysRemaining={daysRemaining}
                 />
               </div>
             </div>
@@ -157,6 +138,8 @@ export function DecisionInstanceContent({
                     proposals={proposals}
                     onProposalLike={handleProposalLike}
                     onProposalFollow={handleProposalFollow}
+                    slug={slug}
+                    instanceId={instanceId}
                   />
                 </div>
               )}
