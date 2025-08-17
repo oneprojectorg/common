@@ -68,6 +68,7 @@ export {
   organizationRelationshipsRelations,
   profileRelationships,
   profileRelationshipsRelations,
+  ProfileRelationshipType,
 } from './tables/relationships.sql';
 export { users, usersRelations } from './tables/users.sql';
 export { usersUsedStorage } from './tables/usersUsedStorage.sql';
