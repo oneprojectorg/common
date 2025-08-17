@@ -292,6 +292,7 @@ export const ProfileTabsMobile = ({
   decisionsContent?: React.ReactNode;
 }) => {
   const t = useTranslations();
+  const decisionsEnabled = false;
 
   return (
     <Tabs className="px-0 pb-8 sm:hidden">
@@ -299,9 +300,9 @@ export const ProfileTabsMobile = ({
         <Tab id="updates">{t('Updates')}</Tab>
         <Tab id="about">{t('About')}</Tab>
         <Tab id="relationships">{t('Relationships')}</Tab>
-        <Tab id="followers">{t('Followers')}</Tab>
-        <Tab id="members">{t('Members')}</Tab>
-        {false ? <Tab id="decisions">{t('Decisions')}</Tab> : null}
+        {decisionsEnabled ? <Tab id="followers">{t('Followers')}</Tab> : null}
+        {decisionsEnabled ? <Tab id="members">{t('Members')}</Tab> : null}
+        {decisionsEnabled ? <Tab id="decisions">{t('Decisions')}</Tab> : null}
       </TabList>
       <TabPanel id="updates" className="px-0">
         <Suspense fallback={<Skeleton className="w-full" />}>
