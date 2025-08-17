@@ -1,3 +1,4 @@
+CREATE TYPE "public"."profile_relationship_type" AS ENUM('following', 'likes');
 CREATE TABLE "profile_relationships" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"source_profile_id" uuid NOT NULL,
