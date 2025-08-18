@@ -31,8 +31,11 @@ const removeRelationshipInputSchema = z.object({
 });
 
 const getRelationshipsInputSchema = z.object({
-  targetProfileId: z.string().uuid(),
+  targetProfileId: z.string().uuid().optional(),
+  sourceProfileId: z.string().uuid().optional(),
+  includeTargetProfiles: z.boolean().optional(),
 });
+
 
 const addRelationshipMeta: OpenApiMeta = {
   openapi: {
@@ -136,15 +139,25 @@ export const profileRelationshipRouter = router({
           relationshipType: z.string(),
           pending: z.boolean().nullable(),
           createdAt: z.string().nullable(),
+          targetProfile: z.object({
+            id: z.string(),
+            name: z.string(),
+            slug: z.string(),
+            bio: z.string().nullable(),
+            avatarImage: z.string().nullable(),
+            type: z.string(),
+          }).optional(),
         }),
       ),
     )
     .query(async ({ input }) => {
-      const { targetProfileId } = input;
+      const { targetProfileId, sourceProfileId, includeTargetProfiles } = input;
 
       try {
         const relationships = await getProfileRelationships({
           targetProfileId,
+          sourceProfileId,
+          includeTargetProfiles,
         });
         return relationships;
       } catch (error) {

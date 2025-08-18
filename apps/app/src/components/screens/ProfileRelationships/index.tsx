@@ -1,104 +1,25 @@
 'use client';
 
 import { pluralize } from '@/utils/pluralize';
-import { RouterOutput, trpc } from '@op/api/client';
+import { trpc } from '@op/api/client';
 import { RELATIONSHIP_OPTIONS, relationshipMap } from '@op/types/relationships';
 import { Breadcrumb, Breadcrumbs } from '@op/ui/Breadcrumbs';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
-import { Tag, TagGroup } from '@op/ui/TagGroup';
 import { ErrorBoundary } from 'next/dist/client/components/error-boundary';
 import React, { Suspense, useMemo, useState } from 'react';
 import { LuArrowLeft } from 'react-icons/lu';
 
 import { Link } from '@/lib/i18n';
 
-import { OrganizationAvatar } from '@/components/OrganizationAvatar';
+import {
+  RelationshipList,
+  type RelationshipListItem,
+} from '@/components/RelationshipList';
 
 import {
   OrganizationNameSuspense,
   ProfileOrganizations,
 } from '../ProfileOrganizations';
-
-type relationshipOrganization =
-  RouterOutput['organization']['listRelationships']['organizations'][number];
-
-const RelationshipList = ({
-  organizations,
-  searchTerm,
-}: {
-  organizations: Array<relationshipOrganization>;
-  searchTerm?: string;
-}) => {
-  const filteredOrganizations = useMemo(() => {
-    if (!searchTerm) return organizations;
-
-    return organizations.filter(
-      (org) =>
-        org.profile.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        org.profile.bio?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        org.relationships?.some((rel) =>
-          relationshipMap[rel.relationshipType]?.label
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase()),
-        ),
-    );
-  }, [organizations, searchTerm]);
-
-  return (
-    <div className="grid grid-cols-1 gap-8 pb-6 md:grid-cols-2">
-      {filteredOrganizations.map((relationshipOrg) => (
-        <div
-          key={relationshipOrg.id}
-          className="flex w-full gap-4 rounded border border-neutral-gray1 p-6"
-        >
-          <div className="flex-shrink-0">
-            <OrganizationAvatar
-              profile={relationshipOrg.profile}
-              className="size-20"
-            />
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-col gap-2">
-              <div className="flex flex-col gap-2">
-                <Link
-                  className="truncate font-semibold text-neutral-black"
-                  href={`/org/${relationshipOrg.profile.slug}`}
-                >
-                  {relationshipOrg.profile.name}
-                </Link>
-                <div className="text-neutral-black">
-                  {relationshipOrg.relationships?.map(
-                    (relationship, i, arr) => (
-                      <React.Fragment key={relationship.relationshipType}>
-                        {relationshipMap[relationship.relationshipType]
-                          ?.label ?? 'Relationship'}
-                        {relationship.pending && (
-                          <TagGroup className="ml-1 inline-flex">
-                            <Tag className="rounded-sm px-1 py-0.5 text-xs">
-                              Pending
-                            </Tag>
-                          </TagGroup>
-                        )}
-                        {i < arr.length - 1 && <span className="mx-1">•</span>}
-                      </React.Fragment>
-                    ),
-                  )}
-                </div>
-              </div>
-
-              <div className="line-clamp-3 text-neutral-charcoal">
-                {relationshipOrg.profile.bio &&
-                relationshipOrg.profile.bio.length > 200
-                  ? `${relationshipOrg.profile.bio.slice(0, 200)}...`
-                  : relationshipOrg.profile.bio}
-              </div>
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-};
 
 export const ProfileRelationshipsSuspense = ({
   slug,
@@ -117,20 +38,38 @@ export const ProfileRelationshipsSuspense = ({
       organizationId: organization.id,
     });
 
-  const relationshipsSegmented: Array<
-    [string, Array<relationshipOrganization>]
-  > = useMemo(
+  // Convert organization data to RelationshipListItem format
+  const relationshipItems: RelationshipListItem[] = useMemo(
     () =>
-      RELATIONSHIP_OPTIONS.map((definition) => [
-        definition.noun,
-        organizations.filter((org) =>
-          org.relationships?.some(
-            (relationship) => relationship.relationshipType === definition.key,
-          ),
-        ),
-      ]),
+      organizations.map((org) => ({
+        id: org.id,
+        name: org.profile.name,
+        slug: org.profile.slug,
+        bio: org.profile.bio,
+        avatarImage: org.profile.avatarImage?.name || null,
+        type: 'org', // Organizations are always type 'org'
+        relationships: org.relationships?.map((rel) => ({
+          relationshipType: rel.relationshipType,
+          pending: rel.pending,
+        })),
+      })),
     [organizations],
   );
+
+  const relationshipsSegmented: Array<[string, Array<RelationshipListItem>]> =
+    useMemo(
+      () =>
+        RELATIONSHIP_OPTIONS.map((definition) => [
+          definition.noun,
+          relationshipItems.filter((item) =>
+            item.relationships?.some(
+              (relationship) =>
+                relationship.relationshipType === definition.key,
+            ),
+          ),
+        ]),
+      [relationshipItems],
+    );
 
   return (
     <>
@@ -150,13 +89,14 @@ export const ProfileRelationshipsSuspense = ({
           <div className="w-72"></div>
         </div>
       </div>
+
       <Tabs>
         <TabList className="px-4 sm:px-0" variant="pill">
           <Tab id="all" variant="pill">
             All relationships
           </Tab>
-          {relationshipsSegmented.map(([noun, orgs]) =>
-            orgs?.length ? (
+          {relationshipsSegmented.map(([noun, items]) =>
+            items?.length ? (
               <Tab id={noun} key={noun} variant="pill">
                 {noun}s
               </Tab>
@@ -166,15 +106,20 @@ export const ProfileRelationshipsSuspense = ({
 
         <TabPanel id="all" className="px-4 sm:px-0">
           <RelationshipList
-            organizations={organizations}
+            profiles={relationshipItems}
             searchTerm={searchTerm}
+            relationshipMap={relationshipMap}
           />
         </TabPanel>
 
-        {relationshipsSegmented.map(([noun, orgs]) =>
-          orgs?.length ? (
+        {relationshipsSegmented.map(([noun, items]) =>
+          items?.length ? (
             <TabPanel id={noun} key={noun} className="px-4 sm:px-0">
-              <RelationshipList organizations={orgs} searchTerm={searchTerm} />
+              <RelationshipList
+                profiles={items}
+                searchTerm={searchTerm}
+                relationshipMap={relationshipMap}
+              />
             </TabPanel>
           ) : null,
         )}

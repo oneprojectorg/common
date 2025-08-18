@@ -1,5 +1,5 @@
 import { and, db, eq } from '@op/db/client';
-import { ProfileRelationshipType, profileRelationships } from '@op/db/schema';
+import { profileRelationships, profiles } from '@op/db/schema';
 
 import { ValidationError } from '../../utils/error';
 import { getCurrentProfileId } from '../access';
@@ -62,13 +62,25 @@ export const removeRelationship = async ({
 
 export const getRelationships = async ({
   targetProfileId,
+  sourceProfileId,
+  includeTargetProfiles = false,
 }: {
-  targetProfileId: string;
+  targetProfileId?: string;
+  sourceProfileId?: string;
+  includeTargetProfiles?: boolean;
 }): Promise<
   Array<{
     relationshipType: string;
     pending: boolean | null;
     createdAt: string | null;
+    targetProfile?: {
+      id: string;
+      name: string;
+      slug: string;
+      bio: string | null;
+      avatarImage: string | null;
+      type: string;
+    };
   }>
 > => {
   const currentProfileId = await getCurrentProfileId();
@@ -77,59 +89,73 @@ export const getRelationships = async ({
     throw new ValidationError('You must be logged in to view relationships');
   }
 
-  // Get all relationships with the target profile
-  const relationships = await db
-    .select({
-      relationshipType: profileRelationships.relationshipType,
-      pending: profileRelationships.pending,
-      createdAt: profileRelationships.createdAt,
-    })
-    .from(profileRelationships)
-    .where(
-      and(
-        eq(profileRelationships.sourceProfileId, currentProfileId),
-        eq(profileRelationships.targetProfileId, targetProfileId),
-      ),
-    );
+  // Determine the source profile ID
+  const actualSourceProfileId = sourceProfileId ?? currentProfileId;
 
-  return relationships.map((rel) => ({
-    relationshipType: rel.relationshipType,
-    pending: rel.pending,
-    createdAt: rel.createdAt,
-  }));
-};
+  // Build the where conditions
+  const conditions = [
+    eq(profileRelationships.sourceProfileId, actualSourceProfileId),
+  ];
 
-// Convenience functions for following
-export const followProfile = async ({
-  targetProfileId,
-}: {
-  targetProfileId: string;
-}): Promise<void> => {
-  await addRelationship({
-    targetProfileId,
-    relationshipType: ProfileRelationshipType.FOLLOWING,
-    pending: false,
+  if (targetProfileId) {
+    conditions.push(eq(profileRelationships.targetProfileId, targetProfileId));
+  }
+
+  let relationships;
+
+  if (includeTargetProfiles) {
+    relationships = await db
+      .select({
+        relationshipType: profileRelationships.relationshipType,
+        pending: profileRelationships.pending,
+        createdAt: profileRelationships.createdAt,
+        targetProfile: {
+          id: profiles.id,
+          name: profiles.name,
+          slug: profiles.slug,
+          bio: profiles.bio,
+          avatarImage: profiles.avatarImageId,
+          type: profiles.type,
+        },
+      })
+      .from(profileRelationships)
+      .innerJoin(
+        profiles,
+        eq(profiles.id, profileRelationships.targetProfileId),
+      )
+      .where(and(...conditions));
+  } else {
+    relationships = await db
+      .select({
+        relationshipType: profileRelationships.relationshipType,
+        pending: profileRelationships.pending,
+        createdAt: profileRelationships.createdAt,
+      })
+      .from(profileRelationships)
+      .where(and(...conditions));
+  }
+
+  return relationships.map((rel) => {
+    const baseRel = {
+      relationshipType: rel.relationshipType,
+      pending: rel.pending,
+      createdAt: rel.createdAt,
+    };
+
+    if ('targetProfile' in rel) {
+      return {
+        ...baseRel,
+        targetProfile: rel.targetProfile as {
+          id: string;
+          name: string;
+          slug: string;
+          bio: string | null;
+          avatarImage: string | null;
+          type: string;
+        },
+      };
+    }
+
+    return baseRel;
   });
-};
-
-export const unfollowProfile = async ({
-  targetProfileId,
-}: {
-  targetProfileId: string;
-}): Promise<void> => {
-  await removeRelationship({
-    targetProfileId,
-    relationshipType: ProfileRelationshipType.FOLLOWING,
-  });
-};
-
-export const isFollowing = async ({
-  targetProfileId,
-}: {
-  targetProfileId: string;
-}): Promise<boolean> => {
-  const relationships = await getRelationships({ targetProfileId });
-  return relationships.some(
-    (rel) => rel.relationshipType === ProfileRelationshipType.FOLLOWING,
-  );
 };
