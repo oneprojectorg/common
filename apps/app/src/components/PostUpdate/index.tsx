@@ -7,6 +7,7 @@ import { detectLinks } from '@/utils/linkDetection';
 import { createCommentsQueryKey } from '@/utils/queryKeys';
 import { trpc } from '@op/api/client';
 import type { Organization, Post } from '@op/api/encoders';
+import { getCurrentProfileId } from '@op/common';
 import { Button } from '@op/ui/Button';
 import { TextArea } from '@op/ui/Field';
 import { Form } from '@op/ui/Form';
@@ -68,7 +69,9 @@ const PostUpdateWithUser = ({
     content: string;
     attachmentIds: string[];
   } | null>(null);
-  const [optimisticCommentId, setOptimisticCommentId] = useState<string | null>(null);
+  const [optimisticCommentId, setOptimisticCommentId] = useState<string | null>(
+    null,
+  );
   const optimisticCommentRef = useRef<string | null>(null);
   const t = useTranslations();
   const utils = trpc.useUtils();
@@ -87,7 +90,6 @@ const PostUpdateWithUser = ({
     maxFiles: 1,
   });
 
-
   const createPost = trpc.posts.createPost.useMutation({
     onMutate: async (variables) => {
       // Generate optimistic ID for comments and add optimistic comment immediately
@@ -95,14 +97,14 @@ const PostUpdateWithUser = ({
         const tempId = `optimistic-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         optimisticCommentRef.current = tempId;
         setOptimisticCommentId(tempId);
-        
+
         // Cancel any outgoing refetches
         const queryKey = createCommentsQueryKey(variables.parentPostId);
         await utils.posts.getPosts.cancel(queryKey);
-        
+
         // Snapshot previous value
         const previousComments = utils.posts.getPosts.getData(queryKey);
-        
+
         // Add optimistic comment immediately
         const optimisticComment: Post = {
           id: tempId,
@@ -121,31 +123,35 @@ const PostUpdateWithUser = ({
           childPosts: null,
           parentPost: null,
         };
-        
+
         // Add optimistic comment
         utils.posts.getPosts.setData(queryKey, (old) => {
           if (!old) return [optimisticComment];
           return [optimisticComment, ...old];
         });
-        
+
         return { previousComments, tempId };
       }
-      
+
       return {};
     },
     onError: (err, variables, context) => {
       const errorInfo = analyzeError(err);
 
       // Rollback optimistic comment updates on error
-      if (variables.parentPostId && context?.tempId && optimisticCommentRef.current === context.tempId) {
+      if (
+        variables.parentPostId &&
+        context?.tempId &&
+        optimisticCommentRef.current === context.tempId
+      ) {
         // Restore previous comments state
         const queryKey = createCommentsQueryKey(variables.parentPostId);
         utils.posts.getPosts.setData(queryKey, context.previousComments);
-        
+
         // Clear the optimistic comment ID
         optimisticCommentRef.current = null;
         setOptimisticCommentId(null);
-        
+
         // Revert parent post comment count - invalidate to be safe
         void utils.organization.listPosts.invalidate();
         void utils.organization.listAllPosts.invalidate();
@@ -179,7 +185,7 @@ const PostUpdateWithUser = ({
         // Clear the optimistic comment ID since we have real data
         optimisticCommentRef.current = null;
         setOptimisticCommentId(null);
-        
+
         // Enhance server data with user profile if not present
         const enhancedData = {
           ...data,
@@ -187,24 +193,23 @@ const PostUpdateWithUser = ({
         };
 
         const queryKey = createCommentsQueryKey(variables.parentPostId);
-        utils.posts.getPosts.setData(
-          queryKey,
-          (old) => {
-            if (!old) return [enhancedData];
-            // Replace optimistic comment with real data, or add if not found
-            if (optimisticCommentId) {
-              const index = old.findIndex(comment => comment.id === optimisticCommentId);
-              if (index >= 0) {
-                const newComments = [...old];
-                newComments[index] = enhancedData;
-                return newComments;
-              }
+        utils.posts.getPosts.setData(queryKey, (old) => {
+          if (!old) return [enhancedData];
+          // Replace optimistic comment with real data, or add if not found
+          if (optimisticCommentId) {
+            const index = old.findIndex(
+              (comment) => comment.id === optimisticCommentId,
+            );
+            if (index >= 0) {
+              const newComments = [...old];
+              newComments[index] = enhancedData;
+              return newComments;
             }
-            // Add the new comment to the beginning if no optimistic comment to replace
-            return [enhancedData, ...old];
-          },
-        );
-        
+          }
+          // Add the new comment to the beginning if no optimistic comment to replace
+          return [enhancedData, ...old];
+        });
+
         // Update parent post's comment count in main feed caches
         const updateCommentCount = (item: any) => {
           if (item.post.id === variables.parentPostId) {
@@ -220,16 +225,19 @@ const PostUpdateWithUser = ({
         };
 
         // Update organization.listPosts cache
-        utils.organization.listPosts.setInfiniteData({ slug: organization.profile.slug }, (old) => {
-          if (!old) return old;
-          return {
-            ...old,
-            pages: old.pages.map((page) => ({
-              ...page,
-              items: page.items.map(updateCommentCount),
-            })),
-          };
-        });
+        utils.organization.listPosts.setInfiniteData(
+          { slug: organization.profile.slug },
+          (old) => {
+            if (!old) return old;
+            return {
+              ...old,
+              pages: old.pages.map((page) => ({
+                ...page,
+                items: page.items.map(updateCommentCount),
+              })),
+            };
+          },
+        );
 
         // Update organization.listAllPosts cache
         utils.organization.listAllPosts.setData({}, (old) => {
@@ -333,9 +341,9 @@ const PostUpdateWithUser = ({
         textarea.style.height = '1.5rem'; // Reset to min height
         textarea.style.height = `${textarea.scrollHeight}px`; // Set to scrollHeight
       };
-      
+
       textarea.addEventListener('input', handleInput);
-      
+
       // Cleanup function to remove event listener
       return () => {
         textarea.removeEventListener('input', handleInput);
@@ -496,18 +504,34 @@ export const PostUpdate = ({
   label: string;
 }) => {
   const { user } = useUser();
-  const currentOrg = user?.currentOrganization;
+  const currentProfileId = user?.currentProfileId;
 
   if (
-    !(currentOrg && !organization) &&
-    (!currentOrg || organization?.id !== currentOrg.id)
+    !(currentProfileId && !organization) &&
+    (!currentProfileId || organization?.profile?.id !== currentProfileId)
   ) {
     return <div className={cn(className, 'border-none p-0')} />;
   }
 
+  console.log(
+    'HELLO',
+    user,
+    currentProfileId,
+    organization,
+    user.currentOrganization,
+  );
+  // TODO: Ugly! Still a stopgap until we migrate off of organizationId
+  if (
+    organization &&
+    (user.currentOrganization?.profile.id !== currentProfileId ||
+      !user.currentOrganization)
+  ) {
+    return null;
+  }
+
   return (
     <PostUpdateWithUser
-      organization={organization ?? currentOrg}
+      organization={organization ?? user.currentOrganization}
       className={className}
       parentPostId={parentPostId}
       placeholder={placeholder}

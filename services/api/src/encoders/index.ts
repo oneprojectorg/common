@@ -11,5 +11,5 @@ export * from './relationships';
 export * from './profiles';
 export * from './shared';
 
-// Export EntityType for frontend usage
-export { EntityType } from '@op/db/schema';
+// Export EntityType and ProfileRelationshipType for frontend usage
+export { EntityType, ProfileRelationshipType } from '@op/db/schema';
