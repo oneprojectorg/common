@@ -28,7 +28,6 @@ import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
 import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';
-import { useFeatureFlagEnabled } from 'posthog-js/react';
 import { ReactNode, memo, useMemo, useState } from 'react';
 import { LuEllipsis, LuLeaf } from 'react-icons/lu';
 

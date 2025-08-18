@@ -38,8 +38,8 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
   const shouldShowFollowButton =
     isCurrentUserIndividual && isOrganizationProfile && !isViewingOwnProfile;
 
-  if (profile.profile.type === 'individual') {
-    // TODO: add invite button here!
+  if (!isViewingOwnProfile && profile.profile.type === 'individual') {
+    // TODO: add invite button here! but also, architect it better
     return null;
   }
 

@@ -7,7 +7,6 @@ import { detectLinks } from '@/utils/linkDetection';
 import { createCommentsQueryKey } from '@/utils/queryKeys';
 import { trpc } from '@op/api/client';
 import type { Organization, Post } from '@op/api/encoders';
-import { getCurrentProfileId } from '@op/common';
 import { Button } from '@op/ui/Button';
 import { TextArea } from '@op/ui/Field';
 import { Form } from '@op/ui/Form';
@@ -429,7 +428,7 @@ const PostUpdateWithUser = ({
             className={cn(
               'flex w-full items-center justify-between gap-6',
               (content || fileUpload.filePreviews?.length) &&
-                'border-t border-neutral-gray1 py-2',
+              'border-t border-neutral-gray1 py-2',
             )}
           >
             <button
@@ -513,13 +512,6 @@ export const PostUpdate = ({
     return <div className={cn(className, 'border-none p-0')} />;
   }
 
-  console.log(
-    'HELLO',
-    user,
-    currentProfileId,
-    organization,
-    user.currentOrganization,
-  );
   // TODO: Ugly! Still a stopgap until we migrate off of organizationId
   if (
     organization &&
@@ -529,9 +521,14 @@ export const PostUpdate = ({
     return null;
   }
 
+  const org = organization ?? user?.currentOrganization;
+  if (!org) {
+    return null;
+  }
+
   return (
     <PostUpdateWithUser
-      organization={organization ?? user.currentOrganization}
+      organization={org}
       className={className}
       parentPostId={parentPostId}
       placeholder={placeholder}
