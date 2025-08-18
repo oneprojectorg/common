@@ -1,14 +1,12 @@
+import { parseDate } from '@internationalized/date';
 import type { Meta } from '@storybook/react';
-import { Form } from 'react-aria-components';
+import { useState } from 'react';
+import type { DateValue } from 'react-aria-components';
 
-import { Button } from '../src/components/Button';
 import { DatePicker } from '../src/components/DatePicker';
 
 const meta: Meta<typeof DatePicker> = {
   component: DatePicker,
-  parameters: {
-    layout: 'centered',
-  },
   tags: ['autodocs'],
   args: {
     label: 'Event date',
@@ -17,15 +15,62 @@ const meta: Meta<typeof DatePicker> = {
 
 export default meta;
 
-export const Example = (args: any) => <DatePicker {...args} />;
+export const Example = () => {
+  const [value, setValue] = useState<DateValue | undefined>(undefined);
 
-export const Validation = (args: any) => (
-  <Form className="flex flex-col items-start gap-2">
-    <DatePicker {...args} />
-    <Button type="submit">Submit</Button>
-  </Form>
-);
+  return (
+    <div className="flex w-96 flex-col gap-2">
+      <DatePicker
+        label="Event date"
+        placeholder="08/06/2025"
+        value={value}
+        onChange={setValue}
+      />
+      <div className="text-sm text-neutral-gray4">
+        Selected date:{' '}
+        {value ? `${value.year}-${value.month}-${value.day}` : 'None'}
+      </div>
+    </div>
+  );
+};
 
-Validation.args = {
-  isRequired: true,
+export const InitialValue = () => {
+  const [value, setValue] = useState<DateValue | undefined>(
+    () => parseDate('2020-02-03') as DateValue,
+  );
+
+  return (
+    <div className="flex w-96 flex-col gap-2">
+      <DatePicker
+        label="Event date"
+        placeholder="08/06/2025"
+        value={value}
+        onChange={setValue}
+      />
+      <div className="text-sm text-neutral-gray4">
+        Selected date:{' '}
+        {value ? `${value.year}-${value.month}-${value.day}` : 'None'}
+      </div>
+    </div>
+  );
+};
+
+export const Disabled = () => {
+  return (
+    <div className="flex w-96 flex-col gap-2">
+      <DatePicker label="Event date" placeholder="08/06/2025" isDisabled />
+    </div>
+  );
+};
+
+export const ErrorState = () => {
+  return (
+    <div className="flex w-96 flex-col gap-2">
+      <DatePicker
+        label="Event date"
+        placeholder="08/06/2025"
+        errorMessage="This is an error message"
+      />
+    </div>
+  );
 };

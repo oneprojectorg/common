@@ -1,0 +1,129 @@
+#!/bin/bash
+
+# Git worktree manager script
+# Usage: ./wt.sh <add|rm> [branch-name]
+
+set -e
+
+if [ $# -lt 1 ]; then
+    echo "Usage: $0 <add|rm> [branch-name]"
+    echo "  add: Create new worktree with specified branch name"
+    echo "  rm:  Remove current worktree"
+    exit 1
+fi
+
+ACTION=$1
+
+case $ACTION in
+    "add")
+        if [ $# -ne 2 ]; then
+            echo "Error: 'add' requires a branch name"
+            echo "Usage: $0 add <branch-name>"
+            exit 1
+        fi
+        
+        BRANCH_NAME=$2
+        WORKTREE_PATH="../$BRANCH_NAME-wt"
+        
+        # Check if directory already exists
+        if [ -d "$WORKTREE_PATH" ]; then
+            echo "Worktree directory '$WORKTREE_PATH' already exists"
+            echo "📁 Location: $WORKTREE_PATH"
+            echo "🌿 Branch: $BRANCH_NAME"
+            echo ""
+        else
+            echo "Creating worktree for branch '$BRANCH_NAME' at '$WORKTREE_PATH'"
+            
+            # Check if branch already exists (locally or remotely)
+            if git show-ref --verify --quiet "refs/heads/$BRANCH_NAME" || \
+               git show-ref --verify --quiet "refs/remotes/origin/$BRANCH_NAME"; then
+                echo "Branch '$BRANCH_NAME' already exists, checking it out..."
+                git worktree add "$WORKTREE_PATH" "$BRANCH_NAME"
+            else
+                echo "Creating new branch '$BRANCH_NAME'..."
+                git worktree add "$WORKTREE_PATH" -b "$BRANCH_NAME"
+            fi
+            
+            echo "✅ Worktree created successfully!"
+            echo "📁 Location: $WORKTREE_PATH"
+            echo "🌿 Branch: $BRANCH_NAME"
+            echo ""
+        fi
+        
+        # Check if we're in a tmux session
+        if [ -n "$TMUX" ]; then
+            echo "🚀 Opening Claude and lazygit in new tmux tab with split panes..."
+            # Create new tmux window (tab) and split it (claude 1/3, lazygit 2/3)
+            tmux new-window -c "$WORKTREE_PATH" -n "$BRANCH_NAME" \; \
+                 send-keys "claude" C-m \; \
+                 split-window -h -c "$WORKTREE_PATH" \; \
+                 send-keys "lazygit" C-m \; \
+                 resize-pane -t 1 -x 67% \; \
+                 select-pane -t 0
+        elif command -v kitty >/dev/null 2>&1; then
+            echo "🚀 Opening Claude and lazygit in kitty split..."
+            # Use kitty to create split layout
+            kitty @ launch --type=tab --tab-title="$BRANCH_NAME" --cwd="$WORKTREE_PATH" claude
+            kitty @ launch --type=window --cwd="$WORKTREE_PATH" lazygit
+        elif command -v wezterm >/dev/null 2>&1; then
+            echo "🚀 Opening Claude and lazygit in WezTerm split..."
+            wezterm cli spawn --cwd "$WORKTREE_PATH" -- claude &
+            wezterm cli spawn --cwd "$WORKTREE_PATH" -- lazygit &
+        elif command -v alacritty >/dev/null 2>&1; then
+            echo "🚀 Opening Claude and lazygit in separate Alacritty windows..."
+            alacritty --working-directory "$WORKTREE_PATH" -e claude &
+            alacritty --working-directory "$WORKTREE_PATH" -e lazygit &
+        elif command -v gnome-terminal >/dev/null 2>&1; then
+            echo "🚀 Opening Claude and lazygit in GNOME Terminal..."
+            gnome-terminal --working-directory="$WORKTREE_PATH" --tab -e "claude" --tab -e "lazygit" &
+        else
+            echo "⚠️  Could not detect compatible terminal for auto-launch"
+            echo "To manually open:"
+            echo "cd $WORKTREE_PATH && claude"
+            echo "cd $WORKTREE_PATH && lazygit"
+        fi
+        ;;
+        
+    "rm")
+        # Get current worktree path
+        CURRENT_PATH=$(pwd)
+        
+        # Check if we're in a git repository
+        if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+            echo "Error: Not inside a git repository"
+            exit 1
+        fi
+        
+        # Get the worktree root path
+        WORKTREE_ROOT=$(git rev-parse --show-toplevel)
+        
+        # Check if this is the main worktree
+        MAIN_WORKTREE=$(git worktree list | head -n1 | awk '{print $1}')
+        
+        if [ "$WORKTREE_ROOT" = "$MAIN_WORKTREE" ]; then
+            echo "Error: Cannot remove the main worktree"
+            echo "You are currently in the main repository worktree"
+            exit 1
+        fi
+        
+        echo "Removing current worktree: $WORKTREE_ROOT"
+        
+        
+        echo "in parent: $WORKTREE_ROOT"
+        echo "📁 You are now in: $(pwd)"
+        # Remove the worktree
+        git worktree remove ./
+        
+        echo "✅ Worktree removed successfully!"
+
+        # Move to parent directory before removing
+        cd ../
+        echo "📁 You are now in: $(pwd)"
+        ;;
+        
+    *)
+        echo "Error: Invalid action '$ACTION'"
+        echo "Usage: $0 <add|rm> [branch-name]"
+        exit 1
+        ;;
+esac

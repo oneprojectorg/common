@@ -6,6 +6,11 @@ import {
   users,
   usersUsedStorage,
 } from '@op/db/schema';
+import {
+  type NormalizedRole,
+  type UserWithRoles,
+  getGlobalPermissions,
+} from 'access-zones';
 
 export interface User {
   id: number;
@@ -68,10 +73,12 @@ export const getAllowListUser = async ({ email }: { email?: string }) => {
 
 export const getUserByAuthId = async ({
   authUserId,
+  includePermissions = false,
 }: {
   authUserId: string;
+  includePermissions?: boolean;
 }) => {
-  return await db.query.users.findFirst({
+  const user = await db.query.users.findFirst({
     where: (table, { eq }) => eq(table.authUserId, authUserId),
     with: {
       avatarImage: true,
@@ -86,6 +93,19 @@ export const getUserByAuthId = async ({
               },
             },
           },
+          roles: includePermissions ? {
+            with: {
+              accessRole: {
+                with: {
+                  zonePermissions: {
+                    with: {
+                      accessZone: true,
+                    },
+                  },
+                },
+              },
+            },
+          } : undefined,
         },
       },
       currentOrganization: {
@@ -111,6 +131,62 @@ export const getUserByAuthId = async ({
       },
     },
   });
+
+  if (!user || !includePermissions) {
+    return user;
+  }
+
+  // Process each organizationUser to add permissions
+  const userWithPermissions = { ...user };
+  
+  if (userWithPermissions.organizationUsers) {
+    userWithPermissions.organizationUsers = userWithPermissions.organizationUsers.map(orgUser => {
+      if (!orgUser.roles) {
+        return orgUser;
+      }
+
+      // Transform the relational data into normalized format for access-zones library
+      const normalizedRoles: NormalizedRole[] = orgUser.roles.map(
+        (roleJunction: any) => {
+          const role = roleJunction.accessRole;
+
+          // Build the access object with zone names as keys and permission bitfields as values
+          const access: Record<string, number> = {};
+
+          if (role.zonePermissions) {
+            role.zonePermissions.forEach((zonePermission: any) => {
+              // Use zone name as key, permission bitfield as value
+              access[zonePermission.accessZone.name] =
+                zonePermission.permission;
+            });
+          }
+
+          return {
+            id: role.id,
+            name: role.name,
+            access,
+          };
+        },
+      );
+
+      // Transform the user to the format expected by access-zones
+      const userForTransformation: UserWithRoles = {
+        id: orgUser.id,
+        roles: normalizedRoles,
+      };
+
+      // Get the global boolean permissions
+      const globalPermissions = getGlobalPermissions(userForTransformation);
+
+      // Return orgUser with permissions attached
+      return {
+        ...orgUser,
+        permissions: globalPermissions,
+      };
+    });
+  }
+
+  return userWithPermissions;
 };
 
 export const createUserByAuthId = async ({
@@ -132,46 +208,7 @@ export const createUserByAuthId = async ({
     throw new Error('Could not create user');
   }
 
-  return await db.query.users.findFirst({
-    where: (table, { eq }) => eq(table.id, newUser.id),
-    with: {
-      avatarImage: true,
-      organizationUsers: {
-        with: {
-          organization: {
-            with: {
-              profile: {
-                with: {
-                  avatarImage: true,
-                },
-              },
-            },
-          },
-        },
-      },
-      currentOrganization: {
-        with: {
-          profile: {
-            with: {
-              avatarImage: true,
-            },
-          },
-        },
-      },
-      currentProfile: {
-        with: {
-          avatarImage: true,
-          headerImage: true,
-        },
-      },
-      profile: {
-        with: {
-          avatarImage: true,
-          headerImage: true,
-        },
-      },
-    },
-  });
+  return await getUserByAuthId({ authUserId, includePermissions: false });
 };
 
 export const getUserWithProfiles = async ({
