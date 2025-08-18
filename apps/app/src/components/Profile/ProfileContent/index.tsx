@@ -284,11 +284,9 @@ export const ProfileTabs = ({ children }: { children: React.ReactNode }) => {
 
 export const ProfileTabsMobile = ({
   profile,
-  children,
   decisionsContent,
 }: {
   profile: Organization;
-  children?: React.ReactNode;
   decisionsContent?: React.ReactNode;
 }) => {
   const t = useTranslations();
@@ -299,7 +297,6 @@ export const ProfileTabsMobile = ({
       <TabList className="overflow-x-auto px-4">
         <Tab id="updates">{t('Updates')}</Tab>
         <Tab id="about">{t('About')}</Tab>
-        <Tab id="relationships">{t('Relationships')}</Tab>
         {decisionsEnabled ? <Tab id="followers">{t('Followers')}</Tab> : null}
         {decisionsEnabled ? <Tab id="members">{t('Members')}</Tab> : null}
         {decisionsEnabled ? <Tab id="decisions">{t('Decisions')}</Tab> : null}
@@ -319,9 +316,6 @@ export const ProfileTabsMobile = ({
       <TabPanel id="about">
         <ProfileAbout profile={profile} className="px-4 py-2" />
       </TabPanel>
-      <TabPanel id="relationships" className="px-4 py-2">
-        {children}
-      </TabPanel>
       <TabPanel id="followers" className="px-4 py-2">
         <div className="text-center text-neutral-gray4">
           Followers content coming soon
@@ -332,7 +326,7 @@ export const ProfileTabsMobile = ({
           Members content coming soon
         </div>
       </TabPanel>
-      {false ? (
+      {decisionsEnabled ? (
         <TabPanel id="decisions" className="px-0">
           {decisionsContent}
         </TabPanel>

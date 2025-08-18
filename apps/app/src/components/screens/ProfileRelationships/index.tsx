@@ -144,7 +144,7 @@ export const ProfileRelationshipsSuspense = ({
           </Breadcrumbs>
         ) : null}
         <div className="flex items-center justify-between">
-          <div className="font-serif text-title-sm sm:text-title-lg">
+          <div className="w-full font-serif text-title-sm sm:text-title-lg">
             {count} {pluralize('Relationship', count)}
           </div>
           <div className="w-72"></div>
