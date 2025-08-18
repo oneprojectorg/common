@@ -102,14 +102,9 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
             ) : null}
           </ProfileTabs>
           <ProfileTabsMobile
-            profile={organization as any}
+            profile={organization}
             decisionsContent={<ProfileDecisionsSuspense />}
-          >
-            <ProfileRelationshipsSuspense
-              slug={profile.slug}
-              showBreadcrumb={false}
-            />
-          </ProfileTabsMobile>
+          />
         </>
       ) : null;
     }

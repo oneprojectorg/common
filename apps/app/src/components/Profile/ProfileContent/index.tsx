@@ -289,12 +289,10 @@ export const ProfileTabs = ({ children }: { children: React.ReactNode }) => {
 
 export const ProfileTabsMobile = ({
   profile,
-  children,
   decisionsContent,
   followingContent,
 }: {
   profile: Organization;
-  children?: React.ReactNode;
   decisionsContent?: React.ReactNode;
   followingContent?: React.ReactNode;
 }) => {
@@ -357,7 +355,7 @@ export const ProfileTabsMobile = ({
           </TabPanel>
         </>
       )}
-      {!isIndividual && (
+      {!isIndividual && false (
         <>
           <TabPanel id="followers" className="px-4 py-2">
             <div className="text-center text-neutral-gray4">
@@ -371,7 +369,7 @@ export const ProfileTabsMobile = ({
           </TabPanel>
         </>
       )}
-      {false ? (
+      {decisionsEnabled ? (
         <TabPanel id="decisions" className="px-0">
           {decisionsContent}
         </TabPanel>
