@@ -31,7 +31,7 @@ export const ProfileFollowingSuspense = ({
   }, [relationships]);
 
   return (
-    <div className="flex flex-col gap-8 text-base sm:py-8">
+    <div className="flex flex-col gap-4 text-base sm:gap-8 sm:py-8">
       <RelationshipList
         profiles={following}
         title={`Following ${following.length} ${pluralize('organization', following.length)}`}

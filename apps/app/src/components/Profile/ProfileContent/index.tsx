@@ -12,7 +12,6 @@ import { Tag, TagGroup } from '@op/ui/TagGroup';
 import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
 import Link from 'next/link';
-import { useFeatureFlagEnabled } from 'posthog-js/react';
 import { ReactNode, Suspense } from 'react';
 import { LuCopy, LuGlobe, LuMail } from 'react-icons/lu';
 
@@ -289,15 +288,17 @@ export const ProfileTabs = ({ children }: { children: React.ReactNode }) => {
 
 export const ProfileTabsMobile = ({
   profile,
+  children,
   decisionsContent,
   followingContent,
 }: {
   profile: Organization;
+  children?: React.ReactNode;
   decisionsContent?: React.ReactNode;
   followingContent?: React.ReactNode;
 }) => {
   const t = useTranslations();
-  const decisionsEnabled = useFeatureFlagEnabled('decision_making');
+  const decisionsEnabled = false; // useFeatureFlagEnabled('decision_making'); // client only
   const isIndividual = profile.orgType === null || profile.orgType === '';
 
   return (
@@ -305,7 +306,6 @@ export const ProfileTabsMobile = ({
       <TabList className="overflow-x-auto px-4">
         {!isIndividual && <Tab id="updates">{t('Updates')}</Tab>}
         <Tab id="about">{t('About')}</Tab>
-        {!isIndividual && <Tab id="relationships">{t('Relationships')}</Tab>}
         {!isIndividual ? (
           <>
             {decisionsEnabled ? (
@@ -340,22 +340,17 @@ export const ProfileTabsMobile = ({
       <TabPanel id="about">
         <ProfileAbout profile={profile} className="px-4 py-2" />
       </TabPanel>
-      {!isIndividual && (
-        <TabPanel id="relationships" className="px-4 py-2">
-          {children}
-        </TabPanel>
-      )}
       {isIndividual && (
         <>
           <TabPanel id="organizations" className="px-4 py-2">
-            {children}
+            <div className="flex flex-col gap-4">{children}</div>
           </TabPanel>
           <TabPanel id="following" className="px-4 py-2">
             {followingContent}
           </TabPanel>
         </>
       )}
-      {!isIndividual && false (
+      {!isIndividual && false && (
         <>
           <TabPanel id="followers" className="px-4 py-2">
             <div className="text-center text-neutral-gray4">

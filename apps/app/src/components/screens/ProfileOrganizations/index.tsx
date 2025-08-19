@@ -33,7 +33,7 @@ export const ProfileOrganizationsSuspense = ({
 
   return (
     <>
-      <div className="flex flex-col gap-4 px-4 sm:px-0">
+      <div className="flex flex-col gap-4 sm:px-0">
         {showBreadcrumb ? (
           <Breadcrumbs className="hidden sm:flex">
             <Breadcrumb href={`/org/${slug}`}>{profile.name}</Breadcrumb>
@@ -45,7 +45,6 @@ export const ProfileOrganizationsSuspense = ({
             Member of {organizations.length}{' '}
             {pluralize('Organization', organizations.length)}
           </div>
-          <div className="w-72"></div>
         </div>
       </div>
       <OrganizationCardList organizations={organizations} />

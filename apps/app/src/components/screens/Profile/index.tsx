@@ -4,7 +4,6 @@ import { Tab, TabPanel } from '@op/ui/Tabs';
 import { cn, getGradientForString } from '@op/ui/utils';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
-import { useFeatureFlagEnabled } from 'posthog-js/react';
 import { LuArrowLeft } from 'react-icons/lu';
 
 import { Link } from '@/lib/i18n';
@@ -52,7 +51,7 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
         slug,
       });
 
-      const decisionsEnabled = useFeatureFlagEnabled('decision_making');
+      const decisionsEnabled = false; // useFeatureFlagEnabled('decision_making'); // client only
 
       return organization ? (
         <>
