@@ -36,12 +36,11 @@ const getRelationshipsInputSchema = z.object({
   includeTargetProfiles: z.boolean().optional(),
 });
 
-
 const addRelationshipMeta: OpenApiMeta = {
   openapi: {
     enabled: true,
     method: 'POST',
-    path: '/profile/{targetProfileId}/relationship',
+    path: '/profile/relationship/{targetProfileId}',
     protect: true,
     tags: ['profile'],
     summary: 'Add a relationship to a profile',
@@ -52,7 +51,7 @@ const removeRelationshipMeta: OpenApiMeta = {
   openapi: {
     enabled: true,
     method: 'DELETE',
-    path: '/profile/{targetProfileId}/relationship',
+    path: '/profile/relationship/{targetProfileId}',
     protect: true,
     tags: ['profile'],
     summary: 'Remove a relationship to a profile',
@@ -63,7 +62,7 @@ const getRelationshipsMeta: OpenApiMeta = {
   openapi: {
     enabled: true,
     method: 'GET',
-    path: '/profile/{targetProfileId}/relationship',
+    path: '/profile/relationship',
     protect: true,
     tags: ['profile'],
     summary: 'Get relationships to a profile',
@@ -139,14 +138,16 @@ export const profileRelationshipRouter = router({
           relationshipType: z.string(),
           pending: z.boolean().nullable(),
           createdAt: z.string().nullable(),
-          targetProfile: z.object({
-            id: z.string(),
-            name: z.string(),
-            slug: z.string(),
-            bio: z.string().nullable(),
-            avatarImage: z.string().nullable(),
-            type: z.string(),
-          }).optional(),
+          targetProfile: z
+            .object({
+              id: z.string(),
+              name: z.string(),
+              slug: z.string(),
+              bio: z.string().nullable(),
+              avatarImage: z.string().nullable(),
+              type: z.string(),
+            })
+            .optional(),
         }),
       ),
     )
