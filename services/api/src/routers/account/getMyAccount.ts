@@ -1,4 +1,4 @@
-import { cache } from '@op/cache';
+// import { cache } from '@op/cache';
 import {
   CommonError,
   NotFoundError,
@@ -36,15 +36,20 @@ export const getMyAccount = router({
     .query(async ({ ctx }) => {
       const { id, email } = ctx.user;
 
-      const user = await cache({
-        type: 'user',
-        params: [id],
-        fetch: async () => {
-          return await getUserByAuthId({
-            authUserId: id,
-            includePermissions: true,
-          });
-        },
+      // const user = await cache({
+      // type: 'user',
+      // params: [id],
+      // fetch: async () => {
+      // return await getUserByAuthId({
+      // authUserId: id,
+      // includePermissions: true,
+      // });
+      // },
+      // });
+
+      const user = await getUserByAuthId({
+        authUserId: id,
+        includePermissions: true,
       });
 
       if (!user) {
