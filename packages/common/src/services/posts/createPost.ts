@@ -1,5 +1,5 @@
 import { db } from '@op/db/client';
-import { attachments, posts, postsToOrganizations } from '@op/db/schema';
+import { attachments, posts, postsToProfiles } from '@op/db/schema';
 import { CreatePostInput } from '@op/types';
 import { eq } from 'drizzle-orm';
 
@@ -7,7 +7,7 @@ import { CommonError } from '../../utils';
 import { getCurrentProfileId } from '../access';
 
 export const createPost = async (input: CreatePostInput) => {
-  const { content, attachmentIds = [], parentPostId, organizationId } = input;
+  const { content, attachmentIds = [], parentPostId, profileId: targetProfileId } = input;
   const profileId = await getCurrentProfileId();
 
   try {
@@ -46,24 +46,25 @@ export const createPost = async (input: CreatePostInput) => {
       throw new CommonError('Failed to create post');
     }
 
-    // If organizationId is provided, create the organization association
-    if (organizationId) {
-      await db.insert(postsToOrganizations).values({
+
+    // If targetProfileId is provided, create the profile association
+    if (targetProfileId) {
+      await db.insert(postsToProfiles).values({
         postId: newPost.id,
-        organizationId,
+        profileId: targetProfileId,
       });
     } else if (parentPostId) {
-      // For comments (posts with parentPostId), inherit organization associations from parent post
-      const parentOrganizations = await db
-        .select({ organizationId: postsToOrganizations.organizationId })
-        .from(postsToOrganizations)
-        .where(eq(postsToOrganizations.postId, parentPostId));
+      // For comments (posts with parentPostId), inherit profile associations from parent post
+      const parentProfiles = await db
+        .select({ profileId: postsToProfiles.profileId })
+        .from(postsToProfiles)
+        .where(eq(postsToProfiles.postId, parentPostId));
 
-      if (parentOrganizations.length > 0) {
-        await db.insert(postsToOrganizations).values(
-          parentOrganizations.map((org) => ({
+      if (parentProfiles.length > 0) {
+        await db.insert(postsToProfiles).values(
+          parentProfiles.map((profile) => ({
             postId: newPost.id,
-            organizationId: org.organizationId,
+            profileId: profile.profileId,
           })),
         );
       }

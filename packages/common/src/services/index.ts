@@ -7,6 +7,7 @@ export * from './individual';
 export * from './user';
 export * from './posts';
 export * from './reactions';
+export * from './decision';
 export {
   updateUserProfile,
   getProfile,

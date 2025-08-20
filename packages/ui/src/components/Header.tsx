@@ -41,3 +41,24 @@ export const Header3 = ({
     </h3>
   );
 };
+
+export const GradientHeader = ({
+  children,
+  className,
+}: {
+  children?: React.ReactNode;
+  className?: string;
+}) => {
+  return (
+    <div className="flex w-full items-center justify-center text-transparent">
+      <div
+        className={cn(
+          'flex items-center bg-gradient bg-clip-text font-serif text-title-xxl',
+          className,
+        )}
+      >
+        {children}
+      </div>
+    </div>
+  );
+};

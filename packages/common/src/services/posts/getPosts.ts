@@ -1,12 +1,12 @@
 import { db } from '@op/db/client';
-import { posts, postsToOrganizations } from '@op/db/schema';
+import { posts, postsToProfiles } from '@op/db/schema';
 import { and, desc, eq, isNull } from 'drizzle-orm';
 
 import { getCurrentProfileId } from '../access';
 import { getItemsWithReactionsAndComments } from './listPosts';
 
 export interface GetPostsInput {
-  organizationId?: string;
+  profileId?: string;
   parentPostId?: string | null; // null for top-level posts, string for child posts, undefined for all
   limit?: number;
   offset?: number;
@@ -16,7 +16,7 @@ export interface GetPostsInput {
 
 export const getPosts = async (input: GetPostsInput) => {
   const {
-    organizationId,
+    profileId,
     parentPostId,
     limit = 20,
     offset = 0,
@@ -30,7 +30,12 @@ export const getPosts = async (input: GetPostsInput) => {
   }
 
   try {
-    // Build where conditions
+    // This endpoint is for profile-based posts only
+    if (!profileId) {
+      return []; // Return empty array if no profileId provided
+    }
+
+    // Build where conditions for posts within the profile
     const conditions = [];
 
     // Filter by parent post
@@ -43,162 +48,66 @@ export const getPosts = async (input: GetPostsInput) => {
     }
     // If parentPostId is undefined, we get all posts regardless of parent
 
-    // Build the query with relations
-    const query = db.query.posts.findMany({
-      where: conditions.length > 0 ? and(...conditions) : undefined,
-      limit,
-      offset,
-      orderBy: [desc(posts.createdAt)],
+    // Filter by profile through postsToProfiles
+    const profilePosts = await db.query.postsToProfiles.findMany({
+      where: eq(postsToProfiles.profileId, profileId),
       with: {
-        profile: {
+        post: {
+          where: conditions.length > 0 ? and(...conditions) : undefined,
           with: {
-            avatarImage: true,
-          },
-        },
-        attachments: {
-          with: {
-            storageObject: true,
-          },
-        },
-        reactions: {
-          with: {
-            profile: true,
-          },
-        },
-        // Recursively include child posts if requested
-        ...(includeChildren && maxDepth > 0
-          ? {
-              childPosts: {
-                limit: 50, // Reasonable limit for child posts
-                orderBy: [desc(posts.createdAt)],
-                with: {
-                  profile: {
+            profile: {
+              with: {
+                avatarImage: true,
+              },
+            },
+            attachments: {
+              with: {
+                storageObject: true,
+              },
+            },
+            reactions: {
+              with: {
+                profile: true,
+              },
+            },
+            ...(includeChildren && maxDepth > 0
+              ? {
+                  childPosts: {
+                    limit: 50,
+                    orderBy: [desc(posts.createdAt)],
                     with: {
-                      avatarImage: true,
-                    },
-                  },
-                  attachments: {
-                    with: {
-                      storageObject: true,
-                    },
-                  },
-                  reactions: {
-                    with: {
-                      profile: true,
-                    },
-                  },
-                  // One level of nesting for now (can be expanded recursively)
-                  ...(maxDepth > 1
-                    ? {
-                        childPosts: {
-                          limit: 20,
-                          orderBy: [desc(posts.createdAt)],
-                          with: {
-                            profile: {
-                              with: {
-                                avatarImage: true,
-                              },
-                            },
-                            reactions: {
-                              with: {
-                                profile: true,
-                              },
-                            },
-                          },
+                      profile: {
+                        with: {
+                          avatarImage: true,
                         },
-                      }
-                    : {}),
-                },
-              },
-            }
-          : {}),
-      },
-    });
-
-    // If filtering by organization, we need to join through postsToOrganizations
-    if (organizationId) {
-      const orgPosts = await db.query.postsToOrganizations.findMany({
-        where: eq(postsToOrganizations.organizationId, organizationId),
-        with: {
-          post: {
-            where: conditions.length > 0 ? and(...conditions) : undefined,
-            with: {
-              profile: {
-                with: {
-                  avatarImage: true,
-                },
-              },
-              attachments: {
-                with: {
-                  storageObject: true,
-                },
-              },
-              reactions: {
-                with: {
-                  profile: true,
-                },
-              },
-              ...(includeChildren && maxDepth > 0
-                ? {
-                    childPosts: {
-                      limit: 50,
-                      orderBy: [desc(posts.createdAt)],
-                      with: {
-                        profile: {
-                          with: {
-                            avatarImage: true,
-                          },
+                      },
+                      attachments: {
+                        with: {
+                          storageObject: true,
                         },
-                        attachments: {
-                          with: {
-                            storageObject: true,
-                          },
-                        },
-                        reactions: {
-                          with: {
-                            profile: true,
-                          },
+                      },
+                      reactions: {
+                        with: {
+                          profile: true,
                         },
                       },
                     },
-                  }
-                : {}),
-            },
-          },
-          organization: {
-            with: {
-              profile: {
-                with: {
-                  avatarImage: true,
-                },
-              },
-            },
+                  },
+                }
+              : {}),
           },
         },
-        limit,
-        offset,
-        orderBy: [desc(postsToOrganizations.createdAt)],
-      });
+      },
+      limit,
+      offset,
+      orderBy: [desc(postsToProfiles.createdAt)],
+    });
 
-      // Transform to match expected format and add reaction data
-      const actorProfileId = await getCurrentProfileId();
-      const itemsWithReactionsAndComments =
-        await getItemsWithReactionsAndComments({
-          items: orgPosts,
-          profileId: actorProfileId,
-        });
-
-      return itemsWithReactionsAndComments;
-    }
-
-    // Execute query for non-organization posts
-    const result = await query;
-
-    // Add reaction counts and user reactions
+    // Transform to match expected format and add reaction data
     const actorProfileId = await getCurrentProfileId();
     const itemsWithReactionsAndComments =
       await getItemsWithReactionsAndComments({
-        items: result.map((post) => ({ post })),
+        items: profilePosts.map((item: any) => ({ post: item.post })),
         profileId: actorProfileId,
       });
 
