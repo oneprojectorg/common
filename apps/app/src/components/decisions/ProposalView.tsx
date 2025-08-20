@@ -28,6 +28,7 @@ import { z } from 'zod';
 
 import { PostFeed, PostItem, usePostFeedActions } from '../PostFeed';
 import { PostUpdate } from '../PostUpdate';
+import { IframelyExtension } from './IframelyExtension';
 import { ProposalViewLayout } from './ProposalViewLayout';
 
 type Proposal = z.infer<typeof proposalEncoder>;
@@ -131,6 +132,7 @@ export function ProposalView({ proposal, backHref }: ProposalViewProps) {
         Strike,
         Blockquote,
         HorizontalRule,
+        IframelyExtension,
       ],
       content: content || '<p>No content available</p>',
       editable: false, // Make editor read-only
