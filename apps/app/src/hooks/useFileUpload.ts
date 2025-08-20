@@ -97,7 +97,6 @@ export const useFileUpload = (options: UseFileUploadOptions) => {
 
       const result = await uploadAttachment
         .mutateAsync({
-          organizationId,
           file: base64,
           fileName: file.name,
           mimeType: file.type,
@@ -123,9 +122,9 @@ export const useFileUpload = (options: UseFileUploadOptions) => {
         prev.map((f) =>
           f.id === previewId
             ? {
-                ...f,
-                uploading: false,
-              }
+              ...f,
+              uploading: false,
+            }
             : f,
         ),
       );

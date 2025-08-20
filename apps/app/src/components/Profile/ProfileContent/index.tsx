@@ -250,11 +250,12 @@ export const OrganizationProfileGrid = ({
 }) => {
   const t = useTranslations();
   const { user } = useUser();
+  const isOrg = user?.currentProfile?.type === 'org';
 
   return (
     <ProfileGridWrapper>
       <div className="col-span-9 flex flex-col gap-8">
-        {user?.currentProfile?.type !== 'org' ? (
+        {isOrg ? (
           <Suspense fallback={null}>
             <PostUpdate
               organization={profile}
@@ -262,7 +263,9 @@ export const OrganizationProfileGrid = ({
               className="border-b px-4 pb-8 pt-6"
             />
           </Suspense>
-        ) : null}
+        ) : (
+          <div></div>
+        )}
         <Suspense fallback={<PostFeedSkeleton className="px-4" numPosts={3} />}>
           <ProfileFeed profile={profile} />
         </Suspense>

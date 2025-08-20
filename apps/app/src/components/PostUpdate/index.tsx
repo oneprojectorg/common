@@ -308,7 +308,6 @@ const PostUpdateWithUser = ({
       }
 
       // Optimistic updates are now handled in onMutate
-
       createPost.mutate({
         content: content.trim() || '',
         organizationId: organization.id,
@@ -350,11 +349,15 @@ const PostUpdateWithUser = ({
     }
   }, []);
 
+  if (!user?.currentProfile) {
+    return null;
+  }
+
   return (
-    <div className={cn('flex flex-col gap-8', className)}>
+    <div className={cn('flex flex-col gap-8 sm:flex', className)}>
       <FeedItem>
         <OrganizationAvatar
-          profile={organization.profile}
+          profile={user.currentProfile}
           className="size-8 bg-white"
         />
         <FeedMain className="relative">
@@ -428,7 +431,7 @@ const PostUpdateWithUser = ({
             className={cn(
               'flex w-full items-center justify-between gap-6',
               (content || fileUpload.filePreviews?.length) &&
-              'border-t border-neutral-gray1 py-2',
+                'border-t border-neutral-gray1 py-2',
             )}
           >
             <button
