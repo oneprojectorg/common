@@ -11,6 +11,7 @@ import { trpc } from '@op/api/client';
 import type { proposalEncoder } from '@op/api/encoders';
 import { Avatar } from '@op/ui/Avatar';
 import { Surface } from '@op/ui/Surface';
+import TiptapImage from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import TextAlign from '@tiptap/extension-text-align';
 import { EditorContent, useEditor } from '@tiptap/react';
@@ -113,6 +114,10 @@ export function ProposalView({ proposal, backHref }: ProposalViewProps) {
         }),
         TextAlign.configure({
           types: ['heading', 'paragraph'],
+        }),
+        TiptapImage.configure({
+          inline: true,
+          allowBase64: true,
         }),
       ],
       content: content || '<p>No content available</p>',

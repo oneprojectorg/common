@@ -37,6 +37,7 @@
     "@svgr/plugin-jsx": "^8.1.0",
     "@tanstack/react-form": "^1.6.2",
     "@tiptap/extension-bullet-list": "^3.2.0",
+    "@tiptap/extension-image": "^3.2.0",
     "@tiptap/extension-link": "^3.2.0",
     "@tiptap/extension-list-item": "^3.2.0",
     "@tiptap/extension-ordered-list": "^3.2.0",

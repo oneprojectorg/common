@@ -8,6 +8,7 @@ export const proposalDataSchema = z.object({
   content: z.string().optional(),
   category: z.string().optional(),
   budget: z.number().optional(),
+  attachmentIds: z.array(z.string()).optional().default([]),
 }).passthrough(); // Allow additional fields
 
 export type ProposalData = z.infer<typeof proposalDataSchema>;

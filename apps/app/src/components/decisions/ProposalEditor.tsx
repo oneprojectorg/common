@@ -6,6 +6,7 @@ import { trpc } from '@op/api/client';
 import type { proposalEncoder } from '@op/api/encoders';
 import { Select, SelectItem } from '@op/ui/Select';
 import { TextField } from '@op/ui/TextField';
+import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import TextAlign from '@tiptap/extension-text-align';
 import { EditorContent, useEditor } from '@tiptap/react';
@@ -16,6 +17,7 @@ import {
   AlignRight,
   Bold,
   Code,
+  Image as ImageIcon,
   Italic,
   Link as LinkIcon,
   List,
@@ -24,8 +26,10 @@ import {
   Undo,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
+
+import { useFileUpload } from '@/hooks/useFileUpload';
 
 import { ProposalEditorLayout } from './layout';
 
@@ -49,6 +53,17 @@ export function ProposalEditor({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [budget, setBudget] = useState<number | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // File upload setup for images only
+  const {
+    uploadFile,
+    getUploadedAttachmentIds,
+  } = useFileUpload({
+    acceptedTypes: ['image/png', 'image/jpeg', 'image/webp', 'image/gif'],
+    maxFiles: 10,
+    maxSizePerFile: 4 * 1024 * 1024, // 4MB
+  });
 
   const createProposalMutation = trpc.decision.createProposal.useMutation();
   const updateProposalMutation = trpc.decision.updateProposal.useMutation();
@@ -107,6 +122,10 @@ export function ProposalEditor({
       TextAlign.configure({
         types: ['heading', 'paragraph'],
       }),
+      Image.configure({
+        inline: true,
+        allowBase64: true,
+      }),
     ],
     content: placeholderContent,
     editorProps: {
@@ -164,6 +183,7 @@ export function ProposalEditor({
         content,
         category: selectedCategory,
         budget: budget,
+        attachmentIds: getUploadedAttachmentIds(),
         // Add any additional fields that match the process's proposal template
       };
 
@@ -206,6 +226,7 @@ export function ProposalEditor({
     existingProposal,
     backHref,
     router,
+    getUploadedAttachmentIds,
   ]);
 
   const addLink = useCallback(() => {
@@ -228,6 +249,34 @@ export function ProposalEditor({
       .setLink({ href: url })
       .run();
   }, [editor]);
+
+  const handleImageUpload = useCallback(async () => {
+    fileInputRef.current?.click();
+  }, []);
+
+  const handleFileChange = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const files = event.target.files;
+      if (!files || files.length === 0 || !editor) return;
+
+      const file = files[0];
+      if (!file) return;
+      
+      try {
+        const uploadResult = await uploadFile(file);
+        // Insert the uploaded image into the editor
+        editor.chain().focus().setImage({ src: uploadResult.url }).run();
+      } catch (error) {
+        console.error('Failed to upload image:', error);
+      }
+
+      // Clear the input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    },
+    [editor, uploadFile],
+  );
 
   if (!editor) {
     return (
@@ -348,8 +397,27 @@ export function ProposalEditor({
           >
             <Code className="h-4 w-4" />
           </button>
+
+          <div className="mx-2 h-6 w-px bg-gray-300" />
+
+          <button
+            onClick={handleImageUpload}
+            className="rounded p-2 hover:bg-gray-100"
+            title="Add Image"
+          >
+            <ImageIcon className="h-4 w-4" />
+          </button>
         </div>
       </div>
+
+      {/* Hidden file input for image upload */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileChange}
+        className="hidden"
+      />
 
       {/* Content */}
       <div className="flex-1 px-6 py-8">
