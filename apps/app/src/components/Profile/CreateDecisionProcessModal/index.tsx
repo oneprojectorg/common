@@ -59,13 +59,16 @@ const transformFormDataToInstanceData = (data: Record<string, unknown>) => {
 
 export const CreateDecisionProcessModal = () => {
   const utils = trpc.useUtils();
+  type ValidationMode = 'none' | 'static' | 'live';
+
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] =
     useState<Record<string, unknown>>(schemaDefaults);
-  const [errors, setErrors] = useState<Record<number, any>>({});
+  const [validationModes, setValidationModes] = useState<Record<number, ValidationMode>>({});
+  const [stepErrors, setStepErrors] = useState<Record<number, any>>({});
 
   const isOnline = useConnectionStatus();
-  
+
   // Get the dialog close function from React Aria Components context
   const overlayTriggerState = useContext(OverlayTriggerStateContext);
   const { onClose } = useContext(ModalContext);
@@ -203,23 +206,31 @@ export const CreateDecisionProcessModal = () => {
       currentStepData,
     );
 
-    const fieldErrors: Record<string, string[]> = {};
+    // Use RJSF ErrorSchema format: { fieldName: { __errors: ['error message'] } }
+    const fieldErrors: Record<string, { __errors: string[] }> = {};
 
     // Add JSON Schema validation errors
     if (result.errors && result.errors.length > 0) {
       result.errors.forEach((error) => {
+        let fieldName = '';
+
         if (error.instancePath) {
-          const fieldName = error.instancePath.substring(1);
-          if (!fieldErrors[fieldName]) {
-            fieldErrors[fieldName] = [];
-          }
-          fieldErrors[fieldName].push(error.message);
+          fieldName = error.instancePath.substring(1) || error.schemaPath?.split('/')[2] || 'root';
         } else if (error.property) {
-          const fieldName = error.property.substring(9);
-          if (!fieldErrors[fieldName]) {
-            fieldErrors[fieldName] = [];
+          fieldName = error.property.substring(9);
+        } else if (error.schemaPath) {
+          // Handle required field errors that don't have instancePath
+          const matches = error.schemaPath.match(/\/properties\/([^\/]+)/);
+          if (matches) {
+            fieldName = matches[1];
           }
-          fieldErrors[fieldName].push(error.message);
+        }
+
+        if (fieldName) {
+          if (!fieldErrors[fieldName]) {
+            fieldErrors[fieldName] = { __errors: [] };
+          }
+          fieldErrors[fieldName]!.__errors.push(error.message || 'Invalid value');
         }
       });
     }
@@ -228,38 +239,51 @@ export const CreateDecisionProcessModal = () => {
     const phaseErrors = validatePhaseSequence();
     if (phaseErrors.length > 0) {
       // Add phase sequence errors to the form-level errors
-      fieldErrors['_phases'] = phaseErrors;
+      fieldErrors['_phases'] = { __errors: phaseErrors };
     }
 
     const hasErrors = Object.keys(fieldErrors).length > 0;
     return { isValid: !hasErrors, errors: fieldErrors };
   };
 
-  const handleNext = (): boolean => {
+  const validateStep = (step: number, showErrors = false): boolean => {
     const validation = validateCurrentStep();
 
-    if (!validation.isValid) {
-      setErrors((prev) => ({ ...prev, [currentStep]: validation.errors }));
-      return false;
+    if (!validation.isValid && showErrors) {
+      // Only show static errors if not already in live validation mode
+      if (validationModes[step] !== 'live') {
+        setStepErrors(prev => ({ ...prev, [step]: validation.errors }));
+        setValidationModes(prev => ({ ...prev, [step]: 'static' }));
+      }
     }
 
-    // Clear errors and proceed to next step
-    setErrors((prev) => ({ ...prev, [currentStep]: null }));
-    setCurrentStep((prev) => prev + 1);
-    return true;
+    return validation.isValid;
+  };
+
+  const handleNext = (): boolean => {
+    const isValid = validateStep(currentStep, true);
+
+    if (isValid) {
+      // Clear validation state when moving forward successfully
+      setValidationModes(prev => ({ ...prev, [currentStep]: 'none' }));
+      setStepErrors(prev => ({ ...prev, [currentStep]: null }));
+      setCurrentStep((prev) => prev + 1);
+    }
+
+    return isValid;
   };
 
   const handlePrevious = (): void => {
-    // Clear errors when going back
-    setErrors((prev) => ({ ...prev, [currentStep]: null }));
+    // Clear validation state when going back
+    setValidationModes((prev) => ({ ...prev, [currentStep]: 'none' }));
+    setStepErrors((prev) => ({ ...prev, [currentStep]: null }));
     setCurrentStep((prev) => prev - 1);
   };
 
   const handleFinish = (): void => {
-    const validation = validateCurrentStep();
+    const isValid = validateStep(currentStep, true);
 
-    if (!validation.isValid) {
-      setErrors((prev) => ({ ...prev, [currentStep]: validation.errors }));
+    if (!isValid) {
       return;
     }
 
@@ -290,9 +314,11 @@ export const CreateDecisionProcessModal = () => {
     if (data.formData) {
       setFormData({ ...formData, ...data.formData });
     }
-    // Clear field-level errors when user starts making changes
-    if (errors[currentStep]) {
-      setErrors((prev) => ({ ...prev, [currentStep]: null }));
+
+    // Transition from static to live validation on first change after validation failure
+    if (validationModes[currentStep] === 'static') {
+      setValidationModes((prev) => ({ ...prev, [currentStep]: 'live' }));
+      setStepErrors((prev) => ({ ...prev, [currentStep]: null }));
     }
   };
 
@@ -307,6 +333,10 @@ export const CreateDecisionProcessModal = () => {
     // Convert 1-based to 0-based for array access
     const stepConfig = stepSchemas[currentStep - 1];
     if (!stepConfig) return null;
+
+    const validationMode = validationModes[currentStep] || 'none';
+    const currentExtraErrors = stepErrors[currentStep];
+    const currentLiveValidate = validationMode === 'live';
 
     return (
       <div className="flex flex-col gap-6">
@@ -341,10 +371,10 @@ export const CreateDecisionProcessModal = () => {
             widgets={CustomWidgets}
             templates={CustomTemplates}
             showErrorList={false}
-            liveValidate={true}
+            liveValidate={currentLiveValidate}
             noHtml5Validate
             omitExtraData
-            extraErrors={errors[currentStep] as any}
+            extraErrors={currentExtraErrors as any}
           >
             {/* Hide submit button - we'll use our own stepper */}
             <div style={{ display: 'none' }} />
