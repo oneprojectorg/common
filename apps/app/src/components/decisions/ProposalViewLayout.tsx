@@ -1,9 +1,11 @@
 'use client';
 
 import { Button } from '@op/ui/Button';
+import { cn } from '@op/ui/utils';
 import { ChevronLeft, Edit, Heart, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { ReactNode } from 'react';
+import { LuBookmark } from 'react-icons/lu';
 
 import { UserAvatarMenu } from '../SiteHeader';
 
@@ -64,21 +66,15 @@ export function ProposalViewLayout({
           )}
           <Button
             surface="ghost"
+            color="secondary"
             onPress={onLike}
             isDisabled={isLoading}
-            className="flex px-4 py-2 text-primary-teal"
           >
             <Heart className={`h-4 w-4 ${isLiked ? 'fill-current' : ''}`} />
             {isLiked ? 'Liked' : 'Like'}
           </Button>
-          <Button
-            color="secondary"
-            surface={isFollowing ? 'solid' : 'outline'}
-            onPress={onFollow}
-            isDisabled={isLoading}
-            className="px-4 py-2"
-          >
-            <Users className="h-4 w-4" />
+          <Button color="secondary" onPress={onFollow}>
+            <LuBookmark className={cn(isFollowing ? 'fill-current' : '')} />
             {isFollowing ? 'Following' : 'Follow'}
           </Button>
           <UserAvatarMenu />
