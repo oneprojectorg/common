@@ -20,7 +20,6 @@ import { searchOrganizationsRouter } from './searchOrganizations';
 import { organizationStatsRouter } from './stats';
 import { updateOrganizationRouter } from './updateOrganization';
 import { uploadAvatarImage } from './uploadAvatarImage';
-import { uploadPostAttachment } from './uploadPostAttachment';
 
 export const organizationRouter = mergeRouters(
   getOrganizationRouter,
@@ -34,7 +33,6 @@ export const organizationRouter = mergeRouters(
   createOrganizationRouter,
   updateOrganizationRouter,
   uploadAvatarImage,
-  uploadPostAttachment,
   addRelationshipRouter,
   approveRelationshipRouter,
   declineRelationshipRouter,

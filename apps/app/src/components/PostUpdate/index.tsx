@@ -78,7 +78,6 @@ const PostUpdateWithUser = ({
   const isOnline = useConnectionStatus();
 
   const fileUpload = useFileUpload({
-    organizationId: organization.id,
     acceptedTypes: [
       'image/gif',
       'image/png',

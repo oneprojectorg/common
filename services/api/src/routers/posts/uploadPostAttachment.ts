@@ -22,7 +22,7 @@ const meta: OpenApiMeta = {
   openapi: {
     enabled: true,
     method: 'POST',
-    path: `/profile/{profileId}/feed/posts/attachment`,
+    path: `/posts/attachment`,
     protect: true,
     tags: ['profile'],
     summary: 'Upload a attachment',
@@ -102,7 +102,7 @@ export const uploadPostAttachment = router({
           cookieOptions: {},
           cookies: {
             getAll: async () => [],
-            setAll: async () => { },
+            setAll: async () => {},
           },
         },
       );
