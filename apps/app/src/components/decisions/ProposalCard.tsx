@@ -85,6 +85,11 @@ export function ProposalCard({
                     variables.relationshipType === ProfileRelationshipType.LIKES
                       ? (p.likesCount || 0) + 1
                       : p.likesCount,
+                  followersCount:
+                    variables.relationshipType ===
+                    ProfileRelationshipType.FOLLOWING
+                      ? (p.followersCount || 0) + 1
+                      : p.followersCount,
                 }
               : p,
           ),
@@ -171,6 +176,11 @@ export function ProposalCard({
                       ProfileRelationshipType.LIKES
                         ? Math.max((p.likesCount || 0) - 1, 0)
                         : p.likesCount,
+                    followersCount:
+                      variables.relationshipType ===
+                      ProfileRelationshipType.FOLLOWING
+                        ? Math.max((p.followersCount || 0) - 1, 0)
+                        : p.followersCount,
                   }
                 : p,
             ),
@@ -356,7 +366,7 @@ export function ProposalCard({
           </span>
           <span className="flex items-center gap-1">
             <Users className="h-4 w-4" />
-            <span>0 Followers</span>
+            <span>{currentProposal.followersCount || 0} Followers</span>
           </span>
         </div>
         <div className="flex items-center gap-2">
