@@ -138,7 +138,7 @@ export const getUserByAuthId = async ({
 
   // Process each organizationUser to add permissions
   const userWithPermissions = { ...user };
-  
+
   if (userWithPermissions.organizationUsers) {
     userWithPermissions.organizationUsers = userWithPermissions.organizationUsers.map(orgUser => {
       if (!orgUser.roles) {

@@ -2,7 +2,7 @@
 
 import { parseDate } from '@internationalized/date';
 import { CalendarIcon } from 'lucide-react';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { DateValue } from 'react-aria-components';
 
 import { cn } from '../lib/utils';
@@ -43,20 +43,48 @@ export const DatePicker = <T extends DateValue>({
 }: DatePickerProps<T>) => {
   const initialInputValue = useMemo(() => {
     if (props.value) {
-      return new Date(
-        props.value.year,
-        props.value.month - 1,
-        props.value.day,
-      ).toLocaleDateString('en-US', {
-        month: '2-digit',
-        day: '2-digit',
-        year: 'numeric',
-      });
+      try {
+        // Add validation for the date values
+        if (!props.value.year || !props.value.month || !props.value.day) {
+          console.warn('DatePicker: Invalid date structure:', props.value);
+          return '';
+        }
+
+        const date = new Date(
+          props.value.year,
+          props.value.month - 1,
+          props.value.day,
+        );
+
+        // Check if the date is valid
+        if (isNaN(date.getTime())) {
+          console.warn('DatePicker: Invalid date created:', props.value, date);
+          return '';
+        }
+
+        return date.toLocaleDateString('en-US', {
+          month: '2-digit',
+          day: '2-digit',
+          year: 'numeric',
+        });
+      } catch (error) {
+        console.error(
+          'DatePicker: Error processing date value:',
+          props.value,
+          error,
+        );
+        return '';
+      }
     }
     return '';
   }, [props.value]);
 
   const [inputValue, setInputValue] = useState<string>(initialInputValue);
+
+  // Sync internal state when props.value changes
+  useEffect(() => {
+    setInputValue(initialInputValue);
+  }, [initialInputValue]);
 
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -121,7 +149,7 @@ export const DatePicker = <T extends DateValue>({
         props.onChange(parsedDate as T);
       }
     },
-    [parseInputDate],
+    [parseInputDate, props.onChange],
   );
 
   const handleInputFocus = useCallback(() => {
