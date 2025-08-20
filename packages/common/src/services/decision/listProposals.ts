@@ -1,4 +1,4 @@
-import { and, asc, db, desc, eq, sql, inArray } from '@op/db/client';
+import { and, asc, db, desc, eq, sql, inArray, ilike } from '@op/db/client';
 import { profileRelationships, proposals, users, ProfileRelationshipType } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
@@ -63,9 +63,9 @@ export const listProposals = async ({
     }
 
     if (search) {
-      // Search in proposal data (JSONB)
+      // Search in proposal data (JSONB) - using safe parameterized query
       conditions.push(
-        sql`${proposals.proposalData}::text ILIKE ${`%${search}%`}`,
+        ilike(sql`${proposals.proposalData}::text`, `%${search}%`)
       );
     }
 
