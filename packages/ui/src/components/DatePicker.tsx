@@ -162,60 +162,58 @@ export const DatePicker = <T extends DateValue>({
 
   return (
     <div className="relative">
-      <div className="relative">
-        <TextField
-          ref={inputRef}
-          label={label}
-          description={description}
-          errorMessage={errorMessage}
-          fieldClassName={fieldClassName}
-          descriptionClassName={descriptionClassName}
-          labelClassName={labelClassName}
-          isRequired={isRequired}
-          value={inputValue}
-          onChange={handleInputChange}
-          isDisabled={props.isDisabled}
-          inputProps={{
-            ...inputProps,
-            className: cn('pr-10', inputProps?.className),
-            placeholder: placeholder,
-            onFocus: handleInputFocus,
-            onBlur: handleInputBlur,
-          }}
-        />
+      <TextField
+        ref={inputRef}
+        label={label}
+        description={description}
+        errorMessage={errorMessage}
+        fieldClassName="relative"
+        descriptionClassName={descriptionClassName}
+        labelClassName={labelClassName}
+        isRequired={isRequired}
+        value={inputValue}
+        onChange={handleInputChange}
+        isDisabled={props.isDisabled}
+        inputProps={{
+          ...inputProps,
+          className: cn('pr-10', inputProps?.className),
+          placeholder: placeholder,
+          onFocus: handleInputFocus,
+          onBlur: handleInputBlur,
+        }}
+      >
         <button
           type="button"
           onClick={handleCalendarIconClick}
           disabled={props.isDisabled}
           className={cn(
-            'absolute bottom-0 right-3 m-auto',
-            'h-10',
+            'absolute right-0 top-1/2 -translate-y-1/2',
+            'h-10 w-10',
             'flex items-center justify-center',
-            'text-black',
+            'text-neutral-black',
             props.isDisabled && 'cursor-not-allowed text-lightGray',
           )}
-          style={{ marginTop: label ? '12px' : '0' }}
         >
           <CalendarIcon className="size-4" />
         </button>
-      </div>
-      {isCalendarOpen && (
-        <div
-          className="absolute top-full z-50 mt-1 w-full max-w-[15.5rem]"
-          role="dialog"
-          aria-modal="true"
-        >
-          <Calendar
-            value={props.value}
-            onChange={handleCalendarChange}
-            minValue={props.minValue}
-            maxValue={props.maxValue}
-            isDisabled={props.isDisabled}
-            isReadOnly={props.isReadOnly}
-            errorMessage={errorMessage}
-          />
-        </div>
-      )}
+        {isCalendarOpen && (
+          <div
+            className="absolute top-full z-50 mt-1 w-[15.5rem]"
+            role="dialog"
+            aria-modal="true"
+          >
+            <Calendar
+              value={props.value}
+              onChange={handleCalendarChange}
+              minValue={props.minValue}
+              maxValue={props.maxValue}
+              isDisabled={props.isDisabled}
+              isReadOnly={props.isReadOnly}
+              errorMessage={errorMessage}
+            />
+          </div>
+        )}
+      </TextField>
     </div>
   );
 };

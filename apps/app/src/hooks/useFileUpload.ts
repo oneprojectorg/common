@@ -15,7 +15,6 @@ export interface FilePreview {
 }
 
 interface UseFileUploadOptions {
-  organizationId: string;
   acceptedTypes?: string[];
   maxFiles?: number;
   maxSizePerFile?: number;
@@ -33,7 +32,6 @@ export const DEFAULT_MAX_SIZE = 4 * 1024 * 1024; // 4MB
 
 export const useFileUpload = (options: UseFileUploadOptions) => {
   const {
-    organizationId,
     acceptedTypes = DEFAULT_ACCEPTED_TYPES,
     maxFiles = DEFAULT_MAX_FILES,
     maxSizePerFile = DEFAULT_MAX_SIZE,
@@ -42,7 +40,7 @@ export const useFileUpload = (options: UseFileUploadOptions) => {
   const [filePreviews, setFilePreviews] = useState<FilePreview[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
 
-  const uploadAttachment = trpc.organization.uploadPostAttachment.useMutation();
+  const uploadAttachment = trpc.posts.uploadPostAttachment.useMutation();
 
   const validateFile = (file: File): string | null => {
     if (!acceptedTypes.includes(file.type)) {
@@ -97,7 +95,6 @@ export const useFileUpload = (options: UseFileUploadOptions) => {
 
       const result = await uploadAttachment
         .mutateAsync({
-          organizationId,
           file: base64,
           fileName: file.name,
           mimeType: file.type,

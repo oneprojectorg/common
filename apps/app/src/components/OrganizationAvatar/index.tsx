@@ -40,7 +40,7 @@ export const OrganizationAvatar = ({
   );
 
   return withLink ? (
-    <Link href={`/org/${slug}`} className="hover:no-underline">
+    <Link href={`/profile/${slug}`} className="hover:no-underline">
       {avatar}
     </Link>
   ) : (

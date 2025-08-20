@@ -19,6 +19,7 @@ import {
 import { ProfileDecisionsSuspense } from '@/components/Profile/ProfileDecisions';
 import { ProfileDetails } from '@/components/Profile/ProfileDetails';
 
+import { ProfileFollowing } from '../ProfileFollowing';
 import {
   ProfileOrganizations,
   ProfileOrganizationsSuspense,
@@ -101,7 +102,9 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
           </ProfileTabs>
           <ProfileTabsMobile
             profile={organization as any}
-            decisionsContent={<ProfileDecisionsSuspense profileId={profile.id} />}
+            decisionsContent={
+              <ProfileDecisionsSuspense profileId={profile.id} />
+            }
           >
             <ProfileRelationshipsSuspense
               slug={profile.slug}
@@ -163,6 +166,7 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
           <ProfileTabList>
             <Tab id="about">About</Tab>
             <Tab id="organizations">Organizations</Tab>
+            <Tab id="following">Following</Tab>
           </ProfileTabList>
 
           <TabPanel id="about" className="sm:p-0">
@@ -176,8 +180,19 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
               />
             </ProfileOrganizations>
           </TabPanel>
+          <TabPanel id="following" className="px-4 sm:px-6 sm:py-0">
+            <ProfileFollowing profileId={profile.id} />
+          </TabPanel>
         </ProfileTabs>
-        <ProfileTabsMobile profile={userProfile} />
+        <ProfileTabsMobile
+          profile={userProfile}
+          followingContent={<ProfileFollowing profileId={profile.id} />}
+        >
+          <ProfileOrganizationsSuspense
+            slug={profile.slug}
+            showBreadcrumb={false}
+          />
+        </ProfileTabsMobile>
       </>
     );
   } catch (e) {

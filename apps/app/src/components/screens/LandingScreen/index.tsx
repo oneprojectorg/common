@@ -41,12 +41,16 @@ const LandingScreenFeeds = ({
 
     return (
       <>
-        <Suspense fallback={<Skeleton className="h-full w-full" />}>
-          <Surface className="mb-8 border-0 p-0 pt-5 sm:mb-4 sm:border sm:p-4">
-            <PostUpdate label={t('Post')} />
-          </Surface>
-        </Suspense>
-        <hr />
+        {user.currentProfile?.type === 'org' ? (
+          <>
+            <Suspense fallback={<Skeleton className="h-full w-full" />}>
+              <Surface className="mb-8 border-0 p-0 pt-5 sm:mb-4 sm:border sm:p-4">
+                <PostUpdate label={t('Post')} />
+              </Surface>
+            </Suspense>
+            <hr />
+          </>
+        ) : null}
         <div className="mt-4 sm:mt-0">
           {user.currentOrganization ? (
             <Suspense fallback={<PostFeedSkeleton numPosts={3} />}>
@@ -111,7 +115,7 @@ export const LandingScreen = async () => {
         >
           <OrganizationHighlights />
         </Suspense>
-        {user.currentProfile ? (
+        {user.currentProfile && user.currentProfile.type === 'org' ? (
           <PendingRelationships slug={user.currentProfile.slug} />
         ) : null}
         <hr />

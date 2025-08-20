@@ -1,4 +1,4 @@
-import { CommonError, UnauthorizedError, getOrgAccessUser } from '@op/common';
+import { CommonError, getSession } from '@op/common';
 import { createServerClient } from '@op/supabase/lib';
 import { Buffer } from 'buffer';
 import type { OpenApiMeta } from 'trpc-to-openapi';
@@ -22,10 +22,10 @@ const meta: OpenApiMeta = {
   openapi: {
     enabled: true,
     method: 'POST',
-    path: `/organization/{organizationId}/feed/posts/attachment`,
+    path: `/posts/attachment`,
     protect: true,
-    tags: ['organization'],
-    summary: 'Upload a attachment for posts',
+    tags: ['profile'],
+    summary: 'Upload a attachment',
   },
 };
 
@@ -39,7 +39,6 @@ export const uploadPostAttachment = router({
     .meta(meta)
     .input(
       z.object({
-        organizationId: z.string().uuid({ message: 'Invalid organization ID' }),
         file: z.string(), // base64 encoded
         fileName: z.string(),
         mimeType: z.string(),
@@ -55,18 +54,10 @@ export const uploadPostAttachment = router({
         fileSize: z.number(),
       }),
     )
-    .mutation(async ({ input, ctx }) => {
-      const { organizationId, file, fileName, mimeType } = input;
-      const { user } = ctx;
-
-      const orgUser = await getOrgAccessUser({
-        organizationId,
-        user,
-      });
-
-      if (!orgUser) {
-        throw new UnauthorizedError();
-      }
+    .mutation(async ({ input }) => {
+      const { file, fileName, mimeType } = input;
+      const session = await getSession();
+      const profileId = session?.user.currentProfileId;
 
       const sanitizedFileName = sanitizeS3Filename(fileName);
 
@@ -117,7 +108,7 @@ export const uploadPostAttachment = router({
       );
 
       const bucket = 'assets';
-      const filePath = `org/${organizationId}/posts/${Date.now()}_${sanitizedFileName}`;
+      const filePath = `profile/${profileId}/posts/${Date.now()}_${sanitizedFileName}`;
 
       const { error: uploadError, data } = await supabase.storage
         .from(bucket)

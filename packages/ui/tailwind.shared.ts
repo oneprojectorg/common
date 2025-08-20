@@ -246,6 +246,7 @@ const config: Omit<Config, 'content'> = {
           redBlack: 'hsl(var(--op-red-600))',
           redWhite: 'hsl(var(--op-red-50))',
           green: 'hsl(var(--op-green-500))',
+          greenWhite: 'hsl(var(--op-green-50))',
         },
         data: {
           purple: 'hsl(var(--op-purple-500))',
