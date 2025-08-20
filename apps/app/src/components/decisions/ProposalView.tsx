@@ -49,6 +49,7 @@ export function ProposalView({ proposal: initialProposal, backHref }: ProposalVi
     { 
       initialData: initialProposal,
       refetchOnMount: false, // Don't refetch on mount since we have initial data
+      staleTime: 0, // Consider data stale immediately to allow cache updates to take effect
     }
   );
 
@@ -90,6 +91,7 @@ export function ProposalView({ proposal: initialProposal, backHref }: ProposalVi
     onSettled: () => {
       // Always refetch after error or success
       utils.decision.getProposal.invalidate({ proposalId: currentProposal.id });
+      utils.decision.listProposals.invalidate(); // Also invalidate list to keep ProposalCard in sync
     },
   });
 
@@ -124,6 +126,7 @@ export function ProposalView({ proposal: initialProposal, backHref }: ProposalVi
     onSettled: () => {
       // Always refetch after error or success
       utils.decision.getProposal.invalidate({ proposalId: currentProposal.id });
+      utils.decision.listProposals.invalidate(); // Also invalidate list to keep ProposalCard in sync
     },
   });
 

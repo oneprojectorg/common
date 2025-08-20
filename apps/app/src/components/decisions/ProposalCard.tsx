@@ -15,6 +15,7 @@ import { Surface } from '@op/ui/Surface';
 import { Heart, MessageCircle, Users } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { LuBookMarked, LuBookmark } from 'react-icons/lu';
 import { z } from 'zod';
 
 type Proposal = z.infer<typeof proposalEncoder>;
@@ -53,15 +54,21 @@ export function ProposalCard({
     onMutate: async (variables) => {
       // Cancel outgoing refetches
       await utils.decision.listProposals.cancel();
+      await utils.decision.getProposal.cancel({
+        proposalId: currentProposal.id,
+      });
 
-      // Snapshot the previous value
-      const previousData = utils.decision.listProposals.getData();
+      // Snapshot the previous values
+      const previousListData = utils.decision.listProposals.getData();
+      const previousProposalData = utils.decision.getProposal.getData({
+        proposalId: currentProposal.id,
+      });
 
       // Optimistically update list data
-      if (previousData) {
-        const optimisticData = {
-          ...previousData,
-          proposals: previousData.proposals.map((p) =>
+      if (previousListData) {
+        const optimisticListData = {
+          ...previousListData,
+          proposals: previousListData.proposals.map((p) =>
             p.id === currentProposal.id
               ? {
                   ...p,
@@ -82,15 +89,40 @@ export function ProposalCard({
               : p,
           ),
         };
-        utils.decision.listProposals.setData({}, optimisticData);
+        utils.decision.listProposals.setData({}, optimisticListData);
       }
 
-      return { previousData };
+      // Optimistically update individual proposal data
+      if (previousProposalData) {
+        const optimisticProposalData = {
+          ...previousProposalData,
+          isLikedByUser:
+            variables.relationshipType === ProfileRelationshipType.LIKES
+              ? true
+              : previousProposalData.isLikedByUser,
+          isFollowedByUser:
+            variables.relationshipType === ProfileRelationshipType.FOLLOWING
+              ? true
+              : previousProposalData.isFollowedByUser,
+        };
+        utils.decision.getProposal.setData(
+          { proposalId: currentProposal.id },
+          optimisticProposalData,
+        );
+      }
+
+      return { previousListData, previousProposalData };
     },
     onError: (error, _variables, context) => {
       // Rollback on error
-      if (context?.previousData) {
-        utils.decision.listProposals.setData({}, context.previousData);
+      if (context?.previousListData) {
+        utils.decision.listProposals.setData({}, context.previousListData);
+      }
+      if (context?.previousProposalData) {
+        utils.decision.getProposal.setData(
+          { proposalId: currentProposal.id },
+          context.previousProposalData,
+        );
       }
       console.error('Failed to add relationship:', error);
     },
@@ -106,15 +138,21 @@ export function ProposalCard({
       onMutate: async (variables) => {
         // Cancel outgoing refetches
         await utils.decision.listProposals.cancel();
+        await utils.decision.getProposal.cancel({
+          proposalId: currentProposal.id,
+        });
 
-        // Snapshot the previous value
-        const previousData = utils.decision.listProposals.getData();
+        // Snapshot the previous values
+        const previousListData = utils.decision.listProposals.getData();
+        const previousProposalData = utils.decision.getProposal.getData({
+          proposalId: currentProposal.id,
+        });
 
         // Optimistically update list data
-        if (previousData) {
-          const optimisticData = {
-            ...previousData,
-            proposals: previousData.proposals.map((p) =>
+        if (previousListData) {
+          const optimisticListData = {
+            ...previousListData,
+            proposals: previousListData.proposals.map((p) =>
               p.id === currentProposal.id
                 ? {
                     ...p,
@@ -137,15 +175,40 @@ export function ProposalCard({
                 : p,
             ),
           };
-          utils.decision.listProposals.setData({}, optimisticData);
+          utils.decision.listProposals.setData({}, optimisticListData);
         }
 
-        return { previousData };
+        // Optimistically update individual proposal data
+        if (previousProposalData) {
+          const optimisticProposalData = {
+            ...previousProposalData,
+            isLikedByUser:
+              variables.relationshipType === ProfileRelationshipType.LIKES
+                ? false
+                : previousProposalData.isLikedByUser,
+            isFollowedByUser:
+              variables.relationshipType === ProfileRelationshipType.FOLLOWING
+                ? false
+                : previousProposalData.isFollowedByUser,
+          };
+          utils.decision.getProposal.setData(
+            { proposalId: currentProposal.id },
+            optimisticProposalData,
+          );
+        }
+
+        return { previousListData, previousProposalData };
       },
       onError: (error, _variables, context) => {
         // Rollback on error
-        if (context?.previousData) {
-          utils.decision.listProposals.setData({}, context.previousData);
+        if (context?.previousListData) {
+          utils.decision.listProposals.setData({}, context.previousListData);
+        }
+        if (context?.previousProposalData) {
+          utils.decision.getProposal.setData(
+            { proposalId: currentProposal.id },
+            context.previousProposalData,
+          );
         }
         console.error('Failed to remove relationship:', error);
       },
@@ -297,28 +360,18 @@ export function ProposalCard({
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            onPress={handleLikeClick}
-            surface="ghost"
-            size="sm"
-            className="flex px-4 py-2 text-primary-teal"
-          >
+          <Button onPress={handleLikeClick} size="small" color="secondary">
             <Heart
               className={`size-4 ${currentProposal.isLikedByUser ? 'fill-current' : ''}`}
             />
             {currentProposal.isLikedByUser ? 'Liked' : 'Like'}
           </Button>
-          <button
-            onClick={handleFollowClick}
-            disabled={isLoading || !currentProposal.profileId}
-            className={`rounded-md border px-3 py-1.5 text-sm transition-colors disabled:opacity-50 ${
-              currentProposal.isFollowedByUser
-                ? 'hover:bg-primary-teal-dark border-primary-teal bg-primary-teal text-white'
-                : 'border-neutral-gray1 text-neutral-charcoal hover:bg-neutral-gray1'
-            }`}
-          >
+          <Button onPress={handleFollowClick} size="small" color="secondary">
+            <LuBookmark
+              className={`size-4 ${currentProposal.isFollowedByUser ? 'fill-current' : ''}`}
+            />
             {currentProposal.isFollowedByUser ? 'Following' : 'Follow'}
-          </button>
+          </Button>
         </div>
       </div>
     </Surface>
