@@ -1,11 +1,11 @@
 // Public tables are included in migrations
 export { accessRoles } from './tables/access.sql';
-export { 
-  accessZones, 
+export {
+  accessZones,
   accessZonesRelations,
   accessRolePermissionsOnAccessZones,
   accessRolePermissionsOnAccessZonesRelations,
-  accessRolesRelations
+  accessRolesRelations,
 } from './tables/accessZones.sql';
 export { links, linksRelations, linkTypeEnum } from './tables/links.sql';
 export {
@@ -69,6 +69,10 @@ export { projects, projectsRelations } from './tables/projects.sql';
 export {
   organizationRelationships,
   organizationRelationshipsRelations,
+  profileRelationships,
+  profileRelationshipsRelations,
+  ProfileRelationshipType,
+  profileRelationshipTypeEnum,
 } from './tables/relationships.sql';
 export { users, usersRelations } from './tables/users.sql';
 export { usersUsedStorage } from './tables/usersUsedStorage.sql';

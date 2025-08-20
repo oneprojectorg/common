@@ -80,7 +80,6 @@ const PostUpdateWithUser = ({
   const isOnline = useConnectionStatus();
 
   const fileUpload = useFileUpload({
-    organizationId: organization?.id || '',
     acceptedTypes: [
       'image/gif',
       'image/png',
@@ -100,7 +99,10 @@ const PostUpdateWithUser = ({
       // For comments (posts with parentPostId)
       if (variables.parentPostId) {
         // Cancel any outgoing refetches
-        const queryKey = createCommentsQueryKey(variables.parentPostId, profileId);
+        const queryKey = createCommentsQueryKey(
+          variables.parentPostId,
+          profileId,
+        );
         await utils.posts.getPosts.cancel(queryKey);
 
         // Snapshot previous value
@@ -187,7 +189,10 @@ const PostUpdateWithUser = ({
         // For comments (posts with parentPostId)
         if (variables.parentPostId && context.isComment) {
           // Restore previous comments state
-          const queryKey = createCommentsQueryKey(variables.parentPostId, profileId);
+          const queryKey = createCommentsQueryKey(
+            variables.parentPostId,
+            profileId,
+          );
           utils.posts.getPosts.setData(queryKey, context.previousComments);
 
           // Revert parent post comment count - only for organization posts
@@ -251,7 +256,10 @@ const PostUpdateWithUser = ({
 
         // For comments (posts with parentPostId)
         if (variables.parentPostId) {
-          const queryKey = createCommentsQueryKey(variables.parentPostId, profileId);
+          const queryKey = createCommentsQueryKey(
+            variables.parentPostId,
+            profileId,
+          );
           utils.posts.getPosts.setData(queryKey, (old) => {
             if (!old) return [enhancedData];
             // Replace optimistic comment with real data, or add if not found
@@ -349,7 +357,10 @@ const PostUpdateWithUser = ({
         // Minimal invalidation since optimistic updates handle UI
         // Only invalidate on ERROR to trigger recovery
         if (error) {
-          const queryKey = createCommentsQueryKey(variables.parentPostId, profileId);
+          const queryKey = createCommentsQueryKey(
+            variables.parentPostId,
+            profileId,
+          );
           void utils.posts.getPosts.invalidate(queryKey);
           // Also invalidate main feeds on error to refresh comment counts - only for organization posts
           if (organization?.profile?.slug) {
@@ -423,7 +434,6 @@ const PostUpdateWithUser = ({
       }
 
       // Optimistic updates are now handled in onMutate
-
       const mutationData: any = {
         content: content.trim() || '',
         parentPostId,
@@ -471,8 +481,12 @@ const PostUpdateWithUser = ({
     }
   }, []);
 
+  if (!user?.currentProfile) {
+    return null;
+  }
+
   return (
-    <div className={cn('flex flex-col gap-8', className)}>
+    <div className={cn('flex flex-col gap-8 sm:flex', className)}>
       <FeedItem>
         {organization ? (
           <OrganizationAvatar
@@ -635,7 +649,7 @@ export const PostUpdate = ({
   label: string;
 }) => {
   const { user } = useUser();
-  const currentOrg = user?.currentOrganization;
+  const currentProfileId = user?.currentProfileId;
 
   // For profile-based associations (like proposals), we don't need an organization
   if (profileId) {
@@ -653,15 +667,29 @@ export const PostUpdate = ({
   }
 
   if (
-    !(currentOrg && !organization) &&
-    (!currentOrg || organization?.id !== currentOrg.id)
+    !(currentProfileId && !organization) &&
+    (!currentProfileId || organization?.profile?.id !== currentProfileId)
   ) {
     return <div className={cn(className, 'border-none p-0')} />;
   }
 
+  // TODO: Ugly! Still a stopgap until we migrate off of organizationId
+  if (
+    organization &&
+    (user.currentOrganization?.profile.id !== currentProfileId ||
+      !user.currentOrganization)
+  ) {
+    return null;
+  }
+
+  const org = organization ?? user?.currentOrganization;
+  if (!org) {
+    return null;
+  }
+
   return (
     <PostUpdateWithUser
-      organization={organization ?? currentOrg}
+      organization={org}
       className={className}
       parentPostId={parentPostId}
       profileId={profileId}

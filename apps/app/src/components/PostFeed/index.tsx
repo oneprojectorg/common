@@ -1,9 +1,12 @@
 'use client';
 
 import { getPublicUrl } from '@/utils';
-import { createOptimisticUpdater, type PostFeedUser } from '@/utils/optimisticUpdates';
 import { OrganizationUser } from '@/utils/UserProvider';
 import { detectLinks, linkifyText } from '@/utils/linkDetection';
+import {
+  type PostFeedUser,
+  createOptimisticUpdater,
+} from '@/utils/optimisticUpdates';
 import { createCommentsQueryKey } from '@/utils/queryKeys';
 import { trpc } from '@op/api/client';
 import type {
@@ -25,7 +28,6 @@ import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
 import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';
-import { useFeatureFlagEnabled } from 'posthog-js/react';
 import { ReactNode, memo, useMemo, useState } from 'react';
 import { LuEllipsis, LuLeaf } from 'react-icons/lu';
 
@@ -156,19 +158,19 @@ const PostReactions = ({
 
   const reactions = post.reactionCounts
     ? Object.entries(post.reactionCounts).map(([reactionType, count]) => {
-      const reactionOption = REACTION_OPTIONS.find(
-        (option) => option.key === reactionType,
-      );
-      const emoji = reactionOption?.emoji || reactionType;
-      const users = post.reactionUsers?.[reactionType] || [];
+        const reactionOption = REACTION_OPTIONS.find(
+          (option) => option.key === reactionType,
+        );
+        const emoji = reactionOption?.emoji || reactionType;
+        const users = post.reactionUsers?.[reactionType] || [];
 
-      return {
-        emoji,
-        count: count as number,
-        isActive: post.userReaction === reactionType,
-        users,
-      };
-    })
+        return {
+          emoji,
+          count: count as number,
+          isActive: post.userReaction === reactionType,
+          users,
+        };
+      })
     : [];
 
   return (
@@ -188,10 +190,8 @@ const PostCommentButton = ({
   post: Post;
   onCommentClick: () => void;
 }) => {
-  const commentsEnabled = useFeatureFlagEnabled('comments');
-
   // we can disable this to allow for threads in the future
-  if (!commentsEnabled || !post?.id || post.parentPostId) {
+  if (!post?.id || post.parentPostId) {
     return null;
   }
 

@@ -20,7 +20,6 @@ interface PhaseStepperProps {
   className?: string;
 }
 
-
 const Step = ({
   stepState,
   index,
@@ -36,11 +35,11 @@ const Step = ({
         className={cn(
           'flex size-6 items-center justify-center rounded-full font-serif',
           stepState === 'completed' &&
-          'bg-functional-greenWhite text-functional-green',
+            'bg-functional-greenWhite text-functional-green',
           stepState === 'current' &&
-          'bg-neutral-charcoal text-neutral-offWhite',
+            'bg-neutral-charcoal text-neutral-offWhite',
           stepState === 'upcoming' &&
-          'border border-neutral-charcoal bg-transparent text-neutral-charcoal',
+            'border border-neutral-charcoal bg-transparent text-neutral-charcoal',
         )}
       >
         {stepState === 'completed' ? <Check className="size-4" /> : index + 1}

@@ -62,3 +62,15 @@ export const Disabled = () => {
     </div>
   );
 };
+
+export const ErrorState = () => {
+  return (
+    <div className="flex w-96 flex-col gap-2">
+      <DatePicker
+        label="Event date"
+        placeholder="08/06/2025"
+        errorMessage="This is an error message"
+      />
+    </div>
+  );
+};
