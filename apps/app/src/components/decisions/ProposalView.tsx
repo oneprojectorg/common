@@ -11,9 +11,14 @@ import { trpc } from '@op/api/client';
 import type { proposalEncoder } from '@op/api/encoders';
 import { Avatar } from '@op/ui/Avatar';
 import { Surface } from '@op/ui/Surface';
+import Blockquote from '@tiptap/extension-blockquote';
+import Heading from '@tiptap/extension-heading';
+import HorizontalRule from '@tiptap/extension-horizontal-rule';
 import TiptapImage from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
+import Strike from '@tiptap/extension-strike';
 import TextAlign from '@tiptap/extension-text-align';
+import Underline from '@tiptap/extension-underline';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Heart, MessageCircle, Users } from 'lucide-react';
@@ -119,13 +124,20 @@ export function ProposalView({ proposal, backHref }: ProposalViewProps) {
           inline: true,
           allowBase64: true,
         }),
+        Heading.configure({
+          levels: [1, 2, 3],
+        }),
+        Underline,
+        Strike,
+        Blockquote,
+        HorizontalRule,
       ],
       content: content || '<p>No content available</p>',
       editable: false, // Make editor read-only
       editorProps: {
         attributes: {
           class:
-            'prose prose-lg max-w-none focus:outline-none min-h-96 px-4 py-4',
+            'prose prose-lg max-w-none focus:outline-none px-6 py-6 text-neutral-black',
         },
       },
       immediatelyRender: false,
@@ -265,10 +277,12 @@ export function ProposalView({ proposal, backHref }: ProposalViewProps) {
 
           {/* Proposal Content */}
           <div className="mt-6">
-            <EditorContent
-              className="[&>div]:px-0 [&>div]:py-0"
-              editor={editor}
-            />
+            <div className="rounded-lg border border-neutral-gray1 bg-white">
+              <EditorContent
+                className="[&>div]:px-0 [&>div]:py-0"
+                editor={editor}
+              />
+            </div>
           </div>
 
           {/* Comments Section */}
