@@ -48,8 +48,8 @@ export function ProposalView({ proposal, backHref }: ProposalViewProps) {
   // Check if current user can edit (only submitter can edit for now)
   const canEdit = Boolean(
     user?.currentProfile &&
-      proposal.submittedBy &&
-      user.currentProfile.id === proposal.submittedBy.id,
+    proposal.submittedBy &&
+    user.currentProfile.id === proposal.submittedBy.id,
   );
 
   // Generate edit href
@@ -277,7 +277,7 @@ export function ProposalView({ proposal, backHref }: ProposalViewProps) {
 
           {/* Proposal Content */}
           <div className="mt-6">
-            <div className="rounded-lg border border-neutral-gray1 bg-white">
+            <div>
               <EditorContent
                 className="[&>div]:px-0 [&>div]:py-0"
                 editor={editor}

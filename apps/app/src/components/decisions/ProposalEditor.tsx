@@ -43,6 +43,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
 
 import { ProposalEditorLayout } from './layout';
+import { SlashCommands } from './SlashCommands';
 
 type Proposal = z.infer<typeof proposalEncoder>;
 
@@ -148,6 +149,7 @@ export function ProposalEditor({
       Strike,
       Blockquote,
       HorizontalRule,
+      SlashCommands,
     ],
     content: placeholderContent,
     editorProps: {

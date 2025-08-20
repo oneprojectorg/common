@@ -442,6 +442,9 @@ importers:
       '@tanstack/react-form':
         specifier: ^1.6.2
         version: 1.6.2(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+      '@tiptap/core':
+        specifier: ^3.2.0
+        version: 3.2.0(@tiptap/pm@3.2.0)
       '@tiptap/extension-blockquote':
         specifier: ^3.2.0
         version: 3.2.0(@tiptap/core@3.2.0(@tiptap/pm@3.2.0))
@@ -469,6 +472,9 @@ importers:
       '@tiptap/extension-ordered-list':
         specifier: ^3.2.0
         version: 3.2.0(@tiptap/extension-list@3.2.0(@tiptap/core@3.2.0(@tiptap/pm@3.2.0))(@tiptap/pm@3.2.0))
+      '@tiptap/extension-placeholder':
+        specifier: ^3.2.0
+        version: 3.2.0(@tiptap/extensions@3.2.0(@tiptap/core@3.2.0(@tiptap/pm@3.2.0))(@tiptap/pm@3.2.0))
       '@tiptap/extension-strike':
         specifier: ^3.2.0
         version: 3.2.0(@tiptap/core@3.2.0(@tiptap/pm@3.2.0))
@@ -478,12 +484,18 @@ importers:
       '@tiptap/extension-underline':
         specifier: ^3.2.0
         version: 3.2.0(@tiptap/core@3.2.0(@tiptap/pm@3.2.0))
+      '@tiptap/pm':
+        specifier: ^3.2.0
+        version: 3.2.0
       '@tiptap/react':
         specifier: ^3.2.0
         version: 3.2.0(@floating-ui/dom@1.7.3)(@tiptap/core@3.2.0(@tiptap/pm@3.2.0))(@tiptap/pm@3.2.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       '@tiptap/starter-kit':
         specifier: ^3.2.0
         version: 3.2.0
+      '@tiptap/suggestion':
+        specifier: ^3.2.0
+        version: 3.2.0(@tiptap/core@3.2.0(@tiptap/pm@3.2.0))(@tiptap/pm@3.2.0)
       '@vercel/otel':
         specifier: ^1.12.0
         version: 1.12.0(@opentelemetry/api@1.9.0)(@opentelemetry/resources@2.0.1(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-metrics@2.0.1(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.0.1(@opentelemetry/api@1.9.0))
@@ -4096,6 +4108,11 @@ packages:
     peerDependencies:
       '@tiptap/core': ^3.2.0
 
+  '@tiptap/extension-placeholder@3.2.0':
+    resolution: {integrity: sha512-+yswlhZDJrCad2VXYe2NOZ9miMHFuIT7jGnKRCjIWiGpnRgB0FBSI7fjVBl1HmCDaSdVd+p0fOMHLTGYO5Fkdw==}
+    peerDependencies:
+      '@tiptap/extensions': ^3.2.0
+
   '@tiptap/extension-strike@3.2.0':
     resolution: {integrity: sha512-gIfaIJmvQNBxjvtJfNQ8LhvWuGEFVFDMJxLa80speY4ngsDYZ3K8Ea4+0FTctKJVIXEZ5cDoHZR96ELkQMPzWA==}
     peerDependencies:
@@ -4135,6 +4152,12 @@ packages:
 
   '@tiptap/starter-kit@3.2.0':
     resolution: {integrity: sha512-hcA12kqxVz1ypNqXhTUStQHWmDFmd2nm8NPmQmepK5T/T2FVXhVhhGSN8KsCR8sYFr3TwOk9utszxQLkT4AwOA==}
+
+  '@tiptap/suggestion@3.2.0':
+    resolution: {integrity: sha512-AEkZPsn9Fn3p/3e6LIz8dyF3npU0JjVa2rCGqj/MmmvX9MD2fRYhiTCT1y7q9Q9/4wB4+CiOT7Mt4sWiijEkxw==}
+    peerDependencies:
+      '@tiptap/core': ^3.2.0
+      '@tiptap/pm': ^3.2.0
 
   '@trivago/prettier-plugin-sort-imports@5.2.2':
     resolution: {integrity: sha512-fYDQA9e6yTNmA13TLVSA+WMQRc5Bn/c0EUBditUHNfMMxN7M82c38b1kEggVE3pLpZ0FwkwJkUEKMiOi52JXFA==}
@@ -11954,6 +11977,10 @@ snapshots:
     dependencies:
       '@tiptap/core': 3.2.0(@tiptap/pm@3.2.0)
 
+  '@tiptap/extension-placeholder@3.2.0(@tiptap/extensions@3.2.0(@tiptap/core@3.2.0(@tiptap/pm@3.2.0))(@tiptap/pm@3.2.0))':
+    dependencies:
+      '@tiptap/extensions': 3.2.0(@tiptap/core@3.2.0(@tiptap/pm@3.2.0))(@tiptap/pm@3.2.0)
+
   '@tiptap/extension-strike@3.2.0(@tiptap/core@3.2.0(@tiptap/pm@3.2.0))':
     dependencies:
       '@tiptap/core': 3.2.0(@tiptap/pm@3.2.0)
@@ -12036,6 +12063,11 @@ snapshots:
       '@tiptap/extension-text': 3.2.0(@tiptap/core@3.2.0(@tiptap/pm@3.2.0))
       '@tiptap/extension-underline': 3.2.0(@tiptap/core@3.2.0(@tiptap/pm@3.2.0))
       '@tiptap/extensions': 3.2.0(@tiptap/core@3.2.0(@tiptap/pm@3.2.0))(@tiptap/pm@3.2.0)
+      '@tiptap/pm': 3.2.0
+
+  '@tiptap/suggestion@3.2.0(@tiptap/core@3.2.0(@tiptap/pm@3.2.0))(@tiptap/pm@3.2.0)':
+    dependencies:
+      '@tiptap/core': 3.2.0(@tiptap/pm@3.2.0)
       '@tiptap/pm': 3.2.0
 
   '@trivago/prettier-plugin-sort-imports@5.2.2(@vue/compiler-sfc@3.5.13)(prettier@3.5.2)':
