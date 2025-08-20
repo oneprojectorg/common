@@ -277,7 +277,6 @@ const PostUpdateWithUser = ({
     if (lastFailedPost) {
       createPost.mutate({
         content: lastFailedPost.content,
-        organizationId: organization.id,
         parentPostId,
         attachmentIds: lastFailedPost.attachmentIds,
       });
@@ -309,7 +308,6 @@ const PostUpdateWithUser = ({
       // Optimistic updates are now handled in onMutate
       createPost.mutate({
         content: content.trim() || '',
-        organizationId: organization.id,
         parentPostId,
         attachmentIds: fileUpload.getUploadedAttachmentIds(),
       });

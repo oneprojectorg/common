@@ -108,7 +108,7 @@ export const createProposal = async ({
         .values({
           processInstanceId: data.processInstanceId,
           proposalData: data.proposalData,
-          submittedByProfileId: dbUser.currentProfileId,
+          submittedByProfileId: dbUser.currentProfileId!,
           profileId: proposalProfile.id,
           status: 'submitted',
         })

@@ -454,7 +454,7 @@ export class TransitionEngine {
 
     // Simplified: assume decisions with decisionData.approved = true are approvals
     const approvalCount = allDecisions.filter(d => {
-      const decisionData = d.decisions.decisionData as Record<string, unknown>;
+      const decisionData = d.decision_instances.decisionData as Record<string, unknown>;
       return decisionData.approved === true;
     }).length;
 

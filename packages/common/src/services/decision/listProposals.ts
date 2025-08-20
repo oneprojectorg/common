@@ -110,7 +110,7 @@ export const listProposals = async ({
     });
 
     // Get likes count for each proposal and user relationship status
-    const proposalIds = proposalList.map(p => p.profileId).filter(Boolean);
+    const proposalIds = proposalList.map(p => p.profileId).filter((id): id is string => Boolean(id));
     
     let likesCountMap = new Map();
     let userRelationshipMap = new Map();
