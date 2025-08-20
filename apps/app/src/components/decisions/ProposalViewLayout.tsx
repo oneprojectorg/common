@@ -2,7 +2,7 @@
 
 import { Button } from '@op/ui/Button';
 import { cn } from '@op/ui/utils';
-import { ChevronLeft, Edit, Heart, Users } from 'lucide-react';
+import { ChevronLeft, Edit, Heart } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { ReactNode } from 'react';
 import { LuBookmark } from 'react-icons/lu';
