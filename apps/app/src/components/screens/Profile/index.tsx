@@ -51,7 +51,7 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
         slug,
       });
 
-      const decisionsEnabled = false; // useFeatureFlagEnabled('decision_making'); // client only
+      const decisionsEnabled = true;
 
       return organization ? (
         <>
@@ -96,14 +96,21 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
             </TabPanel>
             {decisionsEnabled ? (
               <TabPanel id="decisions" className="px-4 sm:px-6 sm:py-0">
-                <ProfileDecisionsSuspense />
+                <ProfileDecisionsSuspense profileId={profile.id} />
               </TabPanel>
             ) : null}
           </ProfileTabs>
           <ProfileTabsMobile
-            profile={organization}
-            decisionsContent={<ProfileDecisionsSuspense />}
-          />
+            profile={organization as any}
+            decisionsContent={
+              <ProfileDecisionsSuspense profileId={profile.id} />
+            }
+          >
+            <ProfileRelationshipsSuspense
+              slug={profile.slug}
+              showBreadcrumb={false}
+            />
+          </ProfileTabsMobile>
         </>
       ) : null;
     }

@@ -317,7 +317,7 @@ const AvatarMenuContent = ({
   );
 };
 
-const UserAvatarMenu = () => {
+export const UserAvatarMenu = () => {
   const { user } = useUser();
   const isMobile = useMediaQuery('(max-width: 640px)');
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
