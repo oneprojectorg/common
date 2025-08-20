@@ -76,7 +76,7 @@ const SlashCommandsList = forwardRef<
   }));
 
   return (
-    <div className="z-50 h-auto max-h-[330px] w-72 overflow-auto rounded-md border border-neutral-gray1 bg-white p-1 shadow-md">
+    <div className="z-[9999999] h-auto max-h-[330px] w-72 overflow-auto rounded-md border border-neutral-gray1 bg-white p-1 shadow-md">
       {props.items.length ? (
         props.items.map((item, index) => (
           <button
@@ -262,7 +262,7 @@ const suggestionOptions: Partial<SuggestionOptions> = {
         popup.style.position = 'absolute';
         popup.style.top = `${props.clientRect().bottom + 8}px`;
         popup.style.left = `${props.clientRect().left}px`;
-        popup.style.zIndex = '50';
+        popup.style.zIndex = '9999999';
         document.body.appendChild(popup);
 
         root = createRoot(popup);

@@ -388,6 +388,9 @@ importers:
       '@formity/react':
         specifier: ^1.0.0
         version: 1.0.0(react@19.0.0)
+      '@internationalized/date':
+        specifier: ^3.8.2
+        version: 3.8.2
       '@next/bundle-analyzer':
         specifier: ^15.3.0
         version: 15.3.0
