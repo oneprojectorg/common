@@ -5,7 +5,13 @@
 //
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { trpc } from '@op/api/client';
-import { Modal, ModalBody, ModalHeader, ModalStepper, ModalContext } from '@op/ui/Modal';
+import {
+  Modal,
+  ModalBody,
+  ModalContext,
+  ModalHeader,
+  ModalStepper,
+} from '@op/ui/Modal';
 import { toast } from '@op/ui/Toast';
 import Form from '@rjsf/core';
 import type { RJSFValidationError } from '@rjsf/utils';
@@ -57,15 +63,119 @@ const transformFormDataToInstanceData = (data: Record<string, unknown>) => {
   };
 };
 
+type ValidationMode = 'none' | 'static' | 'live';
+
+interface FieldError {
+  __errors: string[];
+}
+
+interface ErrorSchema {
+  [fieldName: string]: FieldError | ErrorSchema;
+}
+
+interface ValidationError {
+  instancePath?: string;
+  property?: string;
+  schemaPath?: string;
+  message?: string;
+}
+
+interface ValidationResult {
+  isValid: boolean;
+  errors: ErrorSchema;
+}
+
+// Extract error processing logic for better testability and maintainability
+const processValidationErrors = (errors: ValidationError[]): ErrorSchema => {
+  const fieldErrors: ErrorSchema = {};
+
+  errors.forEach((error) => {
+    let fieldPath = '';
+
+    if (error.instancePath) {
+      // Remove leading slash and convert to nested path
+      fieldPath = error.instancePath.substring(1);
+    } else if (error.property) {
+      fieldPath = error.property.substring(9);
+    } else if (error.schemaPath) {
+      // Handle required field errors that don't have instancePath
+      // Extract nested field path from schema path like "/properties/proposalSubmissionPhase/properties/submissionsOpen"
+      const pathMatches = error.schemaPath.match(
+        /\/properties\/([^\/]+(?:\/properties\/[^\/]+)*)/,
+      );
+      if (pathMatches) {
+        // Convert "/properties/parent/properties/child" to "parent/child"
+        fieldPath = pathMatches[1]!.replace(/\/properties\//g, '/');
+      }
+    }
+
+    if (fieldPath) {
+      // Handle nested field paths like "proposalSubmissionPhase/submissionsOpen"
+      const pathParts = fieldPath.split('/').filter(Boolean); // Remove empty parts
+      let currentLevel: Record<string, any> = fieldErrors;
+
+      // Navigate/create nested structure
+      for (let i = 0; i < pathParts.length; i++) {
+        const part = pathParts[i]!; // TypeScript assertion since we filtered empty parts
+        if (i === pathParts.length - 1) {
+          // Last part - add the error
+          if (!currentLevel[part]) {
+            currentLevel[part] = { __errors: [] };
+          }
+          currentLevel[part].__errors.push(error.message || 'Invalid value');
+        } else {
+          // Intermediate part - create nested structure
+          if (!currentLevel[part]) {
+            currentLevel[part] = {};
+          }
+          currentLevel = currentLevel[part];
+        }
+      }
+    }
+  });
+
+  return fieldErrors;
+};
+
+// Custom hook for validation state management
+const useStepValidation = () => {
+  const [validationModes, setValidationModes] = useState<
+    Record<number, ValidationMode>
+  >({});
+  const [stepErrors, setStepErrors] = useState<Record<number, ErrorSchema>>({});
+
+  const setStepValidation = (
+    step: number,
+    mode: ValidationMode,
+    errors?: ErrorSchema,
+  ) => {
+    setValidationModes((prev) => ({ ...prev, [step]: mode }));
+    if (errors !== undefined) {
+      setStepErrors((prev) => ({ ...prev, [step]: errors }));
+    }
+  };
+
+  const clearStep = (step: number) => {
+    setValidationModes((prev) => ({ ...prev, [step]: 'none' }));
+    setStepErrors((prev) => ({ ...prev, [step]: {} }));
+  };
+
+  return {
+    validationModes,
+    stepErrors,
+    setStepValidation,
+    clearStep,
+  };
+};
+
 export const CreateDecisionProcessModal = () => {
   const utils = trpc.useUtils();
-  type ValidationMode = 'none' | 'static' | 'live';
 
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] =
     useState<Record<string, unknown>>(schemaDefaults);
-  const [validationModes, setValidationModes] = useState<Record<number, ValidationMode>>({});
-  const [stepErrors, setStepErrors] = useState<Record<number, any>>({});
+  const { validationModes, stepErrors, setStepValidation, clearStep } =
+    useStepValidation();
 
   const isOnline = useConnectionStatus();
 
@@ -190,7 +300,7 @@ export const CreateDecisionProcessModal = () => {
   };
 
   // Extract validation logic to avoid duplication
-  const validateCurrentStep = (): { isValid: boolean; errors: any } => {
+  const validateCurrentStep = (): ValidationResult => {
     const currentSchema = stepSchemas[currentStep - 1];
     if (!currentSchema) return { isValid: false, errors: {} };
 
@@ -206,34 +316,8 @@ export const CreateDecisionProcessModal = () => {
       currentStepData,
     );
 
-    // Use RJSF ErrorSchema format: { fieldName: { __errors: ['error message'] } }
-    const fieldErrors: Record<string, { __errors: string[] }> = {};
-
-    // Add JSON Schema validation errors
-    if (result.errors && result.errors.length > 0) {
-      result.errors.forEach((error) => {
-        let fieldName = '';
-
-        if (error.instancePath) {
-          fieldName = error.instancePath.substring(1) || error.schemaPath?.split('/')[2] || 'root';
-        } else if (error.property) {
-          fieldName = error.property.substring(9);
-        } else if (error.schemaPath) {
-          // Handle required field errors that don't have instancePath
-          const matches = error.schemaPath.match(/\/properties\/([^\/]+)/);
-          if (matches) {
-            fieldName = matches[1];
-          }
-        }
-
-        if (fieldName) {
-          if (!fieldErrors[fieldName]) {
-            fieldErrors[fieldName] = { __errors: [] };
-          }
-          fieldErrors[fieldName]!.__errors.push(error.message || 'Invalid value');
-        }
-      });
-    }
+    // Process JSON Schema validation errors using extracted function
+    const fieldErrors = processValidationErrors(result.errors || []);
 
     // Add custom phase sequence validation for step 2
     const phaseErrors = validatePhaseSequence();
@@ -252,8 +336,7 @@ export const CreateDecisionProcessModal = () => {
     if (!validation.isValid && showErrors) {
       // Only show static errors if not already in live validation mode
       if (validationModes[step] !== 'live') {
-        setStepErrors(prev => ({ ...prev, [step]: validation.errors }));
-        setValidationModes(prev => ({ ...prev, [step]: 'static' }));
+        setStepValidation(step, 'static', validation.errors);
       }
     }
 
@@ -265,8 +348,7 @@ export const CreateDecisionProcessModal = () => {
 
     if (isValid) {
       // Clear validation state when moving forward successfully
-      setValidationModes(prev => ({ ...prev, [currentStep]: 'none' }));
-      setStepErrors(prev => ({ ...prev, [currentStep]: null }));
+      clearStep(currentStep);
       setCurrentStep((prev) => prev + 1);
     }
 
@@ -275,8 +357,7 @@ export const CreateDecisionProcessModal = () => {
 
   const handlePrevious = (): void => {
     // Clear validation state when going back
-    setValidationModes((prev) => ({ ...prev, [currentStep]: 'none' }));
-    setStepErrors((prev) => ({ ...prev, [currentStep]: null }));
+    clearStep(currentStep);
     setCurrentStep((prev) => prev - 1);
   };
 
@@ -310,23 +391,21 @@ export const CreateDecisionProcessModal = () => {
     });
   };
 
-  const handleChange = (data: any) => {
+  const handleChange = (data: { formData?: Record<string, unknown> }) => {
     if (data.formData) {
-      setFormData({ ...formData, ...data.formData });
+      // Optimized performance: use functional update to avoid recreating entire object
+      setFormData((prev) => ({ ...prev, ...data.formData }));
     }
 
     // Transition from static to live validation on first change after validation failure
     if (validationModes[currentStep] === 'static') {
-      setValidationModes((prev) => ({ ...prev, [currentStep]: 'live' }));
-      setStepErrors((prev) => ({ ...prev, [currentStep]: null }));
+      setStepValidation(currentStep, 'live', {});
     }
   };
 
-  const handleError = (errors: RJSFValidationError[]) => {
+  const handleError = (_errors: RJSFValidationError[]) => {
     // Handle live validation errors from RJSF
-    if (errors.length > 0) {
-      console.warn('Live validation errors:', errors);
-    }
+    // These are automatically displayed by RJSF when liveValidate is enabled
   };
 
   const renderStepContent = () => {
@@ -335,7 +414,7 @@ export const CreateDecisionProcessModal = () => {
     if (!stepConfig) return null;
 
     const validationMode = validationModes[currentStep] || 'none';
-    const currentExtraErrors = stepErrors[currentStep];
+    const currentExtraErrors = stepErrors[currentStep] || {};
     const currentLiveValidate = validationMode === 'live';
 
     return (
@@ -363,18 +442,18 @@ export const CreateDecisionProcessModal = () => {
         >
           <Form
             schema={stepConfig.schema}
-            uiSchema={stepConfig.uiSchema}
+            uiSchema={stepConfig.uiSchema as any}
             formData={formData}
             onChange={handleChange}
             onError={handleError}
-            validator={validator}
+            validator={validator as any}
             widgets={CustomWidgets}
             templates={CustomTemplates}
             showErrorList={false}
             liveValidate={currentLiveValidate}
             noHtml5Validate
             omitExtraData
-            extraErrors={currentExtraErrors as any}
+            extraErrors={currentExtraErrors}
           >
             {/* Hide submit button - we'll use our own stepper */}
             <div style={{ display: 'none' }} />

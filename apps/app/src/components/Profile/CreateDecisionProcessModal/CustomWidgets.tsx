@@ -1,3 +1,4 @@
+import { parseDate } from '@internationalized/date';
 import { CategoryList } from '@op/ui/CategoryList';
 import { Checkbox } from '@op/ui/Checkbox';
 import { DatePicker } from '@op/ui/DatePicker';
@@ -118,35 +119,17 @@ export const DateWidget = (props: WidgetProps) => {
   const { id, value, required, onChange, onBlur, onFocus, schema, rawErrors } =
     props;
 
-  // Helper function to create a DateValue-like object from ISO string
+  // Helper function to create a proper DateValue object from ISO string
   const parseISOString = (isoString: string) => {
-    if (!isoString) return undefined;
+    if (!isoString?.trim()) return undefined;
     
     try {
-      const match = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(isoString.trim());
-      if (match) {
-        const [, yearStr, monthStr, dayStr] = match;
-        if (yearStr && monthStr && dayStr) {
-          const year = parseInt(yearStr, 10);
-          const month = parseInt(monthStr, 10);
-          const day = parseInt(dayStr, 10);
-        
-        // Validate the date is real
-        const testDate = new Date(year, month - 1, day);
-        if (
-          testDate.getFullYear() === year &&
-          testDate.getMonth() === month - 1 &&
-          testDate.getDate() === day
-        ) {
-          return { year, month, day };
-        }
-        }
-      }
+      // Use parseDate directly - it handles ISO format validation internally
+      return parseDate(isoString.trim());
     } catch (error) {
-      console.warn('Failed to parse date value:', isoString, error);
+      console.warn('DateWidget: Failed to parse date value:', isoString, error);
+      return undefined;
     }
-    
-    return undefined;
   };
 
   const dateValue = parseISOString(value as string);
@@ -201,21 +184,35 @@ export const DateWidget = (props: WidgetProps) => {
     ...validateDateRanges(value as string)
   ];
 
-  return (
-    <DatePicker
-      label={schema.title || ''}
-      value={dateValue as any}
-      isRequired={required}
-      placeholder="Select date"
-      description={schema.description}
-      onChange={handleDateChange}
-      errorMessage={allErrors.length > 0 ? allErrors.join(', ') : undefined}
-      inputProps={{
-        onBlur: () => onBlur(id, value),
-        onFocus: () => onFocus(id, value),
-      }}
-    />
-  );
+  try {
+    return (
+      <DatePicker
+        label={schema.title || ''}
+        value={dateValue as any}
+        isRequired={required}
+        placeholder="Select date"
+        description={schema.description}
+        onChange={handleDateChange}
+        errorMessage={allErrors.length > 0 ? allErrors.join(', ') : undefined}
+        inputProps={{
+          onBlur: () => onBlur(id, value),
+          onFocus: () => onFocus(id, value),
+        }}
+      />
+    );
+  } catch (error) {
+    console.error('DateWidget render error:', error, 'value:', value, 'dateValue:', dateValue);
+    return (
+      <div className="rounded border border-functional-red/20 bg-functional-red/5 p-3">
+        <p className="text-sm text-functional-red">
+          Date widget error: {error instanceof Error ? error.message : 'Unknown error'}
+        </p>
+        <p className="text-xs text-neutral-gray4 mt-1">
+          Value: {JSON.stringify(value)} | Parsed: {JSON.stringify(dateValue)}
+        </p>
+      </div>
+    );
+  }
 };
 
 export const CheckboxWidget = (props: WidgetProps) => {
