@@ -15,7 +15,7 @@ import { Surface } from '@op/ui/Surface';
 import { Heart, MessageCircle, Users } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { LuBookMarked, LuBookmark } from 'react-icons/lu';
+import { LuBookmark } from 'react-icons/lu';
 import { z } from 'zod';
 
 type Proposal = z.infer<typeof proposalEncoder>;
