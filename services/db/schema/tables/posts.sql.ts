@@ -47,6 +47,34 @@ export const postsToOrganizations = pgTable(
   ],
 );
 
+export const postsToProfiles = pgTable(
+  'posts_to_profiles',
+  {
+    postId: uuid()
+      .notNull()
+      .references(() => posts.id, {
+        onDelete: 'cascade',
+      }),
+    profileId: uuid()
+      .notNull()
+      .references(() => profiles.id, {
+        onDelete: 'cascade',
+      }),
+    ...timestamps,
+  },
+  (table) => [
+    ...serviceRolePolicies,
+    primaryKey({ columns: [table.postId, table.profileId] }),
+    index('posts_to_profiles_post_id_idx')
+      .on(table.postId)
+      .concurrently(),
+    index('posts_to_profiles_profile_id_idx')
+      .on(table.profileId)
+      .concurrently(),
+  ],
+);
+
+
 export const postsRelations = relations(posts, ({ one, many }) => ({
   organization: many(organizations),
   attachments: many(attachments),
@@ -64,6 +92,7 @@ export const postsRelations = relations(posts, ({ one, many }) => ({
   childPosts: many(posts, {
     relationName: 'PostToParent',
   }),
+  postsToProfiles: many(postsToProfiles),
 }));
 
 export const postsToOrganizationsRelations = relations(
@@ -80,5 +109,20 @@ export const postsToOrganizationsRelations = relations(
   }),
 );
 
+export const postsToProfilesRelations = relations(
+  postsToProfiles,
+  ({ one }) => ({
+    post: one(posts, {
+      fields: [postsToProfiles.postId],
+      references: [posts.id],
+    }),
+    profile: one(profiles, {
+      fields: [postsToProfiles.profileId],
+      references: [profiles.id],
+    }),
+  }),
+);
+
 export type Post = InferModel<typeof posts>;
 export type PostToOrganization = InferModel<typeof postsToOrganizations>;
+export type PostToProfile = InferModel<typeof postsToProfiles>;

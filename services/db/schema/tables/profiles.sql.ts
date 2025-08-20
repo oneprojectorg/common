@@ -60,7 +60,7 @@ export const profiles = pgTable(
 );
 
 export const profilesRelations = relations(profiles, ({ many, one }) => ({
-  posts: many(posts),
+  posts: many(posts), // Posts authored by this profile
   headerImage: one(objectsInStorage, {
     fields: [profiles.headerImageId],
     references: [objectsInStorage.id],
