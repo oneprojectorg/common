@@ -1,5 +1,4 @@
 CREATE TYPE "public"."decision_process_status" AS ENUM('draft', 'active', 'paused', 'completed', 'cancelled');--> statement-breakpoint
-CREATE TYPE "public"."profile_relationship_type" AS ENUM('following', 'likes');--> statement-breakpoint
 CREATE TYPE "public"."decision_proposal_status" AS ENUM('draft', 'submitted', 'under_review', 'approved', 'rejected');--> statement-breakpoint
 ALTER TYPE "public"."entity_type" ADD VALUE 'proposal';--> statement-breakpoint
 CREATE TABLE "decision_processes" (
