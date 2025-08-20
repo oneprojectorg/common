@@ -11,8 +11,9 @@ export const QUERY_KEYS = {
 } as const;
 
 // Helper function to create consistent comment query parameters
-export const createCommentsQueryKey = (parentPostId: string) => ({
+export const createCommentsQueryKey = (parentPostId: string, profileId?: string) => ({
   parentPostId,
+  profileId,
   limit: QUERY_KEYS.COMMENTS.LIMIT,
   offset: QUERY_KEYS.COMMENTS.OFFSET,
   includeChildren: QUERY_KEYS.COMMENTS.INCLUDE_CHILDREN,

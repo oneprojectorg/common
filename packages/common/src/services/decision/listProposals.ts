@@ -109,10 +109,11 @@ export const listProposals = async ({
       orderBy: orderFn(orderColumn),
     });
 
-    // Get likes count for each proposal and user relationship status
+    // Get likes count and followers count for each proposal and user relationship status
     const proposalIds = proposalList.map(p => p.profileId).filter((id): id is string => Boolean(id));
     
     let likesCountMap = new Map();
+    let followersCountMap = new Map();
     let userRelationshipMap = new Map();
 
     if (proposalIds.length > 0) {
@@ -132,6 +133,23 @@ export const listProposals = async ({
         .groupBy(profileRelationships.targetProfileId);
 
       likesCountMap = new Map(likesCountQuery.map(item => [item.targetProfileId, Number(item.count)]));
+
+      // Get followers counts for all proposals
+      const followersCountQuery = await db
+        .select({
+          targetProfileId: profileRelationships.targetProfileId,
+          count: sql<number>`count(*)`,
+        })
+        .from(profileRelationships)
+        .where(
+          and(
+            inArray(profileRelationships.targetProfileId, proposalIds),
+            eq(profileRelationships.relationshipType, ProfileRelationshipType.FOLLOWING)
+          )
+        )
+        .groupBy(profileRelationships.targetProfileId);
+
+      followersCountMap = new Map(followersCountQuery.map(item => [item.targetProfileId, Number(item.count)]));
 
       // Get current user's relationships to these proposals
       const userRelationships = await db
@@ -177,6 +195,7 @@ export const listProposals = async ({
         : [];
 
       const likesCount = proposal.profileId ? (likesCountMap.get(proposal.profileId) || 0) : 0;
+      const followersCount = proposal.profileId ? (followersCountMap.get(proposal.profileId) || 0) : 0;
       const userRelationship = proposal.profileId ? userRelationshipMap.get(proposal.profileId) : null;
 
       return {
@@ -212,6 +231,7 @@ export const listProposals = async ({
         profile: profile,
         decisionCount: decisions.length,
         likesCount,
+        followersCount,
         isLikedByUser: userRelationship?.isLiked || false,
         isFollowedByUser: userRelationship?.isFollowed || false,
       };

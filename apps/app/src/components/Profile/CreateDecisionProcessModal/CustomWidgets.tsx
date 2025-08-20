@@ -1,3 +1,4 @@
+import { parseDate } from '@internationalized/date';
 import { CategoryList } from '@op/ui/CategoryList';
 import { Checkbox } from '@op/ui/Checkbox';
 import { DatePicker } from '@op/ui/DatePicker';
@@ -7,10 +8,12 @@ import { TextField } from '@op/ui/TextField';
 import { WidgetProps } from '@rjsf/utils';
 import React from 'react';
 
+import { RichTextEditor } from '../../RichTextEditor';
+
 // Higher-order component to wrap widgets with error boundaries
 const withWidgetErrorBoundary = <P extends WidgetProps>(
   WrappedWidget: React.ComponentType<P>,
-  widgetName: string
+  widgetName: string,
 ) => {
   return class extends React.Component<P, { hasError: boolean }> {
     constructor(props: P) {
@@ -33,7 +36,7 @@ const withWidgetErrorBoundary = <P extends WidgetProps>(
             <p className="text-sm text-functional-red">
               Error rendering {widgetName} widget
             </p>
-            <p className="text-xs text-neutral-gray4 mt-1">
+            <p className="mt-1 text-xs text-neutral-gray4">
               Field: {this.props.schema?.title || 'Unknown'}
             </p>
           </div>
@@ -118,41 +121,28 @@ export const DateWidget = (props: WidgetProps) => {
   const { id, value, required, onChange, onBlur, onFocus, schema, rawErrors } =
     props;
 
-  // Helper function to create a DateValue-like object from ISO string
+  // Helper function to create a proper DateValue object from ISO string
   const parseISOString = (isoString: string) => {
-    if (!isoString) return undefined;
-    
+    if (!isoString?.trim()) return undefined;
+
     try {
-      const match = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(isoString.trim());
-      if (match) {
-        const [, yearStr, monthStr, dayStr] = match;
-        if (yearStr && monthStr && dayStr) {
-          const year = parseInt(yearStr, 10);
-          const month = parseInt(monthStr, 10);
-          const day = parseInt(dayStr, 10);
-        
-        // Validate the date is real
-        const testDate = new Date(year, month - 1, day);
-        if (
-          testDate.getFullYear() === year &&
-          testDate.getMonth() === month - 1 &&
-          testDate.getDate() === day
-        ) {
-          return { year, month, day };
-        }
-        }
-      }
+      // Use parseDate directly - it handles ISO format validation internally
+      return parseDate(isoString.trim());
     } catch (error) {
-      console.warn('Failed to parse date value:', isoString, error);
+      console.warn('DateWidget: Failed to parse date value:', isoString, error);
+      return undefined;
     }
-    
-    return undefined;
   };
 
   const dateValue = parseISOString(value as string);
 
   const handleDateChange = (newDateValue: any) => {
-    if (newDateValue && newDateValue.year && newDateValue.month && newDateValue.day) {
+    if (
+      newDateValue &&
+      newDateValue.year &&
+      newDateValue.month &&
+      newDateValue.day
+    ) {
       // Convert the DateValue to ISO string format for the form
       const isoString = `${newDateValue.year}-${String(newDateValue.month).padStart(2, '0')}-${String(newDateValue.day).padStart(2, '0')}`;
       onChange(isoString);
@@ -165,23 +155,23 @@ export const DateWidget = (props: WidgetProps) => {
   const validateDateRanges = (selectedDate: string): string[] => {
     const errors: string[] = [];
     if (!selectedDate) return errors;
-    
+
     try {
       const selected = new Date(selectedDate);
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      
+
       // Check if date is valid
       if (isNaN(selected.getTime())) {
         errors.push('Invalid date format');
         return errors;
       }
-      
+
       // Business rule: dates should not be in the past
       if (selected < today) {
         errors.push('Date cannot be in the past');
       }
-      
+
       // Business rule: dates should be within reasonable future range (2 years)
       const twoYearsFromNow = new Date();
       twoYearsFromNow.setFullYear(twoYearsFromNow.getFullYear() + 2);
@@ -191,31 +181,53 @@ export const DateWidget = (props: WidgetProps) => {
     } catch (error) {
       errors.push('Invalid date format');
     }
-    
+
     return errors;
   };
 
   // Combine RJSF validation errors with our custom validation
   const allErrors = [
     ...(rawErrors || []),
-    ...validateDateRanges(value as string)
+    ...validateDateRanges(value as string),
   ];
 
-  return (
-    <DatePicker
-      label={schema.title || ''}
-      value={dateValue as any}
-      isRequired={required}
-      placeholder="Select date"
-      description={schema.description}
-      onChange={handleDateChange}
-      errorMessage={allErrors.length > 0 ? allErrors.join(', ') : undefined}
-      inputProps={{
-        onBlur: () => onBlur(id, value),
-        onFocus: () => onFocus(id, value),
-      }}
-    />
-  );
+  try {
+    return (
+      <DatePicker
+        label={schema.title || ''}
+        value={dateValue as any}
+        isRequired={required}
+        placeholder="Select date"
+        description={schema.description}
+        onChange={handleDateChange}
+        errorMessage={allErrors.length > 0 ? allErrors.join(', ') : undefined}
+        inputProps={{
+          onBlur: () => onBlur(id, value),
+          onFocus: () => onFocus(id, value),
+        }}
+      />
+    );
+  } catch (error) {
+    console.error(
+      'DateWidget render error:',
+      error,
+      'value:',
+      value,
+      'dateValue:',
+      dateValue,
+    );
+    return (
+      <div className="rounded border border-functional-red/20 bg-functional-red/5 p-3">
+        <p className="text-sm text-functional-red">
+          Date widget error:{' '}
+          {error instanceof Error ? error.message : 'Unknown error'}
+        </p>
+        <p className="mt-1 text-xs text-neutral-gray4">
+          Value: {JSON.stringify(value)} | Parsed: {JSON.stringify(dateValue)}
+        </p>
+      </div>
+    );
+  }
 };
 
 export const CheckboxWidget = (props: WidgetProps) => {
@@ -307,8 +319,8 @@ export const CategoryListWidget = (props: WidgetProps) => {
   const handleUpdateList = (categories: { id: string; label: string }[]) => {
     // Convert back to string array for RJSF
     const stringArray = categories
-      .map(cat => cat.label)
-      .filter(label => label.trim() !== ''); // Filter out empty labels
+      .map((cat) => cat.label)
+      .filter((label) => label.trim() !== ''); // Filter out empty labels
     onChange(stringArray);
   };
 
@@ -330,6 +342,39 @@ export const CategoryListWidget = (props: WidgetProps) => {
   );
 };
 
+export const RichTextEditorWidget = (props: WidgetProps) => {
+  const { value, required, onChange, schema, uiSchema, rawErrors } = props;
+
+  const handleChange = (content: string) => {
+    onChange(content);
+  };
+
+  return (
+    <div className="flex flex-col gap-2 rounded-md border p-4">
+      <label className="text-sm font-medium text-neutral-charcoal">
+        {schema.title}
+        {required && <span className="ml-1 text-functional-red">*</span>}
+      </label>
+      {schema.description && (
+        <p className="text-sm text-neutral-charcoal">{schema.description}</p>
+      )}
+      <RichTextEditor
+        content={value || ''}
+        placeholder={uiSchema?.['ui:placeholder'] || 'Start writing...'}
+        onChange={handleChange}
+        onUpdate={handleChange}
+        className="min-h-[200px]"
+        editorClassName="prose prose-sm max-w-none focus:outline-none"
+      />
+      {rawErrors && rawErrors.length > 0 && (
+        <div className="text-sm text-functional-red">
+          {rawErrors.join(', ')}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // Wrap widgets with error boundaries
 const SafeTextWidget = withWidgetErrorBoundary(TextWidget, 'Text');
 const SafeTextareaWidget = withWidgetErrorBoundary(TextareaWidget, 'Textarea');
@@ -337,7 +382,14 @@ const SafeNumberWidget = withWidgetErrorBoundary(NumberWidget, 'Number');
 const SafeDateWidget = withWidgetErrorBoundary(DateWidget, 'Date');
 const SafeCheckboxWidget = withWidgetErrorBoundary(CheckboxWidget, 'Checkbox');
 const SafeRadioWidget = withWidgetErrorBoundary(RadioWidget, 'Radio');
-const SafeCategoryListWidget = withWidgetErrorBoundary(CategoryListWidget, 'CategoryList');
+const SafeCategoryListWidget = withWidgetErrorBoundary(
+  CategoryListWidget,
+  'CategoryList',
+);
+const SafeRichTextEditorWidget = withWidgetErrorBoundary(
+  RichTextEditorWidget,
+  'RichTextEditor',
+);
 
 export const CustomWidgets = {
   TextWidget: SafeTextWidget,
@@ -347,6 +399,7 @@ export const CustomWidgets = {
   CheckboxWidget: SafeCheckboxWidget,
   RadioWidget: SafeRadioWidget,
   CategoryListWidget: SafeCategoryListWidget,
+  RichTextEditorWidget: SafeRichTextEditorWidget,
   text: SafeTextWidget,
   textarea: SafeTextareaWidget,
   number: SafeNumberWidget,
@@ -354,4 +407,5 @@ export const CustomWidgets = {
   checkbox: SafeCheckboxWidget,
   radio: SafeRadioWidget,
   CategoryList: SafeCategoryListWidget,
+  RichTextEditor: SafeRichTextEditorWidget,
 };
