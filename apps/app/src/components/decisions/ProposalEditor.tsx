@@ -29,6 +29,7 @@ import {
   Image as ImageIcon,
   Italic,
   Link as LinkIcon,
+  Link2,
   List,
   ListOrdered,
   Minus,
@@ -44,6 +45,7 @@ import { z } from 'zod';
 
 import { ProposalEditorLayout } from './layout';
 import { SlashCommands } from './SlashCommands';
+import { IframelyExtension } from './IframelyExtension';
 
 type Proposal = z.infer<typeof proposalEncoder>;
 
@@ -134,6 +136,7 @@ export function ProposalEditor({
       StarterKit,
       Link.configure({
         openOnClick: false,
+        linkOnPaste: false, // Disable auto-linking on paste to let our Iframely extension handle it
       }),
       TextAlign.configure({
         types: ['heading', 'paragraph'],
@@ -150,6 +153,7 @@ export function ProposalEditor({
       Blockquote,
       HorizontalRule,
       SlashCommands,
+      IframelyExtension,
     ],
     content: placeholderContent,
     editorProps: {
@@ -272,6 +276,14 @@ export function ProposalEditor({
       .extendMarkRange('link')
       .setLink({ href: url })
       .run();
+  }, [editor]);
+
+  const addEmbedLink = useCallback(() => {
+    const url = window.prompt('Enter the URL to embed:');
+
+    if (url && url.trim()) {
+      editor?.chain().focus().setIframely({ src: url.trim() }).run();
+    }
   }, [editor]);
 
   const handleImageUpload = useCallback(async () => {
@@ -555,6 +567,13 @@ export function ProposalEditor({
             title="Add Link"
           >
             <LinkIcon className="h-4 w-4" />
+          </button>
+          <button
+            onClick={addEmbedLink}
+            className="rounded p-2 hover:bg-gray-100"
+            title="Embed Link Preview"
+          >
+            <Link2 className="h-4 w-4" />
           </button>
           <button
             onClick={handleImageUpload}

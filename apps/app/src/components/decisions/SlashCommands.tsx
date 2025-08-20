@@ -6,6 +6,7 @@ import {
   Heading1,
   Heading2,
   Heading3,
+  Link2,
   List,
   ListOrdered,
   Minus,
@@ -211,6 +212,23 @@ const suggestionOptions: Partial<SuggestionOptions> = {
         icon: Minus,
         command: ({ editor, range }) => {
           editor.chain().focus().deleteRange(range).setHorizontalRule().run();
+        },
+      },
+      {
+        title: 'Link Embed',
+        description: 'Embed a link with preview.',
+        searchTerms: ['embed', 'preview', 'iframely', 'url'],
+        icon: Link2,
+        command: ({ editor, range }) => {
+          const url = window.prompt('Enter the URL to embed:');
+          if (url && url.trim()) {
+            editor
+              .chain()
+              .focus()
+              .deleteRange(range)
+              .setIframely({ src: url.trim() })
+              .run();
+          }
         },
       },
     ];
