@@ -15,7 +15,7 @@ import { processInstances } from './processInstances.sql';
 import { profiles } from './profiles.sql';
 
 export const stateTransitionHistory = pgTable(
-  'state_transition_history',
+  'decision_transition_history',
   {
     id: autoId().primaryKey(),
     processInstanceId: uuid('process_instance_id')

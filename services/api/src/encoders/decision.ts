@@ -170,6 +170,7 @@ export const proposalEncoder = createSelectSchema(proposals)
     submittedBy: baseProfileEncoder.optional(),
     profile: baseProfileEncoder.optional(),
     decisionCount: z.number().optional(),
+    likesCount: z.number().optional(),
     // User relationship status
     isLikedByUser: z.boolean().optional(),
     isFollowedByUser: z.boolean().optional(),

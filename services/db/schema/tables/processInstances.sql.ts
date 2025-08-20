@@ -31,12 +31,12 @@ export enum ProcessStatus {
 }
 
 export const processStatusEnum = pgEnum(
-  'process_status',
+  'decision_process_status',
   enumToPgEnum(ProcessStatus),
 );
 
 export const processInstances = pgTable(
-  'process_instances',
+  'decision_process_instances',
   {
     id: autoId().primaryKey(),
     processId: uuid('process_id')
@@ -85,7 +85,7 @@ export const processInstances = pgTable(
     index().on(table.processId).concurrently(),
     index().on(table.ownerProfileId).concurrently(),
     index().on(table.currentStateId).concurrently(),
-    index('process_instances_search_gin_index').using('gin', table.search),
+    index('process_instances_search_index').using('gin', table.search),
   ],
 );
 

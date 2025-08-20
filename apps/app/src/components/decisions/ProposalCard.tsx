@@ -1,11 +1,16 @@
 'use client';
 
 import { getPublicUrl } from '@/utils';
-import { formatCurrency, getTextPreview, parseProposalData } from '@/utils/proposalUtils';
-import type { proposalEncoder } from '@op/api/encoders';
+import {
+  formatCurrency,
+  getTextPreview,
+  parseProposalData,
+} from '@/utils/proposalUtils';
 import { trpc } from '@op/api/client';
+import type { proposalEncoder } from '@op/api/encoders';
 import { ProfileRelationshipType } from '@op/api/encoders';
 import { Avatar } from '@op/ui/Avatar';
+import { Button } from '@op/ui/Button';
 import { Surface } from '@op/ui/Surface';
 import { Heart, MessageCircle, Users } from 'lucide-react';
 import Image from 'next/image';
@@ -19,11 +24,29 @@ interface ProposalCardProps {
   viewHref: string;
 }
 
-export function ProposalCard({ proposal, viewHref }: ProposalCardProps) {
-  // Parse proposal data using shared utility
-  const { title, budget, category, content } = parseProposalData(proposal.proposalData);
-
+export function ProposalCard({
+  proposal: initialProposal,
+  viewHref,
+}: ProposalCardProps) {
   const utils = trpc.useUtils();
+
+  // Get the current proposal data from cache, using initial prop as fallback
+  const { data: listData } = trpc.decision.listProposals.useQuery(
+    {},
+    {
+      refetchOnMount: false,
+    },
+  );
+
+  // Find current proposal in the list data, fallback to initial prop
+  const currentProposal =
+    listData?.proposals.find((p) => p.id === initialProposal.id) ||
+    initialProposal;
+
+  // Parse proposal data using shared utility
+  const { title, budget, category, content } = parseProposalData(
+    currentProposal.proposalData,
+  );
 
   // Direct tRPC mutations with optimistic updates
   const addRelationshipMutation = trpc.profile.addRelationship.useMutation({
@@ -38,15 +61,26 @@ export function ProposalCard({ proposal, viewHref }: ProposalCardProps) {
       if (previousData) {
         const optimisticData = {
           ...previousData,
-          proposals: previousData.proposals.map((p) => 
-            p.id === proposal.id 
+          proposals: previousData.proposals.map((p) =>
+            p.id === currentProposal.id
               ? {
                   ...p,
-                  isLikedByUser: variables.relationshipType === ProfileRelationshipType.LIKES ? true : p.isLikedByUser,
-                  isFollowedByUser: variables.relationshipType === ProfileRelationshipType.FOLLOWING ? true : p.isFollowedByUser,
+                  isLikedByUser:
+                    variables.relationshipType === ProfileRelationshipType.LIKES
+                      ? true
+                      : p.isLikedByUser,
+                  isFollowedByUser:
+                    variables.relationshipType ===
+                    ProfileRelationshipType.FOLLOWING
+                      ? true
+                      : p.isFollowedByUser,
+                  likesCount:
+                    variables.relationshipType === ProfileRelationshipType.LIKES
+                      ? (p.likesCount || 0) + 1
+                      : p.likesCount,
                 }
-              : p
-          )
+              : p,
+          ),
         };
         utils.decision.listProposals.setData({}, optimisticData);
       }
@@ -62,78 +96,88 @@ export function ProposalCard({ proposal, viewHref }: ProposalCardProps) {
     },
     onSettled: () => {
       // Always refetch after error or success
-      utils.decision.getProposal.invalidate({ proposalId: proposal.id });
+      utils.decision.getProposal.invalidate({ proposalId: currentProposal.id });
       utils.decision.listProposals.invalidate();
     },
   });
 
-  const removeRelationshipMutation = trpc.profile.removeRelationship.useMutation({
-    onMutate: async (variables) => {
-      // Cancel outgoing refetches
-      await utils.decision.listProposals.cancel();
+  const removeRelationshipMutation =
+    trpc.profile.removeRelationship.useMutation({
+      onMutate: async (variables) => {
+        // Cancel outgoing refetches
+        await utils.decision.listProposals.cancel();
 
-      // Snapshot the previous value
-      const previousData = utils.decision.listProposals.getData();
+        // Snapshot the previous value
+        const previousData = utils.decision.listProposals.getData();
 
-      // Optimistically update list data
-      if (previousData) {
-        const optimisticData = {
-          ...previousData,
-          proposals: previousData.proposals.map((p) => 
-            p.id === proposal.id 
-              ? {
-                  ...p,
-                  isLikedByUser: variables.relationshipType === ProfileRelationshipType.LIKES ? false : p.isLikedByUser,
-                  isFollowedByUser: variables.relationshipType === ProfileRelationshipType.FOLLOWING ? false : p.isFollowedByUser,
-                }
-              : p
-          )
-        };
-        utils.decision.listProposals.setData({}, optimisticData);
-      }
+        // Optimistically update list data
+        if (previousData) {
+          const optimisticData = {
+            ...previousData,
+            proposals: previousData.proposals.map((p) =>
+              p.id === currentProposal.id
+                ? {
+                    ...p,
+                    isLikedByUser:
+                      variables.relationshipType ===
+                      ProfileRelationshipType.LIKES
+                        ? false
+                        : p.isLikedByUser,
+                    isFollowedByUser:
+                      variables.relationshipType ===
+                      ProfileRelationshipType.FOLLOWING
+                        ? false
+                        : p.isFollowedByUser,
+                    likesCount:
+                      variables.relationshipType ===
+                      ProfileRelationshipType.LIKES
+                        ? Math.max((p.likesCount || 0) - 1, 0)
+                        : p.likesCount,
+                  }
+                : p,
+            ),
+          };
+          utils.decision.listProposals.setData({}, optimisticData);
+        }
 
-      return { previousData };
-    },
-    onError: (error, _variables, context) => {
-      // Rollback on error
-      if (context?.previousData) {
-        utils.decision.listProposals.setData({}, context.previousData);
-      }
-      console.error('Failed to remove relationship:', error);
-    },
-    onSettled: () => {
-      // Always refetch after error or success
-      utils.decision.getProposal.invalidate({ proposalId: proposal.id });
-      utils.decision.listProposals.invalidate();
-    },
-  });
-
-  const isLoading = addRelationshipMutation.isPending || removeRelationshipMutation.isPending;
-
-  const handleLikeClick = async () => {
-    console.log('ProposalCard handleLikeClick called', { 
-      profileId: proposal.profileId, 
-      isLikedByUser: proposal.isLikedByUser 
+        return { previousData };
+      },
+      onError: (error, _variables, context) => {
+        // Rollback on error
+        if (context?.previousData) {
+          utils.decision.listProposals.setData({}, context.previousData);
+        }
+        console.error('Failed to remove relationship:', error);
+      },
+      onSettled: () => {
+        // Always refetch after error or success
+        utils.decision.getProposal.invalidate({
+          proposalId: currentProposal.id,
+        });
+        utils.decision.listProposals.invalidate();
+      },
     });
 
-    if (!proposal.profileId) {
+  const isLoading =
+    addRelationshipMutation.isPending || removeRelationshipMutation.isPending;
+
+  const handleLikeClick = async () => {
+    if (!currentProposal.profileId) {
       console.error('No profileId provided for like action');
       return;
     }
 
     try {
-      if (proposal.isLikedByUser) {
-        console.log('Unliking proposal (ProposalCard)...');
+      if (currentProposal.isLikedByUser) {
         // Unlike
         await removeRelationshipMutation.mutateAsync({
-          targetProfileId: proposal.profileId,
+          targetProfileId: currentProposal.profileId,
           relationshipType: ProfileRelationshipType.LIKES,
         });
       } else {
-        console.log('Liking proposal (ProposalCard)...');
         // Like
         await addRelationshipMutation.mutateAsync({
-          targetProfileId: proposal.profileId,
+          targetProfileId: currentProposal.profileId,
           relationshipType: ProfileRelationshipType.LIKES,
           pending: false,
         });
@@ -144,21 +188,21 @@ export function ProposalCard({ proposal, viewHref }: ProposalCardProps) {
   };
 
   const handleFollowClick = async () => {
-    if (!proposal.profileId) {
+    if (!currentProposal.profileId) {
       console.error('No profileId provided for follow action');
       return;
     }
 
-    if (proposal.isFollowedByUser) {
+    if (currentProposal.isFollowedByUser) {
       // Unfollow
       await removeRelationshipMutation.mutateAsync({
-        targetProfileId: proposal.profileId,
+        targetProfileId: currentProposal.profileId,
         relationshipType: ProfileRelationshipType.FOLLOWING,
       });
     } else {
       // Follow
       await addRelationshipMutation.mutateAsync({
-        targetProfileId: proposal.profileId,
+        targetProfileId: currentProposal.profileId,
         relationshipType: ProfileRelationshipType.FOLLOWING,
         pending: false,
       });
@@ -169,9 +213,9 @@ export function ProposalCard({ proposal, viewHref }: ProposalCardProps) {
     <Surface className="p-6">
       {/* Header with title and budget */}
       <div className="mb-3 flex items-start justify-between">
-        <Link 
+        <Link
           href={viewHref}
-          className="text-lg font-semibold text-neutral-charcoal hover:text-primary-teal transition-colors"
+          className="text-lg font-semibold text-neutral-charcoal transition-colors hover:text-primary-teal"
         >
           {title || 'Untitled Proposal'}
         </Link>
@@ -184,23 +228,36 @@ export function ProposalCard({ proposal, viewHref }: ProposalCardProps) {
 
       {/* Author and category */}
       <div className="mb-3 flex items-center gap-3">
-        {proposal.submittedBy && (
+        {currentProposal.submittedBy && (
           <>
             <Avatar
-              placeholder={proposal.submittedBy.name || proposal.submittedBy.slug || 'U'}
-              className="h-6 w-6"
+              placeholder={
+                currentProposal.submittedBy.name ||
+                currentProposal.submittedBy.slug ||
+                'U'
+              }
+              className="size-6"
             >
-              {proposal.submittedBy.avatarImage?.name ? (
+              {currentProposal.submittedBy.avatarImage?.name ? (
                 <Image
-                  src={getPublicUrl(proposal.submittedBy.avatarImage.name) ?? ''}
-                  alt={proposal.submittedBy.name || proposal.submittedBy.slug || ''}
+                  src={
+                    getPublicUrl(
+                      currentProposal.submittedBy.avatarImage.name,
+                    ) ?? ''
+                  }
+                  alt={
+                    currentProposal.submittedBy.name ||
+                    currentProposal.submittedBy.slug ||
+                    ''
+                  }
                   fill
                   className="aspect-square object-cover"
                 />
               ) : null}
             </Avatar>
             <span className="text-sm text-neutral-charcoal">
-              {proposal.submittedBy.name || proposal.submittedBy.slug}
+              {currentProposal.submittedBy.name ||
+                currentProposal.submittedBy.slug}
             </span>
             <span className="text-sm text-neutral-gray2">•</span>
           </>
@@ -214,7 +271,7 @@ export function ProposalCard({ proposal, viewHref }: ProposalCardProps) {
 
       {/* Description */}
       {content && (
-        <p className="mb-4 text-sm text-neutral-gray3 line-clamp-3">
+        <p className="mb-4 line-clamp-3 text-sm text-neutral-gray3">
           {getTextPreview(content)}
         </p>
       )}
@@ -222,13 +279,13 @@ export function ProposalCard({ proposal, viewHref }: ProposalCardProps) {
       {/* Footer with engagement */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4 text-sm text-neutral-gray2">
-          <button 
+          <button
             onClick={handleLikeClick}
             disabled={isLoading}
             className="flex items-center gap-1 transition-colors hover:text-neutral-charcoal disabled:opacity-50"
           >
             <Heart className="h-4 w-4" />
-            <span>0 Likes</span>
+            <span>{currentProposal.likesCount || 0} Likes</span>
           </button>
           <span className="flex items-center gap-1">
             <MessageCircle className="h-4 w-4" />
@@ -240,28 +297,27 @@ export function ProposalCard({ proposal, viewHref }: ProposalCardProps) {
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={handleLikeClick}
-            disabled={isLoading || !proposal.profileId}
-            className={`flex items-center gap-1 rounded-md border px-3 py-1.5 text-sm transition-colors disabled:opacity-50 ${
-              proposal.isLikedByUser
-                ? 'border-red-500 bg-red-500 text-white hover:bg-red-600'
-                : 'border-primary-teal text-primary-teal hover:bg-primary-teal hover:text-white'
-            }`}
+          <Button
+            onPress={handleLikeClick}
+            surface="ghost"
+            size="sm"
+            className="flex px-4 py-2 text-primary-teal"
           >
-            <Heart className={`h-4 w-4 ${proposal.isLikedByUser ? 'fill-current' : ''}`} />
-            {proposal.isLikedByUser ? 'Liked' : 'Like'}
-          </button>
+            <Heart
+              className={`size-4 ${currentProposal.isLikedByUser ? 'fill-current' : ''}`}
+            />
+            {currentProposal.isLikedByUser ? 'Liked' : 'Like'}
+          </Button>
           <button
             onClick={handleFollowClick}
-            disabled={isLoading || !proposal.profileId}
+            disabled={isLoading || !currentProposal.profileId}
             className={`rounded-md border px-3 py-1.5 text-sm transition-colors disabled:opacity-50 ${
-              proposal.isFollowedByUser
-                ? 'border-primary-teal bg-primary-teal text-white hover:bg-primary-teal-dark'
+              currentProposal.isFollowedByUser
+                ? 'hover:bg-primary-teal-dark border-primary-teal bg-primary-teal text-white'
                 : 'border-neutral-gray1 text-neutral-charcoal hover:bg-neutral-gray1'
             }`}
           >
-            {proposal.isFollowedByUser ? 'Following' : 'Follow'}
+            {currentProposal.isFollowedByUser ? 'Following' : 'Follow'}
           </button>
         </div>
       </div>

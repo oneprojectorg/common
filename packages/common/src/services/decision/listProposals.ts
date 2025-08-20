@@ -1,5 +1,5 @@
-import { and, asc, db, desc, eq, sql } from '@op/db/client';
-import { proposals, users } from '@op/db/schema';
+import { and, asc, db, desc, eq, sql, inArray } from '@op/db/client';
+import { profileRelationships, proposals, users, ProfileRelationshipType } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
 import { UnauthorizedError } from '../../utils';
@@ -109,7 +109,58 @@ export const listProposals = async ({
       orderBy: orderFn(orderColumn),
     });
 
-    // Transform the results to match the expected structure and add decision counts
+    // Get likes count for each proposal and user relationship status
+    const proposalIds = proposalList.map(p => p.profileId).filter(Boolean);
+    
+    let likesCountMap = new Map();
+    let userRelationshipMap = new Map();
+
+    if (proposalIds.length > 0) {
+      // Get likes counts for all proposals
+      const likesCountQuery = await db
+        .select({
+          targetProfileId: profileRelationships.targetProfileId,
+          count: sql<number>`count(*)`,
+        })
+        .from(profileRelationships)
+        .where(
+          and(
+            inArray(profileRelationships.targetProfileId, proposalIds),
+            eq(profileRelationships.relationshipType, ProfileRelationshipType.LIKES)
+          )
+        )
+        .groupBy(profileRelationships.targetProfileId);
+
+      likesCountMap = new Map(likesCountQuery.map(item => [item.targetProfileId, Number(item.count)]));
+
+      // Get current user's relationships to these proposals
+      const userRelationships = await db
+        .select({
+          targetProfileId: profileRelationships.targetProfileId,
+          relationshipType: profileRelationships.relationshipType,
+        })
+        .from(profileRelationships)
+        .where(
+          and(
+            eq(profileRelationships.sourceProfileId, dbUser.currentProfileId),
+            inArray(profileRelationships.targetProfileId, proposalIds)
+          )
+        );
+
+      userRelationships.forEach(rel => {
+        if (!userRelationshipMap.has(rel.targetProfileId)) {
+          userRelationshipMap.set(rel.targetProfileId, { isLiked: false, isFollowed: false });
+        }
+        if (rel.relationshipType === ProfileRelationshipType.LIKES) {
+          userRelationshipMap.get(rel.targetProfileId).isLiked = true;
+        }
+        if (rel.relationshipType === ProfileRelationshipType.FOLLOWING) {
+          userRelationshipMap.get(rel.targetProfileId).isFollowed = true;
+        }
+      });
+    }
+
+    // Transform the results to match the expected structure and add decision counts, likes count, and user relationship status
     // TODO: improve this with more streamlined types
     const proposalsWithCounts = proposalList.map((proposal) => {
       const processInstance = Array.isArray(proposal.processInstance)
@@ -124,6 +175,9 @@ export const listProposals = async ({
       const decisions = Array.isArray(proposal.decisions)
         ? proposal.decisions
         : [];
+
+      const likesCount = proposal.profileId ? (likesCountMap.get(proposal.profileId) || 0) : 0;
+      const userRelationship = proposal.profileId ? userRelationshipMap.get(proposal.profileId) : null;
 
       return {
         id: proposal.id,
@@ -157,6 +211,9 @@ export const listProposals = async ({
         submittedBy: submittedBy,
         profile: profile,
         decisionCount: decisions.length,
+        likesCount,
+        isLikedByUser: userRelationship?.isLiked || false,
+        isFollowedByUser: userRelationship?.isFollowed || false,
       };
     });
 

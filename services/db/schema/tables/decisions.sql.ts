@@ -7,7 +7,7 @@ import { profiles } from './profiles.sql';
 import { proposals } from './proposals.sql';
 
 export const decisions = pgTable(
-  'decisions',
+  'decision_instances',
   {
     id: autoId().primaryKey(),
     proposalId: uuid('proposal_id')

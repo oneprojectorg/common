@@ -29,12 +29,12 @@ export enum ProposalStatus {
 }
 
 export const proposalStatusEnum = pgEnum(
-  'proposal_status',
+  'decision_proposal_status',
   enumToPgEnum(ProposalStatus),
 );
 
 export const proposals = pgTable(
-  'proposals',
+  'decision_proposals',
   {
     id: autoId().primaryKey(),
     processInstanceId: uuid('process_instance_id')
@@ -75,7 +75,7 @@ export const proposals = pgTable(
 
 // Junction table for proposal categories (using existing taxonomy system)
 export const proposalCategories = pgTable(
-  'proposal_categories',
+  'decision_categories',
   {
     proposalId: uuid('proposal_id')
       .notNull()
