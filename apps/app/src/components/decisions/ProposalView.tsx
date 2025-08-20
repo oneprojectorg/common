@@ -9,6 +9,7 @@ import {
 } from '@/utils/proposalUtils';
 import { trpc } from '@op/api/client';
 import type { proposalEncoder } from '@op/api/encoders';
+import { ProfileRelationshipType } from '@op/api/encoders';
 import { Avatar } from '@op/ui/Avatar';
 import { Surface } from '@op/ui/Surface';
 import Blockquote from '@tiptap/extension-blockquote';
@@ -23,7 +24,7 @@ import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Heart, MessageCircle, Users } from 'lucide-react';
 import Image from 'next/image';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { z } from 'zod';
 
 import { PostFeed, PostItem, usePostFeedActions } from '../PostFeed';
@@ -38,30 +39,110 @@ interface ProposalViewProps {
   backHref: string;
 }
 
-export function ProposalView({ proposal, backHref }: ProposalViewProps) {
-  const [isLiked, setIsLiked] = useState(false);
-  const [isFollowing, setIsFollowing] = useState(false);
+export function ProposalView({ proposal: initialProposal, backHref }: ProposalViewProps) {
   const commentsContainerRef = useRef<HTMLDivElement>(null);
+  const utils = trpc.useUtils();
+
+  // Use a client-side query to get real-time updates, with initial data from server
+  const { data: proposal } = trpc.decision.getProposal.useQuery(
+    { proposalId: initialProposal.id },
+    { 
+      initialData: initialProposal,
+      refetchOnMount: false, // Don't refetch on mount since we have initial data
+    }
+  );
+
+  // Safety check - fallback to initial data if query returns undefined
+  const currentProposal = proposal || initialProposal;
 
   // Get current user to check edit permissions
   const { user } = useUser();
 
+  // Direct tRPC mutations for like/follow functionality with optimistic updates
+  const addRelationshipMutation = trpc.profile.addRelationship.useMutation({
+    onMutate: async (variables) => {
+      // Cancel outgoing refetches
+      await utils.decision.getProposal.cancel({ proposalId: currentProposal.id });
+
+      // Snapshot the previous value
+      const previousData = utils.decision.getProposal.getData({ proposalId: currentProposal.id });
+
+      // Optimistically update the cache
+      if (previousData) {
+        const optimisticData = { ...previousData };
+        if (variables.relationshipType === ProfileRelationshipType.LIKES) {
+          optimisticData.isLikedByUser = true;
+        } else if (variables.relationshipType === ProfileRelationshipType.FOLLOWING) {
+          optimisticData.isFollowedByUser = true;
+        }
+        utils.decision.getProposal.setData({ proposalId: currentProposal.id }, optimisticData);
+      }
+
+      return { previousData };
+    },
+    onError: (error, _variables, context) => {
+      // Rollback on error
+      if (context?.previousData) {
+        utils.decision.getProposal.setData({ proposalId: currentProposal.id }, context.previousData);
+      }
+      console.error('Failed to add relationship:', error);
+    },
+    onSettled: () => {
+      // Always refetch after error or success
+      utils.decision.getProposal.invalidate({ proposalId: currentProposal.id });
+    },
+  });
+
+  const removeRelationshipMutation = trpc.profile.removeRelationship.useMutation({
+    onMutate: async (variables) => {
+      // Cancel outgoing refetches
+      await utils.decision.getProposal.cancel({ proposalId: currentProposal.id });
+
+      // Snapshot the previous value
+      const previousData = utils.decision.getProposal.getData({ proposalId: currentProposal.id });
+
+      // Optimistically update the cache
+      if (previousData) {
+        const optimisticData = { ...previousData };
+        if (variables.relationshipType === ProfileRelationshipType.LIKES) {
+          optimisticData.isLikedByUser = false;
+        } else if (variables.relationshipType === ProfileRelationshipType.FOLLOWING) {
+          optimisticData.isFollowedByUser = false;
+        }
+        utils.decision.getProposal.setData({ proposalId: currentProposal.id }, optimisticData);
+      }
+
+      return { previousData };
+    },
+    onError: (error, _variables, context) => {
+      // Rollback on error
+      if (context?.previousData) {
+        utils.decision.getProposal.setData({ proposalId: currentProposal.id }, context.previousData);
+      }
+      console.error('Failed to remove relationship:', error);
+    },
+    onSettled: () => {
+      // Always refetch after error or success
+      utils.decision.getProposal.invalidate({ proposalId: currentProposal.id });
+    },
+  });
+
   // Check if current user can edit (only submitter can edit for now)
   const canEdit = Boolean(
     user?.currentProfile &&
-    proposal.submittedBy &&
-    user.currentProfile.id === proposal.submittedBy.id,
+    currentProposal.submittedBy &&
+    user.currentProfile.id === currentProposal.submittedBy.id,
   );
 
   // Generate edit href
   const editHref = canEdit
-    ? `${backHref}/proposal/${proposal.id}/edit`
+    ? `${backHref}/proposal/${currentProposal.id}/edit`
     : undefined;
 
   // Get comments for the proposal using the posts API
   const { data: commentsData, isLoading: commentsLoading } =
     trpc.posts.getPosts.useQuery({
-      profileId: proposal.profileId || undefined,
+      profileId: currentProposal.profileId || undefined,
       parentPostId: null, // Get top-level comments only
       limit: 50,
       offset: 0,
@@ -71,7 +152,7 @@ export function ProposalView({ proposal, backHref }: ProposalViewProps) {
   // Post feed actions for comments with profile-specific optimistic updates
   const { handleReactionClick } = usePostFeedActions({
     user,
-    profileId: proposal.profileId || undefined, // Add profileId for optimistic updates
+    profileId: currentProposal.profileId || undefined, // Add profileId for optimistic updates
   });
 
   // Transform comments data to match PostToOrganization format expected by PostItem
@@ -107,7 +188,7 @@ export function ProposalView({ proposal, backHref }: ProposalViewProps) {
 
   // Parse proposal data using shared utility
   const { title, budget, category, content } = parseProposalData(
-    proposal.proposalData,
+    currentProposal.proposalData,
   );
 
   // Memoize editor configuration for performance
@@ -150,15 +231,62 @@ export function ProposalView({ proposal, backHref }: ProposalViewProps) {
   // Create read-only editor for content display
   const editor = useEditor(editorConfig);
 
-  const handleLike = useCallback(() => {
-    setIsLiked(!isLiked);
-    // TODO: Implement like API call
-  }, [isLiked]);
+  const isLoading = addRelationshipMutation.isPending || removeRelationshipMutation.isPending;
 
-  const handleFollow = useCallback(() => {
-    setIsFollowing(!isFollowing);
-    // TODO: Implement follow API call
-  }, [isFollowing]);
+  const handleLike = useCallback(async () => {
+    console.log('handleLike called', { 
+      profileId: currentProposal.profileId, 
+      isLikedByUser: currentProposal.isLikedByUser 
+    });
+
+    if (!currentProposal.profileId) {
+      console.error('No profileId provided for like action');
+      return;
+    }
+
+    try {
+      if (currentProposal.isLikedByUser) {
+        console.log('Unliking proposal...');
+        // Unlike
+        await removeRelationshipMutation.mutateAsync({
+          targetProfileId: currentProposal.profileId,
+          relationshipType: ProfileRelationshipType.LIKES,
+        });
+      } else {
+        console.log('Liking proposal...');
+        // Like
+        await addRelationshipMutation.mutateAsync({
+          targetProfileId: currentProposal.profileId,
+          relationshipType: ProfileRelationshipType.LIKES,
+          pending: false,
+        });
+      }
+    } catch (error) {
+      console.error('Error in handleLike:', error);
+    }
+  }, [currentProposal.profileId, currentProposal.isLikedByUser, addRelationshipMutation, removeRelationshipMutation]);
+
+  const handleFollow = useCallback(async () => {
+    if (!currentProposal.profileId) {
+      console.error('No profileId provided for follow action');
+      return;
+    }
+
+    if (currentProposal.isFollowedByUser) {
+      // Unfollow
+      await removeRelationshipMutation.mutateAsync({
+        targetProfileId: currentProposal.profileId,
+        relationshipType: ProfileRelationshipType.FOLLOWING,
+      });
+    } else {
+      // Follow
+      await addRelationshipMutation.mutateAsync({
+        targetProfileId: currentProposal.profileId,
+        relationshipType: ProfileRelationshipType.FOLLOWING,
+        pending: false,
+      });
+    }
+  }, [currentProposal.profileId, currentProposal.isFollowedByUser, addRelationshipMutation, removeRelationshipMutation]);
 
   if (!editor) {
     return (
@@ -167,8 +295,9 @@ export function ProposalView({ proposal, backHref }: ProposalViewProps) {
         title={title || 'Untitled Proposal'}
         onLike={handleLike}
         onFollow={handleFollow}
-        isLiked={isLiked}
-        isFollowing={isFollowing}
+        isLiked={currentProposal.isLikedByUser || false}
+        isFollowing={currentProposal.isFollowedByUser || false}
+        isLoading={isLoading}
         editHref={editHref}
         canEdit={canEdit}
       >
@@ -185,8 +314,9 @@ export function ProposalView({ proposal, backHref }: ProposalViewProps) {
       title={title || 'Untitled Proposal'}
       onLike={handleLike}
       onFollow={handleFollow}
-      isLiked={isLiked}
-      isFollowing={isFollowing}
+      isLiked={currentProposal.isLikedByUser || false}
+      isFollowing={currentProposal.isFollowedByUser || false}
+      isLoading={isLoading}
       editHref={editHref}
       canEdit={canEdit}
     >
@@ -221,25 +351,25 @@ export function ProposalView({ proposal, backHref }: ProposalViewProps) {
 
           {/* Author and submission info */}
           <div className="flex items-center gap-3">
-            {proposal.submittedBy && (
+            {currentProposal.submittedBy && (
               <>
                 <Avatar
                   placeholder={
-                    proposal.submittedBy.name ||
-                    proposal.submittedBy.slug ||
+                    currentProposal.submittedBy.name ||
+                    currentProposal.submittedBy.slug ||
                     'U'
                   }
                   className="h-8 w-8"
                 >
-                  {proposal.submittedBy.avatarImage?.name ? (
+                  {currentProposal.submittedBy.avatarImage?.name ? (
                     <Image
                       src={
-                        getPublicUrl(proposal.submittedBy.avatarImage.name) ??
+                        getPublicUrl(currentProposal.submittedBy.avatarImage.name) ??
                         ''
                       }
                       alt={
-                        proposal.submittedBy.name ||
-                        proposal.submittedBy.slug ||
+                        currentProposal.submittedBy.name ||
+                        currentProposal.submittedBy.slug ||
                         ''
                       }
                       fill
@@ -249,10 +379,10 @@ export function ProposalView({ proposal, backHref }: ProposalViewProps) {
                 </Avatar>
                 <div className="flex flex-col">
                   <span className="text-sm font-medium text-neutral-charcoal">
-                    {proposal.submittedBy.name || proposal.submittedBy.slug}
+                    {currentProposal.submittedBy.name || currentProposal.submittedBy.slug}
                   </span>
                   <span className="text-xs text-neutral-gray2">
-                    Submitted on {formatDate(proposal.createdAt)}
+                    Submitted on {formatDate(currentProposal.createdAt)}
                   </span>
                 </div>
               </>
@@ -298,7 +428,7 @@ export function ProposalView({ proposal, backHref }: ProposalViewProps) {
               <div className="mb-8">
                 <Surface className="border-0 p-0 sm:border sm:p-4">
                   <PostUpdate
-                    profileId={proposal.profileId || undefined}
+                    profileId={currentProposal.profileId || undefined}
                     placeholder={`Comment${user?.currentProfile?.name ? ` as ${user?.currentProfile?.name}` : ''}...`}
                     label="Comment"
                     onSuccess={scrollToComments}

@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@op/ui/Button';
-import { ChevronLeft, Heart, Users, Edit } from 'lucide-react';
+import { ChevronLeft, Edit, Heart, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { ReactNode } from 'react';
 
@@ -15,6 +15,7 @@ interface ProposalViewLayoutProps {
   onFollow?: () => void;
   isLiked?: boolean;
   isFollowing?: boolean;
+  isLoading?: boolean;
   editHref?: string;
   canEdit?: boolean;
 }
@@ -27,6 +28,7 @@ export function ProposalViewLayout({
   onFollow,
   isLiked = false,
   isFollowing = false,
+  isLoading = false,
   editHref,
   canEdit = false,
 }: ProposalViewLayoutProps) {
@@ -61,18 +63,19 @@ export function ProposalViewLayout({
             </Button>
           )}
           <Button
-            color="primary"
-            surface="outline"
+            surface="ghost"
             onPress={onLike}
-            className="px-4 py-2"
+            isDisabled={isLoading}
+            className="flex px-4 py-2 text-primary-teal"
           >
             <Heart className={`h-4 w-4 ${isLiked ? 'fill-current' : ''}`} />
-            Like
+            {isLiked ? 'Liked' : 'Like'}
           </Button>
           <Button
             color="secondary"
-            surface={isFollowing ? "solid" : "outline"}
+            surface={isFollowing ? 'solid' : 'outline'}
             onPress={onFollow}
+            isDisabled={isLoading}
             className="px-4 py-2"
           >
             <Users className="h-4 w-4" />

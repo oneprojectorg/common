@@ -44,15 +44,6 @@ export function DecisionInstanceContent({
 }: DecisionInstanceContentProps) {
   const locale = useLocale();
 
-  const handleProposalLike = (proposalId: string) => {
-    // TODO
-    console.log('Like proposal:', proposalId);
-  };
-
-  const handleProposalFollow = (proposalId: string) => {
-    // TODO
-    console.log('Follow proposal:', proposalId);
-  };
 
   const uniqueSubmitters = getUniqueSubmitters(proposals);
 
@@ -136,8 +127,6 @@ export function DecisionInstanceContent({
                   {/* Proposals list */}
                   <ProposalsList
                     proposals={proposals}
-                    onProposalLike={handleProposalLike}
-                    onProposalFollow={handleProposalFollow}
                     slug={slug}
                     instanceId={instanceId}
                   />
