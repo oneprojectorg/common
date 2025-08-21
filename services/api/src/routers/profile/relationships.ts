@@ -33,7 +33,6 @@ const removeRelationshipInputSchema = z.object({
 const getRelationshipsInputSchema = z.object({
   targetProfileId: z.string().uuid().optional(),
   sourceProfileId: z.string().uuid().optional(),
-  includeTargetProfiles: z.boolean().optional(),
 });
 
 const addRelationshipMeta: OpenApiMeta = {
@@ -148,17 +147,26 @@ export const profileRelationshipRouter = router({
               type: z.string(),
             })
             .optional(),
+          sourceProfile: z
+            .object({
+              id: z.string(),
+              name: z.string(),
+              slug: z.string(),
+              bio: z.string().nullable(),
+              avatarImage: z.string().nullable(),
+              type: z.string(),
+            })
+            .optional(),
         }),
       ),
     )
     .query(async ({ input }) => {
-      const { targetProfileId, sourceProfileId, includeTargetProfiles } = input;
+      const { targetProfileId, sourceProfileId } = input;
 
       try {
         const relationships = await getProfileRelationships({
           targetProfileId,
           sourceProfileId,
-          includeTargetProfiles,
         });
         return relationships;
       } catch (error) {
