@@ -112,6 +112,10 @@ export const UpdateProfileForm = forwardRef<
       });
       utils.account.getMyAccount.invalidate();
       utils.account.getUserProfiles.invalidate();
+      utils.profile.getBySlug.invalidate({
+        slug: profile.slug,
+      });
+      utils.profile.list.invalidate();
       utils.individual.getTermsByProfile.invalidate({
         profileId,
       });
