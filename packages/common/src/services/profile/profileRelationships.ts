@@ -109,9 +109,6 @@ export const getRelationships = async ({
     conditions.push(eq(profileRelationships.targetProfileId, targetProfileId));
   }
 
-  // Optimized: Use Drizzle joins to get all data in a single query
-  // This reduces from 1 + (N * 2) queries to just 1 query
-  
   // Get unique profile IDs first to fetch in bulk
   const relationships = await db
     .select({
@@ -131,7 +128,7 @@ export const getRelationships = async ({
 
   // Get all unique profile IDs
   const profileIds = new Set<string>();
-  relationships.forEach(rel => {
+  relationships.forEach((rel) => {
     profileIds.add(rel.sourceProfileId);
     profileIds.add(rel.targetProfileId);
   });
@@ -151,12 +148,12 @@ export const getRelationships = async ({
 
   // Create a lookup map for profiles
   const profileMap = new Map();
-  allProfiles.forEach(profile => {
+  allProfiles.forEach((profile) => {
     profileMap.set(profile.id, profile);
   });
 
   // Combine the data
-  return relationships.map(rel => ({
+  return relationships.map((rel) => ({
     relationshipType: rel.relationshipType,
     pending: rel.pending,
     createdAt: rel.createdAt,
