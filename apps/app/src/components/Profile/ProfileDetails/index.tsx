@@ -12,6 +12,7 @@ import { LuHandCoins, LuInfo } from 'react-icons/lu';
 import { ProfileSummary } from '../ProfileSummary';
 import { AddRelationshipModal } from './AddRelationshipModal';
 import { FollowButton } from './FollowButton';
+import { InviteToOrganizationButton } from './InviteToOrganizationButton';
 import { UpdateOrganizationModal } from './UpdateOrganizationModal';
 import { UpdateUserProfileModal } from './UpdateUserProfileModal';
 
@@ -27,7 +28,7 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
     (fundingLink) => fundingLink.type === 'offering',
   );
 
-  const isOrganizationProfile = profile.profile?.type === 'org';
+  const isOrganizationProfile = profile.profile?.type === EntityType.ORG;
   const isViewingOwnProfile =
     user?.currentProfile?.id ===
     (isOrganizationProfile ? profile.profile.id : profile.id);
@@ -38,8 +39,22 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
   const shouldShowFollowButton =
     isCurrentUserIndividual && isOrganizationProfile && !isViewingOwnProfile;
 
-  if (!isViewingOwnProfile && profile.profile.type === 'individual') {
-    // TODO: add invite button here! but also, architect it better
+  // Check if current user is Organization viewing an Individual
+  const isCurrentUserOrganization =
+    user?.currentProfile?.type === EntityType.ORG;
+  const shouldShowInviteButton =
+    isCurrentUserOrganization &&
+    profile.profile.type === EntityType.INDIVIDUAL &&
+    !isViewingOwnProfile;
+
+  if (!isViewingOwnProfile && profile.profile.type === EntityType.INDIVIDUAL) {
+    if (shouldShowInviteButton) {
+      return (
+        <div className="flex flex-wrap gap-3 sm:h-fit sm:max-w-fit sm:justify-end sm:gap-4 sm:py-2">
+          <InviteToOrganizationButton profile={profile} />
+        </div>
+      );
+    }
     return null;
   }
 
