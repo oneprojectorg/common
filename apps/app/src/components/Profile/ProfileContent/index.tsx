@@ -12,7 +12,7 @@ import { Tag, TagGroup } from '@op/ui/TagGroup';
 import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
 import Link from 'next/link';
-import { useFeatureFlagEnabled } from 'posthog-js/react';
+// import { useFeatureFlagEnabled } from 'posthog-js/react';
 import { ReactNode, Suspense } from 'react';
 import { LuCopy, LuGlobe, LuMail } from 'react-icons/lu';
 
@@ -304,7 +304,7 @@ export const ProfileTabsMobile = ({
   followersContent?: React.ReactNode;
 }) => {
   const t = useTranslations();
-  const decisionsEnabled = false; // useFeatureFlagEnabled('decision_making'); // client only
+  const decisionsEnabled = true; // useFeatureFlagEnabled('decision_making'); // client only
   const isIndividual = profile.orgType === null || profile.orgType === '';
   const individualUsersEnabled = true; // useFeatureFlagEnabled('individual_users');
 
