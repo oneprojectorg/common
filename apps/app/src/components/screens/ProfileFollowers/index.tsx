@@ -10,40 +10,41 @@ import {
   type RelationshipListItem,
 } from '@/components/RelationshipList';
 
-export const ProfileFollowingSuspense = ({
+export const ProfileFollowersSuspense = ({
   profileId,
 }: {
   profileId: string;
 }) => {
+  // Get relationships where this profile is the target (people following this profile)
   const [relationships] = trpc.profile.getRelationships.useSuspenseQuery({
-    sourceProfileId: profileId,
+    targetProfileId: profileId,
   });
 
-  // Filter for following relationships and extract target profiles
-  const following: RelationshipListItem[] = useMemo(() => {
+  // Filter for following relationships and extract source profiles (followers)
+  const followers: RelationshipListItem[] = useMemo(() => {
     return relationships
       .filter(
-        (rel) => rel.relationshipType === 'following' && rel.targetProfile,
+        (rel) => rel.relationshipType === 'following' && rel.sourceProfile,
       )
-      .map((rel) => rel.targetProfile!)
+      .map((rel) => rel.sourceProfile!)
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [relationships]);
 
   return (
     <div className="flex flex-col gap-4 text-base sm:gap-8 sm:py-8">
       <RelationshipList
-        profiles={following}
-        title={`Following ${following.length} ${pluralize('organization', following.length)}`}
+        profiles={followers}
+        title={`${followers.length} ${pluralize('follower', followers.length)}`}
       />
     </div>
   );
 };
 
-export const ProfileFollowing = ({ profileId }: { profileId: string }) => {
+export const ProfileFollowers = ({ profileId }: { profileId: string }) => {
   return (
     <ErrorBoundary fallback={null}>
-      <Suspense fallback={<div>Loading following...</div>}>
-        <ProfileFollowingSuspense profileId={profileId} />
+      <Suspense fallback={<div>Loading followers...</div>}>
+        <ProfileFollowersSuspense profileId={profileId} />
       </Suspense>
     </ErrorBoundary>
   );

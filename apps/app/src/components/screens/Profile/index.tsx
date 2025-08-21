@@ -19,6 +19,7 @@ import {
 import { ProfileDecisionsSuspense } from '@/components/Profile/ProfileDecisions';
 import { ProfileDetails } from '@/components/Profile/ProfileDetails';
 
+import { ProfileFollowers } from '../ProfileFollowers';
 import { ProfileFollowing } from '../ProfileFollowing';
 import {
   ProfileOrganizations,
@@ -52,6 +53,7 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
       });
 
       const decisionsEnabled = true;
+      const individualUsersEnabled = true;
 
       return organization ? (
         <>
@@ -77,6 +79,10 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
             <ProfileTabList>
               <Tab id="home">Home</Tab>
               <Tab id="relationships">Relationships</Tab>
+
+              {individualUsersEnabled ? (
+                <Tab id="followers">Followers</Tab>
+              ) : null}
               {decisionsEnabled ? <Tab id="decisions">Decisions</Tab> : null}
             </ProfileTabList>
 
@@ -94,6 +100,9 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
                 />
               </ProfileOrganizations>
             </TabPanel>
+            <TabPanel id="followers" className="px-4 sm:px-6 sm:py-0">
+              <ProfileFollowers profileId={profile.id} />
+            </TabPanel>
             {decisionsEnabled ? (
               <TabPanel id="decisions" className="px-4 sm:px-6 sm:py-0">
                 <ProfileDecisionsSuspense profileId={profile.id} />
@@ -105,6 +114,7 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
             decisionsContent={
               <ProfileDecisionsSuspense profileId={profile.id} />
             }
+            followersContent={<ProfileFollowers profileId={profile.id} />}
           >
             <ProfileRelationshipsSuspense
               slug={profile.slug}

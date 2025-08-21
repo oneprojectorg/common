@@ -1,4 +1,4 @@
-import { and, db, eq } from '@op/db/client';
+import { and, db, eq, inArray } from '@op/db/client';
 import { profileRelationships, profiles } from '@op/db/schema';
 
 import { ValidationError } from '../../utils/error';
@@ -63,17 +63,23 @@ export const removeRelationship = async ({
 export const getRelationships = async ({
   targetProfileId,
   sourceProfileId,
-  includeTargetProfiles = false,
 }: {
   targetProfileId?: string;
   sourceProfileId?: string;
-  includeTargetProfiles?: boolean;
 }): Promise<
   Array<{
     relationshipType: string;
     pending: boolean | null;
     createdAt: string | null;
     targetProfile?: {
+      id: string;
+      name: string;
+      slug: string;
+      bio: string | null;
+      avatarImage: string | null;
+      type: string;
+    };
+    sourceProfile?: {
       id: string;
       name: string;
       slug: string;
@@ -89,73 +95,69 @@ export const getRelationships = async ({
     throw new ValidationError('You must be logged in to view relationships');
   }
 
-  // Determine the source profile ID
-  const actualSourceProfileId = sourceProfileId ?? currentProfileId;
-
   // Build the where conditions
-  const conditions = [
-    eq(profileRelationships.sourceProfileId, actualSourceProfileId),
-  ];
+  const conditions = [];
+
+  if (sourceProfileId) {
+    conditions.push(eq(profileRelationships.sourceProfileId, sourceProfileId));
+  } else if (!targetProfileId) {
+    // If neither sourceProfileId nor targetProfileId is provided, default to current user as source
+    conditions.push(eq(profileRelationships.sourceProfileId, currentProfileId));
+  }
 
   if (targetProfileId) {
     conditions.push(eq(profileRelationships.targetProfileId, targetProfileId));
   }
 
-  let relationships;
+  // Get unique profile IDs first to fetch in bulk
+  const relationships = await db
+    .select({
+      id: profileRelationships.id,
+      relationshipType: profileRelationships.relationshipType,
+      pending: profileRelationships.pending,
+      createdAt: profileRelationships.createdAt,
+      sourceProfileId: profileRelationships.sourceProfileId,
+      targetProfileId: profileRelationships.targetProfileId,
+    })
+    .from(profileRelationships)
+    .where(conditions.length > 0 ? and(...conditions) : undefined);
 
-  if (includeTargetProfiles) {
-    relationships = await db
-      .select({
-        relationshipType: profileRelationships.relationshipType,
-        pending: profileRelationships.pending,
-        createdAt: profileRelationships.createdAt,
-        targetProfile: {
-          id: profiles.id,
-          name: profiles.name,
-          slug: profiles.slug,
-          bio: profiles.bio,
-          avatarImage: profiles.avatarImageId,
-          type: profiles.type,
-        },
-      })
-      .from(profileRelationships)
-      .innerJoin(
-        profiles,
-        eq(profiles.id, profileRelationships.targetProfileId),
-      )
-      .where(and(...conditions));
-  } else {
-    relationships = await db
-      .select({
-        relationshipType: profileRelationships.relationshipType,
-        pending: profileRelationships.pending,
-        createdAt: profileRelationships.createdAt,
-      })
-      .from(profileRelationships)
-      .where(and(...conditions));
+  if (relationships.length === 0) {
+    return [];
   }
 
-  return relationships.map((rel) => {
-    const baseRel = {
-      relationshipType: rel.relationshipType,
-      pending: rel.pending,
-      createdAt: rel.createdAt,
-    };
-
-    if ('targetProfile' in rel) {
-      return {
-        ...baseRel,
-        targetProfile: rel.targetProfile as {
-          id: string;
-          name: string;
-          slug: string;
-          bio: string | null;
-          avatarImage: string | null;
-          type: string;
-        },
-      };
-    }
-
-    return baseRel;
+  // Get all unique profile IDs
+  const profileIds = new Set<string>();
+  relationships.forEach((rel) => {
+    profileIds.add(rel.sourceProfileId);
+    profileIds.add(rel.targetProfileId);
   });
+
+  // Fetch all profiles in a single query
+  const allProfiles = await db
+    .select({
+      id: profiles.id,
+      name: profiles.name,
+      slug: profiles.slug,
+      bio: profiles.bio,
+      avatarImage: profiles.avatarImageId,
+      type: profiles.type,
+    })
+    .from(profiles)
+    .where(inArray(profiles.id, [...profileIds]));
+
+  // Create a lookup map for profiles
+  const profileMap = new Map();
+  allProfiles.forEach((profile) => {
+    profileMap.set(profile.id, profile);
+  });
+
+  // Combine the data
+  return relationships.map((rel) => ({
+    relationshipType: rel.relationshipType,
+    pending: rel.pending,
+    createdAt: rel.createdAt,
+    sourceProfile: profileMap.get(rel.sourceProfileId),
+    targetProfile: profileMap.get(rel.targetProfileId),
+  }));
 };
