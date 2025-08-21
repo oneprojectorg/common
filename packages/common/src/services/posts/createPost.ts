@@ -7,7 +7,12 @@ import { CommonError } from '../../utils';
 import { getCurrentProfileId } from '../access';
 
 export const createPost = async (input: CreatePostInput) => {
-  const { content, attachmentIds = [], parentPostId, profileId: targetProfileId } = input;
+  const {
+    content,
+    attachmentIds = [],
+    parentPostId,
+    profileId: targetProfileId,
+  } = input;
   const profileId = await getCurrentProfileId();
 
   try {
@@ -32,62 +37,67 @@ export const createPost = async (input: CreatePostInput) => {
       }
     }
 
-    // Create the post
-    const [newPost] = await db
-      .insert(posts)
-      .values({
-        content,
-        parentPostId: parentPostId || null,
-        profileId,
-      })
-      .returning();
+    const newPost = await db.transaction(async (tx) => {
+      // Create the post
+      const [newPost] = await tx
+        .insert(posts)
+        .values({
+          content,
+          parentPostId: parentPostId || null,
+          profileId,
+        })
+        .returning();
 
-    if (!newPost) {
-      throw new CommonError('Failed to create post');
-    }
-
-
-    // If targetProfileId is provided, create the profile association
-    if (targetProfileId) {
-      await db.insert(postsToProfiles).values({
-        postId: newPost.id,
-        profileId: targetProfileId,
-      });
-    } else if (parentPostId) {
-      // For comments (posts with parentPostId), inherit profile associations from parent post
-      const parentProfiles = await db
-        .select({ profileId: postsToProfiles.profileId })
-        .from(postsToProfiles)
-        .where(eq(postsToProfiles.postId, parentPostId));
-
-      if (parentProfiles.length > 0) {
-        await db.insert(postsToProfiles).values(
-          parentProfiles.map((profile) => ({
-            postId: newPost.id,
-            profileId: profile.profileId,
-          })),
-        );
+      if (!newPost) {
+        throw new CommonError('Failed to create post');
       }
-    }
 
-    // Create attachment records if any attachments were uploaded
-    if (allStorageObjects.length > 0) {
-      const attachmentValues = allStorageObjects.map((storageObject) => ({
-        postId: newPost.id,
-        storageObjectId: storageObject.id,
-        profileId,
-        fileName:
-          storageObject?.name
-            ?.split('/')
-            .slice(-1)[0]
-            ?.split('_')
-            .slice(1)
-            .join('_') ?? '',
-        mimeType: (storageObject.metadata as { mimetype: string }).mimetype,
-      }));
+      // If targetProfileId is provided, create the profile association
+      if (targetProfileId) {
+        await tx.insert(postsToProfiles).values({
+          postId: newPost.id,
+          profileId: targetProfileId,
+        });
+      } else if (parentPostId) {
+        // For comments (posts with parentPostId), inherit profile associations from parent post
+        const parentProfiles = await tx
+          .select({ profileId: postsToProfiles.profileId })
+          .from(postsToProfiles)
+          .where(eq(postsToProfiles.postId, parentPostId));
 
-      await db.insert(attachments).values(attachmentValues);
-    }
+        if (parentProfiles.length > 0) {
+          await tx.insert(postsToProfiles).values(
+            parentProfiles.map((profile) => ({
+              postId: newPost.id,
+              profileId: profile.profileId,
+            })),
+          );
+        }
+      } else {
+        throw new CommonError('Failed to create post');
+      }
+
+      // Create attachment records if any attachments were uploaded
+      if (allStorageObjects.length > 0) {
+        const attachmentValues = allStorageObjects.map((storageObject) => ({
+          postId: newPost.id,
+          storageObjectId: storageObject.id,
+          profileId,
+          fileName:
+            storageObject?.name
+              ?.split('/')
+              .slice(-1)[0]
+              ?.split('_')
+              .slice(1)
+              .join('_') ?? '',
+          mimeType: (storageObject.metadata as { mimetype: string }).mimetype,
+        }));
+
+        await tx.insert(attachments).values(attachmentValues);
+      }
+
+      return newPost;
+    });
 
     return {
       ...newPost,
