@@ -13,7 +13,7 @@ export const FieldTemplate = (props: FieldTemplateProps) => {
 };
 
 export const ObjectFieldTemplate = (props: ObjectFieldTemplateProps) => {
-  const { properties, title, description, idSchema, uiSchema, schema } = props;
+  const { properties, title, description, idSchema } = props;
   
   // Check if this is the root schema - if so, skip rendering title and description
   // as the modal wrapper already handles them

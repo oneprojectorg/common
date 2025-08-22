@@ -108,3 +108,5 @@ Use `pnpm w:<workspace>` shortcuts:
 ## Workflow Warnings
 
 - Don't run pnpm format unless specifically asked to do so
+
+- If you need to check interactions in the browser, you can use the Playwright MCP server and open http://localhost:3100 to open the dev server

@@ -234,25 +234,6 @@ export const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
       },
     },
   },
-  {
-    schema: {
-      type: 'object',
-      title: 'Review and launch',
-      description: 'Confirm your settings before creating the process.',
-      properties: {
-        summary: {
-          type: 'object',
-          title: 'Summary',
-          properties: {},
-        },
-      },
-    },
-    uiSchema: {
-      summary: {
-        'ui:widget': 'ReviewSummary',
-      },
-    },
-  },
 ];
 
 export const schemaDefaults = {
@@ -278,7 +259,6 @@ export const schemaDefaults = {
   categories: [],
   budgetCapAmount: null,
   descriptionGuidance: '',
-  summary: {},
 };
 
 // Transform form data to API-compatible format

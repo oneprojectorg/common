@@ -375,6 +375,104 @@ export const RichTextEditorWidget = (props: WidgetProps) => {
   );
 };
 
+export const ReviewSummaryWidget = (props: WidgetProps) => {
+  // Access the full form data from the root level
+  const formData = (props as any).formContext?.formData || props.formData || {};
+
+  const formatCurrency = (amount: number | null | undefined) => {
+    if (!amount) return '$0.00';
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(amount);
+  };
+
+  const formatDate = (dateString: string | null | undefined) => {
+    if (!dateString) return 'Not set';
+    try {
+      return new Date(dateString).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      });
+    } catch {
+      return 'Invalid date';
+    }
+  };
+
+  const formatDateRange = (startDate: string | undefined, endDate: string | undefined) => {
+    const start = formatDate(startDate);
+    const end = formatDate(endDate);
+    if (start === 'Not set' || end === 'Not set') return 'Not set';
+    return `${start} - ${end}`;
+  };
+
+  const SummarySection = ({ title, children }: { title: string; children: React.ReactNode }) => (
+    <div className="space-y-3">
+      <h3 className="text-base font-semibold text-neutral-charcoal">{title}</h3>
+      <div className="space-y-2">{children}</div>
+    </div>
+  );
+
+  const SummaryRow = ({ label, value }: { label: string; value: string | React.ReactNode }) => (
+    <div className="flex justify-between items-start">
+      <span className="text-sm text-neutral-charcoal font-medium">{label}</span>
+      <span className="text-sm text-neutral-charcoal text-right flex-1 ml-4">{value}</span>
+    </div>
+  );
+
+  const categories = formData.categories || [];
+  const categoriesDisplay = categories.length > 0 
+    ? `${categories.length} (${categories.join(', ')})`
+    : 'None';
+
+  return (
+    <div className="space-y-6">
+      <SummarySection title="Process Details">
+        <SummaryRow label="Name" value={formData.processName || 'Not set'} />
+        <SummaryRow label="Description" value={formData.description || 'Not set'} />
+        <SummaryRow label="Total Budget" value={formatCurrency(formData.totalBudget)} />
+      </SummarySection>
+
+      <SummarySection title="Timeline">
+        <SummaryRow 
+          label="Submissions" 
+          value={formatDateRange(
+            formData.proposalSubmissionPhase?.submissionsOpen,
+            formData.proposalSubmissionPhase?.submissionsClose
+          )} 
+        />
+        <SummaryRow 
+          label="Review" 
+          value={formatDateRange(
+            formData.reviewShortlistingPhase?.reviewOpen,
+            formData.reviewShortlistingPhase?.reviewClose
+          )} 
+        />
+        <SummaryRow 
+          label="Voting" 
+          value={formatDateRange(
+            formData.votingPhase?.votingOpen,
+            formData.votingPhase?.votingClose
+          )} 
+        />
+        <SummaryRow 
+          label="Results" 
+          value={formatDate(formData.resultsAnnouncement?.resultsDate)} 
+        />
+      </SummarySection>
+
+      <SummarySection title="Configuration">
+        <SummaryRow 
+          label="Max votes per member" 
+          value={formData.maxVotesPerMember ? `${formData.maxVotesPerMember} per member` : 'Not set'} 
+        />
+        <SummaryRow label="Categories" value={categoriesDisplay} />
+      </SummarySection>
+    </div>
+  );
+};
+
 // Wrap widgets with error boundaries
 const SafeTextWidget = withWidgetErrorBoundary(TextWidget, 'Text');
 const SafeTextareaWidget = withWidgetErrorBoundary(TextareaWidget, 'Textarea');
@@ -390,6 +488,10 @@ const SafeRichTextEditorWidget = withWidgetErrorBoundary(
   RichTextEditorWidget,
   'RichTextEditor',
 );
+const SafeReviewSummaryWidget = withWidgetErrorBoundary(
+  ReviewSummaryWidget,
+  'ReviewSummary',
+);
 
 export const CustomWidgets = {
   TextWidget: SafeTextWidget,
@@ -400,6 +502,7 @@ export const CustomWidgets = {
   RadioWidget: SafeRadioWidget,
   CategoryListWidget: SafeCategoryListWidget,
   RichTextEditorWidget: SafeRichTextEditorWidget,
+  ReviewSummaryWidget: SafeReviewSummaryWidget,
   text: SafeTextWidget,
   textarea: SafeTextareaWidget,
   number: SafeNumberWidget,
@@ -408,4 +511,5 @@ export const CustomWidgets = {
   radio: SafeRadioWidget,
   CategoryList: SafeCategoryListWidget,
   RichTextEditor: SafeRichTextEditorWidget,
+  ReviewSummary: SafeReviewSummaryWidget,
 };

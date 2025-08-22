@@ -221,7 +221,7 @@ export const CreateDecisionProcessModal = () => {
     },
   });
 
-  const totalSteps = stepSchemas.length;
+  const totalSteps = stepSchemas.length + 1; // +1 for review step
 
   const handleCreateError = (error: unknown, title: string) => {
     console.error(title + ':', error);
@@ -245,7 +245,7 @@ export const CreateDecisionProcessModal = () => {
   const validatePhaseSequence = (): string[] => {
     const errors: string[] = [];
 
-    if (currentStep !== 2) {
+    if (currentStep !== 2 || currentStep === stepSchemas.length + 1) {
       return errors;
     }
 
@@ -301,6 +301,11 @@ export const CreateDecisionProcessModal = () => {
 
   // Extract validation logic to avoid duplication
   const validateCurrentStep = (): ValidationResult => {
+    // If we're on the final review step, always consider it valid
+    if (currentStep === stepSchemas.length + 1) {
+      return { isValid: true, errors: {} };
+    }
+
     const currentSchema = stepSchemas[currentStep - 1];
     if (!currentSchema) return { isValid: false, errors: {} };
 
@@ -409,6 +414,33 @@ export const CreateDecisionProcessModal = () => {
   };
 
   const renderStepContent = () => {
+    // If we're on the final review step (step 6 when there are 5 schema steps)
+    if (currentStep === stepSchemas.length + 1) {
+      return (
+        <div className="flex flex-col gap-6">
+          <p className="text-base text-neutral-charcoal">
+            Confirm your settings before creating the process.
+          </p>
+          <CustomWidgets.ReviewSummary 
+            id="review-summary"
+            name="summary"
+            label=""
+            formData={formData}
+            formContext={{ formData }}
+            schema={{}}
+            uiSchema={{}}
+            value={{}}
+            onChange={() => {}}
+            onBlur={() => {}}
+            onFocus={() => {}}
+            options={{}}
+            required={false}
+            registry={{} as any}
+          />
+        </div>
+      );
+    }
+
     // Convert 1-based to 0-based for array access
     const stepConfig = stepSchemas[currentStep - 1];
     if (!stepConfig) return null;
@@ -444,6 +476,7 @@ export const CreateDecisionProcessModal = () => {
             schema={stepConfig.schema}
             uiSchema={stepConfig.uiSchema as any}
             formData={formData}
+            formContext={{ formData }}
             onChange={handleChange}
             onError={handleError}
             validator={validator as any}
@@ -464,6 +497,11 @@ export const CreateDecisionProcessModal = () => {
   };
 
   const getCurrentStepTitle = () => {
+    // If we're on the final review step (step 6 when there are 5 schema steps)
+    if (currentStep === stepSchemas.length + 1) {
+      return 'Review and launch';
+    }
+
     const stepConfig = stepSchemas[currentStep - 1];
     return stepConfig?.schema.title || 'Set up your decision-making process';
   };
