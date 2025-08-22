@@ -335,5 +335,6 @@ export const proposalFilterSchema = z
     status: z
       .enum(['draft', 'submitted', 'under_review', 'approved', 'rejected'])
       .optional(),
+    categoryId: z.string().optional(),
   })
   .merge(paginationInputSchema);

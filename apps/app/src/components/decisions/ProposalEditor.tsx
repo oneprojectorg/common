@@ -49,10 +49,11 @@ export function ProposalEditor({
   const descriptionGuidance = instance.instanceData?.fieldValues
     ?.descriptionGuidance as string | undefined;
 
-  // Get categories from instance data and budget cap from template
-  const categories = instance.instanceData?.fieldValues?.categories as
-    | string[]
-    | undefined;
+  // Get categories dynamically from the database
+  const [categoriesData] = trpc.decision.getCategories.useSuspenseQuery({
+    processInstanceId: instance.id,
+  });
+  const { categories } = categoriesData;
   let budgetCapAmount: number | undefined;
 
   // Extract budget cap from the template if available
@@ -231,9 +232,9 @@ export function ProposalEditor({
                 onSelectionChange={(key) => setSelectedCategory(key as string)}
                 className="w-auto"
               >
-                {categories.map((cat) => (
-                  <SelectItem key={cat} id={cat}>
-                    {cat}
+                {categories.map((category) => (
+                  <SelectItem key={category.id} id={category.name}>
+                    {category.name}
                   </SelectItem>
                 ))}
               </Select>

@@ -1,34 +1,63 @@
 'use client';
 
+import { trpc } from '@op/api/client';
 import type { proposalEncoder } from '@op/api/encoders';
 import { Select, SelectItem } from '@op/ui/Select';
+import { useState } from 'react';
 import type { z } from 'zod';
 
 import { ProposalCard } from './ProposalCard';
 
 type Proposal = z.infer<typeof proposalEncoder>;
 
-interface Category {
-  id: string;
-  name: string;
-}
-
 interface ProposalsListProps {
-  proposals: Proposal[];
+  initialProposals: Proposal[];
   slug: string;
   instanceId: string;
-  categories: Category[];
 }
 
+const NoProposalsFound = () => (
+  <div className="py-12 text-center">
+    <p className="text-neutral-charcoal">
+      No proposals found matching the current filters.
+    </p>
+    <p className="mt-2 text-sm text-neutral-gray2">
+      Try adjusting your filter selection above.
+    </p>
+  </div>
+);
+
 export function ProposalsList({
-  proposals,
+  initialProposals,
   slug,
   instanceId,
-  categories,
 }: ProposalsListProps) {
-  if (proposals.length === 0) {
-    return null;
-  }
+  const [selectedCategory, setSelectedCategory] =
+    useState<string>('all-categories');
+
+  const [categoriesData] = trpc.decision.getCategories.useSuspenseQuery({
+    processInstanceId: instanceId,
+  });
+
+  const categories = categoriesData.categories;
+
+  const [proposalsData] = trpc.decision.listProposals.useSuspenseQuery(
+    {
+      processInstanceId: instanceId,
+      categoryId:
+        selectedCategory === 'all-categories' ? undefined : selectedCategory,
+      limit: 200,
+    },
+    {
+      initialData: {
+        proposals: initialProposals,
+        total: initialProposals.length,
+        hasMore: false,
+      },
+    },
+  );
+
+  const { proposals } = proposalsData;
 
   return (
     <div className="mt-8">
@@ -40,11 +69,15 @@ export function ProposalsList({
           </span>
         </div>
         <div className="flex items-center gap-4">
-          <Select defaultSelectedKey="my" className="w-36">
+          <Select defaultSelectedKey="all" className="w-36">
             <SelectItem id="my">My proposals</SelectItem>
             <SelectItem id="all">All proposals</SelectItem>
           </Select>
-          <Select defaultSelectedKey="all-categories" className="w-40">
+          <Select
+            selectedKey={selectedCategory}
+            onSelectionChange={(key) => setSelectedCategory(String(key))}
+            className="w-40"
+          >
             <SelectItem id="all-categories">All categories</SelectItem>
             {categories.map((category) => (
               <SelectItem key={category.id} id={category.id}>
@@ -59,16 +92,20 @@ export function ProposalsList({
         </div>
       </div>
 
-      {/* Proposals List */}
-      <div className="space-y-4">
-        {proposals.map((proposal) => (
-          <ProposalCard
-            key={proposal.id}
-            proposal={proposal}
-            viewHref={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.id}`}
-          />
-        ))}
-      </div>
+      {/* Proposals List or Empty State */}
+      {proposals.length === 0 ? (
+        <NoProposalsFound />
+      ) : (
+        <div className="space-y-4">
+          {proposals.map((proposal) => (
+            <ProposalCard
+              key={proposal.id}
+              proposal={proposal}
+              viewHref={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.id}`}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

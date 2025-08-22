@@ -64,12 +64,6 @@ async function DecisionInstancePageContent({
     const { name, proposalCount = 0 } = instance;
     const proposals = proposalsData?.proposals || [];
 
-    const categories = (
-      (instanceData?.fieldValues?.categories as string[]) || []
-    ).map((categoryLabel, index) => ({
-      id: `category-${index}`,
-      name: categoryLabel,
-    }));
 
     return (
       <>
@@ -132,15 +126,11 @@ async function DecisionInstancePageContent({
               {proposals.length === 0 ? (
                 <EmptyProposalsState />
               ) : (
-                <div>
-                  {/* Proposals list */}
-                  <ProposalsList
-                    proposals={proposals}
-                    slug={slug}
-                    instanceId={instanceId}
-                    categories={categories}
-                  />
-                </div>
+                <ProposalsList
+                  initialProposals={proposals}
+                  slug={slug}
+                  instanceId={instanceId}
+                />
               )}
             </div>
           </div>
