@@ -18,10 +18,12 @@ const DecisionProcessList = ({ profileId }: { profileId: string }) => {
     limit: 20,
     offset: 0,
   });
-  const user = useUser();
+  const access = useUser();
+  const { user } = access;
 
-  const permission = user.getPermissionsForProfile(profileId);
+  const permission = access.getPermissionsForProfile(profileId);
   const decisionPermission = permission.decisions;
+  const isOwnProfile = user?.currentProfile?.id === profileId;
 
   if (!data.instances || data.instances.length === 0) {
     return (
@@ -40,7 +42,7 @@ const DecisionProcessList = ({ profileId }: { profileId: string }) => {
           </p>
         </div>
 
-        {decisionPermission.create ? (
+        {decisionPermission.create && isOwnProfile ? (
           <DialogTrigger>
             <Button color="primary" size="medium" variant="icon">
               <LuPlus className="size-4" />
@@ -60,7 +62,7 @@ const DecisionProcessList = ({ profileId }: { profileId: string }) => {
           All processes
         </h2>
 
-        {decisionPermission.create ? (
+        {decisionPermission.create && isOwnProfile ? (
           <DialogTrigger>
             <Button color="primary" size="medium" variant="icon">
               <LuPlus className="size-4" />
