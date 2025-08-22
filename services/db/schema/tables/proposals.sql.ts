@@ -70,6 +70,12 @@ export const proposals = pgTable(
     index().on(table.submittedByProfileId).concurrently(),
     index().on(table.profileId).concurrently(),
     index().on(table.status).concurrently(),
+    index('proposals_status_created_at_idx')
+      .on(table.status, table.createdAt)
+      .concurrently(),
+    index('proposals_process_status_idx')
+      .on(table.processInstanceId, table.status)
+      .concurrently(),
   ],
 );
 
@@ -93,6 +99,8 @@ export const proposalCategories = pgTable(
   (table) => [
     ...serviceRolePolicies,
     primaryKey(table.proposalId, table.taxonomyTermId),
+    index('proposalCategories_taxonomyTermId_index').on(table.taxonomyTermId),
+    index('proposalCategories_proposalId_index').on(table.proposalId),
   ],
 );
 

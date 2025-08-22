@@ -46,6 +46,11 @@ export const taxonomyTerms = pgTable(
   (table) => [
     ...serviceRolePolicies,
     unique().on(table.taxonomyId, table.termUri),
+    index('taxonomyTerms_label_btree_index').on(table.label),
+    index('taxonomyTerms_taxonomy_label_index').on(
+      table.taxonomyId,
+      table.label,
+    ),
     index('taxonomyTerms_data_gin_index')
       .using('gin', sql`to_tsvector('english', ${table.label})`)
       .concurrently(),

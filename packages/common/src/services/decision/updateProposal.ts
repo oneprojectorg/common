@@ -1,9 +1,53 @@
 import { db, eq } from '@op/db/client';
-import { proposals, users } from '@op/db/schema';
+import { proposals, proposalCategories, taxonomies, taxonomyTerms, users } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
 import { CommonError, NotFoundError, UnauthorizedError, ValidationError } from '../../utils';
 import type { ProposalData } from './types';
+
+/**
+ * Updates the category link for a proposal
+ */
+async function updateProposalCategoryLink(
+  proposalId: string,
+  newCategoryLabel?: string,
+): Promise<void> {
+  try {
+    // Remove existing category links
+    await db.delete(proposalCategories).where(eq(proposalCategories.proposalId, proposalId));
+
+    // Add new category link if provided
+    if (newCategoryLabel?.trim()) {
+      // Find the "proposal" taxonomy
+      const proposalTaxonomy = await db.query.taxonomies.findFirst({
+        where: eq(taxonomies.name, 'proposal'),
+      });
+
+      if (!proposalTaxonomy) {
+        console.warn('No "proposal" taxonomy found, skipping category linking');
+        return;
+      }
+
+      // Find the taxonomy term that matches the category label
+      const taxonomyTerm = await db.query.taxonomyTerms.findFirst({
+        where: eq(taxonomyTerms.label, newCategoryLabel.trim()),
+      });
+
+      if (taxonomyTerm) {
+        // Create the new link
+        await db.insert(proposalCategories).values({
+          proposalId,
+          taxonomyTermId: taxonomyTerm.id,
+        });
+      } else {
+        console.warn(`No taxonomy term found for category: ${newCategoryLabel}`);
+      }
+    }
+  } catch (error) {
+    console.error('Error updating proposal category link:', error);
+    // Don't throw error as this is not critical for proposal update
+  }
+}
 
 export interface UpdateProposalInput {
   proposalData?: ProposalData;
@@ -96,6 +140,12 @@ export const updateProposal = async ({
 
     if (!updatedProposal) {
       throw new CommonError('Failed to update proposal');
+    }
+
+    // Update category link if proposal data was updated
+    if (data.proposalData) {
+      const newCategoryLabel = (data.proposalData as any)?.category;
+      await updateProposalCategoryLink(proposalId, newCategoryLabel);
     }
 
     return updatedProposal;

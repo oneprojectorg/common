@@ -20,40 +20,74 @@ const mockProposals = [
     processInstanceId: 'instance-id-1',
     proposalData: { title: 'First Proposal' },
     submittedByProfileId: 'profile-id-123',
+    profileId: 'profile-id-123',
     status: 'submitted',
     createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-01T00:00:00Z',
     processInstance: {
       id: 'instance-id-1',
       name: 'First Instance',
+      description: 'First description',
+      instanceData: {},
+      currentStateId: 'state-1',
+      status: 'active',
+      createdAt: '2024-01-01T00:00:00Z',
+      updatedAt: '2024-01-01T00:00:00Z',
       process: {
         id: 'process-id-1',
         name: 'Test Process',
+        description: 'Test description',
+        createdAt: '2024-01-01T00:00:00Z',
+        updatedAt: '2024-01-01T00:00:00Z',
+        processSchema: {},
       },
     },
     submittedBy: {
       id: 'profile-id-123',
       name: 'John Doe',
     },
+    profile: {
+      id: 'profile-id-123',
+      name: 'John Doe',
+    },
+    decisions: [],
   },
   {
     id: 'proposal-id-2',
     processInstanceId: 'instance-id-2',
     proposalData: { title: 'Second Proposal' },
     submittedByProfileId: 'profile-id-456',
+    profileId: 'profile-id-456',
     status: 'approved',
     createdAt: '2024-01-02T00:00:00Z',
+    updatedAt: '2024-01-02T00:00:00Z',
     processInstance: {
       id: 'instance-id-2',
       name: 'Second Instance',
+      description: 'Second description',
+      instanceData: {},
+      currentStateId: 'state-2',
+      status: 'active',
+      createdAt: '2024-01-02T00:00:00Z',
+      updatedAt: '2024-01-02T00:00:00Z',
       process: {
         id: 'process-id-2',
         name: 'Another Process',
+        description: 'Another description',
+        createdAt: '2024-01-02T00:00:00Z',
+        updatedAt: '2024-01-02T00:00:00Z',
+        processSchema: {},
       },
     },
     submittedBy: {
       id: 'profile-id-456',
       name: 'Jane Smith',
     },
+    profile: {
+      id: 'profile-id-456',
+      name: 'Jane Smith',
+    },
+    decisions: [],
   },
 ];
 
@@ -74,12 +108,23 @@ describe('listProposals', () => {
     // Mock proposals query
     mockDb.query.proposals.findMany.mockResolvedValue(mockProposals);
     
-    // Mock decision count queries
-    mockDb.select.mockReturnValue({
-      from: vi.fn().mockReturnValue({
-        where: vi.fn().mockResolvedValue([{ decisionCount: 2 }]),
-      }),
-    });
+    // Mock the new CTE-based relationship query
+    mockDb.execute.mockResolvedValue([
+      {
+        profile_id: 'profile-id-123',
+        likes_count: 5,
+        followers_count: 10,
+        is_liked_by_user: true,
+        is_followed_by_user: false,
+      },
+      {
+        profile_id: 'profile-id-456',
+        likes_count: 3,
+        followers_count: 8,
+        is_liked_by_user: false,
+        is_followed_by_user: true,
+      },
+    ]);
   });
 
   it('should list proposals successfully with default parameters', async () => {
@@ -92,11 +137,19 @@ describe('listProposals', () => {
       proposals: expect.arrayContaining([
         expect.objectContaining({
           id: 'proposal-id-1',
-          decisionCount: 2,
+          decisionCount: 0, // Updated to match empty decisions array
+          likesCount: 5,
+          followersCount: 10,
+          isLikedByUser: true,
+          isFollowedByUser: false,
         }),
         expect.objectContaining({
           id: 'proposal-id-2',
-          decisionCount: 2,
+          decisionCount: 0, // Updated to match empty decisions array
+          likesCount: 3,
+          followersCount: 8,
+          isLikedByUser: false,
+          isFollowedByUser: true,
         }),
       ]),
       total: mockProposals.length,

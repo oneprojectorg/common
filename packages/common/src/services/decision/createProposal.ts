@@ -4,6 +4,8 @@ import {
   processInstances,
   profiles,
   proposals,
+  proposalCategories,
+  taxonomyTerms,
   users,
 } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
@@ -16,6 +18,7 @@ import {
   ValidationError,
 } from '../../utils';
 import type { InstanceData, ProcessSchema, ProposalData } from './types';
+
 
 export interface CreateProposalInput {
   processInstanceId: string;
@@ -88,6 +91,29 @@ export const createProposal = async ({
     // Extract title from proposal data
     const proposalTitle = extractTitleFromProposalData(data.proposalData);
 
+    // Pre-fetch category term if specified to avoid lookup inside transaction
+    const categoryLabel = (data.proposalData as any)?.category;
+    let categoryTermId: string | null = null;
+    
+    if (categoryLabel?.trim()) {
+      try {
+        const taxonomyTerm = await db.query.taxonomyTerms.findFirst({
+          where: eq(taxonomyTerms.label, categoryLabel.trim()),
+          with: {
+            taxonomy: true,
+          },
+        });
+        
+        if (taxonomyTerm && taxonomyTerm.taxonomy?.name === 'proposal') {
+          categoryTermId = taxonomyTerm.id;
+        } else {
+          console.warn(`No valid proposal taxonomy term found for category: ${categoryLabel}`);
+        }
+      } catch (error) {
+        console.warn('Error fetching category term, proceeding without category:', error);
+      }
+    }
+
     const proposal = await db.transaction(async (tx) => {
       // Create a profile for the proposal
       const [proposalProfile] = await tx
@@ -113,6 +139,14 @@ export const createProposal = async ({
           status: 'submitted',
         })
         .returning();
+
+      // Link to category within transaction if we have a valid term
+      if (proposal && categoryTermId) {
+        await tx.insert(proposalCategories).values({
+          proposalId: proposal.id,
+          taxonomyTermId: categoryTermId,
+        });
+      }
 
       return proposal;
     });

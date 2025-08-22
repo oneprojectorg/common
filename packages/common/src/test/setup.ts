@@ -56,6 +56,7 @@ export const mockDb = {
     }),
   }),
   $count: vi.fn().mockResolvedValue(0),
+  execute: vi.fn().mockResolvedValue([]), // Add execute method for raw SQL queries
   transaction: vi.fn().mockImplementation((callback) => callback({
     update: vi.fn().mockReturnValue({
       set: vi.fn().mockReturnValue({
@@ -88,7 +89,7 @@ vi.mock('@op/db/client', () => ({
   asc: mockAsc,
   sql: mockSql,
   ilike: vi.fn(),
-  and: mockAnd,
+  exists: vi.fn(), // Add exists function for subqueries
 }));
 
 // Mock Supabase User type
