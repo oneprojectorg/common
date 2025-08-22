@@ -275,7 +275,7 @@ export function ProposalEditor({
             content={initialContent}
             onUpdate={handleEditorUpdate}
             onEditorReady={handleEditorReady}
-            editorClassName="min-h-96 px-6 py-6 text-neutral-black placeholder:text-neutral-gray2"
+            editorClassName="w-[32rem] px-6 py-6 text-neutral-black placeholder:text-neutral-gray2"
           />
         </div>
       </div>

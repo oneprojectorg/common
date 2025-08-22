@@ -1,10 +1,8 @@
 import { trpcNext } from '@op/api/vanilla';
-import { Button } from '@op/ui/Button';
+import { ButtonLink } from '@op/ui/Button';
 import { Header3 } from '@op/ui/Header';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
-
-import { Link } from '@/lib/i18n';
 
 import { CurrentPhaseSurface } from '@/components/decisions/CurrentPhaseSurface';
 import { DecisionInstanceContent } from '@/components/decisions/DecisionInstanceContent';
@@ -105,14 +103,13 @@ async function DecisionInstancePageContent({
                 {description ? <p className="text-sm">{description}</p> : null}
 
                 <div className="mb-6">
-                  <Link
+
+                  <ButtonLink
                     href={`/profile/${slug}/decisions/${instanceId}/proposal/create`}
-                    className="block"
-                  >
-                    <Button color="primary" className="w-full">
-                      Submit a proposal
-                    </Button>
-                  </Link>
+                    color="primary"
+                    className="w-full">
+                    Submit a proposal
+                  </ButtonLink>
                 </div>
 
                 <CurrentPhaseSurface
