@@ -33,7 +33,7 @@ async function DecisionInstancePageContent({
   try {
     const client = await trpcNext();
 
-    // Fetch both instance and proposals in parallel
+    // Fetch instance and proposals in parallel
     const [instance, proposalsData] = await Promise.all([
       client.decision.getInstance.query({
         instanceId,
@@ -63,6 +63,13 @@ async function DecisionInstancePageContent({
 
     const { name, proposalCount = 0 } = instance;
     const proposals = proposalsData?.proposals || [];
+
+    const categories = (
+      (instanceData?.fieldValues?.categories as string[]) || []
+    ).map((categoryLabel, index) => ({
+      id: `category-${index}`,
+      name: categoryLabel,
+    }));
 
     return (
       <>
@@ -103,11 +110,11 @@ async function DecisionInstancePageContent({
                 {description ? <p className="text-sm">{description}</p> : null}
 
                 <div className="mb-6">
-
                   <ButtonLink
                     href={`/profile/${slug}/decisions/${instanceId}/proposal/create`}
                     color="primary"
-                    className="w-full">
+                    className="w-full"
+                  >
                     Submit a proposal
                   </ButtonLink>
                 </div>
@@ -131,6 +138,7 @@ async function DecisionInstancePageContent({
                     proposals={proposals}
                     slug={slug}
                     instanceId={instanceId}
+                    categories={categories}
                   />
                 </div>
               )}

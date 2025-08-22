@@ -8,16 +8,23 @@ import { ProposalCard } from './ProposalCard';
 
 type Proposal = z.infer<typeof proposalEncoder>;
 
+interface Category {
+  id: string;
+  name: string;
+}
+
 interface ProposalsListProps {
   proposals: Proposal[];
   slug: string;
   instanceId: string;
+  categories: Category[];
 }
 
 export function ProposalsList({
   proposals,
   slug,
   instanceId,
+  categories,
 }: ProposalsListProps) {
   if (proposals.length === 0) {
     return null;
@@ -39,6 +46,11 @@ export function ProposalsList({
           </Select>
           <Select defaultSelectedKey="all-categories" className="w-40">
             <SelectItem id="all-categories">All categories</SelectItem>
+            {categories.map((category) => (
+              <SelectItem key={category.id} id={category.id}>
+                {category.name}
+              </SelectItem>
+            ))}
           </Select>
           <Select defaultSelectedKey="newest" className="w-36">
             <SelectItem id="newest">Newest First</SelectItem>
