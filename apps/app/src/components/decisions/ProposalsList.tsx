@@ -46,7 +46,7 @@ export function ProposalsList({
       processInstanceId: instanceId,
       categoryId:
         selectedCategory === 'all-categories' ? undefined : selectedCategory,
-      limit: 200,
+      limit: 50,
     },
     {
       initialData: {

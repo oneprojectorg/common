@@ -47,6 +47,9 @@ export type { ListProposalsInput } from './listProposals';
 
 export { deleteProposal } from './deleteProposal';
 
+export { getProcessCategories } from './getProcessCategories';
+export type { ProcessCategory } from './getProcessCategories';
+
 // Types
 export type {
   ProcessSchema,
