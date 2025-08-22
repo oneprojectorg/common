@@ -77,10 +77,17 @@ export function ProposalsList({
             selectedKey={selectedCategory}
             onSelectionChange={(key) => setSelectedCategory(String(key))}
             className="w-40"
+            aria-label="Filter proposals by category"
           >
-            <SelectItem id="all-categories">All categories</SelectItem>
+            <SelectItem id="all-categories" aria-label="Show all categories">
+              All categories
+            </SelectItem>
             {categories.map((category) => (
-              <SelectItem key={category.id} id={category.id}>
+              <SelectItem
+                key={category.id}
+                id={category.id}
+                aria-label={`Filter by ${category.name} category`}
+              >
                 {category.name}
               </SelectItem>
             ))}
