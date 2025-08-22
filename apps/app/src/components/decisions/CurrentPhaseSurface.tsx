@@ -26,7 +26,7 @@ export function CurrentPhaseSurface({
   const remainingDays = calculateDaysRemaining(currentPhase?.phase?.endDate);
 
   return (
-    <Surface variant="filled" className="flex flex-col gap-4">
+    <Surface variant="filled" className="flex flex-col gap-4 p-4">
       {/* Header section */}
       <div className="flex flex-col gap-2">
         <div className="text-xs font-normal uppercase tracking-[0.96px] text-neutral-gray4">

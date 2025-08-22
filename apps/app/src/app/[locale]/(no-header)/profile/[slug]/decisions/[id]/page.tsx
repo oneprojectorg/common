@@ -1,10 +1,17 @@
 import { trpcNext } from '@op/api/vanilla';
+import { Button } from '@op/ui/Button';
+import { Header3 } from '@op/ui/Header';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
+import { Link } from '@/lib/i18n';
+
+import { CurrentPhaseSurface } from '@/components/decisions/CurrentPhaseSurface';
 import { DecisionInstanceContent } from '@/components/decisions/DecisionInstanceContent';
 import { DecisionInstanceHeader } from '@/components/decisions/DecisionInstanceHeader';
 import { DecisionProcessStepper } from '@/components/decisions/DecisionProcessStepper';
+import { EmptyProposalsState } from '@/components/decisions/EmptyProposalsState';
+import { ProposalsList } from '@/components/decisions/ProposalsList';
 
 interface ProcessPhase {
   id: string;
@@ -53,40 +60,98 @@ async function DecisionInstancePageContent({
 
     const budget = instanceData?.budget || processSchema?.budget;
 
+    const description =
+      instance.description ?? instance.process?.description ?? undefined;
+
+    const { name, proposalCount = 0 } = instance;
+    const proposals = proposalsData?.proposals || [];
+
     return (
       <>
-        <DecisionInstanceHeader
-          backTo={{
-            label: instance.owner?.name,
-            href: `/profile/${slug}`,
-          }}
-          title={instance.process?.name || instance.name}
-          userAvatar={{
-            name: instance.owner?.name || instance.owner?.slug,
-          }}
-        />
+        <div className="bg-offWhite">
+          <DecisionInstanceHeader
+            backTo={{
+              label: instance.owner?.name,
+              href: `/profile/${slug}`,
+            }}
+            title={instance.process?.name || instance.name}
+            userAvatar={{
+              name: instance.owner?.name || instance.owner?.slug,
+            }}
+          />
 
-        <div className="bg-white py-8">
-          <DecisionProcessStepper
-            phases={phases}
-            currentStateId={instance.currentStateId || ''}
-            className="mx-auto"
+          <div className="flex flex-col items-center">
+            <div className="w-fit rounded-b border border-t-0 bg-white px-32 py-4">
+              <DecisionProcessStepper
+                phases={phases}
+                currentStateId={instance.currentStateId || ''}
+                className="mx-auto"
+              />
+            </div>
+          </div>
+
+          <DecisionInstanceContent
+            name={name}
+            description={
+              instance.description ?? instance.process?.description ?? undefined
+            }
+            budget={budget}
+            currentPhase={currentPhase}
+            proposalCount={proposalCount}
+            createProposalHref={`/profile/${slug}/decisions/${instanceId}/proposal/create`}
+            proposals={proposals}
+            slug={slug}
+            instanceId={instanceId}
           />
         </div>
 
-        <DecisionInstanceContent
-          name={instance.name}
-          description={
-            instance.description ?? instance.process?.description ?? undefined
-          }
-          budget={budget}
-          currentPhase={currentPhase}
-          proposalCount={instance.proposalCount || 0}
-          createProposalHref={`/profile/${slug}/decisions/${instanceId}/proposal/create`}
-          proposals={proposalsData?.proposals || []}
-          slug={slug}
-          instanceId={instanceId}
-        />
+        {/* Main layout with sidebar and content */}
+        <div className="flex w-full justify-center bg-white">
+          <div className="grid w-full max-w-6xl grid-cols-1 gap-8 p-8 lg:grid-cols-4">
+            {/* Left sidebar - Process Info */}
+            <div className="lg:col-span-1">
+              <div className="flex flex-col gap-4">
+                <Header3 className="font-serif !text-title-base text-neutral-black">
+                  {name}
+                </Header3>
+                {description ? <p className="text-sm">{description}</p> : null}
+
+                <div className="mb-6">
+                  <Link
+                    href={`/profile/${slug}/decisions/${instanceId}/proposal/create`}
+                    className="block"
+                  >
+                    <Button color="primary" className="w-full">
+                      Submit a proposal
+                    </Button>
+                  </Link>
+                </div>
+
+                <CurrentPhaseSurface
+                  currentPhase={currentPhase}
+                  budget={budget}
+                  proposalCount={proposalCount}
+                />
+              </div>
+            </div>
+
+            {/* Main content area - Proposals */}
+            <div className="lg:col-span-3">
+              {proposals.length === 0 ? (
+                <EmptyProposalsState />
+              ) : (
+                <div>
+                  {/* Proposals list */}
+                  <ProposalsList
+                    proposals={proposals}
+                    slug={slug}
+                    instanceId={instanceId}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </>
     );
   } catch (error) {

@@ -44,14 +44,13 @@ export function DecisionInstanceContent({
 }: DecisionInstanceContentProps) {
   const locale = useLocale();
 
-
   const uniqueSubmitters = getUniqueSubmitters(proposals);
 
   return (
-    <div className="min-h-full bg-gray-50 py-12">
+    <div className="min-h-full py-12">
       <div className="mx-auto">
         {/* heading */}
-        <div className="mb-12 text-center">
+        <div className="mb-12 bg-offWhite text-center">
           <GradientHeader className="items-center align-middle">
             SHARE YOUR IDEAS.
           </GradientHeader>
@@ -91,50 +90,7 @@ export function DecisionInstanceContent({
           )}
         </div>
 
-        {/* Main layout with sidebar and content */}
-        <div className="flex w-full justify-center bg-white">
-          <div className="grid w-full max-w-6xl grid-cols-1 gap-8 p-8 lg:grid-cols-4">
-            {/* Left sidebar - Process Info */}
-            <div className="lg:col-span-1">
-              <div className="flex flex-col gap-4">
-                <Header3 className="font-serif !text-title-base text-neutral-black">
-                  {name}
-                </Header3>
-                {description ? <p className="text-sm">{description}</p> : null}
 
-                <div className="mb-6">
-                  <Link href={createProposalHref} className="block">
-                    <Button color="primary" className="w-full">
-                      Submit a proposal
-                    </Button>
-                  </Link>
-                </div>
-
-                <CurrentPhaseSurface
-                  currentPhase={currentPhase}
-                  budget={budget}
-                  proposalCount={proposalCount}
-                />
-              </div>
-            </div>
-
-            {/* Main content area - Proposals */}
-            <div className="lg:col-span-3">
-              {proposals.length === 0 ? (
-                <EmptyProposalsState />
-              ) : (
-                <div>
-                  {/* Proposals list */}
-                  <ProposalsList
-                    proposals={proposals}
-                    slug={slug}
-                    instanceId={instanceId}
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );
