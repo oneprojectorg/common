@@ -42,8 +42,6 @@ export const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
     schema: {
       type: 'object',
       title: 'Set up your decision-making phases',
-      description:
-        'Members submit proposals and ideas for funding consideration.',
       required: [
         'proposalSubmissionPhase',
         'reviewShortlistingPhase',
@@ -190,8 +188,6 @@ export const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
             type: 'string',
           },
           default: [],
-          description:
-            'Categories help organize proposals. You can add or remove categories as needed.',
         },
       },
     },
@@ -248,7 +244,6 @@ export const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
           type: 'object',
           title: 'Summary',
           properties: {},
-          description: 'Confirm your settings before creating the process.',
         },
       },
     },

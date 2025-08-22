@@ -35,6 +35,7 @@ export const ObjectFieldTemplate = (props: ObjectFieldTemplateProps) => {
         prop.name.includes('Close') ||
         prop.name === 'resultsDate'),
   );
+  
 
   if (isPhaseGroup && properties.length > 0) {
     return (

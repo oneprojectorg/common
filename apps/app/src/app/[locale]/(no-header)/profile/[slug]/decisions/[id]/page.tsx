@@ -68,7 +68,7 @@ async function DecisionInstancePageContent({
 
     return (
       <>
-        <div className="bg-offWhite">
+        <div className="border-b bg-neutral-offWhite">
           <DecisionInstanceHeader
             backTo={{
               label: instance.owner?.name,
@@ -90,19 +90,7 @@ async function DecisionInstancePageContent({
             </div>
           </div>
 
-          <DecisionInstanceContent
-            name={name}
-            description={
-              instance.description ?? instance.process?.description ?? undefined
-            }
-            budget={budget}
-            currentPhase={currentPhase}
-            proposalCount={proposalCount}
-            createProposalHref={`/profile/${slug}/decisions/${instanceId}/proposal/create`}
-            proposals={proposals}
-            slug={slug}
-            instanceId={instanceId}
-          />
+          <DecisionInstanceContent budget={budget} proposals={proposals} />
         </div>
 
         {/* Main layout with sidebar and content */}
@@ -186,7 +174,7 @@ function DecisionInstancePageLoading() {
       {/* Content loading */}
       <div className="min-h-full bg-gray-50 px-6 py-12">
         <div className="mx-auto max-w-6xl">
-          <div className="mb-12 text-center">
+          <div className="text-center">
             <div className="mx-auto h-16 w-96 animate-pulse rounded bg-neutral-gray1" />
             <div className="mx-auto mt-4 h-6 w-80 animate-pulse rounded bg-neutral-gray1" />
           </div>

@@ -2,55 +2,34 @@
 
 import { getPublicUrl } from '@/utils';
 import { formatCurrency, getUniqueSubmitters } from '@/utils/proposalUtils';
-import type { processPhaseSchema, proposalEncoder } from '@op/api/encoders';
+import type { proposalEncoder } from '@op/api/encoders';
 import { Avatar } from '@op/ui/Avatar';
-import { Button } from '@op/ui/Button';
 import { FacePile } from '@op/ui/FacePile';
-import { GradientHeader, Header3 } from '@op/ui/Header';
+import { GradientHeader } from '@op/ui/Header';
 import { useLocale } from 'next-intl';
 import Image from 'next/image';
-import Link from 'next/link';
 import type { z } from 'zod';
 
-import { CurrentPhaseSurface } from './CurrentPhaseSurface';
-import { EmptyProposalsState } from './EmptyProposalsState';
-import { ProposalsList } from './ProposalsList';
-
 type Proposal = z.infer<typeof proposalEncoder>;
-type ProcessPhase = z.infer<typeof processPhaseSchema>;
 
 interface DecisionInstanceContentProps {
-  name: string;
-  description?: string;
   budget?: number;
-  currentPhase?: ProcessPhase;
-  proposalCount: number;
-  createProposalHref: string;
   proposals: Proposal[];
-  slug: string;
-  instanceId: string;
 }
 
 export function DecisionInstanceContent({
-  name,
-  description,
   budget,
-  currentPhase,
-  proposalCount,
-  createProposalHref,
   proposals,
-  slug,
-  instanceId,
 }: DecisionInstanceContentProps) {
   const locale = useLocale();
 
   const uniqueSubmitters = getUniqueSubmitters(proposals);
 
   return (
-    <div className="min-h-full py-12">
+    <div className="min-h-full py-8">
       <div className="mx-auto">
         {/* heading */}
-        <div className="mb-12 bg-offWhite text-center">
+        <div className="text-center">
           <GradientHeader className="items-center align-middle">
             SHARE YOUR IDEAS.
           </GradientHeader>
@@ -89,8 +68,6 @@ export function DecisionInstanceContent({
             </div>
           )}
         </div>
-
-
       </div>
     </div>
   );
