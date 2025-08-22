@@ -1,19 +1,58 @@
-import { and, asc, db, desc, eq, sql, inArray, ilike } from '@op/db/client';
-import { profileRelationships, proposals, users, ProfileRelationshipType } from '@op/db/schema';
+import { and, asc, db, desc, eq, ilike, inArray, sql } from '@op/db/client';
+import {
+  ProfileRelationshipType,
+  profileRelationships,
+  proposalCategories,
+  proposals,
+} from '@op/db/schema';
 import { User } from '@op/supabase/lib';
+import { assertAccess, permission } from 'access-zones';
+import { count as countFn } from 'drizzle-orm';
 
 import { UnauthorizedError } from '../../utils';
+import {
+  getCurrentOrgId,
+  getCurrentProfileId,
+  getOrgAccessUser,
+} from '../access';
 
 export interface ListProposalsInput {
   processInstanceId?: string;
   submittedByProfileId?: string;
   status?: 'draft' | 'submitted' | 'under_review' | 'approved' | 'rejected';
   search?: string;
+  categoryId?: string;
   limit?: number;
   offset?: number;
   orderBy?: 'createdAt' | 'updatedAt' | 'status';
   orderDirection?: 'asc' | 'desc';
 }
+
+// Shared function to build WHERE conditions for both count and data queries
+const buildWhereConditions = (input: ListProposalsInput) => {
+  const { processInstanceId, submittedByProfileId, status, search } = input;
+
+  const conditions = [];
+
+  if (processInstanceId) {
+    conditions.push(eq(proposals.processInstanceId, processInstanceId));
+  }
+
+  if (submittedByProfileId) {
+    conditions.push(eq(proposals.submittedByProfileId, submittedByProfileId));
+  }
+
+  if (status) {
+    conditions.push(eq(proposals.status, status));
+  }
+
+  if (search) {
+    // Search in proposal data (JSONB) - convert to text for searching
+    conditions.push(ilike(sql`${proposals.proposalData}::text`, `%${search}%`));
+  }
+
+  return conditions.length > 0 ? and(...conditions) : undefined;
+};
 
 export const listProposals = async ({
   input,
@@ -26,69 +65,65 @@ export const listProposals = async ({
     throw new UnauthorizedError('User must be authenticated');
   }
 
+  const orgUserId = await getCurrentOrgId({ database: db });
+  const orgUser = await getOrgAccessUser({
+    user,
+    organizationId: orgUserId,
+  });
+
+  assertAccess({ decisions: permission.READ }, orgUser?.roles ?? []);
+
   try {
-    // Get the database user record to access currentProfileId
-    const dbUser = await db.query.users.findFirst({
-      where: eq(users.authUserId, user.id),
-    });
-
-    if (!dbUser || !dbUser.currentProfileId) {
-      throw new UnauthorizedError('User must have an active profile');
-    }
-
     const {
-      processInstanceId,
-      submittedByProfileId,
-      status,
-      search,
       limit = 20,
       offset = 0,
       orderBy = 'createdAt',
       orderDirection = 'desc',
     } = input;
 
-    // Build filter conditions
-    const conditions = [];
+    // Build shared WHERE clause using the extracted function
+    const baseWhereClause = buildWhereConditions(input);
 
-    if (processInstanceId) {
-      conditions.push(eq(proposals.processInstanceId, processInstanceId));
+    // Handle category filtering separately to avoid table reference issues
+    const { categoryId } = input;
+    let whereClause = baseWhereClause;
+    let categoryProposalIds: string[] = [];
+
+    if (categoryId) {
+      // First get proposal IDs that belong to the category
+      const proposalIdsInCategory = await db
+        .select({ proposalId: proposalCategories.proposalId })
+        .from(proposalCategories)
+        .where(eq(proposalCategories.taxonomyTermId, categoryId));
+
+      categoryProposalIds = proposalIdsInCategory.map((p) => p.proposalId);
+
+      if (categoryProposalIds.length === 0) {
+        // No proposals in this category, return empty result early
+        return {
+          proposals: [],
+          total: 0,
+          hasMore: false,
+        };
+      }
+
+      // Add category filter to WHERE clause
+      const categoryFilter = inArray(proposals.id, categoryProposalIds);
+      whereClause = baseWhereClause
+        ? and(baseWhereClause, categoryFilter)
+        : categoryFilter;
     }
 
-    if (submittedByProfileId) {
-      conditions.push(eq(proposals.submittedByProfileId, submittedByProfileId));
-    }
-
-    if (status) {
-      conditions.push(eq(proposals.status, status));
-    }
-
-    if (search) {
-      // Search in proposal data (JSONB) - using safe parameterized query
-      conditions.push(
-        ilike(sql`${proposals.proposalData}::text`, `%${search}%`)
-      );
-    }
-
-    // Combine conditions
-    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
-
-    // Get total count for pagination
+    // Get count using Drizzle's count function instead of raw SQL
     const countResult = await db
-      .select({ count: sql<number>`count(*)` })
+      .select({ count: countFn() })
       .from(proposals)
       .where(whereClause);
 
     const count = countResult[0]?.count || 0;
 
-    // Get proposals using Drizzle's declarative relational query style
-    const orderColumn =
-      orderBy === 'createdAt'
-        ? proposals.createdAt
-        : orderBy === 'updatedAt'
-          ? proposals.updatedAt
-          : orderBy === 'status'
-            ? proposals.status
-            : proposals.createdAt;
+    // Get proposals with optimized ordering
+    const orderColumn = proposals[orderBy] ?? proposals.createdAt;
 
     const orderFn = orderDirection === 'asc' ? asc : desc;
 
@@ -102,85 +137,102 @@ export const listProposals = async ({
         },
         submittedBy: true,
         profile: true,
-        decisions: true, // Include decisions to calculate count
+        decisions: true,
       },
       limit,
       offset,
       orderBy: orderFn(orderColumn),
     });
 
-    // Get likes count and followers count for each proposal and user relationship status
-    const proposalIds = proposalList.map(p => p.profileId).filter((id): id is string => Boolean(id));
-    
-    let likesCountMap = new Map();
-    let followersCountMap = new Map();
-    let userRelationshipMap = new Map();
+    // Get relationship data for all proposal profiles using optimized Drizzle queries
+    const proposalIds = proposalList
+      .map((p: any) => p.profileId)
+      .filter((id: any): id is string => Boolean(id));
+
+    let relationshipData = new Map<
+      string,
+      {
+        likesCount: number;
+        followersCount: number;
+        isLikedByUser: boolean;
+        isFollowedByUser: boolean;
+      }
+    >();
 
     if (proposalIds.length > 0) {
-      // Get likes counts for all proposals
-      const likesCountQuery = await db
-        .select({
-          targetProfileId: profileRelationships.targetProfileId,
-          count: sql<number>`count(*)`,
-        })
-        .from(profileRelationships)
-        .where(
-          and(
-            inArray(profileRelationships.targetProfileId, proposalIds),
-            eq(profileRelationships.relationshipType, ProfileRelationshipType.LIKES)
-          )
-        )
-        .groupBy(profileRelationships.targetProfileId);
+      const currentProfileId = await getCurrentProfileId();
 
-      likesCountMap = new Map(likesCountQuery.map(item => [item.targetProfileId, Number(item.count)]));
+      // Optimized: Get both relationship counts and user relationships in parallel
+      const [relationshipCounts, userRelationships] = await Promise.all([
+        // Get relationship counts for all profile IDs (likes and follows)
+        db
+          .select({
+            targetProfileId: profileRelationships.targetProfileId,
+            relationshipType: profileRelationships.relationshipType,
+            count: countFn(),
+          })
+          .from(profileRelationships)
+          .where(inArray(profileRelationships.targetProfileId, proposalIds))
+          .groupBy(
+            profileRelationships.targetProfileId,
+            profileRelationships.relationshipType,
+          ),
 
-      // Get followers counts for all proposals
-      const followersCountQuery = await db
-        .select({
-          targetProfileId: profileRelationships.targetProfileId,
-          count: sql<number>`count(*)`,
-        })
-        .from(profileRelationships)
-        .where(
-          and(
-            inArray(profileRelationships.targetProfileId, proposalIds),
-            eq(profileRelationships.relationshipType, ProfileRelationshipType.FOLLOWING)
-          )
-        )
-        .groupBy(profileRelationships.targetProfileId);
+        // Get user's relationships to these profiles
+        db
+          .select({
+            targetProfileId: profileRelationships.targetProfileId,
+            relationshipType: profileRelationships.relationshipType,
+          })
+          .from(profileRelationships)
+          .where(
+            and(
+              eq(profileRelationships.sourceProfileId, currentProfileId),
+              inArray(profileRelationships.targetProfileId, proposalIds),
+            ),
+          ),
+      ]);
 
-      followersCountMap = new Map(followersCountQuery.map(item => [item.targetProfileId, Number(item.count)]));
+      // Build the relationship data map efficiently
+      proposalIds.forEach((profileId: string) => {
+        const likesCount =
+          relationshipCounts.find(
+            (rc) =>
+              rc.targetProfileId === profileId &&
+              rc.relationshipType === ProfileRelationshipType.LIKES,
+          )?.count || 0;
 
-      // Get current user's relationships to these proposals
-      const userRelationships = await db
-        .select({
-          targetProfileId: profileRelationships.targetProfileId,
-          relationshipType: profileRelationships.relationshipType,
-        })
-        .from(profileRelationships)
-        .where(
-          and(
-            eq(profileRelationships.sourceProfileId, dbUser.currentProfileId),
-            inArray(profileRelationships.targetProfileId, proposalIds)
-          )
+        const followersCount =
+          relationshipCounts.find(
+            (rc) =>
+              rc.targetProfileId === profileId &&
+              rc.relationshipType === ProfileRelationshipType.FOLLOWING,
+          )?.count || 0;
+
+        const isLikedByUser = userRelationships.some(
+          (ur) =>
+            ur.targetProfileId === profileId &&
+            ur.relationshipType === ProfileRelationshipType.LIKES,
         );
 
-      userRelationships.forEach(rel => {
-        if (!userRelationshipMap.has(rel.targetProfileId)) {
-          userRelationshipMap.set(rel.targetProfileId, { isLiked: false, isFollowed: false });
-        }
-        if (rel.relationshipType === ProfileRelationshipType.LIKES) {
-          userRelationshipMap.get(rel.targetProfileId).isLiked = true;
-        }
-        if (rel.relationshipType === ProfileRelationshipType.FOLLOWING) {
-          userRelationshipMap.get(rel.targetProfileId).isFollowed = true;
-        }
+        const isFollowedByUser = userRelationships.some(
+          (ur) =>
+            ur.targetProfileId === profileId &&
+            ur.relationshipType === ProfileRelationshipType.FOLLOWING,
+        );
+
+        relationshipData.set(profileId, {
+          likesCount: Number(likesCount),
+          followersCount: Number(followersCount),
+          isLikedByUser,
+          isFollowedByUser,
+        });
       });
     }
 
     // Transform the results to match the expected structure and add decision counts, likes count, and user relationship status
     // TODO: improve this with more streamlined types
-    const proposalsWithCounts = proposalList.map((proposal) => {
+    const proposalsWithCounts = proposalList.map((proposal: any) => {
       const processInstance = Array.isArray(proposal.processInstance)
         ? proposal.processInstance[0]
         : proposal.processInstance;
@@ -194,9 +246,9 @@ export const listProposals = async ({
         ? proposal.decisions
         : [];
 
-      const likesCount = proposal.profileId ? (likesCountMap.get(proposal.profileId) || 0) : 0;
-      const followersCount = proposal.profileId ? (followersCountMap.get(proposal.profileId) || 0) : 0;
-      const userRelationship = proposal.profileId ? userRelationshipMap.get(proposal.profileId) : null;
+      const relationshipInfo = proposal.profileId
+        ? relationshipData.get(proposal.profileId)
+        : null;
 
       return {
         id: proposal.id,
@@ -230,10 +282,10 @@ export const listProposals = async ({
         submittedBy: submittedBy,
         profile: profile,
         decisionCount: decisions.length,
-        likesCount,
-        followersCount,
-        isLikedByUser: userRelationship?.isLiked || false,
-        isFollowedByUser: userRelationship?.isFollowed || false,
+        likesCount: relationshipInfo?.likesCount || 0,
+        followersCount: relationshipInfo?.followersCount || 0,
+        isLikedByUser: relationshipInfo?.isLikedByUser || false,
+        isFollowedByUser: relationshipInfo?.isFollowedByUser || false,
       };
     });
 
