@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { TextField as AriaTextField } from 'react-aria-components';
 import type {
   TextFieldProps as AriaTextFieldProps,
@@ -26,6 +26,7 @@ export interface NumberFieldProps
   labelClassName?: string;
   value?: number | null;
   defaultValue?: number | null;
+  prefixText?: string;
   onChange?: (value: number | null) => void;
   onInput?: (value: number | null) => void;
 }
@@ -55,6 +56,7 @@ export const NumberField = ({
   labelClassName,
   value,
   defaultValue,
+  prefixText,
   onChange,
   onInput,
   children,
@@ -65,6 +67,8 @@ export const NumberField = ({
   children?: React.ReactNode;
 }) => {
   const [displayValue, setDisplayValue] = useState('');
+  const [prefixWidth, setPrefixWidth] = useState(0);
+  const prefixRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
     if (value !== undefined) {
@@ -77,6 +81,25 @@ export const NumberField = ({
       setDisplayValue(defaultValue?.toString() || '');
     }
   }, [defaultValue, value]);
+
+  useEffect(() => {
+    if (prefixText && prefixRef.current) {
+      const updatePrefixWidth = () => {
+        if (prefixRef.current) {
+          setPrefixWidth(prefixRef.current.offsetWidth);
+        }
+      };
+
+      updatePrefixWidth();
+
+      const resizeObserver = new ResizeObserver(updatePrefixWidth);
+      resizeObserver.observe(prefixRef.current);
+
+      return () => {
+        resizeObserver.disconnect();
+      };
+    }
+  }, [prefixText]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value;
@@ -118,13 +141,24 @@ export const NumberField = ({
           {isRequired && <span className="text-functional-red"> *</span>}
         </Label>
       )}
-      <FieldGroup className={fieldClassName}>
+      <FieldGroup className={cn(fieldClassName, prefixText && 'relative')}>
+        {prefixText && (
+          <span
+            ref={prefixRef}
+            className="pointer-events-none absolute bottom-0 left-0 top-0 flex select-none items-center justify-center pl-3 pr-2 text-neutral-gray4"
+          >
+            {prefixText}
+          </span>
+        )}
         <Input
           {...inputProps}
           type="text"
           value={displayValue}
           onChange={handleInputChange}
           onInput={handleInput}
+          style={{
+            paddingLeft: prefixText ? `${prefixWidth}px` : undefined,
+          }}
           className={cn(
             inputProps?.className,
             'group-data-[invalid=true]:outline-1 group-data-[invalid=true]:outline-functional-red',

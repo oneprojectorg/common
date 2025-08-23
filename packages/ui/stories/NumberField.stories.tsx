@@ -1,4 +1,5 @@
 import type { Meta } from '@storybook/react';
+import { useState } from 'react';
 import { Form } from 'react-aria-components';
 
 import { Button } from '../src/components/Button';
@@ -56,4 +57,31 @@ export const Validation = (args: any) => (
 Validation.args = {
   isRequired: true,
   inputProps: { placeholder: 'Enter your age' },
+};
+
+export const WithPrefix = () => (
+  <NumberField
+    inputProps={{ placeholder: 'Enter your budget' }}
+    label="Budget"
+    prefixText="$"
+  />
+);
+
+export const DynamicPrefix = () => {
+  const [value, setValue] = useState(0);
+  const [prefix, setPrefix] = useState('$');
+
+  return (
+    <NumberField
+      inputProps={{ placeholder: 'Enter your budget' }}
+      label="Budget"
+      prefixText={prefix}
+      value={value}
+      onChange={(value) => {
+        setValue(value ?? 0);
+        const valueStr = value?.toString() || '0';
+        setPrefix('$'.repeat(valueStr.length));
+      }}
+    />
+  );
 };
