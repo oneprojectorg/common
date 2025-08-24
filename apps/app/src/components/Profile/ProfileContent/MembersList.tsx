@@ -2,10 +2,14 @@
 
 import { pluralize } from '@/utils/pluralize';
 import { trpc } from '@op/api/client';
+import { IconButton } from '@op/ui/IconButton';
+import { Menu, MenuItem, MenuTrigger } from '@op/ui/Menu';
+import { Popover } from '@op/ui/Popover';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
+import { toast } from '@op/ui/Toast';
 import React, { useMemo } from 'react';
-import { LuUsers } from 'react-icons/lu';
+import { LuEllipsis, LuUsers } from 'react-icons/lu';
 
 import { Link } from '@/lib/i18n';
 
@@ -36,6 +40,50 @@ type Member = {
   }>;
 };
 
+const MemberMenu = ({ member }: { member: Member }) => {
+  const handleChangeToMember = () => {
+    // TODO: Implement API call to change user role to member
+    console.log('Changing member to member:', member.id);
+    toast.success({ message: 'Changed to member successfully' });
+  };
+
+  const handleRemoveFromOrganization = () => {
+    // TODO: Implement API call to remove user from organization
+    console.log('Removing member from organization:', member.id);
+    toast.success({ message: 'Removed from organization successfully' });
+  };
+
+  return (
+    <MenuTrigger>
+      <IconButton
+        variant="ghost"
+        size="small"
+        className="aria-expanded:bg-neutral-gray1"
+      >
+        <LuEllipsis className="size-4" />
+      </IconButton>
+      <Popover placement="bottom end">
+        <Menu className="min-w-48 p-2">
+          <MenuItem
+            key="change-to-member"
+            onAction={handleChangeToMember}
+            className="px-3 py-1"
+          >
+            Change to Member
+          </MenuItem>
+          <MenuItem
+            key="remove-from-org"
+            onAction={handleRemoveFromOrganization}
+            className="px-3 py-1 text-functional-red"
+          >
+            Remove from organization
+          </MenuItem>
+        </Menu>
+      </Popover>
+    </MenuTrigger>
+  );
+};
+
 const MembersListContent = ({ members }: { members: Member[] }) => {
   return (
     <div className="grid grid-cols-1 gap-8 pb-6 md:grid-cols-2">
@@ -48,27 +96,30 @@ const MembersListContent = ({ members }: { members: Member[] }) => {
         // Create a RelationshipListItem-like object for ProfileAvatar
         const profileForAvatar = profile
           ? {
-              id: profile.id,
-              name: profile.name || displayName,
-              slug: profile.slug,
-              bio: profile.bio,
-              avatarImage: profile.avatarImage,
-              type: profile.type,
-            }
+            id: profile.id,
+            name: profile.name || displayName,
+            slug: profile.slug,
+            bio: profile.bio,
+            avatarImage: profile.avatarImage,
+            type: profile.type,
+          }
           : {
-              id: member.id,
-              name: displayName,
-              slug: '', // No slug for non-profile users
-              bio: member.about,
-              avatarImage: null,
-              type: 'individual', // Default type
-            };
+            id: member.id,
+            name: displayName,
+            slug: '', // No slug for non-profile users
+            bio: member.about,
+            avatarImage: null,
+            type: 'individual', // Default type
+          };
 
         return (
           <div
             key={member.id}
-            className="flex w-full gap-4 rounded border border-neutral-gray1 p-6"
+            className="relative flex w-full gap-4 rounded border border-neutral-gray1 p-6"
           >
+            <div className="absolute right-4 top-4">
+              <MemberMenu member={member} />
+            </div>
             <div className="flex-shrink-0">
               <ProfileAvatar profile={profileForAvatar} className="size-20" />
             </div>
