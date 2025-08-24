@@ -18,21 +18,30 @@ const meta: Meta<typeof Select> = {
 export default meta;
 
 export const Example = () => (
-  <>
-    <Select className="w-full">
-      <SelectItem>Chocolate</SelectItem>
-      <SelectItem id="mint">Mint</SelectItem>
-      <SelectItem>Strawberry</SelectItem>
-      <SelectItem>Vanilla</SelectItem>
-    </Select>
-    Disabled
-    <Select className="w-full" isDisabled>
-      <SelectItem>Chocolate</SelectItem>
-      <SelectItem id="mint">Mint</SelectItem>
-      <SelectItem>Strawberry</SelectItem>
-      <SelectItem>Vanilla</SelectItem>
-    </Select>
-  </>
+  <Select className="w-full">
+    <SelectItem id="chocolate">All proposals</SelectItem>
+    <SelectItem id="mint">Mint</SelectItem>
+    <SelectItem id="strawberry">Strawberry</SelectItem>
+    <SelectItem id="vanilla">Vanilla</SelectItem>
+  </Select>
+);
+
+export const InitialSelectedItem = () => (
+  <Select className="w-full" defaultSelectedKey="chocolate">
+    <SelectItem id="chocolate">All proposals</SelectItem>
+    <SelectItem id="mint">Mint</SelectItem>
+    <SelectItem id="strawberry">Strawberry</SelectItem>
+    <SelectItem id="vanilla">Vanilla</SelectItem>
+  </Select>
+);
+
+export const Disabled = () => (
+  <Select className="w-full" isDisabled>
+    <SelectItem>Chocolate</SelectItem>
+    <SelectItem id="mint">Mint</SelectItem>
+    <SelectItem>Strawberry</SelectItem>
+    <SelectItem>Vanilla</SelectItem>
+  </Select>
 );
 
 export const DisabledItems = (args: any) => <Example {...args} />;
@@ -89,7 +98,7 @@ export const PillVariant = (args: any) => (
       <SelectItem>Testing</SelectItem>
       <SelectItem>Deployment</SelectItem>
     </Select>
-    
+
     <Select {...args} variant="pill" placeholder="Select category" isDisabled>
       <SelectItem>Planning</SelectItem>
       <SelectItem>Design</SelectItem>

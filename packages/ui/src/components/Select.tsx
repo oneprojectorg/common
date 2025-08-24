@@ -104,8 +104,15 @@ export const Select = <T extends object>({
             props.buttonClassName,
           )}
         >
-          <SelectValue className={cn(props.selectValueClassName)} />
-          <ChevronDown aria-hidden className={chevronStyles({ variant })} />
+          <span className="flex h-full w-full flex-1 items-center gap-1">
+            <SelectValue
+              className={cn(
+                props.selectValueClassName,
+                'flex h-full items-center',
+              )}
+            />
+            <ChevronDown aria-hidden className={chevronStyles({ variant })} />
+          </span>
         </Button>
       )}
       {description && <Description>{description}</Description>}
