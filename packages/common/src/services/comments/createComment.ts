@@ -3,15 +3,16 @@ import { comments, commentsToPost } from '@op/db/schema';
 import type { CreateCommentInput } from '@op/types';
 
 import { CommonError, NotFoundError } from '../../utils';
-import { getCurrentProfileId, getCurrentProfileIdByAuth } from '../access';
+import { getCurrentProfileIdByAuth } from '../access';
 
 export const createComment = async (input: CreateCommentInput) => {
   const { authUserId } = input;
   
-  // Use new auth-based function if authUserId is provided, otherwise fallback to old function
-  const profileId = authUserId 
-    ? await getCurrentProfileIdByAuth({ authUserId })
-    : await getCurrentProfileId();
+  if (!authUserId) {
+    throw new Error('authUserId is required - must be provided by API router');
+  }
+  
+  const profileId = await getCurrentProfileIdByAuth({ authUserId });
 
   try {
     // Create the comment first

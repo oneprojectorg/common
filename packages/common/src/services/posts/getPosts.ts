@@ -2,7 +2,7 @@ import { db } from '@op/db/client';
 import { posts, postsToProfiles } from '@op/db/schema';
 import { and, desc, eq, isNull } from 'drizzle-orm';
 
-import { getCurrentProfileId, getCurrentProfileIdByAuth } from '../access';
+import { getCurrentProfileIdByAuth } from '../access';
 import { getItemsWithReactionsAndComments } from './listPosts';
 
 export interface GetPostsInput {
@@ -106,10 +106,11 @@ export const getPosts = async (input: GetPostsInput) => {
     });
 
     // Transform to match expected format and add reaction data
-    // Use new auth-based function if authUserId is provided, otherwise fallback to old function
-    const actorProfileId = authUserId 
-      ? await getCurrentProfileIdByAuth({ authUserId })
-      : await getCurrentProfileId();
+    if (!authUserId) {
+      throw new Error('authUserId is required - must be provided by API router');
+    }
+    
+    const actorProfileId = await getCurrentProfileIdByAuth({ authUserId });
     const itemsWithReactionsAndComments =
       await getItemsWithReactionsAndComments({
         items: profilePosts.map((item: any) => ({ post: item.post })),
