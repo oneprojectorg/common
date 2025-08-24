@@ -12,7 +12,7 @@ export interface GetProfileParams {
 
 const profileResultSchema = z.object({
   id: z.string(),
-  type: z.enum([EntityType.INDIVIDUAL, EntityType.ORG]),
+  type: z.enum([EntityType.INDIVIDUAL, EntityType.ORG, EntityType.PROPOSAL]),
   name: z.string(),
   slug: z.string(),
   bio: z.string().nullable(),

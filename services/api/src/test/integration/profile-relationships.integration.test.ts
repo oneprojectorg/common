@@ -909,4 +909,103 @@ describe('Profile Relationships Integration Tests', () => {
       expect(forProfitRelationships).toHaveLength(1);
     });
   });
+
+  describe('getProfileRelationships filtering', () => {
+    it('should filter relationships by relationshipType', async () => {
+      // Add both relationship types
+      await addProfileRelationship({
+        targetProfileId: profile2Id,
+        relationshipType: ProfileRelationshipType.FOLLOWING,
+        pending: false,
+        sourceProfileId: profile1Id,
+        authUserId: testUser1.id,
+      });
+
+      await addProfileRelationship({
+        targetProfileId: profile2Id,
+        relationshipType: ProfileRelationshipType.LIKES,
+        pending: false,
+        sourceProfileId: profile1Id,
+        authUserId: testUser1.id,
+      });
+
+      // Filter for only following relationships
+      const followingRelationships = await getProfileRelationships({
+        sourceProfileId: profile1Id,
+        relationshipType: ProfileRelationshipType.FOLLOWING,
+        authUserId: testUser1.id,
+      });
+
+      expect(followingRelationships).toHaveLength(1);
+      expect(followingRelationships[0].relationshipType).toBe(
+        ProfileRelationshipType.FOLLOWING,
+      );
+
+      // Filter for only likes relationships
+      const likesRelationships = await getProfileRelationships({
+        sourceProfileId: profile1Id,
+        relationshipType: ProfileRelationshipType.LIKES,
+        authUserId: testUser1.id,
+      });
+
+      expect(likesRelationships).toHaveLength(1);
+      expect(likesRelationships[0].relationshipType).toBe(
+        ProfileRelationshipType.LIKES,
+      );
+    });
+
+    it('should filter relationships by profileType', async () => {
+      // This test will fail initially since profileType filtering is not implemented yet
+      await addProfileRelationship({
+        targetProfileId: profile2Id,
+        relationshipType: ProfileRelationshipType.FOLLOWING,
+        pending: false,
+        sourceProfileId: profile1Id,
+        authUserId: testUser1.id,
+      });
+
+      // Filter for only org relationships
+      const orgRelationships = await getProfileRelationships({
+        sourceProfileId: profile1Id,
+        profileType: 'org',
+        authUserId: testUser1.id,
+      });
+
+      expect(orgRelationships).toHaveLength(1);
+      expect(orgRelationships[0].targetProfile?.type).toBe('org');
+    });
+
+    it('should filter relationships by both relationshipType and profileType', async () => {
+      // Add multiple relationships
+      await addProfileRelationship({
+        targetProfileId: profile2Id,
+        relationshipType: ProfileRelationshipType.FOLLOWING,
+        pending: false,
+        sourceProfileId: profile1Id,
+        authUserId: testUser1.id,
+      });
+
+      await addProfileRelationship({
+        targetProfileId: profile2Id,
+        relationshipType: ProfileRelationshipType.LIKES,
+        pending: false,
+        sourceProfileId: profile1Id,
+        authUserId: testUser1.id,
+      });
+
+      // Filter for following relationships to orgs
+      const filteredRelationships = await getProfileRelationships({
+        sourceProfileId: profile1Id,
+        relationshipType: ProfileRelationshipType.FOLLOWING,
+        profileType: 'org',
+        authUserId: testUser1.id,
+      });
+
+      expect(filteredRelationships).toHaveLength(1);
+      expect(filteredRelationships[0].relationshipType).toBe(
+        ProfileRelationshipType.FOLLOWING,
+      );
+      expect(filteredRelationships[0].targetProfile?.type).toBe('org');
+    });
+  });
 });

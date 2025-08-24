@@ -2,6 +2,7 @@
 
 import { pluralize } from '@/utils/pluralize';
 import { trpc } from '@op/api/client';
+import { EntityType } from '@op/api/encoders';
 import React, { Suspense, useMemo } from 'react';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
@@ -17,14 +18,14 @@ export const ProfileFollowingSuspense = ({
 }) => {
   const [relationships] = trpc.profile.getRelationships.useSuspenseQuery({
     sourceProfileId: profileId,
+    relationshipType: 'following',
+    profileType: EntityType.ORG,
   });
 
-  // Filter for following relationships and extract target profiles
+  // Extract target profiles
   const following: RelationshipListItem[] = useMemo(() => {
     return relationships
-      .filter(
-        (rel) => rel.relationshipType === 'following' && rel.targetProfile,
-      )
+      .filter((rel) => rel.targetProfile)
       .map((rel) => rel.targetProfile!)
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [relationships]);
