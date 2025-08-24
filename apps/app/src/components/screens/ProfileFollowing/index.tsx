@@ -2,7 +2,7 @@
 
 import { pluralize } from '@/utils/pluralize';
 import { trpc } from '@op/api/client';
-import { EntityType } from '@op/api/encoders';
+import { EntityType, ProfileRelationshipType } from '@op/api/encoders';
 import React, { Suspense, useMemo } from 'react';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
@@ -18,7 +18,7 @@ export const ProfileFollowingSuspense = ({
 }) => {
   const [relationships] = trpc.profile.getRelationships.useSuspenseQuery({
     sourceProfileId: profileId,
-    relationshipType: 'following',
+    relationshipType: ProfileRelationshipType.FOLLOWING,
     profileType: EntityType.ORG,
   });
 

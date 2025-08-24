@@ -34,6 +34,7 @@ const FollowButtonSuspense = ({ profile }: { profile: Organization }) => {
             targetProfileId: profile.profile.id,
             relationshipType: ProfileRelationshipType.FOLLOWING,
           });
+
           toast.success({
             message: `Unfollowed ${profile.profile.name}`,
           });
@@ -43,15 +44,26 @@ const FollowButtonSuspense = ({ profile }: { profile: Organization }) => {
             relationshipType: ProfileRelationshipType.FOLLOWING,
             pending: false,
           });
+
           toast.success({
             message: `Now following ${profile.profile.name}`,
           });
         }
 
-        // Invalidate queries to refresh the UI
-        utils.profile.getRelationships.invalidate({
-          targetProfileId: profile.profile.id,
-        });
+        // Invalidate all relationship-related queries
+        await Promise.all([
+          // Invalidate the query that checks if we're following this profile
+          utils.profile.getRelationships.invalidate({
+            targetProfileId: profile.profile.id,
+          }),
+          // Invalidate the current user's following list
+          utils.profile.getRelationships.invalidate({
+            relationshipType: ProfileRelationshipType.FOLLOWING,
+            profileType: 'org',
+          }),
+          // Invalidate all relationship queries for this target profile
+          utils.profile.getRelationships.invalidate(),
+        ]);
       } catch (error) {
         toast.error({
           message: isFollowing ? 'Failed to unfollow' : 'Failed to follow',

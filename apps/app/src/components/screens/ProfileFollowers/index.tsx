@@ -2,6 +2,7 @@
 
 import { pluralize } from '@/utils/pluralize';
 import { trpc } from '@op/api/client';
+import { ProfileRelationshipType } from '@op/api/encoders';
 import React, { Suspense, useMemo } from 'react';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
@@ -26,7 +27,7 @@ export const ProfileFollowersSuspense = ({
   const followers: RelationshipListItem[] = useMemo(() => {
     return relationships
       .filter(
-        (rel) => rel.relationshipType === 'following' && rel.sourceProfile,
+        (rel) => rel.relationshipType === ProfileRelationshipType.FOLLOWING && rel.sourceProfile,
       )
       .map((rel) => rel.sourceProfile!)
       .sort((a, b) => a.name.localeCompare(b.name));

@@ -1,6 +1,10 @@
 import { and, db, eq } from '@op/db/client';
+import {
+  objectsInStorage,
+  profileRelationships,
+  profiles,
+} from '@op/db/schema';
 import { alias } from 'drizzle-orm/pg-core';
-import { profileRelationships, profiles, objectsInStorage } from '@op/db/schema';
 
 import { ValidationError } from '../../utils/error';
 import { getCurrentProfileId } from '../access';
@@ -139,28 +143,46 @@ export const getRelationships = async ({
       targetAvatarName: targetAvatarStorage.name,
     })
     .from(profileRelationships)
-    .leftJoin(sourceProfiles, eq(profileRelationships.sourceProfileId, sourceProfiles.id))
-    .leftJoin(targetProfiles, eq(profileRelationships.targetProfileId, targetProfiles.id))
-    .leftJoin(sourceAvatarStorage, eq(sourceProfiles.avatarImageId, sourceAvatarStorage.id))
-    .leftJoin(targetAvatarStorage, eq(targetProfiles.avatarImageId, targetAvatarStorage.id));
+    .leftJoin(
+      sourceProfiles,
+      eq(profileRelationships.sourceProfileId, sourceProfiles.id),
+    )
+    .leftJoin(
+      targetProfiles,
+      eq(profileRelationships.targetProfileId, targetProfiles.id),
+    )
+    .leftJoin(
+      sourceAvatarStorage,
+      eq(sourceProfiles.avatarImageId, sourceAvatarStorage.id),
+    )
+    .leftJoin(
+      targetAvatarStorage,
+      eq(targetProfiles.avatarImageId, targetAvatarStorage.id),
+    );
 
   // Declaratively define all possible conditions
   const conditions = [];
-  
-  if (sourceProfileId) {
-    conditions.push(eq(profileRelationships.sourceProfileId, sourceProfileId));
-  } else if (!targetProfileId) {
-    conditions.push(eq(profileRelationships.sourceProfileId, currentProfileId));
-  }
-  
+
+  conditions.push(
+    eq(
+      profileRelationships.sourceProfileId,
+      sourceProfileId ?? currentProfileId,
+    ),
+  );
+
   if (targetProfileId) {
     conditions.push(eq(profileRelationships.targetProfileId, targetProfileId));
   }
-  
+
   if (relationshipType) {
-    conditions.push(eq(profileRelationships.relationshipType, relationshipType as 'following' | 'likes'));
+    conditions.push(
+      eq(
+        profileRelationships.relationshipType,
+        relationshipType as 'following' | 'likes',
+      ),
+    );
   }
-  
+
   if (profileType) {
     conditions.push(eq(targetProfiles.type, profileType));
   }
@@ -175,27 +197,35 @@ export const getRelationships = async ({
     relationshipType: rel.relationshipType as string,
     pending: rel.pending as boolean | null,
     createdAt: rel.createdAt as string | null,
-    sourceProfile: rel.sourceProfileId2 ? {
-      id: rel.sourceProfileId2 as string,
-      name: rel.sourceProfileName as string,
-      slug: rel.sourceProfileSlug as string,
-      bio: rel.sourceProfileBio as string | null,
-      avatarImage: rel.sourceAvatarId ? {
-        id: rel.sourceAvatarId as string,
-        name: rel.sourceAvatarName as string | null,
-      } : null,
-      type: rel.sourceProfileType as string,
-    } : undefined,
-    targetProfile: rel.targetProfileId2 ? {
-      id: rel.targetProfileId2 as string,
-      name: rel.targetProfileName as string,
-      slug: rel.targetProfileSlug as string,
-      bio: rel.targetProfileBio as string | null,
-      avatarImage: rel.targetAvatarId ? {
-        id: rel.targetAvatarId as string,
-        name: rel.targetAvatarName as string | null,
-      } : null,
-      type: rel.targetProfileType as string,
-    } : undefined,
+    sourceProfile: rel.sourceProfileId2
+      ? {
+          id: rel.sourceProfileId2 as string,
+          name: rel.sourceProfileName as string,
+          slug: rel.sourceProfileSlug as string,
+          bio: rel.sourceProfileBio as string | null,
+          avatarImage: rel.sourceAvatarId
+            ? {
+                id: rel.sourceAvatarId as string,
+                name: rel.sourceAvatarName as string | null,
+              }
+            : null,
+          type: rel.sourceProfileType as string,
+        }
+      : undefined,
+    targetProfile: rel.targetProfileId2
+      ? {
+          id: rel.targetProfileId2 as string,
+          name: rel.targetProfileName as string,
+          slug: rel.targetProfileSlug as string,
+          bio: rel.targetProfileBio as string | null,
+          avatarImage: rel.targetAvatarId
+            ? {
+                id: rel.targetAvatarId as string,
+                name: rel.targetAvatarName as string | null,
+              }
+            : null,
+          type: rel.targetProfileType as string,
+        }
+      : undefined,
   }));
 };
