@@ -46,7 +46,10 @@ export const ProfileRelationshipsSuspense = ({
         name: org.profile.name,
         slug: org.profile.slug,
         bio: org.profile.bio,
-        avatarImage: org.profile.avatarImage?.name || null,
+        avatarImage: org.profile.avatarImage ? {
+          id: org.profile.avatarImage.id,
+          name: org.profile.avatarImage.name,
+        } : null,
         type: 'org', // Organizations are always type 'org'
         relationships: org.relationships?.map((rel) => ({
           relationshipType: rel.relationshipType,

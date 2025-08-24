@@ -35,7 +35,7 @@ export const getOrganizationUsers = async ({
 
   assertAccess({ admin: permission.READ }, orgUser?.roles || []);
 
-  // Fetch all users in the organization with their roles
+  // Fetch all users in the organization with their roles and avatar images
   const organizationUsers = await db.query.organizationUsers.findMany({
     where: (table, { eq }) => eq(table.organizationId, organizationId),
     with: {
@@ -44,24 +44,51 @@ export const getOrganizationUsers = async ({
           accessRole: true,
         },
       },
+      serviceUser: {
+        with: {
+          profile: {
+            with: {
+              avatarImage: true,
+            },
+          },
+        },
+      },
     },
     orderBy: (table, { asc }) => [asc(table.name), asc(table.email)],
   });
 
-  // Transform the data to include role names
-  return organizationUsers.map((orgUser) => ({
-    id: orgUser.id,
-    authUserId: orgUser.authUserId,
-    name: orgUser.name,
-    email: orgUser.email,
-    about: orgUser.about,
-    organizationId: orgUser.organizationId,
-    createdAt: orgUser.createdAt,
-    updatedAt: orgUser.updatedAt,
-    roles: orgUser.roles.map((roleJunction) => ({
-      id: roleJunction.accessRole.id,
-      name: roleJunction.accessRole.name,
-      description: roleJunction.accessRole.description,
-    })),
-  }));
+  // Transform the data to include role names and user profile data
+  return organizationUsers.map((orgUser) => {
+    const serviceUser = orgUser.serviceUser as any;
+    const userProfile = serviceUser?.profile;
+
+    return {
+      id: orgUser.id,
+      authUserId: orgUser.authUserId,
+      // Use organization user data as fallback, but prefer profile data
+      name: userProfile?.name || orgUser.name,
+      email: orgUser.email,
+      about: userProfile?.bio || orgUser.about,
+      organizationId: orgUser.organizationId,
+      createdAt: orgUser.createdAt,
+      updatedAt: orgUser.updatedAt,
+      // Include profile data for avatar and other profile info
+      profile: userProfile ? {
+        id: userProfile.id,
+        name: userProfile.name,
+        slug: userProfile.slug,
+        bio: userProfile.bio,
+        type: userProfile.type,
+        avatarImage: userProfile.avatarImage ? {
+          id: userProfile.avatarImage.id,
+          name: userProfile.avatarImage.name,
+        } : null,
+      } : null,
+      roles: orgUser.roles.map((roleJunction) => ({
+        id: roleJunction.accessRole.id,
+        name: roleJunction.accessRole.name,
+        description: roleJunction.accessRole.description,
+      })),
+    };
+  });
 };

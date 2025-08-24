@@ -22,7 +22,7 @@ type RelationshipListItem = {
   }>;
 };
 
-const ProfileAvatar = ({
+export const ProfileAvatar = ({
   profile,
   className,
 }: {
@@ -48,71 +48,76 @@ const ProfileAvatar = ({
 const RelationshipListContent = ({
   profiles,
   relationshipMap,
+  children,
 }: {
   profiles: Array<RelationshipListItem>;
   relationshipMap?: Record<string, { label: string }>;
+  children?: React.ReactNode;
 }) => {
   return (
     <div className="grid grid-cols-1 gap-8 pb-6 md:grid-cols-2">
-      {profiles.map((profile) => (
-        <div
-          key={profile.id}
-          className="flex w-full gap-4 rounded border border-neutral-gray1 p-6"
-        >
-          <div className="flex-shrink-0">
-            <ProfileAvatar profile={profile} className="size-20" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-col gap-2">
+      {children ||
+        profiles.map((profile) => (
+          <div
+            key={profile.id}
+            className="flex w-full gap-4 rounded border border-neutral-gray1 p-6"
+          >
+            <div className="flex-shrink-0">
+              <ProfileAvatar profile={profile} className="size-20" />
+            </div>
+            <div className="min-w-0 flex-1">
               <div className="flex flex-col gap-2">
-                <Link
-                  className="truncate font-semibold text-neutral-black"
-                  href={
-                    profile.type === 'org'
-                      ? `/org/${profile.slug}`
-                      : `/profile/${profile.slug}`
-                  }
-                >
-                  {profile.name}
-                </Link>
+                <div className="flex flex-col gap-2">
+                  <Link
+                    className="truncate font-semibold text-neutral-black"
+                    href={
+                      profile.type === 'org'
+                        ? `/org/${profile.slug}`
+                        : `/profile/${profile.slug}`
+                    }
+                  >
+                    {profile.name}
+                  </Link>
 
-                {/* Show relationship types if available */}
-                {profile.relationships && relationshipMap ? (
-                  <div className="text-neutral-black">
-                    {profile.relationships.map((relationship, i, arr) => (
-                      <React.Fragment key={relationship.relationshipType}>
-                        {relationshipMap[relationship.relationshipType]
-                          ?.label ?? 'Relationship'}
-                        {relationship.pending && (
-                          <TagGroup className="ml-1 inline-flex">
-                            <Tag className="rounded-sm px-1 py-0.5 text-xs">
-                              Pending
-                            </Tag>
-                          </TagGroup>
-                        )}
-                        {i < arr.length - 1 && <span className="mx-1">•</span>}
-                      </React.Fragment>
-                    ))}
-                  </div>
-                ) : (
-                  /* Show profile type if no relationships */
-                  <div className="text-sm capitalize text-neutral-charcoal">
-                    {profile.type === 'org' ? 'Organization' : 'Individual'}
+                  {/* Show relationship types if available */}
+                  {profile.relationships && relationshipMap ? (
+                    <div className="text-neutral-black">
+                      {profile.relationships.map((relationship, i, arr) => (
+                        <React.Fragment key={relationship.relationshipType}>
+                          {relationshipMap[relationship.relationshipType]
+                            ?.label ?? 'Relationship'}
+                          {relationship.pending && (
+                            <TagGroup className="ml-1 inline-flex">
+                              <Tag className="rounded-sm px-1 py-0.5 text-xs">
+                                Pending
+                              </Tag>
+                            </TagGroup>
+                          )}
+                          {i < arr.length - 1 && (
+                            <span className="mx-1">•</span>
+                          )}
+                        </React.Fragment>
+                      ))}
+                    </div>
+                  ) : (
+                    /* Show profile type if no relationships */
+                    <div className="text-sm capitalize text-neutral-charcoal">
+                      {profile.type === 'org' ? 'Organization' : 'Individual'}
+                    </div>
+                  )}
+                </div>
+
+                {profile.bio && (
+                  <div className="line-clamp-3 text-neutral-charcoal">
+                    {profile.bio.length > 200
+                      ? `${profile.bio.slice(0, 200)}...`
+                      : profile.bio}
                   </div>
                 )}
               </div>
-
-              {profile.bio && (
-                <div className="line-clamp-3 text-neutral-charcoal">
-                  {profile.bio.length > 200
-                    ? `${profile.bio.slice(0, 200)}...`
-                    : profile.bio}
-                </div>
-              )}
             </div>
           </div>
-        </div>
-      ))}
+        ))}
     </div>
   );
 };

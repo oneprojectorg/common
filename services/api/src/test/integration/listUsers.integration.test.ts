@@ -92,6 +92,8 @@ describe('List Organization Users Integration Tests', () => {
     expect(creator?.email).toBe(testUserEmail);
     expect(creator?.organizationId).toBe(organizationId);
     expect(Array.isArray(creator?.roles)).toBe(true);
+    // Profile data should be included
+    expect(creator?.profile).toBeDefined();
   });
 
   it('should throw unauthorized error for non-members', async () => {
