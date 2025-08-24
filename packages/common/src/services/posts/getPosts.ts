@@ -2,7 +2,7 @@ import { db } from '@op/db/client';
 import { posts, postsToProfiles } from '@op/db/schema';
 import { and, desc, eq, isNull } from 'drizzle-orm';
 
-import { getCurrentProfileId } from '../access';
+import { getCurrentProfileId, getCurrentProfileIdByAuth } from '../access';
 import { getItemsWithReactionsAndComments } from './listPosts';
 
 export interface GetPostsInput {
@@ -12,6 +12,7 @@ export interface GetPostsInput {
   offset?: number;
   includeChildren?: boolean;
   maxDepth?: number;
+  authUserId?: string; // Optional during migration, will be required later
 }
 
 export const getPosts = async (input: GetPostsInput) => {
@@ -21,6 +22,7 @@ export const getPosts = async (input: GetPostsInput) => {
     limit = 20,
     offset = 0,
     includeChildren = false,
+    authUserId,
   } = input;
   let { maxDepth = 3 } = input;
 
@@ -104,7 +106,10 @@ export const getPosts = async (input: GetPostsInput) => {
     });
 
     // Transform to match expected format and add reaction data
-    const actorProfileId = await getCurrentProfileId();
+    // Use new auth-based function if authUserId is provided, otherwise fallback to old function
+    const actorProfileId = authUserId 
+      ? await getCurrentProfileIdByAuth({ authUserId })
+      : await getCurrentProfileId();
     const itemsWithReactionsAndComments =
       await getItemsWithReactionsAndComments({
         items: profilePosts.map((item: any) => ({ post: item.post })),

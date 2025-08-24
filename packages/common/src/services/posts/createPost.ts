@@ -4,7 +4,7 @@ import { CreatePostInput } from '@op/types';
 import { eq } from 'drizzle-orm';
 
 import { CommonError } from '../../utils';
-import { getCurrentProfileId } from '../access';
+import { getCurrentProfileId, getCurrentProfileIdByAuth } from '../access';
 
 export const createPost = async (input: CreatePostInput) => {
   const {
@@ -12,8 +12,13 @@ export const createPost = async (input: CreatePostInput) => {
     attachmentIds = [],
     parentPostId,
     profileId: targetProfileId,
+    authUserId,
   } = input;
-  const profileId = await getCurrentProfileId();
+  
+  // Use new auth-based function if authUserId is provided, otherwise fallback to old function
+  const profileId = authUserId 
+    ? await getCurrentProfileIdByAuth({ authUserId })
+    : await getCurrentProfileId();
 
   try {
     // Get all storage objects that were attached to the post

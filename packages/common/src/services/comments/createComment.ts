@@ -3,10 +3,15 @@ import { comments, commentsToPost } from '@op/db/schema';
 import type { CreateCommentInput } from '@op/types';
 
 import { CommonError, NotFoundError } from '../../utils';
-import { getCurrentProfileId } from '../access';
+import { getCurrentProfileId, getCurrentProfileIdByAuth } from '../access';
 
 export const createComment = async (input: CreateCommentInput) => {
-  const profileId = await getCurrentProfileId();
+  const { authUserId } = input;
+  
+  // Use new auth-based function if authUserId is provided, otherwise fallback to old function
+  const profileId = authUserId 
+    ? await getCurrentProfileIdByAuth({ authUserId })
+    : await getCurrentProfileId();
 
   try {
     // Create the comment first

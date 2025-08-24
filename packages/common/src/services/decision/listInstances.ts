@@ -6,6 +6,7 @@ import { assertAccess, permission } from 'access-zones';
 import { UnauthorizedError } from '../../utils';
 import {
   getCurrentOrgId,
+  getCurrentOrgIdByAuth,
   getOrgAccessUser,
 } from '../access';
 
@@ -19,6 +20,7 @@ export interface ListInstancesInput {
   orderBy?: 'createdAt' | 'updatedAt' | 'name' | 'status';
   orderDirection?: 'asc' | 'desc';
   user: User;
+  authUserId?: string; // Optional during migration, will be required later
 }
 
 export const listInstances = async ({
@@ -31,13 +33,17 @@ export const listInstances = async ({
   orderBy = 'createdAt',
   orderDirection = 'desc',
   user,
+  authUserId,
 }: ListInstancesInput) => {
   if (!user) {
     throw new UnauthorizedError('User must be authenticated');
   }
 
   // ASSERT VIEW ACCESS ON ORGUSER
-  const orgUserId = await getCurrentOrgId({ database: db });
+  // Use new auth-based function if authUserId is provided, otherwise fallback to old function
+  const orgUserId = authUserId
+    ? await getCurrentOrgIdByAuth({ authUserId, database: db })
+    : await getCurrentOrgId({ database: db });
   const orgUser = await getOrgAccessUser({
     user,
     organizationId: orgUserId,
