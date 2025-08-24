@@ -28,29 +28,43 @@ const DecisionProcessList = ({ profileId }: { profileId: string }) => {
   if (!data.instances || data.instances.length === 0) {
     return (
       <div className="flex min-h-[400px] flex-col items-center justify-center gap-6 px-6 py-16 text-center">
-        <div className="flex size-10 items-center justify-center rounded-full bg-neutral-gray1">
-          <LuLeaf className="size-6 text-neutral-gray4" />
-        </div>
-
-        <div className="flex max-w-md flex-col gap-2">
-          <h2 className="font-serif text-title-base text-neutral-black">
-            Set up your decision-making process
-          </h2>
-          <p className="text-base text-neutral-charcoal">
-            Create your first participatory budgeting or grantmaking process to
-            start collecting proposals from your community.
-          </p>
-        </div>
-
         {decisionPermission.create && isOwnProfile ? (
-          <DialogTrigger>
-            <Button color="primary" size="medium" variant="icon">
-              <LuPlus className="size-4" />
-              Create Process
-            </Button>
-            <CreateDecisionProcessModal />
-          </DialogTrigger>
-        ) : null}
+          <>
+            <div className="flex size-10 items-center justify-center rounded-full bg-neutral-gray1">
+              <LuLeaf className="size-6 text-neutral-gray4" />
+            </div>
+
+            <div className="flex max-w-md flex-col gap-2">
+              <h2 className="font-serif text-title-base text-neutral-black">
+                Set up your decision-making process
+              </h2>
+              <p className="text-base text-neutral-charcoal">
+                Create your first participatory budgeting or grantmaking process
+                to start collecting proposals from your community.
+              </p>
+            </div>
+
+            <DialogTrigger>
+              <Button color="primary" size="medium" variant="icon">
+                <LuPlus className="size-4" />
+                Create Process
+              </Button>
+              <CreateDecisionProcessModal />
+            </DialogTrigger>
+          </>
+        ) : (
+          <>
+            <div className="flex size-10 items-center justify-center rounded-full bg-neutral-gray1">
+              <LuLeaf className="size-6 text-neutral-gray4" />
+            </div>
+
+            <div className="flex max-w-md flex-col gap-2">
+              <h2 className="font-serif text-title-base text-neutral-black">
+                There are no current decision-making processes
+              </h2>
+            </div>
+          </>
+        )}
       </div>
     );
   }

@@ -86,7 +86,7 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
               <Tab id="relationships">Relationships</Tab>
 
               <FollowersTab />
-              <DecisionsTab />
+              <DecisionsTab profileId={profile.id} />
             </ProfileTabList>
 
             <TabPanel id="home" className="flex flex-grow flex-col sm:p-0">

@@ -1,5 +1,6 @@
 'use client';
 
+import { useUser } from '@/utils/UserProvider';
 import { Tab, TabPanel } from '@op/ui/Tabs';
 import { cn } from '@op/ui/utils';
 import { useFeatureFlagEnabled } from 'posthog-js/react';
@@ -7,11 +8,15 @@ import { ReactNode } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-export const DecisionsTab = () => {
+export const DecisionsTab = ({ profileId }: { profileId: string }) => {
   const decisionsEnabled = useFeatureFlagEnabled('decision_making');
   const t = useTranslations();
+  const access = useUser();
+  const permission = access.getPermissionsForProfile(profileId);
 
-  return decisionsEnabled ? <Tab id="decisions">{t('Decisions')}</Tab> : null;
+  return decisionsEnabled && permission.decisions.read ? (
+    <Tab id="decisions">{t('Decisions')}</Tab>
+  ) : null;
 };
 
 export const DecisionsTabPanel = ({
