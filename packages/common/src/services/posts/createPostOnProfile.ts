@@ -8,7 +8,7 @@ export interface CreatePostOnProfileInput {
   content: string;
   targetProfileId: string; // The profile where the post will appear
   parentPostId?: string;
-  authUserId?: string; // Optional during migration, will be required later
+  authUserId: string; // User ID for authentication
 }
 
 export const createPostOnProfile = async (input: CreatePostOnProfileInput) => {

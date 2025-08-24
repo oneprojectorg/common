@@ -4,10 +4,7 @@ import { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
 import { UnauthorizedError } from '../../utils';
-import {
-  getCurrentOrgId,
-  getOrgAccessUser,
-} from '../access';
+import { getCurrentOrgId, getOrgAccessUser } from '../access';
 
 export interface ListInstancesInput {
   ownerProfileId?: string;
@@ -19,7 +16,7 @@ export interface ListInstancesInput {
   orderBy?: 'createdAt' | 'updatedAt' | 'name' | 'status';
   orderDirection?: 'asc' | 'desc';
   user: User;
-  authUserId?: string; // Optional during migration, will be required later
+  authUserId: string;
 }
 
 export const listInstances = async ({

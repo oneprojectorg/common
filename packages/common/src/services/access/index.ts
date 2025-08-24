@@ -174,43 +174,9 @@ export const getSession = async () => {
   }
 };
 
-export const getCurrentProfileId = async (authUserId?: string) => {
-  // If authUserId is provided, use the new database-only approach
-  if (authUserId) {
-    const validatedAuthUserId = validateAuthUserId(authUserId);
-    const { user } = (await getUserSession({ authUserId: validatedAuthUserId })) ?? {};
-
-    if (!user) {
-      throw new UnauthorizedError("You don't have access to do this");
-    }
-
-    // Primary: use currentProfileId if available
-    if (user.currentProfileId) {
-      return user.currentProfileId;
-    }
-
-    // Fallback: if lastOrgId exists but currentProfileId doesn't, convert it
-    if (user.lastOrgId) {
-      try {
-        const [org] = await db
-          .select({ profileId: organizations.profileId })
-          .from(organizations)
-          .where(eq(organizations.id, user.lastOrgId))
-          .limit(1);
-
-        if (org) {
-          return org.profileId;
-        }
-      } catch (error) {
-        console.error('Error converting lastOrgId to profileId:', error);
-      }
-    }
-
-    throw new UnauthorizedError("You don't have access to do this");
-  }
-
-  // Legacy behavior: use getSession() - will be removed after migration
-  const { user } = (await getSession()) ?? {};
+export const getCurrentProfileId = async (authUserId: string) => {
+  const validatedAuthUserId = validateAuthUserId(authUserId);
+  const { user } = (await getUserSession({ authUserId: validatedAuthUserId })) ?? {};
 
   if (!user) {
     throw new UnauthorizedError("You don't have access to do this");
@@ -246,40 +212,10 @@ export const getCurrentOrgId = async ({
   authUserId,
 }: {
   database: typeof db;
-  authUserId?: string;
+  authUserId: string;
 }) => {
-  // If authUserId is provided, use the new database-only approach
-  if (authUserId) {
-    const validatedAuthUserId = validateAuthUserId(authUserId);
-    const { user } = (await getUserSession({ authUserId: validatedAuthUserId })) ?? {};
-
-    if (!user) {
-      throw new UnauthorizedError("You don't have access to do this");
-    }
-
-    // Primary: use currentProfileId if available
-    if (user.currentProfileId) {
-      const [org] = await database
-        .select({ id: organizations.id })
-        .from(organizations)
-        .where(eq(organizations.profileId, user.currentProfileId))
-        .limit(1);
-
-      if (org) {
-        return org.id;
-      }
-    }
-
-    // Fallback: use lastOrgId directly if currentProfileId doesn't work
-    if (user.lastOrgId) {
-      return user.lastOrgId;
-    }
-
-    throw new UnauthorizedError("You don't have access to do this");
-  }
-
-  // Legacy behavior: use getSession() - will be removed after migration
-  const { user } = (await getSession()) ?? {};
+  const validatedAuthUserId = validateAuthUserId(authUserId);
+  const { user } = (await getUserSession({ authUserId: validatedAuthUserId })) ?? {};
 
   if (!user) {
     throw new UnauthorizedError("You don't have access to do this");
@@ -308,31 +244,10 @@ export const getCurrentOrgId = async ({
 
 export const getCurrentOrgUserId = async (
   organizationId: string,
-  authUserId?: string
+  authUserId: string
 ) => {
-  // If authUserId is provided, use the new database-only approach
-  if (authUserId) {
-    const validatedAuthUserId = validateAuthUserId(authUserId);
-    const session = await getUserSession({ authUserId: validatedAuthUserId });
-
-    if (!session?.user) {
-      throw new UnauthorizedError("You don't have access to do this");
-    }
-
-    const orgUser = await getOrgAccessUser({
-      user: { id: session.user.authUserId } as User,
-      organizationId,
-    });
-
-    if (!orgUser) {
-      throw new UnauthorizedError("You don't have access to this organization");
-    }
-
-    return orgUser.id;
-  }
-
-  // Legacy behavior: use getSession() - will be removed after migration
-  const session = await getSession();
+  const validatedAuthUserId = validateAuthUserId(authUserId);
+  const session = await getUserSession({ authUserId: validatedAuthUserId });
 
   if (!session?.user) {
     throw new UnauthorizedError("You don't have access to do this");

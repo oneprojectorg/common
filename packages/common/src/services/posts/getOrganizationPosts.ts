@@ -12,7 +12,7 @@ export interface GetOrganizationPostsInput {
   offset?: number;
   includeChildren?: boolean;
   maxDepth?: number;
-  authUserId?: string; // Optional during migration, will be required later
+  authUserId: string; // User ID for authentication
 }
 
 export const getOrganizationPosts = async (input: GetOrganizationPostsInput) => {

@@ -6,7 +6,7 @@ export const createPostSchema = z.object({
   parentPostId: z.string().uuid().optional(), // If provided, this becomes a comment/reply
   profileId: z.string().uuid().optional(), // Profile to associate the post with
   attachmentIds: z.array(z.string()).optional().default([]),
-  authUserId: z.string().optional(), // User ID for authentication - will be required after migration
+  authUserId: z.string(), // User ID for authentication
 });
 
 // Unified post fetching schema
@@ -17,7 +17,7 @@ export const getPostsSchema = z.object({
   offset: z.number().min(0).default(0),
   includeChildren: z.boolean().default(false),
   maxDepth: z.number().min(1).max(5).default(3),
-  authUserId: z.string().optional(), // User ID for authentication - will be required after migration
+  authUserId: z.string(), // User ID for authentication
 });
 
 // Organization posts fetching schema
@@ -28,7 +28,7 @@ export const getOrganizationPostsSchema = z.object({
   offset: z.number().min(0).default(0),
   includeChildren: z.boolean().default(false),
   maxDepth: z.number().min(1).max(5).default(3),
-  authUserId: z.string().optional(), // User ID for authentication - will be required after migration
+  authUserId: z.string(), // User ID for authentication
 });
 
 export const updatePostSchema = z.object({
