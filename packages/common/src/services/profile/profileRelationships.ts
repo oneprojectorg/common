@@ -1,4 +1,5 @@
-import { and, db, eq, inArray } from '@op/db/client';
+import { and, db, eq } from '@op/db/client';
+import { alias } from 'drizzle-orm/pg-core';
 import { profileRelationships, profiles } from '@op/db/schema';
 
 import { ValidationError } from '../../utils/error';
@@ -67,10 +68,14 @@ export const removeRelationship = async ({
 export const getRelationships = async ({
   targetProfileId,
   sourceProfileId,
+  relationshipType,
+  profileType,
   authUserId,
 }: {
   targetProfileId?: string;
   sourceProfileId?: string;
+  relationshipType?: string;
+  profileType?: string;
   authUserId: string;
 }): Promise<
   Array<{
@@ -115,55 +120,101 @@ export const getRelationships = async ({
     conditions.push(eq(profileRelationships.targetProfileId, targetProfileId));
   }
 
-  // Get unique profile IDs first to fetch in bulk
-  const relationships = await db
-    .select({
-      id: profileRelationships.id,
-      relationshipType: profileRelationships.relationshipType,
-      pending: profileRelationships.pending,
-      createdAt: profileRelationships.createdAt,
-      sourceProfileId: profileRelationships.sourceProfileId,
-      targetProfileId: profileRelationships.targetProfileId,
-    })
-    .from(profileRelationships)
-    .where(conditions.length > 0 ? and(...conditions) : undefined);
-
-  if (relationships.length === 0) {
-    return [];
+  if (relationshipType) {
+    conditions.push(
+      eq(
+        profileRelationships.relationshipType,
+        relationshipType as 'following' | 'likes',
+      ),
+    );
   }
 
-  // Get all unique profile IDs
-  const profileIds = new Set<string>();
-  relationships.forEach((rel) => {
-    profileIds.add(rel.sourceProfileId);
-    profileIds.add(rel.targetProfileId);
-  });
+  // Build the query with profile joins to get everything in one query
+  // Use aliases to distinguish between source and target profiles
+  const sourceProfiles = alias(profiles, 'sourceProfiles');
+  const targetProfiles = alias(profiles, 'targetProfiles');
 
-  // Fetch all profiles in a single query
-  const allProfiles = await db
-    .select({
-      id: profiles.id,
-      name: profiles.name,
-      slug: profiles.slug,
-      bio: profiles.bio,
-      avatarImage: profiles.avatarImageId,
-      type: profiles.type,
-    })
-    .from(profiles)
-    .where(inArray(profiles.id, [...profileIds]));
+  if (profileType) {
+    // If profileType filtering is requested, we need to filter on target profiles
+    const relationships = await db
+      .select({
+        id: profileRelationships.id,
+        relationshipType: profileRelationships.relationshipType,
+        pending: profileRelationships.pending,
+        createdAt: profileRelationships.createdAt,
+        sourceProfileId: profileRelationships.sourceProfileId,
+        targetProfileId: profileRelationships.targetProfileId,
+        sourceProfile: {
+          id: sourceProfiles.id,
+          name: sourceProfiles.name,
+          slug: sourceProfiles.slug,
+          bio: sourceProfiles.bio,
+          avatarImage: sourceProfiles.avatarImageId,
+          type: sourceProfiles.type,
+        },
+        targetProfile: {
+          id: targetProfiles.id,
+          name: targetProfiles.name,
+          slug: targetProfiles.slug,
+          bio: targetProfiles.bio,
+          avatarImage: targetProfiles.avatarImageId,
+          type: targetProfiles.type,
+        },
+      })
+      .from(profileRelationships)
+      .leftJoin(sourceProfiles, eq(profileRelationships.sourceProfileId, sourceProfiles.id))
+      .leftJoin(targetProfiles, eq(profileRelationships.targetProfileId, targetProfiles.id))
+      .where(
+        conditions.length > 0
+          ? and(...conditions, eq(targetProfiles.type, profileType))
+          : eq(targetProfiles.type, profileType),
+      );
 
-  // Create a lookup map for profiles
-  const profileMap = new Map();
-  allProfiles.forEach((profile) => {
-    profileMap.set(profile.id, profile);
-  });
+    return relationships.map((rel) => ({
+      relationshipType: rel.relationshipType,
+      pending: rel.pending,
+      createdAt: rel.createdAt,
+      sourceProfile: rel.sourceProfile || undefined,
+      targetProfile: rel.targetProfile || undefined,
+    }));
+  } else {
+    // Join with both source and target profiles
+    const relationships = await db
+      .select({
+        id: profileRelationships.id,
+        relationshipType: profileRelationships.relationshipType,
+        pending: profileRelationships.pending,
+        createdAt: profileRelationships.createdAt,
+        sourceProfileId: profileRelationships.sourceProfileId,
+        targetProfileId: profileRelationships.targetProfileId,
+        sourceProfile: {
+          id: sourceProfiles.id,
+          name: sourceProfiles.name,
+          slug: sourceProfiles.slug,
+          bio: sourceProfiles.bio,
+          avatarImage: sourceProfiles.avatarImageId,
+          type: sourceProfiles.type,
+        },
+        targetProfile: {
+          id: targetProfiles.id,
+          name: targetProfiles.name,
+          slug: targetProfiles.slug,
+          bio: targetProfiles.bio,
+          avatarImage: targetProfiles.avatarImageId,
+          type: targetProfiles.type,
+        },
+      })
+      .from(profileRelationships)
+      .leftJoin(sourceProfiles, eq(profileRelationships.sourceProfileId, sourceProfiles.id))
+      .leftJoin(targetProfiles, eq(profileRelationships.targetProfileId, targetProfiles.id))
+      .where(conditions.length > 0 ? and(...conditions) : undefined);
 
-  // Combine the data
-  return relationships.map((rel) => ({
-    relationshipType: rel.relationshipType,
-    pending: rel.pending,
-    createdAt: rel.createdAt,
-    sourceProfile: profileMap.get(rel.sourceProfileId),
-    targetProfile: profileMap.get(rel.targetProfileId),
-  }));
+    return relationships.map((rel) => ({
+      relationshipType: rel.relationshipType,
+      pending: rel.pending,
+      createdAt: rel.createdAt,
+      sourceProfile: rel.sourceProfile || undefined,
+      targetProfile: rel.targetProfile || undefined,
+    }));
+  }
 };
