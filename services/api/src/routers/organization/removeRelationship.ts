@@ -1,5 +1,4 @@
 import { UnauthorizedError, removeRelationship } from '@op/common';
-import { getSession } from '@op/common/src/services/access';
 import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
@@ -35,8 +34,7 @@ export const removeRelationshipRouter = router({
       const { id } = input;
 
       try {
-        const session = await getSession();
-        if (!session) {
+        if (!user) {
           throw new UnauthorizedError('Unauthorized access');
         }
 

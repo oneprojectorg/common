@@ -64,7 +64,6 @@ const withAuthenticated: MiddlewareBuilderBase<TContextWithUser> = async ({
       params: [user.email?.toLowerCase()],
       fetch: () => getAllowListUser({ email: user.email?.toLowerCase() }),
       options: {
-        storeNulls: true,
         ttl: 30 * 60 * 1000,
       },
     });

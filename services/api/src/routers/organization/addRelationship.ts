@@ -4,7 +4,7 @@ import {
   addRelationship,
   sendRelationshipNotification,
 } from '@op/common';
-import { getCurrentOrgId, getSession } from '@op/common/src/services/access';
+import { getCurrentOrgId } from '@op/common/src/services/access';
 import { TRPCError } from '@trpc/server';
 import { waitUntil } from '@vercel/functions';
 import type { OpenApiMeta } from 'trpc-to-openapi';
@@ -43,15 +43,8 @@ export const addRelationshipRouter = router({
       const { to, relationships } = input;
 
       try {
-        const session = await getSession();
-        if (!session) {
+        if (!user) {
           throw new UnauthorizedError('No user found');
-        }
-
-        if (!session.user.currentProfileId && !session.user.lastOrgId) {
-          throw new UnauthorizedError(
-            'No user currentProfileId or lastOrgId found',
-          );
         }
 
         // TODO: We pull the org ID to add ORG relationships. We are transitioning to profile relationships. This should go away eventually

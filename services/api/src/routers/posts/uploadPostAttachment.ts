@@ -1,4 +1,4 @@
-import { CommonError, getSession } from '@op/common';
+import { CommonError, getCurrentProfileId } from '@op/common';
 import { createServerClient } from '@op/supabase/lib';
 import { Buffer } from 'buffer';
 import type { OpenApiMeta } from 'trpc-to-openapi';
@@ -54,10 +54,10 @@ export const uploadPostAttachment = router({
         fileSize: z.number(),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const { file, fileName, mimeType } = input;
-      const session = await getSession();
-      const profileId = session?.user.currentProfileId;
+      const { user } = ctx;
+      const profileId = await getCurrentProfileId(user.id);
 
       const sanitizedFileName = sanitizeS3Filename(fileName);
 
