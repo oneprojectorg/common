@@ -43,6 +43,7 @@ export const getCategoriesRouter = router({
       try {
         const categories = await getProcessCategories({
           processInstanceId: input.processInstanceId,
+          authUserId: user.id,
           user,
         });
 

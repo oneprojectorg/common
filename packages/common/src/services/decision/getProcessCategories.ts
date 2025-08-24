@@ -14,16 +14,18 @@ export interface ProcessCategory {
 
 export const getProcessCategories = async ({
   processInstanceId,
+  authUserId,
   user,
 }: {
   processInstanceId: string;
+  authUserId: string;
   user: User;
 }): Promise<ProcessCategory[]> => {
   if (!user) {
     throw new UnauthorizedError('User must be authenticated');
   }
 
-  const orgUserId = await getCurrentOrgId({ database: db });
+  const orgUserId = await getCurrentOrgId({ authUserId });
   const orgUser = await getOrgAccessUser({
     user,
     organizationId: orgUserId,

@@ -9,6 +9,7 @@ import type { InstanceData } from './types';
 
 export interface UpdateInstanceInput {
   instanceId: string;
+  authUserId: string;
   name?: string;
   description?: string;
   instanceData?: InstanceData;
@@ -45,7 +46,7 @@ export const updateInstance = async ({
   }
 
   try {
-    const currentProfileId = await getCurrentProfileId();
+    const currentProfileId = await getCurrentProfileId(data.authUserId);
 
     if (!currentProfileId) {
       throw new UnauthorizedError('User must have an active profile');

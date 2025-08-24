@@ -7,13 +7,15 @@ import { getCurrentProfileId } from '../access';
 export const addRelationship = async ({
   targetProfileId,
   relationshipType,
+  authUserId,
   pending = false,
 }: {
   targetProfileId: string;
   relationshipType: string;
+  authUserId: string;
   pending?: boolean;
 }): Promise<void> => {
-  const currentProfileId = await getCurrentProfileId();
+  const currentProfileId = await getCurrentProfileId(authUserId);
 
   // Prevent self-relationships
   if (currentProfileId === targetProfileId) {
@@ -35,11 +37,13 @@ export const addRelationship = async ({
 export const removeRelationship = async ({
   targetProfileId,
   relationshipType,
+  authUserId,
 }: {
   targetProfileId: string;
   relationshipType: string;
+  authUserId: string;
 }): Promise<void> => {
-  const currentProfileId = await getCurrentProfileId();
+  const currentProfileId = await getCurrentProfileId(authUserId);
 
   if (!currentProfileId) {
     throw new ValidationError('You must be logged in to remove a relationship');
@@ -63,9 +67,11 @@ export const removeRelationship = async ({
 export const getRelationships = async ({
   targetProfileId,
   sourceProfileId,
+  authUserId,
 }: {
   targetProfileId?: string;
   sourceProfileId?: string;
+  authUserId: string;
 }): Promise<
   Array<{
     relationshipType: string;
@@ -89,7 +95,7 @@ export const getRelationships = async ({
     };
   }>
 > => {
-  const currentProfileId = await getCurrentProfileId();
+  const currentProfileId = await getCurrentProfileId(authUserId);
 
   if (!currentProfileId) {
     throw new ValidationError('You must be logged in to view relationships');

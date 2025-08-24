@@ -6,18 +6,15 @@ export const createCommentSchema = z.object({
   commentableType: z.string().min(1),
   commentableId: z.string().uuid(),
   parentCommentId: z.string().uuid().optional(),
-  authUserId: z.string(), // User ID for authentication
 });
 
 export const updateCommentSchema = z.object({
   id: z.string().uuid(),
   content: z.string().min(1).max(2000),
-  authUserId: z.string(), // User ID for authentication
 });
 
 export const deleteCommentSchema = z.object({
   id: z.string().uuid(),
-  authUserId: z.string(), // User ID for authentication
 });
 
 // Legacy schema

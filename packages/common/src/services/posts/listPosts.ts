@@ -17,11 +17,13 @@ import { getCurrentProfileId } from '../access';
 
 export const listPosts = async ({
   user,
+  authUserId,
   slug,
   limit = 20,
   cursor,
 }: {
   user: User;
+  authUserId: string;
   slug: string;
   limit?: number;
   cursor?: string | null;
@@ -112,7 +114,7 @@ export const listPosts = async ({
         ? encodeCursor(new Date(lastItem.createdAt), lastItem.postId)
         : null;
 
-    const actorProfileId = await getCurrentProfileId();
+    const actorProfileId = await getCurrentProfileId(authUserId);
     // Transform items to include reaction counts, user's reactions, and comment counts
     const itemsWithReactionsAndComments =
       await getItemsWithReactionsAndComments({

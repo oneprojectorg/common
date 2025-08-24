@@ -36,7 +36,7 @@ export const listInstances = async ({
   }
 
   // ASSERT VIEW ACCESS ON ORGUSER
-  const orgUserId = await getCurrentOrgId({ database: db, authUserId });
+  const orgUserId = await getCurrentOrgId({ authUserId });
   const orgUser = await getOrgAccessUser({
     user,
     organizationId: orgUserId,

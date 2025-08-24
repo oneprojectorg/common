@@ -23,6 +23,7 @@ import type { InstanceData, ProcessSchema, ProposalData } from './types';
 export interface CreateProposalInput {
   processInstanceId: string;
   proposalData: ProposalData;
+  authUserId: string;
 }
 
 export const createProposal = async ({
@@ -41,7 +42,7 @@ export const createProposal = async ({
   try {
     // Get the database user record to access currentProfileId
     const dbUser = await db.query.users.findFirst({
-      where: eq(users.authUserId, user.id),
+      where: eq(users.authUserId, data.authUserId),
     });
 
     if (!dbUser || !dbUser.currentProfileId) {

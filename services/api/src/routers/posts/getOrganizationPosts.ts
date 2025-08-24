@@ -29,9 +29,12 @@ export const getOrganizationPosts = router({
     // .meta(meta)
     .input(getOrganizationPostsSchema)
     .output(outputSchema)
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       try {
-        const posts = await getOrganizationPostsService(input);
+        const posts = await getOrganizationPostsService({
+          ...input,
+          authUserId: ctx.user.id,
+        });
         const output = outputSchema.parse(posts);
         return output;
       } catch (error) {

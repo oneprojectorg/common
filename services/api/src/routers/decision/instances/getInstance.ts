@@ -34,6 +34,7 @@ export const getInstanceRouter = router({
       try {
         const instance = await getInstance({
           instanceId: input.instanceId,
+          authUserId: user.id,
           user,
         });
 

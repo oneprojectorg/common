@@ -6,7 +6,11 @@ import { eq } from 'drizzle-orm';
 import { NotFoundError, UnauthorizedError } from '../../utils';
 import { getCurrentProfileId } from '../access';
 
-export const deleteComment = async (input: DeleteCommentInput) => {
+interface DeleteCommentServiceInput extends DeleteCommentInput {
+  authUserId: string;
+}
+
+export const deleteComment = async (input: DeleteCommentServiceInput) => {
   const { authUserId } = input;
   
   const profileId = await getCurrentProfileId(authUserId);

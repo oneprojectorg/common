@@ -29,7 +29,10 @@ export const createProposalRouter = router({
       const { user, logger } = ctx;
 
       try {
-        const proposal = await createProposal({ data: input, user });
+        const proposal = await createProposal({
+          data: { ...input, authUserId: user.id },
+          user,
+        });
 
         logger.info('Proposal created', {
           userId: user.id,

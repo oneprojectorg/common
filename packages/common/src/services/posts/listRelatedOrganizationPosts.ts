@@ -20,6 +20,7 @@ export interface ListRelatedPostsOptions {
 }
 
 export const listAllRelatedOrganizationPosts = async (
+  authUserId: string,
   options: ListAllPostsOptions = {},
 ) => {
   const { limit = 200, cursor } = options;
@@ -71,7 +72,7 @@ export const listAllRelatedOrganizationPosts = async (
       orderBy: (table, { desc }) => desc(table.createdAt),
       limit: limit + 1, // Fetch one extra to check hasMore
     }),
-    getCurrentProfileId(),
+    getCurrentProfileId(authUserId),
   ]);
 
   // Filter out any items where post is null (due to parentPostId filtering)

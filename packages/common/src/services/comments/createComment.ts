@@ -5,7 +5,11 @@ import type { CreateCommentInput } from '@op/types';
 import { CommonError, NotFoundError } from '../../utils';
 import { getCurrentProfileId } from '../access';
 
-export const createComment = async (input: CreateCommentInput) => {
+interface CreateCommentServiceInput extends CreateCommentInput {
+  authUserId: string;
+}
+
+export const createComment = async (input: CreateCommentServiceInput) => {
   const { authUserId } = input;
   
   const profileId = await getCurrentProfileId(authUserId);

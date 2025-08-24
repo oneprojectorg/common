@@ -207,13 +207,7 @@ export const getCurrentProfileId = async (authUserId: string) => {
   throw new UnauthorizedError("You don't have access to do this");
 };
 
-export const getCurrentOrgId = async ({
-  database,
-  authUserId,
-}: {
-  database: typeof db;
-  authUserId: string;
-}) => {
+export const getCurrentOrgId = async ({ authUserId }: { authUserId: string }) => {
   const validatedAuthUserId = validateAuthUserId(authUserId);
   const { user } = (await getUserSession({ authUserId: validatedAuthUserId })) ?? {};
 
@@ -223,7 +217,7 @@ export const getCurrentOrgId = async ({
 
   // Primary: use currentProfileId if available
   if (user.currentProfileId) {
-    const [org] = await database
+    const [org] = await db
       .select({ id: organizations.id })
       .from(organizations)
       .where(eq(organizations.profileId, user.currentProfileId))

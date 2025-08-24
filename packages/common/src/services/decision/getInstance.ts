@@ -8,16 +8,21 @@ import { getCurrentOrgId, getOrgAccessUser } from '../access';
 
 export interface GetInstanceInput {
   instanceId: string;
+  authUserId: string;
   user: User;
 }
 
-export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
+export const getInstance = async ({
+  instanceId,
+  authUserId,
+  user,
+}: GetInstanceInput) => {
   if (!user) {
     throw new UnauthorizedError('User must be authenticated');
   }
 
   // ASSERT VIEW ACCESS ON ORGUSER
-  const orgUserId = await getCurrentOrgId({ database: db });
+  const orgUserId = await getCurrentOrgId({ authUserId });
   const orgUser = await getOrgAccessUser({
     user,
     organizationId: orgUserId,

@@ -6,7 +6,11 @@ import { eq } from 'drizzle-orm';
 import { CommonError } from '../../utils';
 import { getCurrentProfileId } from '../access';
 
-export const createPost = async (input: CreatePostInput) => {
+interface CreatePostServiceInput extends CreatePostInput {
+  authUserId: string;
+}
+
+export const createPost = async (input: CreatePostServiceInput) => {
   const {
     content,
     attachmentIds = [],
