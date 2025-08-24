@@ -16,6 +16,14 @@ import {
   ProfileTabs,
   ProfileTabsMobile,
 } from '@/components/Profile/ProfileContent';
+import {
+  DecisionsTab,
+  DecisionsTabPanel,
+} from '@/components/Profile/ProfileContent/DecisionsTabs';
+import {
+  FollowersTab,
+  FollowersTabPanel,
+} from '@/components/Profile/ProfileContent/IndividualTabs';
 import { ProfileDecisionsSuspense } from '@/components/Profile/ProfileDecisions';
 import { ProfileDetails } from '@/components/Profile/ProfileDetails';
 
@@ -52,9 +60,6 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
         slug,
       });
 
-      const decisionsEnabled = true;
-      const individualUsersEnabled = true;
-
       return organization ? (
         <>
           <ImageHeader
@@ -80,10 +85,8 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
               <Tab id="home">Home</Tab>
               <Tab id="relationships">Relationships</Tab>
 
-              {individualUsersEnabled ? (
-                <Tab id="followers">Followers</Tab>
-              ) : null}
-              {decisionsEnabled ? <Tab id="decisions">Decisions</Tab> : null}
+              <FollowersTab />
+              <DecisionsTab />
             </ProfileTabList>
 
             <TabPanel id="home" className="flex flex-grow flex-col sm:p-0">
@@ -100,14 +103,12 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
                 />
               </ProfileOrganizations>
             </TabPanel>
-            <TabPanel id="followers" className="px-4 sm:px-6 sm:py-0">
+            <FollowersTabPanel>
               <ProfileFollowers profileId={profile.id} />
-            </TabPanel>
-            {decisionsEnabled ? (
-              <TabPanel id="decisions" className="px-4 sm:px-6 sm:py-0">
-                <ProfileDecisionsSuspense profileId={profile.id} />
-              </TabPanel>
-            ) : null}
+            </FollowersTabPanel>
+            <DecisionsTabPanel>
+              <ProfileDecisionsSuspense profileId={profile.id} />
+            </DecisionsTabPanel>
           </ProfileTabs>
           <ProfileTabsMobile
             profile={organization as any}

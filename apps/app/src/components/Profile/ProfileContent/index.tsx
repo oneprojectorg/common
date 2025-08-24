@@ -12,7 +12,6 @@ import { Tag, TagGroup } from '@op/ui/TagGroup';
 import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
 import Link from 'next/link';
-// import { useFeatureFlagEnabled } from 'posthog-js/react';
 import { ReactNode, Suspense } from 'react';
 import { LuCopy, LuGlobe, LuMail } from 'react-icons/lu';
 
@@ -24,6 +23,13 @@ import { PostFeedSkeleton } from '@/components/PostFeed';
 import { PostUpdate } from '@/components/PostUpdate';
 
 import { ProfileFeed } from '../ProfileFeed';
+import {
+  DecisionsTab,
+  DecisionsTabPanel,
+  MembersTab,
+  MembersTabPanel,
+} from './DecisionsTabs';
+import { FollowersTab, FollowersTabPanel } from './IndividualTabs';
 
 const FocusAreas = ({
   focusAreas,
@@ -304,9 +310,7 @@ export const ProfileTabsMobile = ({
   followersContent?: React.ReactNode;
 }) => {
   const t = useTranslations();
-  const decisionsEnabled = true; // useFeatureFlagEnabled('decision_making'); // client only
   const isIndividual = profile.orgType === null || profile.orgType === '';
-  const individualUsersEnabled = true; // useFeatureFlagEnabled('individual_users');
 
   return (
     <Tabs className="px-0 pb-8 sm:hidden">
@@ -315,13 +319,9 @@ export const ProfileTabsMobile = ({
         <Tab id="about">{t('About')}</Tab>
         {!isIndividual ? (
           <>
-            {individualUsersEnabled ? (
-              <Tab id="followers">{t('Followers')}</Tab>
-            ) : null}
-            {decisionsEnabled ? <Tab id="members">{t('Members')}</Tab> : null}
-            {decisionsEnabled ? (
-              <Tab id="decisions">{t('Decisions')}</Tab>
-            ) : null}
+            <FollowersTab />
+            <DecisionsTab />
+            <MembersTab />
           </>
         ) : (
           <>
@@ -359,25 +359,11 @@ export const ProfileTabsMobile = ({
       )}
       {!isIndividual && (
         <>
-          {individualUsersEnabled ? (
-            <TabPanel id="followers" className="px-4 py-2">
-              {followersContent}
-            </TabPanel>
-          ) : null}
-          {decisionsEnabled && (
-            <TabPanel id="members" className="px-4 py-2">
-              <div className="text-center text-neutral-gray4">
-                Members content coming soon
-              </div>
-            </TabPanel>
-          )}
+          <FollowersTabPanel>{followersContent}</FollowersTabPanel>
+          <MembersTabPanel>Members content coming soon</MembersTabPanel>
         </>
       )}
-      {decisionsEnabled ? (
-        <TabPanel id="decisions" className="px-0">
-          {decisionsContent}
-        </TabPanel>
-      ) : null}
+      <DecisionsTabPanel>{decisionsContent}</DecisionsTabPanel>
     </Tabs>
   );
 };
