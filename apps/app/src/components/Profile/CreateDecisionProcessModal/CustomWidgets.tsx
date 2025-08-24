@@ -289,12 +289,16 @@ export const NumberWidget = (props: WidgetProps) => {
     onChange(numericValue);
   };
 
+  // Show dollar prefix for currency format
+  const isCurrency = schema.format === 'currency';
+
   return (
     <NumberField
       id={id}
       label={schema.title || ''}
       value={value || null}
       isRequired={required}
+      prefixText={isCurrency ? '$' : undefined}
       inputProps={{
         placeholder: uiSchema?.['ui:placeholder'] || placeholder,
         onBlur: () => onBlur(id, value),

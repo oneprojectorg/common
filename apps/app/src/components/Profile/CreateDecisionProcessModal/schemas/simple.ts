@@ -19,6 +19,7 @@ export const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
         },
         totalBudget: {
           type: 'number',
+          format: 'currency',
           title: 'Total Budget Available',
           description: 'The total amount available this funding round.',
         },
@@ -210,6 +211,7 @@ export const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
       properties: {
         budgetCapAmount: {
           type: 'number',
+          format: 'currency',
           title: 'Budget cap amount',
           minimum: 0,
           description: 'Maximum budget amount participants can request',
