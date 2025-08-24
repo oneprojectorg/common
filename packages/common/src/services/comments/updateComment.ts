@@ -4,10 +4,16 @@ import type { UpdateCommentInput } from '@op/types';
 import { and, eq } from 'drizzle-orm';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
-import { getCurrentProfileId } from '../access';
+import { getCurrentProfileIdByAuth } from '../access';
 
 export const updateComment = async (input: UpdateCommentInput) => {
-  const profileId = await getCurrentProfileId();
+  const { authUserId } = input;
+  
+  if (!authUserId) {
+    throw new Error('authUserId is required - must be provided by API router');
+  }
+  
+  const profileId = await getCurrentProfileIdByAuth({ authUserId });
 
   if (!profileId) {
     throw new UnauthorizedError();

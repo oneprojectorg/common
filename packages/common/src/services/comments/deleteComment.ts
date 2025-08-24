@@ -4,10 +4,16 @@ import type { DeleteCommentInput } from '@op/types';
 import { eq } from 'drizzle-orm';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
-import { getCurrentProfileId } from '../access';
+import { getCurrentProfileIdByAuth } from '../access';
 
 export const deleteComment = async (input: DeleteCommentInput) => {
-  const profileId = await getCurrentProfileId();
+  const { authUserId } = input;
+  
+  if (!authUserId) {
+    throw new Error('authUserId is required - must be provided by API router');
+  }
+  
+  const profileId = await getCurrentProfileIdByAuth({ authUserId });
 
   if (!profileId) {
     throw new UnauthorizedError();

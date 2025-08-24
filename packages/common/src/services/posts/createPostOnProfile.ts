@@ -2,16 +2,23 @@ import { db } from '@op/db/client';
 import { posts, postsToProfiles } from '@op/db/schema';
 
 import { NotFoundError } from '../../utils';
-import { getCurrentProfileId } from '../access';
+import { getCurrentProfileIdByAuth } from '../access';
 
 export interface CreatePostOnProfileInput {
   content: string;
   targetProfileId: string; // The profile where the post will appear
   parentPostId?: string;
+  authUserId?: string; // Optional during migration, will be required later
 }
 
 export const createPostOnProfile = async (input: CreatePostOnProfileInput) => {
-  const authorProfileId = await getCurrentProfileId();
+  const { authUserId } = input;
+  
+  if (!authUserId) {
+    throw new Error('authUserId is required - must be provided by API router');
+  }
+  
+  const authorProfileId = await getCurrentProfileIdByAuth({ authUserId });
 
   try {
     // Create a post authored by the current user
