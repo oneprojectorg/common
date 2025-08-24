@@ -12,6 +12,7 @@ export interface GetPostsInput {
   offset?: number;
   includeChildren?: boolean;
   maxDepth?: number;
+  authUserId: string; // User ID for authentication
 }
 
 export const getPosts = async (input: GetPostsInput) => {
@@ -21,6 +22,7 @@ export const getPosts = async (input: GetPostsInput) => {
     limit = 20,
     offset = 0,
     includeChildren = false,
+    authUserId,
   } = input;
   let { maxDepth = 3 } = input;
 
@@ -104,7 +106,7 @@ export const getPosts = async (input: GetPostsInput) => {
     });
 
     // Transform to match expected format and add reaction data
-    const actorProfileId = await getCurrentProfileId();
+    const actorProfileId = await getCurrentProfileId(authUserId);
     const itemsWithReactionsAndComments =
       await getItemsWithReactionsAndComments({
         items: profilePosts.map((item: any) => ({ post: item.post })),

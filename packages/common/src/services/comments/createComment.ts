@@ -5,8 +5,14 @@ import type { CreateCommentInput } from '@op/types';
 import { CommonError, NotFoundError } from '../../utils';
 import { getCurrentProfileId } from '../access';
 
-export const createComment = async (input: CreateCommentInput) => {
-  const profileId = await getCurrentProfileId();
+interface CreateCommentServiceInput extends CreateCommentInput {
+  authUserId: string;
+}
+
+export const createComment = async (input: CreateCommentServiceInput) => {
+  const { authUserId } = input;
+  
+  const profileId = await getCurrentProfileId(authUserId);
 
   try {
     // Create the comment first

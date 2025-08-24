@@ -75,13 +75,14 @@ export const profileRelationshipRouter = router({
     .meta(addRelationshipMeta)
     .input(relationshipInputSchema)
     .output(z.object({ success: z.boolean() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const { targetProfileId, relationshipType, pending } = input;
 
       try {
         await addProfileRelationship({
           targetProfileId,
           relationshipType,
+          authUserId: ctx.user.id,
           pending,
         });
         return { success: true };
@@ -111,11 +112,15 @@ export const profileRelationshipRouter = router({
     .meta(removeRelationshipMeta)
     .input(removeRelationshipInputSchema)
     .output(z.object({ success: z.boolean() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const { targetProfileId, relationshipType } = input;
 
       try {
-        await removeProfileRelationship({ targetProfileId, relationshipType });
+        await removeProfileRelationship({
+          targetProfileId,
+          relationshipType,
+          authUserId: ctx.user.id,
+        });
         return { success: true };
       } catch (error) {
         console.error('Error removing relationship:', error);
@@ -160,13 +165,14 @@ export const profileRelationshipRouter = router({
         }),
       ),
     )
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const { targetProfileId, sourceProfileId } = input;
 
       try {
         const relationships = await getProfileRelationships({
           targetProfileId,
           sourceProfileId,
+          authUserId: ctx.user.id,
         });
         return relationships;
       } catch (error) {

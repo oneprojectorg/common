@@ -6,8 +6,14 @@ import { and, eq } from 'drizzle-orm';
 import { NotFoundError, UnauthorizedError } from '../../utils';
 import { getCurrentProfileId } from '../access';
 
-export const updateComment = async (input: UpdateCommentInput) => {
-  const profileId = await getCurrentProfileId();
+interface UpdateCommentServiceInput extends UpdateCommentInput {
+  authUserId: string;
+}
+
+export const updateComment = async (input: UpdateCommentServiceInput) => {
+  const { authUserId } = input;
+  
+  const profileId = await getCurrentProfileId(authUserId);
 
   if (!profileId) {
     throw new UnauthorizedError();

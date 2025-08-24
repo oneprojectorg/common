@@ -29,9 +29,12 @@ export const getPosts = router({
     // .meta(meta)
     .input(getPostsSchema)
     .output(outputSchema)
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       try {
-        const posts = await getPostsService(input);
+        const posts = await getPostsService({
+          ...input,
+          authUserId: ctx.user.id,
+        });
         const output = outputSchema.parse(posts);
         return output;
       } catch (error) {

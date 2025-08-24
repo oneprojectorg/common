@@ -92,6 +92,7 @@ describe('createProposal', () => {
       data: {
         processInstanceId: 'instance-id-123',
         proposalData: mockProposalData,
+        authUserId: 'auth-user-id',
       },
       user: mockUser,
     });
@@ -108,6 +109,7 @@ describe('createProposal', () => {
         data: {
           processInstanceId: 'instance-id-123',
           proposalData: mockProposalData,
+          authUserId: 'auth-user-id',
         },
         user: null as any,
       })
@@ -123,6 +125,7 @@ describe('createProposal', () => {
         data: {
           processInstanceId: 'instance-id-123',
           proposalData: mockProposalData,
+          authUserId: 'auth-user-id',
         },
         user: mockUser,
       })
@@ -138,6 +141,7 @@ describe('createProposal', () => {
         data: {
           processInstanceId: 'nonexistent-instance',
           proposalData: mockProposalData,
+          authUserId: 'auth-user-id',
         },
         user: mockUser,
       })
@@ -155,6 +159,7 @@ describe('createProposal', () => {
         data: {
           processInstanceId: 'instance-id-123',
           proposalData: mockProposalData,
+          authUserId: 'auth-user-id',
         },
         user: mockUser,
       })
@@ -175,6 +180,7 @@ describe('createProposal', () => {
         data: {
           processInstanceId: 'instance-id-123',
           proposalData: mockProposalData,
+          authUserId: 'auth-user-id',
         },
         user: mockUser,
       })
@@ -196,6 +202,7 @@ describe('createProposal', () => {
         data: {
           processInstanceId: 'instance-id-123',
           proposalData: mockProposalData,
+          authUserId: 'auth-user-id',
         },
         user: mockUser,
       })
@@ -245,6 +252,7 @@ describe('createProposal', () => {
       data: {
         processInstanceId: 'instance-id-123',
         proposalData: mockProposalData,
+        authUserId: 'auth-user-id',
       },
       user: mockUser,
     });
@@ -266,6 +274,7 @@ describe('createProposal', () => {
         data: {
           processInstanceId: 'instance-id-123',
           proposalData: mockProposalData,
+          authUserId: 'auth-user-id',
         },
         user: mockUser,
       })
@@ -282,6 +291,7 @@ describe('createProposal', () => {
         data: {
           processInstanceId: 'instance-id-123',
           proposalData: mockProposalData,
+          authUserId: 'auth-user-id',
         },
         user: mockUser,
       })
@@ -335,6 +345,7 @@ describe('createProposal', () => {
       data: {
         processInstanceId: 'instance-id-123',
         proposalData: mockProposalData,
+        authUserId: 'auth-user-id',
       },
       user: mockUser,
     });

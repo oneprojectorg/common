@@ -42,6 +42,7 @@ export const updateInstanceRouter = router({
         const instance = await updateInstance({
           data: {
             instanceId: input.instanceId,
+            authUserId: user.id,
             name: input.name,
             description: input.description,
             instanceData: input.instanceData,

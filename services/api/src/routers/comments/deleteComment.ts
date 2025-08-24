@@ -31,9 +31,12 @@ export const deleteComment = router({
     .meta(meta)
     .input(deleteCommentSchema)
     .output(outputSchema)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       try {
-        const result = await deleteCommentService(input);
+        const result = await deleteCommentService({
+          ...input,
+          authUserId: ctx.user.id,
+        });
         return result;
       } catch (error) {
         console.log('ERROR', error);

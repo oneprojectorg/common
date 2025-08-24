@@ -28,7 +28,7 @@ export const listProposalsRouter = router({
 
       try {
         const result = await listProposals({
-          input,
+          input: { ...input, authUserId: user.id },
           user,
         });
 

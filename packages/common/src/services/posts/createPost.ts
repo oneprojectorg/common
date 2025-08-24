@@ -6,38 +6,43 @@ import { eq } from 'drizzle-orm';
 import { CommonError } from '../../utils';
 import { getCurrentProfileId } from '../access';
 
-export const createPost = async (input: CreatePostInput) => {
+interface CreatePostServiceInput extends CreatePostInput {
+  authUserId: string;
+}
+
+export const createPost = async (input: CreatePostServiceInput) => {
   const {
     content,
     attachmentIds = [],
     parentPostId,
     profileId: targetProfileId,
+    authUserId,
   } = input;
-  const profileId = await getCurrentProfileId();
+  
+  const profileId = await getCurrentProfileId(authUserId);
 
   try {
-    // Get all storage objects that were attached to the post
-    const allStorageObjects =
-      attachmentIds.length > 0
-        ? await db.query.objectsInStorage.findMany({
-            where: (table, { inArray }) => inArray(table.id, attachmentIds),
-          })
-        : [];
-
-    // If parentPostId is provided, verify the parent post exists
-    if (parentPostId) {
-      const parentPost = await db
-        .select({ id: posts.id })
-        .from(posts)
-        .where(eq(posts.id, parentPostId))
-        .limit(1);
-
-      if (parentPost.length === 0) {
-        throw new CommonError('Parent post not found');
-      }
-    }
-
     const newPost = await db.transaction(async (tx) => {
+      // Get all storage objects that were attached to the post (inside transaction)
+      const allStorageObjects =
+        attachmentIds.length > 0
+          ? await tx.query.objectsInStorage.findMany({
+              where: (table, { inArray }) => inArray(table.id, attachmentIds),
+            })
+          : [];
+
+      // If parentPostId is provided, verify the parent post exists (inside transaction)
+      if (parentPostId) {
+        const parentPost = await tx
+          .select({ id: posts.id })
+          .from(posts)
+          .where(eq(posts.id, parentPostId))
+          .limit(1);
+
+        if (parentPost.length === 0) {
+          throw new CommonError('Parent post not found');
+        }
+      }
       // Create the post
       const [newPost] = await tx
         .insert(posts)

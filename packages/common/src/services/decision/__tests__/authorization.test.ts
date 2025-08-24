@@ -21,6 +21,8 @@ const mockUser = {
   email: 'test@example.com',
 } as any;
 
+const mockAuthUserId = 'auth-user-id';
+
 describe('Decision Authorization', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -30,7 +32,7 @@ describe('Decision Authorization', () => {
     it('should throw UnauthorizedError when user is not authenticated', async () => {
       await expect(
         listProposals({
-          input: { processInstanceId: 'test-id' },
+          input: { processInstanceId: 'test-id', authUserId: mockAuthUserId },
           user: null as any,
         })
       ).rejects.toThrow(UnauthorizedError);
@@ -57,7 +59,7 @@ describe('Decision Authorization', () => {
       
       try {
         await listProposals({
-          input: { processInstanceId: 'test-id' },
+          input: { processInstanceId: 'test-id', authUserId: mockAuthUserId },
           user: mockUser,
         });
       } catch (error) {
@@ -76,6 +78,7 @@ describe('Decision Authorization', () => {
       await expect(
         getProcessCategories({
           processInstanceId: 'test-id',
+          authUserId: mockAuthUserId,
           user: null as any,
         })
       ).rejects.toThrow(UnauthorizedError);
@@ -101,6 +104,7 @@ describe('Decision Authorization', () => {
       try {
         await getProcessCategories({
           processInstanceId: 'test-id',
+          authUserId: mockAuthUserId,
           user: mockUser,
         });
       } catch (error) {

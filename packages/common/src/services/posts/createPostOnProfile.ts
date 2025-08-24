@@ -8,10 +8,13 @@ export interface CreatePostOnProfileInput {
   content: string;
   targetProfileId: string; // The profile where the post will appear
   parentPostId?: string;
+  authUserId: string; // User ID for authentication
 }
 
 export const createPostOnProfile = async (input: CreatePostOnProfileInput) => {
-  const authorProfileId = await getCurrentProfileId();
+  const { authUserId } = input;
+  
+  const authorProfileId = await getCurrentProfileId(authUserId);
 
   try {
     // Create a post authored by the current user

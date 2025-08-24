@@ -26,6 +26,7 @@ export interface ListProposalsInput {
   offset?: number;
   orderBy?: 'createdAt' | 'updatedAt' | 'status';
   orderDirection?: 'asc' | 'desc';
+  authUserId: string;
 }
 
 // Shared function to build WHERE conditions for both count and data queries
@@ -65,7 +66,7 @@ export const listProposals = async ({
     throw new UnauthorizedError('User must be authenticated');
   }
 
-  const orgUserId = await getCurrentOrgId({ database: db });
+  const orgUserId = await getCurrentOrgId({ authUserId: input.authUserId });
   const orgUser = await getOrgAccessUser({
     user,
     organizationId: orgUserId,
@@ -160,7 +161,7 @@ export const listProposals = async ({
     >();
 
     if (proposalIds.length > 0) {
-      const currentProfileId = await getCurrentProfileId();
+      const currentProfileId = await getCurrentProfileId(input.authUserId);
 
       // Optimized: Get both relationship counts and user relationships in parallel
       const [relationshipCounts, userRelationships] = await Promise.all([

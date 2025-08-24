@@ -1,6 +1,6 @@
 import { trackFundingToggle } from '@op/analytics';
 import { invalidate } from '@op/cache';
-import { UnauthorizedError, getSession, updateOrganization } from '@op/common';
+import { UnauthorizedError, updateOrganization } from '@op/common';
 import { TRPCError } from '@trpc/server';
 import { waitUntil } from '@vercel/functions';
 import type { OpenApiMeta } from 'trpc-to-openapi';
@@ -46,9 +46,7 @@ export const updateOrganizationRouter = router({
           input.isOfferingFunds !== undefined ||
           input.isReceivingFunds !== undefined
         ) {
-          const sessionUser = await getSession();
-
-          if (sessionUser && 'user' in sessionUser) {
+          if (user) {
             waitUntil(
               trackFundingToggle(
                 user.id,

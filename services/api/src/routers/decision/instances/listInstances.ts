@@ -30,7 +30,11 @@ export const listInstancesRouter = router({
     .query(async ({ input, ctx }) => {
       const { user } = ctx;
 
-      const result = await listInstances({ ...input, user });
+      const result = await listInstances({ 
+        ...input, 
+        user,
+        authUserId: ctx.user.id,
+      });
 
       return processInstanceListEncoder.parse({
         instances: result.instances.map((instance) => ({

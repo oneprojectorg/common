@@ -28,9 +28,12 @@ export const updateComment = router({
     .meta(meta)
     .input(updateCommentSchema)
     .output(outputSchema)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       try {
-        const comment = await updateCommentService(input);
+        const comment = await updateCommentService({
+          ...input,
+          authUserId: ctx.user.id,
+        });
         const output = outputSchema.parse(comment);
         return output;
       } catch (error) {

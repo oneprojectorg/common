@@ -1,26 +1,23 @@
 import { db } from '@op/db/client';
 import { posts, postsToOrganizations } from '@op/db/schema';
+import type { GetOrganizationPostsInput } from '@op/types';
 import { and, desc, eq, isNull } from 'drizzle-orm';
 
 import { getCurrentProfileId } from '../access';
 import { getItemsWithReactionsAndComments } from './listPosts';
 
-export interface GetOrganizationPostsInput {
-  organizationId: string;
-  parentPostId?: string | null; // null for top-level posts, string for child posts, undefined for all
-  limit?: number;
-  offset?: number;
-  includeChildren?: boolean;
-  maxDepth?: number;
+interface GetOrganizationPostsServiceInput extends GetOrganizationPostsInput {
+  authUserId: string;
 }
 
-export const getOrganizationPosts = async (input: GetOrganizationPostsInput) => {
+export const getOrganizationPosts = async (input: GetOrganizationPostsServiceInput) => {
   const {
     organizationId,
     parentPostId,
     limit = 20,
     offset = 0,
     includeChildren = false,
+    authUserId,
   } = input;
   let { maxDepth = 3 } = input;
 
@@ -108,7 +105,7 @@ export const getOrganizationPosts = async (input: GetOrganizationPostsInput) => 
     });
 
     // Transform to match expected format and add reaction data
-    const actorProfileId = await getCurrentProfileId();
+    const actorProfileId = await getCurrentProfileId(authUserId);
     const itemsWithReactionsAndComments =
       await getItemsWithReactionsAndComments({
         items: orgPosts,

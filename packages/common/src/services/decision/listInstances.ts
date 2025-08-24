@@ -4,10 +4,7 @@ import { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
 import { UnauthorizedError } from '../../utils';
-import {
-  getCurrentOrgId,
-  getOrgAccessUser,
-} from '../access';
+import { getCurrentOrgId, getOrgAccessUser } from '../access';
 
 export interface ListInstancesInput {
   ownerProfileId?: string;
@@ -19,6 +16,7 @@ export interface ListInstancesInput {
   orderBy?: 'createdAt' | 'updatedAt' | 'name' | 'status';
   orderDirection?: 'asc' | 'desc';
   user: User;
+  authUserId: string;
 }
 
 export const listInstances = async ({
@@ -31,13 +29,14 @@ export const listInstances = async ({
   orderBy = 'createdAt',
   orderDirection = 'desc',
   user,
+  authUserId,
 }: ListInstancesInput) => {
   if (!user) {
     throw new UnauthorizedError('User must be authenticated');
   }
 
   // ASSERT VIEW ACCESS ON ORGUSER
-  const orgUserId = await getCurrentOrgId({ database: db });
+  const orgUserId = await getCurrentOrgId({ authUserId });
   const orgUser = await getOrgAccessUser({
     user,
     organizationId: orgUserId,
