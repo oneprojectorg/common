@@ -74,9 +74,6 @@ async function DecisionInstancePageContent({
               href: `/profile/${slug}`,
             }}
             title={instance.process?.name || instance.name}
-            userAvatar={{
-              name: instance.owner?.name || instance.owner?.slug,
-            }}
           />
 
           <div className="flex flex-col items-center">
