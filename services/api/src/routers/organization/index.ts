@@ -12,6 +12,7 @@ import { getRolesRouter } from './getRoles';
 import { inviteUserRouter } from './inviteUser';
 import { joinOrganization } from './joinOrganization';
 import { listOrganizationsRouter } from './listOrganizations';
+import { listUsersRouter } from './listUsers';
 import { listOrganizationPostsRouter } from './listPosts';
 import { listRelatedOrganizationPostsRouter } from './listRelatedOrganizationPosts';
 import { listRelationshipsRouter } from './listRelationships';
@@ -27,6 +28,7 @@ export const organizationRouter = mergeRouters(
   getOrganizationsByProfileRouter,
   getRolesRouter,
   listOrganizationsRouter,
+  listUsersRouter,
   listOrganizationPostsRouter,
   searchOrganizationsRouter,
   createPostInOrganizationRouter,
