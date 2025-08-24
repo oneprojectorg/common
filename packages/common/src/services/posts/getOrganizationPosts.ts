@@ -2,7 +2,7 @@ import { db } from '@op/db/client';
 import { posts, postsToOrganizations } from '@op/db/schema';
 import { and, desc, eq, isNull } from 'drizzle-orm';
 
-import { getCurrentProfileIdByAuth } from '../access';
+import { getCurrentProfileId } from '../access';
 import { getItemsWithReactionsAndComments } from './listPosts';
 
 export interface GetOrganizationPostsInput {
@@ -110,11 +110,7 @@ export const getOrganizationPosts = async (input: GetOrganizationPostsInput) => 
     });
 
     // Transform to match expected format and add reaction data
-    if (!authUserId) {
-      throw new Error('authUserId is required - must be provided by API router');
-    }
-    
-    const actorProfileId = await getCurrentProfileIdByAuth({ authUserId });
+    const actorProfileId = await getCurrentProfileId(authUserId);
     const itemsWithReactionsAndComments =
       await getItemsWithReactionsAndComments({
         items: orgPosts,

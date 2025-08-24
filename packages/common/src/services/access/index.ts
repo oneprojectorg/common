@@ -7,6 +7,7 @@ import type { NormalizedRole } from 'access-zones';
 import { cookies } from 'next/headers';
 
 import { UnauthorizedError } from '../../utils/error';
+import { z } from 'zod';
 
 type OrgUserWithNormalizedRoles = {
   id: string;
@@ -173,7 +174,42 @@ export const getSession = async () => {
   }
 };
 
-export const getCurrentProfileId = async () => {
+export const getCurrentProfileId = async (authUserId?: string) => {
+  // If authUserId is provided, use the new database-only approach
+  if (authUserId) {
+    const validatedAuthUserId = validateAuthUserId(authUserId);
+    const { user } = (await getUserSession({ authUserId: validatedAuthUserId })) ?? {};
+
+    if (!user) {
+      throw new UnauthorizedError("You don't have access to do this");
+    }
+
+    // Primary: use currentProfileId if available
+    if (user.currentProfileId) {
+      return user.currentProfileId;
+    }
+
+    // Fallback: if lastOrgId exists but currentProfileId doesn't, convert it
+    if (user.lastOrgId) {
+      try {
+        const [org] = await db
+          .select({ profileId: organizations.profileId })
+          .from(organizations)
+          .where(eq(organizations.id, user.lastOrgId))
+          .limit(1);
+
+        if (org) {
+          return org.profileId;
+        }
+      } catch (error) {
+        console.error('Error converting lastOrgId to profileId:', error);
+      }
+    }
+
+    throw new UnauthorizedError("You don't have access to do this");
+  }
+
+  // Legacy behavior: use getSession() - will be removed after migration
   const { user } = (await getSession()) ?? {};
 
   if (!user) {
@@ -207,9 +243,42 @@ export const getCurrentProfileId = async () => {
 
 export const getCurrentOrgId = async ({
   database,
+  authUserId,
 }: {
   database: typeof db;
+  authUserId?: string;
 }) => {
+  // If authUserId is provided, use the new database-only approach
+  if (authUserId) {
+    const validatedAuthUserId = validateAuthUserId(authUserId);
+    const { user } = (await getUserSession({ authUserId: validatedAuthUserId })) ?? {};
+
+    if (!user) {
+      throw new UnauthorizedError("You don't have access to do this");
+    }
+
+    // Primary: use currentProfileId if available
+    if (user.currentProfileId) {
+      const [org] = await database
+        .select({ id: organizations.id })
+        .from(organizations)
+        .where(eq(organizations.profileId, user.currentProfileId))
+        .limit(1);
+
+      if (org) {
+        return org.id;
+      }
+    }
+
+    // Fallback: use lastOrgId directly if currentProfileId doesn't work
+    if (user.lastOrgId) {
+      return user.lastOrgId;
+    }
+
+    throw new UnauthorizedError("You don't have access to do this");
+  }
+
+  // Legacy behavior: use getSession() - will be removed after migration
   const { user } = (await getSession()) ?? {};
 
   if (!user) {
@@ -237,7 +306,32 @@ export const getCurrentOrgId = async ({
   throw new UnauthorizedError("You don't have access to do this");
 };
 
-export const getCurrentOrgUserId = async (organizationId: string) => {
+export const getCurrentOrgUserId = async (
+  organizationId: string,
+  authUserId?: string
+) => {
+  // If authUserId is provided, use the new database-only approach
+  if (authUserId) {
+    const validatedAuthUserId = validateAuthUserId(authUserId);
+    const session = await getUserSession({ authUserId: validatedAuthUserId });
+
+    if (!session?.user) {
+      throw new UnauthorizedError("You don't have access to do this");
+    }
+
+    const orgUser = await getOrgAccessUser({
+      user: { id: session.user.authUserId } as User,
+      organizationId,
+    });
+
+    if (!orgUser) {
+      throw new UnauthorizedError("You don't have access to this organization");
+    }
+
+    return orgUser.id;
+  }
+
+  // Legacy behavior: use getSession() - will be removed after migration
   const session = await getSession();
 
   if (!session?.user) {
@@ -256,15 +350,32 @@ export const getCurrentOrgUserId = async (organizationId: string) => {
   return orgUser.id;
 };
 
-// NEW PARAMETER-BASED FUNCTIONS (will replace the above functions during migration)
+// UTILITY FUNCTIONS FOR AUTH VALIDATION
+
+const authUserIdSchema = z.string().uuid('Invalid authentication user ID format');
+
+export const validateAuthUserId = (authUserId: string | undefined) => {
+  if (!authUserId) {
+    throw new UnauthorizedError("Authentication required");
+  }
+  
+  try {
+    return authUserIdSchema.parse(authUserId);
+  } catch {
+    throw new UnauthorizedError("Invalid authentication credentials");
+  }
+};
 
 /**
  * Gets user session data by authUserId (database-only, no Supabase auth)
+ * Used internally by the updated access functions
  */
 export const getUserSession = async ({ authUserId }: { authUserId: string }) => {
+  const validatedAuthUserId = validateAuthUserId(authUserId);
+  
   try {
     const dbUser = await db.query.users.findFirst({
-      where: (table, { eq }) => eq(table.authUserId, authUserId),
+      where: (table, { eq }) => eq(table.authUserId, validatedAuthUserId),
       with: {
         organizationUsers: true,
       },
@@ -288,7 +399,7 @@ export const getUserSession = async ({ authUserId }: { authUserId: string }) => 
           await db
             .update(users)
             .set({ currentProfileId: org.profileId })
-            .where(eq(users.authUserId, authUserId));
+            .where(eq(users.authUserId, validatedAuthUserId));
 
           // Return the updated user object
           return { user: { ...dbUser, currentProfileId: org.profileId } };
@@ -304,106 +415,6 @@ export const getUserSession = async ({ authUserId }: { authUserId: string }) => 
     console.error('ERROR');
     return null;
   }
-};
-
-/**
- * Gets current profile ID by authUserId (database-only, no Supabase auth)
- */
-export const getCurrentProfileIdByAuth = async ({ authUserId }: { authUserId: string }) => {
-  const { user } = (await getUserSession({ authUserId })) ?? {};
-
-  if (!user) {
-    throw new UnauthorizedError("You don't have access to do this");
-  }
-
-  // Primary: use currentProfileId if available
-  if (user.currentProfileId) {
-    return user.currentProfileId;
-  }
-
-  // Fallback: if lastOrgId exists but currentProfileId doesn't, convert it
-  if (user.lastOrgId) {
-    try {
-      const [org] = await db
-        .select({ profileId: organizations.profileId })
-        .from(organizations)
-        .where(eq(organizations.id, user.lastOrgId))
-        .limit(1);
-
-      if (org) {
-        return org.profileId;
-      }
-    } catch (error) {
-      console.error('Error converting lastOrgId to profileId:', error);
-    }
-  }
-
-  throw new UnauthorizedError("You don't have access to do this");
-};
-
-/**
- * Gets current organization ID by authUserId (database-only, no Supabase auth)
- */
-export const getCurrentOrgIdByAuth = async ({
-  authUserId,
-  database,
-}: {
-  authUserId: string;
-  database: typeof db;
-}) => {
-  const { user } = (await getUserSession({ authUserId })) ?? {};
-
-  if (!user) {
-    throw new UnauthorizedError("You don't have access to do this");
-  }
-
-  // Primary: use currentProfileId if available
-  if (user.currentProfileId) {
-    const [org] = await database
-      .select({ id: organizations.id })
-      .from(organizations)
-      .where(eq(organizations.profileId, user.currentProfileId))
-      .limit(1);
-
-    if (org) {
-      return org.id;
-    }
-  }
-
-  // Fallback: use lastOrgId directly if currentProfileId doesn't work
-  if (user.lastOrgId) {
-    return user.lastOrgId;
-  }
-
-  throw new UnauthorizedError("You don't have access to do this");
-};
-
-/**
- * Gets current organization user ID by authUserId (database-only, no Supabase auth)
- */
-export const getCurrentOrgUserIdByAuth = async ({
-  authUserId,
-  organizationId,
-}: {
-  authUserId: string;
-  organizationId: string;
-}) => {
-  const session = await getUserSession({ authUserId });
-
-  if (!session?.user) {
-    throw new UnauthorizedError("You don't have access to do this");
-  }
-
-  const orgUser = await getOrgAccessUser({
-    user: { id: session.user.authUserId } as User,
-    organizationId,
-  });
-
-  if (!orgUser) {
-    throw new UnauthorizedError("You don't have access to this organization");
-  }
-
-  return orgUser.id;
 };
 
 export * from './getRoles';

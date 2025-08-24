@@ -5,7 +5,7 @@ import { assertAccess, permission } from 'access-zones';
 
 import { UnauthorizedError } from '../../utils';
 import {
-  getCurrentOrgIdByAuth,
+  getCurrentOrgId,
   getOrgAccessUser,
 } from '../access';
 
@@ -39,11 +39,7 @@ export const listInstances = async ({
   }
 
   // ASSERT VIEW ACCESS ON ORGUSER
-  if (!authUserId) {
-    throw new Error('authUserId is required - must be provided by API router');
-  }
-  
-  const orgUserId = await getCurrentOrgIdByAuth({ authUserId, database: db });
+  const orgUserId = await getCurrentOrgId({ database: db, authUserId });
   const orgUser = await getOrgAccessUser({
     user,
     organizationId: orgUserId,
