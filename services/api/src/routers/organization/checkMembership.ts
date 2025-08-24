@@ -1,4 +1,4 @@
-import { getOrgAccessUser } from '@op/common';
+import { CommonError, getOrgAccessUser } from '@op/common';
 import { db } from '@op/db/client';
 import { TRPCError } from '@trpc/server';
 import { assertAccess, permission } from 'access-zones';
@@ -33,7 +33,7 @@ export const checkMembershipRouter = router({
           organizationId,
         });
 
-        assertAccess({ admin: permission.ADMIN }, orgUser?.roles ?? []);
+        assertAccess({ profile: permission.ADMIN }, orgUser?.roles ?? []);
 
         // Check if the target email is a member of the organization
         const membershipExists = await db.query.organizationUsers.findFirst({
@@ -48,9 +48,11 @@ export const checkMembershipRouter = router({
           isMember: !!membershipExists,
         };
       } catch (error) {
-        if (error instanceof TRPCError) {
+        if (error instanceof CommonError) {
           throw error;
         }
+
+        console.log('Error', error);
 
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
