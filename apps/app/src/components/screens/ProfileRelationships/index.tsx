@@ -46,10 +46,12 @@ export const ProfileRelationshipsSuspense = ({
         name: org.profile.name,
         slug: org.profile.slug,
         bio: org.profile.bio,
-        avatarImage: org.profile.avatarImage ? {
-          id: org.profile.avatarImage.id,
-          name: org.profile.avatarImage.name,
-        } : null,
+        avatarImage: org.profile.avatarImage
+          ? {
+              id: org.profile.avatarImage.id,
+              name: org.profile.avatarImage.name,
+            }
+          : null,
         type: 'org', // Organizations are always type 'org'
         relationships: org.relationships?.map((rel) => ({
           relationshipType: rel.relationshipType,
@@ -87,7 +89,7 @@ export const ProfileRelationshipsSuspense = ({
         ) : null}
         <div className="flex items-center justify-between">
           <div className="w-full font-serif text-title-sm sm:text-title-lg">
-            {count} {pluralize('Relationship', count)}
+            {count} {pluralize('relationship', count)}
           </div>
           <div className="w-72"></div>
         </div>

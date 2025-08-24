@@ -9,6 +9,8 @@ import { ReactNode, Suspense } from 'react';
 import { useTranslations } from '@/lib/i18n';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
+import { ProfileOrganizations } from '@/components/screens/ProfileOrganizations';
+import { ProfileRelationshipsSkeleton } from '@/components/screens/ProfileRelationships/Skeleton';
 
 import { MembersList } from './MembersList';
 
@@ -54,18 +56,20 @@ export const MembersTabPanel = ({ profileId }: { profileId: string }) => {
   const decisionsEnabled = useFeatureFlagEnabled('decision_making');
 
   return decisionsEnabled ? (
-    <TabPanel id="members" className="px-0">
-      <ErrorBoundary
-        fallback={
-          <div className="p-4 text-center text-neutral-charcoal">
-            Failed to load members
-          </div>
-        }
-      >
-        <Suspense fallback={<MembersList.Skeleton />}>
-          <MembersList profileId={profileId} />
-        </Suspense>
-      </ErrorBoundary>
+    <TabPanel id="members" className="flex-grow px-4 sm:px-6 sm:py-0">
+      <ProfileOrganizations>
+        <ErrorBoundary
+          fallback={
+            <div className="p-4 text-center text-neutral-charcoal">
+              Failed to load members
+            </div>
+          }
+        >
+          <Suspense fallback={<ProfileRelationshipsSkeleton />}>
+            <MembersList profileId={profileId} />
+          </Suspense>
+        </ErrorBoundary>
+      </ProfileOrganizations>
     </TabPanel>
   ) : null;
 };

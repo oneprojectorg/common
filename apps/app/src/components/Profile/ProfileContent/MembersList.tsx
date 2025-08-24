@@ -1,12 +1,15 @@
 'use client';
 
+import { pluralize } from '@/utils/pluralize';
 import { trpc } from '@op/api/client';
-import { Skeleton } from '@op/ui/Skeleton';
+import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
-import React from 'react';
+import React, { useMemo } from 'react';
 import { LuUsers } from 'react-icons/lu';
-import { ProfileAvatar } from '@/components/RelationshipList';
+
 import { Link } from '@/lib/i18n';
+
+import { ProfileAvatar } from '@/components/RelationshipList';
 
 type Member = {
   id: string;
@@ -41,23 +44,25 @@ const MembersListContent = ({ members }: { members: Member[] }) => {
         const profile = member.profile;
         const displayName = profile?.name || member.name || member.email;
         const bio = profile?.bio || member.about;
-        
+
         // Create a RelationshipListItem-like object for ProfileAvatar
-        const profileForAvatar = profile ? {
-          id: profile.id,
-          name: profile.name || displayName,
-          slug: profile.slug,
-          bio: profile.bio,
-          avatarImage: profile.avatarImage,
-          type: profile.type,
-        } : {
-          id: member.id,
-          name: displayName,
-          slug: '', // No slug for non-profile users
-          bio: member.about,
-          avatarImage: null,
-          type: 'individual', // Default type
-        };
+        const profileForAvatar = profile
+          ? {
+              id: profile.id,
+              name: profile.name || displayName,
+              slug: profile.slug,
+              bio: profile.bio,
+              avatarImage: profile.avatarImage,
+              type: profile.type,
+            }
+          : {
+              id: member.id,
+              name: displayName,
+              slug: '', // No slug for non-profile users
+              bio: member.about,
+              avatarImage: null,
+              type: 'individual', // Default type
+            };
 
         return (
           <div
@@ -114,9 +119,7 @@ const MembersListContent = ({ members }: { members: Member[] }) => {
                 {/* Show about/bio information if available */}
                 {bio && (
                   <div className="line-clamp-3 text-neutral-charcoal">
-                    {bio.length > 200
-                      ? `${bio.slice(0, 200)}...`
-                      : bio}
+                    {bio.length > 200 ? `${bio.slice(0, 200)}...` : bio}
                   </div>
                 )}
               </div>
@@ -128,32 +131,31 @@ const MembersListContent = ({ members }: { members: Member[] }) => {
   );
 };
 
-const MembersListSkeleton = () => (
-  <div className="grid grid-cols-1 gap-8 pb-6 md:grid-cols-2">
-    {[...Array(4)].map((_, i) => (
-      <div
-        key={i}
-        className="flex w-full gap-4 rounded border border-neutral-gray1 p-6"
-      >
-        <Skeleton className="size-20 flex-shrink-0 rounded-full" />
-        <div className="min-w-0 flex-1 space-y-2">
-          <Skeleton className="h-5 w-32" />
-          <div className="flex gap-2">
-            <Skeleton className="h-5 w-16" />
-            <Skeleton className="h-5 w-20" />
-          </div>
-          <Skeleton className="h-4 w-48" />
-          <Skeleton className="h-4 w-40" />
-        </div>
-      </div>
-    ))}
-  </div>
-);
-
 export const MembersList = ({ profileId }: { profileId: string }) => {
   const [members] = trpc.organization.listUsers.useSuspenseQuery({
     profileId,
   });
+
+  // Group members by roles for filtering
+  const rolesSegmented: Array<[string, Array<Member>]> = useMemo(() => {
+    if (!members) return [];
+
+    // Get all unique role names
+    const allRoleNames = new Set<string>();
+    members.forEach((member) => {
+      member.roles.forEach((role) => {
+        allRoleNames.add(role.name);
+      });
+    });
+
+    // Create segments for each role
+    return Array.from(allRoleNames).map((roleName) => [
+      roleName,
+      members.filter((member) =>
+        member.roles.some((role) => role.name === roleName),
+      ),
+    ]);
+  }, [members]);
 
   if (!members || members.length === 0) {
     return (
@@ -173,24 +175,41 @@ export const MembersList = ({ profileId }: { profileId: string }) => {
 
   return (
     <>
-      <div className="flex flex-col gap-4 px-0">
+      <div className="flex flex-col gap-4 px-4 sm:px-0">
         <div className="flex items-center justify-between">
           <div className="w-full font-serif text-title-sm sm:text-title-lg">
-            Members ({members.length})
+            {members.length} {pluralize('member', members.length)}
           </div>
+          <div className="w-72"></div>
         </div>
       </div>
-      <div className="px-0">
-        <MembersListContent members={members} />
-      </div>
+
+      <Tabs>
+        <TabList className="px-4 sm:px-0" variant="pill">
+          <Tab id="all" variant="pill">
+            All members
+          </Tab>
+          {rolesSegmented.map(([roleName, roleMembers]) =>
+            roleMembers?.length ? (
+              <Tab id={roleName} key={roleName} variant="pill">
+                {roleName}s
+              </Tab>
+            ) : null,
+          )}
+        </TabList>
+
+        <TabPanel id="all" className="px-4 sm:px-0">
+          <MembersListContent members={members} />
+        </TabPanel>
+
+        {rolesSegmented.map(([roleName, roleMembers]) =>
+          roleMembers?.length ? (
+            <TabPanel id={roleName} key={roleName} className="px-4 sm:px-0">
+              <MembersListContent members={roleMembers} />
+            </TabPanel>
+          ) : null,
+        )}
+      </Tabs>
     </>
   );
 };
-
-export const MembersListWithSkeleton = () => (
-  <div className="p-4">
-    <MembersListSkeleton />
-  </div>
-);
-
-MembersList.Skeleton = MembersListWithSkeleton;
