@@ -50,13 +50,25 @@ const MemberMenu = ({
   profileId: string;
 }) => {
   const utils = trpc.useUtils();
-  
+
   // Query for all available roles to find the "Member" role ID
   const { data: roles } = trpc.organization.getRoles.useQuery();
 
   const updateUser = trpc.organization.updateOrganizationUser.useMutation({
-    onSuccess: () => {
-      toast.success({ message: 'User role updated successfully' });
+    onSuccess: (_, variables) => {
+      // Determine what role was assigned for the success message
+      const wasChangingToAdmin = variables.data.roleIds?.some((roleId) =>
+        roles?.roles?.find(
+          (role: any) =>
+            role.id === roleId && role.name.toLowerCase() === 'admin',
+        ),
+      );
+
+      const message = wasChangingToAdmin
+        ? 'User promoted to Admin successfully'
+        : 'User changed to Member successfully';
+
+      toast.success({ message });
       // Invalidate listUsers query to refresh the UI
       void utils.organization.listUsers.invalidate({ profileId });
     },
@@ -78,22 +90,49 @@ const MemberMenu = ({
     },
   });
 
-  const handleChangeToMember = () => {
-    // Find the "Member" role ID from the available roles
-    const memberRole = roles?.roles?.find((role: any) => role.name.toLowerCase() === 'member');
-    
-    if (!memberRole) {
-      toast.error({ message: 'Member role not found' });
-      return;
+  // Check if user is currently an admin
+  const isCurrentlyAdmin = member.roles.some(
+    (role) => role.name.toLowerCase() === 'admin',
+  );
+
+  const handleRoleToggle = () => {
+    if (isCurrentlyAdmin) {
+      // Change admin to member
+      const memberRole = roles?.roles?.find(
+        (role: any) => role.name.toLowerCase() === 'member',
+      );
+
+      if (!memberRole) {
+        toast.error({ message: 'Member role not found' });
+        return;
+      }
+
+      updateUser.mutate({
+        organizationId,
+        organizationUserId: member.id,
+        data: {
+          roleIds: [memberRole.id], // Set to Member role only
+        },
+      });
+    } else {
+      // Change member to admin
+      const adminRole = roles?.roles?.find(
+        (role: any) => role.name.toLowerCase() === 'admin',
+      );
+
+      if (!adminRole) {
+        toast.error({ message: 'Admin role not found' });
+        return;
+      }
+
+      updateUser.mutate({
+        organizationId,
+        organizationUserId: member.id,
+        data: {
+          roleIds: [adminRole.id], // Set to Admin role only
+        },
+      });
     }
-    
-    updateUser.mutate({
-      organizationId,
-      organizationUserId: member.id,
-      data: {
-        roleIds: [memberRole.id], // Set to Member role only
-      },
-    });
   };
 
   const handleRemoveFromOrganization = () => {
@@ -121,11 +160,11 @@ const MemberMenu = ({
       <Popover placement="bottom end">
         <Menu className="min-w-48 p-2">
           <MenuItem
-            key="change-to-member"
-            onAction={handleChangeToMember}
+            key="toggle-role"
+            onAction={handleRoleToggle}
             className="px-3 py-1"
           >
-            Change to Member
+            {isCurrentlyAdmin ? 'Change to Member' : 'Change to Admin'}
           </MenuItem>
           <MenuItem
             key="remove-from-org"
