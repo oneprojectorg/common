@@ -1,4 +1,9 @@
-import { createOrganization, getRoles, inviteUsersToOrganization, joinOrganization } from '@op/common';
+import {
+  createOrganization,
+  getRoles,
+  inviteUsersToOrganization,
+  joinOrganization,
+} from '@op/common';
 import { db } from '@op/db/client';
 import { beforeEach, describe, expect, it } from 'vitest';
 
@@ -36,10 +41,10 @@ describe('Invite System Integration Tests', () => {
     // Create inviter user and organization
     testInviterEmail = `inviter-${Date.now()}@example.com`;
     testInviteeEmail = `invitee-${Date.now()}@example.com`;
-    
+
     await createTestUser(testInviterEmail);
     await signInTestUser(testInviterEmail);
-    
+
     const session = await getCurrentTestSession();
     testInviterUser = session?.user;
 
@@ -64,7 +69,7 @@ describe('Invite System Integration Tests', () => {
 
     // Get the Admin role ID for testing
     const { roles } = await getRoles();
-    const adminRole = roles.find(role => role.name === 'Admin');
+    const adminRole = roles.find((role) => role.name === 'Admin');
     if (!adminRole) {
       throw new Error('Admin role not found in test database');
     }
@@ -94,11 +99,13 @@ describe('Invite System Integration Tests', () => {
       expect(allowListEntry).toBeDefined();
       expect(allowListEntry?.organizationId).toBe(testOrganization.id);
       expect(allowListEntry?.metadata).toBeDefined();
-      
+
       const metadata = allowListEntry?.metadata as any;
       expect(metadata.roleId).toBe(adminRoleId);
       expect(metadata.inviteType).toBe('existing_organization');
-      expect(metadata.personalMessage).toBe('Welcome to our test organization!');
+      expect(metadata.personalMessage).toBe(
+        'Welcome to our test organization!',
+      );
     });
 
     it('should handle multiple email invites', async () => {
@@ -125,9 +132,9 @@ describe('Invite System Integration Tests', () => {
       });
 
       expect(allowListEntries).toHaveLength(3);
-      
+
       // Verify all have the correct roleId
-      allowListEntries.forEach(entry => {
+      allowListEntries.forEach((entry) => {
         const metadata = entry.metadata as any;
         expect(metadata.roleId).toBe(adminRoleId);
       });
@@ -155,7 +162,7 @@ describe('Invite System Integration Tests', () => {
       });
 
       expect(result2.success).toBe(true);
-      
+
       // Should only have one allowList entry
       const allowListEntries = await db.query.allowList.findMany({
         where: (table, { eq }) => eq(table.email, testInviteeEmail),
@@ -174,7 +181,7 @@ describe('Invite System Integration Tests', () => {
       await signInTestUser(testInviteeEmail);
       const session = await getCurrentTestSession();
       existingUser = session?.user;
-      
+
       // Sign back in as inviter
       await signInTestUser(testInviterEmail);
     });
@@ -241,7 +248,9 @@ describe('Invite System Integration Tests', () => {
 
       expect(result.details?.failed).toHaveLength(1);
       expect(result.details?.failed[0]?.email).toBe(testInviteeEmail);
-      expect(result.details?.failed[0]?.reason).toBe('User is already a member of this organization');
+      expect(result.details?.failed[0]?.reason).toBe(
+        'User is already a member of this organization',
+      );
     });
   });
 
@@ -331,9 +340,9 @@ describe('Invite System Integration Tests', () => {
   describe('Role System Integration', () => {
     it('should respect different role types in invites', async () => {
       const { roles } = await getRoles();
-      
+
       // Find a non-Admin role if available
-      const nonAdminRole = roles.find(role => role.name !== 'Admin');
+      const nonAdminRole = roles.find((role) => role.name !== 'Admin');
       if (!nonAdminRole) {
         // Skip test if only Admin role exists
         console.warn('Only Admin role available, skipping multi-role test');
@@ -465,7 +474,9 @@ describe('Invite System Integration Tests', () => {
           user: outsiderUser,
           organizationId: testOrganization.id,
         }),
-      ).rejects.toThrow('Your email does not have access to join this organization');
+      ).rejects.toThrow(
+        'Your email does not have access to join this organization',
+      );
     });
   });
 });
