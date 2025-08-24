@@ -360,7 +360,7 @@ export const ProfileTabsMobile = ({
       {!isIndividual && (
         <>
           <FollowersTabPanel>{followersContent}</FollowersTabPanel>
-          <MembersTabPanel>Members content coming soon</MembersTabPanel>
+          <MembersTabPanel profileId={profile.id} />
         </>
       )}
       <DecisionsTabPanel>{decisionsContent}</DecisionsTabPanel>

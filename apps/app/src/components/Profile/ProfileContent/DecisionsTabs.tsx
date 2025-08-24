@@ -4,9 +4,13 @@ import { useUser } from '@/utils/UserProvider';
 import { Tab, TabPanel } from '@op/ui/Tabs';
 import { cn } from '@op/ui/utils';
 import { useFeatureFlagEnabled } from 'posthog-js/react';
-import { ReactNode } from 'react';
+import { ReactNode, Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
+
+import ErrorBoundary from '@/components/ErrorBoundary';
+
+import { MembersList } from './MembersList';
 
 export const DecisionsTab = ({ profileId }: { profileId: string }) => {
   const decisionsEnabled = useFeatureFlagEnabled('decision_making');
@@ -46,12 +50,22 @@ export const MembersTab = ({ profileId }: { profileId: string }) => {
   ) : null;
 };
 
-export const MembersTabPanel = ({ children }: { children: ReactNode }) => {
+export const MembersTabPanel = ({ profileId }: { profileId: string }) => {
   const decisionsEnabled = useFeatureFlagEnabled('decision_making');
 
   return decisionsEnabled ? (
-    <TabPanel id="members" className="px-4 py-2">
-      <div className="text-center text-neutral-gray4">{children}</div>
+    <TabPanel id="members" className="px-0">
+      <ErrorBoundary
+        fallback={
+          <div className="p-4 text-center text-neutral-charcoal">
+            Failed to load members
+          </div>
+        }
+      >
+        <Suspense fallback={<MembersList.Skeleton />}>
+          <MembersList profileId={profileId} />
+        </Suspense>
+      </ErrorBoundary>
     </TabPanel>
   ) : null;
 };

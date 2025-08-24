@@ -112,7 +112,7 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
             <DecisionsTabPanel>
               <ProfileDecisionsSuspense profileId={profile.id} />
             </DecisionsTabPanel>
-            <MembersTabPanel>Members content coming soon</MembersTabPanel>
+            <MembersTabPanel profileId={profile.id} />
           </ProfileTabs>
           <ProfileTabsMobile
             profile={organization as any}
