@@ -11,6 +11,8 @@ import {
   type RelationshipListItem,
 } from '@/components/RelationshipList';
 
+import { ProfileRelationshipsSkeleton } from '../ProfileRelationships/Skeleton';
+
 export const ProfileFollowingSuspense = ({
   profileId,
 }: {
@@ -43,7 +45,7 @@ export const ProfileFollowingSuspense = ({
 export const ProfileFollowing = ({ profileId }: { profileId: string }) => {
   return (
     <ErrorBoundary fallback={null}>
-      <Suspense fallback={<div>Loading following...</div>}>
+      <Suspense fallback={<ProfileRelationshipsSkeleton />}>
         <ProfileFollowingSuspense profileId={profileId} />
       </Suspense>
     </ErrorBoundary>
