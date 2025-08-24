@@ -40,17 +40,73 @@ type Member = {
   }>;
 };
 
-const MemberMenu = ({ member }: { member: Member }) => {
+const MemberMenu = ({
+  member,
+  organizationId,
+  profileId,
+}: {
+  member: Member;
+  organizationId: string;
+  profileId: string;
+}) => {
+  const utils = trpc.useUtils();
+  
+  // Query for all available roles to find the "Member" role ID
+  const { data: roles } = trpc.organization.getRoles.useQuery();
+
+  const updateUser = trpc.organization.updateOrganizationUser.useMutation({
+    onSuccess: () => {
+      toast.success({ message: 'User role updated successfully' });
+      // Invalidate listUsers query to refresh the UI
+      void utils.organization.listUsers.invalidate({ profileId });
+    },
+    onError: (error) => {
+      toast.error({ message: error.message || 'Failed to update user role' });
+    },
+  });
+
+  const deleteUser = trpc.organization.deleteOrganizationUser.useMutation({
+    onSuccess: () => {
+      toast.success({ message: 'User removed from organization successfully' });
+      // Invalidate listUsers query to refresh the UI
+      void utils.organization.listUsers.invalidate({ profileId });
+    },
+    onError: (error) => {
+      toast.error({
+        message: error.message || 'Failed to remove user from organization',
+      });
+    },
+  });
+
   const handleChangeToMember = () => {
-    // TODO: Implement API call to change user role to member
-    console.log('Changing member to member:', member.id);
-    toast.success({ message: 'Changed to member successfully' });
+    // Find the "Member" role ID from the available roles
+    const memberRole = roles?.roles?.find((role: any) => role.name.toLowerCase() === 'member');
+    
+    if (!memberRole) {
+      toast.error({ message: 'Member role not found' });
+      return;
+    }
+    
+    updateUser.mutate({
+      organizationId,
+      organizationUserId: member.id,
+      data: {
+        roleIds: [memberRole.id], // Set to Member role only
+      },
+    });
   };
 
   const handleRemoveFromOrganization = () => {
-    // TODO: Implement API call to remove user from organization
-    console.log('Removing member from organization:', member.id);
-    toast.success({ message: 'Removed from organization successfully' });
+    if (
+      confirm(
+        'Are you sure you want to remove this user from the organization?',
+      )
+    ) {
+      deleteUser.mutate({
+        organizationId,
+        organizationUserId: member.id,
+      });
+    }
   };
 
   return (
@@ -84,7 +140,15 @@ const MemberMenu = ({ member }: { member: Member }) => {
   );
 };
 
-const MembersListContent = ({ members }: { members: Member[] }) => {
+const MembersListContent = ({
+  members,
+  organizationId,
+  profileId,
+}: {
+  members: Member[];
+  organizationId: string;
+  profileId: string;
+}) => {
   return (
     <div className="grid grid-cols-1 gap-8 pb-6 md:grid-cols-2">
       {members.map((member) => {
@@ -96,21 +160,21 @@ const MembersListContent = ({ members }: { members: Member[] }) => {
         // Create a RelationshipListItem-like object for ProfileAvatar
         const profileForAvatar = profile
           ? {
-            id: profile.id,
-            name: profile.name || displayName,
-            slug: profile.slug,
-            bio: profile.bio,
-            avatarImage: profile.avatarImage,
-            type: profile.type,
-          }
+              id: profile.id,
+              name: profile.name || displayName,
+              slug: profile.slug,
+              bio: profile.bio,
+              avatarImage: profile.avatarImage,
+              type: profile.type,
+            }
           : {
-            id: member.id,
-            name: displayName,
-            slug: '', // No slug for non-profile users
-            bio: member.about,
-            avatarImage: null,
-            type: 'individual', // Default type
-          };
+              id: member.id,
+              name: displayName,
+              slug: '', // No slug for non-profile users
+              bio: member.about,
+              avatarImage: null,
+              type: 'individual', // Default type
+            };
 
         return (
           <div
@@ -118,7 +182,11 @@ const MembersListContent = ({ members }: { members: Member[] }) => {
             className="relative flex w-full gap-4 rounded border border-neutral-gray1 p-6"
           >
             <div className="absolute right-4 top-4">
-              <MemberMenu member={member} />
+              <MemberMenu
+                member={member}
+                organizationId={organizationId}
+                profileId={profileId}
+              />
             </div>
             <div className="flex-shrink-0">
               <ProfileAvatar profile={profileForAvatar} className="size-20" />
@@ -187,6 +255,13 @@ export const MembersList = ({ profileId }: { profileId: string }) => {
     profileId,
   });
 
+  // We need to get the organizationId from the profileId
+  // This assumes the profileId belongs to an organization
+  const organizationId =
+    members && members.length > 0 && members[0]
+      ? members[0].organizationId
+      : '';
+
   // Group members by roles for filtering
   const rolesSegmented: Array<[string, Array<Member>]> = useMemo(() => {
     if (!members) return [];
@@ -250,13 +325,21 @@ export const MembersList = ({ profileId }: { profileId: string }) => {
         </TabList>
 
         <TabPanel id="all" className="px-4 sm:px-0">
-          <MembersListContent members={members} />
+          <MembersListContent
+            members={members}
+            organizationId={organizationId}
+            profileId={profileId}
+          />
         </TabPanel>
 
         {rolesSegmented.map(([roleName, roleMembers]) =>
           roleMembers?.length ? (
             <TabPanel id={roleName} key={roleName} className="px-4 sm:px-0">
-              <MembersListContent members={roleMembers} />
+              <MembersListContent
+                members={roleMembers}
+                organizationId={organizationId}
+                profileId={profileId}
+              />
             </TabPanel>
           ) : null,
         )}

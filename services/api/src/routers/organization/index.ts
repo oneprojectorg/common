@@ -5,6 +5,7 @@ import { checkMembershipRouter } from './checkMembership';
 import { createOrganizationRouter } from './createOrganization';
 import { createPostInOrganizationRouter } from './createPostInOrganization';
 import { declineRelationshipRouter } from './declineRelationship';
+import { deleteOrganizationUserRouter } from './deleteOrganizationUser';
 import { deletePost } from './deletePost';
 import { getOrganizationRouter } from './getOrganization';
 import { getOrganizationsByProfileRouter } from './getOrganizationsByProfile';
@@ -21,6 +22,7 @@ import { removeRelationshipRouter } from './removeRelationship';
 import { searchOrganizationsRouter } from './searchOrganizations';
 import { organizationStatsRouter } from './stats';
 import { updateOrganizationRouter } from './updateOrganization';
+import { updateOrganizationUserRouter } from './updateOrganizationUser';
 import { uploadAvatarImage } from './uploadAvatarImage';
 
 export const organizationRouter = mergeRouters(
@@ -47,4 +49,6 @@ export const organizationRouter = mergeRouters(
   inviteUserRouter,
   checkMembershipRouter,
   reactionsRouter,
+  updateOrganizationUserRouter,
+  deleteOrganizationUserRouter,
 );
