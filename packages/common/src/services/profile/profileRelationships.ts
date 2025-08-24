@@ -1,6 +1,6 @@
 import { and, db, eq } from '@op/db/client';
 import { alias } from 'drizzle-orm/pg-core';
-import { profileRelationships, profiles } from '@op/db/schema';
+import { profileRelationships, profiles, objectsInStorage } from '@op/db/schema';
 
 import { ValidationError } from '../../utils/error';
 import { getCurrentProfileId } from '../access';
@@ -87,7 +87,7 @@ export const getRelationships = async ({
       name: string;
       slug: string;
       bio: string | null;
-      avatarImage: string | null;
+      avatarImage: { id: string; name: string | null } | null;
       type: string;
     };
     sourceProfile?: {
@@ -95,7 +95,7 @@ export const getRelationships = async ({
       name: string;
       slug: string;
       bio: string | null;
-      avatarImage: string | null;
+      avatarImage: { id: string; name: string | null } | null;
       type: string;
     };
   }>
@@ -106,115 +106,96 @@ export const getRelationships = async ({
     throw new ValidationError('You must be logged in to view relationships');
   }
 
-  // Build the where conditions
-  const conditions = [];
-
-  if (sourceProfileId) {
-    conditions.push(eq(profileRelationships.sourceProfileId, sourceProfileId));
-  } else if (!targetProfileId) {
-    // If neither sourceProfileId nor targetProfileId is provided, default to current user as source
-    conditions.push(eq(profileRelationships.sourceProfileId, currentProfileId));
-  }
-
-  if (targetProfileId) {
-    conditions.push(eq(profileRelationships.targetProfileId, targetProfileId));
-  }
-
-  if (relationshipType) {
-    conditions.push(
-      eq(
-        profileRelationships.relationshipType,
-        relationshipType as 'following' | 'likes',
-      ),
-    );
-  }
-
-  // Build the query with profile joins to get everything in one query
   // Use aliases to distinguish between source and target profiles
   const sourceProfiles = alias(profiles, 'sourceProfiles');
   const targetProfiles = alias(profiles, 'targetProfiles');
+  const sourceAvatarStorage = alias(objectsInStorage, 'sourceAvatarStorage');
+  const targetAvatarStorage = alias(objectsInStorage, 'targetAvatarStorage');
 
-  if (profileType) {
-    // If profileType filtering is requested, we need to filter on target profiles
-    const relationships = await db
-      .select({
-        id: profileRelationships.id,
-        relationshipType: profileRelationships.relationshipType,
-        pending: profileRelationships.pending,
-        createdAt: profileRelationships.createdAt,
-        sourceProfileId: profileRelationships.sourceProfileId,
-        targetProfileId: profileRelationships.targetProfileId,
-        sourceProfile: {
-          id: sourceProfiles.id,
-          name: sourceProfiles.name,
-          slug: sourceProfiles.slug,
-          bio: sourceProfiles.bio,
-          avatarImage: sourceProfiles.avatarImageId,
-          type: sourceProfiles.type,
-        },
-        targetProfile: {
-          id: targetProfiles.id,
-          name: targetProfiles.name,
-          slug: targetProfiles.slug,
-          bio: targetProfiles.bio,
-          avatarImage: targetProfiles.avatarImageId,
-          type: targetProfiles.type,
-        },
-      })
-      .from(profileRelationships)
-      .leftJoin(sourceProfiles, eq(profileRelationships.sourceProfileId, sourceProfiles.id))
-      .leftJoin(targetProfiles, eq(profileRelationships.targetProfileId, targetProfiles.id))
-      .where(
-        conditions.length > 0
-          ? and(...conditions, eq(targetProfiles.type, profileType))
-          : eq(targetProfiles.type, profileType),
-      );
+  // Define the base query structure
+  const baseQuery = db
+    .select({
+      id: profileRelationships.id,
+      relationshipType: profileRelationships.relationshipType,
+      pending: profileRelationships.pending,
+      createdAt: profileRelationships.createdAt,
+      sourceProfileId: profileRelationships.sourceProfileId,
+      targetProfileId: profileRelationships.targetProfileId,
+      // Source profile fields
+      sourceProfileId2: sourceProfiles.id,
+      sourceProfileName: sourceProfiles.name,
+      sourceProfileSlug: sourceProfiles.slug,
+      sourceProfileBio: sourceProfiles.bio,
+      sourceProfileType: sourceProfiles.type,
+      sourceAvatarId: sourceAvatarStorage.id,
+      sourceAvatarName: sourceAvatarStorage.name,
+      // Target profile fields
+      targetProfileId2: targetProfiles.id,
+      targetProfileName: targetProfiles.name,
+      targetProfileSlug: targetProfiles.slug,
+      targetProfileBio: targetProfiles.bio,
+      targetProfileType: targetProfiles.type,
+      targetAvatarId: targetAvatarStorage.id,
+      targetAvatarName: targetAvatarStorage.name,
+    })
+    .from(profileRelationships)
+    .leftJoin(sourceProfiles, eq(profileRelationships.sourceProfileId, sourceProfiles.id))
+    .leftJoin(targetProfiles, eq(profileRelationships.targetProfileId, targetProfiles.id))
+    .leftJoin(sourceAvatarStorage, eq(sourceProfiles.avatarImageId, sourceAvatarStorage.id))
+    .leftJoin(targetAvatarStorage, eq(targetProfiles.avatarImageId, targetAvatarStorage.id));
 
-    return relationships.map((rel) => ({
-      relationshipType: rel.relationshipType,
-      pending: rel.pending,
-      createdAt: rel.createdAt,
-      sourceProfile: rel.sourceProfile || undefined,
-      targetProfile: rel.targetProfile || undefined,
-    }));
-  } else {
-    // Join with both source and target profiles
-    const relationships = await db
-      .select({
-        id: profileRelationships.id,
-        relationshipType: profileRelationships.relationshipType,
-        pending: profileRelationships.pending,
-        createdAt: profileRelationships.createdAt,
-        sourceProfileId: profileRelationships.sourceProfileId,
-        targetProfileId: profileRelationships.targetProfileId,
-        sourceProfile: {
-          id: sourceProfiles.id,
-          name: sourceProfiles.name,
-          slug: sourceProfiles.slug,
-          bio: sourceProfiles.bio,
-          avatarImage: sourceProfiles.avatarImageId,
-          type: sourceProfiles.type,
-        },
-        targetProfile: {
-          id: targetProfiles.id,
-          name: targetProfiles.name,
-          slug: targetProfiles.slug,
-          bio: targetProfiles.bio,
-          avatarImage: targetProfiles.avatarImageId,
-          type: targetProfiles.type,
-        },
-      })
-      .from(profileRelationships)
-      .leftJoin(sourceProfiles, eq(profileRelationships.sourceProfileId, sourceProfiles.id))
-      .leftJoin(targetProfiles, eq(profileRelationships.targetProfileId, targetProfiles.id))
-      .where(conditions.length > 0 ? and(...conditions) : undefined);
-
-    return relationships.map((rel) => ({
-      relationshipType: rel.relationshipType,
-      pending: rel.pending,
-      createdAt: rel.createdAt,
-      sourceProfile: rel.sourceProfile || undefined,
-      targetProfile: rel.targetProfile || undefined,
-    }));
+  // Declaratively define all possible conditions
+  const conditions = [];
+  
+  if (sourceProfileId) {
+    conditions.push(eq(profileRelationships.sourceProfileId, sourceProfileId));
+  } else if (!targetProfileId) {
+    conditions.push(eq(profileRelationships.sourceProfileId, currentProfileId));
   }
+  
+  if (targetProfileId) {
+    conditions.push(eq(profileRelationships.targetProfileId, targetProfileId));
+  }
+  
+  if (relationshipType) {
+    conditions.push(eq(profileRelationships.relationshipType, relationshipType as 'following' | 'likes'));
+  }
+  
+  if (profileType) {
+    conditions.push(eq(targetProfiles.type, profileType));
+  }
+
+  // Execute the query with all applicable conditions
+  const relationships = await baseQuery.where(
+    conditions.length > 0 ? and(...conditions) : undefined,
+  );
+
+  // Transform the results to match the expected return type
+  return relationships.map((rel) => ({
+    relationshipType: rel.relationshipType as string,
+    pending: rel.pending as boolean | null,
+    createdAt: rel.createdAt as string | null,
+    sourceProfile: rel.sourceProfileId2 ? {
+      id: rel.sourceProfileId2 as string,
+      name: rel.sourceProfileName as string,
+      slug: rel.sourceProfileSlug as string,
+      bio: rel.sourceProfileBio as string | null,
+      avatarImage: rel.sourceAvatarId ? {
+        id: rel.sourceAvatarId as string,
+        name: rel.sourceAvatarName as string | null,
+      } : null,
+      type: rel.sourceProfileType as string,
+    } : undefined,
+    targetProfile: rel.targetProfileId2 ? {
+      id: rel.targetProfileId2 as string,
+      name: rel.targetProfileName as string,
+      slug: rel.targetProfileSlug as string,
+      bio: rel.targetProfileBio as string | null,
+      avatarImage: rel.targetAvatarId ? {
+        id: rel.targetAvatarId as string,
+        name: rel.targetAvatarName as string | null,
+      } : null,
+      type: rel.targetProfileType as string,
+    } : undefined,
+  }));
 };

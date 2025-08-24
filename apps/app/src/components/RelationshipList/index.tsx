@@ -13,7 +13,7 @@ type RelationshipListItem = {
   name: string;
   slug: string;
   bio?: string | null;
-  avatarImage?: string | null;
+  avatarImage?: { id: string; name: string | null } | null;
   type: string;
   // For relationships, we might have relationship info
   relationships?: Array<{
@@ -29,8 +29,8 @@ const ProfileAvatar = ({
   profile: RelationshipListItem;
   className?: string;
 }) => {
-  const avatarUrl = profile.avatarImage
-    ? getPublicUrl(profile.avatarImage)
+  const avatarUrl = profile.avatarImage?.name
+    ? getPublicUrl(profile.avatarImage.name)
     : null;
   const gradientBg = getGradientForString(profile.name || 'Profile');
 

@@ -153,7 +153,12 @@ export const profileRelationshipRouter = router({
               name: z.string(),
               slug: z.string(),
               bio: z.string().nullable(),
-              avatarImage: z.string().nullable(),
+              avatarImage: z
+                .object({
+                  id: z.string(),
+                  name: z.string().nullable(),
+                })
+                .nullable(),
               type: z.string(),
             })
             .optional(),
@@ -163,7 +168,12 @@ export const profileRelationshipRouter = router({
               name: z.string(),
               slug: z.string(),
               bio: z.string().nullable(),
-              avatarImage: z.string().nullable(),
+              avatarImage: z
+                .object({
+                  id: z.string(),
+                  name: z.string().nullable(),
+                })
+                .nullable(),
               type: z.string(),
             })
             .optional(),
