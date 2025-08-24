@@ -35,10 +35,15 @@ export const DecisionsTabPanel = ({
   ) : null;
 };
 
-export const MembersTab = () => {
+export const MembersTab = ({ profileId }: { profileId: string }) => {
   const decisionsEnabled = useFeatureFlagEnabled('decision_making');
   const t = useTranslations();
-  return decisionsEnabled ? <Tab id="members">{t('Members')}</Tab> : null;
+  const access = useUser();
+  const permission = access.getPermissionsForProfile(profileId).admin;
+
+  return decisionsEnabled && permission.read ? (
+    <Tab id="members">{t('Members')}</Tab>
+  ) : null;
 };
 
 export const MembersTabPanel = ({ children }: { children: ReactNode }) => {

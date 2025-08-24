@@ -8,7 +8,7 @@ import React, { Suspense, createContext, useContext } from 'react';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
 
-const AccessZones = ['decisions', 'profile'] as const;
+const AccessZones = ['decisions', 'profile', 'admin'] as const;
 
 type CommonZonePermissions = Record<(typeof AccessZones)[number], Permission>;
 const defaultPermissions = AccessZones.reduce<CommonZonePermissions>(

@@ -19,6 +19,8 @@ import {
 import {
   DecisionsTab,
   DecisionsTabPanel,
+  MembersTab,
+  MembersTabPanel,
 } from '@/components/Profile/ProfileContent/DecisionsTabs';
 import {
   FollowersTab,
@@ -87,6 +89,7 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
 
               <FollowersTab />
               <DecisionsTab profileId={profile.id} />
+              <MembersTab profileId={profile.id} />
             </ProfileTabList>
 
             <TabPanel id="home" className="flex flex-grow flex-col sm:p-0">
@@ -109,6 +112,7 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
             <DecisionsTabPanel>
               <ProfileDecisionsSuspense profileId={profile.id} />
             </DecisionsTabPanel>
+            <MembersTabPanel>Members content coming soon</MembersTabPanel>
           </ProfileTabs>
           <ProfileTabsMobile
             profile={organization as any}

@@ -31,19 +31,3 @@ export const FollowersTabPanel = ({
     </TabPanel>
   ) : null;
 };
-
-export const MembersTab = () => {
-  const decisionsEnabled = useFeatureFlagEnabled('decision_making');
-  const t = useTranslations();
-  return decisionsEnabled ? <Tab id="members">{t('Members')}</Tab> : null;
-};
-
-export const MembersTabPanel = ({ children }: { children: ReactNode }) => {
-  const decisionsEnabled = useFeatureFlagEnabled('decision_making');
-
-  return decisionsEnabled ? (
-    <TabPanel id="members" className="px-4 py-2">
-      <div className="text-center text-neutral-gray4">{children}</div>
-    </TabPanel>
-  ) : null;
-};
