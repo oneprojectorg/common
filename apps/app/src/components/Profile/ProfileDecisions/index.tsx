@@ -133,7 +133,7 @@ const DecisionProcessList = ({ profileId }: { profileId: string }) => {
                 </ButtonLink>
               )}
 
-              {decisionPermission.update ? (
+              {decisionPermission.create ? (
                 <DialogTrigger>
                   <Button color="secondary">Edit Process</Button>
                   <EditDecisionProcessModal instance={instance} />
