@@ -7,7 +7,7 @@ import {
 import type { proposalEncoder } from '@op/api/encoders';
 import { Avatar } from '@op/ui/Avatar';
 import { Surface } from '@op/ui/Surface';
-import { Heart, MessageCircle, Users } from 'lucide-react';
+import { Heart, MessageCircle } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { LuBookmark } from 'react-icons/lu';
