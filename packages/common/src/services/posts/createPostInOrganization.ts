@@ -85,6 +85,7 @@ export const createPostInOrganization = async (
         ...post,
         reactionCounts: {},
         userReactions: [],
+        commentCount: 0,
       },
       allStorageObjects,
     };
