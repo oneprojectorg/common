@@ -138,7 +138,7 @@ export const InviteToOrganizationButton = ({
       ) : (
         <>
           <LuUserPlus className="size-4" />
-          Invite to
+          Add to
         </>
       )}
       <OrganizationAvatar profile={user.currentProfile} className="size-6" />
