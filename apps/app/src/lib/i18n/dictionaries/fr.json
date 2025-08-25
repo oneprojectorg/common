@@ -68,5 +68,14 @@
   "Add a link where others can learn more about how to they might receive funding from your organization now or in the future.": "Ajoutez un lien où d'autres peuvent en savoir plus sur la façon dont ils pourraient recevoir un financement de votre organisation maintenant ou à l'avenir.",
   "Enter your organization's website here": "Entrez le site web de votre organisation ici",
   "Enter a brief description for your organization": "Entrez une brève description de votre organisation",
-  "Does your organization serve as a network or coalition with member organizations?": "Votre organisation sert-elle de réseau ou de coalition avec des organisations membres ?"
+  "Does your organization serve as a network or coalition with member organizations?": "Votre organisation sert-elle de réseau ou de coalition avec des organisations membres ?",
+  "Failed to load members": "Échec du chargement des membres",
+  "Communities We Serve": "Communautés que nous servons",
+  "Contact": "Contact",
+  "This email address has been copied to your clipboard.": "Cette adresse e-mail a été copiée dans votre presse-papiers.",
+  "Copy": "Copier",
+  "Mission Statement": "Énoncé de mission",
+  "Strategies": "Stratégies",
+  "Organizations": "Organisations",
+  "Following": "Suivi"
 }
