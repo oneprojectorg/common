@@ -32,9 +32,9 @@ export const getPosts = async (input: GetPostsInput) => {
   }
 
   try {
-    // This endpoint is for profile-based posts only
-    if (!profileId) {
-      return []; // Return empty array if no profileId provided
+    // This endpoint is for profile-based posts, but allow querying comments without profileId
+    if (!profileId && !parentPostId) {
+      return []; // Return empty array if neither profileId nor parentPostId provided
     }
 
     // Build where conditions for posts within the profile
@@ -50,66 +50,123 @@ export const getPosts = async (input: GetPostsInput) => {
     }
     // If parentPostId is undefined, we get all posts regardless of parent
 
-    // Filter by profile through postsToProfiles
-    const profilePosts = await db.query.postsToProfiles.findMany({
-      where: eq(postsToProfiles.profileId, profileId),
-      with: {
-        post: {
-          where: conditions.length > 0 ? and(...conditions) : undefined,
-          with: {
-            profile: {
-              with: {
-                avatarImage: true,
+    let postsData: any[];
+
+    if (profileId) {
+      // Query by profile through postsToProfiles
+      const profilePosts = await db.query.postsToProfiles.findMany({
+        where: eq(postsToProfiles.profileId, profileId),
+        with: {
+          post: {
+            where: conditions.length > 0 ? and(...conditions) : undefined,
+            with: {
+              profile: {
+                with: {
+                  avatarImage: true,
+                },
               },
-            },
-            attachments: {
-              with: {
-                storageObject: true,
+              attachments: {
+                with: {
+                  storageObject: true,
+                },
               },
-            },
-            reactions: {
-              with: {
-                profile: true,
+              reactions: {
+                with: {
+                  profile: true,
+                },
               },
-            },
-            ...(includeChildren && maxDepth > 0
-              ? {
-                  childPosts: {
-                    limit: 50,
-                    orderBy: [desc(posts.createdAt)],
-                    with: {
-                      profile: {
-                        with: {
-                          avatarImage: true,
+              ...(includeChildren && maxDepth > 0
+                ? {
+                    childPosts: {
+                      limit: 50,
+                      orderBy: [desc(posts.createdAt)],
+                      with: {
+                        profile: {
+                          with: {
+                            avatarImage: true,
+                          },
                         },
-                      },
-                      attachments: {
-                        with: {
-                          storageObject: true,
+                        attachments: {
+                          with: {
+                            storageObject: true,
+                          },
                         },
-                      },
-                      reactions: {
-                        with: {
-                          profile: true,
+                        reactions: {
+                          with: {
+                            profile: true,
+                          },
                         },
                       },
                     },
-                  },
-                }
-              : {}),
+                  }
+                : {}),
+            },
           },
         },
-      },
-      limit,
-      offset,
-      orderBy: [desc(postsToProfiles.createdAt)],
-    });
+        limit,
+        offset,
+        orderBy: [desc(postsToProfiles.createdAt)],
+      });
+      postsData = profilePosts;
+    } else {
+      // Query comments directly from posts table when no profileId but parentPostId exists
+      const directPosts = await db.query.posts.findMany({
+        where: conditions.length > 0 ? and(...conditions) : undefined,
+        with: {
+          profile: {
+            with: {
+              avatarImage: true,
+            },
+          },
+          attachments: {
+            with: {
+              storageObject: true,
+            },
+          },
+          reactions: {
+            with: {
+              profile: true,
+            },
+          },
+          ...(includeChildren && maxDepth > 0
+            ? {
+                childPosts: {
+                  limit: 50,
+                  orderBy: [desc(posts.createdAt)],
+                  with: {
+                    profile: {
+                      with: {
+                        avatarImage: true,
+                      },
+                    },
+                    attachments: {
+                      with: {
+                        storageObject: true,
+                      },
+                    },
+                    reactions: {
+                      with: {
+                        profile: true,
+                      },
+                    },
+                  },
+                },
+              }
+            : {}),
+        },
+        limit,
+        offset,
+        orderBy: [desc(posts.createdAt)],
+      });
+      // Transform to match postsToProfiles format
+      postsData = directPosts.map(post => ({ post }));
+    }
 
     // Transform to match expected format and add reaction data
     const actorProfileId = await getCurrentProfileId(authUserId);
     const itemsWithReactionsAndComments =
       await getItemsWithReactionsAndComments({
-        items: profilePosts.map((item: any) => ({ post: item.post })),
+        items: postsData.map((item: any) => ({ post: item.post })),
         profileId: actorProfileId,
       });
 
