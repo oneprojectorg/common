@@ -92,7 +92,7 @@ const PostUpdateWithUser = ({
 
   // For organization posts (main feed posts)
   const createOrganizationPost = trpc.organization.createPost.useMutation({
-    onSuccess: (data) => {
+    onSuccess: () => {
       // Clear form on success
       setContent('');
       setDetectedUrls([]);
@@ -104,7 +104,7 @@ const PostUpdateWithUser = ({
         void utils.organization.listPosts.invalidate();
         void utils.organization.listAllPosts.invalidate();
       }
-      
+
       // Call onSuccess callback if provided
       if (onSuccess) {
         onSuccess();
@@ -680,9 +680,13 @@ const PostUpdateWithUser = ({
                   size="small"
                   color="secondary"
                   onPress={retryFailedPost}
-                  isDisabled={createPost.isPending || createOrganizationPost.isPending}
+                  isDisabled={
+                    createPost.isPending || createOrganizationPost.isPending
+                  }
                 >
-                  {(createPost.isPending || createOrganizationPost.isPending) ? 'Retrying...' : 'Retry Failed Post'}
+                  {createPost.isPending || createOrganizationPost.isPending
+                    ? 'Retrying...'
+                    : 'Retry Failed Post'}
                 </Button>
               )}
               <Button
@@ -694,7 +698,11 @@ const PostUpdateWithUser = ({
                 }
                 onPress={createNewPostUpdate}
               >
-                {(createPost.isPending || createOrganizationPost.isPending) ? <LoadingSpinner /> : label}
+                {createPost.isPending || createOrganizationPost.isPending ? (
+                  <LoadingSpinner />
+                ) : (
+                  label
+                )}
               </Button>
             </div>
           </div>

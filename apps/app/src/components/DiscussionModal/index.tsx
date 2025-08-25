@@ -1,7 +1,6 @@
 'use client';
 
 import { useUser } from '@/utils/UserProvider';
-import { createCommentsQueryKey } from '@/utils/queryKeys';
 import { trpc } from '@op/api/client';
 import type { PostToOrganization } from '@op/api/encoders';
 import { Modal, ModalFooter, ModalHeader } from '@op/ui/Modal';
