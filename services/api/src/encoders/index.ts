@@ -1,5 +1,6 @@
 export * from './attachments';
 export * from './comments';
+export * from './decision';
 export * from './links';
 export * from './organizations';
 export * from './individuals';
@@ -11,5 +12,5 @@ export * from './relationships';
 export * from './profiles';
 export * from './shared';
 
-// Export EntityType for frontend usage
-export { EntityType } from '@op/db/schema';
+// Export EntityType and ProfileRelationshipType for frontend usage
+export { EntityType, ProfileRelationshipType } from '@op/db/schema';

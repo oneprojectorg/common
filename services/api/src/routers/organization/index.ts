@@ -1,9 +1,11 @@
 import { mergeRouters } from '../../trpcFactory';
 import { addRelationshipRouter } from './addRelationship';
 import { approveRelationshipRouter } from './approveRelationship';
+import { checkMembershipRouter } from './checkMembership';
 import { createOrganizationRouter } from './createOrganization';
 import { createPostInOrganizationRouter } from './createPostInOrganization';
 import { declineRelationshipRouter } from './declineRelationship';
+import { deleteOrganizationUserRouter } from './deleteOrganizationUser';
 import { deletePost } from './deletePost';
 import { getOrganizationRouter } from './getOrganization';
 import { getOrganizationsByProfileRouter } from './getOrganizationsByProfile';
@@ -11,6 +13,7 @@ import { getRolesRouter } from './getRoles';
 import { inviteUserRouter } from './inviteUser';
 import { joinOrganization } from './joinOrganization';
 import { listOrganizationsRouter } from './listOrganizations';
+import { listUsersRouter } from './listUsers';
 import { listOrganizationPostsRouter } from './listPosts';
 import { listRelatedOrganizationPostsRouter } from './listRelatedOrganizationPosts';
 import { listRelationshipsRouter } from './listRelationships';
@@ -19,14 +22,15 @@ import { removeRelationshipRouter } from './removeRelationship';
 import { searchOrganizationsRouter } from './searchOrganizations';
 import { organizationStatsRouter } from './stats';
 import { updateOrganizationRouter } from './updateOrganization';
+import { updateOrganizationUserRouter } from './updateOrganizationUser';
 import { uploadAvatarImage } from './uploadAvatarImage';
-import { uploadPostAttachment } from './uploadPostAttachment';
 
 export const organizationRouter = mergeRouters(
   getOrganizationRouter,
   getOrganizationsByProfileRouter,
   getRolesRouter,
   listOrganizationsRouter,
+  listUsersRouter,
   listOrganizationPostsRouter,
   searchOrganizationsRouter,
   createPostInOrganizationRouter,
@@ -34,7 +38,6 @@ export const organizationRouter = mergeRouters(
   createOrganizationRouter,
   updateOrganizationRouter,
   uploadAvatarImage,
-  uploadPostAttachment,
   addRelationshipRouter,
   approveRelationshipRouter,
   declineRelationshipRouter,
@@ -44,5 +47,8 @@ export const organizationRouter = mergeRouters(
   listRelatedOrganizationPostsRouter,
   joinOrganization,
   inviteUserRouter,
+  checkMembershipRouter,
   reactionsRouter,
+  updateOrganizationUserRouter,
+  deleteOrganizationUserRouter,
 );

@@ -101,6 +101,7 @@ describe('Profile Relationships API Error Handling', () => {
           targetProfileId: profile1Id,
           relationshipType: ProfileRelationshipType.FOLLOWING,
           pending: false,
+          authUserId: testUser1.id,
         })
       ).rejects.toThrow('You cannot create a relationship with yourself');
     });
@@ -113,6 +114,7 @@ describe('Profile Relationships API Error Handling', () => {
           targetProfileId: profile2Id,
           relationshipType: ProfileRelationshipType.FOLLOWING,
           pending: false,
+          authUserId: undefined as any,
         })
       ).rejects.toThrow();
     });
@@ -124,6 +126,7 @@ describe('Profile Relationships API Error Handling', () => {
         removeProfileRelationship({
           targetProfileId: profile2Id,
           relationshipType: ProfileRelationshipType.FOLLOWING,
+          authUserId: undefined as any,
         })
       ).rejects.toThrow();
     });
@@ -134,6 +137,7 @@ describe('Profile Relationships API Error Handling', () => {
       await expect(
         getProfileRelationships({
           targetProfileId: profile2Id,
+          authUserId: undefined as any,
         })
       ).rejects.toThrow();
     });
@@ -147,6 +151,7 @@ describe('Profile Relationships API Error Handling', () => {
           targetProfileId: profile2Id,
           relationshipType: 'invalid_type' as any,
           pending: false,
+          authUserId: testUser1.id,
         })
       ).rejects.toThrow();
     });
@@ -157,6 +162,7 @@ describe('Profile Relationships API Error Handling', () => {
           targetProfileId: 'not-a-uuid',
           relationshipType: ProfileRelationshipType.FOLLOWING,
           pending: false,
+          authUserId: testUser1.id,
         })
       ).rejects.toThrow();
     });
@@ -169,6 +175,7 @@ describe('Profile Relationships API Error Handling', () => {
         targetProfileId: profile2Id,
         relationshipType: ProfileRelationshipType.FOLLOWING,
         pending: true,
+        authUserId: testUser1.id,
       });
 
       // Switch to user 2 and back to user 1
@@ -178,6 +185,7 @@ describe('Profile Relationships API Error Handling', () => {
       // Verify relationship still exists with correct data
       const relationships = await getProfileRelationships({
         targetProfileId: profile2Id,
+        authUserId: testUser1.id,
       });
 
       expect(relationships).toHaveLength(1);
@@ -192,6 +200,7 @@ describe('Profile Relationships API Error Handling', () => {
         targetProfileId: profile2Id,
         relationshipType: ProfileRelationshipType.FOLLOWING,
         pending: false,
+        authUserId: testUser1.id,
       });
 
       // Switch to User 2 and have them follow User 1
@@ -200,6 +209,7 @@ describe('Profile Relationships API Error Handling', () => {
         targetProfileId: profile1Id,
         relationshipType: ProfileRelationshipType.FOLLOWING,
         pending: false,
+        authUserId: testUser2.id,
       });
 
       // Also have User 2 like User 1
@@ -207,11 +217,13 @@ describe('Profile Relationships API Error Handling', () => {
         targetProfileId: profile1Id,
         relationshipType: ProfileRelationshipType.LIKES,
         pending: false,
+        authUserId: testUser2.id,
       });
 
       // Check User 2's relationships to User 1
       const user2ToUser1 = await getProfileRelationships({
         targetProfileId: profile1Id,
+        authUserId: testUser2.id,
       });
       expect(user2ToUser1).toHaveLength(2);
       
@@ -223,6 +235,7 @@ describe('Profile Relationships API Error Handling', () => {
       await signInTestUser(testUserEmail1);
       const user1ToUser2 = await getProfileRelationships({
         targetProfileId: profile2Id,
+        authUserId: testUser1.id,
       });
       expect(user1ToUser2).toHaveLength(1);
       expect(user1ToUser2[0].relationshipType).toBe(ProfileRelationshipType.FOLLOWING);
@@ -235,16 +248,19 @@ describe('Profile Relationships API Error Handling', () => {
           targetProfileId: profile2Id,
           relationshipType: ProfileRelationshipType.FOLLOWING,
           pending: false,
+          authUserId: testUser1.id,
         }),
         addProfileRelationship({
           targetProfileId: profile2Id,
           relationshipType: ProfileRelationshipType.LIKES,
           pending: true,
+          authUserId: testUser1.id,
         }),
       ]);
 
       const relationships = await getProfileRelationships({
         targetProfileId: profile2Id,
+        authUserId: testUser1.id,
       });
 
       expect(relationships).toHaveLength(2);
@@ -266,6 +282,7 @@ describe('Profile Relationships API Error Handling', () => {
         targetProfileId: profile2Id,
         relationshipType: ProfileRelationshipType.FOLLOWING,
         pending: false,
+        authUserId: testUser1.id,
       });
 
       // Adding the same relationship should not create duplicates
@@ -273,10 +290,12 @@ describe('Profile Relationships API Error Handling', () => {
         targetProfileId: profile2Id,
         relationshipType: ProfileRelationshipType.FOLLOWING,
         pending: false,
+        authUserId: testUser1.id,
       });
 
       const relationships = await getProfileRelationships({
         targetProfileId: profile2Id,
+        authUserId: testUser1.id,
       });
 
       expect(relationships).toHaveLength(1);
@@ -290,10 +309,12 @@ describe('Profile Relationships API Error Handling', () => {
         targetProfileId: profile2Id,
         relationshipType: ProfileRelationshipType.FOLLOWING,
         pending: true,
+        authUserId: testUser1.id,
       });
 
       let relationships = await getProfileRelationships({
         targetProfileId: profile2Id,
+        authUserId: testUser1.id,
       });
       expect(relationships[0].pending).toBe(true);
 
@@ -301,16 +322,19 @@ describe('Profile Relationships API Error Handling', () => {
       await removeProfileRelationship({
         targetProfileId: profile2Id,
         relationshipType: ProfileRelationshipType.FOLLOWING,
+        authUserId: testUser1.id,
       });
 
       await addProfileRelationship({
         targetProfileId: profile2Id,
         relationshipType: ProfileRelationshipType.FOLLOWING,
         pending: false,
+        authUserId: testUser1.id,
       });
 
       relationships = await getProfileRelationships({
         targetProfileId: profile2Id,
+        authUserId: testUser1.id,
       });
       expect(relationships[0].pending).toBe(false);
     });
@@ -322,12 +346,14 @@ describe('Profile Relationships API Error Handling', () => {
         targetProfileId: profile2Id,
         relationshipType: ProfileRelationshipType.FOLLOWING,
         pending: false,
+        authUserId: testUser1.id,
       });
 
       const afterTime = new Date().toISOString();
 
       const relationships = await getProfileRelationships({
         targetProfileId: profile2Id,
+        authUserId: testUser1.id,
       });
 
       expect(relationships[0].createdAt).toBeDefined();
@@ -346,17 +372,20 @@ describe('Profile Relationships API Error Handling', () => {
           targetProfileId: profile2Id,
           relationshipType: ProfileRelationshipType.FOLLOWING,
           pending: false,
+          authUserId: testUser1.id,
         });
 
         await removeProfileRelationship({
           targetProfileId: profile2Id,
           relationshipType: ProfileRelationshipType.FOLLOWING,
+          authUserId: testUser1.id,
         });
       }
 
       // Should end with no relationships
       const relationships = await getProfileRelationships({
         targetProfileId: profile2Id,
+        authUserId: testUser1.id,
       });
       expect(relationships).toHaveLength(0);
     });
@@ -370,6 +399,7 @@ describe('Profile Relationships API Error Handling', () => {
           targetProfileId: fakeProfileId,
           relationshipType: ProfileRelationshipType.FOLLOWING,
           pending: false,
+          authUserId: testUser1.id,
         })
       ).rejects.toThrow();
     });

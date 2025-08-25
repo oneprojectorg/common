@@ -31,14 +31,21 @@ const removeRelationshipInputSchema = z.object({
 });
 
 const getRelationshipsInputSchema = z.object({
-  targetProfileId: z.string().uuid(),
+
+  targetProfileId: z.string().uuid().optional(),
+  sourceProfileId: z.string().uuid().optional(),
+  relationshipType: z.enum([
+    ProfileRelationshipType.FOLLOWING,
+    ProfileRelationshipType.LIKES,
+  ]).optional(),
+  profileType: z.string().optional(),
 });
 
 const addRelationshipMeta: OpenApiMeta = {
   openapi: {
     enabled: true,
     method: 'POST',
-    path: '/profile/{targetProfileId}/relationship',
+    path: '/profile/relationship/{targetProfileId}',
     protect: true,
     tags: ['profile'],
     summary: 'Add a relationship to a profile',
@@ -49,7 +56,7 @@ const removeRelationshipMeta: OpenApiMeta = {
   openapi: {
     enabled: true,
     method: 'DELETE',
-    path: '/profile/{targetProfileId}/relationship',
+    path: '/profile/relationship/{targetProfileId}',
     protect: true,
     tags: ['profile'],
     summary: 'Remove a relationship to a profile',
@@ -60,7 +67,7 @@ const getRelationshipsMeta: OpenApiMeta = {
   openapi: {
     enabled: true,
     method: 'GET',
-    path: '/profile/{targetProfileId}/relationship',
+    path: '/profile/relationship',
     protect: true,
     tags: ['profile'],
     summary: 'Get relationships to a profile',
@@ -74,13 +81,14 @@ export const profileRelationshipRouter = router({
     .meta(addRelationshipMeta)
     .input(relationshipInputSchema)
     .output(z.object({ success: z.boolean() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const { targetProfileId, relationshipType, pending } = input;
 
       try {
         await addProfileRelationship({
           targetProfileId,
           relationshipType,
+          authUserId: ctx.user.id,
           pending,
         });
         return { success: true };
@@ -110,11 +118,15 @@ export const profileRelationshipRouter = router({
     .meta(removeRelationshipMeta)
     .input(removeRelationshipInputSchema)
     .output(z.object({ success: z.boolean() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const { targetProfileId, relationshipType } = input;
 
       try {
-        await removeProfileRelationship({ targetProfileId, relationshipType });
+        await removeProfileRelationship({
+          targetProfileId,
+          relationshipType,
+          authUserId: ctx.user.id,
+        });
         return { success: true };
       } catch (error) {
         console.error('Error removing relationship:', error);
@@ -136,15 +148,49 @@ export const profileRelationshipRouter = router({
           relationshipType: z.string(),
           pending: z.boolean().nullable(),
           createdAt: z.string().nullable(),
+          targetProfile: z
+            .object({
+              id: z.string(),
+              name: z.string(),
+              slug: z.string(),
+              bio: z.string().nullable(),
+              avatarImage: z
+                .object({
+                  id: z.string(),
+                  name: z.string().nullable(),
+                })
+                .nullable(),
+              type: z.string(),
+            })
+            .optional(),
+          sourceProfile: z
+            .object({
+              id: z.string(),
+              name: z.string(),
+              slug: z.string(),
+              bio: z.string().nullable(),
+              avatarImage: z
+                .object({
+                  id: z.string(),
+                  name: z.string().nullable(),
+                })
+                .nullable(),
+              type: z.string(),
+            })
+            .optional(),
         }),
       ),
     )
-    .query(async ({ input }) => {
-      const { targetProfileId } = input;
+    .query(async ({ input, ctx }) => {
+      const { targetProfileId, sourceProfileId, relationshipType, profileType } = input;
 
       try {
         const relationships = await getProfileRelationships({
           targetProfileId,
+          sourceProfileId,
+          relationshipType,
+          profileType,
+          authUserId: ctx.user.id,
         });
         return relationships;
       } catch (error) {

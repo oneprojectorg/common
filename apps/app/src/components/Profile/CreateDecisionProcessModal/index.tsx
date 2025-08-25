@@ -1,312 +1,253 @@
 'use client';
 
-import { Modal, ModalBody, ModalHeader, ModalStepper } from '@op/ui/Modal';
+// TODO: This file is a prototype of a dynamic form for decision-making. There is lots to cleanup here in terms of structure and reusability.
+// We'll continue to iterate on this but one can consider this part of the code as being in "beta"
+//
+import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
+import { trpc } from '@op/api/client';
+import {
+  Modal,
+  ModalBody,
+  ModalContext,
+  ModalHeader,
+  ModalStepper,
+} from '@op/ui/Modal';
+import { toast } from '@op/ui/Toast';
 import Form from '@rjsf/core';
-import { RJSFSchema, UiSchema } from '@rjsf/utils';
 import type { RJSFValidationError } from '@rjsf/utils';
 import validator from '@rjsf/validator-ajv8';
-import { useState } from 'react';
+import { useContext, useState } from 'react';
+import { OverlayTriggerStateContext } from 'react-aria-components';
 
 import ErrorBoundary from '../../ErrorBoundary';
 import { CustomTemplates } from './CustomTemplates';
 import { CustomWidgets } from './CustomWidgets';
+import {
+  schemaDefaults,
+  stepSchemas,
+  transformFormDataToProcessSchema,
+} from './schemas/simple';
 
-const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
-  {
-    schema: {
-      type: 'object',
-      title: 'Basic Information',
-      description: 'Define the key details for your decision process.',
-      required: ['processName', 'totalBudget'],
-      properties: {
-        processName: {
-          type: 'string',
-          title: 'Process Name',
-          minLength: 1,
-        },
-        description: {
-          type: 'string',
-          title: 'Description',
-        },
-        totalBudget: {
-          type: 'number',
-          title: 'Total Budget Available',
-          description: 'The total amount available this funding round.',
-        },
-      },
+const transformFormDataToInstanceData = (data: Record<string, unknown>) => {
+  return {
+    budget: data.totalBudget as number,
+    currentStateId: 'submission',
+    fieldValues: {
+      categories: data.categories,
+      budgetCapAmount: data.budgetCapAmount,
+      descriptionGuidance: data.descriptionGuidance,
+      maxVotesPerMember: data.maxVotesPerMember,
     },
-    uiSchema: {
-      processName: {
-        'ui:placeholder': 'e.g., 2025 Community Budget',
+    phases: [
+      {
+        stateId: 'submission',
+        plannedStartDate: (data.proposalSubmissionPhase as any)
+          ?.submissionsOpen,
+        plannedEndDate: (data.proposalSubmissionPhase as any)?.submissionsClose,
       },
-      description: {
-        'ui:widget': 'textarea',
-        'ui:placeholder': 'Description for your decision-making process',
+      {
+        stateId: 'review',
+        plannedStartDate: (data.reviewShortlistingPhase as any)?.reviewOpen,
+        plannedEndDate: (data.reviewShortlistingPhase as any)?.reviewClose,
       },
-      totalBudget: {
-        'ui:widget': 'number',
-        'ui:placeholder': '0',
+      {
+        stateId: 'voting',
+        plannedStartDate: (data.votingPhase as any)?.votingOpen,
+        plannedEndDate: (data.votingPhase as any)?.votingClose,
       },
-    },
-  },
-  {
-    schema: {
-      type: 'object',
-      title: 'Set up your decision-making phases',
-      description:
-        'Members submit proposals and ideas for funding consideration.',
-      required: [
-        'proposalSubmissionPhase',
-        'reviewShortlistingPhase',
-        'votingPhase',
-        'resultsAnnouncement',
-      ],
-      properties: {
-        proposalSubmissionPhase: {
-          type: 'object',
-          title: 'Proposal Submission Phase',
-          description:
-            'Members submit proposals and ideas for funding consideration.',
-          properties: {
-            submissionsOpen: {
-              type: 'string',
-              format: 'date',
-              title: 'Submissions Open',
-            },
-            submissionsClose: {
-              type: 'string',
-              format: 'date',
-              title: 'Submissions Close',
-            },
-          },
-          required: ['submissionsOpen', 'submissionsClose'],
-        },
-        reviewShortlistingPhase: {
-          type: 'object',
-          title: 'Review & Shortlisting Phase',
-          description:
-            'Reviewers create a shortlist of eligible proposals for voting.',
-          properties: {
-            reviewOpen: {
-              type: 'string',
-              format: 'date',
-              title: 'Review Open',
-            },
-            reviewClose: {
-              type: 'string',
-              format: 'date',
-              title: 'Review Close',
-            },
-          },
-          required: ['reviewOpen', 'reviewClose'],
-        },
-        votingPhase: {
-          type: 'object',
-          title: 'Voting Phase',
-          description:
-            'All members vote on shortlisted proposals to decide which projects receive funding.',
-          properties: {
-            votingOpen: {
-              type: 'string',
-              format: 'date',
-              title: 'Voting Open',
-            },
-            votingClose: {
-              type: 'string',
-              format: 'date',
-              title: 'Voting Close',
-            },
-          },
-          required: ['votingOpen', 'votingClose'],
-        },
-        resultsAnnouncement: {
-          type: 'object',
-          title: 'Results Announcement',
-          properties: {
-            resultsDate: {
-              type: 'string',
-              format: 'date',
-              title: 'Results Announcement Date',
-            },
-          },
-          required: ['resultsDate'],
-        },
+      {
+        stateId: 'results',
+        plannedStartDate: (data.resultsAnnouncement as any)?.resultsDate,
       },
-    },
-    uiSchema: {
-      proposalSubmissionPhase: {
-        submissionsOpen: {
-          'ui:widget': 'date',
-        },
-        submissionsClose: {
-          'ui:widget': 'date',
-        },
-      },
-      reviewShortlistingPhase: {
-        reviewOpen: {
-          'ui:widget': 'date',
-        },
-        reviewClose: {
-          'ui:widget': 'date',
-        },
-      },
-      votingPhase: {
-        votingOpen: {
-          'ui:widget': 'date',
-        },
-        votingClose: {
-          'ui:widget': 'date',
-        },
-      },
-      resultsAnnouncement: {
-        resultsDate: {
-          'ui:widget': 'date',
-        },
-      },
-    },
-  },
-  {
-    schema: {
-      type: 'object',
-      title: 'Configure your voting settings',
-      description: 'Set up how members will participate in the voting process.',
-      required: ['maxVotesPerMember'],
-      properties: {
-        maxVotesPerMember: {
-          type: 'number',
-          title: 'Maximum Votes Per Member',
-          minimum: 1,
-          description: 'How many proposals can each member vote for?',
-        },
-      },
-    },
-    uiSchema: {
-      maxVotesPerMember: {
-        'ui:widget': 'number',
-        'ui:placeholder': '5',
-      },
-    },
-  },
-  {
-    schema: {
-      type: 'object',
-      title: 'Configure proposal categories',
-      description:
-        'Categories help organize proposals. You can add or remove categories as needed.',
-      properties: {
-        categories: {
-          type: 'array',
-          title: 'Categories',
-          items: {
-            type: 'string',
-          },
-          default: [],
-          description:
-            'Categories help organize proposals. You can add or remove categories as needed.',
-        },
-      },
-    },
-    uiSchema: {
-      categories: {
-        'ui:widget': 'CategoryList',
-        'ui:options': {
-          addable: true,
-          removable: true,
-        },
-      },
-    },
-  },
-  {
-    schema: {
-      type: 'object',
-      title: 'Setup proposal template',
-      description: 'Configure guidance and budget limits',
-      required: ['budgetCapAmount', 'descriptionGuidance'],
-      properties: {
-        budgetCapAmount: {
-          type: 'number',
-          title: 'Budget cap amount',
-          minimum: 0,
-          description: 'Maximum budget amount participants can request',
-        },
-        descriptionGuidance: {
-          type: 'string',
-          title: 'Description guidance',
-          description:
-            'Placeholder text that appears in the proposal description area.',
-        },
-      },
-    },
-    uiSchema: {
-      budgetCapAmount: {
-        'ui:widget': 'number',
-        'ui:placeholder': '0',
-      },
-      descriptionGuidance: {
-        'ui:widget': 'textarea',
-        'ui:placeholder':
-          "e.g., Start with the problem you're addressing, explain your solution, and describe the expected impact on our community.",
-      },
-    },
-  },
-  {
-    schema: {
-      type: 'object',
-      title: 'Review and launch',
-      description: 'Confirm your settings before creating the process.',
-      properties: {
-        summary: {
-          type: 'object',
-          title: 'Summary',
-          properties: {},
-          description: 'Confirm your settings before creating the process.',
-        },
-      },
-    },
-    uiSchema: {
-      summary: {
-        'ui:widget': 'ReviewSummary',
-      },
-    },
-  },
-];
+    ],
+  };
+};
+
+type ValidationMode = 'none' | 'static' | 'live';
+
+interface FieldError {
+  __errors: string[];
+}
+
+interface ErrorSchema {
+  [fieldName: string]: FieldError | ErrorSchema;
+}
+
+interface ValidationError {
+  instancePath?: string;
+  property?: string;
+  schemaPath?: string;
+  message?: string;
+}
+
+interface ValidationResult {
+  isValid: boolean;
+  errors: ErrorSchema;
+}
+
+// Extract error processing logic for better testability and maintainability
+const processValidationErrors = (errors: ValidationError[]): ErrorSchema => {
+  const fieldErrors: ErrorSchema = {};
+
+  errors.forEach((error) => {
+    let fieldPath = '';
+
+    if (error.instancePath) {
+      // Remove leading slash and convert to nested path
+      fieldPath = error.instancePath.substring(1);
+    } else if (error.property) {
+      fieldPath = error.property.substring(9);
+    } else if (error.schemaPath) {
+      // Handle required field errors that don't have instancePath
+      // Extract nested field path from schema path like "/properties/proposalSubmissionPhase/properties/submissionsOpen"
+      const pathMatches = error.schemaPath.match(
+        /\/properties\/([^\/]+(?:\/properties\/[^\/]+)*)/,
+      );
+      if (pathMatches) {
+        // Convert "/properties/parent/properties/child" to "parent/child"
+        fieldPath = pathMatches[1]!.replace(/\/properties\//g, '/');
+      }
+    }
+
+    if (fieldPath) {
+      // Handle nested field paths like "proposalSubmissionPhase/submissionsOpen"
+      const pathParts = fieldPath.split('/').filter(Boolean); // Remove empty parts
+      let currentLevel: Record<string, any> = fieldErrors;
+
+      // Navigate/create nested structure
+      for (let i = 0; i < pathParts.length; i++) {
+        const part = pathParts[i]!; // TypeScript assertion since we filtered empty parts
+        if (i === pathParts.length - 1) {
+          // Last part - add the error
+          if (!currentLevel[part]) {
+            currentLevel[part] = { __errors: [] };
+          }
+          currentLevel[part].__errors.push(error.message || 'Invalid value');
+        } else {
+          // Intermediate part - create nested structure
+          if (!currentLevel[part]) {
+            currentLevel[part] = {};
+          }
+          currentLevel = currentLevel[part];
+        }
+      }
+    }
+  });
+
+  return fieldErrors;
+};
+
+// Custom hook for validation state management
+const useStepValidation = () => {
+  const [validationModes, setValidationModes] = useState<
+    Record<number, ValidationMode>
+  >({});
+  const [stepErrors, setStepErrors] = useState<Record<number, ErrorSchema>>({});
+
+  const setStepValidation = (
+    step: number,
+    mode: ValidationMode,
+    errors?: ErrorSchema,
+  ) => {
+    setValidationModes((prev) => ({ ...prev, [step]: mode }));
+    if (errors !== undefined) {
+      setStepErrors((prev) => ({ ...prev, [step]: errors }));
+    }
+  };
+
+  const clearStep = (step: number) => {
+    setValidationModes((prev) => ({ ...prev, [step]: 'none' }));
+    setStepErrors((prev) => ({ ...prev, [step]: {} }));
+  };
+
+  return {
+    validationModes,
+    stepErrors,
+    setStepValidation,
+    clearStep,
+  };
+};
 
 export const CreateDecisionProcessModal = () => {
-  const [currentStep, setCurrentStep] = useState(1);
-  const [formData, setFormData] = useState<Record<string, unknown>>({
-    processName: '',
-    description: '',
-    totalBudget: null,
-    proposalSubmissionPhase: {
-      submissionsOpen: '',
-      submissionsClose: '',
-    },
-    reviewShortlistingPhase: {
-      reviewOpen: '',
-      reviewClose: '',
-    },
-    votingPhase: {
-      votingOpen: '',
-      votingClose: '',
-    },
-    resultsAnnouncement: {
-      resultsDate: '',
-    },
-    maxVotesPerMember: null,
-    categories: [],
-    budgetCapAmount: null,
-    descriptionGuidance: '',
-    summary: {},
-  });
-  const [errors, setErrors] = useState<Record<number, any>>({});
+  const utils = trpc.useUtils();
 
-  const totalSteps = stepSchemas.length;
+  const [currentStep, setCurrentStep] = useState(1);
+  const [formData, setFormData] =
+    useState<Record<string, unknown>>(schemaDefaults);
+  const { validationModes, stepErrors, setStepValidation, clearStep } =
+    useStepValidation();
+
+  const isOnline = useConnectionStatus();
+
+  // Get the dialog close function from React Aria Components context
+  const overlayTriggerState = useContext(OverlayTriggerStateContext);
+  const { onClose } = useContext(ModalContext);
+
+  // tRPC mutations for creating process and instance
+  const createProcess = trpc.decision.createProcess.useMutation({
+    onSuccess: (process) => {
+      // After process is created, create an instance
+      createInstance.mutate({
+        processId: process.id,
+        name: formData.processName as string,
+        description: formData.description as string,
+        instanceData: transformFormDataToInstanceData(formData),
+      });
+    },
+    onError: (error) => {
+      handleCreateError(error, 'Failed to create decision process template');
+    },
+  });
+
+  const createInstance = trpc.decision.createInstance.useMutation({
+    onSuccess: (instance) => {
+      toast.success({
+        title: 'Decision process created successfully!',
+        message: `"${instance.name}" is now ready for proposals.`,
+      });
+
+      // Invalidate the instances list to refresh the UI
+      utils.decision.listInstances.invalidate();
+
+      // Close the modal after successful creation
+      if (overlayTriggerState?.close) {
+        overlayTriggerState.close();
+      } else {
+        onClose?.();
+      }
+    },
+    onError: (error) => {
+      handleCreateError(error, 'Failed to create decision process instance');
+    },
+  });
+
+  const totalSteps = stepSchemas.length + 1; // +1 for review step
+
+  const handleCreateError = (error: unknown, title: string) => {
+    console.error(title + ':', error);
+
+    const errorInfo = analyzeError(error);
+
+    if (errorInfo.isConnectionError) {
+      toast.error({
+        title: 'Connection issue',
+        message: errorInfo.message + ' Please try creating the process again.',
+      });
+    } else {
+      toast.error({
+        title,
+        message: errorInfo.message,
+      });
+    }
+  };
 
   // Validate date ordering for step 2 (phases)
   const validatePhaseSequence = (): string[] => {
     const errors: string[] = [];
 
-    if (currentStep !== 2) return errors;
+    if (currentStep !== 2 || currentStep === stepSchemas.length + 1) {
+      return errors;
+    }
 
     const phases = formData as any;
     const proposalPhase = phases.proposalSubmissionPhase || {};
@@ -359,7 +300,12 @@ export const CreateDecisionProcessModal = () => {
   };
 
   // Extract validation logic to avoid duplication
-  const validateCurrentStep = (): { isValid: boolean; errors: any } => {
+  const validateCurrentStep = (): ValidationResult => {
+    // If we're on the final review step, always consider it valid
+    if (currentStep === stepSchemas.length + 1) {
+      return { isValid: true, errors: {} };
+    }
+
     const currentSchema = stepSchemas[currentStep - 1];
     if (!currentSchema) return { isValid: false, errors: {} };
 
@@ -375,91 +321,132 @@ export const CreateDecisionProcessModal = () => {
       currentStepData,
     );
 
-    const fieldErrors: Record<string, string[]> = {};
-
-    // Add JSON Schema validation errors
-    if (result.errors && result.errors.length > 0) {
-      result.errors.forEach((error) => {
-        if (error.instancePath) {
-          const fieldName = error.instancePath.substring(1);
-          if (!fieldErrors[fieldName]) {
-            fieldErrors[fieldName] = [];
-          }
-          fieldErrors[fieldName].push(error.message);
-        } else if (error.property) {
-          const fieldName = error.property.substring(9);
-          if (!fieldErrors[fieldName]) {
-            fieldErrors[fieldName] = [];
-          }
-          fieldErrors[fieldName].push(error.message);
-        }
-      });
-    }
+    // Process JSON Schema validation errors using extracted function
+    const fieldErrors = processValidationErrors(result.errors || []);
 
     // Add custom phase sequence validation for step 2
     const phaseErrors = validatePhaseSequence();
     if (phaseErrors.length > 0) {
       // Add phase sequence errors to the form-level errors
-      fieldErrors['_phases'] = phaseErrors;
+      fieldErrors['_phases'] = { __errors: phaseErrors };
     }
 
     const hasErrors = Object.keys(fieldErrors).length > 0;
     return { isValid: !hasErrors, errors: fieldErrors };
   };
 
-  const handleNext = (): boolean => {
+  const validateStep = (step: number, showErrors = false): boolean => {
     const validation = validateCurrentStep();
 
-    if (!validation.isValid) {
-      setErrors((prev) => ({ ...prev, [currentStep]: validation.errors }));
-      return false;
+    if (!validation.isValid && showErrors) {
+      // Only show static errors if not already in live validation mode
+      if (validationModes[step] !== 'live') {
+        setStepValidation(step, 'static', validation.errors);
+      }
     }
 
-    // Clear errors and proceed to next step
-    setErrors((prev) => ({ ...prev, [currentStep]: null }));
-    setCurrentStep((prev) => prev + 1);
-    return true;
+    return validation.isValid;
+  };
+
+  const handleNext = (): boolean => {
+    const isValid = validateStep(currentStep, true);
+
+    if (isValid) {
+      // Clear validation state when moving forward successfully
+      clearStep(currentStep);
+      setCurrentStep((prev) => prev + 1);
+    }
+
+    return isValid;
   };
 
   const handlePrevious = (): void => {
-    // Clear errors when going back
-    setErrors((prev) => ({ ...prev, [currentStep]: null }));
+    // Clear validation state when going back
+    clearStep(currentStep);
     setCurrentStep((prev) => prev - 1);
   };
 
   const handleFinish = (): void => {
-    const validation = validateCurrentStep();
+    const isValid = validateStep(currentStep, true);
 
-    if (!validation.isValid) {
-      setErrors((prev) => ({ ...prev, [currentStep]: validation.errors }));
+    if (!isValid) {
       return;
     }
 
-    // Submit form data
-    console.log('Form submitted:', formData);
+    if (!isOnline) {
+      toast.error({
+        title: 'No connection',
+        message: 'Please check your internet connection and try again.',
+      });
+      return;
+    }
+
+    // Prevent multiple submissions
+    if (createProcess.isPending || createInstance.isPending) {
+      return;
+    }
+
+    // Transform and submit form data
+    const processSchema = transformFormDataToProcessSchema(formData);
+
+    createProcess.mutate({
+      name: formData.processName as string,
+      description: formData.description as string,
+      processSchema,
+    });
   };
 
-  const handleChange = (data: any) => {
+  const handleChange = (data: { formData?: Record<string, unknown> }) => {
     if (data.formData) {
-      setFormData({ ...formData, ...data.formData });
+      // Optimized performance: use functional update to avoid recreating entire object
+      setFormData((prev) => ({ ...prev, ...data.formData }));
     }
-    // Clear field-level errors when user starts making changes
-    if (errors[currentStep]) {
-      setErrors((prev) => ({ ...prev, [currentStep]: null }));
+
+    // Transition from static to live validation on first change after validation failure
+    if (validationModes[currentStep] === 'static') {
+      setStepValidation(currentStep, 'live', {});
     }
   };
 
-  const handleError = (errors: RJSFValidationError[]) => {
+  const handleError = (_errors: RJSFValidationError[]) => {
     // Handle live validation errors from RJSF
-    if (errors.length > 0) {
-      console.warn('Live validation errors:', errors);
-    }
+    // These are automatically displayed by RJSF when liveValidate is enabled
   };
 
   const renderStepContent = () => {
+    // If we're on the final review step (step 6 when there are 5 schema steps)
+    if (currentStep === stepSchemas.length + 1) {
+      return (
+        <div className="flex flex-col gap-6">
+          <p className="text-base text-neutral-charcoal">
+            Confirm your settings before creating the process.
+          </p>
+          <CustomWidgets.ReviewSummary 
+            id="review-summary"
+            name="summary"
+            label=""
+            formData={formData}
+            formContext={{ formData }}
+            schema={{}}
+            uiSchema={{}}
+            value={{}}
+            onChange={() => {}}
+            onBlur={() => {}}
+            onFocus={() => {}}
+            options={{}}
+            required={false}
+            registry={{} as any}
+          />
+        </div>
+      );
+    }
     // Convert 1-based to 0-based for array access
     const stepConfig = stepSchemas[currentStep - 1];
     if (!stepConfig) return null;
+
+    const validationMode = validationModes[currentStep] || 'none';
+    const currentExtraErrors = stepErrors[currentStep] || {};
+    const currentLiveValidate = validationMode === 'live';
 
     return (
       <div className="flex flex-col gap-6">
@@ -486,18 +473,19 @@ export const CreateDecisionProcessModal = () => {
         >
           <Form
             schema={stepConfig.schema}
-            uiSchema={stepConfig.uiSchema}
+            uiSchema={stepConfig.uiSchema as any}
             formData={formData}
+            formContext={{ formData }}
             onChange={handleChange}
             onError={handleError}
-            validator={validator}
+            validator={validator as any}
             widgets={CustomWidgets}
             templates={CustomTemplates}
             showErrorList={false}
-            liveValidate={true}
+            liveValidate={currentLiveValidate}
             noHtml5Validate
             omitExtraData
-            extraErrors={errors[currentStep] as any}
+            extraErrors={currentExtraErrors}
           >
             {/* Hide submit button - we'll use our own stepper */}
             <div style={{ display: 'none' }} />
@@ -508,6 +496,11 @@ export const CreateDecisionProcessModal = () => {
   };
 
   const getCurrentStepTitle = () => {
+    // If we're on the final review step (step 6 when there are 5 schema steps)
+    if (currentStep === stepSchemas.length + 1) {
+      return 'Review and launch';
+    }
+        
     const stepConfig = stepSchemas[currentStep - 1];
     return stepConfig?.schema.title || 'Set up your decision-making process';
   };

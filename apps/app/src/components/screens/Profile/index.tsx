@@ -16,9 +16,21 @@ import {
   ProfileTabs,
   ProfileTabsMobile,
 } from '@/components/Profile/ProfileContent';
+import {
+  DecisionsTab,
+  DecisionsTabPanel,
+  MembersTab,
+  MembersTabPanel,
+} from '@/components/Profile/ProfileContent/DecisionsTabs';
+import {
+  FollowersTab,
+  FollowersTabPanel,
+} from '@/components/Profile/ProfileContent/IndividualTabs';
 import { ProfileDecisionsSuspense } from '@/components/Profile/ProfileDecisions';
 import { ProfileDetails } from '@/components/Profile/ProfileDetails';
 
+import { ProfileFollowers } from '../ProfileFollowers';
+import { ProfileFollowing } from '../ProfileFollowing';
 import {
   ProfileOrganizations,
   ProfileOrganizationsSuspense,
@@ -50,8 +62,6 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
         slug,
       });
 
-      const decisionsEnabled = false;
-
       return organization ? (
         <>
           <ImageHeader
@@ -76,7 +86,9 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
             <ProfileTabList>
               <Tab id="home">Home</Tab>
               <Tab id="relationships">Relationships</Tab>
-              {decisionsEnabled ? <Tab id="decisions">Decisions</Tab> : null}
+              <FollowersTab />
+              <MembersTab profileId={profile.id} />
+              <DecisionsTab profileId={profile.id} />
             </ProfileTabList>
 
             <TabPanel id="home" className="flex flex-grow flex-col sm:p-0">
@@ -93,16 +105,26 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
                 />
               </ProfileOrganizations>
             </TabPanel>
-            {decisionsEnabled ? (
-              <TabPanel id="decisions" className="px-4 sm:px-6 sm:py-0">
-                <ProfileDecisionsSuspense />
-              </TabPanel>
-            ) : null}
+            <FollowersTabPanel>
+              <ProfileFollowers profileId={profile.id} />
+            </FollowersTabPanel>
+            <DecisionsTabPanel>
+              <ProfileDecisionsSuspense profileId={profile.id} />
+            </DecisionsTabPanel>
+            <MembersTabPanel profileId={profile.id} />
           </ProfileTabs>
           <ProfileTabsMobile
-            profile={organization}
-            decisionsContent={<ProfileDecisionsSuspense />}
-          />
+            profile={organization as any}
+            decisionsContent={
+              <ProfileDecisionsSuspense profileId={profile.id} />
+            }
+            followersContent={<ProfileFollowers profileId={profile.id} />}
+          >
+            <ProfileRelationshipsSuspense
+              slug={profile.slug}
+              showBreadcrumb={false}
+            />
+          </ProfileTabsMobile>
         </>
       ) : null;
     }
@@ -158,6 +180,7 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
           <ProfileTabList>
             <Tab id="about">About</Tab>
             <Tab id="organizations">Organizations</Tab>
+            <Tab id="following">Following</Tab>
           </ProfileTabList>
 
           <TabPanel id="about" className="sm:p-0">
@@ -171,8 +194,19 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
               />
             </ProfileOrganizations>
           </TabPanel>
+          <TabPanel id="following" className="px-4 sm:px-6 sm:py-0">
+            <ProfileFollowing profileId={profile.id} />
+          </TabPanel>
         </ProfileTabs>
-        <ProfileTabsMobile profile={userProfile} />
+        <ProfileTabsMobile
+          profile={userProfile}
+          followingContent={<ProfileFollowing profileId={profile.id} />}
+        >
+          <ProfileOrganizationsSuspense
+            slug={profile.slug}
+            showBreadcrumb={false}
+          />
+        </ProfileTabsMobile>
       </>
     );
   } catch (e) {

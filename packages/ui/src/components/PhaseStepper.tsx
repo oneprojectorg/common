@@ -3,6 +3,7 @@
 import { Check } from 'lucide-react';
 
 import { cn } from '../lib/utils';
+import { formatDateRange } from '../utils/formatting';
 
 export interface Phase {
   id: string;
@@ -18,29 +19,6 @@ interface PhaseStepperProps {
   currentPhaseId: string;
   className?: string;
 }
-
-const formatDateRange = (startDate?: string, endDate?: string) => {
-  if (!startDate && !endDate) return '';
-
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-    });
-  };
-
-  if (startDate && endDate) {
-    return `${formatDate(startDate)} - ${formatDate(endDate)}`;
-  }
-  if (startDate) {
-    return formatDate(startDate);
-  }
-  if (endDate) {
-    return formatDate(endDate);
-  }
-  return '';
-};
 
 const Step = ({
   stepState,
@@ -99,7 +77,7 @@ export function PhaseStepper({
 
   return (
     <div className={cn('w-full', className)}>
-      <div className="flex justify-evenly gap-2">
+      <div className="flex justify-center gap-2">
         {sortedPhases.map((phase, index) => {
           const stepState = getStepState(index);
 

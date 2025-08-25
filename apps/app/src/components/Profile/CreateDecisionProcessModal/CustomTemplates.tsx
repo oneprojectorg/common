@@ -13,7 +13,11 @@ export const FieldTemplate = (props: FieldTemplateProps) => {
 };
 
 export const ObjectFieldTemplate = (props: ObjectFieldTemplateProps) => {
-  const { properties, title, description } = props;
+  const { properties, title, description, idSchema } = props;
+  
+  // Check if this is the root schema - if so, skip rendering title and description
+  // as the modal wrapper already handles them
+  const isRootSchema = idSchema?.$id === 'root';
 
   // Special handling for the decision-making phases step
   if (title === 'Set up your decision-making phases') {
@@ -31,6 +35,7 @@ export const ObjectFieldTemplate = (props: ObjectFieldTemplateProps) => {
         prop.name.includes('Close') ||
         prop.name === 'resultsDate'),
   );
+  
 
   if (isPhaseGroup && properties.length > 0) {
     return (
@@ -53,10 +58,10 @@ export const ObjectFieldTemplate = (props: ObjectFieldTemplateProps) => {
   // Default template for other steps
   return (
     <div className="space-y-4">
-      {title && (
+      {title && !isRootSchema && (
         <h3 className="text-base font-medium text-neutral-charcoal">{title}</h3>
       )}
-      {description && (
+      {description && !isRootSchema && (
         <p className="text-sm text-neutral-gray4">{description}</p>
       )}
       {properties.map((prop) => prop.content)}

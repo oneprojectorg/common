@@ -11,3 +11,6 @@ export * from './joinOrganization';
 export * from './validators';
 export * from './inviteUsers';
 export * from './getOrganizationsByProfile';
+export * from './getOrganizationUsers';
+export * from './updateOrganizationUser';
+export * from './deleteOrganizationUser';

@@ -1,6 +1,7 @@
 'use client';
 
 import { formatToUrl } from '@/utils';
+import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
@@ -22,6 +23,13 @@ import { PostFeedSkeleton } from '@/components/PostFeed';
 import { PostUpdate } from '@/components/PostUpdate';
 
 import { ProfileFeed } from '../ProfileFeed';
+import {
+  DecisionsTab,
+  DecisionsTabPanel,
+  MembersTab,
+  MembersTabPanel,
+} from './DecisionsTabs';
+import { FollowersTab, FollowersTabPanel } from './IndividualTabs';
 
 const FocusAreas = ({
   focusAreas,
@@ -248,17 +256,23 @@ export const OrganizationProfileGrid = ({
   profile: Organization;
 }) => {
   const t = useTranslations();
+  const { user } = useUser();
+  const isOrg = user?.currentProfile?.type === 'org';
 
   return (
     <ProfileGridWrapper>
       <div className="col-span-9 flex flex-col gap-8">
-        <Suspense fallback={null}>
-          <PostUpdate
-            organization={profile}
-            label={t('Post')}
-            className="border-b px-4 pb-8 pt-6"
-          />
-        </Suspense>
+        {isOrg ? (
+          <Suspense fallback={null}>
+            <PostUpdate
+              organization={profile}
+              label={t('Post')}
+              className="border-b px-4 pb-8 pt-6"
+            />
+          </Suspense>
+        ) : (
+          <div></div>
+        )}
         <Suspense fallback={<PostFeedSkeleton className="px-4" numPosts={3} />}>
           <ProfileFeed profile={profile} />
         </Suspense>
@@ -284,53 +298,72 @@ export const ProfileTabs = ({ children }: { children: React.ReactNode }) => {
 
 export const ProfileTabsMobile = ({
   profile,
+  children,
   decisionsContent,
+  followingContent,
+  followersContent,
 }: {
   profile: Organization;
+  children?: React.ReactNode;
   decisionsContent?: React.ReactNode;
+  followingContent?: React.ReactNode;
+  followersContent?: React.ReactNode;
 }) => {
   const t = useTranslations();
-  const decisionsEnabled = false;
+  const isIndividual = profile.orgType === null || profile.orgType === '';
 
   return (
     <Tabs className="px-0 pb-8 sm:hidden">
       <TabList className="overflow-x-auto px-4">
-        <Tab id="updates">{t('Updates')}</Tab>
+        {!isIndividual && <Tab id="updates">{t('Updates')}</Tab>}
         <Tab id="about">{t('About')}</Tab>
-        {decisionsEnabled ? <Tab id="followers">{t('Followers')}</Tab> : null}
-        {decisionsEnabled ? <Tab id="members">{t('Members')}</Tab> : null}
-        {decisionsEnabled ? <Tab id="decisions">{t('Decisions')}</Tab> : null}
+        {!isIndividual ? (
+          <>
+            <FollowersTab />
+            <MembersTab profileId={profile.id} />
+            <DecisionsTab profileId={profile.id} />
+          </>
+        ) : (
+          <>
+            <Tab id="organizations">Organizations</Tab>
+            <Tab id="following">Following</Tab>
+          </>
+        )}
       </TabList>
-      <TabPanel id="updates" className="px-0">
-        <Suspense fallback={<Skeleton className="w-full" />}>
-          <PostUpdate
-            organization={profile}
-            label={t('Post')}
-            className="border-b px-4 py-6"
-          />
-        </Suspense>
-        <Suspense fallback={<Skeleton className="min-h-20 w-full" />}>
-          <ProfileFeed profile={profile} className="px-4 py-2 sm:py-6" />
-        </Suspense>
-      </TabPanel>
+      {!isIndividual && (
+        <TabPanel id="updates" className="px-0">
+          <Suspense fallback={<Skeleton className="w-full" />}>
+            <PostUpdate
+              organization={profile}
+              label={t('Post')}
+              className="border-b px-4 py-6"
+            />
+          </Suspense>
+          <Suspense fallback={<Skeleton className="min-h-20 w-full" />}>
+            <ProfileFeed profile={profile} className="px-4 py-2 sm:py-6" />
+          </Suspense>
+        </TabPanel>
+      )}
       <TabPanel id="about">
         <ProfileAbout profile={profile} className="px-4 py-2" />
       </TabPanel>
-      <TabPanel id="followers" className="px-4 py-2">
-        <div className="text-center text-neutral-gray4">
-          Followers content coming soon
-        </div>
-      </TabPanel>
-      <TabPanel id="members" className="px-4 py-2">
-        <div className="text-center text-neutral-gray4">
-          Members content coming soon
-        </div>
-      </TabPanel>
-      {decisionsEnabled ? (
-        <TabPanel id="decisions" className="px-0">
-          {decisionsContent}
-        </TabPanel>
-      ) : null}
+      {isIndividual && (
+        <>
+          <TabPanel id="organizations" className="px-4 py-2">
+            <div className="flex flex-col gap-4">{children}</div>
+          </TabPanel>
+          <TabPanel id="following" className="px-4 py-2">
+            {followingContent}
+          </TabPanel>
+        </>
+      )}
+      {!isIndividual && (
+        <>
+          <FollowersTabPanel>{followersContent}</FollowersTabPanel>
+          <MembersTabPanel profileId={profile.id} />
+        </>
+      )}
+      <DecisionsTabPanel>{decisionsContent}</DecisionsTabPanel>
     </Tabs>
   );
 };

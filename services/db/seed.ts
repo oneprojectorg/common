@@ -38,7 +38,7 @@ if (!process.env.DB_SEEDING) {
 
 const allowedDatabaseUrls = [
   'postgresql://postgres:postgres@127.0.0.1:54322/postgres', // Development database
-  'postgresql://postgres:postgres@127.0.0.1:55322/postgres'  // Test database
+  'postgresql://postgres:postgres@127.0.0.1:55322/postgres', // Test database
 ];
 
 if (!allowedDatabaseUrls.includes(process.env.DATABASE_URL || '')) {
@@ -86,18 +86,68 @@ await supabase.storage.emptyBucket('avatars');
 const createdUsers: User[] = [];
 
 for (const email of adminEmails) {
-  // Create dev user in auth table
-  const { data, error } = await supabase.auth.admin.createUser({
-    email,
-  });
+  try {
+    // Check if user already exists in local users table
+    const existingUser = await db.query.users.findFirst({
+      where: (table, { eq }) => eq(table.email, email),
+    });
 
-  if (error) {
-    console.log('ERROR', error);
-    throw new Error('Failed to create dev user');
-  }
+    if (existingUser) {
+      // Get the auth user data from Supabase
+      const { data: authUser } = await supabase.auth.admin.getUserById(
+        existingUser.authUserId,
+      );
+      if (authUser?.user) {
+        createdUsers.push(authUser.user as User);
+        console.log(`User ${email} already exists, using existing user`);
+        continue;
+      }
+    }
 
-  if (data?.user) {
-    createdUsers.push(data.user as User);
+    // Check if auth user already exists in Supabase
+    const { data: existingAuthUsers } = await supabase.auth.admin.listUsers();
+    const existingAuthUser = existingAuthUsers.users?.find(user => user.email === email);
+
+    let authUser;
+    if (existingAuthUser) {
+      // Auth user exists, use it
+      authUser = existingAuthUser;
+      console.log(`Auth user ${email} already exists, using existing auth user`);
+    } else {
+      // Create new auth user
+      const { data, error } = await supabase.auth.admin.createUser({
+        email,
+      });
+
+      if (error) {
+        console.log('ERROR', error);
+        throw new Error('Failed to create dev user');
+      }
+
+      authUser = data?.user;
+    }
+
+    if (authUser) {
+      // Insert or update user in local users table
+      await db
+        .insert(users)
+        .values({
+          authUserId: authUser.id,
+          email: authUser.email!,
+          name: authUser.user_metadata?.name || null,
+        })
+        .onConflictDoUpdate({
+          target: [users.email],
+          set: {
+            authUserId: authUser.id,
+            name: sql`excluded.name`,
+          },
+        });
+
+      createdUsers.push(authUser as User);
+    }
+  } catch (e) {
+    console.warn(e);
   }
 }
 
@@ -182,7 +232,7 @@ taxonomyTermsData.sort((a, b) => {
   if (!a.parentId && !b.parentId) return 0;
   if (!a.parentId) return -1;
   if (!b.parentId) return 1;
-  
+
   // Both have parent_id, sort by parent_id
   return a.parentId.localeCompare(b.parentId);
 });

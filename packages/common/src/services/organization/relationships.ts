@@ -261,6 +261,7 @@ export const getRelatedOrganizations = async ({
 };
 
 export const getDirectedRelationships = async ({
+  // user,
   from,
   to,
   pending = null,

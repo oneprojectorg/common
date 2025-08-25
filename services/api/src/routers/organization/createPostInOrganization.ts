@@ -31,7 +31,7 @@ export const createPostInOrganizationRouter = router({
     // .meta(meta)
     .input(
       z.object({
-        id: z.string(),
+        id: z.string(), // the organization id
         content: z.string().trim().max(255),
         attachmentIds: z.array(z.string()).optional().default([]),
       }),

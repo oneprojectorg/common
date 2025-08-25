@@ -2,12 +2,14 @@
 
 import { parseDate } from '@internationalized/date';
 import { CalendarIcon } from 'lucide-react';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { DateValue } from 'react-aria-components';
+import { DialogTrigger, Button as AriaButton } from 'react-aria-components';
 
 import { cn } from '../lib/utils';
 import { Calendar } from './Calendar';
 import type { InputWithVariantsProps } from './Field';
+import { Popover } from './Popover';
 import { TextField } from './TextField';
 
 export type DatePickerProps<T extends DateValue> = {
@@ -43,23 +45,49 @@ export const DatePicker = <T extends DateValue>({
 }: DatePickerProps<T>) => {
   const initialInputValue = useMemo(() => {
     if (props.value) {
-      return new Date(
-        props.value.year,
-        props.value.month - 1,
-        props.value.day,
-      ).toLocaleDateString('en-US', {
-        month: '2-digit',
-        day: '2-digit',
-        year: 'numeric',
-      });
+      try {
+        // Add validation for the date values
+        if (!props.value.year || !props.value.month || !props.value.day) {
+          console.warn('DatePicker: Invalid date structure:', props.value);
+          return '';
+        }
+
+        const date = new Date(
+          props.value.year,
+          props.value.month - 1,
+          props.value.day,
+        );
+
+        // Check if the date is valid
+        if (isNaN(date.getTime())) {
+          console.warn('DatePicker: Invalid date created:', props.value, date);
+          return '';
+        }
+
+        return date.toLocaleDateString('en-US', {
+          month: '2-digit',
+          day: '2-digit',
+          year: 'numeric',
+        });
+      } catch (error) {
+        console.error(
+          'DatePicker: Error processing date value:',
+          props.value,
+          error,
+        );
+        return '';
+      }
     }
     return '';
   }, [props.value]);
 
   const [inputValue, setInputValue] = useState<string>(initialInputValue);
-
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Sync internal state when props.value changes
+  useEffect(() => {
+    setInputValue(initialInputValue);
+  }, [initialInputValue]);
 
   const parseInputDate = useCallback((input: string): DateValue | null => {
     try {
@@ -121,99 +149,82 @@ export const DatePicker = <T extends DateValue>({
         props.onChange(parsedDate as T);
       }
     },
-    [parseInputDate],
+    [parseInputDate, props.onChange],
   );
 
-  const handleInputFocus = useCallback(() => {
-    setIsCalendarOpen(true);
-  }, []);
+  // Remove focus and blur handlers as DialogTrigger handles open/close state
 
-  const handleInputBlur = useCallback(() => {
-    // Small delay to allow calendar interaction
-    setTimeout(() => {
-      if (!inputRef.current?.contains(document.activeElement)) {
-        setIsCalendarOpen(false);
+  const handleCalendarChange = useCallback(
+    (newValue: DateValue) => {
+      if (props.onChange) {
+        props.onChange(newValue as T);
       }
-    }, 100);
-  }, []);
+      if (newValue) {
+        const formattedValue = new Date(
+          newValue.year,
+          newValue.month - 1,
+          newValue.day,
+        ).toLocaleDateString('en-US', {
+          month: '2-digit',
+          day: '2-digit',
+          year: 'numeric',
+        });
+        setInputValue(formattedValue);
+      }
+      // Close the calendar after selecting a date
+      setIsCalendarOpen(false);
+    },
+    [props.onChange],
+  );
 
-  const handleCalendarChange = useCallback((newValue: DateValue) => {
-    if (props.onChange) {
-      props.onChange(newValue as T);
-    }
-    if (newValue) {
-      const formattedValue = new Date(
-        newValue.year,
-        newValue.month - 1,
-        newValue.day,
-      ).toLocaleDateString('en-US', {
-        month: '2-digit',
-        day: '2-digit',
-        year: 'numeric',
-      });
-      setInputValue(formattedValue);
-    }
-    setIsCalendarOpen(false);
-  }, []);
-
-  const handleCalendarIconClick = () => {
-    setIsCalendarOpen((prev) => !prev);
-  };
+  // Remove icon click handler as DialogTrigger handles this
 
   return (
     <div className="relative">
-      <TextField
-        ref={inputRef}
-        label={label}
-        description={description}
-        errorMessage={errorMessage}
-        fieldClassName="relative"
-        descriptionClassName={descriptionClassName}
-        labelClassName={labelClassName}
-        isRequired={isRequired}
-        value={inputValue}
-        onChange={handleInputChange}
-        isDisabled={props.isDisabled}
-        inputProps={{
-          ...inputProps,
-          className: cn('pr-10', inputProps?.className),
-          placeholder: placeholder,
-          onFocus: handleInputFocus,
-          onBlur: handleInputBlur,
-        }}
-      >
-        <button
-          type="button"
-          onClick={handleCalendarIconClick}
-          disabled={props.isDisabled}
-          className={cn(
-            'absolute right-0 top-1/2 -translate-y-1/2',
-            'h-10 w-10',
-            'flex items-center justify-center',
-            'text-neutral-black',
-            props.isDisabled && 'cursor-not-allowed text-lightGray',
-          )}
+      <DialogTrigger isOpen={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+        <TextField
+          label={label}
+          description={description}
+          errorMessage={errorMessage}
+          fieldClassName="relative"
+          descriptionClassName={descriptionClassName}
+          labelClassName={labelClassName}
+          isRequired={isRequired}
+          value={inputValue}
+          onChange={handleInputChange}
+          isDisabled={props.isDisabled}
+          inputProps={{
+            ...inputProps,
+            className: cn('pr-10', inputProps?.className),
+            placeholder: placeholder,
+          }}
         >
-          <CalendarIcon className="size-4" />
-        </button>
-        {isCalendarOpen && (
-          <div
-            className="absolute top-full z-50 mt-1 w-[15.5rem]"
-            role="dialog"
-            aria-modal="true"
+          <AriaButton
+            isDisabled={props.isDisabled}
+            className={cn(
+              'absolute right-0 top-1/2 -translate-y-1/2',
+              'h-10 w-10',
+              'flex items-center justify-center',
+              'text-neutral-black outline-none',
+              'hover:bg-neutral-gray1 focus:ring-2 focus:ring-primary-teal focus:ring-offset-2 rounded-sm',
+              props.isDisabled && 'cursor-not-allowed text-lightGray',
+            )}
           >
-            <Calendar
-              value={props.value}
-              onChange={handleCalendarChange}
-              minValue={props.minValue}
-              maxValue={props.maxValue}
-              isDisabled={props.isDisabled}
-              isReadOnly={props.isReadOnly}
-              errorMessage={errorMessage}
-            />
-          </div>
-        )}
-      </TextField>
+            <CalendarIcon className="size-4" />
+          </AriaButton>
+        </TextField>
+        <Popover className="w-[15.5rem] p-0" placement="bottom start">
+          <Calendar
+            value={props.value}
+            onChange={handleCalendarChange}
+            minValue={props.minValue}
+            maxValue={props.maxValue}
+            isDisabled={props.isDisabled}
+            isReadOnly={props.isReadOnly}
+            errorMessage={errorMessage}
+          />
+        </Popover>
+      </DialogTrigger>
     </div>
   );
 };

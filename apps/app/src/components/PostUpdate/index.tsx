@@ -50,13 +50,15 @@ const PostUpdateWithUser = ({
   organization,
   className,
   parentPostId,
+  profileId,
   placeholder,
   onSuccess,
   label,
 }: {
-  organization: Organization;
+  organization?: Organization;
   className?: string;
   parentPostId?: string; // If provided, this becomes a comment
+  profileId?: string; // Profile ID to associate the post with (can be any profile type)
   placeholder?: string;
   onSuccess?: () => void;
   label: string;
@@ -68,7 +70,9 @@ const PostUpdateWithUser = ({
     content: string;
     attachmentIds: string[];
   } | null>(null);
-  const [optimisticCommentId, setOptimisticCommentId] = useState<string | null>(null);
+  const [optimisticCommentId, setOptimisticCommentId] = useState<string | null>(
+    null,
+  );
   const optimisticCommentRef = useRef<string | null>(null);
   const t = useTranslations();
   const utils = trpc.useUtils();
@@ -76,7 +80,6 @@ const PostUpdateWithUser = ({
   const isOnline = useConnectionStatus();
 
   const fileUpload = useFileUpload({
-    organizationId: organization.id,
     acceptedTypes: [
       'image/gif',
       'image/png',
@@ -87,22 +90,66 @@ const PostUpdateWithUser = ({
     maxFiles: 1,
   });
 
+  // For organization posts (main feed posts)
+  const createOrganizationPost = trpc.organization.createPost.useMutation({
+    onSuccess: () => {
+      // Clear form on success
+      setContent('');
+      setDetectedUrls([]);
+      fileUpload.clearFiles();
+      setLastFailedPost(null);
 
+      // Invalidate organization feeds to show new post
+      if (organization?.profile?.slug) {
+        void utils.organization.listPosts.invalidate();
+        void utils.organization.listAllPosts.invalidate();
+      }
+
+      // Call onSuccess callback if provided
+      if (onSuccess) {
+        onSuccess();
+      }
+    },
+    onError: (err) => {
+      const errorInfo = analyzeError(err);
+
+      if (errorInfo.isConnectionError) {
+        // Store failed post data for retry
+        setLastFailedPost({
+          content: content.trim(),
+          attachmentIds: fileUpload.getUploadedAttachmentIds(),
+        });
+
+        toast.error({
+          message: errorInfo.message + ' Use the retry button to try again.',
+        });
+      } else {
+        toast.error({ message: errorInfo.message });
+      }
+
+      console.log('ERROR', err);
+    },
+  });
+
+  // For profile posts (comments, etc.)
   const createPost = trpc.posts.createPost.useMutation({
     onMutate: async (variables) => {
-      // Generate optimistic ID for comments and add optimistic comment immediately
+      const tempId = `optimistic-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      optimisticCommentRef.current = tempId;
+      setOptimisticCommentId(tempId);
+
+      // For comments (posts with parentPostId)
       if (variables.parentPostId) {
-        const tempId = `optimistic-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        optimisticCommentRef.current = tempId;
-        setOptimisticCommentId(tempId);
-        
         // Cancel any outgoing refetches
-        const queryKey = createCommentsQueryKey(variables.parentPostId);
+        const queryKey = createCommentsQueryKey(
+          variables.parentPostId,
+          profileId,
+        );
         await utils.posts.getPosts.cancel(queryKey);
-        
+
         // Snapshot previous value
         const previousComments = utils.posts.getPosts.getData(queryKey);
-        
+
         // Add optimistic comment immediately
         const optimisticComment: Post = {
           id: tempId,
@@ -121,34 +168,98 @@ const PostUpdateWithUser = ({
           childPosts: null,
           parentPost: null,
         };
-        
+
         // Add optimistic comment
         utils.posts.getPosts.setData(queryKey, (old) => {
           if (!old) return [optimisticComment];
           return [optimisticComment, ...old];
         });
-        
-        return { previousComments, tempId };
+
+        return { previousComments, tempId, isComment: true };
       }
-      
+
+      // For top-level posts (profile posts like proposal comments)
+      if (profileId) {
+        // Cancel any outgoing refetches for profile posts
+        const queryKey = {
+          profileId,
+          parentPostId: null,
+          limit: 50,
+          offset: 0,
+          includeChildren: false,
+        };
+        await utils.posts.getPosts.cancel(queryKey);
+
+        // Snapshot previous value
+        const previousPosts = utils.posts.getPosts.getData(queryKey);
+
+        // Add optimistic post immediately
+        const optimisticPost: Post = {
+          id: tempId,
+          content: variables.content,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          deletedAt: null,
+          profile: user?.currentProfile || null,
+          profileId: user?.currentProfileId || null,
+          parentPostId: null,
+          attachments: [],
+          reactionCounts: {},
+          reactionUsers: {},
+          userReaction: null,
+          commentCount: 0,
+          childPosts: null,
+          parentPost: null,
+        };
+
+        // Add optimistic post
+        utils.posts.getPosts.setData(queryKey, (old) => {
+          if (!old) return [optimisticPost];
+          return [optimisticPost, ...old];
+        });
+
+        return { previousPosts, tempId, isComment: false };
+      }
+
       return {};
     },
     onError: (err, variables, context) => {
       const errorInfo = analyzeError(err);
 
-      // Rollback optimistic comment updates on error
-      if (variables.parentPostId && context?.tempId && optimisticCommentRef.current === context.tempId) {
-        // Restore previous comments state
-        const queryKey = createCommentsQueryKey(variables.parentPostId);
-        utils.posts.getPosts.setData(queryKey, context.previousComments);
-        
+      // Rollback optimistic updates on error
+      if (context?.tempId && optimisticCommentRef.current === context.tempId) {
+        // For comments (posts with parentPostId)
+        if (variables.parentPostId && context.isComment) {
+          // Restore previous comments state
+          const queryKey = createCommentsQueryKey(
+            variables.parentPostId,
+            profileId,
+          );
+          utils.posts.getPosts.setData(queryKey, context.previousComments);
+
+          // Revert parent post comment count - only for organization posts
+          if (organization?.profile?.slug) {
+            void utils.organization.listPosts.invalidate();
+            void utils.organization.listAllPosts.invalidate();
+          }
+        }
+
+        // For top-level posts (profile posts)
+        if (profileId && !context.isComment) {
+          // Restore previous posts state
+          const queryKey = {
+            profileId,
+            parentPostId: null,
+            limit: 50,
+            offset: 0,
+            includeChildren: false,
+          };
+          utils.posts.getPosts.setData(queryKey, context.previousPosts);
+        }
+
         // Clear the optimistic comment ID
         optimisticCommentRef.current = null;
         setOptimisticCommentId(null);
-        
-        // Revert parent post comment count - invalidate to be safe
-        void utils.organization.listPosts.invalidate();
-        void utils.organization.listAllPosts.invalidate();
       }
 
       if (errorInfo.isConnectionError) {
@@ -174,26 +285,30 @@ const PostUpdateWithUser = ({
       fileUpload.clearFiles();
       setLastFailedPost(null);
 
-      // For comments, optimistically update the cache with enhanced server data
-      if (variables.parentPostId && data && optimisticCommentRef.current) {
+      if (data && optimisticCommentRef.current) {
         // Clear the optimistic comment ID since we have real data
         optimisticCommentRef.current = null;
         setOptimisticCommentId(null);
-        
+
         // Enhance server data with user profile if not present
         const enhancedData = {
           ...data,
           profile: data.profile || user?.currentProfile || null,
         };
 
-        const queryKey = createCommentsQueryKey(variables.parentPostId);
-        utils.posts.getPosts.setData(
-          queryKey,
-          (old) => {
+        // For comments (posts with parentPostId)
+        if (variables.parentPostId) {
+          const queryKey = createCommentsQueryKey(
+            variables.parentPostId,
+            profileId,
+          );
+          utils.posts.getPosts.setData(queryKey, (old) => {
             if (!old) return [enhancedData];
             // Replace optimistic comment with real data, or add if not found
             if (optimisticCommentId) {
-              const index = old.findIndex(comment => comment.id === optimisticCommentId);
+              const index = old.findIndex(
+                (comment) => comment.id === optimisticCommentId,
+              );
               if (index >= 0) {
                 const newComments = [...old];
                 newComments[index] = enhancedData;
@@ -202,79 +317,152 @@ const PostUpdateWithUser = ({
             }
             // Add the new comment to the beginning if no optimistic comment to replace
             return [enhancedData, ...old];
-          },
-        );
-        
-        // Update parent post's comment count in main feed caches
-        const updateCommentCount = (item: any) => {
-          if (item.post.id === variables.parentPostId) {
-            return {
-              ...item,
-              post: {
-                ...item.post,
-                commentCount: (item.post.commentCount || 0) + 1,
+          });
+
+          // Update parent post's comment count in main feed caches
+          const updateCommentCount = (item: any) => {
+            if (item.post.id === variables.parentPostId) {
+              return {
+                ...item,
+                post: {
+                  ...item.post,
+                  commentCount: (item.post.commentCount || 0) + 1,
+                },
+              };
+            }
+            return item;
+          };
+
+          // Update organization.listPosts cache only if organization exists
+          if (organization?.profile?.slug) {
+            utils.organization.listPosts.setInfiniteData(
+              { slug: organization.profile.slug },
+              (old) => {
+                if (!old) return old;
+                return {
+                  ...old,
+                  pages: old.pages.map((page) => ({
+                    ...page,
+                    items: page.items.map(updateCommentCount),
+                  })),
+                };
               },
-            };
+            );
+
+            // Update organization.listAllPosts cache
+            utils.organization.listAllPosts.setData({}, (old) => {
+              if (!old) return old;
+              return {
+                ...old,
+                items: old.items.map(updateCommentCount),
+              };
+            });
           }
-          return item;
-        };
+        }
 
-        // Update organization.listPosts cache
-        utils.organization.listPosts.setInfiniteData({ slug: organization.profile.slug }, (old) => {
-          if (!old) return old;
-          return {
-            ...old,
-            pages: old.pages.map((page) => ({
-              ...page,
-              items: page.items.map(updateCommentCount),
-            })),
+        // For top-level posts (profile posts like proposal comments)
+        if (profileId && !variables.parentPostId) {
+          const queryKey = {
+            profileId,
+            parentPostId: null,
+            limit: 50,
+            offset: 0,
+            includeChildren: false,
           };
-        });
-
-        // Update organization.listAllPosts cache
-        utils.organization.listAllPosts.setData({}, (old) => {
-          if (!old) return old;
-          return {
-            ...old,
-            items: old.items.map(updateCommentCount),
-          };
-        });
+          utils.posts.getPosts.setData(queryKey, (old) => {
+            if (!old) return [enhancedData];
+            // Replace optimistic post with real data, or add if not found
+            if (optimisticCommentId) {
+              const index = old.findIndex(
+                (post) => post.id === optimisticCommentId,
+              );
+              if (index >= 0) {
+                const newPosts = [...old];
+                newPosts[index] = enhancedData;
+                return newPosts;
+              }
+            }
+            // Add the new post to the beginning if no optimistic post to replace
+            return [enhancedData, ...old];
+          });
+        }
       }
 
-      // Call onSuccess callback if provided (for comments)
+      // Call onSuccess callback if provided
       if (onSuccess) {
         onSuccess();
       }
     },
     onSettled: (_data, error, variables) => {
-      if (!variables.parentPostId) {
-        // For top-level posts, keep existing behavior
-        void utils.organization.listPosts.invalidate();
-        void utils.organization.listAllPosts.invalidate();
-        router.refresh();
-      } else {
-        // For comments: minimal invalidation since optimistic updates handle UI
+      // For comments (posts with parentPostId)
+      if (variables.parentPostId) {
+        // Minimal invalidation since optimistic updates handle UI
         // Only invalidate on ERROR to trigger recovery
         if (error) {
-          const queryKey = createCommentsQueryKey(variables.parentPostId);
+          const queryKey = createCommentsQueryKey(
+            variables.parentPostId,
+            profileId,
+          );
           void utils.posts.getPosts.invalidate(queryKey);
-          // Also invalidate main feeds on error to refresh comment counts
-          void utils.organization.listPosts.invalidate();
-          void utils.organization.listAllPosts.invalidate();
+          // Also invalidate main feeds on error to refresh comment counts - only for organization posts
+          if (organization?.profile?.slug) {
+            void utils.organization.listPosts.invalidate();
+            void utils.organization.listAllPosts.invalidate();
+          }
         }
         // Don't refresh router for comments to avoid layout shifts
+      } else {
+        // For top-level posts
+        if (profileId) {
+          // For profile posts (like proposal comments), only invalidate on error
+          if (error) {
+            const queryKey = {
+              profileId,
+              parentPostId: null,
+              limit: 50,
+              offset: 0,
+              includeChildren: false,
+            };
+            void utils.posts.getPosts.invalidate(queryKey);
+          }
+          // Don't refresh router for profile posts to avoid layout shifts
+        } else if (organization?.profile?.slug) {
+          // For organization posts, invalidate organization caches
+          void utils.organization.listPosts.invalidate();
+          void utils.organization.listAllPosts.invalidate();
+          router.refresh();
+        }
       }
     },
   });
 
   const retryFailedPost = () => {
     if (lastFailedPost) {
-      createPost.mutate({
+      // For organization posts (main feed posts without parentPostId or profileId)
+      if (organization && !parentPostId && !profileId) {
+        const orgMutationData = {
+          id: organization.id,
+          content: lastFailedPost.content,
+          attachmentIds: lastFailedPost.attachmentIds,
+        };
+
+        createOrganizationPost.mutate(orgMutationData);
+        return;
+      }
+
+      // For profile posts (comments, etc.)
+      const mutationData: any = {
         content: lastFailedPost.content,
-        organizationId: organization.id,
         parentPostId,
         attachmentIds: lastFailedPost.attachmentIds,
-      });
+      };
+
+      // Add profile association if provided
+      if (profileId) {
+        mutationData.profileId = profileId;
+      }
+
+      createPost.mutate(mutationData);
     }
   };
 
@@ -295,19 +483,42 @@ const PostUpdateWithUser = ({
         return;
       }
 
+      // For organization posts (main feed posts without parentPostId or profileId)
+      if (organization && !parentPostId && !profileId) {
+        // Prevent duplicate submissions while mutation is pending
+        if (createOrganizationPost.isPending) {
+          return;
+        }
+
+        const orgMutationData = {
+          id: organization.id,
+          content: content.trim() || '',
+          attachmentIds: fileUpload.getUploadedAttachmentIds(),
+        };
+
+        createOrganizationPost.mutate(orgMutationData);
+        return;
+      }
+
+      // For profile posts (comments, etc.)
       // Prevent duplicate submissions while mutation is pending
       if (createPost.isPending) {
         return;
       }
 
       // Optimistic updates are now handled in onMutate
-
-      createPost.mutate({
+      const mutationData: any = {
         content: content.trim() || '',
-        organizationId: organization.id,
         parentPostId,
         attachmentIds: fileUpload.getUploadedAttachmentIds(),
-      });
+      };
+
+      // Add profile association if provided
+      if (profileId) {
+        mutationData.profileId = profileId;
+      }
+
+      createPost.mutate(mutationData);
     }
   };
 
@@ -333,9 +544,9 @@ const PostUpdateWithUser = ({
         textarea.style.height = '1.5rem'; // Reset to min height
         textarea.style.height = `${textarea.scrollHeight}px`; // Set to scrollHeight
       };
-      
+
       textarea.addEventListener('input', handleInput);
-      
+
       // Cleanup function to remove event listener
       return () => {
         textarea.removeEventListener('input', handleInput);
@@ -343,13 +554,26 @@ const PostUpdateWithUser = ({
     }
   }, []);
 
+  if (!user?.currentProfile) {
+    return null;
+  }
+
   return (
-    <div className={cn('flex flex-col gap-8', className)}>
+    <div className={cn('flex flex-col gap-8 sm:flex', className)}>
       <FeedItem>
-        <OrganizationAvatar
-          profile={organization.profile}
-          className="size-8 bg-white"
-        />
+        {organization ? (
+          <OrganizationAvatar
+            profile={organization.profile}
+            className="size-8 bg-white"
+          />
+        ) : user?.currentProfile ? (
+          <OrganizationAvatar
+            profile={user.currentProfile}
+            className="size-8 bg-white"
+          />
+        ) : (
+          <div className="size-8 rounded-full bg-neutral-gray1" />
+        )}
         <FeedMain className="relative">
           <Form onSubmit={handleSubmit} className="flex w-full flex-col gap-4">
             <TextArea
@@ -456,9 +680,13 @@ const PostUpdateWithUser = ({
                   size="small"
                   color="secondary"
                   onPress={retryFailedPost}
-                  isDisabled={createPost.isPending}
+                  isDisabled={
+                    createPost.isPending || createOrganizationPost.isPending
+                  }
                 >
-                  {createPost.isPending ? 'Retrying...' : 'Retry Failed Post'}
+                  {createPost.isPending || createOrganizationPost.isPending
+                    ? 'Retrying...'
+                    : 'Retry Failed Post'}
                 </Button>
               )}
               <Button
@@ -470,7 +698,11 @@ const PostUpdateWithUser = ({
                 }
                 onPress={createNewPostUpdate}
               >
-                {createPost.isPending ? <LoadingSpinner /> : label}
+                {createPost.isPending || createOrganizationPost.isPending ? (
+                  <LoadingSpinner />
+                ) : (
+                  label
+                )}
               </Button>
             </div>
           </div>
@@ -484,6 +716,7 @@ export const PostUpdate = ({
   organization,
   className,
   parentPostId,
+  profileId,
   placeholder,
   onSuccess,
   label,
@@ -491,25 +724,56 @@ export const PostUpdate = ({
   organization?: Organization;
   className?: string;
   parentPostId?: string;
+  profileId?: string;
   placeholder?: string;
   onSuccess?: () => void;
   label: string;
 }) => {
   const { user } = useUser();
-  const currentOrg = user?.currentOrganization;
+  const currentProfileId = user?.currentProfileId;
+
+  // For profile-based associations (like proposals), we don't need an organization
+  if (profileId) {
+    return (
+      <PostUpdateWithUser
+        organization={undefined}
+        className={className}
+        parentPostId={parentPostId}
+        profileId={profileId}
+        placeholder={placeholder}
+        onSuccess={onSuccess}
+        label={label}
+      />
+    );
+  }
 
   if (
-    !(currentOrg && !organization) &&
-    (!currentOrg || organization?.id !== currentOrg.id)
+    !(currentProfileId && !organization) &&
+    (!currentProfileId || organization?.profile?.id !== currentProfileId)
   ) {
     return <div className={cn(className, 'border-none p-0')} />;
   }
 
+  // TODO: Ugly! Still a stopgap until we migrate off of organizationId
+  if (
+    organization &&
+    (user.currentOrganization?.profile.id !== currentProfileId ||
+      !user.currentOrganization)
+  ) {
+    return null;
+  }
+
+  const org = organization ?? user?.currentOrganization;
+  if (!org) {
+    return null;
+  }
+
   return (
     <PostUpdateWithUser
-      organization={organization ?? currentOrg}
+      organization={org}
       className={className}
       parentPostId={parentPostId}
+      profileId={profileId}
       placeholder={placeholder}
       onSuccess={onSuccess}
       label={label}

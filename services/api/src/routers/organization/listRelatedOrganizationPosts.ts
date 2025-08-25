@@ -63,10 +63,10 @@ export const listRelatedOrganizationPostsRouter = router({
         hasMore: z.boolean(),
       }),
     )
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const { limit = 200, cursor } = input ?? {};
 
-      const result = await listAllRelatedOrganizationPosts({ limit, cursor });
+      const result = await listAllRelatedOrganizationPosts(ctx.user.id, { limit, cursor });
 
       return {
         items: result.items.map((postToOrg) => ({

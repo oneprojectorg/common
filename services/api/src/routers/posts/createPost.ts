@@ -29,9 +29,12 @@ export const createPost = router({
     // .meta(meta)
     .input(createPostSchema)
     .output(outputSchema)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       try {
-        const post = await createPostService(input);
+        const post = await createPostService({
+          ...input,
+          authUserId: ctx.user.id,
+        });
         const output = outputSchema.parse(post);
         return output;
       } catch (error) {

@@ -1,8 +1,8 @@
 import {
-  addRelationship,
+  addProfileRelationship,
   createOrganization,
-  getRelationships,
-  removeRelationship,
+  getProfileRelationships,
+  removeProfileRelationship,
 } from '@op/common';
 import { ProfileRelationshipType } from '@op/db/schema';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -93,18 +93,20 @@ describe('Profile Relationships Integration Tests', () => {
     await signInTestUser(testUserEmail1);
   });
 
-  describe('addRelationship', () => {
+  describe('addProfileRelationship', () => {
     it('should successfully add a following relationship', async () => {
-      await addRelationship({
+      await addProfileRelationship({
         targetProfileId: profile2Id,
         relationshipType: ProfileRelationshipType.FOLLOWING,
         pending: false,
         sourceProfileId: profile1Id,
+        authUserId: testUser1.id,
       });
 
-      const relationships = await getRelationships({
+      const relationships = await getProfileRelationships({
         targetProfileId: profile2Id,
         sourceProfileId: profile1Id,
+        authUserId: testUser1.id,
       });
 
       expect(relationships).toHaveLength(1);
@@ -116,16 +118,18 @@ describe('Profile Relationships Integration Tests', () => {
     });
 
     it('should successfully add a likes relationship', async () => {
-      await addRelationship({
+      await addProfileRelationship({
         targetProfileId: profile2Id,
         relationshipType: ProfileRelationshipType.LIKES,
         pending: false,
         sourceProfileId: profile1Id,
+        authUserId: testUser1.id,
       });
 
-      const relationships = await getRelationships({
+      const relationships = await getProfileRelationships({
         targetProfileId: profile2Id,
         sourceProfileId: profile1Id,
+        authUserId: testUser1.id,
       });
 
       expect(relationships).toHaveLength(1);
@@ -136,16 +140,18 @@ describe('Profile Relationships Integration Tests', () => {
     });
 
     it('should add a pending relationship when specified', async () => {
-      await addRelationship({
+      await addProfileRelationship({
         targetProfileId: profile2Id,
         relationshipType: ProfileRelationshipType.FOLLOWING,
         pending: true,
         sourceProfileId: profile1Id,
+        authUserId: testUser1.id,
       });
 
-      const relationships = await getRelationships({
+      const relationships = await getProfileRelationships({
         targetProfileId: profile2Id,
         sourceProfileId: profile1Id,
+        authUserId: testUser1.id,
       });
 
       expect(relationships).toHaveLength(1);
@@ -157,35 +163,39 @@ describe('Profile Relationships Integration Tests', () => {
 
     it('should prevent self-relationships', async () => {
       await expect(
-        addRelationship({
+        addProfileRelationship({
           targetProfileId: profile1Id,
           relationshipType: ProfileRelationshipType.FOLLOWING,
           pending: false,
           sourceProfileId: profile1Id,
+        authUserId: testUser1.id,
         }),
       ).rejects.toThrow('You cannot create a relationship with yourself');
     });
 
     it('should handle duplicate relationships gracefully (onConflictDoNothing)', async () => {
       // Add the same relationship twice
-      await addRelationship({
+      await addProfileRelationship({
         targetProfileId: profile2Id,
         relationshipType: ProfileRelationshipType.FOLLOWING,
         pending: false,
         sourceProfileId: profile1Id,
+        authUserId: testUser1.id,
       });
 
-      await addRelationship({
+      await addProfileRelationship({
         targetProfileId: profile2Id,
         relationshipType: ProfileRelationshipType.FOLLOWING,
         pending: false,
         sourceProfileId: profile1Id,
+        authUserId: testUser1.id,
       });
 
       // Should still only have one relationship
-      const relationships = await getRelationships({
+      const relationships = await getProfileRelationships({
         targetProfileId: profile2Id,
         sourceProfileId: profile1Id,
+        authUserId: testUser1.id,
       });
 
       expect(relationships).toHaveLength(1);
@@ -195,23 +205,26 @@ describe('Profile Relationships Integration Tests', () => {
     });
 
     it('should allow multiple different relationship types to the same profile', async () => {
-      await addRelationship({
+      await addProfileRelationship({
         targetProfileId: profile2Id,
         relationshipType: ProfileRelationshipType.FOLLOWING,
         pending: false,
         sourceProfileId: profile1Id,
+        authUserId: testUser1.id,
       });
 
-      await addRelationship({
+      await addProfileRelationship({
         targetProfileId: profile2Id,
         relationshipType: ProfileRelationshipType.LIKES,
         pending: false,
         sourceProfileId: profile1Id,
+        authUserId: testUser1.id,
       });
 
-      const relationships = await getRelationships({
+      const relationships = await getProfileRelationships({
         targetProfileId: profile2Id,
         sourceProfileId: profile1Id,
+        authUserId: testUser1.id,
       });
 
       expect(relationships).toHaveLength(2);
@@ -222,65 +235,71 @@ describe('Profile Relationships Integration Tests', () => {
     });
   });
 
-  describe('removeRelationship', () => {
+  describe('removeProfileRelationship', () => {
     it('should successfully remove a following relationship', async () => {
       // First add a relationship
-      await addRelationship({
+      await addProfileRelationship({
         targetProfileId: profile2Id,
         relationshipType: ProfileRelationshipType.FOLLOWING,
         pending: false,
         sourceProfileId: profile1Id,
+        authUserId: testUser1.id,
       });
 
       // Verify it exists
-      let relationships = await getRelationships({
+      let relationships = await getProfileRelationships({
         targetProfileId: profile2Id,
         sourceProfileId: profile1Id,
+        authUserId: testUser1.id,
       });
       expect(relationships).toHaveLength(1);
 
       // Remove it
-      await removeRelationship({
+      await removeProfileRelationship({
         targetProfileId: profile2Id,
         relationshipType: ProfileRelationshipType.FOLLOWING,
-        sourceProfileId: profile1Id,
+        authUserId: testUser1.id,
       });
 
       // Verify it's gone
-      relationships = await getRelationships({
+      relationships = await getProfileRelationships({
         targetProfileId: profile2Id,
         sourceProfileId: profile1Id,
+        authUserId: testUser1.id,
       });
       expect(relationships).toHaveLength(0);
     });
 
     it('should only remove the specified relationship type', async () => {
       // Add both relationship types
-      await addRelationship({
+      await addProfileRelationship({
         targetProfileId: profile2Id,
         relationshipType: ProfileRelationshipType.FOLLOWING,
         pending: false,
         sourceProfileId: profile1Id,
+        authUserId: testUser1.id,
       });
 
-      await addRelationship({
+      await addProfileRelationship({
         targetProfileId: profile2Id,
         relationshipType: ProfileRelationshipType.LIKES,
         pending: false,
         sourceProfileId: profile1Id,
+        authUserId: testUser1.id,
       });
 
       // Remove only the following relationship
-      await removeRelationship({
+      await removeProfileRelationship({
         targetProfileId: profile2Id,
         relationshipType: ProfileRelationshipType.FOLLOWING,
-        sourceProfileId: profile1Id,
+        authUserId: testUser1.id,
       });
 
       // Verify only likes remains
-      const relationships = await getRelationships({
+      const relationships = await getProfileRelationships({
         targetProfileId: profile2Id,
         sourceProfileId: profile1Id,
+        authUserId: testUser1.id,
       });
       expect(relationships).toHaveLength(1);
       expect(relationships[0].relationshipType).toBe(
@@ -291,27 +310,29 @@ describe('Profile Relationships Integration Tests', () => {
     it('should handle removing non-existent relationships gracefully', async () => {
       // Try to remove a relationship that doesn't exist
       await expect(
-        removeRelationship({
+        removeProfileRelationship({
           targetProfileId: profile2Id,
           relationshipType: ProfileRelationshipType.FOLLOWING,
-          sourceProfileId: profile1Id,
+          authUserId: testUser1.id,
         }),
       ).resolves.not.toThrow();
 
       // Verify no relationships exist
-      const relationships = await getRelationships({
+      const relationships = await getProfileRelationships({
         targetProfileId: profile2Id,
         sourceProfileId: profile1Id,
+        authUserId: testUser1.id,
       });
       expect(relationships).toHaveLength(0);
     });
   });
 
-  describe('getRelationships', () => {
+  describe('getProfileRelationships', () => {
     it('should return empty array when no relationships exist', async () => {
-      const relationships = await getRelationships({
+      const relationships = await getProfileRelationships({
         targetProfileId: profile2Id,
         sourceProfileId: profile1Id,
+        authUserId: testUser1.id,
       });
 
       expect(relationships).toHaveLength(0);
@@ -320,23 +341,26 @@ describe('Profile Relationships Integration Tests', () => {
 
     it('should return all relationships with a profile', async () => {
       // Add multiple relationships
-      await addRelationship({
+      await addProfileRelationship({
         targetProfileId: profile2Id,
         relationshipType: ProfileRelationshipType.FOLLOWING,
         pending: false,
         sourceProfileId: profile1Id,
+        authUserId: testUser1.id,
       });
 
-      await addRelationship({
+      await addProfileRelationship({
         targetProfileId: profile2Id,
         relationshipType: ProfileRelationshipType.LIKES,
         pending: true,
         sourceProfileId: profile1Id,
+        authUserId: testUser1.id,
       });
 
-      const relationships = await getRelationships({
+      const relationships = await getProfileRelationships({
         targetProfileId: profile2Id,
         sourceProfileId: profile1Id,
+        authUserId: testUser1.id,
       });
 
       expect(relationships).toHaveLength(2);
@@ -360,26 +384,29 @@ describe('Profile Relationships Integration Tests', () => {
 
     it('should only return relationships from current user to target profile', async () => {
       // User 1 follows User 2
-      await addRelationship({
+      await addProfileRelationship({
         targetProfileId: profile2Id,
         relationshipType: ProfileRelationshipType.FOLLOWING,
         pending: false,
         sourceProfileId: profile1Id,
+        authUserId: testUser1.id,
       });
 
       // Switch to User 2 and have them follow User 1
       await signInTestUser(testUserEmail2);
-      await addRelationship({
+      await addProfileRelationship({
         targetProfileId: profile1Id,
         relationshipType: ProfileRelationshipType.FOLLOWING,
         pending: false,
         sourceProfileId: profile2Id,
+        authUserId: testUser2.id,
       });
 
       // User 2 should only see their relationship to User 1
-      const user2Relationships = await getRelationships({
+      const user2Relationships = await getProfileRelationships({
         targetProfileId: profile1Id,
         sourceProfileId: profile2Id,
+        authUserId: testUser2.id,
       });
       expect(user2Relationships).toHaveLength(1);
       expect(user2Relationships[0].relationshipType).toBe(
@@ -388,9 +415,10 @@ describe('Profile Relationships Integration Tests', () => {
 
       // Switch back to User 1 and check they only see their relationship to User 2
       await signInTestUser(testUserEmail1);
-      const user1Relationships = await getRelationships({
+      const user1Relationships = await getProfileRelationships({
         targetProfileId: profile2Id,
         sourceProfileId: profile1Id,
+        authUserId: testUser1.id,
       });
       expect(user1Relationships).toHaveLength(1);
       expect(user1Relationships[0].relationshipType).toBe(
@@ -402,34 +430,38 @@ describe('Profile Relationships Integration Tests', () => {
   describe('Cross-user scenarios', () => {
     it('should handle relationships from both directions independently', async () => {
       // User 1 follows User 2
-      await addRelationship({
+      await addProfileRelationship({
         targetProfileId: profile2Id,
         relationshipType: ProfileRelationshipType.FOLLOWING,
         pending: false,
         sourceProfileId: profile1Id,
+        authUserId: testUser1.id,
       });
 
       // Switch to User 2 and have them also follow User 1
       await signInTestUser(testUserEmail2);
-      await addRelationship({
+      await addProfileRelationship({
         targetProfileId: profile1Id,
         relationshipType: ProfileRelationshipType.FOLLOWING,
         pending: false,
         sourceProfileId: profile2Id,
+        authUserId: testUser2.id,
       });
 
       // User 2 likes User 1
-      await addRelationship({
+      await addProfileRelationship({
         targetProfileId: profile1Id,
         relationshipType: ProfileRelationshipType.LIKES,
         pending: false,
         sourceProfileId: profile2Id,
+        authUserId: testUser2.id,
       });
 
       // Check User 2's relationships to User 1
-      const user2ToUser1 = await getRelationships({
+      const user2ToUser1 = await getProfileRelationships({
         targetProfileId: profile1Id,
         sourceProfileId: profile2Id,
+        authUserId: testUser2.id,
       });
       expect(user2ToUser1).toHaveLength(2);
 
@@ -439,9 +471,10 @@ describe('Profile Relationships Integration Tests', () => {
 
       // Switch back to User 1 and check their relationships to User 2
       await signInTestUser(testUserEmail1);
-      const user1ToUser2 = await getRelationships({
+      const user1ToUser2 = await getProfileRelationships({
         targetProfileId: profile2Id,
         sourceProfileId: profile1Id,
+        authUserId: testUser1.id,
       });
       expect(user1ToUser2).toHaveLength(1);
       expect(user1ToUser2[0].relationshipType).toBe(
@@ -451,11 +484,12 @@ describe('Profile Relationships Integration Tests', () => {
 
     it('should maintain data integrity across user sessions', async () => {
       // User 1 adds a pending relationship
-      await addRelationship({
+      await addProfileRelationship({
         targetProfileId: profile2Id,
         relationshipType: ProfileRelationshipType.FOLLOWING,
         pending: true,
         sourceProfileId: profile1Id,
+        authUserId: testUser1.id,
       });
 
       // Switch users multiple times
@@ -463,9 +497,10 @@ describe('Profile Relationships Integration Tests', () => {
       await signInTestUser(testUserEmail1);
 
       // Verify the relationship still exists with correct data
-      const relationships = await getRelationships({
+      const relationships = await getProfileRelationships({
         targetProfileId: profile2Id,
         sourceProfileId: profile1Id,
+        authUserId: testUser1.id,
       });
 
       expect(relationships).toHaveLength(1);
@@ -503,17 +538,19 @@ describe('Profile Relationships Integration Tests', () => {
       // Individual (User 1) follows Organization (User 2)
       await signInTestUser(testUserEmail1);
 
-      await addRelationship({
+      await addProfileRelationship({
         targetProfileId: orgProfileId,
         relationshipType: ProfileRelationshipType.FOLLOWING,
         pending: false,
         sourceProfileId: individualProfileId,
+        authUserId: testUser1.id,
       });
 
       // Verify the individual is following the organization
-      const relationships = await getRelationships({
+      const relationships = await getProfileRelationships({
         targetProfileId: orgProfileId,
         sourceProfileId: individualProfileId,
+        authUserId: testUser1.id,
       });
 
       expect(relationships).toHaveLength(1);
@@ -526,14 +563,16 @@ describe('Profile Relationships Integration Tests', () => {
     it('should allow an individual to like an organization', async () => {
       await signInTestUser(testUserEmail1);
 
-      await addRelationship({
+      await addProfileRelationship({
         targetProfileId: orgProfileId,
         relationshipType: ProfileRelationshipType.LIKES,
         pending: false,
+        authUserId: testUser1.id,
       });
 
-      const relationships = await getRelationships({
+      const relationships = await getProfileRelationships({
         targetProfileId: orgProfileId,
+        authUserId: testUser1.id,
       });
 
       expect(relationships).toHaveLength(1);
@@ -546,14 +585,16 @@ describe('Profile Relationships Integration Tests', () => {
       // Individual sends a pending follow request to organization
       await signInTestUser(testUserEmail1);
 
-      await addRelationship({
+      await addProfileRelationship({
         targetProfileId: orgProfileId,
         relationshipType: ProfileRelationshipType.FOLLOWING,
         pending: true, // Organization needs to approve
+        authUserId: testUser1.id,
       });
 
-      const relationships = await getRelationships({
+      const relationships = await getProfileRelationships({
         targetProfileId: orgProfileId,
+        authUserId: testUser1.id,
       });
 
       expect(relationships).toHaveLength(1);
@@ -563,19 +604,22 @@ describe('Profile Relationships Integration Tests', () => {
       expect(relationships[0].pending).toBe(true);
 
       // Simulate organization "approving" by removing and re-adding as non-pending
-      await removeRelationship({
+      await removeProfileRelationship({
         targetProfileId: orgProfileId,
         relationshipType: ProfileRelationshipType.FOLLOWING,
+        authUserId: testUser1.id,
       });
 
-      await addRelationship({
+      await addProfileRelationship({
         targetProfileId: orgProfileId,
         relationshipType: ProfileRelationshipType.FOLLOWING,
         pending: false,
+        authUserId: testUser1.id,
       });
 
-      const approvedRelationships = await getRelationships({
+      const approvedRelationships = await getProfileRelationships({
         targetProfileId: orgProfileId,
+        authUserId: testUser1.id,
       });
 
       expect(approvedRelationships).toHaveLength(1);
@@ -604,21 +648,24 @@ describe('Profile Relationships Integration Tests', () => {
       // Individual follows both organizations
       await signInTestUser(testUserEmail1);
 
-      await addRelationship({
+      await addProfileRelationship({
         targetProfileId: orgProfileId,
         relationshipType: ProfileRelationshipType.FOLLOWING,
         pending: false,
+        authUserId: testUser1.id,
       });
 
-      await addRelationship({
+      await addProfileRelationship({
         targetProfileId: org3.profileId,
         relationshipType: ProfileRelationshipType.FOLLOWING,
         pending: false,
+        authUserId: testUser1.id,
       });
 
       // Verify individual is following first organization
-      const org1Relationships = await getRelationships({
+      const org1Relationships = await getProfileRelationships({
         targetProfileId: orgProfileId,
+        authUserId: testUser1.id,
       });
       expect(org1Relationships).toHaveLength(1);
       expect(org1Relationships[0].relationshipType).toBe(
@@ -626,8 +673,9 @@ describe('Profile Relationships Integration Tests', () => {
       );
 
       // Verify individual is following second organization
-      const org3Relationships = await getRelationships({
+      const org3Relationships = await getProfileRelationships({
         targetProfileId: org3.profileId,
+        authUserId: testUser1.id,
       });
       expect(org3Relationships).toHaveLength(1);
       expect(org3Relationships[0].relationshipType).toBe(
@@ -639,20 +687,23 @@ describe('Profile Relationships Integration Tests', () => {
       await signInTestUser(testUserEmail1);
 
       // Individual both follows and likes the organization
-      await addRelationship({
+      await addProfileRelationship({
         targetProfileId: orgProfileId,
         relationshipType: ProfileRelationshipType.FOLLOWING,
         pending: false,
+        authUserId: testUser1.id,
       });
 
-      await addRelationship({
+      await addProfileRelationship({
         targetProfileId: orgProfileId,
         relationshipType: ProfileRelationshipType.LIKES,
         pending: false,
+        authUserId: testUser1.id,
       });
 
-      const relationships = await getRelationships({
+      const relationships = await getProfileRelationships({
         targetProfileId: orgProfileId,
+        authUserId: testUser1.id,
       });
 
       expect(relationships).toHaveLength(2);
@@ -666,27 +717,31 @@ describe('Profile Relationships Integration Tests', () => {
       // Individual follows organization first
       await signInTestUser(testUserEmail1);
 
-      await addRelationship({
+      await addProfileRelationship({
         targetProfileId: orgProfileId,
         relationshipType: ProfileRelationshipType.FOLLOWING,
         pending: false,
+        authUserId: testUser1.id,
       });
 
       // Verify relationship exists
-      let relationships = await getRelationships({
+      let relationships = await getProfileRelationships({
         targetProfileId: orgProfileId,
+        authUserId: testUser1.id,
       });
       expect(relationships).toHaveLength(1);
 
       // Individual unfollows organization
-      await removeRelationship({
+      await removeProfileRelationship({
         targetProfileId: orgProfileId,
         relationshipType: ProfileRelationshipType.FOLLOWING,
+        authUserId: testUser1.id,
       });
 
       // Verify relationship is removed
-      relationships = await getRelationships({
+      relationships = await getProfileRelationships({
         targetProfileId: orgProfileId,
+        authUserId: testUser1.id,
       });
       expect(relationships).toHaveLength(0);
     });
@@ -696,16 +751,18 @@ describe('Profile Relationships Integration Tests', () => {
 
       await signInTestUser(testUserEmail1);
 
-      await addRelationship({
+      await addProfileRelationship({
         targetProfileId: orgProfileId,
         relationshipType: ProfileRelationshipType.FOLLOWING,
         pending: false,
+        authUserId: testUser1.id,
       });
 
       const afterTime = new Date();
 
-      const relationships = await getRelationships({
+      const relationships = await getProfileRelationships({
         targetProfileId: orgProfileId,
+        authUserId: testUser1.id,
       });
 
       expect(relationships).toHaveLength(1);
@@ -744,29 +801,35 @@ describe('Profile Relationships Integration Tests', () => {
 
       // Both individuals follow the same organization
       await signInTestUser(testUserEmail1);
-      await addRelationship({
+      await addProfileRelationship({
         targetProfileId: orgProfileId,
         relationshipType: ProfileRelationshipType.FOLLOWING,
         pending: false,
+        authUserId: testUser1.id,
       });
 
       await signInTestUser(testUserEmail3);
-      await addRelationship({
+      await addProfileRelationship({
         targetProfileId: orgProfileId,
         relationshipType: ProfileRelationshipType.FOLLOWING,
         pending: false,
+        authUserId: testUser3.id,
       });
 
       // Each individual should see their own relationship
       await signInTestUser(testUserEmail1);
-      const individual1Relationships = await getRelationships({
+      const individual1Relationships = await getProfileRelationships({
         targetProfileId: orgProfileId,
+        sourceProfileId: individualProfileId,
+        authUserId: testUser1.id,
       });
       expect(individual1Relationships).toHaveLength(1);
 
       await signInTestUser(testUserEmail3);
-      const individual2Relationships = await getRelationships({
+      const individual2Relationships = await getProfileRelationships({
         targetProfileId: orgProfileId,
+        sourceProfileId: individual2ProfileId,
+        authUserId: testUser3.id,
       });
       expect(individual2Relationships).toHaveLength(1);
 
@@ -818,28 +881,131 @@ describe('Profile Relationships Integration Tests', () => {
       // Individual follows both types of organizations
       await signInTestUser(testUserEmail1);
 
-      await addRelationship({
+      await addProfileRelationship({
         targetProfileId: nonprofitOrg.profileId,
         relationshipType: ProfileRelationshipType.FOLLOWING,
         pending: false,
+        authUserId: testUser1.id,
       });
 
-      await addRelationship({
+      await addProfileRelationship({
         targetProfileId: forProfitOrg.profileId,
         relationshipType: ProfileRelationshipType.FOLLOWING,
         pending: false,
+        authUserId: testUser1.id,
       });
 
       // Verify both relationships exist
-      const nonprofitRelationships = await getRelationships({
+      const nonprofitRelationships = await getProfileRelationships({
         targetProfileId: nonprofitOrg.profileId,
+        authUserId: testUser1.id,
       });
       expect(nonprofitRelationships).toHaveLength(1);
 
-      const forProfitRelationships = await getRelationships({
+      const forProfitRelationships = await getProfileRelationships({
         targetProfileId: forProfitOrg.profileId,
+        authUserId: testUser1.id,
       });
       expect(forProfitRelationships).toHaveLength(1);
+    });
+  });
+
+  describe('getProfileRelationships filtering', () => {
+    it('should filter relationships by relationshipType', async () => {
+      // Add both relationship types
+      await addProfileRelationship({
+        targetProfileId: profile2Id,
+        relationshipType: ProfileRelationshipType.FOLLOWING,
+        pending: false,
+        sourceProfileId: profile1Id,
+        authUserId: testUser1.id,
+      });
+
+      await addProfileRelationship({
+        targetProfileId: profile2Id,
+        relationshipType: ProfileRelationshipType.LIKES,
+        pending: false,
+        sourceProfileId: profile1Id,
+        authUserId: testUser1.id,
+      });
+
+      // Filter for only following relationships
+      const followingRelationships = await getProfileRelationships({
+        sourceProfileId: profile1Id,
+        relationshipType: ProfileRelationshipType.FOLLOWING,
+        authUserId: testUser1.id,
+      });
+
+      expect(followingRelationships).toHaveLength(1);
+      expect(followingRelationships[0].relationshipType).toBe(
+        ProfileRelationshipType.FOLLOWING,
+      );
+
+      // Filter for only likes relationships
+      const likesRelationships = await getProfileRelationships({
+        sourceProfileId: profile1Id,
+        relationshipType: ProfileRelationshipType.LIKES,
+        authUserId: testUser1.id,
+      });
+
+      expect(likesRelationships).toHaveLength(1);
+      expect(likesRelationships[0].relationshipType).toBe(
+        ProfileRelationshipType.LIKES,
+      );
+    });
+
+    it('should filter relationships by profileType', async () => {
+      // This test will fail initially since profileType filtering is not implemented yet
+      await addProfileRelationship({
+        targetProfileId: profile2Id,
+        relationshipType: ProfileRelationshipType.FOLLOWING,
+        pending: false,
+        sourceProfileId: profile1Id,
+        authUserId: testUser1.id,
+      });
+
+      // Filter for only org relationships
+      const orgRelationships = await getProfileRelationships({
+        sourceProfileId: profile1Id,
+        profileType: 'org',
+        authUserId: testUser1.id,
+      });
+
+      expect(orgRelationships).toHaveLength(1);
+      expect(orgRelationships[0].targetProfile?.type).toBe('org');
+    });
+
+    it('should filter relationships by both relationshipType and profileType', async () => {
+      // Add multiple relationships
+      await addProfileRelationship({
+        targetProfileId: profile2Id,
+        relationshipType: ProfileRelationshipType.FOLLOWING,
+        pending: false,
+        sourceProfileId: profile1Id,
+        authUserId: testUser1.id,
+      });
+
+      await addProfileRelationship({
+        targetProfileId: profile2Id,
+        relationshipType: ProfileRelationshipType.LIKES,
+        pending: false,
+        sourceProfileId: profile1Id,
+        authUserId: testUser1.id,
+      });
+
+      // Filter for following relationships to orgs
+      const filteredRelationships = await getProfileRelationships({
+        sourceProfileId: profile1Id,
+        relationshipType: ProfileRelationshipType.FOLLOWING,
+        profileType: 'org',
+        authUserId: testUser1.id,
+      });
+
+      expect(filteredRelationships).toHaveLength(1);
+      expect(filteredRelationships[0].relationshipType).toBe(
+        ProfileRelationshipType.FOLLOWING,
+      );
+      expect(filteredRelationships[0].targetProfile?.type).toBe('org');
     });
   });
 });

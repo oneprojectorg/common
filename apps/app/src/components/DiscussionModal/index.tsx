@@ -33,10 +33,10 @@ export function DiscussionModal({
     user,
   });
 
-  // Get comments for the post
+  // Get comments for the post using getPosts without profileId (works for all post types)
   const { data: commentsData, isLoading } = trpc.posts.getPosts.useQuery(
     {
-      parentPostId: post.id, // Get threads (child posts) of this post
+      parentPostId: post.id,
       limit: 50,
       offset: 0,
       includeChildren: false,
@@ -73,19 +73,19 @@ export function DiscussionModal({
     sourcePostProfile?.name ?? organization?.profile.name ?? '';
 
   // Transform comments data to match PostFeeds expected PostToOrganizaion format
-  const comments = useMemo(
-    () =>
-      commentsData?.map((comment) => ({
-        createdAt: comment.createdAt,
-        updatedAt: comment.updatedAt,
-        deletedAt: null,
-        postId: comment.id,
-        organizationId: '', // Not needed for comments
-        post: comment,
-        organization: null, // Comments don't need organization context in the modal
-      })) || [],
-    [commentsData],
-  );
+  const comments = useMemo(() => {
+    if (!commentsData) return [];
+
+    return commentsData.map((comment) => ({
+      createdAt: comment.createdAt,
+      updatedAt: comment.updatedAt,
+      deletedAt: null,
+      postId: comment.id,
+      organizationId: organization?.id || '', // Use parent post's organization if available
+      post: comment,
+      organization: organization || null, // Use parent post's organization context
+    }));
+  }, [commentsData, organization]);
 
   return (
     <Modal

@@ -1,9 +1,12 @@
 'use client';
 
 import { getPublicUrl } from '@/utils';
-import { createOptimisticUpdater, type PostFeedUser } from '@/utils/optimisticUpdates';
 import { OrganizationUser } from '@/utils/UserProvider';
 import { detectLinks, linkifyText } from '@/utils/linkDetection';
+import {
+  type PostFeedUser,
+  createOptimisticUpdater,
+} from '@/utils/optimisticUpdates';
 import { createCommentsQueryKey } from '@/utils/queryKeys';
 import { trpc } from '@op/api/client';
 import type {
@@ -25,7 +28,6 @@ import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
 import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';
-import { useFeatureFlagEnabled } from 'posthog-js/react';
 import { ReactNode, memo, useMemo, useState } from 'react';
 import { LuEllipsis, LuLeaf } from 'react-icons/lu';
 
@@ -156,19 +158,19 @@ const PostReactions = ({
 
   const reactions = post.reactionCounts
     ? Object.entries(post.reactionCounts).map(([reactionType, count]) => {
-      const reactionOption = REACTION_OPTIONS.find(
-        (option) => option.key === reactionType,
-      );
-      const emoji = reactionOption?.emoji || reactionType;
-      const users = post.reactionUsers?.[reactionType] || [];
+        const reactionOption = REACTION_OPTIONS.find(
+          (option) => option.key === reactionType,
+        );
+        const emoji = reactionOption?.emoji || reactionType;
+        const users = post.reactionUsers?.[reactionType] || [];
 
-      return {
-        emoji,
-        count: count as number,
-        isActive: post.userReaction === reactionType,
-        users,
-      };
-    })
+        return {
+          emoji,
+          count: count as number,
+          isActive: post.userReaction === reactionType,
+          users,
+        };
+      })
     : [];
 
   return (
@@ -188,10 +190,8 @@ const PostCommentButton = ({
   post: Post;
   onCommentClick: () => void;
 }) => {
-  const commentsEnabled = useFeatureFlagEnabled('comments');
-
   // we can disable this to allow for threads in the future
-  if (!commentsEnabled || !post?.id || post.parentPostId) {
+  if (!post?.id || post.parentPostId) {
     return null;
   }
 
@@ -356,11 +356,13 @@ export const usePostFeedActions = ({
   slug,
   limit = 20,
   parentPostId,
+  profileId,
   user,
 }: {
   slug?: string;
   limit?: number;
   parentPostId?: string;
+  profileId?: string;
   user?: PostFeedUser;
 } = {}) => {
   const utils = trpc.useUtils();
@@ -382,8 +384,22 @@ export const usePostFeedActions = ({
 
       // Cancel comments cache if we're in a modal context
       if (parentPostId) {
-        const commentsQueryKey = createCommentsQueryKey(parentPostId);
+        const commentsQueryKey = createCommentsQueryKey(parentPostId, profileId);
         await utils.posts.getPosts.cancel(commentsQueryKey);
+      }
+
+      // Cancel profile posts cache if we're working with profile posts
+      let previousProfilePosts;
+      if (profileId) {
+        const profileQueryKey = {
+          profileId,
+          parentPostId: null,
+          limit: 50,
+          offset: 0,
+          includeChildren: false,
+        };
+        await utils.posts.getPosts.cancel(profileQueryKey);
+        previousProfilePosts = utils.posts.getPosts.getData(profileQueryKey);
       }
 
       // Snapshot the previous values
@@ -392,7 +408,7 @@ export const usePostFeedActions = ({
         : undefined;
       const previousListAllPosts = utils.organization.listAllPosts.getData({});
       const previousComments = parentPostId
-        ? utils.posts.getPosts.getData(createCommentsQueryKey(parentPostId))
+        ? utils.posts.getPosts.getData(createCommentsQueryKey(parentPostId, profileId))
         : undefined;
 
       // Use optimistic updater service for cleaner code
@@ -429,9 +445,41 @@ export const usePostFeedActions = ({
         };
       });
 
+      // Optimistically update profile posts cache (for proposal comments)
+      if (profileId) {
+        const profileQueryKey = {
+          profileId,
+          parentPostId: null,
+          limit: 50,
+          offset: 0,
+          includeChildren: false,
+        };
+        utils.posts.getPosts.setData(profileQueryKey, (old) => {
+          if (!old) {
+            return old;
+          }
+
+          // Transform posts to PostToOrganization format and apply updates
+          return old.map((post) => {
+            const postToOrg: PostToOrganization = {
+              createdAt: post.createdAt,
+              updatedAt: post.updatedAt,
+              deletedAt: null,
+              postId: post.id,
+              organizationId: '',
+              post: post,
+              organization: null,
+            };
+
+            const updated = updatePostReactions(postToOrg);
+            return updated.post;
+          });
+        });
+      }
+
       // Optimistically update comments cache if we're in a modal context
       if (parentPostId) {
-        const commentsQueryKey = createCommentsQueryKey(parentPostId);
+        const commentsQueryKey = createCommentsQueryKey(parentPostId, profileId);
         utils.posts.getPosts.setData(commentsQueryKey, (old) => {
           if (!old) {
             return old;
@@ -455,7 +503,7 @@ export const usePostFeedActions = ({
         });
       }
 
-      return { previousListPosts, previousListAllPosts, previousComments };
+      return { previousListPosts, previousListAllPosts, previousComments, previousProfilePosts };
     },
     onError: (err, _variables, context) => {
       // Rollback on error
@@ -472,11 +520,21 @@ export const usePostFeedActions = ({
         );
       }
       if (context?.previousComments && parentPostId) {
-        const commentsQueryKey = createCommentsQueryKey(parentPostId);
+        const commentsQueryKey = createCommentsQueryKey(parentPostId, profileId);
         utils.posts.getPosts.setData(
           commentsQueryKey,
           context.previousComments,
         );
+      }
+      if (context?.previousProfilePosts && profileId) {
+        const profileQueryKey = {
+          profileId,
+          parentPostId: null,
+          limit: 50,
+          offset: 0,
+          includeChildren: false,
+        };
+        utils.posts.getPosts.setData(profileQueryKey, context.previousProfilePosts);
       }
       toast.error({ message: err.message || 'Failed to update reaction' });
     },

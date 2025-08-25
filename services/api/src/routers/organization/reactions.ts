@@ -25,11 +25,12 @@ export const reactionsRouter = router({
         reactionType: reactionTypeEnum,
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const { postId, reactionType } = input;
+      const { user } = ctx;
 
       try {
-        const profileId = await getCurrentProfileId();
+        const profileId = await getCurrentProfileId(user.id);
         await addReaction({ postId, profileId, reactionType });
         return { success: true };
       } catch (error) {
@@ -48,10 +49,11 @@ export const reactionsRouter = router({
         postId: z.string(),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const { postId } = input;
+      const { user } = ctx;
 
-      const profileId = await getCurrentProfileId();
+      const profileId = await getCurrentProfileId(user.id);
       await removeReaction({ postId, profileId });
 
       return { success: true };
@@ -66,11 +68,12 @@ export const reactionsRouter = router({
         reactionType: reactionTypeEnum,
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const { postId, reactionType } = input;
+      const { user } = ctx;
 
       try {
-        const profileId = await getCurrentProfileId();
+        const profileId = await getCurrentProfileId(user.id);
         return await toggleReaction({ postId, profileId, reactionType });
       } catch (e) {
         throw new CommonError('Failed to toggle reaction');
