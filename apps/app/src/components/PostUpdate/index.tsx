@@ -90,6 +90,48 @@ const PostUpdateWithUser = ({
     maxFiles: 1,
   });
 
+  // For organization posts (main feed posts)
+  const createOrganizationPost = trpc.organization.createPost.useMutation({
+    onSuccess: (data) => {
+      // Clear form on success
+      setContent('');
+      setDetectedUrls([]);
+      fileUpload.clearFiles();
+      setLastFailedPost(null);
+
+      // Invalidate organization feeds to show new post
+      if (organization?.profile?.slug) {
+        void utils.organization.listPosts.invalidate();
+        void utils.organization.listAllPosts.invalidate();
+      }
+      
+      // Call onSuccess callback if provided
+      if (onSuccess) {
+        onSuccess();
+      }
+    },
+    onError: (err) => {
+      const errorInfo = analyzeError(err);
+
+      if (errorInfo.isConnectionError) {
+        // Store failed post data for retry
+        setLastFailedPost({
+          content: content.trim(),
+          attachmentIds: fileUpload.getUploadedAttachmentIds(),
+        });
+
+        toast.error({
+          message: errorInfo.message + ' Use the retry button to try again.',
+        });
+      } else {
+        toast.error({ message: errorInfo.message });
+      }
+
+      console.log('ERROR', err);
+    },
+  });
+
+  // For profile posts (comments, etc.)
   const createPost = trpc.posts.createPost.useMutation({
     onMutate: async (variables) => {
       const tempId = `optimistic-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -396,6 +438,19 @@ const PostUpdateWithUser = ({
 
   const retryFailedPost = () => {
     if (lastFailedPost) {
+      // For organization posts (main feed posts without parentPostId or profileId)
+      if (organization && !parentPostId && !profileId) {
+        const orgMutationData = {
+          id: organization.id,
+          content: lastFailedPost.content,
+          attachmentIds: lastFailedPost.attachmentIds,
+        };
+
+        createOrganizationPost.mutate(orgMutationData);
+        return;
+      }
+
+      // For profile posts (comments, etc.)
       const mutationData: any = {
         content: lastFailedPost.content,
         parentPostId,
@@ -428,6 +483,24 @@ const PostUpdateWithUser = ({
         return;
       }
 
+      // For organization posts (main feed posts without parentPostId or profileId)
+      if (organization && !parentPostId && !profileId) {
+        // Prevent duplicate submissions while mutation is pending
+        if (createOrganizationPost.isPending) {
+          return;
+        }
+
+        const orgMutationData = {
+          id: organization.id,
+          content: content.trim() || '',
+          attachmentIds: fileUpload.getUploadedAttachmentIds(),
+        };
+
+        createOrganizationPost.mutate(orgMutationData);
+        return;
+      }
+
+      // For profile posts (comments, etc.)
       // Prevent duplicate submissions while mutation is pending
       if (createPost.isPending) {
         return;
@@ -607,9 +680,9 @@ const PostUpdateWithUser = ({
                   size="small"
                   color="secondary"
                   onPress={retryFailedPost}
-                  isDisabled={createPost.isPending}
+                  isDisabled={createPost.isPending || createOrganizationPost.isPending}
                 >
-                  {createPost.isPending ? 'Retrying...' : 'Retry Failed Post'}
+                  {(createPost.isPending || createOrganizationPost.isPending) ? 'Retrying...' : 'Retry Failed Post'}
                 </Button>
               )}
               <Button
@@ -621,7 +694,7 @@ const PostUpdateWithUser = ({
                 }
                 onPress={createNewPostUpdate}
               >
-                {createPost.isPending ? <LoadingSpinner /> : label}
+                {(createPost.isPending || createOrganizationPost.isPending) ? <LoadingSpinner /> : label}
               </Button>
             </div>
           </div>
