@@ -62,6 +62,8 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
         slug,
       });
 
+      const decisionsEnabled = false;
+
       return organization ? (
         <>
           <ImageHeader
@@ -86,10 +88,10 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
             <ProfileTabList>
               <Tab id="home">Home</Tab>
               <Tab id="relationships">Relationships</Tab>
-
               <FollowersTab />
               <MembersTab profileId={profile.id} />
               <DecisionsTab profileId={profile.id} />
+
             </ProfileTabList>
 
             <TabPanel id="home" className="flex flex-grow flex-col sm:p-0">

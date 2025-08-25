@@ -31,6 +31,7 @@ const removeRelationshipInputSchema = z.object({
 });
 
 const getRelationshipsInputSchema = z.object({
+
   targetProfileId: z.string().uuid().optional(),
   sourceProfileId: z.string().uuid().optional(),
   relationshipType: z.enum([

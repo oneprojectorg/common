@@ -505,6 +505,7 @@ export const CustomWidgets = {
   CheckboxWidget: SafeCheckboxWidget,
   RadioWidget: SafeRadioWidget,
   CategoryListWidget: SafeCategoryListWidget,
+
   RichTextEditorWidget: SafeRichTextEditorWidget,
   ReviewSummaryWidget: SafeReviewSummaryWidget,
   text: SafeTextWidget,

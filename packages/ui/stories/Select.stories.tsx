@@ -98,7 +98,6 @@ export const PillVariant = (args: any) => (
       <SelectItem>Testing</SelectItem>
       <SelectItem>Deployment</SelectItem>
     </Select>
-
     <Select {...args} variant="pill" placeholder="Select category" isDisabled>
       <SelectItem>Planning</SelectItem>
       <SelectItem>Design</SelectItem>

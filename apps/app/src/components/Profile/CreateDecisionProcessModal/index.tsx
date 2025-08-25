@@ -440,7 +440,6 @@ export const CreateDecisionProcessModal = () => {
         </div>
       );
     }
-
     // Convert 1-based to 0-based for array access
     const stepConfig = stepSchemas[currentStep - 1];
     if (!stepConfig) return null;
@@ -501,7 +500,7 @@ export const CreateDecisionProcessModal = () => {
     if (currentStep === stepSchemas.length + 1) {
       return 'Review and launch';
     }
-
+        
     const stepConfig = stepSchemas[currentStep - 1];
     return stepConfig?.schema.title || 'Set up your decision-making process';
   };
