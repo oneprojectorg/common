@@ -23,6 +23,10 @@ import {
   MembersTabPanel,
 } from '@/components/Profile/ProfileContent/DecisionsTabs';
 import {
+  DesktopIndividualTabs,
+  DesktopOrganizationTabs,
+} from '@/components/Profile/ProfileContent/DesktopTabs';
+import {
   FollowersTab,
   FollowersTabPanel,
 } from '@/components/Profile/ProfileContent/IndividualTabs';
@@ -84,8 +88,7 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
           <ProfileDetails organization={organization} />
           <ProfileTabs>
             <ProfileTabList>
-              <Tab id="home">Home</Tab>
-              <Tab id="relationships">Relationships</Tab>
+              <DesktopOrganizationTabs />
               <FollowersTab />
               <MembersTab profileId={profile.id} />
               <DecisionsTab profileId={profile.id} />
@@ -178,9 +181,7 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
         <ProfileDetails organization={userProfile} />
         <ProfileTabs>
           <ProfileTabList>
-            <Tab id="about">About</Tab>
-            <Tab id="organizations">Organizations</Tab>
-            <Tab id="following">Following</Tab>
+            <DesktopIndividualTabs />
           </ProfileTabList>
 
           <TabPanel id="about" className="sm:p-0">

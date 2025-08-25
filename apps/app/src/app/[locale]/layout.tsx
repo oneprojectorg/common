@@ -33,7 +33,7 @@ const AppLayout = async ({
   // }
   // }
 
-  const messages = await getMessages();
+  const messages = await getMessages({ locale });
 
   return (
     <I18nProvider locale={locale} messages={messages}>
