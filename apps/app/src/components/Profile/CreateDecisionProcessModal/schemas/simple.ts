@@ -258,9 +258,12 @@ export const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
         'ui:placeholder': '0',
       },
       descriptionGuidance: {
-        'ui:widget': 'textarea',
+        'ui:widget': 'RichTextEditor',
         'ui:placeholder':
           "e.g., Start with the problem you're addressing, explain your solution, and describe the expected impact on our community.",
+        'ui:options': {
+          className: 'min-h-72',
+        },
       },
     },
   },
