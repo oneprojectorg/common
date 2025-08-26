@@ -1,6 +1,6 @@
 import { getPublicUrl } from '@/utils';
 import { trpcNext } from '@op/api/vanilla';
-import { Tab, TabPanel } from '@op/ui/Tabs';
+import { TabPanel } from '@op/ui/Tabs';
 import { cn, getGradientForString } from '@op/ui/utils';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';

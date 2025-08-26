@@ -8,6 +8,8 @@ import { Heart } from 'lucide-react';
 import { LuBookmark } from 'react-icons/lu';
 import { z } from 'zod';
 
+import { useTranslations } from '@/lib/i18n';
+
 type Proposal = z.infer<typeof proposalEncoder>;
 
 interface ProposalCardActionsProps {
@@ -17,6 +19,7 @@ interface ProposalCardActionsProps {
 export function ProposalCardActions({
   proposal: initialProposal,
 }: ProposalCardActionsProps) {
+  const t = useTranslations();
   const utils = trpc.useUtils();
 
   // Subscribe to the individual proposal data which gets optimistically updated
@@ -288,7 +291,7 @@ export function ProposalCardActions({
         <Heart
           className={`size-4 ${currentProposal.isLikedByUser ? 'fill-current' : ''}`}
         />
-        {currentProposal.isLikedByUser ? 'Liked' : 'Like'}
+        {currentProposal.isLikedByUser ? t('Liked') : t('Like')}
       </Button>
       <Button
         onPress={handleFollowClick}
@@ -299,7 +302,7 @@ export function ProposalCardActions({
         <LuBookmark
           className={`size-4 ${currentProposal.isFollowedByUser ? 'fill-current' : ''}`}
         />
-        {currentProposal.isFollowedByUser ? 'Following' : 'Follow'}
+        {currentProposal.isFollowedByUser ? t('Following') : t('Follow')}
       </Button>
     </div>
   );

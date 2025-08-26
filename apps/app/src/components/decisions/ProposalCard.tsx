@@ -1,3 +1,5 @@
+'use client';
+
 import { getPublicUrl } from '@/utils';
 import {
   formatCurrency,
@@ -13,6 +15,8 @@ import Link from 'next/link';
 import { LuBookmark } from 'react-icons/lu';
 import { z } from 'zod';
 
+import { useTranslations } from '@/lib/i18n';
+
 import { ProposalCardActions } from './ProposalCardActions';
 
 type Proposal = z.infer<typeof proposalEncoder>;
@@ -26,6 +30,8 @@ export function ProposalCard({
   proposal: currentProposal,
   viewHref,
 }: ProposalCardProps) {
+  const t = useTranslations();
+  
   // Parse proposal data using shared utility
   const { title, budget, category, content } = parseProposalData(
     currentProposal.proposalData,
@@ -39,7 +45,7 @@ export function ProposalCard({
           href={viewHref}
           className="text-lg font-semibold text-neutral-charcoal transition-colors hover:text-primary-teal"
         >
-          {title || 'Untitled Proposal'}
+          {title || t('Untitled Proposal')}
         </Link>
         {budget && (
           <span className="text-lg font-semibold text-neutral-charcoal">
@@ -103,15 +109,15 @@ export function ProposalCard({
         <div className="flex items-center gap-4 text-sm text-neutral-gray2">
           <span className="flex items-center gap-1">
             <Heart className="h-4 w-4" />
-            <span>{currentProposal.likesCount || 0} Likes</span>
+            <span>{currentProposal.likesCount || 0} {t('Likes')}</span>
           </span>
           <span className="flex items-center gap-1">
             <MessageCircle className="h-4 w-4" />
-            <span>0 Comments</span>
+            <span>0 {t('Comments')}</span>
           </span>
           <span className="flex items-center gap-1">
             <LuBookmark className="size-4" />
-            <span>{currentProposal.followersCount || 0} Followers</span>
+            <span>{currentProposal.followersCount || 0} {t('Followers')}</span>
           </span>
         </div>
         <ProposalCardActions proposal={currentProposal} />

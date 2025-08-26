@@ -7,6 +7,8 @@ import { useRouter } from 'next/navigation';
 import { ReactNode } from 'react';
 import { LuBookmark } from 'react-icons/lu';
 
+import { useTranslations } from '@/lib/i18n';
+
 import { UserAvatarMenu } from '../SiteHeader';
 
 interface ProposalViewLayoutProps {
@@ -34,6 +36,7 @@ export function ProposalViewLayout({
   editHref,
   canEdit = false,
 }: ProposalViewLayoutProps) {
+  const t = useTranslations();
   const router = useRouter();
 
   return (
@@ -45,11 +48,11 @@ export function ProposalViewLayout({
           className="flex items-center gap-2 text-sm text-primary-teal hover:text-primary-tealBlack"
         >
           <ChevronLeft className="h-4 w-4" />
-          Back to Proposals
+          {t('Back to Proposals')}
         </button>
 
         <div className="flex-1 text-center text-lg font-medium text-neutral-black">
-          {title ? title : 'Untitled Proposal'}
+          {title ? title : t('Untitled Proposal')}
         </div>
 
         <div className="flex items-center gap-4">
@@ -61,7 +64,7 @@ export function ProposalViewLayout({
               className="px-4 py-2"
             >
               <Edit className="h-4 w-4" />
-              Edit
+              {t('Edit')}
             </Button>
           )}
           <Button
@@ -71,11 +74,11 @@ export function ProposalViewLayout({
             isDisabled={isLoading}
           >
             <Heart className={`h-4 w-4 ${isLiked ? 'fill-current' : ''}`} />
-            {isLiked ? 'Liked' : 'Like'}
+            {isLiked ? t('Liked') : t('Like')}
           </Button>
           <Button color="secondary" onPress={onFollow}>
             <LuBookmark className={cn(isFollowing ? 'fill-current' : '')} />
-            {isFollowing ? 'Following' : 'Follow'}
+            {isFollowing ? t('Following') : t('Follow')}
           </Button>
           <UserAvatarMenu />
         </div>
