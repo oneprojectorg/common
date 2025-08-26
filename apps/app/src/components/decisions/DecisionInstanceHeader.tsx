@@ -1,7 +1,7 @@
 'use client';
 
 import { ChevronLeft } from 'lucide-react';
-import Link from 'next/link';
+import { Link } from '@/lib/i18n/routing';
 
 import { useTranslations } from '@/lib/i18n';
 

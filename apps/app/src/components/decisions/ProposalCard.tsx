@@ -11,7 +11,7 @@ import { Avatar } from '@op/ui/Avatar';
 import { Surface } from '@op/ui/Surface';
 import { Heart, MessageCircle } from 'lucide-react';
 import Image from 'next/image';
-import Link from 'next/link';
+import { Link } from '@/lib/i18n/routing';
 import { LuBookmark } from 'react-icons/lu';
 import { z } from 'zod';
 

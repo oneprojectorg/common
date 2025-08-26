@@ -11,11 +11,10 @@ import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
 import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
-import Link from 'next/link';
 import { ReactNode, Suspense } from 'react';
 import { LuCopy, LuGlobe, LuMail } from 'react-icons/lu';
 
-import { useTranslations } from '@/lib/i18n';
+import { Link, useTranslations } from '@/lib/i18n';
 
 import { ContactLink } from '@/components/ContactLink';
 import ErrorBoundary from '@/components/ErrorBoundary';
@@ -43,7 +42,7 @@ const FocusAreas = ({
   }>;
 }) => {
   const t = useTranslations();
-  
+
   return (
     <section className="flex flex-col gap-2 text-neutral-charcoal">
       <Header3>{t('Focus Areas')}</Header3>
@@ -140,7 +139,9 @@ const ProfileAbout = ({
                     onPress={() => {
                       navigator.clipboard.writeText(email);
                       toast.success({
-                        message: t('This email address has been copied to your clipboard.'),
+                        message: t(
+                          'This email address has been copied to your clipboard.',
+                        ),
                         dismissable: false,
                       });
                     }}
