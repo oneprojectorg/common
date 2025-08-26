@@ -2,6 +2,7 @@
 
 import { ProcessInstance } from '@/utils/decisionProcessTransforms';
 import { parseProposalData } from '@/utils/proposalUtils';
+import { extractImageUrlsFromContent, extractAttachmentIdsFromUrls, type ImageAttachment } from '@/utils/proposalContentProcessor';
 import { trpc } from '@op/api/client';
 import type { proposalEncoder } from '@op/api/encoders';
 import { Select, SelectItem } from '@op/ui/Select';
@@ -13,9 +14,9 @@ import { z } from 'zod';
 import {
   RichTextEditorContent,
   RichTextEditorRef,
-  RichTextEditorToolbar,
 } from '../RichTextEditor';
 import { ProposalEditorLayout } from './layout';
+import { ProposalRichTextToolbar } from './ProposalRichTextToolbar';
 
 type Proposal = z.infer<typeof proposalEncoder>;
 
@@ -39,6 +40,7 @@ export function ProposalEditor({
   const [budget, setBudget] = useState<number | null>(null);
   const [editorContent, setEditorContent] = useState('');
   const [editorInstance, setEditorInstance] = useState<any>(null);
+  const [imageAttachments, setImageAttachments] = useState<ImageAttachment[]>([]);
   const editorRef = useRef<RichTextEditorRef>(null);
 
   const createProposalMutation = trpc.decision.createProposal.useMutation();
@@ -109,6 +111,11 @@ export function ProposalEditor({
     setEditorInstance(editor);
   }, []);
 
+  // Handle image attachment uploads
+  const handleImageUploaded = useCallback((attachment: ImageAttachment) => {
+    setImageAttachments(prev => [...prev, attachment]);
+  }, []);
+
   // Initialize form with existing proposal data if in edit mode
   useEffect(() => {
     if (isEditMode && existingProposal && parsedProposalData) {
@@ -149,6 +156,10 @@ export function ProposalEditor({
     setIsSubmitting(true);
 
     try {
+      // Extract image URLs from content and get attachment IDs
+      const imageUrls = extractImageUrlsFromContent(content);
+      const attachmentIds = extractAttachmentIdsFromUrls(imageUrls, imageAttachments);
+
       // Create the proposal data structure
       const proposalData = {
         title,
@@ -164,6 +175,7 @@ export function ProposalEditor({
           proposalId: existingProposal.id,
           data: {
             proposalData,
+            attachmentIds, // Include attachment IDs for updates
           },
         });
       } else {
@@ -171,6 +183,7 @@ export function ProposalEditor({
         await createProposalMutation.mutateAsync({
           processInstanceId: instance.id,
           proposalData,
+          attachmentIds, // Include attachment IDs for new proposals
         });
       }
 
@@ -197,6 +210,7 @@ export function ProposalEditor({
     existingProposal,
     backHref,
     router,
+    imageAttachments,
   ]);
 
   return (
@@ -209,7 +223,12 @@ export function ProposalEditor({
     >
       {/* Content */}
       <div className="flex flex-1 flex-col gap-12">
-        {editorInstance && <RichTextEditorToolbar editor={editorInstance} />}
+        {editorInstance && (
+          <ProposalRichTextToolbar 
+            editor={editorInstance} 
+            onImageUploaded={handleImageUploaded}
+          />
+        )}
         <div className="mx-auto flex max-w-4xl flex-col gap-6">
           {/* Title input */}
           <TextField

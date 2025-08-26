@@ -50,6 +50,13 @@
       "when": 1755879252686,
       "tag": "0006_superb_prodigy",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1756208946557,
+      "tag": "0007_tired_vulture",
+      "breakpoints": true
     }
   ]
 }
