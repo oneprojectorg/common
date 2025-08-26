@@ -36,6 +36,6 @@ export default getRequestConfig(async ({ requestLocale }) => {
   return {
     locale,
     // messages: await getConfig(locale),
-    messages: getConfig(rawMessages),
+    messages: await getConfig(rawMessages),
   };
 });
