@@ -233,6 +233,40 @@ export const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
   {
     schema: {
       type: 'object',
+      title: 'Configure proposal information',
+      description: 'Set up information that will be displayed to participants when they create proposals.',
+      required: ['proposalInfoTitle', 'proposalInfoContent'],
+      properties: {
+        proposalInfoTitle: {
+          type: 'string',
+          title: 'Information Title',
+          minLength: 1,
+          description: 'Title for the information modal shown to proposal creators',
+        },
+        proposalInfoContent: {
+          type: 'string',
+          title: 'Information Content',
+          description: 'Information that will be displayed to participants when they create a new proposal',
+        },
+      },
+    },
+    uiSchema: {
+      proposalInfoTitle: {
+        'ui:placeholder': 'e.g., Proposal Guidelines',
+      },
+      proposalInfoContent: {
+        'ui:widget': 'RichTextEditor',
+        'ui:placeholder':
+          'Enter information that will help participants understand the requirements and guidelines for creating proposals...',
+        'ui:options': {
+          className: 'min-h-72',
+        },
+      },
+    },
+  },
+  {
+    schema: {
+      type: 'object',
       title: 'Setup proposal template',
       description: 'Configure guidance and budget limits',
       required: ['budgetCapAmount', 'descriptionGuidance'],
@@ -294,6 +328,8 @@ export const schemaDefaults = {
   },
   maxVotesPerMember: null,
   categories: [],
+  proposalInfoTitle: '',
+  proposalInfoContent: '',
   budgetCapAmount: null,
   descriptionGuidance: '',
 };
@@ -308,6 +344,8 @@ export const transformFormDataToProcessSchema = (
     budget: data.totalBudget as number,
     fields: {
       categories: data.categories,
+      proposalInfoTitle: data.proposalInfoTitle,
+      proposalInfoContent: data.proposalInfoContent,
       budgetCapAmount: data.budgetCapAmount,
       descriptionGuidance: data.descriptionGuidance,
     },

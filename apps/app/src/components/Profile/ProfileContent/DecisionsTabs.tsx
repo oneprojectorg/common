@@ -15,7 +15,7 @@ import { ProfileRelationshipsSkeleton } from '@/components/screens/ProfileRelati
 import { MembersList } from './MembersList';
 
 export const DecisionsTab = ({ profileId }: { profileId: string }) => {
-  const decisionsEnabled = useFeatureFlagEnabled('decision_making');
+  const decisionsEnabled = useFeatureFlagEnabled('decision_making') || true;
   const t = useTranslations();
   const access = useUser();
   const permission = access.getPermissionsForProfile(profileId);
@@ -32,7 +32,7 @@ export const DecisionsTabPanel = ({
   children: ReactNode;
   className?: string;
 }) => {
-  const decisionsEnabled = useFeatureFlagEnabled('decision_making');
+  const decisionsEnabled = useFeatureFlagEnabled('decision_making') || true;
 
   return decisionsEnabled ? (
     <TabPanel id="decisions" className={cn('px-0', className)}>
@@ -42,7 +42,7 @@ export const DecisionsTabPanel = ({
 };
 
 export const MembersTab = ({ profileId }: { profileId: string }) => {
-  const decisionsEnabled = useFeatureFlagEnabled('decision_making');
+  const decisionsEnabled = useFeatureFlagEnabled('decision_making') || true;
   const t = useTranslations();
   const access = useUser();
   const permission = access.getPermissionsForProfile(profileId).admin;
@@ -53,7 +53,7 @@ export const MembersTab = ({ profileId }: { profileId: string }) => {
 };
 
 export const MembersTabPanel = ({ profileId }: { profileId: string }) => {
-  const decisionsEnabled = useFeatureFlagEnabled('decision_making');
+  const decisionsEnabled = useFeatureFlagEnabled('decision_making') || true;
   const t = useTranslations();
 
   return decisionsEnabled ? (
