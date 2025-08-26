@@ -1,6 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
+import { EntityType } from '@op/api/encoders';
 import { Suspense } from 'react';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
@@ -18,6 +19,7 @@ export const ProfileSearchResultsSuspense = ({
   const [profiles] = trpc.profile.search.useSuspenseQuery({
     limit,
     q: query,
+    types: [EntityType.ORG],
   });
 
   return profiles.length > 0 ? (
