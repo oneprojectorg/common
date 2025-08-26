@@ -44,12 +44,32 @@ export const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
       type: 'object',
       title: 'Set up your decision-making phases',
       required: [
+        'ideaCollectionPhase',
         'proposalSubmissionPhase',
         'reviewShortlistingPhase',
         'votingPhase',
         'resultsAnnouncement',
       ],
       properties: {
+        ideaCollectionPhase: {
+          type: 'object',
+          title: 'Idea Collection Phase',
+          description:
+            'Members share initial ideas and concepts before formal proposal submission.',
+          properties: {
+            ideaCollectionOpen: {
+              type: 'string',
+              format: 'date',
+              title: 'Idea Collection Open',
+            },
+            ideaCollectionClose: {
+              type: 'string',
+              format: 'date',
+              title: 'Idea Collection Close',
+            },
+          },
+          required: ['ideaCollectionOpen', 'ideaCollectionClose'],
+        },
         proposalSubmissionPhase: {
           type: 'object',
           title: 'Proposal Submission Phase',
@@ -122,6 +142,14 @@ export const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
       },
     },
     uiSchema: {
+      ideaCollectionPhase: {
+        ideaCollectionOpen: {
+          'ui:widget': 'date',
+        },
+        ideaCollectionClose: {
+          'ui:widget': 'date',
+        },
+      },
       proposalSubmissionPhase: {
         submissionsOpen: {
           'ui:widget': 'date',
@@ -242,6 +270,10 @@ export const schemaDefaults = {
   processName: '',
   description: '',
   totalBudget: null,
+  ideaCollectionPhase: {
+    ideaCollectionOpen: '',
+    ideaCollectionClose: '',
+  },
   proposalSubmissionPhase: {
     submissionsOpen: '',
     submissionsClose: '',
@@ -278,13 +310,27 @@ export const transformFormDataToProcessSchema = (
     },
     states: [
       {
+        id: 'ideaCollection',
+        name: 'Idea Collection',
+        type: 'initial' as const,
+        phase: {
+          startDate: (data.ideaCollectionPhase as any)?.ideaCollectionOpen,
+          endDate: (data.ideaCollectionPhase as any)?.ideaCollectionClose,
+          sortOrder: 1,
+        },
+        config: {
+          allowProposals: false,
+          allowDecisions: false,
+        },
+      },
+      {
         id: 'submission',
         name: 'Proposal Submission',
-        type: 'initial' as const,
+        type: 'intermediate' as const,
         phase: {
           startDate: (data.proposalSubmissionPhase as any)?.submissionsOpen,
           endDate: (data.proposalSubmissionPhase as any)?.submissionsClose,
-          sortOrder: 1,
+          sortOrder: 2,
         },
         config: {
           allowProposals: true,
@@ -298,7 +344,7 @@ export const transformFormDataToProcessSchema = (
         phase: {
           startDate: (data.reviewShortlistingPhase as any)?.reviewOpen,
           endDate: (data.reviewShortlistingPhase as any)?.reviewClose,
-          sortOrder: 2,
+          sortOrder: 3,
         },
         config: {
           allowProposals: false,
@@ -312,7 +358,7 @@ export const transformFormDataToProcessSchema = (
         phase: {
           startDate: (data.votingPhase as any)?.votingOpen,
           endDate: (data.votingPhase as any)?.votingClose,
-          sortOrder: 3,
+          sortOrder: 4,
         },
         config: {
           allowProposals: false,
@@ -325,7 +371,7 @@ export const transformFormDataToProcessSchema = (
         type: 'final' as const,
         phase: {
           startDate: (data.resultsAnnouncement as any)?.resultsDate,
-          sortOrder: 4,
+          sortOrder: 5,
         },
         config: {
           allowProposals: false,
@@ -334,6 +380,13 @@ export const transformFormDataToProcessSchema = (
       },
     ],
     transitions: [
+      {
+        id: 'ideaCollection-to-submission',
+        name: 'Move to Proposal Submission',
+        from: 'ideaCollection',
+        to: 'submission',
+        rules: { type: 'manual' as const },
+      },
       {
         id: 'submission-to-review',
         name: 'Move to Review',
@@ -356,7 +409,7 @@ export const transformFormDataToProcessSchema = (
         rules: { type: 'manual' as const },
       },
     ],
-    initialState: 'submission',
+    initialState: 'ideaCollection',
     decisionDefinition: {
       type: 'object',
       properties: {
