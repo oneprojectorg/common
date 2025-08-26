@@ -3,8 +3,9 @@ import {
   EntityType,
   processInstances,
   profiles,
-  proposals,
+  proposalAttachments,
   proposalCategories,
+  proposals,
   taxonomyTerms,
   users,
 } from '@op/db/schema';
@@ -17,13 +18,14 @@ import {
   UnauthorizedError,
   ValidationError,
 } from '../../utils';
+import { processProposalContent } from './proposalContentProcessor';
 import type { InstanceData, ProcessSchema, ProposalData } from './types';
-
 
 export interface CreateProposalInput {
   processInstanceId: string;
   proposalData: ProposalData;
   authUserId: string;
+  attachmentIds?: string[];
 }
 
 export const createProposal = async ({
@@ -95,7 +97,7 @@ export const createProposal = async ({
     // Pre-fetch category term if specified to avoid lookup inside transaction
     const categoryLabel = (data.proposalData as any)?.category;
     let categoryTermId: string | null = null;
-    
+
     if (categoryLabel?.trim()) {
       try {
         const taxonomyTerm = await db.query.taxonomyTerms.findFirst({
@@ -104,14 +106,19 @@ export const createProposal = async ({
             taxonomy: true,
           },
         });
-        
+
         if (taxonomyTerm && taxonomyTerm.taxonomy?.name === 'proposal') {
           categoryTermId = taxonomyTerm.id;
         } else {
-          console.warn(`No valid proposal taxonomy term found for category: ${categoryLabel}`);
+          console.warn(
+            `No valid proposal taxonomy term found for category: ${categoryLabel}`,
+          );
         }
       } catch (error) {
-        console.warn('Error fetching category term, proceeding without category:', error);
+        console.warn(
+          'Error fetching category term, proceeding without category:',
+          error,
+        );
       }
     }
 
@@ -149,11 +156,34 @@ export const createProposal = async ({
         });
       }
 
+      // Link attachments to proposal if provided
+      if (proposal && data.attachmentIds && data.attachmentIds.length > 0) {
+        const proposalAttachmentValues = data.attachmentIds.map(
+          (attachmentId) => ({
+            proposalId: proposal.id,
+            attachmentId: attachmentId,
+            uploadedBy: dbUser.currentProfileId!,
+          }),
+        );
+
+        await tx.insert(proposalAttachments).values(proposalAttachmentValues);
+      }
+
       return proposal;
     });
 
     if (!proposal) {
       throw new CommonError('Failed to create proposal');
+    }
+
+    // Process proposal content to replace temporary URLs with permanent ones
+    if (data.attachmentIds && data.attachmentIds.length > 0) {
+      try {
+        await processProposalContent(proposal.id);
+      } catch (error) {
+        console.error('Error processing proposal content:', error);
+        // Don't throw - we don't want to fail proposal creation if URL processing fails
+      }
     }
 
     return proposal;

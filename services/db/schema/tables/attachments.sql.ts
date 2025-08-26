@@ -11,11 +11,9 @@ export const attachments = pgTable(
   'attachments',
   {
     id: autoId().primaryKey(),
-    postId: uuid()
-      .notNull()
-      .references(() => posts.id, {
-        onDelete: 'cascade',
-      }),
+    postId: uuid().references(() => posts.id, {
+      onDelete: 'cascade',
+    }),
     storageObjectId: uuid()
       .notNull()
       .references(() => objectsInStorage.id, {
