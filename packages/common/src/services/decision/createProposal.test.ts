@@ -24,7 +24,7 @@ vi.mock('@op/db/client', () => ({
 }));
 
 vi.mock('./proposalContentProcessor', () => ({
-  processProposalContent: vi.fn(),
+  processProposalContent: vi.fn().mockResolvedValue(undefined),
 }));
 
 describe('createProposal with attachments', () => {
