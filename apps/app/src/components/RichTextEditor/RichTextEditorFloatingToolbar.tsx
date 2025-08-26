@@ -65,6 +65,7 @@ export function RichTextEditorFloatingToolbar({
       style={{
         top: `${position.top}px`,
         left: `${position.left}px`,
+        transform: 'translateX(-50%)',
         minWidth: 'max-content',
       }}
     >
