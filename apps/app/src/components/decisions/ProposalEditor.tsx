@@ -17,6 +17,7 @@ import {
 } from '../RichTextEditor';
 import { ProposalEditorLayout } from './layout';
 import { ProposalRichTextToolbar } from './ProposalRichTextToolbar';
+import { ProposalInfoModal } from './ProposalInfoModal';
 
 type Proposal = z.infer<typeof proposalEncoder>;
 
@@ -41,6 +42,7 @@ export function ProposalEditor({
   const [editorContent, setEditorContent] = useState('');
   const [editorInstance, setEditorInstance] = useState<any>(null);
   const [imageAttachments, setImageAttachments] = useState<ImageAttachment[]>([]);
+  const [showInfoModal, setShowInfoModal] = useState(false);
   const editorRef = useRef<RichTextEditorRef>(null);
 
   const createProposalMutation = trpc.decision.createProposal.useMutation();
@@ -50,6 +52,12 @@ export function ProposalEditor({
   const proposalTemplate = instance.process?.processSchema?.proposalTemplate;
   const descriptionGuidance = instance.instanceData?.fieldValues
     ?.descriptionGuidance as string | undefined;
+  
+  // Extract proposal info from the instance field values
+  const proposalInfoTitle = instance.instanceData?.fieldValues
+    ?.proposalInfoTitle as string | undefined;
+  const proposalInfoContent = instance.instanceData?.fieldValues
+    ?.proposalInfoContent as string | undefined;
 
   // Get categories dynamically from the database
   const [categoriesData] = trpc.decision.getCategories.useSuspenseQuery({
@@ -149,6 +157,17 @@ export function ProposalEditor({
       editorInstance.commands.setContent(parsedProposalData.content);
     }
   }, [editorInstance, isEditMode, parsedProposalData?.content]);
+
+  // Show proposal info modal when creating a new proposal (not editing)
+  useEffect(() => {
+    if (!isEditMode && proposalInfoTitle && proposalInfoContent) {
+      setShowInfoModal(true);
+    }
+  }, [isEditMode, proposalInfoTitle, proposalInfoContent]);
+
+  const handleCloseInfoModal = () => {
+    setShowInfoModal(false);
+  };
 
   const handleSubmitProposal = useCallback(async () => {
     const content = editorRef.current?.getHTML() || editorContent;
@@ -299,6 +318,16 @@ export function ProposalEditor({
           />
         </div>
       </div>
+
+      {/* Proposal Info Modal */}
+      {proposalInfoTitle && proposalInfoContent && (
+        <ProposalInfoModal
+          isOpen={showInfoModal}
+          onClose={handleCloseInfoModal}
+          title={proposalInfoTitle}
+          content={proposalInfoContent}
+        />
+      )}
     </ProposalEditorLayout>
   );
 }
