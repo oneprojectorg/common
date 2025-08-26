@@ -65,7 +65,7 @@ export const viewport: Viewport = {
 
 const RootLayout = async ({ children }: { children: React.ReactNode }) => {
   return (
-    <html lang="en">
+    <html>
       <head>
         {/* {(IS_DEVELOPMENT || IS_PREVIEW) && (
           <script

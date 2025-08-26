@@ -11,11 +11,10 @@ import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
 import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
-import Link from 'next/link';
 import { ReactNode, Suspense } from 'react';
 import { LuCopy, LuGlobe, LuMail } from 'react-icons/lu';
 
-import { useTranslations } from '@/lib/i18n';
+import { Link, useTranslations } from '@/lib/i18n';
 
 import { ContactLink } from '@/components/ContactLink';
 import ErrorBoundary from '@/components/ErrorBoundary';
@@ -42,9 +41,11 @@ const FocusAreas = ({
     facet?: string | null;
   }>;
 }) => {
+  const t = useTranslations();
+
   return (
     <section className="flex flex-col gap-2 text-neutral-charcoal">
-      <Header3>Focus Areas</Header3>
+      <Header3>{t('Focus Areas')}</Header3>
       <TagGroup>
         {focusAreas.map((term) => (
           <Tag key={term.label}>{term.label}</Tag>
@@ -82,6 +83,7 @@ const CommunitiesServed = ({ profileId }: { profileId: string }) => {
   const [terms] = trpc.organization.getTerms.useSuspenseQuery({
     id: profileId,
   });
+  const t = useTranslations();
 
   const communitiesServed = terms['candid:POPULATION'];
 
@@ -89,7 +91,7 @@ const CommunitiesServed = ({ profileId }: { profileId: string }) => {
 
   return (
     <section className="flex flex-col gap-2 text-neutral-charcoal">
-      <Header3>Communities We Serve</Header3>
+      <Header3>{t('Communities We Serve')}</Header3>
       <TagGroup>
         {communitiesServed.map((term) => (
           <Tag key={term.label}>{term.label}</Tag>
@@ -108,12 +110,13 @@ const ProfileAbout = ({
 }) => {
   const { mission, email, website } = profile.profile;
   const { orgType, strategies } = profile;
+  const t = useTranslations();
 
   return (
     <div className={cn('flex flex-col gap-8', className)}>
       {email || website ? (
         <section className="flex flex-col gap-2">
-          <Header3>Contact</Header3>
+          <Header3>{t('Contact')}</Header3>
           <div className="flex flex-col text-teal">
             {website ? (
               <ContactLink>
@@ -136,13 +139,14 @@ const ProfileAbout = ({
                     onPress={() => {
                       navigator.clipboard.writeText(email);
                       toast.success({
-                        message:
+                        message: t(
                           'This email address has been copied to your clipboard.',
+                        ),
                         dismissable: false,
                       });
                     }}
                   >
-                    <LuCopy /> Copy
+                    <LuCopy /> {t('Copy')}
                   </Button>
                 }
               >
@@ -170,14 +174,14 @@ const ProfileAbout = ({
 
       {mission ? (
         <section className="flex flex-col gap-2 text-neutral-charcoal">
-          <Header3>Mission Statement</Header3>
+          <Header3>{t('Mission Statement')}</Header3>
           <p>{mission}</p>
         </section>
       ) : null}
 
       {strategies?.length > 0 ? (
         <section className="flex flex-col gap-2 text-neutral-charcoal">
-          <Header3>Strategies</Header3>
+          <Header3>{t('Strategies')}</Header3>
           <TagGroup>
             {strategies.map((strategy) =>
               strategy ? (
@@ -325,8 +329,8 @@ export const ProfileTabsMobile = ({
           </>
         ) : (
           <>
-            <Tab id="organizations">Organizations</Tab>
-            <Tab id="following">Following</Tab>
+            <Tab id="organizations">{t('Organizations')}</Tab>
+            <Tab id="following">{t('Following')}</Tab>
           </>
         )}
       </TabList>

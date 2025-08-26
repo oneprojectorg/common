@@ -20,6 +20,36 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
       !pathname.startsWith(`/${locale}/`) && pathname !== `/${locale}`,
   );
 
+  // Set locale cookie if URL contains a locale (for preference learning)
+  let localeResponse: NextResponse | null = null;
+  if (!pathnameIsMissingLocale && !pathname.startsWith('/api')) {
+    const currentLocale = i18nConfig.locales.find(
+      (locale) =>
+        pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`,
+    );
+
+    if (currentLocale) {
+      const existingLocaleCookie = request.cookies.get('NEXT_LOCALE')?.value;
+
+      // Only set cookie if it's different from current cookie value
+      if (existingLocaleCookie !== currentLocale) {
+        localeResponse = NextResponse.next({ request });
+
+        // Set the locale cookie with proper domain options
+        localeResponse.cookies.set('NEXT_LOCALE', currentLocale, {
+          path: '/',
+          maxAge: 60 * 60 * 24 * 365, // 1 year
+          secure:
+            useUrl.IS_PRODUCTION || useUrl.IS_STAGING || useUrl.IS_PREVIEW,
+          sameSite: 'lax',
+          ...(useUrl.IS_PRODUCTION || useUrl.IS_STAGING || useUrl.IS_PREVIEW
+            ? { domain: cookieOptionsDomain }
+            : {}),
+        });
+      }
+    }
+  }
+
   // only reroute if locale is missing. Otherwise we want to use the domain routing
   if (pathnameIsMissingLocale && !pathname.startsWith('/api')) {
     const handleI18nRouting = createMiddleware(routing);
@@ -29,7 +59,7 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
     return response;
   }
 
-  let supabaseResponse = NextResponse.next({
+  let supabaseResponse = localeResponse || NextResponse.next({
     request,
   });
   const supabase = createServerClient(

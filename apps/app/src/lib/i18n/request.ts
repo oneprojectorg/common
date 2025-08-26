@@ -31,12 +31,11 @@ export default getRequestConfig(async ({ requestLocale }) => {
   if (!locale || !routing.locales.includes(locale as any)) {
     locale = routing.defaultLocale;
   }
-
   const rawMessages = (await import(`./dictionaries/${locale}.json`)).default;
 
   return {
     locale,
     // messages: await getConfig(locale),
-    messages: getConfig(rawMessages),
+    messages: await getConfig(rawMessages),
   };
 });

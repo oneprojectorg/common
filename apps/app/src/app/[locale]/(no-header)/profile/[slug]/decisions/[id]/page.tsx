@@ -1,6 +1,7 @@
 import { trpcNext } from '@op/api/vanilla';
 import { ButtonLink } from '@op/ui/Button';
 import { Header3 } from '@op/ui/Header';
+import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
@@ -32,6 +33,7 @@ async function DecisionInstancePageContent({
 }) {
   try {
     const client = await trpcNext();
+    const t = await getTranslations();
 
     // Fetch instance and proposals in parallel
     const [instance, proposalsData] = await Promise.all([
@@ -106,7 +108,7 @@ async function DecisionInstancePageContent({
                     color="primary"
                     className="w-full"
                   >
-                    Submit a proposal
+                    {t('Submit a proposal')}
                   </ButtonLink>
                 </div>
 
