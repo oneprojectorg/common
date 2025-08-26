@@ -1,6 +1,6 @@
 import { getPublicUrl } from '@/utils';
 import { trpcNext } from '@op/api/vanilla';
-import { Tab, TabPanel } from '@op/ui/Tabs';
+import { TabPanel } from '@op/ui/Tabs';
 import { cn, getGradientForString } from '@op/ui/utils';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
@@ -22,6 +22,10 @@ import {
   MembersTab,
   MembersTabPanel,
 } from '@/components/Profile/ProfileContent/DecisionsTabs';
+import {
+  DesktopIndividualTabs,
+  DesktopOrganizationTabs,
+} from '@/components/Profile/ProfileContent/DesktopTabs';
 import {
   FollowersTab,
   FollowersTabPanel,
@@ -84,8 +88,7 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
           <ProfileDetails organization={organization} />
           <ProfileTabs>
             <ProfileTabList>
-              <Tab id="home">Home</Tab>
-              <Tab id="relationships">Relationships</Tab>
+              <DesktopOrganizationTabs />
               <FollowersTab />
               <MembersTab profileId={profile.id} />
               <DecisionsTab profileId={profile.id} />
@@ -178,9 +181,7 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
         <ProfileDetails organization={userProfile} />
         <ProfileTabs>
           <ProfileTabList>
-            <Tab id="about">About</Tab>
-            <Tab id="organizations">Organizations</Tab>
-            <Tab id="following">Following</Tab>
+            <DesktopIndividualTabs />
           </ProfileTabList>
 
           <TabPanel id="about" className="sm:p-0">

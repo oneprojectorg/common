@@ -27,6 +27,8 @@ import Image from 'next/image';
 import { useCallback, useMemo, useRef } from 'react';
 import { z } from 'zod';
 
+import { useTranslations } from '@/lib/i18n';
+
 import { PostFeed, PostItem, usePostFeedActions } from '../PostFeed';
 import { PostUpdate } from '../PostUpdate';
 import { IframelyExtension } from './IframelyExtension';
@@ -40,6 +42,7 @@ interface ProposalViewProps {
 }
 
 export function ProposalView({ proposal: initialProposal, backHref }: ProposalViewProps) {
+  const t = useTranslations();
   const commentsContainerRef = useRef<HTMLDivElement>(null);
   const utils = trpc.useUtils();
 
@@ -295,7 +298,7 @@ export function ProposalView({ proposal: initialProposal, backHref }: ProposalVi
     return (
       <ProposalViewLayout
         backHref={backHref}
-        title={title || 'Untitled Proposal'}
+        title={title || t('Untitled Proposal')}
         onLike={handleLike}
         onFollow={handleFollow}
         isLiked={currentProposal.isLikedByUser || false}
@@ -305,7 +308,7 @@ export function ProposalView({ proposal: initialProposal, backHref }: ProposalVi
         canEdit={canEdit}
       >
         <div className="flex flex-1 items-center justify-center">
-          <div className="text-gray-500">Loading proposal...</div>
+          <div className="text-gray-500">{t('Loading proposal...')}</div>
         </div>
       </ProposalViewLayout>
     );
@@ -314,7 +317,7 @@ export function ProposalView({ proposal: initialProposal, backHref }: ProposalVi
   return (
     <ProposalViewLayout
       backHref={backHref}
-      title={title || 'Untitled Proposal'}
+      title={title || t('Untitled Proposal')}
       onLike={handleLike}
       onFollow={handleFollow}
       isLiked={currentProposal.isLikedByUser || false}
@@ -328,7 +331,7 @@ export function ProposalView({ proposal: initialProposal, backHref }: ProposalVi
         <div className="mx-auto flex max-w-4xl flex-col gap-6">
           {/* Title */}
           <h1 className="font-serif text-title-lg text-neutral-black">
-            {title || 'Untitled Proposal'}
+            {title || t('Untitled Proposal')}
           </h1>
 
           {/* Metadata Row */}
@@ -337,7 +340,7 @@ export function ProposalView({ proposal: initialProposal, backHref }: ProposalVi
               {budget && (
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-neutral-charcoal">
-                    Budget
+                    {t('Budget')}
                   </span>
                   <span className="rounded-md bg-neutral-gray1 px-3 py-1 text-sm font-semibold text-neutral-charcoal">
                     {formatCurrency(budget)}
@@ -385,7 +388,7 @@ export function ProposalView({ proposal: initialProposal, backHref }: ProposalVi
                     {currentProposal.submittedBy.name || currentProposal.submittedBy.slug}
                   </span>
                   <span className="text-xs text-neutral-gray2">
-                    Submitted on {formatDate(currentProposal.createdAt)}
+                    {t('Submitted on')} {formatDate(currentProposal.createdAt)}
                   </span>
                 </div>
               </>
@@ -396,17 +399,17 @@ export function ProposalView({ proposal: initialProposal, backHref }: ProposalVi
           <div className="flex items-center gap-6 border-b border-neutral-gray1 pb-4">
             <div className="flex items-center gap-1 text-sm text-neutral-gray2">
               <Heart className="h-4 w-4" />
-              <span>0 Likes</span>
+              <span>0 {t('Likes')}</span>
             </div>
             <div className="flex items-center gap-1 text-sm text-neutral-gray2">
               <MessageCircle className="h-4 w-4" />
               <span>
-                {comments.length} Comment{comments.length !== 1 ? 's' : ''}
+                {comments.length} {comments.length !== 1 ? t('Comments') : t('Comment')}
               </span>
             </div>
             <div className="flex items-center gap-1 text-sm text-neutral-gray2">
               <Users className="h-4 w-4" />
-              <span>1 Follower</span>
+              <span>1 {t('Follower')}</span>
             </div>
           </div>
 
@@ -424,7 +427,7 @@ export function ProposalView({ proposal: initialProposal, backHref }: ProposalVi
           <div className="mt-12" ref={commentsContainerRef}>
             <div className="border-t border-neutral-gray1 pt-8">
               <h3 className="mb-6 text-lg font-semibold text-neutral-charcoal">
-                Comments ({comments.length})
+                {t('Comments')} ({comments.length})
               </h3>
 
               {/* Comment Input */}
@@ -432,8 +435,8 @@ export function ProposalView({ proposal: initialProposal, backHref }: ProposalVi
                 <Surface className="border-0 p-0 sm:border sm:p-4">
                   <PostUpdate
                     profileId={currentProposal.profileId || undefined}
-                    placeholder={`Comment${user?.currentProfile?.name ? ` as ${user?.currentProfile?.name}` : ''}...`}
-                    label="Comment"
+                    placeholder={`${t('Comment')}${user?.currentProfile?.name ? ` as ${user?.currentProfile?.name}` : ''}...`}
+                    label={t('Comment')}
                     onSuccess={scrollToComments}
                   />
                 </Surface>
@@ -446,7 +449,7 @@ export function ProposalView({ proposal: initialProposal, backHref }: ProposalVi
                   role="status"
                   aria-label="Loading comments"
                 >
-                  Loading comments...
+                  {t('Loading comments...')}
                 </div>
               ) : comments.length > 0 ? (
                 <div role="feed" aria-label={`${comments.length} comments`}>
@@ -473,7 +476,7 @@ export function ProposalView({ proposal: initialProposal, backHref }: ProposalVi
                   role="status"
                   aria-label="No comments"
                 >
-                  No comments yet. Be the first to comment!
+                  {t('No comments yet. Be the first to comment!')}
                 </div>
               )}
             </div>

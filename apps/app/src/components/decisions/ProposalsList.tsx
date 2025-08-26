@@ -6,6 +6,8 @@ import { Select, SelectItem } from '@op/ui/Select';
 import { useState } from 'react';
 import type { z } from 'zod';
 
+import { useTranslations } from '@/lib/i18n';
+
 import { ProposalCard } from './ProposalCard';
 
 type Proposal = z.infer<typeof proposalEncoder>;
@@ -16,22 +18,26 @@ interface ProposalsListProps {
   instanceId: string;
 }
 
-const NoProposalsFound = () => (
-  <div className="py-12 text-center">
-    <p className="text-neutral-charcoal">
-      No proposals found matching the current filters.
-    </p>
-    <p className="mt-2 text-sm text-neutral-gray2">
-      Try adjusting your filter selection above.
-    </p>
-  </div>
-);
+const NoProposalsFound = () => {
+  const t = useTranslations();
+  return (
+    <div className="py-12 text-center">
+      <p className="text-neutral-charcoal">
+        {t('No proposals found matching the current filters.')}
+      </p>
+      <p className="mt-2 text-sm text-neutral-gray2">
+        {t('Try adjusting your filter selection above.')}
+      </p>
+    </div>
+  );
+};
 
 export function ProposalsList({
   initialProposals,
   slug,
   instanceId,
 }: ProposalsListProps) {
+  const t = useTranslations();
   const [selectedCategory, setSelectedCategory] =
     useState<string>('all-categories');
 
@@ -65,13 +71,13 @@ export function ProposalsList({
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <span className="text-lg font-medium text-neutral-charcoal">
-            My proposals • {proposals.length}
+            {t('My proposals •')} {proposals.length}
           </span>
         </div>
         <div className="flex items-center gap-4">
           <Select defaultSelectedKey="all" className="w-36">
-            <SelectItem id="my">My proposals</SelectItem>
-            <SelectItem id="all">All proposals</SelectItem>
+            <SelectItem id="my">{t('My proposals')}</SelectItem>
+            <SelectItem id="all">{t('All proposals')}</SelectItem>
           </Select>
           <Select
             selectedKey={selectedCategory}
@@ -80,7 +86,7 @@ export function ProposalsList({
             aria-label="Filter proposals by category"
           >
             <SelectItem id="all-categories" aria-label="Show all categories">
-              All categories
+              {t('All categories')}
             </SelectItem>
             {categories.map((category) => (
               <SelectItem
@@ -93,8 +99,8 @@ export function ProposalsList({
             ))}
           </Select>
           <Select defaultSelectedKey="newest" className="w-36">
-            <SelectItem id="newest">Newest First</SelectItem>
-            <SelectItem id="oldest">Oldest First</SelectItem>
+            <SelectItem id="newest">{t('Newest First')}</SelectItem>
+            <SelectItem id="oldest">{t('Oldest First')}</SelectItem>
           </Select>
         </div>
       </div>
