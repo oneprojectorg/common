@@ -13,6 +13,7 @@ const buttonStyle = tv({
     variant: {
       primary: '',
       icon: 'flex gap-2 text-sm sm:text-base',
+      pill: 'h-auto border-0 bg-primary-tealWhite p-2 text-primary-teal active:bg-teal-50 active:text-primary-tealBlack hover:bg-teal-50 hover:text-primary-tealBlack focus-visible:outline-data-blue',
     },
     color: {
       primary:
@@ -28,6 +29,7 @@ const buttonStyle = tv({
         'border border-neutral-gray1 bg-white text-neutral-charcoal shadow-light hover:bg-neutral-50 pressed:bg-white',
       destructive:
         'border-functional-red bg-functional-red text-neutral-offWhite hover:bg-functional-redBlack',
+      pill: '',
     },
     size: {
       small: 'h-8 p-3',
