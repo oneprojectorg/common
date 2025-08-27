@@ -35,19 +35,27 @@ export function ProposalCardActions({
   const addRelationshipMutation = trpc.profile.addRelationship.useMutation({
     onMutate: async (variables) => {
       // Cancel outgoing refetches
-      await utils.decision.listProposals.cancel();
+      if (initialProposal.processInstance?.id) {
+        await utils.decision.listProposals.cancel({
+          processInstanceId: initialProposal.processInstance.id,
+        });
+      }
       await utils.decision.getProposal.cancel({
         proposalId: currentProposal.id,
       });
 
       // Snapshot the previous values
-      const previousListData = utils.decision.listProposals.getData();
+      const previousListData = initialProposal.processInstance?.id
+        ? utils.decision.listProposals.getData({
+            processInstanceId: initialProposal.processInstance.id,
+          })
+        : null;
       const previousProposalData = utils.decision.getProposal.getData({
         proposalId: currentProposal.id,
       });
 
       // Optimistically update list data
-      if (previousListData) {
+      if (previousListData && initialProposal.processInstance?.id) {
         const optimisticListData = {
           ...previousListData,
           proposals: previousListData.proposals.map((p) =>
@@ -76,7 +84,10 @@ export function ProposalCardActions({
               : p,
           ),
         };
-        utils.decision.listProposals.setData({}, optimisticListData);
+        utils.decision.listProposals.setData(
+          { processInstanceId: initialProposal.processInstance.id },
+          optimisticListData,
+        );
       }
 
       // Optimistically update individual proposal data
@@ -110,8 +121,11 @@ export function ProposalCardActions({
     },
     onError: (error, _variables, context) => {
       // Rollback on error
-      if (context?.previousListData) {
-        utils.decision.listProposals.setData({}, context.previousListData);
+      if (context?.previousListData && initialProposal.processInstance?.id) {
+        utils.decision.listProposals.setData(
+          { processInstanceId: initialProposal.processInstance.id },
+          context.previousListData,
+        );
       }
       if (context?.previousProposalData) {
         utils.decision.getProposal.setData(
@@ -124,7 +138,11 @@ export function ProposalCardActions({
     onSettled: () => {
       // Always refetch after error or success
       utils.decision.getProposal.invalidate({ proposalId: currentProposal.id });
-      utils.decision.listProposals.invalidate();
+      if (initialProposal.processInstance?.id) {
+        utils.decision.listProposals.invalidate({
+          processInstanceId: initialProposal.processInstance.id,
+        });
+      }
     },
   });
 
@@ -132,19 +150,27 @@ export function ProposalCardActions({
     trpc.profile.removeRelationship.useMutation({
       onMutate: async (variables) => {
         // Cancel outgoing refetches
-        await utils.decision.listProposals.cancel();
+        if (initialProposal.processInstance?.id) {
+          await utils.decision.listProposals.cancel({
+            processInstanceId: initialProposal.processInstance.id,
+          });
+        }
         await utils.decision.getProposal.cancel({
           proposalId: currentProposal.id,
         });
 
         // Snapshot the previous values
-        const previousListData = utils.decision.listProposals.getData();
+        const previousListData = initialProposal.processInstance?.id
+          ? utils.decision.listProposals.getData({
+              processInstanceId: initialProposal.processInstance.id,
+            })
+          : null;
         const previousProposalData = utils.decision.getProposal.getData({
           proposalId: currentProposal.id,
         });
 
         // Optimistically update list data
-        if (previousListData) {
+        if (previousListData && initialProposal.processInstance?.id) {
           const optimisticListData = {
             ...previousListData,
             proposals: previousListData.proposals.map((p) =>
@@ -175,7 +201,10 @@ export function ProposalCardActions({
                 : p,
             ),
           };
-          utils.decision.listProposals.setData({}, optimisticListData);
+          utils.decision.listProposals.setData(
+            { processInstanceId: initialProposal.processInstance.id },
+            optimisticListData,
+          );
         }
 
         // Optimistically update individual proposal data
@@ -209,8 +238,11 @@ export function ProposalCardActions({
       },
       onError: (error, _variables, context) => {
         // Rollback on error
-        if (context?.previousListData) {
-          utils.decision.listProposals.setData({}, context.previousListData);
+        if (context?.previousListData && initialProposal.processInstance?.id) {
+          utils.decision.listProposals.setData(
+            { processInstanceId: initialProposal.processInstance.id },
+            context.previousListData,
+          );
         }
         if (context?.previousProposalData) {
           utils.decision.getProposal.setData(
@@ -225,7 +257,11 @@ export function ProposalCardActions({
         utils.decision.getProposal.invalidate({
           proposalId: currentProposal.id,
         });
-        utils.decision.listProposals.invalidate();
+        if (initialProposal.processInstance?.id) {
+          utils.decision.listProposals.invalidate({
+            processInstanceId: initialProposal.processInstance.id,
+          });
+        }
       },
     });
 
