@@ -39,7 +39,7 @@ export const createProposalRouter = router({
       try {
         const proposal = await createProposal({
           data: { ...input, authUserId: user.id },
-          user,
+          authUserId: user.id,
         });
 
         return proposalEncoder.parse(proposal);

@@ -8,9 +8,7 @@ import {
   proposalCategories,
   proposals,
   taxonomyTerms,
-  users,
 } from '@op/db/schema';
-import { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 import { randomUUID } from 'crypto';
 
@@ -20,7 +18,7 @@ import {
   UnauthorizedError,
   ValidationError,
 } from '../../utils';
-import { getOrgAccessUser } from '../access';
+import { getCurrentProfileId, getOrgAccessUser } from '../access';
 import { processProposalContent } from './proposalContentProcessor';
 import type { InstanceData, ProcessSchema, ProposalData } from './types';
 
@@ -33,12 +31,12 @@ export interface CreateProposalInput {
 
 export const createProposal = async ({
   data,
-  user,
+  authUserId,
 }: {
   data: CreateProposalInput;
-  user: User;
+  authUserId: string;
 }) => {
-  if (!user) {
+  if (!authUserId) {
     throw new UnauthorizedError('User must be authenticated');
   }
 
@@ -70,7 +68,7 @@ export const createProposal = async ({
     }
 
     const orgUser = await getOrgAccessUser({
-      user,
+      user: { id: authUserId },
       organizationId,
     });
 
@@ -131,6 +129,7 @@ export const createProposal = async ({
       }
     }
 
+    const profileId = await getCurrentProfileId(authUserId);
     const proposal = await db.transaction(async (tx) => {
       // Create a profile for the proposal
       const [proposalProfile] = await tx
@@ -151,7 +150,7 @@ export const createProposal = async ({
         .values({
           processInstanceId: data.processInstanceId,
           proposalData: data.proposalData,
-          submittedByProfileId: dbUser.currentProfileId!,
+          submittedByProfileId: profileId,
           profileId: proposalProfile.id,
           status: 'submitted',
         })
@@ -171,7 +170,7 @@ export const createProposal = async ({
           (attachmentId) => ({
             proposalId: proposal.id,
             attachmentId: attachmentId,
-            uploadedBy: dbUser.currentProfileId!,
+            uploadedBy: profileId,
           }),
         );
 
