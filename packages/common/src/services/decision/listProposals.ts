@@ -17,30 +17,28 @@ import {
 } from '../access';
 
 export interface ListProposalsInput {
-  processInstanceId?: string;
-  profileId?: string;
+  processInstanceId: string;
+  submittedByProfileId?: string;
   status?: 'draft' | 'submitted' | 'under_review' | 'approved' | 'rejected';
   search?: string;
   categoryId?: string;
   limit?: number;
   offset?: number;
   orderBy?: 'createdAt' | 'updatedAt' | 'status';
-  orderDirection?: 'asc' | 'desc';
+  dir?: 'asc' | 'desc';
   authUserId: string;
 }
 
 // Shared function to build WHERE conditions for both count and data queries
 const buildWhereConditions = (input: ListProposalsInput) => {
-  const { processInstanceId, profileId, status, search } = input;
+  const { processInstanceId, submittedByProfileId, status, search } = input;
 
   const conditions = [];
 
-  if (processInstanceId) {
-    conditions.push(eq(proposals.processInstanceId, processInstanceId));
-  }
+  conditions.push(eq(proposals.processInstanceId, processInstanceId));
 
-  if (profileId) {
-    conditions.push(eq(proposals.submittedByProfileId, profileId));
+  if (submittedByProfileId) {
+    conditions.push(eq(proposals.submittedByProfileId, submittedByProfileId));
   }
 
   if (status) {
@@ -79,7 +77,7 @@ export const listProposals = async ({
       limit = 20,
       offset = 0,
       orderBy = 'createdAt',
-      orderDirection = 'desc',
+      dir = 'desc',
     } = input;
 
     // Build shared WHERE clause using the extracted function
@@ -126,7 +124,7 @@ export const listProposals = async ({
     // Get proposals with optimized ordering
     const orderColumn = proposals[orderBy] ?? proposals.createdAt;
 
-    const orderFn = orderDirection === 'asc' ? asc : desc;
+    const orderFn = dir === 'asc' ? asc : desc;
 
     const proposalList = await db.query.proposals.findMany({
       where: whereClause,

@@ -4,7 +4,7 @@ import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import type { proposalEncoder } from '@op/api/encoders';
 import { Select, SelectItem } from '@op/ui/Select';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
@@ -43,6 +43,7 @@ export function ProposalsList({
   const [selectedCategory, setSelectedCategory] =
     useState<string>('all-categories');
   const [proposalFilter, setProposalFilter] = useState<string>('all');
+  const [sortOrder, setSortOrder] = useState<string>('newest');
 
   const [categoriesData] = trpc.decision.getCategories.useSuspenseQuery({
     processInstanceId: instanceId,
@@ -53,14 +54,43 @@ export function ProposalsList({
   // Get current user's profile ID for "My Proposals" filter
   const currentProfileId = user?.currentProfile?.id;
 
-  const [proposalsData] = trpc.decision.listProposals.useSuspenseQuery(
-    {
+  // Build query parameters, ensuring consistent structure
+  const queryParams = useMemo(() => {
+    const params: {
+      processInstanceId: string;
+      categoryId?: string;
+      submittedByProfileId?: string;
+      dir: 'asc' | 'desc';
+      limit: number;
+    } = {
       processInstanceId: instanceId,
-      categoryId:
-        selectedCategory === 'all-categories' ? undefined : selectedCategory,
-      profileId: proposalFilter === 'my' ? currentProfileId : undefined,
+      dir: sortOrder === 'newest' ? 'desc' : 'asc',
       limit: 50,
-    },
+    };
+
+    if (selectedCategory !== 'all-categories') {
+      params.categoryId = selectedCategory;
+    }
+
+    // Only include submittedByProfileId if we're filtering for "my" proposals AND we have a currentProfileId
+    if (proposalFilter === 'my' && currentProfileId) {
+      params.submittedByProfileId = currentProfileId;
+    }
+
+    return params;
+  }, [
+    instanceId,
+    selectedCategory,
+    proposalFilter,
+    currentProfileId,
+    sortOrder,
+  ]);
+
+  // If we're filtering for "my" proposals but don't have currentProfileId, show empty results
+  const showEmptyResults = proposalFilter === 'my' && !currentProfileId;
+
+  const [proposalsData] = trpc.decision.listProposals.useSuspenseQuery(
+    queryParams,
     {
       initialData: {
         proposals: initialProposals,
@@ -70,12 +100,17 @@ export function ProposalsList({
     },
   );
 
-  const { proposals } = proposalsData;
+  // Override with empty results if we should show empty
+  const finalProposalsData = showEmptyResults
+    ? { proposals: [], total: 0, hasMore: false }
+    : proposalsData;
+
+  const { proposals } = finalProposalsData;
 
   return (
     <div className="mt-8">
       {/* Filters Bar */}
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <span className="text-lg font-medium text-neutral-charcoal">
             {proposalFilter === 'my'
@@ -84,19 +119,26 @@ export function ProposalsList({
             {proposals.length}
           </span>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4">
           <Select
             selectedKey={proposalFilter}
-            onSelectionChange={(key) => setProposalFilter(String(key))}
-            className="w-36"
+            onSelectionChange={(key) => {
+              const newKey = String(key);
+              // If selecting "My proposals" but no current profile, fallback to "all"
+              if (newKey === 'my' && !currentProfileId) {
+                return;
+              }
+              setProposalFilter(newKey);
+            }}
           >
             <SelectItem id="all">{t('All proposals')}</SelectItem>
-            <SelectItem id="my">{t('My proposals')}</SelectItem>
+            <SelectItem id="my" isDisabled={!currentProfileId}>
+              {t('My proposals')}
+            </SelectItem>
           </Select>
           <Select
             selectedKey={selectedCategory}
             onSelectionChange={(key) => setSelectedCategory(String(key))}
-            className="w-40"
             aria-label="Filter proposals by category"
           >
             <SelectItem id="all-categories" aria-label="Show all categories">
@@ -112,7 +154,10 @@ export function ProposalsList({
               </SelectItem>
             ))}
           </Select>
-          <Select defaultSelectedKey="newest" className="w-36">
+          <Select
+            selectedKey={sortOrder}
+            onSelectionChange={(key) => setSortOrder(String(key))}
+          >
             <SelectItem id="newest">{t('Newest First')}</SelectItem>
             <SelectItem id="oldest">{t('Oldest First')}</SelectItem>
           </Select>
