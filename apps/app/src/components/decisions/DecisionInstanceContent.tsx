@@ -2,26 +2,27 @@
 
 import { getPublicUrl } from '@/utils';
 import { formatCurrency, getUniqueSubmitters } from '@/utils/proposalUtils';
-import type { proposalEncoder } from '@op/api/encoders';
+import { trpc } from '@op/api/client';
 import { Avatar } from '@op/ui/Avatar';
 import { FacePile } from '@op/ui/FacePile';
 import { GradientHeader } from '@op/ui/Header';
 import { useLocale } from 'next-intl';
 import Image from 'next/image';
-import type { z } from 'zod';
-
-type Proposal = z.infer<typeof proposalEncoder>;
 
 interface DecisionInstanceContentProps {
   budget?: number;
-  proposals: Proposal[];
+  instanceId: string;
 }
 
 export function DecisionInstanceContent({
   budget,
-  proposals,
+  instanceId,
 }: DecisionInstanceContentProps) {
   const locale = useLocale();
+  const [{ proposals }] = trpc.decision.listProposals.useSuspenseQuery({
+    processInstanceId: instanceId,
+    limit: 20,
+  });
 
   const uniqueSubmitters = getUniqueSubmitters(proposals);
 
