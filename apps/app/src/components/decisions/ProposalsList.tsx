@@ -2,19 +2,15 @@
 
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import type { proposalEncoder } from '@op/api/encoders';
 import { Select, SelectItem } from '@op/ui/Select';
 import { useMemo, useState } from 'react';
-import type { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { ProposalCard } from './ProposalCard';
 
-type Proposal = z.infer<typeof proposalEncoder>;
 
 interface ProposalsListProps {
-  initialProposals: Proposal[];
   slug: string;
   instanceId: string;
 }
@@ -34,7 +30,6 @@ const NoProposalsFound = () => {
 };
 
 export function ProposalsList({
-  initialProposals,
   slug,
   instanceId,
 }: ProposalsListProps) {
@@ -68,11 +63,12 @@ export function ProposalsList({
       limit: 50,
     };
 
+    // Only include categoryId if it's not "all-categories"
     if (selectedCategory !== 'all-categories') {
       params.categoryId = selectedCategory;
     }
 
-    // Only include submittedByProfileId if we're filtering for "my" proposals AND we have a currentProfileId
+    // Only include submittedByProfileId if filtering for "my" proposals and we have currentProfileId
     if (proposalFilter === 'my' && currentProfileId) {
       params.submittedByProfileId = currentProfileId;
     }
@@ -91,13 +87,6 @@ export function ProposalsList({
 
   const [proposalsData] = trpc.decision.listProposals.useSuspenseQuery(
     queryParams,
-    {
-      initialData: {
-        proposals: initialProposals,
-        total: initialProposals.length,
-        hasMore: false,
-      },
-    },
   );
 
   // Override with empty results if we should show empty

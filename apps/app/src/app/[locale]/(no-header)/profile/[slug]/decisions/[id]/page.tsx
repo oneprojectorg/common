@@ -126,7 +126,6 @@ async function DecisionInstancePageContent({
                 <EmptyProposalsState />
               ) : (
                 <ProposalsList
-                  initialProposals={proposals}
                   slug={slug}
                   instanceId={instanceId}
                 />
