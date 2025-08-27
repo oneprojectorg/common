@@ -1,23 +1,25 @@
 'use client';
 
 import { ProcessInstance } from '@/utils/decisionProcessTransforms';
+import {
+  type ImageAttachment,
+  extractAttachmentIdsFromUrls,
+  extractImageUrlsFromContent,
+} from '@/utils/proposalContentProcessor';
 import { parseProposalData } from '@/utils/proposalUtils';
-import { extractImageUrlsFromContent, extractAttachmentIdsFromUrls, type ImageAttachment } from '@/utils/proposalContentProcessor';
 import { trpc } from '@op/api/client';
 import type { proposalEncoder } from '@op/api/encoders';
+import { Button } from '@op/ui/Button';
 import { Select, SelectItem } from '@op/ui/Select';
 import { TextField } from '@op/ui/TextField';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
 
-import {
-  RichTextEditorContent,
-  RichTextEditorRef,
-} from '../RichTextEditor';
-import { ProposalEditorLayout } from './layout';
-import { ProposalRichTextToolbar } from './ProposalRichTextToolbar';
+import { RichTextEditorContent, RichTextEditorRef } from '../RichTextEditor';
 import { ProposalInfoModal } from './ProposalInfoModal';
+import { ProposalRichTextToolbar } from './ProposalRichTextToolbar';
+import { ProposalEditorLayout } from './layout';
 
 type Proposal = z.infer<typeof proposalEncoder>;
 
@@ -41,7 +43,9 @@ export function ProposalEditor({
   const [budget, setBudget] = useState<number | null>(null);
   const [editorContent, setEditorContent] = useState('');
   const [editorInstance, setEditorInstance] = useState<any>(null);
-  const [imageAttachments, setImageAttachments] = useState<ImageAttachment[]>([]);
+  const [imageAttachments, setImageAttachments] = useState<ImageAttachment[]>(
+    [],
+  );
   const [showInfoModal, setShowInfoModal] = useState(false);
   const editorRef = useRef<RichTextEditorRef>(null);
 
@@ -52,7 +56,7 @@ export function ProposalEditor({
   const proposalTemplate = instance.process?.processSchema?.proposalTemplate;
   const descriptionGuidance = instance.instanceData?.fieldValues
     ?.descriptionGuidance as string | undefined;
-  
+
   // Extract proposal info from the instance field values
   const proposalInfoTitle = instance.instanceData?.fieldValues
     ?.proposalInfoTitle as string | undefined;
@@ -121,7 +125,7 @@ export function ProposalEditor({
 
   // Handle image attachment uploads
   const handleImageUploaded = useCallback((attachment: ImageAttachment) => {
-    setImageAttachments(prev => [...prev, attachment]);
+    setImageAttachments((prev) => [...prev, attachment]);
   }, []);
 
   // Initialize form with existing proposal data if in edit mode
@@ -177,7 +181,10 @@ export function ProposalEditor({
     try {
       // Extract image URLs from content and get attachment IDs
       const imageUrls = extractImageUrlsFromContent(content);
-      const attachmentIds = extractAttachmentIdsFromUrls(imageUrls, imageAttachments);
+      const attachmentIds = extractAttachmentIdsFromUrls(
+        imageUrls,
+        imageAttachments,
+      );
 
       // Create the proposal data structure
       const proposalData = {
@@ -243,8 +250,8 @@ export function ProposalEditor({
       {/* Content */}
       <div className="flex flex-1 flex-col gap-12">
         {editorInstance && (
-          <ProposalRichTextToolbar 
-            editor={editorInstance} 
+          <ProposalRichTextToolbar
+            editor={editorInstance}
             onImageUploaded={handleImageUploaded}
           />
         )}
@@ -277,8 +284,11 @@ export function ProposalEditor({
                 ))}
               </Select>
             ) : null}
-            <button
-              onClick={() => {
+            <Button
+              variant="pill"
+              color="pill"
+              size="small"
+              onPress={() => {
                 const maxBudgetMsg = budgetCapAmount
                   ? ` (max: $${budgetCapAmount.toLocaleString()})`
                   : '';
@@ -298,15 +308,9 @@ export function ProposalEditor({
                   setBudget(newBudget);
                 }
               }}
-              className="text-sm font-medium text-primary-teal hover:text-primary-tealBlack"
             >
-              {budget ? `Budget: $${budget.toLocaleString()}` : 'Add budget'}
-              {budgetCapAmount && (
-                <span className="ml-1 text-xs text-gray-500">
-                  (max: ${budgetCapAmount.toLocaleString()})
-                </span>
-              )}
-            </button>
+              Add budget
+            </Button>
           </div>
 
           <RichTextEditorContent
