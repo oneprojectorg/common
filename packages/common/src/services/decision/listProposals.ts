@@ -134,7 +134,11 @@ export const listProposals = async ({
             process: true,
           },
         },
-        submittedBy: true,
+        submittedBy: {
+          with: {
+            avatarImage: true,
+          },
+        },
         profile: true,
         decisions: true,
       },

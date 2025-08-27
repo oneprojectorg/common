@@ -24,7 +24,7 @@ export const getOrgAccessUser = async ({
   user,
   organizationId,
 }: {
-  user: User;
+  user: { id: string };
   organizationId: string;
 }): Promise<OrgUserWithNormalizedRoles | undefined> => {
   const orgUser = await db.query.organizationUsers.findFirst({

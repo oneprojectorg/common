@@ -1,15 +1,15 @@
 import { db, eq } from '@op/db/client';
 import {
   EntityType,
+  organizations,
   processInstances,
   profiles,
   proposalAttachments,
   proposalCategories,
   proposals,
   taxonomyTerms,
-  users,
 } from '@op/db/schema';
-import { User } from '@op/supabase/lib';
+import { assertAccess, permission } from 'access-zones';
 import { randomUUID } from 'crypto';
 
 import {
@@ -18,6 +18,7 @@ import {
   UnauthorizedError,
   ValidationError,
 } from '../../utils';
+import { getCurrentProfileId, getOrgAccessUser } from '../access';
 import { processProposalContent } from './proposalContentProcessor';
 import type { InstanceData, ProcessSchema, ProposalData } from './types';
 
@@ -30,27 +31,16 @@ export interface CreateProposalInput {
 
 export const createProposal = async ({
   data,
-  user,
+  authUserId,
 }: {
   data: CreateProposalInput;
-  user: User;
+  authUserId: string;
 }) => {
-  if (!user) {
+  if (!authUserId) {
     throw new UnauthorizedError('User must be authenticated');
   }
 
-  // TODO: assert decisions access
-
   try {
-    // Get the database user record to access currentProfileId
-    const dbUser = await db.query.users.findFirst({
-      where: eq(users.authUserId, data.authUserId),
-    });
-
-    if (!dbUser || !dbUser.currentProfileId) {
-      throw new UnauthorizedError('User must have an active profile');
-    }
-
     // Verify the process instance exists and get the process schema
     const instance = await db.query.processInstances.findFirst({
       where: eq(processInstances.id, data.processInstanceId),
@@ -68,6 +58,23 @@ export const createProposal = async ({
       throw new NotFoundError('Process definition not found');
     }
 
+    const org = await db.query.organizations.findFirst({
+      where: eq(organizations.profileId, instance.ownerProfileId),
+    });
+
+    const organizationId = org?.id;
+    if (!organizationId) {
+      throw new NotFoundError('Organization not found');
+    }
+
+    const orgUser = await getOrgAccessUser({
+      user: { id: authUserId },
+      organizationId,
+    });
+
+    assertAccess({ decisions: permission.UPDATE }, orgUser?.roles ?? []);
+
+    // TODO: why doesn't this get resolved by drizzle
     const process = instance.process as any;
     const processSchema = process.processSchema as ProcessSchema;
     const instanceData = instance.instanceData as InstanceData;
@@ -122,6 +129,7 @@ export const createProposal = async ({
       }
     }
 
+    const profileId = await getCurrentProfileId(authUserId);
     const proposal = await db.transaction(async (tx) => {
       // Create a profile for the proposal
       const [proposalProfile] = await tx
@@ -142,7 +150,7 @@ export const createProposal = async ({
         .values({
           processInstanceId: data.processInstanceId,
           proposalData: data.proposalData,
-          submittedByProfileId: dbUser.currentProfileId!,
+          submittedByProfileId: profileId,
           profileId: proposalProfile.id,
           status: 'submitted',
         })
@@ -162,7 +170,7 @@ export const createProposal = async ({
           (attachmentId) => ({
             proposalId: proposal.id,
             attachmentId: attachmentId,
-            uploadedBy: dbUser.currentProfileId!,
+            uploadedBy: profileId,
           }),
         );
 
