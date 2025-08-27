@@ -1,8 +1,16 @@
-import { UnauthorizedError, NotFoundError, ValidationError, createProposal } from '@op/common';
+import {
+  NotFoundError,
+  UnauthorizedError,
+  ValidationError,
+  createProposal,
+} from '@op/common';
 import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 
-import { createProposalInputSchema, proposalEncoder } from '../../../encoders/decision';
+import {
+  createProposalInputSchema,
+  proposalEncoder,
+} from '../../../encoders/decision';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
 import withRateLimited from '../../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../../trpcFactory';
@@ -31,13 +39,7 @@ export const createProposalRouter = router({
       try {
         const proposal = await createProposal({
           data: { ...input, authUserId: user.id },
-          user,
-        });
-
-        logger.info('Proposal created', {
-          userId: user.id,
-          proposalId: proposal.id,
-          processInstanceId: input.processInstanceId,
+          authUserId: user.id,
         });
 
         return proposalEncoder.parse(proposal);
