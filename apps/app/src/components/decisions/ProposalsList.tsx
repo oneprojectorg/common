@@ -2,17 +2,28 @@
 
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
+import type { proposalEncoder } from '@op/api/encoders';
 import { Select, SelectItem } from '@op/ui/Select';
+import { Skeleton } from '@op/ui/Skeleton';
 import { useMemo, useState } from 'react';
+import type { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { ProposalCard } from './ProposalCard';
 
+type Proposal = z.infer<typeof proposalEncoder>;
 
 interface ProposalsListProps {
   slug: string;
   instanceId: string;
+}
+
+interface ProposalsProps {
+  proposals: Proposal[] | undefined;
+  instanceId: string;
+  slug: string;
+  isLoading: boolean;
 }
 
 const NoProposalsFound = () => {
@@ -29,10 +40,32 @@ const NoProposalsFound = () => {
   );
 };
 
-export function ProposalsList({
-  slug,
-  instanceId,
-}: ProposalsListProps) {
+const Proposals = ({ proposals, instanceId, slug, isLoading }: ProposalsProps) => {
+  if (isLoading) {
+    return (
+      <div className="flex flex-col gap-4">
+        <Skeleton className="h-40" />
+        <Skeleton className="h-40" />
+      </div>
+    );
+  }
+
+  return !proposals || proposals.length === 0 ? (
+    <NoProposalsFound />
+  ) : (
+    <div className="space-y-4">
+      {proposals.map((proposal) => (
+        <ProposalCard
+          key={proposal.id}
+          proposal={proposal}
+          viewHref={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.id}`}
+        />
+      ))}
+    </div>
+  );
+};
+
+export function ProposalsList({ slug, instanceId }: ProposalsListProps) {
   const t = useTranslations();
   const { user } = useUser();
   const [selectedCategory, setSelectedCategory] =
@@ -85,16 +118,15 @@ export function ProposalsList({
   // If we're filtering for "my" proposals but don't have currentProfileId, show empty results
   const showEmptyResults = proposalFilter === 'my' && !currentProfileId;
 
-  const [proposalsData] = trpc.decision.listProposals.useSuspenseQuery(
-    queryParams,
-  );
+  const { data: proposalsData, isLoading } =
+    trpc.decision.listProposals.useQuery(queryParams);
 
   // Override with empty results if we should show empty
   const finalProposalsData = showEmptyResults
     ? { proposals: [], total: 0, hasMore: false }
     : proposalsData;
 
-  const { proposals } = finalProposalsData;
+  const { proposals } = finalProposalsData ?? {};
 
   return (
     <div className="mt-8">
@@ -105,7 +137,7 @@ export function ProposalsList({
             {proposalFilter === 'my'
               ? t('My proposals •')
               : t('All proposals •')}{' '}
-            {proposals.length}
+            {proposals?.length ?? 0}
           </span>
         </div>
         <div className="flex flex-wrap items-center gap-4">
@@ -153,20 +185,12 @@ export function ProposalsList({
         </div>
       </div>
 
-      {/* Proposals List or Empty State */}
-      {proposals.length === 0 ? (
-        <NoProposalsFound />
-      ) : (
-        <div className="space-y-4">
-          {proposals.map((proposal) => (
-            <ProposalCard
-              key={proposal.id}
-              proposal={proposal}
-              viewHref={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.id}`}
-            />
-          ))}
-        </div>
-      )}
+      <Proposals
+        isLoading={isLoading}
+        proposals={proposals}
+        instanceId={instanceId}
+        slug={slug}
+      />
     </div>
   );
 }

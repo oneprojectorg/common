@@ -1,6 +1,7 @@
 import { trpcNext } from '@op/api/vanilla';
 import { ButtonLink } from '@op/ui/Button';
 import { Header3 } from '@op/ui/Header';
+import { Skeleton } from '@op/ui/Skeleton';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
@@ -66,7 +67,6 @@ async function DecisionInstancePageContent({
     const { name, proposalCount = 0 } = instance;
     const proposals = proposalsData?.proposals || [];
 
-
     return (
       <>
         <div className="border-b bg-neutral-offWhite">
@@ -88,7 +88,9 @@ async function DecisionInstancePageContent({
             </div>
           </div>
 
-          <DecisionInstanceContent budget={budget} proposals={proposals} />
+          <Suspense fallback={<Skeleton />}>
+            <DecisionInstanceContent budget={budget} instanceId={instanceId} />
+          </Suspense>
         </div>
 
         {/* Main layout with sidebar and content */}
@@ -125,10 +127,9 @@ async function DecisionInstancePageContent({
               {proposals.length === 0 ? (
                 <EmptyProposalsState />
               ) : (
-                <ProposalsList
-                  slug={slug}
-                  instanceId={instanceId}
-                />
+                <Suspense fallback={<Skeleton className="h-full" />}>
+                  <ProposalsList slug={slug} instanceId={instanceId} />
+                </Suspense>
               )}
             </div>
           </div>
