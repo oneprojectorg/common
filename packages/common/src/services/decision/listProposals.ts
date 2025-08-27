@@ -18,7 +18,7 @@ import {
 
 export interface ListProposalsInput {
   processInstanceId?: string;
-  submittedByProfileId?: string;
+  profileId?: string;
   status?: 'draft' | 'submitted' | 'under_review' | 'approved' | 'rejected';
   search?: string;
   categoryId?: string;
@@ -31,7 +31,7 @@ export interface ListProposalsInput {
 
 // Shared function to build WHERE conditions for both count and data queries
 const buildWhereConditions = (input: ListProposalsInput) => {
-  const { processInstanceId, submittedByProfileId, status, search } = input;
+  const { processInstanceId, profileId, status, search } = input;
 
   const conditions = [];
 
@@ -39,8 +39,8 @@ const buildWhereConditions = (input: ListProposalsInput) => {
     conditions.push(eq(proposals.processInstanceId, processInstanceId));
   }
 
-  if (submittedByProfileId) {
-    conditions.push(eq(proposals.submittedByProfileId, submittedByProfileId));
+  if (profileId) {
+    conditions.push(eq(proposals.submittedByProfileId, profileId));
   }
 
   if (status) {

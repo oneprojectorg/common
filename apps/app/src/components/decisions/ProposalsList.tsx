@@ -1,5 +1,6 @@
 'use client';
 
+import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import type { proposalEncoder } from '@op/api/encoders';
 import { Select, SelectItem } from '@op/ui/Select';
@@ -38,8 +39,10 @@ export function ProposalsList({
   instanceId,
 }: ProposalsListProps) {
   const t = useTranslations();
+  const { user } = useUser();
   const [selectedCategory, setSelectedCategory] =
     useState<string>('all-categories');
+  const [proposalFilter, setProposalFilter] = useState<string>('all');
 
   const [categoriesData] = trpc.decision.getCategories.useSuspenseQuery({
     processInstanceId: instanceId,
@@ -47,11 +50,15 @@ export function ProposalsList({
 
   const categories = categoriesData.categories;
 
+  // Get current user's profile ID for "My Proposals" filter
+  const currentProfileId = user?.currentProfile?.id;
+
   const [proposalsData] = trpc.decision.listProposals.useSuspenseQuery(
     {
       processInstanceId: instanceId,
       categoryId:
         selectedCategory === 'all-categories' ? undefined : selectedCategory,
+      profileId: proposalFilter === 'my' ? currentProfileId : undefined,
       limit: 50,
     },
     {
@@ -71,13 +78,20 @@ export function ProposalsList({
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <span className="text-lg font-medium text-neutral-charcoal">
-            {t('My proposals •')} {proposals.length}
+            {proposalFilter === 'my'
+              ? t('My proposals •')
+              : t('All proposals •')}{' '}
+            {proposals.length}
           </span>
         </div>
         <div className="flex items-center gap-4">
-          <Select defaultSelectedKey="all" className="w-36">
-            <SelectItem id="my">{t('My proposals')}</SelectItem>
+          <Select
+            selectedKey={proposalFilter}
+            onSelectionChange={(key) => setProposalFilter(String(key))}
+            className="w-36"
+          >
             <SelectItem id="all">{t('All proposals')}</SelectItem>
+            <SelectItem id="my">{t('My proposals')}</SelectItem>
           </Select>
           <Select
             selectedKey={selectedCategory}

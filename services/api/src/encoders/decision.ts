@@ -2,8 +2,8 @@ import {
   decisionProcesses,
   decisions,
   processInstances,
-  proposals,
   proposalAttachments,
+  proposals,
   stateTransitionHistory,
 } from '@op/db/schema';
 import { createSelectSchema } from 'drizzle-zod';
@@ -350,7 +350,7 @@ export const instanceFilterSchema = z
 export const proposalFilterSchema = z
   .object({
     processInstanceId: z.string().uuid().optional(),
-    submittedByProfileId: z.string().uuid().optional(),
+    profileId: z.string().uuid().optional(),
     status: z
       .enum(['draft', 'submitted', 'under_review', 'approved', 'rejected'])
       .optional(),
