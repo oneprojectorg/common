@@ -110,3 +110,4 @@ Use `pnpm w:<workspace>` shortcuts:
 - Don't run pnpm format unless specifically asked to do so
 
 - If you need to check interactions in the browser, you can use the Playwright MCP server and open http://localhost:3100 to open the dev server
+- Authorization checks are achieved by our access-zones library. We usually get the orgUser and pass the user's roles to `assertAccess`
