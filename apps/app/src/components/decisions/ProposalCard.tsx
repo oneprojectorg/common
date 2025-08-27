@@ -99,14 +99,14 @@ export function ProposalCard({
 
       {/* Description */}
       {content && (
-        <p className="mb-4 line-clamp-3 text-sm text-neutral-gray3">
+        <p className="mb-4 line-clamp-3 text-sm text-neutral-black">
           {getTextPreview(content)}
         </p>
       )}
 
       {/* Footer with engagement */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4 text-sm text-neutral-gray2">
+        <div className="flex items-center gap-4 text-sm text-neutral-gray4">
           <span className="flex items-center gap-1">
             <Heart className="h-4 w-4" />
             <span>
