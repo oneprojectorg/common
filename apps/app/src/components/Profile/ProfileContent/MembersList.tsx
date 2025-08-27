@@ -65,7 +65,7 @@ const MemberMenu = ({
       );
 
       const message = wasChangingToAdmin
-        ? 'User promoted to Admin successfully'
+        ? 'User changed to Admin successfully'
         : 'User changed to Member successfully';
 
       toast.success({ message });
