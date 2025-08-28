@@ -10,6 +10,7 @@ import { parseProposalData } from '@/utils/proposalUtils';
 import { trpc } from '@op/api/client';
 import type { proposalEncoder } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
+import { NumberField } from '@op/ui/NumberField';
 import { Select, SelectItem } from '@op/ui/Select';
 import { TextField } from '@op/ui/TextField';
 import { useRouter } from 'next/navigation';
@@ -41,6 +42,7 @@ export function ProposalEditor({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [budget, setBudget] = useState<number | null>(null);
+  const [showBudgetInput, setShowBudgetInput] = useState(false);
   const [editorContent, setEditorContent] = useState('');
   const [editorInstance, setEditorInstance] = useState<any>(null);
   const [imageAttachments, setImageAttachments] = useState<ImageAttachment[]>(
@@ -48,9 +50,19 @@ export function ProposalEditor({
   );
   const [showInfoModal, setShowInfoModal] = useState(false);
   const editorRef = useRef<RichTextEditorRef>(null);
+  const utils = trpc.useUtils();
 
   const createProposalMutation = trpc.decision.createProposal.useMutation();
-  const updateProposalMutation = trpc.decision.updateProposal.useMutation();
+  const updateProposalMutation = trpc.decision.updateProposal.useMutation({
+    onSuccess: async () => {
+      utils.decision.getProposal.invalidate({
+        proposalId: existingProposal?.id,
+      });
+      utils.decision.listProposals.invalidate({
+        processInstanceId: instance.id,
+      });
+    },
+  });
 
   // Extract template data from the instance
   const proposalTemplate = instance.process?.processSchema?.proposalTemplate;
@@ -146,6 +158,7 @@ export function ProposalEditor({
       }
       if (existingBudget) {
         setBudget(existingBudget);
+        setShowBudgetInput(true);
       }
 
       // Set editor content state immediately
@@ -272,6 +285,7 @@ export function ProposalEditor({
             {categories && categories.length > 0 ? (
               <Select
                 variant="pill"
+                size="medium"
                 placeholder="Select category"
                 selectedKey={selectedCategory}
                 onSelectionChange={(key) => setSelectedCategory(key as string)}
@@ -284,33 +298,37 @@ export function ProposalEditor({
                 ))}
               </Select>
             ) : null}
-            <Button
-              variant="pill"
-              color="pill"
-              size="small"
-              onPress={() => {
-                const maxBudgetMsg = budgetCapAmount
-                  ? ` (max: $${budgetCapAmount.toLocaleString()})`
-                  : '';
-                // TODO: replace with an input field
-                const budgetStr = window.prompt(
-                  `Enter budget amount (USD)${maxBudgetMsg}:`,
-                  budget?.toString() || '',
-                );
-                if (budgetStr && !isNaN(Number(budgetStr))) {
-                  const newBudget = Number(budgetStr);
-                  if (budgetCapAmount && newBudget > budgetCapAmount) {
-                    alert(
-                      `Budget cannot exceed $${budgetCapAmount.toLocaleString()}`,
-                    );
+            {!showBudgetInput ? (
+              <Button
+                variant="pill"
+                color="pill"
+                onPress={() => setShowBudgetInput(true)}
+              >
+                Add budget
+              </Button>
+            ) : (
+              <NumberField
+                value={budget}
+                onChange={(value) => {
+                  if (
+                    value !== null &&
+                    budgetCapAmount &&
+                    value > budgetCapAmount
+                  ) {
+                    // Don't allow values exceeding the cap
                     return;
                   }
-                  setBudget(newBudget);
-                }
-              }}
-            >
-              Add budget
-            </Button>
+                  setBudget(value);
+                }}
+                prefixText="$"
+                inputProps={{
+                  placeholder: budgetCapAmount
+                    ? `Max ${budgetCapAmount.toLocaleString()}`
+                    : 'Enter amount',
+                }}
+                fieldClassName="w-auto"
+              />
+            )}
           </div>
 
           <RichTextEditorContent
