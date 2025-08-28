@@ -1,5 +1,6 @@
 'use client';
 
+import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 
 import {
@@ -12,12 +13,8 @@ import {
 } from '@/components/PostFeed';
 
 export const Feed = () => {
-  const { data: user } = trpc.account.getMyAccount.useQuery();
-  const {
-    data: postsData,
-    isLoading,
-    error,
-  } = trpc.organization.listAllPosts.useQuery({});
+  const { user } = useUser() ?? {};
+  const [postsData] = trpc.organization.listAllPosts.useSuspenseQuery({});
 
   const {
     discussionModal,
@@ -25,21 +22,6 @@ export const Feed = () => {
     handleCommentClick,
     handleModalClose,
   } = usePostFeedActions({ user });
-
-  if (isLoading) {
-    return <PostFeedSkeleton numPosts={4} />;
-  }
-
-  if (error) {
-    console.error('Failed to load posts:', error);
-    return (
-      <div className="flex flex-col items-center justify-center py-8">
-        <span className="text-neutral-charcoal">
-          Unable to load posts. Please try refreshing.
-        </span>
-      </div>
-    );
-  }
 
   if (!postsData || !user) {
     return <PostFeedSkeleton numPosts={4} />;
