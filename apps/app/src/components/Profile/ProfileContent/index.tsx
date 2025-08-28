@@ -307,7 +307,7 @@ export const ProfileTabsMobile = ({
   followingContent,
   followersContent,
 }: {
-  profile: Organization;
+  profile: Organization; // TODO: THIS IS AN ORG RECORD, NOT A PROFILE. LEGACYNAMING THAT SHOULD BE FIXED
   children?: React.ReactNode;
   decisionsContent?: React.ReactNode;
   followingContent?: React.ReactNode;
@@ -325,7 +325,7 @@ export const ProfileTabsMobile = ({
           <>
             <FollowersTab />
             <MembersTab profileId={profile.id} />
-            <DecisionsTab profileId={profile.id} />
+            <DecisionsTab profileId={profile.profile.id} />
           </>
         ) : (
           <>
