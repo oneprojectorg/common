@@ -4,6 +4,7 @@ import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { Button, ButtonLink } from '@op/ui/Button';
 import { DialogTrigger } from '@op/ui/Dialog';
+import { Header2, Header3 } from '@op/ui/Header';
 import { useParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { LuLeaf, LuPlus } from 'react-icons/lu';
@@ -42,7 +43,9 @@ const DecisionProcessList = ({ profileId }: { profileId: string }) => {
                 {t('Set up your decision-making process')}
               </h2>
               <p className="text-base text-neutral-charcoal">
-                {t('Create your first participatory budgeting or grantmaking process to start collecting proposals from your community.')}
+                {t(
+                  'Create your first participatory budgeting or grantmaking process to start collecting proposals from your community.',
+                )}
               </p>
             </div>
 
@@ -72,11 +75,11 @@ const DecisionProcessList = ({ profileId }: { profileId: string }) => {
   }
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <h2 className="font-serif text-title-sm text-neutral-black">
-          {t('All processes')}
-        </h2>
+        <Header2 className="font-serif text-title-sm">
+          {t('Active processes')}
+        </Header2>
 
         {decisionPermission.create && isOwnProfile ? (
           <DialogTrigger>
@@ -97,25 +100,30 @@ const DecisionProcessList = ({ profileId }: { profileId: string }) => {
           >
             <div className="flex flex-col gap-2">
               <div className="flex flex-col gap-1">
-                <h3 className="text-base font-bold text-neutral-black">
+                <Header3 className="text-base font-bold">
                   {instance.name}
-                </h3>
+                </Header3>
                 <div className="flex items-start gap-1 text-sm text-neutral-charcoal">
                   {instance.instanceData?.budget && (
                     <>
                       <span>
-                        ${instance.instanceData.budget.toLocaleString()} {t('Budget')}
+                        ${instance.instanceData.budget.toLocaleString()}{' '}
+                        {t('Budget')}
                       </span>
                       <span>•</span>
                     </>
                   )}
-                  <span>{instance.proposalCount || 0} {t('Proposals')}</span>
+                  <span>
+                    {instance.proposalCount || 0} {t('Proposals')}
+                  </span>
                   <span>•</span>
-                  <span>{instance.participantCount || 0} {t('Participants')}</span>
+                  <span>
+                    {instance.participantCount || 0} {t('Participants')}
+                  </span>
                 </div>
               </div>
               {instance.description && (
-                <p className="max-w-[40rem] overflow-hidden text-ellipsis text-base text-neutral-charcoal">
+                <p className="max-w-2xl overflow-hidden text-ellipsis text-nowrap text-base text-neutral-charcoal">
                   {instance.description}
                 </p>
               )}
@@ -165,7 +173,7 @@ const DecisionProcessList = ({ profileId }: { profileId: string }) => {
 
 export const ProfileDecisions = ({ profileId }: { profileId: string }) => {
   const t = useTranslations();
-  
+
   return (
     <Suspense
       fallback={
