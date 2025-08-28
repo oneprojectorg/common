@@ -107,6 +107,11 @@ export {
 } from './tables/proposals.sql';
 export type { Proposal, ProposalCategory } from './tables/proposals.sql';
 
+export {
+  proposalAttachments,
+  proposalAttachmentsRelations,
+} from './tables/proposalAttachments.sql';
+
 export { decisions, decisionsRelations } from './tables/decisions.sql';
 export type { Decision } from './tables/decisions.sql';
 

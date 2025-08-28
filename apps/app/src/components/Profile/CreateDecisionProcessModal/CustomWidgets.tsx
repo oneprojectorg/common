@@ -2,6 +2,7 @@ import { parseDate } from '@internationalized/date';
 import { CategoryList } from '@op/ui/CategoryList';
 import { Checkbox } from '@op/ui/Checkbox';
 import { DatePicker } from '@op/ui/DatePicker';
+import { cn } from '@op/ui/utils';
 import { NumberField } from '@op/ui/NumberField';
 import { Radio, RadioGroup } from '@op/ui/RadioGroup';
 import { TextField } from '@op/ui/TextField';
@@ -62,6 +63,7 @@ export const TextWidget = (props: WidgetProps) => {
     rawErrors,
   } = props;
   const inputType = schema.format === 'email' ? 'email' : 'text';
+  const customClassName = uiSchema?.['ui:options']?.className as string;
 
   return (
     <TextField
@@ -79,6 +81,7 @@ export const TextWidget = (props: WidgetProps) => {
       onFocus={() => onFocus(id, value)}
       errorMessage={rawErrors?.join(', ')}
       isInvalid={!!rawErrors && rawErrors.length > 0}
+      className={customClassName}
     />
   );
 };
@@ -96,6 +99,7 @@ export const TextareaWidget = (props: WidgetProps) => {
     uiSchema,
     rawErrors,
   } = props;
+  const customClassName = uiSchema?.['ui:options']?.className as string;
 
   return (
     <TextField
@@ -113,13 +117,15 @@ export const TextareaWidget = (props: WidgetProps) => {
       onFocus={() => onFocus(id, value)}
       errorMessage={rawErrors?.join(', ')}
       isInvalid={!!rawErrors && rawErrors.length > 0}
+      className={customClassName}
     />
   );
 };
 
 export const DateWidget = (props: WidgetProps) => {
-  const { id, value, required, onChange, onBlur, onFocus, schema, rawErrors } =
+  const { id, value, required, onChange, onBlur, onFocus, schema, uiSchema, rawErrors } =
     props;
+  const customClassName = uiSchema?.['ui:options']?.className as string;
 
   // Helper function to create a proper DateValue object from ISO string
   const parseISOString = (isoString: string) => {
@@ -205,6 +211,7 @@ export const DateWidget = (props: WidgetProps) => {
           onBlur: () => onBlur(id, value),
           onFocus: () => onFocus(id, value),
         }}
+        className={customClassName}
       />
     );
   } catch (error) {
@@ -231,13 +238,15 @@ export const DateWidget = (props: WidgetProps) => {
 };
 
 export const CheckboxWidget = (props: WidgetProps) => {
-  const { id, value, onChange, schema } = props;
+  const { id, value, onChange, schema, uiSchema } = props;
+  const customClassName = uiSchema?.['ui:options']?.className as string;
 
   return (
     <Checkbox
       id={id}
       isSelected={value || false}
       onChange={(val) => onChange(val)}
+      className={customClassName}
     >
       {schema.title}
     </Checkbox>
@@ -245,11 +254,12 @@ export const CheckboxWidget = (props: WidgetProps) => {
 };
 
 export const RadioWidget = (props: WidgetProps) => {
-  const { value, onChange, schema, options } = props;
+  const { value, onChange, schema, options, uiSchema } = props;
   const { enumOptions } = options;
+  const customClassName = uiSchema?.['ui:options']?.className as string;
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className={cn('flex flex-col gap-2', customClassName)}>
       <label className="text-sm font-medium text-neutral-charcoal">
         {schema.title}
       </label>
@@ -284,6 +294,7 @@ export const NumberWidget = (props: WidgetProps) => {
     uiSchema,
     rawErrors,
   } = props;
+  const customClassName = uiSchema?.['ui:options']?.className as string;
 
   const handleChange = (numericValue: number | null) => {
     onChange(numericValue);
@@ -307,12 +318,14 @@ export const NumberWidget = (props: WidgetProps) => {
       description={schema.description}
       onChange={handleChange}
       errorMessage={rawErrors?.join(', ')}
+      className={customClassName}
     />
   );
 };
 
 export const CategoryListWidget = (props: WidgetProps) => {
-  const { value, onChange, schema } = props;
+  const { value, onChange, schema, uiSchema } = props;
+  const customClassName = uiSchema?.['ui:options']?.className as string;
 
   // Convert string array to CategoryItem format expected by CategoryList
   const categoryItems = (value || []).map((label: string, index: number) => ({
@@ -329,7 +342,7 @@ export const CategoryListWidget = (props: WidgetProps) => {
   };
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className={cn('flex flex-col gap-2', customClassName)}>
       <label className="text-sm font-medium text-neutral-charcoal">
         {schema.title}
       </label>
@@ -353,6 +366,9 @@ export const RichTextEditorWidget = (props: WidgetProps) => {
     onChange(content);
   };
 
+  // Allow custom className through uiSchema options
+  const customClassName = uiSchema?.['ui:options']?.className as string;
+
   return (
     <div className="flex flex-col gap-2 rounded-md border p-4">
       <label className="text-sm font-medium text-neutral-charcoal">
@@ -367,7 +383,7 @@ export const RichTextEditorWidget = (props: WidgetProps) => {
         placeholder={uiSchema?.['ui:placeholder'] || 'Start writing...'}
         onChange={handleChange}
         onUpdate={handleChange}
-        className="min-h-[200px]"
+        className={cn('min-h-[200px]', customClassName)}
         editorClassName="prose prose-sm max-w-none focus:outline-none"
       />
       {rawErrors && rawErrors.length > 0 && (

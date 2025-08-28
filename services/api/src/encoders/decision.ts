@@ -2,12 +2,14 @@ import {
   decisionProcesses,
   decisions,
   processInstances,
+  proposalAttachments,
   proposals,
   stateTransitionHistory,
 } from '@op/db/schema';
 import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
+import { attachmentWithUrlEncoder } from './attachments';
 import { baseProfileEncoder } from './profiles';
 
 // JSON Schema types
@@ -154,6 +156,20 @@ export const processInstanceEncoder = createSelectSchema(processInstances)
     participantCount: z.number().optional(),
   });
 
+// Proposal Attachment Join Table Encoder
+export const proposalAttachmentEncoder = createSelectSchema(proposalAttachments)
+  .pick({
+    id: true,
+    proposalId: true,
+    attachmentId: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    attachment: attachmentWithUrlEncoder.optional(),
+    uploader: baseProfileEncoder.optional(),
+  });
+
 // Proposal Encoder
 export const proposalEncoder = createSelectSchema(proposals)
   .pick({
@@ -175,6 +191,8 @@ export const proposalEncoder = createSelectSchema(proposals)
     // User relationship status
     isLikedByUser: z.boolean().optional(),
     isFollowedByUser: z.boolean().optional(),
+    // Attachments
+    attachments: z.array(proposalAttachmentEncoder).optional(),
   });
 
 // Decision Encoder
@@ -263,6 +281,7 @@ export const getInstanceInputSchema = z.object({
 export const createProposalInputSchema = z.object({
   processInstanceId: z.string().uuid(),
   proposalData: z.record(z.unknown()), // Proposal content matching template
+  attachmentIds: z.array(z.string()).optional(), // Array of attachment IDs to link to this proposal
 });
 
 export const updateProposalInputSchema = createProposalInputSchema
@@ -330,11 +349,12 @@ export const instanceFilterSchema = z
 
 export const proposalFilterSchema = z
   .object({
-    processInstanceId: z.string().uuid().optional(),
+    processInstanceId: z.string().uuid(),
     submittedByProfileId: z.string().uuid().optional(),
     status: z
       .enum(['draft', 'submitted', 'under_review', 'approved', 'rejected'])
       .optional(),
     categoryId: z.string().optional(),
+    dir: z.enum(['asc', 'desc']).optional(),
   })
   .merge(paginationInputSchema);

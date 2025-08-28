@@ -60,7 +60,13 @@ export const organizations = pgTable(
       }),
     ...timestamps,
   },
-  (table) => [...serviceRolePolicies, index().on(table.id).concurrently()],
+  (table) => [
+    ...serviceRolePolicies,
+    index().on(table.id).concurrently(),
+    index().on(table.profileId).concurrently(),
+    index().on(table.createdAt).concurrently(),
+    index().on(table.updatedAt).concurrently(),
+  ],
 );
 
 export const organizationsRelations = relations(

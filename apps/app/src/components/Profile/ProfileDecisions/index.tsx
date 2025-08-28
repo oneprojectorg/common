@@ -4,15 +4,19 @@ import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { Button, ButtonLink } from '@op/ui/Button';
 import { DialogTrigger } from '@op/ui/Dialog';
+import { Header2, Header3 } from '@op/ui/Header';
 import { useParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { LuLeaf, LuPlus } from 'react-icons/lu';
+
+import { useTranslations } from '@/lib/i18n';
 
 import { CreateDecisionProcessModal } from '../CreateDecisionProcessModal';
 import { EditDecisionProcessModal } from '../EditDecisionProcessModal';
 
 const DecisionProcessList = ({ profileId }: { profileId: string }) => {
   const { slug } = useParams();
+  const t = useTranslations();
   const [data] = trpc.decision.listInstances.useSuspenseQuery({
     ownerProfileId: profileId,
     limit: 20,
@@ -36,18 +40,19 @@ const DecisionProcessList = ({ profileId }: { profileId: string }) => {
 
             <div className="flex max-w-md flex-col gap-2">
               <h2 className="font-serif text-title-base text-neutral-black">
-                Set up your decision-making process
+                {t('Set up your decision-making process')}
               </h2>
               <p className="text-base text-neutral-charcoal">
-                Create your first participatory budgeting or grantmaking process
-                to start collecting proposals from your community.
+                {t(
+                  'Create your first participatory budgeting or grantmaking process to start collecting proposals from your community.',
+                )}
               </p>
             </div>
 
             <DialogTrigger>
               <Button color="primary" size="medium" variant="icon">
                 <LuPlus className="size-4" />
-                Create Process
+                {t('Create Process')}
               </Button>
               <CreateDecisionProcessModal />
             </DialogTrigger>
@@ -60,7 +65,7 @@ const DecisionProcessList = ({ profileId }: { profileId: string }) => {
 
             <div className="flex max-w-md flex-col gap-2">
               <h2 className="font-serif text-title-base text-neutral-black">
-                There are no current decision-making processes
+                {t('There are no current decision-making processes')}
               </h2>
             </div>
           </>
@@ -70,17 +75,17 @@ const DecisionProcessList = ({ profileId }: { profileId: string }) => {
   }
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <h2 className="font-serif text-title-sm text-neutral-black">
-          All processes
-        </h2>
+        <Header2 className="font-serif text-title-sm">
+          {t('Active processes')}
+        </Header2>
 
         {decisionPermission.create && isOwnProfile ? (
           <DialogTrigger>
             <Button color="primary" size="medium" variant="icon">
               <LuPlus className="size-4" />
-              Create Process
+              {t('Create Process')}
             </Button>
             <CreateDecisionProcessModal />
           </DialogTrigger>
@@ -95,25 +100,30 @@ const DecisionProcessList = ({ profileId }: { profileId: string }) => {
           >
             <div className="flex flex-col gap-2">
               <div className="flex flex-col gap-1">
-                <h3 className="text-base font-bold text-neutral-black">
+                <Header3 className="text-base font-bold">
                   {instance.name}
-                </h3>
+                </Header3>
                 <div className="flex items-start gap-1 text-sm text-neutral-charcoal">
                   {instance.instanceData?.budget && (
                     <>
                       <span>
-                        ${instance.instanceData.budget.toLocaleString()} Budget
+                        ${instance.instanceData.budget.toLocaleString()}{' '}
+                        {t('Budget')}
                       </span>
                       <span>•</span>
                     </>
                   )}
-                  <span>{instance.proposalCount || 0} Proposals</span>
+                  <span>
+                    {instance.proposalCount || 0} {t('Proposals')}
+                  </span>
                   <span>•</span>
-                  <span>{instance.participantCount || 0} Participants</span>
+                  <span>
+                    {instance.participantCount || 0} {t('Participants')}
+                  </span>
                 </div>
               </div>
               {instance.description && (
-                <p className="max-w-[40rem] overflow-hidden text-ellipsis text-base text-neutral-charcoal">
+                <p className="max-w-2xl overflow-hidden text-ellipsis text-nowrap text-base text-neutral-charcoal">
                   {instance.description}
                 </p>
               )}
@@ -125,17 +135,17 @@ const DecisionProcessList = ({ profileId }: { profileId: string }) => {
                   color="secondary"
                   href={`/profile/${slug}/decisions/${instance.id}`}
                 >
-                  View Details
+                  {t('View Details')}
                 </ButtonLink>
               ) : (
                 <ButtonLink href={`/profile/${slug}/decisions/${instance.id}`}>
-                  Participate
+                  {t('Participate')}
                 </ButtonLink>
               )}
 
               {decisionPermission.create ? (
                 <DialogTrigger>
-                  <Button color="secondary">Edit Process</Button>
+                  <Button color="secondary">{t('Edit Process')}</Button>
                   <EditDecisionProcessModal instance={instance} />
                 </DialogTrigger>
               ) : null}
@@ -153,7 +163,7 @@ const DecisionProcessList = ({ profileId }: { profileId: string }) => {
               console.log('Load more instances');
             }}
           >
-            Load More
+            {t('Load More')}
           </Button>
         </div>
       )}
@@ -162,12 +172,14 @@ const DecisionProcessList = ({ profileId }: { profileId: string }) => {
 };
 
 export const ProfileDecisions = ({ profileId }: { profileId: string }) => {
+  const t = useTranslations();
+
   return (
     <Suspense
       fallback={
         <div className="flex min-h-96 items-center justify-center">
           <div className="animate-pulse text-base text-neutral-charcoal">
-            Loading...
+            {t('Loading...')}
           </div>
         </div>
       }

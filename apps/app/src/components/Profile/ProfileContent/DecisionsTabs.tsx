@@ -32,7 +32,7 @@ export const DecisionsTabPanel = ({
   children: ReactNode;
   className?: string;
 }) => {
-  const decisionsEnabled = useFeatureFlagEnabled('decision_making');
+  const decisionsEnabled = useFeatureFlagEnabled('decision_making') || true;
 
   return decisionsEnabled ? (
     <TabPanel id="decisions" className={cn('px-0', className)}>
@@ -53,7 +53,8 @@ export const MembersTab = ({ profileId }: { profileId: string }) => {
 };
 
 export const MembersTabPanel = ({ profileId }: { profileId: string }) => {
-  const decisionsEnabled = useFeatureFlagEnabled('decision_making');
+  const decisionsEnabled = useFeatureFlagEnabled('decision_making') || true;
+  const t = useTranslations();
 
   return decisionsEnabled ? (
     <TabPanel id="members" className="flex-grow px-4 sm:px-6 sm:py-0">
@@ -61,7 +62,7 @@ export const MembersTabPanel = ({ profileId }: { profileId: string }) => {
         <ErrorBoundary
           fallback={
             <div className="p-4 text-center text-neutral-charcoal">
-              Failed to load members
+              {t('Failed to load members')}
             </div>
           }
         >

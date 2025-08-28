@@ -18,6 +18,7 @@ import {
 import { decisions } from './decisions.sql';
 import { processInstances } from './processInstances.sql';
 import { profiles } from './profiles.sql';
+import { proposalAttachments } from './proposalAttachments.sql';
 import { taxonomyTerms } from './taxonomies.sql';
 
 export enum ProposalStatus {
@@ -119,6 +120,7 @@ export const proposalsRelations = relations(proposals, ({ one, many }) => ({
   }),
   decisions: many(decisions),
   categories: many(proposalCategories),
+  attachments: many(proposalAttachments),
   // posts relationship will be handled from the posts side to avoid circular dependencies
 }));
 

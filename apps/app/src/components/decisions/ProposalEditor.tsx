@@ -1,20 +1,24 @@
 'use client';
 
 import { ProcessInstance } from '@/utils/decisionProcessTransforms';
+import {
+  type ImageAttachment,
+  extractAttachmentIdsFromUrls,
+  extractImageUrlsFromContent,
+} from '@/utils/proposalContentProcessor';
 import { parseProposalData } from '@/utils/proposalUtils';
 import { trpc } from '@op/api/client';
 import type { proposalEncoder } from '@op/api/encoders';
+import { Button } from '@op/ui/Button';
 import { Select, SelectItem } from '@op/ui/Select';
 import { TextField } from '@op/ui/TextField';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
 
-import {
-  RichTextEditorContent,
-  RichTextEditorRef,
-  RichTextEditorToolbar,
-} from '../RichTextEditor';
+import { RichTextEditorContent, RichTextEditorRef } from '../RichTextEditor';
+import { ProposalInfoModal } from './ProposalInfoModal';
+import { ProposalRichTextToolbar } from './ProposalRichTextToolbar';
 import { ProposalEditorLayout } from './layout';
 
 type Proposal = z.infer<typeof proposalEncoder>;
@@ -39,6 +43,10 @@ export function ProposalEditor({
   const [budget, setBudget] = useState<number | null>(null);
   const [editorContent, setEditorContent] = useState('');
   const [editorInstance, setEditorInstance] = useState<any>(null);
+  const [imageAttachments, setImageAttachments] = useState<ImageAttachment[]>(
+    [],
+  );
+  const [showInfoModal, setShowInfoModal] = useState(false);
   const editorRef = useRef<RichTextEditorRef>(null);
 
   const createProposalMutation = trpc.decision.createProposal.useMutation();
@@ -48,6 +56,12 @@ export function ProposalEditor({
   const proposalTemplate = instance.process?.processSchema?.proposalTemplate;
   const descriptionGuidance = instance.instanceData?.fieldValues
     ?.descriptionGuidance as string | undefined;
+
+  // Extract proposal info from the instance field values
+  const proposalInfoTitle = instance.instanceData?.fieldValues
+    ?.proposalInfoTitle as string | undefined;
+  const proposalInfoContent = instance.instanceData?.fieldValues
+    ?.proposalInfoContent as string | undefined;
 
   // Get categories dynamically from the database
   const [categoriesData] = trpc.decision.getCategories.useSuspenseQuery({
@@ -109,6 +123,11 @@ export function ProposalEditor({
     setEditorInstance(editor);
   }, []);
 
+  // Handle image attachment uploads
+  const handleImageUploaded = useCallback((attachment: ImageAttachment) => {
+    setImageAttachments((prev) => [...prev, attachment]);
+  }, []);
+
   // Initialize form with existing proposal data if in edit mode
   useEffect(() => {
     if (isEditMode && existingProposal && parsedProposalData) {
@@ -143,12 +162,30 @@ export function ProposalEditor({
     }
   }, [editorInstance, isEditMode, parsedProposalData?.content]);
 
+  // Show proposal info modal when creating a new proposal (not editing)
+  useEffect(() => {
+    if (!isEditMode && proposalInfoTitle && proposalInfoContent) {
+      setShowInfoModal(true);
+    }
+  }, [isEditMode, proposalInfoTitle, proposalInfoContent]);
+
+  const handleCloseInfoModal = () => {
+    setShowInfoModal(false);
+  };
+
   const handleSubmitProposal = useCallback(async () => {
     const content = editorRef.current?.getHTML() || editorContent;
 
     setIsSubmitting(true);
 
     try {
+      // Extract image URLs from content and get attachment IDs
+      const imageUrls = extractImageUrlsFromContent(content);
+      const attachmentIds = extractAttachmentIdsFromUrls(
+        imageUrls,
+        imageAttachments,
+      );
+
       // Create the proposal data structure
       const proposalData = {
         title,
@@ -164,6 +201,7 @@ export function ProposalEditor({
           proposalId: existingProposal.id,
           data: {
             proposalData,
+            attachmentIds, // Include attachment IDs for updates
           },
         });
       } else {
@@ -171,6 +209,7 @@ export function ProposalEditor({
         await createProposalMutation.mutateAsync({
           processInstanceId: instance.id,
           proposalData,
+          attachmentIds, // Include attachment IDs for new proposals
         });
       }
 
@@ -197,6 +236,7 @@ export function ProposalEditor({
     existingProposal,
     backHref,
     router,
+    imageAttachments,
   ]);
 
   return (
@@ -209,7 +249,12 @@ export function ProposalEditor({
     >
       {/* Content */}
       <div className="flex flex-1 flex-col gap-12">
-        {editorInstance && <RichTextEditorToolbar editor={editorInstance} />}
+        {editorInstance && (
+          <ProposalRichTextToolbar
+            editor={editorInstance}
+            onImageUploaded={handleImageUploaded}
+          />
+        )}
         <div className="mx-auto flex max-w-4xl flex-col gap-6">
           {/* Title input */}
           <TextField
@@ -239,8 +284,11 @@ export function ProposalEditor({
                 ))}
               </Select>
             ) : null}
-            <button
-              onClick={() => {
+            <Button
+              variant="pill"
+              color="pill"
+              size="small"
+              onPress={() => {
                 const maxBudgetMsg = budgetCapAmount
                   ? ` (max: $${budgetCapAmount.toLocaleString()})`
                   : '';
@@ -260,15 +308,9 @@ export function ProposalEditor({
                   setBudget(newBudget);
                 }
               }}
-              className="text-sm font-medium text-primary-teal hover:text-primary-tealBlack"
             >
-              {budget ? `Budget: $${budget.toLocaleString()}` : 'Add budget'}
-              {budgetCapAmount && (
-                <span className="ml-1 text-xs text-gray-500">
-                  (max: ${budgetCapAmount.toLocaleString()})
-                </span>
-              )}
-            </button>
+              Add budget
+            </Button>
           </div>
 
           <RichTextEditorContent
@@ -280,6 +322,16 @@ export function ProposalEditor({
           />
         </div>
       </div>
+
+      {/* Proposal Info Modal */}
+      {proposalInfoTitle && proposalInfoContent && (
+        <ProposalInfoModal
+          isOpen={showInfoModal}
+          onClose={handleCloseInfoModal}
+          title={proposalInfoTitle}
+          content={proposalInfoContent}
+        />
+      )}
     </ProposalEditorLayout>
   );
 }

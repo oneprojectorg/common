@@ -1,14 +1,15 @@
 import { db, eq } from '@op/db/client';
 import {
   EntityType,
+  organizations,
   processInstances,
   profiles,
-  proposals,
+  proposalAttachments,
   proposalCategories,
+  proposals,
   taxonomyTerms,
-  users,
 } from '@op/db/schema';
-import { User } from '@op/supabase/lib';
+import { assertAccess, permission } from 'access-zones';
 import { randomUUID } from 'crypto';
 
 import {
@@ -17,38 +18,29 @@ import {
   UnauthorizedError,
   ValidationError,
 } from '../../utils';
+import { getCurrentProfileId, getOrgAccessUser } from '../access';
+import { processProposalContent } from './proposalContentProcessor';
 import type { InstanceData, ProcessSchema, ProposalData } from './types';
-
 
 export interface CreateProposalInput {
   processInstanceId: string;
   proposalData: ProposalData;
   authUserId: string;
+  attachmentIds?: string[];
 }
 
 export const createProposal = async ({
   data,
-  user,
+  authUserId,
 }: {
   data: CreateProposalInput;
-  user: User;
+  authUserId: string;
 }) => {
-  if (!user) {
+  if (!authUserId) {
     throw new UnauthorizedError('User must be authenticated');
   }
 
-  // TODO: assert decisions access
-
   try {
-    // Get the database user record to access currentProfileId
-    const dbUser = await db.query.users.findFirst({
-      where: eq(users.authUserId, data.authUserId),
-    });
-
-    if (!dbUser || !dbUser.currentProfileId) {
-      throw new UnauthorizedError('User must have an active profile');
-    }
-
     // Verify the process instance exists and get the process schema
     const instance = await db.query.processInstances.findFirst({
       where: eq(processInstances.id, data.processInstanceId),
@@ -66,6 +58,23 @@ export const createProposal = async ({
       throw new NotFoundError('Process definition not found');
     }
 
+    const org = await db.query.organizations.findFirst({
+      where: eq(organizations.profileId, instance.ownerProfileId),
+    });
+
+    const organizationId = org?.id;
+    if (!organizationId) {
+      throw new NotFoundError('Organization not found');
+    }
+
+    const orgUser = await getOrgAccessUser({
+      user: { id: authUserId },
+      organizationId,
+    });
+
+    assertAccess({ decisions: permission.UPDATE }, orgUser?.roles ?? []);
+
+    // TODO: why doesn't this get resolved by drizzle
     const process = instance.process as any;
     const processSchema = process.processSchema as ProcessSchema;
     const instanceData = instance.instanceData as InstanceData;
@@ -95,7 +104,7 @@ export const createProposal = async ({
     // Pre-fetch category term if specified to avoid lookup inside transaction
     const categoryLabel = (data.proposalData as any)?.category;
     let categoryTermId: string | null = null;
-    
+
     if (categoryLabel?.trim()) {
       try {
         const taxonomyTerm = await db.query.taxonomyTerms.findFirst({
@@ -104,17 +113,23 @@ export const createProposal = async ({
             taxonomy: true,
           },
         });
-        
+
         if (taxonomyTerm && taxonomyTerm.taxonomy?.name === 'proposal') {
           categoryTermId = taxonomyTerm.id;
         } else {
-          console.warn(`No valid proposal taxonomy term found for category: ${categoryLabel}`);
+          console.warn(
+            `No valid proposal taxonomy term found for category: ${categoryLabel}`,
+          );
         }
       } catch (error) {
-        console.warn('Error fetching category term, proceeding without category:', error);
+        console.warn(
+          'Error fetching category term, proceeding without category:',
+          error,
+        );
       }
     }
 
+    const profileId = await getCurrentProfileId(authUserId);
     const proposal = await db.transaction(async (tx) => {
       // Create a profile for the proposal
       const [proposalProfile] = await tx
@@ -135,7 +150,7 @@ export const createProposal = async ({
         .values({
           processInstanceId: data.processInstanceId,
           proposalData: data.proposalData,
-          submittedByProfileId: dbUser.currentProfileId!,
+          submittedByProfileId: profileId,
           profileId: proposalProfile.id,
           status: 'submitted',
         })
@@ -149,11 +164,34 @@ export const createProposal = async ({
         });
       }
 
+      // Link attachments to proposal if provided
+      if (proposal && data.attachmentIds && data.attachmentIds.length > 0) {
+        const proposalAttachmentValues = data.attachmentIds.map(
+          (attachmentId) => ({
+            proposalId: proposal.id,
+            attachmentId: attachmentId,
+            uploadedBy: profileId,
+          }),
+        );
+
+        await tx.insert(proposalAttachments).values(proposalAttachmentValues);
+      }
+
       return proposal;
     });
 
     if (!proposal) {
       throw new CommonError('Failed to create proposal');
+    }
+
+    // Process proposal content to replace temporary URLs with permanent ones
+    if (data.attachmentIds && data.attachmentIds.length > 0) {
+      try {
+        await processProposalContent(proposal.id);
+      } catch (error) {
+        console.error('Error processing proposal content:', error);
+        // Don't throw - we don't want to fail proposal creation if URL processing fails
+      }
     }
 
     return proposal;

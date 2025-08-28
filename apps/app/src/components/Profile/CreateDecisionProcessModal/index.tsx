@@ -34,6 +34,8 @@ const transformFormDataToInstanceData = (data: Record<string, unknown>) => {
     currentStateId: 'submission',
     fieldValues: {
       categories: data.categories,
+      proposalInfoTitle: data.proposalInfoTitle,
+      proposalInfoContent: data.proposalInfoContent,
       budgetCapAmount: data.budgetCapAmount,
       descriptionGuidance: data.descriptionGuidance,
       maxVotesPerMember: data.maxVotesPerMember,

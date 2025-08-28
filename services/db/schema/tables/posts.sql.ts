@@ -22,6 +22,7 @@ export const posts = pgTable(
   (table) => [
     ...serviceRolePolicies,
     index().on(table.id).concurrently(),
+    index().on(table.profileId).concurrently(),
     index().on(table.parentPostId).concurrently(),
   ],
 );
@@ -65,15 +66,12 @@ export const postsToProfiles = pgTable(
   (table) => [
     ...serviceRolePolicies,
     primaryKey({ columns: [table.postId, table.profileId] }),
-    index('posts_to_profiles_post_id_idx')
-      .on(table.postId)
-      .concurrently(),
+    index('posts_to_profiles_post_id_idx').on(table.postId).concurrently(),
     index('posts_to_profiles_profile_id_idx')
       .on(table.profileId)
       .concurrently(),
   ],
 );
-
 
 export const postsRelations = relations(posts, ({ one, many }) => ({
   organization: many(organizations),
