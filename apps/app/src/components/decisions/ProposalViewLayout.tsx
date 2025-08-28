@@ -3,18 +3,18 @@
 import { Button } from '@op/ui/Button';
 import { cn } from '@op/ui/utils';
 import { ChevronLeft, Edit, Heart } from 'lucide-react';
-import { useRouter } from '@/lib/i18n/routing';
 import { ReactNode } from 'react';
 import { LuBookmark } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
+import { useRouter } from '@/lib/i18n/routing';
 
 import { UserAvatarMenu } from '../SiteHeader';
 
 interface ProposalViewLayoutProps {
   children: ReactNode;
   backHref: string;
-  title: string;
+  title?: string;
   onLike?: () => void;
   onFollow?: () => void;
   isLiked?: boolean;
@@ -52,7 +52,7 @@ export function ProposalViewLayout({
         </button>
 
         <div className="flex-1 text-center text-lg font-medium text-neutral-black">
-          {title ? title : t('Untitled Proposal')}
+          {title ?? null}
         </div>
 
         <div className="flex items-center gap-4">
