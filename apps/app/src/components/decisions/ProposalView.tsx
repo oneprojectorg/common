@@ -353,7 +353,6 @@ export function ProposalView({
   return (
     <ProposalViewLayout
       backHref={backHref}
-      title={title || t('Untitled Proposal')}
       onLike={handleLike}
       onFollow={handleFollow}
       isLiked={currentProposal.isLikedByUser || false}
@@ -372,7 +371,7 @@ export function ProposalView({
             </Header1>
             <div className="space-y-6">
               {/* Metadata Row */}
-              <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
                 {category && (
                   <TagGroup>
                     <Tag className="sm:rounded-sm">{category}</Tag>
