@@ -22,7 +22,7 @@ import { Popover } from './Popover';
 import type { PopoverProps } from './Popover';
 
 const selectStyles = tv({
-  base: 'flex h-10 min-w-0 flex-row justify-between rounded-md border border-neutral-gray1 p-3 text-base leading-3 text-neutral-black outline outline-0 placeholder:text-neutral-gray4 group-data-[invalid=true]:outline-1 group-data-[invalid=true]:outline-functional-red active:border-neutral-gray4 active:outline hover:border-neutral-gray2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue disabled:border-neutral-gray2',
+  base: 'flex min-w-0 flex-row justify-between rounded-md border border-neutral-gray1 text-base leading-3 text-neutral-black outline outline-0 placeholder:text-neutral-gray4 group-data-[invalid=true]:outline-1 group-data-[invalid=true]:outline-functional-red active:border-neutral-gray4 active:outline hover:border-neutral-gray2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue disabled:border-neutral-gray2',
   variants: {
     isDisabled: {
       true: 'bg-neutral-gray1 text-neutral-gray4',
@@ -30,11 +30,16 @@ const selectStyles = tv({
     },
     variant: {
       default: '',
-      pill: 'h-auto border-0 bg-primary-tealWhite p-2 text-primary-teal active:bg-teal-50 active:text-primary-tealBlack hover:bg-teal-50 hover:text-primary-tealBlack focus-visible:outline-data-blue',
+      pill: 'h-auto border-0 bg-primary-tealWhite text-primary-teal active:bg-teal-50 active:text-primary-tealBlack hover:bg-teal-50 hover:text-primary-tealBlack focus-visible:outline-data-blue',
+    },
+    size: {
+      small: 'h-8 p-2',
+      medium: 'h-10 p-3',
     },
   },
   defaultVariants: {
     variant: 'default',
+    size: 'small',
   },
 });
 
