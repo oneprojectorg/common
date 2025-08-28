@@ -7,6 +7,7 @@ import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
+import ErrorBoundary from '@/components/ErrorBoundary';
 import { NewOrganizations } from '@/components/NewOrganizations';
 import { NewlyJoinedModal } from '@/components/NewlyJoinedModal';
 import { OrganizationHighlights } from '@/components/OrganizationHighlights';
@@ -49,9 +50,19 @@ const LandingScreenFeeds = ({
         ) : null}
         <div className="mt-4 sm:mt-0">
           {user.currentOrganization ? (
-            <Suspense fallback={<PostFeedSkeleton numPosts={3} />}>
-              <Feed />
-            </Suspense>
+            <ErrorBoundary
+              fallback={
+                <div className="flex flex-col items-center justify-center py-8">
+                  <span className="text-neutral-charcoal">
+                    Unable to load posts. Please try refreshing.
+                  </span>
+                </div>
+              }
+            >
+              <Suspense fallback={<PostFeedSkeleton numPosts={3} />}>
+                <Feed />
+              </Suspense>
+            </ErrorBoundary>
           ) : null}
         </div>
       </>
