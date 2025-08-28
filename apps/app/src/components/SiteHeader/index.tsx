@@ -135,9 +135,7 @@ const AvatarMenuContent = ({
   const logout = useAuthLogout();
   const router = useRouter();
   const t = useTranslations();
-  const individualProfilesEnabled = useFeatureFlagEnabled(
-    'individual_profiles',
-  );
+  const individualProfilesEnabled = useFeatureFlagEnabled('individual_users');
 
   const { data: profiles } = trpc.account.getUserProfiles.useQuery();
 

@@ -17,9 +17,7 @@ import { SearchResultItem } from './SearchResultItem';
 
 export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
   const router = useRouter();
-  const individualProfilesEnabled = useFeatureFlagEnabled(
-    'individual_profiles',
-  );
+  const individualProfilesEnabled = useFeatureFlagEnabled('individual_users');
 
   const [query, setQuery] = useState<string>('');
   const [debouncedQuery, setImmediateQuery] = useDebounce(query, 200);
