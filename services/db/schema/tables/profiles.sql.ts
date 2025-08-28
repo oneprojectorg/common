@@ -55,6 +55,7 @@ export const profiles = pgTable(
     ...serviceRolePolicies,
     index().on(table.id).concurrently(),
     index().on(table.slug).concurrently(),
+    index().on(table.updatedAt).concurrently(),
     index('profiles_search_gin_index').using('gin', table.search),
   ],
 );

@@ -49,9 +49,9 @@ export const users = pgTable(
   (table) => [
     ...serviceRolePolicies,
     index().on(table.id).concurrently(),
-    index().on(table.email).concurrently(),
-    index().on(table.username).concurrently(),
+    index().on(table.authUserId).concurrently(),
     index().on(table.profileId).concurrently(),
+    index().on(table.email).concurrently(),
     index('users_email_gin_index')
       .using('gin', sql`to_tsvector('english', ${table.email})`)
       .concurrently(),
