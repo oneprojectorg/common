@@ -1,10 +1,12 @@
-import { trpcNext } from '@op/api/vanilla';
-import { notFound } from 'next/navigation';
+'use client';
+
+import { trpc } from '@op/api/client';
+import { notFound, useParams } from 'next/navigation';
 import { Suspense } from 'react';
 
 import { ProposalView } from '@/components/decisions/ProposalView';
 
-async function ProposalViewPageContent({
+function ProposalViewPageContent({
   proposalId,
   instanceId,
   slug,
@@ -14,8 +16,7 @@ async function ProposalViewPageContent({
   slug: string;
 }) {
   try {
-    const client = await trpcNext();
-    const proposal = await client.decision.getProposal.query({
+    const [proposal] = trpc.decision.getProposal.useSuspenseQuery({
       proposalId,
     });
 
@@ -81,12 +82,12 @@ function ProposalViewPageSkeleton() {
   );
 }
 
-const ProposalViewPage = async ({
-  params,
-}: {
-  params: Promise<{ proposalId: string; id: string; slug: string }>;
-}) => {
-  const { proposalId, id, slug } = await params;
+const ProposalViewPage = () => {
+  const { proposalId, id, slug } = useParams<{
+    proposalId: string;
+    id: string;
+    slug: string;
+  }>();
 
   return (
     <Suspense fallback={<ProposalViewPageSkeleton />}>

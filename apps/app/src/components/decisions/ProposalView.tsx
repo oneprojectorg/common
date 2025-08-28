@@ -11,7 +11,9 @@ import { trpc } from '@op/api/client';
 import type { proposalEncoder } from '@op/api/encoders';
 import { ProfileRelationshipType } from '@op/api/encoders';
 import { Avatar } from '@op/ui/Avatar';
+import { Header1 } from '@op/ui/Header';
 import { Surface } from '@op/ui/Surface';
+import { Tag, TagGroup } from '@op/ui/TagGroup';
 import Blockquote from '@tiptap/extension-blockquote';
 import Heading from '@tiptap/extension-heading';
 import HorizontalRule from '@tiptap/extension-horizontal-rule';
@@ -22,9 +24,10 @@ import TextAlign from '@tiptap/extension-text-align';
 import Underline from '@tiptap/extension-underline';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import { Heart, MessageCircle, Users } from 'lucide-react';
+import { Heart, MessageCircle } from 'lucide-react';
 import Image from 'next/image';
 import { useCallback, useMemo, useRef } from 'react';
+import { LuBookmark } from 'react-icons/lu';
 import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
@@ -41,20 +44,17 @@ interface ProposalViewProps {
   backHref: string;
 }
 
-export function ProposalView({ proposal: initialProposal, backHref }: ProposalViewProps) {
+export function ProposalView({
+  proposal: initialProposal,
+  backHref,
+}: ProposalViewProps) {
   const t = useTranslations();
   const commentsContainerRef = useRef<HTMLDivElement>(null);
   const utils = trpc.useUtils();
 
-  // Use a client-side query to get real-time updates, with initial data from server
-  const { data: proposal } = trpc.decision.getProposal.useQuery(
-    { proposalId: initialProposal.id },
-    { 
-      initialData: initialProposal,
-      refetchOnMount: false, // Don't refetch on mount since we have initial data
-      staleTime: 0, // Consider data stale immediately to allow cache updates to take effect
-    }
-  );
+  const { data: proposal } = trpc.decision.getProposal.useQuery({
+    proposalId: initialProposal.id,
+  });
 
   // Safety check - fallback to initial data if query returns undefined
   const currentProposal = proposal || initialProposal;
@@ -66,20 +66,29 @@ export function ProposalView({ proposal: initialProposal, backHref }: ProposalVi
   const addRelationshipMutation = trpc.profile.addRelationship.useMutation({
     onMutate: async (variables) => {
       // Cancel outgoing refetches
-      await utils.decision.getProposal.cancel({ proposalId: currentProposal.id });
+      await utils.decision.getProposal.cancel({
+        proposalId: currentProposal.id,
+      });
 
       // Snapshot the previous value
-      const previousData = utils.decision.getProposal.getData({ proposalId: currentProposal.id });
+      const previousData = utils.decision.getProposal.getData({
+        proposalId: currentProposal.id,
+      });
 
       // Optimistically update the cache
       if (previousData) {
         const optimisticData = { ...previousData };
         if (variables.relationshipType === ProfileRelationshipType.LIKES) {
           optimisticData.isLikedByUser = true;
-        } else if (variables.relationshipType === ProfileRelationshipType.FOLLOWING) {
+        } else if (
+          variables.relationshipType === ProfileRelationshipType.FOLLOWING
+        ) {
           optimisticData.isFollowedByUser = true;
         }
-        utils.decision.getProposal.setData({ proposalId: currentProposal.id }, optimisticData);
+        utils.decision.getProposal.setData(
+          { proposalId: currentProposal.id },
+          optimisticData,
+        );
       }
 
       return { previousData };
@@ -87,7 +96,10 @@ export function ProposalView({ proposal: initialProposal, backHref }: ProposalVi
     onError: (error, _variables, context) => {
       // Rollback on error
       if (context?.previousData) {
-        utils.decision.getProposal.setData({ proposalId: currentProposal.id }, context.previousData);
+        utils.decision.getProposal.setData(
+          { proposalId: currentProposal.id },
+          context.previousData,
+        );
       }
       console.error('Failed to add relationship:', error);
     },
@@ -98,46 +110,61 @@ export function ProposalView({ proposal: initialProposal, backHref }: ProposalVi
     },
   });
 
-  const removeRelationshipMutation = trpc.profile.removeRelationship.useMutation({
-    onMutate: async (variables) => {
-      // Cancel outgoing refetches
-      await utils.decision.getProposal.cancel({ proposalId: currentProposal.id });
+  const removeRelationshipMutation =
+    trpc.profile.removeRelationship.useMutation({
+      onMutate: async (variables) => {
+        // Cancel outgoing refetches
+        await utils.decision.getProposal.cancel({
+          proposalId: currentProposal.id,
+        });
 
-      // Snapshot the previous value
-      const previousData = utils.decision.getProposal.getData({ proposalId: currentProposal.id });
+        // Snapshot the previous value
+        const previousData = utils.decision.getProposal.getData({
+          proposalId: currentProposal.id,
+        });
 
-      // Optimistically update the cache
-      if (previousData) {
-        const optimisticData = { ...previousData };
-        if (variables.relationshipType === ProfileRelationshipType.LIKES) {
-          optimisticData.isLikedByUser = false;
-        } else if (variables.relationshipType === ProfileRelationshipType.FOLLOWING) {
-          optimisticData.isFollowedByUser = false;
+        // Optimistically update the cache
+        if (previousData) {
+          const optimisticData = { ...previousData };
+          if (variables.relationshipType === ProfileRelationshipType.LIKES) {
+            optimisticData.isLikedByUser = false;
+          } else if (
+            variables.relationshipType === ProfileRelationshipType.FOLLOWING
+          ) {
+            optimisticData.isFollowedByUser = false;
+          }
+          utils.decision.getProposal.setData(
+            { proposalId: currentProposal.id },
+            optimisticData,
+          );
         }
-        utils.decision.getProposal.setData({ proposalId: currentProposal.id }, optimisticData);
-      }
 
-      return { previousData };
-    },
-    onError: (error, _variables, context) => {
-      // Rollback on error
-      if (context?.previousData) {
-        utils.decision.getProposal.setData({ proposalId: currentProposal.id }, context.previousData);
-      }
-      console.error('Failed to remove relationship:', error);
-    },
-    onSettled: () => {
-      // Always refetch after error or success
-      utils.decision.getProposal.invalidate({ proposalId: currentProposal.id });
-      utils.decision.listProposals.invalidate(); // Also invalidate list to keep ProposalCard in sync
-    },
-  });
+        return { previousData };
+      },
+      onError: (error, _variables, context) => {
+        // Rollback on error
+        if (context?.previousData) {
+          utils.decision.getProposal.setData(
+            { proposalId: currentProposal.id },
+            context.previousData,
+          );
+        }
+        console.error('Failed to remove relationship:', error);
+      },
+      onSettled: () => {
+        // Always refetch after error or success
+        utils.decision.getProposal.invalidate({
+          proposalId: currentProposal.id,
+        });
+        utils.decision.listProposals.invalidate(); // Also invalidate list to keep ProposalCard in sync
+      },
+    });
 
   // Check if current user can edit (only submitter can edit for now)
   const canEdit = Boolean(
     user?.currentProfile &&
-    currentProposal.submittedBy &&
-    user.currentProfile.id === currentProposal.submittedBy.id,
+      currentProposal.submittedBy &&
+      user.currentProfile.id === currentProposal.submittedBy.id,
   );
 
   // Generate edit href
@@ -237,12 +264,13 @@ export function ProposalView({ proposal: initialProposal, backHref }: ProposalVi
   // Create read-only editor for content display
   const editor = useEditor(editorConfig);
 
-  const isLoading = addRelationshipMutation.isPending || removeRelationshipMutation.isPending;
+  const isLoading =
+    addRelationshipMutation.isPending || removeRelationshipMutation.isPending;
 
   const handleLike = useCallback(async () => {
-    console.log('handleLike called', { 
-      profileId: currentProposal.profileId, 
-      isLikedByUser: currentProposal.isLikedByUser 
+    console.log('handleLike called', {
+      profileId: currentProposal.profileId,
+      isLikedByUser: currentProposal.isLikedByUser,
     });
 
     if (!currentProposal.profileId) {
@@ -252,14 +280,12 @@ export function ProposalView({ proposal: initialProposal, backHref }: ProposalVi
 
     try {
       if (currentProposal.isLikedByUser) {
-        console.log('Unliking proposal...');
         // Unlike
         await removeRelationshipMutation.mutateAsync({
           targetProfileId: currentProposal.profileId,
           relationshipType: ProfileRelationshipType.LIKES,
         });
       } else {
-        console.log('Liking proposal...');
         // Like
         await addRelationshipMutation.mutateAsync({
           targetProfileId: currentProposal.profileId,
@@ -270,7 +296,12 @@ export function ProposalView({ proposal: initialProposal, backHref }: ProposalVi
     } catch (error) {
       console.error('Error in handleLike:', error);
     }
-  }, [currentProposal.profileId, currentProposal.isLikedByUser, addRelationshipMutation, removeRelationshipMutation]);
+  }, [
+    currentProposal.profileId,
+    currentProposal.isLikedByUser,
+    addRelationshipMutation,
+    removeRelationshipMutation,
+  ]);
 
   const handleFollow = useCallback(async () => {
     if (!currentProposal.profileId) {
@@ -292,7 +323,12 @@ export function ProposalView({ proposal: initialProposal, backHref }: ProposalVi
         pending: false,
       });
     }
-  }, [currentProposal.profileId, currentProposal.isFollowedByUser, addRelationshipMutation, removeRelationshipMutation]);
+  }, [
+    currentProposal.profileId,
+    currentProposal.isFollowedByUser,
+    addRelationshipMutation,
+    removeRelationshipMutation,
+  ]);
 
   if (!editor) {
     return (
@@ -328,100 +364,96 @@ export function ProposalView({ proposal: initialProposal, backHref }: ProposalVi
     >
       {/* Content */}
       <div className="flex-1 px-6 py-8">
-        <div className="mx-auto flex max-w-4xl flex-col gap-6">
-          {/* Title */}
-          <h1 className="font-serif text-title-lg text-neutral-black">
-            {title || t('Untitled Proposal')}
-          </h1>
-
-          {/* Metadata Row */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              {budget && (
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-neutral-charcoal">
-                    {t('Budget')}
-                  </span>
-                  <span className="rounded-md bg-neutral-gray1 px-3 py-1 text-sm font-semibold text-neutral-charcoal">
+        <div className="mx-auto flex max-w-xl flex-col gap-8">
+          <div className="space-y-4">
+            {/* Title */}
+            <Header1 className="font-serif text-title-lg">
+              {title || t('Untitled Proposal')}
+            </Header1>
+            <div className="space-y-6">
+              {/* Metadata Row */}
+              <div className="flex items-center justify-between gap-4">
+                {category && (
+                  <TagGroup>
+                    <Tag className="sm:rounded-sm">{category}</Tag>
+                  </TagGroup>
+                )}
+                {budget && (
+                  <span className="font-serif text-title-base text-neutral-black">
                     {formatCurrency(budget)}
                   </span>
-                </div>
-              )}
-              {category && (
-                <span className="rounded-full bg-neutral-gray1 px-3 py-1 text-xs text-neutral-charcoal">
-                  {category}
-                </span>
-              )}
-            </div>
-          </div>
+                )}
+              </div>
 
-          {/* Author and submission info */}
-          <div className="flex items-center gap-3">
-            {currentProposal.submittedBy && (
-              <>
-                <Avatar
-                  placeholder={
-                    currentProposal.submittedBy.name ||
-                    currentProposal.submittedBy.slug ||
-                    'U'
-                  }
-                  className="h-8 w-8"
-                >
-                  {currentProposal.submittedBy.avatarImage?.name ? (
-                    <Image
-                      src={
-                        getPublicUrl(currentProposal.submittedBy.avatarImage.name) ??
-                        ''
-                      }
-                      alt={
+              {/* Author and submission info */}
+              <div className="flex items-center gap-2">
+                {currentProposal.submittedBy && (
+                  <>
+                    <Avatar
+                      placeholder={
                         currentProposal.submittedBy.name ||
                         currentProposal.submittedBy.slug ||
-                        ''
+                        'U'
                       }
-                      fill
-                      className="aspect-square object-cover"
-                    />
-                  ) : null}
-                </Avatar>
-                <div className="flex flex-col">
-                  <span className="text-sm font-medium text-neutral-charcoal">
-                    {currentProposal.submittedBy.name || currentProposal.submittedBy.slug}
-                  </span>
-                  <span className="text-xs text-neutral-gray2">
-                    {t('Submitted on')} {formatDate(currentProposal.createdAt)}
+                      className="size-8"
+                    >
+                      {currentProposal.submittedBy.avatarImage?.name ? (
+                        <Image
+                          src={
+                            getPublicUrl(
+                              currentProposal.submittedBy.avatarImage.name,
+                            ) ?? ''
+                          }
+                          alt={
+                            currentProposal.submittedBy.name ||
+                            currentProposal.submittedBy.slug ||
+                            ''
+                          }
+                          fill
+                          className="aspect-square object-cover"
+                        />
+                      ) : null}
+                    </Avatar>
+                    <div className="flex flex-col">
+                      <span className="text-base text-neutral-black">
+                        {currentProposal.submittedBy.name ||
+                          currentProposal.submittedBy.slug}
+                      </span>
+                      <span className="text-sm text-neutral-charcoal">
+                        {t('Submitted on')}{' '}
+                        {formatDate(currentProposal.createdAt)}
+                      </span>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Engagement Stats */}
+              <div className="flex items-center gap-4 border-b border-t border-neutral-gray1 py-4 text-sm text-neutral-gray4">
+                <div className="flex items-center gap-1">
+                  <Heart className="h-4 w-4" />
+                  <span>0 {t('Likes')}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <MessageCircle className="h-4 w-4" />
+                  <span>
+                    {comments.length}{' '}
+                    {comments.length !== 1 ? t('Comments') : t('Comment')}
                   </span>
                 </div>
-              </>
-            )}
-          </div>
-
-          {/* Engagement Stats */}
-          <div className="flex items-center gap-6 border-b border-neutral-gray1 pb-4">
-            <div className="flex items-center gap-1 text-sm text-neutral-gray2">
-              <Heart className="h-4 w-4" />
-              <span>0 {t('Likes')}</span>
-            </div>
-            <div className="flex items-center gap-1 text-sm text-neutral-gray2">
-              <MessageCircle className="h-4 w-4" />
-              <span>
-                {comments.length} {comments.length !== 1 ? t('Comments') : t('Comment')}
-              </span>
-            </div>
-            <div className="flex items-center gap-1 text-sm text-neutral-gray2">
-              <Users className="h-4 w-4" />
-              <span>1 {t('Follower')}</span>
+                <div className="flex items-center gap-1">
+                  <LuBookmark className="size-4" />
+                  <span>1 {t('Follower')}</span>
+                </div>
+              </div>
             </div>
           </div>
 
           {/* Proposal Content */}
-          <div className="mt-6">
-            <div>
-              <EditorContent
-                className="[&>div]:px-0 [&>div]:py-0"
-                editor={editor}
-              />
-            </div>
-          </div>
+          <EditorContent
+            className="[&>div]:px-0 [&>div]:py-0"
+            editor={editor}
+          />
 
           {/* Comments Section */}
           <div className="mt-12" ref={commentsContainerRef}>

@@ -1,9 +1,9 @@
 'use client';
 
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { useUser } from '@/utils/UserProvider';
 import { Tab, TabPanel } from '@op/ui/Tabs';
 import { cn } from '@op/ui/utils';
-import { useFeatureFlagEnabled } from 'posthog-js/react';
 import { ReactNode, Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -15,7 +15,7 @@ import { ProfileRelationshipsSkeleton } from '@/components/screens/ProfileRelati
 import { MembersList } from './MembersList';
 
 export const DecisionsTab = ({ profileId }: { profileId: string }) => {
-  const decisionsEnabled = useFeatureFlagEnabled('decision_making');
+  const decisionsEnabled = useFeatureFlag('decision_making');
   const t = useTranslations();
   const access = useUser();
   const permission = access.getPermissionsForProfile(profileId);
@@ -32,7 +32,7 @@ export const DecisionsTabPanel = ({
   children: ReactNode;
   className?: string;
 }) => {
-  const decisionsEnabled = useFeatureFlagEnabled('decision_making') || true;
+  const decisionsEnabled = useFeatureFlag('decision_making');
 
   return decisionsEnabled ? (
     <TabPanel id="decisions" className={cn('px-0', className)}>
@@ -42,7 +42,7 @@ export const DecisionsTabPanel = ({
 };
 
 export const MembersTab = ({ profileId }: { profileId: string }) => {
-  const decisionsEnabled = useFeatureFlagEnabled('decision_making');
+  const decisionsEnabled = useFeatureFlag('decision_making');
   const t = useTranslations();
   const access = useUser();
   const permission = access.getPermissionsForProfile(profileId).admin;
@@ -53,7 +53,7 @@ export const MembersTab = ({ profileId }: { profileId: string }) => {
 };
 
 export const MembersTabPanel = ({ profileId }: { profileId: string }) => {
-  const decisionsEnabled = useFeatureFlagEnabled('decision_making') || true;
+  const decisionsEnabled = useFeatureFlag('decision_making');
   const t = useTranslations();
 
   return decisionsEnabled ? (

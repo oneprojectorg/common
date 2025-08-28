@@ -1,10 +1,12 @@
-import { trpcNext } from '@op/api/vanilla';
+'use client';
+
+import { trpc } from '@op/api/client';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
 import { ProposalEditor } from '@/components/decisions/ProposalEditor';
 
-async function ProposalEditPageContent({
+function ProposalEditPageContent({
   proposalId,
   instanceId,
   slug,
@@ -14,13 +16,13 @@ async function ProposalEditPageContent({
   slug: string;
 }) {
   try {
-    const client = await trpcNext();
-    
     // Get both the proposal and the instance
-    const [proposal, instance] = await Promise.all([
-      client.decision.getProposal.query({ proposalId }),
-      client.decision.getInstance.query({ instanceId }),
-    ]);
+    const [proposal] = trpc.decision.getProposal.useSuspenseQuery({
+      proposalId,
+    });
+    const [instance] = trpc.decision.getInstance.useSuspenseQuery({
+      instanceId,
+    });
 
     if (!proposal || !instance) {
       notFound();
