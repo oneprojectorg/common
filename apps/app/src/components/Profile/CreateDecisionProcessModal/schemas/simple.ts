@@ -234,19 +234,21 @@ export const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
     schema: {
       type: 'object',
       title: 'Configure proposal information',
-      description: 'Set up information that will be displayed to participants when they create proposals.',
-      required: ['proposalInfoTitle', 'proposalInfoContent'],
+      description:
+        'Set up information that will be displayed to participants when they create proposals.',
       properties: {
         proposalInfoTitle: {
           type: 'string',
           title: 'Information Title',
           minLength: 1,
-          description: 'Title for the information modal shown to proposal creators',
+          description:
+            'Title for the information modal shown to proposal creators',
         },
         proposalInfoContent: {
           type: 'string',
           title: 'Information Content',
-          description: 'Information that will be displayed to participants when they create a new proposal',
+          description:
+            'Information that will be displayed to participants when they create a new proposal',
         },
       },
     },
@@ -269,7 +271,7 @@ export const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
       type: 'object',
       title: 'Setup proposal template',
       description: 'Configure guidance and budget limits',
-      required: ['budgetCapAmount', 'descriptionGuidance'],
+      required: ['budgetCapAmount'],
       properties: {
         budgetCapAmount: {
           type: 'number',

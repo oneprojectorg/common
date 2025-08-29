@@ -243,7 +243,7 @@ export const CreateDecisionProcessModal = () => {
     }
   };
 
-  // Validate date ordering for step 2 (phases)
+  // Validate date ordering for phases
   const validatePhaseSequence = (): string[] => {
     const errors: string[] = [];
 
@@ -251,53 +251,109 @@ export const CreateDecisionProcessModal = () => {
       return errors;
     }
 
+    // Get phase schema from step 2 (index 1)
+    const phaseSchema = stepSchemas[1];
+    if (!phaseSchema?.schema.properties) {
+      return errors;
+    }
+
     const phases = formData as any;
-    const proposalPhase = phases.proposalSubmissionPhase || {};
-    const reviewPhase = phases.reviewShortlistingPhase || {};
-    const votingPhase = phases.votingPhase || {};
-    const resultsPhase = phases.resultsAnnouncement || {};
 
-    const submissionOpen = proposalPhase.submissionsOpen;
-    const submissionClose = proposalPhase.submissionsClose;
-    const reviewOpen = reviewPhase.reviewOpen;
-    const reviewClose = reviewPhase.reviewClose;
-    const votingOpen = votingPhase.votingOpen;
-    const votingClose = votingPhase.votingClose;
-    const resultsDate = resultsPhase.resultsDate;
+    // We need to ensure dates follow the expected phase order
+    const phaseOrder = Object.keys(phaseSchema.schema.properties);
+    const datesByPhase = new Map<
+      string,
+      Array<{ name: string; value: string; key: string }>
+    >();
 
-    const dates = [
-      {
-        name: 'Submissions Open',
-        value: submissionOpen,
-        key: 'submissionsOpen',
+    // Group dates by phase, preserving schema order
+    Object.entries(phaseSchema.schema.properties).forEach(
+      ([phaseKey, phaseConfig]: [string, any]) => {
+        if (phaseConfig.type === 'object' && phaseConfig.properties) {
+          const phaseData = phases[phaseKey] || {};
+          const phaseDates: Array<{
+            name: string;
+            value: string;
+            key: string;
+          }> = [];
+
+          // Iterate through date fields in schema order
+          Object.entries(phaseConfig.properties).forEach(
+            ([dateKey, dateConfig]: [string, any]) => {
+              if (dateConfig.format === 'date' && phaseData[dateKey]) {
+                phaseDates.push({
+                  name: `${phaseConfig.title || phaseKey} - ${dateConfig.title || dateKey}`,
+                  value: phaseData[dateKey],
+                  key: `${phaseKey}.${dateKey}`,
+                });
+              }
+            },
+          );
+
+          if (phaseDates.length > 0) {
+            datesByPhase.set(phaseKey, phaseDates);
+          }
+        }
       },
-      {
-        name: 'Submissions Close',
-        value: submissionClose,
-        key: 'submissionsClose',
-      },
-      { name: 'Review Open', value: reviewOpen, key: 'reviewOpen' },
-      { name: 'Review Close', value: reviewClose, key: 'reviewClose' },
-      { name: 'Voting Open', value: votingOpen, key: 'votingOpen' },
-      { name: 'Voting Close', value: votingClose, key: 'votingClose' },
-      { name: 'Results Date', value: resultsDate, key: 'resultsDate' },
-    ].filter((d) => d.value); // Only validate dates that are set
+    );
 
-    // Check chronological order
-    for (let i = 0; i < dates.length - 1; i++) {
-      const currentDate = dates[i];
-      const nextDate = dates[i + 1];
+    // Validate within each phase (start dates before end dates)
+    datesByPhase.forEach((dates) => {
+      for (let i = 0; i < dates.length - 1; i++) {
+        const currentDate = dates[i];
+        const nextDate = dates[i + 1];
 
-      if (currentDate && nextDate) {
-        const current = new Date(currentDate.value);
-        const next = new Date(nextDate.value);
+        console.log('>>', currentDate, nextDate);
 
-        if (current >= next) {
-          errors.push(`${currentDate.name} must be before ${nextDate.name}`);
+        if (currentDate && nextDate) {
+          const current = new Date(currentDate.value);
+          const next = new Date(nextDate.value);
+
+          if (current >= next) {
+            console.log(
+              'ERROR',
+              `${currentDate.name} must be before ${nextDate.name}`,
+            );
+            errors.push(`${currentDate.name} must be before ${nextDate.name}`);
+          }
+        }
+      }
+    });
+
+    // Validate across phases (later phases should not start before earlier phases end)
+    for (let i = 0; i < phaseOrder.length - 1; i++) {
+      const currentPhaseKey = phaseOrder[i];
+      const nextPhaseKey = phaseOrder[i + 1];
+
+      if (!currentPhaseKey || !nextPhaseKey) continue;
+
+      const currentPhaseDates = datesByPhase.get(currentPhaseKey) || [];
+      const nextPhaseDates = datesByPhase.get(nextPhaseKey) || [];
+
+      if (currentPhaseDates.length > 0 && nextPhaseDates.length > 0) {
+        // Get the latest date from current phase
+        const currentPhaseEnd = currentPhaseDates.reduce((latest, date) => {
+          const dateValue = new Date(date.value);
+          const latestValue = new Date(latest.value);
+          return dateValue > latestValue ? date : latest;
+        });
+
+        // Get the earliest date from next phase
+        const nextPhaseStart = nextPhaseDates.reduce((earliest, date) => {
+          const dateValue = new Date(date.value);
+          const earliestValue = new Date(earliest.value);
+          return dateValue < earliestValue ? date : earliest;
+        });
+
+        if (new Date(currentPhaseEnd.value) >= new Date(nextPhaseStart.value)) {
+          errors.push(
+            `${nextPhaseStart.name} must be after ${currentPhaseEnd.name}`,
+          );
         }
       }
     }
 
+    console.log('ERRORS', errors);
     return errors;
   };
 
@@ -340,10 +396,26 @@ export const CreateDecisionProcessModal = () => {
   const validateStep = (step: number, showErrors = false): boolean => {
     const validation = validateCurrentStep();
 
-    if (!validation.isValid && showErrors) {
+    if (!validation.isValid) {
+      console.log('Live validation errors', validation.errors);
+      const errors = Object.values(validation.errors).reduce((accum, val) => {
+        if (val && val.__errors) {
+          return [...accum, ...(val.__errors as string[])];
+        }
+        return accum;
+      }, [] as string[]);
+
       // Only show static errors if not already in live validation mode
-      if (validationModes[step] !== 'live') {
+      if (showErrors && validationModes[step] !== 'live') {
         setStepValidation(step, 'static', validation.errors);
+        toast.error({
+          message: errors.join(', '),
+        });
+      } else {
+        console.log('Live validation errors', validation.errors);
+        toast.error({
+          message: errors.join(', '),
+        });
       }
     }
 
@@ -423,7 +495,7 @@ export const CreateDecisionProcessModal = () => {
           <p className="text-base text-neutral-charcoal">
             Confirm your settings before creating the process.
           </p>
-          <CustomWidgets.ReviewSummary 
+          <CustomWidgets.ReviewSummary
             id="review-summary"
             name="summary"
             label=""
@@ -502,7 +574,7 @@ export const CreateDecisionProcessModal = () => {
     if (currentStep === stepSchemas.length + 1) {
       return 'Review and launch';
     }
-        
+
     const stepConfig = stepSchemas[currentStep - 1];
     return stepConfig?.schema.title || 'Set up your decision-making process';
   };
