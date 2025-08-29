@@ -14,8 +14,6 @@ import { forwardRef, useEffect, useImperativeHandle } from 'react';
 
 import { IframelyExtension } from '../decisions/IframelyExtension';
 import { SlashCommands } from '../decisions/SlashCommands';
-import { RichTextEditorFloatingToolbar } from './RichTextEditorFloatingToolbar';
-import { useRichTextEditorFloatingToolbar } from './useRichTextEditorFloatingToolbar';
 
 export interface RichTextEditorContentProps {
   content?: string;
@@ -129,16 +127,6 @@ export const RichTextEditorContent = forwardRef<
       }
     }, [editor, onEditorReady]);
 
-    // Floating toolbar hook - always enabled
-    const {
-      isVisible: floatingToolbarVisible,
-      position: floatingToolbarPosition,
-      handleSelectionChange,
-    } = useRichTextEditorFloatingToolbar({
-      editor,
-      enabled: true,
-    });
-
     if (!editor) {
       return (
         <div className={`flex flex-1 items-center justify-center ${className}`}>
@@ -149,14 +137,7 @@ export const RichTextEditorContent = forwardRef<
 
     return (
       <div className={className}>
-        <EditorContent className="[&>div]:px-0 [&>div]:py-0" editor={editor} />
-
-        <RichTextEditorFloatingToolbar
-          editor={editor}
-          isVisible={floatingToolbarVisible}
-          position={floatingToolbarPosition}
-          onSelectionChange={handleSelectionChange}
-        />
+        <EditorContent editor={editor} placeholder={_placeholder} />
       </div>
     );
   },
