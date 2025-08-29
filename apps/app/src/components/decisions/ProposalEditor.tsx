@@ -123,7 +123,7 @@ export function ProposalEditor({
       ? parsedProposalData.content
       : descriptionGuidance
         ? `<p>${descriptionGuidance}</p>`
-        : "<p>Start with the problem you're addressing, explain your solution, and describe the expected impact on our community...</p>";
+        : undefined;
 
   // Update editor content when it changes
   const handleEditorUpdate = useCallback((content: string) => {
@@ -335,6 +335,7 @@ export function ProposalEditor({
             ref={editorRef}
             content={initialContent}
             onUpdate={handleEditorUpdate}
+            placeholder="Write your proposal here..."
             onEditorReady={handleEditorReady}
             editorClassName="w-[32rem] px-6 py-6 text-neutral-black placeholder:text-neutral-gray2"
           />
