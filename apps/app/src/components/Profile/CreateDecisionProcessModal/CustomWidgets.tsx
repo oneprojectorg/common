@@ -382,14 +382,21 @@ export const RichTextEditorWidget = (props: WidgetProps) => {
         {schema.title}
         {required && <span className="ml-1 text-functional-red">*</span>}
       </label>
-      <RichTextEditor
-        content={value || ''}
-        placeholder={uiSchema?.['ui:placeholder'] || 'Start writing...'}
-        onChange={handleChange}
-        onUpdate={handleChange}
-        className={cn('min-h-52 rounded-md border p-4', customClassName)}
-        editorClassName="prose prose-sm max-w-none focus:outline-none"
-      />
+      <div className="flex flex-col rounded-md border">
+        <RichTextEditor
+          content={value || ''}
+          placeholder={uiSchema?.['ui:placeholder'] || 'Start writing...'}
+          onChange={handleChange}
+          onUpdate={handleChange}
+          className="flex flex-1 flex-col"
+          editorClassName={cn(
+            'prose prose-sm min-h-52 max-w-none flex-1 p-4 focus:outline-none',
+            customClassName,
+          )}
+          showToolbar={true}
+          toolbarPosition="bottom"
+        />
+      </div>
       {schema.description && <Description>{schema.description}</Description>}
       {rawErrors && rawErrors.length > 0 && (
         <div className="text-sm text-functional-red">

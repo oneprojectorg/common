@@ -107,12 +107,12 @@ export function RichTextEditorToolbar({
 
   return (
     <div className={`border-b border-neutral-gray1 px-6 py-2 ${className}`}>
-      <div className="w-full flex flex-wrap items-center justify-center gap-1">
+      <div className="w-full flex items-center gap-1 overflow-x-auto scrollbar-hide min-w-0">
         {/* Undo/Redo */}
         <button
           onClick={() => editor.chain().focus().undo().run()}
           disabled={!editor.can().undo()}
-          className="rounded p-2 hover:bg-gray-100 disabled:opacity-50"
+          className="rounded p-2 hover:bg-gray-100 disabled:opacity-50 flex-shrink-0"
           title="Undo"
         >
           <Undo className="size-4" />
@@ -120,20 +120,20 @@ export function RichTextEditorToolbar({
         <button
           onClick={() => editor.chain().focus().redo().run()}
           disabled={!editor.can().redo()}
-          className="rounded p-2 hover:bg-gray-100 disabled:opacity-50"
+          className="rounded p-2 hover:bg-gray-100 disabled:opacity-50 flex-shrink-0"
           title="Redo"
         >
           <Redo className="h-4 w-4" />
         </button>
 
-        <div className="mx-2 h-6 w-px bg-gray-300" />
+        <div className="mx-2 h-6 w-px bg-gray-300 flex-shrink-0" />
 
         {/* Headings */}
         <button
           onClick={() =>
             editor.chain().focus().toggleHeading({ level: 1 }).run()
           }
-          className={`rounded p-2 hover:bg-gray-100 ${editor.isActive('heading', { level: 1 }) ? 'bg-gray-200' : ''}`}
+          className={`rounded p-2 hover:bg-gray-100 flex-shrink-0 ${editor.isActive('heading', { level: 1 }) ? 'bg-gray-200' : ''}`}
           title="Heading 1"
         >
           <Heading1 className="h-4 w-4" />
@@ -142,7 +142,7 @@ export function RichTextEditorToolbar({
           onClick={() =>
             editor.chain().focus().toggleHeading({ level: 2 }).run()
           }
-          className={`rounded p-2 hover:bg-gray-100 ${editor.isActive('heading', { level: 2 }) ? 'bg-gray-200' : ''}`}
+          className={`rounded p-2 hover:bg-gray-100 flex-shrink-0 ${editor.isActive('heading', { level: 2 }) ? 'bg-gray-200' : ''}`}
           title="Heading 2"
         >
           <Heading2 className="h-4 w-4" />
@@ -151,128 +151,128 @@ export function RichTextEditorToolbar({
           onClick={() =>
             editor.chain().focus().toggleHeading({ level: 3 }).run()
           }
-          className={`rounded p-2 hover:bg-gray-100 ${editor.isActive('heading', { level: 3 }) ? 'bg-gray-200' : ''}`}
+          className={`rounded p-2 hover:bg-gray-100 flex-shrink-0 ${editor.isActive('heading', { level: 3 }) ? 'bg-gray-200' : ''}`}
           title="Heading 3"
         >
           <Heading3 className="h-4 w-4" />
         </button>
 
-        <div className="mx-2 h-6 w-px bg-gray-300" />
+        <div className="mx-2 h-6 w-px bg-gray-300 flex-shrink-0" />
 
         {/* Text Formatting */}
         <button
           onClick={() => editor.chain().focus().toggleBold().run()}
-          className={`rounded p-2 hover:bg-gray-100 ${editor.isActive('bold') ? 'bg-gray-200' : ''}`}
+          className={`rounded p-2 hover:bg-gray-100 flex-shrink-0 ${editor.isActive('bold') ? 'bg-gray-200' : ''}`}
           title="Bold"
         >
           <Bold className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor.chain().focus().toggleItalic().run()}
-          className={`rounded p-2 hover:bg-gray-100 ${editor.isActive('italic') ? 'bg-gray-200' : ''}`}
+          className={`rounded p-2 hover:bg-gray-100 flex-shrink-0 ${editor.isActive('italic') ? 'bg-gray-200' : ''}`}
           title="Italic"
         >
           <Italic className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor.chain().focus().toggleUnderline().run()}
-          className={`rounded p-2 hover:bg-gray-100 ${editor.isActive('underline') ? 'bg-gray-200' : ''}`}
+          className={`rounded p-2 hover:bg-gray-100 flex-shrink-0 ${editor.isActive('underline') ? 'bg-gray-200' : ''}`}
           title="Underline"
         >
           <UnderlineIcon className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor.chain().focus().toggleStrike().run()}
-          className={`rounded p-2 hover:bg-gray-100 ${editor.isActive('strike') ? 'bg-gray-200' : ''}`}
+          className={`rounded p-2 hover:bg-gray-100 flex-shrink-0 ${editor.isActive('strike') ? 'bg-gray-200' : ''}`}
           title="Strikethrough"
         >
           <Strikethrough className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor.chain().focus().toggleCode().run()}
-          className={`rounded p-2 hover:bg-gray-100 ${editor.isActive('code') ? 'bg-gray-200' : ''}`}
+          className={`rounded p-2 hover:bg-gray-100 flex-shrink-0 ${editor.isActive('code') ? 'bg-gray-200' : ''}`}
           title="Code"
         >
           <Code className="h-4 w-4" />
         </button>
 
-        <div className="mx-2 h-6 w-px bg-gray-300" />
+        <div className="mx-2 h-6 w-px bg-gray-300 flex-shrink-0" />
 
         {/* Lists */}
         <button
           onClick={() => editor.chain().focus().toggleBulletList().run()}
-          className={`rounded p-2 hover:bg-gray-100 ${editor.isActive('bulletList') ? 'bg-gray-200' : ''}`}
+          className={`rounded p-2 hover:bg-gray-100 flex-shrink-0 ${editor.isActive('bulletList') ? 'bg-gray-200' : ''}`}
           title="Bullet List"
         >
           <List className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor.chain().focus().toggleOrderedList().run()}
-          className={`rounded p-2 hover:bg-gray-100 ${editor.isActive('orderedList') ? 'bg-gray-200' : ''}`}
+          className={`rounded p-2 hover:bg-gray-100 flex-shrink-0 ${editor.isActive('orderedList') ? 'bg-gray-200' : ''}`}
           title="Numbered List"
         >
           <ListOrdered className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor.chain().focus().toggleBlockquote().run()}
-          className={`rounded p-2 hover:bg-gray-100 ${editor.isActive('blockquote') ? 'bg-gray-200' : ''}`}
+          className={`rounded p-2 hover:bg-gray-100 flex-shrink-0 ${editor.isActive('blockquote') ? 'bg-gray-200' : ''}`}
           title="Blockquote"
         >
           <Quote className="h-4 w-4" />
         </button>
 
-        <div className="mx-2 h-6 w-px bg-gray-300" />
+        <div className="mx-2 h-6 w-px bg-gray-300 flex-shrink-0" />
 
         {/* Text Alignment */}
         <button
           onClick={() => editor.chain().focus().setTextAlign('left').run()}
-          className={`rounded p-2 hover:bg-gray-100 ${editor.isActive({ textAlign: 'left' }) ? 'bg-gray-200' : ''}`}
+          className={`rounded p-2 hover:bg-gray-100 flex-shrink-0 ${editor.isActive({ textAlign: 'left' }) ? 'bg-gray-200' : ''}`}
           title="Align Left"
         >
           <AlignLeft className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor.chain().focus().setTextAlign('center').run()}
-          className={`rounded p-2 hover:bg-gray-100 ${editor.isActive({ textAlign: 'center' }) ? 'bg-gray-200' : ''}`}
+          className={`rounded p-2 hover:bg-gray-100 flex-shrink-0 ${editor.isActive({ textAlign: 'center' }) ? 'bg-gray-200' : ''}`}
           title="Align Center"
         >
           <AlignCenter className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor.chain().focus().setTextAlign('right').run()}
-          className={`rounded p-2 hover:bg-gray-100 ${editor.isActive({ textAlign: 'right' }) ? 'bg-gray-200' : ''}`}
+          className={`rounded p-2 hover:bg-gray-100 flex-shrink-0 ${editor.isActive({ textAlign: 'right' }) ? 'bg-gray-200' : ''}`}
           title="Align Right"
         >
           <AlignRight className="h-4 w-4" />
         </button>
 
-        <div className="mx-2 h-6 w-px bg-gray-300" />
+        <div className="mx-2 h-6 w-px bg-gray-300 flex-shrink-0" />
 
         {/* Insert Elements */}
         <button
           onClick={addLink}
-          className={`rounded p-2 hover:bg-gray-100 ${editor.isActive('link') ? 'bg-gray-200' : ''}`}
+          className={`rounded p-2 hover:bg-gray-100 flex-shrink-0 ${editor.isActive('link') ? 'bg-gray-200' : ''}`}
           title="Add Link"
         >
           <LinkIcon className="h-4 w-4" />
         </button>
         <button
           onClick={addEmbedLink}
-          className="rounded p-2 hover:bg-gray-100"
+          className="rounded p-2 hover:bg-gray-100 flex-shrink-0"
           title="Embed Link Preview"
         >
           <Link2 className="h-4 w-4" />
         </button>
         <button
           onClick={handleImageUpload}
-          className="rounded p-2 hover:bg-gray-100"
+          className="rounded p-2 hover:bg-gray-100 flex-shrink-0"
           title="Add Image"
         >
           <ImageIcon className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor.chain().focus().setHorizontalRule().run()}
-          className="rounded p-2 hover:bg-gray-100"
+          className="rounded p-2 hover:bg-gray-100 flex-shrink-0"
           title="Add Horizontal Rule"
         >
           <Minus className="h-4 w-4" />

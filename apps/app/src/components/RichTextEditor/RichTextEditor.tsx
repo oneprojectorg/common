@@ -1,6 +1,7 @@
 'use client';
 
-import { forwardRef } from 'react';
+import { forwardRef, useRef, useState } from 'react';
+import type { Editor } from '@tiptap/react';
 
 import { RichTextEditorContent, type RichTextEditorRef } from './RichTextEditorContent';
 import { RichTextEditorToolbar } from './RichTextEditorToolbar';
@@ -13,6 +14,7 @@ export interface RichTextEditorProps {
   className?: string;
   editorClassName?: string;
   showToolbar?: boolean;
+  toolbarPosition?: 'top' | 'bottom';
   readOnly?: boolean;
   immediatelyRender?: boolean;
 }
@@ -25,27 +27,43 @@ export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>
   className = '',
   editorClassName = '',
   showToolbar = true,
+  toolbarPosition = 'top',
   readOnly = false,
   immediatelyRender = false,
 }, ref) => {
+  const editorRef = useRef<RichTextEditorRef>(null);
+  const [editor, setEditor] = useState<Editor | null>(null);
+
+  const handleEditorReady = (editorInstance: Editor) => {
+    setEditor(editorInstance);
+  };
+
   return (
     <div className={className}>
-      {showToolbar && (
+      {showToolbar && toolbarPosition === 'top' && (
         <RichTextEditorToolbar
-          editor={null} // Will be passed from parent if needed
+          editor={editor}
         />
       )}
 
       <RichTextEditorContent
-        ref={ref}
+        ref={ref || editorRef}
         content={content}
         placeholder={placeholder}
         onUpdate={onUpdate}
         onChange={onChange}
+        onEditorReady={handleEditorReady}
         editorClassName={editorClassName}
         readOnly={readOnly}
         immediatelyRender={immediatelyRender}
       />
+
+      {showToolbar && toolbarPosition === 'bottom' && (
+        <RichTextEditorToolbar
+          editor={editor}
+          className="border-t border-b-0"
+        />
+      )}
     </div>
   );
 });
