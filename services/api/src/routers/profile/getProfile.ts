@@ -1,4 +1,5 @@
 import { NotFoundError, getProfile, listProfiles } from '@op/common';
+import { getProfileById } from '@op/common/src/services/profile/getProfile';
 import { EntityType } from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
@@ -14,6 +15,10 @@ const inputSchema = z.object({
   slug: z.string(),
 });
 
+const inputByIdSchema = z.object({
+  id: z.string(),
+});
+
 const getBySlugMeta: OpenApiMeta = {
   openapi: {
     enabled: true,
@@ -22,6 +27,17 @@ const getBySlugMeta: OpenApiMeta = {
     protect: true,
     tags: ['profile'],
     summary: 'Get profile by slug',
+  },
+};
+
+const getByIdMeta: OpenApiMeta = {
+  openapi: {
+    enabled: true,
+    method: 'GET',
+    path: '/profile/id/{id}',
+    protect: true,
+    tags: ['profile'],
+    summary: 'Get profile by ID',
   },
 };
 
@@ -111,6 +127,45 @@ export const getProfileRouter = router({
         // Use the profile service to get profile data
         const profile = await getProfile({
           slug,
+          user,
+        });
+
+        // Return the profile data using the profile encoder
+        return universalProfileSchema.parse(profile);
+      } catch (error: unknown) {
+        console.log(error);
+
+        if (error instanceof NotFoundError) {
+          throw new TRPCError({
+            message: error.message,
+            code: 'NOT_FOUND',
+          });
+        }
+
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+
+        throw new TRPCError({
+          message: 'Profile not found',
+          code: 'NOT_FOUND',
+        });
+      }
+    }),
+  getById: loggedProcedure
+    .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
+    .use(withAuthenticated)
+    .meta(getByIdMeta)
+    .input(inputByIdSchema)
+    .output(universalProfileSchema)
+    .query(async ({ ctx, input }) => {
+      const { id } = input;
+      const { user } = ctx;
+
+      try {
+        // Use the profile service to get profile data by ID
+        const profile = await getProfileById({
+          id,
           user,
         });
 

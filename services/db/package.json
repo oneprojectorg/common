@@ -18,12 +18,15 @@
     "push": "pnpm drizzle-kit push",
     "reset": "pnpx supabase db reset",
     "seed": "cross-env DB_SEEDING=true tsx ./seed.ts",
+    "seed:map": "cross-env DB_SEEDING=true tsx ./scripts/create-map-test-data.ts",
+    "seed:map:test": "cross-env DB_SEEDING=true DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:55322/postgres tsx ./scripts/create-map-test-data.ts",
     "start": "pnpx supabase start",
     "status": "pnpx supabase status",
     "stop": "pnpx supabase stop",
     "studio": "pnpm drizzle-kit studio"
   },
   "dependencies": {
+    "@faker-js/faker": "^10.0.0",
     "@op/core": "workspace:*",
     "@op/supabase": "workspace:^",
     "@types/pg": "^8.11.11",

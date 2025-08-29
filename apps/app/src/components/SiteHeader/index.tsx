@@ -22,6 +22,7 @@ import {
   LuChevronDown,
   LuCircleHelp,
   LuLogOut,
+  LuMap,
   LuSearch,
 } from 'react-icons/lu';
 
@@ -436,6 +437,7 @@ export const UserAvatarMenu = () => {
 
 export const SiteHeader = () => {
   const [isMobileSearchExpanded, setIsMobileSearchExpanded] = useState(false);
+  const profilesMapEnabled = useFeatureFlagEnabled('profiles_map');
 
   return (
     <>
@@ -443,10 +445,22 @@ export const SiteHeader = () => {
         <Link href="/" className="flex gap-1">
           <CommonLogo />
         </Link>
-        <span className="flex items-center justify-center">
+        <span className="flex items-center justify-center gap-2">
           <ErrorBoundary fallback={<Skeleton className="h-10 w-96" />}>
             <SearchInput />
           </ErrorBoundary>
+          {profilesMapEnabled && (
+            <Link href="/map">
+              <Button
+                variant="icon"
+                size="small"
+                className="flex items-center justify-center rounded-lg border border-neutral-gray2 bg-white p-2 hover:bg-neutral-offWhite"
+                aria-label="View profiles map"
+              >
+                <LuMap className="size-4 text-neutral-gray4" />
+              </Button>
+            </Link>
+          )}
         </span>
         <div className="flex items-center gap-3">
           <ClientOnly>
@@ -500,13 +514,28 @@ export const SiteHeader = () => {
             </>
           ) : (
             <>
-              <Button
-                unstyled
-                onPress={() => setIsMobileSearchExpanded(true)}
-                className="flex items-center justify-center"
-              >
-                <LuSearch className="size-4 text-neutral-gray4" />
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  unstyled
+                  onPress={() => setIsMobileSearchExpanded(true)}
+                  className="flex items-center justify-center"
+                >
+                  <LuSearch className="size-4 text-neutral-gray4" />
+                </Button>
+                
+                {profilesMapEnabled && (
+                  <Link href="/map">
+                    <Button
+                      variant="icon"
+                      size="small"
+                      className="flex items-center justify-center"
+                      aria-label="View profiles map"
+                    >
+                      <LuMap className="size-4 text-neutral-gray4" />
+                    </Button>
+                  </Link>
+                )}
+              </div>
 
               <div className="flex items-center gap-3">
                 <ClientOnly>

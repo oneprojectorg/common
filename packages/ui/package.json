@@ -44,8 +44,13 @@
     "./RAH": "./src/RAH.ts",
     "./RAS": "./src/RAS.ts",
     "./Scroller": "./src/components/Scroller.tsx",
+    "./SearchField": "./src/components/SearchField.tsx",
     "./Select": "./src/components/Select.tsx",
     "./Skeleton": "./src/components/Skeleton.tsx",
+    "./CustomMarker": "./src/components/CustomMarker.tsx",
+    "./ClusterIcon": "./src/components/ClusterIcon.tsx",
+    "./MapViewSync": "./src/components/MapViewSync.tsx",
+    "./ProfilePopup": "./src/components/ProfilePopup.tsx",
     "./SocialLinks": "./src/components/SocialLinks.tsx",
     "./Stepper": "./src/components/Stepper/index.ts",
     "./Switch": "./src/components/Switch.tsx",
@@ -90,6 +95,9 @@
     "tailwindcss-animate": "1.0.7",
     "tailwindcss-react-aria-components": "^1.2.0"
   },
+  "peerDependencies": {
+    "leaflet": "^1.9.4"
+  },
   "devDependencies": {
     "@iconify/json": "2.2.311",
     "@op/typescript-config": "workspace:*",
@@ -103,10 +111,14 @@
     "@storybook/react-vite": "^8.6.2",
     "@storybook/test": "^8.6.2",
     "@storybook/theming": "^8.6.2",
+    "@types/leaflet": "^1.9.20",
     "@types/react": "19.0.10",
     "autoprefixer": "^10.4.20",
+    "leaflet": "^1.9.4",
     "postcss": "^8.5.3",
     "react": "^18.3.1",
+    "react-leaflet": "^5.0.0",
+    "react-leaflet-cluster": "^3.1.1",
     "storybook": "^8.6.2",
     "tailwindcss": "^3.4.17",
     "typescript": "5.7.3",

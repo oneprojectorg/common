@@ -10,6 +10,11 @@ export interface GetProfileParams {
   user?: User;
 }
 
+export interface GetProfileByIdParams {
+  id: string;
+  user?: User;
+}
+
 const profileResultSchema = z.object({
   id: z.string(),
   type: z.enum([EntityType.INDIVIDUAL, EntityType.ORG, EntityType.PROPOSAL]),
@@ -63,6 +68,34 @@ export const getProfile = async ({
     }
 
     console.error('Error in getProfile:', error);
+    throw new NotFoundError('Profile not found');
+  }
+};
+
+export const getProfileById = async ({
+  id,
+  user: _user, // Currently unused but kept for future extensibility
+}: GetProfileByIdParams) => {
+  try {
+    const profile = await db.query.profiles.findFirst({
+      where: eq(profiles.id, id),
+      with: {
+        avatarImage: true,
+        headerImage: true,
+      },
+    });
+
+    if (!profile) {
+      throw new NotFoundError('Profile not found');
+    }
+
+    return profileResultSchema.parse(profile);
+  } catch (error) {
+    if (error instanceof NotFoundError) {
+      throw error;
+    }
+
+    console.error('Error in getProfileById:', error);
     throw new NotFoundError('Profile not found');
   }
 };

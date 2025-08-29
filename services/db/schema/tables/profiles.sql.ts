@@ -10,6 +10,7 @@ import {
 } from '../../helpers';
 import { EntityType, entityTypeEnum } from './entities.sql';
 import { individuals } from './individuals.sql';
+import { locations } from './locations.sql';
 import { organizations } from './organizations.sql';
 import { posts } from './posts.sql';
 import { objectsInStorage } from './storage.sql';
@@ -44,6 +45,9 @@ export const profiles = pgTable(
       onUpdate: 'cascade',
     }),
 
+    // Location reference
+    primaryLocationId: uuid('primary_location_id').references(() => locations.id),
+
     search: tsvector('search').generatedAlwaysAs(
       (): SQL =>
         sql`setweight(to_tsvector('simple', ${profiles.name}), 'A') || ' ' || setweight(to_tsvector('english', COALESCE(${profiles.bio}, '')), 'B') || ' ' || setweight(to_tsvector('english', COALESCE(${profiles.mission}, '')), 'C')::tsvector`,
@@ -53,10 +57,11 @@ export const profiles = pgTable(
   },
   (table) => [
     ...serviceRolePolicies,
-    index().on(table.id).concurrently(),
-    index().on(table.slug).concurrently(),
-    index().on(table.updatedAt).concurrently(),
+    index().on(table.id),
+    index().on(table.slug),
+    index().on(table.updatedAt),
     index('profiles_search_gin_index').using('gin', table.search),
+    index('profiles_primary_location_idx').on(table.primaryLocationId),
   ],
 );
 
@@ -77,6 +82,10 @@ export const profilesRelations = relations(profiles, ({ many, one }) => ({
   individual: one(individuals, {
     fields: [profiles.id],
     references: [individuals.profileId],
+  }),
+  primaryLocation: one(locations, {
+    fields: [profiles.primaryLocationId],
+    references: [locations.id],
   }),
 }));
 

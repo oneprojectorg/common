@@ -1,0 +1,227 @@
+/* Custom map styles for minimal, stroke-based design using application design system */
+
+/* Desaturate the map tiles to reduce visual noise */
+.leaflet-tile {
+  filter: saturate(0.2) contrast(1.2) brightness(1.15);
+  mix-blend-mode: multiply;
+}
+
+/* Style map controls to match design system */
+.leaflet-control-attribution {
+  background: hsl(var(--op-neutral-50)) !important;
+  color: hsl(var(--op-neutral-700)) !important;
+  border: 1px solid hsl(var(--op-neutral-200)) !important;
+  border-radius: 0.5rem !important;
+  font-size: 0.75rem !important;
+  padding: 4px 8px !important;
+}
+
+.leaflet-control-attribution a {
+  color: hsl(var(--op-teal-600)) !important;
+  text-decoration: none !important;
+}
+
+.leaflet-control-attribution a:hover {
+  text-decoration: underline !important;
+}
+
+/* Zoom controls styling */
+.leaflet-control-zoom {
+  border: none !important;
+  box-shadow: 0px 0px 16px 0px rgba(20, 35, 38, 0.04) !important;
+}
+
+.leaflet-control-zoom a {
+  background: hsl(var(--op-neutral-50)) !important;
+  color: hsl(var(--op-neutral-700)) !important;
+  border: 1px solid hsl(var(--op-neutral-200)) !important;
+  border-radius: 0.5rem !important;
+  margin-bottom: 4px !important;
+  width: 32px !important;
+  height: 32px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 16px !important;
+  font-weight: 500 !important;
+  transition: all 150ms ease !important;
+}
+
+.leaflet-control-zoom a:hover {
+  background: hsl(var(--op-teal-50)) !important;
+  color: hsl(var(--op-teal-700)) !important;
+  border-color: hsl(var(--op-teal-200)) !important;
+  box-shadow: 0 0 8px hsl(var(--op-teal-500) / 0.2) !important;
+  /* Remove transform to prevent position displacement */
+}
+
+.leaflet-control-zoom a:last-child {
+  margin-bottom: 0 !important;
+}
+
+/* Popup styling to match design system */
+.leaflet-popup {
+  margin-bottom: 8px !important;
+}
+
+.leaflet-popup-content-wrapper {
+  background: hsl(var(--op-neutral-50)) !important;
+  border: 1px solid hsl(var(--op-neutral-200)) !important;
+  border-radius: 0.5rem !important;
+  box-shadow: 0px 0px 48px 0px rgba(20, 35, 38, 0.08) !important;
+  padding: 0 !important;
+}
+
+.leaflet-popup-content {
+  margin: 0 !important;
+  padding: 16px !important;
+  min-width: 200px !important;
+}
+
+.leaflet-popup-tip {
+  background: hsl(var(--op-neutral-50)) !important;
+  border: 1px solid hsl(var(--op-neutral-200)) !important;
+  border-top: none !important;
+  border-left: none !important;
+}
+
+.leaflet-popup-close-button {
+  color: hsl(var(--op-neutral-700)) !important;
+  font-size: 18px !important;
+  padding: 8px !important;
+  right: 8px !important;
+  top: 8px !important;
+  width: auto !important;
+  height: auto !important;
+  transition: color 150ms ease !important;
+}
+
+.leaflet-popup-close-button:hover {
+  color: hsl(var(--op-red-500)) !important;
+  background: transparent !important;
+}
+
+/* Custom marker styles */
+.custom-marker {
+  background: hsl(var(--op-teal-500)) !important;
+  border: 2px solid hsl(var(--op-neutral-50)) !important;
+  border-radius: 50% !important;
+  box-shadow: 0px 0px 16px 0px rgba(20, 35, 38, 0.04) !important;
+  transition: all 150ms ease !important;
+  cursor: pointer !important;
+}
+
+.custom-marker:hover {
+  background: hsl(var(--op-teal-600)) !important;
+  border-width: 3px !important;
+  box-shadow: 0px 0px 24px 0px rgba(20, 35, 38, 0.12), 0 0 12px hsl(var(--op-teal-500) / 0.3) !important;
+  /* Remove transform to prevent position displacement */
+}
+
+.custom-marker.selected {
+  background: hsl(var(--op-teal-600)) !important;
+  border-color: hsl(var(--op-yellow-500)) !important;
+  border-width: 3px !important;
+  box-shadow: 0 0 12px hsl(var(--op-teal-500) / 0.3) !important;
+}
+
+/* Clustering styles */
+.marker-cluster {
+  background: hsl(var(--op-teal-100)) !important;
+  border: 2px solid hsl(var(--op-teal-500)) !important;
+  border-radius: 50% !important;
+  color: hsl(var(--op-teal-700)) !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 150ms ease !important;
+}
+
+.marker-cluster:hover {
+  background: hsl(var(--op-teal-200)) !important;
+  border-width: 3px !important;
+  box-shadow: 0 0 12px hsl(var(--op-teal-500) / 0.3) !important;
+  /* Remove transform to prevent position displacement */
+}
+
+.marker-cluster-small {
+  width: 32px !important;
+  height: 32px !important;
+}
+
+.marker-cluster-medium {
+  width: 40px !important;
+  height: 40px !important;
+  font-size: 14px !important;
+}
+
+.marker-cluster-large {
+  width: 48px !important;
+  height: 48px !important;
+  font-size: 16px !important;
+}
+
+/* Loading states */
+.leaflet-loading {
+  cursor: wait !important;
+}
+
+.leaflet-container {
+  background: hsl(var(--op-neutral-50)) !important;
+  cursor: grab !important;
+}
+
+.leaflet-container:active {
+  cursor: grabbing !important;
+}
+
+/* Focus/accessibility styles */
+.leaflet-container:focus {
+  outline: 2px solid hsl(var(--op-teal-500)) !important;
+  outline-offset: 2px !important;
+}
+
+.leaflet-control-zoom a:focus {
+  outline: 2px solid hsl(var(--op-teal-500)) !important;
+  outline-offset: 2px !important;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 640px) {
+  .leaflet-control-zoom a {
+    width: 36px !important;
+    height: 36px !important;
+    font-size: 18px !important;
+  }
+  
+  .leaflet-popup-content {
+    min-width: 280px !important;
+    max-width: calc(100vw - 40px) !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .leaflet-tile {
+    filter: saturate(0.1) contrast(1.4) brightness(1.2);
+  }
+  
+  .custom-marker {
+    border-width: 3px !important;
+  }
+  
+  .leaflet-control-zoom a {
+    border-width: 2px !important;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .custom-marker,
+  .leaflet-control-zoom a,
+  .marker-cluster {
+    transition: none !important;
+  }
+}
