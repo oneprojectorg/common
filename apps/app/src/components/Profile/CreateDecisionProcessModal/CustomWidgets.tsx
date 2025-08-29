@@ -2,10 +2,10 @@ import { parseDate } from '@internationalized/date';
 import { CategoryList } from '@op/ui/CategoryList';
 import { Checkbox } from '@op/ui/Checkbox';
 import { DatePicker } from '@op/ui/DatePicker';
-import { cn } from '@op/ui/utils';
 import { NumberField } from '@op/ui/NumberField';
 import { Radio, RadioGroup } from '@op/ui/RadioGroup';
 import { TextField } from '@op/ui/TextField';
+import { cn } from '@op/ui/utils';
 import { WidgetProps } from '@rjsf/utils';
 import React from 'react';
 
@@ -123,8 +123,17 @@ export const TextareaWidget = (props: WidgetProps) => {
 };
 
 export const DateWidget = (props: WidgetProps) => {
-  const { id, value, required, onChange, onBlur, onFocus, schema, uiSchema, rawErrors } =
-    props;
+  const {
+    id,
+    value,
+    required,
+    onChange,
+    onBlur,
+    onFocus,
+    schema,
+    uiSchema,
+    rawErrors,
+  } = props;
   const customClassName = uiSchema?.['ui:options']?.className as string;
 
   // Helper function to create a proper DateValue object from ISO string
@@ -157,10 +166,12 @@ export const DateWidget = (props: WidgetProps) => {
     }
   };
 
-  // Add date range validation for business logic
+  // Add date range validation
   const validateDateRanges = (selectedDate: string): string[] => {
     const errors: string[] = [];
-    if (!selectedDate) return errors;
+    if (!selectedDate) {
+      return errors;
+    }
 
     try {
       const selected = new Date(selectedDate);
@@ -173,19 +184,14 @@ export const DateWidget = (props: WidgetProps) => {
         return errors;
       }
 
-      // Business rule: dates should not be in the past
-      if (selected < today) {
-        errors.push('Date cannot be in the past');
-      }
-
-      // Business rule: dates should be within reasonable future range (2 years)
+      // Dates should be within reasonable future range (2 years)
       const twoYearsFromNow = new Date();
       twoYearsFromNow.setFullYear(twoYearsFromNow.getFullYear() + 2);
       if (selected > twoYearsFromNow) {
         errors.push('Date cannot be more than 2 years in the future');
       }
     } catch (error) {
-      errors.push('Invalid date format');
+      errors.push('Invalid date');
     }
 
     return errors;
@@ -420,72 +426,100 @@ export const ReviewSummaryWidget = (props: WidgetProps) => {
     }
   };
 
-  const formatDateRange = (startDate: string | undefined, endDate: string | undefined) => {
+  const formatDateRange = (
+    startDate: string | undefined,
+    endDate: string | undefined,
+  ) => {
     const start = formatDate(startDate);
     const end = formatDate(endDate);
     if (start === 'Not set' || end === 'Not set') return 'Not set';
     return `${start} - ${end}`;
   };
 
-  const SummarySection = ({ title, children }: { title: string; children: React.ReactNode }) => (
+  const SummarySection = ({
+    title,
+    children,
+  }: {
+    title: string;
+    children: React.ReactNode;
+  }) => (
     <div className="space-y-3">
       <h3 className="text-base font-semibold text-neutral-charcoal">{title}</h3>
       <div className="space-y-2">{children}</div>
     </div>
   );
 
-  const SummaryRow = ({ label, value }: { label: string; value: string | React.ReactNode }) => (
-    <div className="flex justify-between items-start">
-      <span className="text-sm text-neutral-charcoal font-medium">{label}</span>
-      <span className="text-sm text-neutral-charcoal text-right flex-1 ml-4">{value}</span>
+  const SummaryRow = ({
+    label,
+    value,
+  }: {
+    label: string;
+    value: string | React.ReactNode;
+  }) => (
+    <div className="flex items-start justify-between">
+      <span className="text-sm font-medium text-neutral-charcoal">{label}</span>
+      <span className="ml-4 flex-1 text-right text-sm text-neutral-charcoal">
+        {value}
+      </span>
     </div>
   );
 
   const categories = formData.categories || [];
-  const categoriesDisplay = categories.length > 0 
-    ? `${categories.length} (${categories.join(', ')})`
-    : 'None';
+  const categoriesDisplay =
+    categories.length > 0
+      ? `${categories.length} (${categories.join(', ')})`
+      : 'None';
 
   return (
     <div className="space-y-6">
       <SummarySection title="Process Details">
         <SummaryRow label="Name" value={formData.processName || 'Not set'} />
-        <SummaryRow label="Description" value={formData.description || 'Not set'} />
-        <SummaryRow label="Total Budget" value={formatCurrency(formData.totalBudget)} />
+        <SummaryRow
+          label="Description"
+          value={formData.description || 'Not set'}
+        />
+        <SummaryRow
+          label="Total Budget"
+          value={formatCurrency(formData.totalBudget)}
+        />
       </SummarySection>
 
       <SummarySection title="Timeline">
-        <SummaryRow 
-          label="Submissions" 
+        <SummaryRow
+          label="Submissions"
           value={formatDateRange(
             formData.proposalSubmissionPhase?.submissionsOpen,
-            formData.proposalSubmissionPhase?.submissionsClose
-          )} 
+            formData.proposalSubmissionPhase?.submissionsClose,
+          )}
         />
-        <SummaryRow 
-          label="Review" 
+        <SummaryRow
+          label="Review"
           value={formatDateRange(
             formData.reviewShortlistingPhase?.reviewOpen,
-            formData.reviewShortlistingPhase?.reviewClose
-          )} 
+            formData.reviewShortlistingPhase?.reviewClose,
+          )}
         />
-        <SummaryRow 
-          label="Voting" 
+        <SummaryRow
+          label="Voting"
           value={formatDateRange(
             formData.votingPhase?.votingOpen,
-            formData.votingPhase?.votingClose
-          )} 
+            formData.votingPhase?.votingClose,
+          )}
         />
-        <SummaryRow 
-          label="Results" 
-          value={formatDate(formData.resultsAnnouncement?.resultsDate)} 
+        <SummaryRow
+          label="Results"
+          value={formatDate(formData.resultsAnnouncement?.resultsDate)}
         />
       </SummarySection>
 
       <SummarySection title="Configuration">
-        <SummaryRow 
-          label="Max votes per member" 
-          value={formData.maxVotesPerMember ? `${formData.maxVotesPerMember} per member` : 'Not set'} 
+        <SummaryRow
+          label="Max votes per member"
+          value={
+            formData.maxVotesPerMember
+              ? `${formData.maxVotesPerMember} per member`
+              : 'Not set'
+          }
         />
         <SummaryRow label="Categories" value={categoriesDisplay} />
       </SummarySection>
