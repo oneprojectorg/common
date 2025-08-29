@@ -77,9 +77,8 @@ export const ProfileFeed = ({
       <PostFeed>
         {allPosts.length > 0 ? (
           allPosts.map((postToOrg, i) => (
-            <>
+            <div key={i}>
               <PostItem
-                key={i}
                 postToOrg={postToOrg}
                 user={user}
                 withLinks={false}
@@ -87,7 +86,7 @@ export const ProfileFeed = ({
                 onCommentClick={handleCommentClick}
               />
               <hr className="bg-neutral-gray1" />
-            </>
+            </div>
           ))
         ) : (
           <EmptyPostsState />

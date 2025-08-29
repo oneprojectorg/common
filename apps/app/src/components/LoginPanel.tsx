@@ -333,7 +333,7 @@ export const LoginPanel = () => {
                       isDisabled={
                         !emailIsValid ||
                         login.isFetching ||
-                        (!!token && token.length !== 10)
+                        (!!token && token.length !== 6)
                       }
                       onPress={async () => {
                         if (!loginSuccess) {
@@ -345,7 +345,7 @@ export const LoginPanel = () => {
                         } else if (
                           loginSuccess &&
                           token &&
-                          token.length === 10
+                          token.length === 6
                         ) {
                           void handleTokenSubmit();
                         }

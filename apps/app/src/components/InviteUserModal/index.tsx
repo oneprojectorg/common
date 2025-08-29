@@ -8,7 +8,7 @@ import { DialogTrigger } from '@op/ui/Dialog';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { toast } from '@op/ui/Toast';
-import { useFeatureFlagEnabled } from 'posthog-js/react';
+import { useFeatureFlagEnabled } from '@/hooks/useFeatureFlag';
 import { Suspense, useEffect, useState } from 'react';
 import { LuUserPlus } from 'react-icons/lu';
 

@@ -16,7 +16,7 @@ import { MenuTrigger } from '@op/ui/RAC';
 import { Skeleton } from '@op/ui/Skeleton';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useFeatureFlagEnabled } from 'posthog-js/react';
+import { useFeatureFlagEnabled } from '@/hooks/useFeatureFlag';
 import { Suspense, useEffect, useRef, useState } from 'react';
 import {
   LuChevronDown,

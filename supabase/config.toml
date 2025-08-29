@@ -145,7 +145,7 @@ policy = "oneshot"
 inspector_port = 8084  # Different from dev port 8083
 
 [analytics]
-enabled = true
+enabled = false
 port = 55327  # Different from dev port 54327
 backend = "postgres"
 

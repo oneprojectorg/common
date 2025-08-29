@@ -5,7 +5,7 @@ import { trpc } from '@op/api/client';
 import { Select, SelectItem } from '@op/ui/Select';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
 import { toast } from '@op/ui/Toast';
-import { useFeatureFlagEnabled } from 'posthog-js/react';
+import { useFeatureFlagEnabled } from '@/hooks/useFeatureFlag';
 import React from 'react';
 import { LuX } from 'react-icons/lu';
 

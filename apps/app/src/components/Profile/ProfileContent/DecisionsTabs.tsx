@@ -3,7 +3,7 @@
 import { useUser } from '@/utils/UserProvider';
 import { Tab, TabPanel } from '@op/ui/Tabs';
 import { cn } from '@op/ui/utils';
-import { useFeatureFlagEnabled } from 'posthog-js/react';
+import { useFeatureFlagEnabled } from '@/hooks/useFeatureFlag';
 import { ReactNode, Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';

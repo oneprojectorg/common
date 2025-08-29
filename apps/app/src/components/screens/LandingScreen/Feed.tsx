@@ -31,9 +31,8 @@ export const Feed = () => {
     <PostFeed>
       {postsData.items.length > 0 ? (
         postsData.items.map((postToOrg, i) => (
-          <>
+          <div key={i}>
             <PostItem
-              key={i}
               postToOrg={postToOrg}
               user={user}
               withLinks={true}
@@ -41,7 +40,7 @@ export const Feed = () => {
               onCommentClick={handleCommentClick}
             />
             <hr className="bg-neutral-gray1" />
-          </>
+          </div>
         ))
       ) : (
         <EmptyPostsState />

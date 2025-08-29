@@ -95,7 +95,7 @@ const config = {
     return [
       {
         source: '/assets/:path*',
-        destination: `${process.env.S3_ASSET_ROOT}/:path*`,
+        destination: process.env.S3_ASSET_ROOT ? `${process.env.S3_ASSET_ROOT}/:path*` : '/assets/:path*',
       },
       {
         source: '/stats/static/:path*',

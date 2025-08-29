@@ -4,7 +4,7 @@ import { EntityType } from '@op/api/encoders';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { TextField } from '@op/ui/TextField';
 import { cn } from '@op/ui/utils';
-import { useFeatureFlagEnabled } from 'posthog-js/react';
+import { useFeatureFlagEnabled } from '@/hooks/useFeatureFlag';
 import { useEffect, useRef, useState } from 'react';
 import { LuSearch } from 'react-icons/lu';
 import { useDebounce } from 'use-debounce';

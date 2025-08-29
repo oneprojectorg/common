@@ -7,20 +7,25 @@ import { Suspense, useEffect } from 'react';
 
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
-    posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
-      api_host: '/stats',
-      ui_host: 'https://eu.posthog.com',
-      capture_pageview: false, // We capture pageviews manually
-      capture_pageleave: true, // Enable pageleave capture
-      // debug: process.env.NODE_ENV === 'development',
-    });
+    // Only initialize PostHog if the key is provided
+    if (process.env.NEXT_PUBLIC_POSTHOG_KEY) {
+      posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
+        api_host: '/stats',
+        ui_host: 'https://eu.posthog.com',
+        capture_pageview: false, // We capture pageviews manually
+        capture_pageleave: true, // Enable pageleave capture
+      });
+    }
   }, []);
 
-  return (
+  // Conditionally render the provider only if the key is available
+  return process.env.NEXT_PUBLIC_POSTHOG_KEY ? (
     <PHProvider client={posthog}>
       <SuspendedPostHogPageView />
       {children}
     </PHProvider>
+  ) : (
+    <>{children}</>
   );
 }
 

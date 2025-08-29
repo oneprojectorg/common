@@ -37,6 +37,13 @@ export const listInstances = async ({
 
   // ASSERT VIEW ACCESS ON ORGUSER
   const orgUserId = await getCurrentOrgId({ authUserId });
+
+  if (!orgUserId) {
+    throw new UnauthorizedError(
+      'User does not have a current organization selected.',
+    );
+  }
+
   const orgUser = await getOrgAccessUser({
     user,
     organizationId: orgUserId,
