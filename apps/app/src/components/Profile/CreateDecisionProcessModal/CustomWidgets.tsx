@@ -2,6 +2,7 @@ import { parseDate } from '@internationalized/date';
 import { CategoryList } from '@op/ui/CategoryList';
 import { Checkbox } from '@op/ui/Checkbox';
 import { DatePicker } from '@op/ui/DatePicker';
+import { Description } from '@op/ui/Field';
 import { NumberField } from '@op/ui/NumberField';
 import { Radio, RadioGroup } from '@op/ui/RadioGroup';
 import { TextField } from '@op/ui/TextField';
@@ -376,22 +377,20 @@ export const RichTextEditorWidget = (props: WidgetProps) => {
   const customClassName = uiSchema?.['ui:options']?.className as string;
 
   return (
-    <div className="flex flex-col gap-2 rounded-md border p-4">
+    <div className="flex flex-col gap-2">
       <label className="text-sm font-medium text-neutral-charcoal">
         {schema.title}
         {required && <span className="ml-1 text-functional-red">*</span>}
       </label>
-      {schema.description && (
-        <p className="text-sm text-neutral-charcoal">{schema.description}</p>
-      )}
       <RichTextEditor
         content={value || ''}
         placeholder={uiSchema?.['ui:placeholder'] || 'Start writing...'}
         onChange={handleChange}
         onUpdate={handleChange}
-        className={cn('min-h-[200px]', customClassName)}
+        className={cn('min-h-52 rounded-md border p-4', customClassName)}
         editorClassName="prose prose-sm max-w-none focus:outline-none"
       />
+      {schema.description && <Description>{schema.description}</Description>}
       {rawErrors && rawErrors.length > 0 && (
         <div className="text-sm text-functional-red">
           {rawErrors.join(', ')}

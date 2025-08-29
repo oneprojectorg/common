@@ -240,7 +240,6 @@ export const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
         proposalInfoTitle: {
           type: 'string',
           title: 'Information Title',
-          minLength: 1,
           description:
             'Title for the information modal shown to proposal creators',
         },
