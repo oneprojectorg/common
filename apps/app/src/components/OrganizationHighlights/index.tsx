@@ -65,7 +65,9 @@ const OrganizationFacePile = ({ children }: { children?: ReactNode }) => {
 
     const resizeObserver = new ResizeObserver((e) => {
       // divide by 2 rem - 0.5 rem overlap
-      setNumItems(Math.floor((e[0]?.contentRect.width ?? 1) / (32 - 8)));
+      setNumItems(
+        Math.min(Math.floor((e[0]?.contentRect.width ?? 1) / (32 - 8)), 20),
+      );
     });
 
     resizeObserver.observe(facePileRef.current);
@@ -158,12 +160,13 @@ export const OrganizationHighlights = () => {
       <div className="flex flex-col justify-center gap-2 border-0 border-t bg-neutral-offWhite p-6 text-sm text-neutral-charcoal sm:flex-row sm:items-center">
         <Suspense>
           <div className="flex items-center gap-2">
-            <OrganizationFacePile>
-              <span className="whitespace-nowrap">
-                are collaborating on Common
-              </span>
-            </OrganizationFacePile>
-          </div>
+            <div className="flex max-w-full items-center gap-2">
+              <OrganizationFacePile>
+                <span className="whitespace-nowrap">
+                  are collaborating on Common
+                </span>
+              </OrganizationFacePile>
+            </div>
         </Suspense>
       </div>
     </Surface>
