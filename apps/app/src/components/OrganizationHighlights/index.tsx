@@ -49,13 +49,13 @@ const Highlight = ({ children }: { children?: ReactNode }) => {
   );
 };
 
-const OrganizationFacePile = () => {
+const OrganizationFacePile = ({ children }: { children?: ReactNode }) => {
   const [{ items: organizations }] = trpc.organization.list.useSuspenseQuery({
     limit: 100,
   });
 
   const [stats] = trpc.organization.getStats.useSuspenseQuery();
-  const facePileRef = useRef<HTMLUListElement>(null);
+  const facePileRef = useRef<HTMLDivElement>(null);
   const [numItems, setNumItems] = useState(20);
 
   useEffect(() => {
@@ -112,7 +112,11 @@ const OrganizationFacePile = () => {
     );
   }
 
-  return <FacePile items={items} ref={facePileRef} />;
+  return (
+    <FacePile items={items} ref={facePileRef}>
+      {children}
+    </FacePile>
+  );
 };
 
 export const OrganizationHighlights = () => {
@@ -153,8 +157,13 @@ export const OrganizationHighlights = () => {
       </div>
       <div className="flex flex-col justify-center gap-2 border-0 border-t bg-neutral-offWhite p-6 text-sm text-neutral-charcoal sm:flex-row sm:items-center">
         <Suspense>
-          <OrganizationFacePile />
-          are collaborating on Common
+          <div className="flex items-center gap-2">
+            <OrganizationFacePile>
+              <span className="whitespace-nowrap">
+                are collaborating on Common
+              </span>
+            </OrganizationFacePile>
+          </div>
         </Suspense>
       </div>
     </Surface>
