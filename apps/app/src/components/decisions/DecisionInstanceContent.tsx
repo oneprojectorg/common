@@ -1,6 +1,7 @@
 'use client';
 
 import { getPublicUrl } from '@/utils';
+import { pluralize } from '@/utils/pluralize';
 import { formatCurrency, getUniqueSubmitters } from '@/utils/proposalUtils';
 import { trpc } from '@op/api/client';
 import { Avatar } from '@op/ui/Avatar';
@@ -61,9 +62,10 @@ export function DecisionInstanceContent({
                   </Avatar>
                 ))}
               />
-              <span className="ml-3 text-sm text-gray-600">
-                {uniqueSubmitters.length} member
-                {uniqueSubmitters.length !== 1 ? 's' : ''} have submitted
+              <span className="w-fit text-sm text-neutral-charcoal">
+                {uniqueSubmitters.length}
+                {pluralize('member', uniqueSubmitters.length)}{' '}
+                {uniqueSubmitters.length > 1 ? 'have' : 'has'} submitted
                 proposals
               </span>
             </div>
