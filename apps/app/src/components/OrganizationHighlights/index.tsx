@@ -20,7 +20,7 @@ const HighlightNumber = ({
   className?: string;
 }) => {
   return (
-    <div className="col-span-2 text-transparent">
+    <div className="col-span-3 text-transparent xxs:col-span-2">
       <div
         className={cn(
           'flex items-center justify-end bg-gradient bg-clip-text text-right font-serif text-title-xxl',
@@ -35,7 +35,7 @@ const HighlightNumber = ({
 
 const HighlightLabel = ({ children }: { children?: ReactNode }) => {
   return (
-    <div className="col-span-3 flex h-12 max-w-32 items-center text-neutral-charcoal">
+    <div className="col-span-2 flex h-12 max-w-32 items-center text-neutral-charcoal xxs:col-span-3">
       {children}
     </div>
   );
