@@ -159,14 +159,13 @@ export const OrganizationHighlights = () => {
       </div>
       <div className="flex flex-col justify-center gap-2 border-0 border-t bg-neutral-offWhite p-6 text-sm text-neutral-charcoal sm:flex-row sm:items-center">
         <Suspense>
-          <div className="flex items-center gap-2">
-            <div className="flex max-w-full items-center gap-2">
-              <OrganizationFacePile>
-                <span className="whitespace-nowrap">
-                  are collaborating on Common
-                </span>
-              </OrganizationFacePile>
-            </div>
+          <div className="flex max-w-full items-center gap-2">
+            <OrganizationFacePile>
+              <span className="whitespace-nowrap">
+                are collaborating on Common
+              </span>
+            </OrganizationFacePile>
+          </div>
         </Suspense>
       </div>
     </Surface>
