@@ -7,7 +7,8 @@ import { trpc } from '@op/api/client';
 import { Avatar } from '@op/ui/Avatar';
 import { FacePile } from '@op/ui/FacePile';
 import { GradientHeader } from '@op/ui/Header';
-import { useLocale, useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
+import { useTranslations } from '@/lib/i18n/routing';
 import Image from 'next/image';
 
 interface DecisionInstanceContentProps {
@@ -37,7 +38,7 @@ export function DecisionInstanceContent({
             {t('SHARE YOUR IDEAS.')}
           </GradientHeader>
           <p className="mt-4 text-base text-gray-700">
-            {t('Help determine how we invest our budget community budget.', {
+            {t('Help determine how we invest our {budget} community budget.', {
               budget: budget ? formatCurrency(budget, locale) : '$0',
             })}
           </p>
