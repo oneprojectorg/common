@@ -6,11 +6,9 @@ import {
   users,
   usersUsedStorage,
 } from '@op/db/schema';
-import {
-  type NormalizedRole,
-  type UserWithRoles,
-  getGlobalPermissions,
-} from 'access-zones';
+import { type UserWithRoles, getGlobalPermissions } from 'access-zones';
+
+import { getNormalizedRoles } from '../access';
 
 export interface User {
   id: number;
@@ -93,19 +91,21 @@ export const getUserByAuthId = async ({
               },
             },
           },
-          roles: includePermissions ? {
-            with: {
-              accessRole: {
+          roles: includePermissions
+            ? {
                 with: {
-                  zonePermissions: {
+                  accessRole: {
                     with: {
-                      accessZone: true,
+                      zonePermissions: {
+                        with: {
+                          accessZone: true,
+                        },
+                      },
                     },
                   },
                 },
-              },
-            },
-          } : undefined,
+              }
+            : undefined,
         },
       },
       currentOrganization: {
@@ -140,50 +140,30 @@ export const getUserByAuthId = async ({
   const userWithPermissions = { ...user };
 
   if (userWithPermissions.organizationUsers) {
-    userWithPermissions.organizationUsers = userWithPermissions.organizationUsers.map(orgUser => {
-      if (!orgUser.roles) {
-        return orgUser;
-      }
+    userWithPermissions.organizationUsers =
+      userWithPermissions.organizationUsers.map((orgUser) => {
+        if (!orgUser.roles) {
+          return orgUser;
+        }
 
-      // Transform the relational data into normalized format for access-zones library
-      const normalizedRoles: NormalizedRole[] = orgUser.roles.map(
-        (roleJunction: any) => {
-          const role = roleJunction.accessRole;
+        // Transform the relational data into normalized format for access-zones library
+        const normalizedRoles = getNormalizedRoles(orgUser.roles);
 
-          // Build the access object with zone names as keys and permission bitfields as values
-          const access: Record<string, number> = {};
+        // Transform the user to the format expected by access-zones
+        const userForTransformation: UserWithRoles = {
+          id: orgUser.id,
+          roles: normalizedRoles,
+        };
 
-          if (role.zonePermissions) {
-            role.zonePermissions.forEach((zonePermission: any) => {
-              // Use zone name as key, permission bitfield as value
-              access[zonePermission.accessZone.name] =
-                zonePermission.permission;
-            });
-          }
+        // Get the global boolean permissions
+        const globalPermissions = getGlobalPermissions(userForTransformation);
 
-          return {
-            id: role.id,
-            name: role.name,
-            access,
-          };
-        },
-      );
-
-      // Transform the user to the format expected by access-zones
-      const userForTransformation: UserWithRoles = {
-        id: orgUser.id,
-        roles: normalizedRoles,
-      };
-
-      // Get the global boolean permissions
-      const globalPermissions = getGlobalPermissions(userForTransformation);
-
-      // Return orgUser with permissions attached
-      return {
-        ...orgUser,
-        permissions: globalPermissions,
-      };
-    });
+        // Return orgUser with permissions attached
+        return {
+          ...orgUser,
+          permissions: globalPermissions,
+        };
+      });
   }
 
   return userWithPermissions;
@@ -268,7 +248,15 @@ export const getUserForProfileSwitch = async ({
           },
           roles: {
             with: {
-              accessRole: true,
+              accessRole: {
+                with: {
+                  zonePermissions: {
+                    with: {
+                      accessZone: true,
+                    },
+                  },
+                },
+              },
             },
           },
         },
