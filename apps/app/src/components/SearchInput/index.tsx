@@ -17,7 +17,7 @@ import { SearchResultItem } from './SearchResultItem';
 
 export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
   const router = useRouter();
-  const individualProfilesEnabled = useFeatureFlagEnabled('individual_users');
+  const individualSearchEnabled = useFeatureFlagEnabled('individual_search');
 
   const [query, setQuery] = useState<string>('');
   const [debouncedQuery, setImmediateQuery] = useDebounce(query, 200);
@@ -41,7 +41,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
     trpc.profile.search.useQuery(
       {
         q: debouncedQuery,
-        types: individualProfilesEnabled
+        types: individualSearchEnabled
           ? [EntityType.USER, EntityType.ORG]
           : [EntityType.ORG],
       },
