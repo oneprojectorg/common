@@ -37,8 +37,8 @@ export function DecisionInstanceContent({
             {t('SHARE YOUR IDEAS.')}
           </GradientHeader>
           <p className="mt-4 text-base text-gray-700">
-            {t('Help determine how we invest our {budget} community budget.', {
-              budget: budget ? formatCurrency(budget, locale) : '$0'
+            {t('Help determine how we invest our budget community budget.', {
+              budget: budget ? formatCurrency(budget, locale) : '$0',
             })}
           </p>
 
@@ -67,7 +67,8 @@ export function DecisionInstanceContent({
               <span className="w-fit text-sm text-neutral-charcoal">
                 {uniqueSubmitters.length}
                 {pluralize(t('member'), uniqueSubmitters.length)}{' '}
-                {uniqueSubmitters.length > 1 ? t('have') : t('has')} {t('submitted proposals')}
+                {uniqueSubmitters.length > 1 ? t('have') : t('has')}{' '}
+                {t('submitted proposals')}
               </span>
             </div>
           )}
