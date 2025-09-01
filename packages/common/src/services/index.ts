@@ -13,6 +13,7 @@ export {
   getProfile,
   searchProfiles,
   listProfiles,
+  searchProfilesLocations,
 } from './profile';
 export {
   addRelationship as addProfileRelationship,

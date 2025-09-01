@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import ReactMap, {
   Marker,
   Popup,
@@ -61,7 +61,6 @@ export function MapGeospatial({
   profiles,
   initialViewState = DEFAULT_VIEW_STATE,
   onBoundsChange,
-  onViewStateChange,
   onContactClick,
   onViewProfileClick,
   showControls = true,
@@ -82,14 +81,6 @@ export function MapGeospatial({
 
   const handleMove = useCallback((evt: ViewStateChangeEvent) => {
     setViewState(evt.viewState);
-    
-    if (onViewStateChange) {
-      onViewStateChange({
-        latitude: evt.viewState.latitude,
-        longitude: evt.viewState.longitude,
-        zoom: evt.viewState.zoom,
-      });
-    }
 
     if (onBoundsChange && mapRef.current) {
       const bounds = mapRef.current.getBounds();
@@ -100,7 +91,21 @@ export function MapGeospatial({
         west: bounds.getWest(),
       });
     }
-  }, [onBoundsChange, onViewStateChange]);
+  }, [onBoundsChange]);
+
+  const handleLoad = useCallback(() => {
+    // Trigger bounds change on initial load to fetch profiles for the initial view
+    if (onBoundsChange && mapRef.current) {
+      const bounds = mapRef.current.getBounds();
+      console.log('got bounds from map bounds', bounds);
+      onBoundsChange({
+        north: bounds.getNorth(),
+        south: bounds.getSouth(),
+        east: bounds.getEast(),
+        west: bounds.getWest(),
+      });
+    }
+  }, [onBoundsChange]);
 
   const handleMarkerClick = useCallback((profile: ProfilePopupData) => {
     setSelectedProfile(profile);
@@ -136,6 +141,7 @@ export function MapGeospatial({
         ref={mapRef}
         {...viewState}
         onMove={handleMove}
+        onLoad={handleLoad}
         mapStyle={mapStyle}
         styleDiffing={true}
         attributionControl={false}

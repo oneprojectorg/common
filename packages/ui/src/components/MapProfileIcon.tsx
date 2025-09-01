@@ -9,7 +9,7 @@ export interface MapProfileIconProps {
 export function MapProfileIcon({
   profileType,
 }: MapProfileIconProps): React.ReactElement {
-  const isOrg = profileType === 'organization';
+  const isOrg = profileType !== 'individual';
 
   const orgColor = 'fill-teal-500';
   const individualColor = 'fill-emerald-700';
