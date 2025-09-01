@@ -9,6 +9,7 @@ import { Surface } from '@op/ui/Surface';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';
 import { ReactNode, Suspense, useEffect, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 import { Link } from '@/lib/i18n';
 
@@ -123,6 +124,7 @@ const OrganizationFacePile = ({ children }: { children?: ReactNode }) => {
 
 export const OrganizationHighlights = () => {
   const [stats] = trpc.organization.getStats.useSuspenseQuery();
+  const t = useTranslations();
 
   return (
     <Surface className="shadow-light">
@@ -131,7 +133,7 @@ export const OrganizationHighlights = () => {
           <HighlightNumber className="bg-tealGreen">
             {stats.newOrganizations}
           </HighlightNumber>
-          <HighlightLabel>new organizations to explore</HighlightLabel>
+          <HighlightLabel>{t('new organizations to explore')}</HighlightLabel>
         </Highlight>
         <hr className="hidden h-20 w-0.5 bg-neutral-gray1 sm:block" />
         <Highlight>
@@ -139,7 +141,7 @@ export const OrganizationHighlights = () => {
             {stats.totalRelationships}
           </HighlightNumber>
           <HighlightLabel>
-            active {pluralize('relationship', stats.totalRelationships)}
+            {t('active')} {pluralize('relationship', stats.totalRelationships)}
           </HighlightLabel>
         </Highlight>
         <hr className="hidden h-20 w-0.5 bg-neutral-gray1 sm:block" />
@@ -147,14 +149,14 @@ export const OrganizationHighlights = () => {
           <HighlightNumber className="bg-redTeal">
             {stats.totalOrganizations}
           </HighlightNumber>
-          <HighlightLabel>organizations on Common</HighlightLabel>
+          <HighlightLabel>{t('organizations on Common')}</HighlightLabel>
         </Highlight>
         <hr className="hidden h-20 w-0.5 bg-neutral-gray1 sm:block" />
         <Highlight>
           <HighlightNumber className="bg-redPurple">
             {stats.totalUsers}
           </HighlightNumber>
-          <HighlightLabel>people on Common</HighlightLabel>
+          <HighlightLabel>{t('people on Common')}</HighlightLabel>
         </Highlight>
       </div>
       <div className="flex flex-col justify-center gap-2 border-0 border-t bg-neutral-offWhite p-6 text-sm text-neutral-charcoal sm:flex-row sm:items-center">
@@ -162,7 +164,7 @@ export const OrganizationHighlights = () => {
           <div className="flex max-w-full items-center gap-2">
             <OrganizationFacePile>
               <span className="whitespace-nowrap">
-                are collaborating on Common
+                {t('are collaborating on Common')}
               </span>
             </OrganizationFacePile>
           </div>

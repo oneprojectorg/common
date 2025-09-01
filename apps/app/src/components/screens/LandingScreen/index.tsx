@@ -15,11 +15,12 @@ import { OrganizationListSkeleton } from '@/components/OrganizationList';
 import { PendingRelationships } from '@/components/PendingRelationships';
 import { PostFeedSkeleton } from '@/components/PostFeed';
 import { PostUpdate } from '@/components/PostUpdate';
+import { TranslatedText } from '@/components/TranslatedText';
 
 import { Feed } from './Feed';
 import { Welcome } from './Welcome';
 
-const LandingScreenFeeds = ({
+const LandingScreenFeeds = async ({
   user,
 }: {
   user: RouterOutput['account']['getMyAccount'];
@@ -28,7 +29,7 @@ const LandingScreenFeeds = ({
     return (
       <Surface className="flex flex-col gap-6 border-0 sm:border sm:p-6">
         <Header3 className="font-serif text-title-sm">
-          New Organizations
+          <TranslatedText text="New Organizations" />
         </Header3>
         <NewOrganizations />
       </Surface>
@@ -54,7 +55,7 @@ const LandingScreenFeeds = ({
               fallback={
                 <div className="flex flex-col items-center justify-center py-8">
                   <span className="text-neutral-charcoal">
-                    Unable to load posts. Please try refreshing.
+                    <TranslatedText text="Unable to load posts. Please try refreshing." />
                   </span>
                 </div>
               }
@@ -83,10 +84,10 @@ const LandingScreenFeeds = ({
       <Tabs className="gap-8 pb-8 sm:hidden">
         <TabList variant="pill">
           <Tab id="discover" variant="pill">
-            Discover
+            <TranslatedText text="Discover" />
           </Tab>
           <Tab id="recent" variant="pill">
-            Recent
+            <TranslatedText text="Recent" />
           </Tab>
         </TabList>
         <TabPanel id="discover" className="p-0">
@@ -110,7 +111,7 @@ export const LandingScreen = async () => {
         <div className="flex flex-col gap-2">
           <Welcome user={user} />
           <span className="text-center text-neutral-charcoal">
-            Explore new connections and strengthen existing relationships.
+            <TranslatedText text="Explore new connections and strengthen existing relationships." />
           </span>
         </div>
         <Suspense
@@ -140,17 +141,17 @@ export const LandingScreen = async () => {
   }
 };
 
-export const LandingScreenSkeleton: React.FC = () => {
+export const LandingScreenSkeleton: React.FC = async () => {
   return (
     <div className="container flex min-h-0 grow flex-col gap-4 pt-8 sm:gap-10 sm:pt-14">
       <div className="flex flex-col gap-2">
         <Skeleton>
           <Header1 className="text-center text-title-md text-transparent sm:text-title-xl">
-            Welcome back, to Common!
+            <TranslatedText text="Welcome back, to Common!" />
           </Header1>
         </Skeleton>
         <Skeleton className="text-center text-transparent">
-          Explore new connections and strengthen existing relationships.
+          <TranslatedText text="Explore new connections and strengthen existing relationships." />
         </Skeleton>
       </div>
 
@@ -167,7 +168,9 @@ export const LandingScreenSkeleton: React.FC = () => {
         <span />
         <div className="col-span-5">
           <Surface className="flex flex-col gap-6 border-0 sm:border sm:p-6">
-            <Skeleton className="text-title-sm">New Organizations</Skeleton>
+            <Skeleton className="text-title-sm">
+              <TranslatedText text="New Organizations" />
+            </Skeleton>
             <OrganizationListSkeleton />
           </Surface>
         </div>
@@ -176,16 +179,18 @@ export const LandingScreenSkeleton: React.FC = () => {
       <Tabs className="pb-8 sm:hidden">
         <TabList variant="pill">
           <Tab id="discover" variant="pill">
-            Discover
+            <TranslatedText text="Discover" />
           </Tab>
           <Tab id="recent" variant="pill">
-            Recent
+            <TranslatedText text="Recent" />
           </Tab>
         </TabList>
 
         <TabPanel id="discover" className="p-0">
           <Surface className="flex flex-col gap-6 border-0 sm:border sm:p-6">
-            <Skeleton className="text-title-sm">New Organizations</Skeleton>
+            <Skeleton className="text-title-sm">
+              <TranslatedText text="New Organizations" />
+            </Skeleton>
             <SkeletonLine lines={5} />
           </Surface>
         </TabPanel>
