@@ -1,9 +1,13 @@
 import { invalidate } from '@op/cache';
-import { getUserForProfileSwitch, updateUserCurrentProfile } from '@op/common';
+import {
+  getNormalizedRoles,
+  getUserForProfileSwitch,
+  updateUserCurrentProfile,
+} from '@op/common';
 import { TRPCError } from '@trpc/server';
+import { assertAccess, permission } from 'access-zones';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
-import { assertAccess, permission } from 'access-zones';
 
 import { userEncoder } from '../../encoders';
 import withAuthenticated from '../../middlewares/withAuthenticated';
@@ -62,7 +66,8 @@ export const switchProfile = router({
 
         // Use assertAccess to check admin permission
         try {
-          assertAccess({ profile: permission.ADMIN }, orgUser.roles ?? []);
+          const normalizedRoles = getNormalizedRoles(orgUser.roles);
+          assertAccess({ profile: permission.CREATE }, normalizedRoles ?? []);
         } catch (error) {
           throw new TRPCError({
             code: 'FORBIDDEN',
