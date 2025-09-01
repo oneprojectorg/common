@@ -3,6 +3,7 @@ import { getUserForProfileSwitch, updateUserCurrentProfile } from '@op/common';
 import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
+import { assertAccess, permission } from 'access-zones';
 
 import { userEncoder } from '../../encoders';
 import withAuthenticated from '../../middlewares/withAuthenticated';
@@ -42,19 +43,32 @@ export const switchProfile = router({
         });
       }
 
-      // Check if the profile ID is valid for this user
-      const hasAccess =
-        (user.profile && (user.profile as any).id === input.profileId) ||
-        user.organizationUsers.some((orgUser) => {
+      // Check if switching to user's own individual profile
+      if (user.profile && (user.profile as any).id === input.profileId) {
+        // Allow switching to user's own individual profile
+      } else {
+        // Check organization profiles - must have admin role
+        const orgUser = user.organizationUsers.find((orgUser) => {
           const profile = orgUser.organization?.profile as any;
           return profile && profile.id === input.profileId;
         });
 
-      if (!hasAccess) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'Access denied to this profile',
-        });
+        if (!orgUser) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'Access denied to this profile',
+          });
+        }
+
+        // Use assertAccess to check admin permission
+        try {
+          assertAccess({ profile: permission.ADMIN }, orgUser.roles ?? []);
+        } catch (error) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'Admin role required for organization profiles',
+          });
+        }
       }
 
       const org = user.organizationUsers.find((orgUser) => {
