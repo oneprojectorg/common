@@ -11,7 +11,7 @@ import { toast } from '@op/ui/Toast';
 import React, { useMemo } from 'react';
 import { LuEllipsis, LuUsers } from 'react-icons/lu';
 
-import { Link } from '@/lib/i18n';
+import { Link, useTranslations } from '@/lib/i18n';
 
 import { ProfileAvatar } from '@/components/RelationshipList';
 
@@ -50,6 +50,7 @@ const MemberMenu = ({
   profileId: string;
 }) => {
   const utils = trpc.useUtils();
+  const t = useTranslations();
 
   // Query for all available roles to find the "Member" role ID
   const { data: roles } = trpc.organization.getRoles.useQuery();
@@ -65,27 +66,27 @@ const MemberMenu = ({
       );
 
       const message = wasChangingToAdmin
-        ? 'User changed to Admin successfully'
-        : 'User changed to Member successfully';
+        ? t('User changed to Admin successfully')
+        : t('User changed to Member successfully');
 
       toast.success({ message });
       // Invalidate listUsers query to refresh the UI
       void utils.organization.listUsers.invalidate({ profileId });
     },
     onError: (error) => {
-      toast.error({ message: error.message || 'Failed to update user role' });
+      toast.error({ message: error.message || t('Failed to update user role') });
     },
   });
 
   const deleteUser = trpc.organization.deleteOrganizationUser.useMutation({
     onSuccess: () => {
-      toast.success({ message: 'User removed from organization successfully' });
+      toast.success({ message: t('User removed from organization successfully') });
       // Invalidate listUsers query to refresh the UI
       void utils.organization.listUsers.invalidate({ profileId });
     },
     onError: (error) => {
       toast.error({
-        message: error.message || 'Failed to remove user from organization',
+        message: error.message || t('Failed to remove user from organization'),
       });
     },
   });
@@ -103,7 +104,7 @@ const MemberMenu = ({
       );
 
       if (!memberRole) {
-        toast.error({ message: 'Member role not found' });
+        toast.error({ message: t('Member role not found') });
         return;
       }
 
@@ -121,7 +122,7 @@ const MemberMenu = ({
       );
 
       if (!adminRole) {
-        toast.error({ message: 'Admin role not found' });
+        toast.error({ message: t('Admin role not found') });
         return;
       }
 
@@ -138,7 +139,7 @@ const MemberMenu = ({
   const handleRemoveFromOrganization = () => {
     if (
       confirm(
-        'Are you sure you want to remove this user from the organization?',
+        t('Are you sure you want to remove this user from the organization?'),
       )
     ) {
       deleteUser.mutate({
@@ -164,14 +165,14 @@ const MemberMenu = ({
             onAction={handleRoleToggle}
             className="px-3 py-1"
           >
-            {isCurrentlyAdmin ? 'Change to Member' : 'Change to Admin'}
+            {isCurrentlyAdmin ? t('Change to Member') : t('Change to Admin')}
           </MenuItem>
           <MenuItem
             key="remove-from-org"
             onAction={handleRemoveFromOrganization}
             className="px-3 py-1 text-functional-red"
           >
-            Remove from organization
+            {t('Remove from organization')}
           </MenuItem>
         </Menu>
       </Popover>
@@ -188,6 +189,8 @@ const MembersListContent = ({
   organizationId: string;
   profileId: string;
 }) => {
+  const t = useTranslations();
+  
   return (
     <div className="grid grid-cols-1 gap-8 pb-6 md:grid-cols-2">
       {members.map((member) => {
@@ -263,7 +266,7 @@ const MembersListContent = ({
                       </TagGroup>
                     </div>
                   ) : (
-                    <div className="text-sm text-neutral-charcoal">Member</div>
+                    <div className="text-sm text-neutral-charcoal">{t('Member')}</div>
                   )}
 
                   {/* Show email if different from display name */}
@@ -290,6 +293,8 @@ const MembersListContent = ({
 };
 
 export const MembersList = ({ profileId }: { profileId: string }) => {
+  const t = useTranslations();
+  
   const [members] = trpc.organization.listUsers.useSuspenseQuery({
     profileId,
   });
@@ -329,10 +334,10 @@ export const MembersList = ({ profileId }: { profileId: string }) => {
           <LuUsers className="h-6 w-6 text-neutral-gray4" />
         </div>
         <div className="mb-2 font-serif text-title-base text-neutral-black">
-          No members found
+          {t('No members found')}
         </div>
         <p className="max-w-md text-sm text-neutral-charcoal">
-          This organization doesn't have any members yet.
+          {t("This organization doesn't have any members yet.")}
         </p>
       </div>
     );
@@ -343,7 +348,7 @@ export const MembersList = ({ profileId }: { profileId: string }) => {
       <div className="flex flex-col gap-4 px-4 sm:px-0">
         <div className="flex items-center justify-between">
           <div className="w-full font-serif text-title-sm sm:text-title-lg">
-            {members.length} {pluralize('member', members.length)}
+            {members.length} {pluralize(t('member'), members.length)}
           </div>
           <div className="w-72"></div>
         </div>
@@ -352,7 +357,7 @@ export const MembersList = ({ profileId }: { profileId: string }) => {
       <Tabs>
         <TabList className="px-4 sm:px-0" variant="pill">
           <Tab id="all" variant="pill">
-            All members
+            {t('All members')}
           </Tab>
           {rolesSegmented.map(([roleName, roleMembers]) =>
             roleMembers?.length ? (

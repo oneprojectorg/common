@@ -165,7 +165,7 @@ const ProfileAbout = ({
 
       {orgType ? (
         <section className="flex flex-col gap-2 text-neutral-charcoal">
-          <Header3>Organizational Status</Header3>
+          <Header3>{t('Organizational Status')}</Header3>
           <TagGroup>
             <Tag className="capitalize">{orgType}</Tag>
           </TagGroup>
@@ -199,7 +199,7 @@ const ProfileAbout = ({
         <Suspense
           fallback={
             <section className="flex flex-col gap-2 text-neutral-charcoal">
-              <Header3>Focus Areas</Header3>
+              <Header3>{t('Focus Areas')}</Header3>
               <div className="flex flex-wrap gap-2">
                 <Skeleton className="h-6 w-16" />
                 <Skeleton className="h-6 w-20" />
@@ -220,7 +220,7 @@ const ProfileAbout = ({
         <Suspense
           fallback={
             <section className="flex flex-col gap-2 text-neutral-charcoal">
-              <Header3>Communities We Serve</Header3>
+              <Header3>{t('Communities We Serve')}</Header3>
               <div className="flex flex-wrap gap-2">
                 <Skeleton className="h-6 w-18" />
                 <Skeleton className="h-6 w-24" />

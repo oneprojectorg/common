@@ -10,6 +10,7 @@ import {
   RelationshipList,
   type RelationshipListItem,
 } from '@/components/RelationshipList';
+import { useTranslations } from '@/lib/i18n';
 
 import { ProfileRelationshipsSkeleton } from '../ProfileRelationships/Skeleton';
 
@@ -18,6 +19,8 @@ export const ProfileFollowersSuspense = ({
 }: {
   profileId: string;
 }) => {
+  const t = useTranslations();
+  
   // Get relationships where this profile is the target (people following this profile)
   const [relationships] = trpc.profile.getRelationships.useSuspenseQuery({
     targetProfileId: profileId,
@@ -37,7 +40,7 @@ export const ProfileFollowersSuspense = ({
     <div className="flex flex-col gap-4 text-base sm:gap-8 sm:py-8">
       <RelationshipList
         profiles={followers}
-        title={`${followers.length} ${pluralize('follower', followers.length)}`}
+        title={`${followers.length} ${pluralize(t('follower'), followers.length)}`}
       />
     </div>
   );
