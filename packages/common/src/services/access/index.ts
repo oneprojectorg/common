@@ -4,6 +4,8 @@ import type { User } from '@op/supabase/lib';
 import type { NormalizedRole } from 'access-zones';
 import { z } from 'zod';
 
+import { getNormalizedRoles } from './utils';
+
 import { UnauthorizedError } from '../../utils/error';
 
 type OrgUserWithNormalizedRoles = {
@@ -52,27 +54,8 @@ export const getOrgAccessUser = async ({
 
   if (orgUser) {
     // Transform the relational data into normalized format for access-zones library
-    const normalizedRoles: NormalizedRole[] = orgUser.roles.map(
-      (roleJunction) => {
-        const role = roleJunction.accessRole;
-
-        // Build the access object with zone names as keys and permission bitfields as values
-        const access: Record<string, number> = {};
-
-        if (role.zonePermissions) {
-          role.zonePermissions.forEach((zonePermission: any) => {
-            // Use zone name as key, permission bitfield as value
-            access[zonePermission.accessZone.name] = zonePermission.permission;
-          });
-        }
-
-        return {
-          id: role.id,
-          name: role.name,
-          access,
-        };
-      },
-    );
+    // Type assertion needed because Drizzle query result type is complex but we know it has the right structure
+    const normalizedRoles = getNormalizedRoles(orgUser.roles as Array<{ accessRole: any }>);
 
     // Replace roles with normalized format
     return {

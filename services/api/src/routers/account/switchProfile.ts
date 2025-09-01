@@ -4,6 +4,7 @@ import {
   getUserForProfileSwitch,
   updateUserCurrentProfile,
 } from '@op/common';
+import type { Profile } from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
 import { assertAccess, permission } from 'access-zones';
 import type { OpenApiMeta } from 'trpc-to-openapi';
@@ -48,12 +49,12 @@ export const switchProfile = router({
       }
 
       // Check if switching to user's own individual profile
-      if (user.profile && (user.profile as any).id === input.profileId) {
+      if (user.profile && (user.profile as Profile).id === input.profileId) {
         // Allow switching to user's own individual profile
       } else {
         // Check organization profiles - must have admin role
         const orgUser = user.organizationUsers.find((orgUser) => {
-          const profile = orgUser.organization?.profile as any;
+          const profile = orgUser.organization?.profile as Profile;
           return profile && profile.id === input.profileId;
         });
 
@@ -77,7 +78,7 @@ export const switchProfile = router({
       }
 
       const org = user.organizationUsers.find((orgUser) => {
-        const profile = orgUser.organization?.profile as any;
+        const profile = orgUser.organization?.profile as Profile;
         return profile && profile.id === input.profileId;
       });
 
