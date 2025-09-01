@@ -75,8 +75,8 @@ export const InviteToExistingOrganization = ({
 
     if (!isValidEmail(trimmedEmail)) {
       toast.error({
-        title: 'Invalid email',
-        message: `"${trimmedEmail}" is not a valid email address`,
+        title: t('Invalid email'),
+        message: `"${trimmedEmail}" ${t('is not a valid email address')}`,
       });
       return;
     }
@@ -123,7 +123,7 @@ export const InviteToExistingOrganization = ({
               placeholder={
                 emailBadges.length === 0
                   ? `name1@${user?.currentOrganization?.domain || 'example.org'}, name2@${user?.currentOrganization?.domain || 'example.org'}, ...`
-                  : 'Type emails followed by a comma...'
+                  : t('Type emails followed by a comma...')
               }
               className="min-w-[200px] flex-1 resize-none border-none pt-1 outline-none"
               rows={1}

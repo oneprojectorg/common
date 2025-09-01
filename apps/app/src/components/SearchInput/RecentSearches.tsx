@@ -1,4 +1,5 @@
 import { LuClock } from 'react-icons/lu';
+import { useTranslations } from 'next-intl';
 
 import { Link } from '@/lib/i18n';
 
@@ -17,6 +18,7 @@ export const RecentSearches = ({
   query,
   onSearch,
 }: RecentSearchesProps) => {
+  const t = useTranslations();
   if (recentSearches.length === 0 || query.length > 0) {
     return null;
   }
@@ -24,7 +26,7 @@ export const RecentSearches = ({
   return (
     <div className="pb-4">
       <SearchResultItem className="py-2 pt-6 text-neutral-gray4 hover:bg-transparent">
-        Recent Searches
+        {t('Recent Searches')}
       </SearchResultItem>
       {recentSearches.map((recentQuery, index) => (
         <SearchResultItem

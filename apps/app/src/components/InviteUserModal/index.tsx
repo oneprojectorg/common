@@ -82,14 +82,14 @@ export const InviteUserModal = ({ children }: InviteUserModalProps) => {
   };
 
   const handleInviteError = (error: any, title: string) => {
-    console.error(title + ':', error.message);
+    console.error('Failed to send invite:', error.message);
 
     const errorInfo = analyzeError(error);
 
     if (errorInfo.isConnectionError) {
       toast.error({
-        title: 'Connection issue',
-        message: errorInfo.message + ' Please try sending the invite again.',
+        title: t('Connection issue'),
+        message: errorInfo.message + ' ' + t('Please try sending the invite again.'),
       });
     } else {
       toast.error({
@@ -109,8 +109,8 @@ export const InviteUserModal = ({ children }: InviteUserModalProps) => {
 
     if (!isOnline) {
       toast.error({
-        title: 'No connection',
-        message: 'Please check your internet connection and try again.',
+        title: t('No connection'),
+        message: t('Please check your internet connection and try again.'),
       });
       return;
     }
@@ -150,8 +150,8 @@ export const InviteUserModal = ({ children }: InviteUserModalProps) => {
       toast.error({
         title:
           invalidEmails.length === 1
-            ? 'Invalid email address'
-            : 'Invalid email addresses',
+            ? t('Invalid email address')
+            : t('Invalid email addresses'),
         message: `${invalidEmails.join(', ')}`,
       });
       return;
@@ -212,7 +212,7 @@ export const InviteUserModal = ({ children }: InviteUserModalProps) => {
                 <TabPanel id="existing">
                   <Suspense
                     fallback={
-                      <div className="animate-pulse">Loading roles...</div>
+                      <div className="animate-pulse">{t('Loading roles...')}</div>
                     }
                   >
                     <InviteToExistingOrganization

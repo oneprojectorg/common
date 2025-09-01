@@ -477,8 +477,7 @@ const PostUpdateWithUser = ({
       // Check if offline
       if (!isOnline) {
         toast.error({
-          message:
-            'You are offline. Please check your connection and try again.',
+          message: t('You are offline. Please check your connection and try again.'),
         });
         return;
       }
@@ -580,7 +579,7 @@ const PostUpdateWithUser = ({
               className="size-full h-6 overflow-y-hidden"
               variant="borderless"
               ref={textareaRef as RefObject<HTMLTextAreaElement>}
-              placeholder={placeholder || `Post an update…`}
+              placeholder={placeholder || t('Post an update…')}
               value={content}
               onChange={(e) => handleContentChange(e.target.value ?? '')}
               onKeyDown={handleKeyDown}
@@ -685,8 +684,8 @@ const PostUpdateWithUser = ({
                   }
                 >
                   {createPost.isPending || createOrganizationPost.isPending
-                    ? 'Retrying...'
-                    : 'Retry Failed Post'}
+                    ? t('Retrying...')
+                    : t('Retry Failed Post')}
                 </Button>
               )}
               <Button
