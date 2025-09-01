@@ -46,6 +46,8 @@
     "./Scroller": "./src/components/Scroller.tsx",
     "./Select": "./src/components/Select.tsx",
     "./Skeleton": "./src/components/Skeleton.tsx",
+    "./MapGeospatial": "./src/components/MapGeospatial.tsx",
+    "./ProfilePopup": "./src/components/ProfilePopup.tsx",
     "./SocialLinks": "./src/components/SocialLinks.tsx",
     "./Stepper": "./src/components/Stepper/index.ts",
     "./Switch": "./src/components/Switch.tsx",
@@ -111,6 +113,8 @@
     "tailwindcss": "^3.4.17",
     "typescript": "5.7.3",
     "unplugin-icons": "22.1.0",
-    "vite": "^6.2.0"
+    "vite": "^6.2.0",
+    "react-map-gl": "^8.0.4",
+    "maplibre-gl": "^5.7.0"
   }
 }
