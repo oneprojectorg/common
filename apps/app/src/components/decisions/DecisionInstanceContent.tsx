@@ -7,7 +7,7 @@ import { trpc } from '@op/api/client';
 import { Avatar } from '@op/ui/Avatar';
 import { FacePile } from '@op/ui/FacePile';
 import { GradientHeader } from '@op/ui/Header';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import Image from 'next/image';
 
 interface DecisionInstanceContentProps {
@@ -20,6 +20,7 @@ export function DecisionInstanceContent({
   instanceId,
 }: DecisionInstanceContentProps) {
   const locale = useLocale();
+  const t = useTranslations();
   const [{ proposals }] = trpc.decision.listProposals.useSuspenseQuery({
     processInstanceId: instanceId,
     limit: 20,
@@ -33,11 +34,12 @@ export function DecisionInstanceContent({
         {/* heading */}
         <div className="text-center">
           <GradientHeader className="items-center align-middle">
-            SHARE YOUR IDEAS.
+            {t('SHARE YOUR IDEAS.')}
           </GradientHeader>
           <p className="mt-4 text-base text-gray-700">
-            Help determine how we invest our{' '}
-            {budget ? formatCurrency(budget, locale) : '$0'} community budget.
+            {t('Help determine how we invest our {budget} community budget.', {
+              budget: budget ? formatCurrency(budget, locale) : '$0'
+            })}
           </p>
 
           {/* Member avatars showing who submitted proposals */}
@@ -64,9 +66,8 @@ export function DecisionInstanceContent({
               />
               <span className="w-fit text-sm text-neutral-charcoal">
                 {uniqueSubmitters.length}
-                {pluralize('member', uniqueSubmitters.length)}{' '}
-                {uniqueSubmitters.length > 1 ? 'have' : 'has'} submitted
-                proposals
+                {pluralize(t('member'), uniqueSubmitters.length)}{' '}
+                {uniqueSubmitters.length > 1 ? t('have') : t('has')} {t('submitted proposals')}
               </span>
             </div>
           )}
