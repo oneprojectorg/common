@@ -38,8 +38,8 @@ export const InviteNewOrganization = ({
 
     if (!isValidEmail(trimmedEmail)) {
       toast.error({
-        title: 'Invalid email',
-        message: `"${trimmedEmail}" is not a valid email address`,
+        title: t('Invalid email'),
+        message: `"${trimmedEmail}" ${t('is not a valid email address')}`,
       });
       return;
     }
@@ -86,7 +86,7 @@ export const InviteNewOrganization = ({
               placeholder={
                 emailBadges.length === 0
                   ? `name1@${user?.currentOrganization?.domain || 'solidarityseeds.org'}, name2@${user?.currentOrganization?.domain || 'solidarityseeds.org'}, ...`
-                  : 'Type emails followed by a comma...'
+                  : t('Type emails followed by a comma...')
               }
               className="min-w-[200px] flex-1 resize-none border-none pt-1 outline-none"
               rows={1}

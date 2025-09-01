@@ -8,6 +8,7 @@ import { useFeatureFlagEnabled } from 'posthog-js/react';
 import { useEffect, useRef, useState } from 'react';
 import { LuSearch } from 'react-icons/lu';
 import { useDebounce } from 'use-debounce';
+import { useTranslations } from 'next-intl';
 
 import { Link, useRouter } from '@/lib/i18n';
 
@@ -17,6 +18,7 @@ import { SearchResultItem } from './SearchResultItem';
 
 export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
   const router = useRouter();
+  const t = useTranslations();
   const individualSearchEnabled = useFeatureFlagEnabled('individual_search');
 
   const [query, setQuery] = useState<string>('');
@@ -158,7 +160,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
       <TextField
         ref={inputRef}
         inputProps={{
-          placeholder: 'Search',
+          placeholder: t('Search'),
           color: 'muted',
           size: 'small',
           icon: isSearching ? (
@@ -192,13 +194,13 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
         }}
         value={query}
         className={cn('relative z-20', isMobile ? 'w-full' : 'w-96')}
-        aria-label="Search"
+        aria-label={t('Search')}
       >
         {dropdownShowing ? (
           <div
             className="absolute top-10 z-10 hidden !max-h-80 w-[--trigger-width] min-w-96 overflow-y-auto rounded-b border border-t-0 bg-white group-hover:border-neutral-gray2 sm:block"
             role="listbox"
-            aria-label="Search results"
+            aria-label={t('Search results')}
           >
             <div>
               {query.length > 0 && (
@@ -241,7 +243,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
         <div
           className="fixed inset-x-0 bottom-0 top-[60px] z-10 block overflow-y-auto bg-white sm:hidden"
           role="listbox"
-          aria-label="Search results"
+          aria-label={t('Search results')}
         >
           <div className="p-4 pt-0">
             {false && query.length > 0 && (
