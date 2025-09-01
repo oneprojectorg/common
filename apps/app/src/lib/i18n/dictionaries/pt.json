@@ -109,6 +109,7 @@
   "My proposals •": "Minhas propostas •",
   "My proposals": "Minhas propostas",
   "All proposals": "Todas as propostas",
+  "All proposals •": "Todas as propostas •",
   "All categories": "Todas as categorias",
   "Newest First": "Mais recentes primeiro",
   "Oldest First": "Mais antigos primeiro",
@@ -130,5 +131,11 @@
   "Budget": "Orçamento",
   "Submitted on": "Enviado em",
   "Loading comments...": "Carregando comentários...",
-  "No comments yet. Be the first to comment!": "Ainda não há comentários. Seja o primeiro a comentar!"
+  "No comments yet. Be the first to comment!": "Ainda não há comentários. Seja o primeiro a comentar!",
+  "SHARE YOUR IDEAS.": "COMPARTILHE SUAS IDEIAS.",
+  "Help determine how we invest our {budget} community budget.": "Ajude a determinar como investimos nosso orçamento comunitário de {budget}.",
+  "member": "membro",
+  "have": "enviaram",
+  "has": "enviou",
+  "submitted proposals": "propostas enviadas"
 }

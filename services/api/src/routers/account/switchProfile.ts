@@ -1,9 +1,14 @@
 import { invalidate } from '@op/cache';
-import { getUserForProfileSwitch, updateUserCurrentProfile } from '@op/common';
+import {
+  getNormalizedRoles,
+  getUserForProfileSwitch,
+  updateUserCurrentProfile,
+} from '@op/common';
+import type { Profile } from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
+import { assertAccess, permission } from 'access-zones';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
-import { assertAccess, permission } from 'access-zones';
 
 import { userEncoder } from '../../encoders';
 import withAuthenticated from '../../middlewares/withAuthenticated';
@@ -44,12 +49,12 @@ export const switchProfile = router({
       }
 
       // Check if switching to user's own individual profile
-      if (user.profile && (user.profile as any).id === input.profileId) {
+      if (user.profile && (user.profile as Profile).id === input.profileId) {
         // Allow switching to user's own individual profile
       } else {
         // Check organization profiles - must have admin role
         const orgUser = user.organizationUsers.find((orgUser) => {
-          const profile = orgUser.organization?.profile as any;
+          const profile = orgUser.organization?.profile as Profile;
           return profile && profile.id === input.profileId;
         });
 
@@ -62,7 +67,8 @@ export const switchProfile = router({
 
         // Use assertAccess to check admin permission
         try {
-          assertAccess({ profile: permission.ADMIN }, orgUser.roles ?? []);
+          const normalizedRoles = getNormalizedRoles(orgUser.roles);
+          assertAccess({ profile: permission.ADMIN }, normalizedRoles ?? []);
         } catch (error) {
           throw new TRPCError({
             code: 'FORBIDDEN',
@@ -72,7 +78,7 @@ export const switchProfile = router({
       }
 
       const org = user.organizationUsers.find((orgUser) => {
-        const profile = orgUser.organization?.profile as any;
+        const profile = orgUser.organization?.profile as Profile;
         return profile && profile.id === input.profileId;
       });
 
