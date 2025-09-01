@@ -35,13 +35,16 @@ export const ProfileAvatar = ({
   const gradientBg = getGradientForString(profile.name || 'Profile');
 
   return (
-    <div className={cn('relative overflow-hidden rounded-full', className)}>
+    <Link
+      href={`/profile/${profile.slug}`}
+      className={cn('relative block overflow-hidden rounded-full', className)}
+    >
       {avatarUrl ? (
         <Image src={avatarUrl} alt="" fill className="object-cover" />
       ) : (
         <div className={cn('h-full w-full', gradientBg)} />
       )}
-    </div>
+    </Link>
   );
 };
 

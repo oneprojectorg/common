@@ -26,7 +26,10 @@ export const FollowersTabPanel = ({
   const individualUsersEnabled = useFeatureFlagEnabled('individual_users');
 
   return individualUsersEnabled ? (
-    <TabPanel id="followers" className={cn('px-4 py-2', className)}>
+    <TabPanel
+      id="followers"
+      className={cn('px-4 py-2 sm:px-6 sm:py-0', className)}
+    >
       {children}
     </TabPanel>
   ) : null;
