@@ -213,8 +213,10 @@ export const createUserByAuthId = async ({
 
 export const getUserWithProfiles = async ({
   authUserId,
+  includeRoles = false,
 }: {
   authUserId: string;
+  includeRoles?: boolean;
 }) => {
   return await db.query.users.findFirst({
     where: (table, { eq }) => eq(table.authUserId, authUserId),
@@ -235,6 +237,13 @@ export const getUserWithProfiles = async ({
               },
             },
           },
+          roles: includeRoles
+            ? {
+                with: {
+                  accessRole: true,
+                },
+              }
+            : undefined,
         },
       },
     },
@@ -255,6 +264,11 @@ export const getUserForProfileSwitch = async ({
           organization: {
             with: {
               profile: true,
+            },
+          },
+          roles: {
+            with: {
+              accessRole: true,
             },
           },
         },

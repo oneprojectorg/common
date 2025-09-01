@@ -163,12 +163,13 @@ export const getRelationships = async ({
   // Declaratively define all possible conditions
   const conditions = [];
 
-  conditions.push(
-    eq(
-      profileRelationships.sourceProfileId,
-      sourceProfileId ?? currentProfileId,
-    ),
-  );
+  // Only filter by sourceProfileId if explicitly provided
+  if (sourceProfileId) {
+    conditions.push(eq(profileRelationships.sourceProfileId, sourceProfileId));
+  } else if (!targetProfileId) {
+    // If no targetProfileId is provided, default to current user's relationships
+    conditions.push(eq(profileRelationships.sourceProfileId, currentProfileId));
+  }
 
   if (targetProfileId) {
     conditions.push(eq(profileRelationships.targetProfileId, targetProfileId));

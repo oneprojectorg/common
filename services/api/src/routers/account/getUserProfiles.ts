@@ -53,8 +53,11 @@ export const getUserProfiles = router({
     .query(async ({ ctx }) => {
       const { id: authUserId } = ctx.user;
 
-      // Get the user's database record
-      const user = await getUserWithProfiles({ authUserId });
+      // Get the user's database record with roles to filter for admin organizations
+      const user = await getUserWithProfiles({
+        authUserId,
+        includeRoles: true,
+      });
 
       if (!user) {
         throw new UnauthorizedError('User not found');
@@ -89,23 +92,31 @@ export const getUserProfiles = router({
         });
       }
 
-      // Add organization profiles
+      // Add organization profiles - only those where user has admin role
       for (const orgUser of user.organizationUsers) {
         if (orgUser.organization?.profile) {
-          const profile = orgUser.organization.profile as any;
-          userProfiles.push({
-            id: profile.id,
-            type: EntityType.ORG as const,
-            name: profile.name,
-            slug: profile.slug,
-            bio: profile.bio,
-            avatarImage: profile.avatarImage
-              ? {
-                  id: profile.avatarImage.id,
-                  name: profile.avatarImage.name,
-                }
-              : null,
-          });
+          // Check if user has admin role in this organization
+          const hasAdminRole = orgUser.roles?.some(
+            (roleJunction: any) =>
+              roleJunction.accessRole?.name?.toLowerCase() === 'admin',
+          );
+
+          if (hasAdminRole) {
+            const profile = orgUser.organization.profile as any;
+            userProfiles.push({
+              id: profile.id,
+              type: EntityType.ORG as const,
+              name: profile.name,
+              slug: profile.slug,
+              bio: profile.bio,
+              avatarImage: profile.avatarImage
+                ? {
+                    id: profile.avatarImage.id,
+                    name: profile.avatarImage.name,
+                  }
+                : null,
+            });
+          }
         }
       }
 
