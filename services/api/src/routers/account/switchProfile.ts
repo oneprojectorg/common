@@ -68,7 +68,7 @@ export const switchProfile = router({
         // Use assertAccess to check admin permission
         try {
           const normalizedRoles = getNormalizedRoles(orgUser.roles);
-          assertAccess({ profile: permission.CREATE }, normalizedRoles ?? []);
+          assertAccess({ profile: permission.ADMIN }, normalizedRoles ?? []);
         } catch (error) {
           throw new TRPCError({
             code: 'FORBIDDEN',
