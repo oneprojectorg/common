@@ -161,8 +161,94 @@ describe('Role ID System Integration Tests', () => {
       expect(orgUser?.roles[0]?.accessRole.name).toBe('Viewer');
     });
 
+    it('should update currentProfileId only for admin role assignments', async () => {
+      const adminRole = roles.find(r => r.name === 'Admin');
+
+      // Get user's initial currentProfileId
+      const initialUser = await db.query.users.findFirst({
+        where: (table, { eq }) => eq(table.authUserId, testUser.id),
+      });
+      const initialCurrentProfileId = initialUser?.currentProfileId;
+
+      // Create allowList entry with Admin roleId
+      await insertTestData('allow_list', [
+        {
+          email: testUser.email,
+          organization_id: testOrgId,
+          metadata: {
+            roleId: adminRole.id,
+            inviteType: 'existing_organization',
+            invitedBy: testUser.id,
+            invitedAt: new Date().toISOString(),
+          },
+        },
+      ]);
+
+      // User joins organization
+      await joinOrganization({
+        user: testUser,
+        organizationId: testOrgId,
+      });
+
+      // Verify user's currentProfileId was updated since they joined as Admin
+      const updatedUser = await db.query.users.findFirst({
+        where: (table, { eq }) => eq(table.authUserId, testUser.id),
+      });
+
+      // Get the organization to verify currentProfileId was set to org's profileId
+      const org = await db.query.organizations.findFirst({
+        where: (table, { eq }) => eq(table.id, testOrgId),
+      });
+
+      expect(updatedUser?.currentProfileId).toBe(org?.profileId);
+      expect(updatedUser?.currentProfileId).not.toBe(initialCurrentProfileId);
+    });
+
+    it('should NOT update currentProfileId for non-admin role assignments', async () => {
+      const viewerRole = roles.find(r => r.name === 'Viewer');
+
+      // Get user's initial currentProfileId
+      const initialUser = await db.query.users.findFirst({
+        where: (table, { eq }) => eq(table.authUserId, testUser.id),
+      });
+      const initialCurrentProfileId = initialUser?.currentProfileId;
+
+      // Create allowList entry with Viewer roleId (non-admin)
+      await insertTestData('allow_list', [
+        {
+          email: testUser.email,
+          organization_id: testOrgId,
+          metadata: {
+            roleId: viewerRole.id,
+            inviteType: 'existing_organization',
+            invitedBy: testUser.id,
+            invitedAt: new Date().toISOString(),
+          },
+        },
+      ]);
+
+      // User joins organization
+      await joinOrganization({
+        user: testUser,
+        organizationId: testOrgId,
+      });
+
+      // Verify user's currentProfileId was NOT updated since they joined as non-admin
+      const updatedUser = await db.query.users.findFirst({
+        where: (table, { eq }) => eq(table.authUserId, testUser.id),
+      });
+
+      expect(updatedUser?.currentProfileId).toBe(initialCurrentProfileId);
+    });
+
     it('should fallback to Admin when roleId is invalid', async () => {
       const adminRole = roles.find(r => r.name === 'Admin');
+
+      // Get user's initial currentProfileId
+      const initialUser = await db.query.users.findFirst({
+        where: (table, { eq }) => eq(table.authUserId, testUser.id),
+      });
+      const initialCurrentProfileId = initialUser?.currentProfileId;
 
       // Create allowList entry with invalid roleId
       await insertTestData('allow_list', [
@@ -203,9 +289,27 @@ describe('Role ID System Integration Tests', () => {
       });
 
       expect(orgUser?.roles[0]?.accessRole.name).toBe('Admin');
+
+      // Since they got Admin role as fallback, currentProfileId should be updated
+      const updatedUser = await db.query.users.findFirst({
+        where: (table, { eq }) => eq(table.authUserId, testUser.id),
+      });
+
+      const org = await db.query.organizations.findFirst({
+        where: (table, { eq }) => eq(table.id, testOrgId),
+      });
+
+      expect(updatedUser?.currentProfileId).toBe(org?.profileId);
+      expect(updatedUser?.currentProfileId).not.toBe(initialCurrentProfileId);
     });
 
     it('should fallback to Admin for domain-based joins without roleId', async () => {
+      // Get user's initial currentProfileId
+      const initialUser = await db.query.users.findFirst({
+        where: (table, { eq }) => eq(table.authUserId, testUser.id),
+      });
+      const initialCurrentProfileId = initialUser?.currentProfileId;
+
       // User joins via domain matching (no allowList entry)
       const result = await joinOrganization({
         user: testUser,
@@ -231,6 +335,18 @@ describe('Role ID System Integration Tests', () => {
       });
 
       expect(orgUser?.roles[0]?.accessRole.name).toBe('Admin');
+
+      // Since they got Admin role via fallback, currentProfileId should be updated
+      const updatedUser = await db.query.users.findFirst({
+        where: (table, { eq }) => eq(table.authUserId, testUser.id),
+      });
+
+      const org = await db.query.organizations.findFirst({
+        where: (table, { eq }) => eq(table.id, testOrgId),
+      });
+
+      expect(updatedUser?.currentProfileId).toBe(org?.profileId);
+      expect(updatedUser?.currentProfileId).not.toBe(initialCurrentProfileId);
     });
   });
 
