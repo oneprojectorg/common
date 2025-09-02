@@ -1,6 +1,8 @@
 import { and, asc, db, desc, eq, ilike, inArray, sql } from '@op/db/client';
 import {
   ProfileRelationshipType,
+  organizations,
+  processInstances,
   profileRelationships,
   proposalCategories,
   proposals,
@@ -10,11 +12,7 @@ import { assertAccess, permission } from 'access-zones';
 import { count as countFn } from 'drizzle-orm';
 
 import { UnauthorizedError } from '../../utils';
-import {
-  getCurrentOrgId,
-  getCurrentProfileId,
-  getOrgAccessUser,
-} from '../access';
+import { getCurrentProfileId, getOrgAccessUser } from '../access';
 
 export interface ListProposalsInput {
   processInstanceId: string;
@@ -64,10 +62,29 @@ export const listProposals = async ({
     throw new UnauthorizedError('User must be authenticated');
   }
 
-  const orgUserId = await getCurrentOrgId({ authUserId: input.authUserId });
+  const { processInstanceId } = input;
+
+  // join the process table to the org table via ownerId to get the org id
+  const instanceOrg = await db
+    .select({
+      id: organizations.id,
+    })
+    .from(organizations)
+    .leftJoin(
+      processInstances,
+      eq(organizations.profileId, processInstances.ownerProfileId),
+    )
+    .where(eq(processInstances.id, processInstanceId))
+    .limit(1);
+
+  if (!instanceOrg[0]) {
+    throw new UnauthorizedError('User does not have access to this process');
+  }
+
+  // ASSERT VIEW ACCESS ON ORGUSER
   const orgUser = await getOrgAccessUser({
     user,
-    organizationId: orgUserId,
+    organizationId: instanceOrg[0].id,
   });
 
   assertAccess({ decisions: permission.READ }, orgUser?.roles ?? []);
