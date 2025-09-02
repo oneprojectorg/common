@@ -50,21 +50,19 @@ const LandingScreenFeeds = async ({
           </>
         ) : null}
         <div className="mt-4 sm:mt-0">
-          {user.currentOrganization ? (
-            <ErrorBoundary
-              fallback={
-                <div className="flex flex-col items-center justify-center py-8">
-                  <span className="text-neutral-charcoal">
-                    <TranslatedText text="Unable to load posts. Please try refreshing." />
-                  </span>
-                </div>
-              }
-            >
-              <Suspense fallback={<PostFeedSkeleton numPosts={3} />}>
-                <Feed />
-              </Suspense>
-            </ErrorBoundary>
-          ) : null}
+          <ErrorBoundary
+            fallback={
+              <div className="flex flex-col items-center justify-center py-8">
+                <span className="text-neutral-charcoal">
+                  <TranslatedText text="Unable to load posts. Please try refreshing." />
+                </span>
+              </div>
+            }
+          >
+            <Suspense fallback={<PostFeedSkeleton numPosts={3} />}>
+              <Feed />
+            </Suspense>
+          </ErrorBoundary>
         </div>
       </>
     );
