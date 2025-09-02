@@ -73,6 +73,8 @@ const ProfileMenuItem = ({
   const switchProfile = trpc.account.switchProfile.useMutation({
     onSuccess: () => {
       utils.invalidate();
+      // TODO: something is happening when switching so trying this out to see if it helps to continue debugging
+      utils.organization.listAllPosts.refetch();
       // Reset all SSR fetches as well
       router.refresh();
     },
