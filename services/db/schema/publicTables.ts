@@ -122,3 +122,7 @@ export {
 export type { StateTransitionHistory } from './tables/stateTransitionHistory.sql';
 
 export type { ObjectsInStorage } from './tables/storage.sql';
+
+// Module activation tables
+export { modules, modulesRelations, profileModules, profileModulesRelations } from './tables/modules.sql';
+export type { Module, ProfileModule } from './tables/modules.sql';
