@@ -9,7 +9,7 @@ import { ErrorBoundary } from 'next/dist/client/components/error-boundary';
 import React, { Suspense, useMemo, useState } from 'react';
 import { LuArrowLeft } from 'react-icons/lu';
 
-import { Link } from '@/lib/i18n';
+import { Link, useTranslations } from '@/lib/i18n';
 
 import {
   RelationshipList,
@@ -29,6 +29,7 @@ export const ProfileRelationshipsSuspense = ({
   showBreadcrumb?: boolean;
 }) => {
   const [searchTerm] = useState('');
+  const t = useTranslations();
   const [organization] = trpc.organization.getBySlug.useSuspenseQuery({
     slug,
   });
@@ -84,12 +85,12 @@ export const ProfileRelationshipsSuspense = ({
             <Breadcrumb href={`/org/${slug}`}>
               {organization.profile.name}
             </Breadcrumb>
-            <Breadcrumb>Relationships</Breadcrumb>
+            <Breadcrumb>{t('Relationships')}</Breadcrumb>
           </Breadcrumbs>
         ) : null}
         <div className="flex items-center justify-between">
           <div className="w-full font-serif text-title-sm sm:text-title-lg">
-            {count} {pluralize('relationship', count)}
+            {count} {pluralize(t('relationship'), count)}
           </div>
           <div className="w-72"></div>
         </div>
@@ -98,7 +99,7 @@ export const ProfileRelationshipsSuspense = ({
       <Tabs>
         <TabList className="px-4 sm:px-0" variant="pill">
           <Tab id="all" variant="pill">
-            All relationships
+            {t('All relationships')}
           </Tab>
           {relationshipsSegmented.map(([noun, items]) =>
             items?.length ? (

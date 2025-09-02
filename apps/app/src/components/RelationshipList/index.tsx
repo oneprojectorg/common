@@ -6,7 +6,7 @@ import { cn, getGradientForString } from '@op/ui/utils';
 import Image from 'next/image';
 import React from 'react';
 
-import { Link } from '@/lib/i18n';
+import { Link, useTranslations } from '@/lib/i18n';
 
 type RelationshipListItem = {
   id: string;
@@ -57,6 +57,7 @@ const RelationshipListContent = ({
   relationshipMap?: Record<string, { label: string }>;
   children?: React.ReactNode;
 }) => {
+  const t = useTranslations();
   return (
     <div className="grid grid-cols-1 gap-8 pb-6 md:grid-cols-2">
       {children ||
@@ -88,11 +89,11 @@ const RelationshipListContent = ({
                       {profile.relationships.map((relationship, i, arr) => (
                         <React.Fragment key={relationship.relationshipType}>
                           {relationshipMap[relationship.relationshipType]
-                            ?.label ?? 'Relationship'}
+                            ?.label ?? t('Relationship')}
                           {relationship.pending && (
                             <TagGroup className="ml-1 inline-flex">
                               <Tag className="rounded-sm px-1 py-0.5 text-xs">
-                                Pending
+                                {t('Pending')}
                               </Tag>
                             </TagGroup>
                           )}
@@ -105,7 +106,7 @@ const RelationshipListContent = ({
                   ) : (
                     /* Show profile type if no relationships */
                     <div className="text-sm capitalize text-neutral-charcoal">
-                      {profile.type === 'org' ? 'Organization' : 'Individual'}
+                      {profile.type === 'org' ? t('Organization') : t('Individual')}
                     </div>
                   )}
                 </div>
