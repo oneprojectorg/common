@@ -13,11 +13,7 @@ import { ProfileRelationshipsSkeleton } from '@/components/screens/ProfileRelati
 
 import { MembersList } from './MembersList';
 
-export const DecisionsTab = ({ 
-  profileId 
-}: { 
-  profileId: string;
-}) => {
+export const DecisionsTab = ({ profileId }: { profileId: string }) => {
   const t = useTranslations();
   const access = useUser();
   const permission = access.getPermissionsForProfile(profileId);
@@ -41,25 +37,15 @@ export const DecisionsTabPanel = ({
   );
 };
 
-export const MembersTab = ({ 
-  profileId 
-}: { 
-  profileId: string;
-}) => {
+export const MembersTab = ({ profileId }: { profileId: string }) => {
   const t = useTranslations();
   const access = useUser();
   const permission = access.getPermissionsForProfile(profileId).admin;
 
-  return permission.read ? (
-    <Tab id="members">{t('Members')}</Tab>
-  ) : null;
+  return permission.read ? <Tab id="members">{t('Members')}</Tab> : null;
 };
 
-export const MembersTabPanel = ({ 
-  profileId 
-}: { 
-  profileId: string;
-}) => {
+export const MembersTabPanel = ({ profileId }: { profileId: string }) => {
   const t = useTranslations();
 
   return (
