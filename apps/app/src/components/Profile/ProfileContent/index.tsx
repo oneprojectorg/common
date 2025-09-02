@@ -2,6 +2,7 @@
 
 import { formatToUrl } from '@/utils';
 import { useUser } from '@/utils/UserProvider';
+import { checkModuleEnabled } from '@/utils/modules';
 import { trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
@@ -315,6 +316,10 @@ export const ProfileTabsMobile = ({
 }) => {
   const t = useTranslations();
   const isIndividual = profile.orgType === null || profile.orgType === '';
+  const decisionsEnabled = checkModuleEnabled(
+    profile.profile.modules,
+    'decisions',
+  );
 
   return (
     <Tabs className="px-0 pb-8 sm:hidden">
@@ -324,8 +329,12 @@ export const ProfileTabsMobile = ({
         {!isIndividual ? (
           <>
             <FollowersTab />
-            <MembersTab profileId={profile.id} />
-            <DecisionsTab profileId={profile.profile.id} />
+            {decisionsEnabled && (
+              <>
+                <MembersTab profileId={profile.id} />
+                <DecisionsTab profileId={profile.profile.id} />
+              </>
+            )}
           </>
         ) : (
           <>
@@ -364,10 +373,12 @@ export const ProfileTabsMobile = ({
       {!isIndividual && (
         <>
           <FollowersTabPanel>{followersContent}</FollowersTabPanel>
-          <MembersTabPanel profileId={profile.id} />
+          {decisionsEnabled && <MembersTabPanel profileId={profile.id} />}
         </>
       )}
-      <DecisionsTabPanel>{decisionsContent}</DecisionsTabPanel>
+      {decisionsEnabled && (
+        <DecisionsTabPanel>{decisionsContent}</DecisionsTabPanel>
+      )}
     </Tabs>
   );
 };

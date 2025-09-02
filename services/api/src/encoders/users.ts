@@ -7,7 +7,7 @@ import {
   organizationsEncoder,
   organizationsWithProfileEncoder,
 } from './organizations';
-import { profileEncoder } from './profiles';
+import { baseProfileEncoder } from './profiles';
 
 const permissionSchema = z.object({
   create: z.boolean(),
@@ -33,8 +33,8 @@ export const userEncoder = createSelectSchema(users).extend({
     .array()
     .nullish(),
   currentOrganization: organizationsWithProfileEncoder.nullish(),
-  currentProfile: profileEncoder.nullish(),
-  profile: profileEncoder.nullish(),
+  currentProfile: baseProfileEncoder.nullish(),
+  profile: baseProfileEncoder.nullish(),
 });
 
 export type CommonUser = z.infer<typeof userEncoder>;

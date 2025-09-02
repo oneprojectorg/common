@@ -114,8 +114,16 @@ export const getProfileRouter = router({
           user,
         });
 
+        // Transform modules to simplified format
+        const transformedProfile = {
+          ...profile,
+          modules: profile.modules?.map((profileModule: any) => ({
+            slug: profileModule.module.slug,
+          })),
+        };
+
         // Return the profile data using the profile encoder
-        return universalProfileSchema.parse(profile);
+        return universalProfileSchema.parse(transformedProfile);
       } catch (error: unknown) {
         console.log(error);
 

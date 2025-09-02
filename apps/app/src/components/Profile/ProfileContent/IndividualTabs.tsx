@@ -2,18 +2,14 @@
 
 import { Tab, TabPanel } from '@op/ui/Tabs';
 import { cn } from '@op/ui/utils';
-import { useFeatureFlagEnabled } from 'posthog-js/react';
 import { ReactNode } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
 export const FollowersTab = () => {
-  const individualUsersEnabled = useFeatureFlagEnabled('individual_users');
   const t = useTranslations();
 
-  return individualUsersEnabled ? (
-    <Tab id="followers">{t('Followers')}</Tab>
-  ) : null;
+  return <Tab id="followers">{t('Followers')}</Tab>;
 };
 
 export const FollowersTabPanel = ({
@@ -23,14 +19,12 @@ export const FollowersTabPanel = ({
   children: ReactNode;
   className?: string;
 }) => {
-  const individualUsersEnabled = useFeatureFlagEnabled('individual_users');
-
-  return individualUsersEnabled ? (
+  return (
     <TabPanel
       id="followers"
       className={cn('px-4 py-2 sm:px-6 sm:py-0', className)}
     >
       {children}
     </TabPanel>
-  ) : null;
+  );
 };

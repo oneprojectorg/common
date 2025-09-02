@@ -35,6 +35,23 @@ const profileResultSchema = z.object({
       metadata: z.any(),
     })
     .nullable(),
+  modules: z.array(
+    z.object({
+      profileId: z.string(),
+      moduleId: z.string(),
+      enabledAt: z.date(),
+      enabledBy: z.string().nullable(),
+      config: z.any().nullable(),
+      module: z.object({
+        id: z.string(),
+        slug: z.string(),
+        name: z.string(),
+        description: z.string().nullable(),
+        isActive: z.boolean(),
+        metadata: z.any().nullable(),
+      }),
+    })
+  ),
 });
 
 export type ProfileResult = z.infer<typeof profileResultSchema>;
@@ -49,6 +66,11 @@ export const getProfile = async ({
       with: {
         avatarImage: true,
         headerImage: true,
+        modules: {
+          with: {
+            module: true,
+          },
+        },
       },
     });
 

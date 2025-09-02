@@ -1,6 +1,5 @@
 'use client';
 
-import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { useUser } from '@/utils/UserProvider';
 import { Tab, TabPanel } from '@op/ui/Tabs';
 import { cn } from '@op/ui/utils';
@@ -15,12 +14,11 @@ import { ProfileRelationshipsSkeleton } from '@/components/screens/ProfileRelati
 import { MembersList } from './MembersList';
 
 export const DecisionsTab = ({ profileId }: { profileId: string }) => {
-  const decisionsEnabled = useFeatureFlag('decision_making');
   const t = useTranslations();
   const access = useUser();
   const permission = access.getPermissionsForProfile(profileId);
 
-  return decisionsEnabled && permission.decisions.read ? (
+  return permission.decisions.read ? (
     <Tab id="decisions">{t('Decisions')}</Tab>
   ) : null;
 };
@@ -32,31 +30,25 @@ export const DecisionsTabPanel = ({
   children: ReactNode;
   className?: string;
 }) => {
-  const decisionsEnabled = useFeatureFlag('decision_making');
-
-  return decisionsEnabled ? (
+  return (
     <TabPanel id="decisions" className={cn('px-0', className)}>
       {children}
     </TabPanel>
-  ) : null;
+  );
 };
 
 export const MembersTab = ({ profileId }: { profileId: string }) => {
-  const decisionsEnabled = useFeatureFlag('decision_making');
   const t = useTranslations();
   const access = useUser();
   const permission = access.getPermissionsForProfile(profileId).admin;
 
-  return decisionsEnabled && permission.read ? (
-    <Tab id="members">{t('Members')}</Tab>
-  ) : null;
+  return permission.read ? <Tab id="members">{t('Members')}</Tab> : null;
 };
 
 export const MembersTabPanel = ({ profileId }: { profileId: string }) => {
-  const decisionsEnabled = useFeatureFlag('decision_making');
   const t = useTranslations();
 
-  return decisionsEnabled ? (
+  return (
     <TabPanel id="members" className="flex-grow px-4 sm:px-6 sm:py-0">
       <ProfileOrganizations>
         <ErrorBoundary
@@ -72,5 +64,5 @@ export const MembersTabPanel = ({ profileId }: { profileId: string }) => {
         </ErrorBoundary>
       </ProfileOrganizations>
     </TabPanel>
-  ) : null;
+  );
 };
