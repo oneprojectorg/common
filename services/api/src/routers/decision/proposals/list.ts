@@ -2,7 +2,10 @@ import { UnauthorizedError, listProposals } from '@op/common';
 import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 
-import { proposalFilterSchema, proposalListEncoder } from '../../../encoders/decision';
+import {
+  proposalFilterSchema,
+  proposalListEncoder,
+} from '../../../encoders/decision';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
 import { loggedProcedure, router } from '../../../trpcFactory';
 
@@ -30,13 +33,6 @@ export const listProposalsRouter = router({
         const result = await listProposals({
           input: { ...input, authUserId: user.id },
           user,
-        });
-
-        logger.info('Proposals listed', {
-          userId: user.id,
-          filters: input,
-          resultCount: result.proposals.length,
-          total: result.total,
         });
 
         return result;

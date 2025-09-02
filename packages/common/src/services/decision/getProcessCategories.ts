@@ -1,10 +1,10 @@
 import { db, eq } from '@op/db/client';
-import { processInstances, taxonomies } from '@op/db/schema';
+import { organizations, processInstances, taxonomies } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
-import { UnauthorizedError } from '../../utils';
-import { getCurrentOrgId, getOrgAccessUser } from '../access';
+import { NotFoundError, UnauthorizedError } from '../../utils';
+import { getOrgAccessUser } from '../access';
 
 export interface ProcessCategory {
   id: string;
@@ -14,7 +14,6 @@ export interface ProcessCategory {
 
 export const getProcessCategories = async ({
   processInstanceId,
-  authUserId,
   user,
 }: {
   processInstanceId: string;
@@ -24,14 +23,6 @@ export const getProcessCategories = async ({
   if (!user) {
     throw new UnauthorizedError('User must be authenticated');
   }
-
-  const orgUserId = await getCurrentOrgId({ authUserId });
-  const orgUser = await getOrgAccessUser({
-    user,
-    organizationId: orgUserId,
-  });
-
-  assertAccess({ decisions: permission.READ }, orgUser?.roles ?? []);
 
   try {
     // Get the process instance with its process schema
@@ -45,6 +36,26 @@ export const getProcessCategories = async ({
     if (!instance || !instance.process) {
       return [];
     }
+
+    const instanceOrg = await db
+      .select({
+        id: organizations.id,
+      })
+      .from(organizations)
+      .where(eq(organizations.profileId, instance.ownerProfileId))
+      .limit(1);
+
+    if (!instanceOrg[0]) {
+      throw new NotFoundError('Organization not found');
+    }
+
+    // ASSERT VIEW ACCESS ON ORGUSER
+    const orgUser = await getOrgAccessUser({
+      user,
+      organizationId: instanceOrg[0].id,
+    });
+
+    assertAccess({ decisions: permission.READ }, orgUser?.roles ?? []);
 
     // Extract categories from the process schema
     const process = Array.isArray(instance.process)

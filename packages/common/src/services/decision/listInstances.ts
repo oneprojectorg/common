@@ -1,13 +1,13 @@
 import { and, asc, db, desc, eq, sql } from '@op/db/client';
-import { processInstances } from '@op/db/schema';
+import { organizations, processInstances } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
 import { UnauthorizedError } from '../../utils';
-import { getCurrentOrgId, getOrgAccessUser } from '../access';
+import { getOrgAccessUser } from '../access';
 
 export interface ListInstancesInput {
-  ownerProfileId?: string;
+  ownerProfileId: string;
   processId?: string;
   status?: 'draft' | 'active' | 'paused' | 'completed' | 'cancelled';
   search?: string;
@@ -29,17 +29,24 @@ export const listInstances = async ({
   orderBy = 'createdAt',
   orderDirection = 'desc',
   user,
-  authUserId,
 }: ListInstancesInput) => {
   if (!user) {
     throw new UnauthorizedError('User must be authenticated');
   }
 
   // ASSERT VIEW ACCESS ON ORGUSER
-  const orgUserId = await getCurrentOrgId({ authUserId });
+  const org = await db
+    .select({ id: organizations.id })
+    .from(organizations)
+    .where(eq(organizations.profileId, ownerProfileId));
+
+  if (!org[0]?.id) {
+    throw new UnauthorizedError("You don't have access to do this");
+  }
+
   const orgUser = await getOrgAccessUser({
     user,
-    organizationId: orgUserId,
+    organizationId: org[0].id,
   });
 
   assertAccess({ decisions: permission.READ }, orgUser?.roles ?? []);

@@ -339,7 +339,7 @@ export const processFilterSchema = z
 export const instanceFilterSchema = z
   .object({
     processId: z.string().uuid().optional(),
-    ownerProfileId: z.string().uuid().optional(),
+    ownerProfileId: z.string().uuid(),
     status: z
       .enum(['draft', 'active', 'paused', 'completed', 'cancelled'])
       .optional(),
