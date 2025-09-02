@@ -58,7 +58,18 @@ export const getOrganizationRouter = router({
           });
         }
 
-        return organizationsWithProfileEncoder.parse(result);
+        // Transform profile modules to simplified format
+        const transformedResult = {
+          ...result,
+          profile: {
+            ...result.profile,
+            modules: result.profile.modules?.map((profileModule: any) => ({
+              slug: profileModule.module.slug,
+            })),
+          },
+        };
+
+        return organizationsWithProfileEncoder.parse(transformedResult);
       } catch (error: unknown) {
         console.log(error);
         if (error instanceof UnauthorizedError) {
@@ -100,7 +111,18 @@ export const getOrganizationRouter = router({
           });
         }
 
-        return organizationsWithProfileEncoder.parse(result);
+        // Transform profile modules to simplified format
+        const transformedResult = {
+          ...result,
+          profile: {
+            ...result.profile,
+            modules: result.profile.modules?.map((profileModule: any) => ({
+              slug: profileModule.module.slug,
+            })),
+          },
+        };
+
+        return organizationsWithProfileEncoder.parse(transformedResult);
       } catch (error: unknown) {
         console.log(error);
         if (error instanceof UnauthorizedError) {

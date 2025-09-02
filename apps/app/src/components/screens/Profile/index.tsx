@@ -1,4 +1,5 @@
 import { getPublicUrl } from '@/utils';
+import { checkModuleEnabled } from '@/utils/modules';
 import { trpcNext } from '@op/api/vanilla';
 import { TabPanel } from '@op/ui/Tabs';
 import { cn, getGradientForString } from '@op/ui/utils';
@@ -58,6 +59,10 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
     const gradientBgHeader = getGradientForString(
       profile.name + 'C' || 'Common',
     );
+    const decisionsEnabled = checkModuleEnabled(
+      organization.profile.modules,
+      'decisions',
+    );
 
     // If it's an organization profile, query organization-specific data separately
     if (profile.type === 'org') {
@@ -90,8 +95,12 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
             <ProfileTabList>
               <DesktopOrganizationTabs />
               <FollowersTab />
-              <MembersTab profileId={profile.id} />
-              <DecisionsTab profileId={profile.id} />
+              {decisionsEnabled && (
+                <>
+                  <MembersTab profileId={profile.id} />
+                  <DecisionsTab profileId={profile.id} />
+                </>
+              )}
             </ProfileTabList>
 
             <TabPanel id="home" className="flex flex-grow flex-col sm:p-0">
@@ -111,10 +120,14 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
             <FollowersTabPanel>
               <ProfileFollowers profileId={profile.id} />
             </FollowersTabPanel>
-            <DecisionsTabPanel>
-              <ProfileDecisionsSuspense profileId={profile.id} />
-            </DecisionsTabPanel>
-            <MembersTabPanel profileId={profile.id} />
+            {decisionsEnabled && (
+              <>
+                <DecisionsTabPanel>
+                  <ProfileDecisionsSuspense profileId={profile.id} />
+                </DecisionsTabPanel>
+                <MembersTabPanel profileId={profile.id} />
+              </>
+            )}
           </ProfileTabs>
           <ProfileTabsMobile
             profile={organization as any}
@@ -134,9 +147,14 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
 
     // For user profiles, create a simplified profile object based on the profile data
     // TODO: this is jammed in until we update the individual profile and a better typing
+    // Remove modules from individual profiles since they don't use decision tabs
+    const { modules, ...profileWithoutModules } = profile;
     const userProfile = {
       id: profile.id,
-      profile,
+      profile: {
+        ...profileWithoutModules,
+        modules: undefined, // Individual profiles don't need modules
+      },
       // Add minimal required properties for existing components
       links: [],
       networkOrganization: null,
