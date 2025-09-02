@@ -302,6 +302,87 @@ describe('Invite System Integration Tests', () => {
       expect(orgUser?.roles[0]?.accessRole.name).toBe('Admin');
     });
 
+    it('should update currentProfileId when admin joins organization', async () => {
+      // First, invite the user as admin
+      await inviteUsersToOrganization({
+        emails: [testInviteeEmail],
+        roleId: adminRoleId,
+        organizationId: testOrganization.id,
+        authUserId: testInviterUser.id,
+        authUserEmail: testInviterUser.email,
+      });
+
+      // Create the invitee user and have them join
+      await createTestUser(testInviteeEmail);
+      await signInTestUser(testInviteeEmail);
+      const inviteeSession = await getCurrentTestSession();
+      const inviteeUser = inviteeSession?.user;
+
+      // Get user's initial currentProfileId
+      const initialUser = await db.query.users.findFirst({
+        where: (table, { eq }) => eq(table.authUserId, inviteeUser.id),
+      });
+      const initialCurrentProfileId = initialUser?.currentProfileId;
+
+      await joinOrganization({
+        user: inviteeUser,
+        organizationId: testOrganization.id,
+      });
+
+      // Verify user's currentProfileId was updated to organization's profileId
+      const updatedUser = await db.query.users.findFirst({
+        where: (table, { eq }) => eq(table.authUserId, inviteeUser.id),
+      });
+
+      expect(updatedUser?.currentProfileId).toBe(testOrganization.profileId);
+      expect(updatedUser?.currentProfileId).not.toBe(initialCurrentProfileId);
+    });
+
+    it('should NOT update currentProfileId when non-admin joins organization', async () => {
+      // Get all roles to find a non-admin role
+      const { roles } = await getRoles();
+      const nonAdminRole = roles.find((role) => role.name !== 'Admin');
+      
+      if (!nonAdminRole) {
+        console.warn('Only Admin role available, skipping non-admin currentProfileId test');
+        return;
+      }
+
+      // First, invite the user as non-admin
+      await inviteUsersToOrganization({
+        emails: [testInviteeEmail],
+        roleId: nonAdminRole.id,
+        organizationId: testOrganization.id,
+        authUserId: testInviterUser.id,
+        authUserEmail: testInviterUser.email,
+      });
+
+      // Create the invitee user and have them join
+      await createTestUser(testInviteeEmail);
+      await signInTestUser(testInviteeEmail);
+      const inviteeSession = await getCurrentTestSession();
+      const inviteeUser = inviteeSession?.user;
+
+      // Get user's initial currentProfileId
+      const initialUser = await db.query.users.findFirst({
+        where: (table, { eq }) => eq(table.authUserId, inviteeUser.id),
+      });
+      const initialCurrentProfileId = initialUser?.currentProfileId;
+
+      await joinOrganization({
+        user: inviteeUser,
+        organizationId: testOrganization.id,
+      });
+
+      // Verify user's currentProfileId was NOT updated
+      const updatedUser = await db.query.users.findFirst({
+        where: (table, { eq }) => eq(table.authUserId, inviteeUser.id),
+      });
+
+      expect(updatedUser?.currentProfileId).toBe(initialCurrentProfileId);
+      expect(updatedUser?.currentProfileId).not.toBe(testOrganization.profileId);
+    });
+
     it('should fallback to Admin role for domain-based joins', async () => {
       // Create user with same domain as organization
       const domainEmail = `domain-user-${Date.now()}@test-invite.com`; // Same domain as org

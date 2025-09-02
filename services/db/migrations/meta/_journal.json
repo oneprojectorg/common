@@ -64,6 +64,13 @@
       "when": 1756380142834,
       "tag": "0008_gray_ronan",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1756807990447,
+      "tag": "0009_stiff_warbound",
+      "breakpoints": true
     }
   ]
 }

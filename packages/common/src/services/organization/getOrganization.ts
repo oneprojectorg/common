@@ -46,6 +46,11 @@ export const getOrganization = async ({
           with: {
             headerImage: true,
             avatarImage: true,
+            modules: {
+              with: {
+                module: true,
+              },
+            },
           },
         },
         whereWeWork: {

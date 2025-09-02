@@ -279,7 +279,11 @@ export const updateUserCurrentProfile = async (
     .update(users)
     .set({
       currentProfileId: profileId,
-      ...(orgId ? { lastOrgId: orgId.toString() } : {}),
+      ...(orgId
+        ? { lastOrgId: orgId.toString() }
+        : {
+            lastOrgId: null,
+          }),
     })
     .where(eq(users.authUserId, authUserId))
     .returning();

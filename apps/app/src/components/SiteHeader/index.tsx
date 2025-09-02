@@ -16,7 +16,6 @@ import { MenuTrigger } from '@op/ui/RAC';
 import { Skeleton } from '@op/ui/Skeleton';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useFeatureFlagEnabled } from 'posthog-js/react';
 import { Suspense, useEffect, useRef, useState } from 'react';
 import {
   LuChevronDown,
@@ -137,7 +136,6 @@ const AvatarMenuContent = ({
   const logout = useAuthLogout();
   const router = useRouter();
   const t = useTranslations();
-  const individualProfilesEnabled = useFeatureFlagEnabled('individual_users');
 
   const { data: profiles } = trpc.account.getUserProfiles.useQuery();
 
@@ -199,38 +197,41 @@ const AvatarMenuContent = ({
             )
           </span>
           <span className="text-sm text-neutral-gray4 sm:text-xs">
-            Admin for{' '}
-            {user?.currentProfile?.name ??
-              user?.currentOrganization?.profile.name}
+            {user?.currentOrganization ? (
+              <>
+                Admin for{' '}
+                {user?.currentProfile?.name ??
+                  user?.currentOrganization?.profile.name}
+              </>
+            ) : (
+              (user?.currentProfile?.bio ?? '')
+            )}
           </span>
         </div>
       </MenuItemSimple>
 
-      {individualProfilesEnabled &&
-        userProfiles?.map((profile) => (
-          <ProfileMenuItem
-            key={profile.id}
-            profile={profile}
-            onClose={onClose}
-            onProfileSwitch={onProfileSwitch}
-          >
-            <div className="flex max-w-52 flex-col">
-              <div className="flex items-center gap-1">
-                <span className="overflow-hidden truncate">
-                  {profile.name}{' '}
-                </span>
-                {user?.currentProfile?.id === profile.id ? (
-                  <Chip>Active</Chip>
-                ) : null}
-              </div>
-              <div className="relative overflow-hidden truncate text-sm text-neutral-gray4">
-                {profile.bio}
-              </div>
+      {userProfiles?.map((profile) => (
+        <ProfileMenuItem
+          key={profile.id}
+          profile={profile}
+          onClose={onClose}
+          onProfileSwitch={onProfileSwitch}
+        >
+          <div className="flex max-w-52 flex-col">
+            <div className="flex items-center gap-1">
+              <span className="overflow-hidden truncate">{profile.name} </span>
+              {user?.currentProfile?.id === profile.id ? (
+                <Chip>Active</Chip>
+              ) : null}
             </div>
-          </ProfileMenuItem>
-        ))}
+            <div className="relative overflow-hidden truncate text-sm text-neutral-gray4">
+              {profile.bio}
+            </div>
+          </div>
+        </ProfileMenuItem>
+      ))}
 
-      {individualProfilesEnabled && <MenuSeparator className="pt-4" />}
+      <MenuSeparator className="pt-4" />
       {orgProfiles?.map((profile) => (
         <ProfileMenuItem
           key={profile.id}

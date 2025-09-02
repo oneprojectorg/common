@@ -111,17 +111,25 @@ export const joinOrganization = async ({
 
     // Assign the determined role to the user
     if (newOrgUser) {
-      await tx.insert(organizationUserToAccessRoles).values({
-        organizationUserId: newOrgUser.id,
-        accessRoleId: targetRole.id,
-      });
-    }
+      const [role] = await Promise.all([
+        tx
+          .select({ name: accessRoles.name })
+          .from(accessRoles)
+          .where(eq(accessRoles.id, targetRole.id)),
+        tx.insert(organizationUserToAccessRoles).values({
+          organizationUserId: newOrgUser.id,
+          accessRoleId: targetRole.id,
+        }),
+      ]);
 
-    // Update user's currentProfileId to this organization's profile
-    await tx
-      .update(users)
-      .set({ currentProfileId: organization.profileId })
-      .where(eq(users.authUserId, user.id));
+      // Update user's currentProfileId to this organization's profile if the user was invited as an admin
+      if (role[0]?.name.toLowerCase() === 'admin') {
+        await tx
+          .update(users)
+          .set({ currentProfileId: organization.profileId })
+          .where(eq(users.authUserId, user.id));
+      }
+    }
 
     return newOrgUser;
   });
