@@ -13,6 +13,7 @@ import { individuals } from './individuals.sql';
 import { organizations } from './organizations.sql';
 import { posts } from './posts.sql';
 import { objectsInStorage } from './storage.sql';
+import { profileModules } from './modules.sql';
 
 export const profiles = pgTable(
   'profiles',
@@ -78,6 +79,7 @@ export const profilesRelations = relations(profiles, ({ many, one }) => ({
     fields: [profiles.id],
     references: [individuals.profileId],
   }),
+  modules: many(profileModules),
 }));
 
 export type Profile = InferModel<typeof profiles>;
