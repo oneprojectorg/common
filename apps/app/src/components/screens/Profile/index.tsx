@@ -59,10 +59,6 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
     const gradientBgHeader = getGradientForString(
       profile.name + 'C' || 'Common',
     );
-    const decisionsEnabled = checkModuleEnabled(
-      organization.profile.modules,
-      'decisions',
-    );
 
     // If it's an organization profile, query organization-specific data separately
     if (profile.type === 'org') {
@@ -70,6 +66,11 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
       const organization = await client.organization.getBySlug.query({
         slug,
       });
+
+      const decisionsEnabled = checkModuleEnabled(
+        organization.profile.modules,
+        'decisions',
+      );
 
       return organization ? (
         <>
