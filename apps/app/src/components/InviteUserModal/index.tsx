@@ -42,6 +42,8 @@ export const InviteUserModal = ({ children }: InviteUserModalProps) => {
     useFeatureFlagEnabled('invite_admin_user') ||
     user?.currentOrganization?.networkOrganization;
 
+  const isOrg = user?.currentOrganization;
+
   // Initialize selected organization when user data is available
   useEffect(() => {
     if (user?.currentOrganization?.id && !selectedOrganization) {
@@ -89,7 +91,8 @@ export const InviteUserModal = ({ children }: InviteUserModalProps) => {
     if (errorInfo.isConnectionError) {
       toast.error({
         title: t('Connection issue'),
-        message: errorInfo.message + ' ' + t('Please try sending the invite again.'),
+        message:
+          errorInfo.message + ' ' + t('Please try sending the invite again.'),
       });
     } else {
       toast.error({
@@ -173,22 +176,24 @@ export const InviteUserModal = ({ children }: InviteUserModalProps) => {
     }
   };
 
-  const triggerButton = children || (
-    <>
-      <Button color="secondary" variant="icon" className="hidden sm:flex">
-        <LuUserPlus className="min-h-4 min-w-4" />
-        <div className="text-nowrap">{t('Invite users')}</div>
-      </Button>
-      <Button
-        color="neutral"
-        unstyled
-        variant="icon"
-        className="flex size-8 items-center justify-center rounded-full bg-neutral-offWhite sm:hidden"
-      >
-        <LuUserPlus className="min-h-4 min-w-4 text-neutral-gray4" />
-      </Button>
-    </>
-  );
+  const triggerButton = isOrg
+    ? children || (
+        <>
+          <Button color="secondary" variant="icon" className="hidden sm:flex">
+            <LuUserPlus className="min-h-4 min-w-4" />
+            <div className="text-nowrap">{t('Invite users')}</div>
+          </Button>
+          <Button
+            color="neutral"
+            unstyled
+            variant="icon"
+            className="flex size-8 items-center justify-center rounded-full bg-neutral-offWhite sm:hidden"
+          >
+            <LuUserPlus className="min-h-4 min-w-4 text-neutral-gray4" />
+          </Button>
+        </>
+      )
+    : null;
 
   return (
     <>
@@ -212,7 +217,9 @@ export const InviteUserModal = ({ children }: InviteUserModalProps) => {
                 <TabPanel id="existing">
                   <Suspense
                     fallback={
-                      <div className="animate-pulse">{t('Loading roles...')}</div>
+                      <div className="animate-pulse">
+                        {t('Loading roles...')}
+                      </div>
                     }
                   >
                     <InviteToExistingOrganization

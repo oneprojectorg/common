@@ -197,9 +197,15 @@ const AvatarMenuContent = ({
             )
           </span>
           <span className="text-sm text-neutral-gray4 sm:text-xs">
-            Admin for{' '}
-            {user?.currentProfile?.name ??
-              user?.currentOrganization?.profile.name}
+            {user?.currentOrganization ? (
+              <>
+                Admin for{' '}
+                {user?.currentProfile?.name ??
+                  user?.currentOrganization?.profile.name}
+              </>
+            ) : (
+              (user?.currentProfile?.bio ?? '')
+            )}
           </span>
         </div>
       </MenuItemSimple>
