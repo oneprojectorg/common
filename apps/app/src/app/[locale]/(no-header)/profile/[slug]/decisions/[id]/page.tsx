@@ -89,7 +89,11 @@ async function DecisionInstancePageContent({
           </div>
 
           <Suspense fallback={<Skeleton />}>
-            <DecisionInstanceContent budget={budget} instanceId={instanceId} />
+            <DecisionInstanceContent 
+              budget={budget} 
+              hideBudget={instanceData?.hideBudget}
+              instanceId={instanceId} 
+            />
           </Suspense>
         </div>
 
@@ -117,6 +121,7 @@ async function DecisionInstancePageContent({
                 <CurrentPhaseSurface
                   currentPhase={currentPhase}
                   budget={budget}
+                  hideBudget={instanceData?.hideBudget}
                   proposalCount={proposalCount}
                 />
               </div>

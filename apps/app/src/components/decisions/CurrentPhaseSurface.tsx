@@ -17,12 +17,14 @@ type ProcessPhase = z.infer<typeof processPhaseSchema>;
 interface CurrentPhaseSurfaceProps {
   currentPhase?: ProcessPhase;
   budget?: number;
+  hideBudget?: boolean;
   proposalCount: number;
 }
 
 export function CurrentPhaseSurface({
   currentPhase,
   budget,
+  hideBudget,
   proposalCount,
 }: CurrentPhaseSurfaceProps) {
   const locale = useLocale();
@@ -56,12 +58,14 @@ export function CurrentPhaseSurface({
 
       {/* Stats section */}
       <div className="flex flex-col gap-2">
-        <div className="flex items-start justify-between text-sm font-normal leading-[1.5]">
-          <span className="text-neutral-charcoal">{t('Total Budget')}</span>
-          <span className="text-neutral-black">
-            {budget ? formatCurrency(budget, locale) : '$0'}
-          </span>
-        </div>
+        {budget && !hideBudget && (
+          <div className="flex items-start justify-between text-sm font-normal leading-[1.5]">
+            <span className="text-neutral-charcoal">{t('Total Budget')}</span>
+            <span className="text-neutral-black">
+              {formatCurrency(budget, locale)}
+            </span>
+          </div>
+        )}
         <div className="flex items-start justify-between text-sm font-normal leading-[1.5]">
           <span className="text-neutral-charcoal">{t('Proposals Submitted')}</span>
           <span className="text-neutral-black">{proposalCount}</span>
