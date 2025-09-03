@@ -285,6 +285,12 @@ export const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
           description:
             'Placeholder text that appears in the proposal description area.',
         },
+        requireBudget: {
+          type: 'boolean',
+          title: 'Require budget for proposals',
+          description:
+            'When enabled, all proposals must include a budget amount',
+        },
       },
     },
     uiSchema: {
@@ -299,6 +305,9 @@ export const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
         'ui:options': {
           className: 'min-h-72',
         },
+      },
+      requireBudget: {
+        'ui:widget': 'checkbox',
       },
     },
   },
@@ -333,6 +342,7 @@ export const schemaDefaults = {
   proposalInfoContent: '',
   budgetCapAmount: null,
   descriptionGuidance: '',
+  requireBudget: true,
 };
 
 // Transform form data to API-compatible format
@@ -467,6 +477,7 @@ export const transformFormDataToProcessSchema = (
         budget: { type: 'number', maximum: data.budgetCapAmount },
         category: { type: 'string', enum: data.categories },
       },
+      required: data.requireBudget ? ['title', 'description', 'budget'] : ['title', 'description'],
     },
   };
 };

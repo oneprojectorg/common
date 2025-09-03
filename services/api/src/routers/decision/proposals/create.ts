@@ -68,6 +68,9 @@ export const createProposalRouter = router({
           throw new TRPCError({
             message: error.message,
             code: 'BAD_REQUEST',
+            cause: {
+              fieldErrors: error.fieldErrors,
+            },
           });
         }
 

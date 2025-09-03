@@ -3,6 +3,7 @@ import { proposals, proposalCategories, taxonomies, taxonomyTerms, users } from 
 import { User } from '@op/supabase/lib';
 
 import { CommonError, NotFoundError, UnauthorizedError, ValidationError } from '../../utils';
+import { schemaValidator } from './schemaValidator';
 import type { ProposalData } from './types';
 
 /**
@@ -127,7 +128,18 @@ export const updateProposal = async ({
       }
     }
 
-    // TODO: Validate proposal data against schema if updating proposalData
+    // Validate proposal data against schema if updating proposalData
+    if (data.proposalData && processInstance?.process) {
+      const process = processInstance.process as any;
+      const processSchema = process.processSchema;
+      
+      if (processSchema?.proposalTemplate) {
+        schemaValidator.validateProposalData(
+          processSchema.proposalTemplate,
+          data.proposalData,
+        );
+      }
+    }
 
     const [updatedProposal] = await db
       .update(proposals)

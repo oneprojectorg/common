@@ -14,10 +14,16 @@ const getPublicUrl = (key?: string | null) => {
 /**
  * Process proposal content to replace temporary image URLs with permanent attachment references
  */
-export async function processProposalContent(proposalId: string): Promise<void> {
+export async function processProposalContent({
+  conn,
+  proposalId,
+}: {
+  conn: typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
+  proposalId: string;
+}): Promise<void> {
   try {
     // Get the proposal content
-    const proposal = await db.query.proposals.findFirst({
+    const proposal = await conn.query.proposals.findFirst({
       where: eq(proposals.id, proposalId),
     });
 
@@ -35,12 +41,13 @@ export async function processProposalContent(proposalId: string): Promise<void> 
     }
 
     // Get all attachments for this proposal through the join table
-    const proposalAttachmentJoins = await db.query.proposalAttachments.findMany({
-      where: eq(proposalAttachments.proposalId, proposalId),
-      with: {
-        attachment: true,
-      },
-    });
+    const proposalAttachmentJoins =
+      await conn.query.proposalAttachments.findMany({
+        where: eq(proposalAttachments.proposalId, proposalId),
+        with: {
+          attachment: true,
+        },
+      });
 
     if (proposalAttachmentJoins.length === 0) {
       console.log(`No attachments to process for proposal: ${proposalId}`);
@@ -49,7 +56,7 @@ export async function processProposalContent(proposalId: string): Promise<void> 
 
     // Extract image URLs from content
     const imageUrls = extractImageUrlsFromContent(content);
-    
+
     if (imageUrls.length === 0) {
       console.log(`No image URLs found in proposal content: ${proposalId}`);
       return;
@@ -69,22 +76,28 @@ export async function processProposalContent(proposalId: string): Promise<void> 
     for (const proposalAttachmentJoin of proposalAttachmentJoins) {
       const attachment = proposalAttachmentJoin.attachment as any;
       if (!attachment) continue;
-      
+
       try {
         // Generate permanent public URL using the storage path
         const storagePath = `profile/${attachment.storageObjectId}`;
         const publicUrl = getPublicUrl(storagePath);
-        
+
         if (!publicUrl) {
-          console.error(`Failed to generate public URL for ${attachment.storageObjectId}`);
+          console.error(
+            `Failed to generate public URL for ${attachment.storageObjectId}`,
+          );
           continue;
         }
 
         // Find the corresponding temporary URL in content and replace it
-        const tempUrl = imageUrls.find(url => url.includes(attachment.storageObjectId));
+        const tempUrl = imageUrls.find((url) =>
+          url.includes(attachment.storageObjectId),
+        );
         if (tempUrl) {
           processedContent = processedContent.replace(tempUrl, publicUrl);
-          console.log(`Replaced temporary URL with public URL: ${tempUrl} -> ${publicUrl}`);
+          console.log(
+            `Replaced temporary URL with public URL: ${tempUrl} -> ${publicUrl}`,
+          );
         }
 
         // Update attachment metadata (use existing data from attachment record)
@@ -106,7 +119,7 @@ export async function processProposalContent(proposalId: string): Promise<void> 
         content: processedContent,
       };
 
-      await db
+      await conn
         .update(proposals)
         .set({
           proposalData: updatedProposalData,
@@ -119,7 +132,7 @@ export async function processProposalContent(proposalId: string): Promise<void> 
     // Update attachment metadata
     if (updatedAttachments.length > 0) {
       for (const attachmentUpdate of updatedAttachments) {
-        await db
+        await conn
           .update(attachments)
           .set({
             fileName: attachmentUpdate.fileName,
@@ -129,11 +142,15 @@ export async function processProposalContent(proposalId: string): Promise<void> 
           .where(eq(attachments.id, attachmentUpdate.id));
       }
 
-      console.log(`Updated ${updatedAttachments.length} attachment metadata for proposal ${proposalId}`);
+      console.log(
+        `Updated ${updatedAttachments.length} attachment metadata for proposal ${proposalId}`,
+      );
     }
-
   } catch (error) {
-    console.error(`Error processing proposal content for ${proposalId}:`, error);
+    console.error(
+      `Error processing proposal content for ${proposalId}:`,
+      error,
+    );
   }
 }
 
@@ -144,20 +161,22 @@ function extractImageUrlsFromContent(htmlContent: string): string[] {
   const imageUrls: string[] = [];
   const imgRegex = /<img[^>]+src="([^">]+)"/gi;
   let match;
-  
+
   while ((match = imgRegex.exec(htmlContent)) !== null) {
     if (match[1]) {
       imageUrls.push(match[1]);
     }
   }
-  
+
   return imageUrls;
 }
 
 /**
  * Get permanent URLs for proposal attachments
  */
-export async function getProposalAttachmentUrls(proposalId: string): Promise<Record<string, string>> {
+export async function getProposalAttachmentUrls(
+  proposalId: string,
+): Promise<Record<string, string>> {
   const proposalAttachmentJoins = await db.query.proposalAttachments.findMany({
     where: eq(proposalAttachments.proposalId, proposalId),
     with: {
@@ -174,17 +193,20 @@ export async function getProposalAttachmentUrls(proposalId: string): Promise<Rec
   for (const proposalAttachmentJoin of proposalAttachmentJoins) {
     const attachment = proposalAttachmentJoin.attachment as any;
     if (!attachment) continue;
-    
+
     try {
       // Generate permanent public URL using Next.js rewrite
       const storagePath = `profile/${attachment.storageObjectId}`;
       const publicUrl = getPublicUrl(storagePath);
-      
+
       if (publicUrl) {
         urlMap[attachment.id] = publicUrl;
       }
     } catch (error) {
-      console.error(`Error getting URL for attachment ${attachment.id}:`, error);
+      console.error(
+        `Error getting URL for attachment ${attachment.id}:`,
+        error,
+      );
     }
   }
 
