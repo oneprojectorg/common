@@ -64,7 +64,7 @@ export function DecisionInstanceContent({
                         alt={submitter.name || submitter.slug || ''}
                         width={32}
                         height={32}
-                        className="rounded-full object-cover"
+                        className="rounded-full aspect-square object-cover"
                       />
                     ) : null}
                   </Avatar>
