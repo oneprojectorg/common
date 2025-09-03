@@ -42,12 +42,14 @@ export function DecisionStats({
 
       {/* Stats */}
       <div className="space-y-3">
-        <div className="flex justify-between">
-          <span className="text-sm text-neutral-gray3">Total Budget</span>
-          <span className="text-sm font-medium text-neutral-charcoal">
-            {budget ? formatCurrency(budget) : '$25,000'}
-          </span>
-        </div>
+        {budget && (
+          <div className="flex justify-between">
+            <span className="text-sm text-neutral-gray3">Total Budget</span>
+            <span className="text-sm font-medium text-neutral-charcoal">
+              {formatCurrency(budget)}
+            </span>
+          </div>
+        )}
         <div className="flex justify-between">
           <span className="text-sm text-neutral-gray3">Proposals Submitted</span>
           <span className="text-sm font-medium text-neutral-charcoal">

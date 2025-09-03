@@ -13,11 +13,13 @@ import Image from 'next/image';
 
 interface DecisionInstanceContentProps {
   budget?: number;
+  hideBudget?: boolean;
   instanceId: string;
 }
 
 export function DecisionInstanceContent({
   budget,
+  hideBudget,
   instanceId,
 }: DecisionInstanceContentProps) {
   const locale = useLocale();
@@ -38,9 +40,12 @@ export function DecisionInstanceContent({
             {t('SHARE YOUR IDEAS.')}
           </GradientHeader>
           <p className="mt-4 text-base text-gray-700">
-            {t('Help determine how we invest our {budget} community budget.', {
-              budget: budget ? formatCurrency(budget, locale) : '$0',
-            })}
+            {budget && !hideBudget
+              ? t('Help determine how we invest our {budget} community budget.', {
+                  budget: formatCurrency(budget, locale),
+                })
+              : t('Share your ideas and help shape our community funding decisions.')
+            }
           </p>
 
           {/* Member avatars showing who submitted proposals */}
@@ -59,7 +64,7 @@ export function DecisionInstanceContent({
                         alt={submitter.name || submitter.slug || ''}
                         width={32}
                         height={32}
-                        className="rounded-full object-cover"
+                        className="rounded-full aspect-square object-cover"
                       />
                     ) : null}
                   </Avatar>

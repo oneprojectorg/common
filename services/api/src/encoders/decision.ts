@@ -99,6 +99,7 @@ const processSchemaEncoder = z.object({
 // Instance Data Encoder
 const instanceDataEncoder = z.object({
   budget: z.number().optional(),
+  hideBudget: z.boolean().optional(),
   fieldValues: z.record(z.unknown()).optional(),
   currentStateId: z.string(),
   stateData: z

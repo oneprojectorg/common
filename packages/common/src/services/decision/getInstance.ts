@@ -63,8 +63,17 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
     );
     const participantCount = uniqueParticipants.size;
 
+    // Filter budget if hideBudget is true (for all users, including owner)
+    const instanceData = instance.instanceData as any;
+    const shouldHideBudget = instanceData?.hideBudget === true;
+
+    const filteredInstanceData = shouldHideBudget
+      ? { ...instanceData, budget: undefined }
+      : instanceData;
+
     return {
       ...instance,
+      instanceData: filteredInstanceData,
       proposalCount,
       participantCount,
     };

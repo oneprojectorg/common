@@ -34,7 +34,11 @@ export const getProposal = async ({
             owner: true,
           },
         },
-        submittedBy: true,
+        submittedBy: {
+          with: {
+            avatarImage: true,
+          },
+        },
         profile: true,
         decisions: {
           with: {
