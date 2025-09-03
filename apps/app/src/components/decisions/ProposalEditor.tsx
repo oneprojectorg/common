@@ -32,6 +32,46 @@ interface ProposalEditorProps {
   isEditMode?: boolean;
 }
 
+// Utility function to handle tRPC validation errors
+function handleValidationError(error: any, operationType: 'create' | 'update') {
+  console.error(`Failed to ${operationType} proposal:`, error);
+
+  // Check if error has field-specific validation errors
+  if (
+    error.data &&
+    'cause' in error.data &&
+    error.data.cause &&
+    typeof error.data.cause === 'object' &&
+    'fieldErrors' in error.data.cause
+  ) {
+    const fieldErrors = error.data.cause.fieldErrors as Record<
+      string,
+      string
+    >;
+
+    // Show individual error messages for each field, or combine if multiple
+    const errorMessages = Object.values(fieldErrors);
+
+    if (errorMessages.length === 1) {
+      // Single error - show just the message
+      toast.error({
+        message: errorMessages[0],
+      });
+    } else {
+      // Multiple errors - show with title
+      toast.error({
+        title: 'Please fix the following issues:',
+        message: errorMessages.join(', '),
+      });
+    }
+  } else {
+    toast.error({
+      title: `Failed to ${operationType} proposal`,
+      message: error.message || 'An unexpected error occurred',
+    });
+  }
+}
+
 export function ProposalEditor({
   instance,
   backHref,
@@ -54,35 +94,7 @@ export function ProposalEditor({
   const utils = trpc.useUtils();
 
   const createProposalMutation = trpc.decision.createProposal.useMutation({
-    onError: (error) => {
-      console.error('Failed to create proposal:', error);
-      
-      // Check if error has field-specific validation errors
-      if (error.data && 'cause' in error.data && error.data.cause && typeof error.data.cause === 'object' && 'fieldErrors' in error.data.cause) {
-        const fieldErrors = error.data.cause.fieldErrors as Record<string, string>;
-        
-        // Show individual error messages for each field, or combine if multiple
-        const errorMessages = Object.values(fieldErrors);
-        
-        if (errorMessages.length === 1) {
-          // Single error - show just the message
-          toast.error({
-            message: errorMessages[0],
-          });
-        } else {
-          // Multiple errors - show with title
-          toast.error({
-            title: 'Please fix the following issues:',
-            message: errorMessages.join(', '),
-          });
-        }
-      } else {
-        toast.error({
-          title: 'Failed to create proposal',
-          message: error.message || 'An unexpected error occurred',
-        });
-      }
-    },
+    onError: (error) => handleValidationError(error, 'create'),
   });
 
   const updateProposalMutation = trpc.decision.updateProposal.useMutation({
@@ -94,35 +106,7 @@ export function ProposalEditor({
         processInstanceId: instance.id,
       });
     },
-    onError: (error) => {
-      console.error('Failed to update proposal:', error);
-      
-      // Check if error has field-specific validation errors
-      if (error.data && 'cause' in error.data && error.data.cause && typeof error.data.cause === 'object' && 'fieldErrors' in error.data.cause) {
-        const fieldErrors = error.data.cause.fieldErrors as Record<string, string>;
-        
-        // Show individual error messages for each field, or combine if multiple
-        const errorMessages = Object.values(fieldErrors);
-        
-        if (errorMessages.length === 1) {
-          // Single error - show just the message
-          toast.error({
-            message: errorMessages[0],
-          });
-        } else {
-          // Multiple errors - show with title
-          toast.error({
-            title: 'Please fix the following issues:',
-            message: errorMessages.join(', '),
-          });
-        }
-      } else {
-        toast.error({
-          title: 'Failed to update proposal',
-          message: error.message || 'An unexpected error occurred',
-        });
-      }
-    },
+    onError: (error) => handleValidationError(error, 'update'),
   });
 
   // Extract template data from the instance
@@ -172,18 +156,18 @@ export function ProposalEditor({
       .budgetCapAmount as number;
   }
 
-  // Check if budget is required - simplified approach with safe default
   const isBudgetRequired = (() => {
     // First check the proposal template schema
-    if (proposalTemplate && 
-        typeof proposalTemplate === 'object' && 
-        'required' in proposalTemplate &&
-        Array.isArray(proposalTemplate.required)) {
+    if (
+      proposalTemplate &&
+      typeof proposalTemplate === 'object' &&
+      'required' in proposalTemplate &&
+      Array.isArray(proposalTemplate.required)
+    ) {
       return proposalTemplate.required.includes('budget');
     }
-    
+
     // Safe default: require budget for all proposals unless explicitly configured otherwise
-    // This ensures backward compatibility with existing processes
     return true;
   })();
 
@@ -196,7 +180,7 @@ export function ProposalEditor({
   // Use existing content if editing, otherwise use placeholder content
   const initialContent =
     isEditMode && parsedProposalData
-      ? (parsedProposalData.description || parsedProposalData.content)
+      ? parsedProposalData.description || parsedProposalData.content
       : descriptionGuidance
         ? `<p>${descriptionGuidance}</p>`
         : undefined;
@@ -246,17 +230,12 @@ export function ProposalEditor({
     }
   }, [isEditMode, existingProposal, parsedProposalData]);
 
-  // Show budget input if budget is required (separate effect)
-  useEffect(() => {
-    if (isBudgetRequired && !showBudgetInput) {
-      setShowBudgetInput(true);
-    }
-  }, [isBudgetRequired, showBudgetInput]);
 
   // Set editor content when editor is ready and we have existing content
   useEffect(() => {
     if (editorInstance && isEditMode && parsedProposalData) {
-      const contentToSet = parsedProposalData.description || parsedProposalData.content;
+      const contentToSet =
+        parsedProposalData.description || parsedProposalData.content;
       if (contentToSet) {
         editorInstance.commands.setContent(contentToSet);
       }
@@ -282,22 +261,23 @@ export function ProposalEditor({
     try {
       // Validate required fields
       const missingFields: string[] = [];
-      
+
       if (!title || title.trim() === '') {
         missingFields.push('Title');
       }
-      
+
       // Check for empty content (rich text editor can have various empty states)
-      const isContentEmpty = !content || 
-        content.trim() === '' || 
-        content === '<p></p>' || 
+      const isContentEmpty =
+        !content ||
+        content.trim() === '' ||
+        content === '<p></p>' ||
         content === '<p><br></p>' ||
         content.replace(/<[^>]*>/g, '').trim() === '';
-        
+
       if (isContentEmpty) {
         missingFields.push('Description');
       }
-      
+
       if (isBudgetRequired && (budget === null || budget === undefined)) {
         missingFields.push('Budget');
       }
@@ -329,12 +309,12 @@ export function ProposalEditor({
       // Always include required fields (they've been validated above)
       proposalData.title = title;
       proposalData.description = content; // The schema expects 'description' field
-      
+
       // Only include optional fields if they have values
       if (selectedCategory) {
         proposalData.category = selectedCategory;
       }
-      
+
       if (budget !== null && budget !== undefined) {
         proposalData.budget = budget;
       }
@@ -431,7 +411,7 @@ export function ProposalEditor({
                 ))}
               </Select>
             ) : null}
-            {!showBudgetInput && !isBudgetRequired ? (
+            {!showBudgetInput ? (
               <Button
                 variant="pill"
                 color="pill"
@@ -440,7 +420,7 @@ export function ProposalEditor({
                 Add budget
               </Button>
             ) : null}
-            {(showBudgetInput || isBudgetRequired) && (
+            {showBudgetInput && (
               <NumberField
                 value={budget}
                 onChange={(value) => {
