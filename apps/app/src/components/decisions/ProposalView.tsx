@@ -220,12 +220,11 @@ export function ProposalView({
   }, []);
 
   // Parse proposal data using shared utility
-  const { title, budget, category, description, content } = parseProposalData(
+  const { title, budget, category, description } = parseProposalData(
     currentProposal.proposalData,
   );
   
-  // Use description (preferred) or fall back to content for backward compatibility
-  const proposalContent = description || content;
+  const proposalContent = description;
 
   // Memoize editor configuration for performance
   const editorConfig = useMemo(
