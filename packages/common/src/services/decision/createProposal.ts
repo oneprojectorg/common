@@ -20,6 +20,7 @@ import {
 } from '../../utils';
 import { getCurrentProfileId, getOrgAccessUser } from '../access';
 import { processProposalContent } from './proposalContentProcessor';
+import { schemaValidator } from './schemaValidator';
 import type { InstanceData, ProcessSchema, ProposalData } from './types';
 
 export interface CreateProposalInput {
@@ -95,8 +96,13 @@ export const createProposal = async ({
       );
     }
 
-    // TODO: Validate proposal data against processSchema.proposalTemplate
-    // This would require JSON Schema validation utilities
+    // Validate proposal data against processSchema.proposalTemplate
+    if (processSchema.proposalTemplate) {
+      schemaValidator.validateProposalData(
+        processSchema.proposalTemplate,
+        data.proposalData,
+      );
+    }
 
     // Extract title from proposal data
     const proposalTitle = extractTitleFromProposalData(data.proposalData);
