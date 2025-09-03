@@ -68,7 +68,7 @@ describe('proposalContentProcessor with public URLs', () => {
 
   describe('processProposalContent', () => {
     it('should replace temporary URLs with permanent public URLs', async () => {
-      await processProposalContent('test-proposal-id');
+      await processProposalContent({ conn: db, proposalId: 'test-proposal-id' });
 
       // Verify proposal content was updated
       expect(db.update).toHaveBeenCalled();
@@ -110,7 +110,7 @@ describe('proposalContentProcessor with public URLs', () => {
       (db.query.proposals.findFirst as any).mockResolvedValue(mockProposalMultiImages);
       (db.query.proposalAttachments.findMany as any).mockResolvedValue(mockAttachments);
 
-      await processProposalContent('test-proposal-id');
+      await processProposalContent({ conn: db, proposalId: 'test-proposal-id' });
 
       expect(db.update).toHaveBeenCalled();
       
@@ -134,7 +134,7 @@ describe('proposalContentProcessor with public URLs', () => {
 
       (db.query.proposals.findFirst as any).mockResolvedValue(mockProposalNoImages);
 
-      await processProposalContent('test-proposal-id');
+      await processProposalContent({ conn: db, proposalId: 'test-proposal-id' });
 
       // Should return early and not attempt any updates
       expect(db.update).not.toHaveBeenCalled();
@@ -143,7 +143,7 @@ describe('proposalContentProcessor with public URLs', () => {
     it('should handle proposals without attachments', async () => {
       (db.query.proposalAttachments.findMany as any).mockResolvedValue([]);
 
-      await processProposalContent('test-proposal-id');
+      await processProposalContent({ conn: db, proposalId: 'test-proposal-id' });
 
       // Should return early and not attempt any updates
       expect(db.update).not.toHaveBeenCalled();
@@ -153,7 +153,7 @@ describe('proposalContentProcessor with public URLs', () => {
       (db.query.proposals.findFirst as any).mockResolvedValue(null);
 
       // Should not throw
-      await expect(processProposalContent('nonexistent-proposal-id')).resolves.toBeUndefined();
+      await expect(processProposalContent({ conn: db, proposalId: 'nonexistent-proposal-id' })).resolves.toBeUndefined();
       
       expect(db.update).not.toHaveBeenCalled();
     });
@@ -168,7 +168,7 @@ describe('proposalContentProcessor with public URLs', () => {
 
       (db.query.proposalAttachments.findMany as any).mockResolvedValue(mockAttachmentsWithNull);
 
-      await processProposalContent('test-proposal-id');
+      await processProposalContent({ conn: db, proposalId: 'test-proposal-id' });
 
       // Should not crash and should not update content
       expect(db.update).not.toHaveBeenCalled();

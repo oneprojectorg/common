@@ -175,6 +175,15 @@ export const createProposal = async ({
         );
 
         await tx.insert(proposalAttachments).values(proposalAttachmentValues);
+
+        // Process proposal content to replace temporary URLs with permanent ones
+        try {
+          await processProposalContent({ conn: tx, proposalId: proposal.id });
+        } catch (error) {
+          console.error('Error processing proposal content:', error);
+          // Let the transaction roll back on error to maintain data consistency
+          throw error;
+        }
       }
 
       return proposal;
@@ -182,16 +191,6 @@ export const createProposal = async ({
 
     if (!proposal) {
       throw new CommonError('Failed to create proposal');
-    }
-
-    // Process proposal content to replace temporary URLs with permanent ones
-    if (data.attachmentIds && data.attachmentIds.length > 0) {
-      try {
-        await processProposalContent(proposal.id);
-      } catch (error) {
-        console.error('Error processing proposal content:', error);
-        // Don't throw - we don't want to fail proposal creation if URL processing fails
-      }
     }
 
     return proposal;
