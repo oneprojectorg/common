@@ -15,7 +15,7 @@ import { Popover } from '@op/ui/Popover';
 import { MenuTrigger } from '@op/ui/RAC';
 import { Skeleton } from '@op/ui/Skeleton';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { Suspense, useEffect, useRef, useState } from 'react';
 import {
   LuChevronDown,
@@ -24,7 +24,8 @@ import {
   LuSearch,
 } from 'react-icons/lu';
 
-import { Link, useTranslations } from '@/lib/i18n';
+import { Link, usePathname, useRouter as useI18nRouter, useTranslations } from '@/lib/i18n';
+import { i18nConfig } from '@/lib/i18n/config';
 
 import { CoCModal } from '../CoCModal';
 import { CommonLogo } from '../CommonLogo';
@@ -135,7 +136,11 @@ const AvatarMenuContent = ({
   const { user } = useUser();
   const logout = useAuthLogout();
   const router = useRouter();
+  const i18nRouter = useI18nRouter();
+  const pathname = usePathname();
+  const params = useParams();
   const t = useTranslations();
+  const currentLocale = params.locale as string;
 
   const { data: profiles } = trpc.account.getUserProfiles.useQuery();
 
@@ -279,6 +284,39 @@ const AvatarMenuContent = ({
       >
         <LuLogOut className="size-8 rounded-full bg-neutral-offWhite p-2" />{' '}
         {t('Log out')}
+      </MenuItem>
+      <MenuItem
+        id="language"
+        className="px-0 py-2 text-neutral-charcoal hover:bg-neutral-offWhite focus:bg-neutral-offWhite"
+        onAction={() => {
+          // Prevent default menu item action - we handle clicks on individual locale buttons
+        }}
+      >
+        <div className="flex items-center gap-1">
+          {i18nConfig.locales.map((locale, index) => (
+            <span key={locale}>
+              <button
+                className={`hover:underline ${
+                  currentLocale === locale
+                    ? 'font-bold text-primary-teal'
+                    : 'text-neutral-charcoal'
+                }`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (locale !== currentLocale) {
+                    i18nRouter.replace(pathname, { locale });
+                  }
+                  onClose?.();
+                }}
+              >
+                {locale}
+              </button>
+              {index < i18nConfig.locales.length - 1 && (
+                <span className="mx-1 text-neutral-gray4">/</span>
+              )}
+            </span>
+          ))}
+        </div>
       </MenuItem>
       <MenuItemSimple
         isDisabled
