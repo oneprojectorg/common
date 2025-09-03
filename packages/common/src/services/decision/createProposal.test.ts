@@ -162,8 +162,8 @@ describe('createProposal with attachments', () => {
       // Verify proposalAttachments were linked
       expect(db.transaction).toHaveBeenCalled();
 
-      // Verify processProposalContent was called synchronously
-      expect(processProposalContent).toHaveBeenCalledWith('test-proposal-id');
+      // Verify processProposalContent was called with transaction context
+      expect(processProposalContent).toHaveBeenCalledWith({ conn: expect.any(Object), proposalId: 'test-proposal-id' });
     });
 
     it('should create proposal without attachments', async () => {
@@ -192,7 +192,7 @@ describe('createProposal with attachments', () => {
       expect(processProposalContent).not.toHaveBeenCalled();
     });
 
-    it('should handle content processing errors gracefully', async () => {
+    it('should fail when content processing errors occur', async () => {
       // Mock processProposalContent to throw an error
       (processProposalContent as any).mockRejectedValue(new Error('Content processing failed'));
 
@@ -206,14 +206,13 @@ describe('createProposal with attachments', () => {
         attachmentIds: ['attachment-id-1'],
       };
 
-      // Should not throw even if content processing fails
-      const result = await createProposal({
+      // Should throw when content processing fails (transaction rollback)
+      await expect(createProposal({
         data: proposalInput,
         user: mockUser,
-      });
+      })).rejects.toThrow('Content processing failed');
 
-      expect(result).toEqual(mockProposal);
-      expect(processProposalContent).toHaveBeenCalledWith('test-proposal-id');
+      expect(processProposalContent).toHaveBeenCalledWith({ conn: expect.any(Object), proposalId: 'test-proposal-id' });
     });
 
     it('should handle empty attachment list', async () => {
