@@ -91,20 +91,30 @@ export function ProposalEditor({
   );
   const [showInfoModal, setShowInfoModal] = useState(false);
   const editorRef = useRef<RichTextEditorRef>(null);
+  const initializedRef = useRef(false);
   const utils = trpc.useUtils();
 
   const createProposalMutation = trpc.decision.createProposal.useMutation({
+    onSuccess: async () => {
+      await utils.decision.listProposals.invalidate({
+        processInstanceId: instance.id,
+      });
+      // Navigate after cache invalidation completes
+      router.push(backHref);
+    },
     onError: (error) => handleValidationError(error, 'create'),
   });
 
   const updateProposalMutation = trpc.decision.updateProposal.useMutation({
     onSuccess: async () => {
-      utils.decision.getProposal.invalidate({
+      await utils.decision.getProposal.invalidate({
         proposalId: existingProposal?.id,
       });
-      utils.decision.listProposals.invalidate({
+      await utils.decision.listProposals.invalidate({
         processInstanceId: instance.id,
       });
+      // Navigate after cache invalidation completes
+      router.push(backHref);
     },
     onError: (error) => handleValidationError(error, 'update'),
   });
@@ -202,7 +212,7 @@ export function ProposalEditor({
 
   // Initialize form with existing proposal data if in edit mode
   useEffect(() => {
-    if (isEditMode && existingProposal && parsedProposalData) {
+    if (isEditMode && existingProposal && parsedProposalData && !initializedRef.current) {
       const {
         title: existingTitle,
         description: existingDescription,
@@ -217,7 +227,7 @@ export function ProposalEditor({
       if (existingCategory) {
         setSelectedCategory(existingCategory);
       }
-      if (existingBudget) {
+      if (existingBudget !== undefined) {
         setBudget(existingBudget);
         setShowBudgetInput(true);
       }
@@ -227,20 +237,14 @@ export function ProposalEditor({
       if (contentToSet) {
         setEditorContent(contentToSet);
       }
+      
+      // Mark as initialized to prevent re-running
+      initializedRef.current = true;
     }
   }, [isEditMode, existingProposal, parsedProposalData]);
 
 
-  // Set editor content when editor is ready and we have existing content
-  useEffect(() => {
-    if (editorInstance && isEditMode && parsedProposalData) {
-      const contentToSet =
-        parsedProposalData.description || parsedProposalData.content;
-      if (contentToSet) {
-        editorInstance.commands.setContent(contentToSet);
-      }
-    }
-  }, [editorInstance, isEditMode, parsedProposalData]);
+  // Content setting is now handled by RichTextEditorContent component via the content prop
 
   // Show proposal info modal when creating a new proposal (not editing)
   useEffect(() => {
@@ -282,6 +286,14 @@ export function ProposalEditor({
         missingFields.push('Budget');
       }
 
+      // Validate budget cap if there's a limit
+      if (budget !== null && budget !== undefined && budgetCapAmount && budget > budgetCapAmount) {
+        toast.error({
+          message: `Budget cannot exceed ${budgetCapAmount.toLocaleString()}`,
+        });
+        return;
+      }
+
       if (missingFields.length > 0) {
         if (missingFields.length === 1) {
           toast.error({
@@ -320,7 +332,7 @@ export function ProposalEditor({
       }
 
       if (isEditMode && existingProposal) {
-        // Update existing proposal
+        // Update existing proposal - navigation handled in onSuccess callback
         await updateProposalMutation.mutateAsync({
           proposalId: existingProposal.id,
           data: {
@@ -329,16 +341,13 @@ export function ProposalEditor({
           },
         });
       } else {
-        // Create new proposal
+        // Create new proposal - navigation handled in onSuccess callback
         await createProposalMutation.mutateAsync({
           processInstanceId: instance.id,
           proposalData,
           attachmentIds, // Include attachment IDs for new proposals
         });
       }
-
-      // Navigate back to appropriate page
-      router.push(backHref);
     } catch (error) {
       // Error handling is now done by the mutation's onError callbacks
       // This catch block handles any other unexpected errors
@@ -424,14 +433,6 @@ export function ProposalEditor({
               <NumberField
                 value={budget}
                 onChange={(value) => {
-                  if (
-                    value !== null &&
-                    budgetCapAmount &&
-                    value > budgetCapAmount
-                  ) {
-                    // Don't allow values exceeding the cap
-                    return;
-                  }
                   setBudget(value);
                 }}
                 prefixText="$"
@@ -447,10 +448,12 @@ export function ProposalEditor({
 
           <RichTextEditorContent
             ref={editorRef}
-            content={initialContent}
+            content={initialContent || ''}
             onUpdate={handleEditorUpdate}
             placeholder="Write your proposal here..."
             onEditorReady={handleEditorReady}
+            readOnly={false}
+            immediatelyRender={false}
             editorClassName="w-[32rem] px-6 py-6 text-neutral-black placeholder:text-neutral-gray2"
           />
         </div>
