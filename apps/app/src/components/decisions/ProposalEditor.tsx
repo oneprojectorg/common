@@ -190,7 +190,7 @@ export function ProposalEditor({
   // Use existing content if editing, otherwise use placeholder content
   const initialContent =
     isEditMode && parsedProposalData
-      ? parsedProposalData.description || parsedProposalData.content
+      ? parsedProposalData.description
       : descriptionGuidance
         ? `<p>${descriptionGuidance}</p>`
         : undefined;
@@ -216,7 +216,6 @@ export function ProposalEditor({
       const {
         title: existingTitle,
         description: existingDescription,
-        content: existingContent, // Keep for backward compatibility
         category: existingCategory,
         budget: existingBudget,
       } = parsedProposalData;
@@ -232,10 +231,9 @@ export function ProposalEditor({
         setShowBudgetInput(true);
       }
 
-      // Set editor content state immediately (prefer description over content for backward compatibility)
-      const contentToSet = existingDescription || existingContent;
-      if (contentToSet) {
-        setEditorContent(contentToSet);
+      // Set editor content state immediately
+      if (existingDescription) {
+        setEditorContent(existingDescription);
       }
       
       // Mark as initialized to prevent re-running
@@ -320,7 +318,7 @@ export function ProposalEditor({
 
       // Always include required fields (they've been validated above)
       proposalData.title = title;
-      proposalData.description = content; // The schema expects 'description' field
+      proposalData.description = content;
 
       // Only include optional fields if they have values
       if (selectedCategory) {
