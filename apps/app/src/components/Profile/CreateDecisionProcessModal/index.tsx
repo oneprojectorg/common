@@ -31,6 +31,7 @@ import {
 const transformFormDataToInstanceData = (data: Record<string, unknown>) => {
   return {
     budget: data.totalBudget as number,
+    hideBudget: data.hideBudget as boolean,
     currentStateId: 'submission',
     fieldValues: {
       categories: data.categories,
@@ -226,8 +227,6 @@ export const CreateDecisionProcessModal = () => {
   const totalSteps = stepSchemas.length + 1; // +1 for review step
 
   const handleCreateError = (error: unknown, title: string) => {
-    console.error(title + ':', error);
-
     const errorInfo = analyzeError(error);
 
     if (errorInfo.isConnectionError) {
@@ -303,8 +302,6 @@ export const CreateDecisionProcessModal = () => {
         const currentDate = dates[i];
         const nextDate = dates[i + 1];
 
-        console.log('>>', currentDate, nextDate);
-
         if (currentDate && nextDate) {
           const current = new Date(currentDate.value);
           const next = new Date(nextDate.value);
@@ -353,7 +350,6 @@ export const CreateDecisionProcessModal = () => {
       }
     }
 
-    console.log('ERRORS', errors);
     return errors;
   };
 

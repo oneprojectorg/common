@@ -23,6 +23,11 @@ export const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
           title: 'Total Budget Available',
           description: 'The total amount available this funding round.',
         },
+        hideBudget: {
+          type: 'boolean',
+          title: 'Hide budget from members',
+          description: 'When enabled, only you will see the total budget amount. Members will still see individual proposal budgets.',
+        },
       },
     },
     uiSchema: {
@@ -36,6 +41,9 @@ export const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
       totalBudget: {
         'ui:widget': 'number',
         'ui:placeholder': '0',
+      },
+      hideBudget: {
+        'ui:widget': 'checkbox',
       },
     },
   },
@@ -308,6 +316,7 @@ export const schemaDefaults = {
   processName: '',
   description: '',
   totalBudget: null,
+  hideBudget: false,
   ideaCollectionPhase: {
     ideaCollectionOpen: '',
     ideaCollectionClose: '',
