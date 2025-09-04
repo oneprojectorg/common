@@ -39,7 +39,7 @@ export function ProposalEditorLayout({
           <span className="hidden sm:block">Back</span>
         </button>
 
-        <div className="flex-1 text-center text-lg font-medium text-neutral-black">
+        <div className="hidden flex-1 text-center text-lg font-medium text-neutral-black sm:block">
           {title ? title : 'Untitled Proposal'}
         </div>
 

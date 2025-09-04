@@ -266,11 +266,7 @@ export function ProposalEditor({
     >
       {/* Content */}
       <div className="flex flex-1 flex-col gap-12">
-        {editorInstance && (
-          <RichTextEditorToolbar
-            editor={editorInstance}
-          />
-        )}
+        {editorInstance && <RichTextEditorToolbar editor={editorInstance} />}
         <div className="mx-auto flex max-w-4xl flex-col gap-6">
           {/* Title input */}
           <TextField
@@ -340,7 +336,7 @@ export function ProposalEditor({
             onUpdate={handleEditorUpdate}
             placeholder="Write your proposal here..."
             onEditorReady={handleEditorReady}
-            editorClassName="w-[32rem] px-6 py-6 text-neutral-black placeholder:text-neutral-gray2"
+            editorClassName="max-w-[32rem] sm:min-w-[32rem] px-0 py-6 text-neutral-black placeholder:text-neutral-gray2"
           />
         </div>
       </div>
