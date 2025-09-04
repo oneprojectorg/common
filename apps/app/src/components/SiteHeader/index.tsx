@@ -30,6 +30,7 @@ import { CoCModal } from '../CoCModal';
 import { CommonLogo } from '../CommonLogo';
 import ErrorBoundary from '../ErrorBoundary';
 import { InviteUserModal } from '../InviteUserModal';
+import { LocaleChooser } from '../LocaleChooser';
 import { PrivacyPolicyModal } from '../PrivacyPolicyModal';
 import { UpdateProfileModal } from '../Profile/ProfileDetails/UpdateProfileModal';
 import { ProfileSwitchingModal } from '../ProfileSwitchingModal';
@@ -280,6 +281,7 @@ const AvatarMenuContent = ({
         <LuLogOut className="size-8 rounded-full bg-neutral-offWhite p-2" />{' '}
         {t('Log out')}
       </MenuItem>
+
       <MenuItemSimple
         isDisabled
         className="flex flex-col items-start justify-start gap-2 px-0 pt-4 text-neutral-gray4 hover:bg-transparent sm:text-sm"
@@ -454,8 +456,7 @@ export const SiteHeader = () => {
         <div className="flex items-center gap-3">
           <ClientOnly>
             <InviteUserModal />
-          </ClientOnly>
-          <ClientOnly>
+            <LocaleChooser />
             <ErrorBoundary
               fallback={
                 <div className="size-8 rounded-full border bg-white shadow" />
@@ -514,8 +515,7 @@ export const SiteHeader = () => {
               <div className="flex items-center gap-3">
                 <ClientOnly>
                   <InviteUserModal />
-                </ClientOnly>
-                <ClientOnly>
+                  <LocaleChooser />
                   <ErrorBoundary
                     fallback={
                       <div className="size-8 rounded-full border bg-white shadow" />
