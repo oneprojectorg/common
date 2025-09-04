@@ -40,7 +40,12 @@ const NoProposalsFound = () => {
   );
 };
 
-const Proposals = ({ proposals, instanceId, slug, isLoading }: ProposalsProps) => {
+const Proposals = ({
+  proposals,
+  instanceId,
+  slug,
+  isLoading,
+}: ProposalsProps) => {
   if (isLoading) {
     return (
       <div className="flex flex-col gap-4">
@@ -133,14 +138,14 @@ export function ProposalsList({ slug, instanceId }: ProposalsListProps) {
       {/* Filters Bar */}
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <span className="text-lg font-medium text-neutral-charcoal">
+          <span className="text-title-base text-neutral-black">
             {proposalFilter === 'my'
               ? t('My proposals •')
               : t('All proposals •')}{' '}
             {proposals?.length ?? 0}
           </span>
         </div>
-        <div className="flex flex-wrap items-center gap-4">
+        <div className="grid max-w-fit grid-cols-2 gap-4 sm:flex sm:flex-1 sm:flex-wrap sm:items-center">
           <Select
             selectedKey={proposalFilter}
             onSelectionChange={(key) => {

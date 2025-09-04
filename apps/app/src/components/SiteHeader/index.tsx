@@ -14,6 +14,7 @@ import { Modal, ModalBody } from '@op/ui/Modal';
 import { Popover } from '@op/ui/Popover';
 import { MenuTrigger } from '@op/ui/RAC';
 import { Skeleton } from '@op/ui/Skeleton';
+import { cn } from '@op/ui/utils';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Suspense, useEffect, useRef, useState } from 'react';
@@ -320,7 +321,7 @@ const AvatarMenuContent = ({
   );
 };
 
-export const UserAvatarMenu = () => {
+export const UserAvatarMenu = ({ className }: { className?: string }) => {
   const { user } = useUser();
   const isMobile = useMediaQuery('(max-width: 640px)');
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -359,7 +360,7 @@ export const UserAvatarMenu = () => {
   const avatarButton = (
     <Button
       unstyled
-      className="relative"
+      className={cn('relative', className)}
       onPress={() => (isMobile ? setIsDrawerOpen(true) : undefined)}
     >
       <Avatar placeholder={user?.currentProfile?.name}>

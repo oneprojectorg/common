@@ -1,10 +1,11 @@
 {
   "permissions": {
-    "allow": [
-      "rg:*"
-    ],
+    "allow": ["rg:*", "pnpm w:app lint"],
     "deny": [
-      "pnpm w:db:*"
+      "pnpm build",
+      "pnpm w:db migrate",
+      "pnpm w:db generate",
+      "pnpm format"
     ]
   }
 }

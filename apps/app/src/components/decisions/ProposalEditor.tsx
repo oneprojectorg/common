@@ -18,9 +18,12 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
 
-import { RichTextEditorContent, RichTextEditorRef } from '../RichTextEditor';
+import {
+  RichTextEditorContent,
+  RichTextEditorRef,
+  RichTextEditorToolbar,
+} from '../RichTextEditor';
 import { ProposalInfoModal } from './ProposalInfoModal';
-import { ProposalRichTextToolbar } from './ProposalRichTextToolbar';
 import { ProposalEditorLayout } from './layout';
 
 type Proposal = z.infer<typeof proposalEncoder>;
@@ -44,10 +47,7 @@ function handleValidationError(error: any, operationType: 'create' | 'update') {
     typeof error.data.cause === 'object' &&
     'fieldErrors' in error.data.cause
   ) {
-    const fieldErrors = error.data.cause.fieldErrors as Record<
-      string,
-      string
-    >;
+    const fieldErrors = error.data.cause.fieldErrors as Record<string, string>;
 
     // Show individual error messages for each field, or combine if multiple
     const errorMessages = Object.values(fieldErrors);
@@ -86,9 +86,7 @@ export function ProposalEditor({
   const [showBudgetInput, setShowBudgetInput] = useState(false);
   const [editorContent, setEditorContent] = useState('');
   const [editorInstance, setEditorInstance] = useState<any>(null);
-  const [imageAttachments, setImageAttachments] = useState<ImageAttachment[]>(
-    [],
-  );
+  const [imageAttachments] = useState<ImageAttachment[]>([]);
   const [showInfoModal, setShowInfoModal] = useState(false);
   const editorRef = useRef<RichTextEditorRef>(null);
   const initializedRef = useRef(false);
@@ -205,14 +203,14 @@ export function ProposalEditor({
     setEditorInstance(editor);
   }, []);
 
-  // Handle image attachment uploads
-  const handleImageUploaded = useCallback((attachment: ImageAttachment) => {
-    setImageAttachments((prev) => [...prev, attachment]);
-  }, []);
-
   // Initialize form with existing proposal data if in edit mode
   useEffect(() => {
-    if (isEditMode && existingProposal && parsedProposalData && !initializedRef.current) {
+    if (
+      isEditMode &&
+      existingProposal &&
+      parsedProposalData &&
+      !initializedRef.current
+    ) {
       const {
         title: existingTitle,
         description: existingDescription,
@@ -235,12 +233,11 @@ export function ProposalEditor({
       if (existingDescription) {
         setEditorContent(existingDescription);
       }
-      
+
       // Mark as initialized to prevent re-running
       initializedRef.current = true;
     }
   }, [isEditMode, existingProposal, parsedProposalData]);
-
 
   // Content setting is now handled by RichTextEditorContent component via the content prop
 
@@ -285,7 +282,12 @@ export function ProposalEditor({
       }
 
       // Validate budget cap if there's a limit
-      if (budget !== null && budget !== undefined && budgetCapAmount && budget > budgetCapAmount) {
+      if (
+        budget !== null &&
+        budget !== undefined &&
+        budgetCapAmount &&
+        budget > budgetCapAmount
+      ) {
         toast.error({
           message: `Budget cannot exceed ${budgetCapAmount.toLocaleString()}`,
         });
@@ -382,12 +384,7 @@ export function ProposalEditor({
     >
       {/* Content */}
       <div className="flex flex-1 flex-col gap-12">
-        {editorInstance && (
-          <ProposalRichTextToolbar
-            editor={editorInstance}
-            onImageUploaded={handleImageUploaded}
-          />
-        )}
+        {editorInstance && <RichTextEditorToolbar editor={editorInstance} />}
         <div className="mx-auto flex max-w-4xl flex-col gap-6">
           {/* Title input */}
           <TextField
@@ -450,9 +447,9 @@ export function ProposalEditor({
             onUpdate={handleEditorUpdate}
             placeholder="Write your proposal here..."
             onEditorReady={handleEditorReady}
+            editorClassName="max-w-[32rem] sm:min-w-[32rem] px-0 py-6 text-neutral-black placeholder:text-neutral-gray2"
             readOnly={false}
             immediatelyRender={false}
-            editorClassName="w-[32rem] px-6 py-6 text-neutral-black placeholder:text-neutral-gray2"
           />
         </div>
       </div>
