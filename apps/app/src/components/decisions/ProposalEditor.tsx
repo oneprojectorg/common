@@ -322,8 +322,8 @@ export function ProposalEditor({
       proposalData.title = title;
       proposalData.description = content;
 
-      // Only include optional fields if they have values
-      if (selectedCategory) {
+      // Include category field if categories are available for this process
+      if (categories && categories.length > 0) {
         proposalData.category = selectedCategory;
       }
 

@@ -90,8 +90,6 @@ async function DecisionInstancePageContent({
 
           <Suspense fallback={<Skeleton />}>
             <DecisionInstanceContent 
-              budget={budget} 
-              hideBudget={instanceData?.hideBudget}
               instanceId={instanceId} 
             />
           </Suspense>
