@@ -5,11 +5,19 @@ import { formatCurrency, formatDate } from './formatting';
 // Define the expected structure of proposalData with better type safety
 export const proposalDataSchema = z.object({
   title: z.string().optional(),
-  content: z.string().optional(),
+  description: z.string().optional(), // Schema expects 'description'
+  content: z.string().optional(), // Keep for backward compatibility
   category: z.string().optional(),
   budget: z.number().optional(),
   attachmentIds: z.array(z.string()).optional().default([]),
-}).passthrough(); // Allow additional fields
+}).passthrough() // Allow additional fields
+.transform((data) => {
+  // Handle backward compatibility: if content exists but not description, use content as description
+  if (data.content && !data.description) {
+    data.description = data.content;
+  }
+  return data;
+});
 
 export type ProposalData = z.infer<typeof proposalDataSchema>;
 

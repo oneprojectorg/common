@@ -20,6 +20,7 @@ import {
 } from '../../utils';
 import { getCurrentProfileId, getOrgAccessUser } from '../access';
 import { processProposalContent } from './proposalContentProcessor';
+import { schemaValidator } from './schemaValidator';
 import type { InstanceData, ProcessSchema, ProposalData } from './types';
 
 export interface CreateProposalInput {
@@ -95,8 +96,13 @@ export const createProposal = async ({
       );
     }
 
-    // TODO: Validate proposal data against processSchema.proposalTemplate
-    // This would require JSON Schema validation utilities
+    // Validate proposal data against processSchema.proposalTemplate
+    if (processSchema.proposalTemplate) {
+      schemaValidator.validateProposalData(
+        processSchema.proposalTemplate,
+        data.proposalData,
+      );
+    }
 
     // Extract title from proposal data
     const proposalTitle = extractTitleFromProposalData(data.proposalData);
@@ -175,6 +181,15 @@ export const createProposal = async ({
         );
 
         await tx.insert(proposalAttachments).values(proposalAttachmentValues);
+
+        // Process proposal content to replace temporary URLs with permanent ones
+        try {
+          await processProposalContent({ conn: tx, proposalId: proposal.id });
+        } catch (error) {
+          console.error('Error processing proposal content:', error);
+          // Let the transaction roll back on error to maintain data consistency
+          throw error;
+        }
       }
 
       return proposal;
@@ -182,16 +197,6 @@ export const createProposal = async ({
 
     if (!proposal) {
       throw new CommonError('Failed to create proposal');
-    }
-
-    // Process proposal content to replace temporary URLs with permanent ones
-    if (data.attachmentIds && data.attachmentIds.length > 0) {
-      try {
-        await processProposalContent(proposal.id);
-      } catch (error) {
-        console.error('Error processing proposal content:', error);
-        // Don't throw - we don't want to fail proposal creation if URL processing fails
-      }
     }
 
     return proposal;

@@ -220,9 +220,11 @@ export function ProposalView({
   }, []);
 
   // Parse proposal data using shared utility
-  const { title, budget, category, content } = parseProposalData(
+  const { title, budget, category, description } = parseProposalData(
     currentProposal.proposalData,
   );
+  
+  const proposalContent = description;
 
   // Memoize editor configuration for performance
   const editorConfig = useMemo(
@@ -248,7 +250,7 @@ export function ProposalView({
         HorizontalRule,
         IframelyExtension,
       ],
-      content: content || '<p>No content available</p>',
+      content: proposalContent || '<p>No content available</p>',
       editable: false, // Make editor read-only
       editorProps: {
         attributes: {
@@ -258,7 +260,7 @@ export function ProposalView({
       },
       immediatelyRender: false,
     }),
-    [content],
+    [proposalContent],
   );
 
   // Create read-only editor for content display
