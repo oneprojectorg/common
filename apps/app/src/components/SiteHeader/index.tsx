@@ -282,7 +282,6 @@ const AvatarMenuContent = ({
         {t('Log out')}
       </MenuItem>
 
-      <LocaleChooser onClose={onClose} />
       <MenuItemSimple
         isDisabled
         className="flex flex-col items-start justify-start gap-2 px-0 pt-4 text-neutral-gray4 hover:bg-transparent sm:text-sm"
@@ -457,8 +456,7 @@ export const SiteHeader = () => {
         <div className="flex items-center gap-3">
           <ClientOnly>
             <InviteUserModal />
-          </ClientOnly>
-          <ClientOnly>
+            <LocaleChooser />
             <ErrorBoundary
               fallback={
                 <div className="size-8 rounded-full border bg-white shadow" />
@@ -517,8 +515,7 @@ export const SiteHeader = () => {
               <div className="flex items-center gap-3">
                 <ClientOnly>
                   <InviteUserModal />
-                </ClientOnly>
-                <ClientOnly>
+                  <LocaleChooser />
                   <ErrorBoundary
                     fallback={
                       <div className="size-8 rounded-full border bg-white shadow" />

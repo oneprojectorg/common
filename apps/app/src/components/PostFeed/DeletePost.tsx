@@ -22,22 +22,22 @@ export const DeletePost = ({
       // If this is a comment (has parentPostId), update the comments cache optimistically
       if (post.parentPostId) {
         const queryKey = createCommentsQueryKey(post.parentPostId);
-        
+
         // Cancel any outgoing refetches for comments
         await utils.posts.getPosts.cancel(queryKey);
-        
+
         // Snapshot previous comments
         const previousComments = utils.posts.getPosts.getData(queryKey);
-        
+
         // Optimistically remove the comment
         utils.posts.getPosts.setData(queryKey, (old) => {
           if (!old) return old;
-          return old.filter(comment => comment.id !== post.id);
+          return old.filter((comment) => comment.id !== post.id);
         });
-        
+
         return { previousComments };
       }
-      
+
       return {};
     },
     onSuccess: () => {
@@ -52,7 +52,7 @@ export const DeletePost = ({
         const queryKey = createCommentsQueryKey(post.parentPostId);
         utils.posts.getPosts.setData(queryKey, context.previousComments);
       }
-      
+
       toast.error({ message: error.message || 'Failed to delete post' });
     },
   });
