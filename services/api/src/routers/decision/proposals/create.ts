@@ -1,3 +1,4 @@
+import { trackEvent } from '@op/analytics';
 import {
   NotFoundError,
   UnauthorizedError,
@@ -5,6 +6,7 @@ import {
   createProposal,
 } from '@op/common';
 import { TRPCError } from '@trpc/server';
+import { waitUntil } from '@vercel/functions';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 
 import {
@@ -35,12 +37,25 @@ export const createProposalRouter = router({
     .output(proposalEncoder)
     .mutation(async ({ ctx, input }) => {
       const { user, logger } = ctx;
+      const { processInstanceId } = input;
 
       try {
         const proposal = await createProposal({
           data: { ...input, authUserId: user.id },
           authUserId: user.id,
         });
+
+        waitUntil(
+          trackEvent({
+            distinctId: user.id,
+            event: 'proposal_created',
+            properties: {
+              decisionId: processInstanceId,
+              proposalId: proposal.id,
+              timestamp: Date.now(),
+            },
+          }),
+        );
 
         return proposalEncoder.parse(proposal);
       } catch (error: unknown) {
