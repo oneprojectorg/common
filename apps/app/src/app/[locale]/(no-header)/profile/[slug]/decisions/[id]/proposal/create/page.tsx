@@ -86,9 +86,11 @@ const CreateProposalPage = async ({
   const { id, slug } = await params;
 
   return (
-    <Suspense fallback={<CreateProposalPageSkeleton />}>
-      <CreateProposalPageContent instanceId={id} slug={slug} />
-    </Suspense>
+    <div className="px-4">
+      <Suspense fallback={<CreateProposalPageSkeleton />}>
+        <CreateProposalPageContent instanceId={id} slug={slug} />
+      </Suspense>
+    </div>
   );
 };
 

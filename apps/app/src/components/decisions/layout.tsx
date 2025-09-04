@@ -2,10 +2,9 @@
 
 import { Button } from '@op/ui/Button';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { ChevronLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { ReactNode } from 'react';
-import { LuCheck } from 'react-icons/lu';
+import { LuArrowLeft, LuCheck } from 'react-icons/lu';
 
 import { UserAvatarMenu } from '../SiteHeader';
 
@@ -31,13 +30,13 @@ export function ProposalEditorLayout({
   return (
     <div className="flex min-h-screen flex-col bg-white">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-neutral-gray1 px-6 py-4">
+      <div className="flex items-center justify-between gap-2 border-b border-neutral-gray1 py-4 sm:px-6">
         <button
           onClick={() => router.push(backHref)}
           className="flex items-center gap-2 text-sm text-primary-teal hover:text-primary-tealBlack"
         >
-          <ChevronLeft className="h-4 w-4" />
-          Back
+          <LuArrowLeft className="size-6 stroke-1 text-neutral-charcoal sm:size-4 sm:text-primary-teal" />
+          <span className="hidden sm:block">Back</span>
         </button>
 
         <div className="flex-1 text-center text-lg font-medium text-neutral-black">
@@ -53,9 +52,16 @@ export function ProposalEditorLayout({
             className="px-4 py-2"
           >
             {isSubmitting ? <LoadingSpinner /> : <LuCheck />}
-            {isEditMode ? 'Update Proposal' : 'Submit Proposal'}
+            {isEditMode ? (
+              'Update Proposal'
+            ) : (
+              <>
+                <span className="hidden sm:block">Submit Proposal</span>
+                <span className="sm:hidden">Submit</span>{' '}
+              </>
+            )}
           </Button>
-          <UserAvatarMenu />
+          <UserAvatarMenu className="hidden sm:block" />
         </div>
       </div>
 
