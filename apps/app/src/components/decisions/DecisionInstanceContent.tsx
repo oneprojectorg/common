@@ -30,8 +30,8 @@ export function DecisionInstanceContent({
     <div className="min-h-full px-4 py-8">
       <div className="mx-auto flex max-w-3xl justify-center">
         {/* heading */}
-        <div className="text-center uppercase">
-          <GradientHeader className="items-center align-middle">
+        <div className="text-center">
+          <GradientHeader className="items-center align-middle uppercase">
             {t(
               "Decide how to allocate part of People Powered's budget for 2026",
             )}
