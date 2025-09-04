@@ -30,7 +30,7 @@ export function ProposalEditorLayout({
   return (
     <div className="flex min-h-screen flex-col bg-white">
       {/* Header */}
-      <div className="flex items-center justify-between gap-2 border-b border-neutral-gray1 py-4 sm:px-6">
+      <div className="flex items-center justify-between gap-2 border-b border-neutral-gray1 py-4 px-4 sm:px-6">
         <button
           onClick={() => router.push(backHref)}
           className="flex items-center gap-2 text-sm text-primary-teal hover:text-primary-tealBlack"

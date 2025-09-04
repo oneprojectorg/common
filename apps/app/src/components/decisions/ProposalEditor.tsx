@@ -23,7 +23,6 @@ import {
   RichTextEditorToolbar,
 } from '../RichTextEditor';
 import { ProposalInfoModal } from './ProposalInfoModal';
-import { ProposalRichTextToolbar } from './ProposalRichTextToolbar';
 import { ProposalEditorLayout } from './layout';
 
 type Proposal = z.infer<typeof proposalEncoder>;
@@ -49,7 +48,7 @@ export function ProposalEditor({
   const [showBudgetInput, setShowBudgetInput] = useState(false);
   const [editorContent, setEditorContent] = useState('');
   const [editorInstance, setEditorInstance] = useState<any>(null);
-  const [imageAttachments, setImageAttachments] = useState<ImageAttachment[]>(
+  const [imageAttachments] = useState<ImageAttachment[]>(
     [],
   );
   const [showInfoModal, setShowInfoModal] = useState(false);
@@ -137,11 +136,6 @@ export function ProposalEditor({
   // Handle editor ready callback
   const handleEditorReady = useCallback((editor: any) => {
     setEditorInstance(editor);
-  }, []);
-
-  // Handle image attachment uploads
-  const handleImageUploaded = useCallback((attachment: ImageAttachment) => {
-    setImageAttachments((prev) => [...prev, attachment]);
   }, []);
 
   // Initialize form with existing proposal data if in edit mode
