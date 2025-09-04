@@ -45,12 +45,15 @@ interface FormPhaseData {
  * Transforms process instance data from the API into form data structure
  * that can be used in the multi-step form
  */
-export const transformInstanceDataToFormData = (instance: ProcessInstance): Record<string, unknown> => {
+export const transformInstanceDataToFormData = (
+  instance: ProcessInstance,
+): Record<string, unknown> => {
   const formData: Record<string, unknown> = {
     ...schemaDefaults,
     processName: instance.name,
     description: instance.description || '',
     totalBudget: instance.instanceData?.budget || 0,
+    hideBudget: instance.instanceData?.hideBudget || false,
     categories: instance.instanceData?.fieldValues?.categories || [],
     budgetCapAmount: instance.instanceData?.fieldValues?.budgetCapAmount || 0,
     descriptionGuidance:
@@ -62,10 +65,18 @@ export const transformInstanceDataToFormData = (instance: ProcessInstance): Reco
   // Extract phase dates if they exist
   if (instance.instanceData?.phases) {
     const phases = instance.instanceData.phases;
-    const submissionPhase = phases.find((p: PhaseConfiguration) => p.stateId === 'submission');
-    const reviewPhase = phases.find((p: PhaseConfiguration) => p.stateId === 'review');
-    const votingPhase = phases.find((p: PhaseConfiguration) => p.stateId === 'voting');
-    const resultsPhase = phases.find((p: PhaseConfiguration) => p.stateId === 'results');
+    const submissionPhase = phases.find(
+      (p: PhaseConfiguration) => p.stateId === 'submission',
+    );
+    const reviewPhase = phases.find(
+      (p: PhaseConfiguration) => p.stateId === 'review',
+    );
+    const votingPhase = phases.find(
+      (p: PhaseConfiguration) => p.stateId === 'voting',
+    );
+    const resultsPhase = phases.find(
+      (p: PhaseConfiguration) => p.stateId === 'results',
+    );
 
     if (submissionPhase) {
       formData.proposalSubmissionPhase = {
@@ -99,9 +110,12 @@ export const transformInstanceDataToFormData = (instance: ProcessInstance): Reco
  * Transforms form data back into the instance data structure
  * that can be saved to the database
  */
-export const transformFormDataToInstanceData = (data: Record<string, unknown>): InstanceData => {
+export const transformFormDataToInstanceData = (
+  data: Record<string, unknown>,
+): InstanceData => {
   return {
     budget: data.totalBudget as number,
+    hideBudget: data.hideBudget as boolean,
     currentStateId: 'submission',
     fieldValues: {
       categories: data.categories,
@@ -114,21 +128,37 @@ export const transformFormDataToInstanceData = (data: Record<string, unknown>): 
         stateId: 'submission',
         plannedStartDate: (data.proposalSubmissionPhase as PhaseFormData)
           ?.submissionsOpen,
-        plannedEndDate: (data.proposalSubmissionPhase as PhaseFormData)?.submissionsClose,
+        plannedEndDate: (data.proposalSubmissionPhase as PhaseFormData)
+          ?.submissionsClose,
       },
       {
         stateId: 'review',
-        plannedStartDate: (data.reviewShortlistingPhase as { reviewOpen?: string; reviewClose?: string })?.reviewOpen,
-        plannedEndDate: (data.reviewShortlistingPhase as { reviewOpen?: string; reviewClose?: string })?.reviewClose,
+        plannedStartDate: (
+          data.reviewShortlistingPhase as {
+            reviewOpen?: string;
+            reviewClose?: string;
+          }
+        )?.reviewOpen,
+        plannedEndDate: (
+          data.reviewShortlistingPhase as {
+            reviewOpen?: string;
+            reviewClose?: string;
+          }
+        )?.reviewClose,
       },
       {
         stateId: 'voting',
-        plannedStartDate: (data.votingPhase as { votingOpen?: string; votingClose?: string })?.votingOpen,
-        plannedEndDate: (data.votingPhase as { votingOpen?: string; votingClose?: string })?.votingClose,
+        plannedStartDate: (
+          data.votingPhase as { votingOpen?: string; votingClose?: string }
+        )?.votingOpen,
+        plannedEndDate: (
+          data.votingPhase as { votingOpen?: string; votingClose?: string }
+        )?.votingClose,
       },
       {
         stateId: 'results',
-        plannedStartDate: (data.resultsAnnouncement as { resultsDate?: string })?.resultsDate,
+        plannedStartDate: (data.resultsAnnouncement as { resultsDate?: string })
+          ?.resultsDate,
       },
     ],
   };
@@ -137,7 +167,9 @@ export const transformFormDataToInstanceData = (data: Record<string, unknown>): 
 /**
  * Validates that phase dates are in chronological order
  */
-export const validatePhaseSequence = (formData: Record<string, unknown>): string[] => {
+export const validatePhaseSequence = (
+  formData: Record<string, unknown>,
+): string[] => {
   const errors: string[] = [];
 
   const phases = formData as FormPhaseData;

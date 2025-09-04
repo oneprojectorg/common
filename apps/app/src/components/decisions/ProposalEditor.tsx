@@ -13,6 +13,7 @@ import { Button } from '@op/ui/Button';
 import { NumberField } from '@op/ui/NumberField';
 import { Select, SelectItem } from '@op/ui/Select';
 import { TextField } from '@op/ui/TextField';
+import { toast } from '@op/ui/Toast';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
@@ -34,6 +35,43 @@ interface ProposalEditorProps {
   isEditMode?: boolean;
 }
 
+// Utility function to handle tRPC validation errors
+function handleValidationError(error: any, operationType: 'create' | 'update') {
+  console.error(`Failed to ${operationType} proposal:`, error);
+
+  // Check if error has field-specific validation errors
+  if (
+    error.data &&
+    'cause' in error.data &&
+    error.data.cause &&
+    typeof error.data.cause === 'object' &&
+    'fieldErrors' in error.data.cause
+  ) {
+    const fieldErrors = error.data.cause.fieldErrors as Record<string, string>;
+
+    // Show individual error messages for each field, or combine if multiple
+    const errorMessages = Object.values(fieldErrors);
+
+    if (errorMessages.length === 1) {
+      // Single error - show just the message
+      toast.error({
+        message: errorMessages[0],
+      });
+    } else {
+      // Multiple errors - show with title
+      toast.error({
+        title: 'Please fix the following issues:',
+        message: errorMessages.join(', '),
+      });
+    }
+  } else {
+    toast.error({
+      title: `Failed to ${operationType} proposal`,
+      message: error.message || 'An unexpected error occurred',
+    });
+  }
+}
+
 export function ProposalEditor({
   instance,
   backHref,
@@ -48,23 +86,35 @@ export function ProposalEditor({
   const [showBudgetInput, setShowBudgetInput] = useState(false);
   const [editorContent, setEditorContent] = useState('');
   const [editorInstance, setEditorInstance] = useState<any>(null);
-  const [imageAttachments] = useState<ImageAttachment[]>(
-    [],
-  );
+  const [imageAttachments] = useState<ImageAttachment[]>([]);
   const [showInfoModal, setShowInfoModal] = useState(false);
   const editorRef = useRef<RichTextEditorRef>(null);
+  const initializedRef = useRef(false);
   const utils = trpc.useUtils();
 
-  const createProposalMutation = trpc.decision.createProposal.useMutation();
-  const updateProposalMutation = trpc.decision.updateProposal.useMutation({
+  const createProposalMutation = trpc.decision.createProposal.useMutation({
     onSuccess: async () => {
-      utils.decision.getProposal.invalidate({
-        proposalId: existingProposal?.id,
-      });
-      utils.decision.listProposals.invalidate({
+      await utils.decision.listProposals.invalidate({
         processInstanceId: instance.id,
       });
+      // Navigate after cache invalidation completes
+      router.push(backHref);
     },
+    onError: (error) => handleValidationError(error, 'create'),
+  });
+
+  const updateProposalMutation = trpc.decision.updateProposal.useMutation({
+    onSuccess: async () => {
+      await utils.decision.getProposal.invalidate({
+        proposalId: existingProposal?.id,
+      });
+      await utils.decision.listProposals.invalidate({
+        processInstanceId: instance.id,
+      });
+      // Navigate after cache invalidation completes
+      router.push(backHref);
+    },
+    onError: (error) => handleValidationError(error, 'update'),
   });
 
   // Extract template data from the instance
@@ -114,6 +164,21 @@ export function ProposalEditor({
       .budgetCapAmount as number;
   }
 
+  const isBudgetRequired = (() => {
+    // First check the proposal template schema
+    if (
+      proposalTemplate &&
+      typeof proposalTemplate === 'object' &&
+      'required' in proposalTemplate &&
+      Array.isArray(proposalTemplate.required)
+    ) {
+      return proposalTemplate.required.includes('budget');
+    }
+
+    // Safe default: require budget for all proposals unless explicitly configured otherwise
+    return true;
+  })();
+
   // Parse proposal data for editing
   const parsedProposalData =
     isEditMode && existingProposal
@@ -122,8 +187,8 @@ export function ProposalEditor({
 
   // Use existing content if editing, otherwise use placeholder content
   const initialContent =
-    isEditMode && parsedProposalData?.content
-      ? parsedProposalData.content
+    isEditMode && parsedProposalData
+      ? parsedProposalData.description
       : descriptionGuidance
         ? `<p>${descriptionGuidance}</p>`
         : undefined;
@@ -140,10 +205,15 @@ export function ProposalEditor({
 
   // Initialize form with existing proposal data if in edit mode
   useEffect(() => {
-    if (isEditMode && existingProposal && parsedProposalData) {
+    if (
+      isEditMode &&
+      existingProposal &&
+      parsedProposalData &&
+      !initializedRef.current
+    ) {
       const {
         title: existingTitle,
-        content: existingContent,
+        description: existingDescription,
         category: existingCategory,
         budget: existingBudget,
       } = parsedProposalData;
@@ -154,24 +224,22 @@ export function ProposalEditor({
       if (existingCategory) {
         setSelectedCategory(existingCategory);
       }
-      if (existingBudget) {
+      if (existingBudget !== undefined) {
         setBudget(existingBudget);
         setShowBudgetInput(true);
       }
 
       // Set editor content state immediately
-      if (existingContent) {
-        setEditorContent(existingContent);
+      if (existingDescription) {
+        setEditorContent(existingDescription);
       }
+
+      // Mark as initialized to prevent re-running
+      initializedRef.current = true;
     }
   }, [isEditMode, existingProposal, parsedProposalData]);
 
-  // Set editor content when editor is ready and we have existing content
-  useEffect(() => {
-    if (editorInstance && isEditMode && parsedProposalData?.content) {
-      editorInstance.commands.setContent(parsedProposalData.content);
-    }
-  }, [editorInstance, isEditMode, parsedProposalData?.content]);
+  // Content setting is now handled by RichTextEditorContent component via the content prop
 
   // Show proposal info modal when creating a new proposal (not editing)
   useEffect(() => {
@@ -190,6 +258,56 @@ export function ProposalEditor({
     setIsSubmitting(true);
 
     try {
+      // Validate required fields
+      const missingFields: string[] = [];
+
+      if (!title || title.trim() === '') {
+        missingFields.push('Title');
+      }
+
+      // Check for empty content (rich text editor can have various empty states)
+      const isContentEmpty =
+        !content ||
+        content.trim() === '' ||
+        content === '<p></p>' ||
+        content === '<p><br></p>' ||
+        content.replace(/<[^>]*>/g, '').trim() === '';
+
+      if (isContentEmpty) {
+        missingFields.push('Description');
+      }
+
+      if (isBudgetRequired && (budget === null || budget === undefined)) {
+        missingFields.push('Budget');
+      }
+
+      // Validate budget cap if there's a limit
+      if (
+        budget !== null &&
+        budget !== undefined &&
+        budgetCapAmount &&
+        budget > budgetCapAmount
+      ) {
+        toast.error({
+          message: `Budget cannot exceed ${budgetCapAmount.toLocaleString()}`,
+        });
+        return;
+      }
+
+      if (missingFields.length > 0) {
+        if (missingFields.length === 1) {
+          toast.error({
+            message: `${missingFields[0]} is required`,
+          });
+        } else {
+          toast.error({
+            title: 'Please complete the following required fields:',
+            message: missingFields.join(', '),
+          });
+        }
+        return;
+      }
+
       // Extract image URLs from content and get attachment IDs
       const imageUrls = extractImageUrlsFromContent(content);
       const attachmentIds = extractAttachmentIdsFromUrls(
@@ -198,16 +316,23 @@ export function ProposalEditor({
       );
 
       // Create the proposal data structure
-      const proposalData = {
-        title,
-        content,
-        category: selectedCategory,
-        budget: budget,
-        // Add any additional fields that match the process's proposal template
-      };
+      const proposalData: Record<string, unknown> = {};
+
+      // Always include required fields (they've been validated above)
+      proposalData.title = title;
+      proposalData.description = content;
+
+      // Only include optional fields if they have values
+      if (selectedCategory) {
+        proposalData.category = selectedCategory;
+      }
+
+      if (budget !== null && budget !== undefined) {
+        proposalData.budget = budget;
+      }
 
       if (isEditMode && existingProposal) {
-        // Update existing proposal
+        // Update existing proposal - navigation handled in onSuccess callback
         await updateProposalMutation.mutateAsync({
           proposalId: existingProposal.id,
           data: {
@@ -216,22 +341,20 @@ export function ProposalEditor({
           },
         });
       } else {
-        // Create new proposal
+        // Create new proposal - navigation handled in onSuccess callback
         await createProposalMutation.mutateAsync({
           processInstanceId: instance.id,
           proposalData,
           attachmentIds, // Include attachment IDs for new proposals
         });
       }
-
-      // Navigate back to appropriate page
-      router.push(backHref);
     } catch (error) {
+      // Error handling is now done by the mutation's onError callbacks
+      // This catch block handles any other unexpected errors
       console.error(
         `Failed to ${isEditMode ? 'update' : 'submit'} proposal:`,
         error,
       );
-      // TODO: Show error message to user
     } finally {
       setIsSubmitting(false);
     }
@@ -248,6 +371,7 @@ export function ProposalEditor({
     backHref,
     router,
     imageAttachments,
+    isBudgetRequired,
   ]);
 
   return (
@@ -299,18 +423,11 @@ export function ProposalEditor({
               >
                 Add budget
               </Button>
-            ) : (
+            ) : null}
+            {showBudgetInput && (
               <NumberField
                 value={budget}
                 onChange={(value) => {
-                  if (
-                    value !== null &&
-                    budgetCapAmount &&
-                    value > budgetCapAmount
-                  ) {
-                    // Don't allow values exceeding the cap
-                    return;
-                  }
                   setBudget(value);
                 }}
                 prefixText="$"
@@ -326,11 +443,13 @@ export function ProposalEditor({
 
           <RichTextEditorContent
             ref={editorRef}
-            content={initialContent}
+            content={initialContent || ''}
             onUpdate={handleEditorUpdate}
             placeholder="Write your proposal here..."
             onEditorReady={handleEditorReady}
             editorClassName="max-w-[32rem] sm:min-w-[32rem] px-0 py-6 text-neutral-black placeholder:text-neutral-gray2"
+            readOnly={false}
+            immediatelyRender={false}
           />
         </div>
       </div>

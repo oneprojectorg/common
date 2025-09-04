@@ -113,12 +113,15 @@ export const RichTextEditorContent = forwardRef<
       [editor],
     );
 
-    // Set initial content
+    // Set initial content only once when editor is first created
     useEffect(() => {
-      if (editor && content !== editor.getHTML()) {
-        editor.commands.setContent(content);
+      if (editor && content) {
+        const currentContent = editor.getHTML();
+        if (currentContent === '' || currentContent === '<p></p>') {
+          editor.commands.setContent(content);
+        }
       }
-    }, [editor, content]);
+    }, [editor]); // Only depend on editor, not content
 
     // Notify parent when editor is ready
     useEffect(() => {

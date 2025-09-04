@@ -104,7 +104,7 @@ const DecisionProcessList = ({ profileId }: { profileId: string }) => {
                   {instance.name}
                 </Header3>
                 <div className="flex items-start gap-1 text-sm text-neutral-charcoal">
-                  {instance.instanceData?.budget && (
+                  {instance.instanceData?.budget && !instance.instanceData?.hideBudget && (
                     <>
                       <span>
                         ${instance.instanceData.budget.toLocaleString()}{' '}
