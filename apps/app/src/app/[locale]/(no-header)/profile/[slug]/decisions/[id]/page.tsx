@@ -95,7 +95,7 @@ async function DecisionInstancePageContent({
 
         {/* Main layout with sidebar and content */}
         <div className="flex w-full justify-center bg-white">
-          <div className="grid w-full max-w-6xl grid-cols-1 gap-8 p-8 lg:grid-cols-4">
+          <div className="grid w-full grid-cols-1 gap-8 p-4 sm:max-w-6xl sm:p-8 lg:grid-cols-4">
             {/* Left sidebar - Process Info */}
             <div className="lg:col-span-1">
               <div className="flex flex-col gap-4">
@@ -167,7 +167,7 @@ function DecisionInstancePageLoading() {
 
       {/* Content loading */}
       <div className="min-h-full bg-gray-50 px-6 py-12">
-        <div className="mx-auto max-w-6xl">
+        <div className="mx-auto sm:max-w-6xl">
           <div className="text-center">
             <div className="mx-auto h-16 w-96 animate-pulse rounded bg-neutral-gray1" />
             <div className="mx-auto mt-4 h-6 w-80 animate-pulse rounded bg-neutral-gray1" />
