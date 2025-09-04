@@ -8,8 +8,9 @@ import { Avatar } from '@op/ui/Avatar';
 import { FacePile } from '@op/ui/FacePile';
 import { GradientHeader } from '@op/ui/Header';
 import { useLocale } from 'next-intl';
-import { useTranslations } from '@/lib/i18n/routing';
 import Image from 'next/image';
+
+import { useTranslations } from '@/lib/i18n/routing';
 
 interface DecisionInstanceContentProps {
   budget?: number;
@@ -30,7 +31,7 @@ export function DecisionInstanceContent({
   const uniqueSubmitters = getUniqueSubmitters(proposals);
 
   return (
-    <div className="min-h-full py-8">
+    <div className="min-h-full px-4 py-8">
       <div className="mx-auto">
         {/* heading */}
         <div className="text-center">

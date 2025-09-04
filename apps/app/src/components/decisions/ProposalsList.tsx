@@ -145,7 +145,7 @@ export function ProposalsList({ slug, instanceId }: ProposalsListProps) {
             {proposals?.length ?? 0}
           </span>
         </div>
-        <div className="flex flex-1 flex-wrap items-center gap-4">
+        <div className="grid max-w-fit grid-cols-2 gap-4 sm:flex sm:flex-1 sm:flex-wrap sm:items-center">
           <Select
             selectedKey={proposalFilter}
             onSelectionChange={(key) => {

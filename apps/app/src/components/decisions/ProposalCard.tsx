@@ -8,6 +8,7 @@ import {
 } from '@/utils/proposalUtils';
 import type { proposalEncoder } from '@op/api/encoders';
 import { Avatar } from '@op/ui/Avatar';
+import { Chip } from '@op/ui/Chip';
 import { Surface } from '@op/ui/Surface';
 import { Heart, MessageCircle } from 'lucide-react';
 import Image from 'next/image';
@@ -38,24 +39,24 @@ export function ProposalCard({
   );
 
   return (
-    <Surface className="p-6">
+    <Surface className="space-y-3 p-6 pb-4">
       {/* Header with title and budget */}
-      <div className="mb-3 flex items-start justify-between">
+      <div className="flex flex-col items-start justify-between gap-2 sm:flex-row">
         <Link
           href={viewHref}
-          className="text-lg font-semibold text-neutral-charcoal transition-colors hover:text-primary-teal"
+          className="text-title-sm text-neutral-black transition-colors hover:text-primary-teal"
         >
           {title || t('Untitled Proposal')}
         </Link>
         {budget && (
-          <span className="text-lg font-semibold text-neutral-charcoal">
+          <span className="text-title-base text-neutral-charcoal">
             {formatCurrency(budget)}
           </span>
         )}
       </div>
 
       {/* Author and category */}
-      <div className="mb-3 flex items-center gap-3">
+      <div className="flex items-center gap-3">
         {currentProposal.submittedBy && (
           <>
             <Avatar
@@ -83,30 +84,29 @@ export function ProposalCard({
                 />
               ) : null}
             </Avatar>
-            <span className="text-sm text-neutral-charcoal">
+            <span className="text-base text-neutral-charcoal">
               {currentProposal.submittedBy.name ||
                 currentProposal.submittedBy.slug}
             </span>
-            <span className="text-sm text-neutral-gray2">•</span>
+
+            <span className="text-sm text-neutral-gray2">
+              {category ? '•' : null}
+            </span>
           </>
         )}
-        {category && (
-          <span className="rounded-full bg-neutral-gray1 px-3 py-1 text-xs text-neutral-charcoal">
-            {category}
-          </span>
-        )}
+        {category && <Chip>{category}</Chip>}
       </div>
 
       {/* Description */}
       {content && (
-        <p className="mb-4 line-clamp-3 text-sm text-neutral-black">
+        <p className="mb-4 line-clamp-3 text-base text-neutral-charcoal">
           {getTextPreview(content)}
         </p>
       )}
 
       {/* Footer with engagement */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4 text-sm text-neutral-gray4">
+      <div className="flex flex-col justify-between gap-4 sm:flex-row">
+        <div className="flex w-full items-center justify-between gap-4 text-base text-neutral-gray4 sm:justify-normal">
           <span className="flex items-center gap-1">
             <Heart className="h-4 w-4" />
             <span>
