@@ -17,7 +17,11 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
 
-import { RichTextEditorContent, RichTextEditorRef } from '../RichTextEditor';
+import {
+  RichTextEditorContent,
+  RichTextEditorRef,
+  RichTextEditorToolbar,
+} from '../RichTextEditor';
 import { ProposalInfoModal } from './ProposalInfoModal';
 import { ProposalRichTextToolbar } from './ProposalRichTextToolbar';
 import { ProposalEditorLayout } from './layout';
@@ -263,9 +267,8 @@ export function ProposalEditor({
       {/* Content */}
       <div className="flex flex-1 flex-col gap-12">
         {editorInstance && (
-          <ProposalRichTextToolbar
+          <RichTextEditorToolbar
             editor={editorInstance}
-            onImageUploaded={handleImageUploaded}
           />
         )}
         <div className="mx-auto flex max-w-4xl flex-col gap-6">
