@@ -37,11 +37,11 @@ export function CurrentPhaseSurface({
         <div className="text-xs font-normal uppercase tracking-[0.96px] text-neutral-gray4">
           {t('Current Phase')}
         </div>
-        <div className="text-sm font-bold leading-[1.5] text-neutral-black">
+        <div className="text-base font-bold text-neutral-black">
           {currentPhase?.name || t('Proposal Submissions')}
         </div>
         {(currentPhase?.phase?.startDate || currentPhase?.phase?.endDate) && (
-          <div className="text-sm font-normal leading-[1.5] text-neutral-black">
+          <div className="text-base text-neutral-black">
             {formatDateRange(
               currentPhase.phase?.startDate,
               currentPhase.phase?.endDate,
@@ -56,18 +56,20 @@ export function CurrentPhaseSurface({
 
       {/* Stats section */}
       <div className="flex flex-col gap-2">
-        <div className="flex items-start justify-between text-sm font-normal leading-[1.5]">
+        <div className="flex items-start justify-between">
           <span className="text-neutral-charcoal">{t('Total Budget')}</span>
           <span className="text-neutral-black">
             {budget ? formatCurrency(budget, locale) : '$0'}
           </span>
         </div>
-        <div className="flex items-start justify-between text-sm font-normal leading-[1.5]">
-          <span className="text-neutral-charcoal">{t('Proposals Submitted')}</span>
+        <div className="flex items-start justify-between">
+          <span className="text-neutral-charcoal">
+            {t('Proposals Submitted')}
+          </span>
           <span className="text-neutral-black">{proposalCount}</span>
         </div>
         {remainingDays !== null && (
-          <div className="flex items-start justify-between text-sm font-normal leading-[1.5]">
+          <div className="flex items-start justify-between">
             <span className="text-neutral-charcoal">{t('Days Remaining')}</span>
             <span className="text-neutral-black">{remainingDays}</span>
           </div>
