@@ -31,7 +31,10 @@ export const DecisionsTabPanel = ({
   className?: string;
 }) => {
   return (
-    <TabPanel id="decisions" className={cn('px-0', className)}>
+    <TabPanel
+      id="decisions"
+      className={cn('flex-grow px-4 pt-2 sm:px-6 sm:py-8', className)}
+    >
       {children}
     </TabPanel>
   );

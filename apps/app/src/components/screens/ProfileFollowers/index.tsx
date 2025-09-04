@@ -5,12 +5,13 @@ import { trpc } from '@op/api/client';
 import { ProfileRelationshipType } from '@op/api/encoders';
 import React, { Suspense, useMemo } from 'react';
 
+import { useTranslations } from '@/lib/i18n';
+
 import ErrorBoundary from '@/components/ErrorBoundary';
 import {
   RelationshipList,
   type RelationshipListItem,
 } from '@/components/RelationshipList';
-import { useTranslations } from '@/lib/i18n';
 
 import { ProfileRelationshipsSkeleton } from '../ProfileRelationships/Skeleton';
 
@@ -20,7 +21,7 @@ export const ProfileFollowersSuspense = ({
   profileId: string;
 }) => {
   const t = useTranslations();
-  
+
   // Get relationships where this profile is the target (people following this profile)
   const [relationships] = trpc.profile.getRelationships.useSuspenseQuery({
     targetProfileId: profileId,
@@ -30,7 +31,9 @@ export const ProfileFollowersSuspense = ({
   const followers: RelationshipListItem[] = useMemo(() => {
     return relationships
       .filter(
-        (rel) => rel.relationshipType === ProfileRelationshipType.FOLLOWING && rel.sourceProfile,
+        (rel) =>
+          rel.relationshipType === ProfileRelationshipType.FOLLOWING &&
+          rel.sourceProfile,
       )
       .map((rel) => rel.sourceProfile!)
       .sort((a, b) => a.name.localeCompare(b.name));
