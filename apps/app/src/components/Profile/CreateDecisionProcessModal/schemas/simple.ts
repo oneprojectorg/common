@@ -484,7 +484,12 @@ export const transformFormDataToProcessSchema = (
         title: { type: 'string' },
         description: { type: 'string' },
         budget: { type: 'number', maximum: data.budgetCapAmount },
-        category: { type: 'string', enum: data.categories },
+        ...(data.categories && (data.categories as string[]).length > 0 ? {
+          category: { 
+            type: ['string', 'null'], 
+            enum: [...(data.categories as string[]), null] 
+          },
+        } : {}),
       },
       required: data.requireBudget ? ['title', 'description', 'budget'] : ['title', 'description'],
     },
