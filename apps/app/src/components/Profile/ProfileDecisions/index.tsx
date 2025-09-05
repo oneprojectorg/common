@@ -1,6 +1,7 @@
 'use client';
 
 import { useUser } from '@/utils/UserProvider';
+import { getTextPreview } from '@/utils/proposalUtils';
 import { trpc } from '@op/api/client';
 import { Button, ButtonLink } from '@op/ui/Button';
 import { DialogTrigger } from '@op/ui/Dialog';
@@ -104,15 +105,16 @@ const DecisionProcessList = ({ profileId }: { profileId: string }) => {
                   {instance.name}
                 </Header3>
                 <div className="flex items-start gap-1 text-sm text-neutral-charcoal">
-                  {instance.instanceData?.budget && !instance.instanceData?.hideBudget && (
-                    <>
-                      <span>
-                        ${instance.instanceData.budget.toLocaleString()}{' '}
-                        {t('Budget')}
-                      </span>
-                      <span>•</span>
-                    </>
-                  )}
+                  {instance.instanceData?.budget &&
+                    !instance.instanceData?.hideBudget && (
+                      <>
+                        <span>
+                          ${instance.instanceData.budget.toLocaleString()}{' '}
+                          {t('Budget')}
+                        </span>
+                        <span>•</span>
+                      </>
+                    )}
                   <span>
                     {instance.proposalCount || 0} {t('Proposals')}
                   </span>
@@ -124,7 +126,7 @@ const DecisionProcessList = ({ profileId }: { profileId: string }) => {
               </div>
               {instance.description && (
                 <p className="max-w-2xl overflow-hidden text-ellipsis text-base text-neutral-charcoal sm:text-nowrap">
-                  {instance.description}
+                  {getTextPreview(instance.description)}
                 </p>
               )}
             </div>

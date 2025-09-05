@@ -1,15 +1,17 @@
 import { parseDate } from '@internationalized/date';
 import { CategoryList } from '@op/ui/CategoryList';
-import { Checkbox } from '@op/ui/Checkbox';
 import { DatePicker } from '@op/ui/DatePicker';
 import { Description } from '@op/ui/Field';
 import { NumberField } from '@op/ui/NumberField';
 import { Radio, RadioGroup } from '@op/ui/RadioGroup';
 import { TextField } from '@op/ui/TextField';
+import { ToggleButton } from '@op/ui/ToggleButton';
 import { cn } from '@op/ui/utils';
 import { formatDate as formatDateCore } from '@op/ui/utils/formatting';
 import { WidgetProps } from '@rjsf/utils';
 import React from 'react';
+
+import { ToggleRow } from '@/components/layout/split/form/ToggleRow';
 
 import { RichTextEditor } from '../../RichTextEditor';
 
@@ -250,14 +252,16 @@ export const CheckboxWidget = (props: WidgetProps) => {
   const customClassName = uiSchema?.['ui:options']?.className as string;
 
   return (
-    <Checkbox
-      id={id}
-      isSelected={value || false}
-      onChange={(val) => onChange(val)}
-      className={customClassName}
-    >
-      {schema.title}
-    </Checkbox>
+    <ToggleRow>
+      <span>{schema.title}</span>
+
+      <ToggleButton
+        id={id}
+        isSelected={value || false}
+        onChange={(val) => onChange(val)}
+        className={customClassName}
+      />
+    </ToggleRow>
   );
 };
 
@@ -376,6 +380,8 @@ export const RichTextEditorWidget = (props: WidgetProps) => {
 
   // Allow custom className through uiSchema options
   const customClassName = uiSchema?.['ui:options']?.className as string;
+  const showToolbar =
+    (uiSchema?.['ui:options']?.showToolbar as boolean) ?? true;
 
   return (
     <div className="flex flex-col gap-2">
@@ -394,7 +400,7 @@ export const RichTextEditorWidget = (props: WidgetProps) => {
             'prose prose-sm min-h-52 max-w-none flex-1 p-4 focus:outline-none',
             customClassName,
           )}
-          showToolbar={true}
+          showToolbar={showToolbar}
           toolbarPosition="bottom"
         />
       </div>
@@ -486,30 +492,37 @@ export const ReviewSummaryWidget = (props: WidgetProps) => {
           key: 'ideaCollectionPhase',
           label: 'Idea Collection',
           formatter: (phase: any) =>
-            formatDateRange(phase?.ideaCollectionOpen, phase?.ideaCollectionClose),
+            formatDateRange(
+              phase?.ideaCollectionOpen,
+              phase?.ideaCollectionClose,
+            ),
           // Only show if the phase has data
-          shouldShow: (value: any) => Boolean(value?.ideaCollectionOpen || value?.ideaCollectionClose),
+          shouldShow: (value: any) =>
+            Boolean(value?.ideaCollectionOpen || value?.ideaCollectionClose),
         },
         {
           key: 'proposalSubmissionPhase',
           label: 'Submissions',
           formatter: (phase: any) =>
             formatDateRange(phase?.submissionsOpen, phase?.submissionsClose),
-          shouldShow: (value: any) => Boolean(value?.submissionsOpen || value?.submissionsClose),
+          shouldShow: (value: any) =>
+            Boolean(value?.submissionsOpen || value?.submissionsClose),
         },
         {
           key: 'reviewShortlistingPhase',
           label: 'Review',
           formatter: (phase: any) =>
             formatDateRange(phase?.reviewOpen, phase?.reviewClose),
-          shouldShow: (value: any) => Boolean(value?.reviewOpen || value?.reviewClose),
+          shouldShow: (value: any) =>
+            Boolean(value?.reviewOpen || value?.reviewClose),
         },
         {
           key: 'votingPhase',
           label: 'Voting',
           formatter: (phase: any) =>
             formatDateRange(phase?.votingOpen, phase?.votingClose),
-          shouldShow: (value: any) => Boolean(value?.votingOpen || value?.votingClose),
+          shouldShow: (value: any) =>
+            Boolean(value?.votingOpen || value?.votingClose),
         },
         {
           key: 'resultsAnnouncement',
@@ -585,7 +598,7 @@ export const ReviewSummaryWidget = (props: WidgetProps) => {
             {visibleFields.map((field) => {
               const value = formData[field.key];
               const formattedValue = field.formatter(value);
-              
+
               return (
                 <SummaryRow
                   key={field.key}

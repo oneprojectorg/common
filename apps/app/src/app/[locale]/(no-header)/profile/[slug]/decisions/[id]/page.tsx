@@ -123,7 +123,12 @@ async function DecisionInstancePageContent({
                 <Header3 className="font-serif !text-title-base text-neutral-black">
                   {name}
                 </Header3>
-                {description ? <p className="text-sm">{description}</p> : null}
+                {description ? (
+                  <p
+                    className="text-sm"
+                    dangerouslySetInnerHTML={{ __html: description }}
+                  />
+                ) : null}
 
                 <div className="mb-6">
                   <ButtonLink

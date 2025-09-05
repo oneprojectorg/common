@@ -26,7 +26,8 @@ export const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
         hideBudget: {
           type: 'boolean',
           title: 'Hide budget from members',
-          description: 'When enabled, only you will see the total budget amount. Members will still see individual proposal budgets.',
+          description:
+            'When enabled, only you will see the total budget amount. Members will still see individual proposal budgets.',
         },
       },
     },
@@ -35,7 +36,7 @@ export const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
         'ui:placeholder': 'e.g., 2025 Community Budget',
       },
       description: {
-        'ui:widget': 'textarea',
+        'ui:widget': 'RichTextEditor',
         'ui:placeholder': 'Description for your decision-making process',
       },
       totalBudget: {
@@ -484,14 +485,18 @@ export const transformFormDataToProcessSchema = (
         title: { type: 'string' },
         description: { type: 'string' },
         budget: { type: 'number', maximum: data.budgetCapAmount },
-        ...(data.categories && (data.categories as string[]).length > 0 ? {
-          category: { 
-            type: ['string', 'null'], 
-            enum: [...(data.categories as string[]), null] 
-          },
-        } : {}),
+        ...(data.categories && (data.categories as string[]).length > 0
+          ? {
+              category: {
+                type: ['string', 'null'],
+                enum: [...(data.categories as string[]), null],
+              },
+            }
+          : {}),
       },
-      required: data.requireBudget ? ['title', 'description', 'budget'] : ['title', 'description'],
+      required: data.requireBudget
+        ? ['title', 'description', 'budget']
+        : ['title', 'description'],
     },
   };
 };
