@@ -52,8 +52,27 @@ async function DecisionInstancePageContent({
     }
 
     const processSchema = instance.process?.processSchema as any;
-    const phases: ProcessPhase[] = processSchema?.states || [];
     const instanceData = instance.instanceData as any;
+    
+    // Merge template states with actual instance phase data
+    const templateStates: ProcessPhase[] = processSchema?.states || [];
+    const instancePhases = instanceData?.phases || [];
+    
+    const phases: ProcessPhase[] = templateStates.map((templateState) => {
+      // Find corresponding instance phase data
+      const instancePhase = instancePhases.find(
+        (ip: any) => ip.stateId === templateState.id
+      );
+      
+      return {
+        ...templateState,
+        phase: instancePhase ? {
+          startDate: instancePhase.plannedStartDate,
+          endDate: instancePhase.plannedEndDate,
+          sortOrder: templateState.phase?.sortOrder,
+        } : templateState.phase,
+      };
+    });
 
     const currentPhase = phases.find(
       (phase) => phase.id === instance.currentStateId,

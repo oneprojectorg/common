@@ -78,7 +78,7 @@ export function DecisionInstanceContent({
                 ))}
               />
               <span className="w-fit text-sm text-neutral-charcoal">
-                {uniqueSubmitters.length}
+                {uniqueSubmitters.length}{' '}
                 {pluralize(t('member'), uniqueSubmitters.length)}{' '}
                 {uniqueSubmitters.length > 1 ? t('have') : t('has')}{' '}
                 {t('submitted proposals')}

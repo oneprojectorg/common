@@ -7,6 +7,7 @@ import { NumberField } from '@op/ui/NumberField';
 import { Radio, RadioGroup } from '@op/ui/RadioGroup';
 import { TextField } from '@op/ui/TextField';
 import { cn } from '@op/ui/utils';
+import { formatDate as formatDateCore } from '@op/ui/utils/formatting';
 import { WidgetProps } from '@rjsf/utils';
 import React from 'react';
 
@@ -422,7 +423,8 @@ export const ReviewSummaryWidget = (props: WidgetProps) => {
   const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return 'Not set';
     try {
-      return new Date(dateString).toLocaleDateString('en-US', {
+      // Use the UI package utility for consistent timezone-safe date parsing
+      return formatDateCore(dateString, {
         month: 'short',
         day: 'numeric',
         year: 'numeric',
@@ -441,6 +443,102 @@ export const ReviewSummaryWidget = (props: WidgetProps) => {
     if (start === 'Not set' || end === 'Not set') return 'Not set';
     return `${start} - ${end}`;
   };
+
+  // Types for dynamic summary configuration
+  interface SummaryField {
+    key: string;
+    label: string;
+    formatter: (value: any) => string;
+    shouldShow?: (value: any) => boolean;
+  }
+
+  interface SummarySection {
+    title: string;
+    fields: SummaryField[];
+  }
+
+  // Dynamic summary configuration
+  const summaryConfig: SummarySection[] = [
+    {
+      title: 'Process Details',
+      fields: [
+        {
+          key: 'processName',
+          label: 'Name',
+          formatter: (value: any) => value || 'Not set',
+        },
+        {
+          key: 'description',
+          label: 'Description',
+          formatter: (value: any) => value || 'Not set',
+        },
+        {
+          key: 'totalBudget',
+          label: 'Total Budget',
+          formatter: formatCurrency,
+        },
+      ],
+    },
+    {
+      title: 'Timeline',
+      fields: [
+        {
+          key: 'ideaCollectionPhase',
+          label: 'Idea Collection',
+          formatter: (phase: any) =>
+            formatDateRange(phase?.ideaCollectionOpen, phase?.ideaCollectionClose),
+          // Only show if the phase has data
+          shouldShow: (value: any) => Boolean(value?.ideaCollectionOpen || value?.ideaCollectionClose),
+        },
+        {
+          key: 'proposalSubmissionPhase',
+          label: 'Submissions',
+          formatter: (phase: any) =>
+            formatDateRange(phase?.submissionsOpen, phase?.submissionsClose),
+          shouldShow: (value: any) => Boolean(value?.submissionsOpen || value?.submissionsClose),
+        },
+        {
+          key: 'reviewShortlistingPhase',
+          label: 'Review',
+          formatter: (phase: any) =>
+            formatDateRange(phase?.reviewOpen, phase?.reviewClose),
+          shouldShow: (value: any) => Boolean(value?.reviewOpen || value?.reviewClose),
+        },
+        {
+          key: 'votingPhase',
+          label: 'Voting',
+          formatter: (phase: any) =>
+            formatDateRange(phase?.votingOpen, phase?.votingClose),
+          shouldShow: (value: any) => Boolean(value?.votingOpen || value?.votingClose),
+        },
+        {
+          key: 'resultsAnnouncement',
+          label: 'Results',
+          formatter: (phase: any) => formatDate(phase?.resultsDate),
+          shouldShow: (value: any) => Boolean(value?.resultsDate),
+        },
+      ],
+    },
+    {
+      title: 'Configuration',
+      fields: [
+        {
+          key: 'maxVotesPerMember',
+          label: 'Max votes per member',
+          formatter: (value: any) =>
+            value ? `${value} per member` : 'Not set',
+        },
+        {
+          key: 'categories',
+          label: 'Categories',
+          formatter: (categories: string[]) => {
+            if (!categories || categories.length === 0) return 'None';
+            return `${categories.length} (${categories.join(', ')})`;
+          },
+        },
+      ],
+    },
+  ];
 
   const SummarySection = ({
     title,
@@ -470,65 +568,35 @@ export const ReviewSummaryWidget = (props: WidgetProps) => {
     </div>
   );
 
-  const categories = formData.categories || [];
-  const categoriesDisplay =
-    categories.length > 0
-      ? `${categories.length} (${categories.join(', ')})`
-      : 'None';
-
   return (
     <div className="space-y-6">
-      <SummarySection title="Process Details">
-        <SummaryRow label="Name" value={formData.processName || 'Not set'} />
-        <SummaryRow
-          label="Description"
-          value={formData.description || 'Not set'}
-        />
-        <SummaryRow
-          label="Total Budget"
-          value={formatCurrency(formData.totalBudget)}
-        />
-      </SummarySection>
+      {summaryConfig.map((section) => {
+        // Filter fields that should be shown
+        const visibleFields = section.fields.filter((field) => {
+          const value = formData[field.key];
+          return field.shouldShow ? field.shouldShow(value) : true;
+        });
 
-      <SummarySection title="Timeline">
-        <SummaryRow
-          label="Submissions"
-          value={formatDateRange(
-            formData.proposalSubmissionPhase?.submissionsOpen,
-            formData.proposalSubmissionPhase?.submissionsClose,
-          )}
-        />
-        <SummaryRow
-          label="Review"
-          value={formatDateRange(
-            formData.reviewShortlistingPhase?.reviewOpen,
-            formData.reviewShortlistingPhase?.reviewClose,
-          )}
-        />
-        <SummaryRow
-          label="Voting"
-          value={formatDateRange(
-            formData.votingPhase?.votingOpen,
-            formData.votingPhase?.votingClose,
-          )}
-        />
-        <SummaryRow
-          label="Results"
-          value={formatDate(formData.resultsAnnouncement?.resultsDate)}
-        />
-      </SummarySection>
+        // Only render section if it has visible fields
+        if (visibleFields.length === 0) return null;
 
-      <SummarySection title="Configuration">
-        <SummaryRow
-          label="Max votes per member"
-          value={
-            formData.maxVotesPerMember
-              ? `${formData.maxVotesPerMember} per member`
-              : 'Not set'
-          }
-        />
-        <SummaryRow label="Categories" value={categoriesDisplay} />
-      </SummarySection>
+        return (
+          <SummarySection key={section.title} title={section.title}>
+            {visibleFields.map((field) => {
+              const value = formData[field.key];
+              const formattedValue = field.formatter(value);
+              
+              return (
+                <SummaryRow
+                  key={field.key}
+                  label={field.label}
+                  value={formattedValue}
+                />
+              );
+            })}
+          </SummarySection>
+        );
+      })}
     </div>
   );
 };
