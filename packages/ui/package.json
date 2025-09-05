@@ -60,7 +60,8 @@
     "./tailwind-styles": "./tailwind.styles.scss",
     "./tailwind-utils": "./tailwind.utils.mjs",
     "./useGesture": "./src/useGesture.ts",
-    "./utils": "./src/lib/utils.ts"
+    "./utils": "./src/lib/utils.ts",
+    "./utils/formatting": "./src/utils/formatting.ts"
   },
   "module": "./src/index.ts",
   "scripts": {

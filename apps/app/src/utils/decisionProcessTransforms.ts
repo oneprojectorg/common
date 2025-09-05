@@ -35,6 +35,7 @@ interface PhaseFormData {
 }
 
 interface FormPhaseData {
+  ideaCollectionPhase?: { ideaCollectionOpen?: string; ideaCollectionClose?: string };
   proposalSubmissionPhase?: PhaseFormData;
   reviewShortlistingPhase?: { reviewOpen?: string; reviewClose?: string };
   votingPhase?: { votingOpen?: string; votingClose?: string };
@@ -65,6 +66,9 @@ export const transformInstanceDataToFormData = (
   // Extract phase dates if they exist
   if (instance.instanceData?.phases) {
     const phases = instance.instanceData.phases;
+    const ideaCollectionPhase = phases.find(
+      (p: PhaseConfiguration) => p.stateId === 'ideaCollection',
+    );
     const submissionPhase = phases.find(
       (p: PhaseConfiguration) => p.stateId === 'submission',
     );
@@ -78,6 +82,12 @@ export const transformInstanceDataToFormData = (
       (p: PhaseConfiguration) => p.stateId === 'results',
     );
 
+    if (ideaCollectionPhase) {
+      formData.ideaCollectionPhase = {
+        ideaCollectionOpen: ideaCollectionPhase.plannedStartDate,
+        ideaCollectionClose: ideaCollectionPhase.plannedEndDate,
+      };
+    }
     if (submissionPhase) {
       formData.proposalSubmissionPhase = {
         submissionsOpen: submissionPhase.plannedStartDate,
@@ -124,6 +134,13 @@ export const transformFormDataToInstanceData = (
       maxVotesPerMember: data.maxVotesPerMember,
     },
     phases: [
+      {
+        stateId: 'ideaCollection',
+        plannedStartDate: (data.ideaCollectionPhase as { ideaCollectionOpen?: string; ideaCollectionClose?: string })
+          ?.ideaCollectionOpen,
+        plannedEndDate: (data.ideaCollectionPhase as { ideaCollectionOpen?: string; ideaCollectionClose?: string })
+          ?.ideaCollectionClose,
+      },
       {
         stateId: 'submission',
         plannedStartDate: (data.proposalSubmissionPhase as PhaseFormData)
@@ -173,11 +190,14 @@ export const validatePhaseSequence = (
   const errors: string[] = [];
 
   const phases = formData as FormPhaseData;
+  const ideaCollectionPhase = phases.ideaCollectionPhase || {};
   const proposalPhase = phases.proposalSubmissionPhase || {};
   const reviewPhase = phases.reviewShortlistingPhase || {};
   const votingPhase = phases.votingPhase || {};
   const resultsPhase = phases.resultsAnnouncement || {};
 
+  const ideaCollectionOpen = ideaCollectionPhase.ideaCollectionOpen;
+  const ideaCollectionClose = ideaCollectionPhase.ideaCollectionClose;
   const submissionOpen = proposalPhase.submissionsOpen;
   const submissionClose = proposalPhase.submissionsClose;
   const reviewOpen = reviewPhase.reviewOpen;
@@ -187,6 +207,16 @@ export const validatePhaseSequence = (
   const resultsDate = resultsPhase.resultsDate;
 
   const dates = [
+    {
+      name: 'Idea Collection Open',
+      value: ideaCollectionOpen,
+      key: 'ideaCollectionOpen',
+    },
+    {
+      name: 'Idea Collection Close',
+      value: ideaCollectionClose,
+      key: 'ideaCollectionClose',
+    },
     {
       name: 'Submissions Open',
       value: submissionOpen,

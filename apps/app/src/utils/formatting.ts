@@ -2,6 +2,8 @@
  * Shared formatting utilities for consistent display across the application
  */
 
+import { formatDate as formatDateCore, formatDateRange as formatDateRangeCore } from '@op/ui/utils/formatting';
+
 /**
  * Format currency amount using locale-aware formatting
  */
@@ -33,7 +35,8 @@ export function formatDate(
     return formatDate(new Date().toISOString(), locale, options);
   }
   
-  return new Date(dateString).toLocaleDateString(locale, options);
+  // Use the UI package utility for consistent timezone-safe date parsing
+  return formatDateCore(dateString, options, locale);
 }
 
 /**
@@ -44,26 +47,8 @@ export function formatDateRange(
   endDate?: string,
   locale: string = 'en-US'
 ): string {
-  if (!startDate && !endDate) return '';
-
-  const formatSingleDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString(locale, {
-      month: 'short',
-      day: 'numeric',
-    });
-  };
-
-  if (startDate && endDate) {
-    return `${formatSingleDate(startDate)} - ${formatSingleDate(endDate)}`;
-  }
-  if (startDate) {
-    return formatSingleDate(startDate);
-  }
-  if (endDate) {
-    return formatSingleDate(endDate);
-  }
-  return '';
+  // Use the UI package utility for consistent timezone-safe date parsing
+  return formatDateRangeCore(startDate, endDate, locale);
 }
 
 /**
