@@ -1,6 +1,7 @@
 import { trpc } from '@op/api/client';
 import { Button } from '@op/ui/Button';
 import { Checkbox } from '@op/ui/Checkbox';
+import { Description } from '@op/ui/Field';
 import { Header3 } from '@op/ui/Header';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Surface } from '@op/ui/Surface';
@@ -210,11 +211,6 @@ export const MatchingOrganizationsForm = ({
         </div>
         <div className="flex flex-col gap-4">
           <div className="flex flex-col-reverse justify-between gap-4 sm:flex-row sm:gap-2">
-            {/*
-          <Button color="secondary" onPress={onBack}>
-            {t('Back')}
-          </Button>
-      */}
             <Button
               className="w-full"
               onPress={() => handleContinue()}
@@ -232,22 +228,27 @@ export const MatchingOrganizationsForm = ({
               )}
             </Button>
           </div>
-          <Button
-            className="w-full"
-            onPress={() => handleContinue({ shouldContinue: true })}
-            isDisabled={
-              !selectedOrganizationId ||
-              joinOrganization.isPending ||
-              !termsAccepted ||
-              !privacyAccepted
-            }
-          >
-            {joinOrganization.isPending || isLoading ? (
-              <LoadingSpinner />
-            ) : (
-              t('Join and Create New Organization')
-            )}
-          </Button>
+          <div className="flex flex-col items-center gap-2">
+            <Button
+              className="w-full"
+              onPress={() => handleContinue({ shouldContinue: true })}
+              isDisabled={
+                !selectedOrganizationId ||
+                joinOrganization.isPending ||
+                !termsAccepted ||
+                !privacyAccepted
+              }
+            >
+              {joinOrganization.isPending || isLoading ? (
+                <LoadingSpinner />
+              ) : (
+                t('Get Started + Add My Organization')
+              )}
+            </Button>
+            <Description className="text-center">
+              {t('Choose this if you also admin another organization')}
+            </Description>
+          </div>
           <a
             className="text-center text-teal hover:underline"
             href="mailto:support@oneproject.org"

@@ -40,6 +40,8 @@
   "Confirm Administrator Access": "Confirmar Acesso de Administrador",
   "For now, we're only supporting administrator accounts. In the future, we'll be able to support member accounts.": "Por enquanto, estamos suportando apenas contas de administrador. No futuro, poderemos suportar contas de membros.",
   "Get Started": "Começar",
+  "Get Started + Add My Organization": "Começar + Adicionar Minha Organização",
+  "Choose this if you also admin another organization": "Escolha isto se você também administra outra organização",
   "Whoops! This is not my organization.": "Ops! Esta não é minha organização.",
   "That didn't work": "Isso não funcionou",
   "Something went wrong on our end. Please try again": "Algo deu errado do nosso lado. Por favor, tente novamente",

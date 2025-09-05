@@ -40,6 +40,8 @@
   "Confirm Administrator Access": "Confirm Administrator Access",
   "For now, we're only supporting administrator accounts. In the future, we’ll be able to support member accounts.": "For now, we're only supporting administrator accounts. In the future, we’ll be able to support member accounts.",
   "Get Started": "Get Started",
+  "Get Started + Add My Organization": "Get Started + Add My Organization",
+  "Choose this if you also admin another organization": "Choose this if you also admin another organization",
   "Whoops! This is not my organization.": "Whoops! This is not my organization.",
   "That didn't work": "That didn't work",
   "Something went wrong on our end. Please try again": "Something went wrong on our end. Please try again",
