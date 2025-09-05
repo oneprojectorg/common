@@ -86,35 +86,26 @@ export const transformInstanceDataToFormData = (
       (p: PhaseConfiguration) => p.stateId === 'results',
     );
 
-    if (ideaCollectionPhase) {
-      formData.ideaCollectionPhase = {
-        ideaCollectionOpen: ideaCollectionPhase.plannedStartDate,
-        ideaCollectionClose: ideaCollectionPhase.plannedEndDate,
-      };
-    }
-    if (submissionPhase) {
-      formData.proposalSubmissionPhase = {
-        submissionsOpen: submissionPhase.plannedStartDate,
-        submissionsClose: submissionPhase.plannedEndDate,
-      };
-    }
-    if (reviewPhase) {
-      formData.reviewShortlistingPhase = {
-        reviewOpen: reviewPhase.plannedStartDate,
-        reviewClose: reviewPhase.plannedEndDate,
-      };
-    }
-    if (votingPhase) {
-      formData.votingPhase = {
-        votingOpen: votingPhase.plannedStartDate,
-        votingClose: votingPhase.plannedEndDate,
-      };
-    }
-    if (resultsPhase) {
-      formData.resultsAnnouncement = {
-        resultsDate: resultsPhase.plannedStartDate,
-      };
-    }
+    // Always populate phase objects, even if empty, to match schema defaults
+    formData.ideaCollectionPhase = {
+      ideaCollectionOpen: ideaCollectionPhase?.plannedStartDate || '',
+      ideaCollectionClose: ideaCollectionPhase?.plannedEndDate || '',
+    };
+    formData.proposalSubmissionPhase = {
+      submissionsOpen: submissionPhase?.plannedStartDate || '',
+      submissionsClose: submissionPhase?.plannedEndDate || '',
+    };
+    formData.reviewShortlistingPhase = {
+      reviewOpen: reviewPhase?.plannedStartDate || '',
+      reviewClose: reviewPhase?.plannedEndDate || '',
+    };
+    formData.votingPhase = {
+      votingOpen: votingPhase?.plannedStartDate || '',
+      votingClose: votingPhase?.plannedEndDate || '',
+    };
+    formData.resultsAnnouncement = {
+      resultsDate: resultsPhase?.plannedStartDate || '',
+    };
   }
 
   return formData;

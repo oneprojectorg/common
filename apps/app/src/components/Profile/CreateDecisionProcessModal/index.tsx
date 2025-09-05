@@ -43,6 +43,12 @@ const transformFormDataToInstanceData = (data: Record<string, unknown>) => {
     },
     phases: [
       {
+        stateId: 'ideaCollection',
+        plannedStartDate: (data.ideaCollectionPhase as any)
+          ?.ideaCollectionOpen,
+        plannedEndDate: (data.ideaCollectionPhase as any)?.ideaCollectionClose,
+      },
+      {
         stateId: 'submission',
         plannedStartDate: (data.proposalSubmissionPhase as any)
           ?.submissionsOpen,
