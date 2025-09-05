@@ -74,6 +74,28 @@ async function DecisionInstancePageContent({
       };
     });
 
+    // Merge template states with actual instance phase data
+    const templateStates: ProcessPhase[] = processSchema?.states || [];
+    const instancePhases = instanceData?.phases || [];
+
+    const phases: ProcessPhase[] = templateStates.map((templateState) => {
+      // Find corresponding instance phase data
+      const instancePhase = instancePhases.find(
+        (ip: any) => ip.stateId === templateState.id,
+      );
+
+      return {
+        ...templateState,
+        phase: instancePhase
+          ? {
+              startDate: instancePhase.plannedStartDate,
+              endDate: instancePhase.plannedEndDate,
+              sortOrder: templateState.phase?.sortOrder,
+            }
+          : templateState.phase,
+      };
+    });
+
     const currentPhase = phases.find(
       (phase) => phase.id === instance.currentStateId,
     );
@@ -97,8 +119,8 @@ async function DecisionInstancePageContent({
             title={instance.process?.name || instance.name}
           />
 
-          <div className="flex flex-col items-center">
-            <div className="w-fit rounded-b border border-t-0 bg-white px-32 py-4">
+          <div className="flex flex-col overflow-x-scroll sm:items-center">
+            <div className="w-fit rounded-b border border-t-0 bg-white px-12 py-4 sm:px-32">
               <DecisionProcessStepper
                 phases={phases}
                 currentStateId={instance.currentStateId || ''}
@@ -108,9 +130,7 @@ async function DecisionInstancePageContent({
           </div>
 
           <Suspense fallback={<Skeleton />}>
-            <DecisionInstanceContent 
-              instanceId={instanceId} 
-            />
+            <DecisionInstanceContent instanceId={instanceId} />
           </Suspense>
         </div>
 

@@ -9,6 +9,7 @@ import { LuBookmark } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 import { useRouter } from '@/lib/i18n/routing';
 
+import { LocaleChooser } from '../LocaleChooser';
 import { UserAvatarMenu } from '../SiteHeader';
 
 interface ProposalViewLayoutProps {
@@ -80,7 +81,10 @@ export function ProposalViewLayout({
             <LuBookmark className={cn(isFollowing ? 'fill-current' : '')} />
             {isFollowing ? t('Following') : t('Follow')}
           </Button>
-          <UserAvatarMenu />
+          <div className="flex gap-4">
+            <LocaleChooser />
+            <UserAvatarMenu />
+          </div>
         </div>
       </div>
 

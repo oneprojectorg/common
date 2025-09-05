@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { ReactNode } from 'react';
 import { LuArrowLeft, LuCheck } from 'react-icons/lu';
 
+import { LocaleChooser } from '../LocaleChooser';
 import { UserAvatarMenu } from '../SiteHeader';
 
 interface ProposalEditorLayoutProps {
@@ -30,7 +31,7 @@ export function ProposalEditorLayout({
   return (
     <div className="flex min-h-screen flex-col bg-white">
       {/* Header */}
-      <div className="flex items-center justify-between gap-2 border-b border-neutral-gray1 py-4 px-4 sm:px-6">
+      <div className="flex items-center justify-between gap-2 border-b border-neutral-gray1 px-4 py-4 sm:px-6">
         <button
           onClick={() => router.push(backHref)}
           className="flex items-center gap-2 text-sm text-primary-teal hover:text-primary-tealBlack"
@@ -61,6 +62,7 @@ export function ProposalEditorLayout({
               </>
             )}
           </Button>
+          <LocaleChooser />
           <UserAvatarMenu className="hidden sm:block" />
         </div>
       </div>
