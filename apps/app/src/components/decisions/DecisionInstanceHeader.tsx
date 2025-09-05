@@ -6,6 +6,7 @@ import { LuArrowLeft } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
 
+import { LocaleChooser } from '../LocaleChooser';
 import { UserAvatarMenu } from '../SiteHeader';
 
 interface DecisionInstanceHeaderProps {
@@ -41,7 +42,8 @@ export function DecisionInstanceHeader({
         </Header1>
       </div>
 
-      <div className="flex items-center">
+      <div className="flex items-center gap-2">
+        <LocaleChooser />
         <UserAvatarMenu />
       </div>
     </header>
