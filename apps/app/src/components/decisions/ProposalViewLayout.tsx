@@ -4,7 +4,7 @@ import { Button } from '@op/ui/Button';
 import { cn } from '@op/ui/utils';
 import { ChevronLeft, Edit, Heart } from 'lucide-react';
 import { ReactNode } from 'react';
-import { LuBookmark } from 'react-icons/lu';
+import { LuArrowLeft, LuBookmark } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 import { useRouter } from '@/lib/i18n/routing';
@@ -48,8 +48,8 @@ export function ProposalViewLayout({
           onClick={() => router.push(backHref)}
           className="flex items-center gap-2 text-sm text-primary-teal hover:text-primary-tealBlack"
         >
-          <ChevronLeft className="h-4 w-4" />
-          {t('Back to Proposals')}
+          <LuArrowLeft className="size-6 stroke-1 text-neutral-charcoal sm:size-4 sm:text-primary-teal" />
+          <span className="hidden sm:block">{t('Back to Proposals')}</span>
         </button>
 
         <div className="flex-1 text-center text-lg font-medium text-neutral-black">
