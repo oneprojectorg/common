@@ -61,6 +61,10 @@ export const transformInstanceDataToFormData = (
       instance.instanceData?.fieldValues?.descriptionGuidance || '',
     maxVotesPerMember:
       instance.instanceData?.fieldValues?.maxVotesPerMember || 3,
+    proposalInfoTitle:
+      instance.instanceData?.fieldValues?.proposalInfoTitle || '',
+    proposalInfoContent:
+      instance.instanceData?.fieldValues?.proposalInfoContent || '',
   };
 
   // Extract phase dates if they exist
@@ -132,6 +136,8 @@ export const transformFormDataToInstanceData = (
       budgetCapAmount: data.budgetCapAmount,
       descriptionGuidance: data.descriptionGuidance,
       maxVotesPerMember: data.maxVotesPerMember,
+      proposalInfoTitle: data.proposalInfoTitle,
+      proposalInfoContent: data.proposalInfoContent,
     },
     phases: [
       {
