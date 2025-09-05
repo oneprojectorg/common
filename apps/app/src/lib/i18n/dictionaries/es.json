@@ -212,5 +212,7 @@
   "Failed to remove user from organization": "Error al eliminar usuario de la organización",
   "Member role not found": "Rol de miembro no encontrado",
   "Admin role not found": "Rol de administrador no encontrado",
-  "Are you sure you want to remove this user from the organization?": "¿Estás seguro de que quieres eliminar este usuario de la organización?"
+  "Are you sure you want to remove this user from the organization?": "¿Estás seguro de que quieres eliminar este usuario de la organización?",
+  "INFOTRANSLATION": "'<p'>Las propuestas serán consideradas elegibles si cumplen con los siguientes criterios:'</p'>'<ol'>'<li'>'<p'>Consistente con '<a target=\"_blank\" rel=\"noopener noreferrer nofollow\" href=\"http://peoplepowered.org/about\"'>'<u'>la misión y valores '</u'>'<strong'>'<u'>de People Powered'</u'>'</strong'>'</a'>'</p'>'</li'>'<li'>'<p'>Contribuye a los objetivos del '<a target=\"_blank\" rel=\"noopener noreferrer nofollow\" href=\"https://drive.google.com/file/d/1Ha6-zibY5SWfJybAKzxPszHJnxpiphbX/view?usp=drive_link\"'>'<strong'>'<u'>plan estratégico'</u'>'</strong'>'</a'>' de People Powered'</p'>'</li'>'<li'>'<p'>Beneficia a la comunidad '<strong'>global '</strong'>de People Powered&nbsp;'</p'>'</li'>'<li'>'<p'>Nos mueve hacia '<strong'>horizontes futuros'</strong'> de la democracia participativa, abordando desafíos y oportunidades estratégicas a largo plazo'</p'>'</li'>'<li'>'<p'>Puede ser implementada en 2026'</p'>'</li'>'<li'>'<p'>Cuesta no más de $25,000 USD'</p'>'</li'>'</ol'>'<p'>'</p'>",
+  "PPDESCRIPTION": "¡Bienvenido a PP Decide 2026! People Powered invita a sus miembros a decidir sobre las propuestas de presupuesto para 2026"
 }

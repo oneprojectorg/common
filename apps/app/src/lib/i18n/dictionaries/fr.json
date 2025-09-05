@@ -213,5 +213,7 @@
   "Failed to remove user from organization": "Échec de la suppression de l'utilisateur de l'organisation",
   "Member role not found": "Rôle de membre non trouvé",
   "Admin role not found": "Rôle d'administrateur non trouvé",
-  "Are you sure you want to remove this user from the organization?": "Êtes-vous sûr de vouloir supprimer cet utilisateur de l'organisation ?"
+  "Are you sure you want to remove this user from the organization?": "Êtes-vous sûr de vouloir supprimer cet utilisateur de l'organisation ?",
+  "INFOTRANSLATION": "'<p'>Les propositions seront considérées comme éligibles si elles répondent aux critères suivants :'</p'>'<ol'>'<li'>'<p'>Cohérentes avec '<a target=\"_blank\" rel=\"noopener noreferrer nofollow\" href=\"http://peoplepowered.org/about\"'>'<u'>la mission et les valeurs '</u'>'<strong'>'<u'>de People Powered'</u'>'</strong'>'</a'>'</p'>'</li'>'<li'>'<p'>Contribuent aux objectifs du '<a target=\"_blank\" rel=\"noopener noreferrer nofollow\" href=\"https://drive.google.com/file/d/1Ha6-zibY5SWfJybAKzxPszHJnxpiphbX/view?usp=drive_link\"'>'<strong'>'<u'>plan stratégique'</u'>'</strong'>'</a'>' de People Powered'</p'>'</li'>'<li'>'<p'>Profitent à la communauté '<strong'>mondiale '</strong'>de People Powered&nbsp;'</p'>'</li'>'<li'>'<p'>Nous font avancer vers les '<strong'>horizons futurs'</strong'> de la démocratie participative, en abordant les défis et opportunités stratégiques à long terme'</p'>'</li'>'<li'>'<p'>Peuvent être mises en œuvre en 2026'</p'>'</li'>'<li'>'<p'>Coûtent au maximum 25 000 $ USD'</p'>'</li'>'</ol'>'<p'>'</p'>",
+  "PPDESCRIPTION": "Bienvenue à PP Décide 2026 ! People Powered invite ses membres à décider des propositions de budget pour 2026"
 }

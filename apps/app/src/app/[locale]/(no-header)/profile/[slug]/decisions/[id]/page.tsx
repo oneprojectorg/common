@@ -82,8 +82,10 @@ async function DecisionInstancePageContent({
 
     const budget = instanceData?.budget || processSchema?.budget;
 
-    const description =
-      instance.description ?? instance.process?.description ?? undefined;
+    // TODO: special key for People powered translations as a stop-gap
+    const description = instance?.description?.match('PPDESCRIPTION')
+      ? t('PPDESCRIPTION')
+      : (instance.description ?? instance.process?.description);
 
     const { name, proposalCount = 0 } = instance;
     const proposals = proposalsData?.proposals || [];

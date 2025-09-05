@@ -36,8 +36,11 @@ export const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
         'ui:placeholder': 'e.g., 2025 Community Budget',
       },
       description: {
-        'ui:widget': 'RichTextEditor',
+        'ui:widget': 'textarea',
         'ui:placeholder': 'Description for your decision-making process',
+        'ui:options': {
+          showToolbar: false,
+        },
       },
       totalBudget: {
         'ui:widget': 'number',

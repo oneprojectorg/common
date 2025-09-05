@@ -4,6 +4,8 @@ import { Button } from '@op/ui/Button';
 import { Modal, ModalBody, ModalHeader } from '@op/ui/Modal';
 import { DialogTrigger } from 'react-aria-components';
 
+import { useTranslations } from '@/lib/i18n';
+
 interface ProposalInfoModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -17,16 +19,27 @@ export function ProposalInfoModal({
   title,
   content,
 }: ProposalInfoModalProps) {
+  const t = useTranslations();
+
+  // This is a hack for people powered needing translated content before we support it in user-generated content
+  const translatedContent = !!content.match('INFOTRANSLATION');
+
   return (
     <DialogTrigger isOpen={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <Modal isDismissable isOpen={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <Modal
+        isDismissable
+        isOpen={isOpen}
+        onOpenChange={(open) => !open && onClose()}
+      >
         <div className="flex h-full max-h-[80vh] w-full max-w-2xl flex-col">
           <ModalHeader>{title}</ModalHeader>
 
           <ModalBody className="flex-1 overflow-y-auto">
             <div
               className="prose prose-gray max-w-none"
-              dangerouslySetInnerHTML={{ __html: content }}
+              dangerouslySetInnerHTML={{
+                __html: translatedContent ? t('INFOTRANSLATION') : content,
+              }}
             />
           </ModalBody>
 

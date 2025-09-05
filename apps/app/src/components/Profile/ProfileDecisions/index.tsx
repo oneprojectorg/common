@@ -94,72 +94,79 @@ const DecisionProcessList = ({ profileId }: { profileId: string }) => {
       </div>
 
       <div className="flex flex-col gap-4">
-        {data.instances.map((instance) => (
-          <div
-            key={instance.id}
-            className="flex flex-col items-center justify-between gap-4 border-b border-neutral-gray1 px-0 py-6 sm:flex-row"
-          >
-            <div className="flex w-full flex-col gap-2">
-              <div className="flex flex-col gap-1">
-                <Header3 className="text-base font-bold">
-                  {instance.name}
-                </Header3>
-                <div className="flex items-start gap-1 text-sm text-neutral-charcoal">
-                  {instance.instanceData?.budget &&
-                    !instance.instanceData?.hideBudget && (
-                      <>
-                        <span>
-                          ${instance.instanceData.budget.toLocaleString()}{' '}
-                          {t('Budget')}
-                        </span>
-                        <span>•</span>
-                      </>
-                    )}
-                  <span>
-                    {instance.proposalCount || 0} {t('Proposals')}
-                  </span>
-                  <span>•</span>
-                  <span>
-                    {instance.participantCount || 0} {t('Participants')}
-                  </span>
+        {data.instances.map((instance) => {
+          // TODO: special key for People powered translations as a stop-gap
+          const description = instance?.description?.match('PPDESCRIPTION')
+            ? t('PPDESCRIPTION')
+            : instance?.description;
+
+          return (
+            <div
+              key={instance.id}
+              className="flex flex-col items-center justify-between gap-4 border-b border-neutral-gray1 px-0 py-6 sm:flex-row"
+            >
+              <div className="flex w-full flex-col gap-2">
+                <div className="flex flex-col gap-1">
+                  <Header3 className="text-base font-bold">
+                    {instance.name}
+                  </Header3>
+                  <div className="flex items-start gap-1 text-sm text-neutral-charcoal">
+                    {instance.instanceData?.budget &&
+                      !instance.instanceData?.hideBudget && (
+                        <>
+                          <span>
+                            ${instance.instanceData.budget.toLocaleString()}{' '}
+                            {t('Budget')}
+                          </span>
+                          <span>•</span>
+                        </>
+                      )}
+                    <span>
+                      {instance.proposalCount || 0} {t('Proposals')}
+                    </span>
+                    <span>•</span>
+                    <span>
+                      {instance.participantCount || 0} {t('Participants')}
+                    </span>
+                  </div>
                 </div>
+                {description && (
+                  <p className="max-w-2xl overflow-hidden text-ellipsis text-base text-neutral-charcoal sm:text-nowrap">
+                    {getTextPreview(description)}
+                  </p>
+                )}
               </div>
-              {instance.description && (
-                <p className="max-w-2xl overflow-hidden text-ellipsis text-base text-neutral-charcoal sm:text-nowrap">
-                  {getTextPreview(instance.description)}
-                </p>
-              )}
-            </div>
 
-            <div className="flex w-full flex-col gap-2.5 sm:max-w-36">
-              {decisionPermission.update ? (
-                <ButtonLink
-                  color="secondary"
-                  href={`/profile/${slug}/decisions/${instance.id}`}
-                  className="w-full"
-                >
-                  {t('View Details')}
-                </ButtonLink>
-              ) : (
-                <ButtonLink
-                  href={`/profile/${slug}/decisions/${instance.id}`}
-                  className="w-full"
-                >
-                  {t('Participate')}
-                </ButtonLink>
-              )}
+              <div className="flex w-full flex-col gap-2.5 sm:max-w-36">
+                {decisionPermission.update ? (
+                  <ButtonLink
+                    color="secondary"
+                    href={`/profile/${slug}/decisions/${instance.id}`}
+                    className="w-full"
+                  >
+                    {t('View Details')}
+                  </ButtonLink>
+                ) : (
+                  <ButtonLink
+                    href={`/profile/${slug}/decisions/${instance.id}`}
+                    className="w-full"
+                  >
+                    {t('Participate')}
+                  </ButtonLink>
+                )}
 
-              {decisionPermission.create ? (
-                <DialogTrigger>
-                  <Button color="secondary" className="w-full">
-                    {t('Edit Process')}
-                  </Button>
-                  <EditDecisionProcessModal instance={instance} />
-                </DialogTrigger>
-              ) : null}
+                {decisionPermission.create ? (
+                  <DialogTrigger>
+                    <Button color="secondary" className="w-full">
+                      {t('Edit Process')}
+                    </Button>
+                    <EditDecisionProcessModal instance={instance} />
+                  </DialogTrigger>
+                ) : null}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {data.hasMore && (
