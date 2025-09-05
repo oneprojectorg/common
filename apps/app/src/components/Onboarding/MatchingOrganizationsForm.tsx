@@ -62,7 +62,7 @@ export const MatchingOrganizationsForm = ({
   const handleContinue = async ({
     shouldContinue,
   }: {
-    shouldContinue: boolean;
+    shouldContinue?: boolean;
   } = {}) => {
     if (!selectedOrganizationId) {
       return;
