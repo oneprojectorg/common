@@ -59,7 +59,11 @@ export const MatchingOrganizationsForm = ({
     }
   }, [matchingOrgs]);
 
-  const handleContinue = async () => {
+  const handleContinue = async ({
+    shouldContinue,
+  }: {
+    shouldContinue: boolean;
+  } = {}) => {
     if (!selectedOrganizationId) {
       return;
     }
@@ -80,7 +84,11 @@ export const MatchingOrganizationsForm = ({
       );
 
       trpcUtil.account.getMyAccount.refetch().then(() => {
-        router.push(`/?new=1`);
+        if (shouldContinue) {
+          router.push(`/start?step=2`);
+        } else {
+          router.push(`/?new=1`);
+        }
       });
       // Redirect to the main app with new org flag
     } catch (error) {
@@ -209,7 +217,7 @@ export const MatchingOrganizationsForm = ({
       */}
             <Button
               className="w-full"
-              onPress={handleContinue}
+              onPress={() => handleContinue()}
               isDisabled={
                 !selectedOrganizationId ||
                 joinOrganization.isPending ||
@@ -224,6 +232,22 @@ export const MatchingOrganizationsForm = ({
               )}
             </Button>
           </div>
+          <Button
+            className="w-full"
+            onPress={() => handleContinue({ shouldContinue: true })}
+            isDisabled={
+              !selectedOrganizationId ||
+              joinOrganization.isPending ||
+              !termsAccepted ||
+              !privacyAccepted
+            }
+          >
+            {joinOrganization.isPending || isLoading ? (
+              <LoadingSpinner />
+            ) : (
+              t('Join and Create New Organization')
+            )}
+          </Button>
           <a
             className="text-center text-teal hover:underline"
             href="mailto:support@oneproject.org"
