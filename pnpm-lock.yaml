@@ -1080,6 +1080,9 @@ importers:
       react-email:
         specifier: 4.0.16
         version: 4.0.16(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.85.1)
+      resend:
+        specifier: ^6.0.2
+        version: 6.0.2(@react-email/render@1.1.2(react-dom@19.0.0(react@19.0.0))(react@19.0.0))
       zod:
         specifier: ^3.24.2
         version: 3.24.2
@@ -7653,6 +7656,15 @@ packages:
 
   require-package-name@2.0.1:
     resolution: {integrity: sha512-uuoJ1hU/k6M0779t3VMVIYpb2VMJk05cehCaABFhXaibcbvfgR8wKiozLjVFSzJPmQMRqIcO0HMyTFqfV09V6Q==}
+
+  resend@6.0.2:
+    resolution: {integrity: sha512-um08qWpSVvEVqAePEy/bsa7pqtnJK+qTCZ0Et7YE7xuqM46J0C9gnSbIJKR3LIcRVMgO9jUeot8rH0UI84eqMQ==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      '@react-email/render': ^1.1.0
+    peerDependenciesMeta:
+      '@react-email/render':
+        optional: true
 
   resolve-dir@1.0.1:
     resolution: {integrity: sha512-R7uiTjECzvOsWSfdM0QKFNBVFcK27aHOUwdvK53BcW8zqnGdYp0Fbj82cy54+2A4P2tFM22J5kRfe1R+lM/1yg==}
@@ -16060,6 +16072,10 @@ snapshots:
   require-from-string@2.0.2: {}
 
   require-package-name@2.0.1: {}
+
+  resend@6.0.2(@react-email/render@1.1.2(react-dom@19.0.0(react@19.0.0))(react@19.0.0)):
+    optionalDependencies:
+      '@react-email/render': 1.1.2(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
 
   resolve-dir@1.0.1:
     dependencies:
