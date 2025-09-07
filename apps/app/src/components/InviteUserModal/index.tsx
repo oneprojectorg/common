@@ -33,6 +33,7 @@ export const InviteUserModal = ({ children }: InviteUserModalProps) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [lastInvitedEmail, setLastInvitedEmail] = useState('');
+  const [invitedCount, setInvitedCount] = useState(0);
   const [activeTab, setActiveTab] = useState('existing');
   const t = useTranslations();
   const { user } = useUser();
@@ -80,6 +81,7 @@ export const InviteUserModal = ({ children }: InviteUserModalProps) => {
 
     if (allEmails.length > 0) {
       setLastInvitedEmail(allEmails[0] || '');
+      setInvitedCount(allEmails.length);
     }
 
     setEmails('');
@@ -298,6 +300,7 @@ export const InviteUserModal = ({ children }: InviteUserModalProps) => {
           setIsModalOpen(true);
         }}
         invitedEmail={lastInvitedEmail}
+        invitedCount={invitedCount}
         organizationName={
           activeTab === 'existing'
             ? user?.currentProfile?.name || 'Common'

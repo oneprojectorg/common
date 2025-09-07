@@ -9,7 +9,8 @@ interface InviteSuccessModalProps {
   isOpen: boolean;
   onClose: () => void;
   onInviteMore: () => void;
-  invitedEmail: string;
+  invitedEmail?: string;
+  invitedCount?: number;
   organizationName: string;
 }
 
@@ -18,6 +19,7 @@ export const InviteSuccessModal = ({
   onClose,
   onInviteMore,
   invitedEmail,
+  invitedCount,
   organizationName,
 }: InviteSuccessModalProps) => {
   return (
@@ -28,8 +30,17 @@ export const InviteSuccessModal = ({
           <Header1 className="sm:text-title-lg">Sent</Header1>
         </div>
         <p>
-          You've invited <span className="font-semibold">{invitedEmail}</span>{' '}
-          to join <span className="font-semibold">{organizationName}</span>.
+          {invitedCount && invitedCount > 1 ? (
+            <>
+              You've invited <span className="font-semibold">{invitedCount} people</span>{' '}
+              to join <span className="font-semibold">{organizationName}</span>.
+            </>
+          ) : (
+            <>
+              You've invited <span className="font-semibold">{invitedEmail}</span>{' '}
+              to join <span className="font-semibold">{organizationName}</span>.
+            </>
+          )}
         </p>
         <div className="flex w-full flex-col gap-2">
           <Button color="primary" onPress={onClose} className="w-full">
