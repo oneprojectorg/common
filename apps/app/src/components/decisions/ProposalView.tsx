@@ -62,6 +62,8 @@ export function ProposalView({
   // Get current user to check edit permissions
   const { user } = useUser();
 
+  // Proposal viewed tracking is now handled in the backend (getProposal endpoint)
+
   // Direct tRPC mutations for like/follow functionality with optimistic updates
   const addRelationshipMutation = trpc.profile.addRelationship.useMutation({
     onMutate: async (variables) => {
@@ -92,6 +94,8 @@ export function ProposalView({
       }
 
       return { previousData };
+    },
+    onSuccess: () => {
     },
     onError: (error, _variables, context) => {
       // Rollback on error
@@ -471,6 +475,8 @@ export function ProposalView({
                     placeholder={`${t('Comment')}${user?.currentProfile?.name ? ` as ${user?.currentProfile?.name}` : ''}...`}
                     label={t('Comment')}
                     onSuccess={scrollToComments}
+                    proposalId={currentProposal.id}
+                    processInstanceId={currentProposal.processInstance?.id}
                   />
                 </Surface>
               </div>

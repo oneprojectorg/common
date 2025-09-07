@@ -1,4 +1,4 @@
-import { trackEvent } from '@op/analytics';
+import { trackProposalSubmitted } from '@op/analytics';
 import {
   NotFoundError,
   UnauthorizedError,
@@ -46,14 +46,9 @@ export const createProposalRouter = router({
         });
 
         waitUntil(
-          trackEvent({
-            distinctId: user.id,
-            event: 'proposal_created',
-            properties: {
-              decisionId: processInstanceId,
-              proposalId: proposal.id,
-              timestamp: Date.now(),
-            },
+          trackProposalSubmitted(user.id, processInstanceId, proposal.id, {
+            // Keep the original timestamp format for consistency
+            created_timestamp: Date.now(),
           }),
         );
 

@@ -1,6 +1,8 @@
+import { trackProcessViewed } from '@op/analytics';
 import { NotFoundError, UnauthorizedError, getInstance } from '@op/common';
 import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
+import { waitUntil } from '@vercel/functions';
 
 import {
   getInstanceInputSchema,
@@ -37,6 +39,11 @@ export const getInstanceRouter = router({
           authUserId: user.id,
           user,
         });
+
+        // Track process viewed event
+        waitUntil(
+          trackProcessViewed(user.id, input.instanceId)
+        );
 
         return processInstanceEncoder.parse({
           ...instance,
