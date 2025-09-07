@@ -9,7 +9,7 @@ import { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
 import { getOrgAccessUser } from '../access';
-import { sendInvitationEmail } from '../email';
+import { sendBatchInvitationEmails } from '../email';
 
 // Type definitions for invite metadata
 export interface InviteMetadata {
@@ -94,6 +94,14 @@ export const inviteUsersToOrganization = async (
     successful: [] as string[],
     failed: [] as { email: string; reason: string }[],
   };
+
+  const emailsToInvite: Array<{
+    to: string;
+    inviterName: string;
+    organizationName: string;
+    inviteUrl: string;
+    message?: string;
+  }> = [];
 
   // Process each email
   for (const rawEmail of emails) {
@@ -182,35 +190,54 @@ export const inviteUsersToOrganization = async (
         });
       }
 
-      // Send invitation email
-      try {
-        await sendInvitationEmail({
-          to: email,
-          inviterName: orgUser?.name || user.email || 'A team member',
-          organizationName:
-            (authUser?.currentOrganization as any)?.profile?.name ||
-            'an organization',
-          inviteUrl: OPURLConfig('APP').ENV_URL,
-          message: personalMessage,
-        });
-        results.successful.push(email);
-      } catch (emailError) {
-        console.error(
-          `Failed to send invitation email to ${email}:`,
-          emailError,
-        );
-        // Email failed but database insertion succeeded - track as partial success
-        results.failed.push({
-          email,
-          reason:
-            'Invitation recorded but email delivery failed. User may need to be re-invited.',
-        });
-      }
+      // Prepare email for batch sending
+      emailsToInvite.push({
+        to: email,
+        inviterName: orgUser?.name || user.email || 'A team member',
+        organizationName:
+          (authUser?.currentOrganization as any)?.profile?.name ||
+          'an organization',
+        inviteUrl: OPURLConfig('APP').ENV_URL,
+        message: personalMessage,
+      });
     } catch (error) {
       console.error(`Failed to process invitation for ${email}:`, error);
       results.failed.push({
         email,
         reason: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
+  }
+
+  // Send all invitation emails in batch
+  if (emailsToInvite.length > 0) {
+    try {
+      console.log(
+        'Sending batch emails to:',
+        emailsToInvite.map((e) => e.to),
+      );
+      const batchResult = await sendBatchInvitationEmails({
+        invitations: emailsToInvite,
+      });
+
+      results.successful.push(...batchResult.successful);
+
+      // Add any batch email failures to results
+      batchResult.failed.forEach((failure) => {
+        results.failed.push({
+          email: failure.email,
+          reason: 'Email delivery failed. User may need to be re-invited.',
+        });
+      });
+    } catch (batchError) {
+      console.error('Failed to send batch invitation emails:', batchError);
+      // If batch sending fails entirely, mark all prepared emails as failed
+      emailsToInvite.forEach((emailData) => {
+        results.failed.push({
+          email: emailData.to,
+          reason:
+            'Invitation recorded but email delivery failed. User may need to be re-invited.',
+        });
       });
     }
   }
@@ -267,6 +294,14 @@ export const inviteNewUsers = async (
     failed: [] as { email: string; reason: string }[],
   };
 
+  const emailsToInvite: Array<{
+    to: string;
+    inviterName: string;
+    organizationName: string;
+    inviteUrl: string;
+    message?: string;
+  }> = [];
+
   // Process each email
   for (const rawEmail of emails) {
     const email = rawEmail.toLowerCase();
@@ -293,33 +328,52 @@ export const inviteNewUsers = async (
         });
       }
 
-      // Send invitation email
-      try {
-        await sendInvitationEmail({
-          to: email,
-          inviterName: authUser?.name || user.email || 'A team member',
-          organizationName: 'Common', // General platform invite for new users
-          inviteUrl: OPURLConfig('APP').ENV_URL,
-          message: personalMessage,
-        });
-        results.successful.push(email);
-      } catch (emailError) {
-        console.error(
-          `Failed to send invitation email to ${email}:`,
-          emailError,
-        );
-        // Email failed but database insertion succeeded - track as partial success
-        results.failed.push({
-          email,
-          reason:
-            'Invitation recorded but email delivery failed. User may need to be re-invited.',
-        });
-      }
+      // Prepare email for batch sending
+      emailsToInvite.push({
+        to: email,
+        inviterName: authUser?.name || user.email || 'A team member',
+        organizationName: 'Common', // General platform invite for new users
+        inviteUrl: OPURLConfig('APP').ENV_URL,
+        message: personalMessage,
+      });
     } catch (error) {
       console.error(`Failed to process invitation for ${email}:`, error);
       results.failed.push({
         email,
         reason: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
+  }
+
+  // Send all invitation emails in batch
+  if (emailsToInvite.length > 0) {
+    try {
+      console.log(
+        'Sending batch emails to:',
+        emailsToInvite.map((e) => e.to),
+      );
+      const batchResult = await sendBatchInvitationEmails({
+        invitations: emailsToInvite,
+      });
+
+      results.successful.push(...batchResult.successful);
+
+      // Add any batch email failures to results
+      batchResult.failed.forEach((failure) => {
+        results.failed.push({
+          email: failure.email,
+          reason: 'Email delivery failed. User may need to be re-invited.',
+        });
+      });
+    } catch (batchError) {
+      console.error('Failed to send batch invitation emails:', batchError);
+      // If batch sending fails entirely, mark all prepared emails as failed
+      emailsToInvite.forEach((emailData) => {
+        results.failed.push({
+          email: emailData.to,
+          reason:
+            'Invitation recorded but email delivery failed. User may need to be re-invited.',
+        });
       });
     }
   }
