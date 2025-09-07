@@ -12,7 +12,7 @@ export const sendInvitationEmail = async ({
   to,
   inviterName,
   organizationName,
-  inviteUrl = 'https://common.oneproject.org/signup',
+  inviteUrl = 'https://common.oneproject.org/',
   message,
 }: SendInvitationEmailParams): Promise<void> => {
   // Use dynamic imports to avoid build issues with workspace dependencies
@@ -31,6 +31,62 @@ export const sendInvitationEmail = async ({
         message,
       }),
   });
+};
+
+export interface BatchInvitationEmailParams {
+  invitations: Array<{
+    to: string;
+    inviterName: string;
+    organizationName?: string;
+    inviteUrl?: string;
+    message?: string;
+  }>;
+}
+
+export const sendBatchInvitationEmails = async ({
+  invitations,
+}: BatchInvitationEmailParams): Promise<{
+  successful: string[];
+  failed: { email: string; error: any }[];
+}> => {
+  if (invitations.length === 0) {
+    return { successful: [], failed: [] };
+  }
+
+  // Use dynamic imports to avoid build issues with workspace dependencies
+  const { OPBatchSend } = await import('@op/emails');
+  const { OPInvitationEmail } = await import('@op/emails');
+
+  const batchEmails = invitations.map(
+    ({
+      to,
+      inviterName,
+      organizationName,
+      inviteUrl = 'https://common.oneproject.org/',
+      message,
+    }) => ({
+      to,
+      from: `${organizationName ?? inviterName} via Common`,
+      subject: `Action Required: ${inviterName} invited you to join ${organizationName ? `${organizationName} on Common` : 'Common'}`,
+      component: () =>
+        OPInvitationEmail({
+          inviterName,
+          organizationName: organizationName || 'Common',
+          inviteUrl,
+          message,
+        }),
+    }),
+  );
+
+  const { errors } = await OPBatchSend(batchEmails);
+
+  const successful = invitations
+    .filter(
+      (invitation) => !errors?.some((error) => error.email === invitation.to),
+    )
+    .map((invitation) => invitation.to);
+
+  return { successful, failed: errors || [] };
 };
 
 export interface SendRelationshipRequestEmailParams {
