@@ -68,8 +68,14 @@ export const InviteUserModal = ({ children }: InviteUserModalProps) => {
   const handleInviteSuccess = () => {
     // Store the first invited email for display in success modal
     const allEmails = [...emailBadges];
+
+    // Split the current input by commas and add each email
     if (emails.trim()) {
-      allEmails.push(emails.trim());
+      const emailsFromInput = emails
+        .split(',')
+        .map((email) => email.trim())
+        .filter((email) => email.length > 0);
+      allEmails.push(...emailsFromInput);
     }
 
     if (allEmails.length > 0) {
@@ -138,11 +144,28 @@ export const InviteUserModal = ({ children }: InviteUserModalProps) => {
 
   const handleSendInvite = () => {
     const allEmails = [...emailBadges];
+
+    // Split the current input by commas and add each email
     if (emails.trim()) {
-      allEmails.push(emails.trim());
+      const emailsFromInput = emails
+        .split(',')
+        .map((email) => email.trim())
+        .filter((email) => email.length > 0);
+      allEmails.push(...emailsFromInput);
     }
 
     if (allEmails.length === 0) {
+      return;
+    }
+
+    // Check maximum number of emails (Resend batch limit)
+    if (allEmails.length > 100) {
+      toast.error({
+        title: t('Too many emails'),
+        message: t(
+          'You can invite a maximum of 100 emails at once. Please reduce the number and try again.',
+        ),
+      });
       return;
     }
 
