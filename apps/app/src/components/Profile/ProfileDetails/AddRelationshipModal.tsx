@@ -1,7 +1,7 @@
 'use client';
 
 import { useUser } from '@/utils/UserProvider';
-import { trpc } from '@op/api/client';
+import { skipBatch, trpc } from '@op/api/client';
 import { Organization } from '@op/api/encoders';
 import { relationshipMap } from '@op/types';
 import { Button } from '@op/ui/Button';
@@ -100,9 +100,14 @@ export const AddRelationshipModalSuspense = ({
 
   // checking for our relationships TOWARDS the profile
   const [{ relationships }] =
-    trpc.organization.listDirectedRelationships.useSuspenseQuery({
-      from: profile.id,
-    });
+    trpc.organization.listDirectedRelationships.useSuspenseQuery(
+      {
+        from: profile.id,
+      },
+      {
+        ...skipBatch,
+      },
+    );
 
   const selectedRelationship = relationships.find(
     (r) => r.id === selectedRelationshipId,

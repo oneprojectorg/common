@@ -1,7 +1,7 @@
 'use client';
 
 import { pluralize } from '@/utils/pluralize';
-import { trpc } from '@op/api/client';
+import { skipBatch, trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
 import { Header1 } from '@op/ui/Header';
 import { Skeleton } from '@op/ui/Skeleton';
@@ -13,9 +13,14 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 
 const RelationshipCount = ({ profile }: { profile: Organization }) => {
   const t = useTranslations();
-  const [{ count }] = trpc.organization.listRelationships.useSuspenseQuery({
-    organizationId: profile.id,
-  });
+  const [{ count }] = trpc.organization.listRelationships.useSuspenseQuery(
+    {
+      organizationId: profile.id,
+    },
+    {
+      ...skipBatch,
+    },
+  );
 
   return (
     count > 0 && (
