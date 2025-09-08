@@ -45,6 +45,9 @@ export const getMyAccount = router({
             includePermissions: true,
           });
         },
+        options: {
+          skipMemCache: true,
+        },
       });
 
       // const user = await getUserByAuthId({
