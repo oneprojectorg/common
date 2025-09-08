@@ -12,7 +12,8 @@ if (REDIS_URL) {
     url: REDIS_URL,
     disableOfflineQueue: true,
     socket: {
-      connectTimeout: 300,
+      connectTimeout: 500,
+      socketTimeout: 500,
       reconnectStrategy: () => 10,
     },
   });
