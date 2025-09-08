@@ -1,6 +1,6 @@
 'use client';
 
-import { trpc } from '@op/api/client';
+import { skipBatch, trpc } from '@op/api/client';
 import { relationshipMap } from '@op/types/relationships';
 import { Button } from '@op/ui/Button';
 import { Header2 } from '@op/ui/Header';
@@ -17,7 +17,9 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
   });
 
   const [{ organizations, count }] =
-    trpc.organization.listPendingRelationships.useSuspenseQuery();
+    trpc.organization.listPendingRelationships.useSuspenseQuery(undefined, {
+      ...skipBatch,
+    });
 
   const [acceptedRelationships, setAcceptedRelationships] = useState<
     Set<string>

@@ -1,7 +1,7 @@
 'use client';
 
 import { pluralize } from '@/utils/pluralize';
-import { trpc } from '@op/api/client';
+import { skipBatch, trpc } from '@op/api/client';
 import { RELATIONSHIP_OPTIONS, relationshipMap } from '@op/types/relationships';
 import { Breadcrumb, Breadcrumbs } from '@op/ui/Breadcrumbs';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
@@ -35,9 +35,14 @@ export const ProfileRelationshipsSuspense = ({
   });
 
   const [{ organizations, count }] =
-    trpc.organization.listRelationships.useSuspenseQuery({
-      organizationId: organization.id,
-    });
+    trpc.organization.listRelationships.useSuspenseQuery(
+      {
+        organizationId: organization.id,
+      },
+      {
+        ...skipBatch,
+      },
+    );
 
   // Convert organization data to RelationshipListItem format
   const relationshipItems: RelationshipListItem[] = useMemo(

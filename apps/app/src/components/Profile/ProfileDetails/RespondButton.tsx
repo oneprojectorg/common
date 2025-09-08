@@ -1,7 +1,7 @@
 'use client';
 
 import { useUser } from '@/utils/UserProvider';
-import { trpc } from '@op/api/client';
+import { skipBatch, trpc } from '@op/api/client';
 import { Organization } from '@op/api/encoders';
 import { DropDownButton } from '@op/ui/DropDownButton';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
@@ -21,7 +21,9 @@ const RespondButtonSuspense = ({ profile }: { profile: Organization }) => {
 
   // Get pending relationships FROM the profile TO our current organization
   const [{ organizations: pendingOrgs }] =
-    trpc.organization.listPendingRelationships.useSuspenseQuery();
+    trpc.organization.listPendingRelationships.useSuspenseQuery(undefined, {
+      ...skipBatch,
+    });
 
   // Filter to only show requests from the profile we're viewing
   const pendingFromProfile = pendingOrgs.find((org) => org.id === profile.id);
