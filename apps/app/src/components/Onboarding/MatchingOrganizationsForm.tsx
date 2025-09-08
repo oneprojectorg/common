@@ -37,8 +37,14 @@ export const MatchingOrganizationsForm = ({
   const router = useRouter();
   const [matchingOrgs] =
     trpc.account.listMatchingDomainOrganizations.useSuspenseQuery();
+  const utils = trpc.useUtils();
 
-  const joinOrganization = trpc.organization.join.useMutation();
+  const joinOrganization = trpc.organization.join.useMutation({
+    onSuccess: () => {
+      utils.account.getMyAccount.invalidate();
+    },
+  });
+
   const trpcUtil = trpc.useUtils();
   const [isLoading, setLoading] = useState(false);
   const [selectedOrganizationId, setSelectedOrganizationId] = useState<

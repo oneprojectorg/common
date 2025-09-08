@@ -2,7 +2,6 @@ import { invalidate } from '@op/cache';
 import { joinOrganization as joinOrganizationService } from '@op/common';
 import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
-import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
 import withAuthenticated from '../../middlewares/withAuthenticated';
@@ -45,11 +44,11 @@ export const joinOrganization = router({
           organizationId: input.organizationId,
         });
 
-        // Invalidate user cache since organization membership has changed
-        waitUntil(invalidate({
+        // Invalidate user cache since organization membership has changed. This should be awaited since we want to kill cache BEFORE returning
+        await invalidate({
           type: 'user',
           params: [ctx.user.id],
-        }));
+        });
 
         return {
           success: true,

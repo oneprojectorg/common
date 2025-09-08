@@ -65,15 +65,16 @@ export const cache = async <T = any>({
   params?: any[];
   fetch: () => Promise<any>;
   options?: {
+    skipMemCache?: boolean;
     storeNulls?: boolean;
     ttl?: number;
   };
 }): Promise<T> => {
   const cacheKey = getCacheKey(type, appKey, params);
-  const { ttl, storeNulls = false } = options;
+  const { ttl, skipMemCache = false, storeNulls = false } = options;
 
   // try memcache first
-  if (memCache.has(cacheKey)) {
+  if (!skipMemCache && memCache.has(cacheKey)) {
     const cachedVal = memCache.get(cacheKey);
 
     const memCacheExpire = ttl ? ttl : MEMCACHE_EXPIRE;
@@ -81,6 +82,10 @@ export const cache = async <T = any>({
       log.info('CACHE: memory');
       return cachedVal.data;
     }
+  }
+
+  if (skipMemCache) {
+    console.log('skipping memcache');
   }
 
   // fall back to Redis cache
@@ -146,8 +151,8 @@ export const invalidateMultiple = async ({
         type,
         appKey,
         params,
-      })
-    )
+      }),
+    ),
   );
 };
 

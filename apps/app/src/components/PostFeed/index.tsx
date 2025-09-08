@@ -201,14 +201,19 @@ const PostCommentButton = ({
 };
 
 const PostMenu = ({
+  organization,
   post,
   user,
 }: {
-  organization?: Organization;
+  organization?: Organization | null;
   post: Post;
   user?: OrganizationUser;
 }) => {
-  const canShowMenu = post?.profileId === user?.currentProfileId && !!post?.id;
+  // We check against whether this is the user's post, or whether the org that it was posted to currently matches the user's context
+  const canShowMenu =
+    (post?.profileId === user?.currentProfileId ||
+      (organization && organization?.profile.id === user?.currentProfileId)) &&
+    !!post?.id;
 
   if (!canShowMenu) {
     return null;
@@ -308,7 +313,7 @@ export const PostItem = ({
             </Header3>
             <PostTimestamp createdAt={post?.createdAt} />
           </div>
-          <PostMenu post={post} user={user} />
+          <PostMenu post={post} user={user} organization={organization} />
         </FeedHeader>
         <FeedContent>
           <PostContent content={post?.content} />
@@ -384,7 +389,10 @@ export const usePostFeedActions = ({
 
       // Cancel comments cache if we're in a modal context
       if (parentPostId) {
-        const commentsQueryKey = createCommentsQueryKey(parentPostId, profileId);
+        const commentsQueryKey = createCommentsQueryKey(
+          parentPostId,
+          profileId,
+        );
         await utils.posts.getPosts.cancel(commentsQueryKey);
       }
 
@@ -408,7 +416,9 @@ export const usePostFeedActions = ({
         : undefined;
       const previousListAllPosts = utils.organization.listAllPosts.getData({});
       const previousComments = parentPostId
-        ? utils.posts.getPosts.getData(createCommentsQueryKey(parentPostId, profileId))
+        ? utils.posts.getPosts.getData(
+            createCommentsQueryKey(parentPostId, profileId),
+          )
         : undefined;
 
       // Use optimistic updater service for cleaner code
@@ -479,7 +489,10 @@ export const usePostFeedActions = ({
 
       // Optimistically update comments cache if we're in a modal context
       if (parentPostId) {
-        const commentsQueryKey = createCommentsQueryKey(parentPostId, profileId);
+        const commentsQueryKey = createCommentsQueryKey(
+          parentPostId,
+          profileId,
+        );
         utils.posts.getPosts.setData(commentsQueryKey, (old) => {
           if (!old) {
             return old;
@@ -503,7 +516,12 @@ export const usePostFeedActions = ({
         });
       }
 
-      return { previousListPosts, previousListAllPosts, previousComments, previousProfilePosts };
+      return {
+        previousListPosts,
+        previousListAllPosts,
+        previousComments,
+        previousProfilePosts,
+      };
     },
     onError: (err, _variables, context) => {
       // Rollback on error
@@ -520,7 +538,10 @@ export const usePostFeedActions = ({
         );
       }
       if (context?.previousComments && parentPostId) {
-        const commentsQueryKey = createCommentsQueryKey(parentPostId, profileId);
+        const commentsQueryKey = createCommentsQueryKey(
+          parentPostId,
+          profileId,
+        );
         utils.posts.getPosts.setData(
           commentsQueryKey,
           context.previousComments,
@@ -534,7 +555,10 @@ export const usePostFeedActions = ({
           offset: 0,
           includeChildren: false,
         };
-        utils.posts.getPosts.setData(profileQueryKey, context.previousProfilePosts);
+        utils.posts.getPosts.setData(
+          profileQueryKey,
+          context.previousProfilePosts,
+        );
       }
       toast.error({ message: err.message || 'Failed to update reaction' });
     },
