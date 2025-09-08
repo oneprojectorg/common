@@ -280,72 +280,54 @@ export const getDirectedRelationships = async ({
   // throw new UnauthorizedError('You are not a member of this organization');
   // }
   //
-  const [relationships, inverseRelationships] = await Promise.all([
-    db.query.organizationRelationships.findMany({
-      where: () =>
-        and(
+  const allRelationshipsFromDb = await db.query.organizationRelationships.findMany({
+    where: () =>
+      and(
+        or(
           eq(organizationRelationships.sourceOrganizationId, from),
-          ...(to
-            ? [eq(organizationRelationships.targetOrganizationId, to)]
-            : []),
-          ...(pending !== null
-            ? [eq(organizationRelationships.pending, pending)]
-            : []),
-        ),
-      with: {
-        targetOrganization: {
-          with: {
-            profile: {
-              with: {
-                avatarImage: true,
-              },
-            },
-          },
-        },
-        sourceOrganization: {
-          with: {
-            profile: {
-              with: {
-                avatarImage: true,
-              },
-            },
-          },
-        },
-      },
-    }),
-    db.query.organizationRelationships.findMany({
-      where: () =>
-        and(
           eq(organizationRelationships.targetOrganizationId, from),
-          ...(to
-            ? [eq(organizationRelationships.sourceOrganizationId, to)]
-            : []),
-          ...(pending !== null
-            ? [eq(organizationRelationships.pending, pending)]
-            : []),
         ),
-      with: {
-        targetOrganization: {
-          with: {
-            profile: {
-              with: {
-                avatarImage: true,
-              },
-            },
-          },
-        },
-        sourceOrganization: {
-          with: {
-            profile: {
-              with: {
-                avatarImage: true,
-              },
+        ...(to
+          ? [
+              or(
+                eq(organizationRelationships.targetOrganizationId, to),
+                eq(organizationRelationships.sourceOrganizationId, to),
+              ),
+            ]
+          : []),
+        ...(pending !== null
+          ? [eq(organizationRelationships.pending, pending)]
+          : []),
+      ),
+    with: {
+      targetOrganization: {
+        with: {
+          profile: {
+            with: {
+              avatarImage: true,
             },
           },
         },
       },
-    }),
-  ]);
+      sourceOrganization: {
+        with: {
+          profile: {
+            with: {
+              avatarImage: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  // separate relationships that need to be inverted
+  const directRelationships = allRelationshipsFromDb.filter(
+    (relationship) => relationship.sourceOrganizationId === from,
+  );
+  const inverseRelationships = allRelationshipsFromDb.filter(
+    (relationship) => relationship.targetOrganizationId === from,
+  );
 
   // transform the inverse relationships to the proper direction
   const redirectedInverseRelationships = inverseRelationships.map(
@@ -356,7 +338,7 @@ export const getDirectedRelationships = async ({
       >(relationship),
   );
 
-  const allRelationships = relationships.concat(redirectedInverseRelationships);
+  const allRelationships = directRelationships.concat(redirectedInverseRelationships);
 
   return {
     records: allRelationships,
