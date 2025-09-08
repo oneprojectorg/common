@@ -280,46 +280,43 @@ export const getDirectedRelationships = async ({
   // throw new UnauthorizedError('You are not a member of this organization');
   // }
   //
-  const allRelationshipsFromDb = await db.query.organizationRelationships.findMany({
-    where: () =>
-      and(
-        or(
-          eq(organizationRelationships.sourceOrganizationId, from),
-          eq(organizationRelationships.targetOrganizationId, from),
+  const allRelationshipsFromDb =
+    await db.query.organizationRelationships.findMany({
+      where: () =>
+        and(
+          or(
+            eq(organizationRelationships.sourceOrganizationId, from),
+            eq(organizationRelationships.targetOrganizationId, from),
+          ),
+          ...(to
+            ? [
+                or(
+                  eq(organizationRelationships.targetOrganizationId, to),
+                  eq(organizationRelationships.sourceOrganizationId, to),
+                ),
+              ]
+            : []),
+          ...(pending !== null
+            ? [eq(organizationRelationships.pending, pending)]
+            : []),
         ),
-        ...(to
-          ? [
-              or(
-                eq(organizationRelationships.targetOrganizationId, to),
-                eq(organizationRelationships.sourceOrganizationId, to),
-              ),
-            ]
-          : []),
-        ...(pending !== null
-          ? [eq(organizationRelationships.pending, pending)]
-          : []),
-      ),
-    with: {
-      targetOrganization: {
-        with: {
-          profile: {
-            with: {
-              avatarImage: true,
+      with: {
+        targetOrganization: {
+          with: {
+            profile: {
+              with: {
+                avatarImage: true,
+              },
             },
           },
         },
-      },
-      sourceOrganization: {
-        with: {
-          profile: {
-            with: {
-              avatarImage: true,
-            },
+        sourceOrganization: {
+          with: {
+            profile: true,
           },
         },
       },
-    },
-  });
+    });
 
   // separate relationships that need to be inverted
   const directRelationships = allRelationshipsFromDb.filter(
@@ -338,7 +335,9 @@ export const getDirectedRelationships = async ({
       >(relationship),
   );
 
-  const allRelationships = directRelationships.concat(redirectedInverseRelationships);
+  const allRelationships = directRelationships.concat(
+    redirectedInverseRelationships,
+  );
 
   return {
     records: allRelationships,
