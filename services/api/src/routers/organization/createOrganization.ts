@@ -1,3 +1,4 @@
+import { invalidate } from '@op/cache';
 import { UnauthorizedError, createOrganization } from '@op/common';
 import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
@@ -38,6 +39,12 @@ export const createOrganizationRouter = router({
           userId: user.id,
           organizationId: org.id,
           organizationName: org.profile.name,
+        });
+
+        // Invalidate user cache since organization membership has changed. This should be awaited since we want to kill cache BEFORE returning
+        await invalidate({
+          type: 'user',
+          params: [ctx.user.id],
         });
 
         return organizationsEncoder.parse(org);
