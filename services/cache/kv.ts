@@ -10,6 +10,11 @@ let redis: ReturnType<typeof createClient> | null = null;
 if (REDIS_URL) {
   redis = createClient({
     url: REDIS_URL,
+    disableOfflineQueue: true,
+    socket: {
+      connectTimeout: 300,
+      reconnectStrategy: () => 10,
+    },
   });
 
   redis.on('error', (err) => {
