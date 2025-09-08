@@ -71,6 +71,13 @@
       "when": 1756807990447,
       "tag": "0009_stiff_warbound",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1757366042299,
+      "tag": "0010_lush_ulik",
+      "breakpoints": true
     }
   ]
 }
