@@ -62,8 +62,6 @@ export function ProposalView({
   // Get current user to check edit permissions
   const { user } = useUser();
 
-  // Proposal viewed tracking is now handled in the backend (getProposal endpoint)
-
   // Direct tRPC mutations for like/follow functionality with optimistic updates
   const addRelationshipMutation = trpc.profile.addRelationship.useMutation({
     onMutate: async (variables) => {
@@ -167,8 +165,8 @@ export function ProposalView({
   // Check if current user can edit (only submitter can edit for now)
   const canEdit = Boolean(
     user?.currentProfile &&
-      currentProposal.submittedBy &&
-      user.currentProfile.id === currentProposal.submittedBy.id,
+    currentProposal.submittedBy &&
+    user.currentProfile.id === currentProposal.submittedBy.id,
   );
 
   // Generate edit href
@@ -227,7 +225,7 @@ export function ProposalView({
   const { title, budget, category, description } = parseProposalData(
     currentProposal.proposalData,
   );
-  
+
   const proposalContent = description;
 
   // Memoize editor configuration for performance
