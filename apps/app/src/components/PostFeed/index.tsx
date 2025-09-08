@@ -209,7 +209,6 @@ const PostMenu = ({
   post: Post;
   user?: OrganizationUser;
 }) => {
-  console.log('ORG', organization);
   // We check against whether this is the user's post, or whether the org that it was posted to currently matches the user's context
   const canShowMenu =
     (post?.profileId === user?.currentProfileId ||
