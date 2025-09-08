@@ -1,17 +1,36 @@
+import { trackProposalLiked, trackProposalFollowed } from '@op/analytics';
 import {
   ValidationError,
   addProfileRelationship,
   getProfileRelationships,
   removeProfileRelationship,
 } from '@op/common';
-import { ProfileRelationshipType } from '@op/db/schema';
+import { db, eq } from '@op/db/client';
+import { ProfileRelationshipType, proposals } from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
+import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
+
+// Helper function to check if a profile belongs to a proposal and get process info
+async function getProposalInfo(profileId: string): Promise<{ proposalId: string; processInstanceId: string } | null> {
+  const proposal = await db
+    .select({
+      id: proposals.id,
+      processInstanceId: proposals.processInstanceId,
+    })
+    .from(proposals)
+    .where(eq(proposals.profileId, profileId))
+    .limit(1);
+
+  return proposal.length > 0 
+    ? { proposalId: proposal[0]!.id, processInstanceId: proposal[0]!.processInstanceId }
+    : null;
+}
 
 const relationshipInputSchema = z.object({
   targetProfileId: z.string().uuid(),
@@ -91,6 +110,21 @@ export const profileRelationshipRouter = router({
           authUserId: ctx.user.id,
           pending,
         });
+
+        // Track analytics if this is a proposal relationship (async in background)
+        waitUntil(
+          (async () => {
+            const proposalInfo = await getProposalInfo(targetProfileId);
+            if (proposalInfo) {
+              if (relationshipType === ProfileRelationshipType.LIKES) {
+                await trackProposalLiked(ctx.user.id, proposalInfo.processInstanceId, proposalInfo.proposalId);
+              } else if (relationshipType === ProfileRelationshipType.FOLLOWING) {
+                await trackProposalFollowed(ctx.user.id, proposalInfo.processInstanceId, proposalInfo.proposalId);
+              }
+            }
+          })()
+        );
+
         return { success: true };
       } catch (error) {
         if (error instanceof ValidationError) {

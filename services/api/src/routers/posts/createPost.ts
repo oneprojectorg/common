@@ -1,6 +1,8 @@
+import { trackProposalCommented } from '@op/analytics';
 import { createPost as createPostService } from '@op/common';
 import { createPostSchema } from '@op/types';
 import { TRPCError } from '@trpc/server';
+import { waitUntil } from '@vercel/functions';
 
 // import type { OpenApiMeta } from 'trpc-to-openapi';
 
@@ -35,6 +37,14 @@ export const createPost = router({
           ...input,
           authUserId: ctx.user.id,
         });
+
+        // Track proposal commented event if this is a proposal comment
+        if (input.proposalId && input.processInstanceId) {
+          waitUntil(
+            trackProposalCommented(ctx.user.id, input.processInstanceId, input.proposalId)
+          );
+        }
+
         const output = outputSchema.parse(post);
         return output;
       } catch (error) {
