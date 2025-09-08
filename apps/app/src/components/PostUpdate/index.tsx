@@ -54,6 +54,8 @@ const PostUpdateWithUser = ({
   placeholder,
   onSuccess,
   label,
+  proposalId,
+  processInstanceId,
 }: {
   organization?: Organization;
   className?: string;
@@ -62,6 +64,8 @@ const PostUpdateWithUser = ({
   placeholder?: string;
   onSuccess?: () => void;
   label: string;
+  proposalId?: string; // If provided, this is a proposal comment
+  processInstanceId?: string; // Process instance ID for proposal comments
 }) => {
   const { user } = useUser();
   const [content, setContent] = useState('');
@@ -285,6 +289,7 @@ const PostUpdateWithUser = ({
       fileUpload.clearFiles();
       setLastFailedPost(null);
 
+
       if (data && optimisticCommentRef.current) {
         // Clear the optimistic comment ID since we have real data
         optimisticCommentRef.current = null;
@@ -462,6 +467,14 @@ const PostUpdateWithUser = ({
         mutationData.profileId = profileId;
       }
 
+      // Add proposal context for analytics
+      if (proposalId) {
+        mutationData.proposalId = proposalId;
+      }
+      if (processInstanceId) {
+        mutationData.processInstanceId = processInstanceId;
+      }
+
       createPost.mutate(mutationData);
     }
   };
@@ -515,6 +528,14 @@ const PostUpdateWithUser = ({
       // Add profile association if provided
       if (profileId) {
         mutationData.profileId = profileId;
+      }
+
+      // Add proposal context for analytics
+      if (proposalId) {
+        mutationData.proposalId = proposalId;
+      }
+      if (processInstanceId) {
+        mutationData.processInstanceId = processInstanceId;
       }
 
       createPost.mutate(mutationData);
@@ -719,6 +740,8 @@ export const PostUpdate = ({
   placeholder,
   onSuccess,
   label,
+  proposalId,
+  processInstanceId,
 }: {
   organization?: Organization;
   className?: string;
@@ -727,6 +750,8 @@ export const PostUpdate = ({
   placeholder?: string;
   onSuccess?: () => void;
   label: string;
+  proposalId?: string;
+  processInstanceId?: string;
 }) => {
   const { user } = useUser();
   const currentProfileId = user?.currentProfileId;
@@ -742,6 +767,8 @@ export const PostUpdate = ({
         placeholder={placeholder}
         onSuccess={onSuccess}
         label={label}
+        proposalId={proposalId}
+        processInstanceId={processInstanceId}
       />
     );
   }

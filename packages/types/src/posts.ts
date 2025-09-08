@@ -6,6 +6,9 @@ export const createPostSchema = z.object({
   parentPostId: z.string().uuid().optional(), // If provided, this becomes a comment/reply
   profileId: z.string().uuid().optional(), // Profile to associate the post with
   attachmentIds: z.array(z.string()).optional().default([]),
+  // Optional proposal context for analytics
+  proposalId: z.string().uuid().optional(),
+  processInstanceId: z.string().uuid().optional(),
 });
 
 // Unified post fetching schema
