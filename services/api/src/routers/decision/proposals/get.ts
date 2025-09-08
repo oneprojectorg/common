@@ -1,5 +1,7 @@
+import { trackProposalViewed } from '@op/analytics';
 import { UnauthorizedError, NotFoundError, getProposal } from '@op/common';
 import { TRPCError } from '@trpc/server';
+import { waitUntil } from '@vercel/functions';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
@@ -36,6 +38,13 @@ export const getProposalRouter = router({
           proposalId: input.proposalId,
           user,
         });
+
+        // Track proposal viewed event
+        if (proposal.processInstance && typeof proposal.processInstance === 'object' && !Array.isArray(proposal.processInstance) && 'id' in proposal.processInstance) {
+          waitUntil(
+            trackProposalViewed(user.id, proposal.processInstance.id, proposal.id)
+          );
+        }
 
         return proposalEncoder.parse(proposal);
       } catch (error: unknown) {

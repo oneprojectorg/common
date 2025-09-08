@@ -93,6 +93,8 @@ export function ProposalView({
 
       return { previousData };
     },
+    onSuccess: () => {
+    },
     onError: (error, _variables, context) => {
       // Rollback on error
       if (context?.previousData) {
@@ -163,8 +165,8 @@ export function ProposalView({
   // Check if current user can edit (only submitter can edit for now)
   const canEdit = Boolean(
     user?.currentProfile &&
-      currentProposal.submittedBy &&
-      user.currentProfile.id === currentProposal.submittedBy.id,
+    currentProposal.submittedBy &&
+    user.currentProfile.id === currentProposal.submittedBy.id,
   );
 
   // Generate edit href
@@ -223,7 +225,7 @@ export function ProposalView({
   const { title, budget, category, description } = parseProposalData(
     currentProposal.proposalData,
   );
-  
+
   const proposalContent = description;
 
   // Memoize editor configuration for performance
@@ -471,6 +473,8 @@ export function ProposalView({
                     placeholder={`${t('Comment')}${user?.currentProfile?.name ? ` as ${user?.currentProfile?.name}` : ''}...`}
                     label={t('Comment')}
                     onSuccess={scrollToComments}
+                    proposalId={currentProposal.id}
+                    processInstanceId={currentProposal.processInstance?.id}
                   />
                 </Surface>
               </div>

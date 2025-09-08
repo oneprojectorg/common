@@ -256,3 +256,159 @@ export async function trackRelationshipAccepted(userId: string): Promise<void> {
     event: 'user_accepted_relationship',
   });
 }
+
+/**
+ * Decision-making process analytics
+ */
+
+export interface DecisionCommonProperties {
+  process_id: string;
+  proposal_id?: string;
+  location?: string;
+  timezone?: string;
+  language?: string;
+}
+
+/**
+ * Helper function to get common properties for decision events
+ */
+export function getDecisionCommonProperties(
+  processId: string,
+  proposalId?: string,
+  additionalProps?: Record<string, any>,
+): DecisionCommonProperties & Record<string, any> {
+  // Server-side safe implementation - only add client-side properties if available
+  const baseProps: DecisionCommonProperties & Record<string, any> = {
+    process_id: processId,
+    timestamp: new Date().toISOString(),
+    ...additionalProps,
+  };
+
+  if (proposalId) {
+    baseProps.proposal_id = proposalId;
+  }
+
+  // Only add browser-specific properties if we're on the client side
+  if (typeof window !== 'undefined') {
+    baseProps.location = window.location.href;
+    baseProps.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    baseProps.language = navigator.language;
+  }
+
+  return baseProps;
+}
+
+/**
+ * Track when a user views a decision-making process
+ */
+export async function trackProcessViewed(
+  userId: string,
+  processId: string,
+  additionalProps?: Record<string, any>,
+): Promise<void> {
+  await trackEvent({
+    distinctId: userId,
+    event: 'process_viewed',
+    properties: getDecisionCommonProperties(processId, undefined, additionalProps),
+  });
+}
+
+/**
+ * Track when a user submits a proposal
+ */
+export async function trackProposalSubmitted(
+  userId: string,
+  processId: string,
+  proposalId: string,
+  additionalProps?: Record<string, any>,
+): Promise<void> {
+  await trackEvent({
+    distinctId: userId,
+    event: 'proposal_submitted',
+    properties: getDecisionCommonProperties(processId, proposalId, additionalProps),
+  });
+}
+
+/**
+ * Track when a user views a proposal
+ */
+export async function trackProposalViewed(
+  userId: string,
+  processId: string,
+  proposalId: string,
+  additionalProps?: Record<string, any>,
+): Promise<void> {
+  await trackEvent({
+    distinctId: userId,
+    event: 'proposal_viewed',
+    properties: getDecisionCommonProperties(processId, proposalId, additionalProps),
+  });
+}
+
+/**
+ * Track when a user comments on a proposal
+ */
+export async function trackProposalCommented(
+  userId: string,
+  processId: string,
+  proposalId: string,
+  additionalProps?: Record<string, any>,
+): Promise<void> {
+  await trackEvent({
+    distinctId: userId,
+    event: 'proposal_commented',
+    properties: getDecisionCommonProperties(processId, proposalId, additionalProps),
+  });
+}
+
+/**
+ * Track when a user likes a proposal
+ */
+export async function trackProposalLiked(
+  userId: string,
+  processId: string,
+  proposalId: string,
+  additionalProps?: Record<string, any>,
+): Promise<void> {
+  await trackEvent({
+    distinctId: userId,
+    event: 'proposal_liked',
+    properties: getDecisionCommonProperties(processId, proposalId, additionalProps),
+  });
+}
+
+/**
+ * Track when a user follows a proposal
+ */
+export async function trackProposalFollowed(
+  userId: string,
+  processId: string,
+  proposalId: string,
+  additionalProps?: Record<string, any>,
+): Promise<void> {
+  await trackEvent({
+    distinctId: userId,
+    event: 'proposal_followed',
+    properties: getDecisionCommonProperties(processId, proposalId, additionalProps),
+  });
+}
+
+/**
+ * Track when a user votes on a proposal
+ */
+export async function trackUserVoted(
+  userId: string,
+  processId: string,
+  proposalId: string,
+  voteData?: Record<string, any>,
+  additionalProps?: Record<string, any>,
+): Promise<void> {
+  await trackEvent({
+    distinctId: userId,
+    event: 'user_voted',
+    properties: getDecisionCommonProperties(processId, proposalId, {
+      ...voteData,
+      ...additionalProps,
+    }),
+  });
+}
