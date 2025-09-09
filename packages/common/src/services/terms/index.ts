@@ -28,7 +28,7 @@ const getTermsFromDb = async ({
   }
 
   if (query) {
-    whereClause = sql`${taxonomies.namespaceUri} = ${taxonomyName} AND ${taxonomyTerms.facet} ${facet ? sql`= ${facet.trim()}` : sql`IS NULL`} AND ${taxonomyTerms.label} @@to_tsquery('english', ${query + ':*'})`;
+    whereClause = sql`${taxonomies.namespaceUri} = ${taxonomyName} AND ${taxonomyTerms.facet} ${facet ? sql`= ${facet.trim()}` : sql`IS NULL`} AND to_tsvector('english', ${taxonomyTerms.label}) @@to_tsquery('english', ${query + ':*'})`;
   }
 
   try {
