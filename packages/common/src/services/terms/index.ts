@@ -1,4 +1,4 @@
-import { InferSelectModel, SQL, and, db, eq, sql } from '@op/db/client';
+import { InferSelectModel, SQL, and, db, eq, isNull, sql } from '@op/db/client';
 import { taxonomies, taxonomyTerms } from '@op/db/schema';
 
 interface TermLookupHandler {
@@ -28,7 +28,17 @@ const getTermsFromDb = async ({
   }
 
   if (query) {
-    whereClause = sql`${taxonomies.namespaceUri} = ${taxonomyName} AND ${taxonomyTerms.facet} ${facet ? sql`= ${facet.trim()}` : sql`IS NULL`} AND to_tsvector('english', ${taxonomyTerms.label}) @@to_tsquery('english', ${query + ':*'})`;
+    const taxonomyCondition = eq(taxonomies.namespaceUri, taxonomyName);
+    const facetCondition = facet
+      ? eq(taxonomyTerms.facet, facet.trim())
+      : isNull(taxonomyTerms.facet);
+    const searchCondition = sql`to_tsvector('english', ${taxonomyTerms.label}) @@to_tsquery('english', ${query.trim().replaceAll(' ', '\\ ') + ':*'})`;
+
+    whereClause = and(
+      taxonomyCondition,
+      facetCondition,
+      searchCondition,
+    ) as SQL<unknown>;
   }
 
   try {
