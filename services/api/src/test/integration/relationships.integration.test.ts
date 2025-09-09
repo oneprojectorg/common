@@ -42,7 +42,7 @@ describe('Organization Relationships Integration Tests', () => {
     testUserEmail1 = `test-user1-${Date.now()}@example.com`;
     await createTestUser(testUserEmail1);
     await signInTestUser(testUserEmail1);
-    
+
     const session1 = await getCurrentTestSession();
     testUser1 = session1?.user;
 
@@ -66,7 +66,7 @@ describe('Organization Relationships Integration Tests', () => {
     testUserEmail2 = `test-user2-${Date.now()}@example.com`;
     await createTestUser(testUserEmail2);
     await signInTestUser(testUserEmail2);
-    
+
     const session2 = await getCurrentTestSession();
     testUser2 = session2?.user;
 
@@ -248,7 +248,7 @@ describe('Organization Relationships Integration Tests', () => {
 
       // Should have 2 relationship records
       expect(org1Relationships.records).toHaveLength(2);
-      
+
       const relationshipTypes = org1Relationships.records.map(r => r.relationshipType);
       expect(relationshipTypes).toContain('funding');
       expect(relationshipTypes).toContain('partnership');
@@ -267,7 +267,7 @@ describe('Organization Relationships Integration Tests', () => {
 
       // Should also have 2 relationship records, properly inverted
       expect(org2Relationships.records).toHaveLength(2);
-      
+
       const invertedTypes = org2Relationships.records.map(r => r.relationshipType);
       expect(invertedTypes).toContain('fundedBy'); // inverted from 'funding'
       expect(invertedTypes).toContain('partnership'); // remains the same
@@ -294,19 +294,19 @@ describe('Organization Relationships Integration Tests', () => {
       });
 
       const relationship = org2Relationships.records[0];
-      
+
       // Verify the inverted relationship has correct organization data
       expect(relationship.sourceOrganization).toBeDefined();
       expect(relationship.targetOrganization).toBeDefined();
-      
+
       // Source should be org2 (the one making the query)
       expect(relationship.sourceOrganization.id).toBe(org2.id);
       expect(relationship.sourceOrganization.profile.name).toBe('Fundee Organization');
-      
+
       // Target should be org1 (the funder)
       expect(relationship.targetOrganization.id).toBe(org1.id);
       expect(relationship.targetOrganization.profile.name).toBe('Funder Organization');
-      
+
       // Relationship type should be inverted
       expect(relationship.relationshipType).toBe('fundedBy');
     });
@@ -344,7 +344,7 @@ describe('Organization Relationships Integration Tests', () => {
       // Should still be 'affiliation' since there's no inverse defined
       expect(org3Relationships.records).toHaveLength(1);
       expect(org3Relationships.records[0].relationshipType).toBe('affiliation');
-      
+
       // But the source/target should still be properly swapped
       expect(org3Relationships.records[0].sourceOrganizationId).toBe(org3.id);
       expect(org3Relationships.records[0].targetOrganizationId).toBe(org1.id);
