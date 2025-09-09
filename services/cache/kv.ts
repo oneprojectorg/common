@@ -110,7 +110,7 @@ export const cache = async <T = any>({
     memCache.set(cacheKey, { createdAt: Date.now(), data: newData });
     // don't cache if we couldn't find the record (?)
     // TTL in redis is in seconds
-    waitUntil(set(cacheKey, newData, ttl ? ttl / 1000 : 24 * 60 * 60)); // 24h default cache
+    waitUntil(set(cacheKey, newData, ttl ? ttl / 1000 : 72 * 60 * 60)); // 72h default cache
   } else if (storeNulls) {
     // This allows us to store negative values in the memcache to improve rejections as well (and avoid DB calls for repeated rejections)
     memCache.set(cacheKey, { createdAt: Date.now(), data: null });
