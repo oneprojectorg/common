@@ -57,7 +57,7 @@ const PostUpdateWithUser = ({
   proposalId,
   processInstanceId,
 }: {
-  organization?: Organization;
+  organization?: Organization | null;
   className?: string;
   parentPostId?: string; // If provided, this becomes a comment
   profileId?: string; // Profile ID to associate the post with (can be any profile type)
@@ -289,7 +289,6 @@ const PostUpdateWithUser = ({
       fileUpload.clearFiles();
       setLastFailedPost(null);
 
-
       if (data && optimisticCommentRef.current) {
         // Clear the optimistic comment ID since we have real data
         optimisticCommentRef.current = null;
@@ -490,7 +489,9 @@ const PostUpdateWithUser = ({
       // Check if offline
       if (!isOnline) {
         toast.error({
-          message: t('You are offline. Please check your connection and try again.'),
+          message: t(
+            'You are offline. Please check your connection and try again.',
+          ),
         });
         return;
       }
@@ -790,9 +791,6 @@ export const PostUpdate = ({
   }
 
   const org = organization ?? user?.currentOrganization;
-  if (!org) {
-    return null;
-  }
 
   return (
     <PostUpdateWithUser
