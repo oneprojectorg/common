@@ -125,9 +125,7 @@ export const MatchingOrganizationsForm = ({
     <div className={cn('max-w-lg', className)}>
       <FormContainer>
         <FormHeader text={t("We've found your organization")}>
-          {t(
-            "Based on your email domain, you have admin access to your organization's profile.",
-          )}
+          {t('join_subheader')}
         </FormHeader>
         <div className="flex flex-col items-center space-y-4">
           {matchingOrgs.map((org) => (
