@@ -40,6 +40,7 @@ export const links = [
        */
       url: envURL.TRPC_URL,
       transformer: superjson,
+      maxItems: 4,
 
       async fetch(url, options) {
         return fetch(url, {
