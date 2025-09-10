@@ -35,7 +35,7 @@
   "Privacy Policy": "Política de privacidad",
   "Media": "Medios",
   "We've found your organization": "Hemos encontrado tu organización",
-  "Based on your email domain, you have admin access to your organization's profile.": "Basado en tu dominio de correo electrónico, tienes acceso de administrador al perfil de tu organización.",
+  "join_subheader": "Basado en tu dominio de correo electrónico, tienes acceso para unirte a esta organización.",
   "Confirm Administrator Access": "Confirmar acceso de administrador",
   "For now, we're only supporting administrator accounts. In the future, we'll be able to support member accounts.": "Por ahora, solo estamos apoyando cuentas de administrador. En el futuro, podremos apoyar cuentas de miembros.",
   "Get Started": "Comenzar",
