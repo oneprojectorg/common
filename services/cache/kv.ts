@@ -12,9 +12,17 @@ if (REDIS_URL) {
     url: REDIS_URL,
     disableOfflineQueue: true,
     socket: {
-      connectTimeout: 500,
-      socketTimeout: 500,
-      reconnectStrategy: () => 10,
+      connectTimeout: 10_000,
+      keepAlive: false, // TCP keepalive
+      reconnectStrategy: (retries) => {
+        if (retries > 3) {
+          return false;
+        }
+
+        const jitter = Math.floor(Math.random() * 100);
+
+        return Math.min(retries * 500, 5_000) + jitter;
+      },
     },
   });
 
@@ -95,7 +103,13 @@ export const cache = async <T = any>({
   }
 
   // fall back to Redis cache
-  const data = (await get(cacheKey)) as T;
+
+  // set null if we don't get a response fast enough
+  const timeout = new Promise((resolve) => {
+    setTimeout(() => resolve(null), 300);
+  });
+
+  const data = (await Promise.race([get(cacheKey), timeout])) as T;
 
   if (data) {
     log.info('CACHE: KV');
