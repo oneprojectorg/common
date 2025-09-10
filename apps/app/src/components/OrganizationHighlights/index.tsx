@@ -44,7 +44,7 @@ const HighlightLabel = ({ children }: { children?: ReactNode }) => {
 
 const Highlight = ({ children }: { children?: ReactNode }) => {
   return (
-    <div className="grid w-full grid-cols-5 items-center gap-4 sm:flex">
+    <div className="xxs:flex grid w-full grid-cols-5 items-center gap-4 sm:flex">
       {children}
     </div>
   );
