@@ -118,6 +118,7 @@ export const inviteUsersToOrganization = async (
       });
 
       if (existingUser) {
+        console.log('User already exists');
         // User exists - check if they're already in this organization
         if (existingUser.organizationUsers.length === 0) {
           // User exists but not in this organization - add them directly
@@ -144,12 +145,16 @@ export const inviteUsersToOrganization = async (
                   organizationUserId: newOrgUser.id,
                   accessRoleId: targetRole.id,
                 });
+              } else {
+                console.error('Could not add user');
               }
             });
 
             results.successful.push(email);
             continue; // Skip email sending for existing users
           } else {
+            console.error('Invalid role specified for organization invite');
+
             // Role not found
             results.failed.push({
               email,
@@ -158,6 +163,7 @@ export const inviteUsersToOrganization = async (
             continue;
           }
         } else {
+          console.error('User already in organization');
           // User already in organization
           results.failed.push({
             email,
