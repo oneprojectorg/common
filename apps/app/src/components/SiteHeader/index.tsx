@@ -198,7 +198,7 @@ const AvatarMenuContent = ({
             </Button>
             )
           </span>
-          <span className="text-sm text-neutral-gray4 sm:text-xs">
+          <span className="max-w-72 text-sm text-neutral-gray4 sm:text-xs">
             {user?.currentOrganization ? (
               <>
                 Admin for{' '}
