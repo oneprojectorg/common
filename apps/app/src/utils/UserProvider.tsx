@@ -52,6 +52,9 @@ export const UserProviderSuspense = ({
   // We are only identifying One Project users by email.
   if (user && user.email.match(/.+@oneproject\.org$|.+@peoplepowered\.org$/)) {
     posthog.identify(user.id, { email: user.email, name: user.name });
+  } else {
+    // others are given anonymous IDs
+    posthog.identify();
   }
 
   // Utility function to get permissions for a specific profile
