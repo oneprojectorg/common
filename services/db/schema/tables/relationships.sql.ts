@@ -24,7 +24,8 @@ export const ProfileRelationshipType = {
   LIKES: 'likes',
 } as const;
 
-export type ProfileRelationshipType = (typeof ProfileRelationshipType)[keyof typeof ProfileRelationshipType];
+export type ProfileRelationshipType =
+  (typeof ProfileRelationshipType)[keyof typeof ProfileRelationshipType];
 
 export const organizationRelationships = pgTable(
   'organization_relationships',
@@ -49,7 +50,9 @@ export const organizationRelationships = pgTable(
     index().on(table.sourceOrganizationId, table.pending).concurrently(),
     index().on(table.targetOrganizationId, table.pending).concurrently(),
     index().on(table.relationshipType, table.pending).concurrently(),
-    index().on(table.sourceOrganizationId, table.targetOrganizationId).concurrently(),
+    index()
+      .on(table.sourceOrganizationId, table.targetOrganizationId)
+      .concurrently(),
     uniqueIndex().on(
       table.sourceOrganizationId,
       table.targetOrganizationId,
@@ -82,7 +85,8 @@ export const profileRelationships = pgTable(
     targetProfileId: uuid('target_profile_id')
       .notNull()
       .references(() => profiles.id, { onDelete: 'cascade' }),
-    relationshipType: profileRelationshipTypeEnum('relationship_type').notNull(),
+    relationshipType:
+      profileRelationshipTypeEnum('relationship_type').notNull(),
     pending: boolean(),
     metadata: jsonb('metadata'),
     ...timestamps,
