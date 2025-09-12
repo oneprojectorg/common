@@ -9,6 +9,7 @@ import { ModalFooter } from '@op/ui/Modal';
 import type { Option } from '@op/ui/MultiSelectComboBox';
 import { Skeleton } from '@op/ui/Skeleton';
 import { toast } from '@op/ui/Toast';
+import { useRouter } from 'next/navigation';
 import { ReactNode, Suspense, forwardRef, useState } from 'react';
 import { z } from 'zod';
 
@@ -72,6 +73,7 @@ export const UpdateProfileForm = forwardRef<
   }
 >(({ profile, onSuccess, className }, ref): ReactNode => {
   const t = useTranslations();
+  const router = useRouter();
   const utils = trpc.useUtils();
 
   const uploadImage = trpc.account.uploadImage.useMutation();
@@ -119,6 +121,7 @@ export const UpdateProfileForm = forwardRef<
       utils.individual.getTermsByProfile.invalidate({
         profileId,
       });
+      router.refresh();
       onSuccess();
     },
   });
@@ -165,6 +168,10 @@ export const UpdateProfileForm = forwardRef<
           onSuccess: () => {
             utils.account.getMyAccount.invalidate();
             utils.account.getUserProfiles.invalidate();
+            utils.profile.getBySlug.invalidate({
+              slug: profile.slug,
+            });
+            router.refresh();
           },
         },
       );
