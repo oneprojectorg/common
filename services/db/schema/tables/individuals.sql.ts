@@ -19,7 +19,11 @@ export const individuals = pgTable(
       }),
     ...timestamps,
   },
-  (table) => [...serviceRolePolicies, index().on(table.id).concurrently()],
+  (table) => [
+    ...serviceRolePolicies,
+    index().on(table.id).concurrently(),
+    index().on(table.profileId),
+  ],
 );
 
 export const individualsRelations = relations(individuals, ({ many, one }) => ({
@@ -46,10 +50,11 @@ export const individualsTerms = pgTable(
         onDelete: 'cascade',
       }),
   },
-  (table) => ({
+  (table) => [
     ...serviceRolePolicies,
-    pk: primaryKey(table.individualId, table.taxonomyTermId),
-  }),
+    primaryKey(table.individualId, table.taxonomyTermId),
+    index().on(table.taxonomyTermId),
+  ],
 );
 
 export const individualsTermsRelations = relations(

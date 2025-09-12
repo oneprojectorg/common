@@ -27,6 +27,7 @@ export const allowList = pgTable(
   (table) => [
     ...serviceRolePolicies,
     index().on(table.email).concurrently(),
+    index().on(table.organizationId),
     uniqueIndex('allowList_email_organizationId_idx')
       .on(table.email, table.organizationId)
       .concurrently(),

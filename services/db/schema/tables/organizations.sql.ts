@@ -102,10 +102,11 @@ export const organizationsTerms = pgTable(
         onDelete: 'cascade',
       }),
   },
-  (table) => ({
+  (table) => [
     ...serviceRolePolicies,
-    pk: primaryKey(table.organizationId, table.taxonomyTermId),
-  }),
+    primaryKey(table.organizationId, table.taxonomyTermId),
+    index().on(table.taxonomyTermId),
+  ],
 );
 
 export const organizationsTermsRelations = relations(
@@ -138,10 +139,11 @@ export const organizationsWhereWeWork = pgTable(
         onDelete: 'cascade',
       }),
   },
-  (table) => ({
+  (table) => [
     ...serviceRolePolicies,
-    pk: primaryKey(table.organizationId, table.locationId),
-  }),
+    primaryKey(table.organizationId, table.locationId),
+    index().on(table.locationId),
+  ],
 );
 
 export const organizationsWhereWeWorkRelations = relations(
@@ -174,10 +176,11 @@ export const organizationsStrategies = pgTable(
         onDelete: 'cascade',
       }),
   },
-  (table) => ({
+  (table) => [
     ...serviceRolePolicies,
-    pk: primaryKey(table.organizationId, table.taxonomyTermId),
-  }),
+    primaryKey(table.organizationId, table.taxonomyTermId),
+    index().on(table.taxonomyTermId),
+  ],
 );
 
 export const organizationsStrategiesRelations = relations(

@@ -45,6 +45,7 @@ export const postsToOrganizations = pgTable(
   (table) => [
     ...serviceRolePolicies,
     primaryKey({ columns: [table.organizationId, table.postId] }),
+    index().on(table.postId),
   ],
 );
 

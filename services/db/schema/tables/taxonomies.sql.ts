@@ -51,6 +51,7 @@ export const taxonomyTerms = pgTable(
       table.taxonomyId,
       table.label,
     ),
+    index().on(table.parentId),
     index('taxonomyTerms_data_gin_index')
       .using('gin', sql`to_tsvector('english', ${table.label})`)
       .concurrently(),

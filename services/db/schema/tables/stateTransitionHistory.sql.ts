@@ -47,6 +47,7 @@ export const stateTransitionHistory = pgTable(
     ...serviceRolePolicies,
     index().on(table.id).concurrently(),
     index().on(table.processInstanceId).concurrently(),
+    index().on(table.triggeredByProfileId),
     index().on(table.toStateId).concurrently(),
     index().on(table.transitionedAt).concurrently(),
   ],
