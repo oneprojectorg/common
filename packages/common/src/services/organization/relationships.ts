@@ -223,6 +223,10 @@ export const getRelatedOrganizations = async ({
   >();
 
   relationships.forEach((relationship) => {
+    if (!relationship.targetOrganization || !relationship.sourceOrganization) {
+      return;
+    }
+
     const isInverseRelationship = relationship.sourceOrganizationId === orgId;
     const relatedOrg = (
       isInverseRelationship

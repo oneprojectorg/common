@@ -144,6 +144,7 @@ export const listRelationshipsRouter = router({
 
         return { organizations, count };
       } catch (error: unknown) {
+        console.error(error);
         if (error instanceof UnauthorizedError) {
           throw new TRPCError({
             message: error.message,
