@@ -51,6 +51,9 @@ export const users = pgTable(
     index().on(table.id).concurrently(),
     index().on(table.authUserId).concurrently(),
     index().on(table.profileId).concurrently(),
+    index().on(table.avatarImageId),
+    index().on(table.lastOrgId),
+    index().on(table.currentProfileId),
     index().on(table.email).concurrently(),
     index('users_email_gin_index')
       .using('gin', sql`to_tsvector('english', ${table.email})`)
