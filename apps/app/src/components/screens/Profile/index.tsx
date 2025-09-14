@@ -42,7 +42,7 @@ import {
 } from '../ProfileOrganizations';
 import { ProfileRelationshipsSuspense } from '../ProfileRelationships';
 
-const ProfileWithData = async ({ slug }: { slug: string }) => {
+const ProfileWithData = async ({ slug, initialTab }: { slug: string; initialTab?: string }) => {
   try {
     const client = await trpcNext();
 
@@ -92,7 +92,7 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
           />
 
           <ProfileDetails organization={organization} />
-          <ProfileTabs>
+          <ProfileTabs initialTab={initialTab} profileType="org">
             <ProfileTabList>
               <DesktopOrganizationTabs />
               <FollowersTab />
@@ -132,6 +132,7 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
           </ProfileTabs>
           <ProfileTabsMobile
             profile={organization as any}
+            initialTab={initialTab}
             decisionsContent={
               <ProfileDecisionsSuspense profileId={profile.id} />
             }
@@ -198,7 +199,7 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
         />
 
         <ProfileDetails organization={userProfile} />
-        <ProfileTabs>
+        <ProfileTabs initialTab={initialTab} profileType="individual">
           <ProfileTabList>
             <DesktopIndividualTabs />
           </ProfileTabList>
@@ -220,6 +221,7 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
         </ProfileTabs>
         <ProfileTabsMobile
           profile={userProfile}
+          initialTab={initialTab}
           followingContent={<ProfileFollowing profileId={profile.id} />}
         >
           <ProfileOrganizationsSuspense
@@ -235,7 +237,7 @@ const ProfileWithData = async ({ slug }: { slug: string }) => {
   }
 };
 
-export const Profile = ({ slug }: { slug: string }) => {
+export const Profile = ({ slug, initialTab }: { slug: string; initialTab?: string }) => {
   return (
     <>
       {/* nav arrow */}
@@ -245,7 +247,7 @@ export const Profile = ({ slug }: { slug: string }) => {
         </Link>
       </header>
       <div className="-mt-[3.05rem] flex w-full flex-col gap-3 border-offWhite border-b-transparent sm:mt-0 sm:min-h-[calc(100vh-3.5rem)] sm:gap-4 sm:border">
-        <ProfileWithData slug={slug} />
+        <ProfileWithData slug={slug} initialTab={initialTab} />
       </div>
     </>
   );

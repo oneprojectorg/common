@@ -8,7 +8,7 @@ import type { Organization } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { Header3 } from '@op/ui/Header';
 import { Skeleton } from '@op/ui/Skeleton';
-import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
+import { Tab, TabList, TabPanel } from '@op/ui/Tabs';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
 import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
@@ -30,6 +30,7 @@ import {
   MembersTabPanel,
 } from './DecisionsTabs';
 import { FollowersTab, FollowersTabPanel } from './IndividualTabs';
+import { ProfileTabsWithQuery } from './ProfileTabsWithQuery';
 
 const FocusAreas = ({
   focusAreas,
@@ -293,11 +294,37 @@ export const ProfileTabList = ({ children }: { children: React.ReactNode }) => (
   <TabList className="flex-shrink-0 px-4 sm:px-6">{children}</TabList>
 );
 
-export const ProfileTabs = ({ children }: { children: React.ReactNode }) => {
+export const ProfileTabs = ({
+  children,
+  initialTab,
+  profileType = 'org',
+}: {
+  children: React.ReactNode;
+  initialTab?: string;
+  profileType?: 'org' | 'individual';
+}) => {
+  // Determine valid tabs and default tab based on profile type
+  const validTabs = [
+    'home',
+    'relationships',
+    'about',
+    'organizations',
+    'following',
+    'followers',
+    'decisions',
+    'members',
+  ];
+  const defaultTab = profileType === 'individual' ? 'about' : 'home';
+
   return (
-    <Tabs className="hidden flex-grow gap-0 px-0 sm:flex sm:h-full sm:flex-col">
+    <ProfileTabsWithQuery
+      className="hidden flex-grow gap-0 px-0 sm:flex sm:h-full sm:flex-col"
+      initialTab={initialTab}
+      defaultTab={defaultTab}
+      validTabs={validTabs}
+    >
       {children}
-    </Tabs>
+    </ProfileTabsWithQuery>
   );
 };
 
@@ -307,12 +334,14 @@ export const ProfileTabsMobile = ({
   decisionsContent,
   followingContent,
   followersContent,
+  initialTab,
 }: {
   profile: Organization; // TODO: THIS IS AN ORG RECORD, NOT A PROFILE. LEGACYNAMING THAT SHOULD BE FIXED
   children?: React.ReactNode;
   decisionsContent?: React.ReactNode;
   followingContent?: React.ReactNode;
   followersContent?: React.ReactNode;
+  initialTab?: string;
 }) => {
   const t = useTranslations();
   const isIndividual = profile.orgType === null || profile.orgType === '';
@@ -321,8 +350,25 @@ export const ProfileTabsMobile = ({
     'decisions',
   );
 
+  // Determine valid tabs and default tab based on profile type
+  const validTabs = [
+    'updates',
+    'about',
+    'organizations',
+    'following',
+    'followers',
+    'decisions',
+    'members',
+  ];
+  const defaultTab = isIndividual ? 'about' : 'updates';
+
   return (
-    <Tabs className="px-0 pb-8 sm:hidden">
+    <ProfileTabsWithQuery
+      className="px-0 pb-8 sm:hidden"
+      initialTab={initialTab}
+      defaultTab={defaultTab}
+      validTabs={validTabs}
+    >
       <TabList className="overflow-x-auto px-4">
         {!isIndividual && <Tab id="updates">{t('Updates')}</Tab>}
         <Tab id="about">{t('About')}</Tab>
@@ -379,6 +425,6 @@ export const ProfileTabsMobile = ({
       {decisionsEnabled && (
         <DecisionsTabPanel>{decisionsContent}</DecisionsTabPanel>
       )}
-    </Tabs>
+    </ProfileTabsWithQuery>
   );
 };
