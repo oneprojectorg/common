@@ -116,12 +116,12 @@ export function ProposalView({
       onMutate: async (variables) => {
         // Cancel outgoing refetches
         await utils.decision.getProposal.cancel({
-          profileId: currentProposal.id,
+          profileId: currentProposal.profileId,
         });
 
         // Snapshot the previous value
         const previousData = utils.decision.getProposal.getData({
-          profileId: currentProposal.id,
+          profileId: currentProposal.profileId,
         });
 
         // Optimistically update the cache

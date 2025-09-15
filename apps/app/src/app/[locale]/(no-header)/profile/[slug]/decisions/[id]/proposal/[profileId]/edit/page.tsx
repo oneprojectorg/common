@@ -4,6 +4,7 @@ import { trpc } from '@op/api/client';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
+import ErrorBoundary from '@/components/ErrorBoundary';
 import { ProposalEditor } from '@/components/decisions/ProposalEditor';
 
 function ProposalEditPageContent({
@@ -15,31 +16,26 @@ function ProposalEditPageContent({
   instanceId: string;
   slug: string;
 }) {
-  try {
-    // Get both the proposal and the instance
-    const [proposal] = trpc.decision.getProposal.useSuspenseQuery({
-      profileId,
-    });
-    const [instance] = trpc.decision.getInstance.useSuspenseQuery({
-      instanceId,
-    });
+  // Get both the proposal and the instance
+  const [proposal] = trpc.decision.getProposal.useSuspenseQuery({
+    profileId,
+  });
+  const [instance] = trpc.decision.getInstance.useSuspenseQuery({
+    instanceId,
+  });
 
-    if (!proposal || !instance) {
-      notFound();
-    }
-
-    return (
-      <ProposalEditor
-        instance={instance}
-        backHref={`/profile/${slug}/decisions/${instanceId}/proposal/${profileId}`}
-        existingProposal={proposal}
-        isEditMode={true}
-      />
-    );
-  } catch (error) {
-    console.error('Error loading proposal for editing:', error);
+  if (!proposal || !instance) {
     notFound();
   }
+
+  return (
+    <ProposalEditor
+      instance={instance}
+      backHref={`/profile/${slug}/decisions/${instanceId}/proposal/${profileId}`}
+      existingProposal={proposal}
+      isEditMode={true}
+    />
+  );
 }
 
 function ProposalEditPageSkeleton() {
@@ -75,13 +71,15 @@ const ProposalEditPage = async ({
   const { profileId, id, slug } = await params;
 
   return (
-    <Suspense fallback={<ProposalEditPageSkeleton />}>
-      <ProposalEditPageContent
-        profileId={profileId}
-        instanceId={id}
-        slug={slug}
-      />
-    </Suspense>
+    <ErrorBoundary>
+      <Suspense fallback={<ProposalEditPageSkeleton />}>
+        <ProposalEditPageContent
+          profileId={profileId}
+          instanceId={id}
+          slug={slug}
+        />
+      </Suspense>
+    </ErrorBoundary>
   );
 };
 
