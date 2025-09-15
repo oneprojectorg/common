@@ -8,10 +8,11 @@
   "main": "src/index.ts",
   "scripts": {
     "test": "vitest run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest"
   },
   "dependencies": {
+    "@op/cache": "workspace:*",
     "@op/emails": "workspace:*",
     "access-zones": "0.0.1",
     "ajv": "^8.17.1",

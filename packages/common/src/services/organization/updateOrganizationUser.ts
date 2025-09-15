@@ -1,7 +1,12 @@
+import { invalidate } from '@op/cache';
 import { db, eq, inArray } from '@op/db/client';
-import { organizationUsers, organizationUserToAccessRoles, accessRoles } from '@op/db/schema';
-import { assertAccess, permission } from 'access-zones';
+import {
+  accessRoles,
+  organizationUserToAccessRoles,
+  organizationUsers,
+} from '@op/db/schema';
 import type { User } from '@supabase/supabase-js';
+import { assertAccess, permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
 import { getOrgAccessUser } from '../access';
@@ -44,7 +49,7 @@ export async function updateOrganizationUser({
     where: (table, { eq, and }) =>
       and(
         eq(table.id, organizationUserId),
-        eq(table.organizationId, organizationId)
+        eq(table.organizationId, organizationId),
       ),
   });
 
@@ -54,9 +59,17 @@ export async function updateOrganizationUser({
 
   // Update the organization user basic info
   const updateData: Partial<UpdateOrganizationUserData> = {};
-  if (data.name !== undefined) updateData.name = data.name;
-  if (data.email !== undefined) updateData.email = data.email;
-  if (data.about !== undefined) updateData.about = data.about;
+  if (data.name !== undefined) {
+    updateData.name = data.name;
+  }
+
+  if (data.email !== undefined) {
+    updateData.email = data.email;
+  }
+
+  if (data.about !== undefined) {
+    updateData.about = data.about;
+  }
 
   if (Object.keys(updateData).length > 0) {
     await db
@@ -85,18 +98,21 @@ export async function updateOrganizationUser({
     // Remove existing role assignments
     await db
       .delete(organizationUserToAccessRoles)
-      .where(eq(organizationUserToAccessRoles.organizationUserId, organizationUserId));
+      .where(
+        eq(
+          organizationUserToAccessRoles.organizationUserId,
+          organizationUserId,
+        ),
+      );
 
     // Add new role assignments
     if (data.roleIds.length > 0) {
-      await db
-        .insert(organizationUserToAccessRoles)
-        .values(
-          data.roleIds.map((roleId) => ({
-            organizationUserId,
-            accessRoleId: roleId,
-          }))
-        );
+      await db.insert(organizationUserToAccessRoles).values(
+        data.roleIds.map((roleId) => ({
+          organizationUserId,
+          accessRoleId: roleId,
+        })),
+      );
     }
   }
 
@@ -115,6 +131,11 @@ export async function updateOrganizationUser({
   if (!updatedUserWithRoles) {
     throw new NotFoundError('Failed to retrieve updated user');
   }
+
+  await invalidate({
+    type: 'orgUser',
+    params: [organizationId, user.id],
+  });
 
   return {
     ...updatedUserWithRoles,
