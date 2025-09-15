@@ -78,8 +78,25 @@ export function DecisionInstanceContent({
               <p>
                 We invite you to apply for funds to boost mutual aid
                 infrastructure capacity that benefits the entire ecosystem. For
-                more details, see the Request for Applications and start your
-                application today!
+                more details, see the{' '}
+                <a
+                  href="https://docs.google.com/document/d/1OPKvQzbMTl3VQsVIvHM1HCk6KrhSbvS5UScvSfmkqT4/edit?tab=t.2dolvnkc9h7e"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-teal hover:underline"
+                >
+                  Request for Applications
+                </a>{' '}
+                and{' '}
+                <a
+                  href="https://docs.google.com/document/d/1OPKvQzbMTl3VQsVIvHM1HCk6KrhSbvS5UScvSfmkqT4/edit?tab=t.2dolvnkc9h7e"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-teal hover:underline"
+                >
+                  start your application
+                </a>{' '}
+                today!
               </p>
             </p>
           )}
