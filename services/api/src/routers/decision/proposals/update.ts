@@ -58,8 +58,8 @@ export const updateProposalRouter = router({
         });
 
         await invalidate({
-          type: 'proposal',
-          params: [proposalId],
+          type: 'profile',
+          params: [proposal.profileId],
         });
 
         return proposalEncoder.parse(proposal);

@@ -28,13 +28,6 @@ import { ProposalEditorLayout } from './layout';
 
 type Proposal = z.infer<typeof proposalEncoder>;
 
-interface ProposalEditorProps {
-  instance: ProcessInstance;
-  backHref: string;
-  existingProposal?: Proposal;
-  isEditMode?: boolean;
-}
-
 // Utility function to handle tRPC validation errors
 function handleValidationError(error: any, operationType: 'create' | 'update') {
   console.error(`Failed to ${operationType} proposal:`, error);
@@ -77,7 +70,12 @@ export function ProposalEditor({
   backHref,
   existingProposal,
   isEditMode = false,
-}: ProposalEditorProps) {
+}: {
+  instance: ProcessInstance;
+  backHref: string;
+  existingProposal?: Proposal;
+  isEditMode?: boolean;
+}) {
   const router = useRouter();
   const [title, setTitle] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -106,7 +104,7 @@ export function ProposalEditor({
   const updateProposalMutation = trpc.decision.updateProposal.useMutation({
     onSuccess: async () => {
       await utils.decision.getProposal.invalidate({
-        proposalId: existingProposal?.id,
+        profileId: existingProposal?.profileId,
       });
       await utils.decision.listProposals.invalidate({
         processInstanceId: instance.id,

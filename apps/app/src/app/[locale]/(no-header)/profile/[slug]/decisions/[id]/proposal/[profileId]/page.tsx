@@ -4,36 +4,32 @@ import { trpc } from '@op/api/client';
 import { notFound, useParams } from 'next/navigation';
 import { Suspense } from 'react';
 
+import ErrorBoundary from '@/components/ErrorBoundary';
 import { ProposalView } from '@/components/decisions/ProposalView';
 
 function ProposalViewPageContent({
-  proposalId,
+  profileId,
   instanceId,
   slug,
 }: {
-  proposalId: string;
+  profileId: string;
   instanceId: string;
   slug: string;
 }) {
-  try {
-    const [proposal] = trpc.decision.getProposal.useSuspenseQuery({
-      proposalId,
-    });
+  const [proposal] = trpc.decision.getProposal.useSuspenseQuery({
+    profileId,
+  });
 
-    if (!proposal) {
-      notFound();
-    }
-
-    return (
-      <ProposalView
-        proposal={proposal}
-        backHref={`/profile/${slug}/decisions/${instanceId}`}
-      />
-    );
-  } catch (error) {
-    console.error('Error loading proposal:', error);
+  if (!proposal) {
     notFound();
   }
+
+  return (
+    <ProposalView
+      proposal={proposal}
+      backHref={`/profile/${slug}/decisions/${instanceId}`}
+    />
+  );
 }
 
 function ProposalViewPageSkeleton() {
@@ -83,20 +79,22 @@ function ProposalViewPageSkeleton() {
 }
 
 const ProposalViewPage = () => {
-  const { proposalId, id, slug } = useParams<{
-    proposalId: string;
+  const { profileId, id, slug } = useParams<{
+    profileId: string;
     id: string;
     slug: string;
   }>();
 
   return (
-    <Suspense fallback={<ProposalViewPageSkeleton />}>
-      <ProposalViewPageContent
-        proposalId={proposalId}
-        instanceId={id}
-        slug={slug}
-      />
-    </Suspense>
+    <ErrorBoundary>
+      <Suspense fallback={<ProposalViewPageSkeleton />}>
+        <ProposalViewPageContent
+          profileId={profileId}
+          instanceId={id}
+          slug={slug}
+        />
+      </Suspense>
+    </ErrorBoundary>
   );
 };
 
