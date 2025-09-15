@@ -32,10 +32,14 @@ export interface PhaseConfiguration {
 interface PhaseFormData {
   submissionsOpen?: string;
   submissionsClose?: string;
+  allowProposals?: boolean;
 }
 
 interface FormPhaseData {
-  ideaCollectionPhase?: { ideaCollectionOpen?: string; ideaCollectionClose?: string };
+  ideaCollectionPhase?: {
+    ideaCollectionOpen?: string;
+    ideaCollectionClose?: string;
+  };
   proposalSubmissionPhase?: PhaseFormData;
   reviewShortlistingPhase?: { reviewOpen?: string; reviewClose?: string };
   votingPhase?: { votingOpen?: string; votingClose?: string };
@@ -133,10 +137,18 @@ export const transformFormDataToInstanceData = (
     phases: [
       {
         stateId: 'ideaCollection',
-        plannedStartDate: (data.ideaCollectionPhase as { ideaCollectionOpen?: string; ideaCollectionClose?: string })
-          ?.ideaCollectionOpen,
-        plannedEndDate: (data.ideaCollectionPhase as { ideaCollectionOpen?: string; ideaCollectionClose?: string })
-          ?.ideaCollectionClose,
+        plannedStartDate: (
+          data.ideaCollectionPhase as {
+            ideaCollectionOpen?: string;
+            ideaCollectionClose?: string;
+          }
+        )?.ideaCollectionOpen,
+        plannedEndDate: (
+          data.ideaCollectionPhase as {
+            ideaCollectionOpen?: string;
+            ideaCollectionClose?: string;
+          }
+        )?.ideaCollectionClose,
       },
       {
         stateId: 'submission',

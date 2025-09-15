@@ -78,6 +78,13 @@ export const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
               format: 'date',
               title: 'Submissions Close',
             },
+            allowProposals: {
+              type: 'boolean',
+              title: 'Allow proposals during this phase',
+              description:
+                'When enabled, the submit proposal button will be hidden during this phase and proposals will not be able to be submitted.',
+              default: true,
+            },
           },
           required: ['submissionsOpen', 'submissionsClose'],
         },
@@ -352,7 +359,7 @@ export const transformFormDataToProcessSchema = (
           sortOrder: 2,
         },
         config: {
-          allowProposals: true,
+          allowProposals: false,
           allowDecisions: false,
         },
       },

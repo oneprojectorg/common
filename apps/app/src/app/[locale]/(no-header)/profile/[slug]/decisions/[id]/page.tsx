@@ -23,6 +23,9 @@ interface ProcessPhase {
     sortOrder?: number;
   };
   type?: 'initial' | 'intermediate' | 'final';
+  config?: {
+    allowProposals?: boolean;
+  };
 }
 
 async function DecisionInstancePageContent({
@@ -82,6 +85,14 @@ async function DecisionInstancePageContent({
 
     const budget = instanceData?.budget || processSchema?.budget;
 
+    const currentStateId =
+      instanceData?.currentStateId || instance.currentStateId;
+    const currentState = templateStates.find(
+      (state) => state.id === currentStateId,
+    );
+    const allowProposals = currentState?.config?.allowProposals !== false; // defaults to true
+    console.log('currentState', currentState);
+
     // TODO: special key for People powered translations as a stop-gap
     const description = instance?.description?.match('PPDESCRIPTION')
       ? t('PPDESCRIPTION')
@@ -132,15 +143,17 @@ async function DecisionInstancePageContent({
                   />
                 ) : null}
 
-                <div className="mb-6">
-                  <ButtonLink
-                    href={`/profile/${slug}/decisions/${instanceId}/proposal/create`}
-                    color="primary"
-                    className="w-full"
-                  >
-                    {t('Submit a proposal')}
-                  </ButtonLink>
-                </div>
+                {allowProposals && (
+                  <div className="mb-6">
+                    <ButtonLink
+                      href={`/profile/${slug}/decisions/${instanceId}/proposal/create`}
+                      color="primary"
+                      className="w-full"
+                    >
+                      {t('Submit a proposal')}
+                    </ButtonLink>
+                  </div>
+                )}
 
                 <CurrentPhaseSurface
                   currentPhase={currentPhase}
