@@ -33,7 +33,13 @@ export const getProposalRouter = router({
     .output(proposalEncoder)
     .query(async ({ ctx, input }) => {
       const { user } = ctx;
-      const { profileId } = input;
+      let { profileId } = input;
+
+      // Adding this map since we are shifting when there is only one proposal.
+      // Preventing 404s for the moment but this can be removed in a short bit.
+      if (profileId === '168e431e-60cd-4834-9ab4-36cc9fbafd8a') {
+        profileId = 'e05db18a-7c18-4cd5-90fc-a33e25a257b1';
+      }
 
       try {
         const proposal = await cache({
