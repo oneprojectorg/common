@@ -22,15 +22,12 @@ import { OverlayTriggerStateContext } from 'react-aria-components';
 import ErrorBoundary from '../../ErrorBoundary';
 import { CustomTemplates } from '../CreateDecisionProcessModal/CustomTemplates';
 import { CustomWidgets } from '../CreateDecisionProcessModal/CustomWidgets';
-import {
-  schemaDefaults,
-  stepSchemas,
-  transformFormDataToProcessSchema,
-} from '../CreateDecisionProcessModal/schemas/simple';
+import { loadSchema, type SchemaType } from '../CreateDecisionProcessModal/schemas/schemaLoader';
 
 
 interface EditDecisionProcessModalProps {
   instance?: ProcessInstance;
+  schema?: SchemaType;
 }
 
 
@@ -45,11 +42,16 @@ interface IChangeEvent {
 
 export const EditDecisionProcessModal = ({
   instance,
+  schema = 'simple',
 }: EditDecisionProcessModalProps) => {
   const utils = trpc.useUtils();
+
+  // Load the appropriate schema based on the prop
+  const { stepSchemas, schemaDefaults, transformFormDataToProcessSchema } = loadSchema(schema);
+
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<Record<string, unknown>>(
-    instance ? transformInstanceDataToFormData(instance) : schemaDefaults
+    instance ? transformInstanceDataToFormData(instance, schemaDefaults) : schemaDefaults
   );
   const [errors, setErrors] = useState<Record<number, FormValidationErrors | null>>({});
 
@@ -62,9 +64,9 @@ export const EditDecisionProcessModal = ({
 
   useEffect(() => {
     if (instance) {
-      setFormData(transformInstanceDataToFormData(instance));
+      setFormData(transformInstanceDataToFormData(instance, schemaDefaults));
     }
-  }, [instance]);
+  }, [instance, schemaDefaults]);
 
   // tRPC mutations for creating process and instance
   const createProcess = trpc.decision.createProcess.useMutation({
@@ -74,7 +76,7 @@ export const EditDecisionProcessModal = ({
         processId: process.id,
         name: formData.processName as string,
         description: formData.description as string,
-        instanceData: transformFormDataToInstanceData(formData),
+        instanceData: transformFormDataToInstanceData(formData, schema),
       });
     },
     onError: (error) => {
@@ -267,7 +269,7 @@ export const EditDecisionProcessModal = ({
         instanceId: instance.id,
         name: formData.processName as string,
         description: formData.description as string,
-        instanceData: transformFormDataToInstanceData(formData),
+        instanceData: transformFormDataToInstanceData(formData, schema),
       });
     } else {
       // Transform and submit form data for new process

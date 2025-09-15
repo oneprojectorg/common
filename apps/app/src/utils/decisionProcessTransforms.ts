@@ -1,6 +1,6 @@
 import type { InstanceData, ProcessSchema } from '@op/common';
 
-import { schemaDefaults } from '../components/Profile/CreateDecisionProcessModal/schemas/simple';
+import type { SchemaType } from '../components/Profile/CreateDecisionProcessModal/schemas/schemaLoader';
 
 // Type definitions for data transformation
 export interface ProcessInstance {
@@ -52,6 +52,7 @@ interface FormPhaseData {
  */
 export const transformInstanceDataToFormData = (
   instance: ProcessInstance,
+  schemaDefaults: Record<string, unknown>,
 ): Record<string, unknown> => {
   const formData: Record<string, unknown> = {
     ...schemaDefaults,
@@ -121,7 +122,68 @@ export const transformInstanceDataToFormData = (
  */
 export const transformFormDataToInstanceData = (
   data: Record<string, unknown>,
+  schemaType: SchemaType,
 ): InstanceData => {
+  const phases = [];
+
+  // Only add ideaCollection phase for simple schema
+  if (schemaType === 'simple') {
+    phases.push({
+      stateId: 'ideaCollection',
+      plannedStartDate: (
+        data.ideaCollectionPhase as {
+          ideaCollectionOpen?: string;
+          ideaCollectionClose?: string;
+        }
+      )?.ideaCollectionOpen,
+      plannedEndDate: (
+        data.ideaCollectionPhase as {
+          ideaCollectionOpen?: string;
+          ideaCollectionClose?: string;
+        }
+      )?.ideaCollectionClose,
+    });
+  }
+
+  phases.push(
+    {
+      stateId: 'submission',
+      plannedStartDate: (data.proposalSubmissionPhase as PhaseFormData)
+        ?.submissionsOpen,
+      plannedEndDate: (data.proposalSubmissionPhase as PhaseFormData)
+        ?.submissionsClose,
+    },
+    {
+      stateId: 'review',
+      plannedStartDate: (
+        data.reviewShortlistingPhase as {
+          reviewOpen?: string;
+          reviewClose?: string;
+        }
+      )?.reviewOpen,
+      plannedEndDate: (
+        data.reviewShortlistingPhase as {
+          reviewOpen?: string;
+          reviewClose?: string;
+        }
+      )?.reviewClose,
+    },
+    {
+      stateId: 'voting',
+      plannedStartDate: (
+        data.votingPhase as { votingOpen?: string; votingClose?: string }
+      )?.votingOpen,
+      plannedEndDate: (
+        data.votingPhase as { votingOpen?: string; votingClose?: string }
+      )?.votingClose,
+    },
+    {
+      stateId: 'results',
+      plannedStartDate: (data.resultsAnnouncement as { resultsDate?: string })
+        ?.resultsDate,
+    }
+  );
+
   return {
     budget: data.totalBudget as number,
     hideBudget: data.hideBudget as boolean,
@@ -134,59 +196,7 @@ export const transformFormDataToInstanceData = (
       proposalInfoTitle: data.proposalInfoTitle,
       proposalInfoContent: data.proposalInfoContent,
     },
-    phases: [
-      {
-        stateId: 'ideaCollection',
-        plannedStartDate: (
-          data.ideaCollectionPhase as {
-            ideaCollectionOpen?: string;
-            ideaCollectionClose?: string;
-          }
-        )?.ideaCollectionOpen,
-        plannedEndDate: (
-          data.ideaCollectionPhase as {
-            ideaCollectionOpen?: string;
-            ideaCollectionClose?: string;
-          }
-        )?.ideaCollectionClose,
-      },
-      {
-        stateId: 'submission',
-        plannedStartDate: (data.proposalSubmissionPhase as PhaseFormData)
-          ?.submissionsOpen,
-        plannedEndDate: (data.proposalSubmissionPhase as PhaseFormData)
-          ?.submissionsClose,
-      },
-      {
-        stateId: 'review',
-        plannedStartDate: (
-          data.reviewShortlistingPhase as {
-            reviewOpen?: string;
-            reviewClose?: string;
-          }
-        )?.reviewOpen,
-        plannedEndDate: (
-          data.reviewShortlistingPhase as {
-            reviewOpen?: string;
-            reviewClose?: string;
-          }
-        )?.reviewClose,
-      },
-      {
-        stateId: 'voting',
-        plannedStartDate: (
-          data.votingPhase as { votingOpen?: string; votingClose?: string }
-        )?.votingOpen,
-        plannedEndDate: (
-          data.votingPhase as { votingOpen?: string; votingClose?: string }
-        )?.votingClose,
-      },
-      {
-        stateId: 'results',
-        plannedStartDate: (data.resultsAnnouncement as { resultsDate?: string })
-          ?.resultsDate,
-      },
-    ],
+    phases,
   };
 };
 
