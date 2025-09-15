@@ -6,6 +6,7 @@ import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
+import { RichTextEditorContent } from '@/components/RichTextEditor';
 import { CurrentPhaseSurface } from '@/components/decisions/CurrentPhaseSurface';
 import { DecisionInstanceContent } from '@/components/decisions/DecisionInstanceContent';
 import { DecisionInstanceHeader } from '@/components/decisions/DecisionInstanceHeader';
@@ -136,9 +137,10 @@ async function DecisionInstancePageContent({
                   {name}
                 </Header3>
                 {description ? (
-                  <p
-                    className="text-sm"
-                    dangerouslySetInnerHTML={{ __html: description }}
+                  <RichTextEditorContent
+                    content={description}
+                    readOnly={true}
+                    editorClassName="prose prose-base max-w-none [&_p]:text-base"
                   />
                 ) : null}
 

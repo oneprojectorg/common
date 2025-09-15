@@ -33,13 +33,13 @@ export const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
     },
     uiSchema: {
       processName: {
-        'ui:placeholder': 'e.g., 2025 Community Budget',
+        'ui:placeholder': 'e.g., 2026 Budget',
       },
       description: {
-        'ui:widget': 'textarea',
+        'ui:widget': 'RichTextEditor',
         'ui:placeholder': 'Description for your decision-making process',
         'ui:options': {
-          showToolbar: false,
+          showToolbar: true,
         },
       },
       totalBudget: {
@@ -56,35 +56,15 @@ export const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
       type: 'object',
       title: 'Set up your decision-making phases',
       required: [
-        'ideaCollectionPhase',
         'proposalSubmissionPhase',
         'reviewShortlistingPhase',
         'votingPhase',
         'resultsAnnouncement',
       ],
       properties: {
-        ideaCollectionPhase: {
-          type: 'object',
-          title: 'Idea Collection Phase',
-          description:
-            'Members share initial ideas and concepts before formal proposal submission.',
-          properties: {
-            ideaCollectionOpen: {
-              type: 'string',
-              format: 'date',
-              title: 'Idea Collection Open',
-            },
-            ideaCollectionClose: {
-              type: 'string',
-              format: 'date',
-              title: 'Idea Collection Close',
-            },
-          },
-          required: ['ideaCollectionOpen', 'ideaCollectionClose'],
-        },
         proposalSubmissionPhase: {
           type: 'object',
-          title: 'Proposal Submission Phase',
+          title: 'Proposal Submission',
           description:
             'Members submit proposals and ideas for funding consideration.',
           properties: {
@@ -98,50 +78,57 @@ export const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
               format: 'date',
               title: 'Submissions Close',
             },
+            allowProposals: {
+              type: 'boolean',
+              title: 'Allow proposals during this phase',
+              description:
+                'When enabled, the submit proposal button will be hidden during this phase and proposals will not be able to be submitted.',
+              default: true,
+            },
           },
           required: ['submissionsOpen', 'submissionsClose'],
         },
         reviewShortlistingPhase: {
           type: 'object',
-          title: 'Review & Shortlisting Phase',
+          title: 'Community Voting',
           description:
             'Reviewers create a shortlist of eligible proposals for voting.',
           properties: {
             reviewOpen: {
               type: 'string',
               format: 'date',
-              title: 'Review Open',
+              title: 'Voting Open',
             },
             reviewClose: {
               type: 'string',
               format: 'date',
-              title: 'Review Close',
+              title: 'Voting Close',
             },
           },
           required: ['reviewOpen', 'reviewClose'],
         },
         votingPhase: {
           type: 'object',
-          title: 'Voting Phase',
+          title: 'Committee Deliberation',
           description:
             'All members vote on shortlisted proposals to decide which projects receive funding.',
           properties: {
             votingOpen: {
               type: 'string',
               format: 'date',
-              title: 'Voting Open',
+              title: 'Deliberation Open',
             },
             votingClose: {
               type: 'string',
               format: 'date',
-              title: 'Voting Close',
+              title: 'Deliberation Close',
             },
           },
           required: ['votingOpen', 'votingClose'],
         },
         resultsAnnouncement: {
           type: 'object',
-          title: 'Results Announcement',
+          title: 'Results',
           properties: {
             resultsDate: {
               type: 'string',
@@ -154,14 +141,6 @@ export const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
       },
     },
     uiSchema: {
-      ideaCollectionPhase: {
-        ideaCollectionOpen: {
-          'ui:widget': 'date',
-        },
-        ideaCollectionClose: {
-          'ui:widget': 'date',
-        },
-      },
       proposalSubmissionPhase: {
         submissionsOpen: {
           'ui:widget': 'date',
@@ -330,10 +309,6 @@ export const schemaDefaults = {
   description: '',
   totalBudget: null,
   hideBudget: false,
-  ideaCollectionPhase: {
-    ideaCollectionOpen: '',
-    ideaCollectionClose: '',
-  },
   proposalSubmissionPhase: {
     submissionsOpen: '',
     submissionsClose: '',
@@ -375,20 +350,6 @@ export const transformFormDataToProcessSchema = (
     },
     states: [
       {
-        id: 'ideaCollection',
-        name: 'Idea Collection',
-        type: 'initial' as const,
-        phase: {
-          startDate: (data.ideaCollectionPhase as any)?.ideaCollectionOpen,
-          endDate: (data.ideaCollectionPhase as any)?.ideaCollectionClose,
-          sortOrder: 1,
-        },
-        config: {
-          allowProposals: false,
-          allowDecisions: false,
-        },
-      },
-      {
         id: 'submission',
         name: 'Proposal Submission',
         type: 'intermediate' as const,
@@ -398,13 +359,13 @@ export const transformFormDataToProcessSchema = (
           sortOrder: 2,
         },
         config: {
-          allowProposals: true,
+          allowProposals: false,
           allowDecisions: false,
         },
       },
       {
         id: 'review',
-        name: 'Review & Shortlisting',
+        name: 'Community Voting',
         type: 'intermediate' as const,
         phase: {
           startDate: (data.reviewShortlistingPhase as any)?.reviewOpen,
@@ -418,7 +379,7 @@ export const transformFormDataToProcessSchema = (
       },
       {
         id: 'voting',
-        name: 'Voting',
+        name: 'Committee Deliberation',
         type: 'intermediate' as const,
         phase: {
           startDate: (data.votingPhase as any)?.votingOpen,
@@ -446,13 +407,6 @@ export const transformFormDataToProcessSchema = (
     ],
     transitions: [
       {
-        id: 'ideaCollection-to-submission',
-        name: 'Move to Proposal Submission',
-        from: 'ideaCollection',
-        to: 'submission',
-        rules: { type: 'manual' as const },
-      },
-      {
         id: 'submission-to-review',
         name: 'Move to Review',
         from: 'submission',
@@ -474,7 +428,7 @@ export const transformFormDataToProcessSchema = (
         rules: { type: 'manual' as const },
       },
     ],
-    initialState: 'ideaCollection',
+    initialState: 'submission',
     decisionDefinition: {
       type: 'object',
       properties: {
