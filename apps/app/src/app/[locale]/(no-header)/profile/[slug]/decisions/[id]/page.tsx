@@ -24,6 +24,10 @@ interface ProcessPhase {
     sortOrder?: number;
   };
   type?: 'initial' | 'intermediate' | 'final';
+  config?: {
+    allowProposals?: boolean;
+    allowDecisions?: boolean;
+  };
 }
 
 async function DecisionInstancePageContent({
