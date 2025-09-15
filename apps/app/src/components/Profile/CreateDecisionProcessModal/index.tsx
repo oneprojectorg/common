@@ -26,13 +26,13 @@ import {
   schemaDefaults,
   stepSchemas,
   transformFormDataToProcessSchema,
-} from './schemas/simple';
+} from './schemas/horizon';
 
 const transformFormDataToInstanceData = (data: Record<string, unknown>) => {
   return {
     budget: data.totalBudget as number,
     hideBudget: data.hideBudget as boolean,
-    currentStateId: 'submission',
+    currentStateId: 'proposalSubmission',
     fieldValues: {
       categories: data.categories,
       proposalInfoTitle: data.proposalInfoTitle,
@@ -43,30 +43,23 @@ const transformFormDataToInstanceData = (data: Record<string, unknown>) => {
     },
     phases: [
       {
-        stateId: 'ideaCollection',
-        plannedStartDate: (data.ideaCollectionPhase as any)
-          ?.ideaCollectionOpen,
-        plannedEndDate: (data.ideaCollectionPhase as any)?.ideaCollectionClose,
+        stateId: 'proposalSubmission',
+        startDate: (data.proposalSubmissionPhase as any)?.submissionsOpen,
+        endDate: (data.proposalSubmissionPhase as any)?.submissionsClose,
       },
       {
-        stateId: 'submission',
-        plannedStartDate: (data.proposalSubmissionPhase as any)
-          ?.submissionsOpen,
-        plannedEndDate: (data.proposalSubmissionPhase as any)?.submissionsClose,
+        stateId: 'communityVoting',
+        startDate: (data.communityVotingPhase as any)?.votingOpen,
+        endDate: (data.communityVotingPhase as any)?.votingClose,
       },
       {
-        stateId: 'review',
-        plannedStartDate: (data.reviewShortlistingPhase as any)?.reviewOpen,
-        plannedEndDate: (data.reviewShortlistingPhase as any)?.reviewClose,
-      },
-      {
-        stateId: 'voting',
-        plannedStartDate: (data.votingPhase as any)?.votingOpen,
-        plannedEndDate: (data.votingPhase as any)?.votingClose,
+        stateId: 'committeeDeliberation',
+        startDate: (data.committeeDeliberationPhase as any)?.deliberationStart,
+        endDate: (data.committeeDeliberationPhase as any)?.deliberationEnd,
       },
       {
         stateId: 'results',
-        plannedStartDate: (data.resultsAnnouncement as any)?.resultsDate,
+        startDate: (data.resultsPhase as any)?.resultsDate,
       },
     ],
   };
@@ -367,7 +360,9 @@ export const CreateDecisionProcessModal = () => {
     }
 
     const currentSchema = stepSchemas[currentStep - 1];
-    if (!currentSchema) return { isValid: false, errors: {} };
+    if (!currentSchema) {
+      return { isValid: false, errors: {} };
+    }
 
     const currentStepData = Object.keys(
       currentSchema.schema.properties || {},
@@ -392,6 +387,7 @@ export const CreateDecisionProcessModal = () => {
     }
 
     const hasErrors = Object.keys(fieldErrors).length > 0;
+
     return { isValid: !hasErrors, errors: fieldErrors };
   };
 

@@ -118,6 +118,8 @@ const instanceDataEncoder = z.object({
         actualEndDate: z.string().optional(),
         plannedStartDate: z.string().optional(),
         plannedEndDate: z.string().optional(),
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
       }),
     )
     .optional(),

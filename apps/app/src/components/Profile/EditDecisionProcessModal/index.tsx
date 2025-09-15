@@ -26,7 +26,7 @@ import {
   schemaDefaults,
   stepSchemas,
   transformFormDataToProcessSchema,
-} from '../CreateDecisionProcessModal/schemas/simple';
+} from '../CreateDecisionProcessModal/schemas/horizon';
 
 
 interface EditDecisionProcessModalProps {
@@ -55,7 +55,7 @@ export const EditDecisionProcessModal = ({
 
   const isOnline = useConnectionStatus();
   const isEditing = !!instance;
-  
+
   // Get the dialog close function from React Aria Components context
   const overlayTriggerState = useContext(OverlayTriggerStateContext);
   const { onClose } = useContext(ModalContext);
@@ -142,7 +142,6 @@ export const EditDecisionProcessModal = ({
   const totalSteps = stepSchemas.length;
 
   const handleCreateError = (error: unknown, title: string) => {
-    console.error(title + ':', error);
 
     const errorInfo = analyzeError(error);
 
@@ -169,8 +168,11 @@ export const EditDecisionProcessModal = ({
 
   // Extract validation logic to avoid duplication
   const validateCurrentStep = (): { isValid: boolean; errors: FormValidationErrors } => {
+
     const currentSchema = stepSchemas[currentStep - 1];
-    if (!currentSchema) return { isValid: false, errors: {} };
+    if (!currentSchema) {
+      return { isValid: false, errors: {} };
+    }
 
     const currentStepData = Object.keys(
       currentSchema.schema.properties || {},
@@ -179,10 +181,12 @@ export const EditDecisionProcessModal = ({
       {},
     );
 
+
     const result = validator.rawValidation(
       currentSchema.schema,
       currentStepData,
     );
+
 
     const fieldErrors: FormValidationErrors = {};
 

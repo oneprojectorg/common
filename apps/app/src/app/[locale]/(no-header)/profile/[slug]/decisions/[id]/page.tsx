@@ -6,6 +6,7 @@ import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
+import { RichTextEditorContent } from '@/components/RichTextEditor';
 import { CurrentPhaseSurface } from '@/components/decisions/CurrentPhaseSurface';
 import { DecisionInstanceContent } from '@/components/decisions/DecisionInstanceContent';
 import { DecisionInstanceHeader } from '@/components/decisions/DecisionInstanceHeader';
@@ -66,19 +67,25 @@ async function DecisionInstancePageContent({
 
       return {
         ...templateState,
-        phase: instancePhase
-          ? {
-              startDate: instancePhase.plannedStartDate,
-              endDate: instancePhase.plannedEndDate,
-              sortOrder: templateState.phase?.sortOrder,
-            }
-          : templateState.phase,
+        phase: {
+          startDate: instancePhase?.startDate,
+          endDate: instancePhase?.endDate,
+          sortOrder: templateState.phase?.sortOrder,
+        },
       };
     });
 
     const currentPhase = phases.find(
       (phase) => phase.id === instance.currentStateId,
     );
+
+    // Check if proposals are allowed in the current state
+    const currentStateId =
+      instanceData?.currentStateId || instance.currentStateId;
+    const currentState = templateStates.find(
+      (state) => state.id === currentStateId,
+    );
+    const allowProposals = currentState?.config?.allowProposals !== false;
 
     const budget = instanceData?.budget || processSchema?.budget;
 
@@ -126,21 +133,26 @@ async function DecisionInstancePageContent({
                   {name}
                 </Header3>
                 {description ? (
-                  <p
-                    className="text-sm"
-                    dangerouslySetInnerHTML={{ __html: description }}
-                  />
+                  <div>
+                    <RichTextEditorContent
+                      content={description}
+                      readOnly={true}
+                      editorClassName="prose prose-base max-w-none [&_p]:text-base"
+                    />
+                  </div>
                 ) : null}
 
-                <div className="mb-6">
-                  <ButtonLink
-                    href={`/profile/${slug}/decisions/${instanceId}/proposal/create`}
-                    color="primary"
-                    className="w-full"
-                  >
-                    {t('Submit a proposal')}
-                  </ButtonLink>
-                </div>
+                {allowProposals && (
+                  <div className="mb-6">
+                    <ButtonLink
+                      href={`/profile/${slug}/decisions/${instanceId}/proposal/create`}
+                      color="primary"
+                      className="w-full"
+                    >
+                      {t('Submit a proposal')}
+                    </ButtonLink>
+                  </div>
+                )}
 
                 <CurrentPhaseSurface
                   currentPhase={currentPhase}
