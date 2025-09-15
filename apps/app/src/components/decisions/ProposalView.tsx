@@ -51,7 +51,7 @@ export function ProposalView({
   const utils = trpc.useUtils();
 
   const { data: proposal } = trpc.decision.getProposal.useQuery({
-    profileId: initialProposal!.profileId,
+    profileId: initialProposal.profileId,
   });
 
   // Safety check - fallback to initial data if query returns undefined
@@ -84,7 +84,7 @@ export function ProposalView({
           optimisticData.isFollowedByUser = true;
         }
         utils.decision.getProposal.setData(
-          { proposalId: currentProposal.id },
+          { profileId: currentProposal.profileId },
           optimisticData,
         );
       }
@@ -96,7 +96,7 @@ export function ProposalView({
       // Rollback on error
       if (context?.previousData) {
         utils.decision.getProposal.setData(
-          { proposalId: currentProposal.id },
+          { profileId: currentProposal.profileId },
           context.previousData,
         );
       }
@@ -104,7 +104,9 @@ export function ProposalView({
     },
     onSettled: () => {
       // Always refetch after error or success
-      utils.decision.getProposal.invalidate({ proposalId: currentProposal.id });
+      utils.decision.getProposal.invalidate({
+        profileId: currentProposal.profileId,
+      });
       utils.decision.listProposals.invalidate(); // Also invalidate list to keep ProposalCard in sync
     },
   });
@@ -114,12 +116,12 @@ export function ProposalView({
       onMutate: async (variables) => {
         // Cancel outgoing refetches
         await utils.decision.getProposal.cancel({
-          proposalId: currentProposal.id,
+          profileId: currentProposal.id,
         });
 
         // Snapshot the previous value
         const previousData = utils.decision.getProposal.getData({
-          proposalId: currentProposal.id,
+          profileId: currentProposal.id,
         });
 
         // Optimistically update the cache
@@ -133,7 +135,7 @@ export function ProposalView({
             optimisticData.isFollowedByUser = false;
           }
           utils.decision.getProposal.setData(
-            { proposalId: currentProposal.id },
+            { profileId: currentProposal.profileId },
             optimisticData,
           );
         }
@@ -144,7 +146,7 @@ export function ProposalView({
         // Rollback on error
         if (context?.previousData) {
           utils.decision.getProposal.setData(
-            { proposalId: currentProposal.id },
+            { profileId: currentProposal.profileId },
             context.previousData,
           );
         }
@@ -153,7 +155,7 @@ export function ProposalView({
       onSettled: () => {
         // Always refetch after error or success
         utils.decision.getProposal.invalidate({
-          proposalId: currentProposal.id,
+          profileId: currentProposal.profileId,
         });
         utils.decision.listProposals.invalidate(); // Also invalidate list to keep ProposalCard in sync
       },
