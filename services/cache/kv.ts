@@ -43,6 +43,7 @@ const TypeMap = {
   allowList: 'allowList',
   linkPreview: 'linkPreview',
   user: 'user',
+  orgUser: 'orgUser',
   proposal: 'proposal',
 };
 
