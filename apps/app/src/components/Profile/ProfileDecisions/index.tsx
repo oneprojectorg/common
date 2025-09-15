@@ -13,9 +13,16 @@ import { LuLeaf, LuPlus } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import { CreateDecisionProcessModal } from '../CreateDecisionProcessModal';
+import { type SchemaType } from '../CreateDecisionProcessModal/schemas/config';
 import { EditDecisionProcessModal } from '../EditDecisionProcessModal';
 
-const DecisionProcessList = ({ profileId }: { profileId: string }) => {
+const DecisionProcessList = ({
+  profileId,
+  schemaType = 'horizon',
+}: {
+  profileId: string;
+  schemaType?: SchemaType;
+}) => {
   const { slug } = useParams();
   const t = useTranslations();
   const [data] = trpc.decision.listInstances.useSuspenseQuery({
@@ -55,7 +62,7 @@ const DecisionProcessList = ({ profileId }: { profileId: string }) => {
                 <LuPlus className="size-4" />
                 {t('Create Process')}
               </Button>
-              <CreateDecisionProcessModal />
+              <CreateDecisionProcessModal schemaType={schemaType} />
             </DialogTrigger>
           </>
         ) : (
@@ -88,7 +95,7 @@ const DecisionProcessList = ({ profileId }: { profileId: string }) => {
               <LuPlus className="size-4" />
               {t('Create Process')}
             </Button>
-            <CreateDecisionProcessModal />
+            <CreateDecisionProcessModal schemaType={schemaType} />
           </DialogTrigger>
         ) : null}
       </div>
@@ -160,7 +167,10 @@ const DecisionProcessList = ({ profileId }: { profileId: string }) => {
                     <Button color="secondary" className="w-full">
                       {t('Edit Process')}
                     </Button>
-                    <EditDecisionProcessModal instance={instance} />
+                    <EditDecisionProcessModal
+                      instance={instance}
+                      schemaType={schemaType}
+                    />
                   </DialogTrigger>
                 ) : null}
               </div>
@@ -186,7 +196,13 @@ const DecisionProcessList = ({ profileId }: { profileId: string }) => {
   );
 };
 
-export const ProfileDecisions = ({ profileId }: { profileId: string }) => {
+export const ProfileDecisionsSuspense = ({
+  profileId,
+  schemaType = 'horizon',
+}: {
+  profileId: string;
+  schemaType?: SchemaType;
+}) => {
   const t = useTranslations();
 
   return (
@@ -199,15 +215,7 @@ export const ProfileDecisions = ({ profileId }: { profileId: string }) => {
         </div>
       }
     >
-      <DecisionProcessList profileId={profileId} />
+      <DecisionProcessList profileId={profileId} schemaType={schemaType} />
     </Suspense>
   );
-};
-
-export const ProfileDecisionsSuspense = ({
-  profileId,
-}: {
-  profileId: string;
-}) => {
-  return <ProfileDecisions profileId={profileId} />;
 };

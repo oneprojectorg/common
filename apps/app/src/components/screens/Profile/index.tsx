@@ -42,9 +42,16 @@ import {
 } from '../ProfileOrganizations';
 import { ProfileRelationshipsSuspense } from '../ProfileRelationships';
 
-const ProfileWithData = async ({ slug, initialTab }: { slug: string; initialTab?: string }) => {
+const ProfileWithData = async ({
+  slug,
+  initialTab,
+}: {
+  slug: string;
+  initialTab?: string;
+}) => {
   try {
     const client = await trpcNext();
+    const schemaType = slug === 'people-powered' ? 'simple' : 'horizon';
 
     // First, get the profile data
     const profile = await client.profile.getBySlug.query({
@@ -124,7 +131,10 @@ const ProfileWithData = async ({ slug, initialTab }: { slug: string; initialTab?
             {decisionsEnabled && (
               <>
                 <DecisionsTabPanel>
-                  <ProfileDecisionsSuspense profileId={profile.id} />
+                  <ProfileDecisionsSuspense
+                    profileId={profile.id}
+                    schemaType={schemaType}
+                  />
                 </DecisionsTabPanel>
                 <MembersTabPanel profileId={profile.id} />
               </>
@@ -134,7 +144,10 @@ const ProfileWithData = async ({ slug, initialTab }: { slug: string; initialTab?
             profile={organization as any}
             initialTab={initialTab}
             decisionsContent={
-              <ProfileDecisionsSuspense profileId={profile.id} />
+              <ProfileDecisionsSuspense
+                profileId={profile.id}
+                schemaType={schemaType}
+              />
             }
             followersContent={<ProfileFollowers profileId={profile.id} />}
           >
@@ -237,7 +250,13 @@ const ProfileWithData = async ({ slug, initialTab }: { slug: string; initialTab?
   }
 };
 
-export const Profile = ({ slug, initialTab }: { slug: string; initialTab?: string }) => {
+export const Profile = ({
+  slug,
+  initialTab,
+}: {
+  slug: string;
+  initialTab?: string;
+}) => {
   return (
     <>
       {/* nav arrow */}

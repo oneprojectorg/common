@@ -57,6 +57,7 @@ export type {
   StateDefinition,
   TransitionDefinition,
   PhaseTransitionRules,
+  PhaseConfiguration,
   ProposalData,
   DecisionData,
 } from './types';

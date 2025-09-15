@@ -1,8 +1,13 @@
-import type { InstanceData, ProcessSchema } from '@op/common';
+import type {
+  InstanceData,
+  PhaseConfiguration,
+  ProcessSchema,
+} from '@op/common';
 
-import { schemaDefaults as horizonDefaults } from '../components/Profile/CreateDecisionProcessModal/schemas/horizon';
-
-// import { schemaDefaults as simpleDefaults } from '../components/Profile/CreateDecisionProcessModal/schemas/simple';
+import {
+  type SchemaType,
+  getSchemaConfig,
+} from '../components/Profile/CreateDecisionProcessModal/schemas/config';
 
 // Type definitions for data transformation
 export interface ProcessInstance {
@@ -24,11 +29,7 @@ export interface ProcessInstance {
   updatedAt?: string | null;
 }
 
-export interface PhaseConfiguration {
-  stateId: string;
-  startDate?: string;
-  endDate?: string;
-}
+// Using PhaseConfiguration from @op/common instead of local definition
 
 type FormPhaseData = {
   proposalSubmissionPhase?: {
@@ -50,8 +51,9 @@ type FormPhaseData = {
  */
 export const transformInstanceDataToFormData = (
   instance: ProcessInstance,
+  schemaType: SchemaType = 'horizon',
 ): Record<string, unknown> => {
-  const schemaDefaults = horizonDefaults;
+  const { schemaDefaults } = getSchemaConfig(schemaType);
 
   const formData: Record<string, unknown> = {
     ...schemaDefaults,
@@ -123,12 +125,21 @@ export const transformInstanceDataToFormData = (
           const phaseObj: any = {};
           Object.keys(schemaPhaseDefaults).forEach((fieldKey) => {
             if (fieldKey.includes('Open') || fieldKey.includes('Start')) {
-              phaseObj[fieldKey] = matchingPhase?.startDate || '';
+              phaseObj[fieldKey] =
+                matchingPhase?.plannedStartDate ||
+                matchingPhase?.actualStartDate ||
+                '';
             } else if (fieldKey.includes('Close') || fieldKey.includes('End')) {
-              phaseObj[fieldKey] = matchingPhase?.endDate || '';
+              phaseObj[fieldKey] =
+                matchingPhase?.plannedEndDate ||
+                matchingPhase?.actualEndDate ||
+                '';
             } else if (fieldKey === 'resultsDate') {
               // Special case: resultsDate maps to startDate for results phase
-              phaseObj[fieldKey] = matchingPhase?.startDate || '';
+              phaseObj[fieldKey] =
+                matchingPhase?.plannedStartDate ||
+                matchingPhase?.actualStartDate ||
+                '';
             } else {
               // Keep the default value for non-date fields
               phaseObj[fieldKey] = schemaPhaseDefaults[fieldKey];
@@ -169,13 +180,13 @@ export const transformFormDataToInstanceData = (
     phases: [
       {
         stateId: 'proposalSubmission',
-        startDate: (
+        plannedStartDate: (
           data.proposalSubmissionPhase as {
             submissionsOpen?: string;
             submissionsClose?: string;
           }
         )?.submissionsOpen,
-        endDate: (
+        plannedEndDate: (
           data.proposalSubmissionPhase as {
             submissionsOpen?: string;
             submissionsClose?: string;
@@ -184,13 +195,13 @@ export const transformFormDataToInstanceData = (
       },
       {
         stateId: 'communityVoting',
-        startDate: (
+        plannedStartDate: (
           data.communityVotingPhase as {
             votingOpen?: string;
             votingClose?: string;
           }
         )?.votingOpen,
-        endDate: (
+        plannedEndDate: (
           data.communityVotingPhase as {
             votingOpen?: string;
             votingClose?: string;
@@ -199,13 +210,13 @@ export const transformFormDataToInstanceData = (
       },
       {
         stateId: 'committeeDeliberation',
-        startDate: (
+        plannedStartDate: (
           data.committeeDeliberationPhase as {
             deliberationStart?: string;
             deliberationEnd?: string;
           }
         )?.deliberationStart,
-        endDate: (
+        plannedEndDate: (
           data.committeeDeliberationPhase as {
             deliberationStart?: string;
             deliberationEnd?: string;
@@ -214,7 +225,8 @@ export const transformFormDataToInstanceData = (
       },
       {
         stateId: 'results',
-        startDate: (data.resultsPhase as { resultsDate?: string })?.resultsDate,
+        plannedStartDate: (data.resultsPhase as { resultsDate?: string })
+          ?.resultsDate,
       },
     ],
   };

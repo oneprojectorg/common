@@ -22,11 +22,7 @@ import { OverlayTriggerStateContext } from 'react-aria-components';
 import ErrorBoundary from '../../ErrorBoundary';
 import { CustomTemplates } from './CustomTemplates';
 import { CustomWidgets } from './CustomWidgets';
-import {
-  schemaDefaults,
-  stepSchemas,
-  transformFormDataToProcessSchema,
-} from './schemas/horizon';
+import { getSchemaConfig, type SchemaType } from './schemas/config';
 
 const transformFormDataToInstanceData = (data: Record<string, unknown>) => {
   return {
@@ -170,8 +166,17 @@ const useStepValidation = () => {
   };
 };
 
-export const CreateDecisionProcessModal = () => {
+interface CreateDecisionProcessModalProps {
+  schemaType?: SchemaType;
+}
+
+export const CreateDecisionProcessModal = ({ 
+  schemaType = 'horizon' 
+}: CreateDecisionProcessModalProps = {}) => {
   const utils = trpc.useUtils();
+  
+  const schemaConfig = getSchemaConfig(schemaType);
+  const { stepSchemas, schemaDefaults, transformFormDataToProcessSchema } = schemaConfig;
 
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] =
