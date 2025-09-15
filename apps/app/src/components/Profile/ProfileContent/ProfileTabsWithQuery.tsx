@@ -68,7 +68,7 @@ export const ProfileTabsWithQuery = ({
         : pathname;
 
       // Use browser history API directly to avoid triggering server-side re-render
-      window.history.replaceState(null, '', newUrl);
+      router.replace(newUrl, { scroll: false });
     },
     [pathname, searchParams, defaultTab],
   );
