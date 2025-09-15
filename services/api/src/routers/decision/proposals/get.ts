@@ -1,5 +1,6 @@
 import { trackProposalViewed } from '@op/analytics';
-import { UnauthorizedError, NotFoundError, getProposal } from '@op/common';
+import { cache } from '@op/cache';
+import { NotFoundError, UnauthorizedError, getProposal } from '@op/common';
 import { TRPCError } from '@trpc/server';
 import { waitUntil } from '@vercel/functions';
 import type { OpenApiMeta } from 'trpc-to-openapi';
@@ -27,22 +28,41 @@ export const getProposalRouter = router({
     .input(
       z.object({
         proposalId: z.string().uuid(),
-      })
+      }),
     )
     .output(proposalEncoder)
     .query(async ({ ctx, input }) => {
       const { user } = ctx;
+      const { proposalId } = input;
 
       try {
-        const proposal = await getProposal({
-          proposalId: input.proposalId,
-          user,
+        const proposal = await cache({
+          type: 'proposal',
+          // TODO: We should also cache with the instance id so we can invalidate the tree
+          params: [proposalId],
+          fetch: () =>
+            getProposal({
+              proposalId,
+              user,
+            }),
+          options: {
+            skipMemCache: true, // We need these to be editable and then immediately accessible
+          },
         });
 
         // Track proposal viewed event
-        if (proposal.processInstance && typeof proposal.processInstance === 'object' && !Array.isArray(proposal.processInstance) && 'id' in proposal.processInstance) {
+        if (
+          proposal.processInstance &&
+          typeof proposal.processInstance === 'object' &&
+          !Array.isArray(proposal.processInstance) &&
+          'id' in proposal.processInstance
+        ) {
           waitUntil(
-            trackProposalViewed(user.id, proposal.processInstance.id, proposal.id)
+            trackProposalViewed(
+              user.id,
+              proposal.processInstance.id,
+              proposal.id,
+            ),
           );
         }
 

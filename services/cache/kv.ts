@@ -43,6 +43,7 @@ const TypeMap = {
   allowList: 'allowList',
   linkPreview: 'linkPreview',
   user: 'user',
+  proposal: 'proposal',
 };
 
 const getCacheKey = (
@@ -142,7 +143,7 @@ export const invalidate = async ({
   type: keyof typeof TypeMap;
   appKey?: string;
   params: any[];
-  data?: any;
+  data?: any; // Updates the data rather than invalidating it
 }) => {
   const cacheKey = getCacheKey(type, appKey, params);
 
