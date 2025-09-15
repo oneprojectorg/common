@@ -39,21 +39,19 @@ import { ProposalViewLayout } from './ProposalViewLayout';
 
 type Proposal = z.infer<typeof proposalEncoder>;
 
-interface ProposalViewProps {
-  proposal: Proposal;
-  backHref: string;
-}
-
 export function ProposalView({
   proposal: initialProposal,
   backHref,
-}: ProposalViewProps) {
+}: {
+  proposal: Proposal;
+  backHref: string;
+}) {
   const t = useTranslations();
   const commentsContainerRef = useRef<HTMLDivElement>(null);
   const utils = trpc.useUtils();
 
   const { data: proposal } = trpc.decision.getProposal.useQuery({
-    proposalId: initialProposal.id,
+    profileId: initialProposal!.profileId,
   });
 
   // Safety check - fallback to initial data if query returns undefined
@@ -67,12 +65,12 @@ export function ProposalView({
     onMutate: async (variables) => {
       // Cancel outgoing refetches
       await utils.decision.getProposal.cancel({
-        proposalId: currentProposal.id,
+        profileId: currentProposal.profileId,
       });
 
       // Snapshot the previous value
       const previousData = utils.decision.getProposal.getData({
-        proposalId: currentProposal.id,
+        profileId: currentProposal.profileId,
       });
 
       // Optimistically update the cache
@@ -93,8 +91,7 @@ export function ProposalView({
 
       return { previousData };
     },
-    onSuccess: () => {
-    },
+    onSuccess: () => {},
     onError: (error, _variables, context) => {
       // Rollback on error
       if (context?.previousData) {
@@ -165,13 +162,13 @@ export function ProposalView({
   // Check if current user can edit (only submitter can edit for now)
   const canEdit = Boolean(
     user?.currentProfile &&
-    currentProposal.submittedBy &&
-    user.currentProfile.id === currentProposal.submittedBy.id,
+      currentProposal.submittedBy &&
+      user.currentProfile.id === currentProposal.submittedBy.id,
   );
 
   // Generate edit href
   const editHref = canEdit
-    ? `${backHref}/proposal/${currentProposal.id}/edit`
+    ? `${backHref}/proposal/${currentProposal.profileId}/edit`
     : undefined;
 
   // Get comments for the proposal using the posts API

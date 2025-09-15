@@ -1,3 +1,4 @@
+import { invalidate } from '@op/cache';
 import { and, db, eq } from '@op/db/client';
 import {
   objectsInStorage,
@@ -28,15 +29,21 @@ export const addRelationship = async ({
   }
 
   // Try to create the relationship - unique constraint will prevent duplicates
-  await db
-    .insert(profileRelationships)
-    .values({
-      sourceProfileId: currentProfileId,
-      targetProfileId,
-      relationshipType: relationshipType as 'following' | 'likes',
-      pending,
-    })
-    .onConflictDoNothing();
+  await Promise.all([
+    db
+      .insert(profileRelationships)
+      .values({
+        sourceProfileId: currentProfileId,
+        targetProfileId,
+        relationshipType: relationshipType as 'following' | 'likes',
+        pending,
+      })
+      .onConflictDoNothing(),
+    invalidate({
+      type: 'profile',
+      params: [targetProfileId],
+    }),
+  ]);
 };
 
 export const removeRelationship = async ({
@@ -55,18 +62,24 @@ export const removeRelationship = async ({
   }
 
   // Delete the specific relationship
-  await db
-    .delete(profileRelationships)
-    .where(
-      and(
-        eq(profileRelationships.sourceProfileId, currentProfileId),
-        eq(profileRelationships.targetProfileId, targetProfileId),
-        eq(
-          profileRelationships.relationshipType,
-          relationshipType as 'following' | 'likes',
+  await Promise.all([
+    db
+      .delete(profileRelationships)
+      .where(
+        and(
+          eq(profileRelationships.sourceProfileId, currentProfileId),
+          eq(profileRelationships.targetProfileId, targetProfileId),
+          eq(
+            profileRelationships.relationshipType,
+            relationshipType as 'following' | 'likes',
+          ),
         ),
       ),
-    );
+    invalidate({
+      type: 'profile',
+      params: [targetProfileId],
+    }),
+  ]);
 };
 
 export const getRelationships = async ({

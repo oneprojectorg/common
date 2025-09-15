@@ -7,17 +7,17 @@ import { Suspense } from 'react';
 import { ProposalView } from '@/components/decisions/ProposalView';
 
 function ProposalViewPageContent({
-  proposalId,
+  profileId,
   instanceId,
   slug,
 }: {
-  proposalId: string;
+  profileId: string;
   instanceId: string;
   slug: string;
 }) {
   try {
     const [proposal] = trpc.decision.getProposal.useSuspenseQuery({
-      proposalId,
+      profileId,
     });
 
     if (!proposal) {
@@ -83,8 +83,8 @@ function ProposalViewPageSkeleton() {
 }
 
 const ProposalViewPage = () => {
-  const { proposalId, id, slug } = useParams<{
-    proposalId: string;
+  const { profileId, id, slug } = useParams<{
+    profileId: string;
     id: string;
     slug: string;
   }>();
@@ -92,7 +92,7 @@ const ProposalViewPage = () => {
   return (
     <Suspense fallback={<ProposalViewPageSkeleton />}>
       <ProposalViewPageContent
-        proposalId={proposalId}
+        profileId={profileId}
         instanceId={id}
         slug={slug}
       />

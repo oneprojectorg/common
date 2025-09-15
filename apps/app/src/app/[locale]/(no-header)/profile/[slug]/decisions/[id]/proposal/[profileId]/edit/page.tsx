@@ -7,18 +7,18 @@ import { Suspense } from 'react';
 import { ProposalEditor } from '@/components/decisions/ProposalEditor';
 
 function ProposalEditPageContent({
-  proposalId,
+  profileId,
   instanceId,
   slug,
 }: {
-  proposalId: string;
+  profileId: string;
   instanceId: string;
   slug: string;
 }) {
   try {
     // Get both the proposal and the instance
     const [proposal] = trpc.decision.getProposal.useSuspenseQuery({
-      proposalId,
+      profileId,
     });
     const [instance] = trpc.decision.getInstance.useSuspenseQuery({
       instanceId,
@@ -31,7 +31,7 @@ function ProposalEditPageContent({
     return (
       <ProposalEditor
         instance={instance}
-        backHref={`/profile/${slug}/decisions/${instanceId}/proposal/${proposalId}`}
+        backHref={`/profile/${slug}/decisions/${instanceId}/proposal/${profileId}`}
         existingProposal={proposal}
         isEditMode={true}
       />
@@ -70,14 +70,14 @@ function ProposalEditPageSkeleton() {
 const ProposalEditPage = async ({
   params,
 }: {
-  params: Promise<{ proposalId: string; id: string; slug: string }>;
+  params: Promise<{ profileId: string; id: string; slug: string }>;
 }) => {
-  const { proposalId, id, slug } = await params;
+  const { profileId, id, slug } = await params;
 
   return (
     <Suspense fallback={<ProposalEditPageSkeleton />}>
       <ProposalEditPageContent
-        proposalId={proposalId}
+        profileId={profileId}
         instanceId={id}
         slug={slug}
       />

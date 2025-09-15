@@ -1,4 +1,4 @@
-import { trackProposalLiked, trackProposalFollowed } from '@op/analytics';
+import { trackProposalFollowed, trackProposalLiked } from '@op/analytics';
 import {
   ValidationError,
   addProfileRelationship,
@@ -8,8 +8,8 @@ import {
 import { db, eq } from '@op/db/client';
 import { ProfileRelationshipType, proposals } from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
-import type { OpenApiMeta } from 'trpc-to-openapi';
 import { waitUntil } from '@vercel/functions';
+import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import withAuthenticated from '../../middlewares/withAuthenticated';
@@ -17,7 +17,9 @@ import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
 // Helper function to check if a profile belongs to a proposal and get process info
-async function getProposalInfo(profileId: string): Promise<{ proposalId: string; processInstanceId: string } | null> {
+async function getProposalInfo(
+  profileId: string,
+): Promise<{ proposalId: string; processInstanceId: string } | null> {
   const proposal = await db
     .select({
       id: proposals.id,
@@ -27,8 +29,11 @@ async function getProposalInfo(profileId: string): Promise<{ proposalId: string;
     .where(eq(proposals.profileId, profileId))
     .limit(1);
 
-  return proposal.length > 0 
-    ? { proposalId: proposal[0]!.id, processInstanceId: proposal[0]!.processInstanceId }
+  return proposal.length > 0
+    ? {
+        proposalId: proposal[0]!.id,
+        processInstanceId: proposal[0]!.processInstanceId,
+      }
     : null;
 }
 
@@ -50,13 +55,11 @@ const removeRelationshipInputSchema = z.object({
 });
 
 const getRelationshipsInputSchema = z.object({
-
   targetProfileId: z.string().uuid().optional(),
   sourceProfileId: z.string().uuid().optional(),
-  relationshipType: z.enum([
-    ProfileRelationshipType.FOLLOWING,
-    ProfileRelationshipType.LIKES,
-  ]).optional(),
+  relationshipType: z
+    .enum([ProfileRelationshipType.FOLLOWING, ProfileRelationshipType.LIKES])
+    .optional(),
   profileType: z.string().optional(),
 });
 
@@ -117,12 +120,22 @@ export const profileRelationshipRouter = router({
             const proposalInfo = await getProposalInfo(targetProfileId);
             if (proposalInfo) {
               if (relationshipType === ProfileRelationshipType.LIKES) {
-                await trackProposalLiked(ctx.user.id, proposalInfo.processInstanceId, proposalInfo.proposalId);
-              } else if (relationshipType === ProfileRelationshipType.FOLLOWING) {
-                await trackProposalFollowed(ctx.user.id, proposalInfo.processInstanceId, proposalInfo.proposalId);
+                await trackProposalLiked(
+                  ctx.user.id,
+                  proposalInfo.processInstanceId,
+                  proposalInfo.proposalId,
+                );
+              } else if (
+                relationshipType === ProfileRelationshipType.FOLLOWING
+              ) {
+                await trackProposalFollowed(
+                  ctx.user.id,
+                  proposalInfo.processInstanceId,
+                  proposalInfo.proposalId,
+                );
               }
             }
-          })()
+          })(),
         );
 
         return { success: true };
@@ -216,7 +229,12 @@ export const profileRelationshipRouter = router({
       ),
     )
     .query(async ({ input, ctx }) => {
-      const { targetProfileId, sourceProfileId, relationshipType, profileType } = input;
+      const {
+        targetProfileId,
+        sourceProfileId,
+        relationshipType,
+        profileType,
+      } = input;
 
       try {
         const relationships = await getProfileRelationships({

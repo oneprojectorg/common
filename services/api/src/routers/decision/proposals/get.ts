@@ -14,7 +14,7 @@ const meta: OpenApiMeta = {
   openapi: {
     enabled: true,
     method: 'GET',
-    path: '/decision/proposal/{proposalId}',
+    path: '/decision/proposal/{profileId}',
     protect: true,
     tags: ['decision'],
     summary: 'Get proposal details',
@@ -27,22 +27,21 @@ export const getProposalRouter = router({
     .meta(meta)
     .input(
       z.object({
-        proposalId: z.string().uuid(),
+        profileId: z.string().uuid(),
       }),
     )
     .output(proposalEncoder)
     .query(async ({ ctx, input }) => {
       const { user } = ctx;
-      const { proposalId } = input;
+      const { profileId } = input;
 
       try {
         const proposal = await cache({
-          type: 'proposal',
-          // TODO: We should also cache with the instance id so we can invalidate the tree
-          params: [proposalId],
+          type: 'profile',
+          params: [profileId],
           fetch: () =>
             getProposal({
-              proposalId,
+              profileId,
               user,
             }),
           options: {

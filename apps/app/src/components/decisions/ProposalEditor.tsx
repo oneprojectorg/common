@@ -106,7 +106,7 @@ export function ProposalEditor({
   const updateProposalMutation = trpc.decision.updateProposal.useMutation({
     onSuccess: async () => {
       await utils.decision.getProposal.invalidate({
-        proposalId: existingProposal?.id,
+        profileId: existingProposal?.profileId!,
       });
       await utils.decision.listProposals.invalidate({
         processInstanceId: instance.id,
