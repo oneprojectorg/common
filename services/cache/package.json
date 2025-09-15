@@ -8,6 +8,7 @@
     "lint": "pnpm tsc --noEmit"
   },
   "dependencies": {
+    "@op/core": "workspace:*",
     "@op/logging": "workspace:*",
     "@vercel/functions": "^2.1.0",
     "redis": "^5.5.5"

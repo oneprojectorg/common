@@ -1,3 +1,4 @@
+import { OPURLConfig } from '@op/core';
 import { logger as log } from '@op/logging';
 import { waitUntil } from '@vercel/functions';
 import { createClient } from 'redis';
@@ -52,7 +53,7 @@ const getCacheKey = (
   appKey: string = 'common',
   params: Array<string>,
 ) => {
-  const apiVersion = 'v1';
+  const apiVersion = OPURLConfig('API').IS_PRODUCTION ? 'v1' : 'dev/v1';
   const key = TypeMap[type];
   const [fullSlug, ...otherParams] = params;
 
