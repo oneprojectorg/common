@@ -96,7 +96,7 @@ async function DecisionInstancePageContent({
           <DecisionInstanceHeader
             backTo={{
               label: instance.owner?.name,
-              href: `/profile/${slug}`,
+              href: `/profile/${slug}?tab=decisions`,
             }}
             title={instance.process?.name || instance.name}
           />

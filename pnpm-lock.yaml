@@ -607,6 +607,9 @@ importers:
 
   packages/common:
     dependencies:
+      '@op/cache':
+        specifier: workspace:*
+        version: link:../../services/cache
       '@op/emails':
         specifier: workspace:*
         version: link:../../services/emails
@@ -626,9 +629,6 @@ importers:
         specifier: ^7.0.3
         version: 7.0.3
     devDependencies:
-      '@op/cache':
-        specifier: workspace:*
-        version: link:../../services/cache
       '@op/core':
         specifier: workspace:*
         version: link:../core
@@ -994,6 +994,9 @@ importers:
 
   services/cache:
     dependencies:
+      '@op/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       '@op/logging':
         specifier: workspace:*
         version: link:../../packages/logging

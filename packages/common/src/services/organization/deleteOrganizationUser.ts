@@ -1,7 +1,8 @@
-import { db, eq, and } from '@op/db/client';
+import { invalidate } from '@op/cache';
+import { and, db, eq } from '@op/db/client';
 import { organizationUsers } from '@op/db/schema';
-import { assertAccess, permission } from 'access-zones';
 import type { User } from '@supabase/supabase-js';
+import { assertAccess, permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
 import { getOrgAccessUser } from '../access';
@@ -35,7 +36,7 @@ export async function deleteOrganizationUser({
     where: (table, { eq, and }) =>
       and(
         eq(table.id, organizationUserId),
-        eq(table.organizationId, organizationId)
+        eq(table.organizationId, organizationId),
       ),
   });
 
@@ -45,7 +46,9 @@ export async function deleteOrganizationUser({
 
   // Prevent users from deleting themselves
   if (targetOrgUser.authUserId === user.id) {
-    throw new UnauthorizedError('You cannot remove yourself from the organization');
+    throw new UnauthorizedError(
+      'You cannot remove yourself from the organization',
+    );
   }
 
   // Delete the organization user
@@ -55,10 +58,16 @@ export async function deleteOrganizationUser({
     .where(
       and(
         eq(organizationUsers.id, organizationUserId),
-        eq(organizationUsers.organizationId, organizationId)
-      )
+        eq(organizationUsers.organizationId, organizationId),
+      ),
     )
     .returning();
+
+  // invalidate to get rid of the cache entry
+  invalidate({
+    type: 'orgUser',
+    params: [organizationId, user.id],
+  });
 
   if (!deletedUser) {
     throw new NotFoundError('Failed to delete organization user');

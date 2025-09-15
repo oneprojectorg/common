@@ -1,3 +1,4 @@
+import { OPURLConfig } from '@op/core';
 import { logger as log } from '@op/logging';
 import { waitUntil } from '@vercel/functions';
 import { createClient } from 'redis';
@@ -43,6 +44,8 @@ const TypeMap = {
   allowList: 'allowList',
   linkPreview: 'linkPreview',
   user: 'user',
+  orgUser: 'orgUser',
+  proposal: 'proposal',
 };
 
 const getCacheKey = (
@@ -50,7 +53,7 @@ const getCacheKey = (
   appKey: string = 'common',
   params: Array<string>,
 ) => {
-  const apiVersion = 'v1';
+  const apiVersion = OPURLConfig('API').IS_PRODUCTION ? 'v1' : 'dev/v1';
   const key = TypeMap[type];
   const [fullSlug, ...otherParams] = params;
 
@@ -142,7 +145,7 @@ export const invalidate = async ({
   type: keyof typeof TypeMap;
   appKey?: string;
   params: any[];
-  data?: any;
+  data?: any; // Updates the data rather than invalidating it
 }) => {
   const cacheKey = getCacheKey(type, appKey, params);
 

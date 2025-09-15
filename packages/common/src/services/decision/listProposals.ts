@@ -130,39 +130,37 @@ export const listProposals = async ({
         : categoryFilter;
     }
 
-    // Get count using Drizzle's count function instead of raw SQL
-    const countResult = await db
-      .select({ count: countFn() })
-      .from(proposals)
-      .where(whereClause);
-
-    const count = countResult[0]?.count || 0;
-
     // Get proposals with optimized ordering
     const orderColumn = proposals[orderBy] ?? proposals.createdAt;
 
     const orderFn = dir === 'asc' ? asc : desc;
 
-    const proposalList = await db.query.proposals.findMany({
-      where: whereClause,
-      with: {
-        processInstance: {
-          with: {
-            process: true,
+    const [proposalList, countResult] = await Promise.all([
+      db.query.proposals.findMany({
+        where: whereClause,
+        with: {
+          processInstance: {
+            with: {
+              process: true,
+            },
           },
-        },
-        submittedBy: {
-          with: {
-            avatarImage: true,
+          submittedBy: {
+            with: {
+              avatarImage: true,
+            },
           },
+          profile: true,
+          decisions: true,
         },
-        profile: true,
-        decisions: true,
-      },
-      limit,
-      offset,
-      orderBy: orderFn(orderColumn),
-    });
+        limit,
+        offset,
+        orderBy: orderFn(orderColumn),
+      }),
+      // Get count using Drizzle's count function instead of raw SQL
+      db.select({ count: countFn() }).from(proposals).where(whereClause),
+    ]);
+
+    const count = countResult[0]?.count || 0;
 
     // Get relationship data for all proposal profiles using optimized Drizzle queries
     const proposalIds = proposalList
