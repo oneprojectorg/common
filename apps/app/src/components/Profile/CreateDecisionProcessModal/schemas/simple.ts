@@ -407,13 +407,6 @@ export const transformFormDataToProcessSchema = (
     ],
     transitions: [
       {
-        id: 'ideaCollection-to-submission',
-        name: 'Move to Proposal Submission',
-        from: 'ideaCollection',
-        to: 'submission',
-        rules: { type: 'manual' as const },
-      },
-      {
         id: 'submission-to-review',
         name: 'Move to Review',
         from: 'submission',
@@ -435,7 +428,7 @@ export const transformFormDataToProcessSchema = (
         rules: { type: 'manual' as const },
       },
     ],
-    initialState: 'ideaCollection',
+    initialState: 'submission',
     decisionDefinition: {
       type: 'object',
       properties: {

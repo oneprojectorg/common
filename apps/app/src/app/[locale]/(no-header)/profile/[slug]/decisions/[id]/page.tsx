@@ -91,7 +91,6 @@ async function DecisionInstancePageContent({
       (state) => state.id === currentStateId,
     );
     const allowProposals = currentState?.config?.allowProposals !== false; // defaults to true
-    console.log('currentState', currentState);
 
     // TODO: special key for People powered translations as a stop-gap
     const description = instance?.description?.match('PPDESCRIPTION')
