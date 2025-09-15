@@ -74,13 +74,17 @@ const MemberMenu = ({
       void utils.organization.listUsers.invalidate({ profileId });
     },
     onError: (error) => {
-      toast.error({ message: error.message || t('Failed to update user role') });
+      toast.error({
+        message: error.message || t('Failed to update user role'),
+      });
     },
   });
 
   const deleteUser = trpc.organization.deleteOrganizationUser.useMutation({
     onSuccess: () => {
-      toast.success({ message: t('User removed from organization successfully') });
+      toast.success({
+        message: t('User removed from organization successfully'),
+      });
       // Invalidate listUsers query to refresh the UI
       void utils.organization.listUsers.invalidate({ profileId });
     },
@@ -190,7 +194,7 @@ const MembersListContent = ({
   profileId: string;
 }) => {
   const t = useTranslations();
-  
+
   return (
     <div className="grid grid-cols-1 gap-8 pb-6 md:grid-cols-2">
       {members.map((member) => {
@@ -266,7 +270,9 @@ const MembersListContent = ({
                       </TagGroup>
                     </div>
                   ) : (
-                    <div className="text-sm text-neutral-charcoal">{t('Member')}</div>
+                    <div className="text-sm text-neutral-charcoal">
+                      {t('Member')}
+                    </div>
                   )}
 
                   {/* Show email if different from display name */}
@@ -294,7 +300,7 @@ const MembersListContent = ({
 
 export const MembersList = ({ profileId }: { profileId: string }) => {
   const t = useTranslations();
-  
+
   const [members] = trpc.organization.listUsers.useSuspenseQuery({
     profileId,
   });

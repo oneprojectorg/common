@@ -24,23 +24,27 @@ export const ProfileTabsWithQuery = ({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // Determine the initial selected tab
-  const getInitialSelectedTab = useCallback(() => {
+  // Determine the current selected tab from URL or fallback to initial/default
+  const getCurrentSelectedTab = useCallback(() => {
+    const currentTab = searchParams.get('tab');
+    if (currentTab && validTabs.includes(currentTab)) {
+      return currentTab;
+    }
     if (initialTab && validTabs.includes(initialTab)) {
       return initialTab;
     }
     return defaultTab;
-  }, [initialTab, defaultTab, validTabs]);
+  }, [searchParams, initialTab, defaultTab, validTabs]);
 
   const [selectedKey, setSelectedKey] = useState<string>(
-    getInitialSelectedTab(),
+    getCurrentSelectedTab(),
   );
 
-  // Update selected tab when initialTab changes
+  // Update selected tab when URL changes
   useEffect(() => {
-    const newTab = getInitialSelectedTab();
+    const newTab = getCurrentSelectedTab();
     setSelectedKey(newTab);
-  }, [getInitialSelectedTab]);
+  }, [getCurrentSelectedTab]);
 
   const handleSelectionChange = useCallback(
     (key: Key) => {
@@ -63,10 +67,10 @@ export const ProfileTabsWithQuery = ({
         ? `${pathname}?${newSearchParams.toString()}`
         : pathname;
 
-      // Use replace to avoid adding to browser history for each tab click
-      router.replace(newUrl, { scroll: false });
+      // Use browser history API directly to avoid triggering server-side re-render
+      window.history.replaceState(null, '', newUrl);
     },
-    [router, pathname, searchParams, defaultTab],
+    [pathname, searchParams, defaultTab],
   );
 
   return (

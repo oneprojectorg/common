@@ -20,17 +20,21 @@ const organizationUserEncoder = z.object({
   organizationId: z.string(),
   createdAt: z.union([z.string(), z.date()]).nullable(),
   updatedAt: z.union([z.string(), z.date()]).nullable(),
-  profile: z.object({
-    id: z.string(),
-    name: z.string().nullable(),
-    slug: z.string(),
-    bio: z.string().nullable(),
-    type: z.string(),
-    avatarImage: z.object({
+  profile: z
+    .object({
       id: z.string(),
       name: z.string().nullable(),
-    }).nullable(),
-  }).nullable(),
+      slug: z.string(),
+      bio: z.string().nullable(),
+      type: z.string(),
+      avatarImage: z
+        .object({
+          id: z.string(),
+          name: z.string().nullable(),
+        })
+        .nullable(),
+    })
+    .nullable(),
   roles: z.array(
     z.object({
       id: z.string(),

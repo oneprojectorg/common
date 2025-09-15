@@ -73,17 +73,21 @@ export const getOrganizationUsers = async ({
       createdAt: orgUser.createdAt,
       updatedAt: orgUser.updatedAt,
       // Include profile data for avatar and other profile info
-      profile: userProfile ? {
-        id: userProfile.id,
-        name: userProfile.name,
-        slug: userProfile.slug,
-        bio: userProfile.bio,
-        type: userProfile.type,
-        avatarImage: userProfile.avatarImage ? {
-          id: userProfile.avatarImage.id,
-          name: userProfile.avatarImage.name,
-        } : null,
-      } : null,
+      profile: userProfile
+        ? {
+            id: userProfile.id,
+            name: userProfile.name,
+            slug: userProfile.slug,
+            bio: userProfile.bio,
+            type: userProfile.type,
+            avatarImage: userProfile.avatarImage
+              ? {
+                  id: userProfile.avatarImage.id,
+                  name: userProfile.avatarImage.name,
+                }
+              : null,
+          }
+        : null,
       roles: orgUser.roles.map((roleJunction) => ({
         id: roleJunction.accessRole.id,
         name: roleJunction.accessRole.name,
