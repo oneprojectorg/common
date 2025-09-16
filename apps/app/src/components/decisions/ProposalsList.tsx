@@ -143,7 +143,7 @@ export function ProposalsList({ slug, instanceId }: ProposalsListProps) {
   const { proposals, canManageProposals = false } = finalProposalsData ?? {};
 
   return (
-    <div className="mt-8">
+    <div>
       {/* Filters Bar */}
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">

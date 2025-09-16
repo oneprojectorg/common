@@ -133,7 +133,7 @@ async function DecisionInstancePageContent({
             {/* Left sidebar - Process Info */}
             <div className="lg:col-span-1">
               <div className="flex flex-col gap-4">
-                <Header3 className="font-serif !text-title-base text-neutral-black">
+                <Header3 className="flex min-h-8 items-center font-serif !text-title-base text-neutral-black">
                   {name}
                 </Header3>
                 {description ? (
