@@ -19,17 +19,20 @@ import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
 
 import { ProposalCardActions } from './ProposalCardActions';
+import { ProposalCardMenu } from './ProposalCardMenu';
 
 type Proposal = z.infer<typeof proposalEncoder>;
 
 interface ProposalCardProps {
   proposal: Proposal;
   viewHref: string;
+  canManageProposals?: boolean;
 }
 
 export function ProposalCard({
   proposal: currentProposal,
   viewHref,
+  canManageProposals = false,
 }: ProposalCardProps) {
   const t = useTranslations();
 
@@ -39,7 +42,10 @@ export function ProposalCard({
   );
 
   return (
-    <Surface className="space-y-3 p-6 pb-4">
+    <Surface className="relative space-y-3 p-6 pb-4">
+      {/* Admin menu */}
+      {canManageProposals && <ProposalCardMenu proposal={currentProposal} />}
+
       {/* Header with title and budget */}
       <div className="flex flex-col items-start justify-between gap-2 sm:flex-row">
         <Link

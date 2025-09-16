@@ -24,6 +24,7 @@ interface ProposalsProps {
   instanceId: string;
   slug: string;
   isLoading: boolean;
+  canManageProposals?: boolean;
 }
 
 const NoProposalsFound = () => {
@@ -45,6 +46,7 @@ const Proposals = ({
   instanceId,
   slug,
   isLoading,
+  canManageProposals = false,
 }: ProposalsProps) => {
   if (isLoading) {
     return (
@@ -64,6 +66,7 @@ const Proposals = ({
           key={proposal.id}
           proposal={proposal}
           viewHref={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`}
+          canManageProposals={canManageProposals}
         />
       ))}
     </div>
@@ -128,10 +131,10 @@ export function ProposalsList({ slug, instanceId }: ProposalsListProps) {
 
   // Override with empty results if we should show empty
   const finalProposalsData = showEmptyResults
-    ? { proposals: [], total: 0, hasMore: false }
+    ? { proposals: [], total: 0, hasMore: false, canManageProposals: false }
     : proposalsData;
 
-  const { proposals } = finalProposalsData ?? {};
+  const { proposals, canManageProposals = false } = finalProposalsData ?? {};
 
   return (
     <div className="mt-8">
@@ -195,6 +198,7 @@ export function ProposalsList({ slug, instanceId }: ProposalsListProps) {
         proposals={proposals}
         instanceId={instanceId}
         slug={slug}
+        canManageProposals={canManageProposals}
       />
     </div>
   );
