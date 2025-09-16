@@ -90,7 +90,7 @@ export function ProposalCard({
         {status === ProposalStatus.APPROVED ? (
           <>
             <span className="text-sm text-neutral-gray2">•</span>
-            <span className="text-sm text-green">{t('Shortlisted')}</span>
+            <span className="text-sm text-green-700">{t('Shortlisted')}</span>
           </>
         ) : null}
       </div>

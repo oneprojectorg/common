@@ -213,6 +213,17 @@ const config: Omit<Config, 'content'> = {
 
         green: {
           DEFAULT: 'hsl(var(--op-green-500))',
+          50: 'hsl(var(--op-green-50))',
+          100: 'hsl(var(--op-green-100))',
+          200: 'hsl(var(--op-green-200))',
+          300: 'hsl(var(--op-green-300))',
+          400: 'hsl(var(--op-green-400))',
+          500: 'hsl(var(--op-green-500))',
+          600: 'hsl(var(--op-green-600))',
+          700: 'hsl(var(--op-green-700))',
+          800: 'hsl(var(--op-green-800))',
+          900: 'hsl(var(--op-green-900))',
+          950: 'hsl(var(--op-green-950))',
         },
         black: 'hsl(var(--op-neutral-950))',
         charcoal: 'hsl(var(--op-neutral-900))',
