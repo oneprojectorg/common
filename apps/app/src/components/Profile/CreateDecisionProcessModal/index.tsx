@@ -22,13 +22,44 @@ import { OverlayTriggerStateContext } from 'react-aria-components';
 import ErrorBoundary from '../../ErrorBoundary';
 import { CustomTemplates } from './CustomTemplates';
 import { CustomWidgets } from './CustomWidgets';
-import {
-  schemaDefaults,
-  stepSchemas,
-  transformFormDataToProcessSchema,
-} from './schemas/simple';
+import { loadSchema, type SchemaType } from './schemas/schemaLoader';
 
-const transformFormDataToInstanceData = (data: Record<string, unknown>) => {
+const transformFormDataToInstanceData = (data: Record<string, unknown>, schemaType: SchemaType) => {
+  const phases = [];
+
+  // Only add ideaCollection phase for simple schema
+  if (schemaType === 'simple') {
+    phases.push({
+      stateId: 'ideaCollection',
+      plannedStartDate: (data.ideaCollectionPhase as any)
+        ?.ideaCollectionOpen,
+      plannedEndDate: (data.ideaCollectionPhase as any)?.ideaCollectionClose,
+    });
+  }
+
+  phases.push(
+    {
+      stateId: 'submission',
+      plannedStartDate: (data.proposalSubmissionPhase as any)
+        ?.submissionsOpen,
+      plannedEndDate: (data.proposalSubmissionPhase as any)?.submissionsClose,
+    },
+    {
+      stateId: 'review',
+      plannedStartDate: (data.reviewShortlistingPhase as any)?.reviewOpen,
+      plannedEndDate: (data.reviewShortlistingPhase as any)?.reviewClose,
+    },
+    {
+      stateId: 'voting',
+      plannedStartDate: (data.votingPhase as any)?.votingOpen,
+      plannedEndDate: (data.votingPhase as any)?.votingClose,
+    },
+    {
+      stateId: 'results',
+      plannedStartDate: (data.resultsAnnouncement as any)?.resultsDate,
+    }
+  );
+
   return {
     budget: data.totalBudget as number,
     hideBudget: data.hideBudget as boolean,
@@ -41,34 +72,7 @@ const transformFormDataToInstanceData = (data: Record<string, unknown>) => {
       descriptionGuidance: data.descriptionGuidance,
       maxVotesPerMember: data.maxVotesPerMember,
     },
-    phases: [
-      {
-        stateId: 'ideaCollection',
-        plannedStartDate: (data.ideaCollectionPhase as any)
-          ?.ideaCollectionOpen,
-        plannedEndDate: (data.ideaCollectionPhase as any)?.ideaCollectionClose,
-      },
-      {
-        stateId: 'submission',
-        plannedStartDate: (data.proposalSubmissionPhase as any)
-          ?.submissionsOpen,
-        plannedEndDate: (data.proposalSubmissionPhase as any)?.submissionsClose,
-      },
-      {
-        stateId: 'review',
-        plannedStartDate: (data.reviewShortlistingPhase as any)?.reviewOpen,
-        plannedEndDate: (data.reviewShortlistingPhase as any)?.reviewClose,
-      },
-      {
-        stateId: 'voting',
-        plannedStartDate: (data.votingPhase as any)?.votingOpen,
-        plannedEndDate: (data.votingPhase as any)?.votingClose,
-      },
-      {
-        stateId: 'results',
-        plannedStartDate: (data.resultsAnnouncement as any)?.resultsDate,
-      },
-    ],
+    phases,
   };
 };
 
@@ -177,8 +181,17 @@ const useStepValidation = () => {
   };
 };
 
-export const CreateDecisionProcessModal = () => {
+interface CreateDecisionProcessModalProps {
+  schema?: SchemaType;
+}
+
+export const CreateDecisionProcessModal = ({
+  schema = 'simple'
+}: CreateDecisionProcessModalProps = {}) => {
   const utils = trpc.useUtils();
+
+  // Load the appropriate schema based on the prop
+  const { stepSchemas, schemaDefaults, transformFormDataToProcessSchema } = loadSchema(schema);
 
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] =
@@ -200,7 +213,7 @@ export const CreateDecisionProcessModal = () => {
         processId: process.id,
         name: formData.processName as string,
         description: formData.description as string,
-        instanceData: transformFormDataToInstanceData(formData),
+        instanceData: transformFormDataToInstanceData(formData, schema),
       });
     },
     onError: (error) => {
