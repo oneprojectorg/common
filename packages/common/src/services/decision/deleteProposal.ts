@@ -95,6 +95,8 @@ export const deleteProposal = async ({
       throw new CommonError('Failed to delete proposal');
     }
 
+    console.log('DELETED PROPOSAL', deletedProposal.id, user.id);
+
     return { success: true, deletedId: proposalId };
   } catch (error) {
     if (
