@@ -4,8 +4,11 @@ import { trpc } from '@op/api/client';
 import type { proposalEncoder } from '@op/api/encoders';
 import { ProfileRelationshipType } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
+import { DialogTrigger } from '@op/ui/Dialog';
+import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { toast } from '@op/ui/Toast';
 import { Heart, Trash2 } from 'lucide-react';
+import { useState } from 'react';
 import { LuBookmark } from 'react-icons/lu';
 import { z } from 'zod';
 
@@ -20,6 +23,7 @@ export function ProposalCardActions({
 }) {
   const t = useTranslations();
   const utils = trpc.useUtils();
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   // Subscribe to the individual proposal data which gets optimistically updated
   const { data: currentProposal } = trpc.decision.getProposal.useQuery(
@@ -340,26 +344,19 @@ export function ProposalCardActions({
     }
   };
 
-  const handleDeleteClick = async () => {
+  const handleDeleteConfirm = async () => {
     if (!currentProposal.id) {
       console.error('No proposal ID provided for delete action');
       return;
     }
 
-    if (
-      confirm(
-        t(
-          'Are you sure you want to delete this proposal? This action cannot be undone.',
-        ),
-      )
-    ) {
-      try {
-        await deleteProposalMutation.mutateAsync({
-          proposalId: currentProposal.id,
-        });
-      } catch (error) {
-        console.error('Error in ProposalCardActions handleDeleteClick:', error);
-      }
+    try {
+      await deleteProposalMutation.mutateAsync({
+        proposalId: currentProposal.id,
+      });
+      setIsDeleteModalOpen(false); // Close modal after successful deletion
+    } catch (error) {
+      console.error('Error in ProposalCardActions handleDeleteConfirm:', error);
     }
   };
 
@@ -390,16 +387,51 @@ export function ProposalCardActions({
         {currentProposal.isFollowedByUser ? t('Following') : t('Follow')}
       </Button>
       {initialProposal.isEditable && (
-        <Button
-          onPress={handleDeleteClick}
-          size="small"
-          color="secondary"
-          className="w-full"
-          isDisabled={isLoading}
+        <DialogTrigger
+          isOpen={isDeleteModalOpen}
+          onOpenChange={setIsDeleteModalOpen}
         >
-          <Trash2 className="size-4" />
-          {t('Delete')}
-        </Button>
+          <Button
+            size="small"
+            color="secondary"
+            className="w-full"
+            isDisabled={isLoading}
+          >
+            <Trash2 className="size-4" />
+            {t('Delete')}
+          </Button>
+          <Modal
+            isDismissable
+            isOpen={isDeleteModalOpen}
+            onOpenChange={setIsDeleteModalOpen}
+          >
+            <ModalHeader>{t('Delete Proposal')}</ModalHeader>
+            <ModalBody>
+              <p>
+                {t(
+                  'Are you sure you want to delete this proposal? This action cannot be undone.',
+                )}
+              </p>
+            </ModalBody>
+            <ModalFooter>
+              <Button
+                color="secondary"
+                onPress={() => setIsDeleteModalOpen(false)}
+              >
+                {t('Cancel')}
+              </Button>
+              <Button
+                color="destructive"
+                onPress={handleDeleteConfirm}
+                isDisabled={deleteProposalMutation.isPending}
+              >
+                {deleteProposalMutation.isPending
+                  ? t('Deleting...')
+                  : t('Delete')}
+              </Button>
+            </ModalFooter>
+          </Modal>
+        </DialogTrigger>
       )}
     </div>
   );
