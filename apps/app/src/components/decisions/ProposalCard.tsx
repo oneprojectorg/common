@@ -54,7 +54,7 @@ export function ProposalCard({
         </Link>
         <div className="flex gap-2">
           {budget && (
-            <span className="text-title-base text-neutral-charcoal">
+            <span className="font-serif text-title-base text-neutral-charcoal">
               {formatCurrency(budget)}
             </span>
           )}

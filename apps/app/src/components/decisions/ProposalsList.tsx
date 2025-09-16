@@ -96,6 +96,7 @@ export function ProposalsList({ slug, instanceId }: ProposalsListProps) {
       processInstanceId: string;
       categoryId?: string;
       submittedByProfileId?: string;
+      status?: 'draft' | 'submitted' | 'under_review' | 'approved' | 'rejected';
       dir: 'asc' | 'desc';
       limit: number;
     } = {
@@ -112,6 +113,11 @@ export function ProposalsList({ slug, instanceId }: ProposalsListProps) {
     // Only include submittedByProfileId if filtering for "my" proposals and we have currentProfileId
     if (proposalFilter === 'my' && currentProfileId) {
       params.submittedByProfileId = currentProfileId;
+    }
+
+    // Filter by status if shortlisted proposals are selected
+    if (proposalFilter === 'shortlisted') {
+      params.status = 'approved';
     }
 
     return params;
@@ -141,10 +147,12 @@ export function ProposalsList({ slug, instanceId }: ProposalsListProps) {
       {/* Filters Bar */}
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <span className="text-title-base text-neutral-black">
+          <span className="font-serif text-title-base text-neutral-black">
             {proposalFilter === 'my'
               ? t('My proposals •')
-              : t('All proposals •')}{' '}
+              : proposalFilter === 'shortlisted'
+                ? t('Shortlisted proposals •')
+                : t('All proposals •')}{' '}
             {proposals?.length ?? 0}
           </span>
         </div>
@@ -161,6 +169,7 @@ export function ProposalsList({ slug, instanceId }: ProposalsListProps) {
             }}
           >
             <SelectItem id="all">{t('All proposals')}</SelectItem>
+            <SelectItem id="shortlisted">{t('Shortlisted')}</SelectItem>
             <SelectItem id="my" isDisabled={!currentProfileId}>
               {t('My proposals')}
             </SelectItem>
