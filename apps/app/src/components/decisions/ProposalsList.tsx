@@ -158,6 +158,7 @@ export function ProposalsList({ slug, instanceId }: ProposalsListProps) {
         </div>
         <div className="grid max-w-fit grid-cols-2 justify-end gap-4 sm:flex sm:flex-1 sm:flex-wrap sm:items-center">
           <Select
+            size="small"
             selectedKey={proposalFilter}
             onSelectionChange={(key) => {
               const newKey = String(key);
@@ -176,6 +177,7 @@ export function ProposalsList({ slug, instanceId }: ProposalsListProps) {
           </Select>
           <Select
             selectedKey={selectedCategory}
+            size="small"
             onSelectionChange={(key) => setSelectedCategory(String(key))}
             aria-label="Filter proposals by category"
           >
@@ -194,6 +196,7 @@ export function ProposalsList({ slug, instanceId }: ProposalsListProps) {
           </Select>
           <Select
             selectedKey={sortOrder}
+            size="small"
             onSelectionChange={(key) => setSortOrder(String(key))}
           >
             <SelectItem id="newest">{t('Newest First')}</SelectItem>
