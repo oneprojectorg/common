@@ -45,7 +45,7 @@ const TypeMap = {
   linkPreview: 'linkPreview',
   user: 'user',
   orgUser: 'orgUser',
-  proposal: 'proposal',
+  profile: 'profile',
 };
 
 const getCacheKey = (
