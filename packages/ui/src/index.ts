@@ -61,6 +61,7 @@ export * from './components/LoadingSpinner';
 export * from './components/Toast';
 export * from './components/AvatarUploader';
 export * from './components/FileUploader';
+export * from './components/OptionMenu';
 
 // Export everything from lib and utils
 export * from './lib/utils';

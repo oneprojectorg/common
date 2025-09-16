@@ -8,7 +8,7 @@ import {
   proposals,
 } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
-import { assertAccess, permission } from 'access-zones';
+import { assertAccess, checkPermission, permission } from 'access-zones';
 import { count as countFn } from 'drizzle-orm';
 
 import { UnauthorizedError } from '../../utils';
@@ -89,6 +89,12 @@ export const listProposals = async ({
 
   assertAccess({ decisions: permission.READ }, orgUser?.roles ?? []);
 
+  // Check if user can manage proposals (approve/reject)
+  const canManageProposals = checkPermission(
+    { decisions: permission.UPDATE },
+    orgUser?.roles ?? []
+  );
+
   try {
     const {
       limit = 20,
@@ -120,6 +126,7 @@ export const listProposals = async ({
           proposals: [],
           total: 0,
           hasMore: false,
+          canManageProposals,
         };
       }
 
@@ -311,6 +318,7 @@ export const listProposals = async ({
       proposals: proposalsWithCounts,
       total: Number(count),
       hasMore: offset + limit < Number(count),
+      canManageProposals,
     };
   } catch (error) {
     if (error instanceof UnauthorizedError) {

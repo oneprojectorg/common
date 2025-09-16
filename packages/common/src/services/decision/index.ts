@@ -40,6 +40,8 @@ export type { CreateProposalInput } from './createProposal';
 export { updateProposal } from './updateProposal';
 export type { UpdateProposalInput } from './updateProposal';
 
+export { updateProposalStatus } from './updateProposalStatus';
+
 export { getProposal } from './getProposal';
 
 export { listProposals } from './listProposals';
