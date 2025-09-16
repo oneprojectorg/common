@@ -6,6 +6,7 @@ import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
+import { RichTextEditorContent } from '@/components/RichTextEditor';
 import { CurrentPhaseSurface } from '@/components/decisions/CurrentPhaseSurface';
 import { DecisionInstanceContent } from '@/components/decisions/DecisionInstanceContent';
 import { DecisionInstanceHeader } from '@/components/decisions/DecisionInstanceHeader';
@@ -23,6 +24,9 @@ interface ProcessPhase {
     sortOrder?: number;
   };
   type?: 'initial' | 'intermediate' | 'final';
+  config?: {
+    allowProposals?: boolean;
+  };
 }
 
 async function DecisionInstancePageContent({
@@ -82,6 +86,13 @@ async function DecisionInstancePageContent({
 
     const budget = instanceData?.budget || processSchema?.budget;
 
+    const currentStateId =
+      instanceData?.currentStateId || instance.currentStateId;
+    const currentState = templateStates.find(
+      (state) => state.id === currentStateId,
+    );
+    const allowProposals = currentState?.config?.allowProposals !== false; // defaults to true
+
     // TODO: special key for People powered translations as a stop-gap
     const description = instance?.description?.match('PPDESCRIPTION')
       ? t('PPDESCRIPTION')
@@ -126,21 +137,24 @@ async function DecisionInstancePageContent({
                   {name}
                 </Header3>
                 {description ? (
-                  <p
-                    className="text-sm"
-                    dangerouslySetInnerHTML={{ __html: description }}
+                  <RichTextEditorContent
+                    content={description}
+                    readOnly={true}
+                    editorClassName="prose prose-base max-w-none [&_p]:text-base"
                   />
                 ) : null}
 
-                <div className="mb-6">
-                  <ButtonLink
-                    href={`/profile/${slug}/decisions/${instanceId}/proposal/create`}
-                    color="primary"
-                    className="w-full"
-                  >
-                    {t('Submit a proposal')}
-                  </ButtonLink>
-                </div>
+                {allowProposals && (
+                  <div className="mb-6">
+                    <ButtonLink
+                      href={`/profile/${slug}/decisions/${instanceId}/proposal/create`}
+                      color="primary"
+                      className="w-full"
+                    >
+                      {t('Submit a proposal')}
+                    </ButtonLink>
+                  </div>
+                )}
 
                 <CurrentPhaseSurface
                   currentPhase={currentPhase}
