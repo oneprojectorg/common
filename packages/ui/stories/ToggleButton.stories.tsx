@@ -15,3 +15,9 @@ export default meta;
 export const Example = (args: any) => (
   <ToggleButton {...args}>Pin</ToggleButton>
 );
+
+export const Small = (args: any) => (
+  <ToggleButton {...args} size="small">
+    Pin
+  </ToggleButton>
+);
