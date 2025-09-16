@@ -4,7 +4,11 @@ import { trpc } from '@op/api/client';
 import type { proposalEncoder } from '@op/api/encoders';
 import { ProfileRelationshipType } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
-import { Heart } from 'lucide-react';
+import { DialogTrigger } from '@op/ui/Dialog';
+import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
+import { toast } from '@op/ui/Toast';
+import { Heart, Trash2 } from 'lucide-react';
+import { useState } from 'react';
 import { LuBookmark } from 'react-icons/lu';
 import { z } from 'zod';
 
@@ -12,15 +16,14 @@ import { useTranslations } from '@/lib/i18n';
 
 type Proposal = z.infer<typeof proposalEncoder>;
 
-interface ProposalCardActionsProps {
-  proposal: Proposal;
-}
-
 export function ProposalCardActions({
   proposal: initialProposal,
-}: ProposalCardActionsProps) {
+}: {
+  proposal: Proposal;
+}) {
   const t = useTranslations();
   const utils = trpc.useUtils();
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   // Subscribe to the individual proposal data which gets optimistically updated
   const { data: currentProposal } = trpc.decision.getProposal.useQuery(
@@ -47,8 +50,8 @@ export function ProposalCardActions({
       // Snapshot the previous values
       const previousListData = initialProposal.processInstance?.id
         ? utils.decision.listProposals.getData({
-            processInstanceId: initialProposal.processInstance.id,
-          })
+          processInstanceId: initialProposal.processInstance.id,
+        })
         : null;
       const previousProposalData = utils.decision.getProposal.getData({
         profileId: currentProposal.profileId,
@@ -61,26 +64,26 @@ export function ProposalCardActions({
           proposals: previousListData.proposals.map((p) =>
             p.id === currentProposal.id
               ? {
-                  ...p,
-                  isLikedByUser:
-                    variables.relationshipType === ProfileRelationshipType.LIKES
-                      ? true
-                      : p.isLikedByUser,
-                  isFollowedByUser:
-                    variables.relationshipType ===
+                ...p,
+                isLikedByUser:
+                  variables.relationshipType === ProfileRelationshipType.LIKES
+                    ? true
+                    : p.isLikedByUser,
+                isFollowedByUser:
+                  variables.relationshipType ===
                     ProfileRelationshipType.FOLLOWING
-                      ? true
-                      : p.isFollowedByUser,
-                  likesCount:
-                    variables.relationshipType === ProfileRelationshipType.LIKES
-                      ? (p.likesCount || 0) + 1
-                      : p.likesCount,
-                  followersCount:
-                    variables.relationshipType ===
+                    ? true
+                    : p.isFollowedByUser,
+                likesCount:
+                  variables.relationshipType === ProfileRelationshipType.LIKES
+                    ? (p.likesCount || 0) + 1
+                    : p.likesCount,
+                followersCount:
+                  variables.relationshipType ===
                     ProfileRelationshipType.FOLLOWING
-                      ? (p.followersCount || 0) + 1
-                      : p.followersCount,
-                }
+                    ? (p.followersCount || 0) + 1
+                    : p.followersCount,
+              }
               : p,
           ),
         };
@@ -164,8 +167,8 @@ export function ProposalCardActions({
         // Snapshot the previous values
         const previousListData = initialProposal.processInstance?.id
           ? utils.decision.listProposals.getData({
-              processInstanceId: initialProposal.processInstance.id,
-            })
+            processInstanceId: initialProposal.processInstance.id,
+          })
           : null;
         const previousProposalData = utils.decision.getProposal.getData({
           profileId: currentProposal.profileId,
@@ -178,28 +181,28 @@ export function ProposalCardActions({
             proposals: previousListData.proposals.map((p) =>
               p.id === currentProposal.id
                 ? {
-                    ...p,
-                    isLikedByUser:
-                      variables.relationshipType ===
+                  ...p,
+                  isLikedByUser:
+                    variables.relationshipType ===
                       ProfileRelationshipType.LIKES
-                        ? false
-                        : p.isLikedByUser,
-                    isFollowedByUser:
-                      variables.relationshipType ===
+                      ? false
+                      : p.isLikedByUser,
+                  isFollowedByUser:
+                    variables.relationshipType ===
                       ProfileRelationshipType.FOLLOWING
-                        ? false
-                        : p.isFollowedByUser,
-                    likesCount:
-                      variables.relationshipType ===
+                      ? false
+                      : p.isFollowedByUser,
+                  likesCount:
+                    variables.relationshipType ===
                       ProfileRelationshipType.LIKES
-                        ? Math.max((p.likesCount || 0) - 1, 0)
-                        : p.likesCount,
-                    followersCount:
-                      variables.relationshipType ===
+                      ? Math.max((p.likesCount || 0) - 1, 0)
+                      : p.likesCount,
+                  followersCount:
+                    variables.relationshipType ===
                       ProfileRelationshipType.FOLLOWING
-                        ? Math.max((p.followersCount || 0) - 1, 0)
-                        : p.followersCount,
-                  }
+                      ? Math.max((p.followersCount || 0) - 1, 0)
+                      : p.followersCount,
+                }
                 : p,
             ),
           };
@@ -267,8 +270,31 @@ export function ProposalCardActions({
       },
     });
 
+  const deleteProposalMutation = trpc.decision.deleteProposal.useMutation({
+    onError: (error, _variables) => {
+      toast.error({
+        message: error.message || t('Failed to delete proposal'),
+      });
+    },
+    onSuccess: () => {
+      toast.success({
+        message: t('Proposal deleted successfully'),
+      });
+    },
+    onSettled: () => {
+      // Always refetch after error or success
+      if (initialProposal.processInstance?.id) {
+        utils.decision.listProposals.invalidate({
+          processInstanceId: initialProposal.processInstance.id,
+        });
+      }
+    },
+  });
+
   const isLoading =
-    addRelationshipMutation.isPending || removeRelationshipMutation.isPending;
+    addRelationshipMutation.isPending ||
+    removeRelationshipMutation.isPending ||
+    deleteProposalMutation.isPending;
 
   const handleLikeClick = async () => {
     if (!currentProposal.profileId) {
@@ -318,6 +344,22 @@ export function ProposalCardActions({
     }
   };
 
+  const handleDeleteConfirm = async () => {
+    if (!currentProposal.id) {
+      console.error('No proposal ID provided for delete action');
+      return;
+    }
+
+    try {
+      await deleteProposalMutation.mutateAsync({
+        proposalId: currentProposal.id,
+      });
+      setIsDeleteModalOpen(false); // Close modal after successful deletion
+    } catch (error) {
+      console.error('Error in ProposalCardActions handleDeleteConfirm:', error);
+    }
+  };
+
   return (
     <div className="flex w-full items-center gap-2 sm:w-auto">
       <Button
@@ -344,6 +386,55 @@ export function ProposalCardActions({
         />
         {currentProposal.isFollowedByUser ? t('Following') : t('Follow')}
       </Button>
+      {initialProposal.isEditable && (
+        <DialogTrigger
+          isOpen={isDeleteModalOpen}
+          onOpenChange={setIsDeleteModalOpen}
+        >
+          <Button
+            size="small"
+            color="secondary"
+            className="w-full"
+            isDisabled={isLoading}
+          >
+            <Trash2 className="size-4" />
+            {t('Delete')}
+          </Button>
+          <Modal
+            isDismissable
+            isOpen={isDeleteModalOpen}
+            onOpenChange={setIsDeleteModalOpen}
+          >
+            <ModalHeader>{t('Delete Proposal')}</ModalHeader>
+            <ModalBody>
+              <p>
+                {t(
+                  'Are you sure you want to delete this proposal? This action cannot be undone.',
+                )}
+              </p>
+            </ModalBody>
+            <ModalFooter>
+              <Button
+                color="secondary"
+                className="w-full sm:w-fit"
+                onPress={() => setIsDeleteModalOpen(false)}
+              >
+                {t('Cancel')}
+              </Button>
+              <Button
+                color="destructive"
+                onPress={handleDeleteConfirm}
+                className="w-full sm:w-fit"
+                isDisabled={deleteProposalMutation.isPending}
+              >
+                {deleteProposalMutation.isPending
+                  ? t('Deleting...')
+                  : t('Delete')}
+              </Button>
+            </ModalFooter>
+          </Modal>
+        </DialogTrigger>
+      )}
     </div>
   );
 }

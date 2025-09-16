@@ -3,6 +3,14 @@ import { deleteProposal } from '../deleteProposal';
 import { UnauthorizedError, NotFoundError, ValidationError, CommonError } from '../../../utils';
 import { mockDb } from '../../../test/setup';
 
+// Mock the access-zones module
+vi.mock('access-zones', () => ({
+  checkPermission: vi.fn(),
+  permission: {
+    ADMIN: 'admin',
+  },
+}));
+
 const mockUser = {
   id: 'auth-user-id',
   email: 'test@example.com',
@@ -15,6 +23,10 @@ const mockDbUser = {
 };
 
 const mockProcessOwnerProfile = 'process-owner-profile-id';
+const mockOrganization = {
+  id: 'org-id-123',
+  profileId: mockProcessOwnerProfile,
+};
 
 const mockExistingProposal = {
   id: 'proposal-id-123',
@@ -31,9 +43,30 @@ const mockExistingProposal = {
   updatedAt: '2024-01-01T00:00:00Z',
 };
 
+const mockOrgUser = {
+  id: 'org-user-id-123',
+  roles: [],
+};
+
 describe('deleteProposal', () => {
+  let mockCheckPermission: any;
+
   beforeEach(() => {
     vi.clearAllMocks();
+
+    // Get the mocked function
+    mockCheckPermission = vi.mocked(require('access-zones').checkPermission);
+
+    // Default to no admin permissions
+    mockCheckPermission.mockReturnValue(false);
+
+    // Default mock organization and org user setup
+    mockDb.query.organizations.findFirst.mockResolvedValue(mockOrganization);
+
+    // Mock getOrgAccessUser to return mockOrgUser
+    vi.doMock('../../../services/access', () => ({
+      getOrgAccessUser: vi.fn().mockResolvedValue(mockOrgUser),
+    }));
   });
 
   it('should delete proposal successfully by submitter', async () => {
@@ -92,6 +125,41 @@ describe('deleteProposal', () => {
     expect(result.deletedId).toBe('proposal-id-123');
   });
 
+  it('should delete proposal successfully by admin user (non-owner)', async () => {
+    // User is not the submitter or process owner, but has admin permissions
+    const adminDbUser = {
+      ...mockDbUser,
+      currentProfileId: 'admin-profile-id',
+    };
+
+    const mockDeletedProposal = {
+      id: 'proposal-id-123',
+    };
+
+    // Mock admin permissions
+    mockCheckPermission.mockReturnValue(true);
+
+    mockDb.query.users.findFirst.mockResolvedValueOnce(adminDbUser);
+    mockDb.query.proposals.findFirst.mockResolvedValueOnce(mockExistingProposal as any);
+    mockDb.delete.mockReturnValueOnce({
+      where: vi.fn().mockReturnValueOnce({
+        returning: vi.fn().mockResolvedValueOnce([mockDeletedProposal]),
+      }),
+    } as any);
+
+    const result = await deleteProposal({
+      proposalId: 'proposal-id-123',
+      user: mockUser,
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.deletedId).toBe('proposal-id-123');
+    expect(mockCheckPermission).toHaveBeenCalledWith(
+      { decisions: 'admin' },
+      mockOrgUser.roles
+    );
+  });
+
   it('should throw UnauthorizedError when user is not authenticated', async () => {
     await expect(
       deleteProposal({
@@ -129,11 +197,14 @@ describe('deleteProposal', () => {
     expect(mockDb.delete).not.toHaveBeenCalled();
   });
 
-  it('should throw UnauthorizedError when user is not submitter or process owner', async () => {
+  it('should throw UnauthorizedError when user is not submitter, process owner, or admin', async () => {
     const unauthorizedDbUser = {
       ...mockDbUser,
       currentProfileId: 'unauthorized-profile-id',
     };
+
+    // Ensure no admin permissions
+    mockCheckPermission.mockReturnValue(false);
 
     mockDb.query.users.findFirst.mockResolvedValueOnce(unauthorizedDbUser);
     mockDb.query.proposals.findFirst.mockResolvedValueOnce(mockExistingProposal as any);
@@ -146,57 +217,10 @@ describe('deleteProposal', () => {
     ).rejects.toThrow(UnauthorizedError);
 
     expect(mockDb.delete).not.toHaveBeenCalled();
-  });
-
-  it('should validate proposal status before deletion', async () => {
-    const invalidStatuses = ['submitted', 'under_review', 'approved'];
-
-    for (const status of invalidStatuses) {
-      const proposalWithInvalidStatus = {
-        ...mockExistingProposal,
-        status,
-      };
-
-      mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-      mockDb.query.proposals.findFirst.mockResolvedValueOnce(proposalWithInvalidStatus as any);
-
-      await expect(
-        deleteProposal({
-          proposalId: 'proposal-id-123',
-          user: mockUser,
-        })
-      ).rejects.toThrow(ValidationError);
-
-      expect(mockDb.delete).not.toHaveBeenCalled();
-      vi.clearAllMocks();
-    }
-  });
-
-  it('should allow deletion of rejected proposals', async () => {
-    const rejectedProposal = {
-      ...mockExistingProposal,
-      status: 'rejected',
-    };
-
-    const mockDeletedProposal = {
-      id: 'proposal-id-123',
-    };
-
-    mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-    mockDb.query.proposals.findFirst.mockResolvedValueOnce(rejectedProposal as any);
-    mockDb.delete.mockReturnValueOnce({
-      where: vi.fn().mockReturnValueOnce({
-        returning: vi.fn().mockResolvedValueOnce([mockDeletedProposal]),
-      }),
-    } as any);
-
-    const result = await deleteProposal({
-      proposalId: 'proposal-id-123',
-      user: mockUser,
-    });
-
-    expect(result.success).toBe(true);
-    expect(mockDb.delete).toHaveBeenCalled();
+    expect(mockCheckPermission).toHaveBeenCalledWith(
+      { decisions: 'admin' },
+      mockOrgUser.roles
+    );
   });
 
   it('should prevent deletion of proposals with existing decisions', async () => {
@@ -227,33 +251,6 @@ describe('deleteProposal', () => {
     ).rejects.toThrow(ValidationError);
 
     expect(mockDb.delete).not.toHaveBeenCalled();
-  });
-
-  it('should handle default status as draft', async () => {
-    const proposalWithNoStatus = {
-      ...mockExistingProposal,
-      status: null, // or undefined
-    };
-
-    const mockDeletedProposal = {
-      id: 'proposal-id-123',
-    };
-
-    mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-    mockDb.query.proposals.findFirst.mockResolvedValueOnce(proposalWithNoStatus as any);
-    mockDb.delete.mockReturnValueOnce({
-      where: vi.fn().mockReturnValueOnce({
-        returning: vi.fn().mockResolvedValueOnce([mockDeletedProposal]),
-      }),
-    } as any);
-
-    const result = await deleteProposal({
-      proposalId: 'proposal-id-123',
-      user: mockUser,
-    });
-
-    expect(result.success).toBe(true);
-    // Should treat null/undefined status as 'draft' and allow deletion
   });
 
   it('should throw CommonError when database delete fails', async () => {
@@ -313,16 +310,15 @@ describe('deleteProposal', () => {
     // Should handle null decisions array gracefully
   });
 
-  it('should validate both status and decisions conditions', async () => {
-    // Test proposal in valid status but with decisions
-    const proposalDraftWithDecisions = {
+  it('should prevent deletion of proposals with existing decisions regardless of status', async () => {
+    const proposalWithDecisions = {
       ...mockExistingProposal,
       status: 'draft',
       decisions: [{ id: 'decision-1', decisionData: {} }],
     };
 
     mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-    mockDb.query.proposals.findFirst.mockResolvedValueOnce(proposalDraftWithDecisions as any);
+    mockDb.query.proposals.findFirst.mockResolvedValueOnce(proposalWithDecisions as any);
 
     await expect(
       deleteProposal({
@@ -331,22 +327,7 @@ describe('deleteProposal', () => {
       })
     ).rejects.toThrow(ValidationError);
 
-    // Test proposal in invalid status but without decisions
-    const proposalSubmittedNoDecisions = {
-      ...mockExistingProposal,
-      status: 'submitted',
-      decisions: [],
-    };
-
-    mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-    mockDb.query.proposals.findFirst.mockResolvedValueOnce(proposalSubmittedNoDecisions as any);
-
-    await expect(
-      deleteProposal({
-        proposalId: 'proposal-id-123',
-        user: mockUser,
-      })
-    ).rejects.toThrow(ValidationError);
+    expect(mockDb.delete).not.toHaveBeenCalled();
   });
 
   it('should include correct error messages', async () => {
@@ -368,14 +349,14 @@ describe('deleteProposal', () => {
       expect(error.message).toContain('Not authorized to delete this proposal');
     }
 
-    // Test invalid status error message
-    const submittedProposal = {
+    // Test existing decisions error message
+    const proposalWithDecisions = {
       ...mockExistingProposal,
-      status: 'submitted',
+      decisions: [{ id: 'decision-1' }],
     };
 
     mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-    mockDb.query.proposals.findFirst.mockResolvedValueOnce(submittedProposal as any);
+    mockDb.query.proposals.findFirst.mockResolvedValueOnce(proposalWithDecisions as any);
 
     try {
       await deleteProposal({
@@ -383,7 +364,7 @@ describe('deleteProposal', () => {
         user: mockUser,
       });
     } catch (error) {
-      expect(error.message).toContain('Cannot delete proposal in submitted status');
+      expect(error.message).toContain('Cannot delete proposal with existing decisions');
     }
   });
 });

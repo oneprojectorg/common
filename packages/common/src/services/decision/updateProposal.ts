@@ -1,5 +1,7 @@
 import { db, eq } from '@op/db/client';
 import {
+  DecisionProcess,
+  ProcessInstance,
   organizations,
   processInstances,
   proposalCategories,
@@ -20,6 +22,10 @@ import {
 import { getOrgAccessUser } from '../access';
 import { schemaValidator } from './schemaValidator';
 import type { ProposalData } from './types';
+
+type ProcessInstanceWithProcess = ProcessInstance & {
+  process: DecisionProcess;
+};
 
 /**
  * Updates the category link for a proposal
@@ -143,7 +149,8 @@ export const updateProposal = async ({
     // Only the submitter or process owner can update the proposal
     const isSubmitter =
       existingProposal.submittedByProfileId === dbUser.currentProfileId;
-    const processInstance = existingProposal.processInstance as any;
+    const processInstance =
+      existingProposal.processInstance as ProcessInstanceWithProcess;
     const canUpdateProposal =
       processInstance?.ownerProfileId === dbUser.currentProfileId ||
       hasPermissions;
