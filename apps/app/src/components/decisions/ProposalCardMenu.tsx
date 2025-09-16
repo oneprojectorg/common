@@ -19,6 +19,7 @@ interface ProposalCardMenuProps {
 export function ProposalCardMenu({ proposal }: ProposalCardMenuProps) {
   const t = useTranslations();
   const utils = trpc.useUtils();
+  const profileId = proposal.profileId;
 
   const updateStatusMutation = trpc.decision.updateProposalStatus.useMutation({
     onMutate: async (variables) => {
@@ -46,12 +47,12 @@ export function ProposalCardMenu({ proposal }: ProposalCardMenuProps) {
                   ...p,
                   status: variables.status,
                 }
-              : p
+              : p,
           ),
         };
         utils.decision.listProposals.setData(
           { processInstanceId: proposal.processInstance.id },
-          optimisticListData
+          optimisticListData,
         );
       }
 
@@ -62,7 +63,7 @@ export function ProposalCardMenu({ proposal }: ProposalCardMenuProps) {
       if (context?.previousListData && proposal.processInstance?.id) {
         utils.decision.listProposals.setData(
           { processInstanceId: proposal.processInstance.id },
-          context.previousListData
+          context.previousListData,
         );
       }
 
@@ -71,9 +72,10 @@ export function ProposalCardMenu({ proposal }: ProposalCardMenuProps) {
       });
     },
     onSuccess: (_, variables) => {
-      const statusMessage = variables.status === 'approved'
-        ? t('Proposal approved successfully')
-        : t('Proposal rejected successfully');
+      const statusMessage =
+        variables.status === 'approved'
+          ? t('Proposal approved successfully')
+          : t('Proposal rejected successfully');
 
       toast.success({
         message: statusMessage,
@@ -91,14 +93,14 @@ export function ProposalCardMenu({ proposal }: ProposalCardMenuProps) {
 
   const handleApprove = () => {
     updateStatusMutation.mutate({
-      proposalId: proposal.id,
+      profileId,
       status: 'approved',
     });
   };
 
   const handleReject = () => {
     updateStatusMutation.mutate({
-      proposalId: proposal.id,
+      profileId,
       status: 'rejected',
     });
   };
