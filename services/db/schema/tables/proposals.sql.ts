@@ -55,10 +55,12 @@ export const proposals = pgTable(
         onDelete: 'cascade',
       }),
 
-    profileId: uuid('profile_id').references(() => profiles.id, {
-      onUpdate: 'cascade',
-      onDelete: 'cascade',
-    }),
+    profileId: uuid('profile_id')
+      .references(() => profiles.id, {
+        onUpdate: 'cascade',
+        onDelete: 'cascade',
+      })
+      .notNull(),
 
     status: proposalStatusEnum('status').default(ProposalStatus.DRAFT),
 

@@ -63,7 +63,7 @@ const Proposals = ({
         <ProposalCard
           key={proposal.id}
           proposal={proposal}
-          viewHref={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.id}`}
+          viewHref={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`}
         />
       ))}
     </div>

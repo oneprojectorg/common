@@ -1,14 +1,19 @@
-import { db, eq, and } from '@op/db/client';
-import { profileRelationships, proposals, users, ProfileRelationshipType } from '@op/db/schema';
+import { and, db, eq } from '@op/db/client';
+import {
+  ProfileRelationshipType,
+  profileRelationships,
+  proposals,
+  users,
+} from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
 
 export const getProposal = async ({
-  proposalId,
+  profileId,
   user,
 }: {
-  proposalId: string;
+  profileId: string;
   user: User;
 }) => {
   if (!user) {
@@ -26,7 +31,7 @@ export const getProposal = async ({
     }
 
     const proposal = await db.query.proposals.findFirst({
-      where: eq(proposals.id, proposalId),
+      where: eq(proposals.profileId, profileId),
       with: {
         processInstance: {
           with: {

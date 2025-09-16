@@ -1,0 +1,1 @@
+ALTER TABLE "decision_proposals" ALTER COLUMN "profile_id" SET NOT NULL;
