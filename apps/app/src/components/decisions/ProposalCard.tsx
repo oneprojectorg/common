@@ -43,9 +43,6 @@ export function ProposalCard({
 
   return (
     <Surface className="relative space-y-3 p-6 pb-4">
-      {/* Admin menu */}
-      {canManageProposals && <ProposalCardMenu proposal={currentProposal} />}
-
       {/* Header with title and budget */}
       <div className="flex flex-col items-start justify-between gap-2 sm:flex-row">
         <Link
@@ -54,11 +51,17 @@ export function ProposalCard({
         >
           {title || t('Untitled Proposal')}
         </Link>
-        {budget && (
-          <span className="text-title-base text-neutral-charcoal">
-            {formatCurrency(budget)}
-          </span>
-        )}
+        <div className="flex gap-2">
+          {budget && (
+            <span className="text-title-base text-neutral-charcoal">
+              {formatCurrency(budget)}
+            </span>
+          )}
+
+          {canManageProposals && (
+            <ProposalCardMenu proposal={currentProposal} />
+          )}
+        </div>
       </div>
 
       {/* Author and category */}

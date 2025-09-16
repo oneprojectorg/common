@@ -108,7 +108,7 @@ export function ProposalCardMenu({ proposal }: ProposalCardMenuProps) {
   const isLoading = updateStatusMutation.isPending;
 
   return (
-    <OptionMenu className="absolute right-2 top-2 aria-expanded:bg-neutral-gray1">
+    <OptionMenu>
       <Menu className="min-w-48 p-2">
         <MenuItem
           key="approve"

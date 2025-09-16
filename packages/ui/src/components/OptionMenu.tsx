@@ -20,10 +20,7 @@ export const OptionMenu = ({
       <IconButton
         variant="ghost"
         size="small"
-        className={cn(
-          'absolute right-0 top-0 aria-expanded:bg-neutral-gray1',
-          className,
-        )}
+        className={cn('aria-expanded:bg-neutral-gray1', className)}
       >
         <LuEllipsis className="size-4" />
       </IconButton>
