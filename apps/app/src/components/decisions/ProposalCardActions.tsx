@@ -50,8 +50,8 @@ export function ProposalCardActions({
       // Snapshot the previous values
       const previousListData = initialProposal.processInstance?.id
         ? utils.decision.listProposals.getData({
-            processInstanceId: initialProposal.processInstance.id,
-          })
+          processInstanceId: initialProposal.processInstance.id,
+        })
         : null;
       const previousProposalData = utils.decision.getProposal.getData({
         profileId: currentProposal.profileId,
@@ -64,26 +64,26 @@ export function ProposalCardActions({
           proposals: previousListData.proposals.map((p) =>
             p.id === currentProposal.id
               ? {
-                  ...p,
-                  isLikedByUser:
-                    variables.relationshipType === ProfileRelationshipType.LIKES
-                      ? true
-                      : p.isLikedByUser,
-                  isFollowedByUser:
-                    variables.relationshipType ===
+                ...p,
+                isLikedByUser:
+                  variables.relationshipType === ProfileRelationshipType.LIKES
+                    ? true
+                    : p.isLikedByUser,
+                isFollowedByUser:
+                  variables.relationshipType ===
                     ProfileRelationshipType.FOLLOWING
-                      ? true
-                      : p.isFollowedByUser,
-                  likesCount:
-                    variables.relationshipType === ProfileRelationshipType.LIKES
-                      ? (p.likesCount || 0) + 1
-                      : p.likesCount,
-                  followersCount:
-                    variables.relationshipType ===
+                    ? true
+                    : p.isFollowedByUser,
+                likesCount:
+                  variables.relationshipType === ProfileRelationshipType.LIKES
+                    ? (p.likesCount || 0) + 1
+                    : p.likesCount,
+                followersCount:
+                  variables.relationshipType ===
                     ProfileRelationshipType.FOLLOWING
-                      ? (p.followersCount || 0) + 1
-                      : p.followersCount,
-                }
+                    ? (p.followersCount || 0) + 1
+                    : p.followersCount,
+              }
               : p,
           ),
         };
@@ -167,8 +167,8 @@ export function ProposalCardActions({
         // Snapshot the previous values
         const previousListData = initialProposal.processInstance?.id
           ? utils.decision.listProposals.getData({
-              processInstanceId: initialProposal.processInstance.id,
-            })
+            processInstanceId: initialProposal.processInstance.id,
+          })
           : null;
         const previousProposalData = utils.decision.getProposal.getData({
           profileId: currentProposal.profileId,
@@ -181,28 +181,28 @@ export function ProposalCardActions({
             proposals: previousListData.proposals.map((p) =>
               p.id === currentProposal.id
                 ? {
-                    ...p,
-                    isLikedByUser:
-                      variables.relationshipType ===
+                  ...p,
+                  isLikedByUser:
+                    variables.relationshipType ===
                       ProfileRelationshipType.LIKES
-                        ? false
-                        : p.isLikedByUser,
-                    isFollowedByUser:
-                      variables.relationshipType ===
+                      ? false
+                      : p.isLikedByUser,
+                  isFollowedByUser:
+                    variables.relationshipType ===
                       ProfileRelationshipType.FOLLOWING
-                        ? false
-                        : p.isFollowedByUser,
-                    likesCount:
-                      variables.relationshipType ===
+                      ? false
+                      : p.isFollowedByUser,
+                  likesCount:
+                    variables.relationshipType ===
                       ProfileRelationshipType.LIKES
-                        ? Math.max((p.likesCount || 0) - 1, 0)
-                        : p.likesCount,
-                    followersCount:
-                      variables.relationshipType ===
+                      ? Math.max((p.likesCount || 0) - 1, 0)
+                      : p.likesCount,
+                  followersCount:
+                    variables.relationshipType ===
                       ProfileRelationshipType.FOLLOWING
-                        ? Math.max((p.followersCount || 0) - 1, 0)
-                        : p.followersCount,
-                  }
+                      ? Math.max((p.followersCount || 0) - 1, 0)
+                      : p.followersCount,
+                }
                 : p,
             ),
           };
@@ -416,6 +416,7 @@ export function ProposalCardActions({
             <ModalFooter>
               <Button
                 color="secondary"
+                className="w-full sm:w-fit"
                 onPress={() => setIsDeleteModalOpen(false)}
               >
                 {t('Cancel')}
@@ -423,6 +424,7 @@ export function ProposalCardActions({
               <Button
                 color="destructive"
                 onPress={handleDeleteConfirm}
+                className="w-full sm:w-fit"
                 isDisabled={deleteProposalMutation.isPending}
               >
                 {deleteProposalMutation.isPending
