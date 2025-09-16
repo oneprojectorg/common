@@ -7,11 +7,11 @@ import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { getOrgAccessUser } from '../access';
 
 export const updateProposalStatus = async ({
-  proposalId,
+  profileId,
   status,
   user,
 }: {
-  proposalId: string;
+  profileId: string;
   status: 'approved' | 'rejected';
   user: User;
 }) => {
@@ -22,7 +22,7 @@ export const updateProposalStatus = async ({
   try {
     // Get proposal with process instance relationship
     const existingProposal = await db.query.proposals.findFirst({
-      where: eq(proposals.id, proposalId),
+      where: eq(proposals.profileId, profileId),
       with: {
         processInstance: true,
       },
@@ -66,7 +66,7 @@ export const updateProposalStatus = async ({
         status,
         updatedAt: new Date().toISOString(),
       })
-      .where(eq(proposals.id, proposalId))
+      .where(eq(proposals.profileId, profileId))
       .returning();
 
     if (!updatedProposal) {
