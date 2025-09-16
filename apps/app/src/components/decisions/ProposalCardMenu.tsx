@@ -2,6 +2,7 @@
 
 import { trpc } from '@op/api/client';
 import type { proposalEncoder } from '@op/api/encoders';
+import { ProposalStatus } from '@op/api/encoders';
 import { Menu, MenuItem } from '@op/ui/Menu';
 import { OptionMenu } from '@op/ui/OptionMenu';
 import { toast } from '@op/ui/Toast';
@@ -94,14 +95,14 @@ export function ProposalCardMenu({ proposal }: ProposalCardMenuProps) {
   const handleApprove = () => {
     updateStatusMutation.mutate({
       profileId,
-      status: 'approved',
+      status: ProposalStatus.APPROVED,
     });
   };
 
   const handleReject = () => {
     updateStatusMutation.mutate({
       profileId,
-      status: 'rejected',
+      status: ProposalStatus.REJECTED,
     });
   };
 
@@ -113,20 +114,20 @@ export function ProposalCardMenu({ proposal }: ProposalCardMenuProps) {
         <MenuItem
           key="approve"
           onAction={handleApprove}
-          className="px-3 py-2 text-functional-green"
-          isDisabled={isLoading || proposal.status === 'approved'}
+          className="py-2"
+          isDisabled={isLoading || proposal.status === ProposalStatus.APPROVED}
         >
           <LuCheck className="size-4" />
-          {t('Approve Proposal')}
+          {t('Shortlist for voting')}
         </MenuItem>
         <MenuItem
           key="reject"
           onAction={handleReject}
-          className="px-3 py-2 text-functional-red"
-          isDisabled={isLoading || proposal.status === 'rejected'}
+          className="py-2"
+          isDisabled={isLoading || proposal.status === ProposalStatus.REJECTED}
         >
           <LuX className="size-4" />
-          {t('Reject Proposal')}
+          {t('Reject from shortlist')}
         </MenuItem>
       </Menu>
     </OptionMenu>

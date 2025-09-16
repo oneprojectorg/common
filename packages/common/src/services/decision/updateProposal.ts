@@ -1,8 +1,23 @@
 import { db, eq } from '@op/db/client';
-import { proposals, proposalCategories, taxonomies, taxonomyTerms, users } from '@op/db/schema';
+import {
+  organizations,
+  processInstances,
+  proposalCategories,
+  proposals,
+  taxonomies,
+  taxonomyTerms,
+  users,
+} from '@op/db/schema';
 import { User } from '@op/supabase/lib';
+import { checkPermission, permission } from 'access-zones';
 
-import { CommonError, NotFoundError, UnauthorizedError, ValidationError } from '../../utils';
+import {
+  CommonError,
+  NotFoundError,
+  UnauthorizedError,
+  ValidationError,
+} from '../../utils';
+import { getOrgAccessUser } from '../access';
 import { schemaValidator } from './schemaValidator';
 import type { ProposalData } from './types';
 
@@ -15,7 +30,9 @@ async function updateProposalCategoryLink(
 ): Promise<void> {
   try {
     // Remove existing category links
-    await db.delete(proposalCategories).where(eq(proposalCategories.proposalId, proposalId));
+    await db
+      .delete(proposalCategories)
+      .where(eq(proposalCategories.proposalId, proposalId));
 
     // Add new category link if provided
     if (newCategoryLabel?.trim()) {
@@ -41,7 +58,9 @@ async function updateProposalCategoryLink(
           taxonomyTermId: taxonomyTerm.id,
         });
       } else {
-        console.warn(`No taxonomy term found for category: ${newCategoryLabel}`);
+        console.warn(
+          `No taxonomy term found for category: ${newCategoryLabel}`,
+        );
       }
     }
   } catch (error) {
@@ -94,37 +113,51 @@ export const updateProposal = async ({
       throw new NotFoundError('Proposal not found');
     }
 
+    // join the process table to the org table via ownerId to get the org id
+    const instanceOrg = await db
+      .select({
+        id: organizations.id,
+      })
+      .from(organizations)
+      .leftJoin(
+        processInstances,
+        eq(organizations.profileId, processInstances.ownerProfileId),
+      )
+      .where(eq(processInstances.id, existingProposal.processInstanceId))
+      .limit(1);
+
+    if (!instanceOrg[0]) {
+      throw new UnauthorizedError('User does not have access to this process');
+    }
+
+    const orgUser = await getOrgAccessUser({
+      user,
+      organizationId: instanceOrg[0].id,
+    });
+
+    const hasPermissions = checkPermission(
+      { decisions: permission.UPDATE },
+      orgUser?.roles ?? [],
+    );
+
     // Only the submitter or process owner can update the proposal
-    const isSubmitter = existingProposal.submittedByProfileId === dbUser.currentProfileId;
+    const isSubmitter =
+      existingProposal.submittedByProfileId === dbUser.currentProfileId;
     const processInstance = existingProposal.processInstance as any;
-    const isProcessOwner = processInstance?.ownerProfileId === dbUser.currentProfileId;
-    
-    if (!isSubmitter && !isProcessOwner) {
+    const canUpdateProposal =
+      processInstance?.ownerProfileId === dbUser.currentProfileId ||
+      hasPermissions;
+
+    if (!isSubmitter && !canUpdateProposal) {
       throw new UnauthorizedError('Not authorized to update this proposal');
     }
 
-    // Validate status transitions
     if (data.status) {
-      const validTransitions: Record<string, string[]> = {
-        draft: ['submitted'],
-        submitted: ['under_review', 'draft'],
-        under_review: ['approved', 'rejected', 'submitted'],
-        approved: [], // Final state
-        rejected: [], // Final state
-      };
-
-      const currentStatus = existingProposal.status || 'draft';
-      const allowedTransitions = validTransitions[currentStatus] || [];
-
-      if (!allowedTransitions.includes(data.status)) {
-        throw new ValidationError(
-          `Cannot transition from ${currentStatus} to ${data.status}`
+      // Only process editors can approve/reject (NOT proposal OWNER)
+      if (['approved', 'rejected'].includes(data.status) && !hasPermissions) {
+        throw new UnauthorizedError(
+          'Only process owner can approve or reject proposals',
         );
-      }
-
-      // Only process owner can approve/reject
-      if (['approved', 'rejected'].includes(data.status) && !isProcessOwner) {
-        throw new UnauthorizedError('Only process owner can approve or reject proposals');
       }
     }
 
@@ -132,7 +165,7 @@ export const updateProposal = async ({
     if (data.proposalData && processInstance?.process) {
       const process = processInstance.process as any;
       const processSchema = process.processSchema;
-      
+
       if (processSchema?.proposalTemplate) {
         schemaValidator.validateProposalData(
           processSchema.proposalTemplate,
