@@ -1,7 +1,6 @@
 'use client';
 
 import { Button } from '@op/ui/Button';
-import { cn } from '@op/ui/utils';
 import { Edit, Heart } from 'lucide-react';
 import { ReactNode } from 'react';
 import { LuArrowLeft, LuBookmark } from 'react-icons/lu';
