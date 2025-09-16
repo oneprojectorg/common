@@ -223,8 +223,6 @@ describe('deleteProposal', () => {
     );
   });
 
-
-
   it('should prevent deletion of proposals with existing decisions', async () => {
     const proposalWithDecisions = {
       ...mockExistingProposal,
@@ -254,7 +252,6 @@ describe('deleteProposal', () => {
 
     expect(mockDb.delete).not.toHaveBeenCalled();
   });
-
 
   it('should throw CommonError when database delete fails', async () => {
     mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
