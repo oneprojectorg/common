@@ -48,7 +48,7 @@ export function ProposalCard({
       <div className="flex flex-col items-start justify-between gap-2 sm:flex-row">
         <Link
           href={viewHref}
-          className="text-title-sm text-neutral-black transition-colors hover:text-primary-teal"
+          className="font-serif text-title-sm text-neutral-black transition-colors hover:text-primary-teal"
         >
           {title || t('Untitled Proposal')}
         </Link>
