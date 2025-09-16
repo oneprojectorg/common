@@ -46,7 +46,7 @@ export function ProposalCard({
       <div className="flex flex-col items-start justify-between gap-2 sm:flex-row">
         <Link
           href={viewHref}
-          className="font-serif text-title-sm text-neutral-black transition-colors hover:text-primary-teal"
+          className="font-serif !text-title-sm text-neutral-black transition-colors hover:text-primary-teal"
         >
           {title || t('Untitled Proposal')}
         </Link>
@@ -103,7 +103,7 @@ export function ProposalCard({
       )}
 
       {/* Footer with engagement */}
-      <div className="flex flex-col justify-between gap-4 sm:flex-row">
+      <div className="flex flex-col justify-between gap-4 pt-3 sm:flex-row">
         <div className="flex w-full items-center justify-between gap-4 text-base text-neutral-gray4 sm:justify-normal">
           <span className="flex items-center gap-1">
             <Heart className="h-4 w-4" />
