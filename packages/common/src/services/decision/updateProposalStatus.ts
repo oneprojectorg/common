@@ -57,7 +57,7 @@ export const updateProposalStatus = async ({
     }
 
     // Assert admin permissions - this will throw if user doesn't have permission
-    assertAccess({ decisions: permission.UPDATE }, orgUser.roles || []);
+    assertAccess({ decisions: permission.ADMIN }, orgUser.roles || []);
 
     // Update
     const [updatedProposal] = await db

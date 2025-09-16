@@ -136,7 +136,7 @@ export const updateProposal = async ({
     });
 
     const hasPermissions = checkPermission(
-      { decisions: permission.UPDATE },
+      { decisions: permission.ADMIN },
       orgUser?.roles ?? [],
     );
 
