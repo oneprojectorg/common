@@ -82,7 +82,7 @@ export const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
               type: 'boolean',
               title: 'Allow proposals during this phase',
               description:
-                'When enabled, the submit proposal button will be hidden during this phase and proposals will not be able to be submitted.',
+                'When disabled, the submit proposal button will be hidden during this phase and proposals will not be able to be submitted.',
               default: true,
             },
           },
@@ -359,7 +359,7 @@ export const transformFormDataToProcessSchema = (
           sortOrder: 2,
         },
         config: {
-          allowProposals: false,
+          allowProposals: (data.proposalSubmissionPhase as any)?.allowProposals ?? true,
           allowDecisions: false,
         },
       },
