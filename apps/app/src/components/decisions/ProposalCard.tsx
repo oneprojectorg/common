@@ -98,16 +98,12 @@ export function ProposalCard({
               {currentProposal.submittedBy.name ||
                 currentProposal.submittedBy.slug}
             </span>
-
-            <span className="text-sm text-neutral-gray2">
-              {category ? '•' : null}
-            </span>
-            {status === ProposalStatus.APPROVED ? (
-              <span className="text-sm text-green">• {t('Shortlisted')}</span>
-            ) : null}
           </>
         )}
-        {category && <Chip>{category}</Chip>}
+        {category && (<><span className="text-sm text-neutral-gray2">•</span><Chip>{category}</Chip></>)}
+        {status === ProposalStatus.APPROVED ? (
+          <span className="text-sm text-green">• {t('Shortlisted')}</span>
+        ) : null}
       </div>
 
       {/* Description */}
