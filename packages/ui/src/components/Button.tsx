@@ -8,7 +8,7 @@ import { Tooltip, TooltipTrigger } from './Tooltip';
 import type { TooltipProps, TooltipTriggerProps } from './Tooltip';
 
 const buttonStyle = tv({
-  base: 'flex w-fit items-center justify-center gap-1 text-center text-base font-normal leading-3 shadow-md sm:text-base',
+  base: 'flex w-fit items-center justify-center gap-1 rounded-md text-center text-base font-normal leading-3 shadow-md sm:text-base',
   variants: {
     variant: {
       primary: '',
@@ -32,7 +32,7 @@ const buttonStyle = tv({
       pill: '',
     },
     size: {
-      small: 'h-8 p-3',
+      small: 'h-8 rounded-sm p-3',
       medium: 'h-10 p-4',
     },
     surface: {
@@ -47,7 +47,7 @@ const buttonStyle = tv({
     unstyled: {
       true: '',
       false:
-        'appearance-none rounded-md outline-none duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lightGray pressed:shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)]',
+        'appearance-noned outline-none duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lightGray pressed:shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)]',
     },
 
     isDisabled: {

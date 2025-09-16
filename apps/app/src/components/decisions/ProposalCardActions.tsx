@@ -4,7 +4,8 @@ import { trpc } from '@op/api/client';
 import type { proposalEncoder } from '@op/api/encoders';
 import { ProfileRelationshipType } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
-import { Heart } from 'lucide-react';
+import { toast } from '@op/ui/Toast';
+import { Heart, Trash2 } from 'lucide-react';
 import { LuBookmark } from 'react-icons/lu';
 import { z } from 'zod';
 
@@ -12,13 +13,11 @@ import { useTranslations } from '@/lib/i18n';
 
 type Proposal = z.infer<typeof proposalEncoder>;
 
-interface ProposalCardActionsProps {
-  proposal: Proposal;
-}
-
 export function ProposalCardActions({
   proposal: initialProposal,
-}: ProposalCardActionsProps) {
+}: {
+  proposal: Proposal;
+}) {
   const t = useTranslations();
   const utils = trpc.useUtils();
 
@@ -267,8 +266,70 @@ export function ProposalCardActions({
       },
     });
 
+  const deleteProposalMutation = trpc.decision.deleteProposal.useMutation({
+    onMutate: async () => {
+      // Cancel outgoing refetches
+      if (initialProposal.processInstance?.id) {
+        await utils.decision.listProposals.cancel({
+          processInstanceId: initialProposal.processInstance.id,
+        });
+      }
+
+      // Snapshot the previous value
+      const previousListData = initialProposal.processInstance?.id
+        ? utils.decision.listProposals.getData({
+            processInstanceId: initialProposal.processInstance.id,
+          })
+        : null;
+
+      // Optimistically remove the proposal from the list
+      if (previousListData && initialProposal.processInstance?.id) {
+        const optimisticListData = {
+          ...previousListData,
+          proposals: previousListData.proposals.filter(
+            (p) => p.id !== currentProposal.id,
+          ),
+          total: Math.max(previousListData.total - 1, 0),
+        };
+        utils.decision.listProposals.setData(
+          { processInstanceId: initialProposal.processInstance.id },
+          optimisticListData,
+        );
+      }
+
+      return { previousListData };
+    },
+    onError: (error, _variables, context) => {
+      // Rollback on error
+      if (context?.previousListData && initialProposal.processInstance?.id) {
+        utils.decision.listProposals.setData(
+          { processInstanceId: initialProposal.processInstance.id },
+          context.previousListData,
+        );
+      }
+      toast.error({
+        message: error.message || t('Failed to delete proposal'),
+      });
+    },
+    onSuccess: () => {
+      toast.success({
+        message: t('Proposal deleted successfully'),
+      });
+    },
+    onSettled: () => {
+      // Always refetch after error or success
+      if (initialProposal.processInstance?.id) {
+        utils.decision.listProposals.invalidate({
+          processInstanceId: initialProposal.processInstance.id,
+        });
+      }
+    },
+  });
+
   const isLoading =
-    addRelationshipMutation.isPending || removeRelationshipMutation.isPending;
+    addRelationshipMutation.isPending ||
+    removeRelationshipMutation.isPending ||
+    deleteProposalMutation.isPending;
 
   const handleLikeClick = async () => {
     if (!currentProposal.profileId) {
@@ -318,6 +379,29 @@ export function ProposalCardActions({
     }
   };
 
+  const handleDeleteClick = async () => {
+    if (!currentProposal.id) {
+      console.error('No proposal ID provided for delete action');
+      return;
+    }
+
+    if (
+      confirm(
+        t(
+          'Are you sure you want to delete this proposal? This action cannot be undone.',
+        ),
+      )
+    ) {
+      try {
+        await deleteProposalMutation.mutateAsync({
+          proposalId: currentProposal.id,
+        });
+      } catch (error) {
+        console.error('Error in ProposalCardActions handleDeleteClick:', error);
+      }
+    }
+  };
+
   return (
     <div className="flex w-full items-center gap-2 sm:w-auto">
       <Button
@@ -344,6 +428,18 @@ export function ProposalCardActions({
         />
         {currentProposal.isFollowedByUser ? t('Following') : t('Follow')}
       </Button>
+      {initialProposal.isEditable && (
+        <Button
+          onPress={handleDeleteClick}
+          size="small"
+          color="secondary"
+          className="w-full"
+          isDisabled={isLoading}
+        >
+          <Trash2 className="size-4" />
+          {t('Delete')}
+        </Button>
+      )}
     </div>
   );
 }

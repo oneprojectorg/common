@@ -184,8 +184,10 @@ export const listProposals = async ({
       }
     >();
 
+    // Get current user's profile ID for both relationship data and editable checks
+    const currentProfileId = await getCurrentProfileId(input.authUserId);
+
     if (proposalIds.length > 0) {
-      const currentProfileId = await getCurrentProfileId(input.authUserId);
 
       // Optimized: Get both relationship counts and user relationships in parallel
       const [relationshipCounts, userRelationships] = await Promise.all([
@@ -275,6 +277,14 @@ export const listProposals = async ({
         ? relationshipData.get(proposal.profileId)
         : null;
 
+      // Check if proposal is editable by current user
+      const isOwner = proposal.submittedByProfileId === currentProfileId;
+      const hasAdminPermission = checkPermission(
+        { decisions: permission.ADMIN },
+        orgUser?.roles ?? []
+      );
+      const isEditable = isOwner || hasAdminPermission;
+
       return {
         id: proposal.id,
         proposalData: proposal.proposalData,
@@ -311,6 +321,7 @@ export const listProposals = async ({
         followersCount: relationshipInfo?.followersCount || 0,
         isLikedByUser: relationshipInfo?.isLikedByUser || false,
         isFollowedByUser: relationshipInfo?.isFollowedByUser || false,
+        isEditable,
       };
     });
 
