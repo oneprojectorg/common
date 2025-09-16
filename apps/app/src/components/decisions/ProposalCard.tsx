@@ -6,7 +6,7 @@ import {
   getTextPreview,
   parseProposalData,
 } from '@/utils/proposalUtils';
-import type { proposalEncoder } from '@op/api/encoders';
+import { ProposalStatus, type proposalEncoder } from '@op/api/encoders';
 import { Avatar } from '@op/ui/Avatar';
 import { Chip } from '@op/ui/Chip';
 import { Surface } from '@op/ui/Surface';
@@ -19,17 +19,20 @@ import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
 
 import { ProposalCardActions } from './ProposalCardActions';
+import { ProposalCardMenu } from './ProposalCardMenu';
 
 type Proposal = z.infer<typeof proposalEncoder>;
 
 interface ProposalCardProps {
   proposal: Proposal;
   viewHref: string;
+  canManageProposals?: boolean;
 }
 
 export function ProposalCard({
   proposal: currentProposal,
   viewHref,
+  canManageProposals = false,
 }: ProposalCardProps) {
   const t = useTranslations();
 
@@ -37,22 +40,29 @@ export function ProposalCard({
   const { title, budget, category, content } = parseProposalData(
     currentProposal.proposalData,
   );
+  const status = currentProposal.status;
 
   return (
-    <Surface className="space-y-3 p-6 pb-4">
+    <Surface className="relative space-y-3 p-6 pb-4">
       {/* Header with title and budget */}
       <div className="flex flex-col items-start justify-between gap-2 sm:flex-row">
         <Link
           href={viewHref}
-          className="text-title-sm text-neutral-black transition-colors hover:text-primary-teal"
+          className="font-serif text-title-sm text-neutral-black transition-colors hover:text-primary-teal"
         >
           {title || t('Untitled Proposal')}
         </Link>
-        {budget && (
-          <span className="text-title-base text-neutral-charcoal">
-            {formatCurrency(budget)}
-          </span>
-        )}
+        <div className="flex gap-2">
+          {budget && (
+            <span className="font-serif text-title-base text-neutral-charcoal">
+              {formatCurrency(budget)}
+            </span>
+          )}
+
+          {canManageProposals && (
+            <ProposalCardMenu proposal={currentProposal} />
+          )}
+        </div>
       </div>
 
       {/* Author and category */}
@@ -92,6 +102,9 @@ export function ProposalCard({
             <span className="text-sm text-neutral-gray2">
               {category ? '•' : null}
             </span>
+            {status === ProposalStatus.APPROVED ? (
+              <span className="text-sm text-green">• {t('Shortlisted')}</span>
+            ) : null}
           </>
         )}
         {category && <Chip>{category}</Chip>}

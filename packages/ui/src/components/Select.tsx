@@ -33,7 +33,7 @@ const selectStyles = tv({
       pill: 'h-auto border-0 bg-primary-tealWhite text-primary-teal active:bg-teal-50 active:text-primary-tealBlack hover:bg-teal-50 hover:text-primary-tealBlack focus-visible:outline-data-blue',
     },
     size: {
-      small: 'h-8 p-2',
+      small: 'h-8 rounded-sm p-2',
       medium: 'h-10 p-3',
     },
   },

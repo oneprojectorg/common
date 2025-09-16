@@ -241,6 +241,7 @@ export const proposalListEncoder = z.object({
   proposals: z.array(proposalEncoder),
   total: z.number(),
   hasMore: z.boolean(),
+  canManageProposals: z.boolean().default(false),
 });
 
 export const decisionListEncoder = z.object({
