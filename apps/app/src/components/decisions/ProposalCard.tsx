@@ -1,23 +1,21 @@
 'use client';
 
-import { getPublicUrl } from '@/utils';
 import {
   formatCurrency,
   getTextPreview,
   parseProposalData,
 } from '@/utils/proposalUtils';
 import { ProposalStatus, type proposalEncoder } from '@op/api/encoders';
-import { Avatar } from '@op/ui/Avatar';
 import { Chip } from '@op/ui/Chip';
 import { Surface } from '@op/ui/Surface';
 import { Heart, MessageCircle } from 'lucide-react';
-import Image from 'next/image';
 import { LuBookmark } from 'react-icons/lu';
 import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
 
+import { OrganizationAvatar } from '../OrganizationAvatar';
 import { ProposalCardActions } from './ProposalCardActions';
 import { ProposalCardMenu } from './ProposalCardMenu';
 
@@ -69,40 +67,31 @@ export function ProposalCard({
       <div className="flex items-center gap-3">
         {currentProposal.submittedBy && (
           <>
-            <Avatar
-              placeholder={
-                currentProposal.submittedBy.name ||
-                currentProposal.submittedBy.slug ||
-                'U'
-              }
+            <OrganizationAvatar
+              profile={currentProposal.submittedBy}
               className="size-6"
+            />
+
+            <Link
+              href={`/profile/${currentProposal.submittedBy.slug}`}
+              className="text-base text-neutral-charcoal"
             >
-              {currentProposal.submittedBy.avatarImage?.name ? (
-                <Image
-                  src={
-                    getPublicUrl(
-                      currentProposal.submittedBy.avatarImage.name,
-                    ) ?? ''
-                  }
-                  alt={
-                    currentProposal.submittedBy.name ||
-                    currentProposal.submittedBy.slug ||
-                    ''
-                  }
-                  fill
-                  className="aspect-square object-cover"
-                />
-              ) : null}
-            </Avatar>
-            <span className="text-base text-neutral-charcoal">
               {currentProposal.submittedBy.name ||
                 currentProposal.submittedBy.slug}
-            </span>
+            </Link>
           </>
         )}
-        {category && (<><span className="text-sm text-neutral-gray2">•</span><Chip>{category}</Chip></>)}
+        {category && (
+          <>
+            <span className="text-sm text-neutral-gray2">•</span>
+            <Chip>{category}</Chip>
+          </>
+        )}
         {status === ProposalStatus.APPROVED ? (
-          <span className="text-sm text-green">• {t('Shortlisted')}</span>
+          <>
+            <span className="text-sm text-neutral-gray2">•</span>
+            <span className="text-sm text-green">{t('Shortlisted')}</span>
+          </>
         ) : null}
       </div>
 
