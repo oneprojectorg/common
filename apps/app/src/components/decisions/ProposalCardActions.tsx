@@ -267,46 +267,7 @@ export function ProposalCardActions({
     });
 
   const deleteProposalMutation = trpc.decision.deleteProposal.useMutation({
-    onMutate: async () => {
-      // Cancel outgoing refetches
-      if (initialProposal.processInstance?.id) {
-        await utils.decision.listProposals.cancel({
-          processInstanceId: initialProposal.processInstance.id,
-        });
-      }
-
-      // Snapshot the previous value
-      const previousListData = initialProposal.processInstance?.id
-        ? utils.decision.listProposals.getData({
-            processInstanceId: initialProposal.processInstance.id,
-          })
-        : null;
-
-      // Optimistically remove the proposal from the list
-      if (previousListData && initialProposal.processInstance?.id) {
-        const optimisticListData = {
-          ...previousListData,
-          proposals: previousListData.proposals.filter(
-            (p) => p.id !== currentProposal.id,
-          ),
-          total: Math.max(previousListData.total - 1, 0),
-        };
-        utils.decision.listProposals.setData(
-          { processInstanceId: initialProposal.processInstance.id },
-          optimisticListData,
-        );
-      }
-
-      return { previousListData };
-    },
-    onError: (error, _variables, context) => {
-      // Rollback on error
-      if (context?.previousListData && initialProposal.processInstance?.id) {
-        utils.decision.listProposals.setData(
-          { processInstanceId: initialProposal.processInstance.id },
-          context.previousListData,
-        );
-      }
+    onError: (error, _variables) => {
       toast.error({
         message: error.message || t('Failed to delete proposal'),
       });
