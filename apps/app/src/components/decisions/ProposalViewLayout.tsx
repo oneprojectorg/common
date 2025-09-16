@@ -69,16 +69,20 @@ export function ProposalViewLayout({
             </Button>
           )}
           <Button
-            surface="ghost"
-            color="secondary"
+            surface={isLiked ? undefined : 'ghost'}
+            color={isLiked ? 'verified' : 'secondary'}
             onPress={onLike}
             isDisabled={isLoading}
           >
-            <Heart className={`h-4 w-4 ${isLiked ? 'fill-current' : ''}`} />
+            <Heart className="size-4" />
             {isLiked ? t('Liked') : t('Like')}
           </Button>
-          <Button color="secondary" onPress={onFollow}>
-            <LuBookmark className={cn(isFollowing ? 'fill-current' : '')} />
+          <Button
+            surface={isFollowing ? undefined : 'ghost'}
+            color={isFollowing ? 'verified' : 'secondary'}
+            onPress={onFollow}
+          >
+            <LuBookmark className="size-4" />
             {isFollowing ? t('Following') : t('Follow')}
           </Button>
           <div className="flex gap-4">
