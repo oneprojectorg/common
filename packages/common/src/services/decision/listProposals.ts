@@ -91,8 +91,8 @@ export const listProposals = async ({
 
   // Check if user can manage proposals (approve/reject)
   const canManageProposals = checkPermission(
-    { decisions: permission.UPDATE },
-    orgUser?.roles ?? []
+    { decisions: permission.ADMIN },
+    orgUser?.roles ?? [],
   );
 
   try {
