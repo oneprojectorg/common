@@ -223,56 +223,7 @@ describe('deleteProposal', () => {
     );
   });
 
-  it('should validate proposal status before deletion', async () => {
-    const invalidStatuses = ['submitted', 'under_review', 'approved'];
 
-    for (const status of invalidStatuses) {
-      const proposalWithInvalidStatus = {
-        ...mockExistingProposal,
-        status,
-      };
-
-      mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-      mockDb.query.proposals.findFirst.mockResolvedValueOnce(proposalWithInvalidStatus as any);
-
-      await expect(
-        deleteProposal({
-          proposalId: 'proposal-id-123',
-          user: mockUser,
-        })
-      ).rejects.toThrow(ValidationError);
-
-      expect(mockDb.delete).not.toHaveBeenCalled();
-      vi.clearAllMocks();
-    }
-  });
-
-  it('should allow deletion of rejected proposals', async () => {
-    const rejectedProposal = {
-      ...mockExistingProposal,
-      status: 'rejected',
-    };
-
-    const mockDeletedProposal = {
-      id: 'proposal-id-123',
-    };
-
-    mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-    mockDb.query.proposals.findFirst.mockResolvedValueOnce(rejectedProposal as any);
-    mockDb.delete.mockReturnValueOnce({
-      where: vi.fn().mockReturnValueOnce({
-        returning: vi.fn().mockResolvedValueOnce([mockDeletedProposal]),
-      }),
-    } as any);
-
-    const result = await deleteProposal({
-      proposalId: 'proposal-id-123',
-      user: mockUser,
-    });
-
-    expect(result.success).toBe(true);
-    expect(mockDb.delete).toHaveBeenCalled();
-  });
 
   it('should prevent deletion of proposals with existing decisions', async () => {
     const proposalWithDecisions = {
@@ -304,32 +255,6 @@ describe('deleteProposal', () => {
     expect(mockDb.delete).not.toHaveBeenCalled();
   });
 
-  it('should handle default status as draft', async () => {
-    const proposalWithNoStatus = {
-      ...mockExistingProposal,
-      status: null, // or undefined
-    };
-
-    const mockDeletedProposal = {
-      id: 'proposal-id-123',
-    };
-
-    mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-    mockDb.query.proposals.findFirst.mockResolvedValueOnce(proposalWithNoStatus as any);
-    mockDb.delete.mockReturnValueOnce({
-      where: vi.fn().mockReturnValueOnce({
-        returning: vi.fn().mockResolvedValueOnce([mockDeletedProposal]),
-      }),
-    } as any);
-
-    const result = await deleteProposal({
-      proposalId: 'proposal-id-123',
-      user: mockUser,
-    });
-
-    expect(result.success).toBe(true);
-    // Should treat null/undefined status as 'draft' and allow deletion
-  });
 
   it('should throw CommonError when database delete fails', async () => {
     mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
@@ -388,16 +313,15 @@ describe('deleteProposal', () => {
     // Should handle null decisions array gracefully
   });
 
-  it('should validate both status and decisions conditions', async () => {
-    // Test proposal in valid status but with decisions
-    const proposalDraftWithDecisions = {
+  it('should prevent deletion of proposals with existing decisions regardless of status', async () => {
+    const proposalWithDecisions = {
       ...mockExistingProposal,
       status: 'draft',
       decisions: [{ id: 'decision-1', decisionData: {} }],
     };
 
     mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-    mockDb.query.proposals.findFirst.mockResolvedValueOnce(proposalDraftWithDecisions as any);
+    mockDb.query.proposals.findFirst.mockResolvedValueOnce(proposalWithDecisions as any);
 
     await expect(
       deleteProposal({
@@ -406,22 +330,7 @@ describe('deleteProposal', () => {
       })
     ).rejects.toThrow(ValidationError);
 
-    // Test proposal in invalid status but without decisions
-    const proposalSubmittedNoDecisions = {
-      ...mockExistingProposal,
-      status: 'submitted',
-      decisions: [],
-    };
-
-    mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-    mockDb.query.proposals.findFirst.mockResolvedValueOnce(proposalSubmittedNoDecisions as any);
-
-    await expect(
-      deleteProposal({
-        proposalId: 'proposal-id-123',
-        user: mockUser,
-      })
-    ).rejects.toThrow(ValidationError);
+    expect(mockDb.delete).not.toHaveBeenCalled();
   });
 
   it('should include correct error messages', async () => {
@@ -443,14 +352,14 @@ describe('deleteProposal', () => {
       expect(error.message).toContain('Not authorized to delete this proposal');
     }
 
-    // Test invalid status error message
-    const submittedProposal = {
+    // Test existing decisions error message
+    const proposalWithDecisions = {
       ...mockExistingProposal,
-      status: 'submitted',
+      decisions: [{ id: 'decision-1' }],
     };
 
     mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-    mockDb.query.proposals.findFirst.mockResolvedValueOnce(submittedProposal as any);
+    mockDb.query.proposals.findFirst.mockResolvedValueOnce(proposalWithDecisions as any);
 
     try {
       await deleteProposal({
@@ -458,7 +367,7 @@ describe('deleteProposal', () => {
         user: mockUser,
       });
     } catch (error) {
-      expect(error.message).toContain('Cannot delete proposal in submitted status');
+      expect(error.message).toContain('Cannot delete proposal with existing decisions');
     }
   });
 });
