@@ -1,3 +1,4 @@
+import { ProposalStatus } from '@op/api/encoders';
 import { z } from 'zod';
 
 import { formatCurrency, formatDate } from './formatting';

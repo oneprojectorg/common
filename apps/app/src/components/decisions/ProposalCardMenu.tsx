@@ -34,8 +34,8 @@ export function ProposalCardMenu({ proposal }: ProposalCardMenuProps) {
       // Snapshot the previous value
       const previousListData = proposal.processInstance?.id
         ? utils.decision.listProposals.getData({
-            processInstanceId: proposal.processInstance.id,
-          })
+          processInstanceId: proposal.processInstance.id,
+        })
         : null;
 
       // Optimistically update list data
@@ -45,9 +45,9 @@ export function ProposalCardMenu({ proposal }: ProposalCardMenuProps) {
           proposals: previousListData.proposals.map((p) =>
             p.id === proposal.id
               ? {
-                  ...p,
-                  status: variables.status,
-                }
+                ...p,
+                status: variables.status,
+              }
               : p,
           ),
         };
@@ -74,8 +74,8 @@ export function ProposalCardMenu({ proposal }: ProposalCardMenuProps) {
     },
     onSuccess: (_, variables) => {
       const statusMessage =
-        variables.status === 'approved'
-          ? t('Proposal approved successfully')
+        variables.status === ProposalStatus.APPROVED
+          ? t('Proposal shortlisted successfully')
           : t('Proposal rejected successfully');
 
       toast.success({

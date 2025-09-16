@@ -6,7 +6,7 @@ import {
   getTextPreview,
   parseProposalData,
 } from '@/utils/proposalUtils';
-import type { proposalEncoder } from '@op/api/encoders';
+import { ProposalStatus, type proposalEncoder } from '@op/api/encoders';
 import { Avatar } from '@op/ui/Avatar';
 import { Chip } from '@op/ui/Chip';
 import { Surface } from '@op/ui/Surface';
@@ -40,6 +40,7 @@ export function ProposalCard({
   const { title, budget, category, content } = parseProposalData(
     currentProposal.proposalData,
   );
+  const status = currentProposal.status;
 
   return (
     <Surface className="relative space-y-3 p-6 pb-4">
@@ -101,6 +102,9 @@ export function ProposalCard({
             <span className="text-sm text-neutral-gray2">
               {category ? '•' : null}
             </span>
+            {status === ProposalStatus.APPROVED ? (
+              <span className="text-sm text-green">• {t('Shortlisted')}</span>
+            ) : null}
           </>
         )}
         {category && <Chip>{category}</Chip>}
