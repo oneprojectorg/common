@@ -27,7 +27,7 @@ export function DecisionInstanceHeader({
       <div className="flex items-center gap-3">
         <Link
           href={backTo.href}
-          className="flex items-center gap-2 text-sm text-neutral-black hover:text-primary-tealBlack sm:text-primary-teal"
+          className="flex items-center gap-2 text-base text-neutral-black hover:text-primary-tealBlack sm:text-primary-teal"
         >
           <LuArrowLeft className="size-6 stroke-1 sm:size-4" />
           <span className="hidden sm:flex">

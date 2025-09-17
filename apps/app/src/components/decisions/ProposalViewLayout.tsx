@@ -45,7 +45,7 @@ export function ProposalViewLayout({
       <div className="flex items-center justify-between border-b border-neutral-gray1 px-6 py-4">
         <button
           onClick={() => router.push(backHref)}
-          className="flex items-center gap-2 text-sm text-primary-teal hover:text-primary-tealBlack"
+          className="flex items-center gap-2 text-base text-primary-teal hover:text-primary-tealBlack"
         >
           <LuArrowLeft className="size-6 stroke-1 text-neutral-charcoal sm:size-4 sm:text-primary-teal" />
           <span className="hidden sm:block">{t('Back to Proposals')}</span>
