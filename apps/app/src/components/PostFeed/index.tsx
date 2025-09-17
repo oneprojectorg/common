@@ -19,17 +19,15 @@ import { REACTION_OPTIONS } from '@op/types';
 import { AvatarSkeleton } from '@op/ui/Avatar';
 import { CommentButton } from '@op/ui/CommentButton';
 import { Header3 } from '@op/ui/Header';
-import { IconButton } from '@op/ui/IconButton';
 import { MediaDisplay } from '@op/ui/MediaDisplay';
-import { MenuTrigger } from '@op/ui/Menu';
-import { Popover } from '@op/ui/Popover';
+import { OptionMenu } from '@op/ui/OptionMenu';
 import { ReactionsButton } from '@op/ui/ReactionsButton';
 import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
 import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';
 import { ReactNode, memo, useMemo, useState } from 'react';
-import { LuEllipsis, LuLeaf } from 'react-icons/lu';
+import { LuLeaf } from 'react-icons/lu';
 
 import { Link } from '@/lib/i18n';
 
@@ -220,22 +218,13 @@ const PostMenu = ({
   }
 
   return (
-    <MenuTrigger>
-      <IconButton
-        variant="ghost"
-        size="small"
-        className="absolute right-0 top-0 aria-expanded:bg-neutral-gray1"
-      >
-        <LuEllipsis className="size-4" />
-      </IconButton>
-      <Popover placement="bottom end">
-        <PostMenuContent
-          post={post}
-          profileId={user?.currentProfileId || ''}
-          canDelete={canShowMenu}
-        />
-      </Popover>
-    </MenuTrigger>
+    <OptionMenu className="absolute right-0 top-0">
+      <PostMenuContent
+        post={post}
+        profileId={user?.currentProfileId || ''}
+        canDelete={canShowMenu}
+      />
+    </OptionMenu>
   );
 };
 

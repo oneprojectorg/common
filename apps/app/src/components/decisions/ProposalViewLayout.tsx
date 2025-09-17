@@ -1,7 +1,6 @@
 'use client';
 
 import { Button } from '@op/ui/Button';
-import { cn } from '@op/ui/utils';
 import { Edit, Heart } from 'lucide-react';
 import { ReactNode } from 'react';
 import { LuArrowLeft, LuBookmark } from 'react-icons/lu';
@@ -46,7 +45,7 @@ export function ProposalViewLayout({
       <div className="flex items-center justify-between border-b border-neutral-gray1 px-6 py-4">
         <button
           onClick={() => router.push(backHref)}
-          className="flex items-center gap-2 text-sm text-primary-teal hover:text-primary-tealBlack"
+          className="flex items-center gap-2 text-base text-primary-teal hover:text-primary-tealBlack"
         >
           <LuArrowLeft className="size-6 stroke-1 text-neutral-charcoal sm:size-4 sm:text-primary-teal" />
           <span className="hidden sm:block">{t('Back to Proposals')}</span>
@@ -69,16 +68,20 @@ export function ProposalViewLayout({
             </Button>
           )}
           <Button
-            surface="ghost"
-            color="secondary"
+            surface={isLiked ? undefined : 'ghost'}
+            color={isLiked ? 'verified' : 'secondary'}
             onPress={onLike}
             isDisabled={isLoading}
           >
-            <Heart className={`h-4 w-4 ${isLiked ? 'fill-current' : ''}`} />
+            <Heart className="size-4" />
             {isLiked ? t('Liked') : t('Like')}
           </Button>
-          <Button color="secondary" onPress={onFollow}>
-            <LuBookmark className={cn(isFollowing ? 'fill-current' : '')} />
+          <Button
+            surface={isFollowing ? undefined : 'ghost'}
+            color={isFollowing ? 'verified' : 'secondary'}
+            onPress={onFollow}
+          >
+            <LuBookmark className="size-4" />
             {isFollowing ? t('Following') : t('Follow')}
           </Button>
           <div className="flex gap-4">

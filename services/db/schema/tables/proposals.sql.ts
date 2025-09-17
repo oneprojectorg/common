@@ -24,9 +24,11 @@ import { taxonomyTerms } from './taxonomies.sql';
 export enum ProposalStatus {
   DRAFT = 'draft',
   SUBMITTED = 'submitted',
+  SHORTLISTED = 'shortlisted',
   UNDER_REVIEW = 'under_review',
   APPROVED = 'approved',
   REJECTED = 'rejected',
+  DUPLICATE = 'duplicate',
 }
 
 export const proposalStatusEnum = pgEnum(

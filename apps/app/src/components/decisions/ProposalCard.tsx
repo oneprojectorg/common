@@ -1,35 +1,36 @@
 'use client';
 
-import { getPublicUrl } from '@/utils';
 import {
   formatCurrency,
   getTextPreview,
   parseProposalData,
 } from '@/utils/proposalUtils';
-import type { proposalEncoder } from '@op/api/encoders';
-import { Avatar } from '@op/ui/Avatar';
+import { ProposalStatus, type proposalEncoder } from '@op/api/encoders';
 import { Chip } from '@op/ui/Chip';
 import { Surface } from '@op/ui/Surface';
 import { Heart, MessageCircle } from 'lucide-react';
-import Image from 'next/image';
 import { LuBookmark } from 'react-icons/lu';
 import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
 
+import { OrganizationAvatar } from '../OrganizationAvatar';
 import { ProposalCardActions } from './ProposalCardActions';
+import { ProposalCardMenu } from './ProposalCardMenu';
 
 type Proposal = z.infer<typeof proposalEncoder>;
 
 interface ProposalCardProps {
   proposal: Proposal;
   viewHref: string;
+  canManageProposals?: boolean;
 }
 
 export function ProposalCard({
   proposal: currentProposal,
   viewHref,
+  canManageProposals = false,
 }: ProposalCardProps) {
   const t = useTranslations();
 
@@ -37,64 +38,61 @@ export function ProposalCard({
   const { title, budget, category, content } = parseProposalData(
     currentProposal.proposalData,
   );
+  const status = currentProposal.status;
 
   return (
-    <Surface className="space-y-3 p-6 pb-4">
+    <Surface className="relative space-y-3 p-6 pb-4">
       {/* Header with title and budget */}
       <div className="flex flex-col items-start justify-between gap-2 sm:flex-row">
         <Link
           href={viewHref}
-          className="text-title-sm text-neutral-black transition-colors hover:text-primary-teal"
+          className="font-serif !text-title-sm text-neutral-black transition-colors hover:text-primary-teal"
         >
           {title || t('Untitled Proposal')}
         </Link>
-        {budget && (
-          <span className="text-title-base text-neutral-charcoal">
-            {formatCurrency(budget)}
-          </span>
-        )}
+        <div className="flex gap-2">
+          {budget && (
+            <span className="font-serif text-title-base text-neutral-charcoal">
+              {formatCurrency(budget)}
+            </span>
+          )}
+
+          {canManageProposals && (
+            <ProposalCardMenu proposal={currentProposal} />
+          )}
+        </div>
       </div>
 
       {/* Author and category */}
       <div className="flex items-center gap-3">
         {currentProposal.submittedBy && (
           <>
-            <Avatar
-              placeholder={
-                currentProposal.submittedBy.name ||
-                currentProposal.submittedBy.slug ||
-                'U'
-              }
+            <OrganizationAvatar
+              profile={currentProposal.submittedBy}
               className="size-6"
+            />
+
+            <Link
+              href={`/profile/${currentProposal.submittedBy.slug}`}
+              className="text-base text-neutral-charcoal"
             >
-              {currentProposal.submittedBy.avatarImage?.name ? (
-                <Image
-                  src={
-                    getPublicUrl(
-                      currentProposal.submittedBy.avatarImage.name,
-                    ) ?? ''
-                  }
-                  alt={
-                    currentProposal.submittedBy.name ||
-                    currentProposal.submittedBy.slug ||
-                    ''
-                  }
-                  fill
-                  className="aspect-square object-cover"
-                />
-              ) : null}
-            </Avatar>
-            <span className="text-base text-neutral-charcoal">
               {currentProposal.submittedBy.name ||
                 currentProposal.submittedBy.slug}
-            </span>
-
-            <span className="text-sm text-neutral-gray2">
-              {category ? '•' : null}
-            </span>
+            </Link>
           </>
         )}
-        {category && <Chip>{category}</Chip>}
+        {category && (
+          <>
+            <span className="text-sm text-neutral-gray2">•</span>
+            <Chip>{category}</Chip>
+          </>
+        )}
+        {status === ProposalStatus.APPROVED ? (
+          <>
+            <span className="text-sm text-neutral-gray2">•</span>
+            <span className="text-sm text-green-700">{t('Shortlisted')}</span>
+          </>
+        ) : null}
       </div>
 
       {/* Description */}
@@ -105,7 +103,7 @@ export function ProposalCard({
       )}
 
       {/* Footer with engagement */}
-      <div className="flex flex-col justify-between gap-4 sm:flex-row">
+      <div className="flex flex-col justify-between gap-4 pt-3 sm:flex-row">
         <div className="flex w-full items-center justify-between gap-4 text-base text-neutral-gray4 sm:justify-normal">
           <span className="flex items-center gap-1">
             <Heart className="h-4 w-4" />

@@ -1,8 +1,15 @@
 import { db, eq } from '@op/db/client';
-import { proposals, users } from '@op/db/schema';
+import { ProcessInstance, organizations, proposals } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
+import { checkPermission, permission } from 'access-zones';
 
-import { CommonError, NotFoundError, UnauthorizedError, ValidationError } from '../../utils';
+import {
+  CommonError,
+  NotFoundError,
+  UnauthorizedError,
+  ValidationError,
+} from '../../utils';
+import { getOrgAccessUser, getUserSession } from '../access';
 
 export const deleteProposal = async ({
   proposalId,
@@ -16,48 +23,66 @@ export const deleteProposal = async ({
   }
 
   try {
-    // Get the database user record to access currentProfileId
-    const dbUser = await db.query.users.findFirst({
-      where: eq(users.authUserId, user.id),
-    });
+    const [sessionUser, existingProposal] = await Promise.all([
+      getUserSession({ authUserId: user.id }),
+      db.query.proposals.findFirst({
+        where: eq(proposals.id, proposalId),
+        with: {
+          processInstance: true,
+          decisions: true,
+        },
+      }),
+    ]);
+
+    const { user: dbUser } = sessionUser ?? {};
 
     if (!dbUser || !dbUser.currentProfileId) {
       throw new UnauthorizedError('User must have an active profile');
     }
 
-    // Check if proposal exists and user has permission to delete it
-    const existingProposal = await db.query.proposals.findFirst({
-      where: eq(proposals.id, proposalId),
-      with: {
-        processInstance: true,
-        decisions: true,
-      },
-    });
-
     if (!existingProposal) {
       throw new NotFoundError('Proposal not found');
     }
 
-    // Only the submitter or process owner can delete the proposal
-    const isSubmitter = existingProposal.submittedByProfileId === dbUser.currentProfileId;
-    const processInstance = existingProposal.processInstance as any;
-    const isProcessOwner = processInstance?.ownerProfileId === dbUser.currentProfileId;
-    
-    if (!isSubmitter && !isProcessOwner) {
-      throw new UnauthorizedError('Not authorized to delete this proposal');
+    const processInstance = existingProposal.processInstance as ProcessInstance;
+    if (!processInstance) {
+      throw new NotFoundError('Process instance not found');
     }
 
-    // Can only delete proposals in draft or rejected status
-    if (!['draft', 'rejected'].includes(existingProposal.status || 'draft')) {
-      throw new ValidationError(
-        `Cannot delete proposal in ${existingProposal.status} status. Only draft or rejected proposals can be deleted.`
-      );
+    // Get organization from process instance owner profile
+    const organization = await db.query.organizations.findFirst({
+      where: eq(organizations.profileId, processInstance.ownerProfileId),
+    });
+
+    if (!organization) {
+      throw new UnauthorizedError('Process not owned by an organization');
+    }
+
+    // Get user's organization membership and roles
+    const orgUser = await getOrgAccessUser({
+      user,
+      organizationId: organization.id,
+    });
+
+    const hasPermissions = checkPermission(
+      { decisions: permission.ADMIN },
+      orgUser?.roles ?? [],
+    );
+
+    // Only the submitter or process owner can delete the proposal
+    const isSubmitter =
+      existingProposal.submittedByProfileId === dbUser.currentProfileId;
+    const isProcessOwner =
+      processInstance?.ownerProfileId === dbUser.currentProfileId;
+
+    if (!isSubmitter && !hasPermissions && !isProcessOwner) {
+      throw new UnauthorizedError('Not authorized to delete this proposal');
     }
 
     // Check if there are any decisions on this proposal
     if (existingProposal.decisions && existingProposal.decisions.length > 0) {
       throw new ValidationError(
-        'Cannot delete proposal that has received decisions'
+        'Cannot delete proposal that has received decisions',
       );
     }
 
@@ -69,6 +94,8 @@ export const deleteProposal = async ({
     if (!deletedProposal) {
       throw new CommonError('Failed to delete proposal');
     }
+
+    console.log('DELETED PROPOSAL', deletedProposal.id, user.id);
 
     return { success: true, deletedId: proposalId };
   } catch (error) {

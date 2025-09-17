@@ -24,6 +24,7 @@ interface ProposalsProps {
   instanceId: string;
   slug: string;
   isLoading: boolean;
+  canManageProposals?: boolean;
 }
 
 const NoProposalsFound = () => {
@@ -45,6 +46,7 @@ const Proposals = ({
   instanceId,
   slug,
   isLoading,
+  canManageProposals = false,
 }: ProposalsProps) => {
   if (isLoading) {
     return (
@@ -64,6 +66,7 @@ const Proposals = ({
           key={proposal.id}
           proposal={proposal}
           viewHref={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`}
+          canManageProposals={canManageProposals}
         />
       ))}
     </div>
@@ -93,6 +96,7 @@ export function ProposalsList({ slug, instanceId }: ProposalsListProps) {
       processInstanceId: string;
       categoryId?: string;
       submittedByProfileId?: string;
+      status?: 'draft' | 'submitted' | 'under_review' | 'approved' | 'rejected';
       dir: 'asc' | 'desc';
       limit: number;
     } = {
@@ -109,6 +113,11 @@ export function ProposalsList({ slug, instanceId }: ProposalsListProps) {
     // Only include submittedByProfileId if filtering for "my" proposals and we have currentProfileId
     if (proposalFilter === 'my' && currentProfileId) {
       params.submittedByProfileId = currentProfileId;
+    }
+
+    // Filter by status if shortlisted proposals are selected
+    if (proposalFilter === 'shortlisted') {
+      params.status = 'approved';
     }
 
     return params;
@@ -128,25 +137,28 @@ export function ProposalsList({ slug, instanceId }: ProposalsListProps) {
 
   // Override with empty results if we should show empty
   const finalProposalsData = showEmptyResults
-    ? { proposals: [], total: 0, hasMore: false }
+    ? { proposals: [], total: 0, hasMore: false, canManageProposals: false }
     : proposalsData;
 
-  const { proposals } = finalProposalsData ?? {};
+  const { proposals, canManageProposals = false } = finalProposalsData ?? {};
 
   return (
-    <div className="mt-8">
+    <div>
       {/* Filters Bar */}
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <span className="text-title-base text-neutral-black">
+          <span className="font-serif text-title-base text-neutral-black">
             {proposalFilter === 'my'
               ? t('My proposals •')
-              : t('All proposals •')}{' '}
+              : proposalFilter === 'shortlisted'
+                ? t('Shortlisted proposals •')
+                : t('All proposals •')}{' '}
             {proposals?.length ?? 0}
           </span>
         </div>
         <div className="grid max-w-fit grid-cols-2 justify-end gap-4 sm:flex sm:flex-1 sm:flex-wrap sm:items-center">
           <Select
+            size="small"
             selectedKey={proposalFilter}
             onSelectionChange={(key) => {
               const newKey = String(key);
@@ -158,12 +170,14 @@ export function ProposalsList({ slug, instanceId }: ProposalsListProps) {
             }}
           >
             <SelectItem id="all">{t('All proposals')}</SelectItem>
+            <SelectItem id="shortlisted">{t('Shortlisted')}</SelectItem>
             <SelectItem id="my" isDisabled={!currentProfileId}>
               {t('My proposals')}
             </SelectItem>
           </Select>
           <Select
             selectedKey={selectedCategory}
+            size="small"
             onSelectionChange={(key) => setSelectedCategory(String(key))}
             aria-label="Filter proposals by category"
           >
@@ -182,6 +196,7 @@ export function ProposalsList({ slug, instanceId }: ProposalsListProps) {
           </Select>
           <Select
             selectedKey={sortOrder}
+            size="small"
             onSelectionChange={(key) => setSortOrder(String(key))}
           >
             <SelectItem id="newest">{t('Newest First')}</SelectItem>
@@ -195,6 +210,7 @@ export function ProposalsList({ slug, instanceId }: ProposalsListProps) {
         proposals={proposals}
         instanceId={instanceId}
         slug={slug}
+        canManageProposals={canManageProposals}
       />
     </div>
   );

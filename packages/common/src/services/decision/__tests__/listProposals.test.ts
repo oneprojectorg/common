@@ -3,6 +3,17 @@ import { listProposals } from '../listProposals';
 import { UnauthorizedError } from '../../../utils';
 import { mockDb } from '../../../test/setup';
 
+// Mock the access-zones module
+vi.mock('access-zones', () => ({
+  assertAccess: vi.fn(),
+  checkPermission: vi.fn(),
+  permission: {
+    READ: 'read',
+    UPDATE: 'update',
+    ADMIN: 'admin',
+  },
+}));
+
 const mockUser = {
   id: 'auth-user-id',
   email: 'test@example.com',
@@ -12,6 +23,16 @@ const mockDbUser = {
   id: 'db-user-id',
   currentProfileId: 'profile-id-123',
   authUserId: 'auth-user-id',
+};
+
+const mockOrganization = {
+  id: 'org-id-123',
+  profileId: 'org-profile-id',
+};
+
+const mockOrgUser = {
+  id: 'org-user-id-123',
+  roles: [],
 };
 
 const mockProposals = [
@@ -92,11 +113,38 @@ const mockProposals = [
 ];
 
 describe('listProposals', () => {
+  let mockCheckPermission: any;
+  let mockAssertAccess: any;
+
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
+    // Get the mocked functions
+    mockCheckPermission = vi.mocked(require('access-zones').checkPermission);
+    mockAssertAccess = vi.mocked(require('access-zones').assertAccess);
+
+    // Default to no admin permissions
+    mockCheckPermission.mockReturnValue(false);
+
     // Default mock setup for successful queries
     mockDb.query.users.findFirst.mockResolvedValue(mockDbUser);
+
+    // Mock organization and access queries
+    mockDb.select.mockImplementation(() => ({
+      from: vi.fn().mockReturnValue({
+        leftJoin: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            limit: vi.fn().mockResolvedValue([mockOrganization]),
+          }),
+        }),
+      }),
+    }));
+
+    // Mock getOrgAccessUser
+    vi.doMock('../../../services/access', () => ({
+      getOrgAccessUser: vi.fn().mockResolvedValue(mockOrgUser),
+      getCurrentProfileId: vi.fn().mockResolvedValue('profile-id-123'),
+    }));
     
     // Mock count query
     mockDb.select.mockReturnValue({
@@ -129,7 +177,10 @@ describe('listProposals', () => {
 
   it('should list proposals successfully with default parameters', async () => {
     const result = await listProposals({
-      input: {},
+      input: {
+        processInstanceId: 'instance-id-1',
+        authUserId: 'auth-user-id',
+      },
       user: mockUser,
     });
 
@@ -142,6 +193,7 @@ describe('listProposals', () => {
           followersCount: 10,
           isLikedByUser: true,
           isFollowedByUser: false,
+          isEditable: true, // User owns this proposal (submittedByProfileId matches currentProfileId)
         }),
         expect.objectContaining({
           id: 'proposal-id-2',
@@ -150,14 +202,20 @@ describe('listProposals', () => {
           followersCount: 8,
           isLikedByUser: false,
           isFollowedByUser: true,
+          isEditable: false, // User doesn't own this proposal and no admin permissions
         }),
       ]),
       total: mockProposals.length,
       hasMore: false,
+      canManageProposals: false,
     });
 
     expect(mockDb.query.users.findFirst).toHaveBeenCalled();
     expect(mockDb.query.proposals.findMany).toHaveBeenCalled();
+    expect(mockCheckPermission).toHaveBeenCalledWith(
+      { decisions: 'admin' },
+      mockOrgUser.roles
+    );
   });
 
   it('should throw UnauthorizedError when user is not authenticated', async () => {
@@ -453,5 +511,44 @@ describe('listProposals', () => {
     });
 
     expect(result.hasMore).toBe(false);
+  });
+
+  it('should set isEditable to true for admin users on all proposals', async () => {
+    // Mock admin permissions
+    mockCheckPermission.mockReturnValue(true);
+
+    const result = await listProposals({
+      input: {
+        processInstanceId: 'instance-id-1',
+        authUserId: 'auth-user-id',
+      },
+      user: mockUser,
+    });
+
+    // Both proposals should be editable for admin users
+    expect(result.proposals[0].isEditable).toBe(true); // Owned proposal
+    expect(result.proposals[1].isEditable).toBe(true); // Non-owned but admin permissions
+
+    expect(mockCheckPermission).toHaveBeenCalledWith(
+      { decisions: 'admin' },
+      mockOrgUser.roles
+    );
+  });
+
+  it('should set isEditable based on ownership when user is not admin', async () => {
+    // Ensure no admin permissions
+    mockCheckPermission.mockReturnValue(false);
+
+    const result = await listProposals({
+      input: {
+        processInstanceId: 'instance-id-1',
+        authUserId: 'auth-user-id',
+      },
+      user: mockUser,
+    });
+
+    // Only owned proposal should be editable
+    expect(result.proposals[0].isEditable).toBe(true);  // Owned by user (profile-id-123)
+    expect(result.proposals[1].isEditable).toBe(false); // Not owned (profile-id-456)
   });
 });

@@ -192,6 +192,8 @@ export const proposalEncoder = createSelectSchema(proposals)
     // User relationship status
     isLikedByUser: z.boolean().optional(),
     isFollowedByUser: z.boolean().optional(),
+    // User permissions
+    isEditable: z.boolean().optional(),
     // Attachments
     attachments: z.array(proposalAttachmentEncoder).optional(),
   });
@@ -241,6 +243,7 @@ export const proposalListEncoder = z.object({
   proposals: z.array(proposalEncoder),
   total: z.number(),
   hasMore: z.boolean(),
+  canManageProposals: z.boolean().default(false),
 });
 
 export const decisionListEncoder = z.object({
