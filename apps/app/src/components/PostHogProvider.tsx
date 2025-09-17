@@ -6,8 +6,6 @@ import { PostHogProvider as PHProvider, usePostHog } from 'posthog-js/react';
 import { Suspense, useEffect } from 'react';
 
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
-  // debugging why we are not getting events in dev specifically
-  console.log('PUBLIC PH', process.env.NEXT_PUBLIC_POSTHOG_KEY!);
   useEffect(() => {
     posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
       api_host: '/stats',
