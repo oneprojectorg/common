@@ -35,7 +35,7 @@ export function ProposalCard({
   const t = useTranslations();
 
   // Parse proposal data using shared utility
-  const { title, budget, category, content } = parseProposalData(
+  const { title, budget, category, description } = parseProposalData(
     currentProposal.proposalData,
   );
   const status = currentProposal.status;
@@ -96,9 +96,9 @@ export function ProposalCard({
       </div>
 
       {/* Description */}
-      {content && (
+      {description && (
         <p className="mb-4 line-clamp-3 text-base text-neutral-charcoal">
-          {getTextPreview(content)}
+          {getTextPreview(description)}
         </p>
       )}
 
