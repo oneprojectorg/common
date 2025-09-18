@@ -1,4 +1,4 @@
-import { trackProposalSubmitted } from '@op/analytics';
+import { trackProposalSubmitted } from '../../../utils/analytics';
 import {
   NotFoundError,
   UnauthorizedError,
@@ -46,7 +46,7 @@ export const createProposalRouter = router({
         });
 
         waitUntil(
-          trackProposalSubmitted(user.id, processInstanceId, proposal.id, {
+          trackProposalSubmitted(ctx, processInstanceId, proposal.id, {
             // Keep the original timestamp format for consistency
             created_timestamp: Date.now(),
           }),

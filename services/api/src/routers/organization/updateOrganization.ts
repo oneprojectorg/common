@@ -1,4 +1,4 @@
-import { trackFundingToggle } from '@op/analytics';
+import { trackFundingToggle } from '../../utils/analytics';
 import { invalidate } from '@op/cache';
 import { UnauthorizedError, updateOrganization } from '@op/common';
 import { TRPCError } from '@trpc/server';
@@ -49,15 +49,11 @@ export const updateOrganizationRouter = router({
           if (user) {
             waitUntil(
               trackFundingToggle(
-                user.id,
+                ctx,
                 { organizationId: input.id },
                 {
                   isOfferingFunds: input.isOfferingFunds,
                   isReceivingFunds: input.isReceivingFunds,
-                },
-                {
-                  isOfferingFunds: org.isOfferingFunds ?? false,
-                  isReceivingFunds: org.isReceivingFunds ?? false,
                 },
               ),
             );

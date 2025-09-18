@@ -1,4 +1,4 @@
-import { trackProposalCommented } from '@op/analytics';
+import { trackProposalCommented } from '../../utils/analytics';
 import { createPost as createPostService } from '@op/common';
 import { createPostSchema } from '@op/types';
 import { TRPCError } from '@trpc/server';
@@ -41,7 +41,7 @@ export const createPost = router({
         // Track proposal commented event if this is a proposal comment
         if (input.proposalId && input.processInstanceId) {
           waitUntil(
-            trackProposalCommented(ctx.user.id, input.processInstanceId, input.proposalId)
+            trackProposalCommented(ctx, input.processInstanceId, input.proposalId)
           );
         }
 

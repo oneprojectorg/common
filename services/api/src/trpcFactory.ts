@@ -11,6 +11,7 @@ import {
 } from './lib/cookies';
 import { errorFormatter } from './lib/error';
 import withLogger from './middlewares/withLogger';
+import withPostHogIdentify from './middlewares/withPostHogIdentify';
 import type { TContext } from './types';
 
 export const createContext = async ({
@@ -49,6 +50,7 @@ export const createContext = async ({
     time: Date.now(),
     ip: req.headers.get('X-Forwarded-For') || null,
     reqUrl: req.url,
+    req,
   };
 };
 
@@ -66,4 +68,6 @@ const t = initTRPC
 export const { router } = t;
 export const { middleware } = t;
 export const { mergeRouters } = t;
-export const loggedProcedure = t.procedure.use(withLogger);
+export const loggedProcedure = t.procedure
+  .use(withLogger)
+  .use(withPostHogIdentify);
