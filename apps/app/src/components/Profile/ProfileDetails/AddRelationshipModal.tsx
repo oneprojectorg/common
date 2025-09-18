@@ -191,7 +191,7 @@ export const AddRelationshipModalSuspense = ({
         ))
       ) : (
         <DialogTrigger>
-          <Button className="min-w-full sm:min-w-fit">
+          <Button className="min-w-full text-nowrap sm:min-w-fit">
             <LuPlus className="size-4 stroke-1" />
             Add relationship
           </Button>
