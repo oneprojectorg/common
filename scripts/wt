@@ -23,7 +23,7 @@ case $ACTION in
         fi
         
         BRANCH_NAME=$2
-        WORKTREE_PATH="../$BRANCH_NAME-wt"
+        WORKTREE_PATH=".trees/$BRANCH_NAME"
         
         # Check if directory already exists
         if [ -d "$WORKTREE_PATH" ]; then
@@ -57,7 +57,7 @@ case $ACTION in
             tmux new-window -c "$WORKTREE_PATH" -n "$BRANCH_NAME" \; \
                  send-keys "claude" C-m \; \
                  split-window -h -c "$WORKTREE_PATH" \; \
-                 send-keys "ln -s ../common/.env.local" C-m \; \
+                 send-keys "ln -s ../../.env.local" C-m \; \
                  send-keys "pnpm i" C-m \; \
                  send-keys "lazygit" C-m \; \
                  resize-pane -t 1 -x 67% \; \
@@ -119,7 +119,7 @@ case $ACTION in
         echo "✅ Worktree removed successfully!"
 
         # Move to parent directory before removing
-        cd ../
+        cd ../..
         echo "📁 You are now in: $(pwd)"
         ;;
         
