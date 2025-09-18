@@ -1,4 +1,4 @@
-import { trackProposalViewed } from '@op/analytics';
+import { trackProposalViewed } from '../../../utils/analytics';
 import { cache } from '@op/cache';
 import { NotFoundError, UnauthorizedError, getProposal } from '@op/common';
 import { TRPCError } from '@trpc/server';
@@ -64,7 +64,7 @@ export const getProposalRouter = router({
         ) {
           waitUntil(
             trackProposalViewed(
-              user.id,
+              ctx,
               proposal.processInstance.id,
               proposal.id,
             ),

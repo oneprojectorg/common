@@ -1,4 +1,4 @@
-import { trackRelationshipAccepted } from '@op/analytics';
+import { trackRelationshipAccepted } from '../../utils/analytics';
 import { UnauthorizedError, approveRelationship } from '@op/common';
 import { TRPCError } from '@trpc/server';
 import { waitUntil } from '@vercel/functions';
@@ -50,7 +50,7 @@ export const approveRelationshipRouter = router({
         });
 
         // Track analytics (non-blocking)
-        waitUntil(trackRelationshipAccepted(user.id));
+        waitUntil(trackRelationshipAccepted(ctx));
 
         return true;
       } catch (error: unknown) {

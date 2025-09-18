@@ -5,7 +5,24 @@ import {
   splitLink,
   unstable_httpBatchStreamLink,
 } from '@trpc/client';
+import posthog from 'posthog-js';
 import superjson from 'superjson';
+
+// Function to get PostHog distinct_id if available
+function getPostHogDistinctId(): string | null {
+  if (typeof window !== 'undefined' && posthog.__loaded) {
+    try {
+      const distinctId = posthog.get_distinct_id();
+      console.log('PostHog distinct_id from client:', distinctId);
+      return distinctId;
+    } catch (error) {
+      console.error('Error getting PostHog distinct_id:', error);
+    }
+  }
+
+  console.log('PostHog not loaded yet');
+  return null;
+}
 
 const envURL = OPURLConfig('API');
 
@@ -27,8 +44,17 @@ export const links = [
       url: envURL.TRPC_URL,
       transformer: superjson,
       async fetch(url, options) {
+        const distinctId = getPostHogDistinctId();
+        const headers = new Headers(options?.headers);
+
+        if (distinctId) {
+          headers.set('x-posthog-distinct-id', distinctId);
+          console.log('Setting x-posthog-distinct-id header:', distinctId);
+        }
+
         return fetch(url, {
           ...options,
+          headers,
           credentials: 'include',
         });
       },
@@ -43,8 +69,17 @@ export const links = [
       maxItems: 4,
 
       async fetch(url, options) {
+        const distinctId = getPostHogDistinctId();
+        const headers = new Headers(options?.headers);
+
+        if (distinctId) {
+          headers.set('x-posthog-distinct-id', distinctId);
+          console.log('Setting x-posthog-distinct-id header:', distinctId);
+        }
+
         return fetch(url, {
           ...options,
+          headers,
           credentials: 'include',
         });
       },

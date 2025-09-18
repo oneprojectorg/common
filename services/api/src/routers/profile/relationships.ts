@@ -1,4 +1,3 @@
-import { trackProposalFollowed, trackProposalLiked } from '@op/analytics';
 import {
   ValidationError,
   addProfileRelationship,
@@ -15,6 +14,10 @@ import { z } from 'zod';
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
+import {
+  trackProposalFollowed,
+  trackProposalLiked,
+} from '../../utils/analytics';
 
 // Helper function to check if a profile belongs to a proposal and get process info
 async function getProposalInfo(
@@ -121,7 +124,7 @@ export const profileRelationshipRouter = router({
             if (proposalInfo) {
               if (relationshipType === ProfileRelationshipType.LIKES) {
                 await trackProposalLiked(
-                  ctx.user.id,
+                  ctx,
                   proposalInfo.processInstanceId,
                   proposalInfo.proposalId,
                 );
@@ -129,7 +132,7 @@ export const profileRelationshipRouter = router({
                 relationshipType === ProfileRelationshipType.FOLLOWING
               ) {
                 await trackProposalFollowed(
-                  ctx.user.id,
+                  ctx,
                   proposalInfo.processInstanceId,
                   proposalInfo.proposalId,
                 );

@@ -1,4 +1,4 @@
-import { trackProcessViewed } from '@op/analytics';
+import { trackProcessViewed } from '../../../utils/analytics';
 import { NotFoundError, UnauthorizedError, getInstance } from '@op/common';
 import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
@@ -42,7 +42,7 @@ export const getInstanceRouter = router({
 
         // Track process viewed event
         waitUntil(
-          trackProcessViewed(user.id, input.instanceId)
+          trackProcessViewed(ctx, input.instanceId)
         );
 
         return processInstanceEncoder.parse({

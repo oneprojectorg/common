@@ -19,10 +19,15 @@ export interface TContext {
   time: number;
   ip: string | null;
   reqUrl: string | undefined;
+  req: Request;
 }
 
 export interface TContextWithUser {
   user: User;
+}
+
+export interface TContextWithAnalytics {
+  analyticsDistinctId?: string;
 }
 
 export interface TContextWithDB {

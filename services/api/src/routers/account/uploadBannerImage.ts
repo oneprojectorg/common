@@ -1,4 +1,4 @@
-import { trackImageUpload } from '@op/analytics';
+import { trackImageUpload } from '../../utils/analytics';
 import { CommonError } from '@op/common';
 import { eq } from '@op/db/client';
 import { profiles, users } from '@op/db/schema';
@@ -156,7 +156,7 @@ export const uploadBannerImage = router({
 
           // Track analytics (non-blocking)
           waitUntil(
-            trackImageUpload(ctx.user.id, 'banner', !!hadPreviousImage),
+            trackImageUpload(ctx, 'banner', !!hadPreviousImage),
           );
         } else {
           throw new TRPCError({
