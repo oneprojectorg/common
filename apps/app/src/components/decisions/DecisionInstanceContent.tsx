@@ -68,17 +68,14 @@ export function DecisionInstanceContent({
                 In May 2025, One Project Core Capabilities grantees (you all!)
                 identified establishing and/or supporting mutual aid
                 infrastructure as the highest priority for addressing what we
-                need now and in the future. Led by those closest to and most
-                impacted, mutual aid infrastructure is fundamental to building
-                and sustaining collective power for self-determination. It
-                enables not just crisis response but also the patient work of
-                building systems that help our communities both survive and
-                thrive.
+                need now and in the future.
               </p>
               <p>
                 We invite you to apply for funds to boost mutual aid
-                infrastructure capacity that benefits the entire ecosystem. For
-                more details, see the{' '}
+                infrastructure capacity that benefits the entire ecosystem.
+              </p>
+              <p>
+                For more details, see the{' '}
                 <a
                   href="https://docs.google.com/document/d/1OPKvQzbMTl3VQsVIvHM1HCk6KrhSbvS5UScvSfmkqT4/edit?tab=t.2dolvnkc9h7e"
                   target="_blank"
@@ -87,7 +84,16 @@ export function DecisionInstanceContent({
                 >
                   Request for Applications
                 </a>{' '}
-                and{' '}
+                [also available in{' '}
+                <a
+                  href="https://docs.google.com/document/d/1RXbv8cFbBTivlP29p9uhqBlg_yFZIO27/edit?rtpof=true&tab=t.0"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-teal hover:underline"
+                >
+                  Spanish
+                </a>
+                ] and{' '}
                 <a
                   href="https://docs.google.com/document/d/1OPKvQzbMTl3VQsVIvHM1HCk6KrhSbvS5UScvSfmkqT4/edit?tab=t.2dolvnkc9h7e"
                   target="_blank"
