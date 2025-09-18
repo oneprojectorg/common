@@ -1,4 +1,4 @@
-import { trackUserPost } from '@op/analytics';
+import { trackUserPost } from '../../utils/analytics';
 import { createPostInOrganization } from '@op/common';
 import { waitUntil } from '@vercel/functions';
 // import type { OpenApiMeta } from 'trpc-to-openapi';
@@ -45,7 +45,7 @@ export const createPostInOrganizationRouter = router({
         user: ctx.user,
       });
 
-      waitUntil(trackUserPost(ctx.user.id, input.content, allStorageObjects));
+      waitUntil(trackUserPost(ctx, input.content, allStorageObjects));
 
       return outputSchema.parse(result);
     }),

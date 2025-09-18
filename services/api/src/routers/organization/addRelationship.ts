@@ -1,4 +1,4 @@
-import { trackRelationshipAdded } from '@op/analytics';
+import { trackRelationshipAdded } from '../../utils/analytics';
 import {
   UnauthorizedError,
   addRelationship,
@@ -60,7 +60,7 @@ export const addRelationshipRouter = router({
         // Track analytics and trigger async processes
         waitUntil(
           Promise.all([
-            trackRelationshipAdded(user.id, relationships),
+            trackRelationshipAdded(ctx, relationships),
             sendRelationshipNotification({
               from,
               to,
