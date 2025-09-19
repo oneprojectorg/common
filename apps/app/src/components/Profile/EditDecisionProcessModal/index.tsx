@@ -5,13 +5,19 @@
 //
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import {
-  transformInstanceDataToFormData,
-  transformFormDataToInstanceData,
-  validatePhaseSequence,
   type ProcessInstance,
+  transformFormDataToInstanceData,
+  transformInstanceDataToFormData,
+  validatePhaseSequence,
 } from '@/utils/decisionProcessTransforms';
 import { trpc } from '@op/api/client';
-import { Modal, ModalBody, ModalHeader, ModalStepper, ModalContext } from '@op/ui/Modal';
+import {
+  Modal,
+  ModalBody,
+  ModalContext,
+  ModalHeader,
+  ModalStepper,
+} from '@op/ui/Modal';
 import { toast } from '@op/ui/Toast';
 import Form from '@rjsf/core';
 import type { RJSFValidationError } from '@rjsf/utils';
@@ -22,14 +28,15 @@ import { OverlayTriggerStateContext } from 'react-aria-components';
 import ErrorBoundary from '../../ErrorBoundary';
 import { CustomTemplates } from '../CreateDecisionProcessModal/CustomTemplates';
 import { CustomWidgets } from '../CreateDecisionProcessModal/CustomWidgets';
-import { loadSchema, type SchemaType } from '../CreateDecisionProcessModal/schemas/schemaLoader';
-
+import {
+  type SchemaType,
+  loadSchema,
+} from '../CreateDecisionProcessModal/schemas/schemaLoader';
 
 interface EditDecisionProcessModalProps {
   instance?: ProcessInstance;
   schema?: SchemaType;
 }
-
 
 interface FormValidationErrors {
   [field: string]: string[];
@@ -39,7 +46,6 @@ interface IChangeEvent {
   formData?: Record<string, unknown>;
 }
 
-
 export const EditDecisionProcessModal = ({
   instance,
   schema = 'simple',
@@ -47,17 +53,22 @@ export const EditDecisionProcessModal = ({
   const utils = trpc.useUtils();
 
   // Load the appropriate schema based on the prop
-  const { stepSchemas, schemaDefaults, transformFormDataToProcessSchema } = loadSchema(schema);
+  const { stepSchemas, schemaDefaults, transformFormDataToProcessSchema } =
+    loadSchema(schema);
 
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<Record<string, unknown>>(
-    instance ? transformInstanceDataToFormData(instance, schemaDefaults) : schemaDefaults
+    instance
+      ? transformInstanceDataToFormData(instance, schemaDefaults)
+      : schemaDefaults,
   );
-  const [errors, setErrors] = useState<Record<number, FormValidationErrors | null>>({});
+  const [errors, setErrors] = useState<
+    Record<number, FormValidationErrors | null>
+  >({});
 
   const isOnline = useConnectionStatus();
   const isEditing = !!instance;
-  
+
   // Get the dialog close function from React Aria Components context
   const overlayTriggerState = useContext(OverlayTriggerStateContext);
   const { onClose } = useContext(ModalContext);
@@ -84,7 +95,7 @@ export const EditDecisionProcessModal = ({
         error,
         isEditing
           ? 'Failed to update decision process'
-          : 'Failed to create decision process template'
+          : 'Failed to create decision process template',
       );
     },
   });
@@ -114,7 +125,7 @@ export const EditDecisionProcessModal = ({
         error,
         isEditing
           ? 'Failed to update decision process'
-          : 'Failed to create decision process instance'
+          : 'Failed to create decision process instance',
       );
     },
   });
@@ -170,7 +181,10 @@ export const EditDecisionProcessModal = ({
   };
 
   // Extract validation logic to avoid duplication
-  const validateCurrentStep = (): { isValid: boolean; errors: FormValidationErrors } => {
+  const validateCurrentStep = (): {
+    isValid: boolean;
+    errors: FormValidationErrors;
+  } => {
     const currentSchema = stepSchemas[currentStep - 1];
     if (!currentSchema) return { isValid: false, errors: {} };
 
@@ -315,9 +329,9 @@ export const EditDecisionProcessModal = ({
 
         <ErrorBoundary
           fallback={
-            <div className="flex flex-col items-center gap-4 rounded-lg border border-functional-orange/20 bg-functional-orange/5 p-6 text-center">
+            <div className="border-functional-orange/20 bg-functional-orange/5 flex flex-col items-center gap-4 rounded-lg border p-6 text-center">
               <div className="flex flex-col gap-2">
-                <h3 className="text-lg font-medium text-functional-orange">
+                <h3 className="text-functional-orange text-lg font-medium">
                   Step {currentStep} Error
                 </h3>
                 <p className="text-sm text-neutral-charcoal">

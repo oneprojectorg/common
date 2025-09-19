@@ -127,12 +127,39 @@ export const updateProcess = async ({
     }
 
     // If processSchema is being updated, ensure taxonomy terms exist for any new categories
+    // and update proposal template enums
     if (data.processSchema) {
       const categories =
         ((data.processSchema?.fields as any)?.categories as string[]) || [];
 
       // Ensure proposal taxonomy and terms exist for the categories
       await ensureProposalTaxonomy(categories);
+
+      // Update the proposal template to include the new category enums
+      if (data.processSchema.proposalTemplate) {
+        const currentProposalTemplate = data.processSchema.proposalTemplate as any;
+        const updatedProposalTemplate = {
+          ...currentProposalTemplate,
+          properties: {
+            ...currentProposalTemplate.properties,
+            ...(categories.length > 0
+              ? {
+                  category: {
+                    type: ['string', 'null'],
+                    enum: [...categories, null],
+                  },
+                }
+              : {}),
+          },
+        };
+
+        // If no categories, remove the category field from the proposal template
+        if (categories.length === 0 && updatedProposalTemplate.properties.category) {
+          delete updatedProposalTemplate.properties.category;
+        }
+
+        data.processSchema.proposalTemplate = updatedProposalTemplate;
+      }
     }
 
     const [updatedProcess] = await db
