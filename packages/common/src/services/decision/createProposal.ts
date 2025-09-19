@@ -7,8 +7,8 @@ import {
   proposalAttachments,
   proposalCategories,
   proposals,
-  taxonomyTerms,
 } from '@op/db/schema';
+import { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 import { randomUUID } from 'crypto';
 
@@ -19,6 +19,7 @@ import {
   ValidationError,
 } from '../../utils';
 import { getCurrentProfileId, getOrgAccessUser } from '../access';
+import { getProcessCategories } from './getProcessCategories';
 import { processProposalContent } from './proposalContentProcessor';
 import { schemaValidator } from './schemaValidator';
 import type { InstanceData, ProcessSchema, ProposalData } from './types';
@@ -113,23 +114,31 @@ export const createProposal = async ({
 
     if (categoryLabel?.trim()) {
       try {
-        const taxonomyTerm = await db.query.taxonomyTerms.findFirst({
-          where: eq(taxonomyTerms.label, categoryLabel.trim()),
-          with: {
-            taxonomy: true,
-          },
+        // First, validate that the category is allowed for this process instance
+        const availableCategories = await getProcessCategories({
+          processInstanceId: data.processInstanceId,
+          authUserId,
+          user: { id: authUserId } as User,
         });
 
-        if (taxonomyTerm && taxonomyTerm.taxonomy?.name === 'proposal') {
-          categoryTermId = taxonomyTerm.id;
-        } else {
-          console.warn(
-            `No valid proposal taxonomy term found for category: ${categoryLabel}`,
+        const allowedCategory = availableCategories.find(
+          (cat) => cat.name === categoryLabel.trim(),
+        );
+
+        if (!allowedCategory) {
+          throw new ValidationError(
+            `Category "${categoryLabel.trim()}" is not available for this process`,
           );
         }
+
+        // Use the validated category term ID
+        categoryTermId = allowedCategory.id;
       } catch (error) {
+        if (error instanceof ValidationError) {
+          throw error; // Re-throw validation errors
+        }
         console.warn(
-          'Error fetching category term, proceeding without category:',
+          'Error validating category, proceeding without category:',
           error,
         );
       }
