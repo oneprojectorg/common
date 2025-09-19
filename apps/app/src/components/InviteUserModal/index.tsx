@@ -16,6 +16,7 @@ import { useTranslations } from '@/lib/i18n';
 
 import ErrorBoundary from '../ErrorBoundary';
 import { InviteSuccessModal } from '../InviteSuccessModal';
+import { parseEmails } from './emailUtils';
 import { InviteNewOrganization } from './InviteNewOrganization';
 import { InviteToExistingOrganization } from './InviteToExistingOrganization';
 
@@ -70,12 +71,9 @@ export const InviteUserModal = ({ children }: InviteUserModalProps) => {
     // Store the first invited email for display in success modal
     const allEmails = [...emailBadges];
 
-    // Split the current input by commas and add each email
+    // Parse the current input for emails
     if (emails.trim()) {
-      const emailsFromInput = emails
-        .split(',')
-        .map((email) => email.trim())
-        .filter((email) => email.length > 0);
+      const { emails: emailsFromInput } = parseEmails(emails);
       allEmails.push(...emailsFromInput);
     }
 
@@ -147,12 +145,9 @@ export const InviteUserModal = ({ children }: InviteUserModalProps) => {
   const handleSendInvite = () => {
     const allEmails = [...emailBadges];
 
-    // Split the current input by commas and add each email
+    // Parse the current input for emails
     if (emails.trim()) {
-      const emailsFromInput = emails
-        .split(',')
-        .map((email) => email.trim())
-        .filter((email) => email.length > 0);
+      const { emails: emailsFromInput } = parseEmails(emails);
       allEmails.push(...emailsFromInput);
     }
 

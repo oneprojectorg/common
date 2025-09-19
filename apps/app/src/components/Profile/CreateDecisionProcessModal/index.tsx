@@ -4,6 +4,7 @@
 // We'll continue to iterate on this but one can consider this part of the code as being in "beta"
 //
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
+import { transformFormDataToInstanceData } from '@/utils/decisionProcessTransforms';
 import { trpc } from '@op/api/client';
 import {
   Modal,
@@ -23,58 +24,6 @@ import ErrorBoundary from '../../ErrorBoundary';
 import { CustomTemplates } from './CustomTemplates';
 import { CustomWidgets } from './CustomWidgets';
 import { loadSchema, type SchemaType } from './schemas/schemaLoader';
-
-const transformFormDataToInstanceData = (data: Record<string, unknown>, schemaType: SchemaType) => {
-  const phases = [];
-
-  // Only add ideaCollection phase for simple and cowop schemas
-  if (schemaType === 'simple' || schemaType === 'cowop') {
-    phases.push({
-      stateId: 'ideaCollection',
-      plannedStartDate: (data.ideaCollectionPhase as any)
-        ?.ideaCollectionOpen,
-      plannedEndDate: (data.ideaCollectionPhase as any)?.ideaCollectionClose,
-    });
-  }
-
-  phases.push(
-    {
-      stateId: 'submission',
-      plannedStartDate: (data.proposalSubmissionPhase as any)
-        ?.submissionsOpen,
-      plannedEndDate: (data.proposalSubmissionPhase as any)?.submissionsClose,
-    },
-    {
-      stateId: 'review',
-      plannedStartDate: (data.reviewShortlistingPhase as any)?.reviewOpen,
-      plannedEndDate: (data.reviewShortlistingPhase as any)?.reviewClose,
-    },
-    {
-      stateId: 'voting',
-      plannedStartDate: (data.votingPhase as any)?.votingOpen,
-      plannedEndDate: (data.votingPhase as any)?.votingClose,
-    },
-    {
-      stateId: 'results',
-      plannedStartDate: (data.resultsAnnouncement as any)?.resultsDate,
-    }
-  );
-
-  return {
-    budget: data.totalBudget as number,
-    hideBudget: data.hideBudget as boolean,
-    currentStateId: schemaType === 'horizon' ? 'submission' : 'ideaCollection',
-    fieldValues: {
-      categories: data.categories,
-      proposalInfoTitle: data.proposalInfoTitle,
-      proposalInfoContent: data.proposalInfoContent,
-      budgetCapAmount: data.budgetCapAmount,
-      descriptionGuidance: data.descriptionGuidance,
-      maxVotesPerMember: data.maxVotesPerMember,
-    },
-    phases,
-  };
-};
 
 type ValidationMode = 'none' | 'static' | 'live';
 
