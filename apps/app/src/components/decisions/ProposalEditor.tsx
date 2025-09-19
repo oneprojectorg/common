@@ -404,10 +404,15 @@ export function ProposalEditor({
                 placeholder="Select category"
                 selectedKey={selectedCategory}
                 onSelectionChange={(key) => setSelectedCategory(key as string)}
-                className="w-auto"
+                className="w-auto min-w-fit"
+                popoverProps={{ className: 'min-w-fit max-w-2xl' }}
               >
                 {categories.map((category) => (
-                  <SelectItem key={category.id} id={category.name}>
+                  <SelectItem
+                    className="min-w-fit"
+                    key={category.id}
+                    id={category.name}
+                  >
                     {category.name}
                   </SelectItem>
                 ))}

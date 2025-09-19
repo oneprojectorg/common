@@ -84,7 +84,9 @@ export function ProposalCard({
         {category && (
           <>
             <span className="text-sm text-neutral-gray2">•</span>
-            <Chip>{category}</Chip>
+            <Chip className="max-w-96 overflow-hidden overflow-ellipsis text-nowrap">
+              {category}
+            </Chip>
           </>
         )}
         {status === ProposalStatus.APPROVED ? (
