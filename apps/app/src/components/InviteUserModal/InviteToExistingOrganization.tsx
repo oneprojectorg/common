@@ -5,7 +5,6 @@ import { trpc } from '@op/api/client';
 import { Select, SelectItem } from '@op/ui/Select';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
 import { toast } from '@op/ui/Toast';
-import { useFeatureFlagEnabled } from 'posthog-js/react';
 import React from 'react';
 import { LuX } from 'react-icons/lu';
 
@@ -36,7 +35,6 @@ export const InviteToExistingOrganization = ({
 }: InviteToExistingOrganizationProps) => {
   const t = useTranslations();
   const { user } = useUser();
-  const membershipsEnabled = useFeatureFlagEnabled('memberships');
 
   const [rolesData] = trpc.organization.getRoles.useSuspenseQuery();
 
@@ -44,8 +42,8 @@ export const InviteToExistingOrganization = ({
     if (!selectedRole) {
       // Initialize default role if none selected
       // Default to Admin if available, otherwise first role
-      const adminRole = rolesData.roles.find((role) => role.name === 'Admin');
-      const defaultRole = adminRole || rolesData.roles[0];
+      const memberRole = rolesData.roles.find((role) => role.name === 'Member');
+      const defaultRole = memberRole || rolesData.roles[0];
       if (defaultRole) {
         setSelectedRole(defaultRole.name);
         setSelectedRoleId(defaultRole.id);
@@ -157,15 +155,11 @@ export const InviteToExistingOrganization = ({
             }
           }}
         >
-          {membershipsEnabled ? (
-            rolesData.roles.map((role) => (
-              <SelectItem key={role.name} id={role.name}>
-                {role.name}
-              </SelectItem>
-            ))
-          ) : (
-            <SelectItem id="Admin">Admin</SelectItem>
-          )}
+          {rolesData.roles.map((role) => (
+            <SelectItem key={role.name} id={role.name}>
+              {role.name}
+            </SelectItem>
+          ))}
         </Select>
       </div>
     </div>
