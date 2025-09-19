@@ -126,8 +126,8 @@ export const transformFormDataToInstanceData = (
 ): InstanceData => {
   const phases = [];
 
-  // Only add ideaCollection phase for simple schema
-  if (schemaType === 'simple') {
+  // Only add ideaCollection phase for simple and cowop schemas
+  if (schemaType === 'simple' || schemaType === 'cowop') {
     phases.push({
       stateId: 'ideaCollection',
       plannedStartDate: (
@@ -187,7 +187,7 @@ export const transformFormDataToInstanceData = (
   return {
     budget: data.totalBudget as number,
     hideBudget: data.hideBudget as boolean,
-    currentStateId: 'submission',
+    currentStateId: schemaType === 'horizon' ? 'submission' : 'ideaCollection',
     fieldValues: {
       categories: data.categories,
       budgetCapAmount: data.budgetCapAmount,
