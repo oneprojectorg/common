@@ -36,10 +36,10 @@ export const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
         'ui:placeholder': 'e.g., 2025 Community Budget',
       },
       description: {
-        'ui:widget': 'textarea',
+        'ui:widget': 'RichTextEditor',
         'ui:placeholder': 'Description for your decision-making process',
         'ui:options': {
-          showToolbar: false,
+          showToolbar: true,
         },
       },
       totalBudget: {
@@ -83,8 +83,7 @@ export const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
         },
         proposalSubmissionPhase: {
           type: 'object',
-          title:
-            'Development of shortlisted concept proposals into Full Funding Proposals',
+          title: 'Proposal Development',
           description:
             'Selected concept proposals are developed into complete funding proposals.',
           properties: {
@@ -390,7 +389,7 @@ export const transformFormDataToProcessSchema = (
       },
       {
         id: 'submission',
-        name: 'Development of shortlisted concept proposals into Full Funding Proposals',
+        name: 'Proposal Development',
         type: 'intermediate' as const,
         phase: {
           startDate: (data.proposalSubmissionPhase as any)?.submissionsOpen,

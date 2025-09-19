@@ -63,7 +63,7 @@ const transformFormDataToInstanceData = (data: Record<string, unknown>, schemaTy
   return {
     budget: data.totalBudget as number,
     hideBudget: data.hideBudget as boolean,
-    currentStateId: 'submission',
+    currentStateId: schemaType === 'horizon' ? 'submission' : 'ideaCollection',
     fieldValues: {
       categories: data.categories,
       proposalInfoTitle: data.proposalInfoTitle,

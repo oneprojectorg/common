@@ -18,7 +18,6 @@ const withPostHogIdentify: MiddlewareBuilderBase<
   if (result.ok) {
     const user = (ctx as any).user as User;
     const posthogSessionId = ctx.req.headers.get('x-posthog-session-id');
-    console.log('DISTINCT', posthogDistinctId);
 
     if (posthogDistinctId && (posthogSessionId || user)) {
       try {

@@ -61,6 +61,7 @@ const ProfileWithData = async ({
     const schema = match(slug, {
       'people-powered': 'simple',
       cowop: 'cowop',
+      'd4cc2f9e-a461-4727-8b3a-3adae4f92a25': 'cowop',
       _: 'horizon',
     });
 
