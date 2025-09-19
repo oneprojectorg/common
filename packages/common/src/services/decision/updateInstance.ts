@@ -1,5 +1,6 @@
 import { db, eq } from '@op/db/client';
 import {
+  decisionProcesses,
   processInstances,
   taxonomies,
   taxonomyTerms,
@@ -149,6 +150,7 @@ export const updateInstance = async ({
     const updateData = updateDataSchema.parse(data);
 
     // If instance data is being updated and contains categories, ensure taxonomy terms exist
+    // and update the process schema to keep them in sync
     if (data.instanceData && data.instanceData.fieldValues?.categories) {
       const categories = Array.isArray(data.instanceData.fieldValues.categories)
         ? data.instanceData.fieldValues.categories.filter(
@@ -158,6 +160,56 @@ export const updateInstance = async ({
 
       // Ensure proposal taxonomy and terms exist for the categories
       await ensureProposalTaxonomy(categories);
+
+      // Also update the process schema to keep categories in sync
+      if (existingInstance.processId) {
+        const existingProcess = await db.query.decisionProcesses.findFirst({
+          where: eq(decisionProcesses.id, existingInstance.processId),
+        });
+
+        if (existingProcess) {
+          const currentProcessSchema = existingProcess.processSchema as any;
+
+          // Update the proposal template to include the new category enums
+          const currentProposalTemplate = currentProcessSchema?.proposalTemplate || {};
+          const updatedProposalTemplate = {
+            ...currentProposalTemplate,
+            properties: {
+              ...currentProposalTemplate.properties,
+              ...(categories.length > 0
+                ? {
+                    category: {
+                      type: ['string', 'null'],
+                      enum: [...categories, null],
+                    },
+                  }
+                : {}),
+            },
+          };
+
+          // If no categories, remove the category field from the proposal template
+          if (categories.length === 0 && updatedProposalTemplate.properties.category) {
+            delete updatedProposalTemplate.properties.category;
+          }
+
+          const updatedProcessSchema = {
+            ...currentProcessSchema,
+            fields: {
+              ...currentProcessSchema?.fields,
+              categories: categories,
+            },
+            proposalTemplate: updatedProposalTemplate,
+          };
+
+          await db
+            .update(decisionProcesses)
+            .set({
+              processSchema: updatedProcessSchema,
+              updatedAt: new Date().toISOString(),
+            })
+            .where(eq(decisionProcesses.id, existingInstance.processId));
+        }
+      }
     }
 
     const [updatedInstance] = await db
