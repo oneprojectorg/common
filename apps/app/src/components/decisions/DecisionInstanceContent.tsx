@@ -62,12 +62,10 @@ export function DecisionInstanceContent({
                 </p>
               </>
             ),
-            cowop: (
+            'd4cc2f9e-a461-4727-8b3a-3adae4f92a25': (
               <>
                 <GradientHeader className="items-center align-middle uppercase">
-                  {t(
-                    'Share your ideas for how to support MA worker owned cooperatives ',
-                  )}
+                  {t('COWOPHEADER')}
                 </GradientHeader>
                 {
                   <p className="mt-4 text-base text-gray-700">
@@ -76,17 +74,11 @@ export function DecisionInstanceContent({
                         href="https://docs.google.com/document/d/18RFVgnAnEawOb8vU8SU6s0zL9XTyTS7-Ju6TalWQMnA/edit?tab=t.0#heading=h.7vhwsm8mmlge"
                         target="_blank"
                         rel="noopener noreferrer"
+                        className="text-teal"
                       >
-                        Submit a Proposal Concept
+                        {t('Submit a Proposal Concept')}
                       </a>
-                      : Worker-owned cooperatives in MA, and partnerships led by
-                      worker owned cooperatives, are invited to share an idea
-                      between September 20 and October 1 2025, for how to use a
-                      portion of this money meaningfully. We encourage you to
-                      workshop your concepts with others, keeping in mind that
-                      your concept does not have to be long, or even fully
-                      developed. At this stage, we are looking for ideas that we
-                      can collectively develop into full proposals.
+                      : {t('COWOPSUBHEADER')}
                     </p>
                   </p>
                 }

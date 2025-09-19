@@ -176,7 +176,7 @@
   "Loading roles...": "En train de charger les rôles...",
   "Invalid email": "Courriel invalide",
   "is not a valid email address": "n'es pas un courriel valide",
-  "Type emails followed by a comma...": "Entrez les courriels suivis d'une virgule...",
+  "Type emails followed by a comma or line break...": "Entrez les courriels suivis d'une virgule ou d'un saut de ligne...",
   "Invite users": "Inviter des utilisateurs",
   "Invite others to Common": "Inviter d'autres sur Common",
   "Add to my organization": "Ajouter à mon organisation",
@@ -188,7 +188,7 @@
   "Add to organization": "Ajouter à l'organisation",
   "Role": "Rôle",
   "Invite new organizations onto Common.": "Invitez de nouvelles organisations sur Common.",
-  "Separate multiple emails with commas": "Séparez plusieurs courriels par des virgules",
+  "Separate multiple emails with commas or line breaks": "Séparez plusieurs courriels par des virgules ou des sauts de ligne",
   "Personal Message": "Message personnel",
   "Add a personal note to your invitation": "Ajoutez une note personnelle à votre invitation",
   "Organizational Status": "Statut organisationnel",
@@ -217,5 +217,14 @@
   "Admin role not found": "Impossible de trouver le rôle d'administrateur",
   "Are you sure you want to remove this user from the organization?": "Êtes-vous sûr de vouloir supprimer cet utilisateur de l'organisation ?",
   "INFOTRANSLATION": "&lt;p&gt;Les propositions seront considérées comme éligibles si elles répondent aux critères suivants :&lt;/p&gt;&lt;ol&gt;&lt;li&gt;&lt;p&gt;Cohérentes avec &lt;a target=&quot;_blank&quot; rel=&quot;noopener noreferrer nofollow&quot; href=&quot;http://peoplepowered.org/about&quot;&gt;&lt;u&gt;la mission et les valeurs &lt;/u&gt;&lt;strong&gt;&lt;u&gt;de People Powered&lt;/u&gt;&lt;/strong&gt;&lt;/a&gt;&lt;/p&gt;&lt;/li&gt;&lt;li&gt;&lt;p&gt;Contribuent aux objectifs du &lt;a target=&quot;_blank&quot; rel=&quot;noopener noreferrer nofollow&quot; href=&quot;https://drive.google.com/file/d/1Ha6-zibY5SWfJybAKzxPszHJnxpiphbX/view?usp=drive_link&quot;&gt;&lt;strong&gt;&lt;u&gt;plan stratégique&lt;/u&gt;&lt;/strong&gt;&lt;/a&gt; de People Powered&lt;/p&gt;&lt;/li&gt;&lt;li&gt;&lt;p&gt;Profitent à la communauté &lt;strong&gt;mondiale &lt;/strong&gt;de People Powered&nbsp;&lt;/p&gt;&lt;/li&gt;&lt;li&gt;&lt;p&gt;Nous font avancer vers les &lt;strong&gt;horizons futurs&lt;/strong&gt; de la démocratie participative, en abordant les défis et opportunités stratégiques à long terme&lt;/p&gt;&lt;/li&gt;&lt;li&gt;&lt;p&gt;Peuvent être mises en œuvre en 2026&lt;/p&gt;&lt;/li&gt;&lt;li&gt;&lt;p&gt;Coûtent au maximum 25 000 $ USD&lt;/p&gt;&lt;/li&gt;&lt;/ol&gt;&lt;p&gt;&lt;/p&gt;",
-  "PPDESCRIPTION": "Bienvenue à PP Décide 2026 ! People Powered invite ses membres à décider des propositions de budget pour 2026"
+  "PPDESCRIPTION": "Bienvenue à PP Décide 2026 ! People Powered invite ses membres à décider des propositions de budget pour 2026",
+  "COWOPHEADER": "Partagez vos idées sur comment soutenir les coopératives ouvrières du Massachusetts",
+  "COWOPSUBHEADER": "Les coopératives ouvrières du Massachusetts, et les partenariats dirigés par des coopératives ouvrières, sont invités à partager une idée entre le 20 septembre et le 1er octobre 2025, sur comment utiliser une partie de cet argent de manière significative. Nous vous encourageons à développer vos concepts avec d'autres, en gardant à l'esprit que votre concept ne doit pas être long, ni même entièrement développé. À ce stade, nous recherchons des idées que nous pouvons développer collectivement en propositions complètes.",
+  "Submit a Proposal Concept": "Soumettre un concept de proposition",
+  "Duplicate email": "Courriel en double",
+  "Duplicate emails": "Courriels en double",
+  "has already been added": "a déjà été ajouté",
+  "have already been added": "ont déjà été ajoutés",
+  "Invalid emails": "Courriels invalides",
+  "are not valid email addresses": "ne sont pas des adresses de courriel valides"
 }
