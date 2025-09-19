@@ -62,7 +62,7 @@ export function DecisionInstanceContent({
                 </p>
               </>
             ),
-            'd4cc2f9e-a461-4727-8b3a-3adae4f92a25': (
+            cowop: (
               <>
                 <GradientHeader className="items-center align-middle uppercase">
                   {t('COWOPHEADER')}
