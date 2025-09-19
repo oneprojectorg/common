@@ -145,7 +145,7 @@ const DecisionProcessList = ({
               </div>
 
               <div className="flex w-full flex-col gap-2.5 sm:max-w-36">
-                {decisionPermission.update ? (
+                {decisionPermission.create ? (
                   <ButtonLink
                     color="secondary"
                     href={`/profile/${slug}/decisions/${instance.id}`}
