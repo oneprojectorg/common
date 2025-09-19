@@ -57,12 +57,22 @@ export const getProcessCategories = async ({
 
     assertAccess({ decisions: permission.READ }, orgUser?.roles ?? []);
 
-    // Extract categories from the process schema
+    // Extract categories from the process schema and instance data
     const process = Array.isArray(instance.process)
       ? instance.process[0]
       : instance.process;
     const processSchema = process?.processSchema as any;
-    const categoryNames = (processSchema?.fields?.categories as string[]) || [];
+    const processSchemaCategories = (processSchema?.fields?.categories as string[]) || [];
+
+    // Check instance data for categories (updated categories are stored here)
+    const instanceData = instance.instanceData as any;
+    const instanceCategories = (instanceData?.fieldValues?.categories as string[]) || [];
+
+    // If instance has categories field defined (even if empty), use those (they represent the current state including removals)
+    // Otherwise, fall back to the original process schema categories
+    const categoryNames = instanceData?.fieldValues && 'categories' in instanceData.fieldValues
+      ? instanceCategories.filter(cat => cat && cat.trim())
+      : processSchemaCategories.filter(cat => cat && cat.trim());
 
     if (categoryNames.length === 0) {
       return [];
