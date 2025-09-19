@@ -61,9 +61,12 @@ const ProfileWithData = async ({
     const schema = match(slug, {
       'people-powered': 'simple',
       cowop: 'cowop',
+      'one-project': 'horizon',
       'd4cc2f9e-a461-4727-8b3a-3adae4f92a25': 'cowop',
       _: 'horizon',
     });
+
+    console.log('Choosing schema:', schema);
 
     const { headerImage, avatarImage } = profile;
     const headerUrl = getPublicUrl(headerImage?.name);
