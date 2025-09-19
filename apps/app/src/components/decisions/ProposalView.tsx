@@ -377,7 +377,9 @@ export function ProposalView({
               <div className="flex items-center gap-4">
                 {category && (
                   <TagGroup>
-                    <Tag className="sm:rounded-sm">{category}</Tag>
+                    <Tag className="max-w-96 sm:rounded-sm">
+                      <span className="truncate">{category}</span>
+                    </Tag>
                   </TagGroup>
                 )}
                 {budget && (
