@@ -5,7 +5,7 @@
   "license": "SEE LICENSE in /LICENSE",
   "type": "module",
   "exports": {
-    ".": "./src/config.ts",
+    ".": "./src/index.ts",
     "./fulog": "./src/fulog.ts"
   },
   "types": "./src/config.ts",

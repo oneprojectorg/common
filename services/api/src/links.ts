@@ -13,14 +13,12 @@ function getPostHogDistinctId(): string | null {
   if (typeof window !== 'undefined' && posthog.__loaded) {
     try {
       const distinctId = posthog.get_distinct_id();
-      console.log('PostHog distinct_id from client:', distinctId);
       return distinctId;
     } catch (error) {
-      console.error('Error getting PostHog distinct_id:', error);
+      console.error('Error getting distinct_id:', error);
     }
   }
 
-  console.log('PostHog not loaded yet');
   return null;
 }
 
@@ -29,10 +27,10 @@ const envURL = OPURLConfig('API');
 export const links = [
   ...(!envURL.IS_PRODUCTION
     ? [
-      loggerLink({
-        colorMode: 'none',
-      }),
-    ]
+        loggerLink({
+          colorMode: 'none',
+        }),
+      ]
     : []),
   splitLink({
     condition(op) {
@@ -49,7 +47,6 @@ export const links = [
 
         if (distinctId) {
           headers.set('x-posthog-distinct-id', distinctId);
-          console.log('Setting x-posthog-distinct-id header:', distinctId);
         }
 
         return fetch(url, {
@@ -74,7 +71,6 @@ export const links = [
 
         if (distinctId) {
           headers.set('x-posthog-distinct-id', distinctId);
-          console.log('Setting x-posthog-distinct-id header:', distinctId);
         }
 
         return fetch(url, {

@@ -1,6 +1,7 @@
 import { getPublicUrl } from '@/utils';
 import { checkModuleEnabled } from '@/utils/modules';
 import { trpcNext } from '@op/api/vanilla';
+import { match } from '@op/core';
 import { TabPanel } from '@op/ui/Tabs';
 import { cn, getGradientForString } from '@op/ui/utils';
 import Image from 'next/image';
@@ -57,8 +58,12 @@ const ProfileWithData = async ({
       slug,
     });
 
-    const schema = slug === 'people-powered' ? 'simple' : 'horizon';
-    console.log('schema', schema);
+    const schema = match(slug, {
+      'people-powered': 'simple',
+      cowop: 'cowop',
+      'd4cc2f9e-a461-4727-8b3a-3adae4f92a25': 'cowop',
+      _: 'horizon',
+    });
 
     const { headerImage, avatarImage } = profile;
     const headerUrl = getPublicUrl(headerImage?.name);

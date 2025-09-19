@@ -2,8 +2,9 @@ import type { RJSFSchema, UiSchema } from '@rjsf/utils';
 
 import * as horizonSchema from './horizon';
 import * as simpleSchema from './simple';
+import * as cowopSchema from './cowop';
 
-export type SchemaType = 'simple' | 'horizon';
+export type SchemaType = 'simple' | 'horizon' | 'cowop';
 
 export interface SchemaExports {
   stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[];
@@ -17,6 +18,14 @@ export const loadSchema = (schemaType: SchemaType): SchemaExports => {
       stepSchemas: horizonSchema.stepSchemas,
       schemaDefaults: horizonSchema.schemaDefaults,
       transformFormDataToProcessSchema: horizonSchema.transformFormDataToProcessSchema,
+    };
+  }
+
+  if (schemaType === 'cowop') {
+    return {
+      stepSchemas: cowopSchema.stepSchemas,
+      schemaDefaults: cowopSchema.schemaDefaults,
+      transformFormDataToProcessSchema: cowopSchema.transformFormDataToProcessSchema,
     };
   }
 

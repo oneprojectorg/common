@@ -27,8 +27,8 @@ import { loadSchema, type SchemaType } from './schemas/schemaLoader';
 const transformFormDataToInstanceData = (data: Record<string, unknown>, schemaType: SchemaType) => {
   const phases = [];
 
-  // Only add ideaCollection phase for simple schema
-  if (schemaType === 'simple') {
+  // Only add ideaCollection phase for simple and cowop schemas
+  if (schemaType === 'simple' || schemaType === 'cowop') {
     phases.push({
       stateId: 'ideaCollection',
       plannedStartDate: (data.ideaCollectionPhase as any)
@@ -63,7 +63,7 @@ const transformFormDataToInstanceData = (data: Record<string, unknown>, schemaTy
   return {
     budget: data.totalBudget as number,
     hideBudget: data.hideBudget as boolean,
-    currentStateId: 'submission',
+    currentStateId: schemaType === 'horizon' ? 'submission' : 'ideaCollection',
     fieldValues: {
       categories: data.categories,
       proposalInfoTitle: data.proposalInfoTitle,
