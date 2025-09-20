@@ -374,10 +374,10 @@ export function ProposalView({
             </Header1>
             <div className="space-y-6">
               {/* Metadata Row */}
-              <div className="flex items-center gap-4">
+              <div className="flex flex-wrap gap-4 sm:flex-row sm:items-center">
                 {category && (
-                  <TagGroup>
-                    <Tag className="max-w-96 sm:rounded-sm">
+                  <TagGroup className="max-w-full">
+                    <Tag className="max-w-full sm:max-w-96 sm:rounded-sm">
                       <span className="truncate">{category}</span>
                     </Tag>
                   </TagGroup>
