@@ -45,6 +45,10 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
       .limit(1);
 
     if (!instanceOrg[0]) {
+      console.error('Could not find organization for process instance', {
+        orgProfileId: organizations.profileId,
+        instanceOwnerProfileId: instance.ownerProfileId,
+      });
       throw new NotFoundError('Organization not found');
     }
 
