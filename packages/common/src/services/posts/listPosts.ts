@@ -66,6 +66,10 @@ export const listPosts = async ({
     });
 
     if (!org) {
+      console.error('Could not find org while listing posts', {
+        profileId,
+        slug,
+      });
       throw new NotFoundError('Organization not found');
     }
 
