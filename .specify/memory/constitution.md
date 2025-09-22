@@ -1,13 +1,15 @@
 <!--
 Sync Impact Report:
-- Version change: N/A → 1.0.0 (Initial constitution creation)
-- Modified principles: N/A (Initial creation)
-- Added sections: All core principles, development workflow, code quality standards, governance
-- Removed sections: N/A
+- Version change: 1.0.0 → 1.1.0 (Added explicit branch checkout principle)
+- Modified principles: Development Workflow - Enhanced branch management rules
+- Added sections: Explicit branch checkout restrictions
+- Removed sections: None
 - Templates requiring updates:
-  ✅ .specify/templates/plan-template.md - Constitution Check section aligned
-  ✅ .specify/templates/spec-template.md - Review checklist compatible
-  ✅ .specify/templates/tasks-template.md - TDD ordering compatible
+  ✅ .specify/templates/plan-template.md - Compatible with branch guidelines
+  ✅ .specify/templates/spec-template.md - No branch management references
+  ✅ .specify/templates/tasks-template.md - No branch management references
+- Scripts requiring updates:
+  ✅ .specify/scripts/bash/create-new-feature.sh - Removed automated git checkout
 - Follow-up TODOs: None
 -->
 
@@ -42,7 +44,7 @@ UI components MUST use React Aria for accessibility, follow Tailwind variants pa
 
 ## Development Workflow
 
-Branch management MUST follow established conventions: checkout new branches when on `dev`, use `bug/descriptive-name` or `feature/descriptive-name` naming. Manual operations (commit, push, pull) MUST never be automated. Authorization checks MUST use the access-zones library with `assertAccess` pattern.
+Branch management MUST follow established conventions: checkout new branches when on `dev`, use `bug/descriptive-name` or `feature/descriptive-name` naming. **Feature branch checkout MUST never be automated by development tools as this is handled separately by external processes.** Manual operations (commit, push, pull) MUST never be automated. Authorization checks MUST use the access-zones library with `assertAccess` pattern.
 
 Parameter types MUST be defined inline within function signatures unless interfaces are shared across multiple functions. Dependency management MUST use workspace-specific commands (`pnpm add <package> --filter <workspace-name>`).
 
@@ -60,4 +62,4 @@ Amendments require documentation of version changes, impact analysis, and migrat
 
 All implementation plans MUST include Constitution Check sections that verify compliance before Phase 0 research and after Phase 1 design. Development workflow violations MUST be blocked until compliance is achieved or justified.
 
-**Version**: 1.0.0 | **Ratified**: 2025-09-22 | **Last Amended**: 2025-09-22
+**Version**: 1.1.0 | **Ratified**: 2025-09-22 | **Last Amended**: 2025-09-22

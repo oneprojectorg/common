@@ -71,10 +71,11 @@ BRANCH_NAME=$(echo "$FEATURE_DESCRIPTION" | tr '[:upper:]' '[:lower:]' | sed 's/
 WORDS=$(echo "$BRANCH_NAME" | tr '-' '\n' | grep -v '^$' | head -3 | tr '\n' '-' | sed 's/-$//')
 BRANCH_NAME="${FEATURE_NUM}-${WORDS}"
 
+# Branch creation is handled externally per constitutional requirements
 if [ "$HAS_GIT" = true ]; then
-    git checkout -b "$BRANCH_NAME"
+    >&2 echo "[specify] Info: Branch '$BRANCH_NAME' should be created externally (automated checkout disabled per constitution)"
 else
-    >&2 echo "[specify] Warning: Git repository not detected; skipped branch creation for $BRANCH_NAME"
+    >&2 echo "[specify] Warning: Git repository not detected; branch creation for $BRANCH_NAME should be handled externally"
 fi
 
 FEATURE_DIR="$SPECS_DIR/$BRANCH_NAME"
