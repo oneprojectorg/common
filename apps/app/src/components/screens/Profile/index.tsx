@@ -2,7 +2,6 @@ import { getPublicUrl } from '@/utils';
 import { checkModuleEnabled } from '@/utils/modules';
 import { trpcNext } from '@op/api/vanilla';
 import { match } from '@op/core';
-import { TabPanel } from '@op/ui/Tabs';
 import { cn, getGradientForString } from '@op/ui/utils';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
@@ -11,37 +10,12 @@ import { LuArrowLeft } from 'react-icons/lu';
 import { Link } from '@/lib/i18n';
 
 import { ImageHeader } from '@/components/ImageHeader';
-import {
-  OrganizationProfileGrid,
-  ProfileGrid,
-  ProfileTabList,
-  ProfileTabs,
-  ProfileTabsMobile,
-} from '@/components/Profile/ProfileContent';
-import {
-  DecisionsTab,
-  DecisionsTabPanel,
-  MembersTab,
-  MembersTabPanel,
-} from '@/components/Profile/ProfileContent/DecisionsTabs';
-import {
-  DesktopIndividualTabs,
-  DesktopOrganizationTabs,
-} from '@/components/Profile/ProfileContent/DesktopTabs';
-import {
-  FollowersTab,
-  FollowersTabPanel,
-} from '@/components/Profile/ProfileContent/IndividualTabs';
-import { ProfileDecisionsSuspense } from '@/components/Profile/ProfileDecisions';
 import { ProfileDetails } from '@/components/Profile/ProfileDetails';
 
-import { ProfileFollowers } from '../ProfileFollowers';
-import { ProfileFollowing } from '../ProfileFollowing';
 import {
-  ProfileOrganizations,
-  ProfileOrganizationsSuspense,
-} from '../ProfileOrganizations';
-import { ProfileRelationshipsSuspense } from '../ProfileRelationships';
+  IndividualProfileTabsRenderer,
+  ProfileTabsRenderer,
+} from './ProfileTabsRenderer';
 
 const ProfileWithData = async ({
   slug,
@@ -109,63 +83,13 @@ const ProfileWithData = async ({
           />
 
           <ProfileDetails organization={organization} />
-          <ProfileTabs initialTab={initialTab} profileType="org">
-            <ProfileTabList>
-              <DesktopOrganizationTabs />
-              <FollowersTab />
-              {decisionsEnabled && (
-                <>
-                  <MembersTab profileId={profile.id} />
-                  <DecisionsTab profileId={profile.id} />
-                </>
-              )}
-            </ProfileTabList>
-
-            <TabPanel id="home" className="flex flex-grow flex-col sm:p-0">
-              <OrganizationProfileGrid profile={organization} />
-            </TabPanel>
-            <TabPanel
-              id="relationships"
-              className="flex-grow px-4 sm:px-6 sm:py-0"
-            >
-              <ProfileOrganizations>
-                <ProfileRelationshipsSuspense
-                  slug={profile.slug}
-                  showBreadcrumb={false}
-                />
-              </ProfileOrganizations>
-            </TabPanel>
-            <FollowersTabPanel>
-              <ProfileFollowers profileId={profile.id} />
-            </FollowersTabPanel>
-            {decisionsEnabled && (
-              <>
-                <DecisionsTabPanel>
-                  <ProfileDecisionsSuspense
-                    profileId={profile.id}
-                    schema={schema}
-                  />
-                </DecisionsTabPanel>
-                <MembersTabPanel profileId={profile.id} />
-              </>
-            )}
-          </ProfileTabs>
-          <ProfileTabsMobile
-            profile={organization as any}
+          <ProfileTabsRenderer
+            organization={organization}
+            profile={profile}
             initialTab={initialTab}
-            decisionsContent={
-              <ProfileDecisionsSuspense
-                profileId={profile.id}
-                schema={schema}
-              />
-            }
-            followersContent={<ProfileFollowers profileId={profile.id} />}
-          >
-            <ProfileRelationshipsSuspense
-              slug={profile.slug}
-              showBreadcrumb={false}
-            />
-          </ProfileTabsMobile>
+            decisionsEnabled={decisionsEnabled}
+            schema={schema}
+          />
         </>
       ) : null;
     }
@@ -222,36 +146,11 @@ const ProfileWithData = async ({
         />
 
         <ProfileDetails organization={userProfile} />
-        <ProfileTabs initialTab={initialTab} profileType="individual">
-          <ProfileTabList>
-            <DesktopIndividualTabs />
-          </ProfileTabList>
-
-          <TabPanel id="about" className="sm:p-0">
-            <ProfileGrid profile={userProfile} />
-          </TabPanel>
-          <TabPanel id="organizations" className="px-4 sm:px-6 sm:py-0">
-            <ProfileOrganizations>
-              <ProfileOrganizationsSuspense
-                slug={profile.slug}
-                showBreadcrumb={false}
-              />
-            </ProfileOrganizations>
-          </TabPanel>
-          <TabPanel id="following" className="px-4 sm:px-6 sm:py-0">
-            <ProfileFollowing profileId={profile.id} />
-          </TabPanel>
-        </ProfileTabs>
-        <ProfileTabsMobile
-          profile={userProfile}
+        <IndividualProfileTabsRenderer
+          userProfile={userProfile}
+          profile={profile}
           initialTab={initialTab}
-          followingContent={<ProfileFollowing profileId={profile.id} />}
-        >
-          <ProfileOrganizationsSuspense
-            slug={profile.slug}
-            showBreadcrumb={false}
-          />
-        </ProfileTabsMobile>
+        />
       </>
     );
   } catch (e) {

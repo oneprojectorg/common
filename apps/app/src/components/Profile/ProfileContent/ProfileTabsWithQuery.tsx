@@ -2,10 +2,10 @@
 
 import { Tabs } from '@op/ui/Tabs';
 import { useSearchParams } from 'next/navigation';
-import { ReactNode, useCallback, useEffect, useState } from 'react';
+import { ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import type { Key } from 'react-aria-components';
 
-import { usePathname, useRouter } from '@/lib/i18n';
+import { usePathname } from '@/lib/i18n';
 
 export const ProfileTabsWithQuery = ({
   children,
@@ -20,7 +20,6 @@ export const ProfileTabsWithQuery = ({
   defaultTab: string;
   validTabs: string[];
 }) => {
-  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
@@ -40,16 +39,24 @@ export const ProfileTabsWithQuery = ({
     getCurrentSelectedTab(),
   );
 
-  // Update selected tab when URL changes
+  // Track when we're programmatically updating the URL to prevent race conditions
+  const isUpdatingUrlRef = useRef(false);
+
+  // Update selected tab when URL changes (but not when we're the ones changing it)
   useEffect(() => {
-    const newTab = getCurrentSelectedTab();
-    setSelectedKey(newTab);
+    if (!isUpdatingUrlRef.current) {
+      const newTab = getCurrentSelectedTab();
+      setSelectedKey(newTab);
+    }
   }, [getCurrentSelectedTab]);
 
   const handleSelectionChange = useCallback(
     (key: Key) => {
       const keyString = String(key);
       setSelectedKey(keyString);
+
+      // Set flag to prevent the useEffect from reacting to our URL change
+      isUpdatingUrlRef.current = true;
 
       // Create new URLSearchParams from current search params
       const newSearchParams = new URLSearchParams(searchParams.toString());
@@ -67,8 +74,13 @@ export const ProfileTabsWithQuery = ({
         ? `${pathname}?${newSearchParams.toString()}`
         : pathname;
 
-      // Use browser history API directly to avoid triggering server-side re-render
-      router.replace(newUrl, { scroll: false });
+      // Use browser history API directly to avoid triggering Next.js router race conditions
+      if (typeof window !== 'undefined') {
+        window.history.replaceState({}, '', newUrl);
+      }
+
+      // Reset flag immediately since we're using the browser API directly
+      isUpdatingUrlRef.current = false;
     },
     [pathname, searchParams, defaultTab],
   );
