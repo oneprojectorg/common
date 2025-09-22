@@ -3,6 +3,7 @@ import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
+import withAnalytics from '../../../middlewares/withAnalytics';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
 import { loggedProcedure, router } from '../../../trpcFactory';
 
@@ -34,6 +35,7 @@ const getCategoriesOutputSchema = z.object({
 export const getCategoriesRouter = router({
   getCategories: loggedProcedure
     .use(withAuthenticated)
+    .use(withAnalytics)
     .meta(meta)
     .input(getCategoriesInputSchema)
     .output(getCategoriesOutputSchema)

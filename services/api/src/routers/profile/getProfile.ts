@@ -6,6 +6,7 @@ import { z } from 'zod';
 
 import { profileEncoder } from '../../encoders/profiles';
 import withAuthenticated from '../../middlewares/withAuthenticated';
+import withAnalytics from '../../middlewares/withAnalytics';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 import { dbFilter } from '../../utils';
@@ -43,6 +44,7 @@ export const getProfileRouter = router({
   list: loggedProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticated)
+    .use(withAnalytics)
     .meta(listMeta)
     .input(
       dbFilter
@@ -100,6 +102,7 @@ export const getProfileRouter = router({
   getBySlug: loggedProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticated)
+    .use(withAnalytics)
     .meta(getBySlugMeta)
     .input(inputSchema)
     .output(universalProfileSchema)

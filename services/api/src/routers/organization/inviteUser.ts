@@ -10,6 +10,7 @@ import { waitUntil } from '@vercel/functions';
 // import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
+import withAnalytics from '../../middlewares/withAnalytics';
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
@@ -77,6 +78,7 @@ export const inviteUserRouter = router({
     // Middlewares
     .use(withRateLimited({ windowSize: 60, maxRequests: 10 }))
     .use(withAuthenticated)
+    .use(withAnalytics)
     // Router
     // .meta(meta)
     .input(inputSchema)

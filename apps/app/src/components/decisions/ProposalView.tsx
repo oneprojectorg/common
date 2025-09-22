@@ -436,18 +436,21 @@ export function ProposalView({
               <div className="flex items-center gap-4 border-b border-t border-neutral-gray1 py-4 text-sm text-neutral-gray4">
                 <div className="flex items-center gap-1">
                   <Heart className="h-4 w-4" />
-                  <span>0 {t('Likes')}</span>
+                  <span>{currentProposal.likesCount || 0} {t('Likes')}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <MessageCircle className="h-4 w-4" />
                   <span>
-                    {comments.length}{' '}
-                    {comments.length !== 1 ? t('Comments') : t('Comment')}
+                    {currentProposal.commentsCount || 0}{' '}
+                    {(currentProposal.commentsCount || 0) !== 1 ? t('Comments') : t('Comment')}
                   </span>
                 </div>
                 <div className="flex items-center gap-1">
                   <LuBookmark className="size-4" />
-                  <span>1 {t('Follower')}</span>
+                  <span>
+                    {currentProposal.followersCount || 0}{' '}
+                    {(currentProposal.followersCount || 0) !== 1 ? t('Followers') : t('Follower')}
+                  </span>
                 </div>
               </div>
             </div>

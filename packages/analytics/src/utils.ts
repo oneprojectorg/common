@@ -14,7 +14,7 @@ export interface AnalyticsEvent {
 
 export interface AnalyticsIdentify {
   distinctId: string;
-  properties: Record<string, any>;
+  properties?: Record<string, any>;
 }
 
 /**
@@ -41,10 +41,9 @@ export async function trackEventWithContext(
   userId: string,
   event: string,
   properties?: Record<string, any>,
-  analyticsDistinctId?: string,
 ): Promise<void> {
   await trackEvent({
-    distinctId: analyticsDistinctId || userId,
+    distinctId: userId,
     event,
     properties,
   });
@@ -87,7 +86,6 @@ export async function trackImageUpload(
   userId: string,
   imageType: 'profile' | 'banner',
   isEdit: boolean,
-  analyticsDistinctId?: string,
 ): Promise<void> {
   const eventName =
     imageType === 'profile'
@@ -98,12 +96,7 @@ export async function trackImageUpload(
         ? 'banner_picture_successfully_edited'
         : 'banner_picture_successfully_uploaded';
 
-  await trackEventWithContext(
-    userId,
-    eventName,
-    undefined,
-    analyticsDistinctId,
-  );
+  await trackEventWithContext(userId, eventName, undefined);
 }
 
 /**
@@ -113,7 +106,6 @@ export async function trackUserPost(
   userId: string,
   content: string,
   attachments: Array<{ metadata: { mimetype: string } } | any>,
-  analyticsDistinctId?: string,
 ): Promise<void> {
   const hasFile = attachments.length > 0;
   const hasText = content.trim().length > 0;
@@ -148,15 +140,10 @@ export async function trackUserPost(
   properties.has_text = hasText;
   properties.text_length = content.trim().length;
 
-  await trackEventWithContext(
-    userId,
-    'user_posted',
-    {
-      media: mediaType,
-      ...properties,
-    },
-    analyticsDistinctId,
-  );
+  await trackEventWithContext(userId, 'user_posted', {
+    media: mediaType,
+    ...properties,
+  });
 }
 
 /**
@@ -170,14 +157,13 @@ export async function trackFundingToggle(
     isOfferingFunds?: boolean;
     isReceivingFunds?: boolean;
   },
-  analyticsDistinctId?: string,
 ): Promise<void> {
   const events: AnalyticsEvent[] = [];
 
   // Track individual toggle events
   if (changes.isOfferingFunds !== undefined) {
     events.push({
-      distinctId: analyticsDistinctId || options.organizationId,
+      distinctId: options.organizationId,
       event: 'toggle_offering_funding',
       properties: {
         enabled: changes.isOfferingFunds,
@@ -188,7 +174,7 @@ export async function trackFundingToggle(
 
   if (changes.isReceivingFunds !== undefined) {
     events.push({
-      distinctId: analyticsDistinctId || options.organizationId,
+      distinctId: options.organizationId,
       event: 'toggle_seeking_funding',
       properties: {
         enabled: changes.isReceivingFunds,
@@ -203,7 +189,7 @@ export async function trackFundingToggle(
   }
 
   // Note: User identification with funding properties is now handled
-  // automatically by the withPostHogIdentify middleware
+  // automatically by the withAnalytics middleware
 }
 
 /**
@@ -212,10 +198,9 @@ export async function trackFundingToggle(
 export async function trackRelationshipAdded(
   userId: string,
   relationships: string[],
-  analyticsDistinctId?: string,
 ): Promise<void> {
   const events: AnalyticsEvent[] = [];
-  const distinctId = analyticsDistinctId || userId;
+  const distinctId = userId;
 
   // Track general relationship add event
   events.push({
@@ -256,16 +241,8 @@ export async function trackRelationshipAdded(
 /**
  * Track relationship acceptance
  */
-export async function trackRelationshipAccepted(
-  userId: string,
-  analyticsDistinctId?: string,
-): Promise<void> {
-  await trackEventWithContext(
-    userId,
-    'user_accepted_relationship',
-    undefined,
-    analyticsDistinctId,
-  );
+export async function trackRelationshipAccepted(userId: string): Promise<void> {
+  await trackEventWithContext(userId, 'user_accepted_relationship', undefined);
 }
 
 /**
@@ -316,13 +293,11 @@ export async function trackProcessViewed(
   userId: string,
   processId: string,
   additionalProps?: Record<string, any>,
-  analyticsDistinctId?: string,
 ): Promise<void> {
   await trackEventWithContext(
     userId,
     'process_viewed',
     getDecisionCommonProperties(processId, undefined, additionalProps),
-    analyticsDistinctId,
   );
 }
 
@@ -334,13 +309,11 @@ export async function trackProposalSubmitted(
   processId: string,
   proposalId: string,
   additionalProps?: Record<string, any>,
-  analyticsDistinctId?: string,
 ): Promise<void> {
   await trackEventWithContext(
     userId,
     'proposal_submitted',
     getDecisionCommonProperties(processId, proposalId, additionalProps),
-    analyticsDistinctId,
   );
 }
 
@@ -352,13 +325,11 @@ export async function trackProposalViewed(
   processId: string,
   proposalId: string,
   additionalProps?: Record<string, any>,
-  analyticsDistinctId?: string,
 ): Promise<void> {
   await trackEventWithContext(
     userId,
     'proposal_viewed',
     getDecisionCommonProperties(processId, proposalId, additionalProps),
-    analyticsDistinctId,
   );
 }
 
@@ -370,13 +341,11 @@ export async function trackProposalCommented(
   processId: string,
   proposalId: string,
   additionalProps?: Record<string, any>,
-  analyticsDistinctId?: string,
 ): Promise<void> {
   await trackEventWithContext(
     userId,
     'proposal_commented',
     getDecisionCommonProperties(processId, proposalId, additionalProps),
-    analyticsDistinctId,
   );
 }
 
@@ -388,13 +357,11 @@ export async function trackProposalLiked(
   processId: string,
   proposalId: string,
   additionalProps?: Record<string, any>,
-  analyticsDistinctId?: string,
 ): Promise<void> {
   await trackEventWithContext(
     userId,
     'proposal_liked',
     getDecisionCommonProperties(processId, proposalId, additionalProps),
-    analyticsDistinctId,
   );
 }
 
@@ -406,13 +373,11 @@ export async function trackProposalFollowed(
   processId: string,
   proposalId: string,
   additionalProps?: Record<string, any>,
-  analyticsDistinctId?: string,
 ): Promise<void> {
   await trackEventWithContext(
     userId,
     'proposal_followed',
     getDecisionCommonProperties(processId, proposalId, additionalProps),
-    analyticsDistinctId,
   );
 }
 

@@ -6,6 +6,7 @@ import {
   proposalFilterSchema,
   proposalListEncoder,
 } from '../../../encoders/decision';
+import withAnalytics from '../../../middlewares/withAnalytics';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
 import { loggedProcedure, router } from '../../../trpcFactory';
 
@@ -23,6 +24,7 @@ const meta: OpenApiMeta = {
 export const listProposalsRouter = router({
   listProposals: loggedProcedure
     .use(withAuthenticated)
+    .use(withAnalytics)
     .meta(meta)
     .input(proposalFilterSchema)
     .output(proposalListEncoder)

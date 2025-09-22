@@ -13,6 +13,7 @@ import {
   postsEncoder,
   postsToOrganizationsEncoder,
 } from '../../encoders/posts';
+import withAnalytics from '../../middlewares/withAnalytics';
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
@@ -48,6 +49,7 @@ export const listRelatedOrganizationPostsRouter = router({
   listAllPosts: loggedProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticated)
+    .use(withAnalytics)
     // .meta(metaAllPosts)
     .input(
       dbFilter
@@ -81,6 +83,7 @@ export const listRelatedOrganizationPostsRouter = router({
   listRelatedPosts: loggedProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticated)
+    .use(withAnalytics)
     // .meta(meta)
     .input(inputSchema)
     .output(z.array(postsToOrganizationsEncoder))

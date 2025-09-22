@@ -5,6 +5,7 @@ import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import withAuthenticated from '../../middlewares/withAuthenticated';
+import withAnalytics from '../../middlewares/withAnalytics';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
@@ -28,6 +29,7 @@ export const joinOrganization = router({
     // Middlewares
     .use(withRateLimited({ windowSize: 60, maxRequests: 5 }))
     .use(withAuthenticated)
+    .use(withAnalytics)
     // Router
     .meta(meta)
     .input(inputSchema)

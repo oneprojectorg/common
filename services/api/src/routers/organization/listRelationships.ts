@@ -10,6 +10,7 @@ import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import withAuthenticated from '../../middlewares/withAuthenticated';
+import withAnalytics from '../../middlewares/withAnalytics';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
@@ -51,6 +52,7 @@ export const listRelationshipsRouter = router({
   listPendingRelationships: loggedProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticated)
+    .use(withAnalytics)
     // .meta(directedMeta)
     .input(z.void())
     .query(async ({ ctx }) => {
@@ -86,6 +88,7 @@ export const listRelationshipsRouter = router({
   listDirectedRelationships: loggedProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticated)
+    .use(withAnalytics)
     // .meta(directedMeta)
     .input(directedInputSchema)
     .query(async ({ ctx, input }) => {
@@ -123,6 +126,7 @@ export const listRelationshipsRouter = router({
   listRelationships: loggedProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticated)
+    .use(withAnalytics)
     // .meta(nonDirectedMeta)
     .input(nonDirectedInputSchema)
     .query(async ({ ctx, input }) => {

@@ -8,6 +8,7 @@ import {
   postsToOrganizationsEncoder,
 } from '../../encoders/posts';
 import withAuthenticated from '../../middlewares/withAuthenticated';
+import withAnalytics from '../../middlewares/withAnalytics';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 import { dbFilter } from '../../utils';
@@ -32,6 +33,7 @@ export const listOrganizationPostsRouter = router({
     // Middlewares
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticated)
+    .use(withAnalytics)
     // Router
     // .meta(meta)
     .input(inputSchema)

@@ -7,6 +7,7 @@ import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { proposalEncoder } from '../../../encoders/decision';
+import withAnalytics from '../../../middlewares/withAnalytics';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
 import { loggedProcedure, router } from '../../../trpcFactory';
 
@@ -24,6 +25,7 @@ const meta: OpenApiMeta = {
 export const getProposalRouter = router({
   getProposal: loggedProcedure
     .use(withAuthenticated)
+    .use(withAnalytics)
     .meta(meta)
     .input(
       z.object({

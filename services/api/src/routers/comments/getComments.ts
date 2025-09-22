@@ -6,6 +6,7 @@ import { z } from 'zod';
 
 import { commentsEncoder } from '../../encoders';
 import withAuthenticated from '../../middlewares/withAuthenticated';
+import withAnalytics from '../../middlewares/withAnalytics';
 import { loggedProcedure, router } from '../../trpcFactory';
 
 const meta: OpenApiMeta = {
@@ -24,6 +25,7 @@ const outputSchema = z.array(commentsEncoder.strip());
 export const getComments = router({
   getComments: loggedProcedure
     .use(withAuthenticated)
+    .use(withAnalytics)
     .meta(meta)
     .input(getCommentsSchema)
     .output(outputSchema)
