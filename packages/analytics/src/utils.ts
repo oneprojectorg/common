@@ -14,7 +14,7 @@ export interface AnalyticsEvent {
 
 export interface AnalyticsIdentify {
   distinctId: string;
-  properties: Record<string, any>;
+  properties?: Record<string, any>;
 }
 
 /**

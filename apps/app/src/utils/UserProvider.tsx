@@ -54,7 +54,7 @@ export const UserProviderSuspense = ({
     posthog.identify(user.id, { email: user.email, name: user.name });
   } else {
     // others are given anonymous IDs
-    posthog.identify();
+    posthog.identify(user.id);
   }
 
   // Utility function to get permissions for a specific profile

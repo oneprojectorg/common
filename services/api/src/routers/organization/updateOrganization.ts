@@ -49,7 +49,6 @@ export const updateOrganizationRouter = router({
           if (user) {
             waitUntil(
               trackFundingToggle(
-                ctx,
                 { organizationId: input.id },
                 {
                   isOfferingFunds: input.isOfferingFunds,
