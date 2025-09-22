@@ -1,3 +1,4 @@
+import { invalidate } from '@op/cache';
 import { db } from '@op/db/client';
 import { attachments, posts, postsToProfiles } from '@op/db/schema';
 import { CreatePostInput } from '@op/types';
@@ -103,6 +104,14 @@ export const createPost = async (input: CreatePostServiceInput) => {
 
       return newPost;
     });
+
+    // Invalidate cache for the target profile if this is a profile-associated post (like a proposal comment)
+    if (targetProfileId) {
+      await invalidate({
+        type: 'profile',
+        params: [targetProfileId],
+      });
+    }
 
     return {
       ...newPost,
