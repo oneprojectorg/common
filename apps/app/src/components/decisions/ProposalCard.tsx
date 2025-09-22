@@ -115,7 +115,9 @@ export function ProposalCard({
           </span>
           <span className="flex items-center gap-1">
             <MessageCircle className="h-4 w-4" />
-            <span>0 {t('Comments')}</span>
+            <span>
+              {currentProposal.commentsCount || 0} {t('Comments')}
+            </span>
           </span>
           <span className="flex items-center gap-1">
             <LuBookmark className="size-4" />
