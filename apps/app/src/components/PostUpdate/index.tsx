@@ -389,6 +389,12 @@ const PostUpdateWithUser = ({
             // Add the new post to the beginning if no optimistic post to replace
             return [enhancedData, ...old];
           });
+
+          // If this is a proposal comment, invalidate proposal queries to refresh comment counts
+          if (proposalId) {
+            void utils.decision.getProposal.invalidate({ profileId });
+            void utils.decision.listProposals.invalidate();
+          }
         }
       }
 
@@ -428,6 +434,12 @@ const PostUpdateWithUser = ({
               includeChildren: false,
             };
             void utils.posts.getPosts.invalidate(queryKey);
+
+            // If this was a proposal comment, also invalidate proposal queries on error
+            if (variables.proposalId) {
+              void utils.decision.getProposal.invalidate({ profileId });
+              void utils.decision.listProposals.invalidate();
+            }
           }
           // Don't refresh router for profile posts to avoid layout shifts
         } else if (organization?.profile?.slug) {

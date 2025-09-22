@@ -2,6 +2,8 @@ import { and, asc, db, desc, eq, ilike, inArray, sql } from '@op/db/client';
 import {
   ProfileRelationshipType,
   organizations,
+  posts,
+  postsToProfiles,
   processInstances,
   profileRelationships,
   proposalCategories,
@@ -181,6 +183,7 @@ export const listProposals = async ({
         followersCount: number;
         isLikedByUser: boolean;
         isFollowedByUser: boolean;
+        commentsCount: number;
       }
     >();
 
@@ -189,8 +192,8 @@ export const listProposals = async ({
 
     if (proposalIds.length > 0) {
 
-      // Optimized: Get both relationship counts and user relationships in parallel
-      const [relationshipCounts, userRelationships] = await Promise.all([
+      // Optimized: Get relationship counts, user relationships, and comment counts in parallel
+      const [relationshipCounts, userRelationships, commentCounts] = await Promise.all([
         // Get relationship counts for all profile IDs (likes and follows)
         db
           .select({
@@ -218,6 +221,17 @@ export const listProposals = async ({
               inArray(profileRelationships.targetProfileId, proposalIds),
             ),
           ),
+
+        // Get comment counts for all profile IDs
+        db
+          .select({
+            profileId: postsToProfiles.profileId,
+            count: countFn(),
+          })
+          .from(posts)
+          .innerJoin(postsToProfiles, eq(posts.id, postsToProfiles.postId))
+          .where(inArray(postsToProfiles.profileId, proposalIds))
+          .groupBy(postsToProfiles.profileId),
       ]);
 
       // Build the relationship data map efficiently
@@ -248,11 +262,15 @@ export const listProposals = async ({
             ur.relationshipType === ProfileRelationshipType.FOLLOWING,
         );
 
+        const commentsCount =
+          commentCounts.find((cc) => cc.profileId === profileId)?.count || 0;
+
         relationshipData.set(profileId, {
           likesCount: Number(likesCount),
           followersCount: Number(followersCount),
           isLikedByUser,
           isFollowedByUser,
+          commentsCount: Number(commentsCount),
         });
       });
     }
@@ -321,6 +339,7 @@ export const listProposals = async ({
         followersCount: relationshipInfo?.followersCount || 0,
         isLikedByUser: relationshipInfo?.isLikedByUser || false,
         isFollowedByUser: relationshipInfo?.isFollowedByUser || false,
+        commentsCount: relationshipInfo?.commentsCount || 0,
         isEditable,
       };
     });
