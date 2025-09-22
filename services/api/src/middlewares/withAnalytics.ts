@@ -17,7 +17,6 @@ const withAnalytics: MiddlewareBuilderBase<TContextWithAnalytics> = async ({
   if (result.ok) {
     const user = (ctx as any).user as User;
     const posthogSessionId = ctx.req.headers.get('x-posthog-session-id');
-    console.log('IDENTIFY posthogSessionId', posthogSessionId, user, 'here');
 
     if (user && user.email) {
       try {
