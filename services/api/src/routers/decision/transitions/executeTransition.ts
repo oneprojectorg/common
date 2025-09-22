@@ -6,12 +6,14 @@ import {
 import { TRPCError } from '@trpc/server';
 
 import { executeTransitionInputSchema } from '../../../encoders/decision';
+import withAnalytics from '../../../middlewares/withAnalytics';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
 import { loggedProcedure, router } from '../../../trpcFactory';
 
 export const executeTransitionRouter = router({
   executeTransition: loggedProcedure
     .use(withAuthenticated)
+    .use(withAnalytics)
     .input(executeTransitionInputSchema)
     .mutation(async ({ ctx, input }) => {
       const { user, logger } = ctx;

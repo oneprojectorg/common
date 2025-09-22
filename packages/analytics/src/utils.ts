@@ -96,11 +96,7 @@ export async function trackImageUpload(
         ? 'banner_picture_successfully_edited'
         : 'banner_picture_successfully_uploaded';
 
-  await trackEventWithContext(
-    userId,
-    eventName,
-    undefined,
-  );
+  await trackEventWithContext(userId, eventName, undefined);
 }
 
 /**
@@ -144,14 +140,10 @@ export async function trackUserPost(
   properties.has_text = hasText;
   properties.text_length = content.trim().length;
 
-  await trackEventWithContext(
-    userId,
-    'user_posted',
-    {
-      media: mediaType,
-      ...properties,
-    },
-  );
+  await trackEventWithContext(userId, 'user_posted', {
+    media: mediaType,
+    ...properties,
+  });
 }
 
 /**
@@ -197,7 +189,7 @@ export async function trackFundingToggle(
   }
 
   // Note: User identification with funding properties is now handled
-  // automatically by the withPostHogIdentify middleware
+  // automatically by the withAnalytics middleware
 }
 
 /**
@@ -249,14 +241,8 @@ export async function trackRelationshipAdded(
 /**
  * Track relationship acceptance
  */
-export async function trackRelationshipAccepted(
-  userId: string,
-): Promise<void> {
-  await trackEventWithContext(
-    userId,
-    'user_accepted_relationship',
-    undefined,
-  );
+export async function trackRelationshipAccepted(userId: string): Promise<void> {
+  await trackEventWithContext(userId, 'user_accepted_relationship', undefined);
 }
 
 /**

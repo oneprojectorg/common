@@ -4,6 +4,7 @@ import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 
 import { commentsEncoder } from '../../encoders';
+import withAnalytics from '../../middlewares/withAnalytics';
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
@@ -25,6 +26,7 @@ export const createComment = router({
   createComment: loggedProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticated)
+    .use(withAnalytics)
     .meta(meta)
     .input(createCommentSchema)
     .output(outputSchema)

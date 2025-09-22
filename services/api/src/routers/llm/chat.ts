@@ -5,6 +5,7 @@ import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import withAuthenticated from '../../middlewares/withAuthenticated';
+import withAnalytics from '../../middlewares/withAnalytics';
 import { loggedProcedure, router } from '../../trpcFactory';
 
 const endpoint = 'chat';
@@ -30,6 +31,7 @@ const chat = router({
   chat: loggedProcedure
     // Middlewares
     .use(withAuthenticated)
+    .use(withAnalytics)
     // Router
     .meta(meta)
     .input(

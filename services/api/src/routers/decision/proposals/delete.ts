@@ -3,6 +3,7 @@ import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
+import withAnalytics from '../../../middlewares/withAnalytics';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
 import withRateLimited from '../../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../../trpcFactory';
@@ -22,6 +23,7 @@ export const deleteProposalRouter = router({
   deleteProposal: loggedProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 5 }))
     .use(withAuthenticated)
+    .use(withAnalytics)
     .meta(meta)
     .input(
       z.object({

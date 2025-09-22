@@ -13,6 +13,7 @@ import {
   organizationsWithProfileEncoder,
 } from '../../encoders/organizations';
 import withAuthenticated from '../../middlewares/withAuthenticated';
+import withAnalytics from '../../middlewares/withAnalytics';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
@@ -36,6 +37,7 @@ export const getOrganizationRouter = router({
     // Middlewares
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticated)
+    .use(withAnalytics)
     // Router
     .meta(meta)
     .input(inputSchema)
@@ -89,6 +91,7 @@ export const getOrganizationRouter = router({
     // Middlewares
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticated)
+    .use(withAnalytics)
     // Router
     // .meta(meta)
     .input(z.object({ id: z.string() }))
@@ -142,6 +145,7 @@ export const getOrganizationRouter = router({
     // Middlewares
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticated)
+    .use(withAnalytics)
     // Router
     // .meta(meta)
     .input(z.object({ id: z.string(), termUri: z.string().optional() }))

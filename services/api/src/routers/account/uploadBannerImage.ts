@@ -9,6 +9,7 @@ import { Buffer } from 'buffer';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
+import withAnalytics from '../../middlewares/withAnalytics';
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withDB from '../../middlewares/withDB';
 import withRateLimited from '../../middlewares/withRateLimited';
@@ -40,6 +41,7 @@ export const uploadBannerImage = router({
     // middlewares
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticated)
+    .use(withAnalytics)
     .use(withDB)
     // Router
     .meta(meta)

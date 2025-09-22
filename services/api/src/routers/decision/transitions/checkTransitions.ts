@@ -1,12 +1,14 @@
 import { checkTransitions, UnauthorizedError, NotFoundError } from '@op/common';
 import { TRPCError } from '@trpc/server';
 import { checkTransitionInputSchema, transitionCheckResultEncoder } from '../../../encoders/decision';
+import withAnalytics from '../../../middlewares/withAnalytics';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
 import { loggedProcedure, router } from '../../../trpcFactory';
 
 export const checkTransitionsRouter = router({
   checkTransitions: loggedProcedure
     .use(withAuthenticated)
+    .use(withAnalytics)
     .input(checkTransitionInputSchema)
     .output(transitionCheckResultEncoder)
     .query(async ({ ctx, input }) => {

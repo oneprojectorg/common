@@ -5,6 +5,7 @@ import { z } from 'zod';
 
 import { organizationsWithProfileEncoder } from '../../encoders/organizations';
 import withAuthenticated from '../../middlewares/withAuthenticated';
+import withAnalytics from '../../middlewares/withAnalytics';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
@@ -23,6 +24,7 @@ export const getOrganizationsByProfileRouter = router({
   getOrganizationsByProfile: loggedProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticated)
+    .use(withAnalytics)
     .meta(meta)
     .input(z.object({ profileId: z.string().uuid() }))
     .output(z.array(organizationsWithProfileEncoder))

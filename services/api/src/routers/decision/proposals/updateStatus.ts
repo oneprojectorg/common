@@ -10,6 +10,7 @@ import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { proposalEncoder } from '../../../encoders/decision';
+import withAnalytics from '../../../middlewares/withAnalytics';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
 import withRateLimited from '../../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../../trpcFactory';
@@ -34,6 +35,7 @@ export const updateProposalStatusRouter = router({
   updateProposalStatus: loggedProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 20 }))
     .use(withAuthenticated)
+    .use(withAnalytics)
     .meta(meta)
     .input(updateProposalStatusInput)
     .output(proposalEncoder)

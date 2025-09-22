@@ -3,9 +3,10 @@ import type { User } from '@op/supabase/lib';
 
 import type { MiddlewareBuilderBase, TContextWithAnalytics } from '../types';
 
-const withPostHogIdentify: MiddlewareBuilderBase<
-  TContextWithAnalytics
-> = async ({ ctx, next }) => {
+const withAnalytics: MiddlewareBuilderBase<TContextWithAnalytics> = async ({
+  ctx,
+  next,
+}) => {
   const result = await next({
     ctx: {
       ...ctx,
@@ -16,6 +17,7 @@ const withPostHogIdentify: MiddlewareBuilderBase<
   if (result.ok) {
     const user = (ctx as any).user as User;
     const posthogSessionId = ctx.req.headers.get('x-posthog-session-id');
+    console.log('IDENTIFY posthogSessionId', posthogSessionId, user, 'here');
 
     if (user && user.email) {
       try {
@@ -45,4 +47,4 @@ const withPostHogIdentify: MiddlewareBuilderBase<
   return result;
 };
 
-export default withPostHogIdentify;
+export default withAnalytics;

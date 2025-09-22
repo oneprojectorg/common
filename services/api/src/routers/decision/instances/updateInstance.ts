@@ -6,6 +6,7 @@ import {
   updateInstanceInputSchema,
   processInstanceEncoder,
 } from '../../../encoders/decision';
+import withAnalytics from '../../../middlewares/withAnalytics';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
 import withRateLimited from '../../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../../trpcFactory';
@@ -25,6 +26,7 @@ export const updateInstanceRouter = router({
   updateInstance: loggedProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticated)
+    .use(withAnalytics)
     .meta(meta)
     .input(updateInstanceInputSchema)
     .output(processInstanceEncoder)
