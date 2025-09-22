@@ -5,10 +5,152 @@ import { eq } from 'drizzle-orm';
 
 import { CommonError } from '../../utils';
 import { getCurrentProfileId } from '../access';
+import { sendCommentNotificationEmail } from '../email';
 
 interface CreatePostServiceInput extends CreatePostInput {
   authUserId: string;
 }
+
+const sendPostCommentNotification = async (
+  parentPostId: string,
+  commentContent: string,
+  commenterProfileId: string,
+) => {
+  try {
+    // Get parent post and author information
+    const parentPost = await db.query.posts.findFirst({
+      where: (table, { eq }) => eq(table.id, parentPostId),
+      with: {
+        profile: true,
+      },
+    });
+
+    if (parentPost && parentPost.profileId) {
+      // Get commenter information
+      const commenterProfile = await db.query.profiles.findFirst({
+        where: (table, { eq }) => eq(table.id, commenterProfileId),
+      });
+
+      // Get parent post author's user information for email
+      const postAuthorUser = await db.query.users.findFirst({
+        where: (table, { eq }) => eq(table.profileId, parentPost.profileId!),
+      });
+
+      if (
+        commenterProfile &&
+        postAuthorUser &&
+        postAuthorUser.email &&
+        parentPost.profile
+      ) {
+        // Don't send notification if user is commenting on their own post
+        if (parentPost.profileId !== commenterProfileId) {
+          const postAuthorName = Array.isArray(parentPost.profile)
+            ? 'User'
+            : parentPost.profile.name || 'User';
+
+          // For posts, we default to 'post' as the content type
+          const contentType = 'post';
+
+          // Generate appropriate URL - for posts, use org profile page
+          const baseUrl =
+            process.env.NEXT_PUBLIC_APP_URL || 'https://common.oneproject.org';
+          const contentUrl = `${baseUrl}/org/${parentPost.profileId}`;
+
+          await sendCommentNotificationEmail({
+            to: postAuthorUser.email,
+            commenterName: commenterProfile.name,
+            postContent: parentPost.content,
+            commentContent: commentContent,
+            postUrl: contentUrl,
+            recipientName: postAuthorName,
+            contentType: contentType,
+          });
+        }
+      }
+    }
+  } catch (emailError) {
+    // Log email error but don't fail the post creation
+    console.error(
+      'Failed to send post comment notification email:',
+      emailError,
+    );
+  }
+};
+
+const sendProposalCommentNotification = async (
+  proposalId: string,
+  commentContent: string,
+  commenterProfileId: string,
+) => {
+  try {
+    // Get proposal and author information
+    const proposal = await db.query.proposals.findFirst({
+      where: (table, { eq }) => eq(table.id, proposalId),
+      with: {
+        profile: true,
+      },
+    });
+
+    if (proposal && proposal.profileId) {
+      // Get commenter information
+      const commenterProfile = await db.query.profiles.findFirst({
+        where: (table, { eq }) => eq(table.id, commenterProfileId),
+      });
+
+      // Get proposal author's user information for email
+      const proposalAuthorProfile = await db.query.profiles.findFirst({
+        where: (table, { eq }) => eq(table.id, proposal.submittedByProfileId),
+      });
+
+      if (
+        commenterProfile &&
+        proposalAuthorProfile &&
+        proposalAuthorProfile.email &&
+        proposal.profile
+      ) {
+        // Don't send notification if user is commenting on their own proposal
+        if (proposal.profileId !== commenterProfileId) {
+          const proposalAuthorName = Array.isArray(proposal.profile)
+            ? 'User'
+            : proposal.profile.name || 'User';
+
+          // For proposals, we use 'proposal' as the content type
+          const contentType = 'proposal';
+
+          // Generate appropriate URL - for proposals, use proposal view page
+          const baseUrl =
+            process.env.NEXT_PUBLIC_APP_URL || 'https://common.oneproject.org';
+          const contentUrl = `${baseUrl}/proposals/${proposalId}`;
+
+          // Extract proposal content from proposalData
+          const proposalContent =
+            typeof proposal.proposalData === 'object' &&
+            proposal.proposalData !== null
+              ? (proposal.proposalData as any)?.description ||
+                (proposal.proposalData as any)?.title ||
+                'Proposal content'
+              : 'Proposal content';
+
+          await sendCommentNotificationEmail({
+            to: proposalAuthorProfile.email,
+            commenterName: commenterProfile.name,
+            postContent: proposalContent,
+            commentContent: commentContent,
+            postUrl: contentUrl,
+            recipientName: proposalAuthorName,
+            contentType: contentType,
+          });
+        }
+      }
+    }
+  } catch (emailError) {
+    // Log email error but don't fail the post creation
+    console.error(
+      'Failed to send proposal comment notification email:',
+      emailError,
+    );
+  }
+};
 
 export const createPost = async (input: CreatePostServiceInput) => {
   const {
@@ -16,9 +158,10 @@ export const createPost = async (input: CreatePostServiceInput) => {
     attachmentIds = [],
     parentPostId,
     profileId: targetProfileId,
+    proposalId,
     authUserId,
   } = input;
-  
+
   const profileId = await getCurrentProfileId(authUserId);
 
   try {
@@ -103,6 +246,15 @@ export const createPost = async (input: CreatePostServiceInput) => {
 
       return newPost;
     });
+
+    // Send notification email based on the type of comment
+    if (parentPostId) {
+      // This is a reply to an existing post/comment
+      await sendPostCommentNotification(parentPostId, content, profileId);
+    } else if (targetProfileId && proposalId) {
+      // This is a comment on a proposal
+      await sendProposalCommentNotification(proposalId, content, profileId);
+    }
 
     return {
       ...newPost,

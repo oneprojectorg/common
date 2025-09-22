@@ -4,14 +4,85 @@ import type { CreateCommentInput } from '@op/types';
 
 import { CommonError, NotFoundError } from '../../utils';
 import { getCurrentProfileId } from '../access';
+import { sendCommentNotificationEmail } from '../email';
 
 interface CreateCommentServiceInput extends CreateCommentInput {
   authUserId: string;
 }
 
+const sendCommentNotification = async (
+  postId: string,
+  commentContent: string,
+  commenterProfileId: string,
+  commentableType: string,
+) => {
+  console.log('TRY SENDING');
+  try {
+    // Get post and author information
+    const post = await db.query.posts.findFirst({
+      where: (table, { eq }) => eq(table.id, postId),
+      with: {
+        profile: true,
+      },
+    });
+
+    if (post && post.profileId) {
+      // Get commenter information
+      const commenterProfile = await db.query.profiles.findFirst({
+        where: (table, { eq }) => eq(table.id, commenterProfileId),
+      });
+
+      // Get post author's user information for email
+      const postAuthorUser = post.profileId
+        ? await db.query.users.findFirst({
+            where: (table, { eq }) => eq(table.profileId, post.profileId!),
+          })
+        : null;
+
+      if (
+        commenterProfile &&
+        postAuthorUser &&
+        postAuthorUser.email &&
+        post.profile
+      ) {
+        // Don't send notification if user is commenting on their own post
+        if (post.profileId !== commenterProfileId) {
+          const postAuthorName = Array.isArray(post.profile)
+            ? 'User'
+            : post.profile.name || 'User';
+
+          const contentType =
+            commentableType === 'proposal' ? 'proposal' : 'post';
+
+          // Generate appropriate URL based on content type
+          const baseUrl =
+            process.env.NEXT_PUBLIC_APP_URL || 'https://common.oneproject.org';
+          const contentUrl =
+            contentType === 'proposal'
+              ? `${baseUrl}/proposals/${postId}`
+              : `${baseUrl}/org/${post.profileId}`;
+
+          await sendCommentNotificationEmail({
+            to: postAuthorUser.email,
+            commenterName: commenterProfile.name,
+            postContent: post.content,
+            commentContent: commentContent,
+            postUrl: contentUrl,
+            recipientName: postAuthorName,
+            contentType: contentType,
+          });
+        }
+      }
+    }
+  } catch (emailError) {
+    // Log email error but don't fail the comment creation
+    console.error('Failed to send comment notification email:', emailError);
+  }
+};
+
 export const createComment = async (input: CreateCommentServiceInput) => {
   const { authUserId } = input;
-  
+
   const profileId = await getCurrentProfileId(authUserId);
 
   try {
@@ -35,6 +106,14 @@ export const createComment = async (input: CreateCommentServiceInput) => {
         commentId: comment.id,
         postId: input.commentableId,
       });
+
+      // Send notification email to post author
+      await sendCommentNotification(
+        input.commentableId,
+        comment.content,
+        profileId,
+        input.commentableType,
+      );
     } else {
       throw new CommonError(
         `Unsupported commentable type: ${input.commentableType}`,
