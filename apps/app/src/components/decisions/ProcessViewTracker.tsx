@@ -19,6 +19,7 @@ export function ProcessViewTracker({
 
     // Track process viewed event
     posthog.capture('process_viewed', {
+      distinctId: user.id,
       process_id: processInstanceId,
       user_id: user.id,
       location: window.location.href,
