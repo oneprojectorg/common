@@ -12,14 +12,14 @@ import {
   trackFundingToggle as trackFundingToggleOriginal,
   trackEventWithContext,
 } from '@op/analytics';
-import type { TContextWithAnalytics, TContextWithUser } from '../types';
+import type { TContextWithUser } from '../types';
 
 /**
- * Analytics utilities that automatically inject the analytics distinct_id from tRPC context
- * This keeps the common service library clean while ensuring all analytics calls use the context
+ * Analytics utilities that automatically inject the user ID for consistent identification
+ * This keeps the common service library clean while ensuring all analytics calls use user.id
  */
 
-type AnalyticsContext = TContextWithUser & TContextWithAnalytics;
+type AnalyticsContext = TContextWithUser;
 
 /**
  * Track a proposal being liked with automatic context injection
@@ -35,7 +35,6 @@ export const trackProposalLiked = (
     processId,
     proposalId,
     additionalProps,
-    ctx.analyticsDistinctId,
   );
 };
 
@@ -53,7 +52,6 @@ export const trackProposalFollowed = (
     processId,
     proposalId,
     additionalProps,
-    ctx.analyticsDistinctId,
   );
 };
 
@@ -69,7 +67,6 @@ export const trackProcessViewed = (
     ctx.user.id,
     processId,
     additionalProps,
-    ctx.analyticsDistinctId,
   );
 };
 
@@ -87,7 +84,6 @@ export const trackProposalViewed = (
     processId,
     proposalId,
     additionalProps,
-    ctx.analyticsDistinctId,
   );
 };
 
@@ -105,7 +101,6 @@ export const trackProposalCommented = (
     processId,
     proposalId,
     additionalProps,
-    ctx.analyticsDistinctId,
   );
 };
 
@@ -123,7 +118,6 @@ export const trackProposalSubmitted = (
     processId,
     proposalId,
     additionalProps,
-    ctx.analyticsDistinctId,
   );
 };
 
@@ -139,7 +133,6 @@ export const trackImageUpload = (
     ctx.user.id,
     imageType,
     isEdit,
-    ctx.analyticsDistinctId,
   );
 };
 
@@ -155,7 +148,6 @@ export const trackUserPost = (
     ctx.user.id,
     content,
     attachments,
-    ctx.analyticsDistinctId,
   );
 };
 
@@ -169,7 +161,6 @@ export const trackRelationshipAdded = (
   return trackRelationshipAddedOriginal(
     ctx.user.id,
     relationships,
-    ctx.analyticsDistinctId,
   );
 };
 
@@ -181,7 +172,6 @@ export const trackRelationshipAccepted = (
 ) => {
   return trackRelationshipAcceptedOriginal(
     ctx.user.id,
-    ctx.analyticsDistinctId,
   );
 };
 
@@ -189,7 +179,6 @@ export const trackRelationshipAccepted = (
  * Track funding toggle with automatic context injection
  */
 export const trackFundingToggle = (
-  ctx: AnalyticsContext,
   organizationContext: { organizationId: string },
   fundingStatus: {
     isOfferingFunds?: boolean;
@@ -199,7 +188,6 @@ export const trackFundingToggle = (
   return trackFundingToggleOriginal(
     organizationContext,
     fundingStatus,
-    ctx.analyticsDistinctId,
   );
 };
 
@@ -215,6 +203,5 @@ export const trackEvent = (
     ctx.user.id,
     event,
     properties,
-    ctx.analyticsDistinctId,
   );
 };
