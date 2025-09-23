@@ -56,6 +56,19 @@ const sendPostCommentNotification = async (
             process.env.NEXT_PUBLIC_APP_URL || 'https://common.oneproject.org';
           const contentUrl = `${baseUrl}/org/${parentPost.profileId}`;
 
+          // Create context name from post content (first 50 characters)
+          const contextName =
+            parentPost.content.length > 50
+              ? `${parentPost.content.slice(0, 50).trim()}...`
+              : parentPost.content.trim();
+
+          // Get organization name for "Posted in" field
+          const postedIn = parentPost.profile
+            ? Array.isArray(parentPost.profile)
+              ? 'Organization'
+              : parentPost.profile.name || 'Organization'
+            : undefined;
+
           await sendCommentNotificationEmail({
             to: postAuthorUser.email,
             commenterName: commenterProfile.name,
@@ -63,7 +76,9 @@ const sendPostCommentNotification = async (
             commentContent: commentContent,
             postUrl: contentUrl,
             recipientName: postAuthorName,
-            contentType: contentType,
+            contentType,
+            contextName,
+            postedIn,
           });
         }
       }
@@ -88,6 +103,7 @@ const sendProposalCommentNotification = async (
       where: (table, { eq }) => eq(table.id, proposalId),
       with: {
         profile: true,
+        processInstance: true,
       },
     });
 
@@ -120,7 +136,19 @@ const sendProposalCommentNotification = async (
           // Generate appropriate URL - for proposals, use proposal view page
           const baseUrl =
             process.env.NEXT_PUBLIC_APP_URL || 'https://common.oneproject.org';
-          const contentUrl = `${baseUrl}/proposals/${proposalId}`;
+
+          // Get processInstanceId for the URL
+          const processInstanceId = proposal.processInstance
+            ? (proposal.processInstance as any).id
+            : 'unknown';
+
+          // Get profile slug for the URL
+          const profileSlug =
+            proposal.profile && !Array.isArray(proposal.profile)
+              ? proposal.profile.slug
+              : 'unknown';
+
+          const contentUrl = `${baseUrl}/profile/${profileSlug}/decisions/${processInstanceId}/proposal/${proposal.profileId}`;
 
           // Extract proposal content from proposalData
           const proposalContent =
@@ -131,6 +159,28 @@ const sendProposalCommentNotification = async (
                 'Proposal content'
               : 'Proposal content';
 
+          // Create context name from proposal title (preferred) or description
+          const proposalTitle =
+            typeof proposal.proposalData === 'object' &&
+            proposal.proposalData !== null
+              ? (proposal.proposalData as any)?.title
+              : null;
+
+          const contextName = proposalTitle
+            ? proposalTitle.length > 50
+              ? `${proposalTitle.slice(0, 50).trim()}...`
+              : proposalTitle.trim()
+            : proposalContent.length > 50
+              ? `${proposalContent.slice(0, 50).trim()}...`
+              : proposalContent.trim();
+
+          // Get decision-making process name for "Posted in" field
+          let postedIn = 'Unknown Process';
+          if (proposal.processInstance) {
+            const processInstanceData = proposal.processInstance as any;
+            postedIn = processInstanceData.name || 'Decision Making Process';
+          }
+
           await sendCommentNotificationEmail({
             to: proposalAuthorProfile.email,
             commenterName: commenterProfile.name,
@@ -139,6 +189,8 @@ const sendProposalCommentNotification = async (
             postUrl: contentUrl,
             recipientName: proposalAuthorName,
             contentType: contentType,
+            contextName: contextName,
+            postedIn: postedIn,
           });
         }
       }

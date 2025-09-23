@@ -62,6 +62,19 @@ const sendCommentNotification = async (
               ? `${baseUrl}/proposals/${postId}`
               : `${baseUrl}/org/${post.profileId}`;
 
+          // Create context name from post content (first 50 characters)
+          const contextName =
+            post.content.length > 50
+              ? `${post.content.slice(0, 50).trim()}...`
+              : post.content.trim();
+
+          // Get organization/process name for "Posted in" field
+          const postedIn = post.profile
+            ? Array.isArray(post.profile)
+              ? 'Organization'
+              : post.profile.name || 'Organization'
+            : undefined;
+
           await sendCommentNotificationEmail({
             to: postAuthorUser.email,
             commenterName: commenterProfile.name,
@@ -69,7 +82,9 @@ const sendCommentNotification = async (
             commentContent: commentContent,
             postUrl: contentUrl,
             recipientName: postAuthorName,
-            contentType: contentType,
+            contentType,
+            contextName,
+            postedIn,
           });
         }
       }

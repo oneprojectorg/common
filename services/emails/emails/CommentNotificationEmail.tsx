@@ -10,6 +10,8 @@ interface CommentNotificationEmailProps {
   postUrl: string;
   recipientName?: string;
   contentType?: 'post' | 'proposal';
+  contextName?: string;
+  postedIn?: string;
 }
 
 export const CommentNotificationEmail = ({
@@ -19,6 +21,8 @@ export const CommentNotificationEmail = ({
   postUrl = 'https://common.oneproject.org/',
   recipientName: _recipientName,
   contentType = 'post',
+  contextName,
+  postedIn,
 }: CommentNotificationEmailProps) => {
 
   return (
@@ -47,7 +51,16 @@ export const CommentNotificationEmail = ({
         </Button>
       </Section>
 
-      <Text className="mb-0 text-xs text-[#606A6C]">Context: Posted in:</Text>
+      {contextName && (
+        <Text className="mb-0 text-xs text-[#606A6C]">
+          Context: {contextName}
+        </Text>
+      )}
+      {postedIn && (
+        <Text className="mb-0 mt-1 text-xs text-[#606A6C]">
+          Posted in: {postedIn}
+        </Text>
+      )}
     </EmailTemplate>
   );
 };
