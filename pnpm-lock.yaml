@@ -613,6 +613,9 @@ importers:
       '@op/emails':
         specifier: workspace:*
         version: link:../../services/emails
+      '@vercel/functions':
+        specifier: ^2.1.0
+        version: 2.1.0
       access-zones:
         specifier: 0.0.1
         version: 0.0.1
