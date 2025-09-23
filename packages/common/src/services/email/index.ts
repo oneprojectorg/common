@@ -162,7 +162,6 @@ export const sendCommentNotificationEmail = async ({
 
   const subject = `${commenterName} commented on your ${contentType}`;
 
-  console.log('SENDING TO', to);
   await OPNodemailer({
     to,
     from: `${commenterName} via Common`,

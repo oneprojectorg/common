@@ -1,6 +1,7 @@
 import { db } from '@op/db/client';
 import { comments, commentsToPost } from '@op/db/schema';
 import type { CreateCommentInput } from '@op/types';
+import { waitUntil } from '@vercel/functions';
 
 import { CommonError, NotFoundError } from '../../utils';
 import { getCurrentProfileId } from '../access';
@@ -27,17 +28,22 @@ const sendCommentNotification = async (
     });
 
     if (post && post.profileId) {
-      // Get commenter information
-      const commenterProfile = await db.query.profiles.findFirst({
-        where: (table, { eq }) => eq(table.id, commenterProfileId),
-      });
-
-      // Get post author's user information for email
-      const postAuthorUser = post.profileId
-        ? await db.query.users.findFirst({
-            where: (table, { eq }) => eq(table.profileId, post.profileId!),
-          })
-        : null;
+      // Parallelize commenter and post author queries
+      const [commenterProfile, postAuthorUser] = post.profileId
+        ? await Promise.all([
+            db.query.profiles.findFirst({
+              where: (table, { eq }) => eq(table.id, commenterProfileId),
+            }),
+            db.query.users.findFirst({
+              where: (table, { eq }) => eq(table.profileId, post.profileId!),
+            }),
+          ])
+        : [
+            await db.query.profiles.findFirst({
+              where: (table, { eq }) => eq(table.id, commenterProfileId),
+            }),
+            null,
+          ];
 
       if (
         commenterProfile &&
@@ -122,12 +128,22 @@ export const createComment = async (input: CreateCommentServiceInput) => {
         postId: input.commentableId,
       });
 
-      // Send notification email to post author
-      await sendCommentNotification(
-        input.commentableId,
-        comment.content,
-        profileId,
-        input.commentableType,
+      // Send notification email to post author (run async without blocking response)
+      // TODO: replace with our message queue and remove the dependency on waitUntil
+      waitUntil(
+        (async () => {
+          try {
+            await sendCommentNotification(
+              input.commentableId,
+              comment.content,
+              profileId,
+              input.commentableType,
+            );
+          } catch (error) {
+            // Log notification errors but don't fail the comment creation
+            console.error('Failed to send comment notification email:', error);
+          }
+        })(),
       );
     } else {
       throw new CommonError(
