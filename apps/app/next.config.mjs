@@ -115,17 +115,35 @@ const config = {
   skipTrailingSlashRedirect: true,
 };
 
-export default withBundleAnalyzer(
-  withNextIntl(withTranspiledWorkspacesForNext(config)),
+// Get current git branch (works in both local dev and Vercel)
+const getCurrentBranch = () => {
+  // In Vercel, use VERCEL_GIT_COMMIT_REF
+  if (process.env.VERCEL_GIT_COMMIT_REF) {
+    return process.env.VERCEL_GIT_COMMIT_REF;
+  }
+
+  // Locally, try to get branch from git
+  try {
+    const { execSync } = require('child_process');
+    return execSync('git rev-parse --abbrev-ref HEAD', { encoding: 'utf8' }).trim();
+  } catch {
+    return null;
+  }
+};
+
+const currentBranch = getCurrentBranch();
+const allowedBranches = ['dev', 'main'];
+const shouldUploadSourcemaps = allowedBranches.includes(currentBranch);
+
+export default withPostHogConfig(
+  withBundleAnalyzer(withNextIntl(withTranspiledWorkspacesForNext(config))),
+  {
+    personalApiKey: process.env.POSTHOG_API_KEY,
+    envId: process.env.POSTHOG_ENV_ID,
+    project: 'common',
+    host: 'https://eu.i.posthog.com',
+    sourcemaps: {
+      enabled: shouldUploadSourcemaps,
+    },
+  },
 );
-// export default withPostHogConfig(
-// withBundleAnalyzer(withNextIntl(withTranspiledWorkspacesForNext(config))),
-// {
-// posthog: {
-// personalApiKey: process.env.POSTHOG_API_KEY,
-// envId: process.env.POSTHOG_ENV_ID,
-// project: 'common',
-// host: 'https://eu.i.posthog.com',
-// },
-// },
-// );
