@@ -4,6 +4,7 @@ import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { userEncoder } from '../../encoders';
+import withAnalytics from '../../middlewares/withAnalytics';
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
@@ -25,6 +26,7 @@ export const switchOrganization = router({
   switchOrganization: loggedProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 5 }))
     .use(withAuthenticated)
+    .use(withAnalytics)
     .meta(meta)
     .input(z.object({ organizationId: z.string().min(1) }))
     .output(userEncoder)

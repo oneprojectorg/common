@@ -15,6 +15,7 @@ import { Select, SelectItem } from '@op/ui/Select';
 import { TextField } from '@op/ui/TextField';
 import { toast } from '@op/ui/Toast';
 import { useRouter } from 'next/navigation';
+import { usePostHog } from 'posthog-js/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
 
@@ -89,9 +90,18 @@ export function ProposalEditor({
   const editorRef = useRef<RichTextEditorRef>(null);
   const initializedRef = useRef(false);
   const utils = trpc.useUtils();
+  const posthog = usePostHog();
 
   const createProposalMutation = trpc.decision.createProposal.useMutation({
     onSuccess: async () => {
+      // Track successful proposal creation
+      if (posthog) {
+        posthog.capture('create_proposal_success', {
+          process_instance_id: instance.id,
+          process_name: instance.process?.name,
+        });
+      }
+
       await utils.decision.listProposals.invalidate({
         processInstanceId: instance.id,
       });
@@ -404,10 +414,15 @@ export function ProposalEditor({
                 placeholder="Select category"
                 selectedKey={selectedCategory}
                 onSelectionChange={(key) => setSelectedCategory(key as string)}
-                className="w-auto"
+                className="w-auto max-w-36 overflow-hidden sm:max-w-96"
+                popoverProps={{ className: 'sm:min-w-fit sm:max-w-2xl' }}
               >
                 {categories.map((category) => (
-                  <SelectItem key={category.id} id={category.name}>
+                  <SelectItem
+                    className="min-w-fit"
+                    key={category.id}
+                    id={category.name}
+                  >
                     {category.name}
                   </SelectItem>
                 ))}

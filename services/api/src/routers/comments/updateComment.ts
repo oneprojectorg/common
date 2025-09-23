@@ -5,6 +5,7 @@ import type { OpenApiMeta } from 'trpc-to-openapi';
 
 import { commentsEncoder } from '../../encoders';
 import withAuthenticated from '../../middlewares/withAuthenticated';
+import withAnalytics from '../../middlewares/withAnalytics';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
@@ -25,6 +26,7 @@ export const updateComment = router({
   updateComment: loggedProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticated)
+    .use(withAnalytics)
     .meta(meta)
     .input(updateCommentSchema)
     .output(outputSchema)

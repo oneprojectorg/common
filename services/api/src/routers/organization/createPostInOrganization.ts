@@ -5,6 +5,7 @@ import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
 import { postsEncoder } from '../../encoders';
+import withAnalytics from '../../middlewares/withAnalytics';
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
@@ -27,6 +28,7 @@ export const createPostInOrganizationRouter = router({
     // Middlewares
     .use(withRateLimited({ windowSize: 10, maxRequests: 3 }))
     .use(withAuthenticated)
+    .use(withAnalytics)
     // Router
     // .meta(meta)
     .input(

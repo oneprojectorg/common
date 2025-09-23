@@ -54,3 +54,5 @@ __pycache__
 !.yarn/versions
 .aider*
 .env*.local
+
+specs/

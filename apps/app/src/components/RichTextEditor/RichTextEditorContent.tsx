@@ -86,7 +86,7 @@ export const RichTextEditorContent = forwardRef<
       editable: !readOnly,
       editorProps: {
         attributes: {
-          class: `prose prose-lg max-w-none focus:outline-none break-words overflow-wrap-anywhere ${editorClassName || 'min-h-96 px-6 py-6 text-neutral-black placeholder:text-neutral-gray2'}`,
+          class: `[&_a]:text-teal [&_a]:no-underline [&_a:hover]:underline prose prose-lg max-w-none focus:outline-none break-words overflow-wrap-anywhere ${editorClassName || 'min-h-96 px-6 py-6 text-neutral-black placeholder:text-neutral-gray2'}`,
         },
       },
       onUpdate: ({ editor }) => {

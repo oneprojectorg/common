@@ -1,6 +1,8 @@
-import { and, db, eq } from '@op/db/client';
+import { and, db, eq, count } from '@op/db/client';
 import {
   ProfileRelationshipType,
+  posts,
+  postsToProfiles,
   profileRelationships,
   proposals,
   users,
@@ -80,6 +82,18 @@ export const getProposal = async ({
       );
     }
 
+    // Get comment count for this proposal
+    let commentsCount = 0;
+    if (proposal.profileId) {
+      const commentCountResult = await db
+        .select({ count: count() })
+        .from(posts)
+        .innerJoin(postsToProfiles, eq(posts.id, postsToProfiles.postId))
+        .where(eq(postsToProfiles.profileId, proposal.profileId));
+
+      commentsCount = Number(commentCountResult[0]?.count || 0);
+    }
+
     // TODO: Add access control - check if user can view this proposal
     // For now, any authenticated user can view any proposal
 
@@ -87,6 +101,7 @@ export const getProposal = async ({
       ...proposal,
       isLikedByUser,
       isFollowedByUser,
+      commentsCount,
     };
   } catch (error) {
     if (error instanceof NotFoundError || error instanceof UnauthorizedError) {

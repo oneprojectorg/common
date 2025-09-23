@@ -2,6 +2,7 @@ import { getOrganizationStats } from '@op/common';
 import { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
+import withAnalytics from '../../middlewares/withAnalytics';
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
@@ -21,6 +22,7 @@ export const organizationStatsRouter = router({
   getStats: loggedProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticated)
+    .use(withAnalytics)
     .meta(meta)
     .input(z.void())
     .output(

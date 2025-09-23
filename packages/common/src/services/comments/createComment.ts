@@ -17,7 +17,6 @@ const sendCommentNotification = async (
   commenterProfileId: string,
   commentableType: string,
 ) => {
-  console.log('TRY SENDING');
   try {
     // Get post and author information
     const post = await db.query.posts.findFirst({

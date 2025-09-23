@@ -8,6 +8,7 @@ import {
   getInstanceInputSchema,
   processInstanceEncoder,
 } from '../../../encoders/decision';
+import withAnalytics from '../../../middlewares/withAnalytics';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
 import withRateLimited from '../../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../../trpcFactory';
@@ -27,6 +28,7 @@ export const getInstanceRouter = router({
   getInstance: loggedProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 30 }))
     .use(withAuthenticated)
+    .use(withAnalytics)
     .meta(meta)
     .input(getInstanceInputSchema)
     .output(processInstanceEncoder)

@@ -11,6 +11,7 @@ import { waitUntil } from '@vercel/functions';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
+import withAnalytics from '../../middlewares/withAnalytics';
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
@@ -103,6 +104,7 @@ export const profileRelationshipRouter = router({
   addRelationship: loggedProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 20 }))
     .use(withAuthenticated)
+    .use(withAnalytics)
     .meta(addRelationshipMeta)
     .input(relationshipInputSchema)
     .output(z.object({ success: z.boolean() }))
@@ -165,6 +167,7 @@ export const profileRelationshipRouter = router({
   removeRelationship: loggedProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 20 }))
     .use(withAuthenticated)
+    .use(withAnalytics)
     .meta(removeRelationshipMeta)
     .input(removeRelationshipInputSchema)
     .output(z.object({ success: z.boolean() }))
@@ -190,6 +193,7 @@ export const profileRelationshipRouter = router({
   getRelationships: loggedProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 100 }))
     .use(withAuthenticated)
+    .use(withAnalytics)
     .meta(getRelationshipsMeta)
     .input(getRelationshipsInputSchema)
     .output(

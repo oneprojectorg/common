@@ -1,11 +1,90 @@
 import { db, eq } from '@op/db/client';
-import { processInstances } from '@op/db/schema';
+import {
+  decisionProcesses,
+  processInstances,
+  taxonomies,
+  taxonomyTerms,
+} from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 import { z } from 'zod';
 
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { getCurrentProfileId } from '../access';
 import type { InstanceData } from './types';
+
+/**
+ * Ensures the "proposal" taxonomy exists and creates/updates taxonomy terms for the given categories
+ */
+async function ensureProposalTaxonomy(categories: string[]): Promise<string[]> {
+  if (!categories || categories.length === 0) {
+    return [];
+  }
+
+  // Ensure "proposal" taxonomy exists
+  let proposalTaxonomy = await db.query.taxonomies.findFirst({
+    where: eq(taxonomies.name, 'proposal'),
+  });
+
+  if (!proposalTaxonomy) {
+    const [newTaxonomy] = await db
+      .insert(taxonomies)
+      .values({
+        name: 'proposal',
+        description:
+          'Categories for organizing proposals in decision-making processes',
+      })
+      .returning();
+
+    if (!newTaxonomy) {
+      throw new CommonError('Failed to create proposal taxonomy');
+    }
+    proposalTaxonomy = newTaxonomy;
+  }
+
+  // Process each category
+  const taxonomyTermIds: string[] = [];
+
+  for (const categoryName of categories) {
+    if (!categoryName.trim()) continue;
+
+    const categoryLabel = categoryName.trim();
+    const termUri = categoryLabel
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '');
+
+    // Check if taxonomy term already exists
+    let existingTerm = await db.query.taxonomyTerms.findFirst({
+      where: eq(taxonomyTerms.termUri, termUri),
+    });
+
+    if (!existingTerm) {
+      // Create new taxonomy term
+      const [newTerm] = await db
+        .insert(taxonomyTerms)
+        .values({
+          taxonomyId: proposalTaxonomy.id,
+          termUri,
+          label: categoryLabel,
+          definition: `Category for ${categoryLabel} proposals`,
+        })
+        .returning();
+
+      if (!newTerm) {
+        throw new CommonError(
+          `Failed to create taxonomy term for category: ${categoryLabel}`,
+        );
+      }
+      existingTerm = newTerm;
+    }
+
+    if (existingTerm) {
+      taxonomyTermIds.push(existingTerm.id);
+    }
+  }
+
+  return taxonomyTermIds;
+}
 
 export interface UpdateInstanceInput {
   instanceId: string;
@@ -69,6 +148,69 @@ export const updateInstance = async ({
     }
 
     const updateData = updateDataSchema.parse(data);
+
+    // If instance data is being updated and contains categories, ensure taxonomy terms exist
+    // and update the process schema to keep them in sync
+    if (data.instanceData && data.instanceData.fieldValues?.categories) {
+      const categories = Array.isArray(data.instanceData.fieldValues.categories)
+        ? data.instanceData.fieldValues.categories.filter(
+            (cat: unknown): cat is string => typeof cat === 'string' && cat.trim() !== ''
+          )
+        : [];
+
+      // Ensure proposal taxonomy and terms exist for the categories
+      await ensureProposalTaxonomy(categories);
+
+      // Also update the process schema to keep categories in sync
+      if (existingInstance.processId) {
+        const existingProcess = await db.query.decisionProcesses.findFirst({
+          where: eq(decisionProcesses.id, existingInstance.processId),
+        });
+
+        if (existingProcess) {
+          const currentProcessSchema = existingProcess.processSchema as any;
+
+          // Update the proposal template to include the new category enums
+          const currentProposalTemplate = currentProcessSchema?.proposalTemplate || {};
+          const updatedProposalTemplate = {
+            ...currentProposalTemplate,
+            properties: {
+              ...currentProposalTemplate.properties,
+              ...(categories.length > 0
+                ? {
+                    category: {
+                      type: ['string', 'null'],
+                      enum: [...categories, null],
+                    },
+                  }
+                : {}),
+            },
+          };
+
+          // If no categories, remove the category field from the proposal template
+          if (categories.length === 0 && updatedProposalTemplate.properties.category) {
+            delete updatedProposalTemplate.properties.category;
+          }
+
+          const updatedProcessSchema = {
+            ...currentProcessSchema,
+            fields: {
+              ...currentProcessSchema?.fields,
+              categories: categories,
+            },
+            proposalTemplate: updatedProposalTemplate,
+          };
+
+          await db
+            .update(decisionProcesses)
+            .set({
+              processSchema: updatedProcessSchema,
+              updatedAt: new Date().toISOString(),
+            })
+            .where(eq(decisionProcesses.id, existingInstance.processId));
+        }
+      }
+    }
 
     const [updatedInstance] = await db
       .update(processInstances)

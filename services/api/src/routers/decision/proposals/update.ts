@@ -13,6 +13,7 @@ import {
   proposalEncoder,
   updateProposalInputSchema,
 } from '../../../encoders/decision';
+import withAnalytics from '../../../middlewares/withAnalytics';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
 import withRateLimited from '../../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../../trpcFactory';
@@ -32,6 +33,7 @@ export const updateProposalRouter = router({
   updateProposal: loggedProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 20 }))
     .use(withAuthenticated)
+    .use(withAnalytics)
     .meta(meta)
     .input(
       z.object({

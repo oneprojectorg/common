@@ -5,6 +5,7 @@ import { assertAccess, permission } from 'access-zones';
 import { z } from 'zod';
 
 import withAuthenticated from '../../middlewares/withAuthenticated';
+import withAnalytics from '../../middlewares/withAnalytics';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
@@ -21,6 +22,7 @@ export const checkMembershipRouter = router({
   checkMembership: loggedProcedure
     .use(withRateLimited({ windowSize: 60, maxRequests: 20 }))
     .use(withAuthenticated)
+    .use(withAnalytics)
     .input(inputSchema)
     .output(outputSchema)
     .query(async ({ ctx, input }) => {

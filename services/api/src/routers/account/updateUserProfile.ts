@@ -4,6 +4,7 @@ import type { OpenApiMeta } from 'trpc-to-openapi';
 import { ZodError, z } from 'zod';
 
 import { userEncoder } from '../../encoders';
+import withAnalytics from '../../middlewares/withAnalytics';
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
@@ -26,6 +27,7 @@ const updateUserProfile = router({
     // Middlewares
     .use(withRateLimited({ windowSize: 10, maxRequests: 3 }))
     .use(withAuthenticated)
+    .use(withAnalytics)
     // Router
     .meta(meta)
     .input(

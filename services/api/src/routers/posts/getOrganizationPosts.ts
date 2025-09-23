@@ -6,6 +6,7 @@ import { z } from 'zod';
 
 import { postsToOrganizationsEncoder } from '../../encoders';
 import withAuthenticated from '../../middlewares/withAuthenticated';
+import withAnalytics from '../../middlewares/withAnalytics';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
@@ -26,6 +27,7 @@ export const getOrganizationPosts = router({
   getOrganizationPosts: loggedProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticated)
+    .use(withAnalytics)
     // .meta(meta)
     .input(getOrganizationPostsSchema)
     .output(outputSchema)

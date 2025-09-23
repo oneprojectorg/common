@@ -217,5 +217,14 @@
   "Admin role not found": "Admin role not found",
   "Are you sure you want to remove this user from the organization?": "Are you sure you want to remove this user from the organization?",
   "INFOTRANSLATION": "&lt;p&gt;Proposals will be considered eligible if they meet the following criteria:&lt;/p&gt;&lt;ol&gt;&lt;li&gt;&lt;p&gt;Consistent with &lt;a target=&quot;_blank&quot; rel=&quot;noopener noreferrer nofollow&quot; href=&quot;http://peoplepowered.org/about&quot;&gt;&lt;u&gt;People Powered&rsquo;s &lt;/u&gt;&lt;strong&gt;&lt;u&gt;mission and values&lt;/u&gt;&lt;/strong&gt;&lt;/a&gt;&lt;/p&gt;&lt;/li&gt;&lt;li&gt;&lt;p&gt;Contributes to the goals of People Powered &lt;a target=&quot;_blank&quot; rel=&quot;noopener noreferrer nofollow&quot; href=&quot;https://drive.google.com/file/d/1Ha6-zibY5SWfJybAKzxPszHJnxpiphbX/view?usp=drive_link&quot;&gt;&lt;strong&gt;&lt;u&gt;strategic plan&lt;/u&gt;&lt;/strong&gt;&lt;/a&gt;&lt;/p&gt;&lt;/li&gt;&lt;li&gt;&lt;p&gt;Benefits the &lt;strong&gt;global &lt;/strong&gt;People Powered community&nbsp;&lt;/p&gt;&lt;/li&gt;&lt;li&gt;&lt;p&gt;Moves us toward &lt;strong&gt;future horizons&lt;/strong&gt; of participatory democracy, by addressing long-term strategic challenges and opportunities&lt;/p&gt;&lt;/li&gt;&lt;li&gt;&lt;p&gt;Can be implemented in 2026&lt;/p&gt;&lt;/li&gt;&lt;li&gt;&lt;p&gt;Cost no more than $25,000 USD&lt;/p&gt;&lt;/li&gt;&lt;/ol&gt;&lt;p&gt;&lt;/p&gt;",
-  "PPDESCRIPTION": "Welcome to PP Decides 2026! People Powered is inviting its members to decide on budget proposals for 2026"
+  "PPDESCRIPTION": "Welcome to PP Decides 2026! People Powered is inviting its members to decide on budget proposals for 2026",
+  "COWOPHEADER": "Share your ideas for how to support MA worker owned cooperatives",
+  "COWOPSUBHEADER": "Worker-owned cooperatives in MA, and partnerships led by worker owned cooperatives, are invited to share an idea between September 20 and October 1 2025, for how to use a portion of this money meaningfully. We encourage you to workshop your concepts with others, keeping in mind that your concept does not have to be long, or even fully developed. At this stage, we are looking for ideas that we can collectively develop into full proposals.",
+  "Submit a Proposal Concept": "Submit a Proposal Concept",
+  "Duplicate email": "Duplicate email",
+  "Duplicate emails": "Duplicate emails",
+  "has already been added": "has already been added",
+  "have already been added": "have already been added",
+  "Invalid emails": "Invalid emails",
+  "are not valid email addresses": "are not valid email addresses"
 }

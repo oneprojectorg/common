@@ -65,11 +65,21 @@ export function DecisionInstanceContent({
             cowop: (
               <>
                 <GradientHeader className="items-center align-middle uppercase">
-                  {t('SHARE YOUR IDEAS.')}
+                  {t('COWOPHEADER')}
                 </GradientHeader>
                 {
                   <p className="mt-4 text-base text-gray-700">
-                    <p>COWOP header</p>
+                    <p>
+                      <a
+                        href="https://docs.google.com/document/d/18RFVgnAnEawOb8vU8SU6s0zL9XTyTS7-Ju6TalWQMnA/edit?tab=t.0#heading=h.7vhwsm8mmlge"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-teal"
+                      >
+                        {t('Submit a Proposal Concept')}
+                      </a>
+                      : {t('COWOPSUBHEADER')}
+                    </p>
                   </p>
                 }
               </>

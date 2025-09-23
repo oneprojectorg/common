@@ -366,7 +366,7 @@ export function ProposalCardActions({
         onPress={handleLikeClick}
         size="small"
         color={currentProposal.isLikedByUser ? 'verified' : 'secondary'}
-        className="w-full"
+        className="w-full text-nowrap"
         isDisabled={isLoading}
       >
         <Heart className="size-4" />
@@ -376,7 +376,7 @@ export function ProposalCardActions({
         onPress={handleFollowClick}
         size="small"
         color={currentProposal.isFollowedByUser ? 'verified' : 'secondary'}
-        className="w-full"
+        className="w-full text-nowrap"
         isDisabled={isLoading}
       >
         <LuBookmark className="size-4" />
@@ -390,7 +390,7 @@ export function ProposalCardActions({
           <Button
             size="small"
             color="secondary"
-            className="w-full"
+            className="w-full text-nowrap"
             isDisabled={isLoading}
           >
             <Trash2 className="size-4" />

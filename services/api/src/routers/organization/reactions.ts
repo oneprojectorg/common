@@ -10,6 +10,7 @@ import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import withAuthenticated from '../../middlewares/withAuthenticated';
+import withAnalytics from '../../middlewares/withAnalytics';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
@@ -19,6 +20,7 @@ export const reactionsRouter = router({
   addReaction: loggedProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 20 }))
     .use(withAuthenticated)
+    .use(withAnalytics)
     .input(
       z.object({
         postId: z.string(),
@@ -44,6 +46,7 @@ export const reactionsRouter = router({
   removeReaction: loggedProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 20 }))
     .use(withAuthenticated)
+    .use(withAnalytics)
     .input(
       z.object({
         postId: z.string(),
@@ -62,6 +65,7 @@ export const reactionsRouter = router({
   toggleReaction: loggedProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 20 }))
     .use(withAuthenticated)
+    .use(withAnalytics)
     .input(
       z.object({
         postId: z.string(),

@@ -84,7 +84,9 @@ export function ProposalCard({
         {category && (
           <>
             <span className="text-sm text-neutral-gray2">•</span>
-            <Chip>{category}</Chip>
+            <Chip className="max-w-96 overflow-hidden overflow-ellipsis text-nowrap">
+              {category}
+            </Chip>
           </>
         )}
         {status === ProposalStatus.APPROVED ? (
@@ -113,7 +115,9 @@ export function ProposalCard({
           </span>
           <span className="flex items-center gap-1">
             <MessageCircle className="h-4 w-4" />
-            <span>0 {t('Comments')}</span>
+            <span>
+              {currentProposal.commentsCount || 0} {t('Comments')}
+            </span>
           </span>
           <span className="flex items-center gap-1">
             <LuBookmark className="size-4" />
