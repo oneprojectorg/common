@@ -7,7 +7,7 @@ import {
   useCallback,
   useContext,
 } from 'react';
-import { ModalOverlay, Modal as RACModal } from 'react-aria-components';
+import { ModalOverlay, Modal as RACModal, OverlayTriggerStateContext } from 'react-aria-components';
 import type { ModalOverlayProps } from 'react-aria-components';
 import { LuX } from 'react-icons/lu';
 import { tv } from 'tailwind-variants';
@@ -40,6 +40,15 @@ export const ModalHeader = ({
   children: ReactNode;
 }) => {
   const { isDismissable, onClose } = useContext(ModalContext);
+  const overlayState = useContext(OverlayTriggerStateContext);
+
+  const handleClose = () => {
+    if (onClose) {
+      onClose();
+    } else if (overlayState?.close) {
+      overlayState.close();
+    }
+  };
 
   return (
     <div className="sticky top-0 z-30 flex min-h-16 w-full items-center border-b border-neutral-gray1 bg-white">
@@ -48,7 +57,7 @@ export const ModalHeader = ({
           <button
             type="button"
             aria-label="Close modal"
-            onClick={onClose}
+            onClick={handleClose}
             className={cn(
               'absolute left-6 flex h-6 w-6',
               'items-center justify-center',
@@ -190,7 +199,7 @@ export const ModalInContext = ({
 }) => {
   const contextValue = {
     isDismissable,
-    onClose: isDismissable ? () => onOpenChange?.(false) : undefined,
+    onClose: onOpenChange ? () => onOpenChange(false) : undefined,
   };
 
   return (
