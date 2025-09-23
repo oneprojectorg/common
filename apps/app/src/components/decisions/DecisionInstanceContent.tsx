@@ -199,19 +199,11 @@ export function DecisionInstanceContent({
             <div className="flex w-full max-w-md items-center justify-center gap-4">
               {description ? (
                 <DialogTrigger>
-                  <Button
-                    color="secondary"
-                    className="w-full"
-                    // onPress={() => setIsToSOpen(true)}
-                  >
+                  <Button color="secondary" className="w-full">
                     {t('About the process')}
                   </Button>
 
-                  <Modal
-                    // onOpenChange={setIsToSOpen}
-                    // isOpen={isToSOpen}
-                    isDismissable
-                  >
+                  <Modal isDismissable>
                     <Dialog>
                       <ModalHeader>{t('About the process')}</ModalHeader>
                       <ModalBody>
