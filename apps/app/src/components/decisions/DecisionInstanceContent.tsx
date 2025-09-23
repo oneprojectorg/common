@@ -6,26 +6,53 @@ import { getUniqueSubmitters } from '@/utils/proposalUtils';
 import { trpc } from '@op/api/client';
 import { match } from '@op/core';
 import { Avatar } from '@op/ui/Avatar';
+import { Button, ButtonLink } from '@op/ui/Button';
+import { Dialog, DialogTrigger } from '@op/ui/Dialog';
 import { FacePile } from '@op/ui/FacePile';
 import { GradientHeader } from '@op/ui/Header';
+import { Modal, ModalBody, ModalHeader } from '@op/ui/Modal';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
 
 import { useTranslations } from '@/lib/i18n/routing';
 
-interface DecisionInstanceContentProps {
-  instanceId: string;
-}
+import { RichTextEditorContent } from '../RichTextEditor';
+import { ProcessPhase } from './types';
 
 export function DecisionInstanceContent({
   instanceId,
-}: DecisionInstanceContentProps) {
+}: {
+  instanceId: string;
+}) {
   const t = useTranslations();
   const { slug } = useParams();
-  const [{ proposals }] = trpc.decision.listProposals.useSuspenseQuery({
-    processInstanceId: instanceId,
-    limit: 20,
-  });
+  const [[{ proposals }, instance]] = trpc.useSuspenseQueries((t) => [
+    t.decision.listProposals({
+      processInstanceId: instanceId,
+      limit: 20,
+    }),
+    t.decision.getInstance({
+      instanceId,
+    }),
+  ]);
+
+  const instanceData = instance.instanceData as any;
+  const processSchema = instance.process?.processSchema as any;
+
+  // Merge template states with actual instance phase data
+  const templateStates: ProcessPhase[] = processSchema?.states || [];
+
+  const currentStateId =
+    instanceData?.currentStateId || instance.currentStateId;
+  const currentState = templateStates.find(
+    (state) => state.id === currentStateId,
+  );
+  const allowProposals = currentState?.config?.allowProposals !== false; // defaults to true
+
+  // TODO: special key for People powered translations as a stop-gap
+  const description = instance?.description?.match('PPDESCRIPTION')
+    ? t('PPDESCRIPTION')
+    : (instance.description ?? instance.process?.description);
 
   const uniqueSubmitters = getUniqueSubmitters(proposals);
   // TODO: This match statement is all going to go away. We are going to move all of this into a modal instead so hardcoding here won't be tech-debt.
@@ -168,6 +195,47 @@ export function DecisionInstanceContent({
               </span>
             </div>
           )}
+          <div className="flex w-full justify-center">
+            <div className="flex w-full max-w-md items-center justify-center gap-4">
+              {description ? (
+                <DialogTrigger>
+                  <Button
+                    color="secondary"
+                    className="w-full"
+                    // onPress={() => setIsToSOpen(true)}
+                  >
+                    {t('About the process')}
+                  </Button>
+
+                  <Modal
+                    // onOpenChange={setIsToSOpen}
+                    // isOpen={isToSOpen}
+                    isDismissable
+                  >
+                    <Dialog>
+                      <ModalHeader>{t('About the process')}</ModalHeader>
+                      <ModalBody>
+                        <RichTextEditorContent
+                          content={description}
+                          readOnly={true}
+                          editorClassName="prose prose-base max-w-none [&_p]:text-base"
+                        />
+                      </ModalBody>
+                    </Dialog>
+                  </Modal>
+                </DialogTrigger>
+              ) : null}
+              {allowProposals && (
+                <ButtonLink
+                  href={`/profile/${slug}/decisions/${instanceId}/proposal/create`}
+                  color="primary"
+                  className="w-full"
+                >
+                  {t('Submit a proposal')}
+                </ButtonLink>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>
