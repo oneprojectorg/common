@@ -1,13 +1,11 @@
 'use client';
 
+import { ReactNode, createContext, memo, useCallback, useContext } from 'react';
 import {
-  ReactNode,
-  createContext,
-  memo,
-  useCallback,
-  useContext,
-} from 'react';
-import { ModalOverlay, Modal as RACModal, OverlayTriggerStateContext } from 'react-aria-components';
+  ModalOverlay,
+  OverlayTriggerStateContext,
+  Modal as RACModal,
+} from 'react-aria-components';
 import type { ModalOverlayProps } from 'react-aria-components';
 import { LuX } from 'react-icons/lu';
 import { tv } from 'tailwind-variants';
@@ -22,7 +20,7 @@ const overlayStyles = tv({
 });
 
 const modalStyles = tv({
-  base: 'isolate z-[999999] h-svh max-h-svh w-screen max-w-md overflow-hidden overflow-y-auto rounded-none border border-offWhite bg-white bg-clip-padding backdrop-blur-lg backdrop-brightness-50 backdrop-saturate-50 entering:duration-500 entering:ease-out entering:animate-in entering:fade-in exiting:duration-500 exiting:ease-in exiting:animate-out exiting:fade-out sm:h-auto sm:max-h-[calc(100svh-2rem)] sm:max-w-[29rem] sm:rounded-md',
+  base: 'isolate z-[999999] h-svh max-h-svh w-screen max-w-md overflow-hidden overflow-y-auto rounded-none border border-offWhite bg-white bg-clip-padding backdrop-blur-lg backdrop-brightness-50 backdrop-saturate-50 entering:duration-500 entering:ease-out entering:animate-in entering:fade-in exiting:duration-500 exiting:ease-in exiting:animate-out exiting:fade-out sm:h-auto sm:max-h-[calc(100svh-2rem)] sm:max-w-[32rem] sm:rounded-md',
 });
 
 type ModalContextType = {

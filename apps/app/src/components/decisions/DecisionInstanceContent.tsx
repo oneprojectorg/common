@@ -59,8 +59,8 @@ export function DecisionInstanceContent({
   // We just need to be sure to move this content into the instance data
   return (
     <div className="min-h-full px-4 py-8">
-      <div className="mx-auto flex max-w-3xl justify-center">
-        <div className="text-center">
+      <div className="mx-auto flex max-w-3xl flex-col justify-center gap-4">
+        <div className="flex flex-col gap-2 text-center">
           {match(slug, {
             'people-powered': (
               <>
@@ -167,7 +167,7 @@ export function DecisionInstanceContent({
 
           {/* Member avatars showing who submitted proposals */}
           {uniqueSubmitters.length > 0 && (
-            <div className="mt-6 flex items-center justify-center gap-2">
+            <div className="flex items-center justify-center gap-2">
               <FacePile
                 items={uniqueSubmitters.slice(0, 4).map((submitter) => (
                   <Avatar
@@ -195,38 +195,38 @@ export function DecisionInstanceContent({
               </span>
             </div>
           )}
-          <div className="flex w-full justify-center">
-            <div className="flex w-full max-w-md items-center justify-center gap-4">
-              {description ? (
-                <DialogTrigger>
-                  <Button color="secondary" className="w-full">
-                    {t('About the process')}
-                  </Button>
+        </div>
+        <div className="flex w-full justify-center">
+          <div className="flex w-full max-w-md items-center justify-center gap-4">
+            {description ? (
+              <DialogTrigger>
+                <Button color="secondary" className="w-full">
+                  {t('About the process')}
+                </Button>
 
-                  <Modal isDismissable>
-                    <Dialog>
-                      <ModalHeader>{t('About the process')}</ModalHeader>
-                      <ModalBody>
-                        <RichTextEditorContent
-                          content={description}
-                          readOnly={true}
-                          editorClassName="prose prose-base max-w-none [&_p]:text-base"
-                        />
-                      </ModalBody>
-                    </Dialog>
-                  </Modal>
-                </DialogTrigger>
-              ) : null}
-              {allowProposals && (
-                <ButtonLink
-                  href={`/profile/${slug}/decisions/${instanceId}/proposal/create`}
-                  color="primary"
-                  className="w-full"
-                >
-                  {t('Submit a proposal')}
-                </ButtonLink>
-              )}
-            </div>
+                <Modal isDismissable>
+                  <Dialog>
+                    <ModalHeader>{t('About the process')}</ModalHeader>
+                    <ModalBody>
+                      <RichTextEditorContent
+                        content={description}
+                        readOnly={true}
+                        editorClassName="prose prose-base max-w-none [&_p]:text-base"
+                      />
+                    </ModalBody>
+                  </Dialog>
+                </Modal>
+              </DialogTrigger>
+            ) : null}
+            {allowProposals && (
+              <ButtonLink
+                href={`/profile/${slug}/decisions/${instanceId}/proposal/create`}
+                color="primary"
+                className="w-full"
+              >
+                {t('Submit a proposal')}
+              </ButtonLink>
+            )}
           </div>
         </div>
       </div>
