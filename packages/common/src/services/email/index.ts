@@ -134,3 +134,48 @@ export const sendRelationshipRequestEmail = async ({
       }),
   });
 };
+
+export const sendCommentNotificationEmail = async ({
+  to,
+  commenterName,
+  postContent,
+  commentContent,
+  postUrl,
+  recipientName,
+  contentType = 'post',
+  contextName,
+  postedIn,
+}: {
+  to: string;
+  commenterName: string;
+  postContent: string;
+  commentContent: string;
+  postUrl: string;
+  recipientName?: string;
+  contentType?: 'post' | 'proposal';
+  contextName?: string;
+  postedIn?: string;
+}): Promise<void> => {
+  // Use dynamic imports to avoid build issues with workspace dependencies
+  const { OPNodemailer } = await import('@op/emails');
+  const { CommentNotificationEmail } = await import('@op/emails');
+
+  const subject = `${commenterName} commented on your ${contentType}`;
+
+  await OPNodemailer({
+    to,
+    from: `${commenterName} via Common`,
+    subject,
+    component: () =>
+      CommentNotificationEmail({
+        commenterName,
+        postContent,
+        commentContent,
+        postUrl,
+        recipientName,
+        contentType,
+        contextName,
+        postedIn,
+      }),
+  });
+};

@@ -1,15 +1,211 @@
 import { invalidate } from '@op/cache';
 import { db } from '@op/db/client';
-import { attachments, posts, postsToProfiles } from '@op/db/schema';
+import {
+  Organization,
+  Post,
+  PostToOrganization,
+  Profile,
+  attachments,
+  posts,
+  postsToProfiles,
+} from '@op/db/schema';
 import { CreatePostInput } from '@op/types';
+import { waitUntil } from '@vercel/functions';
 import { eq } from 'drizzle-orm';
 
 import { CommonError } from '../../utils';
 import { getCurrentProfileId } from '../access';
+import { sendCommentNotificationEmail } from '../email';
 
 interface CreatePostServiceInput extends CreatePostInput {
   authUserId: string;
 }
+
+const sendPostCommentNotification = async (
+  parentPostId: string,
+  commentContent: string,
+  commenterProfileId: string,
+) => {
+  try {
+    // Get parent post and author information, including organization associations
+    const parentPostToOrg = (await db.query.postsToOrganizations.findFirst({
+      where: (table, { eq }) => eq(table.postId, parentPostId),
+      with: {
+        organization: {
+          with: {
+            profile: true,
+          },
+        },
+        post: true,
+      },
+    })) as PostToOrganization & {
+      organization: Organization & { profile: Profile };
+      post: Post;
+    };
+
+    const parentPost = parentPostToOrg.post;
+    const parentProfile = parentPostToOrg.organization.profile;
+    const parentProfileId = parentProfile.id;
+
+    if (parentProfileId) {
+      // Parallelize commenter and post author queries
+      const commenterProfile = await db.query.profiles.findFirst({
+        where: (table, { eq }) => eq(table.id, commenterProfileId),
+      });
+
+      if (commenterProfile && parentProfile.email) {
+        // Don't send notification if user is commenting on their own post
+        if (parentProfileId !== commenterProfileId) {
+          const postAuthorName = parentProfile.name;
+
+          // For posts, we default to 'post' as the content type
+          const contentType = 'post';
+
+          // Create context name from post content (first 50 characters)
+          const contextName =
+            parentPost.content.length > 50
+              ? `${parentPost.content.slice(0, 50).trim()}...`
+              : parentPost.content.trim();
+
+          // Generate URL using the organization profile ID instead of post author's profile
+          const baseUrl =
+            process.env.NEXT_PUBLIC_APP_URL || 'https://common.oneproject.org';
+          const contentUrl = `${baseUrl}/org/${parentProfileId}`;
+
+          await sendCommentNotificationEmail({
+            to: parentProfile.email,
+            commenterName: commenterProfile.name,
+            postContent: parentPost.content,
+            commentContent: commentContent,
+            postUrl: contentUrl,
+            recipientName: postAuthorName,
+            contentType,
+            contextName,
+            postedIn: postAuthorName,
+          });
+        }
+      }
+    }
+  } catch (emailError) {
+    // Log email error but don't fail the post creation
+    console.error(
+      'Failed to send post comment notification email:',
+      emailError,
+    );
+  }
+};
+
+const sendProposalCommentNotification = async (
+  proposalId: string,
+  commentContent: string,
+  commenterProfileId: string,
+) => {
+  try {
+    // Get proposal and author information
+    const proposal = await db.query.proposals.findFirst({
+      where: (table, { eq }) => eq(table.id, proposalId),
+      with: {
+        profile: true,
+        processInstance: true,
+      },
+    });
+
+    if (proposal && proposal.profileId) {
+      // Parallelize commenter and proposal author queries
+      const [commenterProfile, proposalAuthorProfile] = await Promise.all([
+        db.query.profiles.findFirst({
+          where: (table, { eq }) => eq(table.id, commenterProfileId),
+        }),
+        db.query.profiles.findFirst({
+          where: (table, { eq }) => eq(table.id, proposal.submittedByProfileId),
+        }),
+      ]);
+
+      if (
+        commenterProfile &&
+        proposalAuthorProfile &&
+        proposalAuthorProfile.email &&
+        proposal.profile
+      ) {
+        // Don't send notification if user is commenting on their own proposal
+        if (proposal.profileId !== commenterProfileId) {
+          const proposalAuthorName = Array.isArray(proposal.profile)
+            ? 'User'
+            : proposal.profile.name || 'User';
+
+          // For proposals, we use 'proposal' as the content type
+          const contentType = 'proposal';
+
+          // Generate appropriate URL - for proposals, use proposal view page
+          const baseUrl =
+            process.env.NEXT_PUBLIC_APP_URL || 'https://common.oneproject.org';
+
+          // Get processInstanceId for the URL
+          const processInstanceId = proposal.processInstance
+            ? (proposal.processInstance as any).id
+            : 'unknown';
+
+          // Get profile slug for the URL
+          const profileSlug =
+            proposal.profile && !Array.isArray(proposal.profile)
+              ? proposal.profile.slug
+              : 'unknown';
+
+          const contentUrl = `${baseUrl}/profile/${profileSlug}/decisions/${processInstanceId}/proposal/${proposal.profileId}`;
+
+          // Extract proposal content from proposalData
+          const proposalContent =
+            typeof proposal.proposalData === 'object' &&
+            proposal.proposalData !== null
+              ? (proposal.proposalData as any)?.description ||
+                (proposal.proposalData as any)?.title ||
+                'Proposal content'
+              : 'Proposal content';
+
+          // Create context name from proposal title (preferred) or description
+          const proposalTitle =
+            typeof proposal.proposalData === 'object' &&
+            proposal.proposalData !== null
+              ? (proposal.proposalData as any)?.title
+              : null;
+
+          const contextName = proposalTitle
+            ? proposalTitle.length > 50
+              ? `${proposalTitle.slice(0, 50).trim()}...`
+              : proposalTitle.trim()
+            : proposalContent.length > 50
+              ? `${proposalContent.slice(0, 50).trim()}...`
+              : proposalContent.trim();
+
+          // Get decision-making process name for "Posted in" field
+          let postedIn = 'Unknown Process';
+          if (proposal.processInstance) {
+            const processInstanceData = proposal.processInstance as any;
+            postedIn = processInstanceData.name || 'Decision Making Process';
+          }
+
+          await sendCommentNotificationEmail({
+            to: proposalAuthorProfile.email,
+            commenterName: commenterProfile.name,
+            postContent: proposalContent,
+            commentContent: commentContent,
+            postUrl: contentUrl,
+            recipientName: proposalAuthorName,
+            contentType: contentType,
+            contextName: contextName,
+            postedIn: postedIn,
+          });
+        }
+      }
+    }
+  } catch (emailError) {
+    // Log email error but don't fail the post creation
+    console.error(
+      'Failed to send proposal comment notification email:',
+      emailError,
+    );
+  }
+};
 
 export const createPost = async (input: CreatePostServiceInput) => {
   const {
@@ -17,9 +213,10 @@ export const createPost = async (input: CreatePostServiceInput) => {
     attachmentIds = [],
     parentPostId,
     profileId: targetProfileId,
+    proposalId,
     authUserId,
   } = input;
-  
+
   const profileId = await getCurrentProfileId(authUserId);
 
   try {
@@ -104,6 +301,29 @@ export const createPost = async (input: CreatePostServiceInput) => {
 
       return newPost;
     });
+
+    // Send notification email based on the type of comment
+    // TODO: Use the message queue for this and remove @vercel/functions as a dependency in @op/common
+    waitUntil(
+      (async () => {
+        try {
+          if (parentPostId) {
+            // This is a reply to an existing post/comment
+            await sendPostCommentNotification(parentPostId, content, profileId);
+          } else if (targetProfileId && proposalId) {
+            // This is a comment on a proposal
+            await sendProposalCommentNotification(
+              proposalId,
+              content,
+              profileId,
+            );
+          }
+        } catch (error) {
+          // Log notification errors but don't fail the post creation
+          console.error('Failed to send notification email:', error);
+        }
+      })(),
+    );
 
     // Invalidate cache for the target profile if this is a profile-associated post (like a proposal comment)
     if (targetProfileId) {

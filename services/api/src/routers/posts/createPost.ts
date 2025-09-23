@@ -1,4 +1,3 @@
-import { trackProposalCommented } from '../../utils/analytics';
 import { createPost as createPostService } from '@op/common';
 import { createPostSchema } from '@op/types';
 import { TRPCError } from '@trpc/server';
@@ -11,6 +10,7 @@ import withAnalytics from '../../middlewares/withAnalytics';
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
+import { trackProposalCommented } from '../../utils/analytics';
 
 // const meta: OpenApiMeta = {
 // openapi: {
@@ -43,7 +43,11 @@ export const createPost = router({
         // Track proposal commented event if this is a proposal comment
         if (input.proposalId && input.processInstanceId) {
           waitUntil(
-            trackProposalCommented(ctx, input.processInstanceId, input.proposalId)
+            trackProposalCommented(
+              ctx,
+              input.processInstanceId,
+              input.proposalId,
+            ),
           );
         }
 
