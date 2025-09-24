@@ -117,7 +117,7 @@ export function DecisionInstanceContent({
                   {t('SHARE YOUR IDEAS.')}
                 </GradientHeader>
                 {
-                  <p className="mt-4 text-base text-gray-700">
+                  <div className="mt-4 text-base text-gray-700">
                     <p>
                       In May 2025, One Project Core Capabilities grantees (you
                       all!) identified establishing and/or supporting mutual aid
@@ -159,7 +159,17 @@ export function DecisionInstanceContent({
                       </a>{' '}
                       today!
                     </p>
-                  </p>
+                    <p className="py-4">
+                      <a
+                        href="https://horizonfund.grantplatform.com/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-semibold text-teal hover:underline"
+                      >
+                        Start your application
+                      </a>
+                    </p>
+                  </div>
                 }
               </>
             ),
