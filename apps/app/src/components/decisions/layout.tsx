@@ -31,7 +31,7 @@ export function ProposalEditorLayout({
   return (
     <div className="flex min-h-screen flex-col bg-white">
       {/* Header */}
-      <div className="flex items-center justify-between gap-2 border-b border-neutral-gray1 px-4 py-4 sm:px-6">
+      <div className="grid grid-cols-3 items-center gap-2 border-b border-neutral-gray1 px-4 py-4 sm:px-6">
         <button
           onClick={() => router.push(backHref)}
           className="flex items-center gap-2 text-sm text-primary-teal hover:text-primary-tealBlack"
@@ -40,11 +40,11 @@ export function ProposalEditorLayout({
           <span className="hidden sm:block">Back</span>
         </button>
 
-        <div className="hidden flex-1 text-center text-lg font-medium text-neutral-black sm:block">
-          {title ? title : 'Untitled Proposal'}
+        <div className="flex justify-center text-lg font-medium text-neutral-black">
+          <span className="hidden sm:block">{title ? title : 'Untitled Proposal'}</span>
         </div>
 
-        <div className="flex items-center gap-8">
+        <div className="flex items-center justify-end gap-8">
           <Button
             color="primary"
             variant="icon"

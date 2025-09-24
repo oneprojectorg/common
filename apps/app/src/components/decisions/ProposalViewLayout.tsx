@@ -42,7 +42,7 @@ export function ProposalViewLayout({
   return (
     <div className="flex min-h-screen flex-col bg-white">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-neutral-gray1 px-6 py-4">
+      <div className="grid grid-cols-3 items-center border-b border-neutral-gray1 px-6 py-4">
         <button
           onClick={() => router.push(backHref)}
           className="flex items-center gap-2 text-base text-primary-teal hover:text-primary-tealBlack"
@@ -51,11 +51,11 @@ export function ProposalViewLayout({
           <span className="hidden sm:block">{t('Back to Proposals')}</span>
         </button>
 
-        <div className="flex-1 text-center text-lg font-medium text-neutral-black">
+        <div className="flex justify-center text-lg font-medium text-neutral-black">
           {title ?? null}
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center justify-end gap-4">
           {canEdit && editHref && (
             <Button
               color="secondary"

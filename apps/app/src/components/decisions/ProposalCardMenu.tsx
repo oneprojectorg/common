@@ -157,13 +157,13 @@ export function ProposalCardMenu({
   return (
     <>
       <OptionMenu>
-        {canManage && (
-          <>
-            <Menu className="min-w-48 p-2">
+        <Menu className="p-2">
+          {canManage && (
+            <>
               <MenuItem
                 key="approve"
                 onAction={handleApprove}
-                className="py-2"
+                className="min-w-48 py-2"
                 isDisabled={
                   isLoading || proposal.status === ProposalStatus.APPROVED
                 }
@@ -174,7 +174,7 @@ export function ProposalCardMenu({
               <MenuItem
                 key="reject"
                 onAction={handleReject}
-                className="py-2"
+                className="min-w-48 py-2"
                 isDisabled={
                   isLoading || proposal.status === ProposalStatus.REJECTED
                 }
@@ -182,20 +182,20 @@ export function ProposalCardMenu({
                 <LuX className="size-4" />
                 {t('Reject from shortlist')}
               </MenuItem>
-              {proposal.isEditable && (
-                <MenuItem
-                  key="delete"
-                  onAction={() => setIsDeleteModalOpen(true)}
-                  className="py-2 text-red-600"
-                  isDisabled={isLoading}
-                >
-                  <Trash2 className="size-4" />
-                  {t('Delete')}
-                </MenuItem>
-              )}
-            </Menu>
-          </>
-        )}
+            </>
+          )}
+          {proposal.isEditable && (
+            <MenuItem
+              key="delete"
+              onAction={() => setIsDeleteModalOpen(true)}
+              className="py-2 text-functional-red"
+              isDisabled={isLoading}
+            >
+              <Trash2 className="size-4" />
+              {t('Delete')}
+            </MenuItem>
+          )}
+        </Menu>
       </OptionMenu>
       {proposal.isEditable && (
         <DialogTrigger
