@@ -382,7 +382,7 @@ export function ProposalCardActions({
         <LuBookmark className="size-4" />
         {currentProposal.isFollowedByUser ? t('Following') : t('Follow')}
       </Button>
-      {initialProposal.isEditable && (
+      {false && initialProposal.isEditable && (
         <DialogTrigger
           isOpen={isDeleteModalOpen}
           onOpenChange={setIsDeleteModalOpen}
