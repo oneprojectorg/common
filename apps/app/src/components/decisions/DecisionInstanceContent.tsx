@@ -214,7 +214,7 @@ export function DecisionInstanceContent({
           )}
         </div>
         <div className="flex w-full justify-center">
-          <div className="flex w-full max-w-md items-center justify-center gap-4">
+          <div className="flex w-full max-w-md flex-col items-center justify-center gap-4 sm:flex-row">
             {description ? (
               <DialogTrigger>
                 <Button color="secondary" className="w-full">
