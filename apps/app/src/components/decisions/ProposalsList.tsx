@@ -15,19 +15,6 @@ import { ProposalCard } from './ProposalCard';
 
 type Proposal = z.infer<typeof proposalEncoder>;
 
-interface ProposalsListProps {
-  slug: string;
-  instanceId: string;
-}
-
-interface ProposalsProps {
-  proposals: Proposal[] | undefined;
-  instanceId: string;
-  slug: string;
-  isLoading: boolean;
-  canManageProposals?: boolean;
-}
-
 const NoProposalsFound = () => {
   const t = useTranslations();
   return (
@@ -48,7 +35,13 @@ const Proposals = ({
   slug,
   isLoading,
   canManageProposals = false,
-}: ProposalsProps) => {
+}: {
+  proposals?: Proposal[];
+  instanceId: string;
+  slug: string;
+  isLoading: boolean;
+  canManageProposals?: boolean;
+}) => {
   if (isLoading) {
     return (
       <div className="flex flex-col gap-4">
@@ -74,7 +67,13 @@ const Proposals = ({
   );
 };
 
-export function ProposalsList({ slug, instanceId }: ProposalsListProps) {
+export function ProposalsList({
+  slug,
+  instanceId,
+}: {
+  slug: string;
+  instanceId: string;
+}) {
   const t = useTranslations();
   const { user } = useUser();
   const [selectedCategory, setSelectedCategory] =

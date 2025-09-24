@@ -3,9 +3,14 @@
 import { trpc } from '@op/api/client';
 import type { proposalEncoder } from '@op/api/encoders';
 import { ProposalStatus } from '@op/api/encoders';
+import { Button } from '@op/ui/Button';
+import { DialogTrigger } from '@op/ui/Dialog';
 import { Menu, MenuItem } from '@op/ui/Menu';
+import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { OptionMenu } from '@op/ui/OptionMenu';
 import { toast } from '@op/ui/Toast';
+import { Trash2 } from 'lucide-react';
+import { useState } from 'react';
 import { LuCheck, LuX } from 'react-icons/lu';
 import { z } from 'zod';
 
@@ -13,14 +18,17 @@ import { useTranslations } from '@/lib/i18n';
 
 type Proposal = z.infer<typeof proposalEncoder>;
 
-interface ProposalCardMenuProps {
+export function ProposalCardMenu({
+  proposal,
+  canManage = false,
+}: {
   proposal: Proposal;
-}
-
-export function ProposalCardMenu({ proposal }: ProposalCardMenuProps) {
+  canManage?: boolean;
+}) {
   const t = useTranslations();
   const utils = trpc.useUtils();
   const profileId = proposal.profileId;
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const updateStatusMutation = trpc.decision.updateProposalStatus.useMutation({
     onMutate: async (variables) => {
@@ -34,8 +42,8 @@ export function ProposalCardMenu({ proposal }: ProposalCardMenuProps) {
       // Snapshot the previous value
       const previousListData = proposal.processInstance?.id
         ? utils.decision.listProposals.getData({
-          processInstanceId: proposal.processInstance.id,
-        })
+            processInstanceId: proposal.processInstance.id,
+          })
         : null;
 
       // Optimistically update list data
@@ -45,9 +53,9 @@ export function ProposalCardMenu({ proposal }: ProposalCardMenuProps) {
           proposals: previousListData.proposals.map((p) =>
             p.id === proposal.id
               ? {
-                ...p,
-                status: variables.status,
-              }
+                  ...p,
+                  status: variables.status,
+                }
               : p,
           ),
         };
@@ -92,6 +100,27 @@ export function ProposalCardMenu({ proposal }: ProposalCardMenuProps) {
     },
   });
 
+  const deleteProposalMutation = trpc.decision.deleteProposal.useMutation({
+    onError: (error, _variables) => {
+      toast.error({
+        message: error.message || t('Failed to delete proposal'),
+      });
+    },
+    onSuccess: () => {
+      toast.success({
+        message: t('Proposal deleted successfully'),
+      });
+    },
+    onSettled: () => {
+      // Always refetch after error or success
+      if (proposal.processInstance?.id) {
+        utils.decision.listProposals.invalidate({
+          processInstanceId: proposal.processInstance.id,
+        });
+      }
+    },
+  });
+
   const handleApprove = () => {
     updateStatusMutation.mutate({
       profileId,
@@ -106,30 +135,108 @@ export function ProposalCardMenu({ proposal }: ProposalCardMenuProps) {
     });
   };
 
-  const isLoading = updateStatusMutation.isPending;
+  const handleDeleteConfirm = async () => {
+    if (!proposal.id) {
+      console.error('No proposal ID provided for delete action');
+      return;
+    }
+
+    try {
+      await deleteProposalMutation.mutateAsync({
+        proposalId: proposal.id,
+      });
+      setIsDeleteModalOpen(false); // Close modal after successful deletion
+    } catch (error) {
+      console.error('Error in ProposalCardMenu handleDeleteConfirm:', error);
+    }
+  };
+
+  const isLoading =
+    updateStatusMutation.isPending || deleteProposalMutation.isPending;
 
   return (
-    <OptionMenu>
-      <Menu className="min-w-48 p-2">
-        <MenuItem
-          key="approve"
-          onAction={handleApprove}
-          className="py-2"
-          isDisabled={isLoading || proposal.status === ProposalStatus.APPROVED}
+    <>
+      <OptionMenu>
+        {canManage && (
+          <>
+            <Menu className="min-w-48 p-2">
+              <MenuItem
+                key="approve"
+                onAction={handleApprove}
+                className="py-2"
+                isDisabled={
+                  isLoading || proposal.status === ProposalStatus.APPROVED
+                }
+              >
+                <LuCheck className="size-4" />
+                {t('Shortlist for voting')}
+              </MenuItem>
+              <MenuItem
+                key="reject"
+                onAction={handleReject}
+                className="py-2"
+                isDisabled={
+                  isLoading || proposal.status === ProposalStatus.REJECTED
+                }
+              >
+                <LuX className="size-4" />
+                {t('Reject from shortlist')}
+              </MenuItem>
+              {proposal.isEditable && (
+                <MenuItem
+                  key="delete"
+                  onAction={() => setIsDeleteModalOpen(true)}
+                  className="py-2 text-red-600"
+                  isDisabled={isLoading}
+                >
+                  <Trash2 className="size-4" />
+                  {t('Delete')}
+                </MenuItem>
+              )}
+            </Menu>
+          </>
+        )}
+      </OptionMenu>
+      {proposal.isEditable && (
+        <DialogTrigger
+          isOpen={isDeleteModalOpen}
+          onOpenChange={setIsDeleteModalOpen}
         >
-          <LuCheck className="size-4" />
-          {t('Shortlist for voting')}
-        </MenuItem>
-        <MenuItem
-          key="reject"
-          onAction={handleReject}
-          className="py-2"
-          isDisabled={isLoading || proposal.status === ProposalStatus.REJECTED}
-        >
-          <LuX className="size-4" />
-          {t('Reject from shortlist')}
-        </MenuItem>
-      </Menu>
-    </OptionMenu>
+          <Modal
+            isDismissable
+            isOpen={isDeleteModalOpen}
+            onOpenChange={setIsDeleteModalOpen}
+          >
+            <ModalHeader>{t('Delete Proposal')}</ModalHeader>
+            <ModalBody>
+              <p>
+                {t(
+                  'Are you sure you want to delete this proposal? This action cannot be undone.',
+                )}
+              </p>
+            </ModalBody>
+            <ModalFooter>
+              <Button
+                color="secondary"
+                className="w-full sm:w-fit"
+                onPress={() => setIsDeleteModalOpen(false)}
+              >
+                {t('Cancel')}
+              </Button>
+              <Button
+                color="destructive"
+                onPress={handleDeleteConfirm}
+                className="w-full sm:w-fit"
+                isDisabled={deleteProposalMutation.isPending}
+              >
+                {deleteProposalMutation.isPending
+                  ? t('Deleting...')
+                  : t('Delete')}
+              </Button>
+            </ModalFooter>
+          </Modal>
+        </DialogTrigger>
+      )}
+    </>
   );
 }

@@ -23,24 +23,22 @@ import { ProposalCardMenu } from './ProposalCardMenu';
 
 type Proposal = z.infer<typeof proposalEncoder>;
 
-interface ProposalCardProps {
-  proposal: Proposal;
-  viewHref: string;
-  canManageProposals?: boolean;
-}
-
 export function ProposalCard({
   proposal: currentProposal,
   viewHref,
   canManageProposals = false,
-}: ProposalCardProps) {
+}: {
+  proposal: Proposal;
+  viewHref: string;
+  canManageProposals?: boolean;
+}) {
   const t = useTranslations();
 
   // Parse proposal data using shared utility
   const { title, budget, category, description } = parseProposalData(
     currentProposal.proposalData,
   );
-  const status = currentProposal.status;
+  const { status } = currentProposal;
 
   return (
     <Surface className="relative w-full min-w-80 space-y-3 p-6 pb-4">
@@ -49,13 +47,16 @@ export function ProposalCard({
         <div className="flex flex-col items-start justify-between gap-2 sm:flex-row">
           <Link
             href={viewHref}
-            className="font-serif !text-title-sm text-neutral-black transition-colors hover:text-primary-teal"
+            className="max-w-full truncate text-nowrap font-serif !text-title-sm text-neutral-black transition-colors hover:text-primary-teal"
           >
             {title || t('Untitled Proposal')}
           </Link>
-          {canManageProposals && (
-            <ProposalCardMenu proposal={currentProposal} />
-          )}
+          {canManageProposals || currentProposal.isEditable ? (
+            <ProposalCardMenu
+              proposal={currentProposal}
+              canManage={canManageProposals}
+            />
+          ) : null}
         </div>
         {budget && (
           <span className="font-serif text-title-base text-neutral-charcoal">
