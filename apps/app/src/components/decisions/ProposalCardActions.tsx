@@ -266,8 +266,7 @@ export function ProposalCardActions({
     });
 
   const isLoading =
-    addRelationshipMutation.isPending ||
-    removeRelationshipMutation.isPending;
+    addRelationshipMutation.isPending || removeRelationshipMutation.isPending;
 
   const handleLikeClick = async () => {
     if (!currentProposal.profileId) {
