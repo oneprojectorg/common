@@ -27,7 +27,7 @@ async function DecisionInstancePageContent({
       }),
       client.decision.listProposals.query({
         processInstanceId: instanceId,
-        limit: 20,
+        limit: 100,
       }),
     ]);
 
@@ -45,7 +45,7 @@ async function DecisionInstancePageContent({
     const phases: ProcessPhase[] = templateStates.map((templateState) => {
       // Find corresponding instance phase data
       const instancePhase = instancePhases.find(
-        (ip: any) => ip.stateId === templateState.id,
+        (phase: any) => phase.stateId === templateState.id,
       );
 
       return {
