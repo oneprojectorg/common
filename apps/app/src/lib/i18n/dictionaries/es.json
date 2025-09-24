@@ -224,5 +224,17 @@
   "has already been added": "ya ha sido agregado",
   "have already been added": "ya han sido agregados",
   "Invalid emails": "Correos inválidos",
-  "are not valid email addresses": "no son direcciones de correo válidas"
+  "are not valid email addresses": "no son direcciones de correo válidas",
+  "About the process": "Acerca del proceso",
+  "Delete Proposal": "Eliminar propuesta",
+  "Delete": "Eliminar",
+  "Deleting...": "Eliminando...",
+  "Failed to delete proposal": "Error al eliminar la propuesta",
+  "Proposal deleted successfully": "Propuesta eliminada exitosamente",
+  "Not shortlisted": "No preseleccionada",
+  "Shortlisted": "Preseleccionada",
+  "Reject from shortlist": "Rechazar de la preselección",
+  "Shortlist for voting": "Preseleccionar para votación",
+  "Shortlisted proposals •": "Propuestas preseleccionadas •",
+  "Are you sure you want to delete this proposal? This action cannot be undone.": "¿Estás seguro de que quieres eliminar esta propuesta? Esta acción no se puede deshacer."
 }

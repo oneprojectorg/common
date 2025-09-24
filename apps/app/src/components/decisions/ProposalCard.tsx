@@ -119,23 +119,17 @@ export function ProposalCard({
       {/* Footer with engagement */}
       <div className="flex flex-col justify-between gap-4 pt-3">
         <div className="flex w-full items-center justify-between gap-4 text-base text-neutral-gray4 sm:justify-normal">
-          <span className="flex items-center gap-1">
-            <Heart className="h-4 w-4" />
-            <span>
-              {currentProposal.likesCount || 0} {t('Likes')}
-            </span>
+          <span className="flex items-center gap-1 truncate">
+            <Heart className="size-4" />
+            {currentProposal.likesCount || 0} {t('Likes')}
           </span>
-          <span className="flex items-center gap-1">
-            <MessageCircle className="h-4 w-4" />
-            <span>
-              {currentProposal.commentsCount || 0} {t('Comments')}
-            </span>
+          <span className="flex items-center gap-1 truncate">
+            <MessageCircle className="size-4" />
+            {currentProposal.commentsCount || 0} {t('Comments')}
           </span>
-          <span className="flex items-center gap-1">
+          <span className="flex items-center gap-1 truncate">
             <LuBookmark className="size-4" />
-            <span>
-              {currentProposal.followersCount || 0} {t('Followers')}
-            </span>
+            {currentProposal.followersCount || 0} {t('Followers')}
           </span>
         </div>
         <ProposalCardActions proposal={currentProposal} />
