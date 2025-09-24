@@ -41,7 +41,7 @@ export function ProposalCard({
   const { status } = currentProposal;
 
   return (
-    <Surface className="relative w-full min-w-80 space-y-3 p-6 pb-4">
+    <Surface className="relative w-full min-w-80 space-y-3 p-4 pb-4">
       {/* Header with title and budget */}
       <div className="flex flex-col gap-2">
         <div className="flex items-start justify-between gap-2">
