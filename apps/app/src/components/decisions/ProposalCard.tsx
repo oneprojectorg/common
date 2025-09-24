@@ -118,7 +118,7 @@ export function ProposalCard({
 
       {/* Footer with engagement */}
       <div className="flex flex-col justify-between gap-4 pt-3">
-        <div className="flex w-full items-center justify-between gap-4 text-base text-neutral-gray4 sm:justify-normal">
+        <div className="flex w-full items-center justify-between gap-4 text-base text-neutral-gray4">
           <span className="flex items-center gap-1 truncate">
             <Heart className="size-4" />
             {currentProposal.likesCount || 0} {t('Likes')}

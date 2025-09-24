@@ -78,11 +78,9 @@ export const ProfileTabsRenderer = ({
       <ProfileTabList>
         <DesktopOrganizationTabs />
         <FollowersTab />
+        <MembersTab profileId={profile.id} />
         {decisionsEnabled && (
-          <>
-            <MembersTab profileId={profile.id} />
-            <DecisionsTab profileId={profile.id} />
-          </>
+          <DecisionsTab profileId={profile.id} />
         )}
       </ProfileTabList>
 
@@ -117,53 +115,55 @@ export const ProfileTabsRenderer = ({
     </ProfileTabs>
   );
 };
+{
+  decisionsEnabled && (
 
 export const IndividualProfileTabsRenderer = ({
-  userProfile,
-  profile,
-  initialTab,
-}: {
-  userProfile: Organization;
-  profile: Profile;
-  initialTab?: string;
-}) => {
-  const isMobile = useMediaQuery('(max-width: 640px)');
+    userProfile,
+    profile,
+    initialTab,
+  }: {
+    userProfile: Organization;
+    profile: Profile;
+    initialTab?: string;
+  }) => {
+    const isMobile = useMediaQuery('(max-width: 640px)');
 
-  if (isMobile) {
-    return (
-      <ProfileTabsMobile
-        profile={userProfile}
-        initialTab={initialTab}
-        followingContent={<ProfileFollowing profileId={profile.id} />}
-      >
-        <ProfileOrganizationsSuspense
-          slug={profile.slug}
-          showBreadcrumb={false}
-        />
-      </ProfileTabsMobile>
-    );
-  }
-
-  return (
-    <ProfileTabs initialTab={initialTab} profileType="individual">
-      <ProfileTabList>
-        <DesktopIndividualTabs />
-      </ProfileTabList>
-
-      <TabPanel id="about" className="sm:p-0">
-        <ProfileGrid profile={userProfile} />
-      </TabPanel>
-      <TabPanel id="organizations" className="px-4 sm:px-6 sm:py-0">
-        <ProfileOrganizations>
+    if (isMobile) {
+      return (
+        <ProfileTabsMobile
+          profile={userProfile}
+          initialTab={initialTab}
+          followingContent={<ProfileFollowing profileId={profile.id} />}
+        >
           <ProfileOrganizationsSuspense
             slug={profile.slug}
             showBreadcrumb={false}
           />
-        </ProfileOrganizations>
-      </TabPanel>
-      <TabPanel id="following" className="px-4 sm:px-6 sm:py-0">
-        <ProfileFollowing profileId={profile.id} />
-      </TabPanel>
-    </ProfileTabs>
-  );
-};
+        </ProfileTabsMobile>
+      );
+    }
+
+    return (
+      <ProfileTabs initialTab={initialTab} profileType="individual">
+        <ProfileTabList>
+          <DesktopIndividualTabs />
+        </ProfileTabList>
+
+        <TabPanel id="about" className="sm:p-0">
+          <ProfileGrid profile={userProfile} />
+        </TabPanel>
+        <TabPanel id="organizations" className="px-4 sm:px-6 sm:py-0">
+          <ProfileOrganizations>
+            <ProfileOrganizationsSuspense
+              slug={profile.slug}
+              showBreadcrumb={false}
+            />
+          </ProfileOrganizations>
+        </TabPanel>
+        <TabPanel id="following" className="px-4 sm:px-6 sm:py-0">
+          <ProfileFollowing profileId={profile.id} />
+        </TabPanel>
+      </ProfileTabs>
+    );
+  };
