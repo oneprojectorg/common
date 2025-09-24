@@ -1,13 +1,11 @@
 'use client';
 
+import { ReactNode, createContext, memo, useCallback, useContext } from 'react';
 import {
-  ReactNode,
-  createContext,
-  memo,
-  useCallback,
-  useContext,
-} from 'react';
-import { ModalOverlay, Modal as RACModal } from 'react-aria-components';
+  ModalOverlay,
+  OverlayTriggerStateContext,
+  Modal as RACModal,
+} from 'react-aria-components';
 import type { ModalOverlayProps } from 'react-aria-components';
 import { LuX } from 'react-icons/lu';
 import { tv } from 'tailwind-variants';
@@ -22,7 +20,7 @@ const overlayStyles = tv({
 });
 
 const modalStyles = tv({
-  base: 'isolate z-[999999] h-svh max-h-svh w-screen max-w-md overflow-hidden overflow-y-auto rounded-none border border-offWhite bg-white bg-clip-padding backdrop-blur-lg backdrop-brightness-50 backdrop-saturate-50 entering:duration-500 entering:ease-out entering:animate-in entering:fade-in exiting:duration-500 exiting:ease-in exiting:animate-out exiting:fade-out sm:h-auto sm:max-h-[calc(100svh-2rem)] sm:max-w-[29rem] sm:rounded-md',
+  base: 'isolate z-[999999] h-svh max-h-svh w-screen max-w-md overflow-hidden overflow-y-auto rounded-none border border-offWhite bg-white bg-clip-padding backdrop-blur-lg backdrop-brightness-50 backdrop-saturate-50 entering:duration-500 entering:ease-out entering:animate-in entering:fade-in exiting:duration-500 exiting:ease-in exiting:animate-out exiting:fade-out sm:h-auto sm:max-h-[calc(100svh-2rem)] sm:max-w-[32rem] sm:rounded-md',
 });
 
 type ModalContextType = {
@@ -40,6 +38,15 @@ export const ModalHeader = ({
   children: ReactNode;
 }) => {
   const { isDismissable, onClose } = useContext(ModalContext);
+  const overlayState = useContext(OverlayTriggerStateContext);
+
+  const handleClose = () => {
+    if (onClose) {
+      onClose();
+    } else if (overlayState?.close) {
+      overlayState.close();
+    }
+  };
 
   return (
     <div className="sticky top-0 z-30 flex min-h-16 w-full items-center border-b border-neutral-gray1 bg-white">
@@ -48,7 +55,7 @@ export const ModalHeader = ({
           <button
             type="button"
             aria-label="Close modal"
-            onClick={onClose}
+            onClick={handleClose}
             className={cn(
               'absolute left-6 flex h-6 w-6',
               'items-center justify-center',
@@ -190,7 +197,7 @@ export const ModalInContext = ({
 }) => {
   const contextValue = {
     isDismissable,
-    onClose: isDismissable ? () => onOpenChange?.(false) : undefined,
+    onClose: onOpenChange ? () => onOpenChange(false) : undefined,
   };
 
   return (

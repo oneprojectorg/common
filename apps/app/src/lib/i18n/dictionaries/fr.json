@@ -111,7 +111,6 @@
   "My proposals •": "Mes propositions •",
   "My proposals": "Mes propositions",
   "All proposals": "Toutes les propositions",
-  "All proposals •": "Toutes les propositions •",
   "All categories": "Toutes les catégories",
   "Newest First": "Plus récent en premier",
   "Oldest First": "Plus ancien en premier",
@@ -226,5 +225,17 @@
   "has already been added": "a déjà été ajouté",
   "have already been added": "ont déjà été ajoutés",
   "Invalid emails": "Courriels invalides",
-  "are not valid email addresses": "ne sont pas des adresses de courriel valides"
+  "are not valid email addresses": "ne sont pas des adresses de courriel valides",
+  "About the process": "À propos du processus",
+  "Delete Proposal": "Supprimer la proposition",
+  "Delete": "Supprimer",
+  "Deleting...": "Suppression en cours...",
+  "Failed to delete proposal": "Échec de la suppression de la proposition",
+  "Proposal deleted successfully": "Proposition supprimée avec succès",
+  "Not shortlisted": "Non présélectionné",
+  "Shortlisted": "Présélectionné",
+  "Reject from shortlist": "Rejeter de la présélection",
+  "Shortlist for voting": "Présélectionner pour le vote",
+  "Shortlisted proposals •": "Propositions présélectionnées •",
+  "Are you sure you want to delete this proposal? This action cannot be undone.": "Êtes-vous sûr de vouloir supprimer cette proposition ? Cette action ne peut pas être annulée."
 }

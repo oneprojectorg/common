@@ -10,22 +10,10 @@ import type { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { Bullet } from '../Bullet';
 import { ProposalCard } from './ProposalCard';
 
 type Proposal = z.infer<typeof proposalEncoder>;
-
-interface ProposalsListProps {
-  slug: string;
-  instanceId: string;
-}
-
-interface ProposalsProps {
-  proposals: Proposal[] | undefined;
-  instanceId: string;
-  slug: string;
-  isLoading: boolean;
-  canManageProposals?: boolean;
-}
 
 const NoProposalsFound = () => {
   const t = useTranslations();
@@ -47,7 +35,13 @@ const Proposals = ({
   slug,
   isLoading,
   canManageProposals = false,
-}: ProposalsProps) => {
+}: {
+  proposals?: Proposal[];
+  instanceId: string;
+  slug: string;
+  isLoading: boolean;
+  canManageProposals?: boolean;
+}) => {
   if (isLoading) {
     return (
       <div className="flex flex-col gap-4">
@@ -60,7 +54,7 @@ const Proposals = ({
   return !proposals || proposals.length === 0 ? (
     <NoProposalsFound />
   ) : (
-    <div className="space-y-4">
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
       {proposals.map((proposal) => (
         <ProposalCard
           key={proposal.id}
@@ -73,7 +67,13 @@ const Proposals = ({
   );
 };
 
-export function ProposalsList({ slug, instanceId }: ProposalsListProps) {
+export function ProposalsList({
+  slug,
+  instanceId,
+}: {
+  slug: string;
+  instanceId: string;
+}) {
   const t = useTranslations();
   const { user } = useUser();
   const [selectedCategory, setSelectedCategory] =
@@ -143,17 +143,17 @@ export function ProposalsList({ slug, instanceId }: ProposalsListProps) {
   const { proposals, canManageProposals = false } = finalProposalsData ?? {};
 
   return (
-    <div>
+    <div className="flex flex-col gap-6">
       {/* Filters Bar */}
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <span className="font-serif text-title-base text-neutral-black">
             {proposalFilter === 'my'
               ? t('My proposals •')
               : proposalFilter === 'shortlisted'
                 ? t('Shortlisted proposals •')
-                : t('All proposals •')}{' '}
-            {proposals?.length ?? 0}
+                : t('All proposals')}{' '}
+            <Bullet /> {proposals?.length ?? 0}
           </span>
         </div>
         <div className="grid max-w-fit grid-cols-2 justify-end gap-4 sm:flex sm:flex-1 sm:flex-wrap sm:items-center">

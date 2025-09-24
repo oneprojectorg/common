@@ -1,33 +1,14 @@
 import { trpcNext } from '@op/api/vanilla';
-import { ButtonLink } from '@op/ui/Button';
-import { Header3 } from '@op/ui/Header';
 import { Skeleton } from '@op/ui/Skeleton';
-import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
-import { RichTextEditorContent } from '@/components/RichTextEditor';
-import { CurrentPhaseSurface } from '@/components/decisions/CurrentPhaseSurface';
 import { DecisionInstanceContent } from '@/components/decisions/DecisionInstanceContent';
 import { DecisionInstanceHeader } from '@/components/decisions/DecisionInstanceHeader';
 import { DecisionProcessStepper } from '@/components/decisions/DecisionProcessStepper';
 import { EmptyProposalsState } from '@/components/decisions/EmptyProposalsState';
 import { ProposalsList } from '@/components/decisions/ProposalsList';
-
-interface ProcessPhase {
-  id: string;
-  name: string;
-  description?: string;
-  phase?: {
-    startDate?: string;
-    endDate?: string;
-    sortOrder?: number;
-  };
-  type?: 'initial' | 'intermediate' | 'final';
-  config?: {
-    allowProposals?: boolean;
-  };
-}
+import { ProcessPhase } from '@/components/decisions/types';
 
 async function DecisionInstancePageContent({
   instanceId,
@@ -38,7 +19,6 @@ async function DecisionInstancePageContent({
 }) {
   try {
     const client = await trpcNext();
-    const t = await getTranslations();
 
     // Fetch instance and proposals in parallel
     const [instance, proposalsData] = await Promise.all([
@@ -47,7 +27,7 @@ async function DecisionInstancePageContent({
       }),
       client.decision.listProposals.query({
         processInstanceId: instanceId,
-        limit: 20,
+        limit: 100,
       }),
     ]);
 
@@ -65,7 +45,7 @@ async function DecisionInstancePageContent({
     const phases: ProcessPhase[] = templateStates.map((templateState) => {
       // Find corresponding instance phase data
       const instancePhase = instancePhases.find(
-        (ip: any) => ip.stateId === templateState.id,
+        (phase: any) => phase.stateId === templateState.id,
       );
 
       return {
@@ -80,25 +60,6 @@ async function DecisionInstancePageContent({
       };
     });
 
-    const currentPhase = phases.find(
-      (phase) => phase.id === instance.currentStateId,
-    );
-
-    const budget = instanceData?.budget || processSchema?.budget;
-
-    const currentStateId =
-      instanceData?.currentStateId || instance.currentStateId;
-    const currentState = templateStates.find(
-      (state) => state.id === currentStateId,
-    );
-    const allowProposals = currentState?.config?.allowProposals !== false; // defaults to true
-
-    // TODO: special key for People powered translations as a stop-gap
-    const description = instance?.description?.match('PPDESCRIPTION')
-      ? t('PPDESCRIPTION')
-      : (instance.description ?? instance.process?.description);
-
-    const { name, proposalCount = 0 } = instance;
     const proposals = proposalsData?.proposals || [];
 
     return (
@@ -129,42 +90,7 @@ async function DecisionInstancePageContent({
 
         {/* Main layout with sidebar and content */}
         <div className="flex w-full justify-center bg-white">
-          <div className="grid w-full grid-cols-1 gap-8 p-4 sm:max-w-6xl sm:p-8 lg:grid-cols-4">
-            {/* Left sidebar - Process Info */}
-            <div className="lg:col-span-1">
-              <div className="flex flex-col gap-4">
-                <Header3 className="flex min-h-8 items-center font-serif !text-title-base text-neutral-black">
-                  {name}
-                </Header3>
-                {description ? (
-                  <RichTextEditorContent
-                    content={description}
-                    readOnly={true}
-                    editorClassName="prose prose-base max-w-none [&_p]:text-base"
-                  />
-                ) : null}
-
-                {allowProposals && (
-                  <div className="mb-6">
-                    <ButtonLink
-                      href={`/profile/${slug}/decisions/${instanceId}/proposal/create`}
-                      color="primary"
-                      className="w-full"
-                    >
-                      {t('Submit a proposal')}
-                    </ButtonLink>
-                  </div>
-                )}
-
-                <CurrentPhaseSurface
-                  currentPhase={currentPhase}
-                  budget={budget}
-                  hideBudget={instanceData?.hideBudget}
-                  proposalCount={proposalCount}
-                />
-              </div>
-            </div>
-
+          <div className="w-full gap-8 p-4 sm:max-w-6xl sm:p-8">
             {/* Main content area - Proposals */}
             <div className="lg:col-span-3">
               {proposals.length === 0 ? (

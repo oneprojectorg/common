@@ -6,34 +6,61 @@ import { getUniqueSubmitters } from '@/utils/proposalUtils';
 import { trpc } from '@op/api/client';
 import { match } from '@op/core';
 import { Avatar } from '@op/ui/Avatar';
-import { FacePile } from '@op/ui/FacePile';
+import { Button, ButtonLink } from '@op/ui/Button';
+import { Dialog, DialogTrigger } from '@op/ui/Dialog';
+import { GrowingFacePile } from '@op/ui/GrowingFacePile';
 import { GradientHeader } from '@op/ui/Header';
+import { Modal, ModalBody, ModalHeader } from '@op/ui/Modal';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
 
-import { useTranslations } from '@/lib/i18n/routing';
+import { Link, useTranslations } from '@/lib/i18n/routing';
 
-interface DecisionInstanceContentProps {
-  instanceId: string;
-}
+import { RichTextEditorContent } from '../RichTextEditor';
+import { ProcessPhase } from './types';
 
 export function DecisionInstanceContent({
   instanceId,
-}: DecisionInstanceContentProps) {
+}: {
+  instanceId: string;
+}) {
   const t = useTranslations();
   const { slug } = useParams();
-  const [{ proposals }] = trpc.decision.listProposals.useSuspenseQuery({
-    processInstanceId: instanceId,
-    limit: 20,
-  });
+  const [[{ proposals }, instance]] = trpc.useSuspenseQueries((t) => [
+    t.decision.listProposals({
+      processInstanceId: instanceId,
+      limit: 20,
+    }),
+    t.decision.getInstance({
+      instanceId,
+    }),
+  ]);
+
+  const instanceData = instance.instanceData as any;
+  const processSchema = instance.process?.processSchema as any;
+
+  // Merge template states with actual instance phase data
+  const templateStates: ProcessPhase[] = processSchema?.states || [];
+
+  const currentStateId =
+    instanceData?.currentStateId || instance.currentStateId;
+  const currentState = templateStates.find(
+    (state) => state.id === currentStateId,
+  );
+  const allowProposals = currentState?.config?.allowProposals !== false; // defaults to true
+
+  // TODO: special key for People powered translations as a stop-gap
+  const description = instance?.description?.match('PPDESCRIPTION')
+    ? t('PPDESCRIPTION')
+    : (instance.description ?? instance.process?.description);
 
   const uniqueSubmitters = getUniqueSubmitters(proposals);
   // TODO: This match statement is all going to go away. We are going to move all of this into a modal instead so hardcoding here won't be tech-debt.
   // We just need to be sure to move this content into the instance data
   return (
     <div className="min-h-full px-4 py-8">
-      <div className="mx-auto flex max-w-3xl justify-center">
-        <div className="text-center">
+      <div className="mx-auto flex max-w-3xl flex-col justify-center gap-4">
+        <div className="flex flex-col gap-2 text-center">
           {match(slug, {
             'people-powered': (
               <>
@@ -140,34 +167,74 @@ export function DecisionInstanceContent({
 
           {/* Member avatars showing who submitted proposals */}
           {uniqueSubmitters.length > 0 && (
-            <div className="mt-6 flex items-center justify-center gap-2">
-              <FacePile
-                items={uniqueSubmitters.slice(0, 4).map((submitter) => (
-                  <Avatar
-                    key={submitter.id}
-                    placeholder={submitter.name || submitter.slug || 'U'}
-                    className="border-2 border-white"
+            <div className="flex items-center justify-center gap-2">
+              <GrowingFacePile
+                maxItems={20}
+                items={uniqueSubmitters.map((submitter) => (
+                  <Link
+                    key={submitter.slug}
+                    href={`/profile/${submitter.slug}`}
+                    className="hover:no-underline"
                   >
-                    {submitter.avatarImage?.name ? (
-                      <Image
-                        src={getPublicUrl(submitter.avatarImage.name) ?? ''}
-                        alt={submitter.name || submitter.slug || ''}
-                        width={32}
-                        height={32}
-                        className="aspect-square rounded-full object-cover"
-                      />
-                    ) : null}
-                  </Avatar>
+                    <Avatar
+                      placeholder={submitter.name || submitter.slug || 'U'}
+                    >
+                      {submitter.avatarImage?.name ? (
+                        <Image
+                          src={getPublicUrl(submitter.avatarImage.name) ?? ''}
+                          alt={submitter.name || submitter.slug || ''}
+                          width={32}
+                          height={32}
+                          className="aspect-square object-cover"
+                        />
+                      ) : null}
+                    </Avatar>
+                    <div className="absolute left-0 top-0 h-full w-full cursor-pointer rounded-full bg-white opacity-0 transition-opacity duration-100 ease-in-out active:bg-black hover:opacity-15" />
+                  </Link>
                 ))}
-              />
-              <span className="w-fit text-sm text-neutral-charcoal">
-                {uniqueSubmitters.length}{' '}
-                {pluralize(t('member'), uniqueSubmitters.length)}{' '}
-                {uniqueSubmitters.length > 1 ? t('have') : t('has')}{' '}
-                {t('submitted proposals')}
-              </span>
+              >
+                <span className="w-fit text-sm text-neutral-charcoal">
+                  {uniqueSubmitters.length}{' '}
+                  {pluralize(t('member'), uniqueSubmitters.length)}{' '}
+                  {uniqueSubmitters.length > 1 ? t('have') : t('has')}{' '}
+                  {t('submitted proposals')}
+                </span>
+              </GrowingFacePile>
             </div>
           )}
+        </div>
+        <div className="flex w-full justify-center">
+          <div className="flex w-full max-w-md items-center justify-center gap-4">
+            {description ? (
+              <DialogTrigger>
+                <Button color="secondary" className="w-full">
+                  {t('About the process')}
+                </Button>
+
+                <Modal isDismissable>
+                  <Dialog>
+                    <ModalHeader>{t('About the process')}</ModalHeader>
+                    <ModalBody>
+                      <RichTextEditorContent
+                        content={description}
+                        readOnly={true}
+                        editorClassName="prose prose-base max-w-none [&_p]:text-base"
+                      />
+                    </ModalBody>
+                  </Dialog>
+                </Modal>
+              </DialogTrigger>
+            ) : null}
+            {allowProposals && (
+              <ButtonLink
+                href={`/profile/${slug}/decisions/${instanceId}/proposal/create`}
+                color="primary"
+                className="w-full"
+              >
+                {t('Submit a proposal')}
+              </ButtonLink>
+            )}
+          </div>
         </div>
       </div>
     </div>
