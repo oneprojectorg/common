@@ -60,7 +60,7 @@ const Proposals = ({
   return !proposals || proposals.length === 0 ? (
     <NoProposalsFound />
   ) : (
-    <div className="space-y-4">
+    <div className="grid grid-cols-3 gap-4">
       {proposals.map((proposal) => (
         <ProposalCard
           key={proposal.id}

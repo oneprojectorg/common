@@ -90,12 +90,7 @@ async function DecisionInstancePageContent({
 
         {/* Main layout with sidebar and content */}
         <div className="flex w-full justify-center bg-white">
-          <div className="grid w-full grid-cols-1 gap-8 p-4 sm:max-w-6xl sm:p-8 lg:grid-cols-4">
-            {/* Left sidebar - Process Info */}
-            <div className="lg:col-span-1">
-              <div className="flex flex-col gap-4"></div>
-            </div>
-
+          <div className="w-full gap-8 p-4 sm:max-w-6xl sm:p-8">
             {/* Main content area - Proposals */}
             <div className="lg:col-span-3">
               {proposals.length === 0 ? (
