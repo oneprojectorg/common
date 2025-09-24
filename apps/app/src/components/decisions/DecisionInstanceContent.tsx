@@ -8,13 +8,13 @@ import { match } from '@op/core';
 import { Avatar } from '@op/ui/Avatar';
 import { Button, ButtonLink } from '@op/ui/Button';
 import { Dialog, DialogTrigger } from '@op/ui/Dialog';
-import { FacePile } from '@op/ui/FacePile';
+import { GrowingFacePile } from '@op/ui/GrowingFacePile';
 import { GradientHeader } from '@op/ui/Header';
 import { Modal, ModalBody, ModalHeader } from '@op/ui/Modal';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
 
-import { useTranslations } from '@/lib/i18n/routing';
+import { Link, useTranslations } from '@/lib/i18n/routing';
 
 import { RichTextEditorContent } from '../RichTextEditor';
 import { ProcessPhase } from './types';
@@ -168,31 +168,38 @@ export function DecisionInstanceContent({
           {/* Member avatars showing who submitted proposals */}
           {uniqueSubmitters.length > 0 && (
             <div className="flex items-center justify-center gap-2">
-              <FacePile
-                items={uniqueSubmitters.slice(0, 4).map((submitter) => (
-                  <Avatar
-                    key={submitter.id}
-                    placeholder={submitter.name || submitter.slug || 'U'}
-                    className="border-2 border-white"
+              <GrowingFacePile
+                maxItems={20}
+                items={uniqueSubmitters.map((submitter) => (
+                  <Link
+                    key={submitter.slug}
+                    href={`/profile/${submitter.slug}`}
+                    className="hover:no-underline"
                   >
-                    {submitter.avatarImage?.name ? (
-                      <Image
-                        src={getPublicUrl(submitter.avatarImage.name) ?? ''}
-                        alt={submitter.name || submitter.slug || ''}
-                        width={32}
-                        height={32}
-                        className="aspect-square rounded-full object-cover"
-                      />
-                    ) : null}
-                  </Avatar>
+                    <Avatar
+                      placeholder={submitter.name || submitter.slug || 'U'}
+                    >
+                      {submitter.avatarImage?.name ? (
+                        <Image
+                          src={getPublicUrl(submitter.avatarImage.name) ?? ''}
+                          alt={submitter.name || submitter.slug || ''}
+                          width={32}
+                          height={32}
+                          className="aspect-square object-cover"
+                        />
+                      ) : null}
+                    </Avatar>
+                    <div className="absolute left-0 top-0 h-full w-full cursor-pointer rounded-full bg-white opacity-0 transition-opacity duration-100 ease-in-out active:bg-black hover:opacity-15" />
+                  </Link>
                 ))}
-              />
-              <span className="w-fit text-sm text-neutral-charcoal">
-                {uniqueSubmitters.length}{' '}
-                {pluralize(t('member'), uniqueSubmitters.length)}{' '}
-                {uniqueSubmitters.length > 1 ? t('have') : t('has')}{' '}
-                {t('submitted proposals')}
-              </span>
+              >
+                <span className="w-fit text-sm text-neutral-charcoal">
+                  {uniqueSubmitters.length}{' '}
+                  {pluralize(t('member'), uniqueSubmitters.length)}{' '}
+                  {uniqueSubmitters.length > 1 ? t('have') : t('has')}{' '}
+                  {t('submitted proposals')}
+                </span>
+              </GrowingFacePile>
             </div>
           )}
         </div>

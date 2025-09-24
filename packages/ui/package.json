@@ -10,6 +10,7 @@
     "./AvatarUploader": "./src/components/AvatarUploader.tsx",
     "./Breadcrumbs": "./src/components/Breadcrumbs.tsx",
     "./FacePile": "./src/components/FacePile.tsx",
+    "./GrowingFacePile": "./src/components/GrowingFacePile/index.tsx",
     "./BannerUploader": "./src/components/BannerUploader.tsx",
     "./FileUploader": "./src/components/FileUploader.tsx",
     "./Button": "./src/components/Button.tsx",

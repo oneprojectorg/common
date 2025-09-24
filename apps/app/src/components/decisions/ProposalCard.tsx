@@ -44,7 +44,7 @@ export function ProposalCard({
     <Surface className="relative w-full min-w-80 space-y-3 p-6 pb-4">
       {/* Header with title and budget */}
       <div className="flex flex-col gap-2">
-        <div className="flex flex-col items-start justify-between gap-2 sm:flex-row">
+        <div className="flex items-start justify-between gap-2">
           <Link
             href={viewHref}
             className="max-w-full truncate text-nowrap font-serif !text-title-sm text-neutral-black transition-colors hover:text-primary-teal"

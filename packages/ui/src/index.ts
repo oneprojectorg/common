@@ -62,6 +62,7 @@ export * from './components/Toast';
 export * from './components/AvatarUploader';
 export * from './components/FileUploader';
 export * from './components/OptionMenu';
+export * from './components/GrowingFacePile';
 
 // Export everything from lib and utils
 export * from './lib/utils';
