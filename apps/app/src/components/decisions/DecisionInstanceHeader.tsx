@@ -37,7 +37,7 @@ export function DecisionInstanceHeader({
       </div>
 
       <div className="flex justify-center">
-        <Header1 className="font-serif text-title-sm text-neutral-charcoal">
+        <Header1 className="font-serif text-title-sm text-neutral-charcoal sm:text-title-sm">
           {title}
         </Header1>
       </div>
