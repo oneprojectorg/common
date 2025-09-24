@@ -16,6 +16,7 @@ import { z } from 'zod';
 import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
 
+import { Bullet } from '../Bullet';
 import { OrganizationAvatar } from '../OrganizationAvatar';
 import { ProposalCardActions } from './ProposalCardActions';
 import { ProposalCardMenu } from './ProposalCardMenu';
@@ -82,7 +83,7 @@ export function ProposalCard({
         )}
         {category && (
           <>
-            <span>•</span>
+            <Bullet />
             <Chip className="min-w-6 max-w-96 overflow-hidden overflow-ellipsis text-nowrap">
               {category}
             </Chip>
@@ -97,7 +98,7 @@ export function ProposalCard({
           ),
           [ProposalStatus.REJECTED]: (
             <>
-              <span>•</span>
+              <Bullet />
               <span className="text-nowrap text-sm text-neutral-charcoal">
                 {t('Not shortlisted')}
               </span>
