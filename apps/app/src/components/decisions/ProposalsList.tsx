@@ -215,9 +215,9 @@ export function ProposalsList({
         <div className="flex items-center gap-4">
           <span className="font-serif text-title-base text-neutral-black">
             {proposalFilter === 'my'
-              ? t('My proposals •')
+              ? t('My proposals')
               : proposalFilter === 'shortlisted'
-                ? t('Shortlisted proposals •')
+                ? t('Shortlisted proposals')
                 : t('All proposals')}{' '}
             <Bullet /> {proposals?.length ?? 0}
           </span>
