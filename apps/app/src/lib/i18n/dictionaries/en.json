@@ -108,7 +108,6 @@
   "Participate": "Participate",
   "Load More": "Load More",
   "Loading...": "Loading...",
-  "My proposals •": "My proposals •",
   "My proposals": "My proposals",
   "All proposals": "All proposals",
   "All categories": "All categories",
@@ -236,6 +235,6 @@
   "Shortlisted": "Shortlisted",
   "Reject from shortlist": "Reject from shortlist",
   "Shortlist for voting": "Shortlist for voting",
-  "Shortlisted proposals •": "Shortlisted proposals •",
+  "Shortlisted proposals": "Shortlisted proposals",
   "Are you sure you want to delete this proposal? This action cannot be undone.": "Are you sure you want to delete this proposal? This action cannot be undone."
 }
