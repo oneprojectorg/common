@@ -2,7 +2,6 @@ import { Skeleton } from '@op/ui/Skeleton';
 import { Suspense } from 'react';
 
 import { DecisionHeader } from '@/components/decisions/DecisionHeader';
-import { DecisionContentSection } from '@/components/decisions/DecisionContentSection';
 import { ProposalsSection } from '@/components/decisions/ProposalsSection';
 
 function DecisionHeaderSkeleton() {
@@ -42,13 +41,10 @@ function DecisionInstancePageContent({
 }) {
   return (
     <>
-      {/* Header and Stepper - loads first */}
+      {/* Header, Stepper, and Content - loads first */}
       <Suspense fallback={<DecisionHeaderSkeleton />}>
         <DecisionHeader instanceId={instanceId} slug={slug} />
       </Suspense>
-
-      {/* Content Section - loads independently */}
-      <DecisionContentSection instanceId={instanceId} />
 
       {/* Proposals Section - loads independently */}
       <ProposalsSection instanceId={instanceId} slug={slug} />

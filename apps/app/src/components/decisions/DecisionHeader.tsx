@@ -1,6 +1,9 @@
 import { trpcNext } from '@op/api/vanilla';
+import { Skeleton } from '@op/ui/Skeleton';
 import { notFound } from 'next/navigation';
+import { Suspense } from 'react';
 
+import { DecisionInstanceContent } from '@/components/decisions/DecisionInstanceContent';
 import { DecisionInstanceHeader } from '@/components/decisions/DecisionInstanceHeader';
 import { DecisionProcessStepper } from '@/components/decisions/DecisionProcessStepper';
 import { ProcessPhase } from '@/components/decisions/types';
@@ -65,6 +68,10 @@ export async function DecisionHeader({ instanceId, slug }: DecisionHeaderProps) 
           />
         </div>
       </div>
+
+      <Suspense fallback={<Skeleton />}>
+        <DecisionInstanceContent instanceId={instanceId} />
+      </Suspense>
     </div>
   );
 }
