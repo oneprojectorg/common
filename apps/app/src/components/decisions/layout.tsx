@@ -50,6 +50,7 @@ export function ProposalEditorLayout({
           <Button
             color="primary"
             variant="icon"
+            size="small"
             onPress={onSubmitProposal}
             isDisabled={isSubmitting}
             className="px-4 py-2"
