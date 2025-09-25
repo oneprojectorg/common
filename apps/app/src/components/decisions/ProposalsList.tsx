@@ -14,7 +14,17 @@ import { useTranslations } from '@/lib/i18n';
 
 import { Bullet } from '../Bullet';
 import { EmptyProposalsState } from './EmptyProposalsState';
-import { ProposalCard } from './ProposalCard';
+import {
+  ProposalCard,
+  ProposalCardActions,
+  ProposalCardContent,
+  ProposalCardDescription,
+  ProposalCardFooter,
+  ProposalCardHeader,
+  ProposalCardMenu,
+  ProposalCardMeta,
+  ProposalCardMetrics,
+} from './ProposalCard';
 
 type Proposal = z.infer<typeof proposalEncoder>;
 
@@ -122,12 +132,27 @@ const Proposals = ({
   ) : (
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
       {proposals.map((proposal) => (
-        <ProposalCard
-          key={proposal.id}
-          proposal={proposal}
-          viewHref={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`}
-          canManageProposals={canManageProposals}
-        />
+        <ProposalCard>
+          <ProposalCardContent>
+            <ProposalCardHeader
+              proposal={proposal}
+              viewHref={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`}
+              showMenu={canManageProposals || proposal.isEditable}
+              menuComponent={
+                <ProposalCardMenu
+                  proposal={proposal}
+                  canManage={canManageProposals}
+                />
+              }
+            />
+            <ProposalCardMeta proposal={proposal} />
+            <ProposalCardDescription proposal={proposal} />
+            <ProposalCardFooter>
+              <ProposalCardMetrics proposal={proposal} />
+              <ProposalCardActions proposal={proposal} />
+            </ProposalCardFooter>
+          </ProposalCardContent>
+        </ProposalCard>
       ))}
     </div>
   );

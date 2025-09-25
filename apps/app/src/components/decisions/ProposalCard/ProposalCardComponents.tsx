@@ -1,0 +1,314 @@
+'use client';
+
+import {
+  formatCurrency,
+  getTextPreview,
+  parseProposalData,
+} from '@/utils/proposalUtils';
+import { ProposalStatus, type proposalEncoder } from '@op/api/encoders';
+import { match } from '@op/core';
+import { Chip } from '@op/ui/Chip';
+import { Surface } from '@op/ui/Surface';
+import { Heart, MessageCircle } from 'lucide-react';
+import { LuBookmark } from 'react-icons/lu';
+import type { ReactNode } from 'react';
+import { z } from 'zod';
+
+import { useTranslations } from '@/lib/i18n';
+import { Link } from '@/lib/i18n/routing';
+
+import { Bullet } from '../Bullet';
+import { OrganizationAvatar } from '../OrganizationAvatar';
+
+export type Proposal = z.infer<typeof proposalEncoder>;
+
+export interface BaseProposalCardProps {
+  proposal: Proposal;
+  className?: string;
+}
+
+/**
+ * Main container component for the proposal card
+ * Provides the Surface wrapper and base layout
+ */
+export function ProposalCard({
+  children,
+  className = '',
+}: {
+  proposal?: Proposal;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <Surface className={`relative w-full min-w-80 space-y-3 p-4 pb-4 ${className}`}>
+      {children}
+    </Surface>
+  );
+}
+
+/**
+ * Content wrapper with consistent spacing
+ */
+export function ProposalCardContent({
+  children,
+  className = '',
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return <div className={`space-y-3 ${className}`}>{children}</div>;
+}
+
+/**
+ * Header section containing title and budget
+ */
+export function ProposalCardHeader({
+  proposal,
+  viewHref,
+  showMenu = false,
+  menuComponent,
+  className = '',
+}: BaseProposalCardProps & {
+  viewHref?: string;
+  showMenu?: boolean;
+  menuComponent?: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={`flex flex-col gap-2 ${className}`}>
+      <div className="flex items-start justify-between gap-2">
+        <ProposalCardTitle proposal={proposal} viewHref={viewHref} />
+        {showMenu && menuComponent}
+      </div>
+      <ProposalCardBudget proposal={proposal} />
+    </div>
+  );
+}
+
+/**
+ * Title component with optional linking
+ */
+export function ProposalCardTitle({
+  proposal,
+  viewHref,
+  asLink = true,
+  className = '',
+}: BaseProposalCardProps & {
+  viewHref?: string;
+  asLink?: boolean;
+  className?: string;
+}) {
+  const t = useTranslations();
+  const { title } = parseProposalData(proposal.proposalData);
+
+  const titleText = title || t('Untitled Proposal');
+  const titleClasses = `max-w-full truncate text-nowrap font-serif !text-title-sm text-neutral-black ${className}`;
+
+  if (asLink && viewHref) {
+    return (
+      <Link
+        href={viewHref}
+        className={`${titleClasses} transition-colors hover:text-primary-teal`}
+      >
+        {titleText}
+      </Link>
+    );
+  }
+
+  return <h3 className={titleClasses}>{titleText}</h3>;
+}
+
+/**
+ * Budget display component
+ */
+export function ProposalCardBudget({
+  proposal,
+  className = '',
+}: BaseProposalCardProps & {
+  className?: string;
+}) {
+  const { budget } = parseProposalData(proposal.proposalData);
+
+  if (!budget) {
+    return null;
+  }
+
+  return (
+    <span className={`font-serif text-title-base text-neutral-charcoal ${className}`}>
+      {formatCurrency(budget)}
+    </span>
+  );
+}
+
+/**
+ * Meta section containing author, category, and status
+ */
+export function ProposalCardMeta({
+  proposal,
+  className = '',
+}: BaseProposalCardProps & {
+  className?: string;
+}) {
+  return (
+    <div className={`flex items-center gap-2 ${className}`}>
+      <ProposalCardAuthor proposal={proposal} />
+      <ProposalCardCategory proposal={proposal} />
+      <ProposalCardStatus proposal={proposal} />
+    </div>
+  );
+}
+
+/**
+ * Author avatar and name component
+ */
+export function ProposalCardAuthor({
+  proposal,
+  className = '',
+}: BaseProposalCardProps & {
+  className?: string;
+}) {
+  if (!proposal.submittedBy) {
+    return null;
+  }
+
+  return (
+    <>
+      <OrganizationAvatar
+        profile={proposal.submittedBy}
+        className={`size-6 ${className}`}
+      />
+      <Link
+        href={`/profile/${proposal.submittedBy.slug}`}
+        className="max-w-32 truncate text-nowrap text-base text-neutral-charcoal"
+      >
+        {proposal.submittedBy.name || proposal.submittedBy.slug}
+      </Link>
+    </>
+  );
+}
+
+/**
+ * Category chip component
+ */
+export function ProposalCardCategory({
+  proposal,
+  className = '',
+}: BaseProposalCardProps & {
+  className?: string;
+}) {
+  const { category } = parseProposalData(proposal.proposalData);
+
+  if (!category || !proposal.submittedBy) {
+    return null;
+  }
+
+  return (
+    <>
+      <Bullet />
+      <Chip className={`min-w-6 max-w-96 overflow-hidden overflow-ellipsis text-nowrap ${className}`}>
+        {category}
+      </Chip>
+    </>
+  );
+}
+
+/**
+ * Status indicator component
+ */
+export function ProposalCardStatus({
+  proposal,
+  className = '',
+}: BaseProposalCardProps & {
+  className?: string;
+}) {
+  const t = useTranslations();
+  const { status } = proposal;
+
+  return match(status, {
+    [ProposalStatus.APPROVED]: (
+      <>
+        <span>•</span>
+        <span className={`text-sm text-green-700 ${className}`}>
+          {t('Shortlisted')}
+        </span>
+      </>
+    ),
+    [ProposalStatus.REJECTED]: (
+      <>
+        <Bullet />
+        <span className={`text-nowrap text-sm text-neutral-charcoal ${className}`}>
+          {t('Not shortlisted')}
+        </span>
+      </>
+    ),
+    _: null,
+  });
+}
+
+/**
+ * Description text component
+ */
+export function ProposalCardDescription({
+  proposal,
+  className = '',
+}: BaseProposalCardProps & {
+  className?: string;
+}) {
+  const { description } = parseProposalData(proposal.proposalData);
+
+  if (!description) {
+    return null;
+  }
+
+  return (
+    <p className={`mb-4 line-clamp-3 text-base text-neutral-charcoal ${className}`}>
+      {getTextPreview(description)}
+    </p>
+  );
+}
+
+/**
+ * Engagement metrics component (likes, comments, followers)
+ */
+export function ProposalCardMetrics({
+  proposal,
+  className = '',
+}: BaseProposalCardProps & {
+  className?: string;
+}) {
+  const t = useTranslations();
+
+  return (
+    <div className={`flex w-full items-center justify-between gap-4 text-base text-neutral-gray4 ${className}`}>
+      <span className="flex items-center gap-1 truncate">
+        <Heart className="size-4" />
+        {proposal.likesCount || 0} {t('Likes')}
+      </span>
+      <span className="flex items-center gap-1 truncate">
+        <MessageCircle className="size-4" />
+        {proposal.commentsCount || 0} {t('Comments')}
+      </span>
+      <span className="flex items-center gap-1 truncate">
+        <LuBookmark className="size-4" />
+        {proposal.followersCount || 0} {t('Followers')}
+      </span>
+    </div>
+  );
+}
+
+/**
+ * Footer container for actions or custom content
+ */
+export function ProposalCardFooter({
+  children,
+  className = '',
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={`flex flex-col justify-between gap-4 ${className}`}>
+      {children}
+    </div>
+  );
+}
