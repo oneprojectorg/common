@@ -34,14 +34,16 @@ export function ProposalEditorLayout({
       <div className="grid grid-cols-3 items-center gap-2 border-b border-neutral-gray1 px-4 py-4 sm:px-6">
         <button
           onClick={() => router.push(backHref)}
-          className="flex items-center gap-2 text-sm text-primary-teal hover:text-primary-tealBlack"
+          className="flex items-center gap-2 text-primary-teal hover:text-primary-tealBlack"
         >
           <LuArrowLeft className="size-6 stroke-1 text-neutral-charcoal sm:size-4 sm:text-primary-teal" />
           <span className="hidden sm:block">Back</span>
         </button>
 
         <div className="flex justify-center text-lg font-medium text-neutral-black">
-          <span className="hidden sm:block">{title ? title : 'Untitled Proposal'}</span>
+          <span className="hidden sm:block">
+            {title ? title : 'Untitled Proposal'}
+          </span>
         </div>
 
         <div className="flex items-center justify-end gap-8">
