@@ -7,7 +7,7 @@ import { DecisionInstanceContent } from '@/components/decisions/DecisionInstance
 import { DecisionInstanceHeader } from '@/components/decisions/DecisionInstanceHeader';
 import { DecisionProcessStepper } from '@/components/decisions/DecisionProcessStepper';
 import { EmptyProposalsState } from '@/components/decisions/EmptyProposalsState';
-import { ProposalsList } from '@/components/decisions/ProposalsList';
+import { ProposalsList, ProposalListSkeleton } from '@/components/decisions/ProposalsList';
 import { ProcessPhase } from '@/components/decisions/types';
 
 async function DecisionInstancePageContent({
@@ -96,7 +96,7 @@ async function DecisionInstancePageContent({
               {proposals.length === 0 ? (
                 <EmptyProposalsState />
               ) : (
-                <Suspense fallback={<Skeleton className="h-full" />}>
+                <Suspense fallback={<ProposalListSkeleton />}>
                   <ProposalsList slug={slug} instanceId={instanceId} />
                 </Suspense>
               )}
