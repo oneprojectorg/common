@@ -1,6 +1,8 @@
 import { trpcNext } from '@op/api/vanilla';
+import { Header3 } from '@op/ui/Header';
 import { Suspense } from 'react';
 
+import { TranslatedText } from '@/components/TranslatedText';
 import { EmptyProposalsState } from '@/components/decisions/EmptyProposalsState';
 import { ProposalsList, ProposalListSkeleton } from '@/components/decisions/ProposalsList';
 
@@ -22,7 +24,14 @@ async function ProposalsContent({ instanceId, slug }: ProposalsSectionProps) {
   return (
     <div className="lg:col-span-3">
       {proposals.length === 0 ? (
-        <EmptyProposalsState />
+        <EmptyProposalsState>
+          <Header3 className="font-serif !text-title-base font-light text-neutral-black">
+            <TranslatedText text="No proposals yet" />
+          </Header3>
+          <p className="text-base text-neutral-charcoal">
+            <TranslatedText text="You could be the first one to submit a proposal" />
+          </p>
+        </EmptyProposalsState>
       ) : (
         <Suspense fallback={<ProposalListSkeleton />}>
           <ProposalsList slug={slug} instanceId={instanceId} />
