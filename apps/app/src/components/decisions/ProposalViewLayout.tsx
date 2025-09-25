@@ -11,19 +11,6 @@ import { useRouter } from '@/lib/i18n/routing';
 import { LocaleChooser } from '../LocaleChooser';
 import { UserAvatarMenu } from '../SiteHeader';
 
-interface ProposalViewLayoutProps {
-  children: ReactNode;
-  backHref: string;
-  title?: string;
-  onLike?: () => void;
-  onFollow?: () => void;
-  isLiked?: boolean;
-  isFollowing?: boolean;
-  isLoading?: boolean;
-  editHref?: string;
-  canEdit?: boolean;
-}
-
 export function ProposalViewLayout({
   children,
   backHref,
@@ -35,7 +22,18 @@ export function ProposalViewLayout({
   isLoading = false,
   editHref,
   canEdit = false,
-}: ProposalViewLayoutProps) {
+}: {
+  children: ReactNode;
+  backHref: string;
+  title?: string;
+  onLike?: () => void;
+  onFollow?: () => void;
+  isLiked?: boolean;
+  isFollowing?: boolean;
+  isLoading?: boolean;
+  editHref?: string;
+  canEdit?: boolean;
+}) {
   const t = useTranslations();
   const router = useRouter();
 
@@ -60,6 +58,7 @@ export function ProposalViewLayout({
             <Button
               color="secondary"
               surface="outline"
+              size="small"
               onPress={() => router.push(editHref)}
               className="px-4 py-2"
             >
@@ -70,6 +69,7 @@ export function ProposalViewLayout({
           <Button
             surface={isLiked ? undefined : 'ghost'}
             color={isLiked ? 'verified' : 'secondary'}
+            size="small"
             onPress={onLike}
             isDisabled={isLoading}
           >
@@ -79,6 +79,7 @@ export function ProposalViewLayout({
           <Button
             surface={isFollowing ? undefined : 'ghost'}
             color={isFollowing ? 'verified' : 'secondary'}
+            size="small"
             onPress={onFollow}
           >
             <LuBookmark className="size-4" />

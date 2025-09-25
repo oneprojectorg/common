@@ -222,6 +222,7 @@ export function ProposalsList({
         <div className="grid max-w-fit grid-cols-2 justify-end gap-4 sm:flex sm:flex-1 sm:flex-wrap sm:items-center">
           <Select
             size="small"
+            className="min-w-36"
             selectedKey={proposalFilter}
             onSelectionChange={(key) => {
               const newKey = String(key);
@@ -241,6 +242,7 @@ export function ProposalsList({
           <Select
             selectedKey={selectedCategory}
             size="small"
+            className="min-w-36"
             onSelectionChange={(key) => setSelectedCategory(String(key))}
             aria-label="Filter proposals by category"
           >
@@ -260,6 +262,7 @@ export function ProposalsList({
           <Select
             selectedKey={sortOrder}
             size="small"
+            className="min-w-32"
             onSelectionChange={(key) => setSortOrder(String(key))}
           >
             <SelectItem id="newest">{t('Newest First')}</SelectItem>
