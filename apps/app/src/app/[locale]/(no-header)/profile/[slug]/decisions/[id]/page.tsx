@@ -1,169 +1,61 @@
-import { trpcNext } from '@op/api/vanilla';
 import { Skeleton } from '@op/ui/Skeleton';
-import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
-import { DecisionInstanceContent } from '@/components/decisions/DecisionInstanceContent';
-import { DecisionInstanceHeader } from '@/components/decisions/DecisionInstanceHeader';
-import { DecisionProcessStepper } from '@/components/decisions/DecisionProcessStepper';
-import { EmptyProposalsState } from '@/components/decisions/EmptyProposalsState';
-import { ProposalsList, ProposalListSkeleton } from '@/components/decisions/ProposalsList';
-import { ProcessPhase } from '@/components/decisions/types';
+import { DecisionHeader } from '@/components/decisions/DecisionHeader';
+import { DecisionContentSection } from '@/components/decisions/DecisionContentSection';
+import { ProposalsSection } from '@/components/decisions/ProposalsSection';
 
-async function DecisionInstancePageContent({
+function DecisionHeaderSkeleton() {
+  return (
+    <div className="border-b bg-neutral-offWhite">
+      {/* Header skeleton */}
+      <div className="flex items-center justify-between border-b border-neutral-gray1 bg-white px-6 py-4">
+        <Skeleton className="h-6 w-32" />
+        <Skeleton className="h-6 w-48" />
+        <Skeleton className="h-8 w-8 rounded-full" />
+      </div>
+
+      {/* Stepper skeleton */}
+      <div className="flex flex-col overflow-x-scroll sm:items-center">
+        <div className="w-fit rounded-b border border-t-0 bg-white px-12 py-4 sm:px-32">
+          <div className="mx-auto flex items-center justify-center space-x-8">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="flex flex-col items-center">
+                <Skeleton className="h-10 w-10 rounded-full" />
+                <Skeleton className="mt-3 h-4 w-24" />
+                <Skeleton className="mt-1 h-3 w-16" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DecisionInstancePageContent({
   instanceId,
   slug,
 }: {
   instanceId: string;
   slug: string;
 }) {
-  try {
-    const client = await trpcNext();
-
-    // Fetch instance and proposals in parallel
-    const [instance, proposalsData] = await Promise.all([
-      client.decision.getInstance.query({
-        instanceId,
-      }),
-      client.decision.listProposals.query({
-        processInstanceId: instanceId,
-        limit: 100,
-      }),
-    ]);
-
-    if (!instance) {
-      notFound();
-    }
-
-    const processSchema = instance.process?.processSchema as any;
-    const instanceData = instance.instanceData as any;
-
-    // Merge template states with actual instance phase data
-    const templateStates: ProcessPhase[] = processSchema?.states || [];
-    const instancePhases = instanceData?.phases || [];
-
-    const phases: ProcessPhase[] = templateStates.map((templateState) => {
-      // Find corresponding instance phase data
-      const instancePhase = instancePhases.find(
-        (phase: any) => phase.stateId === templateState.id,
-      );
-
-      return {
-        ...templateState,
-        phase: instancePhase
-          ? {
-              startDate: instancePhase.plannedStartDate,
-              endDate: instancePhase.plannedEndDate,
-              sortOrder: templateState.phase?.sortOrder,
-            }
-          : templateState.phase,
-      };
-    });
-
-    const proposals = proposalsData?.proposals || [];
-
-    return (
-      <>
-        <div className="border-b bg-neutral-offWhite">
-          <DecisionInstanceHeader
-            backTo={{
-              label: instance.owner?.name,
-              href: `/profile/${slug}?tab=decisions`,
-            }}
-            title={instance.process?.name || instance.name}
-          />
-
-          <div className="flex flex-col overflow-x-scroll sm:items-center">
-            <div className="w-fit rounded-b border border-t-0 bg-white px-12 py-4 sm:px-32">
-              <DecisionProcessStepper
-                phases={phases}
-                currentStateId={instance.currentStateId || ''}
-                className="mx-auto"
-              />
-            </div>
-          </div>
-
-          <Suspense fallback={<Skeleton />}>
-            <DecisionInstanceContent instanceId={instanceId} />
-          </Suspense>
-        </div>
-
-        {/* Main layout with sidebar and content */}
-        <div className="flex w-full justify-center bg-white">
-          <div className="w-full gap-8 p-4 sm:max-w-6xl sm:p-8">
-            {/* Main content area - Proposals */}
-            <div className="lg:col-span-3">
-              {proposals.length === 0 ? (
-                <EmptyProposalsState />
-              ) : (
-                <Suspense fallback={<ProposalListSkeleton />}>
-                  <ProposalsList slug={slug} instanceId={instanceId} />
-                </Suspense>
-              )}
-            </div>
-          </div>
-        </div>
-      </>
-    );
-  } catch (error) {
-    console.error('Error loading decision instance:', error);
-    notFound();
-  }
-}
-
-function DecisionInstancePageLoading() {
   return (
     <>
-      {/* Header loading */}
-      <div className="flex items-center justify-between border-b border-neutral-gray1 bg-white px-6 py-4">
-        <div className="h-6 w-32 animate-pulse rounded bg-neutral-gray1" />
-        <div className="h-6 w-48 animate-pulse rounded bg-neutral-gray1" />
-        <div className="h-8 w-8 animate-pulse rounded-full bg-neutral-gray1" />
-      </div>
+      {/* Header and Stepper - loads first */}
+      <Suspense fallback={<DecisionHeaderSkeleton />}>
+        <DecisionHeader instanceId={instanceId} slug={slug} />
+      </Suspense>
 
-      {/* Stepper loading */}
-      <div className="bg-white py-8">
-        <div className="mx-auto flex items-center justify-center space-x-8">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="flex flex-col items-center">
-              <div className="h-10 w-10 animate-pulse rounded-full bg-neutral-gray1" />
-              <div className="mt-3 h-4 w-24 animate-pulse rounded bg-neutral-gray1" />
-              <div className="mt-1 h-3 w-16 animate-pulse rounded bg-neutral-gray1" />
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* Content Section - loads independently */}
+      <DecisionContentSection instanceId={instanceId} />
 
-      {/* Content loading */}
-      <div className="min-h-full bg-gray-50 px-6 py-12">
-        <div className="mx-auto sm:max-w-6xl">
-          <div className="text-center">
-            <div className="mx-auto h-16 w-96 animate-pulse rounded bg-neutral-gray1" />
-            <div className="mx-auto mt-4 h-6 w-80 animate-pulse rounded bg-neutral-gray1" />
-          </div>
-
-          <div className="rounded-lg bg-white p-8 shadow-sm">
-            <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-              <div>
-                <div className="h-8 w-64 animate-pulse rounded bg-neutral-gray1" />
-                <div className="mt-4 space-y-2">
-                  <div className="h-4 w-full animate-pulse rounded bg-neutral-gray1" />
-                  <div className="h-4 w-3/4 animate-pulse rounded bg-neutral-gray1" />
-                </div>
-                <div className="mt-8 h-12 w-32 animate-pulse rounded bg-neutral-gray1" />
-              </div>
-              <div className="space-y-6">
-                <div className="h-20 animate-pulse rounded bg-neutral-gray1" />
-                <div className="h-24 animate-pulse rounded bg-neutral-gray1" />
-                <div className="h-32 animate-pulse rounded bg-neutral-gray1" />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Proposals Section - loads independently */}
+      <ProposalsSection instanceId={instanceId} slug={slug} />
     </>
   );
 }
+
 
 const DecisionInstancePage = async ({
   params,
@@ -172,11 +64,7 @@ const DecisionInstancePage = async ({
 }) => {
   const { id, slug } = await params;
 
-  return (
-    <Suspense fallback={<DecisionInstancePageLoading />}>
-      <DecisionInstancePageContent instanceId={id} slug={slug} />
-    </Suspense>
-  );
+  return <DecisionInstancePageContent instanceId={id} slug={slug} />;
 };
 
 export default DecisionInstancePage;
