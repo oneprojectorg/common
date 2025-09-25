@@ -3,6 +3,7 @@
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import type { proposalEncoder } from '@op/api/encoders';
+import { Header3 } from '@op/ui/Header';
 import { Select, SelectItem } from '@op/ui/Select';
 import { Skeleton } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
@@ -12,6 +13,7 @@ import type { z } from 'zod';
 import { useTranslations } from '@/lib/i18n';
 
 import { Bullet } from '../Bullet';
+import { EmptyProposalsState } from './EmptyProposalsState';
 import { ProposalCard } from './ProposalCard';
 
 type Proposal = z.infer<typeof proposalEncoder>;
@@ -87,14 +89,14 @@ export const ProposalListSkeleton = () => {
 const NoProposalsFound = () => {
   const t = useTranslations();
   return (
-    <div className="py-12 text-center">
-      <p className="text-neutral-charcoal">
+    <EmptyProposalsState>
+      <Header3 className="text-neutral-black">
         {t('No proposals found matching the current filters.')}
-      </p>
-      <p className="mt-2 text-sm text-neutral-gray2">
+      </Header3>
+      <p className="text-base text-neutral-charcoal">
         {t('Try adjusting your filter selection above.')}
       </p>
-    </div>
+    </EmptyProposalsState>
   );
 };
 
