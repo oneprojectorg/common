@@ -3,13 +3,11 @@
 import { useUser } from '@/utils/UserProvider';
 import { Tab, TabPanel } from '@op/ui/Tabs';
 import { cn } from '@op/ui/utils';
-import { ReactNode, Suspense } from 'react';
+import { ReactNode } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-import ErrorBoundary from '@/components/ErrorBoundary';
 import { ProfileOrganizations } from '@/components/screens/ProfileOrganizations';
-import { ProfileRelationshipsSkeleton } from '@/components/screens/ProfileRelationships/Skeleton';
 
 import { MembersList } from './MembersList';
 
@@ -49,22 +47,10 @@ export const MembersTab = ({ profileId }: { profileId: string }) => {
 };
 
 export const MembersTabPanel = ({ profileId }: { profileId: string }) => {
-  const t = useTranslations();
-
   return (
     <TabPanel id="members" className="flex-grow px-4 sm:px-6 sm:py-0">
       <ProfileOrganizations>
-        <ErrorBoundary
-          fallback={
-            <div className="p-4 text-center text-neutral-charcoal">
-              {t('Failed to load members')}
-            </div>
-          }
-        >
-          <Suspense fallback={<ProfileRelationshipsSkeleton />}>
-            <MembersList profileId={profileId} />
-          </Suspense>
-        </ErrorBoundary>
+        <MembersList profileId={profileId} />
       </ProfileOrganizations>
     </TabPanel>
   );

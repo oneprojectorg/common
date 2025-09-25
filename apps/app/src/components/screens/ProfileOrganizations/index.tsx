@@ -9,10 +9,11 @@ import { LuArrowLeft } from 'react-icons/lu';
 
 import { Link } from '@/lib/i18n';
 
+import { ErrorMessage } from '@/components/ErrorMessage';
 import { OrganizationAvatar } from '@/components/OrganizationAvatar';
 import { OrganizationCardList } from '@/components/OrganizationList';
 
-import { ProfileRelationshipsSkeleton } from '../ProfileRelationships/Skeleton';
+import { ProfileOrganizationsSkeleton } from '../ProfileRelationships/Skeleton';
 
 export const ProfileOrganizationsSuspense = ({
   slug,
@@ -73,8 +74,8 @@ export const OrganizationNameSuspense = ({ slug }: { slug: string }) => {
 
 export const ProfileOrganizations = ({ children }: { children: ReactNode }) => (
   <div className="flex w-full flex-col gap-3 pt-4 sm:min-h-[calc(100vh-3.5rem)] sm:gap-8 sm:pt-8">
-    <ErrorBoundary errorComponent={() => <div>Could not load profile</div>}>
-      <Suspense fallback={<ProfileRelationshipsSkeleton />}>
+    <ErrorBoundary errorComponent={() => <ErrorMessage />}>
+      <Suspense fallback={<ProfileOrganizationsSkeleton />}>
         {children}
       </Suspense>
     </ErrorBoundary>

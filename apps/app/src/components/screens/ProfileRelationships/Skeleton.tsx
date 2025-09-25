@@ -2,6 +2,8 @@ import { Breadcrumb, Breadcrumbs } from '@op/ui/Breadcrumbs';
 import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
 import React from 'react';
 
+import { OrganizationCardListSkeleton } from '@/components/OrganizationList';
+
 const BreadcrumbsSkeleton = () => (
   <div className="flex flex-col gap-4">
     <Breadcrumbs>
@@ -100,6 +102,18 @@ export const ProfileRelationshipsSkeletonWithLines = () => {
           </ul>
         </div>
       </div>
+    </>
+  );
+};
+
+export const ProfileOrganizationsSkeleton = () => {
+  return (
+    <>
+      <div className="flex flex-col gap-4">
+        <BreadcrumbsSkeleton />
+        <TitleSkeleton />
+      </div>
+      <OrganizationCardListSkeleton />
     </>
   );
 };

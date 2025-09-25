@@ -3,7 +3,7 @@
 import { getPublicUrl } from '@/utils';
 import { Organization } from '@op/api/encoders';
 import { Avatar } from '@op/ui/Avatar';
-import { SkeletonLine } from '@op/ui/Skeleton';
+import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
 import { cn, getGradientForString } from '@op/ui/utils';
 import Image from 'next/image';
@@ -235,6 +235,35 @@ export const OrganizationListSkeleton = () => {
 
             <div className="flex w-full flex-col text-sm">
               <SkeletonLine className="w-full" lines={2} />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+export const OrganizationCardListSkeleton = () => {
+  return (
+    <div className="grid grid-cols-1 gap-8 pb-6 md:grid-cols-2">
+      {Array.from({ length: 6 }).map((_, index) => (
+        <div
+          key={index}
+          className="flex w-full gap-4 rounded border border-neutral-gray1 p-6"
+        >
+          <div className="flex-shrink-0">
+            <OrganizationAvatarSkeleton className="size-20" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-2">
+                <Skeleton className="h-6 w-3/4" />
+              </div>
+              <SkeletonLine
+                lines={3}
+                randomWidth={true}
+                className="w-full"
+              />
             </div>
           </div>
         </div>
