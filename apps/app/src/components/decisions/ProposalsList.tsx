@@ -7,6 +7,7 @@ import { Header3 } from '@op/ui/Header';
 import { Select, SelectItem } from '@op/ui/Select';
 import { Skeleton } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
+import { toast } from '@op/ui/Toast';
 import { useMemo, useState } from 'react';
 import type { z } from 'zod';
 
@@ -25,6 +26,8 @@ import {
   ProposalCardMeta,
   ProposalCardMetrics,
 } from './ProposalCard';
+import { VotingProposalCard } from './VotingProposalCard';
+import { VotingSubmitButton } from './VotingSubmitButton';
 
 type Proposal = z.infer<typeof proposalEncoder>;
 
@@ -123,6 +126,82 @@ const Proposals = ({
   isLoading: boolean;
   canManageProposals?: boolean;
 }) => {
+  const { user } = useUser();
+  const [selectedProposalIds, setSelectedProposalIds] = useState<string[]>([]);
+
+  // Get voting status for this user and process
+  const { data: voteStatus } = trpc.decision.getVotingStatus.useQuery(
+    {
+      processInstanceId: instanceId,
+      userId: user?.id || '',
+    },
+    {
+      enabled: !!user?.id,
+    },
+  );
+
+  // Submit vote mutation
+  const utils = trpc.useUtils();
+  const submitVoteMutation = trpc.decision.submitVote.useMutation({
+    onSuccess: () => {
+      // Reset selection after successful submission
+      setSelectedProposalIds([]);
+      // Invalidate and refetch vote status
+      utils.decision.getVotingStatus.invalidate({
+        processInstanceId: instanceId,
+        userId: user?.id || '',
+      });
+    },
+    onError: (error) => {
+      console.error('Failed to submit vote:', error);
+      // Could show error toast here
+      toast.error({
+        message: error.message || 'Failed to submit vote',
+      });
+    },
+  });
+
+  // Determine voting state
+  const isVotingEnabled =
+    voteStatus?.votingConfiguration?.allowDecisions || false;
+  const hasVoted = voteStatus?.hasVoted || false;
+  const isReadOnly = hasVoted || !isVotingEnabled;
+  const maxVotesPerMember =
+    voteStatus?.votingConfiguration?.maxVotesPerMember || 0;
+
+  // Handle proposal selection
+  const toggleProposal = (proposalId: string) => {
+    setSelectedProposalIds((prev) => {
+      const isSelected = prev.includes(proposalId);
+
+      if (isSelected) {
+        // Remove from selection
+        return prev.filter((id) => id !== proposalId);
+      } else {
+        // Add to selection if under limit
+        if (prev.length < maxVotesPerMember) {
+          return [...prev, proposalId];
+        }
+        // Could show error message here
+        return prev;
+      }
+    });
+  };
+
+  const isProposalSelected = (proposalId: string) =>
+    selectedProposalIds.includes(proposalId);
+
+  // Handle vote submission
+  const handleSubmitVote = () => {
+    if (selectedProposalIds.length === 0) return;
+
+    submitVoteMutation.mutate({
+      processInstanceId: instanceId,
+      selectedProposalIds,
+      schemaVersion: '1.0.0',
+    });
+  };
+
   if (isLoading) {
     return <ProposalListSkeletonGrid />;
   }
@@ -130,31 +209,73 @@ const Proposals = ({
   return !proposals || proposals.length === 0 ? (
     <NoProposalsFound />
   ) : (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-      {proposals.map((proposal) => (
-        <ProposalCard>
-          <ProposalCardContent>
-            <ProposalCardHeader
-              proposal={proposal}
-              viewHref={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`}
-              showMenu={canManageProposals || proposal.isEditable}
-              menuComponent={
-                <ProposalCardMenu
+    <>
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {proposals.map((proposal) =>
+          isVotingEnabled ? (
+            <VotingProposalCard
+              key={proposal.id}
+              proposalId={proposal.id}
+              isVotingEnabled={isVotingEnabled}
+              isReadOnly={isReadOnly}
+              isSelected={isProposalSelected(proposal.id)}
+              onToggle={toggleProposal}
+            >
+              <ProposalCardContent>
+                <ProposalCardHeader
                   proposal={proposal}
-                  canManage={canManageProposals}
+                  viewHref={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`}
+                  showMenu={canManageProposals || proposal.isEditable}
+                  menuComponent={
+                    <ProposalCardMenu
+                      proposal={proposal}
+                      canManage={canManageProposals}
+                    />
+                  }
                 />
-              }
-            />
-            <ProposalCardMeta proposal={proposal} />
-            <ProposalCardDescription proposal={proposal} />
-            <ProposalCardFooter>
-              <ProposalCardMetrics proposal={proposal} />
-              <ProposalCardActions proposal={proposal} />
-            </ProposalCardFooter>
-          </ProposalCardContent>
-        </ProposalCard>
-      ))}
-    </div>
+                <ProposalCardMeta proposal={proposal} />
+                <ProposalCardDescription proposal={proposal} />
+                <ProposalCardFooter>
+                  <ProposalCardMetrics proposal={proposal} />
+                  <ProposalCardActions proposal={proposal} />
+                </ProposalCardFooter>
+              </ProposalCardContent>
+            </VotingProposalCard>
+          ) : (
+            <ProposalCard>
+              <ProposalCardContent>
+                <ProposalCardHeader
+                  proposal={proposal}
+                  viewHref={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`}
+                  showMenu={canManageProposals || proposal.isEditable}
+                  menuComponent={
+                    <ProposalCardMenu
+                      proposal={proposal}
+                      canManage={canManageProposals}
+                    />
+                  }
+                />
+                <ProposalCardMeta proposal={proposal} />
+                <ProposalCardDescription proposal={proposal} />
+                <ProposalCardFooter>
+                  <ProposalCardMetrics proposal={proposal} />
+                  <ProposalCardActions proposal={proposal} />
+                </ProposalCardFooter>
+              </ProposalCardContent>
+            </ProposalCard>
+          ),
+        )}
+      </div>
+
+      {/* Voting Submit Button */}
+      <VotingSubmitButton
+        selectedCount={selectedProposalIds.length}
+        maxVotesPerMember={maxVotesPerMember}
+        isVisible={isVotingEnabled && !isReadOnly}
+        onSubmit={handleSubmitVote}
+        isSubmitting={submitVoteMutation.isPending}
+      />
+    </>
   );
 };
 

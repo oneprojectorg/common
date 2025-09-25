@@ -7,18 +7,19 @@ import {
 } from '@/utils/proposalUtils';
 import { ProposalStatus, type proposalEncoder } from '@op/api/encoders';
 import { match } from '@op/core';
+import { Avatar } from '@op/ui/Avatar';
 import { Chip } from '@op/ui/Chip';
 import { Surface } from '@op/ui/Surface';
+import { cn } from '@op/ui/utils';
 import { Heart, MessageCircle } from 'lucide-react';
+import type { HTMLAttributes, ReactNode } from 'react';
 import { LuBookmark } from 'react-icons/lu';
-import type { ReactNode } from 'react';
 import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
 
-import { Bullet } from '../Bullet';
-import { OrganizationAvatar } from '../OrganizationAvatar';
+import { Bullet } from '../../Bullet';
 
 export type Proposal = z.infer<typeof proposalEncoder>;
 
@@ -27,20 +28,19 @@ export interface BaseProposalCardProps {
   className?: string;
 }
 
-/**
- * Main container component for the proposal card
- * Provides the Surface wrapper and base layout
- */
 export function ProposalCard({
   children,
   className = '',
+  ...props
 }: {
   proposal?: Proposal;
   children: ReactNode;
-  className?: string;
-}) {
+} & HTMLAttributes<HTMLDivElement>) {
   return (
-    <Surface className={`relative w-full min-w-80 space-y-3 p-4 pb-4 ${className}`}>
+    <Surface
+      className={cn('relative w-full min-w-80 space-y-3 p-4 pb-4', className)}
+      {...props}
+    >
       {children}
     </Surface>
   );
@@ -51,12 +51,12 @@ export function ProposalCard({
  */
 export function ProposalCardContent({
   children,
-  className = '',
+  className,
 }: {
   children: ReactNode;
   className?: string;
 }) {
-  return <div className={`space-y-3 ${className}`}>{children}</div>;
+  return <div className={cn('space-y-3', className)}>{children}</div>;
 }
 
 /**
@@ -67,7 +67,7 @@ export function ProposalCardHeader({
   viewHref,
   showMenu = false,
   menuComponent,
-  className = '',
+  className,
 }: BaseProposalCardProps & {
   viewHref?: string;
   showMenu?: boolean;
@@ -75,7 +75,7 @@ export function ProposalCardHeader({
   className?: string;
 }) {
   return (
-    <div className={`flex flex-col gap-2 ${className}`}>
+    <div className={cn('flex flex-col gap-2', className)}>
       <div className="flex items-start justify-between gap-2">
         <ProposalCardTitle proposal={proposal} viewHref={viewHref} />
         {showMenu && menuComponent}
@@ -92,7 +92,7 @@ export function ProposalCardTitle({
   proposal,
   viewHref,
   asLink = true,
-  className = '',
+  className,
 }: BaseProposalCardProps & {
   viewHref?: string;
   asLink?: boolean;
@@ -102,13 +102,18 @@ export function ProposalCardTitle({
   const { title } = parseProposalData(proposal.proposalData);
 
   const titleText = title || t('Untitled Proposal');
-  const titleClasses = `max-w-full truncate text-nowrap font-serif !text-title-sm text-neutral-black ${className}`;
+  const titleClasses =
+    'max-w-full truncate text-nowrap font-serif !text-title-sm text-neutral-black';
 
   if (asLink && viewHref) {
     return (
       <Link
         href={viewHref}
-        className={`${titleClasses} transition-colors hover:text-primary-teal`}
+        className={cn(
+          titleClasses,
+          className,
+          'transition-colors hover:text-primary-teal',
+        )}
       >
         {titleText}
       </Link>
@@ -123,7 +128,7 @@ export function ProposalCardTitle({
  */
 export function ProposalCardBudget({
   proposal,
-  className = '',
+  className,
 }: BaseProposalCardProps & {
   className?: string;
 }) {
@@ -134,7 +139,12 @@ export function ProposalCardBudget({
   }
 
   return (
-    <span className={`font-serif text-title-base text-neutral-charcoal ${className}`}>
+    <span
+      className={cn(
+        'font-serif text-title-base text-neutral-charcoal',
+        className,
+      )}
+    >
       {formatCurrency(budget)}
     </span>
   );
@@ -145,12 +155,12 @@ export function ProposalCardBudget({
  */
 export function ProposalCardMeta({
   proposal,
-  className = '',
+  className,
 }: BaseProposalCardProps & {
   className?: string;
 }) {
   return (
-    <div className={`flex items-center gap-2 ${className}`}>
+    <div className={cn('flex items-center gap-2', className)}>
       <ProposalCardAuthor proposal={proposal} />
       <ProposalCardCategory proposal={proposal} />
       <ProposalCardStatus proposal={proposal} />
@@ -163,7 +173,7 @@ export function ProposalCardMeta({
  */
 export function ProposalCardAuthor({
   proposal,
-  className = '',
+  className,
 }: BaseProposalCardProps & {
   className?: string;
 }) {
@@ -173,9 +183,9 @@ export function ProposalCardAuthor({
 
   return (
     <>
-      <OrganizationAvatar
-        profile={proposal.submittedBy}
-        className={`size-6 ${className}`}
+      <Avatar
+        placeholder={proposal.submittedBy.name || proposal.submittedBy.slug}
+        className={cn('size-6', className)}
       />
       <Link
         href={`/profile/${proposal.submittedBy.slug}`}
@@ -192,7 +202,7 @@ export function ProposalCardAuthor({
  */
 export function ProposalCardCategory({
   proposal,
-  className = '',
+  className,
 }: BaseProposalCardProps & {
   className?: string;
 }) {
@@ -205,7 +215,12 @@ export function ProposalCardCategory({
   return (
     <>
       <Bullet />
-      <Chip className={`min-w-6 max-w-96 overflow-hidden overflow-ellipsis text-nowrap ${className}`}>
+      <Chip
+        className={cn(
+          'min-w-6 max-w-96 overflow-hidden overflow-ellipsis text-nowrap',
+          className,
+        )}
+      >
         {category}
       </Chip>
     </>
@@ -217,7 +232,7 @@ export function ProposalCardCategory({
  */
 export function ProposalCardStatus({
   proposal,
-  className = '',
+  className,
 }: BaseProposalCardProps & {
   className?: string;
 }) {
@@ -228,7 +243,7 @@ export function ProposalCardStatus({
     [ProposalStatus.APPROVED]: (
       <>
         <span>•</span>
-        <span className={`text-sm text-green-700 ${className}`}>
+        <span className={cn('text-sm text-green-700', className)}>
           {t('Shortlisted')}
         </span>
       </>
@@ -236,7 +251,9 @@ export function ProposalCardStatus({
     [ProposalStatus.REJECTED]: (
       <>
         <Bullet />
-        <span className={`text-nowrap text-sm text-neutral-charcoal ${className}`}>
+        <span
+          className={cn('text-nowrap text-sm text-neutral-charcoal', className)}
+        >
           {t('Not shortlisted')}
         </span>
       </>
@@ -250,7 +267,7 @@ export function ProposalCardStatus({
  */
 export function ProposalCardDescription({
   proposal,
-  className = '',
+  className,
 }: BaseProposalCardProps & {
   className?: string;
 }) {
@@ -261,7 +278,12 @@ export function ProposalCardDescription({
   }
 
   return (
-    <p className={`mb-4 line-clamp-3 text-base text-neutral-charcoal ${className}`}>
+    <p
+      className={cn(
+        'mb-4 line-clamp-3 text-base text-neutral-charcoal',
+        className,
+      )}
+    >
       {getTextPreview(description)}
     </p>
   );
@@ -272,14 +294,19 @@ export function ProposalCardDescription({
  */
 export function ProposalCardMetrics({
   proposal,
-  className = '',
+  className,
 }: BaseProposalCardProps & {
   className?: string;
 }) {
   const t = useTranslations();
 
   return (
-    <div className={`flex w-full items-center justify-between gap-4 text-base text-neutral-gray4 ${className}`}>
+    <div
+      className={cn(
+        'flex w-full items-center justify-between gap-4 text-base text-neutral-gray4',
+        className,
+      )}
+    >
       <span className="flex items-center gap-1 truncate">
         <Heart className="size-4" />
         {proposal.likesCount || 0} {t('Likes')}
@@ -301,13 +328,13 @@ export function ProposalCardMetrics({
  */
 export function ProposalCardFooter({
   children,
-  className = '',
+  className,
 }: {
   children: ReactNode;
   className?: string;
 }) {
   return (
-    <div className={`flex flex-col justify-between gap-4 ${className}`}>
+    <div className={cn('flex flex-col justify-between gap-4', className)}>
       {children}
     </div>
   );
