@@ -53,6 +53,17 @@ const ProposalCardSkeleton = () => {
   );
 };
 
+{
+  /* Proposals Grid Skeleton */
+}
+export const ProposalListSkeletonGrid = () => (
+  <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+    {Array.from({ length: 6 }).map((_, index) => (
+      <ProposalCardSkeleton key={index} />
+    ))}
+  </div>
+);
+
 export const ProposalListSkeleton = () => {
   return (
     <div className="flex flex-col gap-6">
@@ -68,12 +79,7 @@ export const ProposalListSkeleton = () => {
         </div>
       </div>
 
-      {/* Proposals Grid Skeleton */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {Array.from({ length: 6 }).map((_, index) => (
-          <ProposalCardSkeleton key={index} />
-        ))}
-      </div>
+      <ProposalListSkeletonGrid />
     </div>
   );
 };
@@ -106,12 +112,7 @@ const Proposals = ({
   canManageProposals?: boolean;
 }) => {
   if (isLoading) {
-    return (
-      <div className="flex flex-col gap-4">
-        <Skeleton className="h-40" />
-        <Skeleton className="h-40" />
-      </div>
-    );
+    return <ProposalListSkeletonGrid />;
   }
 
   return !proposals || proposals.length === 0 ? (
