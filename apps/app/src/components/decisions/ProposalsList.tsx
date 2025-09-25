@@ -90,7 +90,7 @@ const NoProposalsFound = () => {
   const t = useTranslations();
   return (
     <EmptyProposalsState>
-      <Header3 className="text-neutral-black">
+      <Header3 className="font-serif !text-title-base font-light text-neutral-black">
         {t('No proposals found matching the current filters.')}
       </Header3>
       <p className="text-base text-neutral-charcoal">
