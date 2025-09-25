@@ -375,11 +375,9 @@ export const ProfileTabsMobile = ({
         {!isIndividual ? (
           <>
             <FollowersTab />
+            <MembersTab profileId={profile.profile.id} />
             {decisionsEnabled && (
-              <>
-                <MembersTab profileId={profile.profile.id} />
-                <DecisionsTab profileId={profile.profile.id} />
-              </>
+              <DecisionsTab profileId={profile.profile.id} />
             )}
           </>
         ) : (

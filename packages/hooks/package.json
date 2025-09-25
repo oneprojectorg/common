@@ -13,6 +13,7 @@
     "lint": "pnpm tsc --noEmit"
   },
   "dependencies": {
+    "@op/api": "workspace:*",
     "@op/core": "workspace:*",
     "@op/supabase": "workspace:*",
     "@tanstack/react-query": "5.66.11",

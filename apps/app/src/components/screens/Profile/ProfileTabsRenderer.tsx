@@ -1,11 +1,10 @@
 'use client';
 
-import { useMediaQuery } from '@op/hooks';
 import type { Organization, Profile } from '@op/api/encoders';
+import { useMediaQuery } from '@op/hooks';
 import { TabPanel } from '@op/ui/Tabs';
 
 import type { SchemaType } from '@/components/Profile/CreateDecisionProcessModal/schemas/schemaLoader';
-
 import {
   OrganizationProfileGrid,
   ProfileGrid,
@@ -58,10 +57,7 @@ export const ProfileTabsRenderer = ({
         profile={organization}
         initialTab={initialTab}
         decisionsContent={
-          <ProfileDecisionsSuspense
-            profileId={profile.id}
-            schema={schema}
-          />
+          <ProfileDecisionsSuspense profileId={profile.id} schema={schema} />
         }
         followersContent={<ProfileFollowers profileId={profile.id} />}
       >
@@ -78,21 +74,14 @@ export const ProfileTabsRenderer = ({
       <ProfileTabList>
         <DesktopOrganizationTabs />
         <FollowersTab />
-        {decisionsEnabled && (
-          <>
-            <MembersTab profileId={profile.id} />
-            <DecisionsTab profileId={profile.id} />
-          </>
-        )}
+        <MembersTab profileId={profile.id} />
+        {decisionsEnabled && <DecisionsTab profileId={profile.id} />}
       </ProfileTabList>
 
       <TabPanel id="home" className="flex flex-grow flex-col sm:p-0">
         <OrganizationProfileGrid profile={organization} />
       </TabPanel>
-      <TabPanel
-        id="relationships"
-        className="flex-grow px-4 sm:px-6 sm:py-0"
-      >
+      <TabPanel id="relationships" className="flex-grow px-4 sm:px-6 sm:py-0">
         <ProfileOrganizations>
           <ProfileRelationshipsSuspense
             slug={profile.slug}
@@ -106,10 +95,7 @@ export const ProfileTabsRenderer = ({
       {decisionsEnabled && (
         <>
           <DecisionsTabPanel>
-            <ProfileDecisionsSuspense
-              profileId={profile.id}
-              schema={schema}
-            />
+            <ProfileDecisionsSuspense profileId={profile.id} schema={schema} />
           </DecisionsTabPanel>
           <MembersTabPanel profileId={profile.id} />
         </>

@@ -3,41 +3,100 @@
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import type { proposalEncoder } from '@op/api/encoders';
+import { Header3 } from '@op/ui/Header';
 import { Select, SelectItem } from '@op/ui/Select';
 import { Skeleton } from '@op/ui/Skeleton';
+import { Surface } from '@op/ui/Surface';
 import { useMemo, useState } from 'react';
 import type { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { Bullet } from '../Bullet';
+import { EmptyProposalsState } from './EmptyProposalsState';
 import { ProposalCard } from './ProposalCard';
 
 type Proposal = z.infer<typeof proposalEncoder>;
 
-interface ProposalsListProps {
-  slug: string;
-  instanceId: string;
-}
+const ProposalCardSkeleton = () => {
+  return (
+    <Surface className="relative w-full min-w-80 space-y-3 p-4 pb-4">
+      {/* Header with title and budget skeleton */}
+      <div className="flex flex-col gap-2">
+        <Skeleton className="h-6 w-3/4" />
+        <Skeleton className="h-5 w-1/2" />
+      </div>
 
-interface ProposalsProps {
-  proposals: Proposal[] | undefined;
-  instanceId: string;
-  slug: string;
-  isLoading: boolean;
-  canManageProposals?: boolean;
+      {/* Author and category skeleton */}
+      <div className="flex items-center gap-2">
+        <Skeleton className="size-6 rounded-full" />
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="size-1 rounded-full" />
+        <Skeleton className="h-6 w-16 rounded-full" />
+      </div>
+
+      {/* Description skeleton */}
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-2/3" />
+      </div>
+
+      {/* Footer with engagement skeleton */}
+      <div className="flex flex-col justify-between gap-4">
+        <div className="flex w-full items-center justify-between gap-4">
+          <Skeleton className="h-4 w-12" />
+          <Skeleton className="h-4 w-16" />
+          <Skeleton className="h-4 w-16" />
+        </div>
+        <Skeleton className="h-8 w-full" />
+      </div>
+    </Surface>
+  );
+};
+
+{
+  /* Proposals Grid Skeleton */
 }
+export const ProposalListSkeletonGrid = () => (
+  <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+    {Array.from({ length: 6 }).map((_, index) => (
+      <ProposalCardSkeleton key={index} />
+    ))}
+  </div>
+);
+
+export const ProposalListSkeleton = () => {
+  return (
+    <div className="flex flex-col gap-6">
+      {/* Filters Bar Skeleton */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-6 w-40" />
+        </div>
+        <div className="grid max-w-fit grid-cols-2 justify-end gap-4 sm:flex sm:flex-1 sm:flex-wrap sm:items-center">
+          <Skeleton className="h-10 w-32" />
+          <Skeleton className="h-10 w-32" />
+          <Skeleton className="h-10 w-32" />
+        </div>
+      </div>
+
+      <ProposalListSkeletonGrid />
+    </div>
+  );
+};
 
 const NoProposalsFound = () => {
   const t = useTranslations();
   return (
-    <div className="py-12 text-center">
-      <p className="text-neutral-charcoal">
+    <EmptyProposalsState>
+      <Header3 className="font-serif !text-title-base font-light text-neutral-black">
         {t('No proposals found matching the current filters.')}
-      </p>
-      <p className="mt-2 text-sm text-neutral-gray2">
+      </Header3>
+      <p className="text-base text-neutral-charcoal">
         {t('Try adjusting your filter selection above.')}
       </p>
-    </div>
+    </EmptyProposalsState>
   );
 };
 
@@ -47,20 +106,21 @@ const Proposals = ({
   slug,
   isLoading,
   canManageProposals = false,
-}: ProposalsProps) => {
+}: {
+  proposals?: Proposal[];
+  instanceId: string;
+  slug: string;
+  isLoading: boolean;
+  canManageProposals?: boolean;
+}) => {
   if (isLoading) {
-    return (
-      <div className="flex flex-col gap-4">
-        <Skeleton className="h-40" />
-        <Skeleton className="h-40" />
-      </div>
-    );
+    return <ProposalListSkeletonGrid />;
   }
 
   return !proposals || proposals.length === 0 ? (
     <NoProposalsFound />
   ) : (
-    <div className="space-y-4">
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
       {proposals.map((proposal) => (
         <ProposalCard
           key={proposal.id}
@@ -73,7 +133,13 @@ const Proposals = ({
   );
 };
 
-export function ProposalsList({ slug, instanceId }: ProposalsListProps) {
+export function ProposalsList({
+  slug,
+  instanceId,
+}: {
+  slug: string;
+  instanceId: string;
+}) {
   const t = useTranslations();
   const { user } = useUser();
   const [selectedCategory, setSelectedCategory] =
@@ -143,22 +209,23 @@ export function ProposalsList({ slug, instanceId }: ProposalsListProps) {
   const { proposals, canManageProposals = false } = finalProposalsData ?? {};
 
   return (
-    <div>
+    <div className="flex flex-col gap-6">
       {/* Filters Bar */}
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <span className="font-serif text-title-base text-neutral-black">
             {proposalFilter === 'my'
-              ? t('My proposals •')
+              ? t('My proposals')
               : proposalFilter === 'shortlisted'
-                ? t('Shortlisted proposals •')
-                : t('All proposals •')}{' '}
-            {proposals?.length ?? 0}
+                ? t('Shortlisted proposals')
+                : t('All proposals')}{' '}
+            <Bullet /> {proposals?.length ?? 0}
           </span>
         </div>
         <div className="grid max-w-fit grid-cols-2 justify-end gap-4 sm:flex sm:flex-1 sm:flex-wrap sm:items-center">
           <Select
             size="small"
+            className="min-w-36"
             selectedKey={proposalFilter}
             onSelectionChange={(key) => {
               const newKey = String(key);
@@ -178,6 +245,7 @@ export function ProposalsList({ slug, instanceId }: ProposalsListProps) {
           <Select
             selectedKey={selectedCategory}
             size="small"
+            className="min-w-36"
             onSelectionChange={(key) => setSelectedCategory(String(key))}
             aria-label="Filter proposals by category"
           >
@@ -197,6 +265,7 @@ export function ProposalsList({ slug, instanceId }: ProposalsListProps) {
           <Select
             selectedKey={sortOrder}
             size="small"
+            className="min-w-32"
             onSelectionChange={(key) => setSortOrder(String(key))}
           >
             <SelectItem id="newest">{t('Newest First')}</SelectItem>

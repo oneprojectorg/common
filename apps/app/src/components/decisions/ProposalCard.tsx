@@ -6,6 +6,7 @@ import {
   parseProposalData,
 } from '@/utils/proposalUtils';
 import { ProposalStatus, type proposalEncoder } from '@op/api/encoders';
+import { match } from '@op/core';
 import { Chip } from '@op/ui/Chip';
 import { Surface } from '@op/ui/Surface';
 import { Heart, MessageCircle } from 'lucide-react';
@@ -15,56 +16,56 @@ import { z } from 'zod';
 import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
 
+import { Bullet } from '../Bullet';
 import { OrganizationAvatar } from '../OrganizationAvatar';
 import { ProposalCardActions } from './ProposalCardActions';
 import { ProposalCardMenu } from './ProposalCardMenu';
 
 type Proposal = z.infer<typeof proposalEncoder>;
 
-interface ProposalCardProps {
-  proposal: Proposal;
-  viewHref: string;
-  canManageProposals?: boolean;
-}
-
 export function ProposalCard({
   proposal: currentProposal,
   viewHref,
   canManageProposals = false,
-}: ProposalCardProps) {
+}: {
+  proposal: Proposal;
+  viewHref: string;
+  canManageProposals?: boolean;
+}) {
   const t = useTranslations();
 
   // Parse proposal data using shared utility
   const { title, budget, category, description } = parseProposalData(
     currentProposal.proposalData,
   );
-  const status = currentProposal.status;
+  const { status } = currentProposal;
 
   return (
-    <Surface className="relative space-y-3 p-6 pb-4">
+    <Surface className="relative w-full min-w-80 space-y-3 p-4 pb-4">
       {/* Header with title and budget */}
-      <div className="flex flex-col items-start justify-between gap-2 sm:flex-row">
-        <Link
-          href={viewHref}
-          className="font-serif !text-title-sm text-neutral-black transition-colors hover:text-primary-teal"
-        >
-          {title || t('Untitled Proposal')}
-        </Link>
-        <div className="flex gap-2">
-          {budget && (
-            <span className="font-serif text-title-base text-neutral-charcoal">
-              {formatCurrency(budget)}
-            </span>
-          )}
-
-          {canManageProposals && (
-            <ProposalCardMenu proposal={currentProposal} />
-          )}
+      <div className="flex flex-col gap-2">
+        <div className="flex items-start justify-between gap-2">
+          <Link
+            href={viewHref}
+            className="max-w-full truncate text-nowrap font-serif !text-title-sm text-neutral-black transition-colors hover:text-primary-teal"
+          >
+            {title || t('Untitled Proposal')}
+          </Link>
+          {canManageProposals || currentProposal.isEditable ? (
+            <ProposalCardMenu
+              proposal={currentProposal}
+              canManage={canManageProposals}
+            />
+          ) : null}
         </div>
+        {budget && (
+          <span className="font-serif text-title-base text-neutral-charcoal">
+            {formatCurrency(budget)}
+          </span>
+        )}
       </div>
-
       {/* Author and category */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         {currentProposal.submittedBy && (
           <>
             <OrganizationAvatar
@@ -74,7 +75,7 @@ export function ProposalCard({
 
             <Link
               href={`/profile/${currentProposal.submittedBy.slug}`}
-              className="text-base text-neutral-charcoal"
+              className="max-w-32 truncate text-nowrap text-base text-neutral-charcoal"
             >
               {currentProposal.submittedBy.name ||
                 currentProposal.submittedBy.slug}
@@ -83,18 +84,29 @@ export function ProposalCard({
         )}
         {category && (
           <>
-            <span className="text-sm text-neutral-gray2">•</span>
-            <Chip className="max-w-96 overflow-hidden overflow-ellipsis text-nowrap">
+            <Bullet />
+            <Chip className="min-w-6 max-w-96 overflow-hidden overflow-ellipsis text-nowrap">
               {category}
             </Chip>
           </>
         )}
-        {status === ProposalStatus.APPROVED ? (
-          <>
-            <span className="text-sm text-neutral-gray2">•</span>
-            <span className="text-sm text-green-700">{t('Shortlisted')}</span>
-          </>
-        ) : null}
+        {match(status, {
+          [ProposalStatus.APPROVED]: (
+            <>
+              <span>•</span>
+              <span className="text-sm text-green-700">{t('Shortlisted')}</span>
+            </>
+          ),
+          [ProposalStatus.REJECTED]: (
+            <>
+              <Bullet />
+              <span className="text-nowrap text-sm text-neutral-charcoal">
+                {t('Not shortlisted')}
+              </span>
+            </>
+          ),
+          _: null,
+        })}
       </div>
 
       {/* Description */}
@@ -105,25 +117,19 @@ export function ProposalCard({
       )}
 
       {/* Footer with engagement */}
-      <div className="flex flex-col justify-between gap-4 pt-3 sm:flex-row">
-        <div className="flex w-full items-center justify-between gap-4 text-base text-neutral-gray4 sm:justify-normal">
-          <span className="flex items-center gap-1">
-            <Heart className="h-4 w-4" />
-            <span>
-              {currentProposal.likesCount || 0} {t('Likes')}
-            </span>
+      <div className="flex flex-col justify-between gap-4">
+        <div className="flex w-full items-center justify-between gap-4 text-base text-neutral-gray4">
+          <span className="flex items-center gap-1 truncate">
+            <Heart className="size-4" />
+            {currentProposal.likesCount || 0} {t('Likes')}
           </span>
-          <span className="flex items-center gap-1">
-            <MessageCircle className="h-4 w-4" />
-            <span>
-              {currentProposal.commentsCount || 0} {t('Comments')}
-            </span>
+          <span className="flex items-center gap-1 truncate">
+            <MessageCircle className="size-4" />
+            {currentProposal.commentsCount || 0} {t('Comments')}
           </span>
-          <span className="flex items-center gap-1">
+          <span className="flex items-center gap-1 truncate">
             <LuBookmark className="size-4" />
-            <span>
-              {currentProposal.followersCount || 0} {t('Followers')}
-            </span>
+            {currentProposal.followersCount || 0} {t('Followers')}
           </span>
         </div>
         <ProposalCardActions proposal={currentProposal} />

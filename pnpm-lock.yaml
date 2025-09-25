@@ -681,6 +681,9 @@ importers:
 
   packages/hooks:
     dependencies:
+      '@op/api':
+        specifier: workspace:*
+        version: link:../../services/api
       '@op/core':
         specifier: workspace:*
         version: link:../core

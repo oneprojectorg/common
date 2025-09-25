@@ -15,7 +15,7 @@ const Dialog = ({ className, ...props }: DialogProps) => {
     <RACDialog
       {...props}
       className={cn(
-        'relative max-h-[inherit] overflow-auto p-6 outline outline-0 [[data-placement]>&]:p-4',
+        'relative max-h-[inherit] overflow-auto p-0 outline outline-0 [[data-placement]>&]:p-4',
         className,
       )}
     />
