@@ -8,10 +8,12 @@ import { TRPCError } from '@trpc/server';
 import { executeTransitionInputSchema } from '../../../encoders/decision';
 import withAnalytics from '../../../middlewares/withAnalytics';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
+import withRateLimited from '../../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../../trpcFactory';
 
 export const executeTransitionRouter = router({
   executeTransition: loggedProcedure
+    .use(withRateLimited({ windowSize: 10, maxRequests: 5 }))
     .use(withAuthenticated)
     .use(withAnalytics)
     .input(executeTransitionInputSchema)
