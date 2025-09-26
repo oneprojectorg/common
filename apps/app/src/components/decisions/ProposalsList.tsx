@@ -3,6 +3,8 @@
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import type { proposalEncoder } from '@op/api/encoders';
+import { match } from '@op/core';
+import { Button, ButtonLink } from '@op/ui/Button';
 import { Header3 } from '@op/ui/Header';
 import { Select, SelectItem } from '@op/ui/Select';
 import { Skeleton } from '@op/ui/Skeleton';
@@ -27,7 +29,7 @@ import {
   ProposalCardMetrics,
 } from './ProposalCard';
 import { VotingProposalCard } from './VotingProposalCard';
-import { VotingSubmitButton } from './VotingSubmitButton';
+import { VotingSubmitFooter } from './VotingSubmitFooter';
 
 type Proposal = z.infer<typeof proposalEncoder>;
 
@@ -113,21 +115,25 @@ const NoProposalsFound = () => {
   );
 };
 
-const Proposals = ({
-  proposals,
-  instanceId,
-  slug,
-  isLoading,
-  canManageProposals = false,
-}: {
+interface ProposalsProps {
   proposals?: Proposal[];
   instanceId: string;
   slug: string;
   isLoading: boolean;
   canManageProposals?: boolean;
-}) => {
+}
+
+const VotingProposalsList = ({
+  proposals,
+  instanceId,
+  slug,
+  canManageProposals = false,
+}: ProposalsProps) => {
   const { user } = useUser();
   const [selectedProposalIds, setSelectedProposalIds] = useState<string[]>([]);
+  const t = useTranslations();
+
+  const numSelected = selectedProposalIds.length;
 
   // Get voting status for this user and process
   const { data: voteStatus } = trpc.decision.getVotingStatus.useQuery(
@@ -154,7 +160,6 @@ const Proposals = ({
     },
     onError: (error) => {
       console.error('Failed to submit vote:', error);
-      // Could show error toast here
       toast.error({
         message: error.message || 'Failed to submit vote',
       });
@@ -162,10 +167,8 @@ const Proposals = ({
   });
 
   // Determine voting state
-  const isVotingEnabled =
-    voteStatus?.votingConfiguration?.allowDecisions || false;
   const hasVoted = voteStatus?.hasVoted || false;
-  const isReadOnly = hasVoted || !isVotingEnabled;
+  const isReadOnly = hasVoted;
   const maxVotesPerMember =
     voteStatus?.votingConfiguration?.maxVotesPerMember || 0;
 
@@ -182,7 +185,6 @@ const Proposals = ({
         if (prev.length < maxVotesPerMember) {
           return [...prev, proposalId];
         }
-        // Could show error message here
         return prev;
       }
     });
@@ -193,7 +195,9 @@ const Proposals = ({
 
   // Handle vote submission
   const handleSubmitVote = () => {
-    if (selectedProposalIds.length === 0) return;
+    if (numSelected === 0) {
+      return;
+    }
 
     submitVoteMutation.mutate({
       processInstanceId: instanceId,
@@ -202,81 +206,138 @@ const Proposals = ({
     });
   };
 
+  if (!proposals || proposals.length === 0) {
+    return <NoProposalsFound />;
+  }
+
+  return (
+    <>
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {proposals.map((proposal) => (
+          <VotingProposalCard
+            key={proposal.id}
+            proposalId={proposal.id}
+            isVotingEnabled={true}
+            isReadOnly={isReadOnly}
+            isSelected={isProposalSelected(proposal.id)}
+            onToggle={toggleProposal}
+          >
+            <ProposalCardContent>
+              <ProposalCardHeader
+                proposal={proposal}
+                viewHref={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`}
+                showMenu={canManageProposals || proposal.isEditable}
+                menuComponent={
+                  <ProposalCardMenu
+                    proposal={proposal}
+                    canManage={canManageProposals}
+                  />
+                }
+              />
+              <ProposalCardMeta proposal={proposal} />
+              <ProposalCardDescription proposal={proposal} />
+            </ProposalCardContent>
+            <ProposalCardFooter>
+              <ButtonLink
+                href={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`}
+                color="secondary"
+                className="w-full"
+              >
+                {t('Read full proposal')}
+              </ButtonLink>
+            </ProposalCardFooter>
+          </VotingProposalCard>
+        ))}
+      </div>
+
+      <VotingSubmitFooter selectedCount={numSelected} isVisible={!isReadOnly}>
+        <div className="flex w-full items-center justify-between px-4 sm:max-w-6xl sm:px-8">
+          <span className="text-neutral-black">
+            <span className="text-primary-teal">{numSelected}</span> of{' '}
+            {maxVotesPerMember}{' '}
+            {maxVotesPerMember === 1 ? 'proposal' : 'proposals'} selected
+          </span>
+
+          <Button
+            onPress={handleSubmitVote}
+            isDisabled={numSelected === 0 || submitVoteMutation.isPending}
+            variant="primary"
+          >
+            {submitVoteMutation.isPending
+              ? t('Submitting...')
+              : t('Submit my votes')}
+          </Button>
+        </div>
+      </VotingSubmitFooter>
+    </>
+  );
+};
+
+const ViewProposalsList = ({
+  proposals,
+  instanceId,
+  slug,
+  canManageProposals = false,
+}: ProposalsProps) => {
+  if (!proposals || proposals.length === 0) {
+    return <NoProposalsFound />;
+  }
+
+  return (
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {proposals.map((proposal) => (
+        <ProposalCard key={proposal.id}>
+          <ProposalCardContent>
+            <ProposalCardHeader
+              proposal={proposal}
+              viewHref={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`}
+              showMenu={canManageProposals || proposal.isEditable}
+              menuComponent={
+                <ProposalCardMenu
+                  proposal={proposal}
+                  canManage={canManageProposals}
+                />
+              }
+            />
+            <ProposalCardMeta proposal={proposal} />
+            <ProposalCardDescription proposal={proposal} />
+            <ProposalCardFooter>
+              <ProposalCardMetrics proposal={proposal} />
+              <ProposalCardActions proposal={proposal} />
+            </ProposalCardFooter>
+          </ProposalCardContent>
+        </ProposalCard>
+      ))}
+    </div>
+  );
+};
+
+const Proposals = (props: ProposalsProps) => {
+  const { user } = useUser();
+  const { isLoading, instanceId } = props;
+
+  // Get voting status for this user and process
+  const { data: voteStatus } = trpc.decision.getVotingStatus.useQuery(
+    {
+      processInstanceId: instanceId,
+      userId: user?.id || '',
+    },
+    {
+      enabled: !!user?.id,
+    },
+  );
+
+  // Determine voting state
+  const isVotingEnabled = !!voteStatus?.votingConfiguration?.allowDecisions;
+
   if (isLoading) {
     return <ProposalListSkeletonGrid />;
   }
 
-  return !proposals || proposals.length === 0 ? (
-    <NoProposalsFound />
-  ) : (
-    <>
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {proposals.map((proposal) =>
-          isVotingEnabled ? (
-            <VotingProposalCard
-              key={proposal.id}
-              proposalId={proposal.id}
-              isVotingEnabled={isVotingEnabled}
-              isReadOnly={isReadOnly}
-              isSelected={isProposalSelected(proposal.id)}
-              onToggle={toggleProposal}
-            >
-              <ProposalCardContent>
-                <ProposalCardHeader
-                  proposal={proposal}
-                  viewHref={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`}
-                  showMenu={canManageProposals || proposal.isEditable}
-                  menuComponent={
-                    <ProposalCardMenu
-                      proposal={proposal}
-                      canManage={canManageProposals}
-                    />
-                  }
-                />
-                <ProposalCardMeta proposal={proposal} />
-                <ProposalCardDescription proposal={proposal} />
-                <ProposalCardFooter>
-                  <ProposalCardMetrics proposal={proposal} />
-                  <ProposalCardActions proposal={proposal} />
-                </ProposalCardFooter>
-              </ProposalCardContent>
-            </VotingProposalCard>
-          ) : (
-            <ProposalCard>
-              <ProposalCardContent>
-                <ProposalCardHeader
-                  proposal={proposal}
-                  viewHref={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`}
-                  showMenu={canManageProposals || proposal.isEditable}
-                  menuComponent={
-                    <ProposalCardMenu
-                      proposal={proposal}
-                      canManage={canManageProposals}
-                    />
-                  }
-                />
-                <ProposalCardMeta proposal={proposal} />
-                <ProposalCardDescription proposal={proposal} />
-                <ProposalCardFooter>
-                  <ProposalCardMetrics proposal={proposal} />
-                  <ProposalCardActions proposal={proposal} />
-                </ProposalCardFooter>
-              </ProposalCardContent>
-            </ProposalCard>
-          ),
-        )}
-      </div>
-
-      {/* Voting Submit Button */}
-      <VotingSubmitButton
-        selectedCount={selectedProposalIds.length}
-        maxVotesPerMember={maxVotesPerMember}
-        isVisible={isVotingEnabled && !isReadOnly}
-        onSubmit={handleSubmitVote}
-        isSubmitting={submitVoteMutation.isPending}
-      />
-    </>
-  );
+  return match(isVotingEnabled, {
+    true: () => <VotingProposalsList {...props} />,
+    false: () => <ViewProposalsList {...props} />,
+  });
 };
 
 export function ProposalsList({
@@ -355,7 +416,7 @@ export function ProposalsList({
   const { proposals, canManageProposals = false } = finalProposalsData ?? {};
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 pb-12">
       {/* Filters Bar */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">

@@ -30,7 +30,7 @@ export interface BaseProposalCardProps {
 
 export function ProposalCard({
   children,
-  className = '',
+  className,
   ...props
 }: {
   proposal?: Proposal;
@@ -38,7 +38,10 @@ export function ProposalCard({
 } & HTMLAttributes<HTMLDivElement>) {
   return (
     <Surface
-      className={cn('relative w-full min-w-80 space-y-3 p-4 pb-4', className)}
+      className={cn(
+        'relative flex w-full min-w-80 flex-col justify-between gap-4 p-4',
+        className,
+      )}
       {...props}
     >
       {children}

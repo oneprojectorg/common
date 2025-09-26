@@ -37,7 +37,7 @@ export function VotingProposalCard({
   return (
     <ProposalCard
       className={cn(
-        'relative w-full min-w-80 space-y-3 p-4 pb-4 transition-all',
+        'relative w-full min-w-80 justify-between p-4',
         canInteract && 'cursor-pointer hover:shadow-md',
         canInteract && !isSelected && 'hover:border-neutral-gray2',
         isSelected && 'border-primary-teal bg-primary-tealWhite',
