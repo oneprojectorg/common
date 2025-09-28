@@ -25,16 +25,14 @@ export const ProfileFollowersSuspense = ({
   // Get relationships where this profile is the target (people following this profile)
   const [relationships] = trpc.profile.getRelationships.useSuspenseQuery({
     targetProfileId: profileId,
+    types: [ProfileRelationshipType.FOLLOWING],
   });
 
   // Filter for following relationships and extract source profiles (followers)
   const followers: RelationshipListItem[] = useMemo(() => {
-    return relationships
-      .filter(
-        (rel) =>
-          rel.relationshipType === ProfileRelationshipType.FOLLOWING &&
-          rel.sourceProfile,
-      )
+    const followingRelationships = relationships.following || [];
+    return followingRelationships
+      .filter((rel) => rel.sourceProfile)
       .map((rel) => rel.sourceProfile!)
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [relationships]);
