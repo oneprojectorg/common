@@ -23,13 +23,14 @@ export const ProfileFollowingSuspense = ({
   
   const [relationships] = trpc.profile.getRelationships.useSuspenseQuery({
     sourceProfileId: profileId,
-    relationshipType: ProfileRelationshipType.FOLLOWING,
+    types: [ProfileRelationshipType.FOLLOWING],
     profileType: EntityType.ORG,
   });
 
   // Extract target profiles
   const following: RelationshipListItem[] = useMemo(() => {
-    return relationships
+    const followingRelationships = relationships.following || [];
+    return followingRelationships
       .filter((rel) => rel.targetProfile)
       .map((rel) => rel.targetProfile!)
       .sort((a, b) => a.name.localeCompare(b.name));
