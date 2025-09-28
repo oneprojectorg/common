@@ -60,31 +60,79 @@ export function ProposalView({
   // Get current user to check edit permissions
   const { user } = useUser();
 
+  // Get user's likes and follows in a single request to avoid caching issues
+  const { data: userRelationships } = trpc.profile.getRelationships.useQuery({
+    types: [ProfileRelationshipType.LIKES, ProfileRelationshipType.FOLLOWING],
+  });
+
+  // Check if current user has liked/followed this proposal
+  const isLikedByUser = Boolean(
+    userRelationships?.likes?.some(
+      (r: any) => r.targetProfile?.id === currentProposal.profileId,
+    ),
+  );
+
+  const isFollowedByUser = Boolean(
+    userRelationships?.following?.some(
+      (r: any) => r.targetProfile?.id === currentProposal.profileId,
+    ),
+  );
+
   // Direct tRPC mutations for like/follow functionality with optimistic updates
   const addRelationshipMutation = trpc.profile.addRelationship.useMutation({
     onMutate: async (variables) => {
-      // Cancel outgoing refetches
-      await utils.decision.getProposal.cancel({
-        profileId: currentProposal.profileId,
+      // Cancel outgoing refetches for the relationship queries
+      await utils.profile.getRelationships.cancel({
+        types: [
+          ProfileRelationshipType.LIKES,
+          ProfileRelationshipType.FOLLOWING,
+        ],
       });
 
       // Snapshot the previous value
-      const previousData = utils.decision.getProposal.getData({
-        profileId: currentProposal.profileId,
+      const previousData = utils.profile.getRelationships.getData({
+        types: [
+          ProfileRelationshipType.LIKES,
+          ProfileRelationshipType.FOLLOWING,
+        ],
       });
 
       // Optimistically update the cache
-      if (previousData) {
+      if (
+        previousData &&
+        variables.targetProfileId &&
+        typeof previousData === 'object' &&
+        !Array.isArray(previousData)
+      ) {
+        // Create a minimal relationship object for optimistic update
+        const optimisticRelationship = {
+          relationshipType: variables.relationshipType,
+          pending: false,
+          createdAt: new Date().toISOString(),
+          targetProfile: {
+            id: variables.targetProfileId,
+            name: '',
+            slug: '',
+            bio: null,
+            avatarImage: null,
+            type: 'proposal',
+          },
+        };
+
         const optimisticData = { ...previousData };
-        if (variables.relationshipType === ProfileRelationshipType.LIKES) {
-          optimisticData.isLikedByUser = true;
-        } else if (
-          variables.relationshipType === ProfileRelationshipType.FOLLOWING
-        ) {
-          optimisticData.isFollowedByUser = true;
-        }
-        utils.decision.getProposal.setData(
-          { profileId: currentProposal.profileId },
+        const existingRelationships = optimisticData[variables.relationshipType] || [];
+        optimisticData[variables.relationshipType] = [
+          ...existingRelationships,
+          optimisticRelationship,
+        ];
+
+        utils.profile.getRelationships.setData(
+          {
+            types: [
+              ProfileRelationshipType.LIKES,
+              ProfileRelationshipType.FOLLOWING,
+            ],
+          },
           optimisticData,
         );
       }
@@ -95,47 +143,68 @@ export function ProposalView({
     onError: (error, _variables, context) => {
       // Rollback on error
       if (context?.previousData) {
-        utils.decision.getProposal.setData(
-          { profileId: currentProposal.profileId },
+        utils.profile.getRelationships.setData(
+          {
+            types: [
+              ProfileRelationshipType.LIKES,
+              ProfileRelationshipType.FOLLOWING,
+            ],
+          },
           context.previousData,
         );
       }
       console.error('Failed to add relationship:', error);
     },
-    onSettled: () => {
+    onSettled: (_data, _error, _variables) => {
       // Always refetch after error or success
-      utils.decision.getProposal.invalidate({
-        profileId: currentProposal.profileId,
+      utils.profile.getRelationships.invalidate({
+        types: [
+          ProfileRelationshipType.LIKES,
+          ProfileRelationshipType.FOLLOWING,
+        ],
       });
-      utils.decision.listProposals.invalidate(); // Also invalidate list to keep ProposalCard in sync
     },
   });
 
   const removeRelationshipMutation =
     trpc.profile.removeRelationship.useMutation({
       onMutate: async (variables) => {
-        // Cancel outgoing refetches
-        await utils.decision.getProposal.cancel({
-          profileId: currentProposal.profileId,
+        // Cancel outgoing refetches for the relationship queries
+        await utils.profile.getRelationships.cancel({
+          types: [
+            ProfileRelationshipType.LIKES,
+            ProfileRelationshipType.FOLLOWING,
+          ],
         });
 
         // Snapshot the previous value
-        const previousData = utils.decision.getProposal.getData({
-          profileId: currentProposal.profileId,
+        const previousData = utils.profile.getRelationships.getData({
+          types: [
+            ProfileRelationshipType.LIKES,
+            ProfileRelationshipType.FOLLOWING,
+          ],
         });
 
         // Optimistically update the cache
-        if (previousData) {
+        if (
+          previousData &&
+          variables.targetProfileId &&
+          typeof previousData === 'object' &&
+          !Array.isArray(previousData)
+        ) {
           const optimisticData = { ...previousData };
-          if (variables.relationshipType === ProfileRelationshipType.LIKES) {
-            optimisticData.isLikedByUser = false;
-          } else if (
-            variables.relationshipType === ProfileRelationshipType.FOLLOWING
-          ) {
-            optimisticData.isFollowedByUser = false;
-          }
-          utils.decision.getProposal.setData(
-            { profileId: currentProposal.profileId },
+          const existingRelationships = optimisticData[variables.relationshipType] || [];
+          optimisticData[variables.relationshipType] = existingRelationships.filter(
+            (rel) => rel.targetProfile?.id !== variables.targetProfileId,
+          );
+
+          utils.profile.getRelationships.setData(
+            {
+              types: [
+                ProfileRelationshipType.LIKES,
+                ProfileRelationshipType.FOLLOWING,
+              ],
+            },
             optimisticData,
           );
         }
@@ -145,19 +214,26 @@ export function ProposalView({
       onError: (error, _variables, context) => {
         // Rollback on error
         if (context?.previousData) {
-          utils.decision.getProposal.setData(
-            { profileId: currentProposal.profileId },
+          utils.profile.getRelationships.setData(
+            {
+              types: [
+                ProfileRelationshipType.LIKES,
+                ProfileRelationshipType.FOLLOWING,
+              ],
+            },
             context.previousData,
           );
         }
         console.error('Failed to remove relationship:', error);
       },
-      onSettled: () => {
+      onSettled: (_data, _error, _variables) => {
         // Always refetch after error or success
-        utils.decision.getProposal.invalidate({
-          profileId: currentProposal.profileId,
+        utils.profile.getRelationships.invalidate({
+          types: [
+            ProfileRelationshipType.LIKES,
+            ProfileRelationshipType.FOLLOWING,
+          ],
         });
-        utils.decision.listProposals.invalidate(); // Also invalidate list to keep ProposalCard in sync
       },
     });
 
@@ -273,7 +349,7 @@ export function ProposalView({
   const handleLike = useCallback(async () => {
     console.log('handleLike called', {
       profileId: currentProposal.profileId,
-      isLikedByUser: currentProposal.isLikedByUser,
+      isLikedByUser: isLikedByUser,
     });
 
     if (!currentProposal.profileId) {
@@ -282,7 +358,7 @@ export function ProposalView({
     }
 
     try {
-      if (currentProposal.isLikedByUser) {
+      if (isLikedByUser) {
         // Unlike
         await removeRelationshipMutation.mutateAsync({
           targetProfileId: currentProposal.profileId,
@@ -301,7 +377,7 @@ export function ProposalView({
     }
   }, [
     currentProposal.profileId,
-    currentProposal.isLikedByUser,
+    isLikedByUser,
     addRelationshipMutation,
     removeRelationshipMutation,
   ]);
@@ -312,7 +388,7 @@ export function ProposalView({
       return;
     }
 
-    if (currentProposal.isFollowedByUser) {
+    if (isFollowedByUser) {
       // Unfollow
       await removeRelationshipMutation.mutateAsync({
         targetProfileId: currentProposal.profileId,
@@ -328,7 +404,7 @@ export function ProposalView({
     }
   }, [
     currentProposal.profileId,
-    currentProposal.isFollowedByUser,
+    isFollowedByUser,
     addRelationshipMutation,
     removeRelationshipMutation,
   ]);
@@ -340,8 +416,8 @@ export function ProposalView({
         title={title || t('Untitled Proposal')}
         onLike={handleLike}
         onFollow={handleFollow}
-        isLiked={currentProposal.isLikedByUser || false}
-        isFollowing={currentProposal.isFollowedByUser || false}
+        isLiked={isLikedByUser}
+        isFollowing={isFollowedByUser}
         isLoading={isLoading}
         editHref={editHref}
         canEdit={canEdit}
@@ -358,8 +434,8 @@ export function ProposalView({
       backHref={backHref}
       onLike={handleLike}
       onFollow={handleFollow}
-      isLiked={currentProposal.isLikedByUser || false}
-      isFollowing={currentProposal.isFollowedByUser || false}
+      isLiked={isLikedByUser}
+      isFollowing={isFollowedByUser}
       isLoading={isLoading}
       editHref={editHref}
       canEdit={canEdit}
@@ -436,20 +512,26 @@ export function ProposalView({
               <div className="flex items-center gap-4 border-b border-t border-neutral-gray1 py-4 text-sm text-neutral-gray4">
                 <div className="flex items-center gap-1">
                   <Heart className="h-4 w-4" />
-                  <span>{currentProposal.likesCount || 0} {t('Likes')}</span>
+                  <span>
+                    {currentProposal.likesCount || 0} {t('Likes')}
+                  </span>
                 </div>
                 <div className="flex items-center gap-1">
                   <MessageCircle className="h-4 w-4" />
                   <span>
                     {currentProposal.commentsCount || 0}{' '}
-                    {(currentProposal.commentsCount || 0) !== 1 ? t('Comments') : t('Comment')}
+                    {(currentProposal.commentsCount || 0) !== 1
+                      ? t('Comments')
+                      : t('Comment')}
                   </span>
                 </div>
                 <div className="flex items-center gap-1">
                   <LuBookmark className="size-4" />
                   <span>
                     {currentProposal.followersCount || 0}{' '}
-                    {(currentProposal.followersCount || 0) !== 1 ? t('Followers') : t('Follower')}
+                    {(currentProposal.followersCount || 0) !== 1
+                      ? t('Followers')
+                      : t('Follower')}
                   </span>
                 </div>
               </div>

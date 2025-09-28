@@ -61,11 +61,12 @@ const removeRelationshipInputSchema = z.object({
 const getRelationshipsInputSchema = z.object({
   targetProfileId: z.string().uuid().optional(),
   sourceProfileId: z.string().uuid().optional(),
-  relationshipType: z
-    .enum([ProfileRelationshipType.FOLLOWING, ProfileRelationshipType.LIKES])
-    .optional(),
+  types: z
+    .array(z.enum([ProfileRelationshipType.FOLLOWING, ProfileRelationshipType.LIKES]))
+    .min(1, "At least one relationship type is required"),
   profileType: z.string().optional(),
 });
+
 
 const addRelationshipMeta: OpenApiMeta = {
   openapi: {
@@ -99,6 +100,7 @@ const getRelationshipsMeta: OpenApiMeta = {
     summary: 'Get relationships to a profile',
   },
 };
+
 
 export const profileRelationshipRouter = router({
   addRelationship: loggedProcedure
@@ -197,61 +199,81 @@ export const profileRelationshipRouter = router({
     .meta(getRelationshipsMeta)
     .input(getRelationshipsInputSchema)
     .output(
-      z.array(
-        z.object({
-          relationshipType: z.string(),
-          pending: z.boolean().nullable(),
-          createdAt: z.string().nullable(),
-          targetProfile: z
-            .object({
-              id: z.string(),
-              name: z.string(),
-              slug: z.string(),
-              bio: z.string().nullable(),
-              avatarImage: z
-                .object({
-                  id: z.string(),
-                  name: z.string().nullable(),
-                })
-                .nullable(),
-              type: z.string(),
-            })
-            .optional(),
-          sourceProfile: z
-            .object({
-              id: z.string(),
-              name: z.string(),
-              slug: z.string(),
-              bio: z.string().nullable(),
-              avatarImage: z
-                .object({
-                  id: z.string(),
-                  name: z.string().nullable(),
-                })
-                .nullable(),
-              type: z.string(),
-            })
-            .optional(),
-        }),
+      // Always return grouped format by relationship type
+      z.record(
+        z.enum([ProfileRelationshipType.FOLLOWING, ProfileRelationshipType.LIKES]),
+        z.array(
+          z.object({
+            relationshipType: z.string(),
+            pending: z.boolean().nullable(),
+            createdAt: z.string().nullable(),
+            targetProfile: z
+              .object({
+                id: z.string(),
+                name: z.string(),
+                slug: z.string(),
+                bio: z.string().nullable(),
+                avatarImage: z
+                  .object({
+                    id: z.string(),
+                    name: z.string().nullable(),
+                  })
+                  .nullable(),
+                type: z.string(),
+              })
+              .optional(),
+            sourceProfile: z
+              .object({
+                id: z.string(),
+                name: z.string(),
+                slug: z.string(),
+                bio: z.string().nullable(),
+                avatarImage: z
+                  .object({
+                    id: z.string(),
+                    name: z.string().nullable(),
+                  })
+                  .nullable(),
+                type: z.string(),
+              })
+              .optional(),
+          }),
+        ),
       ),
     )
     .query(async ({ input, ctx }) => {
       const {
         targetProfileId,
         sourceProfileId,
-        relationshipType,
+        types,
         profileType,
       } = input;
 
       try {
-        const relationships = await getProfileRelationships({
+        // Initialize empty arrays for all requested types
+        const groupedResults: Record<string, any[]> = {};
+        for (const type of types) {
+          groupedResults[type] = [];
+        }
+
+        // Fetch all relationships in a single database query
+        const allRelationships = await getProfileRelationships({
           targetProfileId,
           sourceProfileId,
-          relationshipType,
+          relationshipTypes: types,
           profileType,
           authUserId: ctx.user.id,
         });
-        return relationships;
+
+        // Group results by relationship type
+        for (const relationship of allRelationships) {
+          const type = relationship.relationshipType;
+          if (groupedResults[type]) {
+            groupedResults[type].push(relationship);
+          }
+        }
+
+        return groupedResults;
       } catch (error) {
         console.error('Error getting profile relationships:', error);
         throw new TRPCError({

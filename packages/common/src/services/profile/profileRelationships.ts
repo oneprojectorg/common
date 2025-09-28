@@ -1,9 +1,10 @@
 import { invalidate } from '@op/cache';
-import { and, db, eq } from '@op/db/client';
+import { and, db, eq, inArray } from '@op/db/client';
 import {
   objectsInStorage,
   profileRelationships,
   profiles,
+  ProfileRelationshipType,
 } from '@op/db/schema';
 import { alias } from 'drizzle-orm/pg-core';
 
@@ -35,7 +36,7 @@ export const addRelationship = async ({
       .values({
         sourceProfileId: currentProfileId,
         targetProfileId,
-        relationshipType: relationshipType as 'following' | 'likes',
+        relationshipType: relationshipType as ProfileRelationshipType,
         pending,
       })
       .onConflictDoNothing(),
@@ -71,7 +72,7 @@ export const removeRelationship = async ({
           eq(profileRelationships.targetProfileId, targetProfileId),
           eq(
             profileRelationships.relationshipType,
-            relationshipType as 'following' | 'likes',
+            relationshipType as ProfileRelationshipType,
           ),
         ),
       ),
@@ -85,13 +86,13 @@ export const removeRelationship = async ({
 export const getRelationships = async ({
   targetProfileId,
   sourceProfileId,
-  relationshipType,
+  relationshipTypes,
   profileType,
   authUserId,
 }: {
   targetProfileId?: string;
   sourceProfileId?: string;
-  relationshipType?: string;
+  relationshipTypes?: string[];
   profileType?: string;
   authUserId: string;
 }): Promise<
@@ -188,11 +189,11 @@ export const getRelationships = async ({
     conditions.push(eq(profileRelationships.targetProfileId, targetProfileId));
   }
 
-  if (relationshipType) {
+  if (relationshipTypes && relationshipTypes.length > 0) {
     conditions.push(
-      eq(
+      inArray(
         profileRelationships.relationshipType,
-        relationshipType as 'following' | 'likes',
+        relationshipTypes as ProfileRelationshipType[],
       ),
     );
   }
