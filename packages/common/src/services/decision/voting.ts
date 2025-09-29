@@ -286,6 +286,8 @@ export const getVotingStatus = async ({
   }
 
   try {
+    const profileId = await getCurrentProfileId(authUserId);
+
     // Get process instance and schema
     const processInstance = await db.query.processInstances.findFirst({
       where: eq(processInstances.id, data.processInstanceId),
@@ -351,7 +353,7 @@ export const getVotingStatus = async ({
     const voteSubmission = await db.query.decisionsVoteSubmissions.findFirst({
       where: and(
         eq(decisionsVoteSubmissions.processInstanceId, data.processInstanceId),
-        eq(decisionsVoteSubmissions.submittedByProfileId, data.userId),
+        eq(decisionsVoteSubmissions.submittedByProfileId, profileId),
       ),
       with: {
         voteProposals: {
