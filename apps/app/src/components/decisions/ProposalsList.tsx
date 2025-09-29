@@ -18,7 +18,6 @@ import { useTranslations } from '@/lib/i18n';
 
 import { Bullet } from '../Bullet';
 import { EmptyProposalsState } from './EmptyProposalsState';
-import { useProposalFilters, type ProposalFilter } from './useProposalFilters';
 import {
   ProposalCard,
   ProposalCardActions,
@@ -30,9 +29,11 @@ import {
   ProposalCardMeta,
   ProposalCardMetrics,
 } from './ProposalCard';
+import { VoteSubmissionModal } from './VoteSubmissionModal';
+import { VoteSuccessModal } from './VoteSuccessModal';
 import { VotingProposalCard } from './VotingProposalCard';
 import { VotingSubmitFooter } from './VotingSubmitFooter';
-import { VoteSubmissionModal } from './VoteSubmissionModal';
+import { type ProposalFilter, useProposalFilters } from './useProposalFilters';
 
 type Proposal = z.infer<typeof proposalEncoder>;
 
@@ -136,7 +137,7 @@ const VotingProposalsList = ({
 }: ProposalsProps) => {
   const { user } = useUser();
   const [selectedProposalIds, setSelectedProposalIds] = useState<string[]>([]);
-  const [showConfetti, setShowConfetti] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const t = useTranslations();
 
   const numSelected = selectedProposalIds.length;
@@ -182,12 +183,13 @@ const VotingProposalsList = ({
     selectedProposalIds.includes(proposalId);
 
   // Get selected proposals for the modal
-  const selectedProposals = proposals?.filter(p => selectedProposalIds.includes(p.id)) || [];
+  const selectedProposals =
+    proposals?.filter((p) => selectedProposalIds.includes(p.id)) || [];
 
   // Handle successful vote submission
   const handleVoteSuccess = () => {
     setSelectedProposalIds([]);
-    setShowConfetti(false); // Reset confetti state
+    setShowSuccessModal(true); // Show success modal
     utils.decision.getVotingStatus.invalidate({
       processInstanceId: instanceId,
       userId: user?.id || '',
@@ -248,28 +250,29 @@ const VotingProposalsList = ({
           </span>
 
           <DialogTrigger>
-            <Button
-              isDisabled={numSelected === 0}
-              variant="primary"
-            >
+            <Button isDisabled={numSelected === 0} variant="primary">
               {t('Submit my votes')}
             </Button>
 
-            <Modal isDismissable confetti={showConfetti}>
+            <Modal isDismissable>
               <Dialog>
                 <VoteSubmissionModal
                   selectedProposals={selectedProposals}
                   instanceId={instanceId}
-                  slug={slug}
                   maxVotes={maxVotesPerMember}
                   onSuccess={handleVoteSuccess}
-                  onShowConfetti={() => setShowConfetti(true)}
                 />
               </Dialog>
             </Modal>
           </DialogTrigger>
         </div>
       </VotingSubmitFooter>
+
+      <VoteSuccessModal
+        // isOpen={showSuccessModal}
+        isOpen={true}
+        onClose={() => setShowSuccessModal(false)}
+      />
     </>
   );
 };
@@ -404,7 +407,11 @@ export function ProposalsList({
     proposalsData ?? {};
 
   // Use the custom hook for filtering proposals
-  const { filteredProposals: proposals, proposalFilter, setProposalFilter } = useProposalFilters({
+  const {
+    filteredProposals: proposals,
+    proposalFilter,
+    setProposalFilter,
+  } = useProposalFilters({
     proposals: allProposals || [],
     currentProfileId,
     votedProposalIds: selectedProposalIds,

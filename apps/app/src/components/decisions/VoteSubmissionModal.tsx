@@ -13,7 +13,6 @@ import type { z } from 'zod';
 import { useTranslations } from '@/lib/i18n';
 
 import { VoteReviewStep } from './VoteReviewStep';
-import { VoteSuccessContent } from './VoteSuccessContent';
 import { VoteSurveyStep } from './VoteSurveyStep';
 
 export interface SurveyData {
@@ -24,22 +23,18 @@ export interface SurveyData {
 
 type Proposal = z.infer<typeof proposalEncoder>;
 
-type ModalStep = 'review' | 'survey' | 'success';
+type ModalStep = 'review' | 'survey';
 
 export const VoteSubmissionModal = ({
   selectedProposals,
   instanceId,
-  slug,
   maxVotes,
   onSuccess,
-  onShowConfetti,
 }: {
   selectedProposals: Proposal[];
   instanceId: string;
-  slug: string;
   maxVotes: number;
   onSuccess: () => void;
-  onShowConfetti: () => void;
 }) => {
   const t = useTranslations();
   const overlayState = useContext(OverlayTriggerStateContext);
@@ -53,10 +48,9 @@ export const VoteSubmissionModal = ({
   const utils = trpc.useUtils();
   const submitVoteMutation = trpc.decision.submitVote.useMutation({
     onSuccess: () => {
-      setCurrentStep('success');
-      onShowConfetti(); // Trigger confetti animation
       utils.decision.getVotingStatus.invalidate();
-      // Don't call onSuccess() immediately - let the success step handle closing
+      overlayState?.close(); // Close the submission modal
+      onSuccess(); // Trigger success callback to show success modal
     },
     onError: (error) => {
       console.error('Failed to submit vote:', error);
@@ -80,21 +74,6 @@ export const VoteSubmissionModal = ({
     });
   };
 
-  const handleClose = () => {
-    if (currentStep === 'success') {
-      // If closing from success step, trigger the success callback
-      onSuccess();
-    } else {
-      // If closing from other steps, reset modal state
-      setCurrentStep('review');
-      setSurveyData({
-        role: [],
-        region: '',
-        country: '',
-      });
-    }
-    overlayState?.close();
-  };
 
   const getModalTitle = () => {
     switch (currentStep) {
@@ -102,8 +81,6 @@ export const VoteSubmissionModal = ({
         return t('Review your votes');
       case 'survey':
         return t('Complete survey');
-      case 'success':
-        return '';
       default:
         return '';
     }
@@ -111,42 +88,32 @@ export const VoteSubmissionModal = ({
 
   return (
     <>
-      {currentStep === 'success' ? (
-        <VoteSuccessContent
-          onViewProposals={handleClose}
-          slug={slug}
-          instanceId={instanceId}
-        />
-      ) : (
-        <>
-          <ModalHeader>{getModalTitle()}</ModalHeader>
-          <ModalBody>
-            {currentStep === 'review' && (
-              <VoteReviewStep
-                proposals={selectedProposals}
-                maxVotes={maxVotes}
-              />
-            )}
-            {currentStep === 'survey' && (
-              <VoteSurveyStep
-                initialData={surveyData}
-                isSubmitting={submitVoteMutation.isPending}
-                onSubmit={handleSurveySubmit}
-              />
-            )}
-          </ModalBody>
-          {currentStep === 'review' && (
-            <ModalFooter>
-              <Button
-                className="w-full"
-                color="primary"
-                onPress={handleReviewContinue}
-              >
-                {t('Review and continue')}
-              </Button>
-            </ModalFooter>
-          )}
-        </>
+      <ModalHeader>{getModalTitle()}</ModalHeader>
+      <ModalBody>
+        {currentStep === 'review' && (
+          <VoteReviewStep
+            proposals={selectedProposals}
+            maxVotes={maxVotes}
+          />
+        )}
+        {currentStep === 'survey' && (
+          <VoteSurveyStep
+            initialData={surveyData}
+            isSubmitting={submitVoteMutation.isPending}
+            onSubmit={handleSurveySubmit}
+          />
+        )}
+      </ModalBody>
+      {currentStep === 'review' && (
+        <ModalFooter>
+          <Button
+            className="w-full"
+            color="primary"
+            onPress={handleReviewContinue}
+          >
+            {t('Review and continue')}
+          </Button>
+        </ModalFooter>
       )}
     </>
   );
