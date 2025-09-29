@@ -39,7 +39,7 @@ export function ProposalCard({
   return (
     <Surface
       className={cn(
-        'relative flex w-full min-w-80 flex-col justify-between gap-4 p-4',
+        'relative flex w-full min-w-80 flex-col justify-between gap-4 p-6',
         className,
       )}
       {...props}
@@ -194,7 +194,7 @@ export function ProposalCardAuthor({
         href={`/profile/${proposal.submittedBy.slug}`}
         className="max-w-32 truncate text-nowrap text-base text-neutral-charcoal"
       >
-        {proposal.submittedBy.name || proposal.submittedBy.slug}
+        {proposal.submittedBy.name}
       </Link>
     </>
   );

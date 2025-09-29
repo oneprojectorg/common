@@ -5,11 +5,12 @@ import { trpc } from '@op/api/client';
 import type { proposalEncoder } from '@op/api/encoders';
 import { match } from '@op/core';
 import { Button, ButtonLink } from '@op/ui/Button';
+import { Dialog, DialogTrigger } from '@op/ui/Dialog';
 import { Header3 } from '@op/ui/Header';
+import { Modal } from '@op/ui/Modal';
 import { Select, SelectItem } from '@op/ui/Select';
 import { Skeleton } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
-import { toast } from '@op/ui/Toast';
 import { useMemo, useState } from 'react';
 import type { z } from 'zod';
 
@@ -31,6 +32,7 @@ import {
 } from './ProposalCard';
 import { VotingProposalCard } from './VotingProposalCard';
 import { VotingSubmitFooter } from './VotingSubmitFooter';
+import { VoteSubmissionModal } from './VoteSubmissionModal';
 
 type Proposal = z.infer<typeof proposalEncoder>;
 
@@ -134,6 +136,7 @@ const VotingProposalsList = ({
 }: ProposalsProps) => {
   const { user } = useUser();
   const [selectedProposalIds, setSelectedProposalIds] = useState<string[]>([]);
+  const [showConfetti, setShowConfetti] = useState(false);
   const t = useTranslations();
 
   const numSelected = selectedProposalIds.length;
@@ -149,25 +152,7 @@ const VotingProposalsList = ({
     },
   );
 
-  // Submit vote mutation
   const utils = trpc.useUtils();
-  const submitVoteMutation = trpc.decision.submitVote.useMutation({
-    onSuccess: () => {
-      // Reset selection after successful submission
-      setSelectedProposalIds([]);
-      // Invalidate and refetch vote status
-      utils.decision.getVotingStatus.invalidate({
-        processInstanceId: instanceId,
-        userId: user?.id || '',
-      });
-    },
-    onError: (error) => {
-      console.error('Failed to submit vote:', error);
-      toast.error({
-        message: error.message || 'Failed to submit vote',
-      });
-    },
-  });
 
   // Determine voting state
   const hasVoted = voteStatus?.hasVoted || false;
@@ -196,16 +181,16 @@ const VotingProposalsList = ({
   const isProposalSelected = (proposalId: string) =>
     selectedProposalIds.includes(proposalId);
 
-  // Handle vote submission
-  const handleSubmitVote = () => {
-    if (numSelected === 0) {
-      return;
-    }
+  // Get selected proposals for the modal
+  const selectedProposals = proposals?.filter(p => selectedProposalIds.includes(p.id)) || [];
 
-    submitVoteMutation.mutate({
+  // Handle successful vote submission
+  const handleVoteSuccess = () => {
+    setSelectedProposalIds([]);
+    setShowConfetti(false); // Reset confetti state
+    utils.decision.getVotingStatus.invalidate({
       processInstanceId: instanceId,
-      selectedProposalIds,
-      schemaVersion: '1.0.0',
+      userId: user?.id || '',
     });
   };
 
@@ -262,15 +247,27 @@ const VotingProposalsList = ({
             {maxVotesPerMember === 1 ? 'proposal' : 'proposals'} selected
           </span>
 
-          <Button
-            onPress={handleSubmitVote}
-            isDisabled={numSelected === 0 || submitVoteMutation.isPending}
-            variant="primary"
-          >
-            {submitVoteMutation.isPending
-              ? t('Submitting...')
-              : t('Submit my votes')}
-          </Button>
+          <DialogTrigger>
+            <Button
+              isDisabled={numSelected === 0}
+              variant="primary"
+            >
+              {t('Submit my votes')}
+            </Button>
+
+            <Modal isDismissable confetti={showConfetti}>
+              <Dialog>
+                <VoteSubmissionModal
+                  selectedProposals={selectedProposals}
+                  instanceId={instanceId}
+                  slug={slug}
+                  maxVotes={maxVotesPerMember}
+                  onSuccess={handleVoteSuccess}
+                  onShowConfetti={() => setShowConfetti(true)}
+                />
+              </Dialog>
+            </Modal>
+          </DialogTrigger>
         </div>
       </VotingSubmitFooter>
     </>
