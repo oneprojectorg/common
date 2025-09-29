@@ -17,11 +17,11 @@ const FollowButtonSuspense = ({ profile }: { profile: Organization }) => {
   // Check if we're currently following this profile
   const [relationships] = trpc.profile.getRelationships.useSuspenseQuery({
     targetProfileId: profile.profile.id,
+    types: [ProfileRelationshipType.FOLLOWING],
   });
 
-  const isFollowing = relationships.some(
-    (rel) => rel.relationshipType === ProfileRelationshipType.FOLLOWING,
-  );
+  const followingRelationships = relationships.following || [];
+  const isFollowing = followingRelationships.length > 0;
 
   const addRelationship = trpc.profile.addRelationship.useMutation();
   const removeRelationship = trpc.profile.removeRelationship.useMutation();
@@ -55,10 +55,11 @@ const FollowButtonSuspense = ({ profile }: { profile: Organization }) => {
           // Invalidate the query that checks if we're following this profile
           utils.profile.getRelationships.invalidate({
             targetProfileId: profile.profile.id,
+            types: [ProfileRelationshipType.FOLLOWING],
           }),
           // Invalidate the current user's following list
           utils.profile.getRelationships.invalidate({
-            relationshipType: ProfileRelationshipType.FOLLOWING,
+            types: [ProfileRelationshipType.FOLLOWING],
             profileType: 'org',
           }),
           // Invalidate all relationship queries for this target profile

@@ -29,112 +29,82 @@ export function ProposalCardActions({
     },
   );
 
+  // Get user's likes and follows in a single request to avoid caching issues
+  const { data: userRelationships } = trpc.profile.getRelationships.useQuery({
+    types: [ProfileRelationshipType.LIKES, ProfileRelationshipType.FOLLOWING],
+  });
+
+  // Check if current user has liked/followed this proposal
+  const isLikedByUser = Boolean(
+    userRelationships?.likes?.some((r: any) => r.targetProfile?.id === currentProposal.profileId)
+  );
+
+  const isFollowedByUser = Boolean(
+    userRelationships?.following?.some((r: any) => r.targetProfile?.id === currentProposal.profileId)
+  );
+
   // Direct tRPC mutations with optimistic updates
   const addRelationshipMutation = trpc.profile.addRelationship.useMutation({
     onMutate: async (variables) => {
-      // Cancel outgoing refetches
-      if (initialProposal.processInstance?.id) {
-        await utils.decision.listProposals.cancel({
-          processInstanceId: initialProposal.processInstance.id,
-        });
-      }
-      await utils.decision.getProposal.cancel({
-        profileId: currentProposal.profileId,
+      // Cancel outgoing refetches for the relationship queries
+      await utils.profile.getRelationships.cancel({
+        types: [ProfileRelationshipType.LIKES, ProfileRelationshipType.FOLLOWING],
       });
 
-      // Snapshot the previous values
-      const previousListData = initialProposal.processInstance?.id
-        ? utils.decision.listProposals.getData({
-            processInstanceId: initialProposal.processInstance.id,
-          })
-        : null;
-      const previousProposalData = utils.decision.getProposal.getData({
-        profileId: currentProposal.profileId,
+      // Snapshot the previous value
+      const previousData = utils.profile.getRelationships.getData({
+        types: [ProfileRelationshipType.LIKES, ProfileRelationshipType.FOLLOWING],
       });
 
-      // Optimistically update list data
-      if (previousListData && initialProposal.processInstance?.id) {
-        const optimisticListData = {
-          ...previousListData,
-          proposals: previousListData.proposals.map((p) =>
-            p.id === currentProposal.id
-              ? {
-                  ...p,
-                  isLikedByUser:
-                    variables.relationshipType === ProfileRelationshipType.LIKES
-                      ? true
-                      : p.isLikedByUser,
-                  isFollowedByUser:
-                    variables.relationshipType ===
-                    ProfileRelationshipType.FOLLOWING
-                      ? true
-                      : p.isFollowedByUser,
-                  likesCount:
-                    variables.relationshipType === ProfileRelationshipType.LIKES
-                      ? (p.likesCount || 0) + 1
-                      : p.likesCount,
-                  followersCount:
-                    variables.relationshipType ===
-                    ProfileRelationshipType.FOLLOWING
-                      ? (p.followersCount || 0) + 1
-                      : p.followersCount,
-                }
-              : p,
-          ),
+      // Optimistically update the cache
+      if (previousData && variables.targetProfileId && typeof previousData === 'object' && !Array.isArray(previousData)) {
+        // Create a minimal relationship object for optimistic update
+        const optimisticRelationship = {
+          relationshipType: variables.relationshipType,
+          pending: false,
+          createdAt: new Date().toISOString(),
+          targetProfile: {
+            id: variables.targetProfileId,
+            name: '',
+            slug: '',
+            bio: null,
+            avatarImage: null,
+            type: 'proposal',
+          },
         };
-        utils.decision.listProposals.setData(
-          { processInstanceId: initialProposal.processInstance.id },
-          optimisticListData,
+
+        const optimisticData = { ...previousData };
+        const existingRelationships = optimisticData[variables.relationshipType] || [];
+        optimisticData[variables.relationshipType] = [
+          ...existingRelationships,
+          optimisticRelationship,
+        ];
+
+        utils.profile.getRelationships.setData(
+          { types: [ProfileRelationshipType.LIKES, ProfileRelationshipType.FOLLOWING] },
+          optimisticData,
         );
       }
 
-      // Optimistically update individual proposal data
-      if (previousProposalData) {
-        const optimisticProposalData = {
-          ...previousProposalData,
-          isLikedByUser:
-            variables.relationshipType === ProfileRelationshipType.LIKES
-              ? true
-              : previousProposalData.isLikedByUser,
-          isFollowedByUser:
-            variables.relationshipType === ProfileRelationshipType.FOLLOWING
-              ? true
-              : previousProposalData.isFollowedByUser,
-          likesCount:
-            variables.relationshipType === ProfileRelationshipType.LIKES
-              ? (previousProposalData.likesCount || 0) + 1
-              : previousProposalData.likesCount,
-          followersCount:
-            variables.relationshipType === ProfileRelationshipType.FOLLOWING
-              ? (previousProposalData.followersCount || 0) + 1
-              : previousProposalData.followersCount,
-        };
-        utils.decision.getProposal.setData(
-          { profileId: currentProposal.profileId },
-          optimisticProposalData,
-        );
-      }
-
-      return { previousListData, previousProposalData };
+      return { previousData };
     },
     onError: (error, _variables, context) => {
       // Rollback on error
-      if (context?.previousListData && initialProposal.processInstance?.id) {
-        utils.decision.listProposals.setData(
-          { processInstanceId: initialProposal.processInstance.id },
-          context.previousListData,
-        );
-      }
-      if (context?.previousProposalData) {
-        utils.decision.getProposal.setData(
-          { profileId: currentProposal.profileId },
-          context.previousProposalData,
+      if (context?.previousData) {
+        utils.profile.getRelationships.setData(
+          { types: [ProfileRelationshipType.LIKES, ProfileRelationshipType.FOLLOWING] },
+          context.previousData,
         );
       }
       console.error('Failed to add relationship:', error);
     },
-    onSettled: () => {
-      // Always refetch after error or success
+    onSettled: (_data, _error, _variables) => {
+      // Only refetch relationship data - no need to invalidate proposal caches
+      // since they no longer contain user-specific data
+      utils.profile.getRelationships.invalidate({
+        types: [ProfileRelationshipType.LIKES, ProfileRelationshipType.FOLLOWING],
+      });
+      // Still need to invalidate proposal/list data to update like/follower counts
       utils.decision.getProposal.invalidate({
         profileId: currentProposal.profileId,
       });
@@ -149,111 +119,49 @@ export function ProposalCardActions({
   const removeRelationshipMutation =
     trpc.profile.removeRelationship.useMutation({
       onMutate: async (variables) => {
-        // Cancel outgoing refetches
-        if (initialProposal.processInstance?.id) {
-          await utils.decision.listProposals.cancel({
-            processInstanceId: initialProposal.processInstance.id,
-          });
-        }
-        await utils.decision.getProposal.cancel({
-          profileId: currentProposal.profileId,
+        // Cancel outgoing refetches for the relationship queries
+        await utils.profile.getRelationships.cancel({
+          types: [ProfileRelationshipType.LIKES, ProfileRelationshipType.FOLLOWING],
         });
 
-        // Snapshot the previous values
-        const previousListData = initialProposal.processInstance?.id
-          ? utils.decision.listProposals.getData({
-              processInstanceId: initialProposal.processInstance.id,
-            })
-          : null;
-        const previousProposalData = utils.decision.getProposal.getData({
-          profileId: currentProposal.profileId,
+        // Snapshot the previous value
+        const previousData = utils.profile.getRelationships.getData({
+          types: [ProfileRelationshipType.LIKES, ProfileRelationshipType.FOLLOWING],
         });
 
-        // Optimistically update list data
-        if (previousListData && initialProposal.processInstance?.id) {
-          const optimisticListData = {
-            ...previousListData,
-            proposals: previousListData.proposals.map((p) =>
-              p.id === currentProposal.id
-                ? {
-                    ...p,
-                    isLikedByUser:
-                      variables.relationshipType ===
-                      ProfileRelationshipType.LIKES
-                        ? false
-                        : p.isLikedByUser,
-                    isFollowedByUser:
-                      variables.relationshipType ===
-                      ProfileRelationshipType.FOLLOWING
-                        ? false
-                        : p.isFollowedByUser,
-                    likesCount:
-                      variables.relationshipType ===
-                      ProfileRelationshipType.LIKES
-                        ? Math.max((p.likesCount || 0) - 1, 0)
-                        : p.likesCount,
-                    followersCount:
-                      variables.relationshipType ===
-                      ProfileRelationshipType.FOLLOWING
-                        ? Math.max((p.followersCount || 0) - 1, 0)
-                        : p.followersCount,
-                  }
-                : p,
-            ),
-          };
-          utils.decision.listProposals.setData(
-            { processInstanceId: initialProposal.processInstance.id },
-            optimisticListData,
+        // Optimistically update the cache
+        if (previousData && variables.targetProfileId && typeof previousData === 'object' && !Array.isArray(previousData)) {
+          const optimisticData = { ...previousData };
+          const existingRelationships = optimisticData[variables.relationshipType] || [];
+          optimisticData[variables.relationshipType] = existingRelationships.filter(
+            (rel) => rel.targetProfile?.id !== variables.targetProfileId,
+          );
+
+          utils.profile.getRelationships.setData(
+            { types: [ProfileRelationshipType.LIKES, ProfileRelationshipType.FOLLOWING] },
+            optimisticData,
           );
         }
 
-        // Optimistically update individual proposal data
-        if (previousProposalData) {
-          const optimisticProposalData = {
-            ...previousProposalData,
-            isLikedByUser:
-              variables.relationshipType === ProfileRelationshipType.LIKES
-                ? false
-                : previousProposalData.isLikedByUser,
-            isFollowedByUser:
-              variables.relationshipType === ProfileRelationshipType.FOLLOWING
-                ? false
-                : previousProposalData.isFollowedByUser,
-            likesCount:
-              variables.relationshipType === ProfileRelationshipType.LIKES
-                ? Math.max((previousProposalData.likesCount || 0) - 1, 0)
-                : previousProposalData.likesCount,
-            followersCount:
-              variables.relationshipType === ProfileRelationshipType.FOLLOWING
-                ? Math.max((previousProposalData.followersCount || 0) - 1, 0)
-                : previousProposalData.followersCount,
-          };
-          utils.decision.getProposal.setData(
-            { profileId: currentProposal.profileId },
-            optimisticProposalData,
-          );
-        }
-
-        return { previousListData, previousProposalData };
+        return { previousData };
       },
       onError: (error, _variables, context) => {
         // Rollback on error
-        if (context?.previousListData && initialProposal.processInstance?.id) {
-          utils.decision.listProposals.setData(
-            { processInstanceId: initialProposal.processInstance.id },
-            context.previousListData,
-          );
-        }
-        if (context?.previousProposalData) {
-          utils.decision.getProposal.setData(
-            { profileId: currentProposal.profileId },
-            context.previousProposalData,
+        if (context?.previousData) {
+          utils.profile.getRelationships.setData(
+            { types: [ProfileRelationshipType.LIKES, ProfileRelationshipType.FOLLOWING] },
+            context.previousData,
           );
         }
         console.error('Failed to remove relationship:', error);
       },
-      onSettled: () => {
-        // Always refetch after error or success
+      onSettled: (_data, _error, _variables) => {
+        // Only refetch relationship data - no need to invalidate proposal caches
+        // since they no longer contain user-specific data
+        utils.profile.getRelationships.invalidate({
+          types: [ProfileRelationshipType.LIKES, ProfileRelationshipType.FOLLOWING],
+        });
+        // Still need to invalidate proposal/list data to update like/follower counts
         utils.decision.getProposal.invalidate({
           profileId: currentProposal.profileId,
         });
@@ -275,7 +183,7 @@ export function ProposalCardActions({
     }
 
     try {
-      if (currentProposal.isLikedByUser) {
+      if (isLikedByUser) {
         // Unlike
         await removeRelationshipMutation.mutateAsync({
           targetProfileId: currentProposal.profileId,
@@ -300,7 +208,7 @@ export function ProposalCardActions({
       return;
     }
 
-    if (currentProposal.isFollowedByUser) {
+    if (isFollowedByUser) {
       // Unfollow
       await removeRelationshipMutation.mutateAsync({
         targetProfileId: currentProposal.profileId,
@@ -321,22 +229,22 @@ export function ProposalCardActions({
       <Button
         onPress={handleLikeClick}
         size="small"
-        color={currentProposal.isLikedByUser ? 'verified' : 'secondary'}
+        color={isLikedByUser ? 'verified' : 'secondary'}
         className="w-full text-nowrap"
         isDisabled={isLoading}
       >
         <Heart className="size-4" />
-        {currentProposal.isLikedByUser ? t('Liked') : t('Like')}
+        {isLikedByUser ? t('Liked') : t('Like')}
       </Button>
       <Button
         onPress={handleFollowClick}
         size="small"
-        color={currentProposal.isFollowedByUser ? 'verified' : 'secondary'}
+        color={isFollowedByUser ? 'verified' : 'secondary'}
         className="w-full text-nowrap"
         isDisabled={isLoading}
       >
         <LuBookmark className="size-4" />
-        {currentProposal.isFollowedByUser ? t('Following') : t('Follow')}
+        {isFollowedByUser ? t('Following') : t('Follow')}
       </Button>
     </div>
   );
