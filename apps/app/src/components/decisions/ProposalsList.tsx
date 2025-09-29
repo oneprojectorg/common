@@ -17,6 +17,7 @@ import { useTranslations } from '@/lib/i18n';
 
 import { Bullet } from '../Bullet';
 import { EmptyProposalsState } from './EmptyProposalsState';
+import { useProposalFilters, type ProposalFilter } from './useProposalFilters';
 import {
   ProposalCard,
   ProposalCardActions,
@@ -121,6 +122,7 @@ interface ProposalsProps {
   slug: string;
   isLoading: boolean;
   canManageProposals?: boolean;
+  votedProposalIds?: string[];
 }
 
 const VotingProposalsList = ({
@@ -128,6 +130,7 @@ const VotingProposalsList = ({
   instanceId,
   slug,
   canManageProposals = false,
+  votedProposalIds = [],
 }: ProposalsProps) => {
   const { user } = useUser();
   const [selectedProposalIds, setSelectedProposalIds] = useState<string[]>([]);
@@ -220,6 +223,7 @@ const VotingProposalsList = ({
             isVotingEnabled={true}
             isReadOnly={isReadOnly}
             isSelected={isProposalSelected(proposal.id)}
+            isVotedFor={votedProposalIds.includes(proposal.id)}
             onToggle={toggleProposal}
           >
             <ProposalCardContent>
@@ -351,7 +355,6 @@ export function ProposalsList({
   const { user } = useUser();
   const [selectedCategory, setSelectedCategory] =
     useState<string>('all-categories');
-  const [proposalFilter, setProposalFilter] = useState<string>('all');
   const [sortOrder, setSortOrder] = useState<string>('newest');
 
   const [categoriesData] = trpc.decision.getCategories.useSuspenseQuery({
@@ -371,7 +374,8 @@ export function ProposalsList({
 
   // Determine if we're in ballot view (user has voted)
   const hasVoted = voteStatus?.hasVoted || false;
-  const selectedProposalIds = voteStatus?.voteSubmission?.selectedProposalIds || [];
+  const selectedProposalIds =
+    voteStatus?.voteSubmission?.selectedProposalIds || [];
 
   // Build query parameters, ensuring consistent structure
   const queryParams = useMemo(() => {
@@ -388,62 +392,27 @@ export function ProposalsList({
       limit: 50,
     };
 
-    // In ballot view, we don't apply filters - we'll filter client-side later
-    if (!hasVoted) {
-      // Only include categoryId if it's not "all-categories"
-      if (selectedCategory !== 'all-categories') {
-        params.categoryId = selectedCategory;
-      }
-
-      // Only include submittedByProfileId if filtering for "my" proposals and we have currentProfileId
-      if (proposalFilter === 'my' && currentProfileId) {
-        params.submittedByProfileId = currentProfileId;
-      }
-
-      // Filter by status if shortlisted proposals are selected
-      if (proposalFilter === 'shortlisted') {
-        params.status = 'approved';
-      }
+    // Only include categoryId if it's not "all-categories"
+    if (selectedCategory !== 'all-categories') {
+      params.categoryId = selectedCategory;
     }
 
     return params;
-  }, [
-    instanceId,
-    selectedCategory,
-    proposalFilter,
-    currentProfileId,
-    sortOrder,
-    hasVoted,
-  ]);
-
-  // If we're filtering for "my" proposals but don't have currentProfileId, show empty results
-  const showEmptyResults = !hasVoted && proposalFilter === 'my' && !currentProfileId;
+  }, [instanceId, selectedCategory, sortOrder]);
 
   const { data: proposalsData, isLoading } =
     trpc.decision.listProposals.useQuery(queryParams);
 
-  // Override with empty results if we should show empty
-  const finalProposalsData = showEmptyResults
-    ? { proposals: [], total: 0, hasMore: false, canManageProposals: false }
-    : proposalsData;
+  const { proposals: allProposals, canManageProposals = false } =
+    proposalsData ?? {};
 
-  const { proposals: allProposals, canManageProposals = false } = finalProposalsData ?? {};
-
-  // Filter proposals for ballot view
-  const proposals = useMemo(() => {
-    if (!allProposals) {
-      return allProposals;
-    }
-
-    if (hasVoted && selectedProposalIds.length > 0) {
-      // In ballot view, only show the proposals the user voted for
-      return allProposals.filter((proposal) =>
-        selectedProposalIds.includes(proposal.id)
-      );
-    }
-
-    return allProposals;
-  }, [allProposals, hasVoted, selectedProposalIds]);
+  // Use the custom hook for filtering proposals
+  const { filteredProposals: proposals, proposalFilter, setProposalFilter } = useProposalFilters({
+    proposals: allProposals || [],
+    currentProfileId,
+    votedProposalIds: selectedProposalIds,
+    hasVoted,
+  });
 
   return (
     <div className="flex flex-col gap-6 pb-12">
@@ -451,7 +420,7 @@ export function ProposalsList({
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <span className="font-serif text-title-base text-neutral-black">
-            {hasVoted
+            {proposalFilter === 'my-ballot'
               ? t('My ballot')
               : proposalFilter === 'my'
                 ? t('My proposals')
@@ -461,58 +430,59 @@ export function ProposalsList({
             <Bullet /> {proposals?.length ?? 0}
           </span>
         </div>
-        {!hasVoted && (
-          <div className="grid max-w-fit grid-cols-2 justify-end gap-4 sm:flex sm:flex-1 sm:flex-wrap sm:items-center">
-            <Select
-              size="small"
-              className="min-w-36"
-              selectedKey={proposalFilter}
-              onSelectionChange={(key) => {
-                const newKey = String(key);
-                // If selecting "My proposals" but no current profile, fallback to "all"
-                if (newKey === 'my' && !currentProfileId) {
-                  return;
-                }
-                setProposalFilter(newKey);
-              }}
-            >
-              <SelectItem id="all">{t('All proposals')}</SelectItem>
-              <SelectItem id="shortlisted">{t('Shortlisted')}</SelectItem>
-              <SelectItem id="my" isDisabled={!currentProfileId}>
-                {t('My proposals')}
+        <div className="grid max-w-fit grid-cols-2 justify-end gap-4 sm:flex sm:flex-1 sm:flex-wrap sm:items-center">
+          <Select
+            size="small"
+            className="min-w-36"
+            selectedKey={proposalFilter}
+            onSelectionChange={(key) => {
+              const newKey = key as ProposalFilter;
+              // If selecting "My proposals" but no current profile, fallback to "all"
+              if (newKey === 'my' && !currentProfileId) {
+                return;
+              }
+              setProposalFilter(newKey);
+            }}
+          >
+            <SelectItem id="all">{t('All proposals')}</SelectItem>
+            <SelectItem id="shortlisted">{t('Shortlisted')}</SelectItem>
+            <SelectItem id="my" isDisabled={!currentProfileId}>
+              {t('My proposals')}
+            </SelectItem>
+            {hasVoted && (
+              <SelectItem id="my-ballot">{t('My ballot')}</SelectItem>
+            )}
+          </Select>
+          <Select
+            selectedKey={selectedCategory}
+            size="small"
+            className="min-w-36"
+            onSelectionChange={(key) => setSelectedCategory(String(key))}
+            aria-label="Filter proposals by category"
+          >
+            <SelectItem id="all-categories" aria-label="Show all categories">
+              {t('All categories')}
+            </SelectItem>
+            {categories.map((category) => (
+              <SelectItem
+                key={category.id}
+                id={category.id}
+                aria-label={`Filter by ${category.name} category`}
+              >
+                {category.name}
               </SelectItem>
-            </Select>
-            <Select
-              selectedKey={selectedCategory}
-              size="small"
-              className="min-w-36"
-              onSelectionChange={(key) => setSelectedCategory(String(key))}
-              aria-label="Filter proposals by category"
-            >
-              <SelectItem id="all-categories" aria-label="Show all categories">
-                {t('All categories')}
-              </SelectItem>
-              {categories.map((category) => (
-                <SelectItem
-                  key={category.id}
-                  id={category.id}
-                  aria-label={`Filter by ${category.name} category`}
-                >
-                  {category.name}
-                </SelectItem>
-              ))}
-            </Select>
-            <Select
-              selectedKey={sortOrder}
-              size="small"
-              className="min-w-32"
-              onSelectionChange={(key) => setSortOrder(String(key))}
-            >
-              <SelectItem id="newest">{t('Newest First')}</SelectItem>
-              <SelectItem id="oldest">{t('Oldest First')}</SelectItem>
-            </Select>
-          </div>
-        )}
+            ))}
+          </Select>
+          <Select
+            selectedKey={sortOrder}
+            size="small"
+            className="min-w-32"
+            onSelectionChange={(key) => setSortOrder(String(key))}
+          >
+            <SelectItem id="newest">{t('Newest First')}</SelectItem>
+            <SelectItem id="oldest">{t('Oldest First')}</SelectItem>
+          </Select>
+        </div>
       </div>
 
       <Proposals
@@ -521,6 +491,7 @@ export function ProposalsList({
         instanceId={instanceId}
         slug={slug}
         canManageProposals={canManageProposals}
+        votedProposalIds={selectedProposalIds}
       />
     </div>
   );

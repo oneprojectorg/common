@@ -11,6 +11,7 @@ interface VotingProposalCardProps {
   isVotingEnabled?: boolean;
   isReadOnly?: boolean;
   isSelected?: boolean;
+  isVotedFor?: boolean;
   onToggle?: (proposalId: string) => void;
   className?: string;
 }
@@ -21,6 +22,7 @@ export function VotingProposalCard({
   isVotingEnabled = false,
   isReadOnly = false,
   isSelected = false,
+  isVotedFor = false,
   onToggle,
   className = '',
 }: VotingProposalCardProps) {
@@ -34,13 +36,15 @@ export function VotingProposalCard({
     onToggle(proposalId);
   };
 
+  const isHighlighted = isSelected || isVotedFor;
+
   return (
     <ProposalCard
       className={cn(
         'relative w-full min-w-80 justify-between p-4',
         canInteract && 'cursor-pointer hover:shadow-md',
-        canInteract && !isSelected && 'hover:border-neutral-gray2',
-        isSelected && 'border-primary-teal bg-primary-tealWhite',
+        canInteract && !isHighlighted && 'hover:border-neutral-gray2',
+        isHighlighted && 'border-primary-teal bg-primary-tealWhite',
         className,
       )}
       onClick={canInteract ? handleCardClick : undefined}
