@@ -1,9 +1,13 @@
 'use client';
 
+import { countries } from '@/utils/countries';
 import { Button } from '@op/ui/Button';
+import { Checkbox, CheckboxGroup } from '@op/ui/Checkbox';
 import { Radio, RadioGroup } from '@op/ui/RadioGroup';
+import { Select, SelectItem } from '@op/ui/Select';
 import { TextField } from '@op/ui/TextField';
 import { useState } from 'react';
+import { LuSearch } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -22,16 +26,21 @@ export const VoteSurveyStep = ({
 }: VoteSurveyStepProps) => {
   const t = useTranslations();
   const [formData, setFormData] = useState<SurveyData>(initialData);
-  const [errors, setErrors] = useState<Partial<SurveyData>>({});
+  const [errors, setErrors] = useState<
+    Partial<Record<keyof SurveyData, string>>
+  >({});
 
   const validateForm = (): boolean => {
-    const newErrors: Partial<SurveyData> = {};
+    const newErrors: Partial<Record<keyof SurveyData, string>> = {};
 
-    if (!formData.role) {
-      newErrors.role = 'Please select your role' as any;
+    if (!formData.role || formData.role.length === 0) {
+      newErrors.role = 'Please select at least one role';
+    }
+    if (formData.role && formData.role.length > 2) {
+      newErrors.role = 'Please select up to two options';
     }
     if (!formData.region) {
-      newErrors.region = 'Please select your region' as any;
+      newErrors.region = 'Please select your region';
     }
     if (!formData.country.trim()) {
       newErrors.country = 'Please enter your country';
@@ -55,7 +64,7 @@ export const VoteSurveyStep = ({
         )}
       </p>
 
-      <RadioGroup
+      <CheckboxGroup
         label={t('Which is your Role at People Powered?')}
         description={t('You can select up to two options.')}
         className="gap-3"
@@ -70,15 +79,22 @@ export const VoteSurveyStep = ({
             setErrors((prev) => ({ ...prev, role: undefined }));
           }
         }}
-        errorMessage={errors.role as string}
+        errorMessage={errors.role}
         isInvalid={!!errors.role}
-        orientation="vertical"
       >
-        <Radio value="member_org">Part of a Member Organization</Radio>
-        <Radio value="individual">Individual Member</Radio>
-        <Radio value="board">Board of Directors</Radio>
-        <Radio value="staff">Staff</Radio>
-      </RadioGroup>
+        <Checkbox size="small" className="text-base" value="member_org">
+          {t('Part of a Member Organization')}
+        </Checkbox>
+        <Checkbox size="small" className="text-base" value="individual">
+          {t('Individual Member')}
+        </Checkbox>
+        <Checkbox size="small" className="text-base" value="board">
+          {t('Board of Directors')}
+        </Checkbox>
+        <Checkbox size="small" className="text-base" value="staff">
+          {t('Staff')}
+        </Checkbox>
+      </CheckboxGroup>
 
       <RadioGroup
         label={t('Which region of the world are you from?')}
@@ -90,36 +106,52 @@ export const VoteSurveyStep = ({
           }
         }}
         isRequired
-        errorMessage={errors.region as string}
+        errorMessage={errors.region}
         isInvalid={!!errors.region}
         orientation="vertical"
       >
-        <span className="flex flex-col gap-1">
-          <Radio value="africa">Africa</Radio>
-          <Radio value="asia">Asia</Radio>
-          <Radio value="eastern_europe">Eastern Europe</Radio>
-          <Radio value="western_northern_europe">
-            Western & Northern Europe
+        <span className="flex flex-col gap-3">
+          <Radio value="africa" className="p-0">
+            {t('Africa')}
           </Radio>
-          <Radio value="latin_america">Latin America</Radio>
-          <Radio value="us_canada">US & Canada</Radio>
-          <Radio value="oceania">Oceania</Radio>
+          <Radio value="asia" className="p-0">
+            {t('Asia')}
+          </Radio>
+          <Radio value="eastern_europe" className="p-0">
+            {t('Eastern Europe')}
+          </Radio>
+          <Radio value="western_northern_europe" className="p-0">
+            {t('Western & Northern Europe')}
+          </Radio>
+          <Radio value="latin_america" className="p-0">
+            {t('Latin America')}
+          </Radio>
+          <Radio value="us_canada" className="p-0">
+            {t('US & Canada')}
+          </Radio>
+          <Radio value="oceania" className="p-0">
+            {t('Oceania')}
+          </Radio>
         </span>
       </RadioGroup>
 
-      <TextField
+      <Select
         label={t('Which country are you from?')}
-        value={formData.country}
-        isRequired
-        onChange={(value) => {
-          setFormData((prev) => ({ ...prev, country: value }));
+        size="medium"
+        onSelectionChange={(value) => {
+          setFormData((prev) => ({ ...prev, country: value.toString() }));
           if (errors.country) {
             setErrors((prev) => ({ ...prev, country: undefined }));
           }
         }}
-        errorMessage={errors.country}
-        isInvalid={!!errors.country}
-      />
+        placeholder={t('Enter your country')}
+        isRequired
+        icon={<LuSearch className="size-4 text-neutral-gray4" />}
+      >
+        {Object.entries(countries).map(([code, name]) => (
+          <SelectItem id={code}>{name}</SelectItem>
+        ))}
+      </Select>
 
       <div className="flex justify-end">
         <Button

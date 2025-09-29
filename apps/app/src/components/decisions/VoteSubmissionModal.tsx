@@ -17,7 +17,7 @@ import { VoteSuccessContent } from './VoteSuccessContent';
 import { VoteSurveyStep } from './VoteSurveyStep';
 
 export interface SurveyData {
-  role: 'member_org' | 'individual' | 'board' | 'staff';
+  role: ('member_org' | 'individual' | 'board' | 'staff')[];
   region: string;
   country: string;
 }
@@ -45,7 +45,7 @@ export const VoteSubmissionModal = ({
   const overlayState = useContext(OverlayTriggerStateContext);
   const [currentStep, setCurrentStep] = useState<ModalStep>('review');
   const [surveyData, setSurveyData] = useState<SurveyData>({
-    role: 'individual',
+    role: [],
     region: '',
     country: '',
   });
@@ -88,7 +88,7 @@ export const VoteSubmissionModal = ({
       // If closing from other steps, reset modal state
       setCurrentStep('review');
       setSurveyData({
-        role: 'individual',
+        role: [],
         region: '',
         country: '',
       });
