@@ -10,25 +10,25 @@ import { LuSearch } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import type { SurveyData } from './VoteSubmissionModal';
+import type { CurrentSurveyData } from './VoteSubmissionModal';
 
 export const VoteSurveyStep = ({
   initialData,
   isSubmitting,
   onSubmit,
 }: {
-  initialData: SurveyData;
+  initialData: CurrentSurveyData;
   isSubmitting: boolean;
-  onSubmit: (data: SurveyData) => void;
+  onSubmit: (data: CurrentSurveyData) => void;
 }) => {
   const t = useTranslations();
-  const [formData, setFormData] = useState<SurveyData>(initialData);
+  const [formData, setFormData] = useState<CurrentSurveyData>(initialData);
   const [errors, setErrors] = useState<
-    Partial<Record<keyof SurveyData, string>>
+    Partial<Record<keyof CurrentSurveyData, string>>
   >({});
 
   const validateForm = (): boolean => {
-    const newErrors: Partial<Record<keyof SurveyData, string>> = {};
+    const newErrors: Partial<Record<keyof CurrentSurveyData, string>> = {};
 
     if (!formData.role || formData.role.length === 0) {
       newErrors.role = 'Please select at least one role';
@@ -70,7 +70,7 @@ export const VoteSurveyStep = ({
         onChange={(value) => {
           setFormData((prev) => ({
             ...prev,
-            role: value as SurveyData['role'],
+            role: value as CurrentSurveyData['role'],
           }));
           if (errors.role) {
             setErrors((prev) => ({ ...prev, role: undefined }));
