@@ -133,6 +133,7 @@
   "Loading comments...": "Loading comments...",
   "No comments yet. Be the first to comment!": "No comments yet. Be the first to comment!",
   "SHARE YOUR IDEAS.": "SHARE YOUR IDEAS.",
+  "YOUR BALLOT IS IN.": "YOUR BALLOT IS IN.",
   "Decide how to allocate part of People Powered's budget for 2026": "Decide how to allocate part of People Powered's budget for 2026",
   "During 2023, People Powered members and staff co-created the strategic plan that guides our work from 2024 to 2026.": "During 2023, People Powered members and staff co-created the strategic plan that guides our work from 2024 to 2026.",
   "Now, you will decide how to allocate part of People Powered's 2026 budget, in order to advance our strategic plan and move us toward the future horizons of participatory democracy.": "Now, you will decide how to allocate part of People Powered's 2026 budget, in order to advance our strategic plan and move us toward the future horizons of participatory democracy.",
@@ -236,5 +237,6 @@
   "Reject from shortlist": "Reject from shortlist",
   "Shortlist for voting": "Shortlist for voting",
   "Shortlisted proposals": "Shortlisted proposals",
-  "Are you sure you want to delete this proposal? This action cannot be undone.": "Are you sure you want to delete this proposal? This action cannot be undone."
+  "Are you sure you want to delete this proposal? This action cannot be undone.": "Are you sure you want to delete this proposal? This action cannot be undone.",
+  "Thank you for participating in {title}. Your voice helps shape how we invest in our community.": "Thank you for participating in {title}. Your voice helps shape how we invest in our community."
 }

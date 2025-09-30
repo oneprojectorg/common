@@ -40,7 +40,6 @@ async function DecisionAdminPageContent({
               instanceId={instanceId}
               currentStateId={instance.currentStateId || ''}
               phases={phases}
-              transitions={processSchema?.transitions || []}
             />
           </div>
         </div>

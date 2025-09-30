@@ -132,6 +132,7 @@
   "Loading comments...": "Cargando comentarios...",
   "No comments yet. Be the first to comment!": "Aún no hay comentarios. ¡Sé el primero en comentar!",
   "SHARE YOUR IDEAS.": "COMPARTE TUS IDEAS.",
+  "YOUR BALLOT IS IN.": "TU VOTO HA SIDO ENVIADO.",
   "Decide how to allocate part of People Powered's budget for 2026": "Decide cómo asignar parte del presupuesto de People Powered para 2026",
   "During 2023, People Powered members and staff co-created the strategic plan that guides our work from 2024 to 2026.": "Durante 2023, los miembros y el personal de People Powered co-crearon el plan estratégico que guía nuestro trabajo de 2024 a 2026.",
   "Now, you will decide how to allocate part of People Powered's 2026 budget, in order to advance our strategic plan and move us toward the future horizons of participatory democracy.": "Ahora, tú decidirás cómo asignar parte del presupuesto 2026 de People Powered, para avanzar nuestro plan estratégico y llevarnos hacia los futuros horizontes de la democracia participativa.",
@@ -235,5 +236,6 @@
   "Reject from shortlist": "Rechazar de la preselección",
   "Shortlist for voting": "Preseleccionar para votación",
   "Shortlisted proposals": "Propuestas preseleccionadas",
-  "Are you sure you want to delete this proposal? This action cannot be undone.": "¿Estás seguro de que quieres eliminar esta propuesta? Esta acción no se puede deshacer."
+  "Are you sure you want to delete this proposal? This action cannot be undone.": "¿Estás seguro de que quieres eliminar esta propuesta? Esta acción no se puede deshacer.",
+  "Thank you for participating in {title}. Your voice helps shape how we invest in our community.": "Gracias por participar en {title}. Tu voz ayuda a moldear cómo invertimos en nuestra comunidad."
 }

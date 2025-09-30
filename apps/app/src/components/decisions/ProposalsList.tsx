@@ -3,7 +3,11 @@
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import type { proposalEncoder } from '@op/api/encoders';
+import { match } from '@op/core';
+import { Button, ButtonLink } from '@op/ui/Button';
+import { Dialog, DialogTrigger } from '@op/ui/Dialog';
 import { Header3 } from '@op/ui/Header';
+import { Modal } from '@op/ui/Modal';
 import { Select, SelectItem } from '@op/ui/Select';
 import { Skeleton } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
@@ -14,7 +18,22 @@ import { useTranslations } from '@/lib/i18n';
 
 import { Bullet } from '../Bullet';
 import { EmptyProposalsState } from './EmptyProposalsState';
-import { ProposalCard } from './ProposalCard';
+import {
+  ProposalCard,
+  ProposalCardActions,
+  ProposalCardContent,
+  ProposalCardDescription,
+  ProposalCardFooter,
+  ProposalCardHeader,
+  ProposalCardMenu,
+  ProposalCardMeta,
+  ProposalCardMetrics,
+} from './ProposalCard';
+import { VoteSubmissionModal } from './VoteSubmissionModal';
+import { VoteSuccessModal } from './VoteSuccessModal';
+import { VotingProposalCard } from './VotingProposalCard';
+import { VotingSubmitFooter } from './VotingSubmitFooter';
+import { type ProposalFilter, useProposalFilters } from './useProposalFilters';
 
 type Proposal = z.infer<typeof proposalEncoder>;
 
@@ -100,51 +119,242 @@ const NoProposalsFound = () => {
   );
 };
 
-const Proposals = ({
-  proposals,
-  instanceId,
-  slug,
-  isLoading,
-  canManageProposals = false,
-}: {
+interface ProposalsProps {
   proposals?: Proposal[];
   instanceId: string;
   slug: string;
   isLoading: boolean;
   canManageProposals?: boolean;
-}) => {
-  if (isLoading) {
-    return <ProposalListSkeletonGrid />;
+  votedProposalIds?: string[];
+}
+
+const VotingProposalsList = ({
+  proposals,
+  instanceId,
+  slug,
+  canManageProposals = false,
+  votedProposalIds = [],
+}: ProposalsProps) => {
+  const { user } = useUser();
+  const [selectedProposalIds, setSelectedProposalIds] = useState<string[]>([]);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const t = useTranslations();
+
+  const numSelected = selectedProposalIds.length;
+
+  // Get voting status for this user and process
+  const { data: voteStatus } = trpc.decision.getVotingStatus.useQuery(
+    {
+      processInstanceId: instanceId,
+      userId: user?.id || '',
+    },
+    {
+      enabled: !!user?.id,
+    },
+  );
+
+  const utils = trpc.useUtils();
+
+  // Determine voting state
+  const hasVoted = voteStatus?.hasVoted || false;
+  const isReadOnly = hasVoted;
+  const maxVotesPerMember =
+    voteStatus?.votingConfiguration?.maxVotesPerMember || 0;
+
+  // Handle proposal selection
+  const toggleProposal = (proposalId: string) => {
+    setSelectedProposalIds((prev) => {
+      const isSelected = prev.includes(proposalId);
+
+      if (isSelected) {
+        // Remove from selection
+        return prev.filter((id) => id !== proposalId);
+      } else {
+        // Add to selection if under limit
+        if (prev.length < maxVotesPerMember) {
+          return [...prev, proposalId];
+        }
+        return prev;
+      }
+    });
+  };
+
+  const isProposalSelected = (proposalId: string) =>
+    selectedProposalIds.includes(proposalId);
+
+  // Get selected proposals for the modal
+  const selectedProposals =
+    proposals?.filter((p) => selectedProposalIds.includes(p.id)) || [];
+
+  // Handle successful vote submission
+  const handleVoteSuccess = () => {
+    setSelectedProposalIds([]);
+    setShowSuccessModal(true); // Show success modal
+    utils.decision.getVotingStatus.invalidate({
+      processInstanceId: instanceId,
+      userId: user?.id || '',
+    });
+  };
+
+  if (!proposals || proposals.length === 0) {
+    return <NoProposalsFound />;
   }
 
-  return !proposals || proposals.length === 0 ? (
-    <NoProposalsFound />
-  ) : (
+  return (
+    <>
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {proposals.map((proposal) => (
+          <VotingProposalCard
+            key={proposal.id}
+            proposalId={proposal.id}
+            isVotingEnabled={true}
+            isReadOnly={isReadOnly}
+            isSelected={isProposalSelected(proposal.id)}
+            isVotedFor={votedProposalIds.includes(proposal.id)}
+            onToggle={toggleProposal}
+          >
+            <ProposalCardContent>
+              <ProposalCardHeader
+                proposal={proposal}
+                viewHref={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`}
+                showMenu={canManageProposals || proposal.isEditable}
+                menuComponent={
+                  <ProposalCardMenu
+                    proposal={proposal}
+                    canManage={canManageProposals}
+                  />
+                }
+              />
+              <ProposalCardMeta proposal={proposal} />
+              <ProposalCardDescription proposal={proposal} />
+            </ProposalCardContent>
+            <ProposalCardFooter>
+              <ButtonLink
+                href={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`}
+                color="secondary"
+                className="w-full"
+              >
+                {t('Read full proposal')}
+              </ButtonLink>
+            </ProposalCardFooter>
+          </VotingProposalCard>
+        ))}
+      </div>
+
+      <VotingSubmitFooter selectedCount={numSelected} isVisible={!isReadOnly}>
+        <div className="flex w-full items-center justify-between px-4 sm:max-w-6xl sm:px-8">
+          <span className="text-neutral-black">
+            <span className="text-primary-teal">{numSelected}</span> of{' '}
+            {maxVotesPerMember}{' '}
+            {maxVotesPerMember === 1 ? 'proposal' : 'proposals'} selected
+          </span>
+
+          <DialogTrigger>
+            <Button isDisabled={numSelected === 0} variant="primary">
+              {t('Submit my votes')}
+            </Button>
+
+            <Modal isDismissable>
+              <Dialog>
+                <VoteSubmissionModal
+                  selectedProposals={selectedProposals}
+                  instanceId={instanceId}
+                  maxVotes={maxVotesPerMember}
+                  onSuccess={handleVoteSuccess}
+                />
+              </Dialog>
+            </Modal>
+          </DialogTrigger>
+        </div>
+      </VotingSubmitFooter>
+
+      <VoteSuccessModal
+        isOpen={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        instanceId={instanceId}
+      />
+    </>
+  );
+};
+
+const ViewProposalsList = ({
+  proposals,
+  instanceId,
+  slug,
+  canManageProposals = false,
+}: ProposalsProps) => {
+  if (!proposals || proposals.length === 0) {
+    return <NoProposalsFound />;
+  }
+
+  return (
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
       {proposals.map((proposal) => (
-        <ProposalCard
-          key={proposal.id}
-          proposal={proposal}
-          viewHref={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`}
-          canManageProposals={canManageProposals}
-        />
+        <ProposalCard key={proposal.id}>
+          <ProposalCardContent>
+            <ProposalCardHeader
+              proposal={proposal}
+              viewHref={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`}
+              showMenu={canManageProposals || proposal.isEditable}
+              menuComponent={
+                <ProposalCardMenu
+                  proposal={proposal}
+                  canManage={canManageProposals}
+                />
+              }
+            />
+            <ProposalCardMeta proposal={proposal} />
+            <ProposalCardDescription proposal={proposal} />
+            <ProposalCardFooter>
+              <ProposalCardMetrics proposal={proposal} />
+              <ProposalCardActions proposal={proposal} />
+            </ProposalCardFooter>
+          </ProposalCardContent>
+        </ProposalCard>
       ))}
     </div>
   );
 };
 
-export function ProposalsList({
+const Proposals = (props: ProposalsProps) => {
+  const { user } = useUser();
+  const { isLoading, instanceId } = props;
+
+  // Get voting status for this user and process
+  const { data: voteStatus } = trpc.decision.getVotingStatus.useQuery(
+    {
+      processInstanceId: instanceId,
+      userId: user?.id || '',
+    },
+    {
+      enabled: !!user?.id,
+    },
+  );
+
+  // Determine voting state
+  const isVotingEnabled = !!voteStatus?.votingConfiguration?.allowDecisions;
+
+  if (isLoading) {
+    return <ProposalListSkeletonGrid />;
+  }
+
+  return match(isVotingEnabled, {
+    true: () => <VotingProposalsList {...props} />,
+    false: () => <ViewProposalsList {...props} />,
+  });
+};
+
+export const ProposalsList = ({
   slug,
   instanceId,
 }: {
   slug: string;
   instanceId: string;
-}) {
+}) => {
   const t = useTranslations();
   const { user } = useUser();
   const [selectedCategory, setSelectedCategory] =
     useState<string>('all-categories');
-  const [proposalFilter, setProposalFilter] = useState<string>('all');
   const [sortOrder, setSortOrder] = useState<string>('newest');
 
   const [categoriesData] = trpc.decision.getCategories.useSuspenseQuery({
@@ -155,6 +365,17 @@ export function ProposalsList({
 
   // Get current user's profile ID for "My Proposals" filter
   const currentProfileId = user?.currentProfile?.id;
+
+  // Get voting status for this user and process
+  const [voteStatus] = trpc.decision.getVotingStatus.useSuspenseQuery({
+    processInstanceId: instanceId,
+    userId: user?.id || '',
+  });
+
+  // Determine if we're in ballot view (user has voted)
+  const hasVoted = voteStatus?.hasVoted || false;
+  const selectedProposalIds =
+    voteStatus?.voteSubmission?.selectedProposalIds || [];
 
   // Build query parameters, ensuring consistent structure
   const queryParams = useMemo(() => {
@@ -176,49 +397,41 @@ export function ProposalsList({
       params.categoryId = selectedCategory;
     }
 
-    // Only include submittedByProfileId if filtering for "my" proposals and we have currentProfileId
-    if (proposalFilter === 'my' && currentProfileId) {
-      params.submittedByProfileId = currentProfileId;
-    }
-
-    // Filter by status if shortlisted proposals are selected
-    if (proposalFilter === 'shortlisted') {
-      params.status = 'approved';
-    }
-
     return params;
-  }, [
-    instanceId,
-    selectedCategory,
-    proposalFilter,
-    currentProfileId,
-    sortOrder,
-  ]);
-
-  // If we're filtering for "my" proposals but don't have currentProfileId, show empty results
-  const showEmptyResults = proposalFilter === 'my' && !currentProfileId;
+  }, [instanceId, selectedCategory, sortOrder]);
 
   const { data: proposalsData, isLoading } =
     trpc.decision.listProposals.useQuery(queryParams);
 
-  // Override with empty results if we should show empty
-  const finalProposalsData = showEmptyResults
-    ? { proposals: [], total: 0, hasMore: false, canManageProposals: false }
-    : proposalsData;
+  const { proposals: allProposals, canManageProposals = false } =
+    proposalsData ?? {};
 
-  const { proposals, canManageProposals = false } = finalProposalsData ?? {};
+
+  // Use the custom hook for filtering proposals
+  const {
+    filteredProposals: proposals,
+    proposalFilter,
+    setProposalFilter,
+  } = useProposalFilters({
+    proposals: allProposals || [],
+    currentProfileId,
+    votedProposalIds: selectedProposalIds,
+    hasVoted,
+  });
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 pb-12">
       {/* Filters Bar */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <span className="font-serif text-title-base text-neutral-black">
-            {proposalFilter === 'my'
-              ? t('My proposals')
-              : proposalFilter === 'shortlisted'
-                ? t('Shortlisted proposals')
-                : t('All proposals')}{' '}
+            {proposalFilter === 'my-ballot'
+              ? t('My ballot')
+              : proposalFilter === 'my'
+                ? t('My proposals')
+                : proposalFilter === 'shortlisted'
+                  ? t('Shortlisted proposals')
+                  : t('All proposals')}{' '}
             <Bullet /> {proposals?.length ?? 0}
           </span>
         </div>
@@ -228,7 +441,7 @@ export function ProposalsList({
             className="min-w-36"
             selectedKey={proposalFilter}
             onSelectionChange={(key) => {
-              const newKey = String(key);
+              const newKey = key as ProposalFilter;
               // If selecting "My proposals" but no current profile, fallback to "all"
               if (newKey === 'my' && !currentProfileId) {
                 return;
@@ -241,6 +454,9 @@ export function ProposalsList({
             <SelectItem id="my" isDisabled={!currentProfileId}>
               {t('My proposals')}
             </SelectItem>
+            {hasVoted && (
+              <SelectItem id="my-ballot">{t('My ballot')}</SelectItem>
+            )}
           </Select>
           <Select
             selectedKey={selectedCategory}
@@ -280,6 +496,7 @@ export function ProposalsList({
         instanceId={instanceId}
         slug={slug}
         canManageProposals={canManageProposals}
+        votedProposalIds={selectedProposalIds}
       />
     </div>
   );

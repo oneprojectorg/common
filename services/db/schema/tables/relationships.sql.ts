@@ -53,7 +53,7 @@ export const organizationRelationships = pgTable(
     index()
       .on(table.sourceOrganizationId, table.targetOrganizationId)
       .concurrently(),
-    uniqueIndex().on(
+    uniqueIndex('org_rel_source_target_type_unique').on(
       table.sourceOrganizationId,
       table.targetOrganizationId,
       table.relationshipType,

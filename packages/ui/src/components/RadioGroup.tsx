@@ -31,7 +31,10 @@ export const RadioGroup = (props: RadioGroupProps) => {
         'group flex flex-col gap-2',
       )}
     >
-      <Label className="text-base">{props.label}</Label>
+      <Label className="text-neutral-charcoal">
+        {props.label}
+        {props.isRequired && <span className="text-functional-red"> *</span>}
+      </Label>
       <div className="flex gap-2 group-orientation-horizontal:gap-4 group-orientation-vertical:flex-col">
         {props.children}
       </div>

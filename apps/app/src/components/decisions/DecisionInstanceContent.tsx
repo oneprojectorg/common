@@ -1,6 +1,7 @@
 'use client';
 
 import { getPublicUrl } from '@/utils';
+import { useUser } from '@/utils/UserProvider';
 import { pluralize } from '@/utils/pluralize';
 import { getUniqueSubmitters } from '@/utils/proposalUtils';
 import { trpc } from '@op/api/client';
@@ -26,6 +27,8 @@ export function DecisionInstanceContent({
 }) {
   const t = useTranslations();
   const { slug } = useParams();
+  const { user } = useUser();
+
   const [[{ proposals }, instance]] = trpc.useSuspenseQueries((t) => [
     t.decision.listProposals({
       processInstanceId: instanceId,
@@ -35,6 +38,17 @@ export function DecisionInstanceContent({
       instanceId,
     }),
   ]);
+
+  // Get voting status for this user and process
+  const { data: voteStatus } = trpc.decision.getVotingStatus.useQuery(
+    {
+      processInstanceId: instanceId,
+      userId: user?.id || '',
+    },
+    {
+      enabled: !!user?.id,
+    },
+  );
 
   const instanceData = instance.instanceData as any;
   const processSchema = instance.process?.processSchema as any;
@@ -48,6 +62,7 @@ export function DecisionInstanceContent({
     (state) => state.id === currentStateId,
   );
   const allowProposals = currentState?.config?.allowProposals !== false; // defaults to true
+  const hasVoted = voteStatus?.hasVoted || false;
 
   // TODO: special key for People powered translations as a stop-gap
   const description = instance?.description?.match('PPDESCRIPTION')
@@ -114,7 +129,7 @@ export function DecisionInstanceContent({
             _: (
               <>
                 <GradientHeader className="items-center align-middle uppercase">
-                  {t('SHARE YOUR IDEAS.')}
+                  {hasVoted ? t('YOUR BALLOT IS IN.') : t('SHARE YOUR IDEAS.')}
                 </GradientHeader>
                 {
                   <div className="mt-4 text-base text-gray-700">

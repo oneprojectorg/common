@@ -221,6 +221,7 @@ export const OrganizationFormFields = ({
             onBlur={field.handleBlur}
             errorMessage={getFieldErrorMessage(field)}
             className="w-full"
+            size="medium"
           >
             <SelectItem id="nonprofit">{t('Nonprofit')}</SelectItem>
             <SelectItem id="forprofit">{t('Forprofit')}</SelectItem>
