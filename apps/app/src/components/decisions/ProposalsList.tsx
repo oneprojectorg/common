@@ -269,8 +269,7 @@ const VotingProposalsList = ({
       </VotingSubmitFooter>
 
       <VoteSuccessModal
-        // isOpen={showSuccessModal}
-        isOpen={true}
+        isOpen={showSuccessModal}
         onClose={() => setShowSuccessModal(false)}
       />
     </>

@@ -19,10 +19,17 @@ import {
 } from '../../utils';
 import { getCurrentProfileId, getOrgAccessUser } from '../access';
 
+export interface SurveyData {
+  role: ('member_org' | 'individual' | 'board' | 'staff')[];
+  region: string;
+  country: string;
+}
+
 export interface SubmitVoteInput {
   processInstanceId: string;
   selectedProposalIds: string[];
   schemaVersion?: string;
+  surveyData?: SurveyData;
   authUserId: string;
 }
 
@@ -215,6 +222,7 @@ export const submitVote = async ({
       submissionMetadata: {
         timestamp: new Date().toISOString(),
         userAgent: 'unknown',
+        surveyData: data.surveyData,
       },
       validationSignature: createVoteSignature(
         data.selectedProposalIds,

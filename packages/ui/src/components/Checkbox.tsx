@@ -34,9 +34,14 @@ export const CheckboxGroup = (props: CheckboxGroupProps) => {
         'flex flex-col gap-2',
       )}
     >
-      <Label>{props.label}</Label>
+      <span className="flex flex-col">
+        <Label>
+          {props.label}
+          {props.isRequired && <span className="text-functional-red"> *</span>}
+        </Label>
+        {props.description && <Description>{props.description}</Description>}
+      </span>
       {props.children}
-      {props.description && <Description>{props.description}</Description>}
       <FieldError>{props.errorMessage}</FieldError>
     </AriaCheckboxGroup>
   );

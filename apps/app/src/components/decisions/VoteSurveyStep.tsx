@@ -12,17 +12,15 @@ import { useTranslations } from '@/lib/i18n';
 
 import type { SurveyData } from './VoteSubmissionModal';
 
-interface VoteSurveyStepProps {
-  initialData: SurveyData;
-  isSubmitting: boolean;
-  onSubmit: (data: SurveyData) => void;
-}
-
 export const VoteSurveyStep = ({
   initialData,
   isSubmitting,
   onSubmit,
-}: VoteSurveyStepProps) => {
+}: {
+  initialData: SurveyData;
+  isSubmitting: boolean;
+  onSubmit: (data: SurveyData) => void;
+}) => {
   const t = useTranslations();
   const [formData, setFormData] = useState<SurveyData>(initialData);
   const [errors, setErrors] = useState<
@@ -148,7 +146,9 @@ export const VoteSurveyStep = ({
         icon={<LuSearch className="size-4 text-neutral-gray4" />}
       >
         {Object.entries(countries).map(([code, name]) => (
-          <SelectItem id={code}>{name}</SelectItem>
+          <SelectItem key={code} id={code}>
+            {name}
+          </SelectItem>
         ))}
       </Select>
 
