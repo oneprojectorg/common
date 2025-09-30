@@ -116,6 +116,18 @@ export { decisions, decisionsRelations } from './tables/decisions.sql';
 export type { Decision } from './tables/decisions.sql';
 
 export {
+  decisionsVoteSubmissions,
+  decisionsVoteSubmissionsRelations
+} from './tables/decisions_vote_submissions.sql';
+export type { DecisionVoteSubmission, VoteData } from './tables/decisions_vote_submissions.sql';
+
+export {
+  decisionsVoteProposals,
+  decisionsVoteProposalsRelations,
+} from './tables/decisions_vote_proposals.sql';
+export type { DecisionVoteProposal } from './tables/decisions_vote_proposals.sql';
+
+export {
   stateTransitionHistory,
   stateTransitionHistoryRelations,
 } from './tables/stateTransitionHistory.sql';
