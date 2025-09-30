@@ -3,10 +3,12 @@ import { TRPCError } from '@trpc/server';
 import { checkTransitionInputSchema, transitionCheckResultEncoder } from '../../../encoders/decision';
 import withAnalytics from '../../../middlewares/withAnalytics';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
+import withRateLimited from '../../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../../trpcFactory';
 
 export const checkTransitionsRouter = router({
   checkTransitions: loggedProcedure
+    .use(withRateLimited({ windowSize: 10, maxRequests: 5 }))
     .use(withAuthenticated)
     .use(withAnalytics)
     .input(checkTransitionInputSchema)

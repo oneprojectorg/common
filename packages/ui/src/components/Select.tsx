@@ -1,6 +1,7 @@
 'use client';
 
 import { ChevronDown } from 'lucide-react';
+import { ReactNode } from 'react';
 import {
   Select as AriaSelect,
   Button,
@@ -74,6 +75,7 @@ export interface SelectProps<T extends object>
   popoverProps?: Omit<PopoverProps, 'children'>;
   selectionMode?: 'single' | 'multiple';
   variant?: 'default' | 'pill';
+  icon?: ReactNode;
 }
 
 export const Select = <T extends object>({
@@ -85,6 +87,7 @@ export const Select = <T extends object>({
   selectionMode = 'single',
   isRequired,
   variant = 'default',
+  icon,
   ...props
 }: SelectProps<T>) => {
   const { className: popoverClassName, ...popoverProps } =
@@ -115,10 +118,12 @@ export const Select = <T extends object>({
             <SelectValue
               className={cn(
                 props.selectValueClassName,
-                'flex h-full items-center',
+                'flex h-full items-center text-neutral-gray4',
               )}
             />
-            <ChevronDown aria-hidden className={chevronStyles({ variant })} />
+            {icon ?? (
+              <ChevronDown aria-hidden className={chevronStyles({ variant })} />
+            )}
           </span>
         </Button>
       )}

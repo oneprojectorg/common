@@ -1,13 +1,24 @@
 import { db, eq } from '@op/db/client';
-import { processInstances, proposals, decisions, stateTransitionHistory, users } from '@op/db/schema';
+import {
+  decisions,
+  processInstances,
+  proposals,
+  stateTransitionHistory,
+  users,
+} from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
-import { CommonError, NotFoundError, UnauthorizedError, ValidationError } from '../../utils';
+import {
+  CommonError,
+  NotFoundError,
+  UnauthorizedError,
+  ValidationError,
+} from '../../utils';
 import type {
-  ProcessSchema,
   InstanceData,
-  TransitionDefinition,
+  ProcessSchema,
   TransitionCondition,
+  TransitionDefinition,
 } from './types';
 
 export interface TransitionCheckResult {
@@ -66,20 +77,29 @@ export class TransitionEngine {
       const process = instance.process as any;
       const processSchema = process.processSchema as ProcessSchema;
       const instanceData = instance.instanceData as InstanceData;
-      const currentStateId = instanceData.currentStateId || instance.currentStateId || '';
+      console.log(
+        'TRANSITION',
+        instanceData.currentStateId,
+        instance.currentStateId,
+        instanceData,
+      );
+      const currentStateId =
+        instanceData.currentStateId || instance.currentStateId || '';
 
       // Find applicable transitions
-      const applicableTransitions = processSchema.transitions.filter(transition => {
-        // Check if transition applies from current state
-        if (Array.isArray(transition.from)) {
-          return transition.from.includes(currentStateId);
-        }
-        return transition.from === currentStateId;
-      });
+      const applicableTransitions = processSchema.transitions.filter(
+        (transition) => {
+          // Check if transition applies from current state
+          if (Array.isArray(transition.from)) {
+            return transition.from.includes(currentStateId);
+          }
+          return transition.from === currentStateId;
+        },
+      );
 
       // If specific toStateId requested, filter to that transition
       const transitionsToCheck = toStateId
-        ? applicableTransitions.filter(t => t.to === toStateId)
+        ? applicableTransitions.filter((t) => t.to === toStateId)
         : applicableTransitions;
 
       const results = await Promise.all(
@@ -98,15 +118,18 @@ export class TransitionEngine {
             canExecute: ruleCheck.canExecute,
             failedRules: ruleCheck.failedRules,
           };
-        })
+        }),
       );
 
       return {
-        canTransition: results.some(r => r.canExecute),
+        canTransition: results.some((r) => r.canExecute),
         availableTransitions: results,
       };
     } catch (error) {
-      if (error instanceof UnauthorizedError || error instanceof NotFoundError) {
+      if (
+        error instanceof UnauthorizedError ||
+        error instanceof NotFoundError
+      ) {
         throw error;
       }
       console.error('Error checking transitions:', error);
@@ -146,13 +169,13 @@ export class TransitionEngine {
       });
 
       const targetTransition = transitionCheck.availableTransitions.find(
-        t => t.toStateId === data.toStateId
+        (t) => t.toStateId === data.toStateId,
       );
 
       if (!targetTransition || !targetTransition.canExecute) {
         const failedRules = targetTransition?.failedRules || [];
         throw new ValidationError(
-          `Cannot execute transition: ${failedRules.map(r => r.errorMessage).join(', ')}`
+          `Cannot execute transition: ${failedRules.map((r) => r.errorMessage).join(', ')}`,
         );
       }
 
@@ -175,12 +198,16 @@ export class TransitionEngine {
       const process = instance.process as any;
       const processSchema = process.processSchema as ProcessSchema;
       const instanceData = instance.instanceData as InstanceData;
-      const currentStateId = instanceData.currentStateId || instance.currentStateId || '';
+      const currentStateId =
+        instanceData.currentStateId || instance.currentStateId || '';
 
       // Find the transition definition
-      const transition = processSchema.transitions.find(t =>
-        t.to === data.toStateId &&
-        (Array.isArray(t.from) ? t.from.includes(currentStateId) : t.from === currentStateId)
+      const transition = processSchema.transitions.find(
+        (t) =>
+          t.to === data.toStateId &&
+          (Array.isArray(t.from)
+            ? t.from.includes(currentStateId)
+            : t.from === currentStateId),
       );
 
       if (!transition) {
@@ -303,19 +330,20 @@ export class TransitionEngine {
 
           return passes;
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          const errorMessage =
+            error instanceof Error ? error.message : 'Unknown error';
           failedRules.push({
             ruleId,
             errorMessage: `Error evaluating condition: ${errorMessage}`,
           });
           return false;
         }
-      })
+      }),
     );
 
     const canExecute = requireAll
-      ? results.every(r => r)
-      : results.some(r => r);
+      ? results.every((r) => r)
+      : results.some((r) => r);
 
     return { canExecute, failedRules };
   }
@@ -362,7 +390,7 @@ export class TransitionEngine {
 
   private static evaluateTimeCondition(
     condition: TransitionCondition,
-    instanceData: InstanceData
+    instanceData: InstanceData,
   ): boolean {
     const now = new Date();
     const currentState = instanceData.stateData?.[instanceData.currentStateId];
@@ -389,11 +417,11 @@ export class TransitionEngine {
 
   private static async evaluateProposalCountCondition(
     condition: TransitionCondition,
-    instanceId: string
+    instanceId: string,
   ): Promise<boolean> {
     const proposalCount = await db.$count(
       proposals,
-      eq(proposals.processInstanceId, instanceId)
+      eq(proposals.processInstanceId, instanceId),
     );
 
     const value = Number(condition.value);
@@ -412,7 +440,7 @@ export class TransitionEngine {
 
   private static async evaluateParticipationCountCondition(
     condition: TransitionCondition,
-    instanceId: string
+    instanceId: string,
   ): Promise<boolean> {
     // Count unique participants who have submitted decisions
     const participantCount = await db
@@ -420,7 +448,7 @@ export class TransitionEngine {
       .from(decisions)
       .innerJoin(proposals, eq(proposals.id, decisions.proposalId))
       .where(eq(proposals.processInstanceId, instanceId))
-      .then(results => results.length);
+      .then((results) => results.length);
 
     const value = Number(condition.value);
 
@@ -438,7 +466,7 @@ export class TransitionEngine {
 
   private static async evaluateApprovalRateCondition(
     condition: TransitionCondition,
-    instanceId: string
+    instanceId: string,
   ): Promise<boolean> {
     // This is a simplified approval rate calculation
     // In practice, you'd need to define what constitutes "approval" in your decision schema
@@ -453,8 +481,11 @@ export class TransitionEngine {
     }
 
     // Simplified: assume decisions with decisionData.approved = true are approvals
-    const approvalCount = allDecisions.filter(d => {
-      const decisionData = d.decision_instances.decisionData as Record<string, unknown>;
+    const approvalCount = allDecisions.filter((d) => {
+      const decisionData = d.decision_instances.decisionData as Record<
+        string,
+        unknown
+      >;
       return decisionData.approved === true;
     }).length;
 
@@ -475,7 +506,7 @@ export class TransitionEngine {
 
   private static evaluateCustomFieldCondition(
     condition: TransitionCondition,
-    instanceData: InstanceData
+    instanceData: InstanceData,
   ): boolean {
     if (!condition.field) {
       return false;
@@ -488,19 +519,25 @@ export class TransitionEngine {
       case 'equals':
         return fieldValue === expectedValue;
       case 'greaterThan':
-        return typeof fieldValue === 'number' &&
+        return (
+          typeof fieldValue === 'number' &&
           typeof expectedValue === 'number' &&
-          fieldValue > expectedValue;
+          fieldValue > expectedValue
+        );
       case 'lessThan':
-        return typeof fieldValue === 'number' &&
+        return (
+          typeof fieldValue === 'number' &&
           typeof expectedValue === 'number' &&
-          fieldValue < expectedValue;
+          fieldValue < expectedValue
+        );
       default:
         return false;
     }
   }
 
-  private static getConditionErrorMessage(condition: TransitionCondition): string {
+  private static getConditionErrorMessage(
+    condition: TransitionCondition,
+  ): string {
     switch (condition.type) {
       case 'time':
         return `Time condition not met: ${condition.operator} ${condition.value}ms`;
