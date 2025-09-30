@@ -271,6 +271,7 @@ const VotingProposalsList = ({
       <VoteSuccessModal
         isOpen={showSuccessModal}
         onClose={() => setShowSuccessModal(false)}
+        instanceId={instanceId}
       />
     </>
   );
@@ -343,13 +344,13 @@ const Proposals = (props: ProposalsProps) => {
   });
 };
 
-export function ProposalsList({
+export const ProposalsList = ({
   slug,
   instanceId,
 }: {
   slug: string;
   instanceId: string;
-}) {
+}) => {
   const t = useTranslations();
   const { user } = useUser();
   const [selectedCategory, setSelectedCategory] =
@@ -404,6 +405,7 @@ export function ProposalsList({
 
   const { proposals: allProposals, canManageProposals = false } =
     proposalsData ?? {};
+
 
   // Use the custom hook for filtering proposals
   const {

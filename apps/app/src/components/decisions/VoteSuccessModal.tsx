@@ -1,21 +1,46 @@
 'use client';
 
+import { formatStepForDisplay, getNextSteps } from './utils/processSteps';
+import { trpc } from '@op/api/client';
 import { Button } from '@op/ui/Button';
 import { CheckIcon } from '@op/ui/CheckIcon';
 import { DialogTrigger } from '@op/ui/Dialog';
 import { Header1, Header3 } from '@op/ui/Header';
 import { Modal } from '@op/ui/Modal';
+import { Skeleton } from '@op/ui/Skeleton';
+import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-export const VoteSuccessModal = ({
-  isOpen,
-  onClose,
-}: {
+import ErrorBoundary from '../ErrorBoundary';
+
+interface VoteSuccessModalProps {
   isOpen: boolean;
   onClose: () => void;
-}) => {
+  instanceId: string;
+}
+
+const VoteSuccessModalSuspense = ({
+  isOpen,
+  onClose,
+  instanceId,
+}: VoteSuccessModalProps) => {
   const t = useTranslations();
+
+  const [processInstance] = trpc.decision.getInstance.useSuspenseQuery({
+    instanceId,
+  });
+
+  const nextSteps =
+    processInstance?.process?.processSchema?.states &&
+    processInstance?.instanceData
+      ? getNextSteps(
+          processInstance.process.processSchema.states,
+          processInstance.instanceData,
+        )
+      : [];
+
+  const processTitle = processInstance?.name;
 
   return (
     <DialogTrigger isOpen={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -33,31 +58,32 @@ export const VoteSuccessModal = ({
                 </Header1>
 
                 <p className="text-base text-neutral-charcoal">
-                  {t(
-                    'Thank you for participating in the 2025 Community Vote. Your voice helps shape how we invest in our community.',
-                  )}
+                  {processTitle
+                    ? t(
+                        'Thank you for participating in {title}. Your voice helps shape how we invest in our community.',
+                        {
+                          title: processTitle,
+                        },
+                      )
+                    : t(
+                        'Thank you for participating in the 2025 Community Vote. Your voice helps shape how we invest in our community.',
+                      )}
                 </p>
               </div>
 
-              <div className="flex w-full flex-col gap-6 text-left text-base text-neutral-charcoal">
-                <Header3>{t("Here's what will happen next:")}</Header3>
-                <ul className="flex flex-col gap-4 pl-4">
-                  <li className="flex items-start gap-2">
-                    <span>•</span>
-                    <span>{t('Voting closes in 7 days on Oct 30, 2025')}</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span>•</span>
-                    <span>{t('Results will be shared on Nov 5, 2025')}</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span>•</span>
-                    <span>
-                      {t("You'll receive an email with the final results")}
-                    </span>
-                  </li>
-                </ul>
-              </div>
+              {nextSteps.length > 0 && (
+                <div className="flex w-full flex-col gap-6 text-left text-base text-neutral-charcoal">
+                  <Header3>{t("Here's what will happen next:")}</Header3>
+                  <ul className="flex flex-col gap-4 pl-4">
+                    {nextSteps.map((step) => (
+                      <li key={step.id} className="flex items-start gap-2">
+                        <span>•</span>
+                        <span>{formatStepForDisplay(step)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
 
             <Button onPress={onClose} color="primary" className="w-full">
@@ -69,3 +95,11 @@ export const VoteSuccessModal = ({
     </DialogTrigger>
   );
 };
+
+export const VoteSuccessModal = (props: VoteSuccessModalProps) => (
+  <ErrorBoundary>
+    <Suspense fallback={<Skeleton />}>
+      <VoteSuccessModalSuspense {...props} />
+    </Suspense>
+  </ErrorBoundary>
+);
