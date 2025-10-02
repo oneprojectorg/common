@@ -4,7 +4,7 @@ import { Link as AriaLink } from 'react-aria-components';
 import { cn } from '../lib/utils';
 import { Surface } from './Surface';
 
-export interface OrganizationCardProps {
+export interface ProfileCardProps {
   headerImage?: ReactNode;
   avatarImage?: ReactNode;
   title: string;
@@ -15,7 +15,7 @@ export interface OrganizationCardProps {
   onClick?: () => void;
 }
 
-export const OrganizationCard = ({
+export const ProfileCard = ({
   headerImage,
   avatarImage,
   title,
@@ -24,7 +24,7 @@ export const OrganizationCard = ({
   href,
   className,
   onClick,
-}: OrganizationCardProps) => {
+}: ProfileCardProps) => {
   const content = (
     <Surface className={cn('flex w-48 flex-col overflow-hidden', className)}>
       <div className="relative w-full">

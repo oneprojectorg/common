@@ -1,10 +1,10 @@
 import { Chip } from '../src/components/Chip';
-import { OrganizationCard } from '../src/components/OrganizationCard';
+import { ProfileCard } from '../src/components/ProfileCard';
 import { cn, getGradientForString } from '../src/lib/utils';
 
 export default {
-  title: 'OrganizationCard',
-  component: OrganizationCard,
+  title: 'ProfileCard',
+  component: ProfileCard,
   parameters: {
     layout: 'centered',
   },
@@ -13,7 +13,7 @@ export default {
 
 export const WithImages = () => (
   <div className="flex gap-4">
-    <OrganizationCard
+    <ProfileCard
       headerImage={
         <img
           src="https://images.unsplash.com/photo-1464226184884-fa280b87c399?w=400&h=200&fit=crop"
@@ -46,7 +46,7 @@ export const WithGradients = () => {
 
   return (
     <div className="flex gap-4">
-      <OrganizationCard
+      <ProfileCard
         headerImage={<div className={cn('h-full w-full', gradientBgHeader)} />}
         avatarImage={<div className={cn('h-full w-full', gradientBg)} />}
         title="Common Network"
@@ -58,7 +58,7 @@ export const WithGradients = () => {
 };
 
 export const NoBadge = () => (
-  <OrganizationCard
+  <ProfileCard
     headerImage={
       <img
         src="https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=400&h=200&fit=crop"
@@ -80,7 +80,7 @@ export const NoBadge = () => (
 );
 
 export const WithOnClick = () => (
-  <OrganizationCard
+  <ProfileCard
     headerImage={
       <img
         src="https://images.unsplash.com/photo-1511765224389-37f0e77cf0eb?w=400&h=200&fit=crop"
@@ -132,7 +132,7 @@ export const Gallery = () => {
         const gradientBgHeader = getGradientForString(card.name + 'C');
 
         return (
-          <OrganizationCard
+          <ProfileCard
             key={i}
             headerImage={
               <div className={cn('h-full w-full', gradientBgHeader)} />
