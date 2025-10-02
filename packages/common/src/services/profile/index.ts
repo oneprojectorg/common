@@ -3,3 +3,4 @@ export * from './getProfile';
 export * from './searchProfiles';
 export * from './listProfiles';
 export * from './profileRelationships';
+export * from './searchProfilesLocations';
