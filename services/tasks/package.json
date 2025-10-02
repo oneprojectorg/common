@@ -1,0 +1,22 @@
+{
+  "name": "@op/tasks",
+  "version": "0.0.0",
+  "private": true,
+  "license": "SEE LICENSE in /LICENSE",
+  "type": "module",
+  "exports": {
+    ".": "./index.ts"
+  },
+  "scripts": {
+    "lint": "pnpm tsc --noEmit"
+  },
+  "dependencies": {
+    "@op/core": "workspace:*",
+    "@op/logging": "workspace:*",
+    "inngest": "^3.44.0"
+  },
+  "devDependencies": {
+    "@op/typescript-config": "workspace:*",
+    "typescript": "5.7.3"
+  }
+}
