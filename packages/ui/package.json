@@ -37,6 +37,7 @@
     "./MediaDisplay": "./src/components/MediaDisplay/index.tsx",
     "./NumberField": "./src/components/NumberField.tsx",
     "./OptionMenu": "./src/components/OptionMenu.tsx",
+    "./OrganizationCard": "./src/components/OrganizationCard.tsx",
     "./PhaseStepper": "./src/components/PhaseStepper.tsx",
     "./Popover": "./src/components/Popover.tsx",
     "./RadioGroup": "./src/components/RadioGroup.tsx",
