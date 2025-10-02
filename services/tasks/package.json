@@ -5,15 +5,17 @@
   "license": "SEE LICENSE in /LICENSE",
   "type": "module",
   "exports": {
-    ".": "./index.ts"
+    ".": "./src/index.ts"
   },
   "scripts": {
+    "dev": "pnpm dlx inngest-cli@latest dev",
     "lint": "pnpm tsc --noEmit"
   },
   "dependencies": {
     "@op/core": "workspace:*",
     "@op/logging": "workspace:*",
-    "inngest": "^3.44.0"
+    "inngest": "^3.44.0",
+    "zod": "^4.1.11"
   },
   "devDependencies": {
     "@op/typescript-config": "workspace:*",

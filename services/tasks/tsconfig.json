@@ -1,6 +1,7 @@
 {
   "extends": "@op/typescript-config/nextjs.json",
   "compilerOptions": {
+    "esModuleInterop": true
     "plugins": [
       {
         "name": "next"
