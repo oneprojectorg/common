@@ -1,0 +1,6 @@
+{
+  "sdk-url": [
+    "http://localhost:3300/api/v1/tasks"
+  ],
+  "no-discovery": true
+}
