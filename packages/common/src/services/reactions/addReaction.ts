@@ -1,5 +1,6 @@
 import { and, db, eq } from '@op/db/client';
 import { postReactions } from '@op/db/schema';
+import { event } from '@op/tasks';
 
 export interface AddReactionOptions {
   postId: string;
@@ -25,6 +26,15 @@ export const addReaction = async (options: AddReactionOptions) => {
       postId,
       profileId,
       reactionType,
+    });
+
+    await event.send({
+      name: 'post/liked',
+      data: {
+        sourceProfileId: profileId,
+        postId,
+        reactionType,
+      },
     });
   });
 };

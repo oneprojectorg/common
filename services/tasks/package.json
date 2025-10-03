@@ -8,12 +8,16 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "dev": "pnpm dlx inngest-cli@latest dev",
+    "dev-no": "pnpm dlx inngest-cli@latest dev",
     "lint": "pnpm tsc --noEmit"
   },
   "dependencies": {
+    "@op/common": "workspace:*",
     "@op/core": "workspace:*",
+    "@op/db": "workspace:*",
+    "@op/emails": "workspace:*",
     "@op/logging": "workspace:*",
+    "@op/types": "workspace:*",
     "inngest": "^3.44.0",
     "zod": "^4.1.11"
   },
