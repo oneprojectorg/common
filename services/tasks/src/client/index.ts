@@ -1,3 +1,5 @@
-import { Inngest } from "inngest";
+import { Inngest } from 'inngest';
 
-export const inngest = new Inngest({ id: "common" });
+export const inngest = new Inngest({ id: 'common' });
+
+export const event = inngest;

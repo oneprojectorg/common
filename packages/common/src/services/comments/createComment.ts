@@ -27,22 +27,21 @@ const sendCommentNotification = async (
     });
 
     if (post && post.profileId) {
-      // Parallelize commenter and post author queries
       const [commenterProfile, postAuthorUser] = post.profileId
         ? await Promise.all([
-            db.query.profiles.findFirst({
-              where: (table, { eq }) => eq(table.id, commenterProfileId),
-            }),
-            db.query.users.findFirst({
-              where: (table, { eq }) => eq(table.profileId, post.profileId!),
-            }),
-          ])
+          db.query.profiles.findFirst({
+            where: (table, { eq }) => eq(table.id, commenterProfileId),
+          }),
+          db.query.users.findFirst({
+            where: (table, { eq }) => eq(table.profileId, post.profileId!),
+          }),
+        ])
         : [
-            await db.query.profiles.findFirst({
-              where: (table, { eq }) => eq(table.id, commenterProfileId),
-            }),
-            null,
-          ];
+          await db.query.profiles.findFirst({
+            where: (table, { eq }) => eq(table.id, commenterProfileId),
+          }),
+          null,
+        ];
 
       if (
         commenterProfile &&
