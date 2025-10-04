@@ -13,9 +13,9 @@
  * });
  *
  * */
-export const match = (value: any, cases: Record<string, any>) => {
+export const match = (value: any, cases: Record<any, any>) => {
   for (const [pattern, result] of Object.entries(cases)) {
-    if (pattern === '_' || pattern === value) {
+    if (pattern === '_' || pattern == value || String(value) === pattern) {
       return typeof result === 'function' ? result() : result;
     }
   }

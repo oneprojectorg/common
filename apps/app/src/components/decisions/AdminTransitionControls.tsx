@@ -11,42 +11,27 @@ interface Phase {
   description?: string;
 }
 
-interface Transition {
-  id: string;
-  name: string;
-  from: string | string[];
-  to: string;
-  rules?: {
-    type: 'manual' | 'automatic';
-  };
-}
-
 interface AdminTransitionControlsProps {
   instanceId: string;
   currentStateId: string;
   phases: Phase[];
-  transitions: Transition[];
 }
 
 export function AdminTransitionControls({
   instanceId,
   currentStateId,
   phases,
-  transitions,
 }: AdminTransitionControlsProps) {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const router = useRouter();
   const executeTransitionMutation = trpc.decision.executeTransition.useMutation();
 
-  const currentPhase = phases.find((phase) => phase.id === currentStateId);
-  
-  // Find available transitions from current state
-  const availableTransitions = transitions.filter((transition) => {
-    if (Array.isArray(transition.from)) {
-      return transition.from.includes(currentStateId);
-    }
-    return transition.from === currentStateId;
+  // Use the API to check available transitions instead of static filtering
+  const { data: transitionCheck, isLoading: isCheckingTransitions } = trpc.decision.checkTransitions.useQuery({
+    instanceId,
   });
+
+  const currentPhase = phases.find((phase) => phase.id === currentStateId);
 
   const handleTransition = async (toStateId: string, transitionName: string) => {
     if (isTransitioning) return;
@@ -94,41 +79,45 @@ export function AdminTransitionControls({
         <h3 className="text-lg font-semibold text-gray-900">
           Available Transitions
         </h3>
-        {availableTransitions.length === 0 ? (
+        {isCheckingTransitions ? (
+          <p className="mt-2 text-gray-500">Checking transitions...</p>
+        ) : !transitionCheck?.canTransition || transitionCheck.availableTransitions.length === 0 ? (
           <p className="mt-2 text-gray-500">
             No transitions available from the current state.
           </p>
         ) : (
           <div className="mt-4 space-y-3">
-            {availableTransitions.map((transition) => {
-              const targetPhase = phases.find(
-                (phase) => phase.id === transition.to,
-              );
-              
-              return (
-                <div
-                  key={transition.id}
-                  className="flex items-center justify-between rounded-md border border-gray-200 p-4"
-                >
-                  <div>
-                    <p className="font-medium text-gray-900">
-                      {transition.name}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      Transition to: {targetPhase?.name || transition.to}
-                    </p>
-                  </div>
-                  <Button
-                    variant="primary"
-                    size="small"
-                    onPress={() => handleTransition(transition.to, transition.name)}
-                    isDisabled={isTransitioning}
+            {transitionCheck.availableTransitions
+              .filter(transition => transition.canExecute)
+              .map((transition) => {
+                const targetPhase = phases.find(
+                  (phase) => phase.id === transition.toStateId,
+                );
+
+                return (
+                  <div
+                    key={transition.toStateId}
+                    className="flex items-center justify-between rounded-md border border-gray-200 p-4"
                   >
-                    {isTransitioning ? 'Executing...' : 'Execute'}
-                  </Button>
-                </div>
-              );
-            })}
+                    <div>
+                      <p className="font-medium text-gray-900">
+                        {transition.transitionName}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        Transition to: {targetPhase?.name || transition.toStateId}
+                      </p>
+                    </div>
+                    <Button
+                      variant="primary"
+                      size="small"
+                      onPress={() => handleTransition(transition.toStateId, transition.transitionName)}
+                      isDisabled={isTransitioning}
+                    >
+                      {isTransitioning ? 'Executing...' : 'Execute'}
+                    </Button>
+                  </div>
+                );
+              })}
           </div>
         )}
       </div>

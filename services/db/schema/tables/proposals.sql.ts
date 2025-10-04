@@ -16,6 +16,7 @@ import {
   timestamps,
 } from '../../helpers';
 import { decisions } from './decisions.sql';
+import { decisionsVoteProposals } from './decisions_vote_proposals.sql';
 import { processInstances } from './processInstances.sql';
 import { profiles } from './profiles.sql';
 import { proposalAttachments } from './proposalAttachments.sql';
@@ -125,6 +126,7 @@ export const proposalsRelations = relations(proposals, ({ one, many }) => ({
   decisions: many(decisions),
   categories: many(proposalCategories),
   attachments: many(proposalAttachments),
+  voteProposals: many(decisionsVoteProposals),
   // posts relationship will be handled from the posts side to avoid circular dependencies
 }));
 

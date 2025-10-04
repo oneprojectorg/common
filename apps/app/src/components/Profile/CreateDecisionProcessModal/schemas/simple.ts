@@ -414,6 +414,7 @@ export const transformFormDataToProcessSchema = (
         config: {
           allowProposals: false,
           allowDecisions: false,
+          allowShortlisting: true,
         },
       },
       {
@@ -490,11 +491,11 @@ export const transformFormDataToProcessSchema = (
         budget: { type: 'number', maximum: data.budgetCapAmount },
         ...(data.categories && (data.categories as string[]).length > 0
           ? {
-              category: {
-                type: ['string', 'null'],
-                enum: [...(data.categories as string[]), null],
-              },
-            }
+            category: {
+              type: ['string', 'null'],
+              enum: [...(data.categories as string[]), null],
+            },
+          }
           : {}),
       },
       required: data.requireBudget

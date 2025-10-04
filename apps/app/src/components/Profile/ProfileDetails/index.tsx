@@ -72,51 +72,58 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
         <UpdateUserProfileModal profile={profile.profile} />
       )}
       {isReceivingFunds
-        ? receivingFundingLinks.map((link) => (
-            <TooltipTrigger key={link.id}>
-              <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-                <ButtonLink
-                  color="secondary"
-                  href={formatToUrl(link.href)}
-                  target="_blank"
-                  className="min-w-full sm:min-w-fit"
-                >
-                  <LuHandCoins className="size-4 stroke-1" />
-                  Fund
-                </ButtonLink>
-                <Tooltip>{link.description ?? 'Click to learn more'}</Tooltip>
+        ? receivingFundingLinks.map((link) => {
+            const description = link.description?.trim();
 
-                {link.description ? (
-                  <div className="flex w-full items-center justify-center text-sm text-neutral-charcoal sm:hidden">
-                    {link.description}
-                  </div>
-                ) : null}
-              </div>
-            </TooltipTrigger>
-          ))
+            return (
+              <TooltipTrigger key={link.id}>
+                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+                  <ButtonLink
+                    color="secondary"
+                    href={formatToUrl(link.href)}
+                    target="_blank"
+                    className="min-w-full sm:min-w-fit"
+                  >
+                    <LuHandCoins className="size-4 stroke-1" />
+                    Fund
+                  </ButtonLink>
+                  {description ? <Tooltip>{description}</Tooltip> : null}
+
+                  {description ? (
+                    <div className="flex w-full items-center justify-center text-sm text-neutral-charcoal sm:hidden">
+                      {description}
+                    </div>
+                  ) : null}
+                </div>
+              </TooltipTrigger>
+            );
+          })
         : null}
       {isOfferingFunds
-        ? offeringFundingLinks.map((link) => (
-            <TooltipTrigger key={link.id}>
-              <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-                <ButtonLink
-                  color="secondary"
-                  href={formatToUrl(link.href)}
-                  target="_blank"
-                  className="min-w-full sm:min-w-fit"
-                >
-                  <LuInfo className="size-4 stroke-1" />
-                  Learn more
-                </ButtonLink>
-                <Tooltip>{link.description ?? 'Click to learn more'}</Tooltip>
-                {link.description ? (
-                  <div className="flex w-full items-center justify-center text-sm text-neutral-charcoal sm:hidden">
-                    {link.description}
-                  </div>
-                ) : null}
-              </div>
-            </TooltipTrigger>
-          ))
+        ? offeringFundingLinks.map((link) => {
+            const description = link.description?.trim();
+            return (
+              <TooltipTrigger key={link.id}>
+                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+                  <ButtonLink
+                    color="secondary"
+                    href={formatToUrl(link.href)}
+                    target="_blank"
+                    className="min-w-full sm:min-w-fit"
+                  >
+                    <LuInfo className="size-4 stroke-1" />
+                    Learn more
+                  </ButtonLink>
+                  {description ? <Tooltip>{description}</Tooltip> : null}
+                  {description ? (
+                    <div className="flex w-full items-center justify-center text-sm text-neutral-charcoal sm:hidden">
+                      {description}
+                    </div>
+                  ) : null}
+                </div>
+              </TooltipTrigger>
+            );
+          })
         : null}
     </div>
   );

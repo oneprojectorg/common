@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { HTMLAttributes, ReactNode } from 'react';
 
 import { VariantProps, cn, tv } from '../lib/utils';
 
@@ -24,7 +24,8 @@ export const Surface = ({
 }: {
   children: ReactNode;
   className?: string;
-} & SurfaceVariantsProps) => {
+} & SurfaceVariantsProps &
+  HTMLAttributes<HTMLDivElement>) => {
   return (
     <div
       className={cn(
@@ -33,6 +34,7 @@ export const Surface = ({
         } as SurfaceVariantsProps),
         className,
       )}
+      {...props}
     >
       {children}
     </div>

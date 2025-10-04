@@ -32,13 +32,13 @@ function DecisionHeaderSkeleton() {
   );
 }
 
-function DecisionInstancePageContent({
+const DecisionInstancePageContent = ({
   instanceId,
   slug,
 }: {
   instanceId: string;
   slug: string;
-}) {
+}) => {
   return (
     <>
       {/* Header, Stepper, and Content - loads first */}
@@ -50,8 +50,7 @@ function DecisionInstancePageContent({
       <ProposalsSection instanceId={instanceId} slug={slug} />
     </>
   );
-}
-
+};
 
 const DecisionInstancePage = async ({
   params,
