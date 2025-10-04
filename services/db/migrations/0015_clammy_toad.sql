@@ -22,7 +22,7 @@ CREATE TABLE "decisions_vote_submissions" (
 );
 --> statement-breakpoint
 ALTER TABLE "decisions_vote_submissions" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
-DROP INDEX "organization_relationships_source_organization_id_target_organization_id_relationship_type_index";--> statement-breakpoint
+DROP INDEX IF EXISTS "organization_relationships_source_organization_id_target_organization_id_relationship_type_index";--> statement-breakpoint
 ALTER TABLE "decisions_vote_proposals" ADD CONSTRAINT "decisions_vote_proposals_vote_submission_id_decisions_vote_submissions_id_fk" FOREIGN KEY ("vote_submission_id") REFERENCES "public"."decisions_vote_submissions"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "decisions_vote_proposals" ADD CONSTRAINT "decisions_vote_proposals_proposal_id_decision_proposals_id_fk" FOREIGN KEY ("proposal_id") REFERENCES "public"."decision_proposals"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "decisions_vote_submissions" ADD CONSTRAINT "decisions_vote_submissions_process_instance_id_decision_process_instances_id_fk" FOREIGN KEY ("process_instance_id") REFERENCES "public"."decision_process_instances"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
