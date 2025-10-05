@@ -67,7 +67,6 @@ overrides:
   undici: 5.27.1
   unplugin-icons: 22.1.0
   use-error-boundary: ^2.0.6
-  zod: ^3.24.2
   zustand: ^5.0.3
 
 patchedDependencies:
@@ -160,7 +159,7 @@ importers:
         version: 12.5.2(@types/react@19.0.10)(immer@10.1.1)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(use-sync-external-store@1.4.0(react@19.0.0))
       ai:
         specifier: ^4.2.2
-        version: 4.2.2(react@19.0.0)(zod@3.24.2)
+        version: 4.2.2(react@19.0.0)(zod@4.1.11)
       autoprefixer:
         specifier: ^10.4.20
         version: 10.4.20(postcss@8.5.3)
@@ -286,7 +285,7 @@ importers:
         version: 0.174.0
       trpc-to-openapi:
         specifier: 2.1.3
-        version: 2.1.3(@trpc/server@11.0.0-rc.700(typescript@5.7.3))(zod-openapi@4.2.2(zod@3.24.2))(zod@3.24.2)
+        version: 2.1.3(@trpc/server@11.0.0-rc.700(typescript@5.7.3))(zod-openapi@4.2.2(zod@4.1.11))(zod@4.1.11)
       tsx:
         specifier: ^4.19.3
         version: 4.19.3
@@ -302,9 +301,6 @@ importers:
       use-error-boundary:
         specifier: ^2.0.6
         version: 2.0.6(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
-      zod:
-        specifier: ^3.24.2
-        version: 3.24.2
       zustand:
         specifier: ^5.0.3
         version: 5.0.3(@types/react@19.0.10)(immer@10.1.1)(react@19.0.0)(use-sync-external-store@1.4.0(react@19.0.0))
@@ -634,6 +630,9 @@ importers:
       '@op/emails':
         specifier: workspace:*
         version: link:../../services/emails
+      '@op/workflows':
+        specifier: workspace:*
+        version: link:../../services/workflows
       '@vercel/functions':
         specifier: ^2.1.0
         version: 2.1.0
@@ -1167,14 +1166,26 @@ importers:
         specifier: 5.7.3
         version: 5.7.3
 
-  services/tasks:
+  services/workflows:
     dependencies:
+      '@op/common':
+        specifier: workspace:*
+        version: link:../../packages/common
       '@op/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@op/db':
+        specifier: workspace:*
+        version: link:../db
+      '@op/emails':
+        specifier: workspace:*
+        version: link:../emails
       '@op/logging':
         specifier: workspace:*
         version: link:../../packages/logging
+      '@op/types':
+        specifier: workspace:*
+        version: link:../../packages/types
       inngest:
         specifier: ^3.44.0
         version: 3.44.0(h3@1.13.1)(next@15.3.4(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.85.1))(typescript@5.7.3)(zod@4.1.11)
@@ -1198,13 +1209,13 @@ packages:
     resolution: {integrity: sha512-X2bcuDXDKl8UCxUbiK+BX/xW8FLLzc36jngQmQycRvzr1Lmc8k8l+0pgLjgvmWRmbF+L9XOzP38Wm86bdTrFzQ==}
     engines: {node: '>=18'}
     peerDependencies:
-      zod: ^3.24.2
+      zod: ^3.0.0
 
   '@ai-sdk/provider-utils@2.2.1':
     resolution: {integrity: sha512-BuExLp+NcpwsAVj1F4bgJuQkSqO/+roV9wM7RdIO+NVrcT8RBUTdXzf5arHt5T58VpK7bZyB2V9qigjaPHE+Dg==}
     engines: {node: '>=18'}
     peerDependencies:
-      zod: ^3.24.2
+      zod: ^3.23.8
 
   '@ai-sdk/provider@1.1.0':
     resolution: {integrity: sha512-0M+qjp+clUD0R1E5eWQFhxEvWLNaOtGQRUaBn8CUABnSKredagq92hUS9VjOzGsTm37xLfpaxl97AVtbeOsHew==}
@@ -1215,7 +1226,7 @@ packages:
     engines: {node: '>=18'}
     peerDependencies:
       react: ^19.0.0
-      zod: ^3.24.2
+      zod: ^3.23.8
     peerDependenciesMeta:
       zod:
         optional: true
@@ -1224,7 +1235,7 @@ packages:
     resolution: {integrity: sha512-BzvMbYm7LHBlbWuLlcG1jQh4eu14MGpz7L+wrGO1+F4oQ+O0fAjgUSNwPWGlZpKmg4NrcVq/QLmxiVJrx2R4Ew==}
     engines: {node: '>=18'}
     peerDependencies:
-      zod: ^3.24.2
+      zod: ^3.23.8
 
   '@alloc/quick-lru@5.2.0':
     resolution: {integrity: sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw==}
@@ -5188,7 +5199,7 @@ packages:
     engines: {node: '>=18'}
     peerDependencies:
       react: ^19.0.0
-      zod: ^3.24.2
+      zod: ^3.23.8
     peerDependenciesMeta:
       react:
         optional: true
@@ -6080,7 +6091,7 @@ packages:
     resolution: {integrity: sha512-xgCRYYVEzRkeXTS33GSMgoowe3vKsMNBjSI+cwG1oLQVEhAWWbqtb/AAMlm7tkmV4fG/uJjEmWzdzlEmTgWOoQ==}
     peerDependencies:
       drizzle-orm: ^0.43.1
-      zod: ^3.24.2
+      zod: '>=3.0.0'
 
   dunder-proto@1.0.1:
     resolution: {integrity: sha512-KIN/nDJBQRcXw0MLVhZE9iQHmG68qAVIBg9CqmUYjmQIhgij9U5MFvrqkUL5FbtyyzZuOeOt0zdeRe4UY7ct+A==}
@@ -6682,7 +6693,7 @@ packages:
       koa: '>=2.14.2'
       next: '>=12.0.0'
       typescript: 5.7.3
-      zod: ^3.24.2
+      zod: '>=3.24.0'
     peerDependenciesMeta:
       '@sveltejs/kit':
         optional: true
@@ -8996,7 +9007,7 @@ packages:
     resolution: {integrity: sha512-W5wKRHMVVBvq2zD4F8QU4enCLu/pWX54O2lvMvzQWjOXaY70C1GT9Kl6y1I+TBkIpuz1E1mdXbLM3esXQsLspQ==}
     peerDependencies:
       '@trpc/server': 11.0.0-rc.700
-      zod: ^3.24.2
+      zod: ^3.23.8
       zod-openapi: ^4.1.0
 
   ts-dedent@2.2.0:
@@ -9604,12 +9615,12 @@ packages:
     resolution: {integrity: sha512-h1H5ODEc4paf3UKH0h3tp9P3W/FeRXo7wk1bo1P7KofhfxosI4vJdOgeIt2aRyqHorxUAjd/kIvxRWENnBqI5w==}
     engines: {node: '>=18'}
     peerDependencies:
-      zod: ^3.24.2
+      zod: ^3.21.4
 
   zod-to-json-schema@3.24.5:
     resolution: {integrity: sha512-/AuWwMP+YqiPbsJx5D6TfgRTc4kTLjsh5SOcd4bLsfUg2RcEXrFMJl1DGgdHy2aCfsIA/cr/1JM0xcB2GZji8g==}
     peerDependencies:
-      zod: ^3.24.2
+      zod: ^3.24.1
 
   zod@3.24.2:
     resolution: {integrity: sha512-lY7CDW43ECgW9u1TcT3IoXHflywfVqDYze4waEz812jR/bZ8FHDsl7pFQoSZTz5N+2NqRXs8GBwnAwo3ZNxqhQ==}
@@ -9658,6 +9669,13 @@ snapshots:
       secure-json-parse: 2.7.0
       zod: 3.24.2
 
+  '@ai-sdk/provider-utils@2.2.1(zod@4.1.11)':
+    dependencies:
+      '@ai-sdk/provider': 1.1.0
+      nanoid: 3.3.11
+      secure-json-parse: 2.7.0
+      zod: 4.1.11
+
   '@ai-sdk/provider@1.1.0':
     dependencies:
       json-schema: 0.4.0
@@ -9672,12 +9690,29 @@ snapshots:
     optionalDependencies:
       zod: 3.24.2
 
+  '@ai-sdk/react@1.2.1(react@19.0.0)(zod@4.1.11)':
+    dependencies:
+      '@ai-sdk/provider-utils': 2.2.1(zod@4.1.11)
+      '@ai-sdk/ui-utils': 1.2.1(zod@4.1.11)
+      react: 19.0.0
+      swr: 2.3.3(react@19.0.0)
+      throttleit: 2.1.0
+    optionalDependencies:
+      zod: 4.1.11
+
   '@ai-sdk/ui-utils@1.2.1(zod@3.24.2)':
     dependencies:
       '@ai-sdk/provider': 1.1.0
       '@ai-sdk/provider-utils': 2.2.1(zod@3.24.2)
       zod: 3.24.2
       zod-to-json-schema: 3.24.5(zod@3.24.2)
+
+  '@ai-sdk/ui-utils@1.2.1(zod@4.1.11)':
+    dependencies:
+      '@ai-sdk/provider': 1.1.0
+      '@ai-sdk/provider-utils': 2.2.1(zod@4.1.11)
+      zod: 4.1.11
+      zod-to-json-schema: 3.24.5(zod@4.1.11)
 
   '@alloc/quick-lru@5.2.0': {}
 
@@ -14130,6 +14165,18 @@ snapshots:
     optionalDependencies:
       react: 19.0.0
 
+  ai@4.2.2(react@19.0.0)(zod@4.1.11):
+    dependencies:
+      '@ai-sdk/provider': 1.1.0
+      '@ai-sdk/provider-utils': 2.2.1(zod@4.1.11)
+      '@ai-sdk/react': 1.2.1(react@19.0.0)(zod@4.1.11)
+      '@ai-sdk/ui-utils': 1.2.1(zod@4.1.11)
+      '@opentelemetry/api': 1.9.0
+      jsondiffpatch: 0.6.0
+      zod: 4.1.11
+    optionalDependencies:
+      react: 19.0.0
+
   ajv-formats@2.1.1(ajv@8.17.1):
     optionalDependencies:
       ajv: 8.17.1
@@ -18446,6 +18493,17 @@ snapshots:
     optionalDependencies:
       '@rollup/rollup-linux-x64-gnu': 4.6.1
 
+  trpc-to-openapi@2.1.3(@trpc/server@11.0.0-rc.700(typescript@5.7.3))(zod-openapi@4.2.2(zod@4.1.11))(zod@4.1.11):
+    dependencies:
+      '@trpc/server': 11.0.0-rc.700(typescript@5.7.3)
+      co-body: 6.2.0
+      h3: 1.13.1
+      openapi3-ts: 4.4.0
+      zod: 4.1.11
+      zod-openapi: 4.2.2(zod@4.1.11)
+    optionalDependencies:
+      '@rollup/rollup-linux-x64-gnu': 4.6.1
+
   ts-dedent@2.2.0: {}
 
   ts-interface-checker@0.1.13: {}
@@ -19053,9 +19111,17 @@ snapshots:
     dependencies:
       zod: 3.24.2
 
+  zod-openapi@4.2.2(zod@4.1.11):
+    dependencies:
+      zod: 4.1.11
+
   zod-to-json-schema@3.24.5(zod@3.24.2):
     dependencies:
       zod: 3.24.2
+
+  zod-to-json-schema@3.24.5(zod@4.1.11):
+    dependencies:
+      zod: 4.1.11
 
   zod@3.24.2: {}
 

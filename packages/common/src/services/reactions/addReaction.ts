@@ -1,6 +1,6 @@
 import { and, db, eq } from '@op/db/client';
 import { postReactions } from '@op/db/schema';
-import { event } from '@op/tasks';
+import { event } from '@op/workflows';
 
 export interface AddReactionOptions {
   postId: string;
