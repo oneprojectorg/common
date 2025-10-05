@@ -14,7 +14,7 @@
   "dependencies": {
     "@op/cache": "workspace:*",
     "@op/emails": "workspace:*",
-    "@op/workflows": "workspace:*",
+    "@op/events": "workspace:*",
     "@vercel/functions": "^2.1.0",
     "access-zones": "0.0.1",
     "ajv": "^8.17.1",

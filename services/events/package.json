@@ -1,5 +1,5 @@
 {
-  "name": "@op/workflows",
+  "name": "@op/events",
   "version": "0.0.0",
   "private": true,
   "license": "SEE LICENSE in /LICENSE",
@@ -8,19 +8,12 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "dev": "pnpm dlx inngest-cli@latest dev",
     "lint": "pnpm tsc --noEmit"
   },
   "dependencies": {
-    "@op/common": "workspace:*",
     "@op/core": "workspace:*",
-    "@op/db": "workspace:*",
-    "@op/emails": "workspace:*",
-    "@op/events": "workspace:*",
-    "@op/logging": "workspace:*",
-    "@op/types": "workspace:*",
     "inngest": "^3.44.0",
-    "zod": "^4.1.11"
+    "zod": "^3.24.2"
   },
   "devDependencies": {
     "@op/typescript-config": "workspace:*",

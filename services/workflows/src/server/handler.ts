@@ -1,6 +1,6 @@
 import { serve } from 'inngest/next';
 
-import { inngest } from '../client/';
+import { inngest } from '@op/events';
 import * as functions from '../functions';
 
 export const getHandler = () =>

@@ -1,8 +1,7 @@
 import { db } from '@op/db/client';
 import { Organization, Post, PostToOrganization, Profile } from '@op/db/schema';
+import { inngest } from '@op/events';
 import { REACTION_OPTIONS } from '@op/types';
-
-import { inngest } from '../../client';
 
 export const sendReactionNotification = inngest.createFunction(
   {

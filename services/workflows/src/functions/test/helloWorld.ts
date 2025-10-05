@@ -1,4 +1,4 @@
-import { inngest } from '../../client';
+import { inngest } from '@op/events';
 
 export const helloWorld = inngest.createFunction(
   { id: 'hello-world' },
