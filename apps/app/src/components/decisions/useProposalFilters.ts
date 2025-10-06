@@ -13,18 +13,21 @@ export function useProposalFilters({
   currentProfileId,
   votedProposalIds,
   hasVoted,
+  initialFilter,
 }: {
   proposals: Proposal[];
   currentProfileId?: string;
   votedProposalIds: string[];
   hasVoted: boolean;
+  initialFilter?: ProposalFilter;
 }): {
   filteredProposals: Proposal[];
   proposalFilter: ProposalFilter;
   setProposalFilter: (filter: ProposalFilter) => void;
 } {
   // Set default filter: 'my-ballot' if user has voted, otherwise 'all'
-  const defaultFilter: ProposalFilter = hasVoted ? 'my-ballot' : 'all';
+  const defaultFilter: ProposalFilter =
+    initialFilter || (hasVoted ? 'my-ballot' : 'all');
 
   const [proposalFilter, setProposalFilter] =
     useState<ProposalFilter>(defaultFilter);
