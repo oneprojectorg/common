@@ -1149,9 +1149,6 @@ importers:
       inngest:
         specifier: ^3.44.0
         version: 3.44.0(h3@1.13.1)(next@15.3.4(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.85.1))(typescript@5.7.3)(zod@4.1.11)
-      inngest-cli:
-        specifier: ^1.12.1
-        version: 1.12.1
       zod:
         specifier: ^4.1.11
         version: 4.1.11
@@ -1214,6 +1211,9 @@ importers:
       inngest:
         specifier: ^3.44.0
         version: 3.44.0(h3@1.13.1)(next@15.3.4(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.85.1))(typescript@5.7.3)(zod@4.1.11)
+      inngest-cli:
+        specifier: ^1.12.1
+        version: 1.12.1
       zod:
         specifier: ^4.1.11
         version: 4.1.11
