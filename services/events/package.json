@@ -13,7 +13,7 @@
   "dependencies": {
     "@op/core": "workspace:*",
     "inngest": "^3.44.0",
-    "zod": "^3.24.2"
+    "zod": "^4.1.11"
   },
   "devDependencies": {
     "@op/typescript-config": "workspace:*",

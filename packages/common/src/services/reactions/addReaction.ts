@@ -10,6 +10,7 @@ export interface AddReactionOptions {
 
 export const addReaction = async (options: AddReactionOptions) => {
   const { postId, profileId, reactionType } = options;
+
   await db.transaction(async (tx) => {
     // First, remove any existing reaction from this user on this post
     await tx
@@ -27,14 +28,15 @@ export const addReaction = async (options: AddReactionOptions) => {
       profileId,
       reactionType,
     });
+  });
 
-    await event.send({
-      name: 'post/liked',
-      data: {
-        sourceProfileId: profileId,
-        postId,
-        reactionType,
-      },
-    });
+  // sending this only on transaction success
+  await event.send({
+    name: 'post/liked',
+    data: {
+      sourceProfileId: profileId,
+      postId,
+      reactionType,
+    },
   });
 };
