@@ -3,7 +3,7 @@ import * as React from 'react';
 
 import EmailTemplate from '../components/EmailTemplate';
 
-export const LikeNotificationEmail = ({
+export const ReactionNotificationEmail = ({
   likerName = 'A Common user',
   postContent: _postContent,
   postUrl = 'https://common.oneproject.org/',
@@ -56,9 +56,9 @@ export const LikeNotificationEmail = ({
   );
 };
 
-LikeNotificationEmail.subject = (
+ReactionNotificationEmail.subject = (
   likerName: string,
   contentType: 'post' | 'proposal' = 'post',
 ) => `${likerName} reacted to your ${contentType}`;
 
-export default LikeNotificationEmail;
+export default ReactionNotificationEmail;

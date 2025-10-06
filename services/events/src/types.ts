@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-export const PostLikedEventSchema = z.object({
-  name: z.literal('post/liked'),
+export const PostReactionAddedEventSchema = z.object({
+  name: z.literal('post/reaction-added'),
   data: z.object({
     sourceProfileId: z.string(),
     postId: z.string(),
@@ -9,9 +9,11 @@ export const PostLikedEventSchema = z.object({
   }),
 });
 
-export type PostLikedEvent = z.infer<typeof PostLikedEventSchema>;
+export type PostReactionAddedEvent = z.infer<
+  typeof PostReactionAddedEventSchema
+>;
 
 /**
  * Union type of all possible events
  */
-export type AppEvent = PostLikedEvent;
+export type WorkflowEvent = PostReactionAddedEvent;

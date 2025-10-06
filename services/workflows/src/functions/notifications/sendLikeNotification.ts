@@ -6,7 +6,7 @@ import {
   postsToOrganizations,
   profiles,
 } from '@op/db/schema';
-import { PostLikedEventSchema, inngest } from '@op/events';
+import { PostReactionAddedEventSchema, inngest } from '@op/events';
 import { REACTION_OPTIONS } from '@op/types';
 import { and, eq } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
@@ -22,10 +22,10 @@ export const sendReactionNotification = inngest.createFunction(
       timeout: '5m',
     },
   },
-  { event: 'post/liked' },
+  { event: 'post/reaction-added' },
   async ({ event, step }) => {
     // Validate event data with Zod schema for type safety
-    const validatedEvent = PostLikedEventSchema.parse(event);
+    const validatedEvent = PostReactionAddedEventSchema.parse(event);
     const { sourceProfileId, postId, reactionType } = validatedEvent.data;
 
     const reactionEmoji = REACTION_OPTIONS.find(
@@ -106,7 +106,7 @@ export const sendReactionNotification = inngest.createFunction(
         // const likerName = data.sourceProfileName;
         // const contentType = data.parentPostId ? 'comment' : 'post';
         // const { OPNodemailer } = await import('@op/emails');
-        // const { LikeNotificationEmail } = await import('@op/emails');
+        // const { ReactionNotificationEmail } = await import('@op/emails');
 
         console.log('Sending post react notification email', {
           sourceProfileId,
@@ -120,7 +120,7 @@ export const sendReactionNotification = inngest.createFunction(
         // from: `${likerName} via Common`,
         // subject: `${likerName} reacted to your ${contentType}`,
         // component: () =>
-        // LikeNotificationEmail({
+        // ReactionNotificationEmail({
         // likerName,
         // postContent: data.postContent,
         // recipientName: authorProfile.name,

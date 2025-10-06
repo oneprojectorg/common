@@ -32,7 +32,7 @@ export const addReaction = async (options: AddReactionOptions) => {
 
   // sending this only on transaction success
   await event.send({
-    name: 'post/liked',
+    name: 'post/reaction-added',
     data: {
       sourceProfileId: profileId,
       postId,
