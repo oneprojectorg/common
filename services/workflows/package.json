@@ -8,7 +8,6 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "dev": "pnpm dlx inngest-cli@latest dev",
     "lint": "pnpm tsc --noEmit"
   },
   "dependencies": {
