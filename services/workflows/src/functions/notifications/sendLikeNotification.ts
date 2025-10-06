@@ -6,12 +6,13 @@ import {
   postsToOrganizations,
   profiles,
 } from '@op/db/schema';
-import { EventNames, PostReactionAddedEventSchema, inngest } from '@op/events';
+import { Events, inngest } from '@op/events';
 import { REACTION_OPTIONS } from '@op/types';
 import { and, eq } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 
 const key = 'event.data.company_id';
+const { postReactionAdded } = Events;
 
 export const sendReactionNotification = inngest.createFunction(
   {
@@ -22,11 +23,11 @@ export const sendReactionNotification = inngest.createFunction(
       timeout: '5m',
     },
   },
-  { event: EventNames.POST_REACTION_ADDED },
+  { event: postReactionAdded.name },
   async ({ event, step }) => {
-    // Validate event data with Zod schema for type safety
-    const validatedEvent = PostReactionAddedEventSchema.parse(event);
-    const { sourceProfileId, postId, reactionType } = validatedEvent.data;
+    // Validate event data with Zod schema for runtime type safety
+    const { sourceProfileId, postId, reactionType } =
+      postReactionAdded.schema.parse(event.data);
 
     const reactionEmoji = REACTION_OPTIONS.find(
       (option) => option.key === reactionType,
