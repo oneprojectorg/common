@@ -1,12 +1,15 @@
 import { and, db, eq, sql } from '@op/db/client';
 import {
+  EntityType,
   allowList,
   organizationUsers,
   organizations,
+  profiles,
   users,
   usersUsedStorage,
 } from '@op/db/schema';
 import { type UserWithRoles, getGlobalPermissions } from 'access-zones';
+import { randomUUID } from 'crypto';
 
 import { getNormalizedRoles } from '../access';
 
@@ -30,8 +33,33 @@ export const createUserByEmail = async ({
       .onConflictDoNothing()
       .returning();
 
-    // If insertion was successful, return
-    if (newUser.length > 0) {
+    // If insertion was successful, create an individual profile for the user
+    if (newUser.length > 0 && newUser[0]) {
+      await db.transaction(async (tx) => {
+        // Create an individual profile for the new user
+        const [newProfile] = await tx
+          .insert(profiles)
+          .values({
+            type: EntityType.INDIVIDUAL,
+            name: email.split('@')[0] || 'User',
+            slug: randomUUID(),
+          })
+          .returning();
+
+        if (!newProfile) {
+          throw new Error('Failed to create user profile');
+        }
+
+        // Link the profile to the user
+        await tx
+          .update(users)
+          .set({
+            profileId: newProfile.id,
+            currentProfileId: newProfile.id,
+          })
+          .where(eq(users.authUserId, authUserId));
+      });
+
       return;
     }
 
@@ -43,6 +71,34 @@ export const createUserByEmail = async ({
       .limit(1);
 
     if (existingUser.length > 0) {
+      // Check if existing user has a profile, if not create one
+      const user = existingUser[0];
+      if (user && !user.profileId) {
+        await db.transaction(async (tx) => {
+          // Create an individual profile for the existing user
+          const [newProfile] = await tx
+            .insert(profiles)
+            .values({
+              type: EntityType.INDIVIDUAL,
+              name: user.name || email.split('@')[0] || 'User',
+              slug: randomUUID(),
+            })
+            .returning();
+
+          if (!newProfile) {
+            throw new Error('Failed to create user profile');
+          }
+
+          // Link the profile to the user
+          await tx
+            .update(users)
+            .set({
+              profileId: newProfile.id,
+              currentProfileId: newProfile.id,
+            })
+            .where(eq(users.authUserId, authUserId));
+        });
+      }
       return;
     }
   } catch (e) {

@@ -41,12 +41,10 @@ export const GET = async (request: NextRequest) => {
         });
 
         // Create service user if there doesn't currently exist one
-        if (authData.user.email) {
-          await createUserByEmail({
-            authUserId: authData.user.id,
-            email: authData.user.email,
-          });
-        }
+        await createUserByEmail({
+          authUserId: authData.user.id,
+          email: authData.user.email,
+        });
       } catch (error) {
         // If the user is not invited or not registered, sign them out
         await supabase.auth.signOut();
