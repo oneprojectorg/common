@@ -5,12 +5,14 @@ import { REACTION_OPTIONS } from '@op/types';
 
 import { PostReaction } from '../../../../db/schema/tables/postReactions.sql';
 
+const key = 'event.data.company_id';
+
 export const sendReactionNotification = inngest.createFunction(
   {
     id: 'sendReactionNotification',
     debounce: {
-      key: `event.data.sourceProfileId + ' - ' + event.data.postId`,
-      period: '1m',
+      key,
+      period: '2m',
       timeout: '5m',
     },
   },
