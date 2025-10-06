@@ -6,7 +6,7 @@ import {
   postsToOrganizations,
   profiles,
 } from '@op/db/schema';
-import { PostReactionAddedEventSchema, inngest } from '@op/events';
+import { EventNames, PostReactionAddedEventSchema, inngest } from '@op/events';
 import { REACTION_OPTIONS } from '@op/types';
 import { and, eq } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
@@ -22,7 +22,7 @@ export const sendReactionNotification = inngest.createFunction(
       timeout: '5m',
     },
   },
-  { event: 'post/reaction-added' },
+  { event: EventNames.POST_REACTION_ADDED },
   async ({ event, step }) => {
     // Validate event data with Zod schema for type safety
     const validatedEvent = PostReactionAddedEventSchema.parse(event);

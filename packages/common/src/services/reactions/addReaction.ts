@@ -1,6 +1,6 @@
 import { and, db, eq } from '@op/db/client';
 import { postReactions } from '@op/db/schema';
-import { event } from '@op/events';
+import { EventNames, event } from '@op/events';
 
 export interface AddReactionOptions {
   postId: string;
@@ -32,7 +32,7 @@ export const addReaction = async (options: AddReactionOptions) => {
 
   // sending this only on transaction success
   await event.send({
-    name: 'post/reaction-added',
+    name: EventNames.POST_REACTION_ADDED,
     data: {
       sourceProfileId: profileId,
       postId,

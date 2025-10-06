@@ -1,7 +1,11 @@
 import { z } from 'zod';
 
+export const EventNames = {
+  POST_REACTION_ADDED: 'post/reaction-added',
+} as const;
+
 export const PostReactionAddedEventSchema = z.object({
-  name: z.literal('post/reaction-added'),
+  name: z.literal(EventNames.POST_REACTION_ADDED),
   data: z.object({
     sourceProfileId: z.string(),
     postId: z.string(),
