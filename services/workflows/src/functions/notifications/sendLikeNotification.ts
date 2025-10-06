@@ -1,9 +1,15 @@
 import { db } from '@op/db/client';
-import { Organization, Post, PostToOrganization, Profile } from '@op/db/schema';
+import {
+  organizations,
+  postReactions,
+  posts,
+  postsToOrganizations,
+  profiles,
+} from '@op/db/schema';
 import { PostLikedEventSchema, inngest } from '@op/events';
 import { REACTION_OPTIONS } from '@op/types';
-
-import { PostReaction } from '../../../../db/schema/tables/postReactions.sql';
+import { and, eq } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 
 const key = 'event.data.company_id';
 
@@ -32,81 +38,75 @@ export const sendReactionNotification = inngest.createFunction(
 
     await step.run('send-email-notification', async () => {
       try {
-        // Manually typed as drizzle doesn't handled join relations well
-        const relationship = (await db.query.postReactions.findFirst({
-          where: (table, { eq, and }) =>
-            and(eq(table.postId, postId), eq(table.profileId, sourceProfileId)),
-          with: {
-            profile: {
-              columns: {
-                name: true,
-              },
-            },
-            post: {
-              with: {
-                profile: true,
-                parentPost: true,
-              },
-            },
-          },
-        })) as
-          | (PostReaction & {
-              profile: {
-                name: string;
-                email: string;
-              };
-              post: Post & {
-                profile: Profile;
-                parentPost: Post;
-              };
-            })
-          | undefined;
+        const postAuthorProfile = alias(profiles, 'post_author_profile');
+        const orgProfile = alias(profiles, 'org_profile');
+        const parentPost = alias(posts, 'parent_post');
 
-        if (!relationship) {
+        const result = await db
+          .select({
+            reactionType: postReactions.reactionType,
+
+            // Source profile (person who reacted)
+            sourceProfileName: profiles.name,
+
+            postContent: posts.content,
+            postProfileId: posts.profileId,
+            parentPostId: posts.parentPostId,
+
+            postAuthorName: postAuthorProfile.name,
+            postAuthorEmail: postAuthorProfile.email,
+
+            orgProfileName: orgProfile.name,
+            orgProfileEmail: orgProfile.email,
+
+            parentPostContent: parentPost.content,
+          })
+          .from(postReactions)
+          .innerJoin(profiles, eq(postReactions.profileId, profiles.id))
+          .innerJoin(posts, eq(postReactions.postId, posts.id))
+          .leftJoin(
+            postAuthorProfile,
+            eq(posts.profileId, postAuthorProfile.id),
+          )
+          .leftJoin(
+            postsToOrganizations,
+            eq(posts.id, postsToOrganizations.postId),
+          )
+          .leftJoin(
+            organizations,
+            eq(postsToOrganizations.organizationId, organizations.id),
+          )
+          .leftJoin(orgProfile, eq(organizations.profileId, orgProfile.id))
+          .leftJoin(parentPost, eq(posts.parentPostId, parentPost.id))
+          .where(
+            and(
+              eq(postReactions.postId, postId),
+              eq(postReactions.profileId, sourceProfileId),
+            ),
+          )
+          .limit(1);
+
+        const data = result[0];
+
+        if (!data) {
           return;
         }
 
-        const { profile: sourceProfile, post } = relationship;
-
-        const likerName = sourceProfile.name;
-
-        const { OPNodemailer } = await import('@op/emails');
-        const { LikeNotificationEmail } = await import('@op/emails');
-        // If parentPostId exists, this IS a comment (it has a parent)
-        // If no parentPostId, this is a top-level post
-        const contentType = post.parentPostId ? 'comment' : 'post';
-        const { content, parentPost } = post;
-
-        let authorProfile;
-
-        if (!post.profileId) {
-          // this is an org post
-          const postToOrg = (await db.query.postsToOrganizations.findFirst({
-            where: (table, { eq }) => eq(table.postId, post.id),
-            with: {
-              organization: {
-                with: {
-                  profile: true,
-                },
-              },
-            },
-          })) as PostToOrganization & {
-            organization: Organization & {
-              profile: Profile;
-            };
-          };
-
-          const org = postToOrg?.organization;
-          authorProfile = org.profile;
-        } else {
-          authorProfile = post.profile;
-        }
+        // Determine author profile: org profile takes precedence if post has no profileId
+        const authorProfile = data.postProfileId
+          ? { name: data.postAuthorName!, email: data.postAuthorEmail! }
+          : { name: data.orgProfileName!, email: data.orgProfileEmail! };
 
         if (!authorProfile?.email) {
           return;
         }
 
-        const contextName = parentPost?.content || content;
+        const contextName = data.parentPostContent || data.postContent;
+
+        // const likerName = data.sourceProfileName;
+        // const contentType = data.parentPostId ? 'comment' : 'post';
+        // const { OPNodemailer } = await import('@op/emails');
+        // const { LikeNotificationEmail } = await import('@op/emails');
 
         console.log('Sending post react notification email', {
           sourceProfileId,
@@ -115,22 +115,22 @@ export const sendReactionNotification = inngest.createFunction(
         });
 
         // TODO: For merging, we will first disable this as need the proper designed one anyhow and want to test the workflow functionality:w
-        await OPNodemailer({
-          to: authorProfile.email,
-          from: `${likerName} via Common`,
-          subject: `${likerName} reacted to your ${contentType}`,
-          component: () =>
-            LikeNotificationEmail({
-              likerName,
-              postContent: content,
-              recipientName: authorProfile.name,
-              reactionType: reactionEmoji.emoji,
-              contentType,
-              // TODO: generate a post url
-              // postUrl,
-              contextName,
-            }),
-        });
+        // await OPNodemailer({
+        // to: authorProfile.email,
+        // from: `${likerName} via Common`,
+        // subject: `${likerName} reacted to your ${contentType}`,
+        // component: () =>
+        // LikeNotificationEmail({
+        // likerName,
+        // postContent: data.postContent,
+        // recipientName: authorProfile.name,
+        // reactionType: reactionEmoji.emoji,
+        // contentType,
+        // // TODO: generate a post url
+        // // postUrl,
+        // contextName,
+        // }),
+        // });
       } catch (error) {
         // Log error and re-throw for retries
         console.error('Failed to send reaction notification:', {
