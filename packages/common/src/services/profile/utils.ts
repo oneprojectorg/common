@@ -6,18 +6,6 @@ import slugify from 'slugify';
 
 /**
  * Generates a unique profile slug based on a profile name.
- *
- * Strategy:
- * 1. Converts the name to a URL-friendly slug using slugify
- * 2. Pre-queries for all potential slug conflicts in a single query
- * 3. If base slug is taken, tries numeric suffixes (-2, -3, etc.) up to 5 attempts
- * 4. After 5 attempts, appends a short UUID segment to guarantee uniqueness
- *
- * @param name - The profile name to generate a slug from
- * @returns A unique slug that is guaranteed not to exist in the profiles table
- *
- * @example
- * generateUniqueProfileSlug({ name: "John Doe" }) // "john-doe" or "john-doe-2" or "john-doe-a3f9c2b1"
  */
 export const generateUniqueProfileSlug = async ({
   name,
@@ -77,7 +65,9 @@ export const generateUniqueProfileSlug = async ({
 
     // Ensure it fits within length constraint
     if (uuidSlug.length > MAX_SLUG_LENGTH) {
-      uuidCandidates.push(`${baseSlug.substring(0, MAX_SLUG_LENGTH - 9)}-${shortUuid}`);
+      uuidCandidates.push(
+        `${baseSlug.substring(0, MAX_SLUG_LENGTH - 9)}-${shortUuid}`,
+      );
     } else {
       uuidCandidates.push(uuidSlug);
     }
