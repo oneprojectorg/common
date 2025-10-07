@@ -217,7 +217,6 @@ const VotingProposalsList = ({
             <ProposalCardContent>
               <ProposalCardHeader
                 proposal={proposal}
-                viewHref={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`}
                 showMenu={canManageProposals || proposal.isEditable}
                 menuComponent={
                   <ProposalCardMenu
@@ -226,7 +225,7 @@ const VotingProposalsList = ({
                   />
                 }
               />
-              <ProposalCardMeta proposal={proposal} />
+              <ProposalCardMeta withLink={false} proposal={proposal} />
               <ProposalCardDescription proposal={proposal} />
             </ProposalCardContent>
             <ProposalCardFooter>
@@ -431,7 +430,6 @@ export const ProposalsList = ({
   const { proposals: allProposals, canManageProposals = false } =
     proposalsData ?? {};
 
-
   // Use the custom hook for filtering proposals
   const {
     filteredProposals: proposals,
@@ -535,4 +533,4 @@ export const ProposalsList = ({
       />
     </div>
   );
-}
+};

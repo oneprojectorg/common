@@ -25,6 +25,7 @@ export type Proposal = z.infer<typeof proposalEncoder>;
 
 export interface BaseProposalCardProps {
   proposal: Proposal;
+  withLink?: boolean;
   className?: string;
 }
 
@@ -158,13 +159,14 @@ export function ProposalCardBudget({
  */
 export function ProposalCardMeta({
   proposal,
+  withLink = true,
   className,
 }: BaseProposalCardProps & {
   className?: string;
 }) {
   return (
     <div className={cn('flex items-center gap-2', className)}>
-      <ProposalCardAuthor proposal={proposal} />
+      <ProposalCardAuthor proposal={proposal} withLink={withLink} />
       <ProposalCardCategory proposal={proposal} />
       <ProposalCardStatus proposal={proposal} />
     </div>
@@ -176,6 +178,7 @@ export function ProposalCardMeta({
  */
 export function ProposalCardAuthor({
   proposal,
+  withLink = true,
   className,
 }: BaseProposalCardProps & {
   className?: string;
@@ -190,12 +193,18 @@ export function ProposalCardAuthor({
         placeholder={proposal.submittedBy.name || proposal.submittedBy.slug}
         className={cn('size-6', className)}
       />
-      <Link
-        href={`/profile/${proposal.submittedBy.slug}`}
-        className="max-w-32 truncate text-nowrap text-base text-neutral-charcoal"
-      >
-        {proposal.submittedBy.name}
-      </Link>
+      {withLink ? (
+        <Link
+          href={`/profile/${proposal.submittedBy.slug}`}
+          className="max-w-32 truncate text-nowrap text-base text-neutral-charcoal"
+        >
+          {proposal.submittedBy.name}
+        </Link>
+      ) : (
+        <div className="max-w-32 truncate text-nowrap text-base text-neutral-charcoal">
+          {proposal.submittedBy.name}
+        </div>
+      )}
     </>
   );
 }
