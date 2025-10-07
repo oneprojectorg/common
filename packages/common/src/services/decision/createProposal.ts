@@ -10,7 +10,6 @@ import {
   taxonomyTerms,
 } from '@op/db/schema';
 import { assertAccess, permission } from 'access-zones';
-import { randomUUID } from 'crypto';
 
 import {
   CommonError,

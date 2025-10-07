@@ -7,7 +7,6 @@ import {
   users,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { randomUUID } from 'crypto';
 
 import { generateUniqueProfileSlug } from './utils';
 
