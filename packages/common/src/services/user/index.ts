@@ -26,81 +26,67 @@ export const createUserByEmail = async ({
   email: string;
 }): Promise<void> => {
   try {
-    // Attempt to insert a new user; on conflict (duplicate email) do nothing
-    const newUser = await db
+    // Use INSERT ... ON CONFLICT ... DO UPDATE ... RETURNING to atomically
+    // get or create the user in a single query
+    const [user] = await db
       .insert(users)
       .values({ authUserId, email })
-      .onConflictDoNothing()
+      .onConflictDoUpdate({
+        target: users.email,
+        set: {
+          authUserId, // Update authUserId in case it changed in Supabase Auth
+          updatedAt: sql`now()`,
+        },
+      })
       .returning();
 
-    // If insertion was successful, create an individual profile for the user
-    if (newUser.length > 0 && newUser[0]) {
-      await db.transaction(async (tx) => {
-        // Create an individual profile for the new user
-        const [newProfile] = await tx
-          .insert(profiles)
-          .values({
-            type: EntityType.INDIVIDUAL,
-            name: email.split('@')[0] || 'User',
-            slug: randomUUID(),
-          })
-          .returning();
+    if (!user) {
+      throw new Error('Failed to create or retrieve user');
+    }
 
-        if (!newProfile) {
-          throw new Error('Failed to create user profile');
-        }
-
-        // Link the profile to the user
-        await tx
-          .update(users)
-          .set({
-            profileId: newProfile.id,
-            currentProfileId: newProfile.id,
-          })
-          .where(eq(users.authUserId, authUserId));
-      });
-
+    // If user already has a profile, we're done
+    if (user.profileId) {
       return;
     }
 
-    // Otherwise, fetch the existing user by email
-    const existingUser = await db
-      .select()
-      .from(users)
-      .where(eq(users.email, email))
-      .limit(1);
+    // Create profile and link it to user atomically
+    // Use a transaction to ensure profile creation and user update succeed together
+    await db.transaction(async (tx) => {
+      // Double-check profileId inside transaction to prevent race condition
+      const [existingUser] = await tx
+        .select({ profileId: users.profileId })
+        .from(users)
+        .where(eq(users.authUserId, authUserId))
+        .for('update'); // Lock the row to prevent concurrent modifications
 
-    if (existingUser.length > 0) {
-      // Check if existing user has a profile, if not create one
-      const user = existingUser[0];
-      if (user && !user.profileId) {
-        await db.transaction(async (tx) => {
-          // Create an individual profile for the existing user
-          const [newProfile] = await tx
-            .insert(profiles)
-            .values({
-              type: EntityType.INDIVIDUAL,
-              name: user.name || email.split('@')[0] || 'User',
-              slug: randomUUID(),
-            })
-            .returning();
-
-          if (!newProfile) {
-            throw new Error('Failed to create user profile');
-          }
-
-          // Link the profile to the user
-          await tx
-            .update(users)
-            .set({
-              profileId: newProfile.id,
-              currentProfileId: newProfile.id,
-            })
-            .where(eq(users.authUserId, authUserId));
-        });
+      if (existingUser?.profileId) {
+        // Another request already created the profile
+        return;
       }
-      return;
-    }
+
+      // Create the profile
+      const [newProfile] = await tx
+        .insert(profiles)
+        .values({
+          type: EntityType.INDIVIDUAL,
+          name: user.name || email.split('@')[0] || 'User',
+          slug: randomUUID(),
+        })
+        .returning();
+
+      if (!newProfile) {
+        throw new Error('Failed to create user profile');
+      }
+
+      // Link the profile to the user
+      await tx
+        .update(users)
+        .set({
+          profileId: newProfile.id,
+          currentProfileId: newProfile.id,
+        })
+        .where(eq(users.authUserId, authUserId));
+    });
   } catch (e) {
     console.error(e);
     throw new Error('Something went wrong. Please try again.');
