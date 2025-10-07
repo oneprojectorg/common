@@ -19,6 +19,7 @@ import {
   ValidationError,
 } from '../../utils';
 import { getCurrentProfileId, getOrgAccessUser } from '../access';
+import { generateUniqueProfileSlug } from '../profile/utils';
 import { processProposalContent } from './proposalContentProcessor';
 import { schemaValidator } from './schemaValidator';
 import type { InstanceData, ProcessSchema, ProposalData } from './types';
@@ -143,7 +144,7 @@ export const createProposal = async ({
         .values({
           type: EntityType.PROPOSAL,
           name: proposalTitle,
-          slug: randomUUID(),
+          slug: await generateUniqueProfileSlug({ name: proposalTitle }),
         })
         .returning();
 
