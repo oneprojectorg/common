@@ -126,7 +126,8 @@ export function DecisionInstanceContent({
                 }
               </>
             ),
-            _: (
+
+            'one-project': (
               <>
                 <GradientHeader className="items-center align-middle uppercase">
                   {hasVoted ? t('YOUR BALLOT IS IN.') : t('SHARE YOUR IDEAS.')}
@@ -183,6 +184,21 @@ export function DecisionInstanceContent({
                       >
                         Start your application
                       </a>
+                    </p>
+                  </div>
+                }
+              </>
+            ),
+            _: (
+              <>
+                <GradientHeader className="items-center align-middle uppercase">
+                  {hasVoted ? t('YOUR BALLOT IS IN.') : t('SHARE YOUR IDEAS.')}
+                </GradientHeader>
+                {
+                  <div className="flex flex-col gap-2 pb-2 text-base text-gray-700">
+                    <p>Help determine how we invest our snack budget.</p>
+                    <p>
+                      Please select <strong>3 proposals.</strong>
                     </p>
                   </div>
                 }
