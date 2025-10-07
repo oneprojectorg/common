@@ -12,6 +12,7 @@ import { type UserWithRoles, getGlobalPermissions } from 'access-zones';
 import { randomUUID } from 'crypto';
 
 import { getNormalizedRoles } from '../access';
+import { generateUniqueProfileSlug } from '../profile/utils';
 
 export interface User {
   id: number;
@@ -70,7 +71,9 @@ export const createUserByEmail = async ({
         .values({
           type: EntityType.INDIVIDUAL,
           name: user.name || email.split('@')[0] || 'User',
-          slug: randomUUID(),
+          slug: await generateUniqueProfileSlug({
+            name: user.name || email.split('@')[0] || 'User',
+          }),
         })
         .returning();
 
