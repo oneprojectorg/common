@@ -9,7 +9,6 @@ import {
   usersUsedStorage,
 } from '@op/db/schema';
 import { type UserWithRoles, getGlobalPermissions } from 'access-zones';
-import { randomUUID } from 'crypto';
 
 import { getNormalizedRoles } from '../access';
 import { generateUniqueProfileSlug } from '../profile/utils';
