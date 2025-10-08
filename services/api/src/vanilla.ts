@@ -4,7 +4,7 @@ import {
   loggerLink,
   unstable_httpBatchStreamLink,
 } from '@trpc/client';
-import { headers } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import superjson from 'superjson';
 
 import type { AppRouter } from './routers';
@@ -30,7 +30,7 @@ export const createTRPCVanillaClient = (headers?: Record<string, string>) => {
         url: envURL.TRPC_URL,
         transformer: superjson,
         headers,
-        async fetch(url, options) {
+        fetch(url, options) {
           return fetch(url, {
             ...options,
             credentials: 'include',
@@ -42,5 +42,19 @@ export const createTRPCVanillaClient = (headers?: Record<string, string>) => {
 };
 
 export const trpcVanilla = createTRPCVanillaClient();
-export const trpcNext = async () =>
-  createTRPCVanillaClient(Object.fromEntries(await headers()));
+export const trpcNext = async () => {
+  const headersList = await headers();
+  const cookieStore = await cookies();
+
+  const allHeaders = Object.fromEntries(headersList);
+  const cookieHeader = cookieStore
+    .getAll()
+    .map((cookie) => `${cookie.name}=${cookie.value}`)
+    .join('; ');
+
+  if (cookieHeader) {
+    allHeaders['cookie'] = cookieHeader;
+  }
+
+  return createTRPCVanillaClient(allHeaders);
+};

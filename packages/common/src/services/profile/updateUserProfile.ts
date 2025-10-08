@@ -7,7 +7,8 @@ import {
   users,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { randomUUID } from 'crypto';
+
+import { generateUniqueProfileSlug } from './utils';
 
 export interface UpdateUserProfileInput {
   name?: string;
@@ -68,8 +69,9 @@ export const updateUserProfile = async ({
   } else {
     // Create new profile for user
     if (Object.keys(profileData).length > 0) {
-      // For now, use UUID as slug (same as organization profiles)
-      const slug = randomUUID();
+      const slug = await generateUniqueProfileSlug({
+        name: name || currentUser.name || 'Unnamed User',
+      });
 
       const [newProfile] = await dbClient
         .insert(profiles)

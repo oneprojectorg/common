@@ -83,9 +83,10 @@ export function ProposalViewLayout({
             onPress={onFollow}
           >
             <LuBookmark className="size-4" />
+
             {isFollowing ? t('Following') : t('Follow')}
           </Button>
-          <div className="flex gap-4">
+          <div className="hidden gap-4 sm:flex">
             <LocaleChooser />
             <UserAvatarMenu />
           </div>

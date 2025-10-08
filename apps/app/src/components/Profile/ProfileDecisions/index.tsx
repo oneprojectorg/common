@@ -3,11 +3,12 @@
 import { useUser } from '@/utils/UserProvider';
 import { getTextPreview } from '@/utils/proposalUtils';
 import { trpc } from '@op/api/client';
-import { Button, ButtonLink } from '@op/ui/Button';
+import { Button } from '@op/ui/Button';
 import { DialogTrigger } from '@op/ui/Dialog';
 import { Header2, Header3 } from '@op/ui/Header';
-import { useParams } from 'next/navigation';
-import { Suspense } from 'react';
+import { LoadingSpinner } from '@op/ui/LoadingSpinner';
+import { useParams, useRouter } from 'next/navigation';
+import { Suspense, useState } from 'react';
 import { LuLeaf, LuPlus } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -24,7 +25,9 @@ const DecisionProcessList = ({
   schema?: SchemaType;
 }) => {
   const { slug } = useParams();
+  const router = useRouter();
   const t = useTranslations();
+  const [navigatingInstanceId, setNavigatingInstanceId] = useState<string | null>(null);
   const [data] = trpc.decision.listInstances.useSuspenseQuery({
     ownerProfileId: profileId,
     limit: 20,
@@ -146,20 +149,30 @@ const DecisionProcessList = ({
 
               <div className="flex w-full flex-col gap-2.5 sm:max-w-36">
                 {decisionPermission.create ? (
-                  <ButtonLink
+                  <Button
                     color="secondary"
-                    href={`/profile/${slug}/decisions/${instance.id}`}
                     className="w-full"
+                    isDisabled={navigatingInstanceId === instance.id}
+                    onPress={() => {
+                      setNavigatingInstanceId(instance.id);
+                      router.push(`/profile/${slug}/decisions/${instance.id}`);
+                    }}
                   >
+                    {navigatingInstanceId === instance.id ? <LoadingSpinner /> : null}
                     {t('View Details')}
-                  </ButtonLink>
+                  </Button>
                 ) : (
-                  <ButtonLink
-                    href={`/profile/${slug}/decisions/${instance.id}`}
+                  <Button
                     className="w-full"
+                    isDisabled={navigatingInstanceId === instance.id}
+                    onPress={() => {
+                      setNavigatingInstanceId(instance.id);
+                      router.push(`/profile/${slug}/decisions/${instance.id}`);
+                    }}
                   >
+                    {navigatingInstanceId === instance.id ? <LoadingSpinner /> : null}
                     {t('Participate')}
-                  </ButtonLink>
+                  </Button>
                 )}
 
                 {decisionPermission.create ? (

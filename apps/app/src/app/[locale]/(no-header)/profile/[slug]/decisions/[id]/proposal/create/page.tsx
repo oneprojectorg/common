@@ -4,6 +4,8 @@ import { Suspense } from 'react';
 
 import { ProposalEditor } from '@/components/decisions/ProposalEditor';
 
+export const dynamic = 'force-dynamic';
+
 async function CreateProposalPageContent({
   instanceId,
   slug,
