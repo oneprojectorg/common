@@ -12,7 +12,6 @@ import { Dialog, DialogTrigger } from '@op/ui/Dialog';
 import { GrowingFacePile } from '@op/ui/GrowingFacePile';
 import { GradientHeader } from '@op/ui/Header';
 import { Modal, ModalBody, ModalHeader } from '@op/ui/Modal';
-import { cn } from '@op/ui/utils';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
 
