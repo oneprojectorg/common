@@ -1,4 +1,5 @@
 import { invalidate } from '@op/cache';
+import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
 import {
   Organization,
@@ -68,8 +69,7 @@ const sendPostCommentNotification = async (
               : parentPost.content.trim();
 
           // Generate URL using the organization profile ID instead of post author's profile
-          const baseUrl =
-            process.env.NEXT_PUBLIC_APP_URL || 'https://common.oneproject.org';
+          const baseUrl = OPURLConfig('APP');
           const contentUrl = `${baseUrl}/org/${parentProfileId}`;
 
           await sendCommentNotificationEmail({
