@@ -2,7 +2,6 @@
  * This route is used to handle the callback from OAuth providers.
  */
 import { trpcVanilla } from '@op/api/vanilla';
-import { createUserByEmail } from '@op/common';
 import { OPURLConfig } from '@op/core';
 import { createSBServerClient } from '@op/supabase/server';
 import { NextResponse } from 'next/server';
@@ -34,16 +33,12 @@ export const GET = async (request: NextRequest) => {
 
     if (authData.user?.email) {
       // Check if the user is allowed to login
+      // Note: User and profile are automatically created by database trigger
+      // when Supabase creates the auth.users record
       try {
         await trpcVanilla.account.login.query({
           email: authData.user.email,
           usingOAuth: true,
-        });
-
-        // Create service user if there doesn't currently exist one
-        await createUserByEmail({
-          authUserId: authData.user.id,
-          email: authData.user.email,
         });
       } catch (error) {
         // If the user is not invited or not registered, sign them out
