@@ -241,7 +241,7 @@ const VotingProposalsList = ({
         ))}
       </div>
 
-      <VotingSubmitFooter selectedCount={numSelected} isVisible={!isReadOnly}>
+      <VotingSubmitFooter isVisible={!isReadOnly}>
         <div className="flex w-full items-center justify-between px-4 sm:max-w-6xl sm:px-8">
           <span className="text-neutral-black">
             <span className="text-primary-teal">{numSelected}</span> of{' '}

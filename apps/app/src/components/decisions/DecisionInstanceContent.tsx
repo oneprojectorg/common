@@ -12,6 +12,7 @@ import { Dialog, DialogTrigger } from '@op/ui/Dialog';
 import { GrowingFacePile } from '@op/ui/GrowingFacePile';
 import { GradientHeader } from '@op/ui/Header';
 import { Modal, ModalBody, ModalHeader } from '@op/ui/Modal';
+import { cn } from '@op/ui/utils';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
 
@@ -61,6 +62,8 @@ export function DecisionInstanceContent({
   const currentState = templateStates.find(
     (state) => state.id === currentStateId,
   );
+
+  console.log('CURRENT', currentState);
   const allowProposals = currentState?.config?.allowProposals !== false; // defaults to true
   const hasVoted = voteStatus?.hasVoted || false;
 
@@ -191,15 +194,27 @@ export function DecisionInstanceContent({
             ),
             _: (
               <>
-                <GradientHeader className="items-center align-middle uppercase">
-                  {hasVoted ? t('YOUR BALLOT IS IN.') : t('SHARE YOUR IDEAS.')}
+                <GradientHeader
+                  className={cn(
+                    'items-center align-middle uppercase',
+                    currentState?.id === 'voting' && 'bg-redPurple',
+                  )}
+                >
+                  {hasVoted
+                    ? t('YOUR BALLOT IS IN.')
+                    : match(currentState?.id, {
+                        voting: () => t('TIME TO VOTE.'),
+                        _: () => t('SHARE YOUR IDEAS.'),
+                      })}
                 </GradientHeader>
                 {
                   <div className="flex flex-col gap-2 pb-2 text-base text-gray-700">
                     <p>Help determine how we invest our snack budget.</p>
-                    <p>
-                      Please select <strong>3 proposals.</strong>
-                    </p>
+                    {currentState?.id === 'voting' ? (
+                      <p>
+                        Please select <strong>3 proposals.</strong>
+                      </p>
+                    ) : null}
                   </div>
                 }
               </>
