@@ -4,7 +4,6 @@ import {
   accessRoles,
   organizationUserToAccessRoles,
   organizationUsers,
-  users,
 } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
