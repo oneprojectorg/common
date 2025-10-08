@@ -66,7 +66,6 @@ export function DecisionInstanceContent({
     (state) => state.id === currentStateId,
   );
 
-  console.log('CURRENT', currentState);
   const allowProposals = currentState?.config?.allowProposals !== false; // defaults to true
   const hasVoted = voteStatus?.hasVoted || false;
 
@@ -293,7 +292,9 @@ export function DecisionInstanceContent({
                 isDisabled={isNavigating}
                 onPress={() => {
                   setIsNavigating(true);
-                  router.push(`/profile/${slug}/decisions/${instanceId}/proposal/create`);
+                  router.push(
+                    `/profile/${slug}/decisions/${instanceId}/proposal/create`,
+                  );
                 }}
               >
                 {isNavigating ? <LoadingSpinner /> : null}
