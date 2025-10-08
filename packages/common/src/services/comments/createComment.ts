@@ -1,3 +1,4 @@
+import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
 import { comments, commentsToPost } from '@op/db/schema';
 import type { CreateCommentInput } from '@op/types';
@@ -60,8 +61,7 @@ const sendCommentNotification = async (
             commentableType === 'proposal' ? 'proposal' : 'post';
 
           // Generate appropriate URL based on content type
-          const baseUrl =
-            process.env.NEXT_PUBLIC_APP_URL || 'https://common.oneproject.org';
+          const baseUrl = OPURLConfig('APP');
           const contentUrl =
             contentType === 'proposal'
               ? `${baseUrl}/proposals/${postId}`
