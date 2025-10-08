@@ -61,8 +61,8 @@ export function ProposalEditorLayout({
             {isSubmitting ? <LoadingSpinner /> : <LuCheck />}
             {isEditMode ? (
               <>
-                <span className="inline sm:hidden">{t('Update Proposal')}</span>
-                <span className="hidden sm:inline">{t('Update')}</span>
+                <span className="inline sm:hidden">{t('Update')}</span>
+                <span className="hidden sm:inline">{t('Update Proposal')}</span>
               </>
             ) : (
               <>
