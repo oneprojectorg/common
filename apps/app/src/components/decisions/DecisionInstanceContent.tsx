@@ -7,13 +7,15 @@ import { getUniqueSubmitters } from '@/utils/proposalUtils';
 import { trpc } from '@op/api/client';
 import { match } from '@op/core';
 import { Avatar } from '@op/ui/Avatar';
-import { Button, ButtonLink } from '@op/ui/Button';
+import { Button } from '@op/ui/Button';
 import { Dialog, DialogTrigger } from '@op/ui/Dialog';
 import { GrowingFacePile } from '@op/ui/GrowingFacePile';
 import { GradientHeader } from '@op/ui/Header';
+import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Modal, ModalBody, ModalHeader } from '@op/ui/Modal';
 import Image from 'next/image';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 import { Link, useTranslations } from '@/lib/i18n/routing';
 
@@ -28,6 +30,8 @@ export function DecisionInstanceContent({
   const t = useTranslations();
   const { slug } = useParams();
   const { user } = useUser();
+  const router = useRouter();
+  const [isNavigating, setIsNavigating] = useState(false);
 
   const [[{ proposals }, instance]] = trpc.useSuspenseQueries((t) => [
     t.decision.listProposals({
@@ -283,13 +287,18 @@ export function DecisionInstanceContent({
               </DialogTrigger>
             ) : null}
             {allowProposals && (
-              <ButtonLink
-                href={`/profile/${slug}/decisions/${instanceId}/proposal/create`}
+              <Button
                 color="primary"
                 className="w-full"
+                isDisabled={isNavigating}
+                onPress={() => {
+                  setIsNavigating(true);
+                  router.push(`/profile/${slug}/decisions/${instanceId}/proposal/create`);
+                }}
               >
+                {isNavigating ? <LoadingSpinner /> : null}
                 {t('Submit a proposal')}
-              </ButtonLink>
+              </Button>
             )}
           </div>
         </div>
