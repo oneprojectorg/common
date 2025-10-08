@@ -194,12 +194,7 @@ export function DecisionInstanceContent({
             ),
             _: (
               <>
-                <GradientHeader
-                  className={cn(
-                    'items-center align-middle uppercase',
-                    currentState?.id === 'voting' && 'bg-redPurple',
-                  )}
-                >
+                <GradientHeader className="items-center align-middle uppercase">
                   {hasVoted
                     ? t('YOUR BALLOT IS IN.')
                     : match(currentState?.id, {
@@ -212,7 +207,14 @@ export function DecisionInstanceContent({
                     <p>Help determine how we invest our snack budget.</p>
                     {currentState?.id === 'voting' ? (
                       <p>
-                        Please select <strong>3 proposals.</strong>
+                        Please select{' '}
+                        <strong>
+                          {
+                            instance?.instanceData?.fieldValues
+                              ?.maxVotesPerMember as number
+                          }{' '}
+                          proposals.
+                        </strong>
                       </p>
                     ) : null}
                   </div>
