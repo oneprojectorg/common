@@ -1,4 +1,4 @@
-import { db } from '@op/db/client';
+import { DatabaseType, TransactionType, db as database } from '@op/db/client';
 import { profiles } from '@op/db/schema';
 import { randomUUID } from 'crypto';
 import { inArray } from 'drizzle-orm';
@@ -9,11 +9,17 @@ import slugify from 'slugify';
  */
 export const generateUniqueProfileSlug = async ({
   name,
+  db,
 }: {
   name: string;
+  db?: DatabaseType | TransactionType;
 }): Promise<string> => {
-  const MAX_ATTEMPTS = 20;
+  const MAX_ATTEMPTS = 10;
   const MAX_SLUG_LENGTH = 256;
+
+  if (!db) {
+    db = database;
+  }
 
   // Generate base slug from name
   let baseSlug = slugify(name, {

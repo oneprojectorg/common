@@ -137,13 +137,17 @@ export const createProposal = async ({
 
     const profileId = await getCurrentProfileId(authUserId);
     const proposal = await db.transaction(async (tx) => {
+      const slug = await generateUniqueProfileSlug({
+        name: proposalTitle,
+        db: tx,
+      });
       // Create a profile for the proposal
       const [proposalProfile] = await tx
         .insert(profiles)
         .values({
           type: EntityType.PROPOSAL,
           name: proposalTitle,
-          slug: await generateUniqueProfileSlug({ name: proposalTitle }),
+          slug,
         })
         .returning();
 

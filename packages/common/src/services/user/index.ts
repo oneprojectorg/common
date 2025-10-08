@@ -72,6 +72,7 @@ export const createUserByEmail = async ({
           name: user.name || email.split('@')[0] || 'User',
           slug: await generateUniqueProfileSlug({
             name: user.name || email.split('@')[0] || 'User',
+            db: tx,
           }),
         })
         .returning();
