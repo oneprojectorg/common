@@ -1,5 +1,6 @@
 'use client';
 
+import { getPublicUrl } from '@/utils';
 import {
   formatCurrency,
   getTextPreview,
@@ -12,6 +13,7 @@ import { Chip } from '@op/ui/Chip';
 import { Surface } from '@op/ui/Surface';
 import { cn } from '@op/ui/utils';
 import { Heart, MessageCircle } from 'lucide-react';
+import Image from 'next/image';
 import type { HTMLAttributes, ReactNode } from 'react';
 import { LuBookmark } from 'react-icons/lu';
 import { z } from 'zod';
@@ -192,7 +194,16 @@ export function ProposalCardAuthor({
       <Avatar
         placeholder={proposal.submittedBy.name || proposal.submittedBy.slug}
         className={cn('size-6', className)}
-      />
+      >
+        {proposal?.submittedBy?.avatarImage?.name ? (
+          <Image
+            src={getPublicUrl(proposal?.submittedBy?.avatarImage?.name) ?? ''}
+            alt="User avatar"
+            fill
+            className="object-cover"
+          />
+        ) : null}
+      </Avatar>
       {withLink ? (
         <Link
           href={`/profile/${proposal.submittedBy.slug}`}
