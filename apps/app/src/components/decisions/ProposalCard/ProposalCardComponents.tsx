@@ -193,7 +193,7 @@ export function ProposalCardAuthor({
     <>
       <Avatar
         placeholder={proposal.submittedBy.name || proposal.submittedBy.slug}
-        className={cn('size-6', className)}
+        className={cn('size-6 min-h-6 min-w-6', className)}
       >
         {proposal?.submittedBy?.avatarImage?.name ? (
           <Image
