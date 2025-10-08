@@ -10,7 +10,6 @@ import { Avatar } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
 import { Chip } from '@op/ui/Chip';
 import { Menu, MenuItem, MenuItemSimple, MenuSeparator } from '@op/ui/Menu';
-import { Modal, ModalBody } from '@op/ui/Modal';
 import { Popover } from '@op/ui/Popover';
 import { MenuTrigger } from '@op/ui/RAC';
 import { Skeleton } from '@op/ui/Skeleton';
@@ -324,7 +323,6 @@ const AvatarMenuContent = ({
 export const UserAvatarMenu = ({ className }: { className?: string }) => {
   const { user } = useUser();
   const isMobile = useMediaQuery('(max-width: 640px)');
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isSwitchingProfile, setIsSwitchingProfile] = useState(false);
   const [switchingToProfile, setSwitchingToProfile] = useState<{
@@ -361,7 +359,7 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
     <Button
       unstyled
       className={cn('relative', className)}
-      onPress={() => (isMobile ? setIsDrawerOpen(true) : undefined)}
+      onPress={() => undefined}
     >
       <Avatar placeholder={user?.currentProfile?.name}>
         {user?.currentProfile?.avatarImage?.name ? (
@@ -380,39 +378,7 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
   );
 
   if (isMobile) {
-    return (
-      <>
-        {avatarButton}
-        <Modal
-          isOpen={isDrawerOpen}
-          onOpenChange={setIsDrawerOpen}
-          isDismissable={true}
-          isKeyboardDismissDisabled={false}
-          overlayClassName="p-0 items-end justify-center animate-in fade-in-0 duration-300"
-          className="m-0 h-auto w-screen max-w-none rounded-b-none rounded-t border-0 outline-0 duration-300 ease-out animate-in slide-in-from-bottom-full"
-        >
-          <ModalBody className="pb-safe p-0">
-            <Menu className="flex min-w-full flex-col border-t-0 p-4 pb-8">
-              <AvatarMenuContent
-                setIsProfileOpen={setIsProfileOpen}
-                onClose={() => setIsDrawerOpen(false)}
-                onProfileSwitch={handleProfileSwitch}
-              />
-            </Menu>
-          </ModalBody>
-        </Modal>
-        <UpdateProfileModal
-          isOpen={isProfileOpen}
-          setIsOpen={setIsProfileOpen}
-        />
-        <ProfileSwitchingModal
-          isOpen={isSwitchingProfile}
-          avatarImage={switchingToProfile?.avatarImage}
-          profileName={switchingToProfile?.name}
-          onOpenChange={setIsSwitchingProfile}
-        />
-      </>
-    );
+    return null;
   }
 
   return (
