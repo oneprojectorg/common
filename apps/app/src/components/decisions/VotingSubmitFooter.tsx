@@ -1,15 +1,13 @@
 import { ReactNode } from 'react';
 
 export const VotingSubmitFooter = ({
-  selectedCount,
   isVisible,
   children,
 }: {
-  selectedCount: number;
   children?: ReactNode;
   isVisible: boolean;
 }) => {
-  if (!isVisible || selectedCount === 0) {
+  if (!isVisible) {
     return null;
   }
 
