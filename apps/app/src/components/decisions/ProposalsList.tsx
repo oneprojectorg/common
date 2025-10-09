@@ -12,7 +12,7 @@ import { Select, SelectItem } from '@op/ui/Select';
 import { Skeleton } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
@@ -443,6 +443,15 @@ export const ProposalsList = ({
     initialFilter: (searchParams.get('filter') as ProposalFilter) || undefined,
   });
 
+  // Sync URL with filter changes (both manual and automatic)
+  useEffect(() => {
+    const currentFilter = searchParams.get('filter');
+    if (proposalFilter !== currentFilter) {
+      updateURLParams({ filter: proposalFilter });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [proposalFilter]);
+
   return (
     <div className="flex flex-col gap-6 pb-12">
       {/* Filters Bar */}
@@ -471,7 +480,6 @@ export const ProposalsList = ({
                 return;
               }
               setProposalFilter(newKey);
-              updateURLParams({ filter: newKey });
             }}
           >
             <SelectItem id="all">{t('All proposals')}</SelectItem>

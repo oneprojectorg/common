@@ -1,7 +1,7 @@
 'use client';
 
 import type { proposalEncoder } from '@op/api/encoders';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { z } from 'zod';
 
 type Proposal = z.infer<typeof proposalEncoder>;
@@ -25,13 +25,23 @@ export function useProposalFilters({
   proposalFilter: ProposalFilter;
   setProposalFilter: (filter: ProposalFilter) => void;
 } {
-  // Set default filter: 'my-ballot' if user has voted, otherwise use initialFilter or 'all'
-  const defaultFilter: ProposalFilter = hasVoted
-    ? 'my-ballot'
-    : initialFilter || 'all';
+  // Set default filter based on initialFilter or hasVoted status
+  const defaultFilter: ProposalFilter =
+    initialFilter || (hasVoted ? 'my-ballot' : 'all');
 
   const [proposalFilter, setProposalFilter] =
     useState<ProposalFilter>(defaultFilter);
+
+  // Track previous hasVoted state to detect when user just voted
+  const prevHasVotedRef = useRef(hasVoted);
+
+  // Automatically switch to 'my-ballot' when user JUST completed voting (transition from false to true)
+  useEffect(() => {
+    if (!prevHasVotedRef.current && hasVoted) {
+      setProposalFilter('my-ballot');
+    }
+    prevHasVotedRef.current = hasVoted;
+  }, [hasVoted]);
 
   const filteredProposals = useMemo(() => {
     if (!proposals) {
