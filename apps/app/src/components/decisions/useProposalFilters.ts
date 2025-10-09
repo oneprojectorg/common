@@ -25,9 +25,10 @@ export function useProposalFilters({
   proposalFilter: ProposalFilter;
   setProposalFilter: (filter: ProposalFilter) => void;
 } {
-  // Set default filter: 'my-ballot' if user has voted, otherwise 'all'
-  const defaultFilter: ProposalFilter =
-    initialFilter || (hasVoted ? 'my-ballot' : 'all');
+  // Set default filter: 'my-ballot' if user has voted, otherwise use initialFilter or 'all'
+  const defaultFilter: ProposalFilter = hasVoted
+    ? 'my-ballot'
+    : initialFilter || 'all';
 
   const [proposalFilter, setProposalFilter] =
     useState<ProposalFilter>(defaultFilter);
