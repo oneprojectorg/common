@@ -255,7 +255,7 @@ const VotingProposalsList = ({
             </Button>
 
             <Modal isDismissable>
-              <Dialog>
+              <Dialog className="h-full">
                 <VoteSubmissionModal
                   selectedProposals={selectedProposals}
                   instanceId={instanceId}
