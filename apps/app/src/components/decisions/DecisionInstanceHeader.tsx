@@ -9,18 +9,16 @@ import { Link } from '@/lib/i18n/routing';
 import { LocaleChooser } from '../LocaleChooser';
 import { UserAvatarMenu } from '../SiteHeader';
 
-interface DecisionInstanceHeaderProps {
+export const DecisionInstanceHeader = ({
+  backTo,
+  title,
+}: {
   backTo: {
     label?: string;
     href: string;
   };
   title: string;
-}
-
-export function DecisionInstanceHeader({
-  backTo,
-  title,
-}: DecisionInstanceHeaderProps) {
+}) => {
   const t = useTranslations();
   return (
     <header className="grid grid-cols-[auto_1fr_auto] items-center border-b border-neutral-gray1 bg-white p-2 px-6 sm:grid-cols-3 md:py-3">
@@ -48,4 +46,4 @@ export function DecisionInstanceHeader({
       </div>
     </header>
   );
-}
+};
