@@ -6,6 +6,8 @@ import Script from 'next/script';
 import { SiteHeader } from '@/components/SiteHeader';
 import { AppLayout } from '@/components/layout/split/AppLayout';
 
+export const dynamic = 'force-dynamic';
+
 const AppRoot = async ({ children }: { children: React.ReactNode }) => {
   const client = await trpcNext();
   const user = await client.account.getMyAccount.query();

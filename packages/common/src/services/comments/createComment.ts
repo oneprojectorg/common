@@ -1,3 +1,4 @@
+import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
 import { comments, commentsToPost } from '@op/db/schema';
 import type { CreateCommentInput } from '@op/types';
@@ -6,10 +7,6 @@ import { waitUntil } from '@vercel/functions';
 import { CommonError, NotFoundError } from '../../utils';
 import { getCurrentProfileId } from '../access';
 import { sendCommentNotificationEmail } from '../email';
-
-interface CreateCommentServiceInput extends CreateCommentInput {
-  authUserId: string;
-}
 
 const sendCommentNotification = async (
   postId: string,
@@ -59,8 +56,7 @@ const sendCommentNotification = async (
             commentableType === 'proposal' ? 'proposal' : 'post';
 
           // Generate appropriate URL based on content type
-          const baseUrl =
-            process.env.NEXT_PUBLIC_APP_URL || 'https://common.oneproject.org';
+          const baseUrl = OPURLConfig('APP');
           const contentUrl =
             contentType === 'proposal'
               ? `${baseUrl}/proposals/${postId}`
@@ -99,7 +95,11 @@ const sendCommentNotification = async (
   }
 };
 
-export const createComment = async (input: CreateCommentServiceInput) => {
+export const createComment = async (
+  input: CreateCommentInput & {
+    authUserId: string;
+  },
+) => {
   const { authUserId } = input;
 
   const profileId = await getCurrentProfileId(authUserId);

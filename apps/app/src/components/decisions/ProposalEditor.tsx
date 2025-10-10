@@ -88,6 +88,7 @@ export function ProposalEditor({
   const [imageAttachments] = useState<ImageAttachment[]>([]);
   const [showInfoModal, setShowInfoModal] = useState(false);
   const editorRef = useRef<RichTextEditorRef>(null);
+  const budgetInputRef = useRef<HTMLInputElement>(null);
   const initializedRef = useRef(false);
   const utils = trpc.useUtils();
   const posthog = usePostHog();
@@ -255,6 +256,13 @@ export function ProposalEditor({
       setShowInfoModal(true);
     }
   }, [isEditMode, proposalInfoTitle, proposalInfoContent]);
+
+  // Auto-focus budget input when it becomes visible
+  useEffect(() => {
+    if (showBudgetInput && budgetInputRef.current) {
+      budgetInputRef.current.focus();
+    }
+  }, [showBudgetInput]);
 
   const handleCloseInfoModal = () => {
     setShowInfoModal(false);
@@ -439,6 +447,7 @@ export function ProposalEditor({
             ) : null}
             {showBudgetInput && (
               <NumberField
+                ref={budgetInputRef}
                 value={budget}
                 onChange={(value) => {
                   setBudget(value);
@@ -460,7 +469,7 @@ export function ProposalEditor({
             onUpdate={handleEditorUpdate}
             placeholder="Write your proposal here..."
             onEditorReady={handleEditorReady}
-            editorClassName="max-w-[32rem] sm:min-w-[32rem] px-0 py-6 text-neutral-black placeholder:text-neutral-gray2"
+            editorClassName="w-full !max-w-[32rem] sm:min-w-[32rem] min-h-[40rem] px-0 py-6 text-neutral-black placeholder:text-neutral-gray2"
             readOnly={false}
             immediatelyRender={false}
           />

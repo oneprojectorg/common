@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 import { ReactNode } from 'react';
 import { LuArrowLeft, LuCheck } from 'react-icons/lu';
 
+import { useTranslations } from '@/lib/i18n';
+
 import { LocaleChooser } from '../LocaleChooser';
 import { UserAvatarMenu } from '../SiteHeader';
 
@@ -27,6 +29,7 @@ export function ProposalEditorLayout({
   isEditMode = false,
 }: ProposalEditorLayoutProps) {
   const router = useRouter();
+  const t = useTranslations();
 
   return (
     <div className="flex min-h-screen flex-col bg-white">
@@ -57,7 +60,10 @@ export function ProposalEditorLayout({
           >
             {isSubmitting ? <LoadingSpinner /> : <LuCheck />}
             {isEditMode ? (
-              'Update Proposal'
+              <>
+                <span className="inline sm:hidden">{t('Update')}</span>
+                <span className="hidden sm:inline">{t('Update Proposal')}</span>
+              </>
             ) : (
               <>
                 <span className="hidden sm:block">Submit Proposal</span>

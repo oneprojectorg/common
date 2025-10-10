@@ -10,7 +10,6 @@ import {
   taxonomyTerms,
 } from '@op/db/schema';
 import { assertAccess, permission } from 'access-zones';
-import { randomUUID } from 'crypto';
 
 import {
   CommonError,
@@ -19,6 +18,7 @@ import {
   ValidationError,
 } from '../../utils';
 import { getCurrentProfileId, getOrgAccessUser } from '../access';
+import { generateUniqueProfileSlug } from '../profile/utils';
 import { processProposalContent } from './proposalContentProcessor';
 import { schemaValidator } from './schemaValidator';
 import type { InstanceData, ProcessSchema, ProposalData } from './types';
@@ -137,13 +137,17 @@ export const createProposal = async ({
 
     const profileId = await getCurrentProfileId(authUserId);
     const proposal = await db.transaction(async (tx) => {
+      const slug = await generateUniqueProfileSlug({
+        name: proposalTitle,
+        db: tx,
+      });
       // Create a profile for the proposal
       const [proposalProfile] = await tx
         .insert(profiles)
         .values({
           type: EntityType.PROPOSAL,
           name: proposalTitle,
-          slug: randomUUID(),
+          slug,
         })
         .returning();
 

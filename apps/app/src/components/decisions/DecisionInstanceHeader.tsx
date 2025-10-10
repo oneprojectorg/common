@@ -9,21 +9,19 @@ import { Link } from '@/lib/i18n/routing';
 import { LocaleChooser } from '../LocaleChooser';
 import { UserAvatarMenu } from '../SiteHeader';
 
-interface DecisionInstanceHeaderProps {
+export const DecisionInstanceHeader = ({
+  backTo,
+  title,
+}: {
   backTo: {
     label?: string;
     href: string;
   };
   title: string;
-}
-
-export function DecisionInstanceHeader({
-  backTo,
-  title,
-}: DecisionInstanceHeaderProps) {
+}) => {
   const t = useTranslations();
   return (
-    <header className="grid grid-cols-3 items-center border-b border-neutral-gray1 bg-white p-2 px-6 md:py-3">
+    <header className="grid grid-cols-[auto_1fr_auto] items-center border-b border-neutral-gray1 bg-white p-2 px-6 sm:grid-cols-3 md:py-3">
       <div className="flex items-center gap-3">
         <Link
           href={backTo.href}
@@ -36,7 +34,7 @@ export function DecisionInstanceHeader({
         </Link>
       </div>
 
-      <div className="flex justify-center">
+      <div className="flex justify-center text-center">
         <Header1 className="font-serif text-title-sm text-neutral-charcoal sm:text-title-sm">
           {title}
         </Header1>
@@ -48,4 +46,4 @@ export function DecisionInstanceHeader({
       </div>
     </header>
   );
-}
+};

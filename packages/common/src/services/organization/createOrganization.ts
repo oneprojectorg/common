@@ -15,6 +15,7 @@ import { User } from '@op/supabase/lib';
 import { randomUUID } from 'crypto';
 
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
+import { generateUniqueProfileSlug } from '../profile/utils';
 import {
   type FundingLinksInput,
   type OrganizationInput,
@@ -128,7 +129,9 @@ export const createOrganization = async ({
     .insert(profiles)
     .values({
       name: data.name! ?? 'New Organization',
-      slug: randomUUID(),
+      slug: await generateUniqueProfileSlug({
+        name: data.name ?? 'org',
+      }),
       email: data.email,
       bio: data.bio,
       website: data.website,

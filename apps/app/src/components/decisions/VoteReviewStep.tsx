@@ -38,7 +38,7 @@ export const VoteReviewStep = ({ proposals }: VoteReviewStepProps) => {
             <ProposalCard className="bg-neutral-offWhite p-3" key={proposal.id}>
               <ProposalCardContent>
                 <ProposalCardHeader
-                  className="flex-row justify-between"
+                  className="flex-row flex-wrap justify-between"
                   proposal={proposal}
                 />
                 <div className="flex items-center gap-2">

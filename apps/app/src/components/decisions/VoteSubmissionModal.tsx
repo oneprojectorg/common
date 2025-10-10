@@ -6,14 +6,15 @@ import { Button } from '@op/ui/Button';
 import { ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { toast } from '@op/ui/Toast';
 import { useContext } from 'react';
-import { useState } from 'react';
+// import { useState } from 'react';
 import { OverlayTriggerStateContext } from 'react-aria-components';
 import type { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { VoteReviewStep } from './VoteReviewStep';
-import { VoteSurveyStep } from './VoteSurveyStep';
+
+// import { VoteSurveyStep } from './VoteSurveyStep';
 
 // Current specific survey data structure
 export interface CurrentSurveyData {
@@ -27,7 +28,7 @@ export type CustomData = Record<string, unknown>;
 
 type Proposal = z.infer<typeof proposalEncoder>;
 
-type ModalStep = 'review' | 'survey';
+// type ModalStep = 'review' | 'survey';
 
 export const VoteSubmissionModal = ({
   selectedProposals,
@@ -42,12 +43,13 @@ export const VoteSubmissionModal = ({
 }) => {
   const t = useTranslations();
   const overlayState = useContext(OverlayTriggerStateContext);
-  const [currentStep, setCurrentStep] = useState<ModalStep>('review');
-  const [surveyData, setSurveyData] = useState<CurrentSurveyData>({
-    role: [],
-    region: '',
-    country: '',
-  });
+  // const [currentStep, setCurrentStep] = useState<ModalStep>('review');
+  const currentStep = 'review';
+  // const [surveyData, setSurveyData] = useState<CurrentSurveyData>({
+  // role: [],
+  // region: '',
+  // country: '',
+  // });
 
   const utils = trpc.useUtils();
   const submitVoteMutation = trpc.decision.submitVote.useMutation({
@@ -65,26 +67,32 @@ export const VoteSubmissionModal = ({
   });
 
   const handleReviewContinue = () => {
-    setCurrentStep('survey');
-  };
-
-  const handleSurveySubmit = (data: CurrentSurveyData) => {
-    setSurveyData(data);
+    // setCurrentStep('survey');
+    // setSurveyData(data);
     submitVoteMutation.mutate({
       processInstanceId: instanceId,
       selectedProposalIds: selectedProposals.map((p) => p.id),
       schemaVersion: '1.0.0',
-      customData: data as unknown as CustomData,
+      // customData: data as unknown as CustomData,
     });
   };
 
+  // const handleSurveySubmit = (data: CurrentSurveyData) => {
+  // setSurveyData(data);
+  // submitVoteMutation.mutate({
+  // processInstanceId: instanceId,
+  // selectedProposalIds: selectedProposals.map((p) => p.id),
+  // schemaVersion: '1.0.0',
+  // customData: data as unknown as CustomData,
+  // });
+  // };
 
   const getModalTitle = () => {
     switch (currentStep) {
       case 'review':
         return t('Review your votes');
-      case 'survey':
-        return t('Complete survey');
+      // case 'survey':
+      // return t('Complete survey');
       default:
         return '';
     }
@@ -95,27 +103,27 @@ export const VoteSubmissionModal = ({
       <ModalHeader>{getModalTitle()}</ModalHeader>
       <ModalBody>
         {currentStep === 'review' && (
-          <VoteReviewStep
-            proposals={selectedProposals}
-            maxVotes={maxVotes}
-          />
+          <VoteReviewStep proposals={selectedProposals} maxVotes={maxVotes} />
         )}
-        {currentStep === 'survey' && (
+        {/* currentStep === 'survey' && (
           <VoteSurveyStep
             initialData={surveyData}
             isSubmitting={submitVoteMutation.isPending}
             onSubmit={handleSurveySubmit}
           />
-        )}
+        ) */}
       </ModalBody>
       {currentStep === 'review' && (
         <ModalFooter>
           <Button
             className="w-full"
             color="primary"
+            isDisabled={submitVoteMutation.isPending}
             onPress={handleReviewContinue}
           >
-            {t('Review and continue')}
+            {submitVoteMutation.isPending
+              ? t('Submitting...')
+              : t('Submit my votes')}
           </Button>
         </ModalFooter>
       )}

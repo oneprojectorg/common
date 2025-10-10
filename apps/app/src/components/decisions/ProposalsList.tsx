@@ -11,7 +11,8 @@ import { Modal } from '@op/ui/Modal';
 import { Select, SelectItem } from '@op/ui/Select';
 import { Skeleton } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
-import { useMemo, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
 import type { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
@@ -216,7 +217,6 @@ const VotingProposalsList = ({
             <ProposalCardContent>
               <ProposalCardHeader
                 proposal={proposal}
-                viewHref={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`}
                 showMenu={canManageProposals || proposal.isEditable}
                 menuComponent={
                   <ProposalCardMenu
@@ -225,7 +225,7 @@ const VotingProposalsList = ({
                   />
                 }
               />
-              <ProposalCardMeta proposal={proposal} />
+              <ProposalCardMeta withLink={false} proposal={proposal} />
               <ProposalCardDescription proposal={proposal} />
             </ProposalCardContent>
             <ProposalCardFooter>
@@ -241,7 +241,7 @@ const VotingProposalsList = ({
         ))}
       </div>
 
-      <VotingSubmitFooter selectedCount={numSelected} isVisible={!isReadOnly}>
+      <VotingSubmitFooter isVisible={!isReadOnly}>
         <div className="flex w-full items-center justify-between px-4 sm:max-w-6xl sm:px-8">
           <span className="text-neutral-black">
             <span className="text-primary-teal">{numSelected}</span> of{' '}
@@ -255,7 +255,7 @@ const VotingProposalsList = ({
             </Button>
 
             <Modal isDismissable>
-              <Dialog>
+              <Dialog className="h-full">
                 <VoteSubmissionModal
                   selectedProposals={selectedProposals}
                   instanceId={instanceId}
@@ -353,9 +353,17 @@ export const ProposalsList = ({
 }) => {
   const t = useTranslations();
   const { user } = useUser();
-  const [selectedCategory, setSelectedCategory] =
-    useState<string>('all-categories');
-  const [sortOrder, setSortOrder] = useState<string>('newest');
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // Initialize state from URL search params
+  const [selectedCategory, setSelectedCategory] = useState<string>(
+    searchParams.get('category') || 'all-categories',
+  );
+  const [sortOrder, setSortOrder] = useState<string>(
+    searchParams.get('sort') || 'newest',
+  );
 
   const [categoriesData] = trpc.decision.getCategories.useSuspenseQuery({
     processInstanceId: instanceId,
@@ -376,6 +384,22 @@ export const ProposalsList = ({
   const hasVoted = voteStatus?.hasVoted || false;
   const selectedProposalIds =
     voteStatus?.voteSubmission?.selectedProposalIds || [];
+
+  // Helper function to update URL params
+  const updateURLParams = (updates: Record<string, string | null>) => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value === null || value === 'all-categories' || value === 'all') {
+        params.delete(key);
+      } else {
+        params.set(key, value);
+      }
+    });
+
+    const newUrl = `${pathname}?${params.toString()}`;
+    router.replace(newUrl, { scroll: false });
+  };
 
   // Build query parameters, ensuring consistent structure
   const queryParams = useMemo(() => {
@@ -406,7 +430,6 @@ export const ProposalsList = ({
   const { proposals: allProposals, canManageProposals = false } =
     proposalsData ?? {};
 
-
   // Use the custom hook for filtering proposals
   const {
     filteredProposals: proposals,
@@ -417,7 +440,17 @@ export const ProposalsList = ({
     currentProfileId,
     votedProposalIds: selectedProposalIds,
     hasVoted,
+    initialFilter: (searchParams.get('filter') as ProposalFilter) || undefined,
   });
+
+  // Sync URL with filter changes (both manual and automatic)
+  useEffect(() => {
+    const currentFilter = searchParams.get('filter');
+    if (proposalFilter !== currentFilter) {
+      updateURLParams({ filter: proposalFilter });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [proposalFilter]);
 
   return (
     <div className="flex flex-col gap-6 pb-12">
@@ -462,7 +495,11 @@ export const ProposalsList = ({
             selectedKey={selectedCategory}
             size="small"
             className="min-w-36"
-            onSelectionChange={(key) => setSelectedCategory(String(key))}
+            onSelectionChange={(key) => {
+              const category = String(key);
+              setSelectedCategory(category);
+              updateURLParams({ category });
+            }}
             aria-label="Filter proposals by category"
           >
             <SelectItem id="all-categories" aria-label="Show all categories">
@@ -482,7 +519,11 @@ export const ProposalsList = ({
             selectedKey={sortOrder}
             size="small"
             className="min-w-32"
-            onSelectionChange={(key) => setSortOrder(String(key))}
+            onSelectionChange={(key) => {
+              const sort = String(key);
+              setSortOrder(sort);
+              updateURLParams({ sort });
+            }}
           >
             <SelectItem id="newest">{t('Newest First')}</SelectItem>
             <SelectItem id="oldest">{t('Oldest First')}</SelectItem>
@@ -500,4 +541,4 @@ export const ProposalsList = ({
       />
     </div>
   );
-}
+};

@@ -4,6 +4,8 @@ import { Suspense } from 'react';
 
 import { AdminTransitionControls } from '@/components/decisions/AdminTransitionControls';
 
+export const dynamic = 'force-dynamic';
+
 async function DecisionAdminPageContent({
   instanceId,
 }: {

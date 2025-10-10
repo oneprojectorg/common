@@ -233,7 +233,7 @@ const AvatarMenuContent = ({
         </ProfileMenuItem>
       ))}
 
-      <MenuSeparator className="pt-4" />
+      {orgProfiles?.length ? <MenuSeparator className="pt-4" /> : null}
       {orgProfiles?.map((profile) => (
         <ProfileMenuItem
           key={profile.id}
