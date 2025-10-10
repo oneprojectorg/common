@@ -159,7 +159,7 @@ importers:
         version: 12.5.2(@types/react@19.0.10)(immer@10.1.1)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(use-sync-external-store@1.4.0(react@19.0.0))
       ai:
         specifier: ^4.2.2
-        version: 4.2.2(react@19.0.0)(zod@4.1.11)
+        version: 4.2.2(react@19.0.0)(zod@4.1.12)
       autoprefixer:
         specifier: ^10.4.20
         version: 10.4.20(postcss@8.5.3)
@@ -285,7 +285,7 @@ importers:
         version: 0.174.0
       trpc-to-openapi:
         specifier: 2.1.3
-        version: 2.1.3(@trpc/server@11.0.0-rc.700(typescript@5.7.3))(zod-openapi@4.2.2(zod@4.1.11))(zod@4.1.11)
+        version: 2.1.3(@trpc/server@11.0.0-rc.700(typescript@5.7.3))(zod-openapi@4.2.2(zod@4.1.12))(zod@4.1.12)
       tsx:
         specifier: ^4.19.3
         version: 4.19.3
@@ -655,7 +655,7 @@ importers:
         specifier: ^1.6.6
         version: 1.6.6
       zod:
-        specifier: ^3.24.2
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@op/core':
@@ -759,6 +759,10 @@ importers:
         version: 5.7.3
 
   packages/types:
+    dependencies:
+      zod:
+        specifier: ^4.1.12
+        version: 4.1.12
     devDependencies:
       '@op/typescript-config':
         specifier: workspace:*
@@ -832,6 +836,9 @@ importers:
       tailwindcss-react-aria-components:
         specifier: ^1.2.0
         version: 1.2.0(tailwindcss@3.4.17)
+      zod:
+        specifier: ^4.1.12
+        version: 4.1.12
     devDependencies:
       '@iconify/json':
         specifier: 2.2.311
@@ -9697,6 +9704,9 @@ packages:
   zod@4.1.11:
     resolution: {integrity: sha512-WPsqwxITS2tzx1bzhIKsEs19ABD5vmCVa4xBo2tq/SrV4RNZtfws1EnCWQXM6yh8bD08a1idvkB5MZSBiZsjwg==}
 
+  zod@4.1.12:
+    resolution: {integrity: sha512-JInaHOamG8pt5+Ey8kGmdcAcg3OL9reK8ltczgHTAwNhMys/6ThXHityHxVV2p3fkw/c+MAvBHFVYHFZDmjMCQ==}
+
   zustand@5.0.3:
     resolution: {integrity: sha512-14fwWQtU3pH4dE0dOpdMiWjddcH+QzKIgk1cl8epwSE7yag43k/AD/m4L6+K7DytAOr9gGBe3/EXj9g7cdostg==}
     engines: {node: '>=12.20.0'}
@@ -9735,12 +9745,12 @@ snapshots:
       secure-json-parse: 2.7.0
       zod: 3.25.76
 
-  '@ai-sdk/provider-utils@2.2.1(zod@4.1.11)':
+  '@ai-sdk/provider-utils@2.2.1(zod@4.1.12)':
     dependencies:
       '@ai-sdk/provider': 1.1.0
       nanoid: 3.3.11
       secure-json-parse: 2.7.0
-      zod: 4.1.11
+      zod: 4.1.12
 
   '@ai-sdk/provider@1.1.0':
     dependencies:
@@ -9756,15 +9766,15 @@ snapshots:
     optionalDependencies:
       zod: 3.25.76
 
-  '@ai-sdk/react@1.2.1(react@19.0.0)(zod@4.1.11)':
+  '@ai-sdk/react@1.2.1(react@19.0.0)(zod@4.1.12)':
     dependencies:
-      '@ai-sdk/provider-utils': 2.2.1(zod@4.1.11)
-      '@ai-sdk/ui-utils': 1.2.1(zod@4.1.11)
+      '@ai-sdk/provider-utils': 2.2.1(zod@4.1.12)
+      '@ai-sdk/ui-utils': 1.2.1(zod@4.1.12)
       react: 19.0.0
       swr: 2.3.3(react@19.0.0)
       throttleit: 2.1.0
     optionalDependencies:
-      zod: 4.1.11
+      zod: 4.1.12
 
   '@ai-sdk/ui-utils@1.2.1(zod@3.25.76)':
     dependencies:
@@ -9773,12 +9783,12 @@ snapshots:
       zod: 3.25.76
       zod-to-json-schema: 3.24.5(zod@3.25.76)
 
-  '@ai-sdk/ui-utils@1.2.1(zod@4.1.11)':
+  '@ai-sdk/ui-utils@1.2.1(zod@4.1.12)':
     dependencies:
       '@ai-sdk/provider': 1.1.0
-      '@ai-sdk/provider-utils': 2.2.1(zod@4.1.11)
-      zod: 4.1.11
-      zod-to-json-schema: 3.24.5(zod@4.1.11)
+      '@ai-sdk/provider-utils': 2.2.1(zod@4.1.12)
+      zod: 4.1.12
+      zod-to-json-schema: 3.24.5(zod@4.1.12)
 
   '@alloc/quick-lru@5.2.0': {}
 
@@ -14233,15 +14243,15 @@ snapshots:
     optionalDependencies:
       react: 19.0.0
 
-  ai@4.2.2(react@19.0.0)(zod@4.1.11):
+  ai@4.2.2(react@19.0.0)(zod@4.1.12):
     dependencies:
       '@ai-sdk/provider': 1.1.0
-      '@ai-sdk/provider-utils': 2.2.1(zod@4.1.11)
-      '@ai-sdk/react': 1.2.1(react@19.0.0)(zod@4.1.11)
-      '@ai-sdk/ui-utils': 1.2.1(zod@4.1.11)
+      '@ai-sdk/provider-utils': 2.2.1(zod@4.1.12)
+      '@ai-sdk/react': 1.2.1(react@19.0.0)(zod@4.1.12)
+      '@ai-sdk/ui-utils': 1.2.1(zod@4.1.12)
       '@opentelemetry/api': 1.9.0
       jsondiffpatch: 0.6.0
-      zod: 4.1.11
+      zod: 4.1.12
     optionalDependencies:
       react: 19.0.0
 
@@ -18601,14 +18611,14 @@ snapshots:
     optionalDependencies:
       '@rollup/rollup-linux-x64-gnu': 4.6.1
 
-  trpc-to-openapi@2.1.3(@trpc/server@11.0.0-rc.700(typescript@5.7.3))(zod-openapi@4.2.2(zod@4.1.11))(zod@4.1.11):
+  trpc-to-openapi@2.1.3(@trpc/server@11.0.0-rc.700(typescript@5.7.3))(zod-openapi@4.2.2(zod@4.1.12))(zod@4.1.12):
     dependencies:
       '@trpc/server': 11.0.0-rc.700(typescript@5.7.3)
       co-body: 6.2.0
       h3: 1.13.1
       openapi3-ts: 4.4.0
-      zod: 4.1.11
-      zod-openapi: 4.2.2(zod@4.1.11)
+      zod: 4.1.12
+      zod-openapi: 4.2.2(zod@4.1.12)
     optionalDependencies:
       '@rollup/rollup-linux-x64-gnu': 4.6.1
 
@@ -19221,21 +19231,23 @@ snapshots:
     dependencies:
       zod: 3.25.76
 
-  zod-openapi@4.2.2(zod@4.1.11):
+  zod-openapi@4.2.2(zod@4.1.12):
     dependencies:
-      zod: 4.1.11
+      zod: 4.1.12
 
   zod-to-json-schema@3.24.5(zod@3.25.76):
     dependencies:
       zod: 3.25.76
 
-  zod-to-json-schema@3.24.5(zod@4.1.11):
+  zod-to-json-schema@3.24.5(zod@4.1.12):
     dependencies:
-      zod: 4.1.11
+      zod: 4.1.12
 
   zod@3.25.76: {}
 
   zod@4.1.11: {}
+
+  zod@4.1.12: {}
 
   zustand@5.0.3(@types/react@19.0.10)(immer@10.1.1)(react@19.0.0)(use-sync-external-store@1.4.0(react@19.0.0)):
     optionalDependencies:
