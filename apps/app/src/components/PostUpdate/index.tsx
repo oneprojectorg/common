@@ -56,6 +56,7 @@ const PostUpdateWithUser = ({
   label,
   proposalId,
   processInstanceId,
+  characterLimit = 240,
 }: {
   organization?: Organization | null;
   className?: string;
@@ -66,6 +67,7 @@ const PostUpdateWithUser = ({
   label: string;
   proposalId?: string; // If provided, this is a proposal comment
   processInstanceId?: string; // Process instance ID for proposal comments
+  characterLimit?: number;
 }) => {
   const { user } = useUser();
   const [content, setContent] = useState('');
@@ -707,7 +709,7 @@ const PostUpdateWithUser = ({
               {t('Media')}
             </button>
             <div className="flex items-center gap-2 text-neutral-charcoal">
-              <TextCounter text={content} max={240} />
+              <TextCounter text={content} max={characterLimit} />
               {lastFailedPost && (
                 <Button
                   size="small"
@@ -726,7 +728,7 @@ const PostUpdateWithUser = ({
                 size="small"
                 isDisabled={
                   !(content.length > 0 || fileUpload.hasUploadedFiles()) ||
-                  content.length > 240 ||
+                  content.length > characterLimit ||
                   !isOnline
                 }
                 onPress={createNewPostUpdate}
@@ -782,6 +784,7 @@ export const PostUpdate = ({
         label={label}
         proposalId={proposalId}
         processInstanceId={processInstanceId}
+        characterLimit={1500}
       />
     );
   }

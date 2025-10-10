@@ -1,6 +1,5 @@
 'use client';
 
-import { formatStepForDisplay, getNextSteps } from './utils/processSteps';
 import { trpc } from '@op/api/client';
 import { Button } from '@op/ui/Button';
 import { CheckIcon } from '@op/ui/CheckIcon';
@@ -13,6 +12,7 @@ import { Suspense } from 'react';
 import { useTranslations } from '@/lib/i18n';
 
 import ErrorBoundary from '../ErrorBoundary';
+import { formatStepForDisplay, getNextSteps } from './utils/processSteps';
 
 interface VoteSuccessModalProps {
   isOpen: boolean;
@@ -44,7 +44,7 @@ const VoteSuccessModalSuspense = ({
 
   return (
     <DialogTrigger isOpen={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <Modal isDismissable confetti>
+      <Modal isDismissable>
         <div className="z-10 p-12 text-center">
           <div className="flex flex-col gap-6">
             <div className="flex flex-col items-center gap-4">

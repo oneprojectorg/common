@@ -8,10 +8,6 @@ import { CommonError, NotFoundError } from '../../utils';
 import { getCurrentProfileId } from '../access';
 import { sendCommentNotificationEmail } from '../email';
 
-interface CreateCommentServiceInput extends CreateCommentInput {
-  authUserId: string;
-}
-
 const sendCommentNotification = async (
   postId: string,
   commentContent: string,
@@ -100,7 +96,11 @@ const sendCommentNotification = async (
   }
 };
 
-export const createComment = async (input: CreateCommentServiceInput) => {
+export const createComment = async (
+  input: CreateCommentInput & {
+    authUserId: string;
+  },
+) => {
   const { authUserId } = input;
 
   const profileId = await getCurrentProfileId(authUserId);
