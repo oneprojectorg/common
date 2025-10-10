@@ -1,5 +1,6 @@
 import { and, db, eq } from '@op/db/client';
 import { postReactions } from '@op/db/schema';
+import { Events, event } from '@op/events';
 
 export interface AddReactionOptions {
   postId: string;
@@ -9,6 +10,7 @@ export interface AddReactionOptions {
 
 export const addReaction = async (options: AddReactionOptions) => {
   const { postId, profileId, reactionType } = options;
+
   await db.transaction(async (tx) => {
     // First, remove any existing reaction from this user on this post
     await tx
@@ -26,5 +28,15 @@ export const addReaction = async (options: AddReactionOptions) => {
       profileId,
       reactionType,
     });
+  });
+
+  // sending this only on transaction success
+  await event.send({
+    name: Events.postReactionAdded.name,
+    data: {
+      sourceProfileId: profileId,
+      postId,
+      reactionType,
+    },
   });
 };

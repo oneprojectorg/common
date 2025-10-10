@@ -1,0 +1,4 @@
+{
+  "sdk-url": ["http://localhost:3300/api/v1/workflows"],
+  "no-discovery": true
+}

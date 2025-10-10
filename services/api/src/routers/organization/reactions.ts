@@ -9,8 +9,8 @@ import { VALID_REACTION_TYPES } from '@op/types';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
-import withAuthenticated from '../../middlewares/withAuthenticated';
 import withAnalytics from '../../middlewares/withAnalytics';
+import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
@@ -80,6 +80,7 @@ export const reactionsRouter = router({
         const profileId = await getCurrentProfileId(user.id);
         return await toggleReaction({ postId, profileId, reactionType });
       } catch (e) {
+        console.error(e);
         throw new CommonError('Failed to toggle reaction');
       }
     }),
