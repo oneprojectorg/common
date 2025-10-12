@@ -1,6 +1,13 @@
 {
   "permissions": {
-    "allow": ["WebFetch", "Fetch", "Pnpm w:app lint"],
+    "allow": [
+      "Find",
+      "Grep",
+      "WebFetch",
+      "Web Search",
+      "Fetch",
+      "Pnpm w:app lint"
+    ],
     "deny": [
       "Pnpm build",
       "Pnpm w:db migrate",

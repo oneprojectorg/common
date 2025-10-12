@@ -7,8 +7,7 @@
   "exports": {
     ".": "./index.ts",
     "./client": "./src/TRPCProvider.tsx",
-    "./vanilla": "./src/vanilla.ts",
-    "./next": "./src/next.ts",
+    "./serverClient": "./src/serverClient.ts",
     "./encoders": "./src/encoders/index.ts"
   },
   "scripts": {

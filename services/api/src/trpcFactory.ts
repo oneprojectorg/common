@@ -67,4 +67,5 @@ const t = initTRPC
 export const { router } = t;
 export const { middleware } = t;
 export const { mergeRouters } = t;
+export const createCallerFactory = t.createCallerFactory;
 export const loggedProcedure = t.procedure.use(withLogger);
