@@ -104,8 +104,7 @@ const updateDataSchema = z
     status: z
       .enum(['draft', 'active', 'paused', 'completed', 'cancelled'])
       .optional(),
-  })
-  .strip() // Remove any extra fields
+  }) // Remove any extra fields
   .transform((data) => {
     // Remove undefined fields for cleaner database updates
     return Object.fromEntries(
@@ -154,7 +153,8 @@ export const updateInstance = async ({
     if (data.instanceData && data.instanceData.fieldValues?.categories) {
       const categories = Array.isArray(data.instanceData.fieldValues.categories)
         ? data.instanceData.fieldValues.categories.filter(
-            (cat: unknown): cat is string => typeof cat === 'string' && cat.trim() !== ''
+            (cat: unknown): cat is string =>
+              typeof cat === 'string' && cat.trim() !== '',
           )
         : [];
 
@@ -171,7 +171,8 @@ export const updateInstance = async ({
           const currentProcessSchema = existingProcess.processSchema as any;
 
           // Update the proposal template to include the new category enums
-          const currentProposalTemplate = currentProcessSchema?.proposalTemplate || {};
+          const currentProposalTemplate =
+            currentProcessSchema?.proposalTemplate || {};
           const updatedProposalTemplate = {
             ...currentProposalTemplate,
             properties: {
@@ -188,7 +189,10 @@ export const updateInstance = async ({
           };
 
           // If no categories, remove the category field from the proposal template
-          if (categories.length === 0 && updatedProposalTemplate.properties.category) {
+          if (
+            categories.length === 0 &&
+            updatedProposalTemplate.properties.category
+          ) {
             delete updatedProposalTemplate.properties.category;
           }
 

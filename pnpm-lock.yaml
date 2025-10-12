@@ -13,10 +13,10 @@ overrides:
   '@tanstack/query-sync-storage-persister': 5.66.11
   '@tanstack/react-query': 5.66.11
   '@tanstack/react-query-persist-client': 5.66.11
-  '@trpc/client': 11.0.0-rc.700
-  '@trpc/next': 11.0.0-rc.700
-  '@trpc/react-query': 11.0.0-rc.700
-  '@trpc/server': 11.0.0-rc.700
+  '@trpc/client': 11.6.0
+  '@trpc/next': 11.6.0
+  '@trpc/react-query': 11.6.0
+  '@trpc/server': 11.6.0
   '@types/d3-scale': ^4.0.9
   '@types/d3-selection': ^3.0.11
   '@types/lodash': ^4.17.15
@@ -60,13 +60,14 @@ overrides:
   tailwindcss: 3.4.17
   tailwindcss-animate: 1.0.7
   three: ^0.174.0
-  trpc-to-openapi: 2.1.3
+  trpc-to-openapi: ^3.1.0
   tsx: ^4.19.3
   turbo: ^2.4.4
   typescript: 5.7.3
   undici: 5.27.1
   unplugin-icons: 22.1.0
   use-error-boundary: ^2.0.6
+  zod: ^4.1.11
   zustand: ^5.0.3
 
 patchedDependencies:
@@ -119,17 +120,17 @@ importers:
         specifier: ^5.2.2
         version: 5.2.2(@vue/compiler-sfc@3.5.13)(prettier@3.5.2)
       '@trpc/client':
-        specifier: 11.0.0-rc.700
-        version: 11.0.0-rc.700(@trpc/server@11.0.0-rc.700(typescript@5.7.3))(typescript@5.7.3)
+        specifier: 11.6.0
+        version: 11.6.0(@trpc/server@11.6.0(typescript@5.7.3))(typescript@5.7.3)
       '@trpc/next':
-        specifier: 11.0.0-rc.700
-        version: 11.0.0-rc.700(@tanstack/react-query@5.66.11(react@19.0.0))(@trpc/client@11.0.0-rc.700(@trpc/server@11.0.0-rc.700(typescript@5.7.3))(typescript@5.7.3))(@trpc/react-query@11.0.0-rc.700(@tanstack/react-query@5.66.11(react@19.0.0))(@trpc/client@11.0.0-rc.700(@trpc/server@11.0.0-rc.700(typescript@5.7.3))(typescript@5.7.3))(@trpc/server@11.0.0-rc.700(typescript@5.7.3))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3))(@trpc/server@11.0.0-rc.700(typescript@5.7.3))(next@15.3.0(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.85.1))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3)
+        specifier: 11.6.0
+        version: 11.6.0(@tanstack/react-query@5.66.11(react@19.0.0))(@trpc/client@11.6.0(@trpc/server@11.6.0(typescript@5.7.3))(typescript@5.7.3))(@trpc/react-query@11.6.0(@tanstack/react-query@5.66.11(react@19.0.0))(@trpc/client@11.6.0(@trpc/server@11.6.0(typescript@5.7.3))(typescript@5.7.3))(@trpc/server@11.6.0(typescript@5.7.3))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3))(@trpc/server@11.6.0(typescript@5.7.3))(next@15.3.0(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.85.1))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3)
       '@trpc/react-query':
-        specifier: 11.0.0-rc.700
-        version: 11.0.0-rc.700(@tanstack/react-query@5.66.11(react@19.0.0))(@trpc/client@11.0.0-rc.700(@trpc/server@11.0.0-rc.700(typescript@5.7.3))(typescript@5.7.3))(@trpc/server@11.0.0-rc.700(typescript@5.7.3))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3)
+        specifier: 11.6.0
+        version: 11.6.0(@tanstack/react-query@5.66.11(react@19.0.0))(@trpc/client@11.6.0(@trpc/server@11.6.0(typescript@5.7.3))(typescript@5.7.3))(@trpc/server@11.6.0(typescript@5.7.3))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3)
       '@trpc/server':
-        specifier: 11.0.0-rc.700
-        version: 11.0.0-rc.700(typescript@5.7.3)
+        specifier: 11.6.0
+        version: 11.6.0(typescript@5.7.3)
       '@types/d3-scale':
         specifier: ^4.0.9
         version: 4.0.9
@@ -284,8 +285,8 @@ importers:
         specifier: ^0.174.0
         version: 0.174.0
       trpc-to-openapi:
-        specifier: 2.1.3
-        version: 2.1.3(@trpc/server@11.0.0-rc.700(typescript@5.7.3))(zod-openapi@4.2.2(zod@4.1.12))(zod@4.1.12)
+        specifier: ^3.1.0
+        version: 3.1.0(@trpc/server@11.6.0(typescript@5.7.3))(zod-openapi@5.4.3(zod@4.1.12))(zod@4.1.12)
       tsx:
         specifier: ^4.19.3
         version: 4.19.3
@@ -301,6 +302,12 @@ importers:
       use-error-boundary:
         specifier: ^2.0.6
         version: 2.0.6(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+      zod:
+        specifier: ^4.1.11
+        version: 4.1.12
+      zod-openapi:
+        specifier: ^5.0.1
+        version: 5.4.3(zod@4.1.12)
       zustand:
         specifier: ^5.0.3
         version: 5.0.3(@types/react@19.0.10)(immer@10.1.1)(react@19.0.0)(use-sync-external-store@1.4.0(react@19.0.0))
@@ -329,8 +336,8 @@ importers:
         specifier: ^0.5.10
         version: 0.5.10(next@15.3.0(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.85.1))(react@19.0.0)
       '@trpc/server':
-        specifier: 11.0.0-rc.700
-        version: 11.0.0-rc.700(typescript@5.7.3)
+        specifier: 11.6.0
+        version: 11.6.0(typescript@5.7.3)
       dotenv:
         specifier: ^16.4.7
         version: 16.4.7
@@ -344,11 +351,11 @@ importers:
         specifier: ^19.0.0
         version: 19.0.0(react@19.0.0)
       trpc-to-openapi:
-        specifier: 2.1.3
-        version: 2.1.3(@trpc/server@11.0.0-rc.700(typescript@5.7.3))(zod-openapi@4.2.2(zod@3.25.76))(zod@3.25.76)
+        specifier: ^3.1.0
+        version: 3.1.0(@trpc/server@11.6.0(typescript@5.7.3))(zod-openapi@5.4.3(zod@4.1.12))(zod@4.1.12)
       zod:
-        specifier: ^3.24.2
-        version: 3.25.76
+        specifier: ^4.1.11
+        version: 4.1.12
     devDependencies:
       '@op/typescript-config':
         specifier: workspace:*
@@ -555,8 +562,8 @@ importers:
         specifier: ^10.0.4
         version: 10.0.4(react@19.0.0)
       zod:
-        specifier: ^3.24.2
-        version: 3.25.76
+        specifier: ^4.1.11
+        version: 4.1.12
       zustand:
         specifier: ^5.0.3
         version: 5.0.3(@types/react@19.0.10)(immer@10.1.1)(react@19.0.0)(use-sync-external-store@1.4.0(react@19.0.0))
@@ -658,8 +665,8 @@ importers:
         specifier: ^1.6.6
         version: 1.6.6
       zod:
-        specifier: ^3.25.76
-        version: 3.25.76
+        specifier: ^4.1.11
+        version: 4.1.12
     devDependencies:
       '@op/core':
         specifier: workspace:*
@@ -764,7 +771,7 @@ importers:
   packages/types:
     dependencies:
       zod:
-        specifier: ^4.1.12
+        specifier: ^4.1.11
         version: 4.1.12
     devDependencies:
       '@op/typescript-config':
@@ -840,7 +847,7 @@ importers:
         specifier: ^1.2.0
         version: 1.2.0(tailwindcss@3.4.17)
       zod:
-        specifier: ^4.1.12
+        specifier: ^4.1.11
         version: 4.1.12
     devDependencies:
       '@iconify/json':
@@ -908,7 +915,7 @@ importers:
     dependencies:
       '@ai-sdk/anthropic':
         specifier: ^1.2.1
-        version: 1.2.1(zod@3.25.76)
+        version: 1.2.1(zod@4.1.12)
       '@atproto/oauth-client-node':
         specifier: ^0.3.9
         version: 0.3.9
@@ -952,14 +959,14 @@ importers:
         specifier: 5.66.11
         version: 5.66.11(@tanstack/react-query@5.66.11(react@19.0.0))(react@19.0.0)
       '@trpc/client':
-        specifier: 11.0.0-rc.700
-        version: 11.0.0-rc.700(@trpc/server@11.0.0-rc.700(typescript@5.7.3))(typescript@5.7.3)
+        specifier: 11.6.0
+        version: 11.6.0(@trpc/server@11.6.0(typescript@5.7.3))(typescript@5.7.3)
       '@trpc/react-query':
-        specifier: 11.0.0-rc.700
-        version: 11.0.0-rc.700(@tanstack/react-query@5.66.11(react@19.0.0))(@trpc/client@11.0.0-rc.700(@trpc/server@11.0.0-rc.700(typescript@5.7.3))(typescript@5.7.3))(@trpc/server@11.0.0-rc.700(typescript@5.7.3))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3)
+        specifier: 11.6.0
+        version: 11.6.0(@tanstack/react-query@5.66.11(react@19.0.0))(@trpc/client@11.6.0(@trpc/server@11.6.0(typescript@5.7.3))(typescript@5.7.3))(@trpc/server@11.6.0(typescript@5.7.3))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3)
       '@trpc/server':
-        specifier: 11.0.0-rc.700
-        version: 11.0.0-rc.700(typescript@5.7.3)
+        specifier: 11.6.0
+        version: 11.6.0(typescript@5.7.3)
       '@types/sanitize-s3-objectkey':
         specifier: ^0.0.0
         version: 0.0.0
@@ -971,7 +978,7 @@ importers:
         version: 0.0.1
       ai:
         specifier: ^4.2.2
-        version: 4.2.2(react@19.0.0)(zod@3.25.76)
+        version: 4.2.2(react@19.0.0)(zod@4.1.12)
       cookie:
         specifier: ^1.0.2
         version: 1.0.2
@@ -979,8 +986,8 @@ importers:
         specifier: ^0.43.1
         version: 0.43.1(@opentelemetry/api@1.9.0)(@types/pg@8.11.11)(gel@2.0.0)(pg@8.16.0)(postgres@3.4.5)
       drizzle-zod:
-        specifier: ^0.7.0
-        version: 0.7.0(drizzle-orm@0.43.1(@opentelemetry/api@1.9.0)(@types/pg@8.11.11)(gel@2.0.0)(pg@8.16.0)(postgres@3.4.5))(zod@3.25.76)
+        specifier: ^0.8.3
+        version: 0.8.3(drizzle-orm@0.43.1(@opentelemetry/api@1.9.0)(@types/pg@8.11.11)(gel@2.0.0)(pg@8.16.0)(postgres@3.4.5))(zod@4.1.12)
       fast-xml-parser:
         specifier: ^5.2.1
         version: 5.2.1
@@ -1018,11 +1025,11 @@ importers:
         specifier: ^2.2.2
         version: 2.2.2
       trpc-to-openapi:
-        specifier: 2.1.3
-        version: 2.1.3(@trpc/server@11.0.0-rc.700(typescript@5.7.3))(zod-openapi@4.2.2(zod@3.25.76))(zod@3.25.76)
+        specifier: ^3.1.0
+        version: 3.1.0(@trpc/server@11.6.0(typescript@5.7.3))(zod-openapi@5.4.3(zod@4.1.12))(zod@4.1.12)
       zod:
-        specifier: ^3.24.2
-        version: 3.25.76
+        specifier: ^4.1.11
+        version: 4.1.12
     devDependencies:
       '@op/typescript-config':
         specifier: workspace:*
@@ -1141,8 +1148,8 @@ importers:
         specifier: ^6.0.2
         version: 6.0.2(@react-email/render@1.1.2(react-dom@19.0.0(react@19.0.0))(react@19.0.0))
       zod:
-        specifier: ^3.24.2
-        version: 3.25.76
+        specifier: ^4.1.11
+        version: 4.1.12
     devDependencies:
       '@op/typescript-config':
         specifier: workspace:*
@@ -1161,7 +1168,7 @@ importers:
     dependencies:
       inngest:
         specifier: ^3.44.0
-        version: 3.44.0(h3@1.13.1)(next@15.3.4(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.85.1))(typescript@5.7.3)(zod@4.1.11)
+        version: 3.44.0(h3@1.15.1)(next@15.3.4(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.85.1))(typescript@5.7.3)(zod@4.1.11)
       zod:
         specifier: ^4.1.11
         version: 4.1.11
@@ -1223,7 +1230,7 @@ importers:
         version: link:../../packages/types
       inngest:
         specifier: ^3.44.0
-        version: 3.44.0(h3@1.13.1)(next@15.3.4(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.85.1))(typescript@5.7.3)(zod@4.1.11)
+        version: 3.44.0(h3@1.15.1)(next@15.3.4(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.85.1))(typescript@5.7.3)(zod@4.1.11)
       inngest-cli:
         specifier: ^1.12.1
         version: 1.12.1
@@ -1247,13 +1254,13 @@ packages:
     resolution: {integrity: sha512-X2bcuDXDKl8UCxUbiK+BX/xW8FLLzc36jngQmQycRvzr1Lmc8k8l+0pgLjgvmWRmbF+L9XOzP38Wm86bdTrFzQ==}
     engines: {node: '>=18'}
     peerDependencies:
-      zod: ^3.0.0
+      zod: ^4.1.11
 
   '@ai-sdk/provider-utils@2.2.1':
     resolution: {integrity: sha512-BuExLp+NcpwsAVj1F4bgJuQkSqO/+roV9wM7RdIO+NVrcT8RBUTdXzf5arHt5T58VpK7bZyB2V9qigjaPHE+Dg==}
     engines: {node: '>=18'}
     peerDependencies:
-      zod: ^3.23.8
+      zod: ^4.1.11
 
   '@ai-sdk/provider@1.1.0':
     resolution: {integrity: sha512-0M+qjp+clUD0R1E5eWQFhxEvWLNaOtGQRUaBn8CUABnSKredagq92hUS9VjOzGsTm37xLfpaxl97AVtbeOsHew==}
@@ -1264,7 +1271,7 @@ packages:
     engines: {node: '>=18'}
     peerDependencies:
       react: ^19.0.0
-      zod: ^3.23.8
+      zod: ^4.1.11
     peerDependenciesMeta:
       zod:
         optional: true
@@ -1273,7 +1280,7 @@ packages:
     resolution: {integrity: sha512-BzvMbYm7LHBlbWuLlcG1jQh4eu14MGpz7L+wrGO1+F4oQ+O0fAjgUSNwPWGlZpKmg4NrcVq/QLmxiVJrx2R4Ew==}
     engines: {node: '>=18'}
     peerDependencies:
-      zod: ^3.23.8
+      zod: ^4.1.11
 
   '@alloc/quick-lru@5.2.0':
     resolution: {integrity: sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw==}
@@ -4861,19 +4868,19 @@ packages:
       svelte:
         optional: true
 
-  '@trpc/client@11.0.0-rc.700':
-    resolution: {integrity: sha512-8yktSkK/jbDss4pA+3EwwDY972qBrvGN49Kpa7oA/0My40YohlEwrEwLLI5+rdICUi3MFv7jkqzKydgXHJJPRw==}
+  '@trpc/client@11.6.0':
+    resolution: {integrity: sha512-DyWbYk2hd50BaVrXWVkaUnaSwgAF5g/lfBkXtkF1Aqlk6BtSzGUo3owPkgqQO2I5LwWy1+ra9TsSfBBvIZpTwg==}
     peerDependencies:
-      '@trpc/server': 11.0.0-rc.700
+      '@trpc/server': 11.6.0
       typescript: 5.7.3
 
-  '@trpc/next@11.0.0-rc.700':
-    resolution: {integrity: sha512-IZoDhq577LDUZ22S9XO7PJzlh0erWnuuaoExYXGz3UV/5HhQ91c3+hSGvx8s7BiOAWdMeFDGxanwjaUMaJquXg==}
+  '@trpc/next@11.6.0':
+    resolution: {integrity: sha512-LVzXQ4f3pyOJDMA0qXaWkTnnJtnRgzDvW5c1SPuragI69r9mG+Qs0+SgeekV/buSqUy35wMYVvwuEB/DfKvODw==}
     peerDependencies:
       '@tanstack/react-query': 5.66.11
-      '@trpc/client': 11.0.0-rc.700
-      '@trpc/react-query': 11.0.0-rc.700
-      '@trpc/server': 11.0.0-rc.700
+      '@trpc/client': 11.6.0
+      '@trpc/react-query': 11.6.0
+      '@trpc/server': 11.6.0
       next: '*'
       react: ^19.0.0
       react-dom: ^19.0.0
@@ -4884,18 +4891,18 @@ packages:
       '@trpc/react-query':
         optional: true
 
-  '@trpc/react-query@11.0.0-rc.700':
-    resolution: {integrity: sha512-/8tZ7PrfVFOKHjtekSCE0smJLO6v2xxuaXbnSDV7saCoJXIID/+olt3YbwvhAzEzFCaWF9UUuigULW4MIr9Hvw==}
+  '@trpc/react-query@11.6.0':
+    resolution: {integrity: sha512-xljUCzROa23cC89SEd5fwbKiWrGus2NDwtg8zszPlsFvaByWW50Jx6y5sLPXhp/g1FBsEtCInNNhEEL0UCHwGw==}
     peerDependencies:
       '@tanstack/react-query': 5.66.11
-      '@trpc/client': 11.0.0-rc.700
-      '@trpc/server': 11.0.0-rc.700
+      '@trpc/client': 11.6.0
+      '@trpc/server': 11.6.0
       react: ^19.0.0
       react-dom: ^19.0.0
       typescript: 5.7.3
 
-  '@trpc/server@11.0.0-rc.700':
-    resolution: {integrity: sha512-EmbaGj76YcZWsnujZrrJEYa/2a6ZncTMm1he99RlemWE/ZsZbN+I+KCz+VKIsUr+JLaQmQMElcXs2x0qLI6T5g==}
+  '@trpc/server@11.6.0':
+    resolution: {integrity: sha512-skTso0AWbOZck40jwNeYv++AMZXNWLUWdyk+pB5iVaYmEKTuEeMoPrEudR12VafbEU6tZa8HK3QhBfTYYHDCdg==}
     peerDependencies:
       typescript: 5.7.3
 
@@ -5308,7 +5315,7 @@ packages:
     engines: {node: '>=18'}
     peerDependencies:
       react: ^19.0.0
-      zod: ^3.23.8
+      zod: ^4.1.11
     peerDependenciesMeta:
       react:
         optional: true
@@ -5754,10 +5761,6 @@ packages:
   confbox@0.1.8:
     resolution: {integrity: sha512-RMtmw0iFkeR4YV+fUOSucriAQNb9g8zFR52MWCtl+cCZOFRNL6zeB395vPzFhEjjn4fMxXudmELnl/KF/WrK6w==}
 
-  consola@3.4.0:
-    resolution: {integrity: sha512-EiPU8G6dQG0GFHNR8ljnZFki/8a+cQwEQ+7wpxdChl02Q8HXlwEZWD5lqAF8vC2sEC3Tehr8hy7vErz88LHyUA==}
-    engines: {node: ^14.18.0 || >=16.10.0}
-
   console.table@0.10.0:
     resolution: {integrity: sha512-dPyZofqggxuvSf7WXvNjuRfnsOk1YazkVP8FdxH4tcH2c37wc79/Yl6Bhr7Lsu00KMgy2ql/qCMuNu8xctZM8g==}
     engines: {node: '> 0.10'}
@@ -5814,8 +5817,8 @@ packages:
     resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
     engines: {node: '>= 8'}
 
-  crossws@0.3.1:
-    resolution: {integrity: sha512-HsZgeVYaG+b5zA+9PbIPGq4+J/CJynJuearykPsXx4V/eMhyQ5EDVg3Ak2FBZtVXCiOLu/U7IiwDHTr9MA+IKw==}
+  crossws@0.3.5:
+    resolution: {integrity: sha512-ojKiDvcmByhwa8YYqbQI/hg7MEU0NC03+pSdEq4ZUnZR9xXpwk7E43SMNGkn+JxJGPFtNvQ48+vV2p+P1ml5PA==}
 
   css-select@5.1.0:
     resolution: {integrity: sha512-nwoRF1rvRRnnCqqY7updORDsuqKzqYJ28+oSMaJMMgOauh3fvwHqMS7EZpIPqK8GL+g9mKxF1vP/ZjSeNjEVHg==}
@@ -6200,11 +6203,11 @@ packages:
       sqlite3:
         optional: true
 
-  drizzle-zod@0.7.0:
-    resolution: {integrity: sha512-xgCRYYVEzRkeXTS33GSMgoowe3vKsMNBjSI+cwG1oLQVEhAWWbqtb/AAMlm7tkmV4fG/uJjEmWzdzlEmTgWOoQ==}
+  drizzle-zod@0.8.3:
+    resolution: {integrity: sha512-66yVOuvGhKJnTdiqj1/Xaaz9/qzOdRJADpDa68enqS6g3t0kpNkwNYjUuaeXgZfO/UWuIM9HIhSlJ6C5ZraMww==}
     peerDependencies:
       drizzle-orm: ^0.43.1
-      zod: '>=3.0.0'
+      zod: ^4.1.11
 
   dunder-proto@1.0.1:
     resolution: {integrity: sha512-KIN/nDJBQRcXw0MLVhZE9iQHmG68qAVIBg9CqmUYjmQIhgij9U5MFvrqkUL5FbtyyzZuOeOt0zdeRe4UY7ct+A==}
@@ -6643,8 +6646,8 @@ packages:
     resolution: {integrity: sha512-ax7ZYomf6jqPTQ4+XCpUGyXKHk5WweS+e05MBO4/y3WJ5RkmPXNKvX+bx1behVILVwr6JSQvZAku021CHPXG3Q==}
     engines: {node: '>=10'}
 
-  h3@1.13.1:
-    resolution: {integrity: sha512-u/z6Z4YY+ANZ05cRRfsFJadTBrNA6e3jxdU+AN5UCbZSZEUwgHiwjvUEe0k1NoQmAvQmETwr+xB5jd7mhCJuIQ==}
+  h3@1.15.1:
+    resolution: {integrity: sha512-+ORaOBttdUm1E2Uu/obAyCguiI7MbBvsLTndc3gyK3zU+SYLoZXlyCP9Xgy0gikkGufFLTZXCXD6+4BsufnmHA==}
 
   har-schema@2.0.0:
     resolution: {integrity: sha512-Oqluz6zhGX8cyRaTQlFMPw80bSJVG2x/cFb8ZPhUILGgHka9SsokCCOQgpveePerqidZOrT14ipqfJb7ILcW5Q==}
@@ -6817,7 +6820,7 @@ packages:
       koa: '>=2.14.2'
       next: '>=12.0.0'
       typescript: 5.7.3
-      zod: '>=3.24.0'
+      zod: ^4.1.11
     peerDependenciesMeta:
       '@sveltejs/kit':
         optional: true
@@ -7505,11 +7508,6 @@ packages:
     resolution: {integrity: sha512-xRc4oEhT6eaBpU1XF7AjpOFD+xQmXNB5OVKwp4tqCuBpHLS/ZbBDrc07mYTDqVMg6PfxUjjNp85O6Cd2Z/5HWA==}
     engines: {node: '>= 0.6'}
 
-  mime@3.0.0:
-    resolution: {integrity: sha512-jSCU7/VB1loIWBZe14aEYHU/+1UMEHoaO7qxCOVJOw9GgH72VAWppxNcjU+x9a2k3GSIBXNKxXQFqRvvZ7vr3A==}
-    engines: {node: '>=10.0.0'}
-    hasBin: true
-
   mimic-fn@4.0.0:
     resolution: {integrity: sha512-vqiC06CuhBTUdZH+RYl8sFrL096vA45Ok5ISO6sE/Mr1jRbGH4Csnhi8f3wKVl7x8mO4Au7Ir9D3Oyv1VYMFJw==}
     engines: {node: '>=12'}
@@ -7721,9 +7719,6 @@ packages:
     engines: {node: '>=10.5.0'}
     deprecated: Use your platform's native DOMException instead
 
-  node-fetch-native@1.6.4:
-    resolution: {integrity: sha512-IhOigYzAKHd244OC0JIMIUrjzctirCmPkaIfhDeGcEETWof5zKYUW7e7MYvChGWh/4CJeXEgsRyGzuF334rOOQ==}
-
   node-fetch@2.7.0:
     resolution: {integrity: sha512-c4FRfUm/dbcWZ7U+1Wq0AwCyFL+3nt2bEw05wfxSz+DWpWsitgmSgYmy2dQdWyKC1694ELPqMs/YzUSNozLt8A==}
     engines: {node: 4.x || >=6.0.0}
@@ -7740,6 +7735,9 @@ packages:
   node-geonames-client@0.0.2:
     resolution: {integrity: sha512-Dv6zJVHn6Dv+VhXuTU6dY8jQAD6+4vIY9Y8d9ulhLBZGGcHlRFrP7HAyMqyvbeYVgQC+Dsj+K0isFrnhuKAQ9Q==}
     engines: {node: '>=0.10.30'}
+
+  node-mock-http@1.0.3:
+    resolution: {integrity: sha512-jN8dK25fsfnMrVsEhluUTPkBFY+6ybu7jSB1n+ri/vOGjJxU8J9CZhpSGkHXSkFjtUhbmoncG/YG9ta5Ludqog==}
 
   node-releases@2.0.19:
     resolution: {integrity: sha512-xxOWJsBKtzAq7DY0J+DTzuz58K8e7sJbdgwkbMWQe8UYB6ekmsQ45q0M/tJDsGaZmbC+l7n57UV8Hl5tHxO9uw==}
@@ -7788,9 +7786,6 @@ packages:
 
   obuf@1.1.2:
     resolution: {integrity: sha512-PX1wu0AmAdPqOL1mWhqmlOd8kOIZQwGZw6rh7uby9fTc5lhaOWFLX3I6R1hrF9k3zUY40e6igsLGkDXK92LJNg==}
-
-  ohash@1.1.4:
-    resolution: {integrity: sha512-FlDryZAahJmEF3VR3w1KogSEdWX3WhA5GPakFx4J81kEAiHyLMpdLLElS8n8dfNadMgAne/MywcvmogzscVt4g==}
 
   on-exit-leak-free@2.1.2:
     resolution: {integrity: sha512-0eJJY6hXLGf1udHwfNftBqH+g73EU4B504nZeKpz1sYRKafAghwxEJunB2O7rDZkL4PGfsMVnTXZ2EjibbqcsA==}
@@ -9165,12 +9160,12 @@ packages:
   trough@2.2.0:
     resolution: {integrity: sha512-tmMpK00BjZiUyVyvrBK7knerNgmgvcV/KLVyuma/SC+TQN167GrMRciANTz09+k3zW8L8t60jWO1GpfkZdjTaw==}
 
-  trpc-to-openapi@2.1.3:
-    resolution: {integrity: sha512-W5wKRHMVVBvq2zD4F8QU4enCLu/pWX54O2lvMvzQWjOXaY70C1GT9Kl6y1I+TBkIpuz1E1mdXbLM3esXQsLspQ==}
+  trpc-to-openapi@3.1.0:
+    resolution: {integrity: sha512-5hKNl8XxE7QZE5UiaxpyKrRQCk6JRNiei4Ddg9I2Tmk2eEzR3/QhTvTElS32COZY+pWwVtqksVTwVWY8dHxLNw==}
     peerDependencies:
-      '@trpc/server': 11.0.0-rc.700
-      zod: ^3.23.8
-      zod-openapi: ^4.1.0
+      '@trpc/server': 11.6.0
+      zod: ^4.1.11
+      zod-openapi: ^5.0.1
 
   ts-dedent@2.2.0:
     resolution: {integrity: sha512-q5W7tVM71e2xjHZTlgfTDoPF/SmqKG5hddq9SzR49CH2hayqRKJtQ4mtRlSxKaJlR/+9rEM+mnBHf7I2/BQcpQ==}
@@ -9269,9 +9264,6 @@ packages:
   undici@5.27.1:
     resolution: {integrity: sha512-h0P6HVTlbcvF6wiX88+aoouMOuiKJ2TEGfcr+tEbr96OIizJaM4BhXJs/wxdDN/RD0F2yZCV/ylCVJy9PjQJIg==}
     engines: {node: '>=14.0'}
-
-  unenv@1.10.0:
-    resolution: {integrity: sha512-wY5bskBQFL9n3Eca5XnhH6KbUo/tfvkwm9OpcdCvLaeA7piBNbavbOKJySEwQ1V0RH6HvNlSAFRTpvTqgKRQXQ==}
 
   unified@11.0.5:
     resolution: {integrity: sha512-xKvGhPWw3k84Qjh8bI3ZeJjqnyadK+GEFtazSfZv/rKeTkTjOJho6mFqh2SM96iIcZokxiOpg78GazTSg8+KHA==}
@@ -9783,19 +9775,16 @@ packages:
   zhead@2.2.4:
     resolution: {integrity: sha512-8F0OI5dpWIA5IGG5NHUg9staDwz/ZPxZtvGVf01j7vHqSyZ0raHY+78atOVxRqb73AotX22uV1pXt3gYSstGag==}
 
-  zod-openapi@4.2.2:
-    resolution: {integrity: sha512-h1H5ODEc4paf3UKH0h3tp9P3W/FeRXo7wk1bo1P7KofhfxosI4vJdOgeIt2aRyqHorxUAjd/kIvxRWENnBqI5w==}
-    engines: {node: '>=18'}
+  zod-openapi@5.4.3:
+    resolution: {integrity: sha512-6kJ/gJdvHZtuxjYHoMtkl2PixCwRuZ/s79dVkEr7arHvZGXfx7Cvh53X3HfJ5h9FzGelXOXlnyjwfX0sKEPByw==}
+    engines: {node: '>=20'}
     peerDependencies:
-      zod: ^3.21.4
+      zod: ^4.1.11
 
   zod-to-json-schema@3.24.5:
     resolution: {integrity: sha512-/AuWwMP+YqiPbsJx5D6TfgRTc4kTLjsh5SOcd4bLsfUg2RcEXrFMJl1DGgdHy2aCfsIA/cr/1JM0xcB2GZji8g==}
     peerDependencies:
-      zod: ^3.24.1
-
-  zod@3.25.76:
-    resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
+      zod: ^4.1.11
 
   zod@4.1.11:
     resolution: {integrity: sha512-WPsqwxITS2tzx1bzhIKsEs19ABD5vmCVa4xBo2tq/SrV4RNZtfws1EnCWQXM6yh8bD08a1idvkB5MZSBiZsjwg==}
@@ -9828,18 +9817,11 @@ snapshots:
 
   '@adobe/css-tools@4.4.1': {}
 
-  '@ai-sdk/anthropic@1.2.1(zod@3.25.76)':
+  '@ai-sdk/anthropic@1.2.1(zod@4.1.12)':
     dependencies:
       '@ai-sdk/provider': 1.1.0
-      '@ai-sdk/provider-utils': 2.2.1(zod@3.25.76)
-      zod: 3.25.76
-
-  '@ai-sdk/provider-utils@2.2.1(zod@3.25.76)':
-    dependencies:
-      '@ai-sdk/provider': 1.1.0
-      nanoid: 3.3.11
-      secure-json-parse: 2.7.0
-      zod: 3.25.76
+      '@ai-sdk/provider-utils': 2.2.1(zod@4.1.12)
+      zod: 4.1.12
 
   '@ai-sdk/provider-utils@2.2.1(zod@4.1.12)':
     dependencies:
@@ -9852,16 +9834,6 @@ snapshots:
     dependencies:
       json-schema: 0.4.0
 
-  '@ai-sdk/react@1.2.1(react@19.0.0)(zod@3.25.76)':
-    dependencies:
-      '@ai-sdk/provider-utils': 2.2.1(zod@3.25.76)
-      '@ai-sdk/ui-utils': 1.2.1(zod@3.25.76)
-      react: 19.0.0
-      swr: 2.3.3(react@19.0.0)
-      throttleit: 2.1.0
-    optionalDependencies:
-      zod: 3.25.76
-
   '@ai-sdk/react@1.2.1(react@19.0.0)(zod@4.1.12)':
     dependencies:
       '@ai-sdk/provider-utils': 2.2.1(zod@4.1.12)
@@ -9871,13 +9843,6 @@ snapshots:
       throttleit: 2.1.0
     optionalDependencies:
       zod: 4.1.12
-
-  '@ai-sdk/ui-utils@1.2.1(zod@3.25.76)':
-    dependencies:
-      '@ai-sdk/provider': 1.1.0
-      '@ai-sdk/provider-utils': 2.2.1(zod@3.25.76)
-      zod: 3.25.76
-      zod-to-json-schema: 3.24.5(zod@3.25.76)
 
   '@ai-sdk/ui-utils@1.2.1(zod@4.1.12)':
     dependencies:
@@ -9910,7 +9875,7 @@ snapshots:
       '@atproto-labs/simple-store': 0.3.0
       '@atproto-labs/simple-store-memory': 0.1.4
       '@atproto/did': 0.2.1
-      zod: 3.25.76
+      zod: 4.1.12
 
   '@atproto-labs/fetch-node@0.1.10':
     dependencies:
@@ -9934,7 +9899,7 @@ snapshots:
       '@atproto-labs/simple-store': 0.3.0
       '@atproto-labs/simple-store-memory': 0.1.4
       '@atproto/did': 0.2.1
-      zod: 3.25.76
+      zod: 4.1.12
 
   '@atproto-labs/identity-resolver@0.3.2':
     dependencies:
@@ -9955,11 +9920,11 @@ snapshots:
       graphemer: 1.4.0
       multiformats: 9.9.0
       uint8arrays: 3.0.0
-      zod: 3.25.76
+      zod: 4.1.12
 
   '@atproto/did@0.2.1':
     dependencies:
-      zod: 3.25.76
+      zod: 4.1.12
 
   '@atproto/jwk-jose@0.1.11':
     dependencies:
@@ -9970,12 +9935,12 @@ snapshots:
     dependencies:
       '@atproto/jwk': 0.6.0
       '@atproto/jwk-jose': 0.1.11
-      zod: 3.25.76
+      zod: 4.1.12
 
   '@atproto/jwk@0.6.0':
     dependencies:
       multiformats: 9.9.0
-      zod: 3.25.76
+      zod: 4.1.12
 
   '@atproto/lexicon@0.5.1':
     dependencies:
@@ -9983,7 +9948,7 @@ snapshots:
       '@atproto/syntax': 0.4.1
       iso-datestring-validator: 2.2.2
       multiformats: 9.9.0
-      zod: 3.25.76
+      zod: 4.1.12
 
   '@atproto/oauth-client-node@0.3.9':
     dependencies:
@@ -10011,20 +9976,20 @@ snapshots:
       '@atproto/xrpc': 0.7.5
       core-js: 3.41.0
       multiformats: 9.9.0
-      zod: 3.25.76
+      zod: 4.1.12
 
   '@atproto/oauth-types@0.4.2':
     dependencies:
       '@atproto/did': 0.2.1
       '@atproto/jwk': 0.6.0
-      zod: 3.25.76
+      zod: 4.1.12
 
   '@atproto/syntax@0.4.1': {}
 
   '@atproto/xrpc@0.7.5':
     dependencies:
       '@atproto/lexicon': 0.5.1
-      zod: 3.25.76
+      zod: 4.1.12
 
   '@axiomhq/js@1.3.1':
     dependencies:
@@ -13927,33 +13892,33 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@trpc/client@11.0.0-rc.700(@trpc/server@11.0.0-rc.700(typescript@5.7.3))(typescript@5.7.3)':
+  '@trpc/client@11.6.0(@trpc/server@11.6.0(typescript@5.7.3))(typescript@5.7.3)':
     dependencies:
-      '@trpc/server': 11.0.0-rc.700(typescript@5.7.3)
+      '@trpc/server': 11.6.0(typescript@5.7.3)
       typescript: 5.7.3
 
-  '@trpc/next@11.0.0-rc.700(@tanstack/react-query@5.66.11(react@19.0.0))(@trpc/client@11.0.0-rc.700(@trpc/server@11.0.0-rc.700(typescript@5.7.3))(typescript@5.7.3))(@trpc/react-query@11.0.0-rc.700(@tanstack/react-query@5.66.11(react@19.0.0))(@trpc/client@11.0.0-rc.700(@trpc/server@11.0.0-rc.700(typescript@5.7.3))(typescript@5.7.3))(@trpc/server@11.0.0-rc.700(typescript@5.7.3))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3))(@trpc/server@11.0.0-rc.700(typescript@5.7.3))(next@15.3.0(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.85.1))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3)':
+  '@trpc/next@11.6.0(@tanstack/react-query@5.66.11(react@19.0.0))(@trpc/client@11.6.0(@trpc/server@11.6.0(typescript@5.7.3))(typescript@5.7.3))(@trpc/react-query@11.6.0(@tanstack/react-query@5.66.11(react@19.0.0))(@trpc/client@11.6.0(@trpc/server@11.6.0(typescript@5.7.3))(typescript@5.7.3))(@trpc/server@11.6.0(typescript@5.7.3))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3))(@trpc/server@11.6.0(typescript@5.7.3))(next@15.3.0(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.85.1))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3)':
     dependencies:
-      '@trpc/client': 11.0.0-rc.700(@trpc/server@11.0.0-rc.700(typescript@5.7.3))(typescript@5.7.3)
-      '@trpc/server': 11.0.0-rc.700(typescript@5.7.3)
+      '@trpc/client': 11.6.0(@trpc/server@11.6.0(typescript@5.7.3))(typescript@5.7.3)
+      '@trpc/server': 11.6.0(typescript@5.7.3)
       next: 15.3.0(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-e1e972c-20250221)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.85.1)
       react: 19.0.0
       react-dom: 19.0.0(react@19.0.0)
       typescript: 5.7.3
     optionalDependencies:
       '@tanstack/react-query': 5.66.11(react@19.0.0)
-      '@trpc/react-query': 11.0.0-rc.700(@tanstack/react-query@5.66.11(react@19.0.0))(@trpc/client@11.0.0-rc.700(@trpc/server@11.0.0-rc.700(typescript@5.7.3))(typescript@5.7.3))(@trpc/server@11.0.0-rc.700(typescript@5.7.3))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3)
+      '@trpc/react-query': 11.6.0(@tanstack/react-query@5.66.11(react@19.0.0))(@trpc/client@11.6.0(@trpc/server@11.6.0(typescript@5.7.3))(typescript@5.7.3))(@trpc/server@11.6.0(typescript@5.7.3))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3)
 
-  '@trpc/react-query@11.0.0-rc.700(@tanstack/react-query@5.66.11(react@19.0.0))(@trpc/client@11.0.0-rc.700(@trpc/server@11.0.0-rc.700(typescript@5.7.3))(typescript@5.7.3))(@trpc/server@11.0.0-rc.700(typescript@5.7.3))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3)':
+  '@trpc/react-query@11.6.0(@tanstack/react-query@5.66.11(react@19.0.0))(@trpc/client@11.6.0(@trpc/server@11.6.0(typescript@5.7.3))(typescript@5.7.3))(@trpc/server@11.6.0(typescript@5.7.3))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3)':
     dependencies:
       '@tanstack/react-query': 5.66.11(react@19.0.0)
-      '@trpc/client': 11.0.0-rc.700(@trpc/server@11.0.0-rc.700(typescript@5.7.3))(typescript@5.7.3)
-      '@trpc/server': 11.0.0-rc.700(typescript@5.7.3)
+      '@trpc/client': 11.6.0(@trpc/server@11.6.0(typescript@5.7.3))(typescript@5.7.3)
+      '@trpc/server': 11.6.0(typescript@5.7.3)
       react: 19.0.0
       react-dom: 19.0.0(react@19.0.0)
       typescript: 5.7.3
 
-  '@trpc/server@11.0.0-rc.700(typescript@5.7.3)':
+  '@trpc/server@11.6.0(typescript@5.7.3)':
     dependencies:
       typescript: 5.7.3
 
@@ -14434,7 +14399,7 @@ snapshots:
 
   access-zones@0.0.1:
     dependencies:
-      zod: 3.25.76
+      zod: 4.1.12
 
   acorn-import-attributes@1.9.5(acorn@8.14.1):
     dependencies:
@@ -14451,18 +14416,6 @@ snapshots:
   adm-zip@0.5.16: {}
 
   agent-base@7.1.3: {}
-
-  ai@4.2.2(react@19.0.0)(zod@3.25.76):
-    dependencies:
-      '@ai-sdk/provider': 1.1.0
-      '@ai-sdk/provider-utils': 2.2.1(zod@3.25.76)
-      '@ai-sdk/react': 1.2.1(react@19.0.0)(zod@3.25.76)
-      '@ai-sdk/ui-utils': 1.2.1(zod@3.25.76)
-      '@opentelemetry/api': 1.9.0
-      jsondiffpatch: 0.6.0
-      zod: 3.25.76
-    optionalDependencies:
-      react: 19.0.0
 
   ai@4.2.2(react@19.0.0)(zod@4.1.12):
     dependencies:
@@ -14910,8 +14863,6 @@ snapshots:
 
   confbox@0.1.8: {}
 
-  consola@3.4.0: {}
-
   console.table@0.10.0:
     dependencies:
       easy-table: 1.1.0
@@ -14970,7 +14921,7 @@ snapshots:
       shebang-command: 2.0.0
       which: 2.0.2
 
-  crossws@0.3.1:
+  crossws@0.3.5:
     dependencies:
       uncrypto: 0.1.3
 
@@ -15257,10 +15208,10 @@ snapshots:
       pg: 8.16.0
       postgres: 3.4.5
 
-  drizzle-zod@0.7.0(drizzle-orm@0.43.1(@opentelemetry/api@1.9.0)(@types/pg@8.11.11)(gel@2.0.0)(pg@8.16.0)(postgres@3.4.5))(zod@3.25.76):
+  drizzle-zod@0.8.3(drizzle-orm@0.43.1(@opentelemetry/api@1.9.0)(@types/pg@8.11.11)(gel@2.0.0)(pg@8.16.0)(postgres@3.4.5))(zod@4.1.12):
     dependencies:
       drizzle-orm: 0.43.1(@opentelemetry/api@1.9.0)(@types/pg@8.11.11)(gel@2.0.0)(pg@8.16.0)(postgres@3.4.5)
-      zod: 3.25.76
+      zod: 4.1.12
 
   dunder-proto@1.0.1:
     dependencies:
@@ -15789,18 +15740,17 @@ snapshots:
     dependencies:
       duplexer: 0.1.2
 
-  h3@1.13.1:
+  h3@1.15.1:
     dependencies:
       cookie-es: 1.2.2
-      crossws: 0.3.1
+      crossws: 0.3.5
       defu: 6.1.4
       destr: 2.0.3
       iron-webcrypto: 1.2.1
-      ohash: 1.1.4
+      node-mock-http: 1.0.3
       radix3: 1.1.2
       ufo: 1.5.4
       uncrypto: 0.1.3
-      unenv: 1.10.0
 
   har-schema@2.0.0: {}
 
@@ -16021,7 +15971,7 @@ snapshots:
       - encoding
       - supports-color
 
-  inngest@3.44.0(h3@1.13.1)(next@15.3.4(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.85.1))(typescript@5.7.3)(zod@4.1.11):
+  inngest@3.44.0(h3@1.15.1)(next@15.3.4(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.85.1))(typescript@5.7.3)(zod@4.1.11):
     dependencies:
       '@bufbuild/protobuf': 2.9.0
       '@inngest/ai': 0.1.6
@@ -16047,7 +15997,7 @@ snapshots:
       temporal-polyfill: 0.2.5
       zod: 4.1.11
     optionalDependencies:
-      h3: 1.13.1
+      h3: 1.15.1
       next: 15.3.4(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.85.1)
       typescript: 5.7.3
     transitivePeerDependencies:
@@ -16937,8 +16887,6 @@ snapshots:
     dependencies:
       mime-db: 1.54.0
 
-  mime@3.0.0: {}
-
   mimic-fn@4.0.0: {}
 
   mimic-function@5.0.1: {}
@@ -17138,8 +17086,6 @@ snapshots:
 
   node-domexception@1.0.0: {}
 
-  node-fetch-native@1.6.4: {}
-
   node-fetch@2.7.0:
     dependencies:
       whatwg-url: 5.0.0
@@ -17155,6 +17101,8 @@ snapshots:
       argh: 0.1.4
       request: 2.88.2
       xml2js: 0.4.23
+
+  node-mock-http@1.0.3: {}
 
   node-releases@2.0.19: {}
 
@@ -17188,8 +17136,6 @@ snapshots:
   object-inspect@1.13.3: {}
 
   obuf@1.1.2: {}
-
-  ohash@1.1.4: {}
 
   on-exit-leak-free@2.1.2: {}
 
@@ -18831,25 +18777,14 @@ snapshots:
 
   trough@2.2.0: {}
 
-  trpc-to-openapi@2.1.3(@trpc/server@11.0.0-rc.700(typescript@5.7.3))(zod-openapi@4.2.2(zod@3.25.76))(zod@3.25.76):
+  trpc-to-openapi@3.1.0(@trpc/server@11.6.0(typescript@5.7.3))(zod-openapi@5.4.3(zod@4.1.12))(zod@4.1.12):
     dependencies:
-      '@trpc/server': 11.0.0-rc.700(typescript@5.7.3)
+      '@trpc/server': 11.6.0(typescript@5.7.3)
       co-body: 6.2.0
-      h3: 1.13.1
-      openapi3-ts: 4.4.0
-      zod: 3.25.76
-      zod-openapi: 4.2.2(zod@3.25.76)
-    optionalDependencies:
-      '@rollup/rollup-linux-x64-gnu': 4.6.1
-
-  trpc-to-openapi@2.1.3(@trpc/server@11.0.0-rc.700(typescript@5.7.3))(zod-openapi@4.2.2(zod@4.1.12))(zod@4.1.12):
-    dependencies:
-      '@trpc/server': 11.0.0-rc.700(typescript@5.7.3)
-      co-body: 6.2.0
-      h3: 1.13.1
+      h3: 1.15.1
       openapi3-ts: 4.4.0
       zod: 4.1.12
-      zod-openapi: 4.2.2(zod@4.1.12)
+      zod-openapi: 5.4.3(zod@4.1.12)
     optionalDependencies:
       '@rollup/rollup-linux-x64-gnu': 4.6.1
 
@@ -18940,14 +18875,6 @@ snapshots:
   undici@5.27.1:
     dependencies:
       '@fastify/busboy': 2.1.1
-
-  unenv@1.10.0:
-    dependencies:
-      consola: 3.4.0
-      defu: 6.1.4
-      mime: 3.0.0
-      node-fetch-native: 1.6.4
-      pathe: 1.1.2
 
   unified@11.0.5:
     dependencies:
@@ -19466,23 +19393,13 @@ snapshots:
 
   zhead@2.2.4: {}
 
-  zod-openapi@4.2.2(zod@3.25.76):
-    dependencies:
-      zod: 3.25.76
-
-  zod-openapi@4.2.2(zod@4.1.12):
+  zod-openapi@5.4.3(zod@4.1.12):
     dependencies:
       zod: 4.1.12
-
-  zod-to-json-schema@3.24.5(zod@3.25.76):
-    dependencies:
-      zod: 3.25.76
 
   zod-to-json-schema@3.24.5(zod@4.1.12):
     dependencies:
       zod: 4.1.12
-
-  zod@3.25.76: {}
 
   zod@4.1.11: {}
 

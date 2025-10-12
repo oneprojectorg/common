@@ -159,7 +159,7 @@ export const LoginPanel = () => {
 
   const combinedError = (login.error?.message || error) ?? undefined;
 
-  const emailParser = z.string().email();
+  const emailParser = z.email();
 
   const handleTokenSubmit = useCallback(async () => {
     if (!token) {

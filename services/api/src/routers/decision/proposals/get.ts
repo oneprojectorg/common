@@ -1,4 +1,3 @@
-import { trackProposalViewed } from '../../../utils/analytics';
 import { cache } from '@op/cache';
 import { NotFoundError, UnauthorizedError, getProposal } from '@op/common';
 import { TRPCError } from '@trpc/server';
@@ -10,6 +9,7 @@ import { proposalEncoder } from '../../../encoders/decision';
 import withAnalytics from '../../../middlewares/withAnalytics';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
 import { loggedProcedure, router } from '../../../trpcFactory';
+import { trackProposalViewed } from '../../../utils/analytics';
 
 const meta: OpenApiMeta = {
   openapi: {
@@ -29,7 +29,7 @@ export const getProposalRouter = router({
     .meta(meta)
     .input(
       z.object({
-        profileId: z.string().uuid(),
+        profileId: z.uuid(),
       }),
     )
     .output(proposalEncoder)
@@ -65,11 +65,7 @@ export const getProposalRouter = router({
           'id' in proposal.processInstance
         ) {
           waitUntil(
-            trackProposalViewed(
-              ctx,
-              proposal.processInstance.id,
-              proposal.id,
-            ),
+            trackProposalViewed(ctx, proposal.processInstance.id, proposal.id),
           );
         }
 

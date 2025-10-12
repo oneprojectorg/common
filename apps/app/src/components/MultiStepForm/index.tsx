@@ -19,8 +19,7 @@ export type ProgressComponentProps = {
   currentStep?: number;
 };
 
-// Types for props
-interface MultiStepFormProps {
+export const MultiStepForm: React.FC<{
   steps: ComponentType<StepProps>[];
   schemas: ZodSchema<any>[];
   initialValues?: any[];
@@ -28,9 +27,7 @@ interface MultiStepFormProps {
   ProgressComponent?: ComponentType<ProgressComponentProps>;
   getStepValues?: () => any[];
   hasHydrated?: boolean;
-}
-
-export const MultiStepForm: React.FC<MultiStepFormProps> = ({
+}> = ({
   steps,
   schemas,
   initialValues = [],
@@ -118,7 +115,7 @@ export const MultiStepForm: React.FC<MultiStepFormProps> = ({
       const result = schema.safeParse(stepValue);
 
       if (!result.success) {
-        setError(result.error.errors[0]?.message || 'Invalid input');
+        setError(result.error.issues[0]?.message || 'Invalid input');
         return;
       }
     }

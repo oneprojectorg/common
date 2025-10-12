@@ -3,14 +3,14 @@ import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
-import withAuthenticated from '../../middlewares/withAuthenticated';
 import withAnalytics from '../../middlewares/withAnalytics';
+import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
 const inputSchema = z.object({
-  organizationId: z.string().uuid(),
-  organizationUserId: z.string().uuid(),
+  organizationId: z.uuid(),
+  organizationUserId: z.uuid(),
 });
 
 const outputSchema = z.object({
@@ -75,7 +75,8 @@ export const deleteOrganizationUserRouter = router({
           }
           if (error.name === 'AccessError') {
             throw new TRPCError({
-              message: 'You do not have permission to delete organization users',
+              message:
+                'You do not have permission to delete organization users',
               code: 'UNAUTHORIZED',
             });
           }

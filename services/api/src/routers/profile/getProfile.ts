@@ -5,8 +5,8 @@ import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { profileEncoder } from '../../encoders/profiles';
-import withAuthenticated from '../../middlewares/withAuthenticated';
 import withAnalytics from '../../middlewares/withAnalytics';
+import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 import { dbFilter } from '../../utils';
@@ -49,7 +49,7 @@ export const getProfileRouter = router({
     .input(
       dbFilter
         .extend({
-          types: z.array(z.nativeEnum(EntityType)).optional(),
+          types: z.array(z.enum(EntityType)).optional(),
         })
         .optional(),
     )

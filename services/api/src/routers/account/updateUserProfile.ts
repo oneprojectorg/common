@@ -45,13 +45,15 @@ const updateUserProfile = router({
             .toLowerCase()
             .regex(/^[a-z0-9_]+$/),
           email: z
-            .string()
-            .email({ message: 'Invalid email' })
-            .max(255, { message: 'Must be at most 255 characters' }),
-          website: z
-            .string()
-            .trim()
-            .max(255, { message: 'Must be at most 255 characters' }),
+            .email({
+              error: 'Invalid email',
+            })
+            .max(255, {
+              error: 'Must be at most 255 characters',
+            }),
+          website: z.string().trim().max(255, {
+            error: 'Must be at most 255 characters',
+          }),
           focusAreas: z.array(
             z.object({
               id: z.string(),
@@ -80,7 +82,6 @@ const updateUserProfile = router({
               code: 'custom',
               message: 'Username already in use',
               path: ['username'],
-              fatal: true,
             },
           ]);
         }

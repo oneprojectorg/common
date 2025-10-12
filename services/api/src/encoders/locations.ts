@@ -13,6 +13,5 @@ export const locationEncoder = createSelectSchema(locations)
   })
   .strip()
   .extend({
-    id: z.string().optional(),
     metadata: z.record(z.string(), z.any()).optional(),
   });

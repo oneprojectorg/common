@@ -42,16 +42,16 @@ async function getProposalInfo(
 }
 
 const relationshipInputSchema = z.object({
-  targetProfileId: z.string().uuid(),
+  targetProfileId: z.uuid(),
   relationshipType: z.enum([
     ProfileRelationshipType.FOLLOWING,
     ProfileRelationshipType.LIKES,
   ]),
-  pending: z.boolean().optional().default(false),
+  pending: z.boolean().optional().prefault(false),
 });
 
 const removeRelationshipInputSchema = z.object({
-  targetProfileId: z.string().uuid(),
+  targetProfileId: z.uuid(),
   relationshipType: z.enum([
     ProfileRelationshipType.FOLLOWING,
     ProfileRelationshipType.LIKES,
@@ -59,14 +59,18 @@ const removeRelationshipInputSchema = z.object({
 });
 
 const getRelationshipsInputSchema = z.object({
-  targetProfileId: z.string().uuid().optional(),
-  sourceProfileId: z.string().uuid().optional(),
+  targetProfileId: z.uuid().optional(),
+  sourceProfileId: z.uuid().optional(),
   types: z
-    .array(z.enum([ProfileRelationshipType.FOLLOWING, ProfileRelationshipType.LIKES]))
-    .min(1, "At least one relationship type is required"),
+    .array(
+      z.enum([
+        ProfileRelationshipType.FOLLOWING,
+        ProfileRelationshipType.LIKES,
+      ]),
+    )
+    .min(1, 'At least one relationship type is required'),
   profileType: z.string().optional(),
 });
-
 
 const addRelationshipMeta: OpenApiMeta = {
   openapi: {
@@ -100,7 +104,6 @@ const getRelationshipsMeta: OpenApiMeta = {
     summary: 'Get relationships to a profile',
   },
 };
-
 
 export const profileRelationshipRouter = router({
   addRelationship: loggedProcedure
@@ -200,8 +203,11 @@ export const profileRelationshipRouter = router({
     .input(getRelationshipsInputSchema)
     .output(
       // Always return grouped format by relationship type
-      z.record(
-        z.enum([ProfileRelationshipType.FOLLOWING, ProfileRelationshipType.LIKES]),
+      z.partialRecord(
+        z.enum([
+          ProfileRelationshipType.FOLLOWING,
+          ProfileRelationshipType.LIKES,
+        ]),
         z.array(
           z.object({
             relationshipType: z.string(),
@@ -242,12 +248,7 @@ export const profileRelationshipRouter = router({
       ),
     )
     .query(async ({ input, ctx }) => {
-      const {
-        targetProfileId,
-        sourceProfileId,
-        types,
-        profileType,
-      } = input;
+      const { targetProfileId, sourceProfileId, types, profileType } = input;
 
       try {
         // Initialize empty arrays for all requested types

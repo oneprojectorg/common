@@ -29,17 +29,17 @@ import { loggedProcedure, router } from '../../trpcFactory';
 const inputSchema = z
   .object({
     emails: z
-      .array(z.string().email('Must be a valid email address'))
+      .array(z.email('Must be a valid email address'))
       .min(1, 'At least one email address is required'),
-    roleId: z.string().uuid('Role ID must be a valid UUID').optional(),
-    organizationId: z.string().uuid().optional(),
+    roleId: z.uuid('Role ID must be a valid UUID').optional(),
+    organizationId: z.uuid().optional(),
     personalMessage: z.string().optional(),
   })
   .or(
     z.object({
-      email: z.string().email('Must be a valid email address'),
-      roleId: z.string().uuid('Role ID must be a valid UUID'),
-      organizationId: z.string().uuid().optional(),
+      email: z.email('Must be a valid email address'),
+      roleId: z.uuid('Role ID must be a valid UUID'),
+      organizationId: z.uuid().optional(),
       personalMessage: z.string().optional(),
     }),
   )
@@ -52,8 +52,8 @@ const inputSchema = z
       return true;
     },
     {
-      message: 'Role ID is required when inviting to an organization',
       path: ['roleId'],
+      error: 'Role ID is required when inviting to an organization',
     },
   );
 

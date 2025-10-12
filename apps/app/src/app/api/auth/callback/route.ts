@@ -1,7 +1,7 @@
 /*
  * This route is used to handle the callback from OAuth providers.
  */
-import { trpcVanilla } from '@op/api/vanilla';
+import { trpcVanilla } from '@op/api/serverClient';
 import { OPURLConfig } from '@op/core';
 import { createSBServerClient } from '@op/supabase/server';
 import { NextResponse } from 'next/server';

@@ -1,4 +1,4 @@
-import { trpcNext } from '@op/api/vanilla';
+import { createClient } from '@op/api/serverClient';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
@@ -14,8 +14,8 @@ async function CreateProposalPageContent({
   slug: string;
 }) {
   try {
-    const client = await trpcNext();
-    const instance = await client.decision.getInstance.query({
+    const client = await createClient();
+    const instance = await client.decision.getInstance({
       instanceId,
     });
 

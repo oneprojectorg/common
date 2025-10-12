@@ -5,8 +5,8 @@ import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
-import withAuthenticated from '../../middlewares/withAuthenticated';
 import withAnalytics from '../../middlewares/withAnalytics';
+import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 import { dbFilter } from '../../utils';
@@ -33,7 +33,7 @@ export const searchProfilesRouter = router({
     .input(
       dbFilter.extend({
         q: z.string(),
-        types: z.array(z.nativeEnum(EntityType)).optional(),
+        types: z.array(z.enum(EntityType)).optional(),
       }),
     )
     .output(z.array(z.any()))

@@ -34,6 +34,7 @@ export const sendReactionNotification = inngest.createFunction(
     );
 
     if (!reactionEmoji) {
+      console.log('Invalid reaction type:', reactionType);
       return;
     }
 
@@ -90,6 +91,7 @@ export const sendReactionNotification = inngest.createFunction(
         const data = result[0];
 
         if (!data) {
+          console.log('No data found for post reaction notification');
           return;
         }
 
@@ -99,6 +101,7 @@ export const sendReactionNotification = inngest.createFunction(
           : { name: data.orgProfileName!, email: data.orgProfileEmail! };
 
         if (!authorProfile?.email) {
+          console.log('No author email found for post reaction notification');
           return;
         }
 

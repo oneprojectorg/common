@@ -20,29 +20,26 @@ const handler = async (req: NextRequest) => {
     req,
     router: appRouter,
     createContext,
-  });
-
-  const corsResponse = new Response(response.body, {
-    status: response.status,
-    statusText: response.statusText,
-    headers: new Headers(response.headers),
+    onError({ error, path }) {
+      console.error(`tRPC Error on ${path}:`, error);
+    },
   });
 
   const origin = req.headers.get('origin');
   if (origin && allowedOrigins.includes(origin)) {
-    corsResponse.headers.set('Access-Control-Allow-Origin', origin);
+    response.headers.set('Access-Control-Allow-Origin', origin);
   }
-  corsResponse.headers.set(
+  response.headers.set(
     'Access-Control-Allow-Methods',
     'GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS',
   );
-  corsResponse.headers.set(
+  response.headers.set(
     'Access-Control-Allow-Headers',
     'Content-Type, Authorization, trpc-batch-mode',
   );
-  corsResponse.headers.set('Access-Control-Allow-Credentials', 'true');
+  response.headers.set('Access-Control-Allow-Credentials', 'true');
 
-  return corsResponse;
+  return response;
 };
 
 const optionsHandler = async (req: NextRequest) => {

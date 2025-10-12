@@ -16,21 +16,29 @@ import { multiSelectOptionValidator } from './shared/organizationValidation';
 import { useOnboardingFormStore } from './useOnboardingFormStore';
 
 export const validator = z.object({
-  isReceivingFunds: z.boolean().default(false).optional(),
-  isOfferingFunds: z.boolean().default(false).optional(),
-  acceptingApplications: z.boolean().default(false).optional(),
+  isReceivingFunds: z.boolean().prefault(false).optional(),
+  isOfferingFunds: z.boolean().prefault(false).optional(),
+  acceptingApplications: z.boolean().prefault(false).optional(),
   receivingFundsDescription: z
     .string()
-    .max(200, { message: 'Must be at most 200 characters' })
+    .max(200, {
+      error: 'Must be at most 200 characters',
+    })
     .optional(),
   receivingFundsTerms: z.array(multiSelectOptionValidator).optional(),
-  receivingFundsLink: zodUrl({ message: 'Enter a valid website address' }),
+  receivingFundsLink: zodUrl({
+    error: 'Enter a valid website address',
+  }),
   offeringFundsTerms: z.array(multiSelectOptionValidator).optional(),
   offeringFundsDescription: z
     .string()
-    .max(200, { message: 'Must be at most 200 characters' })
+    .max(200, {
+      error: 'Must be at most 200 characters',
+    })
     .optional(),
-  offeringFundsLink: zodUrl({ message: 'Enter a valid website address' }),
+  offeringFundsLink: zodUrl({
+    error: 'Enter a valid website address',
+  }),
 });
 
 export const FundingInformationForm = ({

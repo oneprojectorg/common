@@ -43,18 +43,15 @@ export const createValidator = (t: (key: string) => string) =>
         message: t('Must be at most 200 characters'),
       }),
     email: z
-      .string()
+      .email()
       .trim()
-      .refine(
-        (val) => val === '' || z.string().email().safeParse(val).success,
-        {
-          message: t('Invalid email'),
-        },
-      )
+      .refine((val) => val === '' || z.email().safeParse(val).success, {
+        message: t('Invalid email'),
+      })
       .refine((val) => val.length <= 255, {
         message: t('Must be at most 255 characters'),
       }),
-    website: zodUrl({ message: t('Enter a valid website address') }),
+    website: zodUrl({ error: t('Enter a valid website address') }),
     focusAreas: z
       .array(
         z.object({

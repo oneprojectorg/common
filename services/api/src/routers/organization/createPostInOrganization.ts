@@ -1,4 +1,3 @@
-import { trackUserPost } from '../../utils/analytics';
 import { createPostInOrganization } from '@op/common';
 import { waitUntil } from '@vercel/functions';
 // import type { OpenApiMeta } from 'trpc-to-openapi';
@@ -9,6 +8,7 @@ import withAnalytics from '../../middlewares/withAnalytics';
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
+import { trackUserPost } from '../../utils/analytics';
 
 // const meta: OpenApiMeta = {
 // openapi: {
@@ -35,7 +35,7 @@ export const createPostInOrganizationRouter = router({
       z.object({
         id: z.string(), // the organization id
         content: z.string().trim().max(255),
-        attachmentIds: z.array(z.string()).optional().default([]),
+        attachmentIds: z.array(z.string()).optional().prefault([]),
       }),
     )
     .output(outputSchema)

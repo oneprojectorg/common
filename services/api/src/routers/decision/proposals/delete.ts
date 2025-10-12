@@ -1,4 +1,9 @@
-import { UnauthorizedError, NotFoundError, ValidationError, deleteProposal as deleteProposalService } from '@op/common';
+import {
+  NotFoundError,
+  UnauthorizedError,
+  ValidationError,
+  deleteProposal as deleteProposalService,
+} from '@op/common';
 import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
@@ -27,14 +32,14 @@ export const deleteProposalRouter = router({
     .meta(meta)
     .input(
       z.object({
-        proposalId: z.string().uuid(),
-      })
+        proposalId: z.uuid(),
+      }),
     )
     .output(
       z.object({
         success: z.boolean(),
         deletedId: z.string(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const { user, logger } = ctx;

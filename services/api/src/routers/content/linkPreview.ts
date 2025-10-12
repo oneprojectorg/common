@@ -69,7 +69,7 @@ export const linkPreview = router({
   linkPreview: loggedProcedure
     .input(
       z.object({
-        url: z.string().url(),
+        url: z.url(),
       }),
     )
     .output(linkPreviewResponseSchema)

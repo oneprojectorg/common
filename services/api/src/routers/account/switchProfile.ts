@@ -35,7 +35,7 @@ export const switchProfile = router({
     .use(withAuthenticated)
     .use(withAnalytics)
     .meta(meta)
-    .input(z.object({ profileId: z.string().uuid() }))
+    .input(z.object({ profileId: z.uuid() }))
     .output(userEncoder)
     .mutation(async ({ input, ctx }) => {
       const { id } = ctx.user;

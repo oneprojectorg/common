@@ -1,1 +1,1 @@
-export * from './sendLikeNotification';
+export * from './sendReactionNotification';

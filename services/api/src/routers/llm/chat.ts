@@ -4,8 +4,8 @@ import { convertToCoreMessages, smoothStream, streamText } from 'ai';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
-import withAuthenticated from '../../middlewares/withAuthenticated';
 import withAnalytics from '../../middlewares/withAnalytics';
+import withAuthenticated from '../../middlewares/withAuthenticated';
 import { loggedProcedure, router } from '../../trpcFactory';
 
 const endpoint = 'chat';
@@ -24,7 +24,7 @@ const meta: OpenApiMeta = {
 const providerSchema = z.object({
   vendor: z.literal('anthropic'),
   // model: AnthropicModelsEnum.default('claude-3-5-sonnet-20240620'),
-  model: z.string().default('claude-3-7-sonnet-latest'),
+  model: z.string().prefault('claude-3-7-sonnet-latest'),
 });
 
 const chat = router({

@@ -173,9 +173,7 @@ export const getCurrentOrgUserId = async (
 
 // UTILITY FUNCTIONS FOR AUTH VALIDATION
 
-const authUserIdSchema = z
-  .string()
-  .uuid('Invalid authentication user ID format');
+const authUserIdSchema = z.uuid('Invalid authentication user ID format');
 
 export const validateAuthUserId = (authUserId: string | undefined) => {
   if (!authUserId) {

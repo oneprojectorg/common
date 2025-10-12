@@ -11,7 +11,7 @@ type EventSchemaMap = {
 };
 
 export const inngest = new Inngest({
-  id: process.env.WORKFLOW_APP_ID!,
+  id: process.env.WORKFLOW_APP_ID ?? 'common',
   schemas: new EventSchemas().fromRecord<EventSchemaMap>(),
 });
 

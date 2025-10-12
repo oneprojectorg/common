@@ -20,7 +20,9 @@ import { loggedProcedure, router } from '../../trpcFactory';
 import { dbFilter } from '../../utils';
 
 const inputSchema = z.object({
-  organizationId: z.string().uuid({ message: 'Invalid organization ID' }),
+  organizationId: z.uuid({
+    error: 'Invalid organization ID',
+  }),
 });
 
 // const meta: OpenApiMeta = {
@@ -68,7 +70,10 @@ export const listRelatedOrganizationPostsRouter = router({
     .query(async ({ input, ctx }) => {
       const { limit = 200, cursor } = input ?? {};
 
-      const result = await listAllRelatedOrganizationPosts(ctx.user.id, { limit, cursor });
+      const result = await listAllRelatedOrganizationPosts(ctx.user.id, {
+        limit,
+        cursor,
+      });
 
       return {
         items: result.items.map((postToOrg) => ({

@@ -28,22 +28,24 @@ export const zodUrlRefine = (val: string) => {
 };
 
 export const zodUrl = ({
-  message,
+  error,
   isRequired,
 }: {
-  message: string;
+  error: string;
   isRequired?: boolean;
 }) => {
   const baseValidation = z
-    .string({ message })
-    .max(200, { message: 'Must be at most 200 characters' })
+    .string({ error })
+    .max(200, {
+      error: 'Must be at most 200 characters',
+    })
     .refine(zodUrlRefine, {
-      message,
+      error,
     })
     .optional();
   const validation = isRequired
     ? baseValidation.refine((val) => val && val.trim() !== '', {
-        message,
+        error,
       })
     : baseValidation.optional();
 
