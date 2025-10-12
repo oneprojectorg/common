@@ -1,0 +1,30 @@
+{
+  "name": "@op/workflows",
+  "version": "0.0.0",
+  "private": true,
+  "license": "SEE LICENSE in /LICENSE",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "dev": "inngest-cli dev",
+    "lint": "pnpm tsc --noEmit"
+  },
+  "dependencies": {
+    "@op/common": "workspace:*",
+    "@op/core": "workspace:*",
+    "@op/db": "workspace:*",
+    "@op/emails": "workspace:*",
+    "@op/events": "workspace:*",
+    "@op/logging": "workspace:*",
+    "@op/types": "workspace:*",
+    "inngest": "^3.44.0",
+    "inngest-cli": "^1.12.1",
+    "zod": "^4.1.11"
+  },
+  "devDependencies": {
+    "@op/typescript-config": "workspace:*",
+    "typescript": "5.7.3"
+  }
+}

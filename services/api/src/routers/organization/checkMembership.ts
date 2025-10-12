@@ -4,14 +4,14 @@ import { TRPCError } from '@trpc/server';
 import { assertAccess, permission } from 'access-zones';
 import { z } from 'zod';
 
-import withAuthenticated from '../../middlewares/withAuthenticated';
 import withAnalytics from '../../middlewares/withAnalytics';
+import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
 const inputSchema = z.object({
-  email: z.string().email(),
-  organizationId: z.string().uuid(),
+  email: z.email(),
+  organizationId: z.uuid(),
 });
 
 const outputSchema = z.object({

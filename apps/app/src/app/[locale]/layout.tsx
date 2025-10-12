@@ -1,5 +1,4 @@
 import { setupSSR } from '@/utils/setupSSR';
-// import { createTRPCNextClient } from '@op/api/next';
 import { getMessages } from 'next-intl/server';
 
 // import { headers } from 'next/headers';

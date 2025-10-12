@@ -1,5 +1,6 @@
 'use client';
 
+import { useRelationshipMutations } from '@/hooks/useRelationshipMutations';
 import { getPublicUrl } from '@/utils';
 import { useUser } from '@/utils/UserProvider';
 import {
@@ -9,7 +10,6 @@ import {
 } from '@/utils/proposalUtils';
 import { trpc } from '@op/api/client';
 import type { proposalEncoder } from '@op/api/encoders';
-import { ProfileRelationshipType } from '@op/api/encoders';
 import { Avatar } from '@op/ui/Avatar';
 import { Header1 } from '@op/ui/Header';
 import { Surface } from '@op/ui/Surface';
@@ -48,7 +48,6 @@ export function ProposalView({
 }) {
   const t = useTranslations();
   const commentsContainerRef = useRef<HTMLDivElement>(null);
-  const utils = trpc.useUtils();
 
   const { data: proposal } = trpc.decision.getProposal.useQuery({
     profileId: initialProposal.profileId,
@@ -60,182 +59,16 @@ export function ProposalView({
   // Get current user to check edit permissions
   const { user } = useUser();
 
-  // Get user's likes and follows in a single request to avoid caching issues
-  const { data: userRelationships } = trpc.profile.getRelationships.useQuery({
-    types: [ProfileRelationshipType.LIKES, ProfileRelationshipType.FOLLOWING],
+  // Use relationship mutations hook for like/follow functionality
+  const {
+    isLiked: isLikedByUser,
+    isFollowed: isFollowedByUser,
+    isLoading,
+    handleLike,
+    handleFollow,
+  } = useRelationshipMutations({
+    targetProfileId: currentProposal.profileId,
   });
-
-  // Check if current user has liked/followed this proposal
-  const isLikedByUser = Boolean(
-    userRelationships?.likes?.some(
-      (r: any) => r.targetProfile?.id === currentProposal.profileId,
-    ),
-  );
-
-  const isFollowedByUser = Boolean(
-    userRelationships?.following?.some(
-      (r: any) => r.targetProfile?.id === currentProposal.profileId,
-    ),
-  );
-
-  // Direct tRPC mutations for like/follow functionality with optimistic updates
-  const addRelationshipMutation = trpc.profile.addRelationship.useMutation({
-    onMutate: async (variables) => {
-      // Cancel outgoing refetches for the relationship queries
-      await utils.profile.getRelationships.cancel({
-        types: [
-          ProfileRelationshipType.LIKES,
-          ProfileRelationshipType.FOLLOWING,
-        ],
-      });
-
-      // Snapshot the previous value
-      const previousData = utils.profile.getRelationships.getData({
-        types: [
-          ProfileRelationshipType.LIKES,
-          ProfileRelationshipType.FOLLOWING,
-        ],
-      });
-
-      // Optimistically update the cache
-      if (
-        previousData &&
-        variables.targetProfileId &&
-        typeof previousData === 'object' &&
-        !Array.isArray(previousData)
-      ) {
-        // Create a minimal relationship object for optimistic update
-        const optimisticRelationship = {
-          relationshipType: variables.relationshipType,
-          pending: false,
-          createdAt: new Date().toISOString(),
-          targetProfile: {
-            id: variables.targetProfileId,
-            name: '',
-            slug: '',
-            bio: null,
-            avatarImage: null,
-            type: 'proposal',
-          },
-        };
-
-        const optimisticData = { ...previousData };
-        const existingRelationships = optimisticData[variables.relationshipType] || [];
-        optimisticData[variables.relationshipType] = [
-          ...existingRelationships,
-          optimisticRelationship,
-        ];
-
-        utils.profile.getRelationships.setData(
-          {
-            types: [
-              ProfileRelationshipType.LIKES,
-              ProfileRelationshipType.FOLLOWING,
-            ],
-          },
-          optimisticData,
-        );
-      }
-
-      return { previousData };
-    },
-    onSuccess: () => {},
-    onError: (error, _variables, context) => {
-      // Rollback on error
-      if (context?.previousData) {
-        utils.profile.getRelationships.setData(
-          {
-            types: [
-              ProfileRelationshipType.LIKES,
-              ProfileRelationshipType.FOLLOWING,
-            ],
-          },
-          context.previousData,
-        );
-      }
-      console.error('Failed to add relationship:', error);
-    },
-    onSettled: (_data, _error, _variables) => {
-      // Always refetch after error or success
-      utils.profile.getRelationships.invalidate({
-        types: [
-          ProfileRelationshipType.LIKES,
-          ProfileRelationshipType.FOLLOWING,
-        ],
-      });
-    },
-  });
-
-  const removeRelationshipMutation =
-    trpc.profile.removeRelationship.useMutation({
-      onMutate: async (variables) => {
-        // Cancel outgoing refetches for the relationship queries
-        await utils.profile.getRelationships.cancel({
-          types: [
-            ProfileRelationshipType.LIKES,
-            ProfileRelationshipType.FOLLOWING,
-          ],
-        });
-
-        // Snapshot the previous value
-        const previousData = utils.profile.getRelationships.getData({
-          types: [
-            ProfileRelationshipType.LIKES,
-            ProfileRelationshipType.FOLLOWING,
-          ],
-        });
-
-        // Optimistically update the cache
-        if (
-          previousData &&
-          variables.targetProfileId &&
-          typeof previousData === 'object' &&
-          !Array.isArray(previousData)
-        ) {
-          const optimisticData = { ...previousData };
-          const existingRelationships = optimisticData[variables.relationshipType] || [];
-          optimisticData[variables.relationshipType] = existingRelationships.filter(
-            (rel) => rel.targetProfile?.id !== variables.targetProfileId,
-          );
-
-          utils.profile.getRelationships.setData(
-            {
-              types: [
-                ProfileRelationshipType.LIKES,
-                ProfileRelationshipType.FOLLOWING,
-              ],
-            },
-            optimisticData,
-          );
-        }
-
-        return { previousData };
-      },
-      onError: (error, _variables, context) => {
-        // Rollback on error
-        if (context?.previousData) {
-          utils.profile.getRelationships.setData(
-            {
-              types: [
-                ProfileRelationshipType.LIKES,
-                ProfileRelationshipType.FOLLOWING,
-              ],
-            },
-            context.previousData,
-          );
-        }
-        console.error('Failed to remove relationship:', error);
-      },
-      onSettled: (_data, _error, _variables) => {
-        // Always refetch after error or success
-        utils.profile.getRelationships.invalidate({
-          types: [
-            ProfileRelationshipType.LIKES,
-            ProfileRelationshipType.FOLLOWING,
-          ],
-        });
-      },
-    });
 
   // Check if current user can edit (only submitter can edit for now)
   const canEdit = Boolean(
@@ -342,72 +175,6 @@ export function ProposalView({
 
   // Create read-only editor for content display
   const editor = useEditor(editorConfig);
-
-  const isLoading =
-    addRelationshipMutation.isPending || removeRelationshipMutation.isPending;
-
-  const handleLike = useCallback(async () => {
-    console.log('handleLike called', {
-      profileId: currentProposal.profileId,
-      isLikedByUser: isLikedByUser,
-    });
-
-    if (!currentProposal.profileId) {
-      console.error('No profileId provided for like action');
-      return;
-    }
-
-    try {
-      if (isLikedByUser) {
-        // Unlike
-        await removeRelationshipMutation.mutateAsync({
-          targetProfileId: currentProposal.profileId,
-          relationshipType: ProfileRelationshipType.LIKES,
-        });
-      } else {
-        // Like
-        await addRelationshipMutation.mutateAsync({
-          targetProfileId: currentProposal.profileId,
-          relationshipType: ProfileRelationshipType.LIKES,
-          pending: false,
-        });
-      }
-    } catch (error) {
-      console.error('Error in handleLike:', error);
-    }
-  }, [
-    currentProposal.profileId,
-    isLikedByUser,
-    addRelationshipMutation,
-    removeRelationshipMutation,
-  ]);
-
-  const handleFollow = useCallback(async () => {
-    if (!currentProposal.profileId) {
-      console.error('No profileId provided for follow action');
-      return;
-    }
-
-    if (isFollowedByUser) {
-      // Unfollow
-      await removeRelationshipMutation.mutateAsync({
-        targetProfileId: currentProposal.profileId,
-        relationshipType: ProfileRelationshipType.FOLLOWING,
-      });
-    } else {
-      // Follow
-      await addRelationshipMutation.mutateAsync({
-        targetProfileId: currentProposal.profileId,
-        relationshipType: ProfileRelationshipType.FOLLOWING,
-        pending: false,
-      });
-    }
-  }, [
-    currentProposal.profileId,
-    isFollowedByUser,
-    addRelationshipMutation,
-    removeRelationshipMutation,
-  ]);
 
   if (!editor) {
     return (

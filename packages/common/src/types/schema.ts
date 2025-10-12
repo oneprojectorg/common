@@ -10,13 +10,17 @@ export interface DecisionProcessSchema {
   [key: string]: unknown;
 }
 
-export const DecisionProcessSchemaBase = z.object({
-  allowProposals: z.boolean(),
-  allowDecisions: z.boolean(),
-  instanceData: z.object({
-    maxVotesPerMember: z.number().int().min(0),
-  }).and(z.record(z.unknown())),
-}).and(z.record(z.unknown()));
+export const DecisionProcessSchemaBase = z
+  .object({
+    allowProposals: z.boolean(),
+    allowDecisions: z.boolean(),
+    instanceData: z
+      .object({
+        maxVotesPerMember: z.int().min(0),
+      })
+      .and(z.record(z.string(), z.unknown())),
+  })
+  .and(z.record(z.string(), z.unknown()));
 
 export interface VotingConfig {
   allowProposals: boolean;
@@ -29,14 +33,17 @@ export interface VotingConfig {
 export interface ProposalConfig {
   requiredFields: string[];
   optionalFields: string[];
-  fieldConstraints: Record<string, {
-    type: string;
-    minLength?: number;
-    maxLength?: number;
-    min?: number;
-    max?: number;
-    enum?: string[];
-  }>;
+  fieldConstraints: Record<
+    string,
+    {
+      type: string;
+      minLength?: number;
+      maxLength?: number;
+      min?: number;
+      max?: number;
+      enum?: string[];
+    }
+  >;
   schemaType: string;
   allowProposals: boolean;
 }

@@ -11,9 +11,9 @@ import { useAppForm } from '../form/utils';
 
 export const validator = z
   .object({
-    privacyPolicyAccept: z.boolean().default(true),
+    privacyPolicyAccept: z.boolean().prefault(true),
   })
-  .default({
+  .prefault({
     privacyPolicyAccept: true,
   });
 

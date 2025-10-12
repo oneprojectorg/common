@@ -35,7 +35,7 @@ const login = router({
     .meta(meta)
     .input(
       z.object({
-        email: z.string().email().toLowerCase().trim(),
+        email: z.email().toLowerCase().trim(),
         usingOAuth: z.boolean().optional(),
       }),
     )

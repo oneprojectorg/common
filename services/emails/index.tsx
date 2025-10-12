@@ -81,7 +81,7 @@ export const OPBatchSend = async (emails: BatchEmailItem[]) => {
   // Process emails in chunks of 100
   for (let i = 0; i < emails.length; i += batchSize) {
     const batch = emails.slice(i, i + batchSize);
-    
+
     try {
       const batchPayload = batch.map(({ to, subject, from, component }) => ({
         from: `${from ?? APP_NAME} <${genericEmail}>`,
@@ -91,10 +91,10 @@ export const OPBatchSend = async (emails: BatchEmailItem[]) => {
       }));
 
       const { data, error } = await resend.batch.send(batchPayload);
-      
+
       if (error) {
         // If batch fails, mark all emails in this batch as failed
-        batch.forEach(email => {
+        batch.forEach((email) => {
           errors.push({ email: email.to, error });
         });
       } else {
@@ -102,7 +102,7 @@ export const OPBatchSend = async (emails: BatchEmailItem[]) => {
       }
     } catch (error) {
       // If batch fails, mark all emails in this batch as failed
-      batch.forEach(email => {
+      batch.forEach((email) => {
         errors.push({ email: email.to, error });
       });
     }
@@ -114,3 +114,4 @@ export const OPBatchSend = async (emails: BatchEmailItem[]) => {
 export * from './emails/OPInvitationEmail';
 export * from './emails/OPRelationshipRequestEmail';
 export * from './emails/CommentNotificationEmail';
+export * from './emails/ReactionNotificationEmail';

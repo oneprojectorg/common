@@ -1,4 +1,3 @@
-import { trackRelationshipAccepted } from '../../utils/analytics';
 import { UnauthorizedError, approveRelationship } from '@op/common';
 import { TRPCError } from '@trpc/server';
 import { waitUntil } from '@vercel/functions';
@@ -9,12 +8,15 @@ import withAnalytics from '../../middlewares/withAnalytics';
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
+import { trackRelationshipAccepted } from '../../utils/analytics';
 
 const inputSchema = z.object({
-  targetOrganizationId: z
-    .string()
-    .uuid({ message: 'Invalid target organization ID' }),
-  sourceOrganizationId: z.string().uuid({ message: 'Invalid organization ID' }),
+  targetOrganizationId: z.uuid({
+    error: 'Invalid target organization ID',
+  }),
+  sourceOrganizationId: z.uuid({
+    error: 'Invalid organization ID',
+  }),
 });
 
 const meta: OpenApiMeta = {

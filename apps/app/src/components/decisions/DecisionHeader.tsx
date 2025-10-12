@@ -1,4 +1,4 @@
-import { trpcNext } from '@op/api/vanilla';
+import { createClient } from '@op/api/serverClient';
 import { Skeleton } from '@op/ui/Skeleton';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
@@ -14,9 +14,9 @@ interface DecisionHeaderProps {
 }
 
 export async function DecisionHeader({ instanceId, slug }: DecisionHeaderProps) {
-  const client = await trpcNext();
+  const client = await createClient();
 
-  const instance = await client.decision.getInstance.query({
+  const instance = await client.decision.getInstance({
     instanceId,
   });
 

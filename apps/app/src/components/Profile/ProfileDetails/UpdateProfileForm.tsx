@@ -21,35 +21,39 @@ import { FocusAreasField } from './FocusAreasField';
 
 export const validator = z.object({
   fullName: z
-    .string({ message: 'Enter your full name' })
+    .string({
+      error: 'Enter your full name',
+    })
     .trim()
     .min(1, {
-      message: 'Enter your full name',
+      error: 'Enter your full name',
     })
     .max(200, {
-      message: 'Must be at most 200 characters',
+      error: 'Must be at most 200 characters',
     }),
   title: z
     .string({
-      message: 'Enter your professional title',
+      error: 'Enter your professional title',
     })
     .trim()
     .min(1, {
-      message: 'Enter your professional title',
+      error: 'Enter your professional title',
     })
     .max(200, {
-      message: 'Must be at most 200 characters',
+      error: 'Must be at most 200 characters',
     }),
   email: z
-    .string()
+    .email()
     .trim()
-    .refine((val) => val === '' || z.string().email().safeParse(val).success, {
-      message: 'Invalid email',
+    .refine((val) => val === '' || z.email().safeParse(val).success, {
+      error: 'Invalid email',
     })
     .refine((val) => val.length <= 255, {
-      message: 'Must be at most 255 characters',
+      error: 'Must be at most 255 characters',
     }),
-  website: zodUrl({ message: 'Enter a valid website address' }),
+  website: zodUrl({
+    error: 'Enter a valid website address',
+  }),
   focusAreas: z
     .array(
       z.object({

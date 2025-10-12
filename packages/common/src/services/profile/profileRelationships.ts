@@ -1,10 +1,10 @@
 import { invalidate } from '@op/cache';
 import { and, db, eq, inArray } from '@op/db/client';
 import {
+  ProfileRelationshipType,
   objectsInStorage,
   profileRelationships,
   profiles,
-  ProfileRelationshipType,
 } from '@op/db/schema';
 import { alias } from 'drizzle-orm/pg-core';
 

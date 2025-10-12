@@ -12,20 +12,17 @@ export const geoNamesDataSchema = z
     fcl: z.string(),
     fcode: z.string(),
   })
-  .partial()
-  .strip();
+  .partial();
 
-export const whereWeWorkSchema = z
-  .object({
-    id: z.string(),
-    label: z.string(),
-    data: z.record(z.string(), z.any()),
-  })
-  .strip();
+export const whereWeWorkSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  data: z.record(z.string(), z.any()),
+});
 
 export const baseOrganizationSchema = z.object({
   slug: z.string(),
-  email: z.string().email(),
+  email: z.email(),
   name: z.string(),
   bio: z.string(),
   orgType: z.string(),
@@ -105,8 +102,9 @@ export const fundingLinksInputSchema = z
   .object({
     receivingFundsDescription: z.string().optional(),
     receivingFundsLink: z
-      .string()
-      .url({ message: 'Enter a valid website address' })
+      .url({
+        error: 'Enter a valid website address',
+      })
       .optional(),
     receivingFundsTerms: z
       .array(
@@ -118,11 +116,11 @@ export const fundingLinksInputSchema = z
       .optional(),
     offeringFundsDescription: z.string().optional(),
     offeringFundsLink: z
-      .string()
-      .url({ message: 'Enter a valid website address' })
+      .url({
+        error: 'Enter a valid website address',
+      })
       .optional(),
   })
-  .strip()
   .partial();
 
 export type OrganizationInput = z.infer<typeof organizationInputSchema>;

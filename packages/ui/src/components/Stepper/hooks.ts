@@ -43,7 +43,7 @@ export const useStepper = ({
     if (result.success) {
       success();
     } else {
-      return result.error.formErrors.fieldErrors;
+      return result.error.flatten().fieldErrors;
     }
   };
 

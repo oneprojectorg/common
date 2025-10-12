@@ -23,47 +23,42 @@ export const organizationsEncoder = createSelectSchema(organizations)
   .extend({
     profile: baseProfileEncoder.optional(),
     projects: z.array(projectEncoder).optional(),
-    links: z.array(linksEncoder).optional().default([]),
-    whereWeWork: z.array(locationEncoder).optional().default([]),
-    receivingFundsTerms: z.array(taxonomyTermsEncoder).optional().default([]),
-    strategies: z.array(taxonomyTermsEncoder).optional().default([]),
+    links: z.array(linksEncoder).prefault([]),
+    whereWeWork: z.array(locationEncoder).prefault([]),
+    receivingFundsTerms: z.array(taxonomyTermsEncoder).prefault([]),
+    strategies: z.array(taxonomyTermsEncoder).prefault([]),
     headerImage: storageItemEncoder.nullish(),
     avatarImage: storageItemEncoder.nullish(),
-    acceptingApplications: z.boolean().default(false).optional(),
+    acceptingApplications: z.boolean().prefault(false).optional(),
   });
 
 export const organizationsWithProfileEncoder = organizationsEncoder.extend({
   profile: baseProfileEncoder,
 });
 
-export const organizationsCreateInputEncoder = createSelectSchema(organizations)
-  .merge(createSelectSchema(profiles))
-  .pick({
-    name: true,
-    slug: true,
-    bio: true,
+const organizationFields = createSelectSchema(organizations).pick({
+  isOfferingFunds: true,
+  isReceivingFunds: true,
+  acceptingApplications: true,
+  orgType: true,
+});
 
-    // Mission
-    mission: true,
-    // Email
-    email: true,
-    phone: true,
-    website: true,
-    // Address
-    address: true,
-    city: true,
-    state: true,
-    postalCode: true,
-    // Geography
-    isVerified: true,
+const profileFields = createSelectSchema(profiles).pick({
+  name: true,
+  slug: true,
+  bio: true,
+  mission: true,
+  email: true,
+  phone: true,
+  website: true,
+  address: true,
+  city: true,
+  state: true,
+  postalCode: true,
+});
 
-    isOfferingFunds: true,
-    isReceivingFunds: true,
-    acceptingApplications: true,
-
-    // Organization Type
-    orgType: true,
-  })
+export const organizationsCreateInputEncoder = organizationFields
+  .extend(profileFields.shape)
   .partial();
 
 export const organizationsTermsEncoder = entityTermsEncoder;

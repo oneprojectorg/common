@@ -1,5 +1,5 @@
 import { RouterOutput } from '@op/api/client';
-import { trpcNext } from '@op/api/vanilla';
+import { createClient } from '@op/api/serverClient';
 import { Header1, Header3 } from '@op/ui/Header';
 import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
@@ -101,8 +101,8 @@ const LandingScreenFeeds = async ({
 
 export const LandingScreen = async () => {
   try {
-    const client = await trpcNext();
-    const user = await client.account.getMyAccount.query();
+    const client = await createClient();
+    const user = await client.account.getMyAccount();
 
     return (
       <div className="container flex min-h-0 grow flex-col gap-4 pt-8 sm:gap-10 sm:pt-14">
