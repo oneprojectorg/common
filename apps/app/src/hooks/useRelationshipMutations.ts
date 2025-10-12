@@ -1,5 +1,6 @@
 import { trpc } from '@op/api/client';
 import { ProfileRelationshipType } from '@op/api/encoders';
+import { toast } from '@op/ui/Toast';
 import { useCallback } from 'react';
 
 interface UseRelationshipMutationsOptions {
@@ -10,6 +11,31 @@ interface UseRelationshipMutationsOptions {
     processInstanceId?: string;
   }>;
 }
+
+// Type definitions based on the tRPC output schema
+type RelationshipProfile = {
+  id: string;
+  name: string;
+  slug: string;
+  bio: string | null;
+  avatarImage: {
+    id: string;
+    name: string | null;
+  } | null;
+  type: string;
+};
+
+type RelationshipItem = {
+  relationshipType: string;
+  pending: boolean | null;
+  createdAt: string | null;
+  targetProfile?: RelationshipProfile;
+  sourceProfile?: RelationshipProfile;
+};
+
+type UserRelationships = Partial<
+  Record<ProfileRelationshipType, RelationshipItem[]>
+>;
 
 /**
  * Hook to manage profile relationship mutations (likes and follows) with optimistic updates
@@ -33,20 +59,21 @@ export function useRelationshipMutations({
   };
 
   // Get user's likes and follows
-  const { data: userRelationships } = trpc.profile.getRelationships.useQuery(
-    relationshipQueryKey,
-  );
+  const {
+    data: userRelationships,
+    isLoading: isLoadingRelationships,
+  } = trpc.profile.getRelationships.useQuery(relationshipQueryKey);
 
   // Check if current user has liked/followed this profile
   const isLiked = Boolean(
-    userRelationships?.likes?.some(
-      (r: any) => r.targetProfile?.id === targetProfileId,
+    (userRelationships as UserRelationships | undefined)?.likes?.some(
+      (r) => r.targetProfile?.id === targetProfileId,
     ),
   );
 
   const isFollowed = Boolean(
-    userRelationships?.following?.some(
-      (r: any) => r.targetProfile?.id === targetProfileId,
+    (userRelationships as UserRelationships | undefined)?.following?.some(
+      (r) => r.targetProfile?.id === targetProfileId,
     ),
   );
 
@@ -104,7 +131,7 @@ export function useRelationshipMutations({
         onSuccess();
       }
     },
-    onError: (error, _variables, context) => {
+    onError: (error, variables, context) => {
       // Rollback on error
       if (context?.previousData) {
         utils.profile.getRelationships.setData(
@@ -113,24 +140,40 @@ export function useRelationshipMutations({
         );
       }
       console.error('Failed to add relationship:', error);
-    },
-    onSettled: () => {
-      // Always refetch relationship data after error or success
-      utils.profile.getRelationships.invalidate(relationshipQueryKey);
 
-      // Invalidate additional queries if provided
-      invalidateQueries.forEach((query) => {
-        if (query.profileId) {
-          utils.decision.getProposal.invalidate({
-            profileId: query.profileId,
-          });
-        }
-        if (query.processInstanceId) {
-          utils.decision.listProposals.invalidate({
-            processInstanceId: query.processInstanceId,
-          });
-        }
+      // Show user-facing error notification
+      const action =
+        variables.relationshipType === ProfileRelationshipType.LIKES
+          ? 'like'
+          : 'follow';
+      toast.error({
+        message: `Failed to ${action}. Please try again.`,
       });
+    },
+    onSettled: async () => {
+      // Always refetch relationship data after error or success
+      // Await all invalidations to ensure they complete before proceeding
+      await Promise.all([
+        utils.profile.getRelationships.invalidate(relationshipQueryKey),
+        ...invalidateQueries.flatMap((query) => {
+          const promises = [];
+          if (query.profileId) {
+            promises.push(
+              utils.decision.getProposal.invalidate({
+                profileId: query.profileId,
+              }),
+            );
+          }
+          if (query.processInstanceId) {
+            promises.push(
+              utils.decision.listProposals.invalidate({
+                processInstanceId: query.processInstanceId,
+              }),
+            );
+          }
+          return promises;
+        }),
+      ]);
     },
   });
 
@@ -174,7 +217,7 @@ export function useRelationshipMutations({
           onSuccess();
         }
       },
-      onError: (error, _variables, context) => {
+      onError: (error, variables, context) => {
         // Rollback on error
         if (context?.previousData) {
           utils.profile.getRelationships.setData(
@@ -183,30 +226,48 @@ export function useRelationshipMutations({
           );
         }
         console.error('Failed to remove relationship:', error);
-      },
-      onSettled: () => {
-        // Always refetch relationship data after error or success
-        utils.profile.getRelationships.invalidate(relationshipQueryKey);
 
-        // Invalidate additional queries if provided
-        invalidateQueries.forEach((query) => {
-          if (query.profileId) {
-            utils.decision.getProposal.invalidate({
-              profileId: query.profileId,
-            });
-          }
-          if (query.processInstanceId) {
-            utils.decision.listProposals.invalidate({
-              processInstanceId: query.processInstanceId,
-            });
-          }
+        // Show user-facing error notification
+        const action =
+          variables.relationshipType === ProfileRelationshipType.LIKES
+            ? 'unlike'
+            : 'unfollow';
+        toast.error({
+          message: `Failed to ${action}. Please try again.`,
         });
+      },
+      onSettled: async () => {
+        // Always refetch relationship data after error or success
+        // Await all invalidations to ensure they complete before proceeding
+        await Promise.all([
+          utils.profile.getRelationships.invalidate(relationshipQueryKey),
+          ...invalidateQueries.flatMap((query) => {
+            const promises = [];
+            if (query.profileId) {
+              promises.push(
+                utils.decision.getProposal.invalidate({
+                  profileId: query.profileId,
+                }),
+              );
+            }
+            if (query.processInstanceId) {
+              promises.push(
+                utils.decision.listProposals.invalidate({
+                  processInstanceId: query.processInstanceId,
+                }),
+              );
+            }
+            return promises;
+          }),
+        ]);
       },
     });
 
-  // Combined loading state
+  // Combined loading state (includes initial query loading)
   const isLoading =
-    addRelationshipMutation.isPending || removeRelationshipMutation.isPending;
+    addRelationshipMutation.isPending ||
+    removeRelationshipMutation.isPending ||
+    isLoadingRelationships;
 
   // Handler for like/unlike
   const handleLike = useCallback(async () => {
@@ -231,7 +292,8 @@ export function useRelationshipMutations({
         });
       }
     } catch (error) {
-      console.error('Error in handleLike:', error);
+      // Error handling and user notification is done in mutation's onError
+      // Just catch to prevent unhandled promise rejection
     }
   }, [targetProfileId, isLiked, addRelationshipMutation, removeRelationshipMutation]);
 
@@ -258,7 +320,8 @@ export function useRelationshipMutations({
         });
       }
     } catch (error) {
-      console.error('Error in handleFollow:', error);
+      // Error handling and user notification is done in mutation's onError
+      // Just catch to prevent unhandled promise rejection
     }
   }, [targetProfileId, isFollowed, addRelationshipMutation, removeRelationshipMutation]);
 
