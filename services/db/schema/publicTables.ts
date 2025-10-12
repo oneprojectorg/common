@@ -138,3 +138,8 @@ export type { ObjectsInStorage } from './tables/storage.sql';
 // Module activation tables
 export { modules, modulesRelations, profileModules, profileModulesRelations } from './tables/modules.sql';
 export type { Module, ProfileModule } from './tables/modules.sql';
+
+// AT Protocol authentication tables
+export { atprotoIdentities, atprotoIdentitiesRelations } from './tables/atprotoIdentities.sql';
+export { atprotoOAuthSessions } from './tables/atprotoOAuthSessions.sql';
+export { atprotoPartialSessions } from './tables/atprotoPartialSessions.sql';
