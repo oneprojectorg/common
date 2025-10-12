@@ -1,4 +1,4 @@
-import { trpcNext } from '@op/api/vanilla';
+import { createServerClient } from '@op/api/vanilla';
 import { Header3 } from '@op/ui/Header';
 import { Suspense } from 'react';
 
@@ -12,9 +12,9 @@ interface ProposalsSectionProps {
 }
 
 async function ProposalsContent({ instanceId, slug }: ProposalsSectionProps) {
-  const client = await trpcNext();
+  const client = await createServerClient();
 
-  const proposalsData = await client.decision.listProposals.query({
+  const proposalsData = await client.decision.listProposals({
     processInstanceId: instanceId,
     limit: 100,
   });

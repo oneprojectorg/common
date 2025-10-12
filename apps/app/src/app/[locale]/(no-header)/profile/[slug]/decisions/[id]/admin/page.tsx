@@ -1,4 +1,4 @@
-import { trpcNext } from '@op/api/vanilla';
+import { createServerClient } from '@op/api/vanilla';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
@@ -12,9 +12,9 @@ async function DecisionAdminPageContent({
   instanceId: string;
 }) {
   try {
-    const client = await trpcNext();
+    const client = await createServerClient();
 
-    const instance = await client.decision.getInstance.query({
+    const instance = await client.decision.getInstance({
       instanceId,
     });
 

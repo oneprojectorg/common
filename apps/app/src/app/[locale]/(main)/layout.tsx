@@ -1,5 +1,5 @@
 import { UserProvider } from '@/utils/UserProvider';
-import { trpcNext } from '@op/api/vanilla';
+import { createServerClient } from '@op/api/vanilla';
 import { redirect } from 'next/navigation';
 import Script from 'next/script';
 
@@ -9,8 +9,8 @@ import { AppLayout } from '@/components/layout/split/AppLayout';
 export const dynamic = 'force-dynamic';
 
 const AppRoot = async ({ children }: { children: React.ReactNode }) => {
-  const client = await trpcNext();
-  const user = await client.account.getMyAccount.query();
+  const client = await createServerClient();
+  const user = await client.account.getMyAccount();
 
   if (user?.organizationUsers?.length === 0) {
     redirect('/en/start');

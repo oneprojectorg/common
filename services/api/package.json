@@ -8,7 +8,6 @@
     ".": "./index.ts",
     "./client": "./src/TRPCProvider.tsx",
     "./vanilla": "./src/vanilla.ts",
-    "./next": "./src/next.ts",
     "./encoders": "./src/encoders/index.ts"
   },
   "scripts": {

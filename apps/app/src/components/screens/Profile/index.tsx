@@ -1,6 +1,6 @@
 import { getPublicUrl } from '@/utils';
 import { checkModuleEnabled } from '@/utils/modules';
-import { trpcNext } from '@op/api/vanilla';
+import { createServerClient } from '@op/api/vanilla';
 import { match } from '@op/core';
 import { cn, getGradientForString } from '@op/ui/utils';
 import Image from 'next/image';
@@ -25,10 +25,10 @@ const ProfileWithData = async ({
   initialTab?: string;
 }) => {
   try {
-    const client = await trpcNext();
+    const client = await createServerClient();
 
     // First, get the profile data
-    const profile = await client.profile.getBySlug.query({
+    const profile = await client.profile.getBySlug({
       slug,
     });
 
@@ -54,7 +54,7 @@ const ProfileWithData = async ({
     // If it's an organization profile, query organization-specific data separately
     if (profile.type === 'org') {
       // Get the org with profile attached
-      const organization = await client.organization.getBySlug.query({
+      const organization = await client.organization.getBySlug({
         slug,
       });
 
