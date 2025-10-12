@@ -37,7 +37,7 @@ export const updateProposalRouter = router({
     .meta(meta)
     .input(
       z.object({
-        proposalId: z.string().uuid(),
+        proposalId: z.uuid(),
         data: updateProposalInputSchema,
       }),
     )

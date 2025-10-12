@@ -27,7 +27,7 @@ const meta: OpenApiMeta = {
 };
 
 const updateProposalStatusInput = z.object({
-  profileId: z.string().uuid(),
+  profileId: z.uuid(),
   status: z.enum(['approved', 'rejected']),
 });
 

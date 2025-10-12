@@ -4,8 +4,8 @@ import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import { organizationsWithProfileEncoder } from '../../encoders/organizations';
-import withAuthenticated from '../../middlewares/withAuthenticated';
 import withAnalytics from '../../middlewares/withAnalytics';
+import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
@@ -26,7 +26,7 @@ export const getOrganizationsByProfileRouter = router({
     .use(withAuthenticated)
     .use(withAnalytics)
     .meta(meta)
-    .input(z.object({ profileId: z.string().uuid() }))
+    .input(z.object({ profileId: z.uuid() }))
     .output(z.array(organizationsWithProfileEncoder))
     .query(async ({ input }) => {
       const { profileId } = input;

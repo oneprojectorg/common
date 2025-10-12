@@ -13,7 +13,7 @@ import { attachmentWithUrlEncoder } from './attachments';
 import { baseProfileEncoder } from './profiles';
 
 // JSON Schema types
-const jsonSchemaEncoder = z.record(z.unknown());
+const jsonSchemaEncoder = z.record(z.string(), z.unknown());
 
 // Shared process phase schema
 export const processPhaseSchema = z.object({
@@ -85,7 +85,7 @@ const processSchemaEncoder = z.object({
         .array(
           z.object({
             type: z.enum(['notify', 'updateField', 'createRecord']),
-            config: z.record(z.unknown()),
+            config: z.record(z.string(), z.unknown()),
           }),
         )
         .optional(),
@@ -100,13 +100,14 @@ const processSchemaEncoder = z.object({
 const instanceDataEncoder = z.object({
   budget: z.number().optional(),
   hideBudget: z.boolean().optional(),
-  fieldValues: z.record(z.unknown()).optional(),
+  fieldValues: z.record(z.string(), z.unknown()).optional(),
   currentStateId: z.string(),
   stateData: z
     .record(
+      z.string(),
       z.object({
         enteredAt: z.string().optional(),
-        metadata: z.record(z.unknown()).optional(),
+        metadata: z.record(z.string(), z.unknown()).optional(),
       }),
     )
     .optional(),
@@ -244,7 +245,7 @@ export const proposalListEncoder = z.object({
   proposals: z.array(proposalEncoder),
   total: z.number(),
   hasMore: z.boolean(),
-  canManageProposals: z.boolean().default(false),
+  canManageProposals: z.boolean().prefault(false),
 });
 
 export const decisionListEncoder = z.object({
@@ -263,7 +264,7 @@ export const createProcessInputSchema = z.object({
 export const updateProcessInputSchema = createProcessInputSchema.partial();
 
 export const createInstanceInputSchema = z.object({
-  processId: z.string().uuid(),
+  processId: z.uuid(),
   name: z.string().min(3).max(256),
   description: z.string().optional(),
   instanceData: instanceDataEncoder,
@@ -273,19 +274,19 @@ export const updateInstanceInputSchema = createInstanceInputSchema
   .omit({ processId: true })
   .partial()
   .extend({
-    instanceId: z.string().uuid(),
+    instanceId: z.uuid(),
     status: z
       .enum(['draft', 'active', 'paused', 'completed', 'cancelled'])
       .optional(),
   });
 
 export const getInstanceInputSchema = z.object({
-  instanceId: z.string().uuid(),
+  instanceId: z.uuid(),
 });
 
 export const createProposalInputSchema = z.object({
-  processInstanceId: z.string().uuid(),
-  proposalData: z.record(z.unknown()), // Proposal content matching template
+  processInstanceId: z.uuid(),
+  proposalData: z.record(z.string(), z.unknown()), // Proposal content matching template
   attachmentIds: z.array(z.string()).optional(), // Array of attachment IDs to link to this proposal
 });
 
@@ -294,19 +295,19 @@ export const updateProposalInputSchema = createProposalInputSchema
   .partial();
 
 export const submitDecisionInputSchema = z.object({
-  proposalId: z.string().uuid(),
-  decisionData: z.record(z.unknown()), // Decision data matching voting definition
+  proposalId: z.uuid(),
+  decisionData: z.record(z.string(), z.unknown()), // Decision data matching voting definition
 });
 
 // Transition Schemas
 export const executeTransitionInputSchema = z.object({
-  instanceId: z.string().uuid(),
+  instanceId: z.uuid(),
   toStateId: z.string(),
-  transitionData: z.record(z.unknown()).optional(),
+  transitionData: z.record(z.string(), z.unknown()).optional(),
 });
 
 export const checkTransitionInputSchema = z.object({
-  instanceId: z.string().uuid(),
+  instanceId: z.uuid(),
   toStateId: z.string().optional(), // If not provided, check all possible transitions
 });
 
@@ -329,37 +330,37 @@ export const transitionCheckResultEncoder = z.object({
 
 // Pagination Schema
 export const paginationInputSchema = z.object({
-  limit: z.number().min(1).max(100).default(20),
-  offset: z.number().min(0).default(0),
+  limit: z.number().min(1).max(100).prefault(20),
+  offset: z.number().min(0).prefault(0),
 });
 
 // Filter Schemas
 export const processFilterSchema = z
   .object({
-    createdByProfileId: z.string().uuid().optional(),
+    createdByProfileId: z.uuid().optional(),
     search: z.string().optional(),
   })
-  .merge(paginationInputSchema);
+  .extend(paginationInputSchema.shape);
 
 export const instanceFilterSchema = z
   .object({
-    processId: z.string().uuid().optional(),
-    ownerProfileId: z.string().uuid(),
+    processId: z.uuid().optional(),
+    ownerProfileId: z.uuid(),
     status: z
       .enum(['draft', 'active', 'paused', 'completed', 'cancelled'])
       .optional(),
     search: z.string().optional(),
   })
-  .merge(paginationInputSchema);
+  .extend(paginationInputSchema.shape);
 
 export const proposalFilterSchema = z
   .object({
-    processInstanceId: z.string().uuid(),
-    submittedByProfileId: z.string().uuid().optional(),
+    processInstanceId: z.uuid(),
+    submittedByProfileId: z.uuid().optional(),
     status: z
       .enum(['draft', 'submitted', 'under_review', 'approved', 'rejected'])
       .optional(),
     categoryId: z.string().optional(),
     dir: z.enum(['asc', 'desc']).optional(),
   })
-  .merge(paginationInputSchema);
+  .extend(paginationInputSchema.shape);

@@ -12,11 +12,8 @@ export const taxonomyTermsEncoder = createSelectSchema(taxonomyTerms)
     definition: true,
   })
   .extend({
-    id: z.string(),
-    taxonomyId: z.string(),
-    termUri: z.string().nullish(),
+    id: z.string().uuid(),
     label: z.string(),
-    data: z.object({}).nullish(),
   });
 
 export const taxonomyTermsWithChildrenEncoder: z.ZodType<any> =

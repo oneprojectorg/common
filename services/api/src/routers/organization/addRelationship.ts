@@ -1,4 +1,3 @@
-import { trackRelationshipAdded } from '../../utils/analytics';
 import {
   UnauthorizedError,
   addRelationship,
@@ -14,10 +13,13 @@ import withAnalytics from '../../middlewares/withAnalytics';
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
+import { trackRelationshipAdded } from '../../utils/analytics';
 
 const inputSchema = z.object({
   // from: z.string().uuid({ message: 'Invalid source organization ID' }),
-  to: z.string().uuid({ message: 'Invalid target organization ID' }),
+  to: z.uuid({
+    error: 'Invalid target organization ID',
+  }),
   relationships: z.array(z.string()),
 });
 

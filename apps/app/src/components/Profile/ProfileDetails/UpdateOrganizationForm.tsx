@@ -58,7 +58,7 @@ const transformOrganizationToFormData = (org: Organization, terms?: any) => {
       org.whereWeWork?.map((item) => {
         return {
           id: item.id,
-          label: item.name,
+          label: item.name || '',
           data: item || {},
         };
       }) || [],
@@ -70,13 +70,12 @@ const transformOrganizationToFormData = (org: Organization, terms?: any) => {
       id: item.id,
       label: item.label,
     })),
-    strategies:
-      org.strategies?.map((item) => {
-        return {
+    strategies: org.strategies
+      ? org.strategies.map((item) => ({
           id: item.id,
           label: item.label,
-        };
-      }) || [],
+        }))
+      : [],
     networkOrganization: org.networkOrganization || false,
     // Funding information
     isReceivingFunds: org.isReceivingFunds || false,

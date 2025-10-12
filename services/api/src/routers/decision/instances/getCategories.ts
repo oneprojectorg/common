@@ -19,7 +19,7 @@ const meta: OpenApiMeta = {
 };
 
 const getCategoriesInputSchema = z.object({
-  processInstanceId: z.string().uuid(),
+  processInstanceId: z.uuid(),
 });
 
 const processCategoryEncoder = z.object({

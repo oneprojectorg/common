@@ -9,19 +9,27 @@ import { TRPCError } from '@trpc/server';
 // import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
-import withAuthenticated from '../../middlewares/withAuthenticated';
 import withAnalytics from '../../middlewares/withAnalytics';
+import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
 const directedInputSchema = z.object({
-  from: z.string().uuid({ message: 'Invalid source organization ID' }),
-  to: z.string().uuid({ message: 'Invalid target organization ID' }).optional(),
+  from: z.uuid({
+    error: 'Invalid source organization ID',
+  }),
+  to: z
+    .uuid({
+      error: 'Invalid target organization ID',
+    })
+    .optional(),
   pending: z.boolean().optional(),
 });
 
 const nonDirectedInputSchema = z.object({
-  organizationId: z.string().uuid({ message: 'Invalid organization ID' }),
+  organizationId: z.uuid({
+    error: 'Invalid organization ID',
+  }),
   // to: z.string().uuid({ message: 'Invalid target organization ID' }),
   pending: z.boolean().optional(),
 });

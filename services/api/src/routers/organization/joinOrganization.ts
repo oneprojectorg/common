@@ -4,8 +4,8 @@ import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
-import withAuthenticated from '../../middlewares/withAuthenticated';
 import withAnalytics from '../../middlewares/withAnalytics';
+import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
@@ -21,7 +21,7 @@ const meta: OpenApiMeta = {
 };
 
 const inputSchema = z.object({
-  organizationId: z.string().uuid('Organization ID must be a valid UUID'),
+  organizationId: z.uuid('Organization ID must be a valid UUID'),
 });
 
 export const joinOrganization = router({

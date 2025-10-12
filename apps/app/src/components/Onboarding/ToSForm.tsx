@@ -11,9 +11,9 @@ import { useAppForm } from '../form/utils';
 
 export const validator = z
   .object({
-    tosAccept: z.boolean().default(true),
+    tosAccept: z.boolean().prefault(true),
   })
-  .default({
+  .prefault({
     tosAccept: true,
   });
 

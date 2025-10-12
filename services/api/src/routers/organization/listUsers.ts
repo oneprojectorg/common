@@ -9,7 +9,7 @@ import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
 const inputSchema = z.object({
-  profileId: z.string().uuid(),
+  profileId: z.uuid(),
 });
 
 const organizationUserEncoder = z.object({

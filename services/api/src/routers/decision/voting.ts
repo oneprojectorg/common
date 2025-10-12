@@ -11,23 +11,23 @@ import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
 // Input Schemas based on our contracts
-const customDataSchema = z.record(z.unknown()).optional();
+const customDataSchema = z.record(z.string(), z.unknown()).optional();
 
 const submitVoteInput = z.object({
-  processInstanceId: z.string().uuid(),
-  selectedProposalIds: z.array(z.string().uuid()).min(1),
+  processInstanceId: z.uuid(),
+  selectedProposalIds: z.array(z.uuid()).min(1),
   schemaVersion: z.string().optional(),
   customData: customDataSchema,
 });
 
 const getVoteStatusInput = z.object({
-  processInstanceId: z.string().uuid(),
-  userId: z.string().uuid(),
+  processInstanceId: z.uuid(),
+  userId: z.uuid(),
 });
 
 const validateVoteSelectionInput = z.object({
-  processInstanceId: z.string().uuid(),
-  selectedProposalIds: z.array(z.string().uuid()),
+  processInstanceId: z.uuid(),
+  selectedProposalIds: z.array(z.uuid()),
 });
 
 export const votingRouter = router({

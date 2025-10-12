@@ -20,7 +20,7 @@ const meta: OpenApiMeta = {
 export const getProcessRouter = router({
   getProcess: loggedProcedure
     .meta(meta)
-    .input(z.object({ id: z.string().uuid() }))
+    .input(z.object({ id: z.uuid() }))
     .output(decisionProcessEncoder)
     .query(async ({ input }) => {
       try {
