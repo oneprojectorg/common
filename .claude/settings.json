@@ -1,11 +1,12 @@
 {
   "permissions": {
-    "allow": ["rg:*", "pnpm w:app lint"],
+    "allow": ["WebFetch", "Fetch", "Pnpm w:app lint"],
     "deny": [
       "Pnpm build",
       "Pnpm w:db migrate",
       "Pnpm w:db generate",
       "Pnpm format"
-    ]
+    ],
+    "ask": []
   }
 }
