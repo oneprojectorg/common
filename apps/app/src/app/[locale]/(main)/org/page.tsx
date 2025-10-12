@@ -1,5 +1,5 @@
 import { EntityType } from '@op/api/encoders';
-import { createServerClient } from '@op/api/vanilla';
+import { createClient } from '@op/api/serverClient';
 
 import { AllOrganizations } from '@/components/Organizations/AllOrganizations';
 import {
@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
 
 const OrgListingPage = async () => {
   try {
-    const client = await createServerClient();
+    const client = await createClient();
     const organizations = await client.profile.list({
       limit: 50,
       types: [EntityType.ORG],

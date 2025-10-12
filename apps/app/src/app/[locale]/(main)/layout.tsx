@@ -1,5 +1,5 @@
 import { UserProvider } from '@/utils/UserProvider';
-import { createServerClient } from '@op/api/vanilla';
+import { createClient } from '@op/api/serverClient';
 import { redirect } from 'next/navigation';
 import Script from 'next/script';
 
@@ -9,7 +9,7 @@ import { AppLayout } from '@/components/layout/split/AppLayout';
 export const dynamic = 'force-dynamic';
 
 const AppRoot = async ({ children }: { children: React.ReactNode }) => {
-  const client = await createServerClient();
+  const client = await createClient();
   const user = await client.account.getMyAccount();
 
   if (user?.organizationUsers?.length === 0) {

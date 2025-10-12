@@ -18,7 +18,7 @@ const envURL = OPURLConfig('API');
 /**
  * Create a TRPC Vanilla Client.
  *
- * @deprecated Use `createServerClient()` for server-side calls instead.
+ * @deprecated Use `createClient()` from '@op/api/serverClient' for server-side calls instead.
  * This makes actual HTTP requests which is inefficient when called from the same server.
  * Only use this if you specifically need HTTP-based communication.
  */
@@ -113,21 +113,21 @@ const createServerContext = cache(async (): Promise<TContext> => {
  *
  * Note: Cannot set cookies. For mutations that need to set cookies, use a route handler.
  */
-export const createServerClient = cache(async () => {
+export const createClient = cache(async () => {
   const context = await createServerContext();
   const callerFactory = createCallerFactory(appRouter);
   return callerFactory(context);
 });
 
 /**
- * @deprecated Use `createServerClient()` instead for better performance
+ * @deprecated Use `createClient()` from '@op/api/serverClient' instead for better performance
  */
 export const trpcVanilla = createTRPCVanillaClient();
 
 /**
  * Get tRPC client for Next.js server components (HTTP-based)
  *
- * @deprecated Use `createServerClient()` for better performance.
+ * @deprecated Use `createClient()` from '@op/api/serverClient' for better performance.
  * This makes HTTP requests which is inefficient when called from the same server.
  *
  * Note: Kept for backward compatibility with existing code using .query()/.mutate() syntax.

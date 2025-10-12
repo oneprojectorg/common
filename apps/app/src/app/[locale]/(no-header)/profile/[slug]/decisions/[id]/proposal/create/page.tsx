@@ -1,4 +1,4 @@
-import { createServerClient } from '@op/api/vanilla';
+import { createClient } from '@op/api/serverClient';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
@@ -14,7 +14,7 @@ async function CreateProposalPageContent({
   slug: string;
 }) {
   try {
-    const client = await createServerClient();
+    const client = await createClient();
     const instance = await client.decision.getInstance({
       instanceId,
     });

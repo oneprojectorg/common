@@ -1,4 +1,4 @@
-import { createServerClient } from '@op/api/vanilla';
+import { createClient } from '@op/api/serverClient';
 import { Suspense } from 'react';
 
 import { Link } from '@/lib/i18n';
@@ -14,7 +14,7 @@ export const NewOrganizationsSuspense = async ({
   limit?: number;
 }) => {
   try {
-    const client = await createServerClient();
+    const client = await createClient();
 
     const { items: organizations } = await client.organization.list({
       limit,

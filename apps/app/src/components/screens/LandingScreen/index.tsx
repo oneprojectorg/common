@@ -1,5 +1,5 @@
 import { RouterOutput } from '@op/api/client';
-import { createServerClient } from '@op/api/vanilla';
+import { createClient } from '@op/api/serverClient';
 import { Header1, Header3 } from '@op/ui/Header';
 import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
@@ -101,7 +101,7 @@ const LandingScreenFeeds = async ({
 
 export const LandingScreen = async () => {
   try {
-    const client = await createServerClient();
+    const client = await createClient();
     const user = await client.account.getMyAccount();
 
     return (

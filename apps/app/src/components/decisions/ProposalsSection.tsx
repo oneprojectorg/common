@@ -1,4 +1,4 @@
-import { createServerClient } from '@op/api/vanilla';
+import { createClient } from '@op/api/serverClient';
 import { Header3 } from '@op/ui/Header';
 import { Suspense } from 'react';
 
@@ -12,7 +12,7 @@ interface ProposalsSectionProps {
 }
 
 async function ProposalsContent({ instanceId, slug }: ProposalsSectionProps) {
-  const client = await createServerClient();
+  const client = await createClient();
 
   const proposalsData = await client.decision.listProposals({
     processInstanceId: instanceId,

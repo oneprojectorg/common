@@ -1,6 +1,6 @@
 import { getPublicUrl } from '@/utils';
 import { checkModuleEnabled } from '@/utils/modules';
-import { createServerClient } from '@op/api/vanilla';
+import { createClient } from '@op/api/serverClient';
 import { match } from '@op/core';
 import { cn, getGradientForString } from '@op/ui/utils';
 import Image from 'next/image';
@@ -25,7 +25,7 @@ const ProfileWithData = async ({
   initialTab?: string;
 }) => {
   try {
-    const client = await createServerClient();
+    const client = await createClient();
 
     // First, get the profile data
     const profile = await client.profile.getBySlug({
