@@ -101,6 +101,7 @@ const createServerContext = cache(async (): Promise<TContext> => {
     ip: headersList.get('x-forwarded-for') || null,
     reqUrl: headersList.get('x-url') || mockReq.url,
     req: mockReq,
+    isServerSideCall: true,
   };
 });
 
