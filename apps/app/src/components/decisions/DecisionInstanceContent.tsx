@@ -138,7 +138,7 @@ export function DecisionInstanceContent({
                   {hasVoted
                     ? t('YOUR BALLOT IS IN.')
                     : match(currentState?.id, {
-                        voting: () => t('TIME TO VOTE.'),
+                        review: () => t('TIME TO VOTE.'),
                         _: () => t('SHARE YOUR IDEAS.'),
                       })}
                 </GradientHeader>
@@ -185,7 +185,7 @@ export function DecisionInstanceContent({
                       </a>{' '}
                       today!
                     </p>
-                    {currentState?.id === 'voting' ? (
+                    {currentState?.id === 'review' ? (
                       <p>
                         Please select{' '}
                         <strong>
