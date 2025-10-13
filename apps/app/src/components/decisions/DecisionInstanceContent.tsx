@@ -145,29 +145,27 @@ export function DecisionInstanceContent({
                 {
                   <div className="mt-4 flex flex-col gap-2 text-base text-gray-700">
                     <p>
-                      <strong>
-                        Step 1: Click “Read Full Proposal” to learn more about
-                        each.
-                      </strong>{' '}
-                      Anyone can leave comments or “like” a proposal.
+                      Step 1: Click “Read Full Proposal” to learn more about
+                      each. Anyone can leave comments or “like” a proposal.
                     </p>
                     <p>
-                      <strong>Step 2:</strong> Choose{' '}
-                      <strong>one person</strong> from your organization to cast
+                      Step 2: Choose one person from your organization to cast
                       your votes.
                     </p>
                     <p>
-                      <strong>Each organization gets 5 votes</strong> to
-                      identify the proposals they think would be{' '}
-                      <strong>
-                        most impactful and aligned with the goal of supporting
-                        and/or establishing mutual aid infrastructure for our
-                        ecosystems.
-                      </strong>
+                      Each organization gets 5 votes to identify the proposals
+                      they think would be most impactful and aligned with the
+                      goal of supporting and/or establishing mutual aid
+                      infrastructure for our ecosystems.
                     </p>
                     <p>
-                      <strong>Questions?</strong> Reach out to Meg{' '}
-                      <a href="mailto:meg@oneproject.org">meg@oneproject.org</a>
+                      Questions? Reach out to Meg{' '}
+                      <a
+                        className="hover:text-underline text-primary-teal"
+                        href="mailto:meg@oneproject.org"
+                      >
+                        meg@oneproject.org
+                      </a>
                     </p>
 
                     {currentState?.id === 'review' ? (
