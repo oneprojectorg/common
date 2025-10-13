@@ -135,7 +135,12 @@ export function DecisionInstanceContent({
             'one-project': (
               <>
                 <GradientHeader className="items-center align-middle uppercase">
-                  {hasVoted ? t('YOUR BALLOT IS IN.') : t('SHARE YOUR IDEAS.')}
+                  {hasVoted
+                    ? t('YOUR BALLOT IS IN.')
+                    : match(currentState?.id, {
+                        voting: () => t('TIME TO VOTE.'),
+                        _: () => t('SHARE YOUR IDEAS.'),
+                      })}
                 </GradientHeader>
                 {
                   <div className="mt-4 text-base text-gray-700">
@@ -180,16 +185,18 @@ export function DecisionInstanceContent({
                       </a>{' '}
                       today!
                     </p>
-                    <p className="py-4">
-                      <a
-                        href="https://horizonfund.grantplatform.com/"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-semibold text-teal hover:underline"
-                      >
-                        Start your application
-                      </a>
-                    </p>
+                    {currentState?.id === 'voting' ? (
+                      <p>
+                        Please select{' '}
+                        <strong>
+                          {
+                            instance?.instanceData?.fieldValues
+                              ?.maxVotesPerMember as number
+                          }{' '}
+                          proposals.
+                        </strong>
+                      </p>
+                    ) : null}
                   </div>
                 }
               </>
