@@ -339,7 +339,8 @@ export const getVotingStatus = async ({
       allowDecisions: currentState.config?.allowDecisions || false,
       instanceData: {
         maxVotesPerMember:
-          (processInstance.instanceData as any)?.maxVotesPerMember || 3,
+          (processInstance.instanceData as any)?.fieldValues
+            .maxVotesPerMember || 3,
       },
       schemaType: 'simple',
     };
