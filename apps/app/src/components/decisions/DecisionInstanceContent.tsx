@@ -143,7 +143,7 @@ export function DecisionInstanceContent({
                       })}
                 </GradientHeader>
                 {
-                  <div className="mt-4 text-base text-gray-700">
+                  <div className="mt-4 flex flex-col gap-2 text-base text-gray-700">
                     <p>
                       In May 2025, One Project Core Capabilities grantees (you
                       all!) identified establishing and/or supporting mutual aid
@@ -154,36 +154,6 @@ export function DecisionInstanceContent({
                       We invite you to apply for funds to boost mutual aid
                       infrastructure capacity that benefits the entire
                       ecosystem.
-                    </p>
-                    <p>
-                      For more details, see the{' '}
-                      <a
-                        href="https://docs.google.com/document/d/1OPKvQzbMTl3VQsVIvHM1HCk6KrhSbvS5UScvSfmkqT4/edit?tab=t.2dolvnkc9h7e"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-teal hover:underline"
-                      >
-                        Request for Applications
-                      </a>{' '}
-                      [also available in{' '}
-                      <a
-                        href="https://docs.google.com/document/d/1RXbv8cFbBTivlP29p9uhqBlg_yFZIO27/edit?rtpof=true&tab=t.0"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-teal hover:underline"
-                      >
-                        Spanish
-                      </a>
-                      ] and{' '}
-                      <a
-                        href="https://docs.google.com/document/d/1OPKvQzbMTl3VQsVIvHM1HCk6KrhSbvS5UScvSfmkqT4/edit?tab=t.2dolvnkc9h7e"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-teal hover:underline"
-                      >
-                        start your application
-                      </a>{' '}
-                      today!
                     </p>
                     {currentState?.id === 'review' ? (
                       <p>
