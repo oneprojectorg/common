@@ -147,7 +147,7 @@ export const ProfileRelationships = ({ slug }: { slug: string }) => {
         <ErrorBoundary
           errorComponent={() => (
             <Link href="/" className="flex items-center gap-2">
-              <LuArrowLeft className="size-6 stroke-1 text-neutral-black" />
+              <LuArrowLeft className="size-6 stroke-[1.5] text-neutral-black" />
             </Link>
           )}
         >

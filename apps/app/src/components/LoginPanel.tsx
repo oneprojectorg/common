@@ -276,7 +276,7 @@ export const LoginPanel = () => {
                     <div className="flex flex-col">
                       <Form
                         onSubmit={async (e) => {
-                          if (token && token.length === 10) {
+                          if (token) {
                             e.preventDefault();
                             e.stopPropagation();
                             await handleTokenSubmit();
@@ -330,11 +330,7 @@ export const LoginPanel = () => {
                     <Button
                       type="button"
                       className="flex w-full items-center justify-center"
-                      isDisabled={
-                        !emailIsValid ||
-                        login.isFetching ||
-                        (!!token && token.length !== 10)
-                      }
+                      isDisabled={!emailIsValid || login.isFetching}
                       onPress={async () => {
                         if (!loginSuccess) {
                           void login.refetch().then(({ data }) => {
@@ -342,11 +338,7 @@ export const LoginPanel = () => {
                               setLoginSuccess(true);
                             }
                           });
-                        } else if (
-                          loginSuccess &&
-                          token &&
-                          token.length === 10
-                        ) {
+                        } else if (loginSuccess && token) {
                           void handleTokenSubmit();
                         }
                       }}

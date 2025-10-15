@@ -53,7 +53,7 @@ export const Popover = ({
             width={12}
             height={12}
             viewBox="0 0 12 12"
-            className="block fill-[#1f1f21] stroke-neutral-400 stroke-1 group-placement-left:-rotate-90 group-placement-right:rotate-90 group-placement-bottom:rotate-180"
+            className="block fill-[#1f1f21] stroke-neutral-400 stroke-[1.5] group-placement-left:-rotate-90 group-placement-right:rotate-90 group-placement-bottom:rotate-180"
           >
             <path d="M0 0 L6 6 L12 0" />
           </svg>

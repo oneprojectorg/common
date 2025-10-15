@@ -84,7 +84,7 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
                     target="_blank"
                     className="min-w-full sm:min-w-fit"
                   >
-                    <LuHandCoins className="size-4 stroke-1" />
+                    <LuHandCoins className="size-4 stroke-[1.5]" />
                     Fund
                   </ButtonLink>
                   {description ? <Tooltip>{description}</Tooltip> : null}
@@ -111,7 +111,7 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
                     target="_blank"
                     className="min-w-full sm:min-w-fit"
                   >
-                    <LuInfo className="size-4 stroke-1" />
+                    <LuInfo className="size-4 stroke-[1.5]" />
                     Learn more
                   </ButtonLink>
                   {description ? <Tooltip>{description}</Tooltip> : null}
