@@ -107,6 +107,118 @@ export const OrganizationList = ({
                 </CarouselItem>
               );
             })}
+            {organizations?.map((org) => {
+              const { avatarImage, headerImage } = org.profile;
+              const avatarUrl = getPublicUrl(avatarImage?.name);
+              const headerUrl = getPublicUrl(headerImage?.name);
+
+              const gradientBg = getGradientForString(
+                org.profile.name || 'Common',
+              );
+              const gradientBgHeader = getGradientForString(
+                org.profile.name + 'C' || 'Common',
+              );
+
+              return (
+                <CarouselItem key={org.id}>
+                  <Surface className="flex size-48">
+                    <Link
+                      className="flex size-full flex-col gap-3"
+                      href={`/org/${org.profile.slug}`}
+                    >
+                      <ImageHeader
+                        headerImage={
+                          headerUrl ? (
+                            <Image
+                              src={headerUrl}
+                              alt=""
+                              fill
+                              className="object-cover"
+                            />
+                          ) : (
+                            <div
+                              className={cn('h-full w-full', gradientBgHeader)}
+                            />
+                          )
+                        }
+                        avatarImage={
+                          avatarUrl ? (
+                            <Image
+                              src={avatarUrl}
+                              alt=""
+                              fill
+                              className="object-cover"
+                            />
+                          ) : (
+                            <div className={cn('h-full w-full', gradientBg)} />
+                          )
+                        }
+                      />
+
+                      <div className="flex flex-col p-4 pt-0 text-left">
+                        <span>{org.profile.name}</span>
+                      </div>
+                    </Link>
+                  </Surface>
+                </CarouselItem>
+              );
+            })}
+            {organizations?.map((org) => {
+              const { avatarImage, headerImage } = org.profile;
+              const avatarUrl = getPublicUrl(avatarImage?.name);
+              const headerUrl = getPublicUrl(headerImage?.name);
+
+              const gradientBg = getGradientForString(
+                org.profile.name || 'Common',
+              );
+              const gradientBgHeader = getGradientForString(
+                org.profile.name + 'C' || 'Common',
+              );
+
+              return (
+                <CarouselItem key={org.id}>
+                  <Surface className="flex size-48">
+                    <Link
+                      className="flex size-full flex-col gap-3"
+                      href={`/org/${org.profile.slug}`}
+                    >
+                      <ImageHeader
+                        headerImage={
+                          headerUrl ? (
+                            <Image
+                              src={headerUrl}
+                              alt=""
+                              fill
+                              className="object-cover"
+                            />
+                          ) : (
+                            <div
+                              className={cn('h-full w-full', gradientBgHeader)}
+                            />
+                          )
+                        }
+                        avatarImage={
+                          avatarUrl ? (
+                            <Image
+                              src={avatarUrl}
+                              alt=""
+                              fill
+                              className="object-cover"
+                            />
+                          ) : (
+                            <div className={cn('h-full w-full', gradientBg)} />
+                          )
+                        }
+                      />
+
+                      <div className="flex flex-col p-4 pt-0 text-left">
+                        <span>{org.profile.name}</span>
+                      </div>
+                    </Link>
+                  </Surface>
+                </CarouselItem>
+              );
+            })}
           </>
         </OrganizationCarousel>
       </div>
@@ -259,11 +371,7 @@ export const OrganizationCardListSkeleton = () => {
               <div className="flex flex-col gap-2">
                 <Skeleton className="h-6 w-3/4" />
               </div>
-              <SkeletonLine
-                lines={3}
-                randomWidth={true}
-                className="w-full"
-              />
+              <SkeletonLine lines={3} randomWidth={true} className="w-full" />
             </div>
           </div>
         </div>
