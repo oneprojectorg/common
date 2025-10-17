@@ -21,7 +21,7 @@
     "lint": "turbo lint",
     "local": "pnpm concurrently \"pnpm w:app dev\" \"pnpm w:api dev\" \"pnpm w:db start\"  ",
     "tmux": "bash scripts/tmux.sh",
-    "w:api": "pnpm -C ./apps/api",
+    "w:api": "pnpm -C ./services/api",
     "w:app": "pnpm -C ./apps/app",
     "w:db": "pnpm -C ./services/db",
     "w:emails": "pnpm -C ./services/emails",
