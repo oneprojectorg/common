@@ -1,35 +1,14 @@
-import type { ExportStatusData } from '@op/common';
+import { get, set } from '@op/cache';
 import { getExportStatus, UnauthorizedError } from '@op/common';
+import type { ExportStatusData } from '@op/common';
 import { createSBServerClient } from '@op/supabase/server';
 import { TRPCError } from '@trpc/server';
-import { createClient } from 'redis';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import withAnalytics from '../../../middlewares/withAnalytics';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
 import { loggedProcedure, router } from '../../../trpcFactory';
-
-const REDIS_URL = process.env.REDIS_URL;
-
-// Create Redis client
-let redis: ReturnType<typeof createClient> | null = null;
-
-if (REDIS_URL) {
-  redis = createClient({
-    url: REDIS_URL,
-    disableOfflineQueue: true,
-  });
-
-  redis.on('error', (err) => {
-    console.error('Redis Client Error in getExportStatus:', err);
-  });
-
-  // Connect to Redis
-  if (!redis.isOpen) {
-    redis.connect().catch(console.error);
-  }
-}
 
 const meta: OpenApiMeta = {
   openapi: {
@@ -76,23 +55,13 @@ export const getExportStatusRouter = router({
     .query(async ({ ctx, input }) => {
       const { user, logger } = ctx;
 
-      if (!redis) {
-        logger.error('Redis not available for export status check');
-        throw new TRPCError({
-          message: 'Export status service unavailable',
-          code: 'INTERNAL_SERVER_ERROR',
-        });
-      }
-
       try {
         const key = `export:proposal:${input.exportId}`;
-        const data = await redis.get(key);
+        const exportStatus = (await get(key)) as ExportStatusData | null;
 
-        if (!data) {
+        if (!exportStatus) {
           return { status: 'not_found' as const };
         }
-
-        const exportStatus = JSON.parse(data) as ExportStatusData;
 
         // Service handles all authorization checks (ownership + admin permission)
         await getExportStatus({
@@ -128,8 +97,8 @@ export const getExportStatusRouter = router({
                 Date.now() + 24 * 60 * 60 * 1000,
               ).toISOString();
 
-              // Update Redis with new signed URL
-              await redis.setEx(key, 24 * 60 * 60, JSON.stringify(exportStatus));
+              // Update cache with new signed URL (24 hours TTL)
+              await set(key, exportStatus, 24 * 60 * 60);
             }
           }
         }

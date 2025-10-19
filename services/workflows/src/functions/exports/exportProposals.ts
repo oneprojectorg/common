@@ -1,5 +1,4 @@
-import { createClient } from 'redis';
-
+import { get, set } from '@op/cache';
 import { listProposals } from '@op/common/services/decision';
 import { generateProposalsCsv } from '@op/common/services/decision/exports';
 import { db } from '@op/db/client';
@@ -8,51 +7,16 @@ import { Events, inngest } from '@op/events';
 import { createSBServerClient } from '@op/supabase/server';
 import { eq } from 'drizzle-orm';
 
-const REDIS_URL = process.env.REDIS_URL;
+// Helper to get cache key for export status
+const getExportCacheKey = (exportId: string) => `export:proposal:${exportId}`;
 
-// Create Redis client for status updates
-let redis: ReturnType<typeof createClient> | null = null;
-
-if (REDIS_URL) {
-  redis = createClient({
-    url: REDIS_URL,
-    disableOfflineQueue: true,
-  });
-
-  redis.on('error', (err) => {
-    console.error('Redis Client Error in export workflow:', err);
-  });
-
-  // Connect to Redis
-  if (!redis.isOpen) {
-    redis.connect().catch(console.error);
-  }
-}
-
-// Helper to update export status in Redis
-async function updateExportStatus(exportId: string, data: any) {
-  if (!redis) {
-    console.warn('Redis not available, cannot update export status');
-    return;
-  }
-
-  const key = `export:proposal:${exportId}`;
-  const ttl = 24 * 60 * 60; // 24 hours in seconds
-
-  try {
-    // Get existing data
-    const existing = await redis.get(key);
-    const existingData = existing ? JSON.parse(existing) : {};
-
-    // Merge with new data
-    const updated = { ...existingData, ...data };
-
-    // Save to Redis with TTL
-    await redis.setEx(key, ttl, JSON.stringify(updated));
-  } catch (error) {
-    console.error('Failed to update export status:', error);
-  }
-}
+// Helper to update export status in cache
+const updateExportStatus = async (exportId: string, updates: any) => {
+  const key = getExportCacheKey(exportId);
+  const existing = await get(key);
+  const updated = { ...(existing || {}), ...updates };
+  await set(key, updated, 24 * 60 * 60); // 24 hours TTL
+};
 
 const { proposalExportRequested } = Events;
 

@@ -179,7 +179,7 @@ export const invalidateMultiple = async ({
   );
 };
 
-const get = async (key: string) => {
+export const get = async (key: string) => {
   if (!redis) {
     return null;
   }
@@ -201,7 +201,7 @@ const get = async (key: string) => {
 
 // const DEFAULT_TTL = 3600 * 24 * 30; // 3600 * 24 = 1 day
 const DEFAULT_TTL = 3600; // short TTL for testing
-const set = async (key: string, data: any, ttl?: number) => {
+export const set = async (key: string, data: any, ttl?: number) => {
   if (!redis) {
     return;
   }
