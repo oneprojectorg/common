@@ -13,6 +13,7 @@ import { Skeleton } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
+import { LuArrowDownToLine } from 'react-icons/lu';
 import type { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
@@ -30,12 +31,12 @@ import {
   ProposalCardMeta,
   ProposalCardMetrics,
 } from './ProposalCard';
-import { useProposalExport } from './useProposalExport';
-import { type ProposalFilter, useProposalFilters } from './useProposalFilters';
 import { VoteSubmissionModal } from './VoteSubmissionModal';
 import { VoteSuccessModal } from './VoteSuccessModal';
 import { VotingProposalCard } from './VotingProposalCard';
 import { VotingSubmitFooter } from './VotingSubmitFooter';
+import { useProposalExport } from './useProposalExport';
+import { type ProposalFilter, useProposalFilters } from './useProposalFilters';
 
 type Proposal = z.infer<typeof proposalEncoder>;
 
@@ -549,11 +550,11 @@ export const ProposalsList = ({
           <Button
             onPress={handleExport}
             isDisabled={isExporting}
-            color="primary"
+            color="secondary"
             size="small"
-            className="min-w-32"
           >
-            {isExporting ? t('Exporting...') : t('Download CSV')}
+            <LuArrowDownToLine className="size-4 stroke-[1.5px]" />
+            {isExporting ? t('Exporting...') : t('Download')}
           </Button>
         </div>
       </div>
