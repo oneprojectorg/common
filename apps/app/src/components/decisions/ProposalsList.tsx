@@ -30,11 +30,12 @@ import {
   ProposalCardMeta,
   ProposalCardMetrics,
 } from './ProposalCard';
+import { useProposalExport } from './useProposalExport';
+import { type ProposalFilter, useProposalFilters } from './useProposalFilters';
 import { VoteSubmissionModal } from './VoteSubmissionModal';
 import { VoteSuccessModal } from './VoteSuccessModal';
 import { VotingProposalCard } from './VotingProposalCard';
 import { VotingSubmitFooter } from './VotingSubmitFooter';
-import { type ProposalFilter, useProposalFilters } from './useProposalFilters';
 
 type Proposal = z.infer<typeof proposalEncoder>;
 
@@ -385,6 +386,9 @@ export const ProposalsList = ({
   const selectedProposalIds =
     voteStatus?.voteSubmission?.selectedProposalIds || [];
 
+  // Export hook
+  const { startExport, isExporting } = useProposalExport();
+
   // Helper function to update URL params
   const updateURLParams = (updates: Record<string, string | null>) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -451,6 +455,20 @@ export const ProposalsList = ({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [proposalFilter]);
+
+  // Handle export
+  const handleExport = () => {
+    startExport(
+      {
+        processInstanceId: instanceId,
+        categoryId:
+          selectedCategory !== 'all-categories' ? selectedCategory : undefined,
+        dir: sortOrder === 'newest' ? 'desc' : 'asc',
+        proposalFilter,
+      },
+      'csv',
+    );
+  };
 
   return (
     <div className="flex flex-col gap-6 pb-12">
@@ -528,6 +546,15 @@ export const ProposalsList = ({
             <SelectItem id="newest">{t('Newest First')}</SelectItem>
             <SelectItem id="oldest">{t('Oldest First')}</SelectItem>
           </Select>
+          <Button
+            onPress={handleExport}
+            isDisabled={isExporting}
+            color="primary"
+            size="small"
+            className="min-w-32"
+          >
+            {isExporting ? t('Exporting...') : t('Download CSV')}
+          </Button>
         </div>
       </div>
 
