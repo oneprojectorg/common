@@ -1,3 +1,4 @@
+import { set } from '@op/cache';
 import { exportProposals, UnauthorizedError } from '@op/common';
 import { event, Events } from '@op/events';
 import { TRPCError } from '@trpc/server';
@@ -59,6 +60,28 @@ export const exportProposalsRouter = router({
           },
           user,
         });
+
+        // Set initial 'pending' status in cache so frontend can poll immediately
+        const cacheKey = `export:proposal:${exportId}`;
+        await set(
+          cacheKey,
+          {
+            exportId,
+            processInstanceId: input.processInstanceId,
+            userId: user.id,
+            format: input.format,
+            status: 'pending',
+            filters: {
+              categoryId: input.categoryId,
+              submittedByProfileId: input.submittedByProfileId,
+              status: input.status,
+              dir: input.dir,
+              proposalFilter: input.proposalFilter,
+            },
+            createdAt: new Date().toISOString(),
+          },
+          24 * 60 * 60, // 24 hours TTL
+        );
 
         // Send Inngest event to trigger export workflow
         await event.send({

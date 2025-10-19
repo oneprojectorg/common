@@ -27,6 +27,7 @@ export interface ListProposalsInput {
   orderBy?: 'createdAt' | 'updatedAt' | 'status';
   dir?: 'asc' | 'desc';
   authUserId: string;
+  skipAccessCheck?: boolean; // For trusted contexts like background jobs
 }
 
 // Shared function to build WHERE conditions for both count and data queries
@@ -60,11 +61,12 @@ export const listProposals = async ({
   input: ListProposalsInput;
   user: User;
 }) => {
-  if (!user) {
+  const { processInstanceId, skipAccessCheck = false } = input;
+
+  // Skip authentication check if this is a trusted context (e.g., background job)
+  if (!skipAccessCheck && !user) {
     throw new UnauthorizedError('User must be authenticated');
   }
-
-  const { processInstanceId } = input;
 
   // join the process table to the org table via ownerId to get the org id
   const instanceOrg = await db
@@ -83,19 +85,25 @@ export const listProposals = async ({
     throw new UnauthorizedError('User does not have access to this process');
   }
 
-  // ASSERT VIEW ACCESS ON ORGUSER
-  const orgUser = await getOrgAccessUser({
-    user,
-    organizationId: instanceOrg[0].id,
-  });
+  let canManageProposals = false;
+  let orgUser: Awaited<ReturnType<typeof getOrgAccessUser>> = undefined;
 
-  assertAccess({ decisions: permission.READ }, orgUser?.roles ?? []);
+  // Only perform access checks if not skipped
+  if (!skipAccessCheck) {
+    // ASSERT VIEW ACCESS ON ORGUSER
+    orgUser = await getOrgAccessUser({
+      user,
+      organizationId: instanceOrg[0].id,
+    });
 
-  // Check if user can manage proposals (approve/reject)
-  const canManageProposals = checkPermission(
-    { decisions: permission.ADMIN },
-    orgUser?.roles ?? [],
-  );
+    assertAccess({ decisions: permission.READ }, orgUser?.roles ?? []);
+
+    // Check if user can manage proposals (approve/reject)
+    canManageProposals = checkPermission(
+      { decisions: permission.ADMIN },
+      orgUser?.roles ?? [],
+    );
+  }
 
   try {
     const {

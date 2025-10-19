@@ -1,10 +1,9 @@
 import { get, set } from '@op/cache';
-import { listProposals } from '@op/common/services/decision';
-import { generateProposalsCsv } from '@op/common/services/decision/exports';
+import { generateProposalsCsv, listProposals } from '@op/common';
 import { db } from '@op/db/client';
 import { users } from '@op/db/schema';
 import { Events, inngest } from '@op/events';
-import { createSBServerClient } from '@op/supabase/server';
+import { createSBServiceClient } from '@op/supabase/server';
 import { eq } from 'drizzle-orm';
 
 // Helper to get cache key for export status
@@ -46,9 +45,9 @@ export const exportProposals = inngest.createFunction(
     try {
       // Step 2: Fetch proposals
       const proposals = await step.run('fetch-proposals', async () => {
-        // Get user from database
+        // Get user from database by auth user ID
         const userRecord = await db.query.users.findFirst({
-          where: eq(users.id, userId),
+          where: eq(users.authUserId, userId),
         });
 
         if (!userRecord) {
@@ -64,6 +63,7 @@ export const exportProposals = inngest.createFunction(
             dir: filters.dir,
             limit: 1000, // High limit for exports
             authUserId: userId,
+            skipAccessCheck: true, // Access already verified when export was created
           },
           user: userRecord as any,
         });
@@ -91,7 +91,8 @@ export const exportProposals = inngest.createFunction(
       const { fileName, signedUrl } = await step.run(
         'upload-to-storage',
         async () => {
-          const supabase = await createSBServerClient();
+          // Use service role client to bypass RLS in background job
+          const supabase = createSBServiceClient();
           const timestamp = Date.now();
           const fileName = `proposals_export_${timestamp}.${extension}`;
           const filePath = `exports/proposals/${processInstanceId}/${fileName}`;

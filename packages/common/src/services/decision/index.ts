@@ -27,6 +27,7 @@ export * from './deleteProposal';
 export * from './getProcessCategories';
 export * from './exportProposals';
 export * from './getExportStatus';
+export * from './exports';
 
 // Voting management
 export * from './voting';

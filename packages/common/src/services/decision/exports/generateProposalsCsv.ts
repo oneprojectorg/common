@@ -1,10 +1,15 @@
-import type { proposalEncoder } from '@op/api/encoders';
 import { stringify } from 'csv-stringify/sync';
-import type { z } from 'zod';
 
-type Proposal = z.infer<typeof proposalEncoder>;
+import { listProposals } from '../listProposals';
 
-export async function generateProposalsCsv(proposals: Proposal[]): Promise<string> {
+// Infer the proposal type from the listProposals return value
+type ProposalFromList = Awaited<
+  ReturnType<typeof listProposals>
+>['proposals'][number];
+
+export async function generateProposalsCsv(
+  proposals: ProposalFromList[],
+): Promise<string> {
   const rows = proposals.map((p) => {
     const proposalData = p.proposalData || {};
 
