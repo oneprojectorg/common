@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 export const useProposalExport = () => {
   const [exportId, setExportId] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [isDownloadReady, setIsDownloadReady] = useState(false);
 
   const exportMutation = trpc.decision.export.useMutation();
 
@@ -28,19 +29,12 @@ export const useProposalExport = () => {
 
     if (exportStatus.status === 'completed') {
       setIsExporting(false);
-
-      // Auto-download the file
-      if ('signedUrl' in exportStatus && exportStatus.signedUrl) {
-        window.open(exportStatus.signedUrl, '_blank');
-        toast.success({
-          title: 'Export ready!',
-          message: 'Your CSV file is being downloaded.',
-        });
-      }
+      setIsDownloadReady(true);
     }
 
     if (exportStatus.status === 'failed') {
       setIsExporting(false);
+      setIsDownloadReady(false);
       toast.error({
         title: 'Export failed',
         message:
@@ -63,6 +57,7 @@ export const useProposalExport = () => {
     // Clear any previous export state before starting new one
     setExportId(null);
     setIsExporting(true);
+    setIsDownloadReady(false);
 
     try {
       const { exportId: newExportId } = await exportMutation.mutateAsync({
@@ -88,11 +83,26 @@ export const useProposalExport = () => {
   const reset = () => {
     setExportId(null);
     setIsExporting(false);
+    setIsDownloadReady(false);
   };
+
+  // Extract download URL and filename when ready
+  const downloadUrl =
+    exportStatus?.status === 'completed' && 'signedUrl' in exportStatus
+      ? exportStatus.signedUrl
+      : null;
+
+  const downloadFileName =
+    exportStatus?.status === 'completed' && 'fileName' in exportStatus
+      ? exportStatus.fileName
+      : 'proposals_export.csv';
 
   return {
     startExport,
     isExporting,
+    isDownloadReady,
+    downloadUrl,
+    downloadFileName,
     exportStatus,
     reset,
   };
