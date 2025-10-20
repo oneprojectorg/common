@@ -1,7 +1,9 @@
 import { randomUUID } from 'crypto';
 
+import { set } from '@op/cache';
 import { db, eq } from '@op/db/client';
 import { organizations, processInstances } from '@op/db/schema';
+import { Events, event } from '@op/events';
 import { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
@@ -63,6 +65,46 @@ export const exportProposals = async ({
 
   // Generate export ID
   const exportId = randomUUID();
+
+  // Set initial 'pending' status in cache so frontend can poll immediately
+  const cacheKey = `export:proposal:${exportId}`;
+  await set(
+    cacheKey,
+    {
+      exportId,
+      processInstanceId: input.processInstanceId,
+      userId: user.id,
+      format: input.format,
+      status: 'pending',
+      filters: {
+        categoryId: input.categoryId,
+        submittedByProfileId: input.submittedByProfileId,
+        status: input.status,
+        dir: input.dir,
+        proposalFilter: input.proposalFilter,
+      },
+      createdAt: new Date().toISOString(),
+    },
+    24 * 60 * 60, // 24 hours TTL
+  );
+
+  // Send Inngest event to trigger export workflow
+  await event.send({
+    name: Events.proposalExportRequested.name,
+    data: {
+      exportId,
+      processInstanceId: input.processInstanceId,
+      userId: user.id,
+      format: input.format,
+      filters: {
+        categoryId: input.categoryId,
+        submittedByProfileId: input.submittedByProfileId,
+        status: input.status,
+        dir: input.dir,
+        proposalFilter: input.proposalFilter,
+      },
+    },
+  });
 
   return {
     exportId,
