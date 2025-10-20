@@ -1,11 +1,14 @@
-import { randomUUID } from 'crypto';
-
 import { set } from '@op/cache';
-import { db, eq } from '@op/db/client';
-import { organizations, processInstances } from '@op/db/schema';
+import { and, db, eq } from '@op/db/client';
+import {
+  organizationUsers,
+  organizations,
+  processInstances,
+} from '@op/db/schema';
 import { Events, event } from '@op/events';
 import { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
+import { randomUUID } from 'crypto';
 
 import { UnauthorizedError } from '../../utils';
 import { getOrgAccessUser } from '../access';
@@ -33,37 +36,46 @@ export const exportProposals = async ({
 
   const { processInstanceId } = input;
 
-  // Get organization from process instance
-  const instanceOrg = await db
+  // Get organization AND verify user membership
+  const result = await db
     .select({
-      id: organizations.id,
+      organizationId: organizations.id,
+      orgUserId: organizationUsers.id,
     })
-    .from(organizations)
-    .leftJoin(
-      processInstances,
+    .from(processInstances)
+    .innerJoin(
+      organizations,
       eq(organizations.profileId, processInstances.ownerProfileId),
+    )
+    .innerJoin(
+      organizationUsers,
+      and(
+        eq(organizationUsers.organizationId, organizations.id),
+        eq(organizationUsers.authUserId, user.id),
+      ),
     )
     .where(eq(processInstances.id, processInstanceId))
     .limit(1);
 
-  if (!instanceOrg[0]) {
-    throw new UnauthorizedError('Process instance not found');
+  if (!result[0]) {
+    throw new UnauthorizedError(
+      'Process instance not found or you are not a member of this organization',
+    );
   }
 
-  // Get user's organization membership and roles
+  // Get full org user with roles for permission check (cached)
   const orgUser = await getOrgAccessUser({
     user,
-    organizationId: instanceOrg[0].id,
+    organizationId: result[0].organizationId,
   });
 
+  // This should always succeed since we validated membership above
   if (!orgUser) {
     throw new UnauthorizedError('You are not a member of this organization');
   }
 
-  // Require ADMIN permission to export proposals
   assertAccess({ decisions: permission.ADMIN }, orgUser.roles || []);
 
-  // Generate export ID
   const exportId = randomUUID();
 
   // Set initial 'pending' status in cache so frontend can poll immediately
@@ -74,21 +86,13 @@ export const exportProposals = async ({
       exportId,
       processInstanceId: input.processInstanceId,
       userId: user.id,
-      format: input.format,
       status: 'pending',
-      filters: {
-        categoryId: input.categoryId,
-        submittedByProfileId: input.submittedByProfileId,
-        status: input.status,
-        dir: input.dir,
-        proposalFilter: input.proposalFilter,
-      },
       createdAt: new Date().toISOString(),
     },
-    24 * 60 * 60, // 24 hours TTL
+    2 * 60 * 60, // 2 hours
   );
 
-  // Send Inngest event to trigger export workflow
+  // Trigger workflow
   await event.send({
     name: Events.proposalExportRequested.name,
     data: {
@@ -108,6 +112,6 @@ export const exportProposals = async ({
 
   return {
     exportId,
-    organizationId: instanceOrg[0].id,
+    organizationId: result[0].organizationId,
   };
 };
