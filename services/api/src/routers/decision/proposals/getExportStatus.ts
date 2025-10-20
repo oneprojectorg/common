@@ -1,4 +1,4 @@
-import { getExportStatus, UnauthorizedError } from '@op/common';
+import { UnauthorizedError, getExportStatus } from '@op/common';
 import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
@@ -53,7 +53,6 @@ export const getExportStatusRouter = router({
       const { user, logger } = ctx;
 
       try {
-        // Service handles all logic: cache retrieval, authorization, and signed URL refresh
         const result = await getExportStatus({
           exportId: input.exportId,
           user,
