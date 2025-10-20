@@ -14,7 +14,7 @@ const updateExportStatus = async (exportId: string, updates: any) => {
   const key = getExportCacheKey(exportId);
   const existing = await get(key);
   const updated = { ...(existing || {}), ...updates };
-  await set(key, updated, 24 * 60 * 60); // 24 hours TTL
+  await set(key, updated, 2 * 60 * 60); // 2 hours
 };
 
 const { proposalExportRequested } = Events;
@@ -109,10 +109,10 @@ export const exportProposals = inngest.createFunction(
             throw new Error(`Storage upload failed: ${uploadError.message}`);
           }
 
-          // Generate 24-hour signed URL
+          // Generate 2-hour signed URL
           const { data: urlData, error: urlError } = await supabase.storage
             .from('assets')
-            .createSignedUrl(filePath, 60 * 60 * 24); // 24 hours
+            .createSignedUrl(filePath, 2 * 60 * 60); // 2 hours
 
           if (urlError || !urlData) {
             throw new Error(
