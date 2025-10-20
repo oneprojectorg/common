@@ -11,13 +11,14 @@ export async function generateProposalsCsv(
   proposals: ProposalFromList[],
 ): Promise<string> {
   const rows = proposals.map((p) => {
-    const proposalData = p.proposalData || {};
+    const proposalData = (p.proposalData as any) || {};
 
     return {
       'Proposal ID': p.id,
       Title: proposalData.title || '',
       Description: proposalData.description || '',
       Budget: proposalData.budget || '',
+      Category: proposalData.category || '',
       Status: p.status,
       'Submitted By': p.submittedBy?.name || '',
       'Submitter Email': p.submittedBy?.email || '',
