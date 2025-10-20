@@ -1,4 +1,5 @@
 import { OPURLConfig, cookieOptionsDomain } from '@op/core';
+import { createClient } from '@supabase/supabase-js';
 import { createServerClient } from '@supabase/ssr';
 import type { CookieOptions } from '@supabase/ssr';
 import type { SerializeOptions } from 'cookie';
@@ -18,10 +19,10 @@ export const createSBServerClient = async () => {
       cookieOptions:
         useUrl.IS_PRODUCTION || useUrl.IS_STAGING || useUrl.IS_PREVIEW
           ? {
-              domain: cookieOptionsDomain,
-              sameSite: 'lax',
-              secure: true,
-            }
+            domain: cookieOptionsDomain,
+            sameSite: 'lax',
+            secure: true,
+          }
           : {},
       cookies: {
         getAll: async () => {
@@ -47,6 +48,32 @@ export const createSBServerClient = async () => {
             // user sessions.
           }
         },
+      },
+    },
+  );
+};
+
+/**
+ * Create a Supabase client with service role privileges.
+ * This bypasses Row Level Security and should only be used in trusted server contexts
+ * like background jobs, admin operations, or server-side migrations.
+ *
+ * WARNING: This client has full database access. Use with caution.
+ */
+export const createSBServiceClient = () => {
+  if (!process.env.SUPABASE_SERVICE_ROLE) {
+    throw new Error(
+      'SUPABASE_SERVICE_ROLE is not set. Service role client cannot be created.',
+    );
+  }
+
+  return createClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
       },
     },
   );

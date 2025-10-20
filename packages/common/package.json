@@ -19,6 +19,7 @@
     "access-zones": "0.0.1",
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
+    "csv-stringify": "^6.6.0",
     "next": "^15.0.0",
     "p-map": "^7.0.3",
     "slugify": "^1.6.6",

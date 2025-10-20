@@ -12,12 +12,14 @@
     "lint": "pnpm tsc --noEmit"
   },
   "dependencies": {
+    "@op/cache": "workspace:*",
     "@op/common": "workspace:*",
     "@op/core": "workspace:*",
     "@op/db": "workspace:*",
     "@op/emails": "workspace:*",
     "@op/events": "workspace:*",
     "@op/logging": "workspace:*",
+    "@op/supabase": "workspace:*",
     "@op/types": "workspace:*",
     "inngest": "^3.44.0",
     "inngest-cli": "^1.12.1",

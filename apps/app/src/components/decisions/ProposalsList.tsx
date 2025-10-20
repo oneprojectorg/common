@@ -13,6 +13,7 @@ import { Skeleton } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
+import { LuArrowDownToLine } from 'react-icons/lu';
 import type { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
@@ -34,6 +35,7 @@ import { VoteSubmissionModal } from './VoteSubmissionModal';
 import { VoteSuccessModal } from './VoteSuccessModal';
 import { VotingProposalCard } from './VotingProposalCard';
 import { VotingSubmitFooter } from './VotingSubmitFooter';
+import { useProposalExport } from './useProposalExport';
 import { type ProposalFilter, useProposalFilters } from './useProposalFilters';
 
 type Proposal = z.infer<typeof proposalEncoder>;
@@ -385,6 +387,9 @@ export const ProposalsList = ({
   const selectedProposalIds =
     voteStatus?.voteSubmission?.selectedProposalIds || [];
 
+  // Export hook
+  const { startExport, isExporting } = useProposalExport();
+
   // Helper function to update URL params
   const updateURLParams = (updates: Record<string, string | null>) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -451,6 +456,20 @@ export const ProposalsList = ({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [proposalFilter]);
+
+  // Handle export
+  const handleExport = () => {
+    startExport(
+      {
+        processInstanceId: instanceId,
+        categoryId:
+          selectedCategory !== 'all-categories' ? selectedCategory : undefined,
+        dir: sortOrder === 'newest' ? 'desc' : 'asc',
+        proposalFilter,
+      },
+      'csv',
+    );
+  };
 
   return (
     <div className="flex flex-col gap-6 pb-12">
@@ -528,6 +547,17 @@ export const ProposalsList = ({
             <SelectItem id="newest">{t('Newest First')}</SelectItem>
             <SelectItem id="oldest">{t('Oldest First')}</SelectItem>
           </Select>
+          {canManageProposals ? (
+            <Button
+              onPress={handleExport}
+              isDisabled={isExporting}
+              color="secondary"
+              size="small"
+            >
+              <LuArrowDownToLine className="size-4 stroke-[1.5px]" />
+              {isExporting ? t('Exporting...') : t('Download')}
+            </Button>
+          ) : null}
         </div>
       </div>
 
