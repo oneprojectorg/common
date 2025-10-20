@@ -35,6 +35,7 @@
     "@op/common": "workspace:*",
     "@op/core": "workspace:*",
     "@op/db": "workspace:*",
+    "@op/events": "workspace:*",
     "@op/logging": "workspace:*",
     "@op/supabase": "workspace:*",
     "@op/types": "workspace:*",

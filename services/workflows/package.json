@@ -12,6 +12,7 @@
     "lint": "pnpm tsc --noEmit"
   },
   "dependencies": {
+    "@op/cache": "workspace:*",
     "@op/common": "workspace:*",
     "@op/core": "workspace:*",
     "@op/db": "workspace:*",
