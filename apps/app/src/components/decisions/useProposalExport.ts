@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react';
-
 import { trpc } from '@op/api/client';
 import { toast } from '@op/ui/Toast';
+import { useEffect, useState } from 'react';
 
 export const useProposalExport = () => {
   const [exportId, setExportId] = useState<string | null>(null);
@@ -9,11 +8,15 @@ export const useProposalExport = () => {
 
   const exportMutation = trpc.decision.export.useMutation();
 
+  // Use nil UUID when no exportId to satisfy UUID validation
   const { data: exportStatus } = trpc.decision.getExportStatus.useQuery(
-    { exportId: exportId! },
+    { exportId: exportId || '' },
     {
       enabled: !!exportId && isExporting,
-      refetchInterval: 2000, // Poll every 2 seconds
+      refetchInterval: 2000,
+      gcTime: 0, // Don't cache query results
+      staleTime: 0, // Always fetch fresh data
+      retry: false, // Don't retry validation errors
     },
   );
 
@@ -57,6 +60,8 @@ export const useProposalExport = () => {
     },
     format: 'csv' = 'csv',
   ) => {
+    // Clear any previous export state before starting new one
+    setExportId(null);
     setIsExporting(true);
 
     try {
