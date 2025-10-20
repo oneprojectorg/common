@@ -19,6 +19,7 @@
     "@op/emails": "workspace:*",
     "@op/events": "workspace:*",
     "@op/logging": "workspace:*",
+    "@op/supabase": "workspace:*",
     "@op/types": "workspace:*",
     "inngest": "^3.44.0",
     "inngest-cli": "^1.12.1",

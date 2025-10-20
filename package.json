@@ -26,7 +26,8 @@
     "w:db": "pnpm -C ./services/db",
     "w:emails": "pnpm -C ./services/emails",
     "w:supabase": "pnpm -C ./services/supabase",
-    "w:ui": "pnpm -C ./packages/ui"
+    "w:ui": "pnpm -C ./packages/ui",
+    "w:workflows": "pnpm -C ./services/workflows"
   },
   "dependencies": {
     "prettier-plugin-sql": "^0.18.1"

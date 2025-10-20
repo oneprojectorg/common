@@ -6,6 +6,10 @@ import { Events, inngest } from '@op/events';
 import { createSBServiceClient } from '@op/supabase/server';
 import { eq } from 'drizzle-orm';
 
+type ProposalFromList = Awaited<
+  ReturnType<typeof listProposals>
+>['proposals'][number];
+
 // Helper to get cache key for export status
 const getExportCacheKey = (exportId: string) => `export:proposal:${exportId}`;
 
@@ -71,13 +75,12 @@ export const exportProposals = inngest.createFunction(
         return result.proposals;
       });
 
-      // Step 3: Generate file based on format
       const { content, extension, mimeType } = await step.run(
         'generate-file',
         async () => {
           if (format === 'csv') {
             return {
-              content: await generateProposalsCsv(proposals),
+              content: await generateProposalsCsv(proposals as ProposalFromList[]),
               extension: 'csv',
               mimeType: 'text/csv',
             };

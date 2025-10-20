@@ -1231,6 +1231,9 @@ importers:
       '@op/logging':
         specifier: workspace:*
         version: link:../../packages/logging
+      '@op/supabase':
+        specifier: workspace:*
+        version: link:../supabase
       '@op/types':
         specifier: workspace:*
         version: link:../../packages/types
