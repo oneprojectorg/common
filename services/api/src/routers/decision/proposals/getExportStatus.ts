@@ -1,7 +1,4 @@
-import { get, set } from '@op/cache';
 import { getExportStatus, UnauthorizedError } from '@op/common';
-import type { ExportStatusData } from '@op/common';
-import { createSBServerClient } from '@op/supabase/server';
 import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
@@ -56,54 +53,14 @@ export const getExportStatusRouter = router({
       const { user, logger } = ctx;
 
       try {
-        const key = `export:proposal:${input.exportId}`;
-        const exportStatus = (await get(key)) as ExportStatusData | null;
-
-        if (!exportStatus) {
-          return { status: 'not_found' as const };
-        }
-
-        // Service handles all authorization checks (ownership + admin permission)
-        await getExportStatus({
-          exportData: exportStatus,
+        // Service handles all logic: cache retrieval, authorization, and signed URL refresh
+        const result = await getExportStatus({
+          exportId: input.exportId,
           user,
+          logger,
         });
 
-        // Refresh signed URL if expired but file exists
-        if (
-          exportStatus.status === 'completed' &&
-          exportStatus.signedUrl &&
-          exportStatus.urlExpiresAt
-        ) {
-          const expiresAt = new Date(exportStatus.urlExpiresAt);
-
-          if (expiresAt < new Date()) {
-            logger.info('Refreshing expired signed URL', {
-              exportId: input.exportId,
-            });
-
-            // Extract file path from the export status
-            // We need to reconstruct it from the filename
-            const filePath = `exports/proposals/${exportStatus.processInstanceId}/${exportStatus.fileName}`;
-
-            const supabase = await createSBServerClient();
-            const { data: urlData, error: urlError } = await supabase.storage
-              .from('assets')
-              .createSignedUrl(filePath, 60 * 60 * 24); // 24 hours
-
-            if (!urlError && urlData) {
-              exportStatus.signedUrl = urlData.signedUrl;
-              exportStatus.urlExpiresAt = new Date(
-                Date.now() + 24 * 60 * 60 * 1000,
-              ).toISOString();
-
-              // Update cache with new signed URL (24 hours TTL)
-              await set(key, exportStatus, 24 * 60 * 60);
-            }
-          }
-        }
-
-        return exportStatus;
+        return result;
       } catch (error: unknown) {
         if (error instanceof UnauthorizedError) {
           throw new TRPCError({
