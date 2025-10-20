@@ -547,15 +547,17 @@ export const ProposalsList = ({
             <SelectItem id="newest">{t('Newest First')}</SelectItem>
             <SelectItem id="oldest">{t('Oldest First')}</SelectItem>
           </Select>
-          <Button
-            onPress={handleExport}
-            isDisabled={isExporting}
-            color="secondary"
-            size="small"
-          >
-            <LuArrowDownToLine className="size-4 stroke-[1.5px]" />
-            {isExporting ? t('Exporting...') : t('Download')}
-          </Button>
+          {canManageProposals ? (
+            <Button
+              onPress={handleExport}
+              isDisabled={isExporting}
+              color="secondary"
+              size="small"
+            >
+              <LuArrowDownToLine className="size-4 stroke-[1.5px]" />
+              {isExporting ? t('Exporting...') : t('Download')}
+            </Button>
+          ) : null}
         </div>
       </div>
 
