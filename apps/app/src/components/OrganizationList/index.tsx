@@ -15,6 +15,10 @@ import {
   OrganizationAvatar,
   OrganizationAvatarSkeleton,
 } from '@/components/OrganizationAvatar';
+import {
+  CarouselItem,
+  OrganizationCarousel,
+} from '@/components/OrganizationCarousel';
 
 export const OrganizationList = ({
   organizations,
@@ -45,30 +49,27 @@ export const OrganizationList = ({
 
       {/* mobile */}
       <div className="flex flex-col gap-6 sm:hidden">
-        <ul className="grid max-w-full snap-x snap-mandatory scroll-px-8 auto-cols-auto grid-flow-col gap-x-2 overflow-x-scroll scrollbar-none">
-          {organizations?.map((org, idx) => {
-            const { avatarImage, headerImage } = org.profile;
-            const avatarUrl = getPublicUrl(avatarImage?.name);
-            const headerUrl = getPublicUrl(headerImage?.name);
+        <OrganizationCarousel label="New Organizations" itemWidth={192}>
+          <>
+            {organizations?.map((org) => {
+              const { avatarImage, headerImage } = org.profile;
+              const avatarUrl = getPublicUrl(avatarImage?.name);
+              const headerUrl = getPublicUrl(headerImage?.name);
 
-            const gradientBg = getGradientForString(
-              org.profile.name || 'Common',
-            );
-            const gradientBgHeader = getGradientForString(
-              org.profile.name + 'C' || 'Common',
-            );
+              const gradientBg = getGradientForString(
+                org.profile.name || 'Common',
+              );
+              const gradientBgHeader = getGradientForString(
+                org.profile.name + 'C' || 'Common',
+              );
 
-            return (
-              <>
-                <li
-                  key={org.id + '-' + idx}
-                  className="snap-start first:ml-8 last:mr-8"
-                >
-                  <Link
-                    className="flex size-48"
-                    href={`/org/${org.profile.slug}`}
-                  >
-                    <Surface className="flex size-full flex-col gap-3">
+              return (
+                <CarouselItem key={org.id}>
+                  <Surface className="flex size-48">
+                    <Link
+                      className="flex size-full flex-col gap-3"
+                      href={`/org/${org.profile.slug}`}
+                    >
                       <ImageHeader
                         headerImage={
                           headerUrl ? (
@@ -97,16 +98,17 @@ export const OrganizationList = ({
                           )
                         }
                       />
+
                       <div className="flex flex-col p-4 pt-0 text-left">
                         <span>{org.profile.name}</span>
                       </div>
-                    </Surface>
-                  </Link>
-                </li>
-              </>
-            );
-          })}
-        </ul>
+                    </Link>
+                  </Surface>
+                </CarouselItem>
+              );
+            })}
+          </>
+        </OrganizationCarousel>
       </div>
     </>
   );
@@ -257,7 +259,11 @@ export const OrganizationCardListSkeleton = () => {
               <div className="flex flex-col gap-2">
                 <Skeleton className="h-6 w-3/4" />
               </div>
-              <SkeletonLine lines={3} randomWidth={true} className="w-full" />
+              <SkeletonLine
+                lines={3}
+                randomWidth={true}
+                className="w-full"
+              />
             </div>
           </div>
         </div>
