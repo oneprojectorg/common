@@ -388,7 +388,13 @@ export const ProposalsList = ({
     voteStatus?.voteSubmission?.selectedProposalIds || [];
 
   // Export hook
-  const { startExport, isExporting } = useProposalExport();
+  const {
+    startExport,
+    isExporting,
+    isDownloadReady,
+    downloadUrl,
+    downloadFileName,
+  } = useProposalExport();
 
   // Helper function to update URL params
   const updateURLParams = (updates: Record<string, string | null>) => {
@@ -548,15 +554,27 @@ export const ProposalsList = ({
             <SelectItem id="oldest">{t('Oldest First')}</SelectItem>
           </Select>
           {canManageProposals ? (
-            <Button
-              onPress={handleExport}
-              isDisabled={isExporting}
-              color="secondary"
-              size="small"
-            >
-              <LuArrowDownToLine className="size-4 stroke-[1.5px]" />
-              {isExporting ? t('Exporting...') : t('Download')}
-            </Button>
+            isDownloadReady && downloadUrl ? (
+              <ButtonLink
+                href={downloadUrl}
+                download={downloadFileName}
+                color="secondary"
+                size="small"
+              >
+                <LuArrowDownToLine className="size-4 stroke-[1.5]" />
+                {t('Click to download')}
+              </ButtonLink>
+            ) : (
+              <Button
+                onPress={handleExport}
+                isDisabled={isExporting}
+                color="secondary"
+                size="small"
+              >
+                <LuArrowDownToLine className="size-4 stroke-[1.5]" />
+                {isExporting ? t('Exporting...') : t('Export')}
+              </Button>
+            )
           ) : null}
         </div>
       </div>
