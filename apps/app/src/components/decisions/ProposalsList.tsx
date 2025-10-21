@@ -572,7 +572,7 @@ export const ProposalsList = ({
                 size="small"
               >
                 <LuArrowDownToLine className="size-4 stroke-[1.5]" />
-                {isExporting ? t('Exporting...') : t('Download')}
+                {isExporting ? t('Exporting...') : t('Export')}
               </Button>
             )
           ) : null}
