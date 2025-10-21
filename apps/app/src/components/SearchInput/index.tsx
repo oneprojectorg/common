@@ -44,7 +44,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
       {
         q: debouncedQuery,
         types: individualSearchEnabled
-          ? [EntityType.USER, EntityType.ORG]
+          ? [EntityType.INDIVIDUAL, EntityType.ORG]
           : [EntityType.ORG],
       },
       {
