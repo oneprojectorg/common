@@ -19,7 +19,7 @@ export const OrganizationCarousel = ({
     }
 
     const resizeObserver = new ResizeObserver((e) => {
-      setItemsPerPage((e[0]?.contentRect.width ?? 1) / itemWidth);
+      setItemsPerPage(Math.ceil((e[0]?.contentRect.width ?? 1) / itemWidth));
     });
 
     resizeObserver.observe(carouselRef.current);
@@ -33,11 +33,14 @@ export const OrganizationCarousel = ({
     <Carousel
       ref={carouselRef}
       aria-label={label}
-      className="grid-areas-[.'scroller'.][.'tabs'.] relative grid flex-grow grid-cols-[min-content_1fr_min-content] grid-rows-[1fr_min-content] items-center gap-y-3"
+      className="grid-areas-[.'scroller'.][.'tabs'.] relative z-50 grid flex-grow grid-cols-[min-content_1fr_min-content] grid-rows-[1fr_min-content] items-center gap-y-3"
       mouseDragging
       itemsPerPage={itemsPerPage}
+      scrollPadding="2rem"
+      spaceBetweenItems="1rem"
+      scrollBy="item"
     >
-      <CarouselScroller className="col-start-2 col-end-3 row-start-1 row-end-2 grid snap-x snap-mandatory auto-cols-auto grid-flow-col overflow-x-auto overflow-y-hidden scrollbar-none">
+      <CarouselScroller className="col-start-2 col-end-3 row-start-1 row-end-2 grid snap-x snap-mandatory !auto-cols-auto grid-flow-col gap-x-2 overflow-x-auto overflow-y-hidden scrollbar-none">
         {children}
       </CarouselScroller>
     </Carousel>
