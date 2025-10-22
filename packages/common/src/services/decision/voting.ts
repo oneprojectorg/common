@@ -156,7 +156,8 @@ export const submitVote = async ({
       allowDecisions: currentState.config?.allowDecisions || false,
       instanceData: {
         maxVotesPerMember:
-          (processInstance.instanceData as any)?.maxVotesPerMember || 3,
+          (processInstance.instanceData as any)?.fieldValues
+            ?.maxVotesPerMember || 5,
       },
       schemaType: 'simple',
     };
