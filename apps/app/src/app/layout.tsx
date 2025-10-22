@@ -65,7 +65,7 @@ export const viewport: Viewport = {
 
 const RootLayout = async ({ children }: { children: React.ReactNode }) => {
   return (
-    <html>
+    <html className="h-full">
       <head>
         {/* {(IS_DEVELOPMENT || IS_PREVIEW) && (
           <script
@@ -81,7 +81,7 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
       <WebVitals />
       <TRPCProvider>
         <body
-          className={`${roboto.variable} ${robotoMono.variable} ${robotoSerif.variable} overflow-x-hidden text-base text-neutral-black antialiased`}
+          className={`${roboto.variable} ${robotoMono.variable} ${robotoSerif.variable} h-full overflow-x-hidden text-base text-neutral-black antialiased`}
         >
           <PostHogProvider>{children}</PostHogProvider>
           <ReactQueryDevtools initialIsOpen={false} />

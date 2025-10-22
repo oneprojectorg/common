@@ -17,7 +17,7 @@ const AppRoot = async ({ children }: { children: React.ReactNode }) => {
   }
 
   return (
-    <div className="flex size-full max-h-full flex-col overflow-hidden">
+    <div className="flex size-full max-h-full flex-col">
       <UserProvider>
         <SiteHeader />
         <AppLayout>{children}</AppLayout>

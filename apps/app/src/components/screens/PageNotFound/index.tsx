@@ -3,7 +3,7 @@ import { Header2 } from '@op/ui/Header';
 
 export default function PageNotFound() {
   return (
-    <div className="absolute left-0 top-0 flex h-screen w-screen flex-col items-center justify-center gap-8">
+    <div className="flex size-full flex-col items-center justify-center gap-8">
       <div className="flex flex-col items-center gap-4">
         <Header2 className="font-serif text-[4rem] font-light leading-[110%]">
           404
