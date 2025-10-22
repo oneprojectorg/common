@@ -32,7 +32,7 @@ export const decisionSelectedProposals = pgTable(
       }),
 
     selectedAt: timestamp('selected_at', { withTimezone: true }).notNull(),
-    selectionData: jsonb('selection_data'),
+    resultsData: jsonb('results_data'),
 
     ...timestamps,
   },

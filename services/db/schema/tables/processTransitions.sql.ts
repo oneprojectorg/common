@@ -34,10 +34,10 @@ export const decisionProcessTransitions = pgTable(
 
     completed: boolean('completed').default(false).notNull(),
     autoProcessed: boolean('auto_processed').default(false).notNull(),
-    selectionFunctionFailed: boolean('selection_function_failed')
+    resultsFunctionFailed: boolean('results_function_failed')
       .default(false)
       .notNull(),
-    selectionError: jsonb('selection_error'),
+    resultsError: jsonb('results_error'),
 
     ...timestamps,
   },

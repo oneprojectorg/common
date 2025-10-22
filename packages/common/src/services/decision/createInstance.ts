@@ -64,6 +64,16 @@ export const createInstance = async ({
       throw new CommonError('Failed to create decision process instance');
     }
 
+    const { createTransitionsForProcess } = await import(
+      './createTransitionsForProcess'
+    );
+
+    try {
+      await createTransitionsForProcess({ processInstance: instance });
+    } catch (transitionError) {
+      console.error('Error creating transitions for process:', transitionError);
+    }
+
     return instance;
   } catch (error) {
     if (
