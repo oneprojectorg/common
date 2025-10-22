@@ -150,13 +150,14 @@ export const submitVote = async ({
       throw new ValidationError('Current state not found');
     }
 
+    console.log('VOTING VALIDATION', processInstance.instanceData);
     // Build schema data for validation
     const schemaData = {
       allowProposals: currentState.config?.allowProposals || false,
       allowDecisions: currentState.config?.allowDecisions || false,
       instanceData: {
         maxVotesPerMember:
-          (processInstance.instanceData as any)?.maxVotesPerMember || 3,
+          (processInstance.instanceData as any)?.maxVotesPerMember || 5,
       },
       schemaType: 'simple',
     };
