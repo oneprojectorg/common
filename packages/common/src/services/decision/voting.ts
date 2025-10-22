@@ -150,6 +150,10 @@ export const submitVote = async ({
       throw new ValidationError('Current state not found');
     }
 
+    console.log(
+      'VOTING VALIDATION: maxVotesPerMember',
+      (processInstance.instanceData as any)?.fieldValues?.maxVotesPerMember,
+    );
     // Build schema data for validation
     const schemaData = {
       allowProposals: currentState.config?.allowProposals || false,
