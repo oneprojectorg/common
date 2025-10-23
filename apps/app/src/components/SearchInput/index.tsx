@@ -1,14 +1,14 @@
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { useLocalStorage } from '@/utils/useLocalStorage';
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { TextField } from '@op/ui/TextField';
 import { cn } from '@op/ui/utils';
-import { useFeatureFlagEnabled } from 'posthog-js/react';
+import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { LuSearch } from 'react-icons/lu';
 import { useDebounce } from 'use-debounce';
-import { useTranslations } from 'next-intl';
 
 import { Link, useRouter } from '@/lib/i18n';
 
@@ -19,7 +19,7 @@ import { SearchResultItem } from './SearchResultItem';
 export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
   const router = useRouter();
   const t = useTranslations();
-  const individualSearchEnabled = useFeatureFlagEnabled('individual_search');
+  const individualSearchEnabled = useFeatureFlag('individual_search');
 
   const [query, setQuery] = useState<string>('');
   const [debouncedQuery, setImmediateQuery] = useDebounce(query, 200);
