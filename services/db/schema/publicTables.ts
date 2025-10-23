@@ -133,6 +133,12 @@ export {
 } from './tables/stateTransitionHistory.sql';
 export type { StateTransitionHistory } from './tables/stateTransitionHistory.sql';
 
+export {
+  decisionProcessTransitions,
+  decisionProcessTransitionsRelations,
+} from './tables/processTransitions.sql';
+export type { DecisionProcessTransition } from './tables/processTransitions.sql';
+
 export type { ObjectsInStorage } from './tables/storage.sql';
 
 // Module activation tables
