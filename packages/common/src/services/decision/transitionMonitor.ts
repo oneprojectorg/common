@@ -4,7 +4,7 @@ import pMap from 'p-map';
 
 import { CommonError } from '../../utils';
 
-export interface ProcessDueTransitionsResult {
+export interface ProcessDecisionsTransitionsResult {
   processed: number;
   failed: number;
   errors: Array<{
@@ -18,9 +18,9 @@ export interface ProcessDueTransitionsResult {
  * Monitors and processes transitions that are due.
  * This function is called by an external service either scheduled or on a cron job.
  */
-export async function processDueTransitions(): Promise<ProcessDueTransitionsResult> {
+export async function processDecisionsTransitions(): Promise<ProcessDecisionsTransitionsResult> {
   const now = new Date().toISOString();
-  const result: ProcessDueTransitionsResult = {
+  const result: ProcessDecisionsTransitionsResult = {
     processed: 0,
     failed: 0,
     errors: [],

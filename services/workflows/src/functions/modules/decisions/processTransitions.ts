@@ -1,4 +1,4 @@
-import { processDueTransitions } from '@op/common';
+import { processDecisionsTransitions } from '@op/common';
 import { inngest } from '@op/events';
 
 /**
@@ -7,7 +7,7 @@ import { inngest } from '@op/events';
  */
 export const processTransitions = inngest.createFunction(
   {
-    id: 'process-transitions',
+    id: 'decisions-process-transitions',
     name: 'Process Decision Making Phases Transitions',
   },
   // Run every hour at minute 0. This supports our tier of Inngest which only supports up to
@@ -15,7 +15,7 @@ export const processTransitions = inngest.createFunction(
   { cron: '0 * * * *' },
   async ({ step }) => {
     const result = await step.run('process-phase-transitions', async () => {
-      return await processDueTransitions();
+      return await processDecisionsTransitions();
     });
 
     if (result.failed > 0) {
