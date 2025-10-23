@@ -28,6 +28,7 @@
     "./Field": "./src/components/Field.tsx",
     "./Form": "./src/components/Form.tsx",
     "./Header": "./src/components/Header.tsx",
+    "./HorizontalList": "./src/components/HorizontalList/index.tsx",
     "./IconButton": "./src/components/IconButton.tsx",
     "./Keyboard": "./src/components/Keyboard.tsx",
     "./ListBox": "./src/components/ListBox.tsx",

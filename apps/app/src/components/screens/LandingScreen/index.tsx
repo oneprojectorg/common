@@ -27,8 +27,8 @@ const LandingScreenFeeds = async ({
 }) => {
   const NewOrganizationsList = () => {
     return (
-      <Surface className="flex flex-col gap-6 border-0 sm:border sm:p-6">
-        <Header3 className="font-serif text-title-sm">
+      <Surface className="-mx-8 flex flex-col gap-6 border-0 sm:border sm:p-6">
+        <Header3 className="px-8 font-serif text-title-sm">
           <TranslatedText text="New Organizations" />
         </Header3>
         <NewOrganizations />
