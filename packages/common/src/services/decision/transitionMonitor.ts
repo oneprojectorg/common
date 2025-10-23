@@ -1,9 +1,8 @@
-import { db, eq, lte } from '@op/db/client';
+import { db, eq, lte, sql } from '@op/db/client';
 import { decisionProcessTransitions, processInstances } from '@op/db/schema';
 import pMap from 'p-map';
 
 import { CommonError } from '../../utils';
-import type { InstanceData } from './types';
 
 export interface ProcessDueTransitionsResult {
   processed: number;
@@ -110,30 +109,21 @@ async function processTransition(transitionId: string): Promise<void> {
     return;
   }
 
-  const instance = await db.query.processInstances.findFirst({
-    where: eq(processInstances.id, transition.processInstanceId),
-  });
-
-  if (!instance) {
-    throw new CommonError(
-      `Process instance not found: ${transition.processInstanceId}. The instance may have been deleted.`,
-    );
-  }
-
-  const instanceData = instance.instanceData as InstanceData;
-
   // Update both the process instance and transition in a single transaction
   // to ensure atomicity and prevent partial state updates
+  // Note: We rely on foreign key constraints to ensure the process instance exists
   await db.transaction(async (tx) => {
     // Update the process instance to the new state
+    // Use jsonb_set to update only the currentStateId field without reading the entire instanceData
     await tx
       .update(processInstances)
       .set({
         currentStateId: transition.toStateId,
-        instanceData: {
-          ...instanceData,
-          currentStateId: transition.toStateId,
-        },
+        instanceData: sql`jsonb_set(
+          ${processInstances.instanceData},
+          '{currentStateId}',
+          to_jsonb(${transition.toStateId}::text)
+        )`,
       })
       .where(eq(processInstances.id, transition.processInstanceId));
 
