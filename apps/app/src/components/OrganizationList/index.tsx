@@ -3,6 +3,7 @@
 import { getPublicUrl } from '@/utils';
 import { Organization } from '@op/api/encoders';
 import { Avatar } from '@op/ui/Avatar';
+import { HorizontalList, HorizontalListItem } from '@op/ui/HorizontalList';
 import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
 import { cn, getGradientForString } from '@op/ui/utils';
@@ -45,7 +46,7 @@ export const OrganizationList = ({
 
       {/* mobile */}
       <div className="flex flex-col gap-6 sm:hidden">
-        <ul className="grid max-w-full snap-x snap-mandatory scroll-px-8 auto-cols-auto grid-flow-col gap-x-2 overflow-x-scroll scrollbar-none">
+        <HorizontalList className="scroll-px-8">
           {organizations?.map((org, idx) => {
             const { avatarImage, headerImage } = org.profile;
             const avatarUrl = getPublicUrl(avatarImage?.name);
@@ -59,54 +60,52 @@ export const OrganizationList = ({
             );
 
             return (
-              <>
-                <li
-                  key={org.id + '-' + idx}
-                  className="snap-start first:ml-8 last:mr-8"
+              <HorizontalListItem
+                key={org.id}
+                className="snap-start first:ml-8 last:mr-8"
+              >
+                <Link
+                  className="flex size-48"
+                  href={`/org/${org.profile.slug}`}
                 >
-                  <Link
-                    className="flex size-48"
-                    href={`/org/${org.profile.slug}`}
-                  >
-                    <Surface className="flex size-full flex-col gap-3">
-                      <ImageHeader
-                        headerImage={
-                          headerUrl ? (
-                            <Image
-                              src={headerUrl}
-                              alt=""
-                              fill
-                              className="object-cover"
-                            />
-                          ) : (
-                            <div
-                              className={cn('h-full w-full', gradientBgHeader)}
-                            />
-                          )
-                        }
-                        avatarImage={
-                          avatarUrl ? (
-                            <Image
-                              src={avatarUrl}
-                              alt=""
-                              fill
-                              className="object-cover"
-                            />
-                          ) : (
-                            <div className={cn('h-full w-full', gradientBg)} />
-                          )
-                        }
-                      />
-                      <div className="flex flex-col p-4 pt-0 text-left">
-                        <span>{org.profile.name}</span>
-                      </div>
-                    </Surface>
-                  </Link>
-                </li>
-              </>
+                  <Surface className="flex size-full flex-col gap-3">
+                    <ImageHeader
+                      headerImage={
+                        headerUrl ? (
+                          <Image
+                            src={headerUrl}
+                            alt=""
+                            fill
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div
+                            className={cn('h-full w-full', gradientBgHeader)}
+                          />
+                        )
+                      }
+                      avatarImage={
+                        avatarUrl ? (
+                          <Image
+                            src={avatarUrl}
+                            alt=""
+                            fill
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className={cn('h-full w-full', gradientBg)} />
+                        )
+                      }
+                    />
+                    <div className="flex flex-col p-4 pt-0 text-left">
+                      <span>{org.profile.name}</span>
+                    </div>
+                  </Surface>
+                </Link>
+              </HorizontalListItem>
             );
           })}
-        </ul>
+        </HorizontalList>
       </div>
     </>
   );

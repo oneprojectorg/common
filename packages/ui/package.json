@@ -15,6 +15,7 @@
     "./FileUploader": "./src/components/FileUploader.tsx",
     "./Button": "./src/components/Button.tsx",
     "./CategoryList": "./src/components/CategoryList.tsx",
+    "./HorizontalList": "./src/components/HorizontalList/index.tsx",
     "./ComboBox": "./src/components/ComboBox.tsx",
     "./Command": "./src/components/Command.tsx",
     "./CheckIcon": "./src/components/icons/CheckIcon.tsx",
