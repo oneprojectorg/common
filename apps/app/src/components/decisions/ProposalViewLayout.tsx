@@ -45,7 +45,7 @@ export function ProposalViewLayout({
           onClick={() => router.push(backHref)}
           className="flex items-center gap-2 text-base text-primary-teal hover:text-primary-tealBlack"
         >
-          <LuArrowLeft className="size-6 stroke-[1.5] text-neutral-charcoal sm:size-4 sm:text-primary-teal" />
+          <LuArrowLeft className="size-6 text-neutral-charcoal sm:size-4 sm:text-primary-teal" />
           <span className="hidden sm:block">{t('Back to Proposals')}</span>
         </button>
 

@@ -60,7 +60,7 @@ export const BannerUploader = ({
             {uploading ? (
               <LoadingSpinner />
             ) : (
-              <Camera className="stroke-offWhite stroke-[1.5]" />
+              <Camera className="stroke-offWhite" />
             )}
           </button>
         </div>

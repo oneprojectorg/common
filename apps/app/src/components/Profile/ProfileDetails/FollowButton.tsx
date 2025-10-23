@@ -84,12 +84,12 @@ const FollowButtonSuspense = ({ profile }: { profile: Organization }) => {
         <LoadingSpinner />
       ) : isFollowing ? (
         <>
-          <LuCheck className="size-4 stroke-[1.5]" />
+          <LuCheck className="size-4" />
           Following
         </>
       ) : (
         <>
-          <LuPlus className="size-4 stroke-[1.5]" />
+          <LuPlus className="size-4" />
           Follow
         </>
       )}

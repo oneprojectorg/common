@@ -91,13 +91,13 @@ const RespondButtonSuspense = ({ profile }: { profile: Organization }) => {
     {
       id: 'accept',
       label: 'Accept',
-      icon: <LuCheck className="size-4 stroke-[1.5]" />,
+      icon: <LuCheck className="size-4" />,
       onAction: handleApprove,
     },
     {
       id: 'decline',
       label: 'Decline',
-      icon: <LuX className="size-4 stroke-[1.5] text-functional-red" />,
+      icon: <LuX className="size-4 text-functional-red" />,
       onAction: handleDecline,
     },
   ];
