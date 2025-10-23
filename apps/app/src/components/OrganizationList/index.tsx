@@ -47,7 +47,7 @@ export const OrganizationList = ({
       {/* mobile */}
       <div className="flex flex-col gap-6 sm:hidden">
         <HorizontalList className="scroll-px-8">
-          {organizations?.map((org, idx) => {
+          {organizations?.map((org) => {
             const { avatarImage, headerImage } = org.profile;
             const avatarUrl = getPublicUrl(avatarImage?.name);
             const headerUrl = getPublicUrl(headerImage?.name);
