@@ -1,8 +1,14 @@
 import { db, eq, lte, sql } from '@op/db/client';
-import { decisionProcessTransitions, processInstances } from '@op/db/schema';
+import {
+  decisionProcessTransitions,
+  decisionProcesses,
+  processInstances,
+} from '@op/db/schema';
 import pMap from 'p-map';
 
 import { CommonError } from '../../utils';
+import { processResults } from './processResults';
+import type { ProcessSchema, StateDefinition } from './types';
 
 export interface ProcessDecisionsTransitionsResult {
   processed: number;
@@ -93,6 +99,7 @@ export async function processDecisionsTransitions(): Promise<ProcessDecisionsTra
 /**
  * Processes a single transition by ID.
  * Updates the process instance state to move to the next phase.
+ * If transitioning to a final state (results phase), triggers results processing.
  */
 async function processTransition(transitionId: string): Promise<void> {
   const transition = await db.query.decisionProcessTransitions.findFirst({
@@ -108,6 +115,33 @@ async function processTransition(transitionId: string): Promise<void> {
   if (transition.completedAt) {
     return;
   }
+
+  // Get the process instance to check if we're transitioning to a final state
+  const processInstance = await db.query.processInstances.findFirst({
+    where: eq(processInstances.id, transition.processInstanceId),
+  });
+
+  if (!processInstance) {
+    throw new CommonError(
+      `Process instance not found: ${transition.processInstanceId}`,
+    );
+  }
+
+  // Get the process schema to check the state type
+  const process = await db.query.decisionProcesses.findFirst({
+    where: eq(decisionProcesses.id, processInstance.processId),
+  });
+
+  if (!process) {
+    throw new CommonError(`Process not found: ${processInstance.processId}`);
+  }
+
+  const processSchema = process.processSchema as ProcessSchema;
+  const toState = processSchema.states.find(
+    (state: StateDefinition) => state.id === transition.toStateId,
+  );
+
+  const isTransitioningToFinalState = toState?.type === 'final';
 
   // Update both the process instance and transition in a single transaction
   // to ensure atomicity and prevent partial state updates
@@ -135,4 +169,36 @@ async function processTransition(transitionId: string): Promise<void> {
       })
       .where(eq(decisionProcessTransitions.id, transition.id));
   });
+
+  // If transitioning to a final state (results phase), process the results
+  // This is done AFTER the transition is marked complete to ensure the state change
+  // is committed even if results processing fails
+  if (isTransitioningToFinalState) {
+    try {
+      console.log(
+        `Processing results for process instance ${transition.processInstanceId}`,
+      );
+      const result = await processResults({
+        processInstanceId: transition.processInstanceId,
+      });
+
+      if (!result.success) {
+        console.error(
+          `Results processing failed for process instance ${transition.processInstanceId}:`,
+          result.error,
+        );
+      } else {
+        console.log(
+          `Results processed successfully for process instance ${transition.processInstanceId}. Selected ${result.selectedProposalIds.length} proposals.`,
+        );
+      }
+    } catch (error) {
+      // Log the error but don't fail the transition
+      // The transition to the results phase has already been completed
+      console.error(
+        `Error processing results for process instance ${transition.processInstanceId}:`,
+        error,
+      );
+    }
+  }
 }
