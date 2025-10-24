@@ -3,6 +3,7 @@ import { decisionProcesses, processInstances, users } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
+import { createTransitionsForProcess } from './createTransitionsForProcess';
 import type { InstanceData, ProcessSchema } from './types';
 
 export interface CreateInstanceInput {
@@ -45,7 +46,7 @@ export const createInstance = async ({
     // Get initial state from process schema
     const processSchema = process.processSchema as ProcessSchema;
     const initialStateId =
-      processSchema.initialState || processSchema.states?.[0]?.id;
+      processSchema.initialState || processSchema.states?.[0]?.id || null;
 
     const [instance] = await db
       .insert(processInstances)
@@ -63,6 +64,10 @@ export const createInstance = async ({
     if (!instance) {
       throw new CommonError('Failed to create decision process instance');
     }
+
+    // Create transitions for the process phases
+    // This is critical - if transitions can't be created, the process won't auto-advance
+    await createTransitionsForProcess({ processInstance: instance });
 
     return instance;
   } catch (error) {

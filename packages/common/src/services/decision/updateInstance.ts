@@ -11,6 +11,7 @@ import { z } from 'zod';
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { getCurrentProfileId } from '../access';
 import type { InstanceData } from './types';
+import { updateTransitionsForProcess } from './updateTransitionsForProcess';
 
 /**
  * Ensures the "proposal" taxonomy exists and creates/updates taxonomy terms for the given categories
@@ -224,6 +225,17 @@ export const updateInstance = async ({
 
     if (!updatedInstance) {
       throw new CommonError('Failed to update decision process instance');
+    }
+
+    // If instanceData.phases were updated, update the corresponding transitions
+    if (data.instanceData?.phases) {
+      try {
+        await updateTransitionsForProcess({ processInstance: updatedInstance });
+      } catch (error) {
+        console.error('Error updating transitions for process instance:', error);
+        // Log the error but don't fail the entire update
+        // The instance was updated successfully, just the transitions sync failed
+      }
     }
 
     return updatedInstance;
