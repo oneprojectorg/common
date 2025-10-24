@@ -9,6 +9,7 @@ import { Roboto, Roboto_Mono, Roboto_Serif } from 'next/font/google';
 import Script from 'next/script';
 
 import { register } from '../../instrumentation';
+import { IconProvider } from '../components/IconProvider';
 import { PostHogProvider } from '../components/PostHogProvider';
 
 // Register Axiom logging
@@ -83,7 +84,9 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
         <body
           className={`${roboto.variable} ${robotoMono.variable} ${robotoSerif.variable} h-full overflow-x-hidden text-base text-neutral-black antialiased`}
         >
-          <PostHogProvider>{children}</PostHogProvider>
+          <PostHogProvider>
+            <IconProvider>{children}</IconProvider>
+          </PostHogProvider>
           <ReactQueryDevtools initialIsOpen={false} />
           <Toast />
         </body>

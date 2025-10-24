@@ -65,7 +65,7 @@ const ToastWrapper = ({
           className="w-6 transition-opacity hover:opacity-70"
           onPress={() => sonnerToast.dismiss(id)}
         >
-          <LuX className="size-6 stroke-1" />
+          <LuX className="size-6" />
         </Button>
       )}
     </div>
@@ -168,7 +168,7 @@ export const toast = {
         dismissable={dismissable}
         isSingleLine={isSingleLine}
       >
-        <LuCircleCheck className="size-6 shrink-0 stroke-1 text-functional-green" />
+        <LuCircleCheck className="size-6 shrink-0 text-functional-green" />
         <ToastBody isSingleLine={isSingleLine}>
           {title && <ToastTitle>{title}</ToastTitle>}
           {message &&
@@ -209,7 +209,7 @@ export const toast = {
           dismissable={dismissable}
           isSingleLine={isSingleLine}
         >
-          <LuCircleAlert className="size-6 shrink-0 stroke-1 text-white" />
+          <LuCircleAlert className="size-6 shrink-0 text-white" />
           <ToastBody isSingleLine={isSingleLine}>
             {title && (
               <ToastTitle>

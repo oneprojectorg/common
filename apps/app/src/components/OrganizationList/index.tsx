@@ -3,6 +3,7 @@
 import { getPublicUrl } from '@/utils';
 import { Organization } from '@op/api/encoders';
 import { Avatar } from '@op/ui/Avatar';
+import { HorizontalList, HorizontalListItem } from '@op/ui/HorizontalList';
 import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
 import { cn, getGradientForString } from '@op/ui/utils';
@@ -15,10 +16,6 @@ import {
   OrganizationAvatar,
   OrganizationAvatarSkeleton,
 } from '@/components/OrganizationAvatar';
-import {
-  CarouselItem,
-  OrganizationCarousel,
-} from '@/components/OrganizationCarousel';
 
 export const OrganizationList = ({
   organizations,
@@ -49,66 +46,66 @@ export const OrganizationList = ({
 
       {/* mobile */}
       <div className="flex flex-col gap-6 sm:hidden">
-        <OrganizationCarousel label="New Organizations" itemWidth={192}>
-          <>
-            {organizations?.map((org) => {
-              const { avatarImage, headerImage } = org.profile;
-              const avatarUrl = getPublicUrl(avatarImage?.name);
-              const headerUrl = getPublicUrl(headerImage?.name);
+        <HorizontalList className="scroll-px-8">
+          {organizations?.map((org) => {
+            const { avatarImage, headerImage } = org.profile;
+            const avatarUrl = getPublicUrl(avatarImage?.name);
+            const headerUrl = getPublicUrl(headerImage?.name);
 
-              const gradientBg = getGradientForString(
-                org.profile.name || 'Common',
-              );
-              const gradientBgHeader = getGradientForString(
-                org.profile.name + 'C' || 'Common',
-              );
+            const gradientBg = getGradientForString(
+              org.profile.name || 'Common',
+            );
+            const gradientBgHeader = getGradientForString(
+              org.profile.name + 'C' || 'Common',
+            );
 
-              return (
-                <CarouselItem key={org.id}>
-                  <Surface className="flex size-48">
-                    <Link
-                      className="flex size-full flex-col gap-3"
-                      href={`/org/${org.profile.slug}`}
-                    >
-                      <ImageHeader
-                        headerImage={
-                          headerUrl ? (
-                            <Image
-                              src={headerUrl}
-                              alt=""
-                              fill
-                              className="object-cover"
-                            />
-                          ) : (
-                            <div
-                              className={cn('h-full w-full', gradientBgHeader)}
-                            />
-                          )
-                        }
-                        avatarImage={
-                          avatarUrl ? (
-                            <Image
-                              src={avatarUrl}
-                              alt=""
-                              fill
-                              className="object-cover"
-                            />
-                          ) : (
-                            <div className={cn('h-full w-full', gradientBg)} />
-                          )
-                        }
-                      />
-
-                      <div className="flex flex-col p-4 pt-0 text-left">
-                        <span>{org.profile.name}</span>
-                      </div>
-                    </Link>
+            return (
+              <HorizontalListItem
+                key={org.id}
+                className="snap-start first:ml-8 last:mr-8"
+              >
+                <Link
+                  className="flex size-48"
+                  href={`/org/${org.profile.slug}`}
+                >
+                  <Surface className="flex size-full flex-col gap-3">
+                    <ImageHeader
+                      headerImage={
+                        headerUrl ? (
+                          <Image
+                            src={headerUrl}
+                            alt=""
+                            fill
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div
+                            className={cn('h-full w-full', gradientBgHeader)}
+                          />
+                        )
+                      }
+                      avatarImage={
+                        avatarUrl ? (
+                          <Image
+                            src={avatarUrl}
+                            alt=""
+                            fill
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className={cn('h-full w-full', gradientBg)} />
+                        )
+                      }
+                    />
+                    <div className="flex flex-col p-4 pt-0 text-left">
+                      <span>{org.profile.name}</span>
+                    </div>
                   </Surface>
-                </CarouselItem>
-              );
-            })}
-          </>
-        </OrganizationCarousel>
+                </Link>
+              </HorizontalListItem>
+            );
+          })}
+        </HorizontalList>
       </div>
     </>
   );
@@ -259,11 +256,7 @@ export const OrganizationCardListSkeleton = () => {
               <div className="flex flex-col gap-2">
                 <Skeleton className="h-6 w-3/4" />
               </div>
-              <SkeletonLine
-                lines={3}
-                randomWidth={true}
-                className="w-full"
-              />
+              <SkeletonLine lines={3} randomWidth={true} className="w-full" />
             </div>
           </div>
         </div>

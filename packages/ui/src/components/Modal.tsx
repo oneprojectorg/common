@@ -63,7 +63,7 @@ export const ModalHeader = ({
               'text-neutral-charcoal',
             )}
           >
-            <LuX className="h-6 w-6 stroke-1" aria-hidden="true" />
+            <LuX className="h-6 w-6" aria-hidden="true" />
           </button>
         )}
         <Header1

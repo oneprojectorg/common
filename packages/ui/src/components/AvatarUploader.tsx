@@ -66,7 +66,7 @@ export const AvatarUploader = ({
             {uploading ? (
               <LoadingSpinner />
             ) : (
-              <Camera className="stroke-offWhite stroke-1" />
+              <Camera className="stroke-offWhite" />
             )}
           </button>
         </div>

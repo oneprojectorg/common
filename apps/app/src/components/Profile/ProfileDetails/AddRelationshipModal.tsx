@@ -119,9 +119,9 @@ export const AddRelationshipModalSuspense = ({
       relationshipMap[relationship.relationshipType]?.label ??
       relationship.relationshipType,
     icon: relationship.pending ? (
-      <LuClock className="size-4 stroke-1" />
+      <LuClock className="size-4" />
     ) : (
-      <LuCheck className="size-4 stroke-1" />
+      <LuCheck className="size-4" />
     ),
     onAction: () => setSelectedRelationshipId(relationship.id),
   }));
@@ -146,7 +146,7 @@ export const AddRelationshipModalSuspense = ({
             </>
           }
           items={dropdownItems}
-          chevronIcon={<LuChevronDown className="size-4 stroke-1" />}
+          chevronIcon={<LuChevronDown className="size-4" />}
           className={cn(
             'min-w-full sm:min-w-fit',
             relationships.some((r) => r.pending)
@@ -163,9 +163,9 @@ export const AddRelationshipModalSuspense = ({
                 color={relationship.pending ? 'unverified' : 'verified'}
               >
                 {relationship.pending ? (
-                  <LuClock className="size-4 stroke-1" />
+                  <LuClock className="size-4" />
                 ) : (
-                  <LuCheck className="size-4 stroke-1" />
+                  <LuCheck className="size-4" />
                 )}
                 {relationshipMap[relationship.relationshipType]?.label ??
                   relationship.relationshipType}
@@ -192,7 +192,7 @@ export const AddRelationshipModalSuspense = ({
       ) : (
         <DialogTrigger>
           <Button className="min-w-full text-nowrap sm:min-w-fit">
-            <LuPlus className="size-4 stroke-1" />
+            <LuPlus className="size-4" />
             Add relationship
           </Button>
           <Modal className="sm:min-w-[29rem]">

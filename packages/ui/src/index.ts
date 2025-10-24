@@ -26,6 +26,7 @@ export * from './components/Field';
 export * from './components/Form';
 export * from './components/GridList';
 export * from './components/Header';
+export * from './components/HorizontalList';
 export * from './components/IconButton';
 export * from './components/Keyboard';
 export * from './components/Link';
