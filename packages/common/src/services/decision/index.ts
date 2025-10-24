@@ -17,6 +17,7 @@ export type { ExecuteTransitionInput } from './executeTransition';
 export { TransitionEngine } from './transitionEngine';
 export type { TransitionCheckResult } from './transitionEngine';
 export * from './createTransitionsForProcess';
+export * from './updateTransitionsForProcess';
 export * from './transitionMonitor';
 
 // Proposal management
