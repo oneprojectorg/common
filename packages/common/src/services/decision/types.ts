@@ -23,6 +23,9 @@ export interface ProcessSchema {
 
   // Template for proposals (JSON Schema)
   proposalTemplate: JsonSchema;
+
+  // Results processing function name (identifies which selection algorithm to use)
+  selectionFunctionId?: string;
 }
 
 // State Definition (stored in processSchema.states)
@@ -95,6 +98,15 @@ export interface InstanceData {
   currentStateId: string;
   stateData?: Record<string, StateData>; // State-specific runtime data
   phases?: PhaseConfiguration[];
+  results?: ProcessResults; // Results of the selection function execution
+}
+
+// Results of proposal selection
+export interface ProcessResults {
+  selectedProposalIds: string[]; // Proposals that were selected as successful
+  executedAt: string; // ISO timestamp when selection was executed
+  selectionFunctionId?: string; // Which selection function was used
+  error?: string; // Error message if selection function failed
 }
 
 export interface StateData {
