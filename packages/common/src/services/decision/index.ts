@@ -20,6 +20,13 @@ export * from './createTransitionsForProcess';
 export * from './updateTransitionsForProcess';
 export * from './transitionMonitor';
 
+// Results processing
+export * from './processResults';
+export * from './getResults';
+
+// Selection pipeline
+export * from './selectionPipeline';
+
 // Proposal management
 export * from './createProposal';
 export * from './updateProposal';
