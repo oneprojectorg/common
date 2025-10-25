@@ -1,3 +1,5 @@
+import safeRegex from 'safe-regex2';
+
 import type {
   ArithmeticExpression,
   ComparisonExpression,
@@ -116,8 +118,19 @@ function evaluateComparison(
       return typeof left === 'string' && left.endsWith(String(right));
     case 'matches':
       if (typeof left === 'string' && typeof right === 'string') {
-        const regex = new RegExp(right);
-        return regex.test(left);
+        try {
+          // Validate regex pattern is safe from ReDoS attacks
+          if (!safeRegex(right)) {
+            console.error(`Unsafe regex pattern detected: ${right}`);
+            return false;
+          }
+          const regex = new RegExp(right);
+          return regex.test(left);
+        } catch (error) {
+          // Invalid regex pattern
+          console.error(`Invalid regex pattern: ${right}`, error);
+          return false;
+        }
       }
       return false;
     default:
