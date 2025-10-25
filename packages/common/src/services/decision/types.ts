@@ -1,5 +1,7 @@
 import type { JSONSchema7 } from 'json-schema';
 
+import type { SelectionPipeline } from './selectionPipeline/types';
+
 // Base JSON Schema type (more specific than any)
 export type JsonSchema = JSONSchema7;
 
@@ -24,8 +26,11 @@ export interface ProcessSchema {
   // Template for proposals (JSON Schema)
   proposalTemplate: JsonSchema;
 
-  // Results processing function name (identifies which selection algorithm to use)
-  selectionFunctionId?: string;
+  // Selection pipeline for results phase
+  selectionPipeline?: SelectionPipeline;
+
+  // Phase transition pipelines (keyed by state ID)
+  phaseTransitionPipelines?: Record<string, SelectionPipeline>;
 }
 
 // State Definition (stored in processSchema.states)
@@ -98,15 +103,6 @@ export interface InstanceData {
   currentStateId: string;
   stateData?: Record<string, StateData>; // State-specific runtime data
   phases?: PhaseConfiguration[];
-  results?: ProcessResults; // Results of the selection function execution
-}
-
-// Results of proposal selection
-export interface ProcessResults {
-  selectedProposalIds: string[]; // Proposals that were selected as successful
-  executedAt: string; // ISO timestamp when selection was executed
-  selectionFunctionId?: string; // Which selection function was used
-  error?: string; // Error message if selection function failed
 }
 
 export interface StateData {
