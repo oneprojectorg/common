@@ -1,58 +1,21 @@
-import { db, eq } from '@op/db/client';
-import { processInstances, proposals } from '@op/db/schema';
-import type { ProcessInstance, Proposal, DecisionProcess } from '@op/db/schema';
+import { db, eq, inArray } from '@op/db/client';
+import {
+  ProposalStatus,
+  decisionProcessResultSelections,
+  decisionProcessResults,
+  processInstances,
+  proposals,
+} from '@op/db/schema';
+import type { DecisionProcess } from '@op/db/schema';
 
 import { CommonError } from '../../utils';
-import type { InstanceData, ProcessResults, ProcessSchema } from './types';
-
-/**
- * Selection function signature - takes proposals and returns selected proposal IDs
- */
-export type SelectionFunction = (
-  proposals: Proposal[],
-  processInstance: ProcessInstance,
-) => Promise<string[]> | string[];
-
-/**
- * Registry of selection functions that can be used to determine which proposals succeed
- */
-const selectionFunctions = new Map<string, SelectionFunction>();
-
-/**
- * Register a selection function
- */
-export function registerSelectionFunction(
-  id: string,
-  fn: SelectionFunction,
-): void {
-  selectionFunctions.set(id, fn);
-}
-
-/**
- * Default selection function - selects all submitted proposals
- */
-const defaultSelectionFunction: SelectionFunction = async (proposals) => {
-  return proposals
-    .filter((p) => p.status === 'submitted' || p.status === 'approved')
-    .map((p) => p.id);
-};
-
-// Register the default selection function
-registerSelectionFunction('default', defaultSelectionFunction);
-
-/**
- * Example selection function - selects top N proposals by some criteria
- * This is just an example - real implementations would be registered by the application
- */
-registerSelectionFunction('top-n', async (proposals) => {
-  // Sort by created date (oldest first) and take top 10
-  const sorted = [...proposals].sort((a, b) => {
-    const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-    const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-    return aTime - bTime;
-  });
-  return sorted.slice(0, 10).map((p) => p.id);
-});
+import {
+  aggregateVoteData,
+  defaultSelectionPipeline,
+  executePipeline,
+} from './selectionPipeline';
+import type { ExecutionContext } from './selectionPipeline/types';
+import type { InstanceData, ProcessSchema } from './types';
 
 export interface ProcessResultsInput {
   processInstanceId: string;
@@ -60,13 +23,14 @@ export interface ProcessResultsInput {
 
 export interface ProcessResultsOutput {
   success: boolean;
+  resultId: string;
   selectedProposalIds: string[];
   error?: string;
 }
 
 /**
- * Process results for a process instance by executing the selection function
- * and storing the selected proposal IDs
+ * Process results for a process instance by executing the selection pipeline
+ * and storing the selected proposal IDs in the database
  */
 export async function processResults({
   processInstanceId,
@@ -90,107 +54,124 @@ export async function processResults({
       );
     }
 
-    // Check if results have already been processed
-    const instanceData = processInstance.instanceData as InstanceData;
-    if (instanceData.results) {
-      console.log(
-        `Results already processed for process instance ${processInstanceId}`,
-      );
-      return {
-        success: !instanceData.results.error,
-        selectedProposalIds: instanceData.results.selectedProposalIds,
-        error: instanceData.results.error,
-      };
-    }
-
     // Get all proposals for this process instance
     const processProposals = await db.query.proposals.findMany({
       where: eq(proposals.processInstanceId, processInstanceId),
     });
 
-    // Get the selection function ID from the process schema
+    // Get the process schema
     const process = processInstance.process as DecisionProcess;
     const processSchema = process.processSchema as ProcessSchema;
-    const selectionFunctionId = processSchema.selectionFunctionId || 'default';
-
-    // Get the selection function
-    const selectionFunction = selectionFunctions.get(selectionFunctionId);
-
-    if (!selectionFunction) {
-      throw new CommonError(
-        `Selection function not found: ${selectionFunctionId}. Available functions: ${Array.from(selectionFunctions.keys()).join(', ')}`,
-      );
-    }
+    const instanceData = processInstance.instanceData as InstanceData;
 
     let selectedProposalIds: string[] = [];
     let error: string | undefined;
+    let success = false;
 
     try {
-      // Execute the selection function
-      selectedProposalIds = await selectionFunction(
-        processProposals,
-        processInstance,
-      );
+      // Use the defined pipeline or fall back to default
+      const pipeline =
+        processSchema.selectionPipeline || defaultSelectionPipeline;
+
+      // Aggregate voting data
+      const voteData = await aggregateVoteData(processInstanceId);
+
+      // Build execution context
+      const context: ExecutionContext = {
+        proposals: processProposals,
+        voteData,
+        process: {
+          instanceId: processInstance.id,
+          processId: processInstance.processId,
+          currentStateId: processInstance.currentStateId,
+          instanceData,
+          processSchema,
+          processInstance,
+        },
+        variables: {},
+        outputs: {},
+      };
+
+      // Execute the pipeline
+      const selectedProposals = await executePipeline(pipeline, context);
+      selectedProposalIds = selectedProposals.map((p) => p.id);
+      success = true;
     } catch (err) {
-      console.error('Error executing selection function:', err);
+      console.error('Error executing selection pipeline:', err);
       error = err instanceof Error ? err.message : 'Unknown error';
     }
 
-    // Store the results in the process instance
-    const results: ProcessResults = {
-      selectedProposalIds,
-      executedAt: new Date().toISOString(),
-      selectionFunctionId,
-      error,
-    };
+    const result = await db.transaction(async (tx) => {
+      // Store the results in the database
+      const [resultRecord] = await tx
+        .insert(decisionProcessResults)
+        .values({
+          processInstanceId,
+          success,
+          errorMessage: error,
+          selectedCount: selectedProposalIds.length,
+          pipelineConfig: processSchema.selectionPipeline || null,
+        })
+        .returning();
 
-    const updatedInstanceData: InstanceData = {
-      ...instanceData,
-      results,
-    };
+      if (!resultRecord) {
+        throw new CommonError('Failed to create process result record');
+      }
 
-    await db
-      .update(processInstances)
-      .set({
-        instanceData: updatedInstanceData,
-      })
-      .where(eq(processInstances.id, processInstanceId));
+      // Insert selected proposals into junction table
+      if (selectedProposalIds.length > 0) {
+        await tx.insert(decisionProcessResultSelections).values(
+          selectedProposalIds.map((proposalId, index) => ({
+            processResultId: resultRecord.id,
+            proposalId,
+            selectionRank: index + 1,
+          })),
+        );
 
-    return {
-      success: !error,
-      selectedProposalIds,
-      error,
-    };
+        // Update proposal status to 'selected' for selected proposals
+        await tx
+          .update(proposals)
+          .set({ status: ProposalStatus.SELECTED })
+          .where(inArray(proposals.id, selectedProposalIds));
+      }
+
+      return {
+        success,
+        resultId: resultRecord.id,
+        selectedProposalIds,
+        error,
+      };
+    });
+
+    return result;
   } catch (error) {
     console.error('Error processing results:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error';
 
-    // Try to store the error in the instance data
+    // Try to store the error in the database
     try {
-      const processInstance = await db.query.processInstances.findFirst({
-        where: eq(processInstances.id, processInstanceId),
-      });
+      const [resultRecord] = await db
+        .insert(decisionProcessResults)
+        .values({
+          processInstanceId,
+          success: false,
+          errorMessage,
+          selectedCount: 0,
+          pipelineConfig: null,
+        })
+        .returning();
 
-      if (processInstance) {
-        const instanceData = processInstance.instanceData as InstanceData;
-        const results: ProcessResults = {
+      if (resultRecord) {
+        return {
+          success: false,
+          resultId: resultRecord.id,
           selectedProposalIds: [],
-          executedAt: new Date().toISOString(),
           error: errorMessage,
         };
-
-        await db
-          .update(processInstances)
-          .set({
-            instanceData: {
-              ...instanceData,
-              results,
-            },
-          })
-          .where(eq(processInstances.id, processInstanceId));
       }
-    } catch (updateError) {
-      console.error('Failed to store error in instance data:', updateError);
+    } catch (insertError) {
+      console.error('Failed to store error in database:', insertError);
     }
 
     throw new CommonError(`Failed to process results: ${errorMessage}`);
