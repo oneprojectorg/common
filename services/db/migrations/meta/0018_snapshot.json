@@ -1,5 +1,5 @@
 {
-  "id": "2a858e22-8ff1-4668-8279-233bab21accc",
+  "id": "ed778144-da7a-4e14-84fb-6ad1bbbed64f",
   "prevId": "63fc9d68-068e-4aad-b854-5717e7774d24",
   "version": "7",
   "dialect": "postgresql",
@@ -1069,8 +1069,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "created_at": {
-          "name": "created_at",
+        "executed_at": {
+          "name": "executed_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false,
@@ -1100,6 +1100,13 @@
           "type": "jsonb",
           "primaryKey": false,
           "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "(now() AT TIME ZONE 'utc'::text)"
         },
         "updated_at": {
           "name": "updated_at",
@@ -1141,7 +1148,7 @@
               "nulls": "last"
             },
             {
-              "expression": "created_at",
+              "expression": "executed_at",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1162,7 +1169,7 @@
               "nulls": "last"
             },
             {
-              "expression": "created_at",
+              "expression": "executed_at",
               "isExpression": false,
               "asc": true,
               "nulls": "last"

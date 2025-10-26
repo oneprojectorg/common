@@ -1,4 +1,4 @@
-import { relations } from 'drizzle-orm';
+import { relations, sql } from 'drizzle-orm';
 import type { InferModel } from 'drizzle-orm';
 import {
   boolean,
@@ -7,12 +7,13 @@ import {
   jsonb,
   pgTable,
   text,
+  timestamp,
   uuid,
 } from 'drizzle-orm/pg-core';
 
 import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
-import { processInstances } from './processInstances.sql';
 import { decisionProcessResultSelections } from './decisionProcessResultSelections.sql';
+import { processInstances } from './processInstances.sql';
 
 export const decisionProcessResults = pgTable(
   'decision_process_results',
@@ -26,7 +27,10 @@ export const decisionProcessResults = pgTable(
       }),
 
     // Execution metadata
-    executedAt: timestamps.createdAt,
+    executedAt: timestamp({
+      withTimezone: true,
+      mode: 'string',
+    }).default(sql`(now() AT TIME ZONE 'utc'::text)`),
     success: boolean('success').notNull(),
     errorMessage: text('error_message'),
 
