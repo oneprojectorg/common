@@ -13,11 +13,12 @@ export const defaultSelectionPipeline: SelectionPipeline = {
       id: 'filter-shortlisted',
       type: 'filter',
       name: 'Select all shortlisted proposals',
-      description: 'Default behavior: select all proposals with shortlisted status',
+      description:
+        'Default behavior: select all proposals with shortlisted status',
       condition: {
         operator: 'equals',
         left: { field: 'status' },
-        right: { value: 'shortlisted' },
+        right: { value: 'approved' },
       },
     },
   ],
