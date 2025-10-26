@@ -30,7 +30,6 @@ ALTER TABLE "decision_process_results" ADD CONSTRAINT "decision_process_results_
 CREATE INDEX "result_selections_result_idx" ON "decision_process_result_selections" USING btree ("process_result_id");--> statement-breakpoint
 CREATE INDEX "result_selections_proposal_idx" ON "decision_process_result_selections" USING btree ("proposal_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "result_selections_unique_idx" ON "decision_process_result_selections" USING btree ("process_result_id","proposal_id");--> statement-breakpoint
-CREATE INDEX "decision_process_results_id_index" ON "decision_process_results" USING btree ("id");--> statement-breakpoint
 CREATE INDEX "process_results_instance_date_idx" ON "decision_process_results" USING btree ("process_instance_id","executed_at");--> statement-breakpoint
 CREATE INDEX "process_results_success_date_idx" ON "decision_process_results" USING btree ("success","executed_at");--> statement-breakpoint
 CREATE POLICY "service-role" ON "decision_process_result_selections" AS PERMISSIVE FOR ALL TO "service_role";--> statement-breakpoint

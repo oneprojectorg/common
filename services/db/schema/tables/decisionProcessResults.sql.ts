@@ -44,7 +44,6 @@ export const decisionProcessResults = pgTable(
   },
   (table) => [
     ...serviceRolePolicies,
-    index().on(table.id).concurrently(),
     index('process_results_instance_date_idx')
       .on(table.processInstanceId, table.executedAt)
       .concurrently(),
