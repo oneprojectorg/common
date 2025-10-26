@@ -139,6 +139,18 @@ export {
 } from './tables/processTransitions.sql';
 export type { DecisionProcessTransition } from './tables/processTransitions.sql';
 
+export {
+  decisionProcessResults,
+  decisionProcessResultsRelations,
+} from './tables/decisionProcessResults.sql';
+export type { DecisionProcessResult } from './tables/decisionProcessResults.sql';
+
+export {
+  decisionProcessResultSelections,
+  decisionProcessResultSelectionsRelations,
+} from './tables/decisionProcessResultSelections.sql';
+export type { DecisionProcessResultSelection } from './tables/decisionProcessResultSelections.sql';
+
 export type { ObjectsInStorage } from './tables/storage.sql';
 
 // Module activation tables
