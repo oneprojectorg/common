@@ -121,10 +121,10 @@ export async function processResults({
       // Insert selected proposals into junction table
       if (selectedProposalIds.length > 0) {
         await tx.insert(decisionProcessResultSelections).values(
-          selectedProposalIds.map((proposalId, index) => ({
+          selectedProposalIds.map((proposalId) => ({
             processResultId: resultRecord.id,
             proposalId,
-            selectionRank: index + 1,
+            selectionRank: 0, // Default to 0. This is used for things like ranked voting
           })),
         );
 
