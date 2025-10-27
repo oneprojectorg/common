@@ -10,9 +10,9 @@ export const processTransitions = inngest.createFunction(
     id: 'decisions-process-transitions',
     name: 'Process Decision Making Phases Transitions',
   },
-  // Run every hour at minute 0. This supports our tier of Inngest which only supports up to
+  // Run every day at midnight. This supports our tier of Inngest which only supports up to
   // 7 days advance scheduling. In the future we can specifically schedule these.
-  { cron: '0 * * * *' },
+  { cron: '0 0 * * *' },
   async ({ step }) => {
     const result = await step.run('process-phase-transitions', async () => {
       return await processDecisionsTransitions();

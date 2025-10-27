@@ -1,5 +1,7 @@
 import type { JSONSchema7 } from 'json-schema';
 
+import type { SelectionPipeline } from './selectionPipeline/types';
+
 // Base JSON Schema type (more specific than any)
 export type JsonSchema = JSONSchema7;
 
@@ -23,6 +25,12 @@ export interface ProcessSchema {
 
   // Template for proposals (JSON Schema)
   proposalTemplate: JsonSchema;
+
+  // Selection pipeline for results phase
+  selectionPipeline?: SelectionPipeline;
+
+  // Phase transition pipelines (keyed by state ID)
+  phaseTransitionPipelines?: Record<string, SelectionPipeline>;
 }
 
 // State Definition (stored in processSchema.states)
