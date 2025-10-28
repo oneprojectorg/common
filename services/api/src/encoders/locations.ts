@@ -11,6 +11,7 @@ export const locationEncoder = createSelectSchema(locations)
     countryName: true,
     metadata: true,
   })
+  .partial()
   .strip()
   .extend({
     metadata: z.record(z.string(), z.any()).optional(),
