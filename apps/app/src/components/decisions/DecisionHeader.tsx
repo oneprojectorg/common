@@ -59,7 +59,9 @@ export async function DecisionHeader({
     <div
       className={cn(
         'border-b',
-        isResultsPhase ? 'bg-redPurple' : 'bg-neutral-offWhite',
+        isResultsPhase
+          ? 'bg-redPurple text-neutral-offWhite'
+          : 'bg-neutral-offWhite text-gray-700',
       )}
     >
       <DecisionInstanceHeader

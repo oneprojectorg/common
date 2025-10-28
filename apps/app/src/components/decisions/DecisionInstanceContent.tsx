@@ -10,7 +10,7 @@ import { Avatar } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
 import { Dialog, DialogTrigger } from '@op/ui/Dialog';
 import { GrowingFacePile } from '@op/ui/GrowingFacePile';
-import { GradientHeader } from '@op/ui/Header';
+import { GradientHeader, Header2 } from '@op/ui/Header';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Modal, ModalBody, ModalHeader } from '@op/ui/Modal';
 import Image from 'next/image';
@@ -187,37 +187,56 @@ export function DecisionInstanceContent({
             ),
             _: (
               <>
-                <GradientHeader className="items-center align-middle uppercase">
-                  {hasVoted
-                    ? t('YOUR BALLOT IS IN.')
-                    : match(currentState?.id, {
-                        voting: () => t('TIME TO VOTE.'),
-                        _: () => t('SHARE YOUR IDEAS.'),
-                      })}
-                </GradientHeader>
-                {
-                  <div className="flex flex-col gap-2 pb-2 text-base text-gray-700">
-                    <p>Help determine how we invest our snack budget.</p>
-                    {currentState?.id === 'voting' ? (
-                      <p>
-                        Please select{' '}
-                        <strong>
-                          {
-                            instance?.instanceData?.fieldValues
-                              ?.maxVotesPerMember as number
-                          }{' '}
-                          proposals.
-                        </strong>
-                      </p>
-                    ) : null}
-                  </div>
-                }
+                {hasVoted
+                  ? t('YOUR BALLOT IS IN.')
+                  : match(currentState?.id, {
+                      voting: () => (
+                        <GradientHeader className="items-center align-middle uppercase">
+                          {t('TIME TO VOTE.')}
+                        </GradientHeader>
+                      ),
+                      results: () => (
+                        <Header2 className="font-serif text-title-xxl font-light">
+                          {t('THE RESULTS ARE IN.')}
+                        </Header2>
+                      ),
+                      _: () => (
+                        <GradientHeader className="items-center align-middle uppercase">
+                          {t('SHARE YOUR IDEAS.')}
+                        </GradientHeader>
+                      ),
+                    })}
+                <div className="flex flex-col gap-2 pb-2 text-base">
+                  {match(currentState?.id, {
+                    results: () =>
+                      `Thank you to everyone who participated in ${instance.name}`,
+                    _: () => (
+                      <>
+                        <p>
+                          Help determine how we invest our community budget.
+                        </p>
+                        {currentState?.id === 'voting' ? (
+                          <p>
+                            Please select{' '}
+                            <strong>
+                              {
+                                instance?.instanceData?.fieldValues
+                                  ?.maxVotesPerMember as number
+                              }{' '}
+                              proposals.
+                            </strong>
+                          </p>
+                        ) : null}
+                      </>
+                    ),
+                  })}
+                </div>
               </>
             ),
           })}
 
           {/* Member avatars showing who submitted proposals */}
-          {uniqueSubmitters.length > 0 && (
+          {currentState?.id !== 'results' && uniqueSubmitters.length > 0 && (
             <div className="flex items-center justify-center gap-2">
               <GrowingFacePile
                 maxItems={20}
