@@ -139,6 +139,7 @@ export function DecisionInstanceContent({
                     ? t('YOUR BALLOT IS IN.')
                     : match(currentState?.id, {
                         review: () => t('TIME TO VOTE.'),
+                        voting: () => t('COMMITTEE DELIBERATION.'), // This being voting is a side-effect of having copied another voting process in a pinch. This should all be removed soon.
                         _: () => t('SHARE YOUR IDEAS.'),
                       })}
                 </GradientHeader>

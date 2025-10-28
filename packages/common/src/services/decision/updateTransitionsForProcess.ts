@@ -51,18 +51,21 @@ export async function updateTransitionsForProcess({
     const expectedTransitions = phases.map((phase: PhaseConfiguration, index: number) => {
       const fromStateId = index > 0 ? phases[index - 1]?.stateId : null;
       const toStateId = phase.stateId;
+      // For phases like 'results' that only have a start date (no end), use the start date
       const scheduledEnd = phase.plannedEndDate || phase.actualEndDate;
+      const scheduledStart = phase.plannedStartDate || phase.actualStartDate;
+      const scheduledDate = scheduledEnd || scheduledStart;
 
-      if (!scheduledEnd) {
+      if (!scheduledDate) {
         throw new CommonError(
-          `Phase ${index + 1} (${toStateId}) must have a scheduled end date`,
+          `Phase ${index + 1} (${toStateId}) must have either a scheduled end date or start date`,
         );
       }
 
       return {
         fromStateId,
         toStateId,
-        scheduledDate: new Date(scheduledEnd).toISOString(),
+        scheduledDate: new Date(scheduledDate).toISOString(),
       };
     });
 

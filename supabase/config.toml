@@ -6,7 +6,7 @@ project_id = "common-test"
 [api]
 enabled = true
 # Test API port (different from dev port 54321)
-port = 55321
+port = 54321
 schemas = [
   "public",
   "graphql_public"
@@ -22,14 +22,14 @@ enabled = false
 
 [db]
 # Test database port (different from dev port 54322)
-port = 55322
-shadow_port = 55320
+port = 54322
+shadow_port = 54320
 major_version = 15
 
 [db.pooler]
 enabled = true
 # Test pooler port (different from dev port 54329)
-port = 55329
+port = 54329
 pool_mode = "transaction"
 default_pool_size = 20
 max_client_conn = 100
@@ -44,14 +44,14 @@ enabled = true
 [studio]
 enabled = true
 # Test Studio port (different from dev port 54323)
-port = 55323
+port = 54323
 api_url = "http://127.0.0.1"
 openai_api_key = "env(OPENAI_API_KEY)"
 
 [inbucket]
 enabled = true
 # Test Inbucket port (different from dev port 54324)
-port = 55324
+port = 54324
 
 [storage]
 enabled = true
@@ -146,7 +146,7 @@ inspector_port = 8084  # Different from dev port 8083
 
 [analytics]
 enabled = true
-port = 55327  # Different from dev port 54327
+port = 54327  # Different from dev port 54327
 backend = "postgres"
 
 [experimental]
