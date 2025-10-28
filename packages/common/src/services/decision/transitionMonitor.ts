@@ -7,7 +7,7 @@ import {
 import pMap from 'p-map';
 
 import { CommonError } from '../../utils';
-import { processResults } from './processResults';
+// import { processResults } from './processResults';
 import type { ProcessSchema, StateDefinition } from './types';
 
 export interface ProcessDecisionsTransitionsResult {
