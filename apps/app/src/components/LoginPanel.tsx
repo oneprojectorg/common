@@ -276,7 +276,7 @@ export const LoginPanel = () => {
                     <div className="flex flex-col">
                       <Form
                         onSubmit={async (e) => {
-                          if (token && token.length === 10) {
+                          if (isValidOtpLength(token)) {
                             e.preventDefault();
                             e.stopPropagation();
                             await handleTokenSubmit();
@@ -333,7 +333,7 @@ export const LoginPanel = () => {
                       isDisabled={
                         !emailIsValid ||
                         login.isFetching ||
-                        (!!token && token.length !== 10)
+                        (!!token && !isValidOtpLength(token))
                       }
                       onPress={async () => {
                         if (!loginSuccess) {
@@ -342,11 +342,7 @@ export const LoginPanel = () => {
                               setLoginSuccess(true);
                             }
                           });
-                        } else if (
-                          loginSuccess &&
-                          token &&
-                          token.length === 10
-                        ) {
+                        } else if (loginSuccess && isValidOtpLength(token)) {
                           void handleTokenSubmit();
                         }
                       }}
@@ -403,5 +399,15 @@ export const LoginPanel = () => {
     </div>
   );
 };
+
+// Supabase OTP length is configurable between 6-10 digits
+// https://supabase.com/docs/guides/local-development/cli/config#auth.email.otp_length
+function isValidOtpLength(token: string | undefined): boolean {
+  if (!token) {
+    return false;
+  }
+
+  return token.length >= 6 && token.length <= 10;
+}
 
 export default LoginPanel;
