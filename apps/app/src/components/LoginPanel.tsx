@@ -20,7 +20,6 @@ import GoogleIcon from '~icons/logos/google-icon.jsx';
 
 import { CommonLogo } from './CommonLogo';
 
-
 interface LoginState {
   email: string;
   setEmail: (email: string) => void;
@@ -403,12 +402,12 @@ export const LoginPanel = () => {
 
 // Supabase OTP length is configurable between 6-10 digits
 // https://supabase.com/docs/guides/local-development/cli/config#auth.email.otp_length
-function isValidOtpLength (token: string | undefined): boolean {
+function isValidOtpLength(token: string | undefined): boolean {
   if (!token) {
     return false;
   }
-  const length = token.length;
-  return length >= 6 && length <= 10;
-};
+
+  return token.length >= 6 && token.length <= 10;
+}
 
 export default LoginPanel;
