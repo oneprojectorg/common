@@ -16,10 +16,14 @@ export const ProfileSearchResultsSuspense = ({
   query: string;
   limit?: number;
 }) => {
+  const individualSearchEnabled = useFeatureFlag('individual_search');
+
   const [profiles] = trpc.profile.search.useSuspenseQuery({
     limit,
     q: query,
-    types: [EntityType.ORG],
+    types: individualSearchEnabled
+      ? [EntityType.INDIVIDUAL, EntityType.ORG]
+      : [EntityType.ORG],
   });
 
   return profiles.length > 0 ? (
