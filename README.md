@@ -6,7 +6,7 @@ It's not quite ready to fork or contribute to yet as we are working fast on it b
 ## Quick Start & Setup
 
 1.  **Prerequisites**:
-    - Ensure you have **Node.js v18+** installed.
+    - Ensure you have **Node.js v22+** installed.
     - Enable [Corepack](https://nodejs.org/api/corepack.html) (Node.js's built-in package manager manager) by running: `corepack enable` (This ensures you use the `pnpm` version specified in the root `package.json`).
 2.  **Install Dependencies**: Run `pnpm install` in the project root. This will install dependencies for all workspaces.
 3.  **Environment Variables**:
