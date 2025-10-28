@@ -8,8 +8,10 @@ import {
 } from '@op/db/client';
 import {
   EntityType,
+  locations,
   objectsInStorage,
   organizations,
+  organizationsWhereWeWork,
   profiles,
   users,
 } from '@op/db/schema';
@@ -69,6 +71,14 @@ export const searchProfiles = async ({
       user: {
         ...getTableColumns(users),
       },
+      // Get the first country from the organization's locations using a correlated subquery
+      countryName: sql<string | null>`(
+        SELECT ${locations.countryName}
+        FROM ${organizationsWhereWeWork}
+        INNER JOIN ${locations} ON ${locations.id} = ${organizationsWhereWeWork.locationId}
+        WHERE ${organizationsWhereWeWork.organizationId} = ${organizations.id}
+        LIMIT 1
+      )`,
       rank: sql`ts_rank(${profiles.search}, ${searchQueries.englishQuery}) + ts_rank(${profiles.search}, ${searchQueries.simpleQuery})`.as(
         'rank',
       ),
