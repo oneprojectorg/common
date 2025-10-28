@@ -1,5 +1,6 @@
 import { createClient } from '@op/api/serverClient';
 import { Skeleton } from '@op/ui/Skeleton';
+import { cn } from '@op/ui/utils';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
@@ -13,7 +14,10 @@ interface DecisionHeaderProps {
   slug: string;
 }
 
-export async function DecisionHeader({ instanceId, slug }: DecisionHeaderProps) {
+export async function DecisionHeader({
+  instanceId,
+  slug,
+}: DecisionHeaderProps) {
   const client = await createClient();
 
   const instance = await client.decision.getInstance({
@@ -49,8 +53,15 @@ export async function DecisionHeader({ instanceId, slug }: DecisionHeaderProps) 
     };
   });
 
+  const isResultsPhase = instance.currentStateId === 'results';
+
   return (
-    <div className="border-b bg-neutral-offWhite">
+    <div
+      className={cn(
+        'border-b',
+        isResultsPhase ? 'bg-redPurple' : 'bg-neutral-offWhite',
+      )}
+    >
       <DecisionInstanceHeader
         backTo={{
           label: instance.owner?.name,
