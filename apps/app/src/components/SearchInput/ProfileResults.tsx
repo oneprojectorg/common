@@ -31,9 +31,7 @@ export const ProfileResults = ({
         if (isIndividual) {
           additionalInfo = profile.bio;
         } else {
-          const locationParts = [profile.city, profile.state].filter(Boolean);
-          additionalInfo =
-            locationParts.length > 0 ? locationParts.join(', ') : undefined;
+          additionalInfo = profile.countryName || undefined;
         }
 
         const subtitle = additionalInfo
