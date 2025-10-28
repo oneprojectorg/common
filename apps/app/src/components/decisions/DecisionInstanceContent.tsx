@@ -187,25 +187,23 @@ export function DecisionInstanceContent({
             ),
             _: (
               <>
-                {hasVoted
-                  ? t('YOUR BALLOT IS IN.')
-                  : match(currentState?.id, {
-                      voting: () => (
-                        <GradientHeader className="items-center align-middle uppercase">
-                          {t('TIME TO VOTE.')}
-                        </GradientHeader>
-                      ),
-                      results: () => (
-                        <Header2 className="font-serif text-title-xxl font-light">
-                          {t('THE RESULTS ARE IN.')}
-                        </Header2>
-                      ),
-                      _: () => (
-                        <GradientHeader className="items-center align-middle uppercase">
-                          {t('SHARE YOUR IDEAS.')}
-                        </GradientHeader>
-                      ),
-                    })}
+                {match(currentState?.id, {
+                  voting: () => (
+                    <GradientHeader className="items-center align-middle uppercase">
+                      {hasVoted ? t('YOUR BALLOT IS IN.') : t('TIME TO VOTE.')}
+                    </GradientHeader>
+                  ),
+                  results: () => (
+                    <Header2 className="font-serif text-title-xxl font-light">
+                      {t('THE RESULTS ARE IN.')}
+                    </Header2>
+                  ),
+                  _: () => (
+                    <GradientHeader className="items-center align-middle uppercase">
+                      {t('SHARE YOUR IDEAS.')}
+                    </GradientHeader>
+                  ),
+                })}
                 <div className="flex flex-col gap-2 pb-2 text-base">
                   {match(currentState?.id, {
                     results: () =>
