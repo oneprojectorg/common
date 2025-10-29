@@ -34,11 +34,14 @@ export const getInstanceResultsRouter = router({
     .output(instanceResultsEncoder)
     .query(async ({ ctx, input }) => {
       const { user, logger } = ctx;
+      const { limit = 20, cursor } = input ?? {};
 
       try {
         const result = await getLatestResultWithProposals({
-          processInstanceId: input.instanceId,
+          processInstanceId: input?.instanceId ?? '',
           user,
+          limit,
+          cursor,
         });
 
         if (!result) {
@@ -48,11 +51,7 @@ export const getInstanceResultsRouter = router({
           });
         }
 
-        return {
-          proposals: result.proposals,
-          total: result.proposals.length,
-          hasMore: false,
-        };
+        return result;
       } catch (error) {
         if (error instanceof NotFoundError) {
           throw new TRPCError({

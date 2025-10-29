@@ -1,5 +1,9 @@
 import { z } from 'zod';
 
-export const getInstanceResultsInputSchema = z.object({
-  instanceId: z.uuid(),
-});
+import { dbFilter } from '../utils';
+
+export const getInstanceResultsInputSchema = dbFilter
+  .extend({
+    instanceId: z.uuid(),
+  })
+  .optional();

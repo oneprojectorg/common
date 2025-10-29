@@ -253,8 +253,8 @@ export const proposalListEncoder = z.object({
 });
 
 export const instanceResultsEncoder = z.object({
-  proposals: z.array(proposalEncoder),
-  total: z.number(),
+  items: z.array(proposalEncoder),
+  next: z.string().nullish(),
   hasMore: z.boolean(),
 });
 

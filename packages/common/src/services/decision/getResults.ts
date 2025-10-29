@@ -1,4 +1,4 @@
-import { and, db, desc, eq, inArray } from '@op/db/client';
+import { and, asc, db, desc, eq, gt, inArray, or } from '@op/db/client';
 import {
   decisionProcessResultSelections,
   decisionProcessResults,
@@ -11,59 +11,63 @@ import { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 import { count as countFn } from 'drizzle-orm';
 
-import { NotFoundError, UnauthorizedError } from '../../utils';
+import { NotFoundError, UnauthorizedError, decodeCursor } from '../../utils';
 import { getOrgAccessUser } from '../access';
 import { listProposals } from './listProposals';
+
+// Custom cursor encoding for selection rank pagination
+// Uses selectionRank instead of updatedAt since we sort by rank
+const encodeSelectionCursor = (selectionRank: number, proposalId: string) => {
+  return Buffer.from(JSON.stringify({ selectionRank, proposalId })).toString(
+    'base64',
+  );
+};
 
 export const getLatestResultWithProposals = async ({
   processInstanceId,
   user,
+  limit = 20,
+  cursor,
 }: {
   processInstanceId: string;
   user: User;
+  limit?: number;
+  cursor?: string | null;
 }) => {
   if (!user) {
     throw new UnauthorizedError('User must be authenticated');
   }
 
-  const instance = await db.query.processInstances.findFirst({
-    where: eq(processInstances.id, processInstanceId),
-  });
+  const instanceWithOrg = await db
+    .select({
+      instanceId: processInstances.id,
+      organizationId: organizations.id,
+    })
+    .from(processInstances)
+    .innerJoin(
+      organizations,
+      eq(organizations.profileId, processInstances.ownerProfileId),
+    )
+    .where(eq(processInstances.id, processInstanceId))
+    .limit(1);
 
-  if (!instance) {
+  if (!instanceWithOrg[0]) {
     throw new NotFoundError('Process instance not found');
   }
 
-  const instanceOrg = await db
-    .select({
-      id: organizations.id,
-    })
-    .from(organizations)
-    .where(eq(organizations.profileId, instance.ownerProfileId))
-    .limit(1);
-
-  if (!instanceOrg[0]) {
-    throw new NotFoundError('Organization not found');
-  }
+  const { organizationId } = instanceWithOrg[0];
 
   const orgUser = await getOrgAccessUser({
     user,
-    organizationId: instanceOrg[0].id,
+    organizationId,
   });
 
   assertAccess({ decisions: permission.READ }, orgUser?.roles ?? []);
 
+  // Get the latest result (without loading all selections)
   const result = await db.query.decisionProcessResults.findFirst({
     where: eq(decisionProcessResults.processInstanceId, processInstanceId),
     orderBy: [desc(decisionProcessResults.executedAt)],
-    with: {
-      selections: {
-        with: {
-          proposal: true,
-        },
-        orderBy: [decisionProcessResultSelections.selectionRank],
-      },
-    },
   });
 
   if (!result) {
@@ -74,13 +78,60 @@ export const getLatestResultWithProposals = async ({
     throw new Error('The latest result execution was not successful');
   }
 
-  const proposalIds = result.selections.map((s) => s.proposalId);
+  // Decode cursor to get the last selectionRank and proposalId from previous page
+  const cursorData = cursor
+    ? (decodeCursor(cursor) as { selectionRank: number; proposalId: string })
+    : null;
 
-  if (proposalIds.length === 0) {
+  // Build cursor condition - fetch items after the cursor rank
+  const cursorCondition = cursorData
+    ? or(
+        gt(
+          decisionProcessResultSelections.selectionRank,
+          cursorData.selectionRank,
+        ),
+        and(
+          eq(
+            decisionProcessResultSelections.selectionRank,
+            cursorData.selectionRank,
+          ),
+          gt(decisionProcessResultSelections.proposalId, cursorData.proposalId),
+        ),
+      )
+    : undefined;
+
+  // Fetch selections with cursor-based pagination
+  const paginatedSelections = await db
+    .select({
+      proposalId: decisionProcessResultSelections.proposalId,
+      selectionRank: decisionProcessResultSelections.selectionRank,
+    })
+    .from(decisionProcessResultSelections)
+    .where(
+      cursorCondition
+        ? and(
+            eq(decisionProcessResultSelections.processResultId, result.id),
+            cursorCondition,
+          )
+        : eq(decisionProcessResultSelections.processResultId, result.id),
+    )
+    .orderBy(asc(decisionProcessResultSelections.selectionRank))
+    .limit(limit + 1); // Fetch one extra to check hasMore
+
+  if (paginatedSelections.length === 0) {
     return {
-      proposals: [],
+      items: [],
+      next: null,
+      hasMore: false,
     };
   }
+
+  // Check if we have more items
+  const hasMore = paginatedSelections.length > limit;
+  const selections = hasMore
+    ? paginatedSelections.slice(0, limit)
+    : paginatedSelections;
+  const paginatedProposalIds = selections.map((s) => s.proposalId);
 
   const [voteCounts, enrichedProposals] = await Promise.all([
     db
@@ -98,7 +149,7 @@ export const getLatestResultWithProposals = async ({
       )
       .where(
         and(
-          inArray(decisionsVoteProposals.proposalId, proposalIds),
+          inArray(decisionsVoteProposals.proposalId, paginatedProposalIds),
           eq(decisionsVoteSubmissions.processInstanceId, processInstanceId),
         ),
       )
@@ -107,8 +158,8 @@ export const getLatestResultWithProposals = async ({
       input: {
         processInstanceId,
         authUserId: user.id,
-        proposalIds,
-        limit: proposalIds.length,
+        proposalIds: paginatedProposalIds,
+        limit: paginatedProposalIds.length,
       },
       user,
     }),
@@ -119,7 +170,7 @@ export const getLatestResultWithProposals = async ({
   );
 
   const selectionDataMap = new Map(
-    result.selections.map((s) => [
+    selections.map((s) => [
       s.proposalId,
       {
         selectionRank: s.selectionRank,
@@ -128,22 +179,31 @@ export const getLatestResultWithProposals = async ({
     ]),
   );
 
-  const proposalsWithRankAndVotes = enrichedProposals.proposals
-    .map((proposal) => {
-      const selectionData = selectionDataMap.get(proposal.id);
-      return {
-        ...proposal,
-        selectionRank: selectionData?.selectionRank ?? null,
-        voteCount: selectionData?.voteCount ?? 0,
-      };
-    })
-    .sort((a, b) => {
-      const rankA = a.selectionRank ?? Number.MAX_SAFE_INTEGER;
-      const rankB = b.selectionRank ?? Number.MAX_SAFE_INTEGER;
-      return rankA - rankB;
-    });
+  // Map proposals to match the DB-ordered selection rank
+  // The order is maintained from selections which was sorted by selectionRank at DB level
+  const proposalsWithRankAndVotes = selections.map((selection) => {
+    const proposal = enrichedProposals.proposals.find(
+      (p) => p.id === selection.proposalId,
+    );
+    const selectionData = selectionDataMap.get(selection.proposalId);
+
+    return {
+      ...proposal,
+      selectionRank: selectionData?.selectionRank ?? null,
+      voteCount: selectionData?.voteCount ?? 0,
+    };
+  });
+
+  // Encode cursor from the last item
+  const lastItem = selections[selections.length - 1];
+  const nextCursor =
+    hasMore && lastItem
+      ? encodeSelectionCursor(lastItem.selectionRank, lastItem.proposalId)
+      : null;
 
   return {
-    proposals: proposalsWithRankAndVotes,
+    items: proposalsWithRankAndVotes,
+    next: nextCursor,
+    hasMore,
   };
 };
