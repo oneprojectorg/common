@@ -1,5 +1,5 @@
 {
-  "id": "ee8c7517-9f9d-477d-91e3-5200474da195",
+  "id": "ec6f014d-12ef-4b0f-b536-ed7b958884bf",
   "prevId": "ed778144-da7a-4e14-84fb-6ad1bbbed64f",
   "version": "7",
   "dialect": "postgresql",
@@ -1003,7 +1003,7 @@
               "nulls": "last"
             },
             {
-              "expression": "proposal_id",
+              "expression": "id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"

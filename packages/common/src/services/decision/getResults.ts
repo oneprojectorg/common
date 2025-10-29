@@ -16,9 +16,9 @@ import { getOrgAccessUser } from '../access';
 import { listProposals } from './listProposals';
 
 // Custom cursor encoding for selection rank pagination
-// Uses selectionRank instead of updatedAt since we sort by rank
-const encodeSelectionCursor = (selectionRank: number, proposalId: string) => {
-  return Buffer.from(JSON.stringify({ selectionRank, proposalId })).toString(
+// Uses selectionRank with id as tiebreaker for stable ordering
+const encodeSelectionCursor = (selectionRank: number | null, id: string) => {
+  return Buffer.from(JSON.stringify({ selectionRank, id })).toString(
     'base64',
   );
 };
@@ -78,31 +78,35 @@ export const getLatestResultWithProposals = async ({
     throw new Error('The latest result execution was not successful');
   }
 
-  // Decode cursor to get the last selectionRank and proposalId from previous page
+  // Decode cursor to get the last selectionRank and id from previous page
   const cursorData = cursor
-    ? (decodeCursor(cursor) as { selectionRank: number; proposalId: string })
+    ? (decodeCursor(cursor) as { selectionRank: number | null; id: string })
     : null;
 
-  // Build cursor condition - fetch items after the cursor rank
+  // Build cursor condition - fetch items after the cursor position
+  // Uses (selectionRank, id) for stable ordering even when ranks are equal
   const cursorCondition = cursorData
-    ? or(
-        gt(
-          decisionProcessResultSelections.selectionRank,
-          cursorData.selectionRank,
-        ),
-        and(
-          eq(
+    ? cursorData.selectionRank !== null
+      ? or(
+          gt(
             decisionProcessResultSelections.selectionRank,
             cursorData.selectionRank,
           ),
-          gt(decisionProcessResultSelections.proposalId, cursorData.proposalId),
-        ),
-      )
+          and(
+            eq(
+              decisionProcessResultSelections.selectionRank,
+              cursorData.selectionRank,
+            ),
+            gt(decisionProcessResultSelections.id, cursorData.id),
+          ),
+        )
+      : gt(decisionProcessResultSelections.id, cursorData.id) // If rank is null, just use id
     : undefined;
 
   // Fetch selections with cursor-based pagination
   const paginatedSelections = await db
     .select({
+      id: decisionProcessResultSelections.id,
       proposalId: decisionProcessResultSelections.proposalId,
       selectionRank: decisionProcessResultSelections.selectionRank,
     })
@@ -115,7 +119,10 @@ export const getLatestResultWithProposals = async ({
           )
         : eq(decisionProcessResultSelections.processResultId, result.id),
     )
-    .orderBy(asc(decisionProcessResultSelections.selectionRank))
+    .orderBy(
+      asc(decisionProcessResultSelections.selectionRank),
+      asc(decisionProcessResultSelections.id),
+    )
     .limit(limit + 1); // Fetch one extra to check hasMore
 
   if (paginatedSelections.length === 0) {
@@ -200,7 +207,7 @@ export const getLatestResultWithProposals = async ({
   const lastItem = selections[selections.length - 1];
   const nextCursor =
     hasMore && lastItem
-      ? encodeSelectionCursor(lastItem.selectionRank, lastItem.proposalId)
+      ? encodeSelectionCursor(lastItem.selectionRank, lastItem.id)
       : null;
 
   return {
