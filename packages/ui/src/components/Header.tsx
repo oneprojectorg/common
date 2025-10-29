@@ -35,11 +35,7 @@ export const Header3 = ({
   children: React.ReactNode;
   className?: string;
 }) => {
-  return (
-    <h3 className={cn('text-title-base text-neutral-black', className)}>
-      {children}
-    </h3>
-  );
+  return <h3 className={cn('text-title-base', className)}>{children}</h3>;
 };
 
 export const GradientHeader = ({

@@ -1,5 +1,6 @@
 'use client';
 
+import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { Header3 } from '@op/ui/Header';
 
@@ -7,29 +8,29 @@ import { useTranslations } from '@/lib/i18n';
 
 import { EmptyProposalsState } from './EmptyProposalsState';
 import {
-  ProposalCard,
   ProposalCardContent,
   ProposalCardDescription,
   ProposalCardFooter,
   ProposalCardHeader,
   ProposalCardMeta,
 } from './ProposalCard';
+import { VotingProposalCard } from './VotingProposalCard';
 
-const NoProposalsFound = () => {
+const NoVoteFound = () => {
   const t = useTranslations();
   return (
     <EmptyProposalsState>
       <Header3 className="font-serif !text-title-base font-light text-neutral-black">
-        {t('No results yet for this decision.')}
+        {t('You did not vote in this process.')}
       </Header3>
       <p className="text-base text-neutral-charcoal">
-        {t('Results are still being worked on.')}
+        {t('Your ballot will appear here after you vote.')}
       </p>
     </EmptyProposalsState>
   );
 };
 
-export const ResultsList = ({
+export const MyBallot = ({
   slug,
   instanceId,
 }: {
@@ -37,45 +38,58 @@ export const ResultsList = ({
   instanceId: string;
 }) => {
   const t = useTranslations();
+  const user = useUser();
 
-  const [[instanceResults]] = trpc.useSuspenseQueries((t) => [
-    t.decision.getInstanceResults({
-      instanceId,
+  if (!user.user?.id) {
+    return <NoVoteFound />;
+  }
+
+  const userId = user.user.id;
+
+  const [[voteStatus, proposalsData]] = trpc.useSuspenseQueries((t) => [
+    t.decision.getVotingStatus({
+      processInstanceId: instanceId,
+      userId,
+    }),
+    t.decision.listProposals({
+      processInstanceId: instanceId,
     }),
   ]);
 
-  const { proposals } = instanceResults;
-
-  if (!proposals || proposals.length === 0) {
-    return <NoProposalsFound />;
+  if (!voteStatus.hasVoted || !voteStatus.selectedProposals) {
+    return <NoVoteFound />;
   }
+
+  const selectedProposalIds = new Set(
+    voteStatus.selectedProposals.map((p) => p.id),
+  );
+  const proposals = proposalsData.proposals.filter((proposal) =>
+    selectedProposalIds.has(proposal.id),
+  );
 
   return (
     <div className="flex flex-col gap-6 pb-12">
-      <div className="flex items-center gap-4">
-        <Header3 className="font-serif">{t('Funded Proposals')}</Header3>
-      </div>
+      <Header3 className="font-serif">{t('My Ballot')}</Header3>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {proposals.map((proposal) => (
-          <ProposalCard key={proposal.id}>
+          <VotingProposalCard
+            isSelected={true}
+            proposalId={proposal.id}
+            key={proposal.id}
+          >
             <ProposalCardContent>
-              {/* Header with Title and Budget */}
               <ProposalCardHeader
                 proposal={proposal}
                 viewHref={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`}
               />
 
-              {/* Meta: Author + Category */}
               <ProposalCardMeta proposal={proposal} />
 
-              {/* Description */}
               <ProposalCardDescription proposal={proposal} />
 
-              {/* Divider */}
               <div className="border-neutral-silver h-0 w-full border-b" />
 
-              {/* Footer - Total Votes */}
               <ProposalCardFooter>
                 <div className="flex items-start gap-1 text-base text-neutral-charcoal">
                   <span className="font-bold">{proposal.voteCount ?? 0}</span>
@@ -83,7 +97,7 @@ export const ResultsList = ({
                 </div>
               </ProposalCardFooter>
             </ProposalCardContent>
-          </ProposalCard>
+          </VotingProposalCard>
         ))}
       </div>
     </div>

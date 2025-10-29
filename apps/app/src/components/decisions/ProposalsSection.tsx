@@ -10,7 +10,10 @@ import {
   ProposalsList,
 } from '@/components/decisions/ProposalsList';
 
-import { DecisionResultsTabs, DecisionResultsTabPanel } from './DecisionResultsTabs';
+import {
+  DecisionResultsTabPanel,
+  DecisionResultsTabs,
+} from './DecisionResultsTabs';
 import { MyBallot } from './MyBallot';
 import { ResultsList } from './ResultsList';
 

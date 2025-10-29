@@ -17,7 +17,7 @@ export const DecisionResultsTabs = ({
   return (
     <Tabs className={className} defaultSelectedKey="funded">
       <div className="border-b border-neutral-gray1 bg-white">
-        <div className="mx-auto max-w-6xl px-4 sm:px-8">
+        <div className="mx-auto max-w-6xl">
           <TabList className="flex gap-6">
             <Tab id="funded">{t('Funded Proposals')}</Tab>
             <Tab id="ballot">{t('My Ballot')}</Tab>
