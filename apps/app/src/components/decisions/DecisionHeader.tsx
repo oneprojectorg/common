@@ -72,7 +72,7 @@ export async function DecisionHeader({
         title={instance.process?.name || instance.name}
       />
 
-      <div className="flex flex-col overflow-x-scroll sm:items-center">
+      <div className="flex flex-col overflow-x-auto sm:items-center">
         <div className="w-fit rounded-b border border-t-0 bg-white px-12 py-4 sm:px-32">
           <DecisionProcessStepper
             phases={phases}
