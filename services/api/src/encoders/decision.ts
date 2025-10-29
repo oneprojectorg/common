@@ -198,6 +198,10 @@ export const proposalEncoder = createSelectSchema(proposals)
     isEditable: z.boolean().optional(),
     // Attachments
     attachments: z.array(proposalAttachmentEncoder).optional(),
+    // Selection rank (for results)
+    selectionRank: z.number().nullable().optional(),
+    // Vote count (for results)
+    voteCount: z.number().optional(),
   });
 
 // Decision Encoder
@@ -246,6 +250,12 @@ export const proposalListEncoder = z.object({
   total: z.number(),
   hasMore: z.boolean(),
   canManageProposals: z.boolean().prefault(false),
+});
+
+export const instanceResultsEncoder = z.object({
+  proposals: z.array(proposalEncoder),
+  total: z.number(),
+  hasMore: z.boolean(),
 });
 
 export const decisionListEncoder = z.object({
@@ -362,5 +372,6 @@ export const proposalFilterSchema = z
       .optional(),
     categoryId: z.string().optional(),
     dir: z.enum(['asc', 'desc']).optional(),
+    proposalIds: z.array(z.uuid()).optional(),
   })
   .extend(paginationInputSchema.shape);

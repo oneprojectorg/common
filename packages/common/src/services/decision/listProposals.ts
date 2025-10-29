@@ -22,6 +22,7 @@ export interface ListProposalsInput {
   status?: 'draft' | 'submitted' | 'under_review' | 'approved' | 'rejected';
   search?: string;
   categoryId?: string;
+  proposalIds?: string[];
   limit?: number;
   offset?: number;
   orderBy?: 'createdAt' | 'updatedAt' | 'status';
@@ -32,7 +33,8 @@ export interface ListProposalsInput {
 
 // Shared function to build WHERE conditions for both count and data queries
 const buildWhereConditions = (input: ListProposalsInput) => {
-  const { processInstanceId, submittedByProfileId, status, search } = input;
+  const { processInstanceId, submittedByProfileId, status, search, proposalIds } =
+    input;
 
   const conditions = [];
 
@@ -49,6 +51,10 @@ const buildWhereConditions = (input: ListProposalsInput) => {
   if (search) {
     // Search in proposal data (JSONB) - convert to text for searching
     conditions.push(ilike(sql`${proposals.proposalData}::text`, `%${search}%`));
+  }
+
+  if (proposalIds && proposalIds.length > 0) {
+    conditions.push(inArray(proposals.id, proposalIds));
   }
 
   return conditions.length > 0 ? and(...conditions) : undefined;
