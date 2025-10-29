@@ -54,6 +54,10 @@ export const decisionsVoteSubmissions = pgTable(
     index().on(table.id).concurrently(),
     index().on(table.processInstanceId).concurrently(),
     index().on(table.submittedByProfileId).concurrently(),
+    // Composite index for efficient vote count queries with joins
+    index('vote_submissions_instance_id_idx')
+      .on(table.processInstanceId, table.id)
+      .concurrently(),
     // Ensure one vote submission per person per process instance
     unique().on(table.processInstanceId, table.submittedByProfileId),
   ],
