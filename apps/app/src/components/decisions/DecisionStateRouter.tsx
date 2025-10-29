@@ -7,22 +7,18 @@ import { ResultsPage } from './pages/ResultsPage';
 import { StandardDecisionPage } from './pages/StandardDecisionPage';
 import { VotingPage } from './pages/VotingPage';
 
-interface DecisionStateRouterProps {
-  instanceId: string;
-  slug: string;
-}
-
 export function DecisionStateRouter({
   instanceId,
   slug,
-}: DecisionStateRouterProps) {
-  const [[instance]] = trpc.useSuspenseQueries((t) => [
-    t.decision.getInstance({
-      instanceId,
-    }),
-  ]);
+}: {
+  instanceId: string;
+  slug: string;
+}) {
+  const [instance] = trpc.decision.getInstance.useSuspenseQuery({
+    instanceId,
+  });
 
-  const currentStateId = instance.currentStateId;
+  const { currentStateId } = instance;
 
   return match(currentStateId, {
     results: () => <ResultsPage instanceId={instanceId} slug={slug} />,

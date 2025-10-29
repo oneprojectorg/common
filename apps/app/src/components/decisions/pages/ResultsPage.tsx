@@ -25,11 +25,9 @@ export function ResultsPage({
 }) {
   const t = useTranslations();
 
-  const [[instance]] = trpc.useSuspenseQueries((t) => [
-    t.decision.getInstance({
-      instanceId,
-    }),
-  ]);
+  const [instance] = trpc.decision.getInstance.useSuspenseQuery({
+    instanceId,
+  });
 
   // Get description for "About the process" button
   const description = instance?.description?.match('PPDESCRIPTION')
