@@ -7,7 +7,6 @@ import { decisionsVoteProposals } from './decisions_vote_proposals.sql';
 import { processInstances } from './processInstances.sql';
 import { profiles } from './profiles.sql';
 
-// Vote data structure with proper typing
 export interface VoteData extends Record<string, unknown> {
   schemaVersion: string;
   schemaType: string;
@@ -17,7 +16,6 @@ export interface VoteData extends Record<string, unknown> {
     [key: string]: unknown;
   };
   validationSignature: string;
-  // Allow additional properties for schema-specific data
 }
 
 export const decisionsVoteSubmissions = pgTable(
@@ -54,7 +52,6 @@ export const decisionsVoteSubmissions = pgTable(
     index().on(table.id).concurrently(),
     index().on(table.processInstanceId).concurrently(),
     index().on(table.submittedByProfileId).concurrently(),
-    // Composite index for efficient vote count queries with joins
     index('vote_submissions_instance_id_idx')
       .on(table.processInstanceId, table.id)
       .concurrently(),
