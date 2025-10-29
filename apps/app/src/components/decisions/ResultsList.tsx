@@ -12,6 +12,7 @@ import {
   ProposalCardDescription,
   ProposalCardFooter,
   ProposalCardHeader,
+  ProposalCardMeta,
 } from './ProposalCard';
 
 const NoProposalsFound = () => {
@@ -67,19 +68,22 @@ export const ResultsList = ({
                 viewHref={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`}
               />
 
+              {/* Meta: Author + Category */}
+              <ProposalCardMeta proposal={proposal} />
+
               {/* Description */}
               <ProposalCardDescription proposal={proposal} />
 
               {/* Divider */}
-              <div className="border-neutral-silver h-0 w-full border-b" />
+              <div className="h-0 w-full border-b border-neutral-silver" />
 
               {/* Footer - Total Votes */}
               <ProposalCardFooter>
-                <div className="flex w-full items-start gap-1 text-neutral-charcoal">
-                  <p className="whitespace-pre text-base font-bold">
+                <div className="flex items-start gap-1 text-base text-neutral-charcoal">
+                  <span className="font-bold">
                     {proposal.voteCount ?? 0}
-                  </p>
-                  <p className="text-base">{t('Total Votes')}</p>
+                  </span>
+                  <span>{t('Total Votes')}</span>
                 </div>
               </ProposalCardFooter>
             </ProposalCardContent>

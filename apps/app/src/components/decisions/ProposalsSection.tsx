@@ -10,14 +10,17 @@ import {
   ProposalsList,
 } from '@/components/decisions/ProposalsList';
 
+import { DecisionResultsTabs, DecisionResultsTabPanel } from './DecisionResultsTabs';
+import { MyBallot } from './MyBallot';
 import { ResultsList } from './ResultsList';
 
-interface ProposalsSectionProps {
+async function ProposalsContent({
+  instanceId,
+  slug,
+}: {
   instanceId: string;
   slug: string;
-}
-
-async function ProposalsContent({ instanceId, slug }: ProposalsSectionProps) {
+}) {
   const client = await createClient();
 
   const proposalsData = await client.decision.listProposals({
@@ -47,39 +50,41 @@ async function ProposalsContent({ instanceId, slug }: ProposalsSectionProps) {
   );
 }
 
-const ResultsContent = async ({ instanceId, slug }: ProposalsSectionProps) => {
-  const client = await createClient();
-
-  const proposalsData = await client.decision.getInstanceResults({
-    instanceId,
-  });
-
-  const proposals = proposalsData?.proposals || [];
-
+function ResultsContent({
+  instanceId,
+  slug,
+}: {
+  instanceId: string;
+  slug: string;
+}) {
   return (
-    <div className="lg:col-span-3">
-      {proposals.length === 0 ? (
-        <EmptyProposalsState>
-          <Header3 className="font-serif !text-title-base font-light text-neutral-black">
-            <TranslatedText text="No proposals yet" />
-          </Header3>
-          <p className="text-base text-neutral-charcoal">
-            <TranslatedText text="You could be the first one to submit a proposal" />
-          </p>
-        </EmptyProposalsState>
-      ) : (
-        <Suspense fallback={<ProposalListSkeleton />}>
-          <ResultsList slug={slug} instanceId={instanceId} />
-        </Suspense>
-      )}
-    </div>
+    <DecisionResultsTabs>
+      <DecisionResultsTabPanel id="funded">
+        <div className="lg:col-span-3">
+          <Suspense fallback={<ProposalListSkeleton />}>
+            <ResultsList slug={slug} instanceId={instanceId} />
+          </Suspense>
+        </div>
+      </DecisionResultsTabPanel>
+
+      <DecisionResultsTabPanel id="ballot">
+        <div className="lg:col-span-3">
+          <Suspense fallback={<ProposalListSkeleton />}>
+            <MyBallot slug={slug} instanceId={instanceId} />
+          </Suspense>
+        </div>
+      </DecisionResultsTabPanel>
+    </DecisionResultsTabs>
   );
-};
+}
 
 const ProposalsSectionContent = async ({
   instanceId,
   slug,
-}: ProposalsSectionProps) => {
+}: {
+  instanceId: string;
+  slug: string;
+}) => {
   const client = await createClient();
 
   const instance = await client.decision.getInstance({
@@ -92,7 +97,13 @@ const ProposalsSectionContent = async ({
   });
 };
 
-export function ProposalsSection({ instanceId, slug }: ProposalsSectionProps) {
+export function ProposalsSection({
+  instanceId,
+  slug,
+}: {
+  instanceId: string;
+  slug: string;
+}) {
   return (
     <div className="flex w-full justify-center bg-white">
       <div className="w-full gap-8 p-4 sm:max-w-6xl sm:p-8">
