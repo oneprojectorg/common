@@ -73,7 +73,8 @@ export const TabbedProfileSearchResults = ({
     orgProfiles.length > 0 ? 'organizations' : 'individuals';
 
   return (
-    <Tabs defaultSelectedKey={defaultSelectedKey}>
+    // Use the defaultSelectedKey as the key for the Tabs component so that it switches to the tab with available results.
+    <Tabs key={defaultSelectedKey} defaultSelectedKey={defaultSelectedKey}>
       <TabList variant="pill">
         <Tab id="organizations" variant="pill" className="gap-2">
           <TranslatedText text="Organizations" />{' '}
