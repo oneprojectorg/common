@@ -44,7 +44,7 @@ export const ResultsList = ({
     }),
   ]);
 
-  const { proposals } = instanceResults;
+  const { items: proposals } = instanceResults;
 
   if (!proposals || proposals.length === 0) {
     return <NoProposalsFound />;
