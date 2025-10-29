@@ -1,10 +1,8 @@
 import { createClient } from '@op/api/serverClient';
-import { Skeleton } from '@op/ui/Skeleton';
 import { cn } from '@op/ui/utils';
 import { notFound } from 'next/navigation';
-import { Suspense } from 'react';
+import { ReactNode } from 'react';
 
-import { DecisionInstanceContent } from '@/components/decisions/DecisionInstanceContent';
 import { DecisionInstanceHeader } from '@/components/decisions/DecisionInstanceHeader';
 import { DecisionProcessStepper } from '@/components/decisions/DecisionProcessStepper';
 import { ProcessPhase } from '@/components/decisions/types';
@@ -12,11 +10,13 @@ import { ProcessPhase } from '@/components/decisions/types';
 interface DecisionHeaderProps {
   instanceId: string;
   slug: string;
+  children?: ReactNode;
 }
 
 export async function DecisionHeader({
   instanceId,
   slug,
+  children,
 }: DecisionHeaderProps) {
   const client = await createClient();
 
@@ -58,7 +58,6 @@ export async function DecisionHeader({
   return (
     <div
       className={cn(
-        'border-b',
         isResultsPhase
           ? 'bg-redPurple text-neutral-offWhite'
           : 'bg-neutral-offWhite text-gray-700',
@@ -82,9 +81,7 @@ export async function DecisionHeader({
         </div>
       </div>
 
-      <Suspense fallback={<Skeleton />}>
-        <DecisionInstanceContent instanceId={instanceId} />
-      </Suspense>
+      {children}
     </div>
   );
 }

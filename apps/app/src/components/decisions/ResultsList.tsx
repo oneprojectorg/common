@@ -53,7 +53,9 @@ export const ResultsList = ({
   return (
     <div className="flex flex-col gap-6 pb-12">
       <div className="flex items-center gap-4">
-        <Header3 className="font-serif">{t('Funded Proposals')}</Header3>
+        <Header3 className="font-serif !text-title-base">
+          {t('Funded Proposals')}
+        </Header3>
       </div>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">

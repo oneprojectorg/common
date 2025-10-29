@@ -480,7 +480,7 @@ export const ProposalsList = ({
   return (
     <div className="flex flex-col gap-6 pb-12">
       {/* Filters Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-center gap-4">
           <span className="font-serif text-title-base text-neutral-black">
             {proposalFilter === 'my-ballot'

@@ -16,14 +16,10 @@ export const DecisionResultsTabs = ({
 
   return (
     <Tabs className={className} defaultSelectedKey="funded">
-      <div className="border-b border-neutral-gray1 bg-white">
-        <div className="mx-auto max-w-6xl">
-          <TabList className="flex gap-6">
-            <Tab id="funded">{t('Funded Proposals')}</Tab>
-            <Tab id="ballot">{t('My Ballot')}</Tab>
-          </TabList>
-        </div>
-      </div>
+      <TabList className="flex gap-6">
+        <Tab id="funded">{t('Funded Proposals')}</Tab>
+        <Tab id="ballot">{t('My Ballot')}</Tab>
+      </TabList>
       {children}
     </Tabs>
   );
@@ -37,7 +33,7 @@ export const DecisionResultsTabPanel = ({
   children: ReactNode;
 }) => {
   return (
-    <TabPanel id={id} className="flex-grow">
+    <TabPanel id={id} className="flex-grow sm:p-0">
       {children}
     </TabPanel>
   );
