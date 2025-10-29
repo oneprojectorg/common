@@ -36,6 +36,10 @@ export const decisionProcessResultSelections = pgTable(
     index('result_selections_proposal_idx')
       .on(table.proposalId)
       .concurrently(),
+    // Composite index for efficient cursor-based pagination
+    index('result_selections_pagination_idx')
+      .on(table.processResultId, table.selectionRank, table.proposalId)
+      .concurrently(),
     // Ensure same proposal can't be selected twice in the same result
     uniqueIndex('result_selections_unique_idx')
       .on(table.processResultId, table.proposalId)

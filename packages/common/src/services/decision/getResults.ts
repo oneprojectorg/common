@@ -179,12 +179,14 @@ export const getLatestResultWithProposals = async ({
     ]),
   );
 
+  const proposalMap = new Map(
+    enrichedProposals.proposals.map((p) => [p.id, p]),
+  );
+
   // Map proposals to match the DB-ordered selection rank
   // The order is maintained from selections which was sorted by selectionRank at DB level
   const proposalsWithRankAndVotes = selections.map((selection) => {
-    const proposal = enrichedProposals.proposals.find(
-      (p) => p.id === selection.proposalId,
-    );
+    const proposal = proposalMap.get(selection.proposalId);
     const selectionData = selectionDataMap.get(selection.proposalId);
 
     return {
