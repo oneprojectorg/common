@@ -119,7 +119,7 @@ export const getLatestResultWithProposals = async ({
   );
 
   const selectionDataMap = new Map(
-    result.selections.map((s: any) => [
+    result.selections.map((s) => [
       s.proposalId,
       {
         selectionRank: s.selectionRank,
