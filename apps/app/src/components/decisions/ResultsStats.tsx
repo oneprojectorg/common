@@ -14,29 +14,29 @@ const StatNumber = ({
   className?: string;
 }) => {
   return (
-    <div className="text-transparent">
-      <div
-        className={cn(
-          'flex items-center justify-center bg-gradient bg-clip-text font-serif text-title-xxl',
-          className,
-        )}
-      >
-        {children}
-      </div>
+    <div
+      className={cn(
+        'flex items-center justify-center font-serif text-title-lg !text-neutral-offWhite',
+        className,
+      )}
+    >
+      {children}
     </div>
   );
 };
 
 const StatLabel = ({ children }: { children?: ReactNode }) => {
   return (
-    <div className="flex items-center justify-center text-center text-neutral-charcoal">
+    <div className="flex items-center justify-center text-center text-sm text-neutral-offWhite">
       {children}
     </div>
   );
 };
 
 const Stat = ({ children }: { children?: ReactNode }) => {
-  return <div className="flex flex-col items-center gap-2">{children}</div>;
+  return (
+    <div className="flex min-w-24 flex-col items-center gap-2">{children}</div>
+  );
 };
 
 interface ResultsStatsProps {
@@ -53,29 +53,23 @@ export function ResultsStats({ instanceId }: ResultsStatsProps) {
   }
 
   return (
-    <div className="flex w-full flex-col gap-4">
-      <Surface className="shadow-light">
-        <div className="flex flex-col items-center justify-between gap-8 px-10 py-8 sm:flex-row sm:gap-4">
-          <Stat>
-            <StatNumber className="bg-redOrange">
-              {stats.membersVoted}
-            </StatNumber>
-            <StatLabel>Members Voted</StatLabel>
-          </Stat>
-          <hr className="hidden h-20 w-0.5 bg-neutral-gray1 sm:block" />
-          <Stat>
-            <StatNumber className="bg-orange">{stats.proposalsFunded}</StatNumber>
-            <StatLabel>Proposals Funded</StatLabel>
-          </Stat>
-          <hr className="hidden h-20 w-0.5 bg-neutral-gray1 sm:block" />
-          <Stat>
-            <StatNumber className="bg-redPurple">
-              {formatCurrency(stats.totalAllocated)}
-            </StatNumber>
-            <StatLabel>Total Allocated</StatLabel>
-          </Stat>
-        </div>
-      </Surface>
+    <div className="flex w-full flex-col gap-2">
+      <div className="flex flex-col items-center justify-center gap-6 sm:flex-row">
+        <Stat>
+          <StatNumber>{stats.membersVoted}</StatNumber>
+          <StatLabel>Members Voted</StatLabel>
+        </Stat>
+        <hr className="hidden h-8 w-0.5 bg-white/50 sm:block" />
+        <Stat>
+          <StatNumber>{stats.proposalsFunded}</StatNumber>
+          <StatLabel>Proposals Funded</StatLabel>
+        </Stat>
+        <hr className="hidden h-8 w-0.5 bg-white/50 sm:block" />
+        <Stat>
+          <StatNumber>{formatCurrency(stats.totalAllocated)}</StatNumber>
+          <StatLabel>Total Allocated</StatLabel>
+        </Stat>
+      </div>
     </div>
   );
 }
