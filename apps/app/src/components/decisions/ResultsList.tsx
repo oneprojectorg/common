@@ -61,29 +61,29 @@ export const ResultsList = ({
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {proposals.map((proposal) => (
           <ProposalCard key={proposal.id}>
-            <ProposalCardContent>
-              {/* Header with Title and Budget */}
-              <ProposalCardHeader
-                proposal={proposal}
-                viewHref={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`}
-              />
+            <ProposalCardContent className="flex h-full flex-col justify-between gap-3 space-y-3">
+              <div>
+                <ProposalCardHeader
+                  proposal={proposal}
+                  viewHref={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`}
+                />
 
-              {/* Meta: Author + Category */}
-              <ProposalCardMeta proposal={proposal} />
+                <ProposalCardMeta proposal={proposal} />
 
-              {/* Description */}
-              <ProposalCardDescription proposal={proposal} />
+                <ProposalCardDescription proposal={proposal} />
+              </div>
 
-              {/* Divider */}
-              <div className="border-neutral-silver h-0 w-full border-b" />
+              <div className="flex flex-col gap-3">
+                <div className="border-neutral-silver h-0 w-full border-b" />
 
-              {/* Footer - Total Votes */}
-              <ProposalCardFooter>
-                <div className="flex items-start gap-1 text-base text-neutral-charcoal">
-                  <span className="font-bold">{proposal.voteCount ?? 0}</span>
-                  <span>{t('Total Votes')}</span>
-                </div>
-              </ProposalCardFooter>
+                {/* Footer - Total Votes */}
+                <ProposalCardFooter>
+                  <div className="flex items-start gap-1 text-base text-neutral-charcoal">
+                    <span className="font-bold">{proposal.voteCount ?? 0}</span>
+                    <span>{t('Total Votes')}</span>
+                  </div>
+                </ProposalCardFooter>
+              </div>
             </ProposalCardContent>
           </ProposalCard>
         ))}
