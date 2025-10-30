@@ -367,20 +367,20 @@ export const ProposalsList = ({
     searchParams.get('sort') || 'newest',
   );
 
-  const [categoriesData] = trpc.decision.getCategories.useSuspenseQuery({
-    processInstanceId: instanceId,
-  });
-
-  const categories = categoriesData.categories;
-
   // Get current user's profile ID for "My Proposals" filter
   const currentProfileId = user?.currentProfile?.id;
 
-  // Get voting status for this user and process
-  const [voteStatus] = trpc.decision.getVotingStatus.useSuspenseQuery({
-    processInstanceId: instanceId,
-    userId: user?.id || '',
-  });
+  const [[categoriesData, voteStatus]] = trpc.useSuspenseQueries((t) => [
+    t.decision.getCategories({
+      processInstanceId: instanceId,
+    }),
+    t.decision.getVotingStatus({
+      processInstanceId: instanceId,
+      userId: user?.id || '',
+    }),
+  ]);
+
+  const categories = categoriesData.categories;
 
   // Determine if we're in ballot view (user has voted)
   const hasVoted = voteStatus?.hasVoted || false;
@@ -480,7 +480,7 @@ export const ProposalsList = ({
   return (
     <div className="flex flex-col gap-6 pb-12">
       {/* Filters Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-center gap-4">
           <span className="font-serif text-title-base text-neutral-black">
             {proposalFilter === 'my-ballot'

@@ -5,18 +5,7 @@ import { ReactNode } from 'react';
 
 import { ProposalCard } from './ProposalCard';
 
-interface VotingProposalCardProps {
-  proposalId: string;
-  children: ReactNode;
-  isVotingEnabled?: boolean;
-  isReadOnly?: boolean;
-  isSelected?: boolean;
-  isVotedFor?: boolean;
-  onToggle?: (proposalId: string) => void;
-  className?: string;
-}
-
-export function VotingProposalCard({
+export const VotingProposalCard = ({
   proposalId,
   children,
   isVotingEnabled = false,
@@ -25,7 +14,16 @@ export function VotingProposalCard({
   isVotedFor = false,
   onToggle,
   className = '',
-}: VotingProposalCardProps) {
+}: {
+  proposalId: string;
+  children: ReactNode;
+  isVotingEnabled?: boolean;
+  isReadOnly?: boolean;
+  isSelected?: boolean;
+  isVotedFor?: boolean;
+  onToggle?: (proposalId: string) => void;
+  className?: string;
+}) => {
   const canInteract = isVotingEnabled && !isReadOnly && onToggle;
 
   const handleCardClick = () => {
@@ -59,4 +57,4 @@ export function VotingProposalCard({
       {children}
     </ProposalCard>
   );
-}
+};
