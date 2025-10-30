@@ -1,6 +1,9 @@
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
 import {
+  CommonUser,
+  Organization,
+  Profile,
   allowList,
   organizationUserToAccessRoles,
   organizationUsers,
@@ -21,6 +24,12 @@ export interface InviteMetadata {
   organizationId?: string;
   inviterOrganizationName?: string;
 }
+
+// Type for user queries in this file
+type CommonUserWithProfile = CommonUser & {
+  currentOrganization: Organization & { profile: Profile };
+  currentProfile: Profile;
+};
 
 // Utility function to generate consistent result messages
 const generateInviteResultMessage = (
@@ -78,7 +87,7 @@ export const inviteUsersToOrganization = async (
 
   assertAccess({ profile: permission.ADMIN }, orgUser.roles || []);
 
-  const authUser = await db.query.users.findFirst({
+  const authUser = (await db.query.users.findFirst({
     where: (table, { eq }) => eq(table.authUserId, user.id),
     with: {
       currentOrganization: {
@@ -88,7 +97,7 @@ export const inviteUsersToOrganization = async (
       },
       currentProfile: true,
     },
-  });
+  })) as CommonUserWithProfile;
 
   const results = {
     successful: [] as string[],
@@ -201,8 +210,7 @@ export const inviteUsersToOrganization = async (
         to: email,
         inviterName: orgUser?.name || user.email || 'A team member',
         organizationName:
-          (authUser?.currentOrganization as any)?.profile?.name ||
-          'an organization',
+          authUser?.currentOrganization?.profile?.name || 'an organization',
         inviteUrl: OPURLConfig('APP').ENV_URL,
         message: personalMessage,
       });
@@ -271,7 +279,7 @@ export const inviteNewUsers = async (
   const { emails, personalMessage, user } = input;
 
   // Get the current user's database record with profile details
-  const authUser = await db.query.users.findFirst({
+  const authUser = (await db.query.users.findFirst({
     where: (table, { eq }) => eq(table.authUserId, user.id),
     with: {
       currentOrganization: {
@@ -281,7 +289,7 @@ export const inviteNewUsers = async (
       },
       currentProfile: true,
     },
-  });
+  })) as CommonUserWithProfile;
 
   if (
     (!authUser?.currentProfileId && !authUser?.lastOrgId) ||
@@ -293,7 +301,7 @@ export const inviteNewUsers = async (
   }
 
   const currentProfile =
-    authUser.currentProfile ?? (authUser.currentOrganization as any)?.profile;
+    authUser.currentProfile ?? authUser.currentOrganization?.profile;
 
   const results = {
     successful: [] as string[],

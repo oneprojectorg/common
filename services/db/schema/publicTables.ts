@@ -41,7 +41,11 @@ export {
   postsToProfiles,
   postsToProfilesRelations,
 } from './tables/posts.sql';
-export type { Post, PostToOrganization, PostToProfile } from './tables/posts.sql';
+export type {
+  Post,
+  PostToOrganization,
+  PostToProfile,
+} from './tables/posts.sql';
 
 export {
   postReactions,
@@ -75,6 +79,7 @@ export {
   profileRelationshipTypeEnum,
 } from './tables/relationships.sql';
 export { users, usersRelations } from './tables/users.sql';
+export type { CommonUser } from './tables/users.sql';
 export { usersUsedStorage } from './tables/usersUsedStorage.sql';
 export { locations } from './tables/locations.sql';
 export { profiles, profilesRelations } from './tables/profiles.sql';
@@ -117,9 +122,12 @@ export type { Decision } from './tables/decisions.sql';
 
 export {
   decisionsVoteSubmissions,
-  decisionsVoteSubmissionsRelations
+  decisionsVoteSubmissionsRelations,
 } from './tables/decisions_vote_submissions.sql';
-export type { DecisionVoteSubmission, VoteData } from './tables/decisions_vote_submissions.sql';
+export type {
+  DecisionVoteSubmission,
+  VoteData,
+} from './tables/decisions_vote_submissions.sql';
 
 export {
   decisionsVoteProposals,
@@ -154,5 +162,10 @@ export type { DecisionProcessResultSelection } from './tables/decisionProcessRes
 export type { ObjectsInStorage } from './tables/storage.sql';
 
 // Module activation tables
-export { modules, modulesRelations, profileModules, profileModulesRelations } from './tables/modules.sql';
+export {
+  modules,
+  modulesRelations,
+  profileModules,
+  profileModulesRelations,
+} from './tables/modules.sql';
 export type { Module, ProfileModule } from './tables/modules.sql';
