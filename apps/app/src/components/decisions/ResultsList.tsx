@@ -38,11 +38,9 @@ export const ResultsList = ({
 }) => {
   const t = useTranslations();
 
-  const [[instanceResults]] = trpc.useSuspenseQueries((t) => [
-    t.decision.getInstanceResults({
-      instanceId,
-    }),
-  ]);
+  const [instanceResults] = trpc.decision.getInstanceResults.useSuspenseQuery({
+    instanceId,
+  });
 
   const { items: proposals } = instanceResults;
 
