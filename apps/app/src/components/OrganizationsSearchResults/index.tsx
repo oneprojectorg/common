@@ -1,8 +1,13 @@
 'use client';
 
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { trpc } from '@op/api/client';
-import { EntityType } from '@op/api/encoders';
+import { EntityType, SearchProfilesResult } from '@op/api/encoders';
+import { match } from '@op/core';
+import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { Suspense } from 'react';
+
+import { useTranslations } from '@/lib/i18n';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
 
@@ -16,19 +21,38 @@ export const ProfileSearchResultsSuspense = ({
   query: string;
   limit?: number;
 }) => {
-  const [profiles] = trpc.profile.search.useSuspenseQuery({
+  const individualSearchEnabled = useFeatureFlag('individual_search');
+
+  const [profileSearchResults] = trpc.profile.search.useSuspenseQuery({
     limit,
     q: query,
-    types: [EntityType.ORG],
+    types: individualSearchEnabled
+      ? [EntityType.ORG, EntityType.INDIVIDUAL]
+      : [EntityType.ORG],
   });
 
-  return profiles.length > 0 ? (
+  const totalResults = profileSearchResults.reduce(
+    (acc, curr) => acc + curr.results.length,
+    0,
+  );
+
+  return totalResults > 0 ? (
     <>
       <ListPageLayoutHeader>
         <span className="text-neutral-gray4">Results for</span>{' '}
         <span className="text-neutral-black">{query}</span>
       </ListPageLayoutHeader>
-      <ProfileSummaryList profiles={profiles} />
+      {individualSearchEnabled ? (
+        <TabbedProfileSearchResults profiles={profileSearchResults} />
+      ) : (
+        <ProfileSummaryList
+          profiles={
+            profileSearchResults.find(
+              (results) => results.type === EntityType.ORG,
+            )?.results || []
+          }
+        />
+      )}
     </>
   ) : (
     <>
@@ -43,6 +67,55 @@ export const ProfileSearchResultsSuspense = ({
         </span>
       </div>
     </>
+  );
+};
+
+export const TabbedProfileSearchResults = ({
+  profiles,
+}: {
+  profiles: SearchProfilesResult;
+}) => {
+  const defaultSelectedKey =
+    profiles.find((profileType) => profileType.results.length > 0)?.type ||
+    EntityType.ORG;
+
+  const t = useTranslations();
+
+  return (
+    // Use the defaultSelectedKey as the key for the Tabs component so that it switches to the tab with available results.
+    <Tabs key={defaultSelectedKey} defaultSelectedKey={defaultSelectedKey}>
+      <TabList variant="pill">
+        {profiles.map(({ type, results }) => {
+          const typeName = match(type, {
+            [EntityType.INDIVIDUAL]: 'Individual',
+            [EntityType.ORG]: 'Organization',
+          });
+          return (
+            <Tab id={type} variant="pill" className="gap-2" key={`${type}-tab`}>
+              {t(typeName)}s
+              <span className="text-neutral-gray4">{results.length}</span>
+            </Tab>
+          );
+        })}
+      </TabList>
+      {profiles.map(({ type, results }) => {
+        const typeName = match(type, {
+          [EntityType.INDIVIDUAL]: 'Individual',
+          [EntityType.ORG]: 'Organization',
+        });
+        return (
+          <TabPanel key={`${type}-panel`} id={type}>
+            {results.length > 0 ? (
+              <ProfileSummaryList profiles={results} />
+            ) : (
+              <div className="mt-2 w-full rounded p-8 text-center text-neutral-gray4">
+                No {t(typeName).toLocaleLowerCase()}s found.
+              </div>
+            )}
+          </TabPanel>
+        );
+      })}
+    </Tabs>
   );
 };
 
