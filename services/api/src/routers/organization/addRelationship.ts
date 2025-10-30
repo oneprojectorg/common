@@ -47,10 +47,6 @@ export const addRelationshipRouter = router({
       const { to, relationships } = input;
 
       try {
-        if (!user) {
-          throw new UnauthorizedError('No user found');
-        }
-
         // TODO: We pull the org ID to add ORG relationships. We are transitioning to profile relationships. This should go away eventually
         const from = await getCurrentOrgId({ authUserId: user.id });
 
