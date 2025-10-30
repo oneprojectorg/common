@@ -211,7 +211,7 @@ export const getLatestResultWithProposals = async ({
         voteCount: selectionData?.voteCount ?? 0,
       };
     })
-    .filter((p): p is ProposalWithRankAndVotes => p !== null);
+    .filter((p) => p !== null);
 
   // Encode cursor from the last item
   const lastItem = selections[selections.length - 1];
