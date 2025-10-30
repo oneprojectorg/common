@@ -46,15 +46,15 @@ export const MyBallot = ({
 
   const userId = user.user.id;
 
-  const [[voteStatus, proposalsData]] = trpc.useSuspenseQueries((t) => [
-    t.decision.getVotingStatus({
-      processInstanceId: instanceId,
-      userId,
-    }),
-    t.decision.listProposals({
-      processInstanceId: instanceId,
-    }),
-  ]);
+  const [voteStatus] = trpc.decision.getVotingStatus.useSuspenseQuery({
+    processInstanceId: instanceId,
+    userId,
+  });
+
+  const [proposalsData] = trpc.decision.listProposals.useSuspenseQuery({
+    processInstanceId: instanceId,
+    proposalIds: voteStatus.selectedProposals?.map((p) => p.id) || [],
+  });
 
   if (!voteStatus.hasVoted || !voteStatus.selectedProposals) {
     return <NoVoteFound />;
