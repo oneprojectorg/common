@@ -5,7 +5,6 @@ import { z } from 'zod';
 import { type organizationsEncoder } from './organizations';
 import { storageItemEncoder } from './storageItem';
 
-
 // Base profile encoder without organization reference
 export const baseProfileEncoder = createSelectSchema(profiles)
   .pick({
@@ -23,12 +22,16 @@ export const baseProfileEncoder = createSelectSchema(profiles)
   .extend({
     headerImage: storageItemEncoder.nullish(),
     avatarImage: storageItemEncoder.nullish(),
-    modules: z.array(z.object({
-      slug: z.string(),
-    })).optional(),
+    modules: z
+      .array(
+        z.object({
+          slug: z.string(),
+        }),
+      )
+      .optional(),
   });
 
-// Profile encoder with organization reference  
+// Profile encoder with organization reference
 export const profileEncoder = baseProfileEncoder.extend({
   organization: z
     .lazy<
