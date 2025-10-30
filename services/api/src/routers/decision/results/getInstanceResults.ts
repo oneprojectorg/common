@@ -73,7 +73,7 @@ export const getInstanceResultsRouter = router({
 
         logger.error('Error retrieving instance results', {
           userId: user.id,
-          instanceId: input.instanceId,
+          instanceId: input?.instanceId,
           error: error instanceof Error ? error.message : 'Unknown error',
         });
 

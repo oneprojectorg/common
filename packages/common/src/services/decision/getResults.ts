@@ -18,9 +18,7 @@ import { listProposals } from './listProposals';
 // Custom cursor encoding for selection rank pagination
 // Uses selectionRank with id as tiebreaker for stable ordering
 const encodeSelectionCursor = (selectionRank: number | null, id: string) => {
-  return Buffer.from(JSON.stringify({ selectionRank, id })).toString(
-    'base64',
-  );
+  return Buffer.from(JSON.stringify({ selectionRank, id })).toString('base64');
 };
 
 export const getLatestResultWithProposals = async ({
@@ -33,7 +31,16 @@ export const getLatestResultWithProposals = async ({
   user: User;
   limit?: number;
   cursor?: string | null;
-}) => {
+}): Promise<{
+  items: Array<
+    Awaited<ReturnType<typeof listProposals>>['proposals'][number] & {
+      selectionRank: number | null;
+      voteCount: number;
+    }
+  >;
+  next: string | null;
+  hasMore: boolean;
+} | null> => {
   if (!user) {
     throw new UnauthorizedError('User must be authenticated');
   }
@@ -192,16 +199,23 @@ export const getLatestResultWithProposals = async ({
 
   // Map proposals to match the DB-ordered selection rank
   // The order is maintained from selections which was sorted by selectionRank at DB level
-  const proposalsWithRankAndVotes = selections.map((selection) => {
-    const proposal = proposalMap.get(selection.proposalId);
-    const selectionData = selectionDataMap.get(selection.proposalId);
+  const proposalsWithRankAndVotes = selections
+    .map((selection) => {
+      const proposal = proposalMap.get(selection.proposalId);
+      const selectionData = selectionDataMap.get(selection.proposalId);
 
-    return {
-      ...proposal,
-      selectionRank: selectionData?.selectionRank ?? null,
-      voteCount: selectionData?.voteCount ?? 0,
-    };
-  });
+      // Proposal must exist since we queried for these specific IDs
+      if (!proposal) {
+        return null;
+      }
+
+      return {
+        ...proposal,
+        selectionRank: selectionData?.selectionRank ?? null,
+        voteCount: selectionData?.voteCount ?? 0,
+      };
+    })
+    .filter((p): p is ProposalWithRankAndVotes => p !== null);
 
   // Encode cursor from the last item
   const lastItem = selections[selections.length - 1];
