@@ -23,6 +23,7 @@ export * from './transitionMonitor';
 // Results processing
 export * from './processResults';
 export * from './getResults';
+export * from './getResultsStats';
 
 // Selection pipeline
 export * from './selectionPipeline';
