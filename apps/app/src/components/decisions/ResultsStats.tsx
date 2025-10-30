@@ -2,7 +2,6 @@
 
 import { formatCurrency } from '@/utils/formatting';
 import { trpc } from '@op/api/client';
-import { Surface } from '@op/ui/Surface';
 import { cn } from '@op/ui/utils';
 import { ReactNode } from 'react';
 

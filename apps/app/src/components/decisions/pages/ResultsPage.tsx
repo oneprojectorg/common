@@ -2,6 +2,7 @@
 
 import { trpc } from '@op/api/client';
 import { match } from '@op/core';
+import { Skeleton } from '@op/ui/Skeleton';
 import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n/routing';
@@ -15,6 +16,7 @@ import {
 import { MyBallot } from '../MyBallot';
 import { ProposalListSkeleton } from '../ProposalsList';
 import { ResultsList } from '../ResultsList';
+import { ResultsStats } from '../ResultsStats';
 
 export function ResultsPage({
   instanceId,
@@ -65,11 +67,9 @@ export function ResultsPage({
             variant="results"
           />
 
-          <DecisionActionBar
-            instanceId={instanceId}
-            description={description}
-            showSubmitButton={false}
-          />
+          <Suspense fallback={<Skeleton className="h-64 w-full" />}>
+            <ResultsStats instanceId={instanceId} />
+          </Suspense>
         </div>
       </div>
 
