@@ -11,7 +11,7 @@ import { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 import { count as countFn } from 'drizzle-orm';
 
-import { NotFoundError, UnauthorizedError, decodeCursor } from '../../utils';
+import { NotFoundError, decodeCursor } from '../../utils';
 import { getOrgAccessUser } from '../access';
 import { listProposals } from './listProposals';
 
@@ -41,10 +41,6 @@ export const getLatestResultWithProposals = async ({
   next: string | null;
   hasMore: boolean;
 } | null> => {
-  if (!user) {
-    throw new UnauthorizedError('User must be authenticated');
-  }
-
   const instanceWithOrg = await db
     .select({
       instanceId: processInstances.id,
