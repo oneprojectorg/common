@@ -8,6 +8,7 @@ import {
   createOptimisticUpdater,
 } from '@/utils/optimisticUpdates';
 import { createCommentsQueryKey } from '@/utils/queryKeys';
+import { formatRelativeTime } from '@/utils/time';
 import { trpc } from '@op/api/client';
 import type {
   Organization,
@@ -35,7 +36,6 @@ import { DiscussionModal } from '../DiscussionModal';
 import { FeedContent, FeedHeader, FeedItem, FeedMain } from '../Feed';
 import { LinkPreview } from '../LinkPreview';
 import { OrganizationAvatar } from '../OrganizationAvatar';
-import { formatRelativeTime } from '../utils';
 import { DeletePost } from './DeletePost';
 
 const PostDisplayName = ({

@@ -59,6 +59,7 @@
     "access-zones": "0.0.1",
     "babel-plugin-react-compiler": "19.0.0-beta-e1e972c-20250221",
     "clsx": "^2.1.1",
+    "dayjs": "^1.11.19",
     "dotenv": "^16.4.7",
     "he": "^1.2.0",
     "immer": "^10.1.1",
