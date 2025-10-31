@@ -62,8 +62,10 @@ export const MyBallot = ({
   );
 
   return (
-    <div className="flex flex-col gap-6 pb-12">
-      <Header3 className="font-serif">{t('My Ballot')}</Header3>
+    <div className="flex flex-col gap-4 pb-12">
+      <Header3 className="font-serif !text-title-base">
+        {t('My Ballot')}
+      </Header3>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {proposals.map((proposal) => (

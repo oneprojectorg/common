@@ -285,20 +285,24 @@ const ViewProposalsList = ({
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
       {proposals.map((proposal) => (
         <ProposalCard key={proposal.id}>
+          <div className="flex h-full flex-col justify-between gap-3 space-y-3">
+            <ProposalCardContent>
+              <ProposalCardHeader
+                proposal={proposal}
+                viewHref={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`}
+                showMenu={canManageProposals || proposal.isEditable}
+                menuComponent={
+                  <ProposalCardMenu
+                    proposal={proposal}
+                    canManage={canManageProposals}
+                  />
+                }
+              />
+              <ProposalCardMeta proposal={proposal} />
+              <ProposalCardDescription proposal={proposal} />
+            </ProposalCardContent>
+          </div>
           <ProposalCardContent>
-            <ProposalCardHeader
-              proposal={proposal}
-              viewHref={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`}
-              showMenu={canManageProposals || proposal.isEditable}
-              menuComponent={
-                <ProposalCardMenu
-                  proposal={proposal}
-                  canManage={canManageProposals}
-                />
-              }
-            />
-            <ProposalCardMeta proposal={proposal} />
-            <ProposalCardDescription proposal={proposal} />
             <ProposalCardFooter>
               <ProposalCardMetrics proposal={proposal} />
               <ProposalCardActions proposal={proposal} />

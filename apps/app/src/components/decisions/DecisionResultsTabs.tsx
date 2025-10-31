@@ -1,6 +1,7 @@
 'use client';
 
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
+import { cn } from '@op/ui/utils';
 import { ReactNode } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -15,7 +16,7 @@ export const DecisionResultsTabs = ({
   const t = useTranslations();
 
   return (
-    <Tabs className={className} defaultSelectedKey="funded">
+    <Tabs className={cn('gap-6', className)} defaultSelectedKey="funded">
       <TabList className="flex gap-6">
         <Tab id="funded">{t('Funded Proposals')}</Tab>
         <Tab id="ballot">{t('My Ballot')}</Tab>

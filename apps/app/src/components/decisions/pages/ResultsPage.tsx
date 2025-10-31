@@ -84,7 +84,7 @@ export function ResultsPage({
       </div>
 
       <div className="flex w-full justify-center border-t bg-white">
-        <div className="w-full gap-8 p-4 sm:max-w-6xl sm:p-8">
+        <div className="w-full gap-8 p-4 sm:max-w-6xl">
           <DecisionResultsTabs>
             <DecisionResultsTabPanel id="funded">
               <APIErrorBoundary
