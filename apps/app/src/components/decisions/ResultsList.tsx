@@ -78,7 +78,7 @@ export const ResultsList = ({
               </ProposalCardContent>
             </div>
             <ProposalCardContent>
-              {resultStats?.membersVoted ? (
+              {slug !== 'cowop' && resultStats?.membersVoted ? (
                 <div className="flex flex-col gap-3">
                   <div className="border-neutral-silver h-0 w-full border-b" />
 
