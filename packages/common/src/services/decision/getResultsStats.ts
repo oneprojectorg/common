@@ -2,14 +2,12 @@ import { db, desc, eq } from '@op/db/client';
 import {
   decisionProcessResultSelections,
   decisionProcessResults,
-  decisionsVoteSubmissions,
   organizations,
   processInstances,
   proposals,
 } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
-import { countDistinct } from 'drizzle-orm';
 
 import { NotFoundError } from '../../utils';
 import { getOrgAccessUser } from '../access';
@@ -51,25 +49,16 @@ export const getResultsStats = async ({
 
   assertAccess({ decisions: permission.READ }, orgUser?.roles ?? []);
 
-  const [result, voteCountResult] = await Promise.all([
-    db.query.decisionProcessResults.findFirst({
-      where: eq(decisionProcessResults.processInstanceId, instanceId),
-      orderBy: [desc(decisionProcessResults.executedAt)],
-    }),
-    db
-      .select({
-        count: countDistinct(decisionsVoteSubmissions.submittedByProfileId),
-      })
-      .from(decisionsVoteSubmissions)
-      .where(eq(decisionsVoteSubmissions.processInstanceId, instanceId))
-      .then((results) => results[0]),
-  ]);
-
-  const membersVoted = Number(voteCountResult?.count ?? 0);
+  const result = await db.query.decisionProcessResults.findFirst({
+    where: eq(decisionProcessResults.processInstanceId, instanceId),
+    orderBy: [desc(decisionProcessResults.executedAt)],
+  });
 
   if (!result) {
     return null;
   }
+
+  const membersVoted = result.voterCount;
 
   if (!result.success) {
     throw new Error('The latest result execution was not successful');
@@ -79,6 +68,7 @@ export const getResultsStats = async ({
     .select({
       proposalId: decisionProcessResultSelections.proposalId,
       proposalData: proposals.proposalData,
+      allocated: decisionProcessResultSelections.allocated,
     })
     .from(decisionProcessResultSelections)
     .innerJoin(
@@ -98,8 +88,13 @@ export const getResultsStats = async ({
     };
   }
 
-  // Sum up the budgets from proposalData
+  // Sum up the allocated amounts (or fall back to budgets from proposalData)
   const totalAllocated = selectedProposalsWithData.reduce((sum, item) => {
+    // Use allocated amount if it exists, otherwise fall back to budget
+    if (item.allocated !== null) {
+      const allocatedNum = Number(item.allocated);
+      return sum + (isNaN(allocatedNum) ? 0 : allocatedNum);
+    }
     const proposalData = item.proposalData as any;
     const budget = proposalData?.budget ?? 0;
     return sum + (typeof budget === 'number' ? budget : 0);

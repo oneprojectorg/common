@@ -3,6 +3,7 @@ import type { InferModel } from 'drizzle-orm';
 import {
   index,
   integer,
+  numeric,
   pgTable,
   uniqueIndex,
   uuid,
@@ -31,6 +32,9 @@ export const decisionProcessResultSelections = pgTable(
 
     // Optional ranking to preserve selection order
     selectionRank: integer('selection_rank'),
+
+    // Optional allocated amount (may differ from original budget)
+    allocated: numeric('allocated'),
 
     ...timestamps,
   },

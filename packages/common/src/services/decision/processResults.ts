@@ -1,8 +1,9 @@
-import { db, eq, inArray } from '@op/db/client';
+import { db, eq, inArray, count } from '@op/db/client';
 import {
   ProposalStatus,
   decisionProcessResultSelections,
   decisionProcessResults,
+  decisionsVoteSubmissions,
   processInstances,
   proposals,
 } from '@op/db/schema';
@@ -101,6 +102,14 @@ export async function processResults({
       error = err instanceof Error ? err.message : 'Unknown error';
     }
 
+    // Count the number of voters for this process instance
+    const voterCountResult = await db
+      .select({ count: count() })
+      .from(decisionsVoteSubmissions)
+      .where(eq(decisionsVoteSubmissions.processInstanceId, processInstanceId));
+
+    const voterCount = voterCountResult[0]?.count || 0;
+
     const result = await db.transaction(async (tx) => {
       // Store the results in the database
       const [resultRecord] = await tx
@@ -110,6 +119,7 @@ export async function processResults({
           success,
           errorMessage: error,
           selectedCount: selectedProposalIds.length,
+          voterCount,
           pipelineConfig: processSchema.selectionPipeline || null,
         })
         .returning();
@@ -151,6 +161,16 @@ export async function processResults({
 
     // Try to store the error in the database
     try {
+      // Count the number of voters for this process instance
+      const voterCountResult = await db
+        .select({ count: count() })
+        .from(decisionsVoteSubmissions)
+        .where(
+          eq(decisionsVoteSubmissions.processInstanceId, processInstanceId),
+        );
+
+      const voterCount = voterCountResult[0]?.count || 0;
+
       const [resultRecord] = await db
         .insert(decisionProcessResults)
         .values({
@@ -158,6 +178,7 @@ export async function processResults({
           success: false,
           errorMessage,
           selectedCount: 0,
+          voterCount,
           pipelineConfig: null,
         })
         .returning();

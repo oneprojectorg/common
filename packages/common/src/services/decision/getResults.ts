@@ -36,6 +36,7 @@ export const getLatestResultWithProposals = async ({
     Awaited<ReturnType<typeof listProposals>>['proposals'][number] & {
       selectionRank: number | null;
       voteCount: number;
+      allocated: string | null;
     }
   >;
   next: string | null;
@@ -112,6 +113,7 @@ export const getLatestResultWithProposals = async ({
       id: decisionProcessResultSelections.id,
       proposalId: decisionProcessResultSelections.proposalId,
       selectionRank: decisionProcessResultSelections.selectionRank,
+      allocated: decisionProcessResultSelections.allocated,
     })
     .from(decisionProcessResultSelections)
     .where(
@@ -185,6 +187,7 @@ export const getLatestResultWithProposals = async ({
       {
         selectionRank: s.selectionRank,
         voteCount: voteCountMap.get(s.proposalId) ?? 0,
+        allocated: s.allocated,
       },
     ]),
   );
@@ -209,6 +212,7 @@ export const getLatestResultWithProposals = async ({
         ...proposal,
         selectionRank: selectionData?.selectionRank ?? null,
         voteCount: selectionData?.voteCount ?? 0,
+        allocated: selectionData?.allocated ?? null,
       };
     })
     .filter((p) => p !== null);
