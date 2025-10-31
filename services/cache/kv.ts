@@ -46,6 +46,7 @@ const TypeMap = {
   user: 'user',
   orgUser: 'orgUser',
   profile: 'profile',
+  decisionResult: 'decisionResult',
 };
 
 const getCacheKey = (

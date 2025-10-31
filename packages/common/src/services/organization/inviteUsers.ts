@@ -331,7 +331,7 @@ export const inviteNewUsers = async (
           invitedAt: new Date().toISOString(),
           inviteType: 'new_organization',
           personalMessage: personalMessage,
-          inviterOrganizationName: currentProfile?.profile?.name || 'Common',
+          inviterOrganizationName: currentProfile?.name || 'Common',
         };
 
         // Add the email to the allowList

@@ -1,8 +1,5 @@
-import {
-  NotFoundError,
-  UnauthorizedError,
-  getResultsStats,
-} from '@op/common';
+import { cache } from '@op/cache';
+import { NotFoundError, UnauthorizedError, getResultsStats } from '@op/common';
 import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 
@@ -39,9 +36,14 @@ export const getResultsStatsRouter = router({
       const { instanceId } = input;
 
       try {
-        const stats = await getResultsStats({
-          instanceId,
-          user,
+        const stats = await cache({
+          type: 'decisionResult',
+          params: [instanceId, 'stats'],
+          fetch: () =>
+            getResultsStats({
+              instanceId,
+              user,
+            }),
         });
 
         return stats;
