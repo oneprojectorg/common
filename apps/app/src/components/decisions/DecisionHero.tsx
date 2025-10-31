@@ -28,7 +28,7 @@ export function DecisionHero({
       {description && (
         <div
           className={cn(
-            'flex flex-col gap-2 pb-2 text-base',
+            'flex flex-col gap-2 text-base',
             variant !== 'results' && 'text-neutral-charcoal',
           )}
         >

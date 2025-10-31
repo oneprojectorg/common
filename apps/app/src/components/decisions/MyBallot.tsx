@@ -16,16 +16,13 @@ import {
 } from './ProposalCard';
 import { VotingProposalCard } from './VotingProposalCard';
 
-const NoVoteFound = () => {
+export const NoVoteFound = () => {
   const t = useTranslations();
   return (
     <EmptyProposalsState>
       <Header3 className="font-serif !text-title-base font-light text-neutral-black">
         {t('You did not vote in this process.')}
       </Header3>
-      <p className="text-base text-neutral-charcoal">
-        {t('Your ballot will appear here after you vote.')}
-      </p>
     </EmptyProposalsState>
   );
 };
@@ -65,8 +62,10 @@ export const MyBallot = ({
   );
 
   return (
-    <div className="flex flex-col gap-6 pb-12">
-      <Header3 className="font-serif">{t('My Ballot')}</Header3>
+    <div className="flex flex-col gap-4 pb-12">
+      <Header3 className="font-serif !text-title-base">
+        {t('My Ballot')}
+      </Header3>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {proposals.map((proposal) => (

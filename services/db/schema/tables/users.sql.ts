@@ -1,4 +1,5 @@
 import { relations, sql } from 'drizzle-orm';
+import type { InferModel } from 'drizzle-orm';
 import {
   boolean,
   index,
@@ -83,3 +84,5 @@ export const usersRelations = relations(users, ({ many, one }) => ({
     references: [objectsInStorage.id],
   }),
 }));
+
+export type CommonUser = InferModel<typeof users>;

@@ -38,9 +38,14 @@ export const ResultsList = ({
 }) => {
   const t = useTranslations();
 
-  const [instanceResults] = trpc.decision.getInstanceResults.useSuspenseQuery({
-    instanceId,
-  });
+  const [[instanceResults, resultStats]] = trpc.useSuspenseQueries((t) => [
+    t.decision.getInstanceResults({
+      instanceId,
+    }),
+    t.decision.getResultsStats({
+      instanceId,
+    }),
+  ]);
 
   const { items: proposals } = instanceResults;
 
@@ -49,7 +54,7 @@ export const ResultsList = ({
   }
 
   return (
-    <div className="flex flex-col gap-6 pb-12">
+    <div className="flex flex-col gap-4 pb-12">
       <div className="flex items-center gap-4">
         <Header3 className="font-serif !text-title-base">
           {t('Funded Proposals')}
@@ -59,8 +64,8 @@ export const ResultsList = ({
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {proposals.map((proposal) => (
           <ProposalCard key={proposal.id}>
-            <ProposalCardContent className="flex h-full flex-col justify-between gap-3 space-y-3">
-              <div>
+            <div className="flex h-full flex-col justify-between gap-3 space-y-3">
+              <ProposalCardContent>
                 <ProposalCardHeader
                   proposal={proposal}
                   viewHref={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`}
@@ -69,19 +74,24 @@ export const ResultsList = ({
                 <ProposalCardMeta proposal={proposal} />
 
                 <ProposalCardDescription proposal={proposal} />
-              </div>
+              </ProposalCardContent>
+            </div>
+            <ProposalCardContent>
+              {resultStats?.membersVoted ? (
+                <div className="flex flex-col gap-3">
+                  <div className="border-neutral-silver h-0 w-full border-b" />
 
-              <div className="flex flex-col gap-3">
-                <div className="border-neutral-silver h-0 w-full border-b" />
-
-                {/* Footer - Total Votes */}
-                <ProposalCardFooter>
-                  <div className="flex items-start gap-1 text-base text-neutral-charcoal">
-                    <span className="font-bold">{proposal.voteCount ?? 0}</span>
-                    <span>{t('Total Votes')}</span>
-                  </div>
-                </ProposalCardFooter>
-              </div>
+                  {/* Footer - Total Votes */}
+                  <ProposalCardFooter>
+                    <div className="flex items-start gap-1 text-base text-neutral-charcoal">
+                      <span className="font-bold">
+                        {proposal.voteCount ?? 0}
+                      </span>
+                      <span>{t('Total Votes')}</span>
+                    </div>
+                  </ProposalCardFooter>
+                </div>
+              ) : null}
             </ProposalCardContent>
           </ProposalCard>
         ))}

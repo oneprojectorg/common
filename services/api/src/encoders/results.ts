@@ -7,3 +7,13 @@ export const getInstanceResultsInputSchema = dbFilter
     instanceId: z.uuid(),
   })
   .optional();
+
+export const getResultsStatsInputSchema = z.object({
+  instanceId: z.uuid(),
+});
+
+export const resultsStatsEncoder = z.object({
+  membersVoted: z.number(),
+  proposalsFunded: z.number(),
+  totalAllocated: z.number(),
+});
