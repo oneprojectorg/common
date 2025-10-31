@@ -79,6 +79,7 @@ export const getResultsStats = async ({
     .select({
       proposalId: decisionProcessResultSelections.proposalId,
       proposalData: proposals.proposalData,
+      allocated: decisionProcessResultSelections.allocated,
     })
     .from(decisionProcessResultSelections)
     .innerJoin(
@@ -98,8 +99,13 @@ export const getResultsStats = async ({
     };
   }
 
-  // Sum up the budgets from proposalData
+  // Sum up the allocated amounts (or fall back to budgets from proposalData)
   const totalAllocated = selectedProposalsWithData.reduce((sum, item) => {
+    // Use allocated amount if it exists, otherwise fall back to budget
+    if (item.allocated !== null) {
+      const allocatedNum = Number(item.allocated);
+      return sum + (isNaN(allocatedNum) ? 0 : allocatedNum);
+    }
     const proposalData = item.proposalData as any;
     const budget = proposalData?.budget ?? 0;
     return sum + (typeof budget === 'number' ? budget : 0);

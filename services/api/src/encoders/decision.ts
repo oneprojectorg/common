@@ -202,6 +202,8 @@ export const proposalEncoder = createSelectSchema(proposals)
     selectionRank: z.number().nullable().optional(),
     // Vote count (for results)
     voteCount: z.number().optional(),
+    // Allocated amount (for results)
+    allocated: z.string().nullable().optional(),
   });
 
 // Decision Encoder

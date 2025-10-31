@@ -69,6 +69,7 @@ export const ResultsList = ({
                 <ProposalCardHeader
                   proposal={proposal}
                   viewHref={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`}
+                  allocated={proposal.allocated}
                 />
 
                 <ProposalCardMeta proposal={proposal} />
