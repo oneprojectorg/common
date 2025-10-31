@@ -141,12 +141,10 @@ export const getProposal = async ({
           organizationId: instanceOrg[0].id,
         });
 
-        const hasAdminPermission = checkPermission(
+        isEditable = checkPermission(
           { decisions: permission.ADMIN },
           orgUser?.roles ?? [],
         );
-
-        isEditable = hasAdminPermission;
       }
     }
 
