@@ -46,7 +46,7 @@ const TypeMap = {
   user: 'user',
   orgUser: 'orgUser',
   profile: 'profile',
-  decisionResult: 'decisionResult',
+  decision: 'decision',
 };
 
 const getCacheKey = (
@@ -60,9 +60,8 @@ const getCacheKey = (
 
   // this matches the ability to disregard full paths so pages can be moved without a 404
   const slug = fullSlug?.split('/').slice(-1)[0] ?? '';
-  return `${apiVersion}/${appKey}/${key}/${slug}${
-    otherParams?.length ? `:${otherParams.join(':')}` : ''
-  }`;
+  return `${apiVersion}/${appKey}/${key}/${slug}${otherParams?.length ? `:${otherParams.join(':')}` : ''
+    }`;
 };
 
 const memCache = new Map();

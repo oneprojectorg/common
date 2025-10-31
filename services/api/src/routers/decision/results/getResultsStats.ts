@@ -37,7 +37,7 @@ export const getResultsStatsRouter = router({
 
       try {
         const stats = await cache({
-          type: 'decisionResult',
+          type: 'decision',
           params: [instanceId, 'stats'],
           fetch: () =>
             getResultsStats({
