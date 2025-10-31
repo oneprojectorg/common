@@ -5,6 +5,7 @@ import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
+import { searchProfilesResultEncoder } from '../../encoders/searchResults';
 import withAnalytics from '../../middlewares/withAnalytics';
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
@@ -36,7 +37,7 @@ export const searchProfilesRouter = router({
         types: z.array(z.enum(EntityType)).optional(),
       }),
     )
-    .output(z.array(z.any()))
+    .output(searchProfilesResultEncoder)
     .query(async ({ ctx, input }) => {
       const { q, limit = 10, types } = input;
 
@@ -62,13 +63,6 @@ export const searchProfilesRouter = router({
         });
       }
 
-      return result.map((profile) => {
-        // TODO: Doing this to account for the difference in shape between on avatarImage
-        // which here is rendered even if it is null (with all null values)
-        if (profile.avatarImage?.id == null) {
-          profile.avatarImage = null;
-        }
-        return profile;
-      });
+      return result;
     }),
 });

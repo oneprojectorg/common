@@ -8,7 +8,24 @@ import { Link } from '@/lib/i18n';
 
 type Profiles = RouterOutput['profile']['list']['items'];
 
-export const ProfileSummaryList = ({ profiles }: { profiles: Profiles }) => {
+// Flexible profile type that works with both list and search results
+type ProfileItem = {
+  id: string;
+  name: string;
+  slug: string;
+  type: string;
+  bio: string | null;
+  avatarImage?: { name?: string | null } | null;
+  organization?: {
+    whereWeWork?: Array<{ name: string }>;
+  } | null;
+};
+
+export const ProfileSummaryList = ({
+  profiles,
+}: {
+  profiles: Profiles | ProfileItem[];
+}) => {
   return (
     <div className="flex flex-col gap-6">
       {profiles.map((profile) => {

@@ -1,11 +1,4 @@
-import {
-  aliasedTable,
-  db,
-  eq,
-  getTableColumns,
-  inArray,
-  sql,
-} from '@op/db/client';
+import { aliasedTable, db, eq, getTableColumns, sql } from '@op/db/client';
 import {
   EntityType,
   objectsInStorage,
@@ -26,7 +19,7 @@ export const searchProfiles = async ({
   limit?: number;
   types?: EntityType[];
 }) => {
-  if (!user) {
+  if (!user || !types) {
     return [];
   }
   // TODO: assert authorization
@@ -57,39 +50,41 @@ export const searchProfiles = async ({
     'avatarObjectsInStorage',
   );
 
-  const results = await db
-    .with(searchQueries)
-    .select({
-      ...getTableColumns(profiles),
-      //@ts-ignore
-      avatarImage: avatarObjectsInStorage,
-      organization: {
-        ...getTableColumns(organizations),
-      },
-      user: {
-        ...getTableColumns(users),
-      },
-      rank: sql`ts_rank(${profiles.search}, ${searchQueries.englishQuery}) + ts_rank(${profiles.search}, ${searchQueries.simpleQuery})`.as(
-        'rank',
-      ),
-    })
-    .from(profiles)
-    .crossJoin(searchQueries)
-    .leftJoin(
-      avatarObjectsInStorage,
-      eq(avatarObjectsInStorage.id, profiles.avatarImageId),
-    )
-    .leftJoin(organizations, eq(organizations.profileId, profiles.id))
-    .leftJoin(users, eq(users.profileId, profiles.id))
-    .where(
-      sql`(${profiles.search} @@ ${searchQueries.englishQuery} OR ${profiles.search} @@ ${searchQueries.simpleQuery})${
-        types && types.length > 0
-          ? sql` AND ${inArray(profiles.type, types)}`
-          : sql``
-      }`,
-    )
-    .limit(limit)
-    .orderBy(sql`rank DESC`);
+  const searchByType = async (type: EntityType) =>
+    await db
+      .with(searchQueries)
+      .select({
+        ...getTableColumns(profiles),
+        //@ts-ignore
+        avatarImage: avatarObjectsInStorage,
+        organization: {
+          ...getTableColumns(organizations),
+        },
+        user: {
+          ...getTableColumns(users),
+        },
+        rank: sql`ts_rank(${profiles.search}, ${searchQueries.englishQuery}) + ts_rank(${profiles.search}, ${searchQueries.simpleQuery})`.as(
+          'rank',
+        ),
+      })
+      .from(profiles)
+      .crossJoin(searchQueries)
+      .leftJoin(
+        avatarObjectsInStorage,
+        eq(avatarObjectsInStorage.id, profiles.avatarImageId),
+      )
+      .leftJoin(organizations, eq(organizations.profileId, profiles.id))
+      .leftJoin(users, eq(users.profileId, profiles.id))
+      .where(
+        sql`(${profiles.search} @@ ${searchQueries.englishQuery} OR ${profiles.search} @@ ${searchQueries.simpleQuery})${sql` AND ${eq(profiles.type, type)}`}`,
+      )
+      .limit(limit)
+      .orderBy(sql`rank DESC`);
 
-  return results;
+  return await Promise.all(
+    types.map(async (type) => ({
+      type,
+      results: await searchByType(type),
+    })),
+  );
 };
