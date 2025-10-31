@@ -53,17 +53,17 @@ export function ResultsStats({ instanceId }: ResultsStatsProps) {
 
   return (
     <div className="flex w-full flex-col gap-2">
-      <div className="flex flex-col items-center justify-center gap-6 sm:flex-row">
+      <div className="flex flex-col items-center justify-center gap-2 xxs:flex-row sm:gap-6">
         <Stat>
           <StatNumber>{stats.membersVoted}</StatNumber>
           <StatLabel>Members Voted</StatLabel>
         </Stat>
-        <hr className="hidden h-8 w-0.5 bg-white/50 sm:block" />
+        <hr className="hidden h-8 w-0.5 bg-white/50 xxs:block" />
         <Stat>
           <StatNumber>{stats.proposalsFunded}</StatNumber>
           <StatLabel>Proposals Funded</StatLabel>
         </Stat>
-        <hr className="hidden h-8 w-0.5 bg-white/50 sm:block" />
+        <hr className="hidden h-8 w-0.5 bg-white/50 xxs:block" />
         <Stat>
           <StatNumber>{formatCurrency(stats.totalAllocated)}</StatNumber>
           <StatLabel>Total Allocated</StatLabel>
