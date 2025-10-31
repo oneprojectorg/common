@@ -1,15 +1,19 @@
 import { and, count, db, eq } from '@op/db/client';
 import {
   ProfileRelationshipType,
+  organizations,
   posts,
   postsToProfiles,
+  processInstances,
   profileRelationships,
   proposals,
   users,
 } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
+import { checkPermission, permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
+import { getOrgAccessUser } from '../access';
 
 export const getProposal = async ({
   profileId,
@@ -109,6 +113,43 @@ export const getProposal = async ({
       followersCount = Number(followersCountResult[0]?.count || 0);
     }
 
+    // Check if proposal is editable by current user
+    const isOwner = proposal.submittedByProfileId === dbUser.currentProfileId;
+    let isEditable = isOwner;
+
+    if (
+      !isEditable &&
+      proposal.processInstance &&
+      'id' in proposal.processInstance
+    ) {
+      // Get the organization for the process instance
+      const instanceOrg = await db
+        .select({
+          id: organizations.id,
+        })
+        .from(organizations)
+        .leftJoin(
+          processInstances,
+          eq(organizations.profileId, processInstances.ownerProfileId),
+        )
+        .where(eq(processInstances.id, proposal.processInstance.id as string))
+        .limit(1);
+
+      if (instanceOrg[0]) {
+        const orgUser = await getOrgAccessUser({
+          user,
+          organizationId: instanceOrg[0].id,
+        });
+
+        const hasAdminPermission = checkPermission(
+          { decisions: permission.ADMIN },
+          orgUser?.roles ?? [],
+        );
+
+        isEditable = hasAdminPermission;
+      }
+    }
+
     // TODO: Add access control - check if user can view this proposal
     // For now, any authenticated user can view any proposal
 
@@ -117,6 +158,7 @@ export const getProposal = async ({
       commentsCount,
       likesCount,
       followersCount,
+      isEditable,
     };
   } catch (error) {
     if (error instanceof NotFoundError || error instanceof UnauthorizedError) {
