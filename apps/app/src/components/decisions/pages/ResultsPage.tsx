@@ -74,10 +74,12 @@ export function ResultsPage({
             <ResultsStats instanceId={instanceId} />
           </Suspense>
 
-          <DecisionActionBar
-            instanceId={instanceId}
-            description={description}
-          />
+          {slug === 'cowop' ? (
+            <DecisionActionBar
+              instanceId={instanceId}
+              description={description}
+            />
+          ) : null}
         </div>
       </div>
 

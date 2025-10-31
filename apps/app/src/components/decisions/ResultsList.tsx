@@ -38,9 +38,14 @@ export const ResultsList = ({
 }) => {
   const t = useTranslations();
 
-  const [instanceResults] = trpc.decision.getInstanceResults.useSuspenseQuery({
-    instanceId,
-  });
+  const [[instanceResults, resultStats]] = trpc.useSuspenseQueries((t) => [
+    t.decision.getInstanceResults({
+      instanceId,
+    }),
+    t.decision.getResultsStats({
+      instanceId,
+    }),
+  ]);
 
   const { items: proposals } = instanceResults;
 
@@ -70,18 +75,21 @@ export const ResultsList = ({
 
                 <ProposalCardDescription proposal={proposal} />
               </div>
+              {resultStats?.membersVoted ? (
+                <div className="flex flex-col gap-3">
+                  <div className="border-neutral-silver h-0 w-full border-b" />
 
-              <div className="flex flex-col gap-3">
-                <div className="border-neutral-silver h-0 w-full border-b" />
-
-                {/* Footer - Total Votes */}
-                <ProposalCardFooter>
-                  <div className="flex items-start gap-1 text-base text-neutral-charcoal">
-                    <span className="font-bold">{proposal.voteCount ?? 0}</span>
-                    <span>{t('Total Votes')}</span>
-                  </div>
-                </ProposalCardFooter>
-              </div>
+                  {/* Footer - Total Votes */}
+                  <ProposalCardFooter>
+                    <div className="flex items-start gap-1 text-base text-neutral-charcoal">
+                      <span className="font-bold">
+                        {proposal.voteCount ?? 0}
+                      </span>
+                      <span>{t('Total Votes')}</span>
+                    </div>
+                  </ProposalCardFooter>
+                </div>
+              ) : null}
             </ProposalCardContent>
           </ProposalCard>
         ))}
