@@ -20,10 +20,15 @@ export const APIErrorBoundary = ({
   return (
     <ReactErrorBoundary
       fallbackRender={({ error }: FallbackProps) => {
-        const fallback = fallbacks[error.status];
+        const fallback = fallbacks[error.data?.httpStatus];
 
         if (fallback) {
           return fallback;
+        }
+
+        // support a default fallback
+        if (fallbacks['default']) {
+          return fallbacks['default'];
         }
 
         throw error;

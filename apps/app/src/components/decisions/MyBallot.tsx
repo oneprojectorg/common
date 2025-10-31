@@ -16,16 +16,13 @@ import {
 } from './ProposalCard';
 import { VotingProposalCard } from './VotingProposalCard';
 
-const NoVoteFound = () => {
+export const NoVoteFound = () => {
   const t = useTranslations();
   return (
     <EmptyProposalsState>
       <Header3 className="font-serif !text-title-base font-light text-neutral-black">
         {t('You did not vote in this process.')}
       </Header3>
-      <p className="text-base text-neutral-charcoal">
-        {t('Your ballot will appear here after you vote.')}
-      </p>
     </EmptyProposalsState>
   );
 };

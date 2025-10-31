@@ -1,7 +1,9 @@
 'use client';
 
+import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import { match } from '@op/core';
+import { Header3 } from '@op/ui/Header';
 import { Skeleton } from '@op/ui/Skeleton';
 import { Suspense } from 'react';
 
@@ -13,7 +15,8 @@ import {
   DecisionResultsTabPanel,
   DecisionResultsTabs,
 } from '../DecisionResultsTabs';
-import { MyBallot } from '../MyBallot';
+import { EmptyProposalsState } from '../EmptyProposalsState';
+import { MyBallot, NoVoteFound } from '../MyBallot';
 import { ProposalListSkeleton } from '../ProposalsList';
 import { ResultsList } from '../ResultsList';
 import { ResultsStats } from '../ResultsStats';
@@ -70,6 +73,11 @@ export function ResultsPage({
           <Suspense fallback={<Skeleton className="h-64 w-full" />}>
             <ResultsStats instanceId={instanceId} />
           </Suspense>
+
+          <DecisionActionBar
+            instanceId={instanceId}
+            description={description}
+          />
         </div>
       </div>
 
@@ -77,19 +85,40 @@ export function ResultsPage({
         <div className="w-full gap-8 p-4 sm:max-w-6xl sm:p-8">
           <DecisionResultsTabs>
             <DecisionResultsTabPanel id="funded">
-              <div className="lg:col-span-3">
-                <Suspense fallback={<ProposalListSkeleton />}>
-                  <ResultsList slug={slug} instanceId={instanceId} />
-                </Suspense>
-              </div>
+              <APIErrorBoundary
+                fallbacks={{
+                  404: (
+                    <EmptyProposalsState>
+                      <Header3 className="font-serif !text-title-base font-light text-neutral-black">
+                        {t('Results are still being processed.')}
+                      </Header3>
+                      <p className="text-base text-neutral-charcoal">
+                        {t('Check back again shortly for the results.')}
+                      </p>
+                    </EmptyProposalsState>
+                  ),
+                }}
+              >
+                <div className="lg:col-span-3">
+                  <Suspense fallback={<ProposalListSkeleton />}>
+                    <ResultsList slug={slug} instanceId={instanceId} />
+                  </Suspense>
+                </div>
+              </APIErrorBoundary>
             </DecisionResultsTabPanel>
 
             <DecisionResultsTabPanel id="ballot">
-              <div className="lg:col-span-3">
-                <Suspense fallback={<ProposalListSkeleton />}>
-                  <MyBallot slug={slug} instanceId={instanceId} />
-                </Suspense>
-              </div>
+              <APIErrorBoundary
+                fallbacks={{
+                  default: <NoVoteFound />,
+                }}
+              >
+                <div className="lg:col-span-3">
+                  <Suspense fallback={<ProposalListSkeleton />}>
+                    <MyBallot slug={slug} instanceId={instanceId} />
+                  </Suspense>
+                </div>
+              </APIErrorBoundary>
             </DecisionResultsTabPanel>
           </DecisionResultsTabs>
         </div>
