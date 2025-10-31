@@ -31,7 +31,6 @@ export interface SubmitVoteInput {
 
 export interface GetVotingStatusInput {
   processInstanceId: string;
-  userId: string;
   authUserId: string;
 }
 

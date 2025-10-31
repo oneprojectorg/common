@@ -20,11 +20,6 @@ const submitVoteInput = z.object({
   customData: customDataSchema,
 });
 
-const getVoteStatusInput = z.object({
-  processInstanceId: z.uuid(),
-  userId: z.uuid(),
-});
-
 const validateVoteSelectionInput = z.object({
   processInstanceId: z.uuid(),
   selectedProposalIds: z.array(z.uuid()),
@@ -52,7 +47,11 @@ export const votingRouter = router({
 
   // Get user's vote status with schema context
   getVotingStatus: loggedProcedure
-    .input(getVoteStatusInput)
+    .input(
+      z.object({
+        processInstanceId: z.uuid(),
+      }),
+    )
     .use(withRateLimited({ windowSize: 10, maxRequests: 5 }))
     .use(withAuthenticated)
     .use(withAnalytics)
@@ -60,7 +59,6 @@ export const votingRouter = router({
       return await getVotingStatus({
         data: {
           processInstanceId: input.processInstanceId,
-          userId: input.userId,
           authUserId: ctx.user.id,
         },
         authUserId: ctx.user.id,

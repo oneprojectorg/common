@@ -44,11 +44,8 @@ export const MyBallot = ({
     return <NoVoteFound />;
   }
 
-  const userId = user.user.id;
-
   const [voteStatus] = trpc.decision.getVotingStatus.useSuspenseQuery({
     processInstanceId: instanceId,
-    userId,
   });
 
   const [proposalsData] = trpc.decision.listProposals.useSuspenseQuery({

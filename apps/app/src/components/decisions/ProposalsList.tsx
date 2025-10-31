@@ -138,7 +138,6 @@ const VotingProposalsList = ({
   canManageProposals = false,
   votedProposalIds = [],
 }: ProposalsProps) => {
-  const { user } = useUser();
   const [selectedProposalIds, setSelectedProposalIds] = useState<string[]>([]);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const t = useTranslations();
@@ -146,15 +145,9 @@ const VotingProposalsList = ({
   const numSelected = selectedProposalIds.length;
 
   // Get voting status for this user and process
-  const { data: voteStatus } = trpc.decision.getVotingStatus.useQuery(
-    {
-      processInstanceId: instanceId,
-      userId: user?.id || '',
-    },
-    {
-      enabled: !!user?.id,
-    },
-  );
+  const { data: voteStatus } = trpc.decision.getVotingStatus.useQuery({
+    processInstanceId: instanceId,
+  });
 
   const utils = trpc.useUtils();
 
@@ -195,7 +188,6 @@ const VotingProposalsList = ({
     setShowSuccessModal(true); // Show success modal
     utils.decision.getVotingStatus.invalidate({
       processInstanceId: instanceId,
-      userId: user?.id || '',
     });
   };
 
@@ -319,19 +311,12 @@ const ViewProposalsList = ({
 };
 
 const Proposals = (props: ProposalsProps) => {
-  const { user } = useUser();
   const { isLoading, instanceId } = props;
 
   // Get voting status for this user and process
-  const { data: voteStatus } = trpc.decision.getVotingStatus.useQuery(
-    {
-      processInstanceId: instanceId,
-      userId: user?.id || '',
-    },
-    {
-      enabled: !!user?.id,
-    },
-  );
+  const { data: voteStatus } = trpc.decision.getVotingStatus.useQuery({
+    processInstanceId: instanceId,
+  });
 
   // Determine voting state
   const isVotingEnabled = !!voteStatus?.votingConfiguration?.allowDecisions;
@@ -376,7 +361,6 @@ export const ProposalsList = ({
     }),
     t.decision.getVotingStatus({
       processInstanceId: instanceId,
-      userId: user?.id || '',
     }),
   ]);
 

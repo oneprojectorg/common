@@ -1,6 +1,5 @@
 'use client';
 
-import { useUser } from '@/utils/UserProvider';
 import { getUniqueSubmitters } from '@/utils/proposalUtils';
 import { trpc } from '@op/api/client';
 import { match } from '@op/core';
@@ -21,7 +20,6 @@ export function VotingPage({
   slug: string;
 }) {
   const t = useTranslations();
-  const { user } = useUser();
 
   const [[{ proposals }, instance, voteStatus]] = trpc.useSuspenseQueries(
     (t) => [
@@ -34,7 +32,6 @@ export function VotingPage({
       }),
       t.decision.getVotingStatus({
         processInstanceId: instanceId,
-        userId: user?.id || '',
       }),
     ],
   );
