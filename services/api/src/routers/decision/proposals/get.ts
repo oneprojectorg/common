@@ -1,5 +1,10 @@
 import { cache } from '@op/cache';
-import { NotFoundError, UnauthorizedError, getProposal } from '@op/common';
+import {
+  NotFoundError,
+  UnauthorizedError,
+  getPermissionsOnProposal,
+  getProposal,
+} from '@op/common';
 import { TRPCError } from '@trpc/server';
 import { waitUntil } from '@vercel/functions';
 import type { OpenApiMeta } from 'trpc-to-openapi';
@@ -56,6 +61,16 @@ export const getProposalRouter = router({
             skipMemCache: true, // We need these to be editable and then immediately accessible
           },
         });
+
+        // Don't cache permission
+        try {
+          proposal.isEditable = await getPermissionsOnProposal({
+            user,
+            proposal,
+          });
+        } catch (error) {
+          console.error(error);
+        }
 
         // Track proposal viewed event
         if (

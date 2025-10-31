@@ -1,6 +1,9 @@
 import { and, count, db, eq } from '@op/db/client';
 import {
+  Decision,
+  Profile,
   ProfileRelationshipType,
+  Proposal,
   organizations,
   posts,
   postsToProfiles,
@@ -21,7 +24,19 @@ export const getProposal = async ({
 }: {
   profileId: string;
   user: User;
-}) => {
+}): Promise<
+  Proposal & {
+    submittedBy: Profile & { avatarImage: any }; // fix drizzle types
+    processInstance: any;
+    profile: Profile;
+    decisions: (Decision & {
+      decidedBy: Profile;
+    })[];
+    commentsCount: number;
+    likesCount: number;
+    followersCount: number;
+  }
+> => {
   if (!user) {
     throw new UnauthorizedError('User must be authenticated');
   }
@@ -36,7 +51,7 @@ export const getProposal = async ({
       throw new UnauthorizedError('User must have an active profile');
     }
 
-    const proposal = await db.query.proposals.findFirst({
+    const proposal = (await db.query.proposals.findFirst({
       where: eq(proposals.profileId, profileId),
       with: {
         processInstance: {
@@ -57,7 +72,14 @@ export const getProposal = async ({
           },
         },
       },
-    });
+    })) as Proposal & {
+      submittedBy: Profile & { avatarImage: any }; // fix drizzle types
+      processInstance: any;
+      profile: Profile;
+      decisions: (Decision & {
+        decidedBy: Profile;
+      })[];
+    };
 
     if (!proposal) {
       throw new NotFoundError('Proposal not found');
@@ -113,41 +135,6 @@ export const getProposal = async ({
       followersCount = Number(followersCountResult[0]?.count || 0);
     }
 
-    // Check if proposal is editable by current user
-    const isOwner = proposal.submittedByProfileId === dbUser.currentProfileId;
-    let isEditable = isOwner;
-
-    if (
-      !isEditable &&
-      proposal.processInstance &&
-      'id' in proposal.processInstance
-    ) {
-      // Get the organization for the process instance
-      const instanceOrg = await db
-        .select({
-          id: organizations.id,
-        })
-        .from(organizations)
-        .leftJoin(
-          processInstances,
-          eq(organizations.profileId, processInstances.ownerProfileId),
-        )
-        .where(eq(processInstances.id, proposal.processInstance.id as string))
-        .limit(1);
-
-      if (instanceOrg[0]) {
-        const orgUser = await getOrgAccessUser({
-          user,
-          organizationId: instanceOrg[0].id,
-        });
-
-        isEditable = checkPermission(
-          { decisions: permission.ADMIN },
-          orgUser?.roles ?? [],
-        );
-      }
-    }
-
     // TODO: Add access control - check if user can view this proposal
     // For now, any authenticated user can view any proposal
 
@@ -156,7 +143,6 @@ export const getProposal = async ({
       commentsCount,
       likesCount,
       followersCount,
-      isEditable,
     };
   } catch (error) {
     if (error instanceof NotFoundError || error instanceof UnauthorizedError) {
@@ -165,4 +151,57 @@ export const getProposal = async ({
     console.error('Error fetching proposal:', error);
     throw new NotFoundError('Proposal not found');
   }
+};
+
+export const getPermissionsOnProposal = async ({
+  user,
+  proposal,
+}: {
+  user: User;
+  proposal: Proposal & { processInstance: any };
+}) => {
+  const dbUser = await db.query.users.findFirst({
+    where: eq(users.authUserId, user.id),
+  });
+
+  if (!dbUser || !dbUser.currentProfileId) {
+    throw new UnauthorizedError('User must have an active profile');
+  }
+
+  // Check if proposal is editable by current user
+  const isOwner = proposal.submittedByProfileId === dbUser.currentProfileId;
+  let isEditable = isOwner;
+
+  if (
+    !isEditable &&
+    proposal.processInstance &&
+    'id' in proposal.processInstance
+  ) {
+    // Get the organization for the process instance
+    const instanceOrg = await db
+      .select({
+        id: organizations.id,
+      })
+      .from(organizations)
+      .leftJoin(
+        processInstances,
+        eq(organizations.profileId, processInstances.ownerProfileId),
+      )
+      .where(eq(processInstances.id, proposal.processInstance.id as string))
+      .limit(1);
+
+    if (instanceOrg[0]) {
+      const orgUser = await getOrgAccessUser({
+        user,
+        organizationId: instanceOrg[0].id,
+      });
+
+      isEditable = checkPermission(
+        { decisions: permission.ADMIN },
+        orgUser?.roles ?? [],
+      );
+    }
+  }
+
+  return isEditable;
 };
