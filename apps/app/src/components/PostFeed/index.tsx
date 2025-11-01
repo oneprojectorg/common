@@ -76,7 +76,15 @@ function useRelativeTime(
   const now = nowTime ?? actualNow;
 
   return useMemo(() => {
-    return format.relativeTime(new Date(dateTime), now);
+    const date = new Date(dateTime);
+    const diffMs = now.getTime() - date.getTime();
+
+    // "just now" for recent posts (< 5 seconds)
+    if (diffMs >= 0 && diffMs < 5000) {
+      return 'just now';
+    }
+
+    return format.relativeTime(date, now);
   }, [dateTime, format, now]);
 }
 
