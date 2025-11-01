@@ -37,20 +37,20 @@ export function ResultsPage({
   // Organization-specific content
   const heroContent = match(slug, {
     'people-powered': () => ({
-      title: t('THE RESULTS ARE IN.'),
+      title: t('The results are in.'),
       description: `Thank you to everyone who participated in ${instance.name}`,
     }),
     cowop: () => ({
-      title: t('THE RESULTS ARE IN.'),
-      description: `COWOP's Funds Oversight Committee has made final decisions on allocating our first $100,000!`,
+      title: t('The results are in.'),
+      description: t('COWOPRESULTSHEADER'),
       about: t('COWOPRESULTSABOUT'),
     }),
     'one-project': () => ({
-      title: t('THE RESULTS ARE IN.'),
+      title: t('The results are in.'),
       description: `Thank you to everyone who participated in ${instance.name}`,
     }),
     _: () => ({
-      title: t('THE RESULTS ARE IN.'),
+      title: t('The results are in.'),
       description: `Thank you to everyone who participated in ${instance.name}`,
     }),
   });
