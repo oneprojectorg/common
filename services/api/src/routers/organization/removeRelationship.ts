@@ -38,10 +38,6 @@ export const removeRelationshipRouter = router({
       const { id } = input;
 
       try {
-        if (!user) {
-          throw new UnauthorizedError('Unauthorized access');
-        }
-
         await removeRelationship({
           user,
           id,

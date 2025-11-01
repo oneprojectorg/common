@@ -43,10 +43,6 @@ export const approveRelationshipRouter = router({
       const { targetOrganizationId, sourceOrganizationId } = input;
 
       try {
-        if (!user) {
-          throw new UnauthorizedError('No user found');
-        }
-
         await approveRelationship({
           user,
           targetOrganizationId,
