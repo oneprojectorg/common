@@ -25,6 +25,7 @@ import { ReactionsButton } from '@op/ui/ReactionsButton';
 import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
 import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
+import { useFormatter, useNow } from 'next-intl';
 import Image from 'next/image';
 import { ReactNode, memo, useMemo, useState } from 'react';
 import { LuLeaf } from 'react-icons/lu';
@@ -35,7 +36,6 @@ import { DiscussionModal } from '../DiscussionModal';
 import { FeedContent, FeedHeader, FeedItem, FeedMain } from '../Feed';
 import { LinkPreview } from '../LinkPreview';
 import { OrganizationAvatar } from '../OrganizationAvatar';
-import { formatRelativeTime } from '../utils';
 import { DeletePost } from './DeletePost';
 
 const PostDisplayName = ({
@@ -56,16 +56,34 @@ const PostDisplayName = ({
   return <>{displayName}</>;
 };
 
-const PostTimestamp = ({ createdAt }: { createdAt?: Date | string | null }) => {
-  if (!createdAt) {
-    return null;
-  }
+/**
+ * Hook to get relative time string for a given date
+ */
+function useRelativeTime(
+  dateTime: Date | string,
+  options?: {
+    nowTime?: Date;
+    updateInterval?: number;
+  },
+) {
+  const { nowTime, updateInterval = 60000 } = options || {};
 
-  return (
-    <span className="text-sm text-neutral-gray4">
-      {formatRelativeTime(createdAt)}
-    </span>
-  );
+  const actualNow = useNow({
+    updateInterval,
+  });
+  const format = useFormatter();
+
+  const now = nowTime ?? actualNow;
+
+  return useMemo(() => {
+    return format.relativeTime(new Date(dateTime), now);
+  }, [dateTime, format, now]);
+}
+
+const PostTimestamp = ({ createdAt }: { createdAt: Date | string }) => {
+  const relativeTime = useRelativeTime(createdAt);
+
+  return <span className="text-sm text-neutral-gray4">{relativeTime}</span>;
 };
 
 const PostContent = ({ content }: { content?: string }) => {
@@ -300,7 +318,9 @@ export const PostItem = ({
                 withLinks={withLinks}
               />
             </Header3>
-            <PostTimestamp createdAt={post?.createdAt} />
+            {post.createdAt ? (
+              <PostTimestamp createdAt={post.createdAt} />
+            ) : null}
           </div>
           <PostMenu post={post} user={user} organization={organization} />
         </FeedHeader>
