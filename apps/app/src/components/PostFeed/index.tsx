@@ -15,6 +15,7 @@ import type {
   PostAttachment,
   PostToOrganization,
 } from '@op/api/encoders';
+import { useRelativeTime } from '@op/hooks';
 import { REACTION_OPTIONS } from '@op/types';
 import { AvatarSkeleton } from '@op/ui/Avatar';
 import { CommentButton } from '@op/ui/CommentButton';
@@ -35,7 +36,6 @@ import { DiscussionModal } from '../DiscussionModal';
 import { FeedContent, FeedHeader, FeedItem, FeedMain } from '../Feed';
 import { LinkPreview } from '../LinkPreview';
 import { OrganizationAvatar } from '../OrganizationAvatar';
-import { formatRelativeTime } from '../utils';
 import { DeletePost } from './DeletePost';
 
 const PostDisplayName = ({
@@ -56,17 +56,12 @@ const PostDisplayName = ({
   return <>{displayName}</>;
 };
 
-const PostTimestamp = ({ createdAt }: { createdAt?: Date | string | null }) => {
-  if (!createdAt) {
-    return null;
-  }
+const PostTimestamp = memo(({ createdAt }: { createdAt: Date | string }) => {
+  const relativeTime = useRelativeTime(createdAt);
 
-  return (
-    <span className="text-sm text-neutral-gray4">
-      {formatRelativeTime(createdAt)}
-    </span>
-  );
-};
+  return <span className="text-sm text-neutral-gray4">{relativeTime}</span>;
+});
+PostTimestamp.displayName = 'PostTimestamp';
 
 const PostContent = ({ content }: { content?: string }) => {
   if (!content) {
@@ -300,7 +295,9 @@ export const PostItem = ({
                 withLinks={withLinks}
               />
             </Header3>
-            <PostTimestamp createdAt={post?.createdAt} />
+            {post.createdAt ? (
+              <PostTimestamp createdAt={post.createdAt} />
+            ) : null}
           </div>
           <PostMenu post={post} user={user} organization={organization} />
         </FeedHeader>
