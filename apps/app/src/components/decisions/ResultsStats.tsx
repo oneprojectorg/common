@@ -5,6 +5,8 @@ import { trpc } from '@op/api/client';
 import { cn } from '@op/ui/utils';
 import { ReactNode } from 'react';
 
+import { useTranslations } from '@/lib/i18n';
+
 const StatNumber = ({
   children,
   className,
@@ -43,6 +45,8 @@ interface ResultsStatsProps {
 }
 
 export function ResultsStats({ instanceId }: ResultsStatsProps) {
+  const t = useTranslations();
+
   const [stats] = trpc.decision.getResultsStats.useSuspenseQuery({
     instanceId,
   });
@@ -58,19 +62,19 @@ export function ResultsStats({ instanceId }: ResultsStatsProps) {
           <>
             <Stat>
               <StatNumber>{stats.membersVoted}</StatNumber>
-              <StatLabel>Members Voted</StatLabel>
+              <StatLabel>{t('Members Voted')}</StatLabel>
             </Stat>
             <hr className="hidden h-8 w-0.5 bg-white/50 xxs:block" />
           </>
         )}
         <Stat>
           <StatNumber>{stats.proposalsFunded}</StatNumber>
-          <StatLabel>Proposals Funded</StatLabel>
+          <StatLabel>{t('Proposals Funded')}</StatLabel>
         </Stat>
         <hr className="hidden h-8 w-0.5 bg-white/50 xxs:block" />
         <Stat>
           <StatNumber>{formatCurrency(stats.totalAllocated)}</StatNumber>
-          <StatLabel>Total Allocated</StatLabel>
+          <StatLabel>{t('Total Allocated')}</StatLabel>
         </Stat>
       </div>
     </div>

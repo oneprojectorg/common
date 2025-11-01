@@ -241,5 +241,16 @@
   "Shortlist for voting": "Preseleccionar para votación",
   "Shortlisted proposals": "Propuestas preseleccionadas",
   "Are you sure you want to delete this proposal? This action cannot be undone.": "¿Estás seguro de que quieres eliminar esta propuesta? Esta acción no se puede deshacer.",
-  "Thank you for participating in {title}. Your voice helps shape how we invest in our community.": "Gracias por participar en {title}. Tu voz ayuda a moldear cómo invertimos en nuestra comunidad."
+  "Thank you for participating in {title}. Your voice helps shape how we invest in our community.": "Gracias por participar en {title}. Tu voz ayuda a moldear cómo invertimos en nuestra comunidad.",
+  "No results yet for this decision.": "Aún no hay resultados para esta decisión.",
+  "Results are still being worked on.": "Los resultados aún se están procesando.",
+  "Funded Proposals": "Propuestas financiadas",
+  "Total Votes": "Votos totales",
+  "Members Voted": "Miembros que votaron",
+  "Proposals Funded": "Propuestas financiadas",
+  "Total Allocated": "Total asignado",
+  "Results are still being processed.": "Los resultados aún se están procesando.",
+  "Check back again shortly for the results.": "Vuelve pronto para ver los resultados.",
+  "My Ballot": "Mi voto",
+  "You did not vote in this process.": "No votaste en este proceso."
 }

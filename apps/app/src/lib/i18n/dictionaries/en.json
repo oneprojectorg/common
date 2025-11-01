@@ -242,5 +242,16 @@
   "Shortlist for voting": "Shortlist for voting",
   "Shortlisted proposals": "Shortlisted proposals",
   "Are you sure you want to delete this proposal? This action cannot be undone.": "Are you sure you want to delete this proposal? This action cannot be undone.",
-  "Thank you for participating in {title}. Your voice helps shape how we invest in our community.": "Thank you for participating in {title}. Your voice helps shape how we invest in our community."
+  "Thank you for participating in {title}. Your voice helps shape how we invest in our community.": "Thank you for participating in {title}. Your voice helps shape how we invest in our community.",
+  "No results yet for this decision.": "No results yet for this decision.",
+  "Results are still being worked on.": "Results are still being worked on.",
+  "Funded Proposals": "Funded Proposals",
+  "Total Votes": "Total Votes",
+  "Members Voted": "Members Voted",
+  "Proposals Funded": "Proposals Funded",
+  "Total Allocated": "Total Allocated",
+  "Results are still being processed.": "Results are still being processed.",
+  "Check back again shortly for the results.": "Check back again shortly for the results.",
+  "My Ballot": "My Ballot",
+  "You did not vote in this process.": "You did not vote in this process."
 }
