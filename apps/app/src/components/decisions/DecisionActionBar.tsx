@@ -4,6 +4,7 @@ import { Button } from '@op/ui/Button';
 import { Dialog, DialogTrigger } from '@op/ui/Dialog';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Modal, ModalBody, ModalHeader } from '@op/ui/Modal';
+import he from 'he';
 import { useParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -14,10 +15,12 @@ import { RichTextEditorContent } from '../RichTextEditor';
 export const DecisionActionBar = ({
   instanceId,
   description,
+  markup = false,
   showSubmitButton = false,
 }: {
   instanceId: string;
   description?: string;
+  markup?: boolean;
   showSubmitButton?: boolean;
 }) => {
   const t = useTranslations();
@@ -38,11 +41,20 @@ export const DecisionActionBar = ({
               <Dialog>
                 <ModalHeader>{t('About the process')}</ModalHeader>
                 <ModalBody>
-                  <RichTextEditorContent
-                    content={description}
-                    readOnly={true}
-                    editorClassName="prose prose-base max-w-none [&_p]:text-base"
-                  />
+                  {markup && description ? (
+                    <div
+                      className="prose prose-gray max-w-none"
+                      dangerouslySetInnerHTML={{
+                        __html: he.decode(description),
+                      }}
+                    />
+                  ) : (
+                    <RichTextEditorContent
+                      content={description}
+                      readOnly={true}
+                      editorClassName="prose prose-base max-w-none [&_p]:text-base"
+                    />
+                  )}
                 </ModalBody>
               </Dialog>
             </Modal>
