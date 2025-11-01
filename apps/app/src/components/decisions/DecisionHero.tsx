@@ -16,7 +16,7 @@ export function DecisionHero({
   return (
     <div className="flex flex-col gap-2 text-center">
       {variant === 'results' ? (
-        <Header2 className="font-serif text-title-xxl font-light">
+        <Header2 className="font-serif text-title-xxl font-light uppercase">
           {title}
         </Header2>
       ) : (

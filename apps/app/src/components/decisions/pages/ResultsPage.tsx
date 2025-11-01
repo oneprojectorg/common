@@ -34,27 +34,23 @@ export function ResultsPage({
     instanceId,
   });
 
-  // Get description for "About the process" button
-  const description = instance?.description?.match('PPDESCRIPTION')
-    ? t('PPDESCRIPTION')
-    : (instance.description ?? instance.process?.description ?? undefined);
-
   // Organization-specific content
   const heroContent = match(slug, {
     'people-powered': () => ({
-      title: t('THE RESULTS ARE IN.'),
+      title: t('The results are in.'),
       description: `Thank you to everyone who participated in ${instance.name}`,
     }),
     cowop: () => ({
-      title: t('THE RESULTS ARE IN.'),
-      description: `Thank you to everyone who participated in ${instance.name}`,
+      title: t('The results are in.'),
+      description: t('COWOPRESULTSHEADER'),
+      about: t('COWOPRESULTSABOUT'),
     }),
     'one-project': () => ({
-      title: t('THE RESULTS ARE IN.'),
+      title: t('The results are in.'),
       description: `Thank you to everyone who participated in ${instance.name}`,
     }),
     _: () => ({
-      title: t('THE RESULTS ARE IN.'),
+      title: t('The results are in.'),
       description: `Thank you to everyone who participated in ${instance.name}`,
     }),
   });
@@ -77,7 +73,13 @@ export function ResultsPage({
           {slug === 'cowop' ? (
             <DecisionActionBar
               instanceId={instanceId}
-              description={description}
+              markup={slug === 'cowop'}
+              description={
+                heroContent.about ??
+                instance.description ??
+                instance.process?.description ??
+                undefined
+              }
             />
           ) : null}
         </div>

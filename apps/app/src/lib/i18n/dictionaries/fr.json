@@ -220,6 +220,9 @@
   "PPDESCRIPTION": "Bienvenue à PP Décide 2026 ! People Powered invite ses membres à décider des propositions de budget pour 2026",
   "COWOPHEADER": "Partagez vos idées sur comment soutenir les coopératives ouvrières du Massachusetts",
   "COWOPSUBHEADER": "Les coopératives ouvrières du Massachusetts, et les partenariats dirigés par des coopératives ouvrières, sont invités à partager une idée entre le 20 septembre et le 1er octobre 2025, sur comment utiliser une partie de cet argent de manière significative. Nous vous encourageons à développer vos concepts avec d'autres, en gardant à l'esprit que votre concept ne doit pas être long, ni même entièrement développé. À ce stade, nous recherchons des idées que nous pouvons développer collectivement en propositions complètes.",
+  "COWOPRESULTSABOUT": "&lt;p&gt;Après une délibération minutieuse et des entrevues avec toutes les équipes de propositions, COWOP annonce fièrement les projets finaux qui seront financés par notre processus de budgétisation ascendante ! Une &lt;a target=&quot;_blank&quot; rel=&quot;noopener noreferrer nofollow&quot; href=&quot;https://docs.google.com/document/d/1Vut_98L7WK2G9lJfF2fX2GG_gWQYpNpmnNRJLgAJUL4/edit?tab=t.jc1uksmlpuqv&quot;&gt;équipe d'experts&lt;/a&gt; a examiné 17 propositions au total conformément à notre &lt;a target=&quot;_blank&quot; rel=&quot;noopener noreferrer nofollow&quot; href=&quot;https://docs.google.com/spreadsheets/d/1REwc6lk0ZC6CWfUjEbNVkDWZIG9j0-gZbLls5XsGu4k/edit&quot;&gt;grille d'évaluation de financement&lt;/a&gt; et a décidé d'en financer neuf, la plupart près du montant total demandé. Félicitations à tous ceux qui ont participé et ont préparé le terrain pour l'allocation de nos 100 000 $ restants l'année prochaine !&lt;/p&gt;",
+  "COWOPRESULTSHEADER": "Le Comité de surveillance des fonds de COWOP a pris des décisions finales sur l'allocation de nos premiers 100 000 $ !",
+  "The results are in.": "Les résultats sont là.",
   "Submit a Proposal Concept": "Soumettre un concept de proposition",
   "Duplicate email": "Courriel en double",
   "Duplicate emails": "Courriels en double",
@@ -239,5 +242,16 @@
   "Shortlist for voting": "Présélectionner pour le vote",
   "Shortlisted proposals": "Propositions présélectionnées",
   "Are you sure you want to delete this proposal? This action cannot be undone.": "Êtes-vous sûr de vouloir supprimer cette proposition ? Cette action ne peut pas être annulée.",
-  "Thank you for participating in {title}. Your voice helps shape how we invest in our community.": "Merci de participer à {title}. Votre voix aide à façonner la façon dont nous investissons dans notre communauté."
+  "Thank you for participating in {title}. Your voice helps shape how we invest in our community.": "Merci de participer à {title}. Votre voix aide à façonner la façon dont nous investissons dans notre communauté.",
+  "No results yet for this decision.": "Aucun résultat pour cette décision pour le moment.",
+  "Results are still being worked on.": "Les résultats sont encore en cours de traitement.",
+  "Funded Proposals": "Propositions financées",
+  "Total Votes": "Total des votes",
+  "Members Voted": "Membres ayant voté",
+  "Proposals Funded": "Propositions financées",
+  "Total Allocated": "Total alloué",
+  "Results are still being processed.": "Les résultats sont encore en cours de traitement.",
+  "Check back again shortly for the results.": "Revenez bientôt pour les résultats.",
+  "My Ballot": "Mon vote",
+  "You did not vote in this process.": "Vous n'avez pas voté dans ce processus."
 }

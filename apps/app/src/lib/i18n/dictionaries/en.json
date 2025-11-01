@@ -220,6 +220,9 @@
   "PPDESCRIPTION": "Welcome to PP Decides 2026! People Powered is inviting its members to decide on budget proposals for 2026",
   "COWOPHEADER": "Share your ideas for how to support MA worker owned cooperatives",
   "COWOPSUBHEADER": "Worker-owned cooperatives in MA, and partnerships led by worker owned cooperatives, are invited to share an idea between September 20 and October 1 2025, for how to use a portion of this money meaningfully. We encourage you to workshop your concepts with others, keeping in mind that your concept does not have to be long, or even fully developed. At this stage, we are looking for ideas that we can collectively develop into full proposals.",
+  "COWOPRESULTSABOUT": "&lt;p&gt;After careful deliberation and interviews with all proposal teams, COWOP proudly announces the final projects to be funded through our bottom-up budgeting process!  An &lt;a target=&quot;_blank&quot; rel=&quot;noopener noreferrer nofollow&quot; href=&quot;https://docs.google.com/document/d/1Vut_98L7WK2G9lJfF2fX2GG_gWQYpNpmnNRJLgAJUL4/edit?tab=t.jc1uksmlpuqv&quot;&gt;expert team&lt;/a&gt; reviewed 17 total proposals in line with our &lt;a target=&quot;_blank&quot; rel=&quot;noopener noreferrer nofollow&quot; href=&quot;https://docs.google.com/spreadsheets/d/1REwc6lk0ZC6CWfUjEbNVkDWZIG9j0-gZbLls5XsGu4k/edit&quot;&gt;funding rubric&lt;/a&gt; and has decided to fund nine of them, mostly close to the full amount requested.  Congrats to all who participated, and set the stage for allocating our remaining $100,000 next year!&lt;/p&gt;",
+  "COWOPRESULTSHEADER": "COWOP's Funds Oversight Committee has made final decisions on allocating our first $100,000!",
+  "The results are in.": "The results are in.",
   "Submit a Proposal Concept": "Submit a Proposal Concept",
   "Duplicate email": "Duplicate email",
   "Duplicate emails": "Duplicate emails",
@@ -239,5 +242,16 @@
   "Shortlist for voting": "Shortlist for voting",
   "Shortlisted proposals": "Shortlisted proposals",
   "Are you sure you want to delete this proposal? This action cannot be undone.": "Are you sure you want to delete this proposal? This action cannot be undone.",
-  "Thank you for participating in {title}. Your voice helps shape how we invest in our community.": "Thank you for participating in {title}. Your voice helps shape how we invest in our community."
+  "Thank you for participating in {title}. Your voice helps shape how we invest in our community.": "Thank you for participating in {title}. Your voice helps shape how we invest in our community.",
+  "No results yet for this decision.": "No results yet for this decision.",
+  "Results are still being worked on.": "Results are still being worked on.",
+  "Funded Proposals": "Funded Proposals",
+  "Total Votes": "Total Votes",
+  "Members Voted": "Members Voted",
+  "Proposals Funded": "Proposals Funded",
+  "Total Allocated": "Total Allocated",
+  "Results are still being processed.": "Results are still being processed.",
+  "Check back again shortly for the results.": "Check back again shortly for the results.",
+  "My Ballot": "My Ballot",
+  "You did not vote in this process.": "You did not vote in this process."
 }
