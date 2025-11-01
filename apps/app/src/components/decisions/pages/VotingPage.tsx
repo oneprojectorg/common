@@ -61,16 +61,8 @@ export function VotingPage({
       description: (
         <div className="flex flex-col gap-2">
           <p>
-            Step 1: Click "Read Full Proposal" to learn more about each. Anyone
-            can leave comments or "like" a proposal.
-          </p>
-          <p>
-            Step 2: Choose one person from your organization to cast your votes.
-          </p>
-          <p>
-            Each organization gets 5 votes to identify the proposals they think
-            would be most impactful and aligned with the goal of supporting
-            and/or establishing mutual aid infrastructure for our ecosystems.
+            The Horizon Fund Committee is deliberating based on their reviews
+            and your votes. Results coming soon!
           </p>
           <p>
             Questions? Reach out to Meg{' '}
