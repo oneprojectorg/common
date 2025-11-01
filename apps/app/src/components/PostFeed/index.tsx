@@ -15,6 +15,7 @@ import type {
   PostAttachment,
   PostToOrganization,
 } from '@op/api/encoders';
+import { useRelativeTime } from '@op/hooks';
 import { REACTION_OPTIONS } from '@op/types';
 import { AvatarSkeleton } from '@op/ui/Avatar';
 import { CommentButton } from '@op/ui/CommentButton';
@@ -25,7 +26,6 @@ import { ReactionsButton } from '@op/ui/ReactionsButton';
 import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
 import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
-import { useFormatter, useNow } from 'next-intl';
 import Image from 'next/image';
 import { ReactNode, memo, useMemo, useState } from 'react';
 import { LuLeaf } from 'react-icons/lu';
@@ -55,38 +55,6 @@ const PostDisplayName = ({
 
   return <>{displayName}</>;
 };
-
-/**
- * Hook to get relative time string for a given date
- */
-function useRelativeTime(
-  dateTime: Date | string,
-  options?: {
-    nowTime?: Date;
-    updateInterval?: number;
-  },
-) {
-  const { nowTime, updateInterval = 60000 } = options || {};
-
-  const actualNow = useNow({
-    updateInterval,
-  });
-  const format = useFormatter();
-
-  const now = nowTime ?? actualNow;
-
-  return useMemo(() => {
-    const date = new Date(dateTime);
-    const diffMs = now.getTime() - date.getTime();
-
-    // "just now" for recent posts (< 5 seconds)
-    if (diffMs >= 0 && diffMs < 5000) {
-      return 'just now';
-    }
-
-    return format.relativeTime(date, now);
-  }, [dateTime, format, now]);
-}
 
 const PostTimestamp = memo(({ createdAt }: { createdAt: Date | string }) => {
   const relativeTime = useRelativeTime(createdAt);
