@@ -1,6 +1,7 @@
 import { and, count, db, eq } from '@op/db/client';
 import {
   Decision,
+  ProcessInstance,
   Profile,
   ProfileRelationshipType,
   Proposal,
@@ -27,7 +28,7 @@ export const getProposal = async ({
 }): Promise<
   Proposal & {
     submittedBy: Profile & { avatarImage: any }; // fix drizzle types
-    processInstance: any;
+    processInstance: ProcessInstance;
     profile: Profile;
     decisions: (Decision & {
       decidedBy: Profile;
@@ -74,7 +75,7 @@ export const getProposal = async ({
       },
     })) as Proposal & {
       submittedBy: Profile & { avatarImage: any }; // fix drizzle types
-      processInstance: any;
+      processInstance: ProcessInstance;
       profile: Profile;
       decisions: (Decision & {
         decidedBy: Profile;
@@ -158,7 +159,7 @@ export const getPermissionsOnProposal = async ({
   proposal,
 }: {
   user: User;
-  proposal: Proposal & { processInstance: any };
+  proposal: Proposal & { processInstance: ProcessInstance };
 }) => {
   const dbUser = await db.query.users.findFirst({
     where: eq(users.authUserId, user.id),
@@ -172,6 +173,15 @@ export const getPermissionsOnProposal = async ({
   const isOwner = proposal.submittedByProfileId === dbUser.currentProfileId;
   let isEditable = isOwner;
 
+  // Disable editing if we're in the results phase
+  if (isEditable && proposal.processInstance) {
+    const currentStateId = proposal.processInstance.currentStateId;
+    if (currentStateId === 'results') {
+      isEditable = false;
+    }
+  }
+
+  // If it's not already editable, then check admin permissions to see if we can still make it editable
   if (
     !isEditable &&
     proposal.processInstance &&
@@ -187,7 +197,7 @@ export const getPermissionsOnProposal = async ({
         processInstances,
         eq(organizations.profileId, processInstances.ownerProfileId),
       )
-      .where(eq(processInstances.id, proposal.processInstance.id as string))
+      .where(eq(processInstances.id, proposal.processInstance.id))
       .limit(1);
 
     if (instanceOrg[0]) {
