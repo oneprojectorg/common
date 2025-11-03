@@ -23,8 +23,20 @@ function PostDetailPageContent({ postId }: { postId: string }) {
 function PostDetailPageSkeleton() {
   return (
     <div className="flex min-h-screen flex-col bg-white">
+      {/* Header skeleton */}
+      <div className="grid grid-cols-[auto_1fr_auto] items-center border-b border-neutral-gray1 bg-white p-2 px-6 sm:grid-cols-3 md:py-3">
+        <div className="h-6 w-24 animate-pulse rounded bg-gray-200" />
+        <div className="flex justify-center">
+          <div className="h-10 w-96 animate-pulse rounded bg-gray-200" />
+        </div>
+        <div className="flex items-center justify-end gap-2">
+          <div className="h-8 w-8 animate-pulse rounded-full bg-gray-200" />
+          <div className="h-8 w-8 animate-pulse rounded-full bg-gray-200" />
+        </div>
+      </div>
+
       {/* Content loading */}
-      <div className="flex-1 px-4 py-8">
+      <div className="mx-auto flex w-full max-w-xl flex-1 flex-col px-4 py-8">
         <div className="space-y-6">
           {/* Post skeleton */}
           <div className="flex items-start gap-3">
@@ -58,8 +70,8 @@ function PostDetailPageSkeleton() {
       </div>
 
       {/* Footer skeleton */}
-      <div className="sticky bottom-0 border-t border-gray-200 bg-white p-4">
-        <div className="h-24 w-full animate-pulse rounded bg-gray-200" />
+      <div className="sticky bottom-0 flex justify-center border-t border-gray-200 bg-white p-4">
+        <div className="h-24 w-full max-w-xl animate-pulse rounded bg-gray-200" />
       </div>
     </div>
   );
