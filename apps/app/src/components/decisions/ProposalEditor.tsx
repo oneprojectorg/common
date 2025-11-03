@@ -18,6 +18,7 @@ import { useRouter } from 'next/navigation';
 import { usePostHog } from 'posthog-js/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
+import { useTranslations } from '@/lib/i18n';
 
 import {
   RichTextEditorContent,
@@ -92,6 +93,7 @@ export function ProposalEditor({
   const initializedRef = useRef(false);
   const utils = trpc.useUtils();
   const posthog = usePostHog();
+  const t = useTranslations();
 
   const createProposalMutation = trpc.decision.createProposal.useMutation({
     onSuccess: async () => {
@@ -419,7 +421,7 @@ export function ProposalEditor({
               <Select
                 variant="pill"
                 size="medium"
-                placeholder="Select category"
+                placeholder={t('Select category')}
                 selectedKey={selectedCategory}
                 onSelectionChange={(key) => setSelectedCategory(key as string)}
                 className="w-auto max-w-36 overflow-hidden sm:max-w-96"
@@ -467,7 +469,7 @@ export function ProposalEditor({
             ref={editorRef}
             content={initialContent || ''}
             onUpdate={handleEditorUpdate}
-            placeholder="Write your proposal here..."
+            placeholder={t('Write your proposal here...')}
             onEditorReady={handleEditorReady}
             editorClassName="w-full !max-w-[32rem] sm:min-w-[32rem] min-h-[40rem] px-0 py-6 text-neutral-black placeholder:text-neutral-gray2"
             readOnly={false}

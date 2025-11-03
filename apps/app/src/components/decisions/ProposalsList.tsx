@@ -513,9 +513,9 @@ export const ProposalsList = ({
               setSelectedCategory(category);
               updateURLParams({ category });
             }}
-            aria-label="Filter proposals by category"
+            aria-label={t('Filter proposals by category')}
           >
-            <SelectItem id="all-categories" aria-label="Show all categories">
+            <SelectItem id="all-categories" aria-label={t('Show all categories')}>
               {t('All categories')}
             </SelectItem>
             {categories.map((category) => (
