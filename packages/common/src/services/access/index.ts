@@ -114,6 +114,22 @@ export const getCurrentProfileId = async (authUserId: string) => {
   throw new UnauthorizedError("You don't have access to do this");
 };
 
+export const getIndividualProfileId = async (authUserId: string) => {
+  const validatedAuthUserId = validateAuthUserId(authUserId);
+  const { user } =
+    (await getUserSession({ authUserId: validatedAuthUserId })) ?? {};
+
+  if (!user) {
+    throw new UnauthorizedError("You don't have access to do this");
+  }
+
+  if (user.profileId) {
+    return user.profileId;
+  }
+
+  throw new UnauthorizedError("You don't have an individual profile");
+};
+
 export const getCurrentOrgId = async ({
   authUserId,
 }: {

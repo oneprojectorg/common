@@ -17,7 +17,7 @@ import {
   UnauthorizedError,
   ValidationError,
 } from '../../utils';
-import { getCurrentProfileId, getOrgAccessUser } from '../access';
+import { getIndividualProfileId, getOrgAccessUser } from '../access';
 
 export type CustomData = Record<string, unknown>;
 
@@ -106,7 +106,7 @@ export const submitVote = async ({
   }
 
   try {
-    const profileId = await getCurrentProfileId(authUserId);
+    const profileId = await getIndividualProfileId(authUserId);
 
     // Get process instance and schema
     const processInstance = await db.query.processInstances.findFirst({
@@ -294,7 +294,7 @@ export const getVotingStatus = async ({
   }
 
   try {
-    const profileId = await getCurrentProfileId(authUserId);
+    const profileId = await getIndividualProfileId(authUserId);
 
     // Get process instance and schema
     const processInstance = await db.query.processInstances.findFirst({
