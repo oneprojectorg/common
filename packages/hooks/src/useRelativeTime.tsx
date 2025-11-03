@@ -26,7 +26,7 @@ function getAdaptiveUpdateInterval(
   }
 
   // Less than 1 hour old: update every 60 seconds
-  return 5_000;
+  return 60_000;
 }
 
 /**
@@ -67,37 +67,38 @@ export function useRelativeTime(
   const { updateInterval } = options || {};
 
   const format = useFormatter();
-  const [now, setNow] = useState(new Date());
+  const [updateTrigger, setUpdateTrigger] = useState(0);
 
   const adaptiveInterval =
     updateInterval ?? getAdaptiveUpdateInterval(dateTime);
 
-  // Set up interval to update the current time
+  // Set up interval to trigger re-calculation
   useEffect(() => {
     if (adaptiveInterval === undefined) {
       return;
     }
 
     const intervalId = setInterval(() => {
-      setNow(new Date());
+      setUpdateTrigger((prev) => prev + 1);
     }, adaptiveInterval);
 
     return () => clearInterval(intervalId);
   }, [adaptiveInterval]);
 
   return useMemo(() => {
+    const now = new Date();
     const date = new Date(dateTime);
-    // const diffMs = now.getTime() - date.getTime();
 
-    // // "now" for recent things (-5 secs < thing < 5 secs)
-    // if (diffMs >= -10_000 && diffMs < 10_000) {
-    //   // return 'now';
-    //   return format.relativeTime(date, {
-    //     now: date,
-    //     style: 'narrow',
-    //   });
-    // }
+    const diffMs = now.getTime() - date.getTime();
+
+    // recent things (-5 secs < thing < 5 secs) return now
+    if (diffMs >= -5_000 && diffMs < 5_000) {
+      return format.relativeTime(date, {
+        now: date,
+        style: 'narrow',
+      });
+    }
 
     return format.relativeTime(date, { now, style: 'narrow' });
-  }, [dateTime, format, now]);
+  }, [dateTime, updateTrigger]);
 }
