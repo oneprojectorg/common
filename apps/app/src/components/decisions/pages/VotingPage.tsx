@@ -75,6 +75,13 @@ export function VotingPage({
               )}
             </strong>
           </p>
+          {maxVotesPerMember && (
+            <p>
+              {t('Please select {count} proposals.', {
+                count: maxVotesPerMember,
+              })}
+            </p>
+          )}
         </>
       ),
     }),
