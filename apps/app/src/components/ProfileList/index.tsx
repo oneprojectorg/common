@@ -1,6 +1,6 @@
 import { getPublicUrl } from '@/utils';
 import { RouterOutput } from '@op/api/client';
-import { EntityType } from '@op/api/encoders';
+import { EntityType, Profile } from '@op/api/encoders';
 import { Avatar } from '@op/ui/Avatar';
 import Image from 'next/image';
 
@@ -9,13 +9,8 @@ import { Link } from '@/lib/i18n';
 type Profiles = RouterOutput['profile']['list']['items'];
 
 // Flexible profile type that works with both list and search results
-type ProfileItem = {
-  id: string;
-  name: string;
-  slug: string;
-  type: string;
-  bio: string | null;
-  avatarImage?: { name?: string | null } | null;
+type ProfileItem = Pick<Profile, 'id' | 'name' | 'slug' | 'type' | 'bio'> & {
+  avatarImage?: Pick<NonNullable<Profile['avatarImage']>, 'name'> | null;
   organization?: {
     whereWeWork?: Array<{ name: string }>;
   } | null;
