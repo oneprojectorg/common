@@ -110,14 +110,14 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
   };
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
-    const isInteractingwWithDropdown =
+    const isInteractingWithDropdown =
       !showResults || !mergedProfileResults?.length;
 
     switch (event.key) {
       case 'ArrowDown':
         event.preventDefault();
 
-        if (isInteractingwWithDropdown) {
+        if (isInteractingWithDropdown) {
           break;
         }
 
@@ -128,7 +128,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
       case 'ArrowUp':
         event.preventDefault();
 
-        if (isInteractingwWithDropdown) {
+        if (isInteractingWithDropdown) {
           break;
         }
 
@@ -142,7 +142,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
         recordSearch(query);
 
         if (
-          isInteractingwWithDropdown &&
+          isInteractingWithDropdown &&
           mergedProfileResults &&
           selectedIndex > 0
         ) {
