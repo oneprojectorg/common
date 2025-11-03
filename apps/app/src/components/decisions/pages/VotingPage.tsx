@@ -42,6 +42,7 @@ export function VotingPage({
   const description = instance?.description?.match('PPDESCRIPTION')
     ? t('PPDESCRIPTION')
     : (instance.description ?? instance.process?.description ?? undefined);
+  const aboutIsMarkup = !!instance?.description?.match('PPDESCRIPTION');
 
   const maxVotesPerMember = instance?.instanceData?.fieldValues
     ?.maxVotesPerMember as number;
@@ -50,7 +51,26 @@ export function VotingPage({
   const heroContent = match(slug, {
     'people-powered': () => ({
       title: hasVoted ? t('YOUR BALLOT IS IN.') : t('TIME TO VOTE.'),
-      description: <p>Help determine how we invest our community budget.</p>,
+      description: (
+        <>
+          <p>
+            We are in the voting stage now!
+            <br />
+            We have at least $50,000 USD to allocate for budget proposals for
+            2026! Read through the proposals below and in the ballot and voter
+            guide, and you can also take a look at the full texts and
+            discussions by clicking on each proposal. Selected proposals will be
+            implemented in 2026. It will take around 10 minutes for you to
+            participate.
+          </p>
+          <p>
+            <strong>
+              Click on “About the process” to learn more about the fund
+              allocation.
+            </strong>
+          </p>
+        </>
+      ),
     }),
     cowop: () => ({
       title: hasVoted ? t('YOUR BALLOT IS IN.') : t('TIME TO VOTE.'),
@@ -104,6 +124,7 @@ export function VotingPage({
 
         <DecisionActionBar
           instanceId={instanceId}
+          markup={aboutIsMarkup}
           description={description}
           showSubmitButton={false}
         />
