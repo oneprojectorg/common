@@ -1,4 +1,4 @@
-'use now';
+'use client';
 
 import { useFormatter } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
@@ -50,7 +50,7 @@ export function useRelativeTime(
     }
 
     return format.relativeTime(date, { now, style: 'narrow' });
-  }, [dateTime, updateTrigger]);
+  }, [dateTime, updateTrigger, format]);
 }
 
 /**
