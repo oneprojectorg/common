@@ -67,9 +67,11 @@ function getAdaptiveUpdateInterval(
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
 
+  // 1 hour
   if (diffMs >= 3_600_000) {
     return undefined;
   }
 
+  // 1 min
   return 60_000;
 }
