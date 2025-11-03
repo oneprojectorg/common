@@ -1,5 +1,6 @@
 'use client';
 
+import { formatCurrency } from '@/utils/formatting';
 import { getUniqueSubmitters } from '@/utils/proposalUtils';
 import { trpc } from '@op/api/client';
 import { match } from '@op/core';
@@ -46,6 +47,8 @@ export function VotingPage({
 
   const maxVotesPerMember = instance?.instanceData?.fieldValues
     ?.maxVotesPerMember as number;
+  const totalBudgetAmount = instance?.instanceData?.fieldValues
+    ?.totalBudgetAmount as number;
 
   // Organization-specific content
   const heroContent = match(slug, {
@@ -54,19 +57,22 @@ export function VotingPage({
       description: (
         <>
           <p>
-            We are in the voting stage now!
+            {t('We are in the voting stage now!')}
             <br />
-            We have at least $50,000 USD to allocate for budget proposals for
-            2026! Read through the proposals below and in the ballot and voter
-            guide, and you can also take a look at the full texts and
-            discussions by clicking on each proposal. Selected proposals will be
-            implemented in 2026. It will take around 10 minutes for you to
-            participate.
+            {t(
+              'We have at least {budget} to allocate for budget proposals for 2026! Read through the proposals below and in the ballot and voter guide, and you can also take a look at the full texts and discussions by clicking on each proposal. Selected proposals will be implemented in 2026. It will take around 10 minutes for you to participate.',
+              {
+                budget: totalBudgetAmount
+                  ? formatCurrency(totalBudgetAmount)
+                  : '$50,000 USD',
+              },
+            )}
           </p>
           <p>
             <strong>
-              Click on “About the process” to learn more about the fund
-              allocation.
+              {t(
+                'Click on "About the process" to learn more about the fund allocation.',
+              )}
             </strong>
           </p>
         </>
@@ -74,18 +80,21 @@ export function VotingPage({
     }),
     cowop: () => ({
       title: hasVoted ? t('YOUR BALLOT IS IN.') : t('TIME TO VOTE.'),
-      description: <p>{t('Help determine how we invest our community budget.')}</p>,
+      description: (
+        <p>{t('Help determine how we invest our community budget.')}</p>
+      ),
     }),
     'one-project': () => ({
       title: hasVoted ? t('YOUR BALLOT IS IN.') : t('COMMITTEE DELIBERATION.'),
       description: (
         <div className="flex flex-col gap-2">
           <p>
-            The Horizon Fund Committee is deliberating based on their reviews
-            and your votes. Results coming soon!
+            {t(
+              'The Horizon Fund Committee is deliberating based on their reviews and your votes. Results coming soon!',
+            )}
           </p>
           <p>
-            Questions? Reach out to Meg{' '}
+            {t('Questions? Reach out to Meg')}{' '}
             <a
               className="hover:text-underline text-primary-teal"
               href="mailto:meg@oneproject.org"
@@ -100,10 +109,12 @@ export function VotingPage({
       title: hasVoted ? t('YOUR BALLOT IS IN.') : t('TIME TO VOTE.'),
       description: (
         <>
-          <p>Help determine how we invest our community budget.</p>
+          <p>{t('Help determine how we invest our community budget.')}</p>
           {maxVotesPerMember && (
             <p>
-              Please select <strong>{maxVotesPerMember} proposals.</strong>
+              {t('Please select {count} proposals.', {
+                count: maxVotesPerMember,
+              })}
             </p>
           )}
         </>
