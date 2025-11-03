@@ -232,20 +232,20 @@ export const VoteSurveyStep = ({
         isInvalid={!!errors.satisfactionPPDecides}
         orientation="horizontal"
       >
-        <Radio value="1" className="p-0">
-          {t('1 (not satisfied)')}
+        <Radio value="1" className="p-0" labelPosition="bottom">
+          {t('1')}
         </Radio>
-        <Radio value="2" className="p-0">
+        <Radio value="2" className="p-0" labelPosition="bottom">
           {t('2')}
         </Radio>
-        <Radio value="3" className="p-0">
+        <Radio value="3" className="p-0" labelPosition="bottom">
           {t('3')}
         </Radio>
-        <Radio value="4" className="p-0">
+        <Radio value="4" className="p-0" labelPosition="bottom">
           {t('4')}
         </Radio>
-        <Radio value="5" className="p-0">
-          {t('5 (very satisfied)')}
+        <Radio value="5" className="p-0" labelPosition="bottom">
+          {t('5')}
         </Radio>
       </RadioGroup>
 
@@ -307,23 +307,23 @@ export const VoteSurveyStep = ({
         isInvalid={!!errors.satisfactionMembership}
         orientation="horizontal"
       >
-        <Radio value="1" className="p-0">
-          {t('1 (not satisfied)')}
+        <Radio value="1" className="p-0" labelPosition="bottom">
+          {t('1')}
         </Radio>
-        <Radio value="2" className="p-0">
+        <Radio value="2" className="p-0" labelPosition="bottom">
           {t('2')}
         </Radio>
-        <Radio value="3" className="p-0">
+        <Radio value="3" className="p-0" labelPosition="bottom">
           {t('3')}
         </Radio>
-        <Radio value="4" className="p-0">
+        <Radio value="4" className="p-0" labelPosition="bottom">
           {t('4')}
         </Radio>
-        <Radio value="5" className="p-0">
-          {t('5 (very satisfied)')}
+        <Radio value="5" className="p-0" labelPosition="bottom">
+          {t('5')}
         </Radio>
-        <Radio value="na" className="p-0">
-          {t("N/A (I'm staff or board! Skipping this question)")}
+        <Radio value="na" className="p-0" labelPosition="bottom">
+          {t('N/A')}
         </Radio>
       </RadioGroup>
 
@@ -413,19 +413,19 @@ export const VoteSurveyStep = ({
         isInvalid={!!errors.likelyToRecommendCommon}
         orientation="horizontal"
       >
-        <Radio value="1" className="p-0">
+        <Radio value="1" className="p-0" labelPosition="bottom">
           {t('1')}
         </Radio>
-        <Radio value="2" className="p-0">
+        <Radio value="2" className="p-0" labelPosition="bottom">
           {t('2')}
         </Radio>
-        <Radio value="3" className="p-0">
+        <Radio value="3" className="p-0" labelPosition="bottom">
           {t('3')}
         </Radio>
-        <Radio value="4" className="p-0">
+        <Radio value="4" className="p-0" labelPosition="bottom">
           {t('4')}
         </Radio>
-        <Radio value="5" className="p-0">
+        <Radio value="5" className="p-0" labelPosition="bottom">
           {t('5')}
         </Radio>
       </RadioGroup>
@@ -446,19 +446,19 @@ export const VoteSurveyStep = ({
         isInvalid={!!errors.easeOfUse}
         orientation="horizontal"
       >
-        <Radio value="1" className="p-0">
+        <Radio value="1" className="p-0" labelPosition="bottom">
           {t('1')}
         </Radio>
-        <Radio value="2" className="p-0">
+        <Radio value="2" className="p-0" labelPosition="bottom">
           {t('2')}
         </Radio>
-        <Radio value="3" className="p-0">
+        <Radio value="3" className="p-0" labelPosition="bottom">
           {t('3')}
         </Radio>
-        <Radio value="4" className="p-0">
+        <Radio value="4" className="p-0" labelPosition="bottom">
           {t('4')}
         </Radio>
-        <Radio value="5" className="p-0">
+        <Radio value="5" className="p-0" labelPosition="bottom">
           {t('5')}
         </Radio>
       </RadioGroup>
