@@ -107,67 +107,64 @@ export function PostDetailView({ post: initialPost }: { post: Post }) {
               user={user}
               withLinks={false}
               onReactionClick={handleReactionClick}
+              onCommentClick={() => {
+                // No-op: Comment button is shown for display only
+              }}
             />
           </PostFeed>
 
+          {/* Comment Input */}
+          <div className="border-t border-neutral-gray1 pt-8">
+            <Surface className="border-0 p-0 sm:border sm:p-4">
+              <PostUpdate
+                parentPostId={currentPost.id}
+                placeholder={`${t('Comment')}${user?.currentProfile?.name ? ` as ${user?.currentProfile?.name}` : ''}...`}
+                label={t('Comment')}
+                onSuccess={scrollToOriginalPost}
+              />
+            </Surface>
+          </div>
+
           {/* Comments Section */}
-          <div className="mt-12" ref={commentsContainerRef}>
-            <div className="border-t border-neutral-gray1 pt-8">
-              <h3 className="mb-6 text-lg font-semibold text-neutral-charcoal">
-                {t('Comments')} ({comments.length})
-              </h3>
-
-              {/* Comments Display */}
-              {isLoading ? (
-                <div
-                  className="py-8 text-center text-gray-500"
-                  role="status"
-                  aria-label="Loading comments"
-                >
-                  {t('Loading comments...')}
-                </div>
-              ) : comments.length > 0 ? (
-                <div role="feed" aria-label={`${comments.length} comments`}>
-                  <PostFeed>
-                    {comments.map((comment, i) => (
-                      <div key={comment.post.id}>
-                        <PostItem
-                          postToOrg={comment}
-                          user={user}
-                          withLinks={false}
-                          onReactionClick={handleReactionClick}
-                          onCommentClick={handleCommentClick}
-                          className="sm:px-0"
-                        />
-                        {comments.length !== i + 1 && (
-                          <hr className="my-4 bg-neutral-gray1" />
-                        )}
-                      </div>
-                    ))}
-                  </PostFeed>
-                </div>
-              ) : (
-                <div
-                  className="py-8 text-center text-gray-500"
-                  role="status"
-                  aria-label="No comments"
-                >
-                  {t('No comments yet. Be the first to comment!')}
-                </div>
-              )}
-
-              {/* Comment Input */}
-              <div className="mt-8">
-                <Surface className="border-0 p-0 sm:border sm:p-4">
-                  <PostUpdate
-                    parentPostId={currentPost.id}
-                    placeholder={`${t('Comment')}${user?.currentProfile?.name ? ` as ${user?.currentProfile?.name}` : ''}...`}
-                    label={t('Comment')}
-                    onSuccess={scrollToOriginalPost}
-                  />
-                </Surface>
+          <div className="mt-8" ref={commentsContainerRef}>
+            {/* Comments Display */}
+            {isLoading ? (
+              <div
+                className="py-8 text-center text-gray-500"
+                role="status"
+                aria-label="Loading comments"
+              >
+                {t('Loading comments...')}
               </div>
-            </div>
+            ) : comments.length > 0 ? (
+              <div role="feed" aria-label={`${comments.length} comments`}>
+                <PostFeed>
+                  {comments.map((comment, i) => (
+                    <div key={comment.post.id}>
+                      <PostItem
+                        postToOrg={comment}
+                        user={user}
+                        withLinks={false}
+                        onReactionClick={handleReactionClick}
+                        onCommentClick={handleCommentClick}
+                        className="sm:px-0"
+                      />
+                      {comments.length !== i + 1 && (
+                        <hr className="my-4 bg-neutral-gray1" />
+                      )}
+                    </div>
+                  ))}
+                </PostFeed>
+              </div>
+            ) : (
+              <div
+                className="py-8 text-center text-gray-500"
+                role="status"
+                aria-label="No comments"
+              >
+                {t('No comments yet. Be the first to comment!')}
+              </div>
+            )}
           </div>
         </div>
       </div>
