@@ -2,6 +2,7 @@
 
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
+import { Fragment } from 'react';
 
 import {
   DiscussionModalContainer,
@@ -30,10 +31,9 @@ export const Feed = () => {
   return (
     <PostFeed>
       {postsData.items.length > 0 ? (
-        postsData.items.map((postToOrg, i) => (
-          <>
+        postsData.items.map((postToOrg) => (
+          <Fragment key={postToOrg.postId}>
             <PostItem
-              key={i}
               postToOrg={postToOrg}
               user={user}
               withLinks={true}
@@ -41,7 +41,7 @@ export const Feed = () => {
               onCommentClick={handleCommentClick}
             />
             <hr className="bg-neutral-gray1" />
-          </>
+          </Fragment>
         ))
       ) : (
         <EmptyPostsState />
