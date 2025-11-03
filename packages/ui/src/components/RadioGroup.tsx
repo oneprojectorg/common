@@ -46,7 +46,7 @@ export const RadioGroup = (props: RadioGroupProps) => {
 
 const styles = tv({
   // extend: focusRing,
-  base: 'bg-neutral-white mt-1 size-4 rounded-full border border-neutral-gray3 transition-all',
+  base: 'bg-neutral-white size-4 aspect-square rounded-full border border-neutral-gray3 transition-all flex-shrink-0',
   variants: {
     isSelected: {
       false: 'border group-pressed:border',
@@ -61,21 +61,38 @@ const styles = tv({
   },
 });
 
-export const Radio = (props: RadioProps) => {
+export interface CustomRadioProps extends RadioProps {
+  labelPosition?: 'right' | 'bottom';
+}
+
+export const Radio = ({ labelPosition = 'right', ...props }: CustomRadioProps) => {
+  const isBottomLabel = labelPosition === 'bottom';
+
   return (
     <RACRadio
       {...props}
       className={composeTailwindRenderProps(
         props.className,
-        'group flex items-start gap-2 py-2 text-base text-neutral-charcoal transition',
+        isBottomLabel
+          ? 'group flex flex-col items-center gap-1 py-2 text-base text-neutral-charcoal transition'
+          : 'group flex items-start gap-2 py-2 text-base text-neutral-charcoal transition',
       )}
     >
-      {(renderProps) => (
-        <>
-          <div className={styles(renderProps)} />
-          {props.children}
-        </>
-      )}
+      {(renderProps) => {
+        const children =
+          typeof props.children === 'function'
+            ? props.children(renderProps)
+            : props.children;
+
+        return (
+          <>
+            <div className={styles(renderProps)} />
+            <span className={isBottomLabel ? 'text-center text-sm' : ''}>
+              {children}
+            </span>
+          </>
+        );
+      }}
     </RACRadio>
   );
 };
