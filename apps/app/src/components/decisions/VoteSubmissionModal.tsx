@@ -19,6 +19,15 @@ export interface CurrentSurveyData {
   role: ('member_org' | 'individual' | 'board' | 'staff')[];
   region: string;
   country: string;
+  gender: string;
+  satisfactionPPDecides: string;
+  likedAboutPPDecides: string;
+  improvementsPPDecides: string;
+  satisfactionMembership: string;
+  increasedUnderstanding: string;
+  appliedNewPractices: string;
+  likelyToRecommendCommon: string;
+  easeOfUse: string;
 }
 
 // Generic custom data type for API
@@ -46,6 +55,15 @@ export const VoteSubmissionModal = ({
     role: [],
     region: '',
     country: '',
+    gender: '',
+    satisfactionPPDecides: '',
+    likedAboutPPDecides: '',
+    improvementsPPDecides: '',
+    satisfactionMembership: '',
+    increasedUnderstanding: '',
+    appliedNewPractices: '',
+    likelyToRecommendCommon: '',
+    easeOfUse: '',
   });
 
   const utils = trpc.useUtils();
