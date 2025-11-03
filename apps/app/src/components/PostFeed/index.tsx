@@ -56,12 +56,11 @@ const PostDisplayName = ({
   return <>{displayName}</>;
 };
 
-const PostTimestamp = memo(({ createdAt }: { createdAt: Date | string }) => {
+const PostTimestamp = ({ createdAt }: { createdAt: Date | string }) => {
   const relativeTime = useRelativeTime(createdAt);
 
   return <span className="text-sm text-neutral-gray4">{relativeTime}</span>;
-});
-PostTimestamp.displayName = 'PostTimestamp';
+};
 
 const PostContent = ({ content }: { content?: string }) => {
   if (!content) {
