@@ -4,59 +4,12 @@ import { useFormatter } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 
 /**
- * Calculates an adaptive update interval based on how old the content is.
+ * Returns a locale-aware relative time string with adaptive auto-updates.
+ * Shows "now" for timestamps within ±5 seconds.
  *
- * @param dateTime - The date to calculate the interval for
- * @returns Update interval in milliseconds, or undefined if no updates needed
- *
- * The intervals are:
- * - < 1 hour: 60 seconds (1 minute)
- * - >= 1 hour: undefined (no auto-updates for old posts)
- */
-function getAdaptiveUpdateInterval(
-  dateTime: Date | string,
-): number | undefined {
-  const date = new Date(dateTime);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-
-  // 1 hour or older: don't update automatically
-  if (diffMs >= 3_600_000) {
-    return undefined;
-  }
-
-  // Less than 1 hour old: update every 60 seconds
-  return 60_000;
-}
-
-/**
- * Hook to get a locale-aware relative time string for a given date.
- *
- * The hook automatically updates the returned time string at adaptive intervals
- * based on the age of the content:
- * - Posts < 1 hour old: update every 60 seconds
- * - Posts >= 1 hour old: no automatic updates (static display)
- *
- * @param dateTime - The date to format (Date object or ISO string)
- * @param options - Configuration options
- * @param options.updateInterval - Override the adaptive update interval with a fixed value in milliseconds
- *
- * @returns A formatted relative time string (e.g., "5 minutes ago", "hace 5 minutos")
- *
- * @example
- * ```tsx
- * const relativeTime = useRelativeTime(post.createdAt);
- * // Returns: "5 minutes ago" (English) or "hace 5 minutos" (Spanish)
- * // Updates automatically every 60 seconds for posts < 1 hour old
- * ```
- *
- * @example
- * ```tsx
- * // Override with a custom fixed interval
- * const relativeTime = useRelativeTime(post.createdAt, {
- *   updateInterval: 30000 // Update every 30 seconds
- * });
- * ```
+ * @param dateTime - Date to format (Date object or ISO string)
+ * @param options.updateInterval - Optional: override adaptive interval (ms)
+ * @returns Formatted relative time (e.g., "5m ago", "hace 5m")
  */
 export function useRelativeTime(
   dateTime: Date | string,
@@ -72,7 +25,7 @@ export function useRelativeTime(
   const adaptiveInterval =
     updateInterval ?? getAdaptiveUpdateInterval(dateTime);
 
-  // Set up interval to trigger re-calculation
+  // Trigger recalculation at adaptive intervals
   useEffect(() => {
     if (adaptiveInterval === undefined) {
       return;
@@ -86,19 +39,37 @@ export function useRelativeTime(
   }, [adaptiveInterval]);
 
   return useMemo(() => {
-    const now = new Date();
     const date = new Date(dateTime);
+    let now = new Date();
 
     const diffMs = now.getTime() - date.getTime();
 
-    // recent things (-5 secs < thing < 5 secs) return now
+    // Show "now" for timestamps within ±5 seconds
     if (diffMs >= -5_000 && diffMs < 5_000) {
-      return format.relativeTime(date, {
-        now: date,
-        style: 'narrow',
-      });
+      now = date;
     }
 
     return format.relativeTime(date, { now, style: 'narrow' });
   }, [dateTime, updateTrigger]);
+}
+
+/**
+ * Returns update interval based on content age.
+ * < 1 hour: 60s updates, >= 1 hour: no updates
+ *
+ * For posting and commenting this should work well,
+ * do adapt if updates are too frequent or not frequent enough.
+ */
+function getAdaptiveUpdateInterval(
+  dateTime: Date | string,
+): number | undefined {
+  const date = new Date(dateTime);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+
+  if (diffMs >= 3_600_000) {
+    return undefined;
+  }
+
+  return 60_000;
 }
