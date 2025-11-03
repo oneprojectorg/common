@@ -32,43 +32,43 @@ export const VoteSurveyStep = ({
     const newErrors: Partial<Record<keyof CurrentSurveyData, string>> = {};
 
     if (!formData.role || formData.role.length === 0) {
-      newErrors.role = 'Please select at least one role';
+      newErrors.role = t('Please select at least one role');
     }
     if (formData.role && formData.role.length > 2) {
-      newErrors.role = 'Please select up to two options';
+      newErrors.role = t('Please select up to two options');
     }
     if (!formData.region) {
-      newErrors.region = 'Please select your region';
+      newErrors.region = t('Please select your region');
     }
     if (!formData.country.trim()) {
-      newErrors.country = 'Please enter your country';
+      newErrors.country = t('Please enter your country');
     }
     if (!formData.gender) {
-      newErrors.gender = 'Please select your gender identity';
+      newErrors.gender = t('Please select your gender identity');
     }
     if (!formData.satisfactionPPDecides) {
-      newErrors.satisfactionPPDecides = 'Please rate your satisfaction';
+      newErrors.satisfactionPPDecides = t('Please rate your satisfaction');
     }
     if (!formData.likedAboutPPDecides.trim()) {
-      newErrors.likedAboutPPDecides = 'Please share what you liked';
+      newErrors.likedAboutPPDecides = t('Please share what you liked');
     }
     if (!formData.improvementsPPDecides.trim()) {
-      newErrors.improvementsPPDecides = 'Please share what could be improved';
+      newErrors.improvementsPPDecides = t('Please share what could be improved');
     }
     if (!formData.satisfactionMembership) {
-      newErrors.satisfactionMembership = 'Please rate your satisfaction';
+      newErrors.satisfactionMembership = t('Please rate your satisfaction');
     }
     if (!formData.increasedUnderstanding) {
-      newErrors.increasedUnderstanding = 'Please select an option';
+      newErrors.increasedUnderstanding = t('Please select an option');
     }
     if (!formData.appliedNewPractices) {
-      newErrors.appliedNewPractices = 'Please select an option';
+      newErrors.appliedNewPractices = t('Please select an option');
     }
     if (!formData.likelyToRecommendCommon) {
-      newErrors.likelyToRecommendCommon = 'Please rate how likely you are to recommend';
+      newErrors.likelyToRecommendCommon = t('Please rate how likely you are to recommend');
     }
     if (!formData.easeOfUse) {
-      newErrors.easeOfUse = 'Please rate the ease of use';
+      newErrors.easeOfUse = t('Please rate the ease of use');
     }
 
     setErrors(newErrors);
