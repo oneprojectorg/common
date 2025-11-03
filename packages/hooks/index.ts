@@ -4,6 +4,7 @@ import { useInfiniteScroll } from './src/useInfiniteScroll';
 import { useIntersectionObserver } from './src/useIntersectionObserver';
 import useMediaQuery from './src/useMediaQuery';
 import useMount from './src/useMount';
+import { useRelativeTime } from './src/useRelativeTime';
 
 export {
   useAuthLogout,
@@ -12,4 +13,5 @@ export {
   useIntersectionObserver,
   useMediaQuery,
   useMount,
+  useRelativeTime,
 };
