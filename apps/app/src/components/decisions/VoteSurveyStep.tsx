@@ -233,19 +233,19 @@ export const VoteSurveyStep = ({
         orientation="horizontal"
       >
         <Radio value="1" className="p-0" labelPosition="bottom">
-          {t('1')}
+          1
         </Radio>
         <Radio value="2" className="p-0" labelPosition="bottom">
-          {t('2')}
+          2
         </Radio>
         <Radio value="3" className="p-0" labelPosition="bottom">
-          {t('3')}
+          3
         </Radio>
         <Radio value="4" className="p-0" labelPosition="bottom">
-          {t('4')}
+          4
         </Radio>
         <Radio value="5" className="p-0" labelPosition="bottom">
-          {t('5')}
+          5
         </Radio>
       </RadioGroup>
 
@@ -308,22 +308,22 @@ export const VoteSurveyStep = ({
         orientation="horizontal"
       >
         <Radio value="1" className="p-0" labelPosition="bottom">
-          {t('1')}
+          1
         </Radio>
         <Radio value="2" className="p-0" labelPosition="bottom">
-          {t('2')}
+          2
         </Radio>
         <Radio value="3" className="p-0" labelPosition="bottom">
-          {t('3')}
+          3
         </Radio>
         <Radio value="4" className="p-0" labelPosition="bottom">
-          {t('4')}
+          4
         </Radio>
         <Radio value="5" className="p-0" labelPosition="bottom">
-          {t('5')}
+          5
         </Radio>
         <Radio value="na" className="p-0" labelPosition="bottom">
-          {t('N/A')}
+          N/A
         </Radio>
       </RadioGroup>
 
@@ -414,19 +414,19 @@ export const VoteSurveyStep = ({
         orientation="horizontal"
       >
         <Radio value="1" className="p-0" labelPosition="bottom">
-          {t('1')}
+          1
         </Radio>
         <Radio value="2" className="p-0" labelPosition="bottom">
-          {t('2')}
+          2
         </Radio>
         <Radio value="3" className="p-0" labelPosition="bottom">
-          {t('3')}
+          3
         </Radio>
         <Radio value="4" className="p-0" labelPosition="bottom">
-          {t('4')}
+          4
         </Radio>
         <Radio value="5" className="p-0" labelPosition="bottom">
-          {t('5')}
+          5
         </Radio>
       </RadioGroup>
 
@@ -447,19 +447,19 @@ export const VoteSurveyStep = ({
         orientation="horizontal"
       >
         <Radio value="1" className="p-0" labelPosition="bottom">
-          {t('1')}
+          1
         </Radio>
         <Radio value="2" className="p-0" labelPosition="bottom">
-          {t('2')}
+          2
         </Radio>
         <Radio value="3" className="p-0" labelPosition="bottom">
-          {t('3')}
+          3
         </Radio>
         <Radio value="4" className="p-0" labelPosition="bottom">
-          {t('4')}
+          4
         </Radio>
         <Radio value="5" className="p-0" labelPosition="bottom">
-          {t('5')}
+          5
         </Radio>
       </RadioGroup>
 
