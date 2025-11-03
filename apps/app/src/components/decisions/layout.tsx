@@ -66,8 +66,8 @@ export function ProposalEditorLayout({
               </>
             ) : (
               <>
-                <span className="hidden sm:block">Submit Proposal</span>
-                <span className="sm:hidden">Submit</span>{' '}
+                <span className="hidden sm:block">{t('Submit Proposal')}</span>
+                <span className="sm:hidden">{t('Submit')}</span>{' '}
               </>
             )}
           </Button>
