@@ -10,7 +10,7 @@ type Profiles = RouterOutput['profile']['list']['items'];
 
 // Flexible profile type that works with both list and search results
 type ProfileItem = Pick<Profile, 'id' | 'name' | 'slug' | 'type' | 'bio'> & {
-  avatarImage?: Pick<NonNullable<Profile['avatarImage']>, 'name'> | null;
+  avatarImage?: { name: string | null } | null;
   organization?: {
     whereWeWork?: Array<{ name: string }>;
   } | null;
