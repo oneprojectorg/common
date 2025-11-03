@@ -26,6 +26,7 @@ import {
   Undo,
 } from 'lucide-react';
 import { useCallback, useRef } from 'react';
+import { useTranslations } from '@/lib/i18n';
 
 export interface ProposalRichTextToolbarProps {
   editor: Editor | null;
@@ -38,6 +39,7 @@ export function ProposalRichTextToolbar({
   className = '',
   onImageUploaded,
 }: ProposalRichTextToolbarProps) {
+  const t = useTranslations();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // File upload setup for images only
@@ -129,7 +131,7 @@ export function ProposalRichTextToolbar({
           onClick={() => editor.chain().focus().undo().run()}
           disabled={!editor.can().undo()}
           className="rounded p-2 hover:bg-gray-100 disabled:opacity-50"
-          title="Undo"
+          title={t('Undo')}
         >
           <Undo className="size-4" />
         </button>
@@ -137,7 +139,7 @@ export function ProposalRichTextToolbar({
           onClick={() => editor.chain().focus().redo().run()}
           disabled={!editor.can().redo()}
           className="rounded p-2 hover:bg-gray-100 disabled:opacity-50"
-          title="Redo"
+          title={t('Redo')}
         >
           <Redo className="h-4 w-4" />
         </button>
@@ -150,7 +152,7 @@ export function ProposalRichTextToolbar({
             editor.chain().focus().toggleHeading({ level: 1 }).run()
           }
           className={`rounded p-2 hover:bg-gray-100 ${editor.isActive('heading', { level: 1 }) ? 'bg-gray-200' : ''}`}
-          title="Heading 1"
+          title={t('Heading 1')}
         >
           <Heading1 className="h-4 w-4" />
         </button>
@@ -159,7 +161,7 @@ export function ProposalRichTextToolbar({
             editor.chain().focus().toggleHeading({ level: 2 }).run()
           }
           className={`rounded p-2 hover:bg-gray-100 ${editor.isActive('heading', { level: 2 }) ? 'bg-gray-200' : ''}`}
-          title="Heading 2"
+          title={t('Heading 2')}
         >
           <Heading2 className="h-4 w-4" />
         </button>
@@ -168,7 +170,7 @@ export function ProposalRichTextToolbar({
             editor.chain().focus().toggleHeading({ level: 3 }).run()
           }
           className={`rounded p-2 hover:bg-gray-100 ${editor.isActive('heading', { level: 3 }) ? 'bg-gray-200' : ''}`}
-          title="Heading 3"
+          title={t('Heading 3')}
         >
           <Heading3 className="h-4 w-4" />
         </button>
@@ -179,35 +181,35 @@ export function ProposalRichTextToolbar({
         <button
           onClick={() => editor.chain().focus().toggleBold().run()}
           className={`rounded p-2 hover:bg-gray-100 ${editor.isActive('bold') ? 'bg-gray-200' : ''}`}
-          title="Bold"
+          title={t('Bold')}
         >
           <Bold className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor.chain().focus().toggleItalic().run()}
           className={`rounded p-2 hover:bg-gray-100 ${editor.isActive('italic') ? 'bg-gray-200' : ''}`}
-          title="Italic"
+          title={t('Italic')}
         >
           <Italic className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor.chain().focus().toggleUnderline().run()}
           className={`rounded p-2 hover:bg-gray-100 ${editor.isActive('underline') ? 'bg-gray-200' : ''}`}
-          title="Underline"
+          title={t('Underline')}
         >
           <UnderlineIcon className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor.chain().focus().toggleStrike().run()}
           className={`rounded p-2 hover:bg-gray-100 ${editor.isActive('strike') ? 'bg-gray-200' : ''}`}
-          title="Strikethrough"
+          title={t('Strikethrough')}
         >
           <Strikethrough className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor.chain().focus().toggleCode().run()}
           className={`rounded p-2 hover:bg-gray-100 ${editor.isActive('code') ? 'bg-gray-200' : ''}`}
-          title="Code"
+          title={t('Code')}
         >
           <Code className="h-4 w-4" />
         </button>
@@ -218,21 +220,21 @@ export function ProposalRichTextToolbar({
         <button
           onClick={() => editor.chain().focus().toggleBulletList().run()}
           className={`rounded p-2 hover:bg-gray-100 ${editor.isActive('bulletList') ? 'bg-gray-200' : ''}`}
-          title="Bullet List"
+          title={t('Bullet List')}
         >
           <List className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor.chain().focus().toggleOrderedList().run()}
           className={`rounded p-2 hover:bg-gray-100 ${editor.isActive('orderedList') ? 'bg-gray-200' : ''}`}
-          title="Numbered List"
+          title={t('Numbered List')}
         >
           <ListOrdered className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor.chain().focus().toggleBlockquote().run()}
           className={`rounded p-2 hover:bg-gray-100 ${editor.isActive('blockquote') ? 'bg-gray-200' : ''}`}
-          title="Blockquote"
+          title={t('Blockquote')}
         >
           <Quote className="h-4 w-4" />
         </button>
@@ -243,21 +245,21 @@ export function ProposalRichTextToolbar({
         <button
           onClick={() => editor.chain().focus().setTextAlign('left').run()}
           className={`rounded p-2 hover:bg-gray-100 ${editor.isActive({ textAlign: 'left' }) ? 'bg-gray-200' : ''}`}
-          title="Align Left"
+          title={t('Align Left')}
         >
           <AlignLeft className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor.chain().focus().setTextAlign('center').run()}
           className={`rounded p-2 hover:bg-gray-100 ${editor.isActive({ textAlign: 'center' }) ? 'bg-gray-200' : ''}`}
-          title="Align Center"
+          title={t('Align Center')}
         >
           <AlignCenter className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor.chain().focus().setTextAlign('right').run()}
           className={`rounded p-2 hover:bg-gray-100 ${editor.isActive({ textAlign: 'right' }) ? 'bg-gray-200' : ''}`}
-          title="Align Right"
+          title={t('Align Right')}
         >
           <AlignRight className="h-4 w-4" />
         </button>
@@ -268,28 +270,28 @@ export function ProposalRichTextToolbar({
         <button
           onClick={addLink}
           className={`rounded p-2 hover:bg-gray-100 ${editor.isActive('link') ? 'bg-gray-200' : ''}`}
-          title="Add Link"
+          title={t('Add Link')}
         >
           <LinkIcon className="h-4 w-4" />
         </button>
         <button
           onClick={addEmbedLink}
           className="rounded p-2 hover:bg-gray-100"
-          title="Embed Link Preview"
+          title={t('Embed Link Preview')}
         >
           <Link2 className="h-4 w-4" />
         </button>
         <button
           onClick={handleImageUpload}
           className="rounded p-2 hover:bg-gray-100"
-          title="Add Image"
+          title={t('Add Image')}
         >
           <ImageIcon className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor.chain().focus().setHorizontalRule().run()}
           className="rounded p-2 hover:bg-gray-100"
-          title="Add Horizontal Rule"
+          title={t('Add Horizontal Rule')}
         >
           <Minus className="h-4 w-4" />
         </button>

@@ -74,7 +74,7 @@ export function VotingPage({
     }),
     cowop: () => ({
       title: hasVoted ? t('YOUR BALLOT IS IN.') : t('TIME TO VOTE.'),
-      description: <p>Help determine how we invest our community budget.</p>,
+      description: <p>{t('Help determine how we invest our community budget.')}</p>,
     }),
     'one-project': () => ({
       title: hasVoted ? t('YOUR BALLOT IS IN.') : t('COMMITTEE DELIBERATION.'),

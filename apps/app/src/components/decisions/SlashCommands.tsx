@@ -1,3 +1,5 @@
+'use client';
+
 import { Extension } from '@tiptap/core';
 import { PluginKey } from '@tiptap/pm/state';
 import { Suggestion, SuggestionOptions } from '@tiptap/suggestion';
@@ -15,6 +17,7 @@ import {
 } from 'lucide-react';
 import React, { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import { useTranslations } from '@/lib/i18n';
 
 export interface SlashCommandItem {
   title: string;
@@ -31,6 +34,7 @@ const SlashCommandsList = forwardRef<
     command: (item: SlashCommandItem) => void;
   }
 >((props, ref) => {
+  const t = useTranslations();
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   const selectItem = (index: number) => {
@@ -96,7 +100,7 @@ const SlashCommandsList = forwardRef<
           </button>
         ))
       ) : (
-        <div className="item">No result</div>
+        <div className="item">{t('No result')}</div>
       )}
     </div>
   );
