@@ -1,15 +1,23 @@
 import { and, count, db, eq } from '@op/db/client';
 import {
+  Decision,
+  ProcessInstance,
+  Profile,
   ProfileRelationshipType,
+  Proposal,
+  organizations,
   posts,
   postsToProfiles,
+  processInstances,
   profileRelationships,
   proposals,
   users,
 } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
+import { checkPermission, permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
+import { getOrgAccessUser } from '../access';
 
 export const getProposal = async ({
   profileId,
@@ -17,7 +25,19 @@ export const getProposal = async ({
 }: {
   profileId: string;
   user: User;
-}) => {
+}): Promise<
+  Proposal & {
+    submittedBy: Profile & { avatarImage: any }; // fix drizzle types
+    processInstance: ProcessInstance;
+    profile: Profile;
+    decisions: (Decision & {
+      decidedBy: Profile;
+    })[];
+    commentsCount: number;
+    likesCount: number;
+    followersCount: number;
+  }
+> => {
   if (!user) {
     throw new UnauthorizedError('User must be authenticated');
   }
@@ -32,7 +52,7 @@ export const getProposal = async ({
       throw new UnauthorizedError('User must have an active profile');
     }
 
-    const proposal = await db.query.proposals.findFirst({
+    const proposal = (await db.query.proposals.findFirst({
       where: eq(proposals.profileId, profileId),
       with: {
         processInstance: {
@@ -53,7 +73,14 @@ export const getProposal = async ({
           },
         },
       },
-    });
+    })) as Proposal & {
+      submittedBy: Profile & { avatarImage: any }; // fix drizzle types
+      processInstance: ProcessInstance;
+      profile: Profile;
+      decisions: (Decision & {
+        decidedBy: Profile;
+      })[];
+    };
 
     if (!proposal) {
       throw new NotFoundError('Proposal not found');
@@ -125,4 +152,66 @@ export const getProposal = async ({
     console.error('Error fetching proposal:', error);
     throw new NotFoundError('Proposal not found');
   }
+};
+
+export const getPermissionsOnProposal = async ({
+  user,
+  proposal,
+}: {
+  user: User;
+  proposal: Proposal & { processInstance: ProcessInstance };
+}) => {
+  const dbUser = await db.query.users.findFirst({
+    where: eq(users.authUserId, user.id),
+  });
+
+  if (!dbUser || !dbUser.currentProfileId) {
+    throw new UnauthorizedError('User must have an active profile');
+  }
+
+  // Check if proposal is editable by current user
+  const isOwner = proposal.submittedByProfileId === dbUser.currentProfileId;
+  let isEditable = isOwner;
+
+  // Disable editing if we're in the results phase
+  if (isEditable && proposal.processInstance) {
+    const currentStateId = proposal.processInstance.currentStateId;
+    if (currentStateId === 'results') {
+      isEditable = false;
+    }
+  }
+
+  // If it's not already editable, then check admin permissions to see if we can still make it editable
+  if (
+    !isEditable &&
+    proposal.processInstance &&
+    'id' in proposal.processInstance
+  ) {
+    // Get the organization for the process instance
+    const instanceOrg = await db
+      .select({
+        id: organizations.id,
+      })
+      .from(organizations)
+      .leftJoin(
+        processInstances,
+        eq(organizations.profileId, processInstances.ownerProfileId),
+      )
+      .where(eq(processInstances.id, proposal.processInstance.id))
+      .limit(1);
+
+    if (instanceOrg[0]) {
+      const orgUser = await getOrgAccessUser({
+        user,
+        organizationId: instanceOrg[0].id,
+      });
+
+      isEditable = checkPermission(
+        { decisions: permission.ADMIN },
+        orgUser?.roles ?? [],
+      );
+    }
+  }
+
+  return isEditable;
 };

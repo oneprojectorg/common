@@ -138,7 +138,6 @@ const VotingProposalsList = ({
   canManageProposals = false,
   votedProposalIds = [],
 }: ProposalsProps) => {
-  const { user } = useUser();
   const [selectedProposalIds, setSelectedProposalIds] = useState<string[]>([]);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const t = useTranslations();
@@ -146,15 +145,9 @@ const VotingProposalsList = ({
   const numSelected = selectedProposalIds.length;
 
   // Get voting status for this user and process
-  const { data: voteStatus } = trpc.decision.getVotingStatus.useQuery(
-    {
-      processInstanceId: instanceId,
-      userId: user?.id || '',
-    },
-    {
-      enabled: !!user?.id,
-    },
-  );
+  const { data: voteStatus } = trpc.decision.getVotingStatus.useQuery({
+    processInstanceId: instanceId,
+  });
 
   const utils = trpc.useUtils();
 
@@ -195,7 +188,6 @@ const VotingProposalsList = ({
     setShowSuccessModal(true); // Show success modal
     utils.decision.getVotingStatus.invalidate({
       processInstanceId: instanceId,
-      userId: user?.id || '',
     });
   };
 
@@ -293,20 +285,24 @@ const ViewProposalsList = ({
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
       {proposals.map((proposal) => (
         <ProposalCard key={proposal.id}>
+          <div className="flex h-full flex-col justify-between gap-3 space-y-3">
+            <ProposalCardContent>
+              <ProposalCardHeader
+                proposal={proposal}
+                viewHref={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`}
+                showMenu={canManageProposals || proposal.isEditable}
+                menuComponent={
+                  <ProposalCardMenu
+                    proposal={proposal}
+                    canManage={canManageProposals}
+                  />
+                }
+              />
+              <ProposalCardMeta proposal={proposal} />
+              <ProposalCardDescription proposal={proposal} />
+            </ProposalCardContent>
+          </div>
           <ProposalCardContent>
-            <ProposalCardHeader
-              proposal={proposal}
-              viewHref={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`}
-              showMenu={canManageProposals || proposal.isEditable}
-              menuComponent={
-                <ProposalCardMenu
-                  proposal={proposal}
-                  canManage={canManageProposals}
-                />
-              }
-            />
-            <ProposalCardMeta proposal={proposal} />
-            <ProposalCardDescription proposal={proposal} />
             <ProposalCardFooter>
               <ProposalCardMetrics proposal={proposal} />
               <ProposalCardActions proposal={proposal} />
@@ -319,19 +315,12 @@ const ViewProposalsList = ({
 };
 
 const Proposals = (props: ProposalsProps) => {
-  const { user } = useUser();
   const { isLoading, instanceId } = props;
 
   // Get voting status for this user and process
-  const { data: voteStatus } = trpc.decision.getVotingStatus.useQuery(
-    {
-      processInstanceId: instanceId,
-      userId: user?.id || '',
-    },
-    {
-      enabled: !!user?.id,
-    },
-  );
+  const { data: voteStatus } = trpc.decision.getVotingStatus.useQuery({
+    processInstanceId: instanceId,
+  });
 
   // Determine voting state
   const isVotingEnabled = !!voteStatus?.votingConfiguration?.allowDecisions;
@@ -367,20 +356,19 @@ export const ProposalsList = ({
     searchParams.get('sort') || 'newest',
   );
 
-  const [categoriesData] = trpc.decision.getCategories.useSuspenseQuery({
-    processInstanceId: instanceId,
-  });
-
-  const categories = categoriesData.categories;
-
   // Get current user's profile ID for "My Proposals" filter
   const currentProfileId = user?.currentProfile?.id;
 
-  // Get voting status for this user and process
-  const [voteStatus] = trpc.decision.getVotingStatus.useSuspenseQuery({
-    processInstanceId: instanceId,
-    userId: user?.id || '',
-  });
+  const [[categoriesData, voteStatus]] = trpc.useSuspenseQueries((t) => [
+    t.decision.getCategories({
+      processInstanceId: instanceId,
+    }),
+    t.decision.getVotingStatus({
+      processInstanceId: instanceId,
+    }),
+  ]);
+
+  const categories = categoriesData.categories;
 
   // Determine if we're in ballot view (user has voted)
   const hasVoted = voteStatus?.hasVoted || false;
@@ -480,7 +468,7 @@ export const ProposalsList = ({
   return (
     <div className="flex flex-col gap-6 pb-12">
       {/* Filters Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-center gap-4">
           <span className="font-serif text-title-base text-neutral-black">
             {proposalFilter === 'my-ballot'

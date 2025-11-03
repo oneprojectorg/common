@@ -134,6 +134,20 @@
       "when": 1761484666474,
       "tag": "0018_light_aqueduct",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1761754836851,
+      "tag": "0019_flimsy_terrax",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1761929807345,
+      "tag": "0020_military_mandrill",
+      "breakpoints": true
     }
   ]
 }

@@ -5,7 +5,7 @@ import { trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
 import { useInfiniteScroll } from '@op/hooks';
 import { SkeletonLine } from '@op/ui/Skeleton';
-import { useCallback } from 'react';
+import { Fragment, useCallback } from 'react';
 
 import {
   DiscussionModalContainer,
@@ -76,10 +76,9 @@ export const ProfileFeed = ({
     <div className={className}>
       <PostFeed>
         {allPosts.length > 0 ? (
-          allPosts.map((postToOrg, i) => (
-            <>
+          allPosts.map((postToOrg) => (
+            <Fragment key={postToOrg.postId}>
               <PostItem
-                key={i}
                 postToOrg={postToOrg}
                 user={user}
                 withLinks={false}
@@ -87,7 +86,7 @@ export const ProfileFeed = ({
                 onCommentClick={handleCommentClick}
               />
               <hr className="bg-neutral-gray1" />
-            </>
+            </Fragment>
           ))
         ) : (
           <EmptyPostsState />

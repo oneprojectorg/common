@@ -1,6 +1,13 @@
 import { relations } from 'drizzle-orm';
 import type { InferModel } from 'drizzle-orm';
-import { index, integer, pgTable, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import {
+  index,
+  integer,
+  numeric,
+  pgTable,
+  uniqueIndex,
+  uuid,
+} from 'drizzle-orm/pg-core';
 
 import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
 import { decisionProcessResults } from './decisionProcessResults.sql';
@@ -26,6 +33,9 @@ export const decisionProcessResultSelections = pgTable(
     // Optional ranking to preserve selection order
     selectionRank: integer('selection_rank'),
 
+    // Optional allocated amount (may differ from original budget)
+    allocated: numeric('allocated'),
+
     ...timestamps,
   },
   (table) => [
@@ -33,8 +43,9 @@ export const decisionProcessResultSelections = pgTable(
     index('result_selections_result_idx')
       .on(table.processResultId)
       .concurrently(),
-    index('result_selections_proposal_idx')
-      .on(table.proposalId)
+    index('result_selections_proposal_idx').on(table.proposalId).concurrently(),
+    index('result_selections_pagination_idx')
+      .on(table.processResultId, table.selectionRank, table.id)
       .concurrently(),
     // Ensure same proposal can't be selected twice in the same result
     uniqueIndex('result_selections_unique_idx')

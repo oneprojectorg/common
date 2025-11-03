@@ -37,6 +37,9 @@ export const decisionProcessResults = pgTable(
     // Denormalized count for quick queries
     selectedCount: integer('selected_count').notNull().default(0),
 
+    // Number of members who voted
+    voterCount: integer('voter_count').notNull().default(0),
+
     // Store the pipeline configuration that was executed
     pipelineConfig: jsonb('pipeline_config'),
 

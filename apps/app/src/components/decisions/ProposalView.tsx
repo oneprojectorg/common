@@ -70,12 +70,8 @@ export function ProposalView({
     targetProfileId: currentProposal.profileId,
   });
 
-  // Check if current user can edit (only submitter can edit for now)
-  const canEdit = Boolean(
-    user?.currentProfile &&
-      currentProposal.submittedBy &&
-      user.currentProfile.id === currentProposal.submittedBy.id,
-  );
+  // Check if current user can edit (submitter or org admin)
+  const canEdit = currentProposal.isEditable ?? false;
 
   // Generate edit href
   const editHref = canEdit

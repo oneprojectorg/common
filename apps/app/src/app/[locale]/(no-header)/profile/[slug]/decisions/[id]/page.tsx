@@ -2,7 +2,7 @@ import { Skeleton } from '@op/ui/Skeleton';
 import { Suspense } from 'react';
 
 import { DecisionHeader } from '@/components/decisions/DecisionHeader';
-import { ProposalsSection } from '@/components/decisions/ProposalsSection';
+import { DecisionStateRouter } from '@/components/decisions/DecisionStateRouter';
 
 function DecisionHeaderSkeleton() {
   return (
@@ -15,7 +15,7 @@ function DecisionHeaderSkeleton() {
       </div>
 
       {/* Stepper skeleton */}
-      <div className="flex flex-col overflow-x-scroll sm:items-center">
+      <div className="flex flex-col overflow-x-auto sm:items-center">
         <div className="w-fit rounded-b border border-t-0 bg-white px-12 py-4 sm:px-32">
           <div className="mx-auto flex items-center justify-center space-x-8">
             {[1, 2, 3, 4].map((i) => (
@@ -40,15 +40,13 @@ const DecisionInstancePageContent = ({
   slug: string;
 }) => {
   return (
-    <>
-      {/* Header, Stepper, and Content - loads first */}
-      <Suspense fallback={<DecisionHeaderSkeleton />}>
-        <DecisionHeader instanceId={instanceId} slug={slug} />
-      </Suspense>
-
-      {/* Proposals Section - loads independently */}
-      <ProposalsSection instanceId={instanceId} slug={slug} />
-    </>
+    <Suspense fallback={<DecisionHeaderSkeleton />}>
+      <DecisionHeader instanceId={instanceId} slug={slug}>
+        <Suspense fallback={<Skeleton className="h-96" />}>
+          <DecisionStateRouter instanceId={instanceId} slug={slug} />
+        </Suspense>
+      </DecisionHeader>
+    </Suspense>
   );
 };
 

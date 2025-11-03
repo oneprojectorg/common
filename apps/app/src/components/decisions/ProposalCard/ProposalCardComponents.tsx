@@ -73,11 +73,13 @@ export function ProposalCardHeader({
   viewHref,
   showMenu = false,
   menuComponent,
+  allocated,
   className,
 }: BaseProposalCardProps & {
   viewHref?: string;
   showMenu?: boolean;
   menuComponent?: ReactNode;
+  allocated?: string | number | null;
   className?: string;
 }) {
   return (
@@ -86,7 +88,7 @@ export function ProposalCardHeader({
         <ProposalCardTitle proposal={proposal} viewHref={viewHref} />
         {showMenu && menuComponent}
       </div>
-      <ProposalCardBudget proposal={proposal} />
+      <ProposalCardBudget proposal={proposal} allocated={allocated} />
     </div>
   );
 }
@@ -134,13 +136,20 @@ export function ProposalCardTitle({
  */
 export function ProposalCardBudget({
   proposal,
+  allocated,
   className,
 }: BaseProposalCardProps & {
+  allocated?: string | number | null;
   className?: string;
 }) {
   const { budget } = parseProposalData(proposal.proposalData);
 
-  if (!budget) {
+  // Use allocated amount if provided, otherwise fall back to budget
+  const displayAmount = allocated !== null && allocated !== undefined
+    ? Number(allocated)
+    : budget;
+
+  if (!displayAmount) {
     return null;
   }
 
@@ -151,7 +160,7 @@ export function ProposalCardBudget({
         className,
       )}
     >
-      {formatCurrency(budget)}
+      {formatCurrency(displayAmount)}
     </span>
   );
 }
