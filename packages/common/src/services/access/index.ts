@@ -123,7 +123,6 @@ export const getIndividualProfileId = async (authUserId: string) => {
     throw new UnauthorizedError("You don't have access to do this");
   }
 
-  // Use the user's individual profileId (not currentProfileId)
   if (user.profileId) {
     return user.profileId;
   }
