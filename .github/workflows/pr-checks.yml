@@ -1,4 +1,4 @@
-name: PR Checks
+name: CI
 
 on:
   pull_request:
@@ -53,8 +53,8 @@ jobs:
         run: pnpm w:app lint
         continue-on-error: true
 
-  lint:
-    name: Lint
+  format:
+    name: Format
     runs-on: ubuntu-latest
 
     steps:
@@ -91,6 +91,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run lint checks
+      - name: Run format checks
         run: pnpm format --check
         continue-on-error: true
