@@ -2,7 +2,7 @@
 
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import type { Post } from '@op/api/encoders';
+import type { Organization, Post } from '@op/api/encoders';
 import { Surface } from '@op/ui/Surface';
 import { useCallback, useMemo, useRef } from 'react';
 import React from 'react';
@@ -15,7 +15,13 @@ import { PostDetailHeader } from './PostDetailHeader';
 import { PostViewLayout } from './PostViewLayout';
 import { usePostDetailActions } from './usePostDetailActions';
 
-export function PostDetailView({ post: initialPost }: { post: Post }) {
+export function PostDetailView({
+  post: initialPost,
+  organization,
+}: {
+  post: Post;
+  organization: Organization | null;
+}) {
   const t = useTranslations();
   const { user } = useUser();
   const commentsContainerRef = useRef<HTMLDivElement>(null);
@@ -41,11 +47,11 @@ export function PostDetailView({ post: initialPost }: { post: Post }) {
       updatedAt: currentPost.updatedAt,
       deletedAt: null,
       postId: currentPost.id,
-      organizationId: '',
+      organizationId: organization?.id || '',
       post: currentPost,
-      organization: null,
+      organization: organization || null,
     }),
-    [currentPost],
+    [currentPost, organization],
   );
 
   const { handleReactionClick } = usePostDetailActions({
@@ -90,11 +96,11 @@ export function PostDetailView({ post: initialPost }: { post: Post }) {
       updatedAt: comment.updatedAt,
       deletedAt: null,
       postId: comment.id,
-      organizationId: '',
+      organizationId: organization?.id || '',
       post: comment,
-      organization: null,
+      organization: organization || null,
     }));
-  }, [commentsData]);
+  }, [commentsData, organization]);
 
   return (
     <PostViewLayout>

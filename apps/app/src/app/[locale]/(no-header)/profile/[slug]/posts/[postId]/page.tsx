@@ -7,17 +7,27 @@ import { Suspense } from 'react';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { PostDetailView } from '@/components/posts/PostDetailView';
 
-function PostDetailPageContent({ postId }: { postId: string }) {
+function PostDetailPageContent({
+  postId,
+  slug,
+}: {
+  postId: string;
+  slug: string;
+}) {
   const [post] = trpc.posts.getPost.useSuspenseQuery({
     postId,
     includeChildren: false,
+  });
+
+  const [organization] = trpc.organization.getBySlug.useSuspenseQuery({
+    slug,
   });
 
   if (!post) {
     notFound();
   }
 
-  return <PostDetailView post={post} />;
+  return <PostDetailView post={post} organization={organization} />;
 }
 
 function PostDetailPageSkeleton() {
@@ -78,7 +88,7 @@ function PostDetailPageSkeleton() {
 }
 
 const PostDetailPage = () => {
-  const { postId } = useParams<{
+  const { postId, slug } = useParams<{
     postId: string;
     slug: string;
   }>();
@@ -86,7 +96,7 @@ const PostDetailPage = () => {
   return (
     <ErrorBoundary>
       <Suspense fallback={<PostDetailPageSkeleton />}>
-        <PostDetailPageContent postId={postId} />
+        <PostDetailPageContent postId={postId} slug={slug} />
       </Suspense>
     </ErrorBoundary>
   );
