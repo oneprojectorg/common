@@ -208,11 +208,11 @@ export const submitVote = async ({
     const approvedProposalIds = approvedProposals.map((p) => p.id);
 
     // Check if all selected proposals are approved
-    const nonApprovedSelections = data.selectedProposalIds.filter(
+    const hasNonApprovedSelections = data.selectedProposalIds.some(
       (id) => !approvedProposalIds.includes(id),
     );
 
-    if (nonApprovedSelections.length > 0) {
+    if (hasNonApprovedSelections) {
       throw new ValidationError(
         'You can only vote for approved proposals. Some of your selections are not eligible for voting.',
       );
