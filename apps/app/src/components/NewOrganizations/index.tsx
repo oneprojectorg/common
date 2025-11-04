@@ -7,6 +7,7 @@ import {
   OrganizationList,
   OrganizationListSkeleton,
 } from '../OrganizationList';
+import { TranslatedText } from '../TranslatedText';
 
 export const NewOrganizationsSuspense = async ({
   limit = 5,
@@ -27,7 +28,7 @@ export const NewOrganizationsSuspense = async ({
         <OrganizationList organizations={organizations} />
         <div className="px-8 sm:px-0">
           <Link href="/org" className="text-teal">
-            See more
+            <TranslatedText text="See more" />
           </Link>
         </div>
       </div>

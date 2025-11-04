@@ -15,6 +15,8 @@ import { cn } from '@op/ui/utils';
 import { FormEvent, Suspense, useState, useTransition } from 'react';
 import { LuCheck, LuChevronDown, LuClock, LuPlus } from 'react-icons/lu';
 
+import { useTranslations } from '@/lib/i18n';
+
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { OrganizationAvatar } from '@/components/OrganizationAvatar';
 
@@ -93,6 +95,7 @@ export const AddRelationshipModalSuspense = ({
   profile: Organization;
 }) => {
   const { user } = useUser();
+  const t = useTranslations();
   const utils = trpc.useUtils();
   const [selectedRelationshipId, setSelectedRelationshipId] = useState<
     string | null
@@ -193,7 +196,7 @@ export const AddRelationshipModalSuspense = ({
         <DialogTrigger>
           <Button className="min-w-full text-nowrap sm:min-w-fit">
             <LuPlus className="size-4" />
-            Add relationship
+            {t('Add relationship')}
           </Button>
           <Modal className="sm:min-w-[29rem]">
             <AddRelationshipForm
