@@ -132,13 +132,12 @@ interface ProposalsProps {
 }
 
 const VotingProposalsList = ({
-  proposals: allProposals,
+  proposals,
   instanceId,
   slug,
   canManageProposals = false,
   votedProposalIds = [],
 }: ProposalsProps) => {
-  const proposals = allProposals?.filter((p) => p.status === 'approved') || [];
   const [selectedProposalIds, setSelectedProposalIds] = useState<string[]>([]);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const t = useTranslations();

@@ -78,6 +78,7 @@ export const listProposals = async ({
   const instanceOrg = await db
     .select({
       id: organizations.id,
+      currentStateId: processInstances.currentStateId,
     })
     .from(organizations)
     .leftJoin(
@@ -119,8 +120,14 @@ export const listProposals = async ({
       dir = 'desc',
     } = input;
 
+    // If process is in voting state, only return approved proposals
+    const filteredInput = {
+      ...input,
+      status: instanceOrg[0].currentStateId === 'voting' ? 'approved' : input.status,
+    };
+
     // Build shared WHERE clause using the extracted function
-    const baseWhereClause = buildWhereConditions(input);
+    const baseWhereClause = buildWhereConditions(filteredInput);
 
     // Handle category filtering separately to avoid table reference issues
     const { categoryId } = input;
