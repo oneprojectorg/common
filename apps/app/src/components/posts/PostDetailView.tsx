@@ -9,7 +9,12 @@ import React from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { PostFeed, PostItem, usePostFeedActions } from '../PostFeed';
+import {
+  PostFeed,
+  PostItem,
+  PostItemOnDetailPage,
+  usePostFeedActions,
+} from '../PostFeed';
 import { PostUpdate } from '../PostUpdate';
 import { PostDetailHeader } from './PostDetailHeader';
 import { PostViewLayout } from './PostViewLayout';
@@ -102,12 +107,12 @@ export function PostDetailView({ post: initialPost }: { post: Post }) {
         <div className="mx-auto flex max-w-xl flex-col gap-8">
           {/* Original Post Display */}
           <PostFeed className="originalPost border-none">
-            <PostItem
+            <PostItemOnDetailPage
               postToOrg={postToOrg}
               user={user}
               withLinks={false}
               onReactionClick={handleReactionClick}
-              disableCommentButton={true}
+              commentCount={comments.length}
             />
           </PostFeed>
 

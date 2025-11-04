@@ -178,11 +178,9 @@ const PostReactions = ({
 const PostCommentButton = ({
   post,
   onCommentClick,
-  isDisabled,
 }: {
   post: Post;
   onCommentClick: () => void;
-  isDisabled?: boolean;
 }) => {
   // we can disable this to allow for threads in the future
   if (!post?.id || post.parentPostId) {
@@ -190,11 +188,7 @@ const PostCommentButton = ({
   }
 
   return (
-    <CommentButton
-      count={post.commentCount || 0}
-      onPress={onCommentClick}
-      isDisabled={isDisabled}
-    />
+    <CommentButton count={post.commentCount || 0} onPress={onCommentClick} />
   );
 };
 
@@ -267,7 +261,6 @@ export const PostItem = ({
   withLinks,
   onReactionClick,
   onCommentClick,
-  disableCommentButton,
   className,
 }: {
   postToOrg: PostToOrganization;
@@ -275,7 +268,6 @@ export const PostItem = ({
   withLinks: boolean;
   onReactionClick: (postId: string, emoji: string) => void;
   onCommentClick?: (post: PostToOrganization) => void;
-  disableCommentButton?: boolean;
   className?: string;
 }) => {
   const { organization, post } = postToOrg;
@@ -322,9 +314,71 @@ export const PostItem = ({
               <PostCommentButton
                 post={post}
                 onCommentClick={() => onCommentClick(postToOrg)}
-                isDisabled={disableCommentButton}
               />
             ) : null}
+          </div>
+        </FeedContent>
+      </FeedMain>
+    </FeedItem>
+  );
+};
+
+export const PostItemOnDetailPage = ({
+  postToOrg,
+  user,
+  withLinks,
+  onReactionClick,
+  commentCount,
+  className,
+}: {
+  postToOrg: PostToOrganization;
+  user?: OrganizationUser;
+  withLinks: boolean;
+  onReactionClick: (postId: string, emoji: string) => void;
+  commentCount: number;
+  className?: string;
+}) => {
+  const { organization, post } = postToOrg;
+  const { urls } = useMemo(() => detectLinks(post?.content), [post?.content]);
+
+  // For comments (posts without organization), show the post author
+  // TODO: this is too complex. We need to refactor this
+  const displayName =
+    post?.profile?.name ?? organization?.profile.name ?? 'Unknown User';
+  const displaySlug =
+    post?.profile?.slug ?? organization?.profile.slug ?? 'Unknown User';
+  const profile = post.profile ?? organization?.profile;
+
+  return (
+    <FeedItem className={cn('sm:px-4', className)}>
+      <OrganizationAvatar
+        profile={profile}
+        withLink={withLinks}
+        className="!size-8 max-h-8 max-w-8"
+      />
+      <FeedMain>
+        <FeedHeader className="relative w-full justify-between">
+          <div className="flex items-baseline gap-2">
+            <Header3 className="font-medium leading-3">
+              <PostDisplayName
+                displayName={displayName}
+                displaySlug={displaySlug}
+                withLinks={withLinks}
+              />
+            </Header3>
+            {post.createdAt ? (
+              <PostTimestamp createdAt={post.createdAt} />
+            ) : null}
+          </div>
+          <PostMenu post={post} user={user} organization={organization} />
+        </FeedHeader>
+        <FeedContent>
+          <PostContent content={post?.content} />
+          <PostAttachments attachments={post.attachments} />
+          <PostUrls urls={urls} />
+          <div className="flex items-center justify-between gap-2">
+            <PostReactions post={post} onReactionClick={onReactionClick} />
+            <CommentButton count={commentCount} isDisabled />
           </div>
         </FeedContent>
       </FeedMain>
