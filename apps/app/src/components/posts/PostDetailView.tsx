@@ -107,9 +107,7 @@ export function PostDetailView({ post: initialPost }: { post: Post }) {
               user={user}
               withLinks={false}
               onReactionClick={handleReactionClick}
-              onCommentClick={() => {
-                // No-op: Comment button is shown for display only
-              }}
+              disableCommentButton={true}
             />
           </PostFeed>
 

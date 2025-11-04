@@ -178,9 +178,11 @@ const PostReactions = ({
 const PostCommentButton = ({
   post,
   onCommentClick,
+  isDisabled,
 }: {
   post: Post;
   onCommentClick: () => void;
+  isDisabled?: boolean;
 }) => {
   // we can disable this to allow for threads in the future
   if (!post?.id || post.parentPostId) {
@@ -188,7 +190,11 @@ const PostCommentButton = ({
   }
 
   return (
-    <CommentButton count={post.commentCount || 0} onPress={onCommentClick} />
+    <CommentButton
+      count={post.commentCount || 0}
+      onPress={onCommentClick}
+      isDisabled={isDisabled}
+    />
   );
 };
 
@@ -261,6 +267,7 @@ export const PostItem = ({
   withLinks,
   onReactionClick,
   onCommentClick,
+  disableCommentButton,
   className,
 }: {
   postToOrg: PostToOrganization;
@@ -268,6 +275,7 @@ export const PostItem = ({
   withLinks: boolean;
   onReactionClick: (postId: string, emoji: string) => void;
   onCommentClick?: (post: PostToOrganization) => void;
+  disableCommentButton?: boolean;
   className?: string;
 }) => {
   const { organization, post } = postToOrg;
@@ -314,6 +322,7 @@ export const PostItem = ({
               <PostCommentButton
                 post={post}
                 onCommentClick={() => onCommentClick(postToOrg)}
+                isDisabled={disableCommentButton}
               />
             ) : null}
           </div>
