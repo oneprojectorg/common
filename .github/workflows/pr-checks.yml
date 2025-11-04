@@ -44,4 +44,3 @@ jobs:
 
       - name: Run TypeScript checks
         run: pnpm w:app lint
-        continue-on-error: true
