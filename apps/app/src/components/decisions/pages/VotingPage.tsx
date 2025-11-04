@@ -57,29 +57,26 @@ export function VotingPage({
       description: (
         <>
           <p>
-            {t('We are in the voting stage now!')}
+            {t('We are in the voting stage now!')} {t('PPVOTINGDESCRIPTION1')}
             <br />
-            {t(
-              'We have at least {budget} to allocate for budget proposals for 2026! Read through the proposals below and in the ballot and voter guide, and you can also take a look at the full texts and discussions by clicking on each proposal. Selected proposals will be implemented in 2026. It will take around 10 minutes for you to participate.',
-              {
-                budget: totalBudgetAmount
-                  ? formatCurrency(totalBudgetAmount)
-                  : '$50,000 USD',
-              },
-            )}
+            {t('PPVOTINGDESCRIPTION2', {
+              budget: totalBudgetAmount
+                ? formatCurrency(totalBudgetAmount)
+                : '$50,000 USD',
+            })}
           </p>
           <p>
-            <strong>
-              {t(
-                'Click on "About the process" to learn more about the fund allocation.',
-              )}
-            </strong>
+            {t(
+              'Click on "About the process" to learn more about the fund allocation.',
+            )}
           </p>
           {maxVotesPerMember && (
             <p>
-              {t('Please select {count} proposals.', {
-                count: maxVotesPerMember,
-              })}
+              <strong>
+                {t('Please select {count} proposals.', {
+                  count: maxVotesPerMember,
+                })}
+              </strong>
             </p>
           )}
         </>
