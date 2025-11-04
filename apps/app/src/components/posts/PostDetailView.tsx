@@ -9,15 +9,11 @@ import React from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-import {
-  PostFeed,
-  PostItem,
-  PostItemOnDetailPage,
-  usePostFeedActions,
-} from '../PostFeed';
+import { PostFeed, PostItem, PostItemOnDetailPage } from '../PostFeed';
 import { PostUpdate } from '../PostUpdate';
 import { PostDetailHeader } from './PostDetailHeader';
 import { PostViewLayout } from './PostViewLayout';
+import { usePostDetailActions } from './usePostDetailActions';
 
 export function PostDetailView({ post: initialPost }: { post: Post }) {
   const t = useTranslations();
@@ -52,8 +48,8 @@ export function PostDetailView({ post: initialPost }: { post: Post }) {
     [currentPost],
   );
 
-  const { handleReactionClick, handleCommentClick } = usePostFeedActions({
-    parentPostId: currentPost.id,
+  const { handleReactionClick } = usePostDetailActions({
+    postId: currentPost.id,
     user,
   });
 
@@ -149,7 +145,6 @@ export function PostDetailView({ post: initialPost }: { post: Post }) {
                         user={user}
                         withLinks={false}
                         onReactionClick={handleReactionClick}
-                        onCommentClick={handleCommentClick}
                         className="sm:px-0"
                       />
                       {comments.length !== i + 1 && (
