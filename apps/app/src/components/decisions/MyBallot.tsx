@@ -79,7 +79,6 @@ export const MyBallot = ({
               <ProposalCardHeader
                 proposal={proposal}
                 viewHref={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`}
-                showMenu={true}
                 menuComponent={
                   <Checkbox
                     isSelected={true}

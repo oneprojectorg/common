@@ -214,33 +214,32 @@ const VotingProposalsList = ({
               <ProposalCardContent>
                 <ProposalCardHeader
                   proposal={proposal}
-                  showMenu={
-                    canManageProposals || proposal.isEditable || !isReadOnly
-                  }
                   menuComponent={
-                    <div className="flex items-center gap-2">
-                      {(canManageProposals || proposal.isEditable) && (
-                        <ProposalCardMenu
-                          proposal={proposal}
-                          canManage={canManageProposals}
-                        />
-                      )}
-                      {!isReadOnly && (
-                        <div onClick={(e) => e.stopPropagation()}>
-                          <Checkbox
-                            isSelected={isSelected}
-                            onChange={() => toggleProposal(proposal.id)}
-                            shape="circle"
-                            borderColor="light"
-                            aria-label={
-                              isSelected
-                                ? 'Deselect proposal'
-                                : 'Select proposal'
-                            }
+                    (canManageProposals || proposal.isEditable || !isReadOnly) && (
+                      <div className="flex items-center gap-2">
+                        {(canManageProposals || proposal.isEditable) && (
+                          <ProposalCardMenu
+                            proposal={proposal}
+                            canManage={canManageProposals}
                           />
-                        </div>
-                      )}
-                    </div>
+                        )}
+                        {!isReadOnly && (
+                          <div onClick={(e) => e.stopPropagation()}>
+                            <Checkbox
+                              isSelected={isSelected}
+                              onChange={() => toggleProposal(proposal.id)}
+                              shape="circle"
+                              borderColor="light"
+                              aria-label={
+                                isSelected
+                                  ? 'Deselect proposal'
+                                  : 'Select proposal'
+                              }
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )
                   }
                 />
                 <ProposalCardMeta withLink={false} proposal={proposal} />
@@ -315,12 +314,13 @@ const ViewProposalsList = ({
               <ProposalCardHeader
                 proposal={proposal}
                 viewHref={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`}
-                showMenu={canManageProposals || proposal.isEditable}
                 menuComponent={
-                  <ProposalCardMenu
-                    proposal={proposal}
-                    canManage={canManageProposals}
-                  />
+                  (canManageProposals || proposal.isEditable) && (
+                    <ProposalCardMenu
+                      proposal={proposal}
+                      canManage={canManageProposals}
+                    />
+                  )
                 }
               />
               <ProposalCardMeta proposal={proposal} />
