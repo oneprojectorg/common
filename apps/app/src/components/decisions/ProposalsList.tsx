@@ -201,61 +201,101 @@ const VotingProposalsList = ({
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {proposals.map((proposal) => {
           const isSelected = isProposalSelected(proposal.id);
-          return (
-            <VotingProposalCard
-              key={proposal.id}
-              proposalId={proposal.id}
-              isVotingEnabled={true}
-              isReadOnly={isReadOnly}
-              isSelected={isSelected}
-              isVotedFor={votedProposalIds.includes(proposal.id)}
-              onToggle={toggleProposal}
-            >
-              <ProposalCardContent>
-                <ProposalCardHeader
-                  proposal={proposal}
-                  menu={
-                    (canManageProposals || proposal.isEditable || !isReadOnly) && (
-                      <div className="flex items-center gap-2">
-                        {(canManageProposals || proposal.isEditable) && (
+          const isApproved = proposal.status === ProposalStatus.APPROVED;
+
+          // Render VotingProposalCard for approved proposals, regular ProposalCard for others
+          if (isApproved) {
+            return (
+              <VotingProposalCard
+                key={proposal.id}
+                proposalId={proposal.id}
+                isVotingEnabled={true}
+                isReadOnly={isReadOnly}
+                isSelected={isSelected}
+                isVotedFor={votedProposalIds.includes(proposal.id)}
+                onToggle={toggleProposal}
+              >
+                <ProposalCardContent>
+                  <ProposalCardHeader
+                    proposal={proposal}
+                    menu={
+                      (canManageProposals ||
+                        proposal.isEditable ||
+                        !isReadOnly) && (
+                        <div className="flex items-center gap-2">
+                          {(canManageProposals || proposal.isEditable) && (
+                            <ProposalCardMenu
+                              proposal={proposal}
+                              canManage={canManageProposals}
+                            />
+                          )}
+                          {!isReadOnly && (
+                            <div onClick={(e) => e.stopPropagation()}>
+                              <Checkbox
+                                isSelected={isSelected}
+                                onChange={() => toggleProposal(proposal.id)}
+                                shape="circle"
+                                borderColor="light"
+                                aria-label={
+                                  isSelected
+                                    ? 'Deselect proposal'
+                                    : 'Select proposal'
+                                }
+                              />
+                            </div>
+                          )}
+                        </div>
+                      )
+                    }
+                  />
+                  <ProposalCardMeta withLink={false} proposal={proposal} />
+                  <ProposalCardDescription proposal={proposal} />
+                </ProposalCardContent>
+                <ProposalCardFooter>
+                  <ButtonLink
+                    href={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`}
+                    color="secondary"
+                    className="w-full"
+                  >
+                    {t('Read full proposal')}
+                  </ButtonLink>
+                </ProposalCardFooter>
+              </VotingProposalCard>
+            );
+          } else {
+            return (
+              <ProposalCard key={proposal.id}>
+                <div className="flex h-full flex-col justify-between gap-3 space-y-3">
+                  <ProposalCardContent>
+                    <ProposalCardHeader
+                      proposal={proposal}
+                      menu={
+                        (canManageProposals || proposal.isEditable) && (
                           <ProposalCardMenu
                             proposal={proposal}
                             canManage={canManageProposals}
                           />
-                        )}
-                        {!isReadOnly && (
-                          <div onClick={(e) => e.stopPropagation()}>
-                            <Checkbox
-                              isSelected={isSelected}
-                              onChange={() => toggleProposal(proposal.id)}
-                              shape="circle"
-                              borderColor="light"
-                              aria-label={
-                                isSelected
-                                  ? 'Deselect proposal'
-                                  : 'Select proposal'
-                              }
-                            />
-                          </div>
-                        )}
-                      </div>
-                    )
-                  }
-                />
-                <ProposalCardMeta withLink={false} proposal={proposal} />
-                <ProposalCardDescription proposal={proposal} />
-              </ProposalCardContent>
-              <ProposalCardFooter>
-                <ButtonLink
-                  href={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`}
-                  color="secondary"
-                  className="w-full"
-                >
-                  {t('Read full proposal')}
-                </ButtonLink>
-              </ProposalCardFooter>
-            </VotingProposalCard>
-          );
+                        )
+                      }
+                    />
+                    <ProposalCardMeta proposal={proposal} />
+                    <ProposalCardDescription proposal={proposal} />
+                  </ProposalCardContent>
+                </div>
+                <ProposalCardContent>
+                  <ProposalCardFooter>
+                    <ButtonLink
+                      href={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`}
+                      color="secondary"
+                      className="w-full"
+                    >
+                      {t('Read full proposal')}
+                    </ButtonLink>
+                  </ProposalCardFooter>
+                </ProposalCardContent>
+              </ProposalCard>
+            );
+          }
         })}
       </div>
 
