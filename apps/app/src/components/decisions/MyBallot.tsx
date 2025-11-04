@@ -79,7 +79,7 @@ export const MyBallot = ({
               <ProposalCardHeader
                 proposal={proposal}
                 viewHref={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`}
-                menuComponent={
+                menu={
                   <Checkbox
                     isSelected={true}
                     shape="circle"

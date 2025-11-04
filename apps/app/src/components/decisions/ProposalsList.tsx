@@ -214,7 +214,7 @@ const VotingProposalsList = ({
               <ProposalCardContent>
                 <ProposalCardHeader
                   proposal={proposal}
-                  menuComponent={
+                  menu={
                     (canManageProposals || proposal.isEditable || !isReadOnly) && (
                       <div className="flex items-center gap-2">
                         {(canManageProposals || proposal.isEditable) && (
@@ -314,7 +314,7 @@ const ViewProposalsList = ({
               <ProposalCardHeader
                 proposal={proposal}
                 viewHref={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`}
-                menuComponent={
+                menu={
                   (canManageProposals || proposal.isEditable) && (
                     <ProposalCardMenu
                       proposal={proposal}

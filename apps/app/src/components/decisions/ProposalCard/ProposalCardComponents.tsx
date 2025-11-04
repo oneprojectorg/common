@@ -71,12 +71,12 @@ export function ProposalCardContent({
 export function ProposalCardHeader({
   proposal,
   viewHref,
-  menuComponent,
+  menu,
   allocated,
   className,
 }: BaseProposalCardProps & {
   viewHref?: string;
-  menuComponent?: ReactNode;
+  menu?: ReactNode;
   allocated?: string | number | null;
   className?: string;
 }) {
@@ -84,7 +84,7 @@ export function ProposalCardHeader({
     <div className={cn('flex flex-col gap-2', className)}>
       <div className="flex max-w-full items-start justify-between gap-2">
         <ProposalCardTitle proposal={proposal} viewHref={viewHref} />
-        {menuComponent}
+        {menu}
       </div>
       <ProposalCardBudget proposal={proposal} allocated={allocated} />
     </div>
