@@ -1,6 +1,7 @@
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
+import { useTranslations } from '@/lib/i18n';
 import {
   RELATIONSHIP_OPTIONS,
   RelationshipType,
@@ -22,6 +23,7 @@ export const AddRelationshipForm = ({
   profile: Organization;
   onChange: () => void;
 }) => {
+  const t = useTranslations();
   const addRelationship = trpc.organization.addRelationship.useMutation();
 
   const [selectedRelations, setSelectedRelations] = useState<Array<string>>([]);
@@ -133,10 +135,10 @@ export const AddRelationshipForm = ({
         <Dialog>
           {({ close }) => (
             <form onSubmit={(e) => handleSubmit(e, close)} className="contents">
-              <ModalHeader>Add relationship</ModalHeader>
+              <ModalHeader>{t('Add relationship')}</ModalHeader>
               <ModalBody>
                 <div>
-                  Choose how you’re in relationship with{' '}
+                  {t("Choose how you're in relationship with")}{' '}
                   <span className="font-semibold">{profile.profile.name}:</span>
                   <ul>
                     {filteredRelationshipOptions.map((option) => (
@@ -179,7 +181,7 @@ export const AddRelationshipForm = ({
                   color="secondary"
                   type="button"
                 >
-                  Cancel
+                  {t('Cancel')}
                 </Button>
                 <Button
                   color="primary"
@@ -187,7 +189,7 @@ export const AddRelationshipForm = ({
                   className="w-full sm:w-fit"
                   isPending={isSubmitting}
                 >
-                  {isSubmitting ? <LoadingSpinner /> : 'Add'}
+                  {isSubmitting ? <LoadingSpinner /> : t('Add')}
                 </Button>
               </ModalFooter>
             </form>

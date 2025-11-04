@@ -186,7 +186,7 @@ const AvatarMenuContent = ({
         </Avatar>
         <div className="flex flex-col">
           <span className="sm:text-sm">
-            Logged in as {user?.profile?.name ?? user?.name} (
+            {t('Logged in as')} {user?.profile?.name ?? user?.name} (
             <Button
               onPress={() => setIsProfileOpen(true)}
               unstyled
@@ -201,7 +201,7 @@ const AvatarMenuContent = ({
           <span className="max-w-72 text-sm text-neutral-gray4 sm:text-xs">
             {user?.currentOrganization ? (
               <>
-                Admin for{' '}
+                {t('Admin for')}{' '}
                 {user?.currentProfile?.name ??
                   user?.currentOrganization?.profile.name}
               </>
@@ -249,7 +249,7 @@ const AvatarMenuContent = ({
               ) : null}
             </div>
             <div className="relative overflow-hidden truncate text-sm capitalize text-neutral-gray4">
-              Organization
+              {t('Organization')}
             </div>
           </div>
         </ProfileMenuItem>
@@ -312,7 +312,7 @@ const AvatarMenuContent = ({
               onClose?.();
             }}
           >
-            Ethical Open Source
+            {t('Ethical Open Source')}
           </span>{' '}
           • One Project • {new Date().getFullYear()}
         </div>
