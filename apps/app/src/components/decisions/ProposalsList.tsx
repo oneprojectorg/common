@@ -239,8 +239,8 @@ const VotingProposalsList = ({
                                 isDisabled={isReadOnly}
                                 shape="circle"
                                 borderColor="light"
-                                // Override disabled icon color to keep checkmark white
-                                className="[&[data-disabled]_svg]:!text-neutral-100"
+                                // Override disabled icon color to keep checkmark white (using design token)
+                                className="[&[data-disabled]_svg]:!text-white"
                                 aria-label={
                                   isSelected
                                     ? 'Deselect proposal'
