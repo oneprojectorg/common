@@ -208,7 +208,7 @@ export const PersonalDetailsForm = ({
       className={className}
     >
       <FormContainer className="max-w-lg">
-        <FormHeader text={t('Add your personal details')}>
+        <FormHeader text={t('Set up your individual profile.')}>
           {t('Tell us about yourself so others can find you.')}
         </FormHeader>
 
