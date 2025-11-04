@@ -57,7 +57,8 @@ export function VotingPage({
       description: (
         <>
           <p>
-            {t('We are in the voting stage now!')} {t('PPVOTINGDESCRIPTION1')}
+            {t('We are in the voting stage now!')}{' '}
+            <strong>{t('PPVOTINGDESCRIPTION1')}</strong>
             <br />
             {t('PPVOTINGDESCRIPTION2', {
               budget: totalBudgetAmount
