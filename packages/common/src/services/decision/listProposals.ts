@@ -78,6 +78,7 @@ export const listProposals = async ({
   const instanceOrg = await db
     .select({
       id: organizations.id,
+      currentStateId: processInstances.currentStateId,
     })
     .from(organizations)
     .leftJoin(

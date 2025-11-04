@@ -156,7 +156,7 @@ export function ProposalView({
         HorizontalRule,
         IframelyExtension,
       ],
-      content: proposalContent || '<p>No content available</p>',
+      content: proposalContent || `<p>${t('No content available')}</p>`,
       editable: false, // Make editor read-only
       editorProps: {
         attributes: {
@@ -333,7 +333,7 @@ export function ProposalView({
                 <div
                   className="py-8 text-center text-gray-500"
                   role="status"
-                  aria-label="Loading comments"
+                  aria-label={t('Loading comments')}
                 >
                   {t('Loading comments...')}
                 </div>
@@ -360,7 +360,7 @@ export function ProposalView({
                 <div
                   className="py-8 text-center text-gray-500"
                   role="status"
-                  aria-label="No comments"
+                  aria-label={t('No comments')}
                 >
                   {t('No comments yet. Be the first to comment!')}
                 </div>

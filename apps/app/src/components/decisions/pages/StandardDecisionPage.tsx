@@ -128,7 +128,7 @@ export function StandardDecisionPage({
     }),
     _: () => ({
       title: t('SHARE YOUR IDEAS.'),
-      description: <p>Help determine how we invest our community budget.</p>,
+      description: <p>{t('Help determine how we invest our community budget.')}</p>,
     }),
   });
 

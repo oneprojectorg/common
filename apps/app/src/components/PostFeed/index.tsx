@@ -15,6 +15,7 @@ import type {
   PostAttachment,
   PostToOrganization,
 } from '@op/api/encoders';
+import { useRelativeTime } from '@op/hooks';
 import { REACTION_OPTIONS } from '@op/types';
 import { AvatarSkeleton } from '@op/ui/Avatar';
 import { CommentButton } from '@op/ui/CommentButton';
@@ -29,13 +30,12 @@ import Image from 'next/image';
 import { ReactNode, memo, useMemo, useState } from 'react';
 import { LuLeaf } from 'react-icons/lu';
 
-import { Link } from '@/lib/i18n';
+import { Link, useTranslations } from '@/lib/i18n';
 
 import { DiscussionModal } from '../DiscussionModal';
 import { FeedContent, FeedHeader, FeedItem, FeedMain } from '../Feed';
 import { LinkPreview } from '../LinkPreview';
 import { OrganizationAvatar } from '../OrganizationAvatar';
-import { formatRelativeTime } from '../utils';
 import { DeletePost } from './DeletePost';
 
 const PostDisplayName = ({
@@ -56,16 +56,10 @@ const PostDisplayName = ({
   return <>{displayName}</>;
 };
 
-const PostTimestamp = ({ createdAt }: { createdAt?: Date | string | null }) => {
-  if (!createdAt) {
-    return null;
-  }
+const PostTimestamp = ({ createdAt }: { createdAt: Date | string }) => {
+  const relativeTime = useRelativeTime(createdAt);
 
-  return (
-    <span className="text-sm text-neutral-gray4">
-      {formatRelativeTime(createdAt)}
-    </span>
-  );
+  return <span className="text-sm text-neutral-gray4">{relativeTime}</span>;
 };
 
 const PostContent = ({ content }: { content?: string }) => {
@@ -244,18 +238,22 @@ const PostMenuContent = ({
   return <DeletePost post={post} profileId={profileId} />;
 };
 
-export const EmptyPostsState = () => (
-  <FeedItem>
-    <FeedMain className="flex w-full flex-col items-center justify-center py-6">
-      <FeedContent className="flex flex-col items-center justify-center text-neutral-gray4">
-        <div className="flex size-10 items-center justify-center gap-4 rounded-full bg-neutral-gray1">
-          <LuLeaf />
-        </div>
-        <span>{'No posts yet.'}</span>
-      </FeedContent>
-    </FeedMain>
-  </FeedItem>
-);
+export const EmptyPostsState = () => {
+  const t = useTranslations();
+
+  return (
+    <FeedItem>
+      <FeedMain className="flex w-full flex-col items-center justify-center py-6">
+        <FeedContent className="flex flex-col items-center justify-center text-neutral-gray4">
+          <div className="flex size-10 items-center justify-center gap-4 rounded-full bg-neutral-gray1">
+            <LuLeaf />
+          </div>
+          <span>{t('No posts yet')}</span>
+        </FeedContent>
+      </FeedMain>
+    </FeedItem>
+  );
+};
 
 export const PostItem = ({
   postToOrg,
@@ -300,7 +298,9 @@ export const PostItem = ({
                 withLinks={withLinks}
               />
             </Header3>
-            <PostTimestamp createdAt={post?.createdAt} />
+            {post.createdAt ? (
+              <PostTimestamp createdAt={post.createdAt} />
+            ) : null}
           </div>
           <PostMenu post={post} user={user} organization={organization} />
         </FeedHeader>

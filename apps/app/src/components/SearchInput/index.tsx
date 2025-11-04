@@ -49,10 +49,18 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
       },
       {
         staleTime: 30_000,
+        gcTime: 30_000,
         // make sure we don't remove results while continuing to type
         placeholderData: (prev) => prev,
       },
     );
+
+  const mergedProfileResults = profileResults
+    ? profileResults
+        .flatMap(({ results }) => results)
+        .sort((a, b) => b.rank - a.rank)
+    : [];
+
   const [recentSearches, setRecentSearches] = useLocalStorage<Array<string>>(
     'recentSearches',
     [],
@@ -60,7 +68,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
 
   const dropdownShowing = !!(
     showResults &&
-    (profileResults?.length || recentSearches.length)
+    (mergedProfileResults?.length || recentSearches.length)
   );
 
   useEffect(() => {
@@ -88,7 +96,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
 
   useEffect(() => {
     setSelectedIndex(-1);
-  }, [profileResults]);
+  }, [mergedProfileResults]);
 
   const recordSearch = (query: string) => {
     setShowResults(false);
@@ -102,29 +110,30 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
   };
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
-    const isInteractingwWithDropdown = !showResults || !profileResults?.length;
+    const isInteractingWithDropdown =
+      !showResults || !mergedProfileResults?.length;
 
     switch (event.key) {
       case 'ArrowDown':
         event.preventDefault();
 
-        if (isInteractingwWithDropdown) {
+        if (isInteractingWithDropdown) {
           break;
         }
 
         setSelectedIndex((prev) =>
-          prev < profileResults.length ? prev + 1 : 0,
+          prev < mergedProfileResults.length ? prev + 1 : 0,
         );
         break;
       case 'ArrowUp':
         event.preventDefault();
 
-        if (isInteractingwWithDropdown) {
+        if (isInteractingWithDropdown) {
           break;
         }
 
         setSelectedIndex((prev) =>
-          prev > 0 ? prev - 1 : profileResults.length - 1,
+          prev > 0 ? prev - 1 : mergedProfileResults.length - 1,
         );
         break;
       case 'Enter':
@@ -132,8 +141,12 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
 
         recordSearch(query);
 
-        if (isInteractingwWithDropdown && profileResults && selectedIndex > 0) {
-          const selectedProfile = profileResults[selectedIndex - 1];
+        if (
+          isInteractingWithDropdown &&
+          mergedProfileResults &&
+          selectedIndex > 0
+        ) {
+          const selectedProfile = mergedProfileResults[selectedIndex - 1];
 
           if (selectedProfile) {
             const profilePath =
@@ -206,7 +219,10 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
               {query.length > 0 && (
                 <SearchResultItem
                   selected={selectedIndex === 0}
-                  className={cn('py-2', profileResults?.length && 'border-b')}
+                  className={cn(
+                    'py-2',
+                    mergedProfileResults?.length && 'border-b',
+                  )}
                 >
                   <Link
                     className="flex w-full items-center gap-2"
@@ -218,10 +234,10 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
                   </Link>
                 </SearchResultItem>
               )}
-              {query?.length && profileResults?.length ? (
+              {query?.length && mergedProfileResults?.length ? (
                 <ProfileResults
                   query={query}
-                  profileResults={profileResults}
+                  profileResults={mergedProfileResults}
                   selectedIndex={selectedIndex}
                   onSearch={recordSearch}
                 />
@@ -249,7 +265,10 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
             {false && query.length > 0 && (
               <SearchResultItem
                 selected={selectedIndex === 0}
-                className={cn('py-2', profileResults?.length && 'border-b')}
+                className={cn(
+                  'py-2',
+                  mergedProfileResults?.length && 'border-b',
+                )}
               >
                 <Link
                   className="flex w-full items-center gap-2"
@@ -260,10 +279,11 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
                 </Link>
               </SearchResultItem>
             )}
-            {query?.length && profileResults?.length ? (
+
+            {query?.length && mergedProfileResults?.length ? (
               <ProfileResults
                 query={query}
-                profileResults={profileResults}
+                profileResults={mergedProfileResults}
                 selectedIndex={selectedIndex}
                 onSearch={recordSearch}
               />

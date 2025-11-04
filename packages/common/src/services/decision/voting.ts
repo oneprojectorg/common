@@ -1,6 +1,7 @@
 import { and, db, eq } from '@op/db/client';
 import {
   type VoteData,
+  ProposalStatus,
   decisionsVoteProposals,
   decisionsVoteSubmissions,
   organizations,
@@ -17,7 +18,7 @@ import {
   UnauthorizedError,
   ValidationError,
 } from '../../utils';
-import { getCurrentProfileId, getOrgAccessUser } from '../access';
+import { getIndividualProfileId, getOrgAccessUser } from '../access';
 
 export type CustomData = Record<string, unknown>;
 
@@ -106,7 +107,7 @@ export const submitVote = async ({
   }
 
   try {
-    const profileId = await getCurrentProfileId(authUserId);
+    const profileId = await getIndividualProfileId(authUserId);
 
     // Get process instance and schema
     const processInstance = await db.query.processInstances.findFirst({
@@ -200,13 +201,28 @@ export const submitVote = async ({
       where: eq(proposals.processInstanceId, data.processInstanceId),
     });
 
-    const availableProposalIds = availableProposals.map((p) => p.id);
+    // Filter to only approved proposals for voting
+    const approvedProposals = availableProposals.filter(
+      (p) => p.status === ProposalStatus.APPROVED,
+    );
+    const approvedProposalIds = approvedProposals.map((p) => p.id);
+
+    // Check if all selected proposals are approved
+    const hasNonApprovedSelections = data.selectedProposalIds.some(
+      (id) => !approvedProposalIds.includes(id),
+    );
+
+    if (hasNonApprovedSelections) {
+      throw new ValidationError(
+        'You can only vote for approved proposals. Some of your selections are not eligible for voting.',
+      );
+    }
 
     // Validate the vote selection
     const validation = validateVoteSelection(
       data.selectedProposalIds,
       votingConfig.maxVotesPerMember,
-      availableProposalIds,
+      approvedProposalIds,
     );
 
     if (!validation.isValid) {
@@ -294,7 +310,7 @@ export const getVotingStatus = async ({
   }
 
   try {
-    const profileId = await getCurrentProfileId(authUserId);
+    const profileId = await getIndividualProfileId(authUserId);
 
     // Get process instance and schema
     const processInstance = await db.query.processInstances.findFirst({

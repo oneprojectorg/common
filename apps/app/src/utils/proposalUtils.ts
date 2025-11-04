@@ -1,3 +1,4 @@
+import he from 'he';
 import { z } from 'zod';
 
 import { formatCurrency, formatDate } from './formatting';
@@ -35,12 +36,15 @@ export { formatCurrency, formatDate };
 
 /**
  * Safely extract text content from HTML without XSS vulnerability
- * Uses DOMParser instead of innerHTML for security
+ * First decodes HTML entities, then uses DOMParser for security
  */
 export function getTextPreview(html: string, maxLength: number = 300): string {
+  // First decode HTML entities (e.g., &lt;p&gt; becomes <p>)
+  const decodedHtml = he.decode(html);
+
   if (typeof window === 'undefined') {
     // Server-side fallback - strip HTML tags with regex (basic but safe)
-    const text = html.replace(/<[^>]*>/g, '');
+    const text = decodedHtml.replace(/<[^>]*>/g, '');
     return text.length > maxLength
       ? text.substring(0, maxLength) + '...'
       : text;
@@ -49,7 +53,7 @@ export function getTextPreview(html: string, maxLength: number = 300): string {
   try {
     // Client-side - use DOMParser for safe HTML parsing
     const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
+    const doc = parser.parseFromString(decodedHtml, 'text/html');
     const text = doc.body.textContent || doc.body.innerText || '';
     return text.length > maxLength
       ? text.substring(0, maxLength) + '...'
@@ -57,7 +61,7 @@ export function getTextPreview(html: string, maxLength: number = 300): string {
   } catch (error) {
     console.warn('Failed to parse HTML content:', error);
     // Fallback to regex stripping if DOMParser fails
-    const text = html.replace(/<[^>]*>/g, '');
+    const text = decodedHtml.replace(/<[^>]*>/g, '');
     return text.length > maxLength
       ? text.substring(0, maxLength) + '...'
       : text;

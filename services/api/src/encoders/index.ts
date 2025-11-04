@@ -11,6 +11,7 @@ export * from './posts';
 export * from './taxonomyTerms';
 export * from './relationships';
 export * from './profiles';
+export * from './searchResults';
 export * from './shared';
 
 // Export EntityType and ProfileRelationshipType for frontend usage

@@ -2,9 +2,10 @@
 
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import type { proposalEncoder } from '@op/api/encoders';
+import { ProposalStatus, type proposalEncoder } from '@op/api/encoders';
 import { match } from '@op/core';
 import { Button, ButtonLink } from '@op/ui/Button';
+import { Checkbox } from '@op/ui/Checkbox';
 import { Dialog, DialogTrigger } from '@op/ui/Dialog';
 import { Header3 } from '@op/ui/Header';
 import { Modal } from '@op/ui/Modal';
@@ -198,41 +199,111 @@ const VotingProposalsList = ({
   return (
     <>
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {proposals.map((proposal) => (
-          <VotingProposalCard
-            key={proposal.id}
-            proposalId={proposal.id}
-            isVotingEnabled={true}
-            isReadOnly={isReadOnly}
-            isSelected={isProposalSelected(proposal.id)}
-            isVotedFor={votedProposalIds.includes(proposal.id)}
-            onToggle={toggleProposal}
-          >
-            <ProposalCardContent>
-              <ProposalCardHeader
-                proposal={proposal}
-                showMenu={canManageProposals || proposal.isEditable}
-                menuComponent={
-                  <ProposalCardMenu
-                    proposal={proposal}
-                    canManage={canManageProposals}
-                  />
-                }
-              />
-              <ProposalCardMeta withLink={false} proposal={proposal} />
-              <ProposalCardDescription proposal={proposal} />
-            </ProposalCardContent>
-            <ProposalCardFooter>
-              <ButtonLink
-                href={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`}
-                color="secondary"
-                className="w-full"
+        {proposals.map((proposal) => {
+          const isSelected = isProposalSelected(proposal.id);
+          const isApproved = proposal.status === ProposalStatus.APPROVED;
+          const isVotedFor = votedProposalIds.includes(proposal.id);
+          const showCheckbox = !isReadOnly || isVotedFor;
+
+          // Render VotingProposalCard for approved proposals, regular ProposalCard for others
+          if (isApproved) {
+            return (
+              <VotingProposalCard
+                key={proposal.id}
+                proposalId={proposal.id}
+                isVotingEnabled={true}
+                isReadOnly={isReadOnly}
+                isSelected={isSelected}
+                isVotedFor={isVotedFor}
+                onToggle={toggleProposal}
               >
-                {t('Read full proposal')}
-              </ButtonLink>
-            </ProposalCardFooter>
-          </VotingProposalCard>
-        ))}
+                <ProposalCardContent>
+                  <ProposalCardHeader
+                    proposal={proposal}
+                    menu={
+                      (canManageProposals ||
+                        proposal.isEditable ||
+                        showCheckbox) && (
+                        <div className="flex items-center gap-2">
+                          {(canManageProposals || proposal.isEditable) && (
+                            <ProposalCardMenu
+                              proposal={proposal}
+                              canManage={canManageProposals}
+                            />
+                          )}
+                          {showCheckbox && (
+                            <div onClick={(e) => e.stopPropagation()}>
+                              <Checkbox
+                                isSelected={isReadOnly ? isVotedFor : isSelected}
+                                onChange={() => {
+                                  toggleProposal(proposal.id);
+                                }}
+                                isDisabled={isReadOnly}
+                                shape="circle"
+                                borderColor="light"
+                                // Override disabled icon color to keep checkmark white (using design token)
+                                className="[&[data-disabled]_svg]:!text-white"
+                                aria-label={
+                                  isSelected
+                                    ? 'Deselect proposal'
+                                    : 'Select proposal'
+                                }
+                              />
+                            </div>
+                          )}
+                        </div>
+                      )
+                    }
+                  />
+                  <ProposalCardMeta withLink={false} proposal={proposal} />
+                  <ProposalCardDescription proposal={proposal} />
+                </ProposalCardContent>
+                <ProposalCardFooter>
+                  <ButtonLink
+                    href={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`}
+                    color="secondary"
+                    className="w-full"
+                  >
+                    {t('Read full proposal')}
+                  </ButtonLink>
+                </ProposalCardFooter>
+              </VotingProposalCard>
+            );
+          } else {
+            return (
+              <ProposalCard key={proposal.id}>
+                <div className="flex h-full flex-col justify-between gap-3 space-y-3">
+                  <ProposalCardContent>
+                    <ProposalCardHeader
+                      proposal={proposal}
+                      menu={
+                        (canManageProposals || proposal.isEditable) && (
+                          <ProposalCardMenu
+                            proposal={proposal}
+                            canManage={canManageProposals}
+                          />
+                        )
+                      }
+                    />
+                    <ProposalCardMeta proposal={proposal} />
+                    <ProposalCardDescription proposal={proposal} />
+                  </ProposalCardContent>
+                </div>
+                <ProposalCardContent>
+                  <ProposalCardFooter>
+                    <ButtonLink
+                      href={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`}
+                      color="secondary"
+                      className="w-full"
+                    >
+                      {t('Read full proposal')}
+                    </ButtonLink>
+                  </ProposalCardFooter>
+                </ProposalCardContent>
+              </ProposalCard>
+            );
+          }
+        })}
       </div>
 
       <VotingSubmitFooter isVisible={!isReadOnly}>
@@ -290,12 +361,13 @@ const ViewProposalsList = ({
               <ProposalCardHeader
                 proposal={proposal}
                 viewHref={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`}
-                showMenu={canManageProposals || proposal.isEditable}
-                menuComponent={
-                  <ProposalCardMenu
-                    proposal={proposal}
-                    canManage={canManageProposals}
-                  />
+                menu={
+                  (canManageProposals || proposal.isEditable) && (
+                    <ProposalCardMenu
+                      proposal={proposal}
+                      canManage={canManageProposals}
+                    />
+                  )
                 }
               />
               <ProposalCardMeta proposal={proposal} />
@@ -358,7 +430,6 @@ export const ProposalsList = ({
 
   // Get current user's profile ID for "My Proposals" filter
   const currentProfileId = user?.currentProfile?.id;
-
   const [[categoriesData, voteStatus]] = trpc.useSuspenseQueries((t) => [
     t.decision.getCategories({
       processInstanceId: instanceId,
@@ -513,9 +584,12 @@ export const ProposalsList = ({
               setSelectedCategory(category);
               updateURLParams({ category });
             }}
-            aria-label="Filter proposals by category"
+            aria-label={t('Filter proposals by category')}
           >
-            <SelectItem id="all-categories" aria-label="Show all categories">
+            <SelectItem
+              id="all-categories"
+              aria-label={t('Show all categories')}
+            >
               {t('All categories')}
             </SelectItem>
             {categories.map((category) => (

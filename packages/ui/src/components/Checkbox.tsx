@@ -59,7 +59,7 @@ const checkboxStyles = tv({
 
 const boxStyles = tv({
   extend: focusRing,
-  base: 'flex size-6 flex-shrink-0 items-center justify-center rounded-sm border border-neutral-gray2 transition',
+  base: 'flex size-6 flex-shrink-0 items-center justify-center rounded-sm border transition',
   variants: {
     isSelected: {
       false: '',
@@ -74,6 +74,18 @@ const boxStyles = tv({
     size: {
       small: 'size-4',
     },
+    shape: {
+      square: 'rounded-sm',
+      circle: 'rounded-full',
+    },
+    borderColor: {
+      light: 'border-neutral-gray1',
+      default: 'border-neutral-gray2',
+    },
+  },
+  defaultVariants: {
+    shape: 'square',
+    borderColor: 'default',
   },
 });
 
@@ -105,6 +117,8 @@ export const Checkbox = (props: CheckboxProps & CheckboxVariants) => {
           <div
             className={boxStyles({
               size: props.size,
+              shape: props.shape,
+              borderColor: props.borderColor,
               isSelected: isSelected || isIndeterminate,
               ...renderProps,
             })}

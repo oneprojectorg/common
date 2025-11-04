@@ -1,6 +1,6 @@
 'use client';
 
-import type { proposalEncoder } from '@op/api/encoders';
+import { ProposalStatus, type proposalEncoder } from '@op/api/encoders';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { z } from 'zod';
 
@@ -27,7 +27,7 @@ export function useProposalFilters({
 } {
   // Set default filter based on initialFilter or hasVoted status
   const defaultFilter: ProposalFilter =
-    initialFilter || (hasVoted ? 'my-ballot' : 'all');
+    initialFilter || (hasVoted ? 'my-ballot' : 'shortlisted');
 
   const [proposalFilter, setProposalFilter] =
     useState<ProposalFilter>(defaultFilter);
@@ -63,7 +63,7 @@ export function useProposalFilters({
 
       case 'shortlisted':
         // Show only approved proposals
-        return proposals.filter((proposal) => proposal.status === 'approved');
+        return proposals.filter((proposal) => proposal.status === ProposalStatus.APPROVED);
 
       case 'all':
       default:
