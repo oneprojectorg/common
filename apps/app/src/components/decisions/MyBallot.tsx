@@ -2,6 +2,7 @@
 
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
+import { Checkbox } from '@op/ui/Checkbox';
 import { Header3 } from '@op/ui/Header';
 
 import { useTranslations } from '@/lib/i18n';
@@ -78,6 +79,14 @@ export const MyBallot = ({
               <ProposalCardHeader
                 proposal={proposal}
                 viewHref={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`}
+                checkboxComponent={
+                  <Checkbox
+                    isSelected={true}
+                    shape="circle"
+                    aria-label="Selected proposal"
+                    isDisabled={true}
+                  />
+                }
               />
 
               <ProposalCardMeta proposal={proposal} />

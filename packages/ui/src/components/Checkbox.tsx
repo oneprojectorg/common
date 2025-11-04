@@ -74,6 +74,13 @@ const boxStyles = tv({
     size: {
       small: 'size-4',
     },
+    shape: {
+      square: 'rounded-sm',
+      circle: 'rounded-full',
+    },
+  },
+  defaultVariants: {
+    shape: 'square',
   },
 });
 
@@ -105,6 +112,7 @@ export const Checkbox = (props: CheckboxProps & CheckboxVariants) => {
           <div
             className={boxStyles({
               size: props.size,
+              shape: props.shape,
               isSelected: isSelected || isIndeterminate,
               ...renderProps,
             })}
