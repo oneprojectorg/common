@@ -149,7 +149,7 @@ export const genericEmail = 'support@oneproject.org';
 
 export const adminEmails = ['scott@oneproject.org'];
 
-export const superAdminDomain = 'oneproject.org';
+export const platformAdminEmailDomain = 'oneproject.org';
 
 export const commonColors = colors.neutral;
 

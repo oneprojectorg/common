@@ -1,5 +1,5 @@
 import { createClient } from '@op/api/serverClient';
-import { superAdminDomain } from '@op/core';
+import { platformAdminEmailDomain } from '@op/core';
 import { notFound } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
@@ -7,8 +7,9 @@ export const dynamic = 'force-dynamic';
 export default async function AdminPage() {
   const client = await createClient();
   const user = await client.account.getMyAccount();
+  const userEmailDomain = user.email.split('@')[1];
 
-  if (!user || !user.email.endsWith(`@${superAdminDomain}`)) {
+  if (userEmailDomain !== platformAdminEmailDomain) {
     notFound();
   }
 
