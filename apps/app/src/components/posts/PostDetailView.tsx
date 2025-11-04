@@ -105,10 +105,10 @@ export function PostDetailView({
   return (
     <PostViewLayout>
       <PostDetailHeader />
-      <div className="flex-1 px-6 py-8">
-        <div className="mx-auto flex max-w-xl flex-col gap-8">
+      <div className="flex-1 p-4">
+        <div className="mx-auto flex max-w-xl flex-col gap-2">
           {/* Original Post Display */}
-          <PostFeed className="originalPost border-none">
+          <PostFeed className="originalPost border-none pb-2">
             <PostItemOnDetailPage
               postToOrg={postToOrg}
               user={user}
@@ -119,8 +119,8 @@ export function PostDetailView({
           </PostFeed>
 
           {/* Comment Input */}
-          <div className="border-t border-neutral-gray1 pt-8">
-            <Surface className="border-0 p-0 sm:border sm:p-4">
+          <div className="border-y border-neutral-gray1">
+            <Surface className="border-0 p-0 sm:py-4">
               <PostUpdate
                 parentPostId={currentPost.id}
                 placeholder={`${t('Comment')}${user?.currentProfile?.name ? ` as ${user?.currentProfile?.name}` : ''}...`}
@@ -131,11 +131,11 @@ export function PostDetailView({
           </div>
 
           {/* Comments Section */}
-          <div className="mt-8" ref={commentsContainerRef}>
+          <div className="mt-2" ref={commentsContainerRef}>
             {/* Comments Display */}
             {isLoading ? (
               <div
-                className="py-8 text-center text-gray-500"
+                className="py-8 text-center text-neutral-gray4"
                 role="status"
                 aria-label="Loading comments"
               >
@@ -153,16 +153,14 @@ export function PostDetailView({
                         onReactionClick={handleReactionClick}
                         className="sm:px-0"
                       />
-                      {comments.length !== i + 1 && (
-                        <hr className="my-4 bg-neutral-gray1" />
-                      )}
+                      <hr className="mt-4 bg-neutral-gray1" />
                     </div>
                   ))}
                 </PostFeed>
               </div>
             ) : (
               <div
-                className="py-8 text-center text-gray-500"
+                className="py-8 text-center text-neutral-gray4"
                 role="status"
                 aria-label="No comments"
               >

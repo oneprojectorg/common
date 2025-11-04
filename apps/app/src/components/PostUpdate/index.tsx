@@ -594,7 +594,7 @@ const PostUpdateWithUser = ({
   }
 
   return (
-    <div className={cn('flex flex-col gap-8 sm:flex', className)}>
+    <div className={cn('flex flex-col gap-2 sm:flex', className)}>
       <FeedItem>
         {organization ? (
           <OrganizationAvatar
@@ -610,7 +610,7 @@ const PostUpdateWithUser = ({
           <div className="size-8 rounded-full bg-neutral-gray1" />
         )}
         <FeedMain className="relative">
-          <Form onSubmit={handleSubmit} className="flex w-full flex-col gap-4">
+          <Form onSubmit={handleSubmit} className="flex w-full flex-col gap-2">
             <TextArea
               className="size-full h-6 overflow-y-hidden"
               variant="borderless"
@@ -678,7 +678,7 @@ const PostUpdateWithUser = ({
           )}
           <div
             className={cn(
-              'flex w-full items-center justify-between gap-6',
+              'flex w-full items-center justify-between gap-2',
               (content || fileUpload.filePreviews?.length) &&
                 'border-t border-neutral-gray1 py-2',
             )}
