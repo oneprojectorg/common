@@ -132,12 +132,13 @@ interface ProposalsProps {
 }
 
 const VotingProposalsList = ({
-  proposals,
+  proposals: allProposals,
   instanceId,
   slug,
   canManageProposals = false,
   votedProposalIds = [],
 }: ProposalsProps) => {
+  const proposals = allProposals?.filter((p) => p.status === 'approved') || [];
   const [selectedProposalIds, setSelectedProposalIds] = useState<string[]>([]);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const t = useTranslations();
@@ -358,7 +359,6 @@ export const ProposalsList = ({
 
   // Get current user's profile ID for "My Proposals" filter
   const currentProfileId = user?.currentProfile?.id;
-
   const [[categoriesData, voteStatus]] = trpc.useSuspenseQueries((t) => [
     t.decision.getCategories({
       processInstanceId: instanceId,
@@ -515,7 +515,10 @@ export const ProposalsList = ({
             }}
             aria-label={t('Filter proposals by category')}
           >
-            <SelectItem id="all-categories" aria-label={t('Show all categories')}>
+            <SelectItem
+              id="all-categories"
+              aria-label={t('Show all categories')}
+            >
               {t('All categories')}
             </SelectItem>
             {categories.map((category) => (

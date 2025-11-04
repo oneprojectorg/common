@@ -22,11 +22,12 @@ export function VotingPage({
 }) {
   const t = useTranslations();
 
-  const [[{ proposals: rawProposals }, instance, voteStatus]] =
-    trpc.useSuspenseQueries((t) => [
+  const [[{ proposals }, instance, voteStatus]] = trpc.useSuspenseQueries(
+    (t) => [
       t.decision.listProposals({
         processInstanceId: instanceId,
         limit: 20,
+        status: 'approved',
       }),
       t.decision.getInstance({
         instanceId,
@@ -34,10 +35,8 @@ export function VotingPage({
       t.decision.getVotingStatus({
         processInstanceId: instanceId,
       }),
-    ]);
-
-  const proposals =
-    rawProposals.filter((p) => p.status === 'shortlisted') || [];
+    ],
+  );
 
   const hasVoted = voteStatus?.hasVoted || false;
   const uniqueSubmitters = getUniqueSubmitters(proposals);
