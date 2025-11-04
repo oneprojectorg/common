@@ -120,14 +120,8 @@ export const listProposals = async ({
       dir = 'desc',
     } = input;
 
-    // If process is in voting state, only return approved proposals
-    const filteredInput = {
-      ...input,
-      status: instanceOrg[0].currentStateId === 'voting' ? 'approved' : input.status,
-    };
-
     // Build shared WHERE clause using the extracted function
-    const baseWhereClause = buildWhereConditions(filteredInput);
+    const baseWhereClause = buildWhereConditions(input);
 
     // Handle category filtering separately to avoid table reference issues
     const { categoryId } = input;

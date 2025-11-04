@@ -1,6 +1,7 @@
 import { and, db, eq } from '@op/db/client';
 import {
   type VoteData,
+  ProposalStatus,
   decisionsVoteProposals,
   decisionsVoteSubmissions,
   organizations,
@@ -200,13 +201,28 @@ export const submitVote = async ({
       where: eq(proposals.processInstanceId, data.processInstanceId),
     });
 
-    const availableProposalIds = availableProposals.map((p) => p.id);
+    // Filter to only approved proposals for voting
+    const approvedProposals = availableProposals.filter(
+      (p) => p.status === ProposalStatus.APPROVED,
+    );
+    const approvedProposalIds = approvedProposals.map((p) => p.id);
+
+    // Check if all selected proposals are approved
+    const nonApprovedSelections = data.selectedProposalIds.filter(
+      (id) => !approvedProposalIds.includes(id),
+    );
+
+    if (nonApprovedSelections.length > 0) {
+      throw new ValidationError(
+        'You can only vote for approved proposals. Some of your selections are not eligible for voting.',
+      );
+    }
 
     // Validate the vote selection
     const validation = validateVoteSelection(
       data.selectedProposalIds,
       votingConfig.maxVotesPerMember,
-      availableProposalIds,
+      approvedProposalIds,
     );
 
     if (!validation.isValid) {

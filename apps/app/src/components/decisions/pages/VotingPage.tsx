@@ -27,7 +27,6 @@ export function VotingPage({
       t.decision.listProposals({
         processInstanceId: instanceId,
         limit: 20,
-        status: 'approved',
       }),
       t.decision.getInstance({
         instanceId,
