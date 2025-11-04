@@ -232,23 +232,24 @@ const VotingProposalsList = ({
                             />
                           )}
                           {showCheckbox && (
-                            <Checkbox
-                              isSelected={isReadOnly ? isVotedFor : isSelected}
-                              onChange={(e) => {
-                                e.stopPropagation();
-                                toggleProposal(proposal.id);
-                              }}
-                              isDisabled={isReadOnly}
-                              shape="circle"
-                              borderColor="light"
-                              // Override disabled icon color to keep checkmark white (using design token)
-                              className="[&[data-disabled]_svg]:!text-white"
-                              aria-label={
-                                isSelected
-                                  ? 'Deselect proposal'
-                                  : 'Select proposal'
-                              }
-                            />
+                            <div onClick={(e) => e.stopPropagation()}>
+                              <Checkbox
+                                isSelected={isReadOnly ? isVotedFor : isSelected}
+                                onChange={() => {
+                                  toggleProposal(proposal.id);
+                                }}
+                                isDisabled={isReadOnly}
+                                shape="circle"
+                                borderColor="light"
+                                // Override disabled icon color to keep checkmark white (using design token)
+                                className="[&[data-disabled]_svg]:!text-white"
+                                aria-label={
+                                  isSelected
+                                    ? 'Deselect proposal'
+                                    : 'Select proposal'
+                                }
+                              />
+                            </div>
                           )}
                         </div>
                       )
