@@ -202,6 +202,8 @@ const VotingProposalsList = ({
         {proposals.map((proposal) => {
           const isSelected = isProposalSelected(proposal.id);
           const isApproved = proposal.status === ProposalStatus.APPROVED;
+          const isVotedFor = votedProposalIds.includes(proposal.id);
+          const showCheckbox = !isReadOnly || isVotedFor;
 
           // Render VotingProposalCard for approved proposals, regular ProposalCard for others
           if (isApproved) {
@@ -212,7 +214,7 @@ const VotingProposalsList = ({
                 isVotingEnabled={true}
                 isReadOnly={isReadOnly}
                 isSelected={isSelected}
-                isVotedFor={votedProposalIds.includes(proposal.id)}
+                isVotedFor={isVotedFor}
                 onToggle={toggleProposal}
               >
                 <ProposalCardContent>
@@ -221,7 +223,7 @@ const VotingProposalsList = ({
                     menu={
                       (canManageProposals ||
                         proposal.isEditable ||
-                        !isReadOnly) && (
+                        showCheckbox) && (
                         <div className="flex items-center gap-2">
                           {(canManageProposals || proposal.isEditable) && (
                             <ProposalCardMenu
@@ -229,13 +231,16 @@ const VotingProposalsList = ({
                               canManage={canManageProposals}
                             />
                           )}
-                          {!isReadOnly && (
+                          {showCheckbox && (
                             <div onClick={(e) => e.stopPropagation()}>
                               <Checkbox
-                                isSelected={isSelected}
+                                isSelected={isReadOnly ? isVotedFor : isSelected}
                                 onChange={() => toggleProposal(proposal.id)}
+                                isDisabled={isReadOnly}
                                 shape="circle"
                                 borderColor="light"
+                                // Override default disabled icon color to keep checkmark white
+                                className="[&_svg]:group-disabled:text-neutral-100"
                                 aria-label={
                                   isSelected
                                     ? 'Deselect proposal'
