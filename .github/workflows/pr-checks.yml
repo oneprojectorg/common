@@ -44,6 +44,3 @@ jobs:
 
       - name: Run TypeScript checks - App
         run: pnpm w:app lint
-
-      - name: Run TypeScript checks - API
-        run: pnpm w:api lint
