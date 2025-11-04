@@ -42,5 +42,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run TypeScript checks
-        run: pnpm tsc --noEmit
+      - name: Run TypeScript checks - App
+        run: pnpm w:app lint
+
+      - name: Run TypeScript checks - API
+        run: pnpm w:api lint
