@@ -354,5 +354,9 @@
   "Cancel": "Annuler",
   "Add": "Ajouter",
   "See more": "Voir plus",
-  "Choose how you're in relationship with": "Choisissez comment vous êtes en relation avec"
+  "Choose how you're in relationship with": "Choisissez comment vous êtes en relation avec",
+  "platformAdmin_totalUsers": "Total des utilisateurs",
+  "platformAdmin_totalOrganizations": "Total des organisations",
+  "platformAdmin_totalRelationships": "Total des relations",
+  "platformAdmin_newOrganizations": "Nouvelles organisations (7j)"
 }

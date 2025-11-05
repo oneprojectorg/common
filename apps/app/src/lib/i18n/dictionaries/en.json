@@ -354,5 +354,9 @@
   "Cancel": "Cancel",
   "Add": "Add",
   "See more": "See more",
-  "Choose how you're in relationship with": "Choose how you're in relationship with"
+  "Choose how you're in relationship with": "Choose how you're in relationship with",
+  "platformAdmin_totalUsers": "Total users",
+  "platformAdmin_totalOrganizations": "Total organizations",
+  "platformAdmin_totalRelationships": "Total relationships",
+  "platformAdmin_newOrganizations": "New organizations (7d)"
 }

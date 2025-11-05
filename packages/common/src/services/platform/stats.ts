@@ -2,7 +2,7 @@ import { db, eq, gte, sql } from '@op/db/client';
 import { organizationRelationships, organizations, users } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
-export const getOrganizationStats = async ({ user }: { user: User }) => {
+export const getPlatformStats = async ({ user }: { user: User }) => {
   const lastLogin = new Date(user.last_sign_in_at ?? 0);
   const newOrgThreshold = new Date(lastLogin.setDate(lastLogin.getDate() - 7));
 

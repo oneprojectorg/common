@@ -1,17 +1,17 @@
 'use client';
 
-import { getPublicUrl } from '@/utils';
-import { pluralize } from '@/utils/pluralize';
 import { trpc } from '@op/api/client';
 import { Avatar } from '@op/ui/Avatar';
 import { FacePile } from '@op/ui/FacePile';
 import { Surface } from '@op/ui/Surface';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';
-import { ReactNode, Suspense, useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { ReactNode, Suspense, useEffect, useRef, useState } from 'react';
 
 import { Link } from '@/lib/i18n';
+import { getPublicUrl } from '@/utils';
+import { pluralize } from '@/utils/pluralize';
 
 const HighlightNumber = ({
   children,
@@ -44,7 +44,7 @@ const HighlightLabel = ({ children }: { children?: ReactNode }) => {
 
 const Highlight = ({ children }: { children?: ReactNode }) => {
   return (
-    <div className="xxs:flex grid w-full grid-cols-5 items-center gap-4 sm:flex">
+    <div className="grid w-full grid-cols-5 items-center gap-4 xxs:flex sm:flex">
       {children}
     </div>
   );
@@ -55,7 +55,7 @@ const OrganizationFacePile = ({ children }: { children?: ReactNode }) => {
     limit: 100,
   });
 
-  const [stats] = trpc.organization.getStats.useSuspenseQuery();
+  const [stats] = trpc.platform.getStats.useSuspenseQuery();
   const facePileRef = useRef<HTMLDivElement>(null);
   const [numItems, setNumItems] = useState(20);
 
@@ -122,8 +122,8 @@ const OrganizationFacePile = ({ children }: { children?: ReactNode }) => {
   );
 };
 
-export const OrganizationHighlights = () => {
-  const [stats] = trpc.organization.getStats.useSuspenseQuery();
+export const PlatformHighlights = () => {
+  const [stats] = trpc.platform.getStats.useSuspenseQuery();
   const t = useTranslations();
 
   return (
