@@ -1,5 +1,6 @@
 'use client';
 
+import { posthogUIHost } from '@op/core';
 import { usePathname, useSearchParams } from 'next/navigation';
 import posthog from 'posthog-js';
 import { PostHogProvider as PHProvider, usePostHog } from 'posthog-js/react';
@@ -9,7 +10,7 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
       api_host: '/stats',
-      ui_host: 'https://eu.posthog.com',
+      ui_host: posthogUIHost,
       capture_pageview: false, // We capture pageviews manually
       capture_pageleave: true, // Enable pageleave capture
       __add_tracing_headers: true,

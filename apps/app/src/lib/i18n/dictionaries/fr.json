@@ -358,5 +358,8 @@
   "platformAdmin_totalUsers": "Total des utilisateurs",
   "platformAdmin_totalOrganizations": "Total des organisations",
   "platformAdmin_totalRelationships": "Total des relations",
-  "platformAdmin_newOrganizations": "Nouvelles organisations (7j)"
+  "platformAdmin_newOrganizations": "Nouvelles organisations (7j)",
+  "platformAdmin_title": "Administration de la plateforme",
+  "platformAdmin_viewAllAnalytics": "Voir toutes les analyses",
+  "platformAdmin_addUser": "Ajouter un utilisateur"
 }
