@@ -35,6 +35,7 @@ export * from './components/Menu';
 export * from './components/Meter';
 export * from './components/Modal';
 export * from './components/NumberField';
+export * from './components/Pagination';
 export * from './components/Popover';
 export * from './components/ProgressBar';
 export * from './components/RadioGroup';
