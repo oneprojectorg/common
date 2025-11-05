@@ -40,7 +40,7 @@ const PlatformStatsWithData = () => {
 const StatCard = ({ label, value }: { label: string; value: number }) => {
   return (
     <Surface className="p-8">
-      <div className="flex w-48 flex-col gap-2">
+      <div className="flex flex-col gap-2">
         <div className="text-neutral-charcoal">{label}</div>
         <div className="font-serif text-title-xxl text-neutral-black">
           {value}
@@ -56,7 +56,7 @@ const PlatformStatsSkeleton = () => {
     <div className="grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-4">
       {[...Array(4)].map((_, i) => (
         <Surface key={i} className="p-8">
-          <div className="flex w-48 flex-col gap-2">
+          <div className="flex flex-col gap-2">
             <div className="h-4 w-32 animate-pulse rounded bg-neutral-gray1" />
             <div className="h-12 w-24 animate-pulse rounded bg-neutral-gray1" />
           </div>
