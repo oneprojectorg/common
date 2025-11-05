@@ -354,8 +354,8 @@
   "Add": "Agregar",
   "See more": "Ver más",
   "Choose how you're in relationship with": "Elige cómo estás relacionado con",
-  "totalUsers": "Total de usuarios",
-  "totalOrganizations": "Total de organizaciones",
-  "totalRelationships": "Total de relaciones",
-  "newOrganizations7d": "Nuevas organizaciones (7d)"
+  "platformAdmin_totalUsers": "Total de usuarios",
+  "platformAdmin_totalOrganizations": "Total de organizaciones",
+  "platformAdmin_totalRelationships": "Total de relaciones",
+  "platformAdmin_newOrganizations": "Nuevas organizaciones (7d)"
 }
