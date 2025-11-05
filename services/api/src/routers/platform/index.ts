@@ -6,6 +6,9 @@ import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
+/**
+ * Handles platform-wide operations such as retrieving statistics, listing profiles, users, organizations, etc,.
+ */
 export const platformRouter = router({
   getStats: loggedProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))

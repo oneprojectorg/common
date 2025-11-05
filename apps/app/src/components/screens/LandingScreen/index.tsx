@@ -12,10 +12,7 @@ import { NewOrganizations } from '@/components/NewOrganizations';
 import { NewlyJoinedModal } from '@/components/NewlyJoinedModal';
 import { OrganizationListSkeleton } from '@/components/OrganizationList';
 import { PendingRelationships } from '@/components/PendingRelationships';
-import {
-  PlatformHighlights,
-  PlatfromHighlights,
-} from '@/components/PlatformHighlights';
+import { PlatformHighlights } from '@/components/PlatformHighlights';
 import { PostFeedSkeleton } from '@/components/PostFeed';
 import { PostUpdate } from '@/components/PostUpdate';
 import { TranslatedText } from '@/components/TranslatedText';
