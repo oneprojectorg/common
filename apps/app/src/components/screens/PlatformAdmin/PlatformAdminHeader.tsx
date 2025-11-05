@@ -1,5 +1,6 @@
 'use client';
 
+import { posthogUIHost } from '@op/core';
 import { Button } from '@op/ui/Button';
 import { LuArrowUpRight, LuPlus } from 'react-icons/lu';
 
@@ -17,7 +18,14 @@ export const PlatformAdminHeader = () => {
         </h1>
       </div>
       <div className="flex gap-3">
-        <Button color="secondary" size="small" className="gap-2">
+        <Button
+          onPress={() => {
+            window.open(posthogUIHost, '_blank');
+          }}
+          color="secondary"
+          size="small"
+          className="gap-2"
+        >
           <LuArrowUpRight className="size-4" />
           {t('platformAdmin_viewAllAnalytics')}
         </Button>
