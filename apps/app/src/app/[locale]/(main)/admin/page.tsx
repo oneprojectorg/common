@@ -2,6 +2,8 @@ import { createClient } from '@op/api/serverClient';
 import { platformAdminEmailDomain } from '@op/core';
 import { notFound } from 'next/navigation';
 
+import { PlatformStats } from '@/components/screens/PlatformAdmin';
+
 export const dynamic = 'force-dynamic';
 
 export default async function AdminPage() {
@@ -14,8 +16,8 @@ export default async function AdminPage() {
   }
 
   return (
-    <div className="flex size-full items-center justify-center">
-      <p className="text-xl">Coming Soon</p>
+    <div className="flex w-full items-center justify-center p-8">
+      <PlatformStats />
     </div>
   );
 }
