@@ -10,9 +10,12 @@ import { Suspense } from 'react';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { NewOrganizations } from '@/components/NewOrganizations';
 import { NewlyJoinedModal } from '@/components/NewlyJoinedModal';
-import { OrganizationHighlights } from '@/components/OrganizationHighlights';
 import { OrganizationListSkeleton } from '@/components/OrganizationList';
 import { PendingRelationships } from '@/components/PendingRelationships';
+import {
+  PlatformHighlights,
+  PlatfromHighlights,
+} from '@/components/PlatformHighlights';
 import { PostFeedSkeleton } from '@/components/PostFeed';
 import { PostUpdate } from '@/components/PostUpdate';
 import { TranslatedText } from '@/components/TranslatedText';
@@ -119,7 +122,7 @@ export const LandingScreen = async () => {
             </Surface>
           }
         >
-          <OrganizationHighlights />
+          <PlatformHighlights />
         </Suspense>
         {user.currentProfile && user.currentProfile.type === 'org' ? (
           <PendingRelationships slug={user.currentProfile.slug} />

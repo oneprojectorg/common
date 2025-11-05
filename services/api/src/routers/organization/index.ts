@@ -13,14 +13,13 @@ import { getRolesRouter } from './getRoles';
 import { inviteUserRouter } from './inviteUser';
 import { joinOrganization } from './joinOrganization';
 import { listOrganizationsRouter } from './listOrganizations';
-import { listUsersRouter } from './listUsers';
 import { listOrganizationPostsRouter } from './listPosts';
 import { listRelatedOrganizationPostsRouter } from './listRelatedOrganizationPosts';
 import { listRelationshipsRouter } from './listRelationships';
+import { listUsersRouter } from './listUsers';
 import { reactionsRouter } from './reactions';
 import { removeRelationshipRouter } from './removeRelationship';
 import { searchOrganizationsRouter } from './searchOrganizations';
-import { organizationStatsRouter } from './stats';
 import { updateOrganizationRouter } from './updateOrganization';
 import { updateOrganizationUserRouter } from './updateOrganizationUser';
 import { uploadAvatarImage } from './uploadAvatarImage';
@@ -43,7 +42,6 @@ export const organizationRouter = mergeRouters(
   declineRelationshipRouter,
   listRelationshipsRouter,
   removeRelationshipRouter,
-  organizationStatsRouter,
   listRelatedOrganizationPostsRouter,
   joinOrganization,
   inviteUserRouter,
