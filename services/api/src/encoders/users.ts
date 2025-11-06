@@ -21,17 +21,41 @@ const zonePermissionsSchema = z.record(
   permissionSchema,
 ) satisfies z.ZodType<ZonePermissions>;
 
-const organizationUserWithPermissionsEncoder = createSelectSchema(organizationUsers)
-  .extend({
-    organization: organizationsEncoder.nullish(),
-    permissions: zonePermissionsSchema.nullish(),
-  });
+const accessZoneSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().nullish(),
+});
+
+const zonePermissionSchema = z.object({
+  accessRoleId: z.string(),
+  accessZoneId: z.string(),
+  permission: z.number(),
+  accessZone: accessZoneSchema,
+});
+
+const accessRoleSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().nullish(),
+  zonePermissions: z.array(zonePermissionSchema).nullish(),
+});
+
+const roleJunctionSchema = z.object({
+  accessRole: accessRoleSchema,
+});
+
+const organizationUserWithPermissionsEncoder = createSelectSchema(
+  organizationUsers,
+).extend({
+  organization: organizationsEncoder.nullish(),
+  permissions: zonePermissionsSchema.nullish(),
+  roles: z.array(roleJunctionSchema).nullish(),
+});
 
 export const userEncoder = createSelectSchema(users).extend({
   avatarImage: createSelectSchema(objectsInStorage).nullish(),
-  organizationUsers: organizationUserWithPermissionsEncoder
-    .array()
-    .nullish(),
+  organizationUsers: organizationUserWithPermissionsEncoder.array().nullish(),
   currentOrganization: organizationsWithProfileEncoder.nullish(),
   currentProfile: baseProfileEncoder.nullish(),
   profile: baseProfileEncoder.nullish(),
