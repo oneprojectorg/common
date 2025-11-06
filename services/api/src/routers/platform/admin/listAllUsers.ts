@@ -1,3 +1,4 @@
+import { cache } from '@op/cache';
 import { assertPlatformAdmin, decodeCursor, encodeCursor } from '@op/common';
 import { and, count, db, eq, lt, or } from '@op/db/client';
 import { users } from '@op/db/schema';
@@ -43,7 +44,7 @@ export const listAllUsersRouter = router({
           : undefined;
 
         // db queries
-        const [allUsers, [totalCountResult]] = await Promise.all([
+        const [allUsers, totalCountResult] = await Promise.all([
           // all users with pagination
           db.query.users.findMany({
             where: cursorCondition,
@@ -68,11 +69,21 @@ export const listAllUsersRouter = router({
               dir === 'asc' ? asc(users.createdAt) : desc(users.createdAt),
             limit: limit + 1, // Fetch one extra to check hasMore
           }),
-          // total count
-          db.select({ value: count() }).from(users),
+          // total count - cached for 5 minutes
+          cache<{ value: number }>({
+            type: 'user',
+            params: ['total-count'],
+            fetch: async () => {
+              const [result] = await db.select({ value: count() }).from(users);
+              return result;
+            },
+            options: {
+              ttl: 5 * 60 * 1000, // 5 minutes
+            },
+          }),
         ]);
 
-        const totalCount = totalCountResult?.value ?? 0;
+        const totalCount = totalCountResult.value ?? 0;
         const hasMore = allUsers.length > limit;
         const items = hasMore ? allUsers.slice(0, limit) : allUsers;
         const lastItem = items[items.length - 1];
