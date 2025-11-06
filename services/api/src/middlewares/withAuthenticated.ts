@@ -1,5 +1,5 @@
 import { cache } from '@op/cache';
-import { getAllowListUser, isPlatformAdmin } from '@op/common';
+import { getAllowListUser, isUserPlatformAdmin } from '@op/common';
 import { adminEmails } from '@op/core';
 import type { UserResponse } from '@op/supabase/lib';
 import { TRPCError } from '@trpc/server';
@@ -80,6 +80,9 @@ const withAuthenticated: MiddlewareBuilderBase<TContextWithUser> = async ({
   });
 };
 
+/**
+ * @deprecated Use withAuthenticatedPlatformAdmin
+ */
 export const withAuthenticatedAdmin: MiddlewareBuilderBase<
   TContextWithUser
 > = async ({ ctx, next }) => {
@@ -93,6 +96,9 @@ export const withAuthenticatedAdmin: MiddlewareBuilderBase<
   });
 };
 
+/**
+ * Middleware to ensure the user is authenticated and is a platform admin
+ */
 export const withAuthenticatedPlatformAdmin: MiddlewareBuilderBase<
   TContextWithUser
 > = async ({ ctx, next }) => {
@@ -100,8 +106,7 @@ export const withAuthenticatedPlatformAdmin: MiddlewareBuilderBase<
   const data = await supabase.auth.getUser();
 
   const user = verifyAuthentication(data);
-
-  const isAdmin = await isPlatformAdmin(user.id);
+  const isAdmin = isUserPlatformAdmin(user);
 
   if (!isAdmin) {
     throw new TRPCError({
