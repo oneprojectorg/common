@@ -1,12 +1,12 @@
 import { cache } from '@op/cache';
-import { assertPlatformAdmin, decodeCursor, encodeCursor } from '@op/common';
+import { decodeCursor, encodeCursor } from '@op/common';
 import { and, count, db, eq, lt, or } from '@op/db/client';
 import { users } from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import { userEncoder } from '../../../encoders/';
-import withAuthenticated from '../../../middlewares/withAuthenticated';
+import { withAuthenticatedPlatformAdmin } from '../../../middlewares/withAuthenticated';
 import withRateLimited from '../../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../../trpcFactory';
 import { dbFilter } from '../../../utils';
@@ -14,7 +14,7 @@ import { dbFilter } from '../../../utils';
 export const listAllUsersRouter = router({
   listAllUsers: loggedProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
-    .use(withAuthenticated)
+    .use(withAuthenticatedPlatformAdmin)
     .input(dbFilter.optional())
     .output(
       z.object({
@@ -24,13 +24,10 @@ export const listAllUsersRouter = router({
         total: z.number(),
       }),
     )
-    .query(async ({ ctx, input }) => {
-      const { user } = ctx;
+    .query(async ({ input }) => {
       const { limit = 10, cursor, dir = 'desc' } = input ?? {};
 
       try {
-        await assertPlatformAdmin(user.id);
-
         // Cursor-based pagination using createdAt timestamp
         // Combines createdAt with id as tiebreaker for users created at the same time
         const cursorData = cursor ? decodeCursor(cursor) : null;
@@ -100,18 +97,6 @@ export const listAllUsersRouter = router({
           total: totalCount,
         };
       } catch (error: unknown) {
-        if (error instanceof Error) {
-          if (
-            error.message.includes('Platform admin') ||
-            error.message.includes('Unauthorized')
-          ) {
-            throw new TRPCError({
-              message: 'Platform admin access required',
-              code: 'UNAUTHORIZED',
-            });
-          }
-        }
-
         throw new TRPCError({
           message: 'Failed to retrieve users',
           code: 'INTERNAL_SERVER_ERROR',

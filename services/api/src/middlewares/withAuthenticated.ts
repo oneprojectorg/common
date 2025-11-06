@@ -1,5 +1,5 @@
 import { cache } from '@op/cache';
-import { getAllowListUser } from '@op/common';
+import { getAllowListUser, isPlatformAdmin } from '@op/common';
 import { adminEmails } from '@op/core';
 import type { UserResponse } from '@op/supabase/lib';
 import { TRPCError } from '@trpc/server';
@@ -87,6 +87,28 @@ export const withAuthenticatedAdmin: MiddlewareBuilderBase<
   const data = await supabase.auth.getUser();
 
   const user = verifyAuthentication(data, true);
+
+  return next({
+    ctx: { ...ctx, user },
+  });
+};
+
+export const withAuthenticatedPlatformAdmin: MiddlewareBuilderBase<
+  TContextWithUser
+> = async ({ ctx, next }) => {
+  const supabase = createSBAdminClient(ctx);
+  const data = await supabase.auth.getUser();
+
+  const user = verifyAuthentication(data);
+
+  const isAdmin = await isPlatformAdmin(user.id);
+
+  if (!isAdmin) {
+    throw new TRPCError({
+      message: 'Platform admin access required',
+      code: 'UNAUTHORIZED',
+    });
+  }
 
   return next({
     ctx: { ...ctx, user },
