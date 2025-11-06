@@ -52,35 +52,35 @@ export const listAllUsersRouter = router({
         const orderByColumn =
           orderBy === 'updatedAt' ? users.updatedAt : users.createdAt;
 
-        // Get total count of users
-        const totalCountResult = await db
-          .select({ value: count() })
-          .from(users);
-        const totalCount = totalCountResult[0]?.value ?? 0;
-
-        const allUsers = await db.query.users.findMany({
-          where: cursorCondition,
-          with: {
-            profile: true,
-            organizationUsers: {
-              with: {
-                organization: {
-                  with: {
-                    profile: true,
+        // Get total count of users and all users in parallel
+        const [totalCountResult, allUsers] = await Promise.all([
+          db.select({ value: count() }).from(users),
+          db.query.users.findMany({
+            where: cursorCondition,
+            with: {
+              profile: true,
+              organizationUsers: {
+                with: {
+                  organization: {
+                    with: {
+                      profile: true,
+                    },
                   },
-                },
-                roles: {
-                  with: {
-                    accessRole: true,
+                  roles: {
+                    with: {
+                      accessRole: true,
+                    },
                   },
                 },
               },
             },
-          },
-          orderBy: (_, { asc, desc }) =>
-            dir === 'asc' ? asc(orderByColumn) : desc(orderByColumn),
-          limit: limit + 1, // Fetch one extra to check hasMore
-        });
+            orderBy: (_, { asc, desc }) =>
+              dir === 'asc' ? asc(orderByColumn) : desc(orderByColumn),
+            limit: limit + 1, // Fetch one extra to check hasMore
+          }),
+        ]);
+
+        const totalCount = totalCountResult[0]?.value ?? 0;
 
         console.log('all users', allUsers);
 
