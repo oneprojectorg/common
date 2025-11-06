@@ -3,7 +3,7 @@ import { createSBServiceClient } from '@op/supabase/server';
 import { z } from 'zod';
 
 import { userEncoder } from '../../../encoders';
-import { withAuthenticatedAdmin } from '../../../middlewares/withAuthenticated';
+import { withAuthenticatedPlatformAdmin } from '../../../middlewares/withAuthenticated';
 import withRateLimited from '../../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../../trpcFactory';
 import {
@@ -14,7 +14,7 @@ import {
 export const updateUserProfileRouter = router({
   updateUserProfile: loggedProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 3 }))
-    .use(withAuthenticatedAdmin)
+    .use(withAuthenticatedPlatformAdmin)
     .input(
       z.object({
         userId: z.string(),
