@@ -25,36 +25,26 @@ export const listAllUsersRouter = router({
     )
     .query(async ({ ctx, input }) => {
       const { user } = ctx;
-      const {
-        limit = 10,
-        cursor,
-        orderBy = 'createdAt',
-        dir = 'desc',
-      } = input ?? {};
+      const { limit = 10, cursor, dir = 'desc' } = input ?? {};
 
       try {
         await assertPlatformAdmin(user.id);
 
+        // cursor createdAt pagination logic
         const cursorData = cursor ? decodeCursor(cursor) : null;
-
-        // Build cursor condition
         const cursorCondition = cursorData
           ? or(
-              lt(users.createdAt, cursorData.updatedAt),
+              lt(users.createdAt, cursorData.createdAt),
               and(
-                eq(users.createdAt, cursorData.updatedAt),
+                eq(users.createdAt, cursorData.createdAt),
                 lt(users.id, cursorData.id),
               ),
             )
           : undefined;
 
-        // Determine order by column
-        const orderByColumn =
-          orderBy === 'updatedAt' ? users.updatedAt : users.createdAt;
-
-        // Get total count of users and all users in parallel
-        const [totalCountResult, allUsers] = await Promise.all([
-          db.select({ value: count() }).from(users),
+        // db queries
+        const [allUsers, [totalCountResult]] = await Promise.all([
+          // all users with pagination
           db.query.users.findMany({
             where: cursorCondition,
             with: {
@@ -75,15 +65,14 @@ export const listAllUsersRouter = router({
               },
             },
             orderBy: (_, { asc, desc }) =>
-              dir === 'asc' ? asc(orderByColumn) : desc(orderByColumn),
+              dir === 'asc' ? asc(users.createdAt) : desc(users.createdAt),
             limit: limit + 1, // Fetch one extra to check hasMore
           }),
+          // total count
+          db.select({ value: count() }).from(users),
         ]);
 
-        const totalCount = totalCountResult[0]?.value ?? 0;
-
-        console.log('all users', allUsers);
-
+        const totalCount = totalCountResult?.value ?? 0;
         const hasMore = allUsers.length > limit;
         const items = hasMore ? allUsers.slice(0, limit) : allUsers;
         const lastItem = items[items.length - 1];
@@ -99,8 +88,6 @@ export const listAllUsersRouter = router({
           total: totalCount,
         };
       } catch (error: unknown) {
-        console.error('Error listing all users:', error);
-
         if (error instanceof Error) {
           if (
             error.message.includes('Platform admin') ||
