@@ -31,7 +31,8 @@ export const listAllUsersRouter = router({
       try {
         await assertPlatformAdmin(user.id);
 
-        // cursor createdAt pagination logic
+        // Cursor-based pagination using createdAt timestamp
+        // Combines createdAt with id as tiebreaker for users created at the same time
         const cursorData = cursor ? decodeCursor(cursor) : null;
         const cursorCondition = cursorData
           ? or(
@@ -43,9 +44,9 @@ export const listAllUsersRouter = router({
             )
           : undefined;
 
-        // db queries
+        // Parallel database queries for optimal performance
         const [allUsers, totalCountResult] = await Promise.all([
-          // all users with pagination
+          // Fetch users with complete profile, organization, and role data
           db.query.users.findMany({
             where: cursorCondition,
             with: {
@@ -67,9 +68,9 @@ export const listAllUsersRouter = router({
             },
             orderBy: (_, { asc, desc }) =>
               dir === 'asc' ? asc(users.createdAt) : desc(users.createdAt),
-            limit: limit + 1, // Fetch one extra to check hasMore
+            limit: limit + 1, // Fetch one extra item to determine if more pages exist
           }),
-          // total count - cached for 5 minutes
+          // Total user count with 5-minute cache to reduce database load
           cache<{ value: number }>({
             type: 'user',
             params: ['total-count'],
