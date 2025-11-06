@@ -7,7 +7,6 @@ import { TRPCClientError } from '@trpc/client';
 import {
   createTRPCReact,
   getQueryKey as getQueryKeyTRPC,
-  type inferReactQueryProcedureOptions,
 } from '@trpc/react-query';
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 import React, { useState } from 'react';
@@ -31,8 +30,6 @@ const persister = createSyncStoragePersister({
 
 export const trpc = createTRPCReact<AppRouter>();
 
-// Infer the types for your router
-export type ReactQueryOptions = inferReactQueryProcedureOptions<AppRouter>;
 export type RouterInput = inferRouterInputs<AppRouter>;
 export type RouterOutput = inferRouterOutputs<AppRouter>;
 
