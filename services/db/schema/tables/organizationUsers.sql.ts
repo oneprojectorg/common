@@ -18,7 +18,7 @@ export const organizationUsers = pgTable(
   'organization_users',
   {
     id: autoId().primaryKey(),
-    // TODO it shoudl be the user id instead of authUserId
+    // TODO: it should be the user id instead of authUserId
     authUserId: uuid()
       .notNull()
       .references(() => authUsers.id, {
