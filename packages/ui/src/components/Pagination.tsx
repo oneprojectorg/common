@@ -105,10 +105,16 @@ const PaginationNavigation = React.forwardRef<
   );
 });
 
+/**
+ * Displays the current page range information (e.g., "1 - 10 of 100 items")
+ * Calculates start and end indices based on current page and items per page
+ */
 function PaginationRange(props: PaginationRangeProps): React.ReactElement {
   const { totalItems, itemsPerPage, page, label = 'items' } = props;
 
+  // Calculate the starting index (1-based) for the current page
   const start = page * itemsPerPage + 1;
+  // Calculate the ending index, ensuring it doesn't exceed total items
   const end = Math.min((page + 1) * itemsPerPage, totalItems);
 
   return (

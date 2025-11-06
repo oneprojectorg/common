@@ -5,6 +5,7 @@ import withAnalytics from '../../middlewares/withAnalytics';
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
+import { platformAdminRouter } from './admin';
 
 /**
  * Handles platform-wide operations such as retrieving statistics, listing profiles, users, organizations, etc,.
@@ -27,4 +28,5 @@ export const platformRouter = router({
       const { user } = ctx;
       return await getPlatformStats({ user });
     }),
+  admin: platformAdminRouter,
 });
