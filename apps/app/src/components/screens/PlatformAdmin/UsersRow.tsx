@@ -30,29 +30,28 @@ type UsersRowProps = {
 export const UsersRow = ({ user }: UsersRowProps) => {
   const format = useFormatter();
   const t = useTranslations();
-  // We have to fix this at the database level to always have createdAt
-  const createdAt = user.createdAt ? new Date(user.createdAt) : null;
-  const relativeCreatedAt = createdAt ? useRelativeTime(createdAt) : null;
+  const updatedAt = user.updatedAt ? new Date(user.updatedAt) : null;
+  const relativeUpdatedAt = updatedAt ? useRelativeTime(updatedAt) : null;
 
   return (
     <div className={cn('hover:bg-neutral-gray0 py-4 transition-colors', styles.usersTableGrid)}>
-      <div className="flex items-center text-sm text-neutral-black">
+      <div className="flex items-center text-sm font-normal text-neutral-black">
         {user.profile?.name ?? user.name ?? '—'}
       </div>
-      <div className="flex items-center text-sm text-neutral-black">
+      <div className="flex items-center text-sm font-normal text-neutral-black">
         {user.email}
       </div>
       <UserRolesAndOrganizations
         organizationUsers={user.organizationUsers ?? []}
       />
-      <div className="flex items-center text-sm text-neutral-charcoal">
-        {createdAt ? (
+      <div className="flex items-center text-sm font-normal text-neutral-charcoal">
+        {updatedAt ? (
           <TooltipTrigger>
-            <Button className="cursor-default underline decoration-dotted underline-offset-2 outline-none">
-              {relativeCreatedAt}
+            <Button className="cursor-default text-sm font-normal underline decoration-dotted underline-offset-2 outline-none">
+              {relativeUpdatedAt}
             </Button>
             <Tooltip>
-              {format.dateTime(createdAt, {
+              {format.dateTime(updatedAt, {
                 timeZone: 'UTC',
                 year: 'numeric',
                 month: 'short',
@@ -147,10 +146,10 @@ const UserRolesAndOrganizations = ({
 
   return (
     <>
-      <div className="flex items-center text-sm text-neutral-charcoal">
+      <div className="flex items-center text-sm font-normal text-neutral-black">
         {roleNames}
       </div>
-      <div className="flex items-center text-sm text-neutral-charcoal">
+      <div className="flex items-center text-sm font-normal text-neutral-black">
         <Select
           className="w-full"
           defaultSelectedKey={selectedOrgUserId}

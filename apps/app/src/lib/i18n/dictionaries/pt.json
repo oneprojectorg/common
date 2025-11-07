@@ -368,7 +368,7 @@
   "platformAdmin_columnEmail": "E-mail",
   "platformAdmin_columnRole": "Função",
   "platformAdmin_columnOrganization": "Organização",
-  "platformAdmin_columnJoined": "Ingressou",
+  "platformAdmin_columnLastUpdated": "Última atualização",
   "platformAdmin_columnActions": "Ações",
   "platformAdmin_actionViewAnalytics": "Ver análises",
   "platformAdmin_actionEditProfile": "Editar perfil",

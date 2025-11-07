@@ -368,7 +368,7 @@
   "platformAdmin_columnEmail": "Courriel",
   "platformAdmin_columnRole": "Rôle",
   "platformAdmin_columnOrganization": "Organisation",
-  "platformAdmin_columnJoined": "Inscrit",
+  "platformAdmin_columnLastUpdated": "Dernière mise à jour",
   "platformAdmin_columnActions": "Actions",
   "platformAdmin_actionViewAnalytics": "Voir les analyses",
   "platformAdmin_actionEditProfile": "Modifier le profil",

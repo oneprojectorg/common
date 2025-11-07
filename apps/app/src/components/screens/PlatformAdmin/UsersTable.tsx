@@ -36,7 +36,7 @@ const UsersTableHeader = () => {
     t('platformAdmin_columnEmail'),
     t('platformAdmin_columnRole'),
     t('platformAdmin_columnOrganization'),
-    t('platformAdmin_columnJoined'),
+    t('platformAdmin_columnLastUpdated'),
     t('platformAdmin_columnActions'),
   ];
 
@@ -51,7 +51,7 @@ const UsersTableHeader = () => {
         <div
           key={heading}
           className={cn(
-            'text-sm font-medium text-neutral-charcoal',
+            'text-sm font-normal text-neutral-charcoal',
             idx === columnHeadings.length - 1 && 'text-right',
           )}
         >
