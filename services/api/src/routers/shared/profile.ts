@@ -70,7 +70,7 @@ export const updateUserProfileDataSchema = z
         error: 'Must be at most 255 characters',
       }),
     website: zodUrl({
-      error: 'Invalid URL',
+      error: 'Enter a valid website address',
     }),
     focusAreas: z.array(
       z.object({
