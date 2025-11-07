@@ -29,7 +29,7 @@ export const PostDetailHeader = () => {
       </div>
 
       <div className="flex justify-center">
-        <ErrorBoundary fallback={<Skeleton className="h-10 w-96" />}>
+        <ErrorBoundary>
           <Suspense fallback={<Skeleton className="h-10 w-96" />}>
             <SearchInput />
           </Suspense>
