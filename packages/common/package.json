@@ -9,6 +9,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./validation": "./src/utils/validation.ts",
+    "./src/services/access": "./src/services/access/index.ts",
     "./src/*": "./src/*"
   },
   "scripts": {
