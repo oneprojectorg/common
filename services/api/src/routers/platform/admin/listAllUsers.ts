@@ -45,7 +45,7 @@ export const listAllUsersRouter = router({
         const [allUsers, totalCountResult] = await Promise.all([
           // Fetch users with complete profile, organization, and role data
           db.query.users.findMany({
-            ...(cursorCondition ? { where: cursorCondition } : {}),
+            where: cursorCondition,
             with: {
               profile: true,
               organizationUsers: {
