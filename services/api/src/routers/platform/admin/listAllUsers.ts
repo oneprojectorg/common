@@ -2,7 +2,6 @@ import { cache } from '@op/cache';
 import { decodeCursor, encodeCursor } from '@op/common';
 import { and, count, db, eq, lt, or } from '@op/db/client';
 import { users } from '@op/db/schema';
-import { logger } from '@op/logging';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
@@ -27,7 +26,6 @@ export const listAllUsersRouter = router({
     )
     .query(async ({ input }) => {
       const { limit = 10, cursor, dir = 'desc' } = input ?? {};
-      logger.info('List All Users - Input:', { input });
 
       try {
         // Cursor-based pagination using updatedAt timestamp
@@ -42,8 +40,6 @@ export const listAllUsersRouter = router({
               ),
             )
           : undefined;
-
-        logger.info('List All Users - Input:', { input });
 
         // Parallel database queries for optimal performance
         const [allUsers, totalCountResult] = await Promise.all([
@@ -85,9 +81,6 @@ export const listAllUsersRouter = router({
           }),
         ]);
 
-        logger.info('List All Users - Retrieved users count:', {
-          count: allUsers.length,
-        });
         const totalCount = totalCountResult.value ?? 0;
         const hasMore = allUsers.length > limit;
         const items = hasMore ? allUsers.slice(0, limit) : allUsers;
@@ -104,8 +97,6 @@ export const listAllUsersRouter = router({
           total: totalCount,
         };
       } catch (error: unknown) {
-        logger.error('List All Users - Error retrieving users:', { error });
-        console.error('Error retrieving users:', error);
         throw new TRPCError({
           message: 'Failed to retrieve users',
           code: 'INTERNAL_SERVER_ERROR',
