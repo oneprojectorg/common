@@ -15,6 +15,7 @@ import { PostDetailHeader } from './PostDetailHeader';
 import { PostViewLayout } from './PostViewLayout';
 import { usePostDetailActions } from './usePostDetailActions';
 import { Comments, CommentSkeleton } from './Comments';
+import ErrorBoundary from '../ErrorBoundary';
 
 export function PostDetail({
   postId,
@@ -74,14 +75,16 @@ export function PostDetail({
 
           {/* Comments Section */}
           <div className="mt-2">
-            <Suspense fallback={<CommentSkeleton />}>
-              <Comments
-                postId={post.id}
-                organization={organization}
-                user={user}
-                onReactionClick={handleReactionClick}
-              />
-            </Suspense>
+            <ErrorBoundary>
+              <Suspense fallback={<CommentSkeleton />}>
+                <Comments
+                  postId={post.id}
+                  organization={organization}
+                  user={user}
+                  onReactionClick={handleReactionClick}
+                />
+              </Suspense>
+            </ErrorBoundary>
           </div>
         </div>
       </div>
