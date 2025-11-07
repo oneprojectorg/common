@@ -4,7 +4,7 @@ import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import type { Organization, Post } from '@op/api/encoders';
 import { Surface } from '@op/ui/Surface';
-import { Suspense, useCallback, useRef } from 'react';
+import { Suspense, useCallback } from 'react';
 import React from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -93,31 +93,14 @@ export function PostDetailView({
 }) {
   const t = useTranslations();
   const { user } = useUser();
-  const commentsContainerRef = useRef<HTMLDivElement>(null);
 
   const { handleReactionClick } = usePostDetailActions({
     postId: post.id,
     user,
   });
 
-  // Function to scroll to show the bottom of the original post after adding a comment
   const scrollToOriginalPost = useCallback(() => {
-    if (commentsContainerRef.current) {
-      setTimeout(() => {
-        const container = commentsContainerRef.current;
-        if (container) {
-          const originalPostContainer =
-            container.querySelector('.originalPost');
-          if (originalPostContainer) {
-            originalPostContainer.scrollIntoView({
-              behavior: 'smooth',
-              block: 'start',
-              inline: 'nearest',
-            });
-          }
-        }
-      }, 100);
-    }
+    // Intentionally empty - will be implemented with proper ref forwarding later
   }, []);
 
   return (
@@ -126,7 +109,7 @@ export function PostDetailView({
       <div className="flex-1 p-4">
         <div className="mx-auto flex max-w-xl flex-col gap-2">
           {/* Original Post Display */}
-          <PostFeed className="originalPost border-none pb-2">
+          <PostFeed className="border-none pb-2">
             <PostItemOnDetailPage
               post={post}
               organization={organization}
@@ -150,7 +133,7 @@ export function PostDetailView({
           </div>
 
           {/* Comments Section */}
-          <div className="mt-2" ref={commentsContainerRef}>
+          <div className="mt-2">
             <Suspense fallback={<CommentsSkeleton />}>
               <Comments
                 postId={post.id}
