@@ -1,7 +1,7 @@
 'use client';
 
-import { formatToUrl } from '@/utils';
 import { useUser } from '@/utils/UserProvider';
+import { formatToUrl } from '@op/common/validation';
 import type { Organization } from '@op/api/encoders';
 import { EntityType } from '@op/api/encoders';
 import { ButtonLink } from '@op/ui/Button';
