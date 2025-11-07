@@ -4,7 +4,7 @@ import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import type { Organization, Post } from '@op/api/encoders';
 import { Surface } from '@op/ui/Surface';
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useRef } from 'react';
 import React from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -16,7 +16,7 @@ import { PostViewLayout } from './PostViewLayout';
 import { usePostDetailActions } from './usePostDetailActions';
 
 export function PostDetailView({
-  post: initialPost,
+  post,
   organization,
 }: {
   post: Post;
@@ -26,42 +26,25 @@ export function PostDetailView({
   const { user } = useUser();
   const commentsContainerRef = useRef<HTMLDivElement>(null);
 
-  // Fetch fresh post data
-  const { data: fetchedPost } = trpc.posts.getPost.useQuery(
-    {
-      postId: initialPost.id,
-      includeChildren: false,
-    },
-    {
-      initialData: initialPost,
-    },
-  );
-
-  // Use fetched post or fall back to initial post
-  const currentPost = fetchedPost || initialPost;
-
   // Create PostToOrganization format for the main post
-  const postToOrg = useMemo(
-    () => ({
-      createdAt: currentPost.createdAt,
-      updatedAt: currentPost.updatedAt,
-      deletedAt: null,
-      postId: currentPost.id,
-      organizationId: organization?.id || '',
-      post: currentPost,
-      organization: organization || null,
-    }),
-    [currentPost, organization],
-  );
+  const postToOrg = {
+    createdAt: post.createdAt,
+    updatedAt: post.updatedAt,
+    deletedAt: null,
+    postId: post.id,
+    organizationId: organization?.id || '',
+    post: post,
+    organization: organization || null,
+  };
 
   const { handleReactionClick } = usePostDetailActions({
-    postId: currentPost.id,
+    postId: post.id,
     user,
   });
 
   // Get comments for the post
   const { data: commentsData, isLoading } = trpc.posts.getPosts.useQuery({
-    parentPostId: currentPost.id,
+    parentPostId: post.id,
     limit: 50,
     offset: 0,
     includeChildren: false,
@@ -88,19 +71,17 @@ export function PostDetailView({
   }, []);
 
   // Transform comments data to match PostToOrganization format
-  const comments = useMemo(() => {
-    if (!commentsData) return [];
-
-    return commentsData.map((comment) => ({
-      createdAt: comment.createdAt,
-      updatedAt: comment.updatedAt,
-      deletedAt: null,
-      postId: comment.id,
-      organizationId: organization?.id || '',
-      post: comment,
-      organization: organization || null,
-    }));
-  }, [commentsData, organization]);
+  const comments = !commentsData
+    ? []
+    : commentsData.map((comment) => ({
+        createdAt: comment.createdAt,
+        updatedAt: comment.updatedAt,
+        deletedAt: null,
+        postId: comment.id,
+        organizationId: organization?.id || '',
+        post: comment,
+        organization: organization || null,
+      }));
 
   return (
     <PostViewLayout>
@@ -122,7 +103,7 @@ export function PostDetailView({
           <div className="border-y border-neutral-gray1">
             <Surface className="border-0 p-0 sm:py-4">
               <PostUpdate
-                parentPostId={currentPost.id}
+                parentPostId={post.id}
                 placeholder={`${t('Comment')}${user?.currentProfile?.name ? ` as ${user?.currentProfile?.name}` : ''}...`}
                 label={t('Comment')}
                 onSuccess={scrollToOriginalPost}
