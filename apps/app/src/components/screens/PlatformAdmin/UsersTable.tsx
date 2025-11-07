@@ -5,12 +5,13 @@ import { trpc } from '@op/api/client';
 import { Pagination } from '@op/ui/Pagination';
 import { Skeleton } from '@op/ui/Skeleton';
 import { cn } from '@op/ui/utils';
-import { Suspense, useState } from 'react';
+import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-import styles from './UsersTable.module.css';
 import { UsersRow } from './UsersRow';
+import styles from './UsersTable.module.css';
+import { useCursorPagination } from './useCursorPagination';
 
 const USER_TABLE_MIN_WIDTH = 'min-w-[850px]';
 
@@ -29,7 +30,7 @@ export const UsersTable = () => {
 /** Table header component */
 const UsersTableHeader = () => {
   const t = useTranslations();
-  
+
   const columnHeadings = [
     t('platformAdmin_columnName'),
     t('platformAdmin_columnEmail'),
@@ -40,7 +41,12 @@ const UsersTableHeader = () => {
   ];
 
   return (
-    <div className={cn('bg-neutral-gray0 border-b border-neutral-gray1 py-3', styles.usersTableGrid)}>
+    <div
+      className={cn(
+        'bg-neutral-gray0 border-b border-neutral-gray1 py-3',
+        styles.usersTableGrid,
+      )}
+    >
       {columnHeadings.map((heading, idx) => (
         <div
           key={heading}
@@ -59,9 +65,14 @@ const UsersTableHeader = () => {
 /** Renders users table with live data */
 const UsersTableContent = () => {
   const t = useTranslations();
-  const [cursor, setCursor] = useState<string | null>(null);
-  const [cursorHistory, setCursorHistory] = useState<(string | null)[]>([null]);
-  const limit = 10;
+  const {
+    cursor,
+    currentPage,
+    limit,
+    handleNext,
+    handlePrevious,
+    canGoPrevious,
+  } = useCursorPagination(10);
 
   const queryInput: ListAllUsersInput = {
     cursor,
@@ -71,21 +82,10 @@ const UsersTableContent = () => {
   const [data] = trpc.platform.admin.listAllUsers.useSuspenseQuery(queryInput);
 
   const { items: users, next, hasMore, total } = data;
-  const currentPage = cursorHistory.length - 1;
 
-  const handleNext = () => {
+  const onNext = () => {
     if (hasMore && next) {
-      setCursorHistory([...cursorHistory, next]);
-      setCursor(next);
-    }
-  };
-
-  const handlePrevious = () => {
-    if (cursorHistory.length > 1) {
-      const newHistory = [...cursorHistory];
-      newHistory.pop();
-      setCursorHistory(newHistory);
-      setCursor(newHistory[newHistory.length - 1] ?? null);
+      handleNext(next);
     }
   };
 
@@ -111,8 +111,8 @@ const UsersTableContent = () => {
               page: currentPage,
               label: t('platformAdmin_paginationUsers'),
             }}
-            next={hasMore ? handleNext : undefined}
-            previous={cursorHistory.length > 1 ? handlePrevious : undefined}
+            next={hasMore ? onNext : undefined}
+            previous={canGoPrevious ? handlePrevious : undefined}
           />
         </div>
       </div>
@@ -134,10 +134,7 @@ const UsersTableSkeleton = () => {
           <UsersTableHeader />
           <div className="divide-y divide-neutral-gray1">
             {[...Array(5)].map((_, i) => (
-              <div
-                key={i}
-                className={cn('py-4', styles.usersTableGrid)}
-              >
+              <div key={i} className={cn('py-4', styles.usersTableGrid)}>
                 {[...Array(6)].map((_, j) => (
                   <Skeleton key={j} className="h-4 w-full" />
                 ))}

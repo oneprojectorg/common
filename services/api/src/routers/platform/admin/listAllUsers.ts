@@ -2,6 +2,7 @@ import { cache } from '@op/cache';
 import { decodeCursor, encodeCursor } from '@op/common';
 import { and, count, db, eq, lt, or } from '@op/db/client';
 import { users } from '@op/db/schema';
+import { logger } from '@op/logging';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
@@ -26,26 +27,29 @@ export const listAllUsersRouter = router({
     )
     .query(async ({ input }) => {
       const { limit = 10, cursor, dir = 'desc' } = input ?? {};
+      logger.info('List All Users - Input:', { input });
 
       try {
-        // Cursor-based pagination using createdAt timestamp
-        // Combines createdAt with id as tiebreaker for users created at the same time
+        // Cursor-based pagination using updatedAt timestamp
+        // Combines updatedAt with id as tiebreaker for users created at the same time
         const cursorData = cursor ? decodeCursor(cursor) : null;
         const cursorCondition = cursorData
           ? or(
-              lt(users.createdAt, cursorData.createdAt),
+              lt(users.updatedAt, cursorData.updatedAt),
               and(
-                eq(users.createdAt, cursorData.createdAt),
+                eq(users.updatedAt, cursorData.updatedAt),
                 lt(users.id, cursorData.id),
               ),
             )
           : undefined;
 
+        logger.info('List All Users - Input:', { input });
+
         // Parallel database queries for optimal performance
         const [allUsers, totalCountResult] = await Promise.all([
           // Fetch users with complete profile, organization, and role data
           db.query.users.findMany({
-            where: cursorCondition,
+            ...(cursorCondition ? { where: cursorCondition } : {}),
             with: {
               profile: true,
               organizationUsers: {
@@ -64,7 +68,7 @@ export const listAllUsersRouter = router({
               },
             },
             orderBy: (_, { asc, desc }) =>
-              dir === 'asc' ? asc(users.createdAt) : desc(users.createdAt),
+              dir === 'asc' ? asc(users.updatedAt) : desc(users.updatedAt),
             limit: limit + 1, // Fetch one extra item to determine if more pages exist
           }),
           // Total user count with 5-minute cache to reduce database load
@@ -81,13 +85,16 @@ export const listAllUsersRouter = router({
           }),
         ]);
 
+        logger.info('List All Users - Retrieved users count:', {
+          count: allUsers.length,
+        });
         const totalCount = totalCountResult.value ?? 0;
         const hasMore = allUsers.length > limit;
         const items = hasMore ? allUsers.slice(0, limit) : allUsers;
         const lastItem = items[items.length - 1];
         const nextCursor =
-          hasMore && lastItem && lastItem.createdAt
-            ? encodeCursor(new Date(lastItem.createdAt), lastItem.id)
+          hasMore && lastItem && lastItem.updatedAt
+            ? encodeCursor(new Date(lastItem.updatedAt), lastItem.id)
             : null;
 
         return {
@@ -97,6 +104,8 @@ export const listAllUsersRouter = router({
           total: totalCount,
         };
       } catch (error: unknown) {
+        logger.error('List All Users - Error retrieving users:', { error });
+        console.error('Error retrieving users:', error);
         throw new TRPCError({
           message: 'Failed to retrieve users',
           code: 'INTERNAL_SERVER_ERROR',
