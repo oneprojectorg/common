@@ -2,9 +2,10 @@
 
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import type { Organization, Post } from '@op/api/encoders';
+import type { Organization } from '@op/api/encoders';
 import { Surface } from '@op/ui/Surface';
 import { Suspense, useCallback } from 'react';
+import { notFound } from 'next/navigation';
 import React from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -84,15 +85,28 @@ function CommentsSkeleton() {
   );
 }
 
-export function PostDetailView({
-  post,
-  organization,
+export function PostDetail({
+  postId,
+  slug,
 }: {
-  post: Post;
-  organization: Organization | null;
+  postId: string;
+  slug: string;
 }) {
   const t = useTranslations();
   const { user } = useUser();
+
+  const [post] = trpc.posts.getPost.useSuspenseQuery({
+    postId,
+    includeChildren: false,
+  });
+
+  const [organization] = trpc.organization.getBySlug.useSuspenseQuery({
+    slug,
+  });
+
+  if (!post) {
+    notFound();
+  }
 
   const { handleReactionClick } = usePostDetailActions({
     postId: post.id,

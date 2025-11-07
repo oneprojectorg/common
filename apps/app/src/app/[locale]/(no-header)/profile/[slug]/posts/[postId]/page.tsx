@@ -1,35 +1,11 @@
 'use client';
 
-import { trpc } from '@op/api/client';
 import { Skeleton } from '@op/ui/Skeleton';
-import { notFound, useParams } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { Suspense } from 'react';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
-import { PostDetailView } from '@/components/posts/PostDetailView';
-
-function PostDetailPageContent({
-  postId,
-  slug,
-}: {
-  postId: string;
-  slug: string;
-}) {
-  const [post] = trpc.posts.getPost.useSuspenseQuery({
-    postId,
-    includeChildren: false,
-  });
-
-  const [organization] = trpc.organization.getBySlug.useSuspenseQuery({
-    slug,
-  });
-
-  if (!post) {
-    notFound();
-  }
-
-  return <PostDetailView post={post} organization={organization} />;
-}
+import { PostDetail } from '@/components/posts/PostDetailView';
 
 function PostDetailPageSkeleton() {
   return (
@@ -100,7 +76,7 @@ const PostDetailPage = () => {
   return (
     <ErrorBoundary>
       <Suspense fallback={<PostDetailPageSkeleton />}>
-        <PostDetailPageContent postId={postId} slug={slug} />
+        <PostDetail postId={postId} slug={slug} />
       </Suspense>
     </ErrorBoundary>
   );
