@@ -11,7 +11,9 @@ import { useFormatter } from 'next-intl';
 import { useState } from 'react';
 import { Button } from 'react-aria-components';
 
-import { USER_TABLE_GRID_COLS } from './constants';
+import { useTranslations } from '@/lib/i18n';
+
+import styles from './UsersTable.module.css';
 
 // Infer types from tRPC router output
 type ListAllUsersOutput = RouterOutput['platform']['admin']['listAllUsers'];
@@ -21,18 +23,19 @@ type UserRolesAndOrganizationsProps = {
   organizationUsers: OrganizationUsers;
 };
 
-type UserRowProps = {
+type UsersRowProps = {
   user: User;
 };
 
-export const UserRow = ({ user }: UserRowProps) => {
+export const UsersRow = ({ user }: UsersRowProps) => {
   const format = useFormatter();
+  const t = useTranslations();
   // We have to fix this at the database level to always have createdAt
   const createdAt = user.createdAt ? new Date(user.createdAt) : null;
   const relativeCreatedAt = createdAt ? useRelativeTime(createdAt) : null;
 
   return (
-    <div className={cn('hover:bg-neutral-gray0 grid gap-4 py-4 transition-colors', USER_TABLE_GRID_COLS)}>
+    <div className={cn('hover:bg-neutral-gray0 py-4 transition-colors', styles.usersTableGrid)}>
       <div className="flex items-center text-sm text-neutral-black">
         {user.profile?.name ?? user.name ?? '—'}
       </div>
@@ -69,30 +72,30 @@ export const UserRow = ({ user }: UserRowProps) => {
             <MenuItem
               key="view-analytics"
               onAction={() => {
-                alert('action');
+                alert('coming soon');
               }}
               className="px-3 py-1"
             >
-              View analytics{' '}
+              {t('platformAdmin_actionViewAnalytics')}
             </MenuItem>
             <MenuItem
               key="edit-profile"
               onAction={() => {
-                alert('action');
+                alert('coming soon');
               }}
               className="px-3 py-1"
             >
-              Edit profile{' '}
+              {t('platformAdmin_actionEditProfile')}
             </MenuItem>
             <MenuSeparator />
             <MenuItem
-              key="toggle-'"
+              key="remove-user"
               onAction={() => {
-                alert('action');
+                alert('coming soon');
               }}
               className="px-3 py-1"
             >
-              <span className="text-red-500">Remove User</span>
+              <span className="text-red-500">{t('platformAdmin_actionRemoveUser')}</span>
             </MenuItem>
           </Menu>
         </OptionMenu>

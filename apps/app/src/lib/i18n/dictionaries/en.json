@@ -363,11 +363,14 @@
   "platformAdmin_viewAllAnalytics": "View all analytics",
   "platformAdmin_addUser": "Add user",
   "platformAdmin_paginationUsers": "users",
-  "All Users": "All Users",
-  "Name": "Name",
-  "Email": "Email",
-  "Role": "Role",
-  "Organization": "Organization",
-  "Joined": "Joined",
-  "Actions": "Actions"
+  "platformAdmin_allUsers": "All Users",
+  "platformAdmin_columnName": "Name",
+  "platformAdmin_columnEmail": "Email",
+  "platformAdmin_columnRole": "Role",
+  "platformAdmin_columnOrganization": "Organization",
+  "platformAdmin_columnJoined": "Joined",
+  "platformAdmin_columnActions": "Actions",
+  "platformAdmin_actionViewAnalytics": "View analytics",
+  "platformAdmin_actionEditProfile": "Edit profile",
+  "platformAdmin_actionRemoveUser": "Remove User"
 }

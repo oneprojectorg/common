@@ -361,5 +361,15 @@
   "platformAdmin_title": "Administración de la plataforma",
   "platformAdmin_viewAllAnalytics": "Ver todas las analíticas",
   "platformAdmin_addUser": "Agregar usuario",
-  "platformAdmin_paginationUsers": "usuarios"
+  "platformAdmin_paginationUsers": "usuarios",
+  "platformAdmin_allUsers": "Todos los Usuarios",
+  "platformAdmin_columnName": "Nombre",
+  "platformAdmin_columnEmail": "Correo electrónico",
+  "platformAdmin_columnRole": "Rol",
+  "platformAdmin_columnOrganization": "Organización",
+  "platformAdmin_columnJoined": "Registrado",
+  "platformAdmin_columnActions": "Acciones",
+  "platformAdmin_actionViewAnalytics": "Ver analíticas",
+  "platformAdmin_actionEditProfile": "Editar perfil",
+  "platformAdmin_actionRemoveUser": "Eliminar Usuario"
 }

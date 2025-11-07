@@ -2,7 +2,7 @@ import { createClient } from '@op/api/serverClient';
 import { platformAdminEmailDomain } from '@op/core';
 import { notFound } from 'next/navigation';
 
-import { PlatformStats, UsersList } from '@/components/screens/PlatformAdmin';
+import { PlatformStats, UsersTable } from '@/components/screens/PlatformAdmin';
 import { PlatformAdminHeader } from '@/components/screens/PlatformAdmin/PlatformAdminHeader';
 
 // Force dynamic rendering to ensure fresh data on each request
@@ -23,7 +23,7 @@ export default async function AdminPage() {
     <div className="flex w-full flex-col gap-8 p-8">
       <PlatformAdminHeader />
       <PlatformStats />
-      <UsersList />
+      <UsersTable />
     </div>
   );
 }

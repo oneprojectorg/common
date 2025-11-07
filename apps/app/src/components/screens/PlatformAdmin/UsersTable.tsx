@@ -9,8 +9,10 @@ import { Suspense, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { USER_TABLE_GRID_COLS, USER_TABLE_MIN_WIDTH } from './constants';
+import styles from './UsersTable.module.css';
 import { UsersRow } from './UsersRow';
+
+const USER_TABLE_MIN_WIDTH = 'min-w-[850px]';
 
 // Infer input type for listAllUsers query
 type ListAllUsersInput = RouterInput['platform']['admin']['listAllUsers'];
@@ -38,12 +40,12 @@ const UsersTableHeader = () => {
   ];
 
   return (
-    <div className={cn('bg-neutral-gray0 grid gap-4 border-b border-neutral-gray1 py-3', USER_TABLE_GRID_COLS)}>
+    <div className={cn('bg-neutral-gray0 border-b border-neutral-gray1 py-3', styles.usersTableGrid)}>
       {columnHeadings.map((heading, idx) => (
         <div
           key={heading}
           className={cn(
-            'justify-end text-sm font-medium text-neutral-charcoal',
+            'text-sm font-medium text-neutral-charcoal',
             idx === columnHeadings.length - 1 && 'text-right',
           )}
         >
@@ -134,7 +136,7 @@ const UsersTableSkeleton = () => {
             {[...Array(5)].map((_, i) => (
               <div
                 key={i}
-                className={cn('grid gap-4 py-4', USER_TABLE_GRID_COLS)}
+                className={cn('py-4', styles.usersTableGrid)}
               >
                 {[...Array(6)].map((_, j) => (
                   <Skeleton key={j} className="h-4 w-full" />
