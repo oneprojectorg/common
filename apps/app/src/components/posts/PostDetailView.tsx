@@ -2,88 +2,19 @@
 
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import type { Organization } from '@op/api/encoders';
 import { Surface } from '@op/ui/Surface';
-import { Suspense, useCallback } from 'react';
+import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import React from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { PostFeed, PostItem, PostItemOnDetailPage } from '../PostFeed';
+import { PostFeed, PostItemOnDetailPage } from '../PostFeed';
 import { PostUpdate } from '../PostUpdate';
 import { PostDetailHeader } from './PostDetailHeader';
 import { PostViewLayout } from './PostViewLayout';
 import { usePostDetailActions } from './usePostDetailActions';
-
-type PostFeedUser = NonNullable<ReturnType<typeof useUser>['user']>;
-
-function Comments({
-  postId,
-  organization,
-  user,
-  onReactionClick,
-}: {
-  postId: string;
-  organization: Organization | null;
-  user: PostFeedUser | undefined;
-  onReactionClick: (postId: string, emoji: string) => void;
-}) {
-  const t = useTranslations();
-
-  const [comments] = trpc.posts.getPosts.useSuspenseQuery({
-    parentPostId: postId,
-    limit: 50,
-    offset: 0,
-    includeChildren: false,
-  });
-
-  if (comments.length === 0) {
-    return (
-      <div
-        className="py-8 text-center text-neutral-gray4"
-        role="status"
-        aria-label="No comments"
-      >
-        {t('No comments yet. Be the first to comment!')}
-      </div>
-    );
-  }
-
-  return (
-    <div role="feed" aria-label={`${comments.length} comments`}>
-      <PostFeed>
-        {comments.map((comment) => (
-          <div key={comment.id}>
-            <PostItem
-              post={comment}
-              organization={organization}
-              user={user}
-              withLinks={false}
-              onReactionClick={onReactionClick}
-              className="sm:px-0"
-            />
-            <hr className="mt-4 bg-neutral-gray1" />
-          </div>
-        ))}
-      </PostFeed>
-    </div>
-  );
-}
-
-function CommentsSkeleton() {
-  const t = useTranslations();
-
-  return (
-    <div
-      className="py-8 text-center text-neutral-gray4"
-      role="status"
-      aria-label="Loading comments"
-    >
-      {t('Loading comments...')}
-    </div>
-  );
-}
+import { Comments, CommentSkeleton } from './Comments';
 
 export function PostDetail({
   postId,
@@ -113,10 +44,6 @@ export function PostDetail({
     user,
   });
 
-  const scrollToOriginalPost = useCallback(() => {
-    // Intentionally empty - will be implemented with proper ref forwarding later
-  }, []);
-
   return (
     <PostViewLayout>
       <PostDetailHeader />
@@ -141,14 +68,13 @@ export function PostDetail({
                 parentPostId={post.id}
                 placeholder={`${t('Comment')}${user?.currentProfile?.name ? ` as ${user?.currentProfile?.name}` : ''}...`}
                 label={t('Comment')}
-                onSuccess={scrollToOriginalPost}
               />
             </Surface>
           </div>
 
           {/* Comments Section */}
           <div className="mt-2">
-            <Suspense fallback={<CommentsSkeleton />}>
+            <Suspense fallback={<CommentSkeleton />}>
               <Comments
                 postId={post.id}
                 organization={organization}
