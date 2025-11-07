@@ -144,7 +144,7 @@ export function PostDetailView({
             ) : comments.length > 0 ? (
               <div role="feed" aria-label={`${comments.length} comments`}>
                 <PostFeed>
-                  {comments.map((comment, i) => (
+                  {comments.map((comment) => (
                     <div key={comment.post.id}>
                       <PostItem
                         postToOrg={comment}
