@@ -1,6 +1,7 @@
 'use client';
 
 import type { RouterOutput } from '@op/api/client';
+import { posthogUIHost } from '@op/core';
 import { useRelativeTime } from '@op/hooks';
 import { Menu, MenuItem, MenuSeparator } from '@op/ui/Menu';
 import { OptionMenu } from '@op/ui/OptionMenu';
@@ -25,6 +26,10 @@ type UserRolesAndOrganizationsProps = {
 
 type UsersRowProps = {
   user: User;
+};
+
+const getPostHogUserUrl = (distinctPostHogUserId: string) => {
+  return `${posthogUIHost}/person/${encodeURIComponent(distinctPostHogUserId)}`;
 };
 
 export const UsersRow = ({ user }: UsersRowProps) => {
@@ -71,7 +76,7 @@ export const UsersRow = ({ user }: UsersRowProps) => {
             <MenuItem
               key="view-analytics"
               onAction={() => {
-                alert('coming soon');
+                window.open(getPostHogUserUrl(user.authUserId), '_blank');
               }}
               className="px-3 py-1"
             >
