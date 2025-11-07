@@ -19,6 +19,7 @@
     "@formity/react": "^1.0.0",
     "@internationalized/date": "^3.8.2",
     "@next/bundle-analyzer": "^15.3.0",
+    "@op/analytics": "workspace:^",
     "@op/api": "workspace:*",
     "@op/cache": "workspace:*",
     "@op/common": "workspace:*",

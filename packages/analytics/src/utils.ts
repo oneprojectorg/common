@@ -1,10 +1,19 @@
 import PostHogClient from './client';
+import { posthogUIHost } from '@op/core';
 
 const posthog = PostHogClient();
 
 /**
  * Analytics utility functions for tracking user events
  */
+
+/**
+ * Generates an analytics user URL for a given distinct user ID.
+ * PostHog rewrites URLs to include the project ID.
+ */
+export const getAnalyticsUserUrl = (distinctUserId: string) => {
+  return `${posthogUIHost}/person/${encodeURIComponent(distinctUserId)}`;
+};
 
 export interface AnalyticsEvent {
   distinctId: string;
