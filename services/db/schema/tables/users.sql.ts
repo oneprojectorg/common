@@ -67,7 +67,6 @@ export const users = pgTable(
 
 export const usersRelations = relations(users, ({ many, one }) => ({
   organizationUsers: many(organizationUsers),
-  // to be removed
   currentOrganization: one(organizations, {
     fields: [users.lastOrgId],
     references: [organizations.id],

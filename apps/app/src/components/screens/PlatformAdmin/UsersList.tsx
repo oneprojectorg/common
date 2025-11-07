@@ -4,7 +4,7 @@ import type { RouterInput } from '@op/api/client';
 import { trpc } from '@op/api/client';
 import { Pagination } from '@op/ui/Pagination';
 import { cn } from '@op/ui/utils';
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -13,7 +13,17 @@ import { UserRow } from './UserRow';
 // Infer input type for listAllUsers query
 type ListAllUsersInput = RouterInput['platform']['admin']['listAllUsers'];
 
+/** Main users list component with suspense boundary */
 export const UsersList = () => {
+  return (
+    <Suspense fallback={<UsersListSkeleton />}>
+      <UsersListContent />
+    </Suspense>
+  );
+};
+
+/** Renders users list with live data */
+const UsersListContent = () => {
   const t = useTranslations();
   const [cursor, setCursor] = useState<string | null>(null);
   const [cursorHistory, setCursorHistory] = useState<(string | null)[]>([null]);
@@ -95,8 +105,8 @@ export const UsersList = () => {
   );
 };
 
-// TODO: use Skeleton
-export const UsersListSkeleton = () => {
+/** Loading skeleton for users list */
+const UsersListSkeleton = () => {
   return (
     <div className="mt-8">
       <div className="mb-4 h-8 w-48 animate-pulse rounded bg-neutral-gray1" />

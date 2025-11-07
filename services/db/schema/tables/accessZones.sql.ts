@@ -7,7 +7,7 @@ import { accessRoles } from './access.sql';
 /**
  * Access Zones table - defines permission zones/areas in the application
  * Matches AccessZoneSchema from access-zones library
- *
+ * 
  */
 export const accessZones = pgTable(
   'access_zones',
@@ -20,9 +20,12 @@ export const accessZones = pgTable(
   (table) => [...serviceRolePolicies, index().on(table.id).concurrently()],
 );
 
-export const accessZonesRelations = relations(accessZones, ({ many }) => ({
-  rolePermissions: many(accessRolePermissionsOnAccessZones),
-}));
+export const accessZonesRelations = relations(
+  accessZones,
+  ({ many }) => ({
+    rolePermissions: many(accessRolePermissionsOnAccessZones),
+  }),
+);
 
 // Junction table matching AccessRolePermissionOnAccessZoneSchema from access-zones library
 export const accessRolePermissionsOnAccessZones = pgTable(
@@ -50,9 +53,12 @@ export const accessRolePermissionsOnAccessZones = pgTable(
   ],
 );
 
-export const accessRolesRelations = relations(accessRoles, ({ many }) => ({
-  zonePermissions: many(accessRolePermissionsOnAccessZones),
-}));
+export const accessRolesRelations = relations(
+  accessRoles,
+  ({ many }) => ({
+    zonePermissions: many(accessRolePermissionsOnAccessZones),
+  }),
+);
 
 export const accessRolePermissionsOnAccessZonesRelations = relations(
   accessRolePermissionsOnAccessZones,
