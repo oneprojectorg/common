@@ -14,7 +14,7 @@ export interface GetPostInput {
 
 export const getPost = async (input: GetPostInput) => {
   const { postId, includeChildren = false, authUserId } = input;
-  let { maxDepth = 3 } = input;
+  let { maxDepth = 2 } = input;
 
   // enforcing a max depth to prevent infinite cycles
   if (maxDepth > 2) {
