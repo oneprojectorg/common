@@ -289,7 +289,8 @@
   "Submit": "Soumettre",
   "Help determine how we invest our community budget.": "Aidez à déterminer comment nous investissons le budget de notre communauté.",
   "We are in the voting stage now!": "Nous sommes maintenant dans la phase de vote !",
-  "We have at least {budget} to allocate for budget proposals for 2026! Read through the proposals below and in the ballot and voter guide, and you can also take a look at the full texts and discussions by clicking on each proposal. Selected proposals will be implemented in 2026. It will take around 10 minutes for you to participate.": "Nous avons au moins {budget} à allouer pour les propositions budgétaires de 2026 ! Lisez les propositions ci-dessous et dans le bulletin de vote et le guide de l'électeur, et vous pouvez également consulter les textes complets et les discussions en cliquant sur chaque proposition. Les propositions sélectionnées seront mises en œuvre en 2026. Il vous faudra environ 10 minutes pour participer.",
+  "PPVOTINGDESCRIPTION1": "Cliquez sur jusqu'à 5 propositions ci-dessous pour les sélectionner, puis complétez un bref sondage. Cela prendra environ 10 minutes.",
+  "PPVOTINGDESCRIPTION2": "Nous avons au moins {budget} à allouer pour les propositions budgétaires de 2026 ! Lisez les propositions ci-dessous et dans le bulletin de vote et le guide de l'électeur, et vous pouvez également consulter les textes complets et les discussions en cliquant sur chaque proposition. Les propositions sélectionnées seront mises en œuvre en 2026.",
   "Click on \"About the process\" to learn more about the fund allocation.": "Cliquez sur « À propos du processus » pour en savoir plus sur l'allocation des fonds.",
   "The Horizon Fund Committee is deliberating based on their reviews and your votes. Results coming soon!": "Le Comité du Fonds Horizon délibère sur la base de ses examens et de vos votes. Résultats à venir bientôt !",
   "Questions? Reach out to Meg": "Des questions ? Contactez Meg",
@@ -354,5 +355,12 @@
   "Cancel": "Annuler",
   "Add": "Ajouter",
   "See more": "Voir plus",
-  "Choose how you're in relationship with": "Choisissez comment vous êtes en relation avec"
+  "Choose how you're in relationship with": "Choisissez comment vous êtes en relation avec",
+  "platformAdmin_totalUsers": "Total des utilisateurs",
+  "platformAdmin_totalOrganizations": "Total des organisations",
+  "platformAdmin_totalRelationships": "Total des relations",
+  "platformAdmin_newOrganizations": "Nouvelles organisations (7j)",
+  "platformAdmin_title": "Administration de la plateforme",
+  "platformAdmin_viewAllAnalytics": "Voir toutes les analyses",
+  "platformAdmin_addUser": "Ajouter un utilisateur"
 }

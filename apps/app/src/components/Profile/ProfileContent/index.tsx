@@ -1,7 +1,7 @@
 'use client';
 
-import { formatToUrl } from '@/utils';
 import { useUser } from '@/utils/UserProvider';
+import { formatToUrl } from '@op/common/validation';
 import { checkModuleEnabled } from '@/utils/modules';
 import { trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';

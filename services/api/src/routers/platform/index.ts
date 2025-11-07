@@ -1,33 +1,20 @@
 import { getPlatformStats } from '@op/common';
-import { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import withAnalytics from '../../middlewares/withAnalytics';
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
-
-const meta: OpenApiMeta = {
-  openapi: {
-    enabled: true,
-    method: 'GET',
-    path: '/organization/stats',
-    protect: true,
-    tags: ['organization'],
-    summary: 'Get organization statistics',
-  },
-};
+import { platformAdminRouter } from './admin';
 
 /**
- * @deprecated Kept to maintain backward compatibility.
- * TODO: remove!
+ * Handles platform-wide operations such as retrieving statistics, listing profiles, users, organizations, etc,.
  */
-export const organizationStatsRouter = router({
+export const platformRouter = router({
   getStats: loggedProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticated)
     .use(withAnalytics)
-    .meta(meta)
     .input(z.void())
     .output(
       z.object({
@@ -41,4 +28,5 @@ export const organizationStatsRouter = router({
       const { user } = ctx;
       return await getPlatformStats({ user });
     }),
+  admin: platformAdminRouter,
 });

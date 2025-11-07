@@ -1,6 +1,7 @@
 import { DEFAULT_MAX_SIZE } from '@/hooks/useFileUpload';
-import { getPublicUrl, zodUrl } from '@/utils';
+import { getPublicUrl } from '@/utils';
 import { trpc } from '@op/api/client';
+import { zodUrl } from '@op/common/validation';
 import type { Profile } from '@op/api/encoders';
 import { AvatarUploader } from '@op/ui/AvatarUploader';
 import { BannerUploader } from '@op/ui/BannerUploader';

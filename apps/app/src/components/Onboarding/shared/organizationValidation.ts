@@ -1,5 +1,5 @@
-import { zodUrl } from '@/utils';
 import { z } from 'zod';
+import { zodUrl } from '@op/common/validation';
 
 export const multiSelectOptionValidator = z.object({
   id: z.string(),

@@ -67,10 +67,6 @@ export const listRelationshipsRouter = router({
       const { user } = ctx;
 
       try {
-        if (!user) {
-          throw new UnauthorizedError('No user found');
-        }
-
         const orgId = await getCurrentOrgId({ authUserId: user.id });
         const { records: organizations, count } = await getPendingRelationships(
           {
@@ -104,10 +100,6 @@ export const listRelationshipsRouter = router({
       const { to, from, pending } = input;
 
       try {
-        if (!user) {
-          throw new UnauthorizedError('No user found');
-        }
-
         const defaultOrgId = await getCurrentOrgId({ authUserId: user.id });
         const { records: relationships, count } =
           await getDirectedRelationships({
@@ -142,10 +134,6 @@ export const listRelationshipsRouter = router({
       const { organizationId, pending } = input;
 
       try {
-        if (!user) {
-          throw new UnauthorizedError('No user found');
-        }
-
         const { records: organizations, count } = await getRelatedOrganizations(
           {
             user,
