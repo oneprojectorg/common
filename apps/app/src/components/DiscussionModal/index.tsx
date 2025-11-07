@@ -5,7 +5,7 @@ import { trpc } from '@op/api/client';
 import type { PostToOrganization } from '@op/api/encoders';
 import { Modal, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Surface } from '@op/ui/Surface';
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useRef } from 'react';
 import React from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -44,6 +44,8 @@ export function DiscussionModal({
     { enabled: isOpen },
   );
 
+  const comments = commentsData || [];
+
   // Function to scroll to show the bottom of the original post after adding a comment
   const scrollToOriginalPost = useCallback(() => {
     if (commentsContainerRef.current) {
@@ -72,20 +74,6 @@ export function DiscussionModal({
   const authorName =
     sourcePostProfile?.name ?? organization?.profile.name ?? '';
 
-  // Transform comments data to match PostFeeds expected PostToOrganizaion format
-  const comments = useMemo(() => {
-    if (!commentsData) return [];
-
-    return commentsData.map((comment) => ({
-      createdAt: comment.createdAt,
-      updatedAt: comment.updatedAt,
-      deletedAt: null,
-      postId: comment.id,
-      organizationId: organization?.id || '', // Use parent post's organization if available
-      post: comment,
-      organization: organization || null, // Use parent post's organization context
-    }));
-  }, [commentsData, organization]);
 
   return (
     <Modal
@@ -104,7 +92,8 @@ export function DiscussionModal({
           {/* Original Post Display */}
           <PostFeed className="originalPost border-none">
             <PostItem
-              postToOrg={postToOrg}
+              post={post}
+              organization={organization ?? null}
               user={user}
               withLinks={false}
               onReactionClick={handleReactionClick}
@@ -124,14 +113,15 @@ export function DiscussionModal({
             <div role="feed" aria-label={`${comments.length} comments`}>
               <PostFeed className="border-none">
                 {comments.map((comment, i) => (
-                  <React.Fragment key={comment.post.id}>
+                  <React.Fragment key={comment.id}>
                     <div
                       data-comment-item
-                      data-comment-id={comment.post.id}
+                      data-comment-id={comment.id}
                       data-is-first-comment={i === 0}
                     >
                       <PostItem
-                        postToOrg={comment}
+                        post={comment}
+                        organization={organization ?? null}
                         user={user}
                         withLinks={false}
                         onReactionClick={handleReactionClick}

@@ -88,26 +88,14 @@ export function ProposalView({
       includeChildren: false,
     });
 
+  const comments = commentsData || [];
+
   // Post feed actions for comments with profile-specific optimistic updates
   const { handleReactionClick } = usePostFeedActions({
     user,
     profileId: currentProposal.profileId || undefined, // Add profileId for optimistic updates
   });
 
-  // Transform comments data to match PostToOrganization format expected by PostItem
-  const comments = useMemo(
-    () =>
-      commentsData?.map((comment) => ({
-        createdAt: comment.createdAt,
-        updatedAt: comment.updatedAt,
-        deletedAt: null,
-        postId: comment.id,
-        organizationId: '', // Not needed for proposal comments
-        post: comment,
-        organization: null, // Comments don't need organization context
-      })) || [],
-    [commentsData],
-  );
 
   // Function to scroll to show comments after adding a new one
   const scrollToComments = useCallback(() => {
@@ -341,9 +329,10 @@ export function ProposalView({
                 <div role="feed" aria-label={`${comments.length} comments`}>
                   <PostFeed>
                     {comments.map((comment, i) => (
-                      <div key={comment.post.id}>
+                      <div key={comment.id}>
                         <PostItem
-                          postToOrg={comment}
+                          post={comment}
+                          organization={null}
                           user={user}
                           withLinks={false}
                           onReactionClick={handleReactionClick}

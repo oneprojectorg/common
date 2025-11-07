@@ -26,17 +26,6 @@ export function PostDetailView({
   const { user } = useUser();
   const commentsContainerRef = useRef<HTMLDivElement>(null);
 
-  // Create PostToOrganization format for the main post
-  const postToOrg = {
-    createdAt: post.createdAt,
-    updatedAt: post.updatedAt,
-    deletedAt: null,
-    postId: post.id,
-    organizationId: organization?.id || '',
-    post: post,
-    organization: organization || null,
-  };
-
   const { handleReactionClick } = usePostDetailActions({
     postId: post.id,
     user,
@@ -49,6 +38,8 @@ export function PostDetailView({
     offset: 0,
     includeChildren: false,
   });
+
+  const comments = commentsData || [];
 
   // Function to scroll to show the bottom of the original post after adding a comment
   const scrollToOriginalPost = useCallback(() => {
@@ -70,19 +61,6 @@ export function PostDetailView({
     }
   }, []);
 
-  // Transform comments data to match PostToOrganization format
-  const comments = !commentsData
-    ? []
-    : commentsData.map((comment) => ({
-        createdAt: comment.createdAt,
-        updatedAt: comment.updatedAt,
-        deletedAt: null,
-        postId: comment.id,
-        organizationId: organization?.id || '',
-        post: comment,
-        organization: organization || null,
-      }));
-
   return (
     <PostViewLayout>
       <PostDetailHeader />
@@ -91,7 +69,8 @@ export function PostDetailView({
           {/* Original Post Display */}
           <PostFeed className="originalPost border-none pb-2">
             <PostItemOnDetailPage
-              postToOrg={postToOrg}
+              post={post}
+              organization={organization}
               user={user}
               withLinks={false}
               onReactionClick={handleReactionClick}
@@ -126,9 +105,10 @@ export function PostDetailView({
               <div role="feed" aria-label={`${comments.length} comments`}>
                 <PostFeed>
                   {comments.map((comment) => (
-                    <div key={comment.post.id}>
+                    <div key={comment.id}>
                       <PostItem
-                        postToOrg={comment}
+                        post={comment}
+                        organization={organization}
                         user={user}
                         withLinks={false}
                         onReactionClick={handleReactionClick}

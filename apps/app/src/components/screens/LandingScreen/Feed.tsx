@@ -34,7 +34,8 @@ export const Feed = () => {
         postsData.items.map((postToOrg) => (
           <Fragment key={postToOrg.postId}>
             <PostItem
-              postToOrg={postToOrg}
+              post={postToOrg.post}
+              organization={postToOrg.organization ?? null}
               user={user}
               withLinks={true}
               onReactionClick={handleReactionClick}

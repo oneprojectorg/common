@@ -256,21 +256,22 @@ export const EmptyPostsState = () => {
 };
 
 export const PostItem = ({
-  postToOrg,
+  post,
+  organization,
   user,
   withLinks,
   onReactionClick,
   onCommentClick,
   className,
 }: {
-  postToOrg: PostToOrganization;
+  post: Post;
+  organization: Organization | null;
   user?: OrganizationUser;
   withLinks: boolean;
   onReactionClick: (postId: string, emoji: string) => void;
-  onCommentClick?: (post: PostToOrganization) => void;
+  onCommentClick?: (post: Post, organization: Organization | null) => void;
   className?: string;
 }) => {
-  const { organization, post } = postToOrg;
   const { urls } = useMemo(() => detectLinks(post?.content), [post?.content]);
 
   // For comments (posts without organization), show the post author
@@ -313,7 +314,7 @@ export const PostItem = ({
             {onCommentClick ? (
               <PostCommentButton
                 post={post}
-                onCommentClick={() => onCommentClick(postToOrg)}
+                onCommentClick={() => onCommentClick(post, organization)}
               />
             ) : null}
           </div>
@@ -324,21 +325,22 @@ export const PostItem = ({
 };
 
 export const PostItemOnDetailPage = ({
-  postToOrg,
+  post,
+  organization,
   user,
   withLinks,
   onReactionClick,
   commentCount,
   className,
 }: {
-  postToOrg: PostToOrganization;
+  post: Post;
+  organization: Organization | null;
   user?: OrganizationUser;
   withLinks: boolean;
   onReactionClick: (postId: string, emoji: string) => void;
   commentCount: number;
   className?: string;
 }) => {
-  const { organization, post } = postToOrg;
   const { urls } = useMemo(() => detectLinks(post?.content), [post?.content]);
 
   // For comments (posts without organization), show the post author
@@ -635,8 +637,21 @@ export const usePostFeedActions = ({
     toggleReaction.mutate({ postId, reactionType });
   };
 
-  const handleCommentClick = (post: PostToOrganization) => {
-    setDiscussionModal({ isOpen: true, post });
+  const handleCommentClick = (
+    post: Post,
+    organization: Organization | null,
+  ) => {
+    // Convert to PostToOrganization for modal state
+    const postToOrg: PostToOrganization = {
+      createdAt: post.createdAt,
+      updatedAt: post.updatedAt,
+      deletedAt: null,
+      postId: post.id,
+      organizationId: organization?.id || '',
+      post,
+      organization,
+    };
+    setDiscussionModal({ isOpen: true, post: postToOrg });
   };
 
   const handleModalClose = () => {
