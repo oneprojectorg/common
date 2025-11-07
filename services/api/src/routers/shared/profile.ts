@@ -1,3 +1,4 @@
+import { zodUrl } from '@op/common/validation';
 import { TRPCError } from '@trpc/server';
 import { ZodError } from 'zod';
 import { z } from 'zod';
@@ -68,8 +69,8 @@ export const updateUserProfileDataSchema = z
       .max(255, {
         error: 'Must be at most 255 characters',
       }),
-    website: z.string().trim().max(255, {
-      error: 'Must be at most 255 characters',
+    website: zodUrl({
+      error: 'Invalid URL',
     }),
     focusAreas: z.array(
       z.object({
