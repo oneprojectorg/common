@@ -53,6 +53,7 @@
     "./SocialLinks": "./src/components/SocialLinks.tsx",
     "./Stepper": "./src/components/Stepper/index.ts",
     "./Switch": "./src/components/Switch.tsx",
+    "./Table": "./src/components/Table.tsx",
     "./Tabs": "./src/components/Tabs.tsx",
     "./TagGroup": "./src/components/TagGroup.tsx",
     "./TextField": "./src/components/TextField.tsx",

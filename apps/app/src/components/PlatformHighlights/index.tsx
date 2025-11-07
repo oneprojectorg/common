@@ -1,17 +1,17 @@
 'use client';
 
+import { getPublicUrl } from '@/utils';
+import { pluralize } from '@/utils/pluralize';
 import { trpc } from '@op/api/client';
 import { Avatar } from '@op/ui/Avatar';
 import { FacePile } from '@op/ui/FacePile';
 import { Surface } from '@op/ui/Surface';
 import { cn } from '@op/ui/utils';
-import Image from 'next/image';
 import { useTranslations } from 'next-intl';
+import Image from 'next/image';
 import { ReactNode, Suspense, useEffect, useRef, useState } from 'react';
 
 import { Link } from '@/lib/i18n';
-import { getPublicUrl } from '@/utils';
-import { pluralize } from '@/utils/pluralize';
 
 const HighlightNumber = ({
   children,

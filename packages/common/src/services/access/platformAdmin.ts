@@ -1,11 +1,13 @@
 import { platformAdminEmailDomain } from '@op/core';
-import { User } from '@op/supabase/lib';
+import { db } from '@op/db/client';
 
-/**
- * Checks if a user has platform admin privileges based on email domain
- * Platform admins are identified by having an email address matching the configured admin domain
- */
-export const isUserPlatformAdmin = (user: User): boolean => {
+import { UnauthorizedError } from '../../utils/error';
+
+export const isPlatformAdmin = async (authUserId: string): Promise<boolean> => {
+  const user = await db.query.users.findFirst({
+    where: (table, { eq }) => eq(table.authUserId, authUserId),
+  });
+
   if (!user?.email) {
     return false;
   }
@@ -17,4 +19,14 @@ export const isUserPlatformAdmin = (user: User): boolean => {
   }
 
   return platformAdminEmailDomain === emailDomain;
+};
+
+export const assertPlatformAdmin = async (
+  authUserId: string,
+): Promise<void> => {
+  const isAdmin = await isPlatformAdmin(authUserId);
+
+  if (!isAdmin) {
+    throw new UnauthorizedError('Platform admin access required');
+  }
 };

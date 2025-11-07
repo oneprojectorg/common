@@ -54,7 +54,7 @@ export const Pagination = React.forwardRef<HTMLDivElement, PaginationProps>(
     return (
       <div
         ref={ref}
-        className={clsx('flex items-center justify-between', className)}
+        className={clsx('flex items-center justify-end gap-4', className)}
       >
         {range.totalItems > 1 ? <PaginationRange {...range} /> : null}
         <PaginationNavigation {...actionProps} />

@@ -92,6 +92,7 @@ export const Select = <T extends object>({
 }: SelectProps<T>) => {
   const { className: popoverClassName, ...popoverProps } =
     props.popoverProps || {};
+
   return (
     <AriaSelect
       {...props}
@@ -118,7 +119,7 @@ export const Select = <T extends object>({
             <SelectValue
               className={cn(
                 props.selectValueClassName,
-                'flex h-full items-center text-neutral-gray4',
+                'flex h-full min-w-0 flex-1 items-center text-ellipsis text-neutral-gray4',
               )}
             />
             {icon ?? (

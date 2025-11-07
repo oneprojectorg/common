@@ -360,5 +360,6 @@
   "platformAdmin_newOrganizations": "Nuevas organizaciones (7d)",
   "platformAdmin_title": "Administración de la plataforma",
   "platformAdmin_viewAllAnalytics": "Ver todas las analíticas",
-  "platformAdmin_addUser": "Agregar usuario"
+  "platformAdmin_addUser": "Agregar usuario",
+  "platformAdmin_paginationUsers": "usuarios"
 }

@@ -45,8 +45,6 @@ const roleJunctionSchema = z.object({
   accessRole: accessRoleSchema,
 });
 
-// Extended organization user schema that includes permissions and role data
-// Used when returning user data with full organizational context
 const organizationUserWithPermissionsEncoder = createSelectSchema(
   organizationUsers,
 ).extend({
@@ -55,10 +53,6 @@ const organizationUserWithPermissionsEncoder = createSelectSchema(
   roles: z.array(roleJunctionSchema).nullish(),
 });
 
-/**
- * Complete user data encoder with all relational data
- * Includes avatar, organization memberships, roles, and profile information
- */
 export const userEncoder = createSelectSchema(users).extend({
   avatarImage: createSelectSchema(objectsInStorage).nullish(),
   organizationUsers: organizationUserWithPermissionsEncoder.array().nullish(),

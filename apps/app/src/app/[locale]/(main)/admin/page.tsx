@@ -1,9 +1,12 @@
 import { createClient } from '@op/api/serverClient';
 import { platformAdminEmailDomain } from '@op/core';
 import { notFound } from 'next/navigation';
+import { Suspense } from 'react';
 
 import { PlatformStats } from '@/components/screens/PlatformAdmin';
 import { PlatformAdminHeader } from '@/components/screens/PlatformAdmin/PlatformAdminHeader';
+import { UsersListSkeleton } from '@/components/screens/PlatformAdminScreen/UsersList';
+import { UsersList } from '@/components/screens/PlatformAdminScreen/UsersList';
 
 // Force dynamic rendering to ensure fresh data on each request
 export const dynamic = 'force-dynamic';
@@ -23,6 +26,9 @@ export default async function AdminPage() {
     <div className="flex w-full flex-col gap-8 p-8">
       <PlatformAdminHeader />
       <PlatformStats />
+      <Suspense fallback={<UsersListSkeleton />}>
+        <UsersList />
+      </Suspense>
     </div>
   );
 }

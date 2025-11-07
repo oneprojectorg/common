@@ -1,12 +1,11 @@
-import { cache } from '@op/cache';
-import { decodeCursor, encodeCursor } from '@op/common';
+import { assertPlatformAdmin, decodeCursor, encodeCursor } from '@op/common';
 import { and, count, db, eq, lt, or } from '@op/db/client';
 import { users } from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import { userEncoder } from '../../../encoders/';
-import { withAuthenticatedPlatformAdmin } from '../../../middlewares/withAuthenticated';
+import withAuthenticated from '../../../middlewares/withAuthenticated';
 import withRateLimited from '../../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../../trpcFactory';
 import { dbFilter } from '../../../utils';
@@ -14,7 +13,7 @@ import { dbFilter } from '../../../utils';
 export const listAllUsersRouter = router({
   listAllUsers: loggedProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
-    .use(withAuthenticatedPlatformAdmin)
+    .use(withAuthenticated)
     .input(dbFilter.optional())
     .output(
       z.object({
@@ -24,64 +23,67 @@ export const listAllUsersRouter = router({
         total: z.number(),
       }),
     )
-    .query(async ({ input }) => {
-      const { limit = 10, cursor, dir = 'desc' } = input ?? {};
+    .query(async ({ ctx, input }) => {
+      const { user } = ctx;
+      const {
+        limit = 10,
+        cursor,
+        orderBy = 'createdAt',
+        dir = 'desc',
+      } = input ?? {};
 
       try {
-        // Cursor-based pagination using createdAt timestamp
-        // Combines createdAt with id as tiebreaker for users created at the same time
+        await assertPlatformAdmin(user.id);
+
         const cursorData = cursor ? decodeCursor(cursor) : null;
+
+        // Build cursor condition
         const cursorCondition = cursorData
           ? or(
-              lt(users.createdAt, cursorData.createdAt),
+              lt(users.createdAt, cursorData.updatedAt),
               and(
-                eq(users.createdAt, cursorData.createdAt),
+                eq(users.createdAt, cursorData.updatedAt),
                 lt(users.id, cursorData.id),
               ),
             )
           : undefined;
 
-        // Parallel database queries for optimal performance
-        const [allUsers, totalCountResult] = await Promise.all([
-          // Fetch users with complete profile, organization, and role data
-          db.query.users.findMany({
-            where: cursorCondition,
-            with: {
-              profile: true,
-              organizationUsers: {
-                with: {
-                  organization: {
-                    with: {
-                      profile: true,
-                    },
+        // Determine order by column
+        const orderByColumn =
+          orderBy === 'updatedAt' ? users.updatedAt : users.createdAt;
+
+        // Get total count of users
+        const totalCountResult = await db
+          .select({ value: count() })
+          .from(users);
+        const totalCount = totalCountResult[0]?.value ?? 0;
+
+        const allUsers = await db.query.users.findMany({
+          where: cursorCondition,
+          with: {
+            profile: true,
+            organizationUsers: {
+              with: {
+                organization: {
+                  with: {
+                    profile: true,
                   },
-                  roles: {
-                    with: {
-                      accessRole: true,
-                    },
+                },
+                roles: {
+                  with: {
+                    accessRole: true,
                   },
                 },
               },
             },
-            orderBy: (_, { asc, desc }) =>
-              dir === 'asc' ? asc(users.createdAt) : desc(users.createdAt),
-            limit: limit + 1, // Fetch one extra item to determine if more pages exist
-          }),
-          // Total user count with 5-minute cache to reduce database load
-          cache<{ value: number }>({
-            type: 'user',
-            params: ['total-count'],
-            fetch: async () => {
-              const [result] = await db.select({ value: count() }).from(users);
-              return result;
-            },
-            options: {
-              ttl: 5 * 60 * 1000, // 5 minutes
-            },
-          }),
-        ]);
+          },
+          orderBy: (_, { asc, desc }) =>
+            dir === 'asc' ? asc(orderByColumn) : desc(orderByColumn),
+          limit: limit + 1, // Fetch one extra to check hasMore
+        });
 
-        const totalCount = totalCountResult.value ?? 0;
+        console.log('all users', allUsers);
+
         const hasMore = allUsers.length > limit;
         const items = hasMore ? allUsers.slice(0, limit) : allUsers;
         const lastItem = items[items.length - 1];
@@ -97,6 +99,20 @@ export const listAllUsersRouter = router({
           total: totalCount,
         };
       } catch (error: unknown) {
+        console.error('Error listing all users:', error);
+
+        if (error instanceof Error) {
+          if (
+            error.message.includes('Platform admin') ||
+            error.message.includes('Unauthorized')
+          ) {
+            throw new TRPCError({
+              message: 'Platform admin access required',
+              code: 'UNAUTHORIZED',
+            });
+          }
+        }
+
         throw new TRPCError({
           message: 'Failed to retrieve users',
           code: 'INTERNAL_SERVER_ERROR',

@@ -361,5 +361,13 @@
   "platformAdmin_newOrganizations": "New organizations (7d)",
   "platformAdmin_title": "Platform admin",
   "platformAdmin_viewAllAnalytics": "View all analytics",
-  "platformAdmin_addUser": "Add user"
+  "platformAdmin_addUser": "Add user",
+  "platformAdmin_paginationUsers": "users",
+  "All Users": "All Users",
+  "Name": "Name",
+  "Email": "Email",
+  "Role": "Role",
+  "Organization": "Organization",
+  "Joined": "Joined",
+  "Actions": "Actions"
 }
