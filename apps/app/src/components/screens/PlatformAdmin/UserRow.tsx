@@ -6,9 +6,12 @@ import { Menu, MenuItem, MenuSeparator } from '@op/ui/Menu';
 import { OptionMenu } from '@op/ui/OptionMenu';
 import { Select, SelectItem } from '@op/ui/Select';
 import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
+import { cn } from '@op/ui/utils';
 import { useFormatter } from 'next-intl';
 import { useState } from 'react';
 import { Button } from 'react-aria-components';
+
+import { USER_TABLE_GRID_COLS } from './constants';
 
 // Infer types from tRPC router output
 type ListAllUsersOutput = RouterOutput['platform']['admin']['listAllUsers'];
@@ -29,7 +32,7 @@ export const UserRow = ({ user }: UserRowProps) => {
   const relativeCreatedAt = createdAt ? useRelativeTime(createdAt) : null;
 
   return (
-    <div className="hover:bg-neutral-gray0 grid grid-cols-[minmax(120px,1fr)_minmax(180px,1.5fr)_minmax(100px,0.8fr)_minmax(200px,2.2fr)_minmax(80px,0.5fr)_80px] gap-4 py-4 transition-colors">
+    <div className={cn('hover:bg-neutral-gray0 grid gap-4 py-4 transition-colors', USER_TABLE_GRID_COLS)}>
       <div className="flex items-center text-sm text-neutral-black">
         {user.profile?.name ?? user.name ?? '—'}
       </div>
