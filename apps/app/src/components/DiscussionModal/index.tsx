@@ -5,6 +5,8 @@ import { trpc } from '@op/api/client';
 import type { Organization, Post } from '@op/api/encoders';
 import { Modal, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Surface } from '@op/ui/Surface';
+import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
+import { AvatarSkeleton } from '@op/ui/Avatar';
 import { useCallback, useRef } from 'react';
 import React from 'react';
 
@@ -12,6 +14,26 @@ import { useTranslations } from '@/lib/i18n';
 
 import { PostFeed, PostItem, usePostFeedActions } from '../PostFeed';
 import { PostUpdate } from '../PostUpdate';
+import { FeedItem, FeedMain, FeedHeader, FeedContent } from '../Feed';
+
+function CommentSkeleton() {
+  return (
+    <FeedItem className="sm:px-4">
+      <AvatarSkeleton className="!size-8 max-h-8 max-w-8" />
+      <FeedMain>
+        <FeedHeader className="relative w-full justify-between">
+          <div className="flex items-baseline gap-2">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-3 w-16" />
+          </div>
+        </FeedHeader>
+        <FeedContent>
+          <SkeletonLine lines={2} />
+        </FeedContent>
+      </FeedMain>
+    </FeedItem>
+  );
+}
 
 export function DiscussionModal({
   post,
@@ -103,13 +125,9 @@ export function DiscussionModal({
           </PostFeed>
           {/* Comments Display */}
           {isLoading ? (
-            <div
-              className="py-8 text-center text-gray-500"
-              role="status"
-              aria-label="Loading discussion"
-            >
-              Loading discussion...
-            </div>
+            <PostFeed className="border-none">
+              <CommentSkeleton />
+            </PostFeed>
           ) : comments.length > 0 ? (
             <div role="feed" aria-label={`${comments.length} comments`}>
               <PostFeed className="border-none">
