@@ -394,7 +394,8 @@ export const DiscussionModalContainer = ({
 }: {
   discussionModal: {
     isOpen: boolean;
-    post?: PostToOrganization | null;
+    post?: Post | null;
+    organization?: Organization | null;
   };
   onClose: () => void;
 }) => {
@@ -404,7 +405,8 @@ export const DiscussionModalContainer = ({
 
   return (
     <DiscussionModal
-      postToOrg={discussionModal.post}
+      post={discussionModal.post}
+      organization={discussionModal.organization ?? null}
       isOpen={discussionModal.isOpen}
       onClose={onClose}
     />
@@ -427,10 +429,12 @@ export const usePostFeedActions = ({
   const utils = trpc.useUtils();
   const [discussionModal, setDiscussionModal] = useState<{
     isOpen: boolean;
-    post?: PostToOrganization | null;
+    post?: Post | null;
+    organization?: Organization | null;
   }>({
     isOpen: false,
     post: null,
+    organization: null,
   });
 
   const toggleReaction = trpc.organization.toggleReaction.useMutation({
@@ -641,21 +645,11 @@ export const usePostFeedActions = ({
     post: Post,
     organization: Organization | null,
   ) => {
-    // Convert to PostToOrganization for modal state
-    const postToOrg: PostToOrganization = {
-      createdAt: post.createdAt,
-      updatedAt: post.updatedAt,
-      deletedAt: null,
-      postId: post.id,
-      organizationId: organization?.id || '',
-      post,
-      organization,
-    };
-    setDiscussionModal({ isOpen: true, post: postToOrg });
+    setDiscussionModal({ isOpen: true, post, organization });
   };
 
   const handleModalClose = () => {
-    setDiscussionModal({ isOpen: false, post: null });
+    setDiscussionModal({ isOpen: false, post: null, organization: null });
   };
 
   return {

@@ -2,7 +2,7 @@
 
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import type { PostToOrganization } from '@op/api/encoders';
+import type { Organization, Post } from '@op/api/encoders';
 import { Modal, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Surface } from '@op/ui/Surface';
 import { useCallback, useRef } from 'react';
@@ -14,17 +14,18 @@ import { PostFeed, PostItem, usePostFeedActions } from '../PostFeed';
 import { PostUpdate } from '../PostUpdate';
 
 export function DiscussionModal({
-  postToOrg,
+  post,
+  organization,
   isOpen,
   onClose,
 }: {
-  postToOrg: PostToOrganization;
+  post: Post;
+  organization: Organization | null;
   isOpen: boolean;
   onClose: () => void;
 }) {
   const { user } = useUser();
   const t = useTranslations();
-  const { post, organization } = postToOrg;
   const commentsContainerRef = useRef<HTMLDivElement>(null);
 
   const { handleReactionClick, handleCommentClick } = usePostFeedActions({
