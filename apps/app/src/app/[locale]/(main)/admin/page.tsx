@@ -3,10 +3,9 @@ import { platformAdminEmailDomain } from '@op/core';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
-import { PlatformStats } from '@/components/screens/PlatformAdmin';
+import { PlatformStats, UsersList } from '@/components/screens/PlatformAdmin';
 import { PlatformAdminHeader } from '@/components/screens/PlatformAdmin/PlatformAdminHeader';
 import { UsersListSkeleton } from '@/components/screens/PlatformAdminScreen/UsersList';
-import { UsersList } from '@/components/screens/PlatformAdminScreen/UsersList';
 
 // Force dynamic rendering to ensure fresh data on each request
 export const dynamic = 'force-dynamic';
