@@ -4,7 +4,7 @@ import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import type { Organization, Post } from '@op/api/encoders';
 import { Surface } from '@op/ui/Surface';
-import { useCallback, useRef, Suspense } from 'react';
+import { Suspense, useCallback, useRef } from 'react';
 import React from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -139,7 +139,7 @@ export function PostDetailView({
 
           {/* Comment Input */}
           <div className="border-y border-neutral-gray1">
-            <Surface className="border-0 p-0 sm:py-4">
+            <Surface className="border-0 px-0 py-4">
               <PostUpdate
                 parentPostId={post.id}
                 placeholder={`${t('Comment')}${user?.currentProfile?.name ? ` as ${user?.currentProfile?.name}` : ''}...`}
