@@ -27,6 +27,7 @@ type Member = {
     name: string | null;
     slug: string;
     bio: string | null;
+    email: string | null;
     type: string;
     avatarImage: {
       id: string;
@@ -278,7 +279,7 @@ const MembersListContent = ({
                   {/* Show email if different from display name */}
                   {(member.name || profile?.name) && (
                     <div className="text-sm text-neutral-charcoal">
-                      {member.email}
+                      {member.profile?.email || member.email}
                     </div>
                   )}
                 </div>
