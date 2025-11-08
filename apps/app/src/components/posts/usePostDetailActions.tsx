@@ -115,9 +115,6 @@ export const usePostDetailActions = ({
 
       toast.error({ message: err.message || t('Failed to update reaction') });
     },
-    onSuccess: () => {
-      // Skip invalidation to preserve optimistic updates
-    },
   });
 
   const handleReactionClick = (reactionPostId: string, emoji: string) => {
