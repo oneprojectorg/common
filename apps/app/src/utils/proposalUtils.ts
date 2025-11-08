@@ -36,36 +36,58 @@ export { formatCurrency, formatDate };
 
 /**
  * Safely extract text content from HTML without XSS vulnerability
- * First decodes HTML entities, then uses DOMParser for security
+ * Preserves line breaks from block-level HTML elements and slices by lines
  */
-export function getTextPreview(html: string, maxLength: number = 300): string {
+export function getTextPreview(
+  html: string,
+  maxLines: number = 3,
+  maxLength: number = 300,
+): string {
   // First decode HTML entities (e.g., &lt;p&gt; becomes <p>)
   const decodedHtml = he.decode(html);
 
+  // Replace block-level elements with newline markers before stripping HTML
+  // This preserves semantic line breaks from paragraphs, divs, lists, etc.
+  const withLineBreaks = decodedHtml
+    .replace(/<\/?(p|div|li|h[1-6]|blockquote|tr)[^>]*>/gi, '\n')
+    .replace(/<br\s*\/?>/gi, '\n');
+
+  let text: string;
+
   if (typeof window === 'undefined') {
     // Server-side fallback - strip HTML tags with regex (basic but safe)
-    const text = decodedHtml.replace(/<[^>]*>/g, '');
-    return text.length > maxLength
-      ? text.substring(0, maxLength) + '...'
-      : text;
+    text = withLineBreaks.replace(/<[^>]*>/g, '');
+  } else {
+    try {
+      // Client-side - use DOMParser for safe HTML parsing
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(withLineBreaks, 'text/html');
+      text = doc.body.textContent || doc.body.innerText || '';
+    } catch (error) {
+      console.warn('Failed to parse HTML content:', error);
+      // Fallback to regex stripping if DOMParser fails
+      text = withLineBreaks.replace(/<[^>]*>/g, '');
+    }
   }
 
-  try {
-    // Client-side - use DOMParser for safe HTML parsing
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(decodedHtml, 'text/html');
-    const text = doc.body.textContent || doc.body.innerText || '';
-    return text.length > maxLength
-      ? text.substring(0, maxLength) + '...'
-      : text;
-  } catch (error) {
-    console.warn('Failed to parse HTML content:', error);
-    // Fallback to regex stripping if DOMParser fails
-    const text = decodedHtml.replace(/<[^>]*>/g, '');
-    return text.length > maxLength
-      ? text.substring(0, maxLength) + '...'
-      : text;
-  }
+  // Split by newlines and filter out empty lines
+  const lines = text
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+
+  // Take first N lines
+  const previewLines = lines.slice(0, maxLines);
+  const preview = previewLines.join(' ');
+
+  // Truncate if still too long and add ellipsis if there's more content
+  const hasMoreLines = lines.length > maxLines;
+  const truncated =
+    preview.length > maxLength ? preview.substring(0, maxLength) : preview;
+
+  return hasMoreLines || truncated.length < preview.length
+    ? truncated + '...'
+    : truncated;
 }
 
 /**
