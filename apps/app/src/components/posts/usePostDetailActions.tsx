@@ -8,6 +8,8 @@ import type { PostToOrganization } from '@op/api/encoders';
 import { REACTION_OPTIONS } from '@op/types';
 import { toast } from '@op/ui/Toast';
 
+import { useTranslations } from '@/lib/i18n';
+
 /**
  * Hook for handling reactions on the post detail page.
  * Manages optimistic updates for both the main post and its comments.
@@ -21,6 +23,7 @@ export const usePostDetailActions = ({
   user?: PostFeedUser;
 }) => {
   const utils = trpc.useUtils();
+  const t = useTranslations();
 
   const toggleReaction = trpc.organization.toggleReaction.useMutation({
     onMutate: async ({ postId: reactionPostId, reactionType }) => {
@@ -42,7 +45,11 @@ export const usePostDetailActions = ({
       // Create optimistic updater
       const optimisticUpdater = createOptimisticUpdater(user);
       const updatePostReactions = (item: PostToOrganization) =>
-        optimisticUpdater.updatePostReactions(item, reactionPostId, reactionType);
+        optimisticUpdater.updatePostReactions(
+          item,
+          reactionPostId,
+          reactionType,
+        );
 
       // Optimistically update main post
       utils.posts.getPost.setData(mainPostQueryKey, (old) => {
@@ -100,10 +107,13 @@ export const usePostDetailActions = ({
         utils.posts.getPost.setData(mainPostQueryKey, context.previousMainPost);
       }
       if (context?.previousComments) {
-        utils.posts.getPosts.setData(commentsQueryKey, context.previousComments);
+        utils.posts.getPosts.setData(
+          commentsQueryKey,
+          context.previousComments,
+        );
       }
 
-      toast.error({ message: err.message || 'Failed to update reaction' });
+      toast.error({ message: err.message || t('Failed to update reaction') });
     },
     onSuccess: () => {
       // Skip invalidation to preserve optimistic updates
