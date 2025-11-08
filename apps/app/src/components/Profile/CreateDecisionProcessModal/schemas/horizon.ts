@@ -1,6 +1,11 @@
-import { RJSFSchema, UiSchema } from '@rjsf/utils';
+import { UiSchema } from '@rjsf/utils';
 
-export const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
+import { SchemaWithErrorMessage } from './types';
+
+export const stepSchemas: {
+  schema: SchemaWithErrorMessage;
+  uiSchema: UiSchema;
+}[] = [
   {
     schema: {
       type: 'object',
@@ -187,7 +192,7 @@ export const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
           errorMessage: {
             minimum: 'Must be 1 or more',
           },
-        } as any,
+        },
       },
     },
     uiSchema: {
@@ -272,6 +277,10 @@ export const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
           title: 'Budget cap amount',
           minimum: 0,
           description: 'Maximum budget amount participants can request',
+          errorMessage: {
+            type: 'Please enter a number',
+            minimum: 'Must be 0 or more',
+          },
         },
         descriptionGuidance: {
           type: 'string',
@@ -362,7 +371,8 @@ export const transformFormDataToProcessSchema = (
           sortOrder: 2,
         },
         config: {
-          allowProposals: (data.proposalSubmissionPhase as any)?.allowProposals ?? true,
+          allowProposals:
+            (data.proposalSubmissionPhase as any)?.allowProposals ?? true,
           allowDecisions: false,
         },
       },
