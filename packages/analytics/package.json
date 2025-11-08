@@ -7,7 +7,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./client": "./src/client.ts",
-    "./utils": "./src/utils.ts"
+    "./utils": "./src/utils.ts",
+    "./client-utils": "./src/client-utils.ts"
   },
   "types": "./src/index.ts",
   "scripts": {
@@ -15,6 +16,7 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
+    "@op/core": "workspace:^",
     "posthog-node": "^4.3.0"
   },
   "devDependencies": {

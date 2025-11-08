@@ -1,6 +1,7 @@
 'use client';
 
 import type { RouterOutput } from '@op/api/client';
+import { getAnalyticsUserUrl } from '@op/analytics/client-utils';
 import { useRelativeTime } from '@op/hooks';
 import { Menu, MenuItem, MenuSeparator } from '@op/ui/Menu';
 import { OptionMenu } from '@op/ui/OptionMenu';
@@ -34,7 +35,12 @@ export const UsersRow = ({ user }: UsersRowProps) => {
   const relativeUpdatedAt = updatedAt ? useRelativeTime(updatedAt) : null;
 
   return (
-    <div className={cn('hover:bg-neutral-gray0 py-4 transition-colors', styles.usersTableGrid)}>
+    <div
+      className={cn(
+        'hover:bg-neutral-gray0 py-4 transition-colors',
+        styles.usersTableGrid,
+      )}
+    >
       <div className="flex items-center text-sm font-normal text-neutral-black">
         {user.profile?.name ?? user.name ?? '—'}
       </div>
@@ -71,7 +77,7 @@ export const UsersRow = ({ user }: UsersRowProps) => {
             <MenuItem
               key="view-analytics"
               onAction={() => {
-                alert('coming soon');
+                window.open(getAnalyticsUserUrl(user.authUserId), '_blank');
               }}
               className="px-3 py-1"
             >
@@ -94,7 +100,9 @@ export const UsersRow = ({ user }: UsersRowProps) => {
               }}
               className="px-3 py-1"
             >
-              <span className="text-red-500">{t('platformAdmin_actionRemoveUser')}</span>
+              <span className="text-red-500">
+                {t('platformAdmin_actionRemoveUser')}
+              </span>
             </MenuItem>
           </Menu>
         </OptionMenu>
