@@ -100,7 +100,7 @@ export const usePostDetailActions = ({
         postId,
         includeChildren: false,
       };
-      const commentsQueryKey = createCommentsQueryKey(postId, undefined);
+      const commentsQueryKey = createCommentsQueryKey(postId);
 
       // Rollback on error
       if (context?.previousMainPost) {
