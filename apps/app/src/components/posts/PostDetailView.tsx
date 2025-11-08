@@ -3,27 +3,21 @@
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { Surface } from '@op/ui/Surface';
-import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
+import { Suspense } from 'react';
 import React from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
+import ErrorBoundary from '../ErrorBoundary';
 import { PostFeed, PostItemOnDetailPage } from '../PostFeed';
 import { PostUpdate } from '../PostUpdate';
+import { CommentSkeleton, Comments } from './Comments';
 import { PostDetailHeader } from './PostDetailHeader';
 import { PostViewLayout } from './PostViewLayout';
 import { usePostDetailActions } from './usePostDetailActions';
-import { Comments, CommentSkeleton } from './Comments';
-import ErrorBoundary from '../ErrorBoundary';
 
-export function PostDetail({
-  postId,
-  slug,
-}: {
-  postId: string;
-  slug: string;
-}) {
+export function PostDetail({ postId, slug }: { postId: string; slug: string }) {
   const t = useTranslations();
   const { user } = useUser();
 
@@ -67,7 +61,7 @@ export function PostDetail({
             <Surface className="border-0 px-0 py-4">
               <PostUpdate
                 parentPostId={post.id}
-                placeholder={`${t('Comment')}${user?.currentProfile?.name ? ` as ${user?.currentProfile?.name}` : ''}...`}
+                placeholder={`${t('Comment')}${user?.currentProfile?.name ? ` ${t('as')} ${user?.currentProfile?.name}` : ''}...`}
                 label={t('Comment')}
               />
             </Surface>
