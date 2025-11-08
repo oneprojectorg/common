@@ -23,58 +23,60 @@ export const getPost = async (input: GetPostInput) => {
 
   try {
     // Query post directly by ID
-    const post = await db.query.posts.findFirst({
-      where: eq(posts.id, postId),
-      with: {
-        profile: {
-          with: {
-            avatarImage: true,
+    const [post, actorProfileId] = await Promise.all([
+      db.query.posts.findFirst({
+        where: eq(posts.id, postId),
+        with: {
+          profile: {
+            with: {
+              avatarImage: true,
+            },
           },
-        },
-        attachments: {
-          with: {
-            storageObject: true,
+          attachments: {
+            with: {
+              storageObject: true,
+            },
           },
-        },
-        reactions: {
-          with: {
-            profile: true,
+          reactions: {
+            with: {
+              profile: true,
+            },
           },
-        },
-        ...(includeChildren && maxDepth > 0
-          ? {
-              childPosts: {
-                limit: 50,
-                orderBy: [desc(posts.createdAt)],
-                with: {
-                  profile: {
-                    with: {
-                      avatarImage: true,
+          ...(includeChildren && maxDepth > 0
+            ? {
+                childPosts: {
+                  limit: 50,
+                  orderBy: [desc(posts.createdAt)],
+                  with: {
+                    profile: {
+                      with: {
+                        avatarImage: true,
+                      },
                     },
-                  },
-                  attachments: {
-                    with: {
-                      storageObject: true,
+                    attachments: {
+                      with: {
+                        storageObject: true,
+                      },
                     },
-                  },
-                  reactions: {
-                    with: {
-                      profile: true,
+                    reactions: {
+                      with: {
+                        profile: true,
+                      },
                     },
                   },
                 },
-              },
-            }
-          : {}),
-      },
-    });
+              }
+            : {}),
+        },
+      }),
+      getCurrentProfileId(authUserId),
+    ]);
 
     if (!post) {
       return null;
     }
 
     // Transform to add reaction data
-    const actorProfileId = await getCurrentProfileId(authUserId);
     const itemsWithReactionsAndComments =
       await getItemsWithReactionsAndComments({
         items: [{ post }],
