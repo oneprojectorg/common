@@ -191,6 +191,11 @@ export const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
       maxVotesPerMember: {
         'ui:widget': 'number',
         'ui:placeholder': '5',
+        'ui:options': {
+          messages: {
+            minimum: 'Must be 1 or more',
+          },
+        },
       },
     },
   },
