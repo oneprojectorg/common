@@ -99,6 +99,24 @@ const processValidationErrors = (errors: ValidationError[]): ErrorSchema => {
   return fieldErrors;
 };
 
+// Transform error messages to be more user-friendly
+const transformErrors = (errors: RJSFValidationError[]) => {
+  return errors.map((error) => {
+    // Customize error message for minimum validation on maxVotesPerMember
+    if (
+      error.property === '.maxVotesPerMember' &&
+      error.name === 'minimum' &&
+      error.message?.includes('>= 1')
+    ) {
+      return {
+        ...error,
+        message: 'Must be 1 or more',
+      };
+    }
+    return error;
+  });
+};
+
 // Custom hook for validation state management
 const useStepValidation = () => {
   const [validationModes, setValidationModes] = useState<
@@ -524,6 +542,7 @@ export const CreateDecisionProcessModal = ({
             noHtml5Validate
             omitExtraData
             extraErrors={currentExtraErrors}
+            transformErrors={transformErrors}
           >
             {/* Hide submit button - we'll use our own stepper */}
             <div style={{ display: 'none' }} />
