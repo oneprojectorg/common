@@ -16,7 +16,8 @@ import {
 import { toast } from '@op/ui/Toast';
 import Form from '@rjsf/core';
 import type { RJSFValidationError } from '@rjsf/utils';
-import validator from '@rjsf/validator-ajv8';
+import { customizeValidator } from '@rjsf/validator-ajv8';
+import ajvErrors from 'ajv-errors';
 import { useContext, useState } from 'react';
 import { OverlayTriggerStateContext } from 'react-aria-components';
 
@@ -98,6 +99,12 @@ const processValidationErrors = (errors: ValidationError[]): ErrorSchema => {
 
   return fieldErrors;
 };
+
+// Create custom validator with ajv-errors plugin (following rjsf-team/react-jsonschema-form#4119)
+const validator = customizeValidator();
+if (validator.ajv) {
+  ajvErrors(validator.ajv);
+}
 
 // Custom hook for validation state management
 const useStepValidation = () => {
