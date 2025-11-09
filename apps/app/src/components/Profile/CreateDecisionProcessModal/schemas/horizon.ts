@@ -278,7 +278,7 @@ export const stepSchemas: {
           minimum: 0,
           description: 'Maximum budget amount participants can request',
           errorMessage: {
-            type: 'Please enter a number',
+            type: 'Please enter an amount',
             minimum: 'Must be 0 or more',
           },
         },
