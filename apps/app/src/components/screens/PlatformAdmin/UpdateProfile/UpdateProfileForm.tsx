@@ -49,14 +49,6 @@ export const UpdateProfileForm = ({
       onSubmit={handleSubmit}
       onImageUploadSuccess={handleImageUploadSuccess}
       isSubmitting={updateProfile.isPending}
-      placeholders={{
-        fullName: 'Enter full name',
-        title: 'Enter headline',
-        titleDescription:
-          'Add a descriptive headline for the profile. This could be their professional title at their organization or their focus areas.',
-        email: 'Enter email address',
-        website: 'Enter website URL',
-      }}
     />
   );
 };
