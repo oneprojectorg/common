@@ -9,12 +9,12 @@ import {
 import type { User } from '../types';
 
 export const UpdateProfileForm = ({
-  user,
+  authUserId,
   profile,
   onSuccess,
   className,
 }: {
-  user: User;
+  authUserId: User['authUserId'];
   profile: Profile;
   onSuccess: () => void;
   className?: string;
@@ -24,7 +24,7 @@ export const UpdateProfileForm = ({
 
   const handleSubmit = async (value: FormFields) => {
     await updateProfile.mutateAsync({
-      authUserId: user.authUserId,
+      authUserId,
       data: {
         name: value.fullName,
         bio: value.title,

@@ -1,7 +1,7 @@
+import { Profile } from '@op/api/encoders';
 import { Dialog } from '@op/ui/Dialog';
 import { Modal, ModalHeader } from '@op/ui/Modal';
 import { DialogTrigger } from '@op/ui/RAC';
-import { useEffect } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -9,38 +9,19 @@ import type { User } from '../types';
 import { UpdateProfileForm } from './UpdateProfileForm';
 
 export const UpdateProfileModal = ({
-  user,
+  authUserId,
+  profile,
   isOpen,
   onOpenChange,
   onSuccess,
 }: {
-  user: User;
+  authUserId: User['authUserId'];
+  profile: Profile;
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   onSuccess: () => void;
 }) => {
   const t = useTranslations();
-
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && isOpen) {
-        event.preventDefault();
-        onOpenChange(false);
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener('keydown', handleKeyDown);
-    }
-
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [isOpen, onOpenChange]);
-
-  if (!user.profile) {
-    return null;
-  }
 
   return (
     <DialogTrigger>
@@ -48,8 +29,8 @@ export const UpdateProfileModal = ({
         <Dialog>
           <ModalHeader>{t('Edit Profile')}</ModalHeader>
           <UpdateProfileForm
-            user={user}
-            profile={user.profile}
+            authUserId={authUserId}
+            profile={profile}
             onSuccess={() => {
               onSuccess();
               onOpenChange(false);
