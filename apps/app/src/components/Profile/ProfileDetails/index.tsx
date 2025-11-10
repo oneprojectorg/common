@@ -1,9 +1,9 @@
 'use client';
 
-import { formatToUrl } from '@/utils';
 import { useUser } from '@/utils/UserProvider';
 import type { Organization } from '@op/api/encoders';
 import { EntityType } from '@op/api/encoders';
+import { formatToUrl } from '@op/common/validation';
 import { ButtonLink } from '@op/ui/Button';
 import { SkeletonLine } from '@op/ui/Skeleton';
 import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
@@ -14,7 +14,7 @@ import { AddRelationshipModal } from './AddRelationshipModal';
 import { FollowButton } from './FollowButton';
 import { InviteToOrganizationButton } from './InviteToOrganizationButton';
 import { UpdateOrganizationModal } from './UpdateOrganizationModal';
-import { UpdateUserProfileModal } from './UpdateUserProfileModal';
+import { UpdateUserProfileModal } from './UpdateProfile';
 
 const ProfileInteractions = ({ profile }: { profile: Organization }) => {
   const { user } = useUser();

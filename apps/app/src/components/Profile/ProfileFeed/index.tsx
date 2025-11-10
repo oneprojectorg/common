@@ -79,7 +79,8 @@ export const ProfileFeed = ({
           allPosts.map((postToOrg) => (
             <Fragment key={postToOrg.postId}>
               <PostItem
-                postToOrg={postToOrg}
+                post={postToOrg.post}
+                organization={postToOrg.organization ?? null}
                 user={user}
                 withLinks={false}
                 onReactionClick={handleReactionClick}

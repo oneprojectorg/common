@@ -1,13 +1,15 @@
 import { updateUserProfile as updateUserProfileService } from '@op/common';
-import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
-import { ZodError, z } from 'zod';
 
 import { userEncoder } from '../../encoders';
 import withAnalytics from '../../middlewares/withAnalytics';
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
+import {
+  handleUpdateUserProfileError,
+  updateUserProfileDataSchema,
+} from '../shared/profile';
 
 const endpoint = 'updateUserProfile';
 
@@ -30,39 +32,7 @@ const updateUserProfile = router({
     .use(withAnalytics)
     // Router
     .meta(meta)
-    .input(
-      z
-        .object({
-          name: z.string().trim().min(1).max(255),
-          bio: z.string().trim().max(255),
-          title: z.string().trim().min(1).max(255),
-          // underscore, numbers, lowercase letters
-          username: z
-            .string()
-            .trim()
-            .min(4)
-            .max(255)
-            .toLowerCase()
-            .regex(/^[a-z0-9_]+$/),
-          email: z
-            .email({
-              error: 'Invalid email',
-            })
-            .max(255, {
-              error: 'Must be at most 255 characters',
-            }),
-          website: z.string().trim().max(255, {
-            error: 'Must be at most 255 characters',
-          }),
-          focusAreas: z.array(
-            z.object({
-              id: z.string(),
-              label: z.string(),
-            }),
-          ),
-        })
-        .partial(),
-    )
+    .input(updateUserProfileDataSchema)
     .output(userEncoder)
     .mutation(async ({ input, ctx }) => {
       const { user } = ctx;
@@ -75,21 +45,7 @@ const updateUserProfile = router({
 
         return userEncoder.parse(result);
       } catch (error) {
-        console.error(error);
-        if (error instanceof Error && error.message.includes('duplicate')) {
-          throw new ZodError([
-            {
-              code: 'custom',
-              message: 'Username already in use',
-              path: ['username'],
-            },
-          ]);
-        }
-
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to update profile',
-        });
+        handleUpdateUserProfileError(error);
       }
     }),
 });

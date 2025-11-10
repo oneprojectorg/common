@@ -143,6 +143,9 @@ export const cookieDomains = [
   'api-common.oneproject.org',
 ];
 
+// PostHog config. Eventually to be moved to env vars
+export const posthogUIHost = 'https://eu.posthog.com';
+
 export const allowedEmailDomains = ['oneproject.org', 'team.oneproject.org'];
 
 export const genericEmail = 'support@oneproject.org';

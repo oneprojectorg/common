@@ -1,17 +1,71 @@
 'use client';
 
+import { getPublicUrl } from '@/utils';
+import { pluralize } from '@/utils/pluralize';
 import { trpc } from '@op/api/client';
 import { Avatar } from '@op/ui/Avatar';
 import { FacePile } from '@op/ui/FacePile';
 import { Surface } from '@op/ui/Surface';
 import { cn } from '@op/ui/utils';
-import Image from 'next/image';
 import { useTranslations } from 'next-intl';
+import Image from 'next/image';
 import { ReactNode, Suspense, useEffect, useRef, useState } from 'react';
 
 import { Link } from '@/lib/i18n';
-import { getPublicUrl } from '@/utils';
-import { pluralize } from '@/utils/pluralize';
+
+const hello = () => {};
+
+export const PlatformHighlights = () => {
+  const [stats] = trpc.platform.getStats.useSuspenseQuery();
+  const t = useTranslations();
+
+  return (
+    <Surface className="shadow-light">
+      <div className="flex flex-col items-center justify-between gap-6 px-10 py-6 sm:flex-row sm:gap-4">
+        <Highlight>
+          <HighlightNumber className="bg-tealGreen">
+            {stats.newOrganizations}
+          </HighlightNumber>
+          <HighlightLabel>{t('new organizations to explore')}</HighlightLabel>
+        </Highlight>
+        <hr className="hidden h-20 w-0.5 bg-neutral-gray1 sm:block" />
+        <Highlight>
+          <HighlightNumber className="bg-orange">
+            {stats.totalRelationships}
+          </HighlightNumber>
+          <HighlightLabel>
+            {t('active')} {pluralize('relationship', stats.totalRelationships)}
+          </HighlightLabel>
+        </Highlight>
+        <hr className="hidden h-20 w-0.5 bg-neutral-gray1 sm:block" />
+        <Highlight>
+          <HighlightNumber className="bg-redTeal">
+            {stats.totalOrganizations}
+          </HighlightNumber>
+          <HighlightLabel>{t('organizations on Common')}</HighlightLabel>
+        </Highlight>
+        <hr className="hidden h-20 w-0.5 bg-neutral-gray1 sm:block" />
+        <Highlight>
+          <HighlightNumber className="bg-redPurple">
+            {stats.totalUsers}
+          </HighlightNumber>
+          <HighlightLabel>{t('people on Common')}</HighlightLabel>
+        </Highlight>
+      </div>
+      <div className="flex flex-col justify-center gap-2 border-0 border-t bg-neutral-offWhite p-6 text-sm text-neutral-charcoal sm:flex-row sm:items-center">
+        <Suspense>
+          <div className="flex max-w-full items-center gap-2">
+            <OrganizationFacePile>
+              <span className="whitespace-nowrap">
+                {t('are collaborating on Common')}
+              </span>
+            </OrganizationFacePile>
+          </div>
+        </Suspense>
+      </div>
+    </Surface>
+  );
+};
 
 const HighlightNumber = ({
   children,
@@ -122,54 +176,4 @@ const OrganizationFacePile = ({ children }: { children?: ReactNode }) => {
   );
 };
 
-export const PlatformHighlights = () => {
-  const [stats] = trpc.platform.getStats.useSuspenseQuery();
-  const t = useTranslations();
-
-  return (
-    <Surface className="shadow-light">
-      <div className="flex flex-col items-center justify-between gap-6 px-10 py-6 sm:flex-row sm:gap-4">
-        <Highlight>
-          <HighlightNumber className="bg-tealGreen">
-            {stats.newOrganizations}
-          </HighlightNumber>
-          <HighlightLabel>{t('new organizations to explore')}</HighlightLabel>
-        </Highlight>
-        <hr className="hidden h-20 w-0.5 bg-neutral-gray1 sm:block" />
-        <Highlight>
-          <HighlightNumber className="bg-orange">
-            {stats.totalRelationships}
-          </HighlightNumber>
-          <HighlightLabel>
-            {t('active')} {pluralize('relationship', stats.totalRelationships)}
-          </HighlightLabel>
-        </Highlight>
-        <hr className="hidden h-20 w-0.5 bg-neutral-gray1 sm:block" />
-        <Highlight>
-          <HighlightNumber className="bg-redTeal">
-            {stats.totalOrganizations}
-          </HighlightNumber>
-          <HighlightLabel>{t('organizations on Common')}</HighlightLabel>
-        </Highlight>
-        <hr className="hidden h-20 w-0.5 bg-neutral-gray1 sm:block" />
-        <Highlight>
-          <HighlightNumber className="bg-redPurple">
-            {stats.totalUsers}
-          </HighlightNumber>
-          <HighlightLabel>{t('people on Common')}</HighlightLabel>
-        </Highlight>
-      </div>
-      <div className="flex flex-col justify-center gap-2 border-0 border-t bg-neutral-offWhite p-6 text-sm text-neutral-charcoal sm:flex-row sm:items-center">
-        <Suspense>
-          <div className="flex max-w-full items-center gap-2">
-            <OrganizationFacePile>
-              <span className="whitespace-nowrap">
-                {t('are collaborating on Common')}
-              </span>
-            </OrganizationFacePile>
-          </div>
-        </Suspense>
-      </div>
-    </Surface>
-  );
-};
+export default { hello };

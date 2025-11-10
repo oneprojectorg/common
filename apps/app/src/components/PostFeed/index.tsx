@@ -256,21 +256,22 @@ export const EmptyPostsState = () => {
 };
 
 export const PostItem = ({
-  postToOrg,
+  post,
+  organization,
   user,
   withLinks,
   onReactionClick,
   onCommentClick,
   className,
 }: {
-  postToOrg: PostToOrganization;
+  post: Post;
+  organization: Organization | null;
   user?: OrganizationUser;
   withLinks: boolean;
   onReactionClick: (postId: string, emoji: string) => void;
-  onCommentClick?: (post: PostToOrganization) => void;
+  onCommentClick?: (post: Post, organization: Organization | null) => void;
   className?: string;
 }) => {
-  const { organization, post } = postToOrg;
   const { urls } = useMemo(() => detectLinks(post?.content), [post?.content]);
 
   // For comments (posts without organization), show the post author
@@ -291,7 +292,7 @@ export const PostItem = ({
       <FeedMain>
         <FeedHeader className="relative w-full justify-between">
           <div className="flex items-baseline gap-2">
-            <Header3 className="font-medium leading-3">
+            <Header3 className="font-semibold leading-3">
               <PostDisplayName
                 displayName={displayName}
                 displaySlug={displaySlug}
@@ -313,9 +314,73 @@ export const PostItem = ({
             {onCommentClick ? (
               <PostCommentButton
                 post={post}
-                onCommentClick={() => onCommentClick(postToOrg)}
+                onCommentClick={() => onCommentClick(post, organization)}
               />
             ) : null}
+          </div>
+        </FeedContent>
+      </FeedMain>
+    </FeedItem>
+  );
+};
+
+export const PostItemOnDetailPage = ({
+  post,
+  organization,
+  user,
+  withLinks,
+  onReactionClick,
+  commentCount,
+  className,
+}: {
+  post: Post;
+  organization: Organization | null;
+  user?: OrganizationUser;
+  withLinks: boolean;
+  onReactionClick: (postId: string, emoji: string) => void;
+  commentCount: number;
+  className?: string;
+}) => {
+  const { urls } = useMemo(() => detectLinks(post?.content), [post?.content]);
+
+  // For comments (posts without organization), show the post author
+  // TODO: this is too complex. We need to refactor this
+  const displayName =
+    post?.profile?.name ?? organization?.profile.name ?? 'Unknown User';
+  const displaySlug =
+    post?.profile?.slug ?? organization?.profile.slug ?? 'Unknown User';
+  const profile = post.profile ?? organization?.profile;
+
+  return (
+    <FeedItem className={cn('sm:px-4', className)}>
+      <OrganizationAvatar
+        profile={profile}
+        withLink={withLinks}
+        className="!size-8 max-h-8 max-w-8"
+      />
+      <FeedMain>
+        <FeedHeader className="relative w-full justify-between">
+          <div className="flex items-baseline gap-2">
+            <Header3 className="font-semibold leading-3">
+              <PostDisplayName
+                displayName={displayName}
+                displaySlug={displaySlug}
+                withLinks={withLinks}
+              />
+            </Header3>
+            {post.createdAt ? (
+              <PostTimestamp createdAt={post.createdAt} />
+            ) : null}
+          </div>
+          <PostMenu post={post} user={user} organization={organization} />
+        </FeedHeader>
+        <FeedContent>
+          <PostContent content={post?.content} />
+          <PostAttachments attachments={post.attachments} />
+          <PostUrls urls={urls} />
+          <div className="flex items-center justify-between gap-2">
+            <PostReactions post={post} onReactionClick={onReactionClick} />
+            <CommentButton count={commentCount} isDisabled />
           </div>
         </FeedContent>
       </FeedMain>
@@ -329,7 +394,8 @@ export const DiscussionModalContainer = ({
 }: {
   discussionModal: {
     isOpen: boolean;
-    post?: PostToOrganization | null;
+    post?: Post | null;
+    organization?: Organization | null;
   };
   onClose: () => void;
 }) => {
@@ -339,7 +405,8 @@ export const DiscussionModalContainer = ({
 
   return (
     <DiscussionModal
-      postToOrg={discussionModal.post}
+      post={discussionModal.post}
+      organization={discussionModal.organization ?? null}
       isOpen={discussionModal.isOpen}
       onClose={onClose}
     />
@@ -362,10 +429,12 @@ export const usePostFeedActions = ({
   const utils = trpc.useUtils();
   const [discussionModal, setDiscussionModal] = useState<{
     isOpen: boolean;
-    post?: PostToOrganization | null;
+    post?: Post | null;
+    organization?: Organization | null;
   }>({
     isOpen: false,
     post: null,
+    organization: null,
   });
 
   const toggleReaction = trpc.organization.toggleReaction.useMutation({
@@ -572,12 +641,15 @@ export const usePostFeedActions = ({
     toggleReaction.mutate({ postId, reactionType });
   };
 
-  const handleCommentClick = (post: PostToOrganization) => {
-    setDiscussionModal({ isOpen: true, post });
+  const handleCommentClick = (
+    post: Post,
+    organization: Organization | null,
+  ) => {
+    setDiscussionModal({ isOpen: true, post, organization });
   };
 
   const handleModalClose = () => {
-    setDiscussionModal({ isOpen: false, post: null });
+    setDiscussionModal({ isOpen: false, post: null, organization: null });
   };
 
   return {

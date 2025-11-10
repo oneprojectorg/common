@@ -39,10 +39,6 @@ export const declineRelationshipRouter = router({
       const { ids, targetOrganizationId } = input;
 
       try {
-        if (!user) {
-          throw new UnauthorizedError('No user found');
-        }
-
         await declineRelationship({
           user,
           targetOrganizationId,

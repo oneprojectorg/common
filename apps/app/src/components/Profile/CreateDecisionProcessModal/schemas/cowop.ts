@@ -1,6 +1,11 @@
-import { RJSFSchema, UiSchema } from '@rjsf/utils';
+import { UiSchema } from '@rjsf/utils';
 
-export const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
+import { SchemaWithErrorMessage } from './types';
+
+export const stepSchemas: {
+  schema: SchemaWithErrorMessage;
+  uiSchema: UiSchema;
+}[] = [
   {
     schema: {
       type: 'object',
@@ -204,6 +209,9 @@ export const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
           title: 'Maximum Votes Per Member',
           minimum: 1,
           description: 'How many proposals can each member vote for?',
+          errorMessage: {
+            minimum: 'Must be 1 or more',
+          },
         },
       },
     },
@@ -289,6 +297,10 @@ export const stepSchemas: { schema: RJSFSchema; uiSchema: UiSchema }[] = [
           title: 'Budget cap amount',
           minimum: 0,
           description: 'Maximum budget amount participants can request',
+          errorMessage: {
+            type: 'Please enter an amount',
+            minimum: 'Must be 0 or more',
+          },
         },
         descriptionGuidance: {
           type: 'string',

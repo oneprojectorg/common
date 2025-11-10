@@ -21,17 +21,47 @@ const zonePermissionsSchema = z.record(
   permissionSchema,
 ) satisfies z.ZodType<ZonePermissions>;
 
-const organizationUserWithPermissionsEncoder = createSelectSchema(organizationUsers)
-  .extend({
-    organization: organizationsEncoder.nullish(),
-    permissions: zonePermissionsSchema.nullish(),
-  });
+const accessZoneSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().nullish(),
+});
 
+const zonePermissionSchema = z.object({
+  accessRoleId: z.string(),
+  accessZoneId: z.string(),
+  permission: z.number(),
+  accessZone: accessZoneSchema,
+});
+
+const accessRoleSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().nullish(),
+  zonePermissions: z.array(zonePermissionSchema).nullish(),
+});
+
+const roleJunctionSchema = z.object({
+  accessRole: accessRoleSchema,
+});
+
+// Extended organization user schema that includes permissions and role data
+// Used when returning user data with full organizational context
+const organizationUserWithPermissionsEncoder = createSelectSchema(
+  organizationUsers,
+).extend({
+  organization: organizationsEncoder.nullish(),
+  permissions: zonePermissionsSchema.nullish(),
+  roles: z.array(roleJunctionSchema).nullish(),
+});
+
+/**
+ * Complete user data encoder with all relational data
+ * Includes avatar, organization memberships, roles, and profile information
+ */
 export const userEncoder = createSelectSchema(users).extend({
   avatarImage: createSelectSchema(objectsInStorage).nullish(),
-  organizationUsers: organizationUserWithPermissionsEncoder
-    .array()
-    .nullish(),
+  organizationUsers: organizationUserWithPermissionsEncoder.array().nullish(),
   currentOrganization: organizationsWithProfileEncoder.nullish(),
   currentProfile: baseProfileEncoder.nullish(),
   profile: baseProfileEncoder.nullish(),

@@ -33,7 +33,7 @@ import ErrorBoundary from '../ErrorBoundary';
 import { InviteUserModal } from '../InviteUserModal';
 import { LocaleChooser } from '../LocaleChooser';
 import { PrivacyPolicyModal } from '../PrivacyPolicyModal';
-import { UpdateProfileModal } from '../Profile/ProfileDetails/UpdateProfileModal';
+import { UpdateProfileModal } from '../Profile/ProfileDetails/UpdateProfile';
 import { ProfileSwitchingModal } from '../ProfileSwitchingModal';
 import { SearchInput } from '../SearchInput';
 import { ToSModal } from '../ToSModal';

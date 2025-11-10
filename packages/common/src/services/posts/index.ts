@@ -1,4 +1,5 @@
 export * from './listPosts';
+export * from './getPost';
 export * from './getPosts';
 export * from './getOrganizationPosts';
 export * from './createPost';

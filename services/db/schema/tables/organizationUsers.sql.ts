@@ -18,6 +18,7 @@ export const organizationUsers = pgTable(
   'organization_users',
   {
     id: autoId().primaryKey(),
+    // TODO: it should be the user id instead of authUserId
     authUserId: uuid()
       .notNull()
       .references(() => authUsers.id, {
@@ -54,15 +55,10 @@ export const organizationUsers = pgTable(
 export const organizationUsersRelations = relations(
   organizationUsers,
   ({ one, many }) => ({
-    // TODO: this should be the user not authuser
     serviceUser: one(users, {
       fields: [organizationUsers.authUserId],
       references: [users.authUserId],
     }),
-    // user: one(authUsers, {
-    // fields: [organizationUsers.id],
-    // references: [authUsers.id],
-    // }),
     organization: one(organizations, {
       fields: [organizationUsers.organizationId],
       references: [organizations.id],
