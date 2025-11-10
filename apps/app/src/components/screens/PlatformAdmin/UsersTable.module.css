@@ -1,5 +1,0 @@
-.usersTableGrid {
-  display: grid;
-  grid-template-columns: minmax(120px, 1fr) minmax(180px, 1.5fr) minmax(100px, 0.8fr) minmax(200px, 2.2fr) minmax(80px, 0.5fr) 80px;
-  gap: 1rem;
-}

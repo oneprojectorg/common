@@ -371,6 +371,7 @@
   "platformAdmin_columnRole": "Rol",
   "platformAdmin_columnOrganization": "Organización",
   "platformAdmin_columnLastUpdated": "Última actualización",
+  "platformAdmin_columnLastSignIn": "Último inicio de sesión",
   "platformAdmin_columnActions": "Acciones",
   "platformAdmin_actionViewAnalytics": "Ver analíticas",
   "platformAdmin_actionEditProfile": "Editar perfil",

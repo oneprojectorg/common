@@ -47,6 +47,7 @@ export const listAllUsersRouter = router({
           db.query.users.findMany({
             where: cursorCondition,
             with: {
+              authUser: true,
               profile: true,
               organizationUsers: {
                 with: {
