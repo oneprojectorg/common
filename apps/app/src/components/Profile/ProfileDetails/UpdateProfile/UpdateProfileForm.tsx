@@ -23,6 +23,7 @@ export const UpdateProfileForm = forwardRef<
     await updateProfile.mutateAsync({
       name: value.fullName,
       bio: value.title,
+      pronouns: value.customPronouns || value.pronouns || undefined,
       email: value.email || undefined,
       website: value.website || undefined,
       focusAreas: value.focusAreas || undefined,

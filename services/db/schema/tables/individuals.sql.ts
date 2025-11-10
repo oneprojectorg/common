@@ -6,6 +6,13 @@ import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
 import { profiles } from './profiles.sql';
 import { taxonomyTerms } from './taxonomies.sql';
 
+export enum PronounsType {
+  HE_HIM = 'he-him',
+  SHE_HER = 'she-her',
+  THEY_THEM = 'they-them',
+  CUSTOM = 'custom',
+}
+
 // An individual represents the fields unique to individual profiles
 export const individuals = pgTable(
   'individuals',
