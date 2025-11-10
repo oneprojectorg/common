@@ -17,19 +17,19 @@ export const updateUserProfileRouter = router({
     .use(withAuthenticatedPlatformAdmin)
     .input(
       z.object({
-        userId: z.string(),
+        authUserId: z.string(),
         data: updateUserProfileDataSchema,
       }),
     )
     .output(userEncoder)
     .mutation(async ({ input }) => {
-      const { userId, data } = input;
+      const { authUserId, data } = input;
 
       try {
         // Get the target user by userId (authUserId in Supabase)
         const supabase = createSBServiceClient();
         const { data: targetUserData, error } =
-          await supabase.auth.admin.getUserById(userId);
+          await supabase.auth.admin.getUserById(authUserId);
 
         if (error || !targetUserData?.user) {
           throw new Error('User not found');

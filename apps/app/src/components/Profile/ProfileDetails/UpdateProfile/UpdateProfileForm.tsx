@@ -2,8 +2,7 @@ import { trpc } from '@op/api/client';
 import type { Profile } from '@op/api/encoders';
 import { ReactNode, forwardRef } from 'react';
 
-import { BaseUpdateProfileForm } from './BaseUpdateProfileForm';
-import type { FormFields } from './updateProfileValidator';
+import { BaseUpdateProfileForm, FormFields } from './BaseUpdateProfileForm';
 
 export const UpdateProfileForm = forwardRef<
   HTMLFormElement,

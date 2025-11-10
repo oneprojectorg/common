@@ -1,8 +1,10 @@
 import { trpc } from '@op/api/client';
 import type { Profile } from '@op/api/encoders';
 
-import { BaseUpdateProfileForm } from '@/components/Profile/ProfileDetails/BaseUpdateProfileForm';
-import { FormFields } from '@/components/Profile/ProfileDetails/updateProfileValidator';
+import {
+  BaseUpdateProfileForm,
+  FormFields,
+} from '@/components/Profile/ProfileDetails/UpdateProfile';
 
 import type { User } from '../types';
 
@@ -22,7 +24,7 @@ export const UpdateProfileForm = ({
 
   const handleSubmit = async (value: FormFields) => {
     await updateProfile.mutateAsync({
-      userId: user.id,
+      authUserId: user.authUserId,
       data: {
         name: value.fullName,
         bio: value.title,

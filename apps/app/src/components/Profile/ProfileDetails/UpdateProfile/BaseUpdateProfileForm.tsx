@@ -2,6 +2,7 @@ import { DEFAULT_MAX_SIZE } from '@/hooks/useFileUpload';
 import { getPublicUrl } from '@/utils';
 import { trpc } from '@op/api/client';
 import type { Profile } from '@op/api/encoders';
+import { zodUrl } from '@op/common/validation';
 import { AvatarUploader } from '@op/ui/AvatarUploader';
 import { BannerUploader } from '@op/ui/BannerUploader';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
@@ -11,19 +12,15 @@ import { Skeleton } from '@op/ui/Skeleton';
 import { toast } from '@op/ui/Toast';
 import { useRouter } from 'next/navigation';
 import { ReactNode, Suspense, forwardRef, useState } from 'react';
+import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { FormContainer } from '../../form/FormContainer';
-import { getFieldErrorMessage, useAppForm } from '../../form/utils';
-import { FocusAreasField } from './FocusAreasField';
-import {
-  acceptedImageTypes,
-  type FormFields,
-  validator,
-} from './updateProfileValidator';
+import { FormContainer } from '../../../form/FormContainer';
+import { getFieldErrorMessage, useAppForm } from '../../../form/utils';
+import { FocusAreasField } from '../FocusAreasField';
 
-export interface BaseUpdateProfileFormProps {
+interface BaseUpdateProfileFormProps {
   profile: Profile;
   onSuccess: () => void;
   className?: string;
@@ -66,9 +63,9 @@ export const BaseUpdateProfileForm = forwardRef<
     const profileId = profile.id;
 
     // Initialize with current profile data
-    const [profileImageUrl, setProfileImageUrl] = useState<
-      string | undefined
-    >(getPublicUrl(profile.avatarImage?.name) || undefined);
+    const [profileImageUrl, setProfileImageUrl] = useState<string | undefined>(
+      getPublicUrl(profile.avatarImage?.name) || undefined,
+    );
     const [bannerImageUrl, setBannerImageUrl] = useState<string | undefined>(
       getPublicUrl(profile.headerImage?.name) || undefined,
     );
@@ -211,8 +208,7 @@ export const BaseUpdateProfileForm = forwardRef<
                   )
                 }
                 inputProps={{
-                  placeholder:
-                    placeholders?.title ?? t('Enter your headline'),
+                  placeholder: placeholders?.title ?? t('Enter your headline'),
                 }}
               />
             )}
@@ -279,3 +275,57 @@ export const BaseUpdateProfileForm = forwardRef<
 );
 
 BaseUpdateProfileForm.displayName = 'BaseUpdateProfileForm';
+
+export const validator = z.object({
+  fullName: z
+    .string({
+      error: 'Enter your full name',
+    })
+    .trim()
+    .min(1, {
+      error: 'Enter your full name',
+    })
+    .max(200, {
+      error: 'Must be at most 200 characters',
+    }),
+  title: z
+    .string({
+      error: 'Enter your professional title',
+    })
+    .trim()
+    .min(1, {
+      error: 'Enter your professional title',
+    })
+    .max(200, {
+      error: 'Must be at most 200 characters',
+    }),
+  email: z
+    .email()
+    .trim()
+    .refine((val) => val === '' || z.email().safeParse(val).success, {
+      error: 'Invalid email',
+    })
+    .refine((val) => val.length <= 255, {
+      error: 'Must be at most 255 characters',
+    }),
+  website: zodUrl({
+    error: 'Enter a valid website address',
+  }),
+  focusAreas: z
+    .array(
+      z.object({
+        id: z.string(),
+        label: z.string(),
+      }),
+    )
+    .optional(),
+});
+
+export type FormFields = z.infer<typeof validator>;
+
+export const acceptedImageTypes = [
+  'image/gif',
+  'image/png',
+  'image/jpeg',
+  'image/webp',
+];
