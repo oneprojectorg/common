@@ -7,7 +7,6 @@ import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { SelectItem } from '@op/ui/Select';
 import { Skeleton } from '@op/ui/Skeleton';
 import { toast } from '@op/ui/Toast';
-import { useSearchParams } from 'next/navigation';
 import { ReactNode, Suspense, useState } from 'react';
 import { z } from 'zod';
 
@@ -116,8 +115,6 @@ export const PersonalDetailsForm = ({
   );
   const t = useTranslations();
   const utils = trpc.useUtils();
-  const searchParams = useSearchParams();
-  const currentStep = Number(searchParams.get('step'));
   const uploadImage = trpc.account.uploadImage.useMutation();
   const uploadBannerImage = trpc.account.uploadBannerImage.useMutation();
   const updateProfile = trpc.account.updateUserProfile.useMutation();
