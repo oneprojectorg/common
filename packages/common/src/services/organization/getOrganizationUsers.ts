@@ -79,6 +79,7 @@ export const getOrganizationUsers = async ({
             name: userProfile.name,
             slug: userProfile.slug,
             bio: userProfile.bio,
+            email: userProfile.email,
             type: userProfile.type,
             avatarImage: userProfile.avatarImage
               ? {

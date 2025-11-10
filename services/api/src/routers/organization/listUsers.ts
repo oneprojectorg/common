@@ -27,6 +27,7 @@ const organizationUserEncoder = z.object({
       name: z.string().nullable(),
       slug: z.string(),
       bio: z.string().nullable(),
+      email: z.string().nullable(),
       type: z.string(),
       avatarImage: z
         .object({
