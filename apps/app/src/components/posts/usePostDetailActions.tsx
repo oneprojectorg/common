@@ -4,7 +4,6 @@ import type { PostFeedUser } from '@/utils/optimisticUpdates';
 import { createOptimisticUpdater } from '@/utils/optimisticUpdates';
 import { createCommentsQueryKey } from '@/utils/queryKeys';
 import { trpc } from '@op/api/client';
-import type { PostToOrganization } from '@op/api/encoders';
 import { REACTION_OPTIONS } from '@op/types';
 import { toast } from '@op/ui/Toast';
 
@@ -44,12 +43,6 @@ export const usePostDetailActions = ({
 
       // Create optimistic updater
       const optimisticUpdater = createOptimisticUpdater(user);
-      const updatePostReactions = (item: PostToOrganization) =>
-        optimisticUpdater.updatePostReactions(
-          item,
-          reactionPostId,
-          reactionType,
-        );
 
       // Optimistically update main post
       utils.posts.getPost.setData(mainPostQueryKey, (old) => {
@@ -57,17 +50,11 @@ export const usePostDetailActions = ({
           return old;
         }
 
-        const postToOrg: PostToOrganization = {
-          createdAt: old.createdAt,
-          updatedAt: old.updatedAt,
-          deletedAt: null,
-          postId: old.id,
-          organizationId: '',
-          post: old,
-          organization: null,
-        };
-
-        const updated = updatePostReactions(postToOrg);
+        const updated = optimisticUpdater.updatePostReactions(
+          { post: old },
+          reactionPostId,
+          reactionType,
+        );
         return updated.post;
       });
 
@@ -78,17 +65,11 @@ export const usePostDetailActions = ({
         }
 
         return old.map((comment) => {
-          const postToOrg: PostToOrganization = {
-            createdAt: comment.createdAt,
-            updatedAt: comment.updatedAt,
-            deletedAt: null,
-            postId: comment.id,
-            organizationId: '',
-            post: comment,
-            organization: null,
-          };
-
-          const updated = updatePostReactions(postToOrg);
+          const updated = optimisticUpdater.updatePostReactions(
+            { post: comment },
+            reactionPostId,
+            reactionType,
+          );
           return updated.post;
         });
       });
