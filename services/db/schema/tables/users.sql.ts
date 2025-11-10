@@ -66,6 +66,10 @@ export const users = pgTable(
 );
 
 export const usersRelations = relations(users, ({ many, one }) => ({
+  authUser: one(authUsers, {
+    fields: [users.authUserId],
+    references: [authUsers.id],
+  }),
   organizationUsers: many(organizationUsers),
   currentOrganization: one(organizations, {
     fields: [users.lastOrgId],

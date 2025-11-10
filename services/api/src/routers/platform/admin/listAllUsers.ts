@@ -2,6 +2,7 @@ import { cache } from '@op/cache';
 import { decodeCursor, encodeCursor } from '@op/common';
 import { and, count, db, eq, lt, or } from '@op/db/client';
 import { users } from '@op/db/schema';
+import { logger } from '@op/logging';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
@@ -47,6 +48,7 @@ export const listAllUsersRouter = router({
           db.query.users.findMany({
             where: cursorCondition,
             with: {
+              authUser: true,
               profile: true,
               organizationUsers: {
                 with: {
