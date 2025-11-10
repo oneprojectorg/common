@@ -4,22 +4,26 @@ import { ReactNode } from 'react';
 import { LuEllipsis } from 'react-icons/lu';
 
 import { cn } from '../lib/utils';
-import { IconButton } from './IconButton';
+import { IconButton, IconButtonProps } from './IconButton';
 import { MenuTrigger } from './Menu';
 import { Popover } from './Popover';
 
 export const OptionMenu = ({
   children,
   className,
+  variant = 'ghost',
+  size = 'small',
 }: {
   children: ReactNode;
   className?: string;
+  variant?: IconButtonProps['variant'];
+  size?: IconButtonProps['size'];
 }) => {
   return (
     <MenuTrigger>
       <IconButton
-        variant="ghost"
-        size="small"
+        variant={variant}
+        size={size}
         className={cn(
           'aspect-square aria-expanded:bg-neutral-gray1',
           className,

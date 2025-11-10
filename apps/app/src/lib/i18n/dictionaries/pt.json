@@ -361,5 +361,16 @@
   "platformAdmin_newOrganizations": "Novas organizações (7d)",
   "platformAdmin_title": "Administração da plataforma",
   "platformAdmin_viewAllAnalytics": "Ver todas as análises",
-  "platformAdmin_addUser": "Adicionar usuário"
+  "platformAdmin_addUser": "Adicionar usuário",
+  "platformAdmin_paginationUsers": "usuários",
+  "platformAdmin_allUsers": "Todos os Usuários",
+  "platformAdmin_columnName": "Nome",
+  "platformAdmin_columnEmail": "E-mail",
+  "platformAdmin_columnRole": "Função",
+  "platformAdmin_columnOrganization": "Organização",
+  "platformAdmin_columnLastUpdated": "Última atualização",
+  "platformAdmin_columnActions": "Ações",
+  "platformAdmin_actionViewAnalytics": "Ver análises",
+  "platformAdmin_actionEditProfile": "Editar perfil",
+  "platformAdmin_actionRemoveUser": "Remover Usuário"
 }

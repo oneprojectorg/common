@@ -9,6 +9,7 @@ export * from './user';
 export * from './posts';
 export * from './reactions';
 export * from './decision';
+export * from './platform';
 export {
   updateUserProfile,
   getProfile,

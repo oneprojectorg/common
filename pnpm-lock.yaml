@@ -396,6 +396,9 @@ importers:
       '@next/bundle-analyzer':
         specifier: ^15.3.0
         version: 15.3.0
+      '@op/analytics':
+        specifier: workspace:^
+        version: link:../../packages/analytics
       '@op/api':
         specifier: workspace:*
         version: link:../../services/api
@@ -621,6 +624,9 @@ importers:
 
   packages/analytics:
     dependencies:
+      '@op/core':
+        specifier: workspace:^
+        version: link:../core
       posthog-node:
         specifier: ^4.3.0
         version: 4.18.0
