@@ -10,6 +10,12 @@ export interface PostFeedUser {
 }
 
 /**
+ * A more flexible type for optimistic updates that only requires the post property
+ */
+export type PostItem = Pick<PostToOrganization, 'post'> &
+  Partial<Omit<PostToOrganization, 'post'>>;
+
+/**
  * Handles optimistic updates for post reactions
  */
 export class OptimisticReactionUpdater {
@@ -17,12 +23,13 @@ export class OptimisticReactionUpdater {
 
   /**
    * Updates a post's reaction data optimistically
+   * Uses a generic to preserve the input type shape
    */
-  updatePostReactions = (
-    item: PostToOrganization,
+  updatePostReactions = <T extends PostItem>(
+    item: T,
     postId: string,
     reactionType: string,
-  ): PostToOrganization => {
+  ): T => {
     if (item.post.id !== postId) {
       return item;
     }
@@ -34,14 +41,14 @@ export class OptimisticReactionUpdater {
     const hasReaction = currentReaction === reactionType;
 
     if (hasReaction) {
-      return this.removeReaction(
+      return this.removeReaction<T>(
         item,
         reactionType,
         currentCounts,
         currentReactionUsers,
       );
     } else {
-      return this.addOrReplaceReaction(
+      return this.addOrReplaceReaction<T>(
         item,
         reactionType,
         currentReaction,
@@ -51,12 +58,12 @@ export class OptimisticReactionUpdater {
     }
   };
 
-  private removeReaction = (
-    item: PostToOrganization,
+  private removeReaction = <T extends PostItem>(
+    item: T,
     reactionType: string,
     currentCounts: Record<string, number>,
     currentReactionUsers: Record<string, any[]>,
-  ): PostToOrganization => {
+  ): T => {
     const newCount = Math.max(0, (currentCounts[reactionType] || 1) - 1);
 
     if (newCount === 0) {
@@ -80,16 +87,16 @@ export class OptimisticReactionUpdater {
         reactionCounts: currentCounts,
         reactionUsers: currentReactionUsers,
       },
-    };
+    } as T;
   };
 
-  private addOrReplaceReaction = (
-    item: PostToOrganization,
+  private addOrReplaceReaction = <T extends PostItem>(
+    item: T,
     reactionType: string,
     currentReaction: string | null | undefined,
     currentCounts: Record<string, number>,
     currentReactionUsers: Record<string, any[]>,
-  ): PostToOrganization => {
+  ): T => {
     // Remove previous reaction if exists
     if (currentReaction) {
       this.removePreviousReaction(
@@ -129,7 +136,7 @@ export class OptimisticReactionUpdater {
         reactionCounts: currentCounts,
         reactionUsers: currentReactionUsers,
       },
-    };
+    } as T;
   };
 
   private removePreviousReaction = (

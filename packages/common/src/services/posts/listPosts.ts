@@ -137,29 +137,50 @@ export const listPosts = async ({
   }
 };
 
-// Using `any` here because the Drizzle query result has a complex nested structure
-// that's difficult to type precisely. The function is type-safe internally.
-export const getItemsWithReactionsAndComments = async ({
+/**
+ * Represents a reaction item with required fields for processing
+ */
+type ReactionItem = {
+  reactionType: string;
+  createdAt?: string | Date | null;
+  profileId: string;
+  profile?: {
+    id: string;
+    name: string;
+  } | null;
+};
+
+/**
+ * Fields added to posts by this function
+ */
+type EnhancedPostFields = {
+  reactionCounts: Record<string, number>;
+  reactionUsers: Record<
+    string,
+    Array<{ id: string; name: string; timestamp: Date }>
+  >;
+  userReaction: string | null;
+  commentCount: number;
+};
+
+/**
+ * Processes posts to add reaction counts, user reactions, and comment counts.
+ *
+ * Note: The generic constraint uses `any` for the `post` parameter to remain compatible
+ * with Drizzle's loosely-typed query results. Within the function, we process reactions
+ * with proper type safety using the `ReactionItem` type.
+ *
+ * @param items - Array of items where each has a post with id and optional reactions array
+ * @param profileId - The current user's profile ID to determine their reaction
+ * @returns Items with enhanced post data including reaction counts and comment counts
+ */
+export const getItemsWithReactionsAndComments = async <T extends { post: any }>({
   items,
   profileId,
 }: {
-  items: any[];
+  items: T[];
   profileId: string;
-}): Promise<
-  Array<
-    any & {
-      post: any & {
-        reactionCounts: Record<string, number>;
-        reactionUsers: Record<
-          string,
-          Array<{ id: string; name: string; timestamp: Date }>
-        >;
-        userReaction: string | null;
-        commentCount: number;
-      };
-    }
-  >
-> => {
+}): Promise<Array<T & { post: T['post'] & EnhancedPostFields }>> => {
   // Get all post IDs to fetch comment counts
   const postIds = items.map((item) => item.post.id).filter(Boolean);
 
@@ -197,7 +218,7 @@ export const getItemsWithReactionsAndComments = async ({
 
     // Count reactions by type and collect user info
     if (item.post.reactions) {
-      item.post.reactions.forEach((reaction: any) => {
+      item.post.reactions.forEach((reaction: ReactionItem) => {
         reactionCounts[reaction.reactionType] =
           (reactionCounts[reaction.reactionType] || 0) + 1;
 

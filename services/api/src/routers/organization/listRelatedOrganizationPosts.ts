@@ -5,10 +5,7 @@ import {
 // import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
-import {
-  organizationsEncoder,
-  organizationsWithProfileEncoder,
-} from '../../encoders';
+import { organizationsWithProfileEncoder } from '../../encoders';
 import {
   postsEncoder,
   postsToOrganizationsEncoder,
@@ -78,7 +75,9 @@ export const listRelatedOrganizationPostsRouter = router({
       return {
         items: result.items.map((postToOrg) => ({
           ...postToOrg,
-          organization: organizationsEncoder.parse(postToOrg.organization),
+          organization: organizationsWithProfileEncoder.parse(
+            postToOrg.organization,
+          ),
           post: postsEncoder.parse(postToOrg.post),
         })),
         next: result.next,

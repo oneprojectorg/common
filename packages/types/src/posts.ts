@@ -11,6 +11,13 @@ export const createPostSchema = z.object({
   processInstanceId: z.uuid().optional(),
 });
 
+// Single post fetching schema
+export const getPostSchema = z.object({
+  postId: z.uuid(),
+  includeChildren: z.boolean().prefault(false),
+  maxDepth: z.number().min(1).max(5).prefault(3),
+});
+
 // Unified post fetching schema
 export const getPostsSchema = z.object({
   profileId: z.uuid().optional(), // Profile to get posts for

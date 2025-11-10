@@ -16,9 +16,9 @@ import { useTranslations } from '@/lib/i18n';
 
 import ErrorBoundary from '../ErrorBoundary';
 import { InviteSuccessModal } from '../InviteSuccessModal';
-import { parseEmails } from './emailUtils';
 import { InviteNewOrganization } from './InviteNewOrganization';
 import { InviteToExistingOrganization } from './InviteToExistingOrganization';
+import { parseEmails } from './emailUtils';
 
 interface InviteUserModalProps {
   children?: React.ReactNode;
@@ -201,7 +201,9 @@ export const InviteUserModal = ({ children }: InviteUserModalProps) => {
         <>
           <Button color="secondary" variant="icon" className="hidden sm:flex">
             <LuUserPlus className="min-h-4 min-w-4" />
-            <div className="text-nowrap">{t('Invite users')}</div>
+            <div className="hidden text-nowrap md:block">
+              {t('Invite users')}
+            </div>
           </Button>
           <Button
             color="neutral"
