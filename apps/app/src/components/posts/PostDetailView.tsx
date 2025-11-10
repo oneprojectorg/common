@@ -21,14 +21,10 @@ export function PostDetail({ postId, slug }: { postId: string; slug: string }) {
   const t = useTranslations();
   const { user } = useUser();
 
-  const [post] = trpc.posts.getPost.useSuspenseQuery({
-    postId,
-    includeChildren: false,
-  });
-
-  const [organization] = trpc.organization.getBySlug.useSuspenseQuery({
-    slug,
-  });
+  const [[post, organization]] = trpc.useSuspenseQueries((t) => [
+    t.posts.getPost({ postId, includeChildren: false }),
+    t.organization.getBySlug({ slug }),
+  ]);
 
   if (!post) {
     notFound();
