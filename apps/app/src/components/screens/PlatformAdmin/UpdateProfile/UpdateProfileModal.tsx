@@ -5,10 +5,10 @@ import { useEffect } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-import type { User } from './types';
-import { PlatformAdminUpdateProfileForm } from './PlatformAdminUpdateProfileForm';
+import type { User } from '../types';
+import { UpdateProfileForm } from './UpdateProfileForm';
 
-export const PlatformAdminEditProfileModal = ({
+export const UpdateProfileModal = ({
   user,
   isOpen,
   onOpenChange,
@@ -47,7 +47,7 @@ export const PlatformAdminEditProfileModal = ({
       <Modal isOpen={isOpen} onOpenChange={onOpenChange} isDismissable>
         <Dialog>
           <ModalHeader>{t('Edit Profile')}</ModalHeader>
-          <PlatformAdminUpdateProfileForm
+          <UpdateProfileForm
             user={user}
             profile={user.profile}
             onSuccess={() => {

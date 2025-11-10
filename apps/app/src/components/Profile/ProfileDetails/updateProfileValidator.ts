@@ -1,4 +1,4 @@
-import { zodUrl } from '@/utils';
+import { zodUrl } from '@op/common/validation';
 import { z } from 'zod';
 
 export const validator = z.object({

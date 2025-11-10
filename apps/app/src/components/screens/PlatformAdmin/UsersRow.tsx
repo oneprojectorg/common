@@ -15,7 +15,7 @@ import { Button } from 'react-aria-components';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { PlatformAdminEditProfileModal } from './PlatformAdminEditProfileModal';
+import { UpdateProfileModal } from './UpdateProfile';
 import styles from './UsersTable.module.css';
 
 // Infer types from tRPC router output
@@ -109,8 +109,8 @@ export const UsersRow = ({ user }: { user: User }) => {
           </OptionMenu>
         </div>
       </div>
-      {user.profile && (
-        <PlatformAdminEditProfileModal
+      {user.profile ? (
+        <UpdateProfileModal
           user={user}
           isOpen={isEditModalOpen}
           onOpenChange={setIsEditModalOpen}
@@ -118,7 +118,7 @@ export const UsersRow = ({ user }: { user: User }) => {
             utils.platform.admin.listAllUsers.invalidate();
           }}
         />
-      )}
+      ) : null}
     </>
   );
 };
