@@ -8,7 +8,7 @@ import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
-const outputSchema = postsEncoder.nullable();
+const outputSchema = postsEncoder;
 
 export const getPost = router({
   getPost: loggedProcedure
