@@ -10,20 +10,33 @@ import { Suspense } from 'react';
 import { useTranslations } from '@/lib/i18n';
 
 import { UsersRow } from './UsersRow';
-import styles from './UsersTable.module.css';
 import { useCursorPagination } from './useCursorPagination';
 
 const USER_TABLE_MIN_WIDTH = 'min-w-[850px]';
+const USERS_TABLE_GRID =
+  'grid grid-cols-[minmax(120px,1fr)_minmax(180px,1.5fr)_minmax(100px,0.8fr)_minmax(200px,2.2fr)_minmax(80px,0.5fr)_minmax(80px,0.5fr)_80px] gap-4';
 
 // Infer input type for listAllUsers query
 type ListAllUsersInput = RouterInput['platform']['admin']['listAllUsers'];
 
 /** Main users table component with suspense boundary */
 export const UsersTable = () => {
+  const t = useTranslations();
+
   return (
-    <Suspense fallback={<UsersTableSkeleton />}>
-      <UsersTableContent />
-    </Suspense>
+    <div className="mt-8">
+      <h2 className="text-md mb-4 font-serif text-neutral-black">
+        {t('platformAdmin_allUsers')}
+      </h2>
+      <div className="overflow-x-auto">
+        <div className={USER_TABLE_MIN_WIDTH}>
+          <UsersTableHeader />
+          <Suspense fallback={<UsersTableContentSkeleton />}>
+            <UsersTableContent />
+          </Suspense>
+        </div>
+      </div>
+    </div>
   );
 };
 
@@ -45,7 +58,7 @@ const UsersTableHeader = () => {
     <div
       className={cn(
         'bg-neutral-gray0 border-b border-neutral-gray1 py-3',
-        styles.usersTableGrid,
+        USERS_TABLE_GRID,
       )}
     >
       {columnHeadings.map((heading, idx) => (
@@ -91,59 +104,39 @@ const UsersTableContent = () => {
   };
 
   return (
-    <div className="mt-8">
-      <h2 className="text-md mb-4 font-serif text-neutral-black">
-        {t('platformAdmin_allUsers')}
-      </h2>
-      <div className="overflow-x-auto">
-        <div className={USER_TABLE_MIN_WIDTH}>
-          <UsersTableHeader />
-          <div className="divide-y divide-neutral-gray1">
-            {users.map((user) => (
-              <UsersRow key={user.id} user={user} />
-            ))}
-          </div>
-        </div>
-        <div className="mt-4">
-          <Pagination
-            range={{
-              totalItems: total,
-              itemsPerPage: limit,
-              page: currentPage,
-              label: t('platformAdmin_paginationUsers'),
-            }}
-            next={hasMore ? onNext : undefined}
-            previous={canGoPrevious ? handlePrevious : undefined}
-          />
-        </div>
+    <>
+      <div className="divide-y divide-neutral-gray1">
+        {users.map((user) => (
+          <UsersRow key={user.id} user={user} />
+        ))}
       </div>
-    </div>
+      <div className="mt-4">
+        <Pagination
+          range={{
+            totalItems: total,
+            itemsPerPage: limit,
+            page: currentPage,
+            label: t('platformAdmin_paginationUsers'),
+          }}
+          next={hasMore ? onNext : undefined}
+          previous={canGoPrevious ? handlePrevious : undefined}
+        />
+      </div>
+    </>
   );
 };
 
-/** Loading skeleton for users table */
-const UsersTableSkeleton = () => {
-  const t = useTranslations();
-
+/** Loading skeleton for table content only */
+const UsersTableContentSkeleton = () => {
   return (
-    <div className="mt-8">
-      <h2 className="text-md mb-4 font-serif text-neutral-black">
-        {t('platformAdmin_allUsers')}
-      </h2>
-      <div className="overflow-x-auto">
-        <div className={USER_TABLE_MIN_WIDTH}>
-          <UsersTableHeader />
-          <div className="divide-y divide-neutral-gray1">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className={cn('py-4', styles.usersTableGrid)}>
-                {[...Array(7)].map((_, j) => (
-                  <Skeleton key={j} className="h-4 w-full" />
-                ))}
-              </div>
-            ))}
-          </div>
+    <div className="divide-y divide-neutral-gray1">
+      {[...Array(5)].map((_, i) => (
+        <div key={i} className={cn('py-4', USERS_TABLE_GRID)}>
+          {[...Array(7)].map((_, j) => (
+            <Skeleton key={j} className="h-4 w-full" />
+          ))}
         </div>
-      </div>
+      ))}
     </div>
   );
 };

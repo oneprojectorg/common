@@ -16,7 +16,9 @@ import { Button } from 'react-aria-components';
 import { useTranslations } from '@/lib/i18n';
 
 import { UpdateProfileModal } from './UpdateProfile';
-import styles from './UsersTable.module.css';
+
+const USERS_TABLE_GRID =
+  'grid grid-cols-[minmax(120px,1fr)_minmax(180px,1.5fr)_minmax(100px,0.8fr)_minmax(200px,2.2fr)_minmax(80px,0.5fr)_minmax(80px,0.5fr)_80px] gap-4';
 
 // Infer types from tRPC router output
 type ListAllUsersOutput = RouterOutput['platform']['admin']['listAllUsers'];
@@ -42,7 +44,7 @@ export const UsersRow = ({ user }: { user: User }) => {
       <div
         className={cn(
           'hover:bg-neutral-gray0 py-4 transition-colors',
-          styles.usersTableGrid,
+          USERS_TABLE_GRID,
         )}
       >
         <div className="flex items-center text-sm font-normal text-neutral-black">
