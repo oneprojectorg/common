@@ -22,3 +22,7 @@ export const match = (value: any, cases: Record<any, any>) => {
 
   throw new Error(`No matching case found for value: ${value}`);
 };
+
+// Checks for if a value is nullish and return TRUE if it is
+export const isNullish = (value: unknown) =>
+  value === null || value === undefined || isNaN(value);
