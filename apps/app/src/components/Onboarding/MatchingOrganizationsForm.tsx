@@ -129,7 +129,7 @@ export const MatchingOrganizationsForm = ({
         </FormHeader>
         <div className="flex flex-col items-center space-y-4">
           {matchingOrgs.map((org) => (
-            <Surface className="w-full p-4">
+            <Surface className="w-full p-4" key={org.id}>
               <label key={org.id} className="flex cursor-default gap-4">
                 <input
                   type="radio"
