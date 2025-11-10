@@ -7,7 +7,7 @@ import {
   parseProposalData,
 } from '@/utils/proposalUtils';
 import { ProposalStatus, type proposalEncoder } from '@op/api/encoders';
-import { match } from '@op/core';
+import { isNullish, match } from '@op/core';
 import { Avatar } from '@op/ui/Avatar';
 import { Chip } from '@op/ui/Chip';
 import { Surface } from '@op/ui/Surface';
@@ -143,9 +143,7 @@ export function ProposalCardBudget({
   const { budget } = parseProposalData(proposal.proposalData);
 
   // Use allocated amount if provided, otherwise fall back to budget
-  const displayAmount = allocated !== null && allocated !== undefined
-    ? Number(allocated)
-    : budget;
+  const displayAmount = isNullish(allocated) ? Number(allocated) : budget;
 
   if (!displayAmount) {
     return null;
@@ -314,7 +312,7 @@ export function ProposalCardDescription({
         className,
       )}
     >
-      {getTextPreview(description)}
+      {getTextPreview({ content: description })}
     </p>
   );
 }

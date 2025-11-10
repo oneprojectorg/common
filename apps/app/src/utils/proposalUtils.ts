@@ -38,13 +38,17 @@ export { formatCurrency, formatDate };
  * Safely extract text content from HTML without XSS vulnerability
  * Preserves line breaks from block-level HTML elements and slices by lines
  */
-export function getTextPreview(
-  html: string,
-  maxLines: number = 3,
-  maxLength: number = 300,
-): string {
+export function getTextPreview({
+  content,
+  maxLines = 1,
+  maxLength = 300,
+}: {
+  content: string;
+  maxLines?: number;
+  maxLength?: number;
+}): string {
   // First decode HTML entities (e.g., &lt;p&gt; becomes <p>)
-  const decodedHtml = he.decode(html);
+  const decodedHtml = he.decode(content);
 
   // Replace block-level elements with newline markers before stripping HTML
   // This preserves semantic line breaks from paragraphs, divs, lists, etc.
@@ -86,7 +90,7 @@ export function getTextPreview(
     preview.length > maxLength ? preview.substring(0, maxLength) : preview;
 
   return hasMoreLines || truncated.length < preview.length
-    ? truncated + '...'
+    ? truncated + '…'
     : truncated;
 }
 

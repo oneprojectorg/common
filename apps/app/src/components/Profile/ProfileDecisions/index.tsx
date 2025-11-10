@@ -27,7 +27,9 @@ const DecisionProcessList = ({
   const { slug } = useParams();
   const router = useRouter();
   const t = useTranslations();
-  const [navigatingInstanceId, setNavigatingInstanceId] = useState<string | null>(null);
+  const [navigatingInstanceId, setNavigatingInstanceId] = useState<
+    string | null
+  >(null);
   const [data] = trpc.decision.listInstances.useSuspenseQuery({
     ownerProfileId: profileId,
     limit: 20,
@@ -142,7 +144,7 @@ const DecisionProcessList = ({
                 </div>
                 {description && (
                   <p className="max-w-2xl overflow-hidden text-ellipsis text-base text-neutral-charcoal sm:text-nowrap">
-                    {getTextPreview(description)}
+                    {getTextPreview({ content: description })}
                   </p>
                 )}
               </div>
@@ -158,7 +160,9 @@ const DecisionProcessList = ({
                       router.push(`/profile/${slug}/decisions/${instance.id}`);
                     }}
                   >
-                    {navigatingInstanceId === instance.id ? <LoadingSpinner /> : null}
+                    {navigatingInstanceId === instance.id ? (
+                      <LoadingSpinner />
+                    ) : null}
                     {t('View Details')}
                   </Button>
                 ) : (
@@ -170,7 +174,9 @@ const DecisionProcessList = ({
                       router.push(`/profile/${slug}/decisions/${instance.id}`);
                     }}
                   >
-                    {navigatingInstanceId === instance.id ? <LoadingSpinner /> : null}
+                    {navigatingInstanceId === instance.id ? (
+                      <LoadingSpinner />
+                    ) : null}
                     {t('Participate')}
                   </Button>
                 )}
