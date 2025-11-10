@@ -1,5 +1,6 @@
 'use client';
 
+import { DATE_TIME_UTC_FORMAT } from '@/utils/formatting';
 import { getAnalyticsUserUrl } from '@op/analytics/client-utils';
 import type { RouterOutput } from '@op/api/client';
 import { trpc } from '@op/api/client';
@@ -63,14 +64,7 @@ export const UsersRow = ({ user }: { user: User }) => {
                 {relativeUpdatedAt}
               </Button>
               <Tooltip>
-                {format.dateTime(updatedAt, {
-                  timeZone: 'UTC',
-                  year: 'numeric',
-                  month: 'short',
-                  day: 'numeric',
-                  hour: 'numeric',
-                  minute: 'numeric',
-                })}
+                {format.dateTime(updatedAt, DATE_TIME_UTC_FORMAT)}
               </Tooltip>
             </TooltipTrigger>
           ) : (
@@ -84,14 +78,7 @@ export const UsersRow = ({ user }: { user: User }) => {
                 {relativeLastSignIn}
               </Button>
               <Tooltip>
-                {format.dateTime(lastSignInAt, {
-                  timeZone: 'UTC',
-                  year: 'numeric',
-                  month: 'short',
-                  day: 'numeric',
-                  hour: 'numeric',
-                  minute: 'numeric',
-                })}
+                {format.dateTime(lastSignInAt, DATE_TIME_UTC_FORMAT)}
               </Tooltip>
             </TooltipTrigger>
           ) : (
