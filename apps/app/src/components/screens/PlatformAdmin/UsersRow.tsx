@@ -20,15 +20,8 @@ import styles from './UsersTable.module.css';
 type ListAllUsersOutput = RouterOutput['platform']['admin']['listAllUsers'];
 type User = ListAllUsersOutput['items'][number];
 type OrganizationUsers = User['organizationUsers'];
-type UserRolesAndOrganizationsProps = {
-  organizationUsers: OrganizationUsers;
-};
 
-type UsersRowProps = {
-  user: User;
-};
-
-export const UsersRow = ({ user }: UsersRowProps) => {
+export const UsersRow = ({ user }: { user: User }) => {
   const format = useFormatter();
   const t = useTranslations();
   const updatedAt = user.updatedAt ? new Date(user.updatedAt) : null;
@@ -113,7 +106,9 @@ export const UsersRow = ({ user }: UsersRowProps) => {
 
 const UserRolesAndOrganizations = ({
   organizationUsers,
-}: UserRolesAndOrganizationsProps) => {
+}: {
+  organizationUsers: OrganizationUsers;
+}) => {
   const [selectedOrgUserId, setSelectedOrgUserId] = useState<
     string | undefined
   >(organizationUsers?.[0]?.id);
