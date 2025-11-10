@@ -5,15 +5,17 @@ import { desc, eq } from 'drizzle-orm';
 import { getCurrentProfileId } from '../access';
 import { getItemsWithReactionsAndComments } from './listPosts';
 
-export interface GetPostInput {
+export const getPost = async ({
+  postId,
+  includeChildren = false,
+  authUserId,
+  ...input
+}: {
   postId: string;
   includeChildren?: boolean;
   maxDepth?: number;
   authUserId: string;
-}
-
-export const getPost = async (input: GetPostInput) => {
-  const { postId, includeChildren = false, authUserId } = input;
+}) => {
   let { maxDepth = 2 } = input;
 
   // enforcing a max depth to prevent infinite cycles

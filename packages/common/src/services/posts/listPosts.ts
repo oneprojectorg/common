@@ -146,19 +146,17 @@ export const getItemsWithReactionsAndComments = async ({
   items: any[];
   profileId: string;
 }): Promise<
-  Array<
-    any & {
-      post: any & {
-        reactionCounts: Record<string, number>;
-        reactionUsers: Record<
-          string,
-          Array<{ id: string; name: string; timestamp: Date }>
-        >;
-        userReaction: string | null;
-        commentCount: number;
-      };
-    }
-  >
+  Array<{
+    post: {
+      reactionCounts: Record<string, number>;
+      reactionUsers: Record<
+        string,
+        Array<{ id: string; name: string; timestamp: Date }>
+      >;
+      userReaction: string | null;
+      commentCount: number;
+    };
+  }>
 > => {
   // Get all post IDs to fetch comment counts
   const postIds = items.map((item) => item.post.id).filter(Boolean);

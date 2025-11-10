@@ -48,7 +48,6 @@ export const deletePostSchema = z.object({
 });
 
 export type CreatePostInput = z.infer<typeof createPostSchema>;
-export type GetPostInput = z.infer<typeof getPostSchema>;
 export type GetPostsInput = z.infer<typeof getPostsSchema>;
 export type GetOrganizationPostsInput = z.infer<
   typeof getOrganizationPostsSchema
