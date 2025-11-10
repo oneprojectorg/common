@@ -1,3 +1,4 @@
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { DEFAULT_MAX_SIZE } from '@/hooks/useFileUpload';
 import { trpc } from '@op/api/client';
 import { zodUrl } from '@op/common/validation';
@@ -118,6 +119,7 @@ export const PersonalDetailsForm = ({
   const uploadImage = trpc.account.uploadImage.useMutation();
   const uploadBannerImage = trpc.account.uploadBannerImage.useMutation();
   const updateProfile = trpc.account.updateUserProfile.useMutation();
+  const isOnboardingV2 = useFeatureFlag('onboarding-v2');
 
   // Get current user's profile ID for the focus areas component
   const { data: userAccount } = trpc.account.getMyAccount.useQuery();
@@ -294,47 +296,51 @@ export const PersonalDetailsForm = ({
             />
           )}
         />
-        <form.AppField
-          name="pronouns"
-          children={(field) => (
-            <field.Select
-              label={t('Pronouns')}
-              placeholder={t('Select your preferred pronouns')}
-              selectedKey={field.state.value}
-              onBlur={field.handleBlur}
-              onSelectionChange={field.handleChange}
-              errorMessage={getFieldErrorMessage(field)}
-            >
-              <SelectItem id="she-her">{t('She/Her')}</SelectItem>
-              <SelectItem id="he-him">{t('He/Him')}</SelectItem>
-              <SelectItem id="they-them">{t('They/Them')}</SelectItem>
-              <SelectItem id="custom">{t('Custom')}</SelectItem>
-            </field.Select>
-          )}
-        />
-        <form.Subscribe
-          selector={(state) => state.values.pronouns}
-          children={(pronouns) =>
-            pronouns === 'custom' ? (
-              <form.AppField
-                name="customPronouns"
-                children={(field) => (
-                  <field.TextField
-                    label={t('Custom Pronouns')}
-                    value={field.state.value}
-                    onBlur={field.handleBlur}
-                    onChange={field.handleChange}
-                    errorMessage={getFieldErrorMessage(field)}
-                    isRequired
-                    inputProps={{
-                      placeholder: t('Enter your custom pronouns'),
-                    }}
+        {isOnboardingV2 && (
+          <>
+            <form.AppField
+              name="pronouns"
+              children={(field) => (
+                <field.Select
+                  label={t('Pronouns')}
+                  placeholder={t('Select your preferred pronouns')}
+                  selectedKey={field.state.value}
+                  onBlur={field.handleBlur}
+                  onSelectionChange={field.handleChange}
+                  errorMessage={getFieldErrorMessage(field)}
+                >
+                  <SelectItem id="she-her">{t('She/Her')}</SelectItem>
+                  <SelectItem id="he-him">{t('He/Him')}</SelectItem>
+                  <SelectItem id="they-them">{t('They/Them')}</SelectItem>
+                  <SelectItem id="custom">{t('Custom')}</SelectItem>
+                </field.Select>
+              )}
+            />
+            <form.Subscribe
+              selector={(state) => state.values.pronouns}
+              children={(pronouns) =>
+                pronouns === 'custom' ? (
+                  <form.AppField
+                    name="customPronouns"
+                    children={(field) => (
+                      <field.TextField
+                        label={t('Custom Pronouns')}
+                        value={field.state.value}
+                        onBlur={field.handleBlur}
+                        onChange={field.handleChange}
+                        errorMessage={getFieldErrorMessage(field)}
+                        isRequired
+                        inputProps={{
+                          placeholder: t('Enter your custom pronouns'),
+                        }}
+                      />
+                    )}
                   />
-                )}
-              />
-            ) : null
-          }
-        />
+                ) : null
+              }
+            />
+          </>
+        )}
         <form.AppField
           name="email"
           children={(field) => (
