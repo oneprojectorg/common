@@ -7,6 +7,23 @@ import { Suspense } from 'react';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { PostDetail } from '@/components/posts/PostDetailView';
 
+const PostDetailPage = () => {
+  const { postId, slug } = useParams<{
+    postId: string;
+    slug: string;
+  }>();
+
+  return (
+    <ErrorBoundary>
+      <Suspense fallback={<PostDetailPageSkeleton />}>
+        <PostDetail postId={postId} slug={slug} />
+      </Suspense>
+    </ErrorBoundary>
+  );
+};
+
+export default PostDetailPage;
+
 function PostDetailPageSkeleton() {
   return (
     <div className="flex min-h-screen flex-col bg-white">
@@ -66,20 +83,3 @@ function PostDetailPageSkeleton() {
     </div>
   );
 }
-
-const PostDetailPage = () => {
-  const { postId, slug } = useParams<{
-    postId: string;
-    slug: string;
-  }>();
-
-  return (
-    <ErrorBoundary>
-      <Suspense fallback={<PostDetailPageSkeleton />}>
-        <PostDetail postId={postId} slug={slug} />
-      </Suspense>
-    </ErrorBoundary>
-  );
-};
-
-export default PostDetailPage;
