@@ -26,6 +26,7 @@ export const MultiStepForm: React.FC<{
   onFinish?: (allValues: any[]) => void;
   ProgressComponent?: ComponentType<ProgressComponentProps>;
   getStepValues?: () => any[];
+  getLastStep?: () => number | undefined;
   hasHydrated?: boolean;
 }> = ({
   steps,
@@ -34,6 +35,7 @@ export const MultiStepForm: React.FC<{
   onFinish,
   ProgressComponent,
   getStepValues,
+  getLastStep,
   hasHydrated = true,
 }) => {
   const router = useRouter();
@@ -43,9 +45,9 @@ export const MultiStepForm: React.FC<{
 
   // Centralized goToStep that updates both state and query param
   const goToStep = React.useCallback(
-    (targetStep: number) => {
-      setStep(targetStep);
-      const query = { step: targetStep.toString() };
+    (targetStep?: number) => {
+      setStep(targetStep || 0);
+      const query = { step: targetStep?.toString() || '0' };
 
       const params = new URLSearchParams(query);
 
@@ -55,6 +57,8 @@ export const MultiStepForm: React.FC<{
     [router],
   );
 
+  //
+
   // Next/back handlers
   const nextStep = React.useCallback(() => {
     if (step < steps.length - 1) {
@@ -63,8 +67,9 @@ export const MultiStepForm: React.FC<{
   }, [step, steps.length, goToStep]);
 
   const prevStep = React.useCallback(() => {
+    const lastStep = getLastStep?.();
     if (step > 0) {
-      goToStep(step - 1);
+      goToStep(lastStep);
     }
   }, [step, goToStep]);
 
@@ -159,7 +164,7 @@ export const MultiStepForm: React.FC<{
       />
       {error && <div className="mt-4 font-medium text-red-500">{error}</div>}
       {ProgressComponent ? (
-        <ProgressComponent numItems={steps.length} currentStep={step + 1} />
+        <ProgressComponent numItems={steps.length} currentStep={step} />
       ) : null}
     </div>
   );

@@ -13,6 +13,8 @@ interface ProfileResultsProps {
   profileResults: Array<ProfileSearchResult>;
   selectedIndex: number;
   onSearch: (query: string) => void;
+  selectable?: boolean;
+  onSelect?: (profile: ProfileSearchResult) => void;
 }
 
 export const ProfileResults = ({
@@ -20,9 +22,11 @@ export const ProfileResults = ({
   profileResults,
   selectedIndex,
   onSearch,
+  selectable = false,
+  onSelect,
 }: ProfileResultsProps) => {
   return (
-    <div className="pb-4">
+    <div>
       {profileResults.map((profile, index) => {
         // Set up the subtitle that appears in search results
         const isIndividual = profile.type === EntityType.INDIVIDUAL;
@@ -71,13 +75,51 @@ export const ProfileResults = ({
             <span>{profile.name}</span>
           );
 
+        if (selectable) {
+          return (
+            <SearchResultItem
+              key={profile.id}
+              selected={selectedIndex === index + 1}
+              className="p-0"
+            >
+              <button
+                type="button"
+                className="group/result flex w-full items-center gap-4 p-4 text-left"
+                onClick={() => onSelect?.(profile)}
+              >
+                <Avatar
+                  placeholder={profile.name}
+                  className="size-8 group-hover/result:no-underline"
+                >
+                  {profile.avatarImage?.name ? (
+                    <Image
+                      src={getPublicUrl(profile.avatarImage.name) ?? ''}
+                      alt={`${profile.name} avatar`}
+                      fill
+                      className="object-cover"
+                    />
+                  ) : null}
+                </Avatar>
+
+                <div className="flex flex-col font-semibold text-neutral-charcoal">
+                  {styledName}
+                  <span className="text-sm capitalize text-neutral-gray4">
+                    {subtitle}
+                  </span>
+                </div>
+              </button>
+            </SearchResultItem>
+          );
+        }
+
         return (
           <SearchResultItem
             key={profile.id}
             selected={selectedIndex === index + 1}
+            className="p-0"
           >
             <Link
-              className="group/result flex w-full items-center gap-4 hover:no-underline"
+              className="group/result flex w-full items-center gap-4 p-4 hover:no-underline"
               href={
                 isIndividual
                   ? `/profile/${profile.slug}`

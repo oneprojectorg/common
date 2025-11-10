@@ -39,6 +39,8 @@
   "Privacy Policy": "Política de Privacidade",
   "Media": "Mídia",
   "We've found your organization": "Encontramos sua organização",
+  "Find organizations you belong to": "Encontre organizações às quais você pertence",
+  "Search or add your organization…": "Pesquise ou adicione sua organização…",
   "join_subheader": "Com base no domínio do seu e-mail, você tem acesso para se juntar a esta organização.",
   "Confirm Administrator Access": "Confirmar Acesso de Administrador",
   "For now, we're only supporting administrator accounts. In the future, we'll be able to support member accounts.": "Por enquanto, estamos suportando apenas contas de administrador. No futuro, poderemos suportar contas de membros.",
@@ -364,5 +366,13 @@
   "platformAdmin_newOrganizations": "Novas organizações (7d)",
   "platformAdmin_title": "Administração da plataforma",
   "platformAdmin_viewAllAnalytics": "Ver todas as análises",
-  "platformAdmin_addUser": "Adicionar usuário"
+  "platformAdmin_addUser": "Adicionar usuário",
+  "You must accept the Terms of Service": "Você deve aceitar os Termos de Serviço",
+  "You must accept the Privacy Policy": "Você deve aceitar a Política de Privacidade",
+  "I accept the Terms of Service": "Eu aceito os Termos de Serviço",
+  "I accept the Privacy Policy": "Eu aceito a Política de Privacidade",
+  "One last step": "Um último passo",
+  "Our community shaped these policies to ensure they work for real organizations like yours. Your data stays yours, and decisions about the platform are made democratically.": "Nossa comunidade moldou essas políticas para garantir que funcionem para organizações reais como a sua. Seus dados permanecem seus e as decisões sobre a plataforma são tomadas democraticamente.",
+  "Join Common": "Junte-se ao Common",
+  "Go back": "Voltar"
 }

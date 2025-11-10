@@ -16,7 +16,7 @@ import { useSearchParams } from 'next/navigation';
 import React, { useCallback } from 'react';
 import { z } from 'zod';
 import { create } from 'zustand';
-import GoogleIcon from '~icons/logos/google-icon.jsx';
+import GoogleIcon from '~icons/logos/google-icon';
 
 import { CommonLogo } from './CommonLogo';
 
@@ -246,12 +246,13 @@ export const LoginPanel = () => {
                       >
                         <TextField
                           aria-label="Email"
-                          label="Organization email"
+                          label="Email"
                           isRequired
                           inputProps={{
                             placeholder: 'admin@yourorganization.org',
                             spellCheck: false,
                           }}
+                          description="Use the email address associated with your organization"
                           // eslint-disable-next-line jsx-a11y/no-autofocus
                           autoFocus
                           defaultValue={undefined}
@@ -378,7 +379,7 @@ export const LoginPanel = () => {
               {user?.error?.name === 'AuthRetryableFetchError' ||
               login.isError ||
               !!combinedError ? null : (
-                <div className="flex flex-col items-center justify-center text-center text-xs text-midGray sm:text-sm">
+                <div className="flex flex-col items-center justify-center text-center text-sm text-neutral-gray4 sm:text-base">
                   {isSignup ? (
                     <span>
                       You'll receive a code to confirm your account. Can't find
@@ -387,7 +388,9 @@ export const LoginPanel = () => {
                   ) : (
                     <>
                       <span>Don&apos;t have an account?</span>
-                      <span>We will automatically create one for you.</span>
+                      <span>
+                        We’ll create one for you with your organization’s email.
+                      </span>
                     </>
                   )}
                 </div>

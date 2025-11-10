@@ -39,7 +39,10 @@
   "Privacy Policy": "Privacy Policy",
   "Media": "Media",
   "We've found your organization": "We've found your organization",
+  "Find organizations you belong to": "Find organizations you belong to",
+  "Search or add your organization…": "Search or add your organization…",
   "join_subheader": "Based on your email domain, you have access to join this organization.",
+  "find_organizations_subheader": "Select the organization(s) you want to link to your Common profile. You can add more later from your profile.",
   "Confirm Administrator Access": "Confirm Administrator Access",
   "For now, we're only supporting administrator accounts. In the future, we’ll be able to support member accounts.": "For now, we're only supporting administrator accounts. In the future, we’ll be able to support member accounts.",
   "Get Started": "Get Started",
@@ -364,5 +367,13 @@
   "platformAdmin_newOrganizations": "New organizations (7d)",
   "platformAdmin_title": "Platform admin",
   "platformAdmin_viewAllAnalytics": "View all analytics",
-  "platformAdmin_addUser": "Add user"
+  "platformAdmin_addUser": "Add user",
+  "You must accept the Terms of Service": "You must accept the Terms of Service",
+  "You must accept the Privacy Policy": "You must accept the Privacy Policy",
+  "I accept the Terms of Service": "I accept the Terms of Service",
+  "I accept the Privacy Policy": "I accept the Privacy Policy",
+  "One last step": "One last step",
+  "Our community shaped these policies to ensure they work for real organizations like yours. Your data stays yours, and decisions about the platform are made democratically.": "Our community shaped these policies to ensure they work for real organizations like yours. Your data stays yours, and decisions about the platform are made democratically.",
+  "Join Common": "Join Common",
+  "Go back": "Go back"
 }
