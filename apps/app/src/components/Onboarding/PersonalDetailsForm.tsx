@@ -42,10 +42,6 @@ export const createValidator = (t: (key: string) => string) =>
       .max(200, {
         message: t('Must be at most 200 characters'),
       }),
-    pronouns: z
-      .string({ message: t('Pronouns') })
-      .trim()
-      .optional(),
     email: z
       .email()
       .trim()
@@ -74,7 +70,6 @@ export const validator = z.object({
   title: z.string().trim().min(1).max(200),
   email: z.string().optional(),
   website: z.string().optional(),
-  pronouns: z.string().optional(),
   focusAreas: z
     .array(
       z.object({
@@ -213,7 +208,7 @@ export const PersonalDetailsForm = ({
       className={className}
     >
       <FormContainer className="max-w-lg">
-        <FormHeader text={t('Set up your individual profile.')}>
+        <FormHeader text={t('Add your personal details')}>
           {t('Tell us about yourself so others can find you.')}
         </FormHeader>
 
@@ -269,21 +264,6 @@ export const PersonalDetailsForm = ({
               )}
               inputProps={{
                 placeholder: t('Enter your headline'),
-              }}
-            />
-          )}
-        />
-        <form.AppField
-          name="pronouns"
-          children={(field) => (
-            <field.TextField
-              label={t('Pronouns')}
-              value={field.state.value}
-              onBlur={field.handleBlur}
-              onChange={field.handleChange}
-              errorMessage={getFieldErrorMessage(field)}
-              inputProps={{
-                placeholder: t('Enter your preferred pronouns'),
               }}
             />
           )}
