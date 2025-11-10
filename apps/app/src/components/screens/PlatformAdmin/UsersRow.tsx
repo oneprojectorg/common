@@ -1,7 +1,8 @@
 'use client';
 
-import type { RouterOutput } from '@op/api/client';
 import { getAnalyticsUserUrl } from '@op/analytics/client-utils';
+import type { RouterOutput } from '@op/api/client';
+import { trpc } from '@op/api/client';
 import { useRelativeTime } from '@op/hooks';
 import { Menu, MenuItem, MenuSeparator } from '@op/ui/Menu';
 import { OptionMenu } from '@op/ui/OptionMenu';
@@ -14,6 +15,7 @@ import { Button } from 'react-aria-components';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { PlatformAdminEditProfileModal } from './PlatformAdminEditProfileModal';
 import styles from './UsersTable.module.css';
 
 // Infer types from tRPC router output
@@ -24,83 +26,100 @@ type OrganizationUsers = User['organizationUsers'];
 export const UsersRow = ({ user }: { user: User }) => {
   const format = useFormatter();
   const t = useTranslations();
+  const utils = trpc.useUtils();
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const updatedAt = user.updatedAt ? new Date(user.updatedAt) : null;
   const relativeUpdatedAt = updatedAt ? useRelativeTime(updatedAt) : null;
 
   return (
-    <div
-      className={cn(
-        'hover:bg-neutral-gray0 py-4 transition-colors',
-        styles.usersTableGrid,
-      )}
-    >
-      <div className="flex items-center text-sm font-normal text-neutral-black">
-        {user.profile?.name ?? user.name ?? '—'}
-      </div>
-      <div className="flex items-center text-sm font-normal text-neutral-black">
-        {user.email}
-      </div>
-      <UserRolesAndOrganizations
-        organizationUsers={user.organizationUsers ?? []}
-      />
-      <div className="flex items-center text-sm font-normal text-neutral-charcoal">
-        {updatedAt ? (
-          <TooltipTrigger>
-            <Button className="cursor-default text-sm font-normal underline decoration-dotted underline-offset-2 outline-none">
-              {relativeUpdatedAt}
-            </Button>
-            <Tooltip>
-              {format.dateTime(updatedAt, {
-                timeZone: 'UTC',
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-                hour: 'numeric',
-                minute: 'numeric',
-              })}
-            </Tooltip>
-          </TooltipTrigger>
-        ) : (
-          '—'
+    <>
+      <div
+        className={cn(
+          'hover:bg-neutral-gray0 py-4 transition-colors',
+          styles.usersTableGrid,
         )}
+      >
+        <div className="flex items-center text-sm font-normal text-neutral-black">
+          {user.profile?.name ?? user.name ?? '—'}
+        </div>
+        <div className="flex items-center text-sm font-normal text-neutral-black">
+          {user.email}
+        </div>
+        <UserRolesAndOrganizations
+          organizationUsers={user.organizationUsers ?? []}
+        />
+        <div className="flex items-center text-sm font-normal text-neutral-charcoal">
+          {updatedAt ? (
+            <TooltipTrigger>
+              <Button className="cursor-default text-sm font-normal underline decoration-dotted underline-offset-2 outline-none">
+                {relativeUpdatedAt}
+              </Button>
+              <Tooltip>
+                {format.dateTime(updatedAt, {
+                  timeZone: 'UTC',
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric',
+                  hour: 'numeric',
+                  minute: 'numeric',
+                })}
+              </Tooltip>
+            </TooltipTrigger>
+          ) : (
+            '—'
+          )}
+        </div>
+        <div className="flex items-center justify-end pr-1 text-sm text-neutral-charcoal">
+          <OptionMenu variant="outline" size="medium">
+            <Menu className="min-w-48 p-2">
+              <MenuItem
+                key="view-analytics"
+                onAction={() => {
+                  window.open(getAnalyticsUserUrl(user.authUserId), '_blank');
+                }}
+                className="px-3 py-1"
+              >
+                {t('platformAdmin_actionViewAnalytics')}
+              </MenuItem>
+              <MenuItem
+                key="edit-profile"
+                onAction={() => {
+                  if (user.profile) {
+                    setIsEditModalOpen(true);
+                  }
+                }}
+                className="px-3 py-1"
+                isDisabled={!user.profile}
+              >
+                {t('platformAdmin_actionEditProfile')}
+              </MenuItem>
+              <MenuSeparator />
+              <MenuItem
+                key="remove-user"
+                onAction={() => {
+                  alert('coming soon');
+                }}
+                className="px-3 py-1"
+              >
+                <span className="text-red-500">
+                  {t('platformAdmin_actionRemoveUser')}
+                </span>
+              </MenuItem>
+            </Menu>
+          </OptionMenu>
+        </div>
       </div>
-      <div className="flex items-center justify-end pr-1 text-sm text-neutral-charcoal">
-        <OptionMenu variant="outline" size="medium">
-          <Menu className="min-w-48 p-2">
-            <MenuItem
-              key="view-analytics"
-              onAction={() => {
-                window.open(getAnalyticsUserUrl(user.authUserId), '_blank');
-              }}
-              className="px-3 py-1"
-            >
-              {t('platformAdmin_actionViewAnalytics')}
-            </MenuItem>
-            <MenuItem
-              key="edit-profile"
-              onAction={() => {
-                alert('coming soon');
-              }}
-              className="px-3 py-1"
-            >
-              {t('platformAdmin_actionEditProfile')}
-            </MenuItem>
-            <MenuSeparator />
-            <MenuItem
-              key="remove-user"
-              onAction={() => {
-                alert('coming soon');
-              }}
-              className="px-3 py-1"
-            >
-              <span className="text-red-500">
-                {t('platformAdmin_actionRemoveUser')}
-              </span>
-            </MenuItem>
-          </Menu>
-        </OptionMenu>
-      </div>
-    </div>
+      {user.profile && (
+        <PlatformAdminEditProfileModal
+          user={user}
+          isOpen={isEditModalOpen}
+          onOpenChange={setIsEditModalOpen}
+          onSuccess={() => {
+            utils.platform.admin.listAllUsers.invalidate();
+          }}
+        />
+      )}
+    </>
   );
 };
 
