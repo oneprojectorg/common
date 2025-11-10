@@ -30,6 +30,12 @@ export const UsersRow = ({ user }: { user: User }) => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const updatedAt = user.updatedAt ? new Date(user.updatedAt) : null;
   const relativeUpdatedAt = updatedAt ? useRelativeTime(updatedAt) : null;
+  const lastSignInAt = user.authUser?.lastSignInAt
+    ? new Date(user.authUser.lastSignInAt)
+    : null;
+  const relativeLastSignIn = lastSignInAt
+    ? useRelativeTime(lastSignInAt)
+    : null;
 
   return (
     <>
@@ -56,6 +62,27 @@ export const UsersRow = ({ user }: { user: User }) => {
               </Button>
               <Tooltip>
                 {format.dateTime(updatedAt, {
+                  timeZone: 'UTC',
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric',
+                  hour: 'numeric',
+                  minute: 'numeric',
+                })}
+              </Tooltip>
+            </TooltipTrigger>
+          ) : (
+            '—'
+          )}
+        </div>
+        <div className="flex items-center text-sm font-normal text-neutral-charcoal">
+          {lastSignInAt ? (
+            <TooltipTrigger>
+              <Button className="cursor-default text-sm font-normal underline decoration-dotted underline-offset-2 outline-none">
+                {relativeLastSignIn}
+              </Button>
+              <Tooltip>
+                {format.dateTime(lastSignInAt, {
                   timeZone: 'UTC',
                   year: 'numeric',
                   month: 'short',

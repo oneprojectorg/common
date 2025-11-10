@@ -37,6 +37,7 @@ const UsersTableHeader = () => {
     t('platformAdmin_columnRole'),
     t('platformAdmin_columnOrganization'),
     t('platformAdmin_columnLastUpdated'),
+    t('platformAdmin_columnLastSignIn'),
     t('platformAdmin_columnActions'),
   ];
 
@@ -135,7 +136,7 @@ const UsersTableSkeleton = () => {
           <div className="divide-y divide-neutral-gray1">
             {[...Array(5)].map((_, i) => (
               <div key={i} className={cn('py-4', styles.usersTableGrid)}>
-                {[...Array(6)].map((_, j) => (
+                {[...Array(7)].map((_, j) => (
                   <Skeleton key={j} className="h-4 w-full" />
                 ))}
               </div>

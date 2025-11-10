@@ -372,6 +372,7 @@
   "platformAdmin_columnRole": "Função",
   "platformAdmin_columnOrganization": "Organização",
   "platformAdmin_columnLastUpdated": "Última atualização",
+  "platformAdmin_columnLastSignIn": "Último login",
   "platformAdmin_columnActions": "Ações",
   "platformAdmin_actionViewAnalytics": "Ver análises",
   "platformAdmin_actionEditProfile": "Editar perfil",
