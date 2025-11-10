@@ -37,8 +37,7 @@ export const RolesAtOrganizationsForm = ({
   const router = useRouter();
   const searchParams = useSearchParams();
   const currentStep = Number(searchParams.get('step'));
-  const { selectedOrganizations, setLastStep, lastStep } =
-    useOnboardingFormStore();
+  const { selectedOrganizations, setLastStep } = useOnboardingFormStore();
   const utils = trpc.useUtils();
 
   const joinOrganization = trpc.organization.join.useMutation({

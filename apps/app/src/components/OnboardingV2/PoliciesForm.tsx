@@ -7,15 +7,21 @@ import { FormContainer } from '../form/FormContainer';
 import { FormHeader } from '../form/FormHeader';
 import { getFieldErrorMessage, useAppForm } from '../form/utils';
 
-export const validator = z
-  .object({
-    termsOfServiceAccept: z.boolean().prefault(true),
-    privacyPolicyAccept: z.boolean().prefault(true),
-  })
-  .prefault({
-    termsOfServiceAccept: true,
-    privacyPolicyAccept: true,
+export const createValidator = (t: (key: string) => string) =>
+  z.object({
+    termsOfServiceAccept: z.boolean().refine((value) => value, {
+      error: t('You must accept the Terms of Service'),
+    }),
+    privacyPolicyAccept: z.boolean().refine((value) => value, {
+      error: t('You must accept the Privacy Policy'),
+    }),
   });
+
+// Fallback validator for external use
+export const validator = z.object({
+  termsOfServiceAccept: z.boolean().prefault(false),
+  privacyPolicyAccept: z.boolean().prefault(false),
+});
 
 export const PoliciesForm = ({
   onNext,
@@ -25,12 +31,15 @@ export const PoliciesForm = ({
   const t = useTranslations();
 
   const form = useAppForm({
-    validators: {
-      onChange: validator,
-      onSubmit: validator,
+    defaultValues: {
+      termsOfServiceAccept: false,
+      privacyPolicyAccept: false,
     },
-    onSubmit: () => {
-      onNext({});
+    validators: {
+      onSubmit: createValidator(t) as any,
+    },
+    onSubmit: (values) => {
+      onNext(values);
     },
   });
 
@@ -58,11 +67,18 @@ export const PoliciesForm = ({
                 onChange={field.handleChange}
                 size="small"
                 isRequired
-                errorMessage={getFieldErrorMessage(field)}
+                isInvalid={field.state.meta.errors.length > 0}
               >
-                <span className="text-base">
-                  {t('I accept the Terms of Service')}
-                </span>
+                <div className="flex flex-col">
+                  <span className="text-base">
+                    {t('I accept the Terms of Service')}
+                  </span>
+                  {field.state.meta.errors && (
+                    <span role="alert" className="text-red-500">
+                      {getFieldErrorMessage(field)}
+                    </span>
+                  )}
+                </div>
               </field.Checkbox>
             )}
           />
@@ -75,18 +91,28 @@ export const PoliciesForm = ({
                 onChange={field.handleChange}
                 size="small"
                 isRequired
-                errorMessage={getFieldErrorMessage(field)}
+                isInvalid={field.state.meta.errors.length > 0}
               >
-                <span className="text-base">
-                  {t('I accept the Privacy Policy')}
-                </span>
+                <div className="flex flex-col">
+                  <span className="text-base">
+                    {t('I accept the Privacy Policy')}
+                  </span>
+                  {!field.state.value && (
+                    <span role="alert" className="text-red-500">
+                      {getFieldErrorMessage(field)}
+                    </span>
+                  )}
+                </div>
               </field.Checkbox>
             )}
           />
         </div>
 
         <div className="flex flex-col gap-4">
-          <form.SubmitButton className="sm:w-full">
+          <form.SubmitButton
+            className="sm:w-full"
+            onPress={() => form.handleSubmit()}
+          >
             {t('Join Common')}
           </form.SubmitButton>
           <form.Button color="secondary" onPress={onBack} className="sm:w-full">

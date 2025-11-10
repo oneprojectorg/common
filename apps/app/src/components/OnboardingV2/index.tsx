@@ -55,7 +55,7 @@ export const OnboardingFlowV2 = () => {
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [hasHydrated, setHasHydrated] = useState(false);
   const createOrganization = trpc.organization.create.useMutation();
-  void trpc.account.listMatchingDomainOrganizations.usePrefetchQuery();
+
   const router = useRouter();
   const isOnline = useConnectionStatus();
   const {
