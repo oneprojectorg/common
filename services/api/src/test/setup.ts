@@ -40,9 +40,12 @@ const TEST_DATABASE_URL =
   'postgresql://postgres:postgres@127.0.0.1:55322/postgres';
 
 let testSupabase: SupabaseClient;
+let testSupabaseAdmin: SupabaseClient;
 
 // Export test client for use in tests
 export let supabaseTestClient: SupabaseClient;
+// Export admin client for test setup/teardown (bypasses RLS)
+export let supabaseTestAdminClient: SupabaseClient;
 
 // Mock environment variables for testing
 vi.stubEnv('NODE_ENV', 'test');
@@ -71,15 +74,28 @@ vi.mock('@op/core', async () => {
 
 // Global setup for all tests
 beforeAll(async () => {
-  // Initialize test Supabase client
+  // Initialize test Supabase client (anon key for user operations)
   testSupabase = createClient(TEST_SUPABASE_URL, TEST_SUPABASE_ANON_KEY, {
     auth: {
       persistSession: false,
     },
   });
 
-  // Make test client available globally
+  // Initialize admin Supabase client (service role key bypasses RLS)
+  testSupabaseAdmin = createClient(
+    TEST_SUPABASE_URL,
+    TEST_SUPABASE_SERVICE_ROLE_KEY,
+    {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+      },
+    },
+  );
+
+  // Make test clients available globally
   supabaseTestClient = testSupabase;
+  supabaseTestAdminClient = testSupabaseAdmin;
 
   // Run database migrations before tests
   await runMigrations();

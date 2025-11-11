@@ -1,5 +1,6 @@
 import { type SupabaseClient } from '@supabase/supabase-js';
-import { supabaseTestClient } from './setup';
+
+import { supabaseTestAdminClient, supabaseTestClient } from './setup';
 
 /**
  * Test utilities for Supabase integration tests
@@ -7,25 +8,32 @@ import { supabaseTestClient } from './setup';
 
 /**
  * Clean up test data from tables after tests
+ * Uses admin client to bypass RLS policies
  */
 export async function cleanupTestData(tables: string[] = []) {
-  if (!supabaseTestClient) {
-    console.warn('Supabase test client not initialized');
+  if (!supabaseTestAdminClient) {
+    console.warn('Supabase admin test client not initialized');
     return;
   }
 
   const promises = tables.map(async (table) => {
     try {
       // First check if the table exists by trying to select from it
-      const { error: selectError } = await supabaseTestClient.from(table).select('id').limit(1);
-      
+      const { error: selectError } = await supabaseTestAdminClient
+        .from(table)
+        .select('id')
+        .limit(1);
+
       if (selectError && selectError.message.includes('does not exist')) {
         // Table doesn't exist, skip cleanup
         return;
       }
-      
-      // Delete all records from test table using a more compatible approach
-      const { error } = await supabaseTestClient.from(table).delete().gte('created_at', '1970-01-01');
+
+      // Delete all records from test table using admin client (bypasses RLS)
+      const { error } = await supabaseTestAdminClient
+        .from(table)
+        .delete()
+        .gte('created_at', '1970-01-01');
       if (error && !error.message.includes('does not exist')) {
         console.warn(`Failed to cleanup table ${table}:`, error.message);
       }
@@ -40,7 +48,10 @@ export async function cleanupTestData(tables: string[] = []) {
 /**
  * Create a test user and return the user object
  */
-export async function createTestUser(email: string, password: string = 'testpassword123') {
+export async function createTestUser(
+  email: string,
+  password: string = 'testpassword123',
+) {
   if (!supabaseTestClient) {
     throw new Error('Supabase test client not initialized');
   }
@@ -63,7 +74,10 @@ export async function createTestUser(email: string, password: string = 'testpass
 /**
  * Sign in as a test user
  */
-export async function signInTestUser(email: string, password: string = 'testpassword123') {
+export async function signInTestUser(
+  email: string,
+  password: string = 'testpassword123',
+) {
   if (!supabaseTestClient) {
     throw new Error('Supabase test client not initialized');
   }
@@ -102,7 +116,10 @@ export async function getCurrentTestSession() {
     throw new Error('Supabase test client not initialized');
   }
 
-  const { data: { session }, error } = await supabaseTestClient.auth.getSession();
+  const {
+    data: { session },
+    error,
+  } = await supabaseTestClient.auth.getSession();
   if (error) {
     throw new Error(`Failed to get session: ${error.message}`);
   }
@@ -112,22 +129,25 @@ export async function getCurrentTestSession() {
 
 /**
  * Insert test data into a table
+ * Uses admin client to bypass RLS policies
  */
 export async function insertTestData<T = any>(table: string, data: T | T[]) {
-  if (!supabaseTestClient) {
-    throw new Error('Supabase test client not initialized');
+  if (!supabaseTestAdminClient) {
+    throw new Error('Supabase admin test client not initialized');
   }
 
-  const { data: result, error } = await supabaseTestClient
+  const response = await supabaseTestAdminClient
     .from(table)
     .insert(data)
     .select();
 
-  if (error) {
-    throw new Error(`Failed to insert test data into ${table}: ${error.message}`);
+  if (response.error) {
+    throw new Error(
+      `Failed to insert test data into ${table}: ${response.error.message || response.error.code || response.error.hint || JSON.stringify(response.error)}`,
+    );
   }
 
-  return result;
+  return response.data;
 }
 
 /**
@@ -153,58 +173,66 @@ export async function executeTestSQL(sql: string, params: any[] = []) {
 /**
  * Wait for the Supabase instance to be ready
  */
-export async function waitForSupabase(maxRetries: number = 10, delayMs: number = 1000) {
+export async function waitForSupabase(
+  maxRetries: number = 10,
+  delayMs: number = 1000,
+) {
   if (!supabaseTestClient) {
     throw new Error('Supabase test client not initialized');
   }
 
   for (let i = 0; i < maxRetries; i++) {
     try {
-      const { error } = await supabaseTestClient.from('_test_connection').select('*').limit(1);
+      const { error } = await supabaseTestClient
+        .from('_test_connection')
+        .select('*')
+        .limit(1);
       // If we get here without throwing, connection is working
       return true;
     } catch (err) {
       if (i === maxRetries - 1) {
         throw new Error('Supabase not ready after maximum retries');
       }
-      await new Promise(resolve => setTimeout(resolve, delayMs));
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
     }
   }
-  
+
   return false;
 }
 
 /**
  * Reset database to clean state (removes all data from specified tables)
+ * Uses admin client to bypass RLS policies
  */
 export async function resetTestDatabase(tablesToReset: string[] = []) {
-  if (!supabaseTestClient) {
-    throw new Error('Supabase test client not initialized');
+  if (!supabaseTestAdminClient) {
+    throw new Error('Supabase admin test client not initialized');
   }
 
   // Default tables to reset if none specified
   const defaultTables = [
     'profiles',
-    'organizations', 
+    'organizations',
     'posts',
     'comments',
     // Add more default tables as needed
   ];
 
   const tables = tablesToReset.length > 0 ? tablesToReset : defaultTables;
-  
+
   await cleanupTestData(tables);
-  
-  // Also clear auth users in test mode
+
+  // Clear auth users using admin client
   try {
-    const { data: users } = await supabaseTestClient.auth.admin.listUsers();
+    const { data: users } =
+      await supabaseTestAdminClient.auth.admin.listUsers();
     if (users?.users) {
-      const deletePromises = users.users.map(user => 
-        supabaseTestClient.auth.admin.deleteUser(user.id)
+      const deletePromises = users.users.map((user) =>
+        supabaseTestAdminClient.auth.admin.deleteUser(user.id),
       );
       await Promise.allSettled(deletePromises);
     }
   } catch (err) {
-    console.warn('Could not reset auth users (this is normal if not using service role key)');
+    console.warn('Could not reset auth users:', err);
   }
 }
