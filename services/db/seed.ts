@@ -12,6 +12,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import { db } from '.';
+import * as schema from './schema';
 import {
   links,
   locations,
@@ -45,29 +46,6 @@ if (!allowedDatabaseUrls.includes(process.env.DATABASE_URL || '')) {
   throw new Error('You are truncating in production');
 }
 
-// async function resetTable(
-// database: typeof db,
-// table: Table,
-// schemaName?: string,
-// ) {
-// const tableName = getTableName(table);
-// const fullTableName = schemaName ? `${schemaName}.${tableName}` : tableName;
-
-// await database.execute(
-// sql.raw(`TRUNCATE TABLE ${fullTableName} RESTART IDENTITY CASCADE`),
-// );
-// }
-
-// Reset public schema tables
-// for (const table of Object.values(schema).filter(
-// (value) => value instanceof PgTable,
-// )) {
-// await resetTable(db, table);
-// }
-
-// Reset auth schema table
-// await resetTable(db, authUsers, 'auth');
-
 // Determine the correct Supabase URL based on the database URL
 const isTestDatabase = process.env.DATABASE_URL?.includes('55322');
 const supabaseUrl = isTestDatabase
@@ -86,9 +64,87 @@ const supabase = createServerClient(
   },
 );
 
-await supabase.storage.emptyBucket('assets');
-await supabase.storage.emptyBucket('avatars');
+console.log('🧹 Wiping database before seeding...');
 
+// Helper function to reset a table
+async function resetTable(
+  database: typeof db,
+  table: Table,
+  schemaName?: string,
+) {
+  const tableName = getTableName(table);
+  const fullTableName = schemaName ? `${schemaName}.${tableName}` : tableName;
+
+  try {
+    await database.execute(
+      sql.raw(`TRUNCATE TABLE ${fullTableName} RESTART IDENTITY CASCADE`),
+    );
+    console.log(`  ✓ Truncated ${fullTableName}`);
+  } catch (error: any) {
+    // Ignore errors for tables that don't exist or can't be truncated
+    if (
+      !error.message.includes('does not exist') &&
+      !error.message.includes('cannot truncate')
+    ) {
+      console.warn(`  ⚠ Warning truncating ${fullTableName}:`, error.message);
+    }
+  }
+}
+
+// Delete all auth users - use direct SQL delete since this is test/dev only
+try {
+  // First check how many users exist
+  const countResult = await db.execute(
+    sql.raw(`SELECT COUNT(*) FROM auth.users`),
+  );
+  const userCount = parseInt((countResult as any)[0]?.count || '0');
+
+  if (userCount > 0) {
+    console.log(`  🗑️  Deleting ${userCount} auth users...`);
+
+    // Delete from auth.users directly (CASCADE will handle related tables)
+    await db.execute(sql.raw(`DELETE FROM auth.users`));
+
+    console.log(`  ✓ Deleted auth users`);
+  } else {
+    console.log(`  ℹ️  No auth users to delete`);
+  }
+} catch (error: any) {
+  console.warn(`  ⚠ Warning deleting auth users:`, error.message);
+}
+
+// Empty storage buckets
+try {
+  await supabase.storage.emptyBucket('assets');
+  console.log(`  ✓ Emptied assets bucket`);
+} catch (error: any) {
+  console.warn(`  ⚠ Warning emptying assets bucket:`, error.message);
+}
+
+try {
+  await supabase.storage.emptyBucket('avatars');
+  console.log(`  ✓ Emptied avatars bucket`);
+} catch (error: any) {
+  console.warn(`  ⚠ Warning emptying avatars bucket:`, error.message);
+}
+
+// Reset public schema tables (in reverse order to handle foreign keys)
+const tablesToReset = Object.values(schema).filter(
+  (value) => value instanceof PgTable,
+);
+
+for (const table of tablesToReset) {
+  await resetTable(db, table);
+}
+
+// Reset auth schema table
+await resetTable(db, authUsers, 'auth');
+
+console.log('✅ Database wipe completed\n');
+
+console.log('🌱 Starting database seeding...\n');
+
+console.log('👥 Creating admin users...');
 const createdUsers: User[] = [];
 
 for (const email of adminEmails) {
@@ -161,6 +217,9 @@ for (const email of adminEmails) {
   }
 }
 
+console.log(`✓ Created ${createdUsers.length} admin users\n`);
+
+console.log('🔐 Seeding access control data (zones, roles, permissions)...');
 // Run the SQL seed scripts
 const seedDataPath = path.join(process.cwd(), 'seedData');
 
@@ -181,14 +240,16 @@ for (const fileName of sqlFiles) {
     if (trimmedStatement && trimmedStatement.length > 0) {
       try {
         await db.execute(sql.raw(trimmedStatement));
-        console.log(`Executed SQL from ${fileName}`);
+        console.log(`  ✓ Executed SQL from ${fileName}`);
       } catch (error) {
-        console.error(`Error executing SQL from ${fileName}:`, error);
+        console.error(`  ✗ Error executing SQL from ${fileName}:`, error);
         throw error;
       }
     }
   }
 }
+
+console.log('📚 Importing taxonomy terms from CSV...');
 // Import taxonomy terms from CSV
 const taxonomyTermsCsvPath = path.join(seedDataPath, 'TaxonomyTerms.csv');
 const taxonomyTermsCsvContent = fs.readFileSync(taxonomyTermsCsvPath, 'utf8');
@@ -247,7 +308,9 @@ taxonomyTermsData.sort((a, b) => {
   return a.parentId.localeCompare(b.parentId);
 });
 
-console.log(`Importing ${taxonomyTermsData.length} taxonomy terms...`);
+console.log(
+  `  Importing ${taxonomyTermsData.length} taxonomy terms in batches...`,
+);
 
 // Insert taxonomy terms in batches to handle large datasets
 const batchSize = 100;
@@ -268,19 +331,20 @@ for (let i = 0; i < taxonomyTermsData.length; i += batchSize) {
         },
       });
     console.log(
-      `Imported batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(taxonomyTermsData.length / batchSize)}`,
+      `  ✓ Imported batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(taxonomyTermsData.length / batchSize)}`,
     );
   } catch (error) {
     console.error(
-      `Error importing taxonomy terms batch ${Math.floor(i / batchSize) + 1}:`,
+      `  ✗ Error importing taxonomy terms batch ${Math.floor(i / batchSize) + 1}:`,
       error,
     );
     throw error;
   }
 }
 
-console.log('Taxonomy terms import completed');
+console.log('✓ Taxonomy terms import completed\n');
 
+console.log('🏢 Creating seed organizations...');
 const seedOrgs = [
   {
     name: 'One Project',
@@ -556,7 +620,7 @@ if (firstUser) {
           throw new Error('Failed to associate organization with user');
         }
 
-        console.log(`Created organization: ${org.name}`);
+        console.log(`  ✓ Created organization: ${org.name}`);
       } catch (error) {
         console.error(`Error creating organization ${org.name}:`, error);
       }
@@ -565,7 +629,9 @@ if (firstUser) {
     }
   }
 } else {
-  console.warn('No users created, skipping organization creation');
+  console.warn('⚠️  No users created, skipping organization creation');
 }
+
+console.log('\n✅ Database seeding completed successfully!');
 
 await db.$client.end();
