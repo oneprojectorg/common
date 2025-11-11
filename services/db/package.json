@@ -29,6 +29,7 @@
     "@types/pg": "^8.11.11",
     "dotenv": "^16.4.7",
     "drizzle-orm": "^0.40.0",
+    "drizzle-seed": "^0.3.1",
     "pg": "^8.16.0",
     "postgres": "^3.4.5",
     "server-only": "^0.0.1"

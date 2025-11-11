@@ -4,10 +4,8 @@ import type { User } from '@op/supabase';
 import { createServerClient } from '@supabase/ssr';
 import { randomUUID } from 'crypto';
 import dotenv from 'dotenv';
-import { eq, getTableName, sql } from 'drizzle-orm';
-import type { Table } from 'drizzle-orm';
-import { PgTable } from 'drizzle-orm/pg-core';
-import { authUsers } from 'drizzle-orm/supabase';
+import { eq, sql } from 'drizzle-orm';
+import { reset } from 'drizzle-seed';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -66,52 +64,10 @@ const supabase = createServerClient(
 
 console.log('🧹 Wiping database before seeding...');
 
-// Helper function to reset a table
-async function resetTable(
-  database: typeof db,
-  table: Table,
-  schemaName?: string,
-) {
-  const tableName = getTableName(table);
-  const fullTableName = schemaName ? `${schemaName}.${tableName}` : tableName;
+// Use drizzle-seed reset function to truncate all tables
+await reset(db, schema);
 
-  try {
-    await database.execute(
-      sql.raw(`TRUNCATE TABLE ${fullTableName} RESTART IDENTITY CASCADE`),
-    );
-    console.log(`  ✓ Truncated ${fullTableName}`);
-  } catch (error: any) {
-    // Ignore errors for tables that don't exist or can't be truncated
-    if (
-      !error.message.includes('does not exist') &&
-      !error.message.includes('cannot truncate')
-    ) {
-      console.warn(`  ⚠ Warning truncating ${fullTableName}:`, error.message);
-    }
-  }
-}
-
-// Delete all auth users - use direct SQL delete since this is test/dev only
-try {
-  // First check how many users exist
-  const countResult = await db.execute(
-    sql.raw(`SELECT COUNT(*) FROM auth.users`),
-  );
-  const userCount = parseInt((countResult as any)[0]?.count || '0');
-
-  if (userCount > 0) {
-    console.log(`  🗑️  Deleting ${userCount} auth users...`);
-
-    // Delete from auth.users directly (CASCADE will handle related tables)
-    await db.execute(sql.raw(`DELETE FROM auth.users`));
-
-    console.log(`  ✓ Deleted auth users`);
-  } else {
-    console.log(`  ℹ️  No auth users to delete`);
-  }
-} catch (error: any) {
-  console.warn(`  ⚠ Warning deleting auth users:`, error.message);
-}
+console.log('✅ Database wipe completed\n');
 
 // Empty storage buckets
 try {
@@ -127,20 +83,6 @@ try {
 } catch (error: any) {
   console.warn(`  ⚠ Warning emptying avatars bucket:`, error.message);
 }
-
-// Reset public schema tables (in reverse order to handle foreign keys)
-const tablesToReset = Object.values(schema).filter(
-  (value) => value instanceof PgTable,
-);
-
-for (const table of tablesToReset) {
-  await resetTable(db, table);
-}
-
-// Reset auth schema table
-await resetTable(db, authUsers, 'auth');
-
-console.log('✅ Database wipe completed\n');
 
 console.log('🌱 Starting database seeding...\n');
 
@@ -261,7 +203,7 @@ const headers = lines?.[0]?.split(',') ?? [];
 // Process each row (skip header)
 const taxonomyTermsData = lines.slice(1).map((line) => {
   // Handle CSV parsing with potential commas in quoted fields
-  const values = [];
+  const values: string[] = [];
   let currentValue = '';
   let inQuotes = false;
 
