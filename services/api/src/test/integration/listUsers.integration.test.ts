@@ -1,10 +1,6 @@
-import { createOrganization, inviteUsers } from '@op/common';
-import { db, eq } from '@op/db/client';
-import {
-  accessRoles,
-  organizationUserToAccessRoles,
-  organizationUsers,
-} from '@op/db/schema';
+import { createOrganization } from '@op/common';
+import { db } from '@op/db/client';
+import { accessRoles, organizationUserToAccessRoles } from '@op/db/schema';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { organizationRouter } from '../../routers/organization';
@@ -33,6 +29,7 @@ describe('List Organization Users Integration Tests', () => {
     res: {} as any,
     ip: '127.0.0.1',
     reqUrl: 'http://localhost:3000/api/trpc',
+    isServerSideCall: true, // Skip rate limiting in tests
   });
 
   beforeEach(async () => {
@@ -148,36 +145,32 @@ describe('List Organization Users Integration Tests', () => {
 
   it('should correctly return users with multiple roles', async () => {
     // Get or create access roles
-    const [adminRoleResult] = await db
+    // Try to insert Admin role, ignore if exists
+    await db
       .insert(accessRoles)
       .values({
         name: 'Admin',
         description: 'Administrator role',
       })
-      .onConflictDoNothing()
-      .returning();
+      .onConflictDoNothing();
 
-    const [editorRoleResult] = await db
+    // Try to insert Editor role, ignore if exists
+    await db
       .insert(accessRoles)
       .values({
         name: 'Editor',
         description: 'Editor role',
       })
-      .onConflictDoNothing()
-      .returning();
+      .onConflictDoNothing();
 
-    // If onConflictDoNothing was triggered, fetch the roles manually
-    const adminRole =
-      adminRoleResult ||
-      (await db.query.accessRoles.findFirst({
-        where: (table, { eq }) => eq(table.name, 'Admin'),
-      }));
+    // Fetch the roles
+    const adminRole = await db.query.accessRoles.findFirst({
+      where: (table, { eq }) => eq(table.name, 'Admin'),
+    });
 
-    const editorRole =
-      editorRoleResult ||
-      (await db.query.accessRoles.findFirst({
-        where: (table, { eq }) => eq(table.name, 'Editor'),
-      }));
+    const editorRole = await db.query.accessRoles.findFirst({
+      where: (table, { eq }) => eq(table.name, 'Editor'),
+    });
 
     if (!adminRole || !editorRole) {
       throw new Error('Failed to get or create roles');
