@@ -1,13 +1,12 @@
 import { createOrganization } from '@op/common';
-import { db } from '@op/db/client';
-import { accessRoles, organizationUserToAccessRoles } from '@op/db/schema';
+import { db, sql } from '@op/db/client';
+import { accessRoles } from '@op/db/schema';
 import { Session } from '@supabase/supabase-js';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { organizationRouter } from '../../routers/organization';
 import { createCallerFactory } from '../../trpcFactory';
 import {
-  cleanupTestData,
   createTestUser,
   getCurrentTestSession,
   signInTestUser,
@@ -50,7 +49,16 @@ describe('List Organization Users Integration Tests', () => {
     // ]);
     await signOutTestUser();
 
-    // Ensure Admin role exists (required by createOrganization)
+    // Seed access control data (zones, roles, and permissions)
+    await db.execute(sql`
+      INSERT INTO "public"."access_zones" ("name", "description") 
+      VALUES 
+        ('admin', 'Administrative access zone'),
+        ('content', 'Content management access zone'),
+        ('member', 'Member access zone')
+      ON CONFLICT ("name") DO NOTHING
+    `);
+
     await db
       .insert(accessRoles)
       .values({
@@ -59,12 +67,29 @@ describe('List Organization Users Integration Tests', () => {
       })
       .onConflictDoNothing();
 
+    // Assign full permissions (7 = READ + WRITE + DELETE) to Admin role on all zones
+    // Use INSERT with a check to avoid duplicates
+    await db.execute(sql`
+      INSERT INTO "public"."access_role_permissions_on_access_zones" ("access_role_id", "access_zone_id", "permission")
+      SELECT 
+        ar.id,
+        az.id,
+        7
+      FROM "public"."access_roles" ar
+      CROSS JOIN "public"."access_zones" az
+      WHERE ar.name = 'Admin'
+        AND NOT EXISTS (
+          SELECT 1 
+          FROM "public"."access_role_permissions_on_access_zones" arpaz
+          WHERE arpaz.access_role_id = ar.id 
+            AND arpaz.access_zone_id = az.id
+        )
+    `);
+
     // Create fresh test user for each test
     testUserEmail = `test-users-${Date.now()}@oneproject.org`;
-    const lol = await createTestUser(testUserEmail);
-    console.log('Created test user:', lol);
-    const lul = await signInTestUser(testUserEmail);
-    console.log('Signed in test user:', lul);
+    await createTestUser(testUserEmail);
+    await signInTestUser(testUserEmail);
 
     // Get the authenticated user for service calls
     session = await getCurrentTestSession();
