@@ -2,6 +2,8 @@ import { type SupabaseClient } from '@supabase/supabase-js';
 
 import { supabaseTestAdminClient, supabaseTestClient } from './setup';
 
+export { supabaseTestClient, supabaseTestAdminClient } from './setup';
+
 /**
  * Test utilities for Supabase integration tests
  */
@@ -81,6 +83,8 @@ export async function signInTestUser(
   if (!supabaseTestClient) {
     throw new Error('Supabase test client not initialized');
   }
+
+  console.log(`Signing in test user: ${email}`);
 
   const { data, error } = await supabaseTestClient.auth.signInWithPassword({
     email,

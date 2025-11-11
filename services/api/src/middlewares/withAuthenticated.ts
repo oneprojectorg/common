@@ -52,7 +52,7 @@ const withAuthenticated: MiddlewareBuilderBase<TContextWithUser> = async ({
   next,
 }) => {
   const supabase = createSBAdminClient(ctx);
-  const data = await supabase.auth.getUser();
+  const data = await supabase.auth.getUser(ctx.jwt);
 
   const user = verifyAuthentication(data);
 
@@ -75,6 +75,7 @@ const withAuthenticated: MiddlewareBuilderBase<TContextWithUser> = async ({
     }
   }
 
+  console.log('withAuthenticated middleware cleared=====');
   return next({
     ctx: { ...ctx, user },
   });

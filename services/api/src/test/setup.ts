@@ -57,27 +57,28 @@ vi.stubEnv('SUPABASE_SERVICE_ROLE', TEST_SUPABASE_SERVICE_ROLE_KEY);
 vi.stubEnv('DATABASE_URL', TEST_DATABASE_URL);
 
 // Mock @op/core to return test environment values
-vi.mock('@op/core', async () => {
-  const actual = await vi.importActual('@op/core');
-  return {
-    ...actual,
-    // Mock the URL config to use test environment
-    OPURLConfig: vi.fn(() => ({
-      IS_PRODUCTION: false,
-      IS_STAGING: false,
-      IS_PREVIEW: false,
-      IS_DEVELOPMENT: false,
-      IS_LOCAL: true,
-    })),
-  };
-});
+// vi.mock('@op/core', async () => {
+
+//   const actual = await vi.importActual('@op/core');
+//   return {
+//     ...actual,
+//     // Mock the URL config to use test environment
+//     OPURLConfig: vi.fn(() => ({
+//       IS_PRODUCTION: false,
+//       IS_STAGING: false,
+//       IS_PREVIEW: false,
+//       IS_DEVELOPMENT: false,
+//       IS_LOCAL: true,
+//     })),
+//   };
+// });
 
 // Global setup for all tests
 beforeAll(async () => {
   // Initialize test Supabase client (anon key for user operations)
   testSupabase = createClient(TEST_SUPABASE_URL, TEST_SUPABASE_ANON_KEY, {
     auth: {
-      persistSession: false,
+      persistSession: true, // Enable session persistence for auth to work in tests
     },
   });
 

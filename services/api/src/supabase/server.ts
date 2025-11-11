@@ -24,7 +24,7 @@ export const createSBAdminClient = (ctx: TContext) => {
         : {},
       cookies: {
         getAll: async () => {
-          return Object.entries(ctx.getCookies() || {})
+          return Object.entries(ctx.getCookies() ?? {})
             .filter(([, value]) => value !== undefined)
             .map(([name, value]) => ({ name, value: value as string }));
         },
