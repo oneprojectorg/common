@@ -68,8 +68,14 @@ if (!allowedDatabaseUrls.includes(process.env.DATABASE_URL || '')) {
 // Reset auth schema table
 // await resetTable(db, authUsers, 'auth');
 
+// Determine the correct Supabase URL based on the database URL
+const isTestDatabase = process.env.DATABASE_URL?.includes('55322');
+const supabaseUrl = isTestDatabase
+  ? 'http://127.0.0.1:55321' // Test Supabase instance
+  : process.env.NEXT_PUBLIC_SUPABASE_URL!; // Production/dev instance
+
 const supabase = createServerClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  supabaseUrl,
   process.env.SUPABASE_SERVICE_ROLE!,
   {
     cookieOptions: {},
@@ -106,13 +112,17 @@ for (const email of adminEmails) {
 
     // Check if auth user already exists in Supabase
     const { data: existingAuthUsers } = await supabase.auth.admin.listUsers();
-    const existingAuthUser = existingAuthUsers.users?.find(user => user.email === email);
+    const existingAuthUser = existingAuthUsers.users?.find(
+      (user) => user.email === email,
+    );
 
     let authUser;
     if (existingAuthUser) {
       // Auth user exists, use it
       authUser = existingAuthUser;
-      console.log(`Auth user ${email} already exists, using existing auth user`);
+      console.log(
+        `Auth user ${email} already exists, using existing auth user`,
+      );
     } else {
       // Create new auth user
       const { data, error } = await supabase.auth.admin.createUser({
