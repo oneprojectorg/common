@@ -262,140 +262,6 @@ async function seedAccessControl() {
 }
 
 /**
- * Seed taxonomies and import taxonomy terms from CSV
- */
-async function seedTaxonomies() {
-  const { taxonomies: taxonomiesTable } = schema;
-
-  // Seed taxonomies
-  const taxonomiesData = [
-    {
-      id: 'ad45a607-0d5d-4c9e-83c7-4ad9a44f3d81',
-      name: 'NECFunding',
-      description: 'NEC Simple Funding',
-      namespaceUri: 'necFunding',
-    },
-    {
-      id: 'cde31035-40b4-4e5b-963d-49b9e7ddd8d4',
-      name: 'splcStrategies',
-      description: null,
-      namespaceUri: 'splcStrategies',
-    },
-    {
-      id: 'd81c255a-7e12-436a-bb52-a52eb592b770',
-      name: 'candid',
-      description: 'Candid Taxonomy',
-      namespaceUri: 'candid',
-    },
-    {
-      id: 'f1bfbae2-3b2f-42b8-8b02-747ee1504399',
-      name: 'NEC Simple',
-      description: 'NEC Simple',
-      namespaceUri: 'necSimple',
-    },
-  ];
-
-  await db.insert(taxonomiesTable).values(taxonomiesData);
-  console.log(`  ✓ Inserted ${taxonomiesData.length} taxonomies`);
-
-  console.log('📚 Importing taxonomy terms from CSV...');
-  // Import taxonomy terms from CSV
-  const seedDataPath = path.join(process.cwd(), 'seedData');
-  const taxonomyTermsCsvPath = path.join(seedDataPath, 'TaxonomyTerms.csv');
-  const taxonomyTermsCsvContent = fs.readFileSync(taxonomyTermsCsvPath, 'utf8');
-
-  // Parse CSV content
-  const lines = taxonomyTermsCsvContent.trim().split('\n');
-  const headers = lines?.[0]?.split(',') ?? [];
-
-  // Process each row (skip header)
-  const taxonomyTermsData = lines.slice(1).map((line) => {
-    // Handle CSV parsing with potential commas in quoted fields
-    const values: string[] = [];
-    let currentValue = '';
-    let inQuotes = false;
-
-    for (let i = 0; i < line.length; i++) {
-      const char = line[i];
-
-      if (char === '"') {
-        inQuotes = !inQuotes;
-      } else if (char === ',' && !inQuotes) {
-        values.push(currentValue.trim());
-        currentValue = '';
-      } else {
-        currentValue += char;
-      }
-    }
-    values.push(currentValue.trim()); // Add the last value
-
-    // Create object mapping headers to values
-    const row: Record<string, string> = {};
-    headers.forEach((header, index) => {
-      row[header] = values[index] || '';
-    });
-
-    return {
-      id: row.id,
-      taxonomyId: row.taxonomy_id,
-      termUri: row.term_uri,
-      facet: row.facet || null,
-      label: row.label,
-      definition: row.definition || null,
-      parentId: row.parent_id || null,
-      data: row.data ? JSON.parse(row.data) : null,
-    };
-  });
-
-  // Sort data so records without parent_id come first, then by parent_id
-  taxonomyTermsData.sort((a, b) => {
-    // Records without parent_id come first
-    if (!a.parentId && !b.parentId) return 0;
-    if (!a.parentId) return -1;
-    if (!b.parentId) return 1;
-
-    // Both have parent_id, sort by parent_id
-    return a.parentId.localeCompare(b.parentId);
-  });
-
-  console.log(
-    `  Importing ${taxonomyTermsData.length} taxonomy terms in batches...`,
-  );
-
-  // Insert taxonomy terms in batches to handle large datasets
-  const batchSize = 100;
-  for (let i = 0; i < taxonomyTermsData.length; i += batchSize) {
-    const batch = taxonomyTermsData.slice(i, i + batchSize);
-    try {
-      await db
-        .insert(taxonomyTerms)
-        .values(batch)
-        .onConflictDoUpdate({
-          target: [taxonomyTerms.taxonomyId, taxonomyTerms.termUri],
-          set: {
-            facet: sql`excluded.facet`,
-            label: sql`excluded.label`,
-            definition: sql`excluded.definition`,
-            parentId: sql`excluded.parent_id`,
-            data: sql`excluded.data`,
-          },
-        });
-      console.log(
-        `  ✓ Imported batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(taxonomyTermsData.length / batchSize)}`,
-      );
-    } catch (error) {
-      console.error(
-        `  ✗ Error importing taxonomy terms batch ${Math.floor(i / batchSize) + 1}:`,
-        error,
-      );
-      throw error;
-    }
-  }
-
-  console.log('✓ Taxonomy terms import completed\n');
-}
-
-/**
  * Seed organizations with profiles, funding links, and locations
  */
 async function seedOrganizations(createdUsers: User[]) {
@@ -571,19 +437,18 @@ async function seed() {
   // 1. Wipe database (includes auth.users cleanup)
   // 2. Seed auth.users table (via Supabase Admin API)
   // 3. Seed users table (references auth.users)
-  // 4. Seed access_zones table (standalone)
-  // 5. Seed access_roles table (standalone)
-  // 6. Seed access_role_permissions_on_access_zones table (references access_zones and access_roles)
+  // 4. DONE in seed.ts -- Seed access_zones table (standalone)
+  // 5. DONE in seed.ts -- Seed access_roles table (standalone)
+  // 6. DONE in seed.ts -- Seed access_role_permissions_on_access_zones table (references access_zones and access_roles)
   // 7. Seed profiles table (optional: references storage.objects for avatarImageId/headerImageId)
   // 8. Seed organizations table (references profiles)
   // 9. Seed organization_users table (references auth.users and organizations)
   // 10. Seed organizationUser_to_access_roles table (references organization_users and access_roles)
 
   await wipeDatabase();
-  const createdUsers = await seedAdminUsers();
+  // const createdUsers = await seedAdminUsers();
   await seedAccessControl();
-  await seedTaxonomies();
-  await seedOrganizations(createdUsers);
+  // await seedOrganizations(createdUsers);
 
   console.log('\n✅ Database seeding completed successfully!');
 }

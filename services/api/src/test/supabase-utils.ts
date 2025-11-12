@@ -1,5 +1,3 @@
-import { type SupabaseClient } from '@supabase/supabase-js';
-
 import { supabaseTestAdminClient, supabaseTestClient } from './setup';
 
 export { supabaseTestClient, supabaseTestAdminClient } from './setup';
