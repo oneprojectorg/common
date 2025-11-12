@@ -1,5 +1,6 @@
 import { db } from '@op/db/client';
 import { organizationUserToAccessRoles } from '@op/db/schema';
+import { ROLES } from '@op/db/seedData/accessControl';
 import { describe, expect, it } from 'vitest';
 
 import { organizationRouter } from '../../routers/organization';
@@ -86,19 +87,11 @@ describe('organization.listUsers', () => {
       throw new Error('Organization user not found for admin user');
     }
 
-    const memberRole = await db.query.accessRoles.findFirst({
-      where: (table, { eq }) => eq(table.name, 'Member'),
-    });
-
-    if (!memberRole) {
-      throw new Error('Member role not found');
-    }
-
-    // Add multiple roles to the user
+    // Add multiple roles to the user using predefined role ID
     await db.insert(organizationUserToAccessRoles).values([
       {
         organizationUserId: orgUser.id,
-        accessRoleId: memberRole.id,
+        accessRoleId: ROLES.MEMBER.id,
       },
     ]);
 
@@ -116,11 +109,13 @@ describe('organization.listUsers', () => {
 
     expect(result.length).toBe(2);
 
-    const userWithRoles = result.find((user) => user.email === adminUser.email);
+    const userWithRoles = result.find(
+      (user: any) => user.email === adminUser.email,
+    );
     expect(userWithRoles).toBeDefined();
     expect(userWithRoles.roles).toMatchObject([
-      { name: 'Admin' },
-      { name: 'Member' },
+      { name: ROLES.ADMIN.name },
+      { name: ROLES.MEMBER.name },
     ]);
   });
 

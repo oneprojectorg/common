@@ -7,6 +7,7 @@ import {
   profiles,
   users,
 } from '@op/db/schema';
+import { ROLES } from '@op/db/seedData/accessControl';
 import { randomUUID } from 'crypto';
 import { sql } from 'drizzle-orm';
 import { onTestFinished } from 'vitest';
@@ -182,20 +183,13 @@ export class TestDataManager {
         throw new Error(`Failed to create organization user for ${email}`);
       }
 
-      // Get the role from access_roles
-      // TODO: we should get it from seed data
-      const accessRole = await db.query.accessRoles.findFirst({
-        where: (table, { eq }) => eq(table.name, role),
-      });
-
-      if (!accessRole) {
-        throw new Error(`Role ${role} not found in access_roles table`);
-      }
+      // Get the role ID from predefined seed data constants
+      const accessRoleId = role === 'Admin' ? ROLES.ADMIN.id : ROLES.MEMBER.id;
 
       // Assign role to organization user
       await db.insert(organizationUserToAccessRoles).values({
         organizationUserId: orgUser.id,
-        accessRoleId: accessRole.id,
+        accessRoleId,
       });
 
       return {

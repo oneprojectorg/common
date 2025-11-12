@@ -6,8 +6,6 @@ import { randomUUID } from 'crypto';
 import dotenv from 'dotenv';
 import { eq, sql } from 'drizzle-orm';
 import { reset } from 'drizzle-seed';
-import * as fs from 'fs';
-import * as path from 'path';
 
 import { db } from '.';
 import * as schema from './schema';
@@ -16,10 +14,14 @@ import {
   organizationUserToAccessRoles,
   organizationUsers,
   profiles,
-  taxonomyTerms,
   users,
 } from './schema/publicTables';
 import { OrgType, organizations } from './schema/tables/organizations.sql';
+import {
+  ACCESS_ROLES,
+  ACCESS_ROLE_PERMISSIONS,
+  ACCESS_ZONES,
+} from './seedData/accessControl';
 
 // For local development, we need to load the .env.local file from the root of the monorepo
 dotenv.config({
@@ -174,90 +176,26 @@ async function seedAccessControl() {
   const { accessZones, accessRoles, accessRolePermissionsOnAccessZones } =
     schema;
 
-  // Seed access zones
-  const accessZonesData = [
-    {
-      name: 'admin',
-      description:
-        'Administrative access zone for managing organization settings, users, and permissions',
-    },
-    {
-      name: 'content',
-      description: 'Content management access zone for posts and other content',
-    },
-    {
-      name: 'member',
-      description: 'Member access zone for viewing organization information',
-    },
-  ];
-
+  // Seed access zones using predefined constants
   const insertedZones = await db
     .insert(accessZones)
-    .values(accessZonesData)
+    .values(ACCESS_ZONES)
     .returning();
   console.log(`  ✓ Inserted ${insertedZones.length} access zones`);
 
-  // Seed access roles
-  const accessRolesData = [
-    {
-      name: 'Admin',
-      description: 'Administrator with full permissions',
-    },
-    {
-      name: 'Member',
-      description: 'Basic member with limited permissions',
-    },
-    {
-      name: 'Editor',
-      description: 'Editor with content management permissions',
-    },
-  ];
-
+  // Seed access roles using predefined constants
   const insertedRoles = await db
     .insert(accessRoles)
-    .values(accessRolesData)
+    .values(ACCESS_ROLES)
     .returning();
   console.log(`  ✓ Inserted ${insertedRoles.length} access roles`);
 
-  // Seed access role permissions on access zones
-  const adminRole = insertedRoles.find((r) => r.name === 'Admin')!;
-  const memberRole = insertedRoles.find((r) => r.name === 'Member')!;
-  const editorRole = insertedRoles.find((r) => r.name === 'Editor')!;
-
-  const contentZone = insertedZones.find((z) => z.name === 'content')!;
-  const memberZone = insertedZones.find((z) => z.name === 'member')!;
-
-  const rolePermissionsData = [
-    // Admin gets full permissions (7 = READ + WRITE + DELETE) on all zones
-    ...insertedZones.map((zone) => ({
-      accessRoleId: adminRole.id,
-      accessZoneId: zone.id,
-      permission: 7,
-    })),
-    // Member gets read permissions (1) on member zone only
-    {
-      accessRoleId: memberRole.id,
-      accessZoneId: memberZone.id,
-      permission: 1,
-    },
-    // Editor gets read/write (3) on content zone and read (1) on member zone
-    {
-      accessRoleId: editorRole.id,
-      accessZoneId: contentZone.id,
-      permission: 3,
-    },
-    {
-      accessRoleId: editorRole.id,
-      accessZoneId: memberZone.id,
-      permission: 1,
-    },
-  ];
-
+  // Seed access role permissions on access zones using predefined constants
   await db
     .insert(accessRolePermissionsOnAccessZones)
-    .values(rolePermissionsData);
+    .values(ACCESS_ROLE_PERMISSIONS);
   console.log(
-    `  ✓ Inserted ${rolePermissionsData.length} role permissions on access zones`,
+    `  ✓ Inserted ${ACCESS_ROLE_PERMISSIONS.length} role permissions on access zones`,
   );
 }
 
