@@ -1,6 +1,6 @@
 import { relations } from 'drizzle-orm';
 import type { InferModel } from 'drizzle-orm';
-import { index, pgTable, primaryKey, uuid } from 'drizzle-orm/pg-core';
+import { index, pgTable, primaryKey, uuid, varchar } from 'drizzle-orm/pg-core';
 
 import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
 import { profiles } from './profiles.sql';
@@ -17,6 +17,7 @@ export const individuals = pgTable(
         onUpdate: 'cascade',
         onDelete: 'cascade',
       }),
+    pronouns: varchar({ length: 255 }),
     ...timestamps,
   },
   (table) => [
