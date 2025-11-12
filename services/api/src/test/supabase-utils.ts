@@ -82,8 +82,6 @@ export async function signInTestUser(
     throw new Error('Supabase test client not initialized');
   }
 
-  console.log(`Signing in test user: ${email}`);
-
   const { data, error } = await supabaseTestClient.auth.signInWithPassword({
     email,
     password,

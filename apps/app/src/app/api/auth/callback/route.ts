@@ -8,7 +8,6 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export const GET = async (request: NextRequest) => {
-  console.log('OAuth callback route invoked =======');
   const { searchParams } = new URL(request.url);
   const code = searchParams.get('code');
 

@@ -1,7 +1,7 @@
 import { OPURLConfig, cookieOptionsDomain } from '@op/core';
+import { createClient } from '@supabase/supabase-js';
 import { createServerClient } from '@supabase/ssr';
 import type { CookieOptions } from '@supabase/ssr';
-import { createClient } from '@supabase/supabase-js';
 import type { SerializeOptions } from 'cookie';
 import { cookies } from 'next/headers';
 
@@ -19,10 +19,10 @@ export const createSBServerClient = async () => {
       cookieOptions:
         useUrl.IS_PRODUCTION || useUrl.IS_STAGING || useUrl.IS_PREVIEW
           ? {
-              domain: cookieOptionsDomain,
-              sameSite: 'lax',
-              secure: true,
-            }
+            domain: cookieOptionsDomain,
+            sameSite: 'lax',
+            secure: true,
+          }
           : {},
       cookies: {
         getAll: async () => {

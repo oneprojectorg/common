@@ -13,8 +13,7 @@ import {
 } from '../supabase-utils';
 
 describe('organization.listUsers', () => {
-  const createCaller: ReturnType<typeof createCallerFactory> =
-    createCallerFactory(organizationRouter);
+  const createCaller = createCallerFactory(organizationRouter);
 
   const createTestContext = (jwt: string) => ({
     jwt,
@@ -25,8 +24,10 @@ describe('organization.listUsers', () => {
     res: {} as any,
     ip: '127.0.0.1',
     reqUrl: 'http://localhost:3000/api/trpc',
-    isServerSideCall: true, // Skip rate limiting in tests
+    requestId: 'test-request-id',
     getCookies: () => ({}),
+    getCookie: () => undefined,
+    setCookie: () => {},
   });
 
   it('should successfully list organization users', async ({ task }) => {

@@ -5,11 +5,6 @@ import type { MiddlewareBuilderBase } from '../types';
 
 const withRateLimited = (opts = { windowSize: 10, maxRequests: 10 }) => {
   const withRateLimitedInner: MiddlewareBuilderBase = async ({ ctx, next }) => {
-    // Skip rate limiting for server-side calls since they are trusted
-    if (ctx.isServerSideCall) {
-      return next({ ctx });
-    }
-
     if (!ctx.ip) {
       throw new TRPCError({
         message: `Unable to detect IP address. If you're using a VPN, disable it and try again.`,

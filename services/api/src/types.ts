@@ -3,7 +3,6 @@ import type { db } from '@op/db/client';
 import type { tables } from '@op/db/tables';
 import type { Logger } from '@op/logging';
 import type { User } from '@op/supabase/lib';
-import { Session } from '@supabase/supabase-js';
 import type { MiddlewareFunction } from '@trpc/server/unstable-core-do-not-import';
 import type { SerializeOptions } from 'cookie';
 import type { OpenApiMeta } from 'trpc-to-openapi';
@@ -21,8 +20,7 @@ export interface TContext {
   ip: string | null;
   reqUrl: string | undefined;
   req: Request;
-  isServerSideCall?: boolean;
-  session: Session | null;
+  jwt: string | undefined;
 }
 
 export interface TContextWithUser {
