@@ -117,7 +117,7 @@ export const sendReactionNotification = inngest.createFunction(
 
         const contextName = data.parentPostContent || data.postContent;
 
-        const likerName = data.sourceProfileName;
+        const reactorName = data.sourceProfileName;
         const contentType = data.parentPostId ? 'comment' : 'post';
         const { OPNodemailer } = await import('@op/emails');
         const { ReactionNotificationEmail } = await import('@op/emails');
@@ -131,11 +131,11 @@ export const sendReactionNotification = inngest.createFunction(
 
         await OPNodemailer({
           to: authorProfile.email,
-          from: `${likerName} via Common`,
-          subject: `${likerName} reacted to your ${contentType}`,
+          from: `${reactorName} via Common`,
+          subject: `${reactorName} reacted to your ${contentType}`,
           component: () =>
             ReactionNotificationEmail({
-              likerName,
+              reactorName,
               postContent: data.postContent,
               recipientName: authorProfile.name,
               reactionType: reactionEmoji.emoji,

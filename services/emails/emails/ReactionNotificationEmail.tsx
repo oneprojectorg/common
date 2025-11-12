@@ -4,7 +4,7 @@ import * as React from 'react';
 import EmailTemplate from '../components/EmailTemplate';
 
 export const ReactionNotificationEmail = ({
-  likerName = 'A Common user',
+  reactorName = 'A Common user',
   postContent: _postContent,
   postUrl = 'https://common.oneproject.org/',
   reactionType,
@@ -13,7 +13,7 @@ export const ReactionNotificationEmail = ({
   contextName,
   postedIn,
 }: {
-  likerName: string;
+  reactorName: string;
   postContent: string;
   postUrl?: string;
   reactionType: string;
@@ -23,9 +23,11 @@ export const ReactionNotificationEmail = ({
   postedIn?: string;
 }) => {
   return (
-    <EmailTemplate previewText={`${likerName} reacted to your ${contentType}`}>
+    <EmailTemplate
+      previewText={`${reactorName} reacted to your ${contentType}`}
+    >
       <Text className="my-8 text-lg">
-        <strong>{likerName}</strong> reacted to your {contentType}:{' '}
+        <strong>{reactorName}</strong> reacted to your {contentType}:{' '}
         {reactionType}.
       </Text>
 
@@ -57,8 +59,8 @@ export const ReactionNotificationEmail = ({
 };
 
 ReactionNotificationEmail.subject = (
-  likerName: string,
+  reactorName: string,
   contentType: 'post' | 'proposal' = 'post',
-) => `${likerName} reacted to your ${contentType}`;
+) => `${reactorName} reacted to your ${contentType}`;
 
 export default ReactionNotificationEmail;
