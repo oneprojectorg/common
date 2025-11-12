@@ -1,6 +1,7 @@
 import { db } from '@op/db/client';
 import { organizationUserToAccessRoles } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
+import { TContext } from 'src/types';
 import { describe, expect, it } from 'vitest';
 
 import { organizationRouter } from '../../routers/organization';
@@ -15,19 +16,19 @@ import {
 describe('organization.listUsers', () => {
   const createCaller = createCallerFactory(organizationRouter);
 
-  const createTestContext = (jwt: string) => ({
+  const createTestContext = (jwt: string): TContext => ({
     jwt,
     req: {
       headers: { get: () => '127.0.0.1' },
       url: 'http://localhost:3000/api/trpc',
     } as any,
-    res: {} as any,
     ip: '127.0.0.1',
     reqUrl: 'http://localhost:3000/api/trpc',
     requestId: 'test-request-id',
     getCookies: () => ({}),
     getCookie: () => undefined,
     setCookie: () => {},
+    time: Date.now(),
   });
 
   it('should successfully list organization users', async ({ task }) => {
@@ -46,13 +47,7 @@ describe('organization.listUsers', () => {
       throw new Error('No session found for test user');
     }
 
-    // @ts-expect-error - Test context uses simplified structure
-    const caller = createCaller(createTestContext(session!.access_token));
-
-    // TODO:
-    // if (!('listUsers' in caller) || typeof caller.listUsers !== 'function') {
-    //   throw new Error('listUsers procedure not found in organizationRouter');
-    // }
+    const caller = createCaller(createTestContext(session.access_token));
 
     const result = await caller.listUsers({
       profileId: organization.profileId,
@@ -113,7 +108,11 @@ describe('organization.listUsers', () => {
     const userWithRoles = result.find(
       (user: any) => user.email === adminUser.email,
     );
-    expect(userWithRoles).toBeDefined();
+
+    if (!userWithRoles) {
+      throw new Error('Admin user not found in result');
+    }
+
     expect(userWithRoles.roles).toMatchObject([
       { name: ROLES.ADMIN.name },
       { name: ROLES.MEMBER.name },

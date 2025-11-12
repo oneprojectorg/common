@@ -197,4 +197,4 @@ export const organizationsStrategiesRelations = relations(
   }),
 );
 
-export type Organization = typeof organizations.$inferSelect;
+export type Organization = InferModel<typeof organizations>;
