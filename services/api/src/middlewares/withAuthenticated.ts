@@ -75,7 +75,6 @@ const withAuthenticated: MiddlewareBuilderBase<TContextWithUser> = async ({
     }
   }
 
-  console.log('withAuthenticated middleware cleared=====');
   return next({
     ctx: { ...ctx, user },
   });

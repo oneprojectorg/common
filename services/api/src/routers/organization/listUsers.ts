@@ -71,8 +71,6 @@ export const listUsersRouter = router({
       const { profileId } = input;
       const { user } = ctx;
 
-      console.log('Inside the router', user);
-
       try {
         const users = await getOrganizationUsers({
           profileId,

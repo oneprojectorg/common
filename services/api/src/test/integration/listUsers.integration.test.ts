@@ -1,15 +1,22 @@
 import { db } from '@op/db/client';
 import {
+  Organization,
   organizationUserToAccessRoles,
   organizationUsers,
   organizations,
   profiles,
   users,
 } from '@op/db/schema';
-import { createServerClient } from '@supabase/ssr';
-import { Session } from '@supabase/supabase-js';
 import { randomUUID } from 'crypto';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { sql } from 'drizzle-orm';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  onTestFinished,
+} from 'vitest';
 
 import { organizationRouter } from '../../routers/organization';
 import { createCallerFactory } from '../../trpcFactory';
@@ -18,61 +25,69 @@ import {
   getCurrentTestSession,
   signInTestUser,
   signOutTestUser,
+  supabaseTestAdminClient,
 } from '../supabase-utils';
-
-// Determine the correct Supabase URL based on the test database
-const isTestDatabase = process.env.DATABASE_URL?.includes('55322');
-const supabaseUrl = isTestDatabase
-  ? 'http://127.0.0.1:55321'
-  : process.env.NEXT_PUBLIC_SUPABASE_URL!;
 
 interface SeedUserInput {
   email: string;
-  role: 'Admin' | 'Member' | 'Editor';
+  role: 'Admin' | 'Member';
 }
 
-interface SeedForListUsersInput {
+interface GenerateTestOrganizationOptions {
+  users?: {
+    admin?: number;
+    member?: number;
+  };
   organizationName?: string;
-  users: SeedUserInput[];
 }
 
-interface SeedForListUsersOutput {
-  organization: any;
-  profileId: string;
-  users: Array<{
-    authUserId: string;
-    email: string;
-    organizationUserId: string;
-  }>;
+interface GeneratedUser {
+  authUserId: string;
+  email: string;
+  organizationUserId: string;
+  role: 'Admin' | 'Member';
+}
+
+interface GenerateTestOrganizationOutput {
+  organization: Organization;
+  organizationProfile: any;
+  adminUser: GeneratedUser;
+  adminUsers: GeneratedUser[];
+  memberUsers: GeneratedUser[];
+  allUsers: GeneratedUser[];
 }
 
 /**
- * Minimal seeding helper for listUsers tests.
+ * Generates a test organization with members of specified roles.
  * Assumes access_zones, access_roles, and access_role_permissions_on_access_zones already exist.
  *
- * Usage:
- * const { profileId, users } = await seedForListUsers({
- *   organizationName: "Test Org",
- *   users: [
- *     { email: "admin@test.com", role: "Admin" },
- *     { email: "editor@test.com", role: "Editor" },
- *     { email: "member@test.com", role: "Member" },
- *   ]
+ * @param testId - The test ID (from vitest's task.id)
+ * @param opts - Options for organization and user creation
+ * @returns Organization with categorized users by role
+ *
+ * @example
+ * const { organization, adminUsers, memberUsers } = await generateTestOrganizationWithMembers(task.id, {
+ *   users: { admin: 2, member: 3, editor: 1 },
+ *   organizationName: "Test Org"
  * });
  */
-// @ts-ignore - Helper function for future tests
-async function seedForListUsers(
-  input: SeedForListUsersInput,
-): Promise<SeedForListUsersOutput> {
-  const { organizationName = `Test Org ${Date.now()}`, users: userInputs } =
-    input;
+async function generateTestOrganizationWithMembers(
+  testId: string,
+  opts?: GenerateTestOrganizationOptions,
+): Promise<GenerateTestOrganizationOutput> {
+  const {
+    users: userCounts = { admin: 1, member: 0 },
+    organizationName = 'Test Org',
+  } = opts || {};
+
+  const orgNameWithTestId = `${organizationName}-${testId}`;
 
   // 1. Create organization profile (minimal - only required fields)
   const [orgProfile] = await db
     .insert(profiles)
     .values({
-      name: organizationName,
-      slug: `${organizationName.toLowerCase().replace(/\s+/g, '-')}-${randomUUID()}`,
+      name: orgNameWithTestId,
+      slug: `${orgNameWithTestId.toLowerCase().replace(/\s+/g, '-')}-${randomUUID()}`,
     })
     .returning();
 
@@ -92,11 +107,14 @@ async function seedForListUsers(
     throw new Error('Failed to create organization');
   }
 
-  const createdUsers: SeedForListUsersOutput['users'] = [];
+  const adminUsers: GeneratedUser[] = [];
+  const memberUsers: GeneratedUser[] = [];
 
-  // 3. Create users and link them to the organization
-  for (const userInput of userInputs) {
-    const { email, role } = userInput;
+  // Helper function to create a user with a specific role
+  const createUserWithRole = async (
+    role: 'Admin' | 'Member',
+  ): Promise<GeneratedUser> => {
+    const { email } = generateTestUserWithRole(testId, role);
 
     // Create auth user via Supabase Admin API
     const authUser = await createTestUser(email).then((res) => res.user);
@@ -163,27 +181,118 @@ async function seedForListUsers(
       accessRoleId: accessRole.id,
     });
 
-    createdUsers.push({
+    return {
       authUserId: authUser.id,
       email: authUser.email!,
       organizationUserId: orgUser.id,
-    });
+      role,
+    };
+  };
+
+  // 3. Create admin users
+  for (let i = 0; i < (userCounts.admin || 1); i++) {
+    const user = await createUserWithRole('Admin');
+    adminUsers.push(user);
+  }
+
+  // 4. Create member users
+  for (let i = 0; i < (userCounts.member || 0); i++) {
+    const user = await createUserWithRole('Member');
+    memberUsers.push(user);
+  }
+
+  const [adminUser] = adminUsers;
+  if (!adminUser) {
+    throw new Error(
+      'At least one admin user is required to create the organization',
+    );
   }
 
   return {
     organization,
-    profileId: orgProfile.id,
-    users: createdUsers,
+    organizationProfile: orgProfile,
+    adminUsers,
+    adminUser,
+    memberUsers,
+    allUsers: [...adminUsers, ...memberUsers],
   };
 }
 
+/**
+ * Generates an email/role pair for test users based on task ID and role.
+ * Ensures consistent email generation across tests.
+ * Supports multiple users per role by adding a random suffix.
+ *
+ * @param taskId - The test task ID (from vitest's task.id)
+ * @param role - The role to assign to the user
+ * @returns An object with email and role properties
+ *
+ * @example
+ * const adminUser = generateTestUserWithRole(task.id, 'Admin');
+ * // Returns: { email: 'test-users-123-admin-a1b2c3@oneproject.org', role: 'Admin' }
+ */
+function generateTestUserWithRole(
+  taskId: string,
+  role: 'Admin' | 'Member',
+): SeedUserInput {
+  const randomSuffix = randomUUID().slice(0, 6);
+  return {
+    email: `test-users-${taskId}-${role.toLowerCase()}-${randomSuffix}@oneproject.org`,
+    role,
+  };
+}
+
+/**
+ * Cleans up test data by deleting profiles and auth users created for a specific test.
+ * Relies on database cascade deletes to automatically clean up related records:
+ * - Deleting profiles cascades to organizations, which cascades to organizationUsers and roles
+ * - Deleting auth users cascades to users and organizationUsers tables
+ *
+ * @param testId - The test ID (from vitest's task.id)
+ *
+ * @example
+ * afterEach(async ({ task }) => {
+ *   await cleanupTestOrganization(task.id);
+ * });
+ */
+async function cleanupTestOrganization(testId: string): Promise<void> {
+  if (!supabaseTestAdminClient) {
+    console.warn('Supabase admin test client not initialized');
+    return;
+  }
+
+  try {
+    // 1. Delete profiles with the test ID in the name
+    // This will cascade to organizations -> organizationUsers -> organizationUserToAccessRoles
+    await db
+      .delete(profiles)
+      .where(sql`${profiles.name} LIKE ${'%' + testId + '%'}`);
+
+    // 2. Delete auth users with the test ID in the email
+    // This will cascade to users and organizationUsers tables
+    const { data: authUsers } =
+      await supabaseTestAdminClient.auth.admin.listUsers();
+    if (authUsers?.users) {
+      const testUsers = authUsers.users.filter((user) =>
+        user.email?.includes(testId),
+      );
+      await Promise.allSettled(
+        testUsers.map((user) =>
+          supabaseTestAdminClient.auth.admin.deleteUser(user.id),
+        ),
+      );
+    }
+  } catch (error) {
+    console.warn(
+      `Failed to cleanup test organization for test ${testId}:`,
+      error,
+    );
+  }
+}
+
 describe('List Organization Users Integration Tests', () => {
-  let testUserEmail: string;
-  let testUser: any;
-  let organizationId: string;
-  let profileId: string;
-  let createCaller: ReturnType<typeof createCallerFactory>;
-  let session: Session | null;
+  const createCaller: ReturnType<typeof createCallerFactory> =
+    createCallerFactory(organizationRouter);
 
   const createTestContext = (jwt: string) => ({
     jwt,
@@ -198,52 +307,119 @@ describe('List Organization Users Integration Tests', () => {
     getCookies: () => ({}),
   });
 
-  beforeEach(async () => {
-    // Create fresh test user for each test
-    testUserEmail = `test-users-${Date.now()}@oneproject.org`;
-
-    // Use seedForListUsers to create organization and users
-    const { organization, profileId: orgProfileId } = await seedForListUsers({
-      organizationName: 'Test Organization for Users',
-      users: [{ email: testUserEmail, role: 'Admin' }],
-    });
-
-    organizationId = organization.id;
-    profileId = orgProfileId;
+  it('should successfully list organization users', async ({ task }) => {
+    // Use generateTestOrganizationWithMembers to create organization and users
+    const { organization, adminUser, memberUsers } =
+      await generateTestOrganizationWithMembers(task.id, {
+        users: { admin: 1, member: 1 },
+      });
+    onTestFinished(() => cleanupTestOrganization(task.id));
 
     // Sign in the test user
     await signOutTestUser();
-    await signInTestUser(testUserEmail);
-    session = await getCurrentTestSession();
-    testUser = session?.user;
-
-    // Create tRPC caller
-    createCaller = createCallerFactory(organizationRouter);
-  });
-
-  it('should successfully list organization users', async () => {
+    await signInTestUser(adminUser.email);
+    const session = await getCurrentTestSession();
     if (!session) {
       throw new Error('No session found for test user');
     }
+
     // @ts-expect-error - Test context uses simplified structure
     const caller = createCaller(createTestContext(session!.access_token));
 
-    // @ts-expect-error - listUsers exists on the router
+    // TODO:
+    // if (!('listUsers' in caller) || typeof caller.listUsers !== 'function') {
+    //   throw new Error('listUsers procedure not found in organizationRouter');
+    // }
+
     const result = await caller.listUsers({
-      profileId: profileId,
+      profileId: organization.profileId,
     });
 
-    expect(result).toBeDefined();
-    expect(Array.isArray(result)).toBe(true);
-    expect(result.length).toBeGreaterThan(0);
+    expect(result).toMatchObject([
+      {
+        email: adminUser.email,
+      },
+      ...memberUsers.map((m) => ({
+        email: m.email,
+      })),
+    ]);
+  });
 
-    // Check the creator is in the list
-    const creator = result.find((user: any) => user.authUserId === testUser.id);
-    expect(creator).toBeDefined();
-    expect(creator?.email).toBe(testUserEmail);
-    expect(creator?.organizationId).toBe(organizationId);
-    expect(Array.isArray(creator?.roles)).toBe(true);
-    // Profile data should be included
-    expect(creator?.profile).toBeDefined();
+  it('should correctly return users with multiple roles', async ({ task }) => {
+    // TODO: we should get the role from seed data
+    const { organization, adminUser, memberUsers } =
+      await generateTestOrganizationWithMembers(task.id, {
+        users: { admin: 1, member: 1 },
+      });
+    onTestFinished(() => cleanupTestOrganization(task.id));
+
+    // Get the organization user
+    const orgUser = await db.query.organizationUsers.findFirst({
+      where: (table, { eq, and }) =>
+        and(
+          eq(table.organizationId, organization.id),
+          eq(table.authUserId, adminUser.authUserId),
+        ),
+    });
+
+    if (!orgUser) {
+      throw new Error('Organization user not found for admin user');
+    }
+
+    const memberRole = await db.query.accessRoles.findFirst({
+      where: (table, { eq }) => eq(table.name, 'Member'),
+    });
+
+    if (!memberRole) {
+      throw new Error('Member role not found');
+    }
+
+    // Add multiple roles to the user
+    await db.insert(organizationUserToAccessRoles).values([
+      {
+        organizationUserId: orgUser.id,
+        accessRoleId: memberRole.id,
+      },
+    ]);
+
+    // Sign in the test user
+    await signOutTestUser();
+    await signInTestUser(adminUser.email);
+    const session = await getCurrentTestSession();
+    if (!session) {
+      throw new Error('No session found for test user');
+    }
+    const caller = createCaller(createTestContext(session.access_token));
+    const result = await caller.listUsers({
+      profileId: organization.profileId,
+    });
+
+    expect(result.length).toBe(2);
+
+    const userWithRoles = result.find((user) => user.email === adminUser.email);
+    expect(userWithRoles).toBeDefined();
+    expect(userWithRoles.roles).toMatchObject([
+      { name: 'Admin' },
+      { name: 'Member' },
+    ]);
+  });
+
+  it('should throw error for invalid profile ID', async ({ task }) => {
+    // Use generateTestOrganizationWithMembers to create organization and users
+    const { adminUser } = await generateTestOrganizationWithMembers(task.id);
+
+    // Sign in the test user
+    await signOutTestUser();
+    await signInTestUser(adminUser.email);
+    const session = await getCurrentTestSession();
+    if (!session) {
+      throw new Error('No session found for test user');
+    }
+    const caller = createCaller(createTestContext(session.access_token));
+    expect(async () => {
+      await caller.listUsers({
+        profileId: '00000000-0000-0000-0000-000000000000',
+      });
+    }).rejects.toThrow();
   });
 });
