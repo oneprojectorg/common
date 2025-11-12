@@ -131,7 +131,7 @@ describe('organization.listUsers', () => {
       throw new Error('No session found for test user');
     }
     const caller = createCaller(createTestContext(session.access_token));
-    expect(async () => {
+    await expect(async () => {
       await caller.listUsers({
         profileId: '00000000-0000-0000-0000-000000000000',
       });
