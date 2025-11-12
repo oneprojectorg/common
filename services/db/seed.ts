@@ -1,6 +1,6 @@
 /* eslint-disable antfu/no-top-level-await */
 import { adminEmails } from '@op/core';
-import type { User } from '@op/supabase';
+import type { User } from '@op/supabase/lib';
 import { createServerClient } from '@supabase/ssr';
 import { randomUUID } from 'crypto';
 import dotenv from 'dotenv';
@@ -162,37 +162,133 @@ for (const email of adminEmails) {
 console.log(`✓ Created ${createdUsers.length} admin users\n`);
 
 console.log('🔐 Seeding access control data (zones, roles, permissions)...');
-// Run the SQL seed scripts
-const seedDataPath = path.join(process.cwd(), 'seedData');
 
-// Execute SQL files in order: Access Roles -> Taxonomies -> Terms
-const sqlFiles = ['AccessRoles.sql', 'TaxonomiesRows.sql'];
+// Import schema tables needed for seeding
+const {
+  accessZones,
+  accessRoles,
+  accessRolePermissionsOnAccessZones,
+  taxonomies: taxonomiesTable,
+} = schema;
 
-for (const fileName of sqlFiles) {
-  const filePath = path.join(seedDataPath, fileName);
-  const sqlContent = fs.readFileSync(filePath, 'utf8');
+// Seed access zones
+const accessZonesData = [
+  {
+    name: 'admin',
+    description:
+      'Administrative access zone for managing organization settings, users, and permissions',
+  },
+  {
+    name: 'content',
+    description: 'Content management access zone for posts and other content',
+  },
+  {
+    name: 'member',
+    description: 'Member access zone for viewing organization information',
+  },
+];
 
-  // Split by statement-breakpoint if exists, otherwise execute as single statement
-  const statements = sqlContent.includes('--> statement-breakpoint')
-    ? sqlContent.split('--> statement-breakpoint')
-    : [sqlContent];
+const insertedZones = await db
+  .insert(accessZones)
+  .values(accessZonesData)
+  .returning();
+console.log(`  ✓ Inserted ${insertedZones.length} access zones`);
 
-  for (const statement of statements) {
-    const trimmedStatement = statement.trim();
-    if (trimmedStatement && trimmedStatement.length > 0) {
-      try {
-        await db.execute(sql.raw(trimmedStatement));
-        console.log(`  ✓ Executed SQL from ${fileName}`);
-      } catch (error) {
-        console.error(`  ✗ Error executing SQL from ${fileName}:`, error);
-        throw error;
-      }
-    }
-  }
-}
+// Seed access roles
+const accessRolesData = [
+  {
+    name: 'Admin',
+    description: 'Administrator with full permissions',
+  },
+  {
+    name: 'Member',
+    description: 'Basic member with limited permissions',
+  },
+  {
+    name: 'Editor',
+    description: 'Editor with content management permissions',
+  },
+];
+
+const insertedRoles = await db
+  .insert(accessRoles)
+  .values(accessRolesData)
+  .returning();
+console.log(`  ✓ Inserted ${insertedRoles.length} access roles`);
+
+// Seed access role permissions on access zones
+const adminRole = insertedRoles.find((r) => r.name === 'Admin')!;
+const memberRole = insertedRoles.find((r) => r.name === 'Member')!;
+const editorRole = insertedRoles.find((r) => r.name === 'Editor')!;
+
+const contentZone = insertedZones.find((z) => z.name === 'content')!;
+const memberZone = insertedZones.find((z) => z.name === 'member')!;
+
+const rolePermissionsData = [
+  // Admin gets full permissions (7 = READ + WRITE + DELETE) on all zones
+  ...insertedZones.map((zone) => ({
+    accessRoleId: adminRole.id,
+    accessZoneId: zone.id,
+    permission: 7,
+  })),
+  // Member gets read permissions (1) on member zone only
+  {
+    accessRoleId: memberRole.id,
+    accessZoneId: memberZone.id,
+    permission: 1,
+  },
+  // Editor gets read/write (3) on content zone and read (1) on member zone
+  {
+    accessRoleId: editorRole.id,
+    accessZoneId: contentZone.id,
+    permission: 3,
+  },
+  {
+    accessRoleId: editorRole.id,
+    accessZoneId: memberZone.id,
+    permission: 1,
+  },
+];
+
+await db.insert(accessRolePermissionsOnAccessZones).values(rolePermissionsData);
+console.log(
+  `  ✓ Inserted ${rolePermissionsData.length} role permissions on access zones`,
+);
+
+// Seed taxonomies
+const taxonomiesData = [
+  {
+    id: 'ad45a607-0d5d-4c9e-83c7-4ad9a44f3d81',
+    name: 'NECFunding',
+    description: 'NEC Simple Funding',
+    namespaceUri: 'necFunding',
+  },
+  {
+    id: 'cde31035-40b4-4e5b-963d-49b9e7ddd8d4',
+    name: 'splcStrategies',
+    description: null,
+    namespaceUri: 'splcStrategies',
+  },
+  {
+    id: 'd81c255a-7e12-436a-bb52-a52eb592b770',
+    name: 'candid',
+    description: 'Candid Taxonomy',
+    namespaceUri: 'candid',
+  },
+  {
+    id: 'f1bfbae2-3b2f-42b8-8b02-747ee1504399',
+    name: 'NEC Simple',
+    description: 'NEC Simple',
+    namespaceUri: 'necSimple',
+  },
+];
+
+await db.insert(taxonomiesTable).values(taxonomiesData);
+console.log(`  ✓ Inserted ${taxonomiesData.length} taxonomies`);
 
 console.log('📚 Importing taxonomy terms from CSV...');
 // Import taxonomy terms from CSV
+const seedDataPath = path.join(process.cwd(), 'seedData');
 const taxonomyTermsCsvPath = path.join(seedDataPath, 'TaxonomyTerms.csv');
 const taxonomyTermsCsvContent = fs.readFileSync(taxonomyTermsCsvPath, 'utf8');
 
