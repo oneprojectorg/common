@@ -2,6 +2,7 @@ import { profiles } from '@op/db/schema';
 import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
+import { individualsEncoder } from './individuals';
 import { type organizationsEncoder } from './organizations';
 import { storageItemEncoder } from './storageItem';
 
@@ -22,12 +23,7 @@ export const baseProfileEncoder = createSelectSchema(profiles)
   .extend({
     headerImage: storageItemEncoder.nullish(),
     avatarImage: storageItemEncoder.nullish(),
-    individual: z
-      .object({
-        pronouns: z.string().nullable(),
-      })
-      .nullable()
-      .optional(),
+    individual: individualsEncoder.pick({ pronouns: true }).nullish(),
     modules: z
       .array(
         z.object({
