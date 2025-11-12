@@ -140,6 +140,16 @@ export const ToSContentShort = () => {
       </FormalSection>
 
       <FormalSection>
+        <Header3 className="font-serif">Your Content</Header3>
+        <p className="mb-4">
+          You own the content you post, but by posting, you give us permission
+          to display and share it on the platform. Make sure you have the right
+          to share everything you post, as we're not responsible for your
+          content.
+        </p>
+      </FormalSection>
+
+      <FormalSection>
         <Header3 className="font-serif">Prohibited Content</Header3>
         <p className="mb-4">
           You agree to not post content that is abusive, insulting, threatening,
@@ -151,16 +161,6 @@ export const ToSContentShort = () => {
           personal information without their permission. You also agree to not
           use the platform for commercial activities like sales, promotions, or
           advertising.
-        </p>
-      </FormalSection>
-
-      <FormalSection>
-        <Header3 className="font-serif">Your Content</Header3>
-        <p className="mb-4">
-          You own the content you post, but by posting, you give us permission
-          to display and share it on the platform. Make sure you have the right
-          to share everything you post, as we're not responsible for your
-          content. We prohibit the following type of content:
         </p>
       </FormalSection>
 
