@@ -32,7 +32,6 @@ describe('organization.listUsers', () => {
   });
 
   it('should successfully list organization users', async ({ task }) => {
-    // Create test data manager - automatically registers cleanup
     const testData = new TestOrganizationDataManager(task.id);
     const { organization, adminUser, memberUsers } =
       await testData.createOrganization({
