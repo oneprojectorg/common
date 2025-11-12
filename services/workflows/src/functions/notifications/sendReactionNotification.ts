@@ -1,3 +1,4 @@
+import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
 import {
   organizations,
@@ -58,6 +59,7 @@ export const sendReactionNotification = inngest.createFunction(
             postAuthorName: postAuthorProfile.name,
             postAuthorEmail: postAuthorProfile.email,
 
+            orgProfileSlug: orgProfile.slug,
             orgProfileName: orgProfile.name,
             orgProfileEmail: orgProfile.email,
 
@@ -95,6 +97,14 @@ export const sendReactionNotification = inngest.createFunction(
           return;
         }
 
+        if (!data.orgProfileSlug) {
+          console.log(
+            'Could not find profile slug for post reaction notification',
+            postId,
+          );
+          return;
+        }
+
         // Determine author profile: org profile takes precedence if post has no profileId
         const authorProfile = data.postProfileId
           ? { name: data.postAuthorName!, email: data.postAuthorEmail! }
@@ -107,10 +117,11 @@ export const sendReactionNotification = inngest.createFunction(
 
         const contextName = data.parentPostContent || data.postContent;
 
-        // const likerName = data.sourceProfileName;
-        // const contentType = data.parentPostId ? 'comment' : 'post';
-        // const { OPNodemailer } = await import('@op/emails');
-        // const { ReactionNotificationEmail } = await import('@op/emails');
+        const likerName = data.sourceProfileName;
+        const contentType = data.parentPostId ? 'comment' : 'post';
+        const { OPNodemailer } = await import('@op/emails');
+        const { ReactionNotificationEmail } = await import('@op/emails');
+        const postUrl = `${OPURLConfig('APP').ENV_URL}/profile/${data.orgProfileSlug}/posts/${postId}`;
 
         console.log('Sending post react notification email', {
           sourceProfileId,
@@ -118,23 +129,21 @@ export const sendReactionNotification = inngest.createFunction(
           contextName,
         });
 
-        // TODO: For merging, we will first disable this as need the proper designed one anyhow and want to test the workflow functionality:w
-        // await OPNodemailer({
-        // to: authorProfile.email,
-        // from: `${likerName} via Common`,
-        // subject: `${likerName} reacted to your ${contentType}`,
-        // component: () =>
-        // ReactionNotificationEmail({
-        // likerName,
-        // postContent: data.postContent,
-        // recipientName: authorProfile.name,
-        // reactionType: reactionEmoji.emoji,
-        // contentType,
-        // // TODO: generate a post url
-        // // postUrl,
-        // contextName,
-        // }),
-        // });
+        await OPNodemailer({
+          to: authorProfile.email,
+          from: `${likerName} via Common`,
+          subject: `${likerName} reacted to your ${contentType}`,
+          component: () =>
+            ReactionNotificationEmail({
+              likerName,
+              postContent: data.postContent,
+              recipientName: authorProfile.name,
+              reactionType: reactionEmoji.emoji,
+              contentType,
+              postUrl,
+              contextName,
+            }),
+        });
       } catch (error) {
         // Log error and re-throw for retries
         console.error('Failed to send reaction notification:', {
