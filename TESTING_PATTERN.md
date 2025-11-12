@@ -6,19 +6,19 @@ This document establishes the standard pattern for managing test data in integra
 
 **Every test that creates data MUST also clean up that data.**
 
-To enforce this, we use the `TestDataManager` class which automatically registers cleanup handlers when you create test data.
+To enforce this, we use the `TestOrganizationDataManager` class which automatically registers cleanup handlers when you create test data.
 
 ## The Pattern
 
 ### ✅ Correct Usage
 
 ```typescript
-import { TestDataManager } from '../helpers/test-data-manager';
+import { TestOrganizationDataManager } from '../helpers/TestOrganizationDataManager';
 
 describe('my feature tests', () => {
   it('should do something', async ({ task }) => {
-    // Step 1: Create TestDataManager with task.id
-    const testData = new TestDataManager(task.id);
+    // Step 1: Create TestOrganizationDataManager with task.id
+    const testData = new TestOrganizationDataManager(task.id);
 
     // Step 2: Create test data - cleanup is AUTOMATICALLY registered
     const { organization, adminUser } = await testData.createOrganization({
@@ -81,7 +81,7 @@ const { email, role } = testData.generateUserWithRole('Admin');
 
 ```typescript
 it('should list all organization users', async ({ task }) => {
-  const testData = new TestDataManager(task.id);
+  const testData = new TestOrganizationDataManager(task.id);
   const { organization, adminUser, memberUsers } =
     await testData.createOrganization({
       users: { admin: 1, member: 3 },
@@ -106,7 +106,7 @@ it('should list all organization users', async ({ task }) => {
 
 ```typescript
 it('should handle users with multiple roles', async ({ task }) => {
-  const testData = new TestDataManager(task.id);
+  const testData = new TestOrganizationDataManager(task.id);
   const { organization, adminUser } = await testData.createOrganization({
     users: { admin: 1 },
   });
@@ -140,7 +140,7 @@ it('should handle users with multiple roles', async ({ task }) => {
 
 ```typescript
 it('should throw error for invalid profile ID', async ({ task }) => {
-  const testData = new TestDataManager(task.id);
+  const testData = new TestOrganizationDataManager(task.id);
   const { adminUser } = await testData.createOrganization();
 
   await signInTestUser(adminUser.email);
@@ -159,7 +159,7 @@ it('should throw error for invalid profile ID', async ({ task }) => {
 
 To add new test data creation methods:
 
-1. Add the method to `TestDataManager` class in `test/helpers/test-data-manager.ts`
+1. Add the method to `TestOrganizationDataManager` class in `test/helpers/TestOrganizationDataManager.ts`
 2. Call `this.ensureCleanupRegistered()` at the start
 3. Use `this.testId` in resource names for automatic cleanup
 4. Return the created resources
@@ -179,6 +179,6 @@ async createCustomResource(opts): Promise<CustomResource> {
 
 ## Files
 
-- Implementation: `services/api/src/test/helpers/test-data-manager.ts`
+- Implementation: `services/api/src/test/helpers/TestOrganizationDataManager.ts`
 - Documentation: `services/api/src/test/helpers/README.md`
 - Example: `services/api/src/test/integration/listUsers.integration.test.ts`

@@ -44,7 +44,7 @@ interface GenerateTestOrganizationOutput {
 }
 
 /**
- * Test Data Manager
+ * Test Organization Data Manager
  *
  * Provides a pattern for managing test data lifecycle with automatic cleanup.
  * All test data creation methods automatically register cleanup handlers using vitest's onTestFinished.
@@ -52,7 +52,7 @@ interface GenerateTestOrganizationOutput {
  * @example
  * ```ts
  * it('should do something', async ({ task }) => {
- *   const testData = new TestDataManager(task.id);
+ *   const testData = new TestOrganizationDataManager(task.id);
  *
  *   // Automatically registers cleanup
  *   const { organization, adminUser } = await testData.createOrganization({
@@ -64,7 +64,7 @@ interface GenerateTestOrganizationOutput {
  * });
  * ```
  */
-export class TestDataManager {
+export class TestOrganizationDataManager {
   private testId: string;
   private cleanupRegistered = false;
 
@@ -81,7 +81,7 @@ export class TestDataManager {
    *
    * @example
    * ```ts
-   * const testData = new TestDataManager(task.id);
+   * const testData = new TestOrganizationDataManager(task.id);
    * const { organization, adminUsers, memberUsers } = await testData.createOrganization({
    *   users: { admin: 2, member: 3 },
    *   organizationName: "Test Org"
@@ -239,7 +239,7 @@ export class TestDataManager {
    *
    * @example
    * ```ts
-   * const testData = new TestDataManager(task.id);
+   * const testData = new TestOrganizationDataManager(task.id);
    * const adminUser = testData.generateUserWithRole('Admin');
    * // Returns: { email: 'test-users-123-admin-a1b2c3@oneproject.org', role: 'Admin' }
    * ```

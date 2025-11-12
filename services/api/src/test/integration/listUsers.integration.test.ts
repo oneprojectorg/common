@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 
 import { organizationRouter } from '../../routers/organization';
 import { createCallerFactory } from '../../trpcFactory';
-import { TestDataManager } from '../helpers/test-data-manager';
+import { TestOrganizationDataManager } from '../helpers/TestOrganizationDataManager';
 import {
   getCurrentTestSession,
   signInTestUser,
@@ -33,7 +33,7 @@ describe('organization.listUsers', () => {
 
   it('should successfully list organization users', async ({ task }) => {
     // Create test data manager - automatically registers cleanup
-    const testData = new TestDataManager(task.id);
+    const testData = new TestOrganizationDataManager(task.id);
     const { organization, adminUser, memberUsers } =
       await testData.createOrganization({
         users: { admin: 1, member: 1 },
@@ -65,7 +65,7 @@ describe('organization.listUsers', () => {
 
   it('should correctly return users with multiple roles', async ({ task }) => {
     // Create test data manager - automatically registers cleanup
-    const testData = new TestDataManager(task.id);
+    const testData = new TestOrganizationDataManager(task.id);
     const { organization, adminUser } = await testData.createOrganization({
       users: { admin: 1, member: 1 },
     });
@@ -121,7 +121,7 @@ describe('organization.listUsers', () => {
 
   it('should throw error for invalid profile ID', async ({ task }) => {
     // Create test data manager - automatically registers cleanup
-    const testData = new TestDataManager(task.id);
+    const testData = new TestOrganizationDataManager(task.id);
     const { adminUser } = await testData.createOrganization();
 
     // Sign in the test user
