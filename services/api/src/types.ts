@@ -20,7 +20,8 @@ export interface TContext {
   ip: string | null;
   reqUrl: string | undefined;
   req: Request;
-  jwt: string | undefined;
+  isServerSideCall?: boolean;
+  jwt?: string;
 }
 
 export interface TContextWithUser {
