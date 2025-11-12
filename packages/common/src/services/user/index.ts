@@ -166,12 +166,14 @@ export const getUserByAuthId = async ({
         with: {
           avatarImage: true,
           headerImage: true,
+          individual: true,
         },
       },
       profile: {
         with: {
           avatarImage: true,
           headerImage: true,
+          individual: true,
         },
       },
     },

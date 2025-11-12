@@ -22,6 +22,12 @@ export const baseProfileEncoder = createSelectSchema(profiles)
   .extend({
     headerImage: storageItemEncoder.nullish(),
     avatarImage: storageItemEncoder.nullish(),
+    individual: z
+      .object({
+        pronouns: z.string().nullable(),
+      })
+      .nullable()
+      .optional(),
     modules: z
       .array(
         z.object({
