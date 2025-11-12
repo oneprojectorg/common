@@ -1,27 +1,31 @@
 /* eslint-disable antfu/no-top-level-await */
 import { adminEmails } from '@op/core';
-import type { User } from '@op/supabase/lib';
+import type { User } from '@op/supabase';
 import { createServerClient } from '@supabase/ssr';
 import { randomUUID } from 'crypto';
 import dotenv from 'dotenv';
-import { eq, sql } from 'drizzle-orm';
-import { reset } from 'drizzle-seed';
+import { eq, getTableName, sql } from 'drizzle-orm';
+import type { Table } from 'drizzle-orm';
+import { PgTable } from 'drizzle-orm/pg-core';
+import { authUsers } from 'drizzle-orm/supabase';
+import * as fs from 'fs';
+import * as path from 'path';
 
 import { db } from '.';
-import * as schema from './schema';
 import {
   links,
+  locations,
   organizationUserToAccessRoles,
   organizationUsers,
   profiles,
+  taxonomyTerms,
   users,
 } from './schema/publicTables';
-import { OrgType, organizations } from './schema/tables/organizations.sql';
 import {
-  ACCESS_ROLES,
-  ACCESS_ROLE_PERMISSIONS,
-  ACCESS_ZONES,
-} from './seedData/accessControl';
+  OrgType,
+  organizations,
+  organizationsWhereWeWork,
+} from './schema/tables/organizations.sql';
 
 // For local development, we need to load the .env.local file from the root of the monorepo
 dotenv.config({
@@ -41,14 +45,31 @@ if (!allowedDatabaseUrls.includes(process.env.DATABASE_URL || '')) {
   throw new Error('You are truncating in production');
 }
 
-// Determine the correct Supabase URL based on the database URL
-const isTestDatabase = process.env.DATABASE_URL?.includes('55322');
-const supabaseUrl = isTestDatabase
-  ? 'http://127.0.0.1:55321' // Test Supabase instance
-  : process.env.NEXT_PUBLIC_SUPABASE_URL!; // Production/dev instance
+// async function resetTable(
+// database: typeof db,
+// table: Table,
+// schemaName?: string,
+// ) {
+// const tableName = getTableName(table);
+// const fullTableName = schemaName ? `${schemaName}.${tableName}` : tableName;
+
+// await database.execute(
+// sql.raw(`TRUNCATE TABLE ${fullTableName} RESTART IDENTITY CASCADE`),
+// );
+// }
+
+// Reset public schema tables
+// for (const table of Object.values(schema).filter(
+// (value) => value instanceof PgTable,
+// )) {
+// await resetTable(db, table);
+// }
+
+// Reset auth schema table
+// await resetTable(db, authUsers, 'auth');
 
 const supabase = createServerClient(
-  supabaseUrl,
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE!,
   {
     cookieOptions: {},
@@ -59,184 +80,251 @@ const supabase = createServerClient(
   },
 );
 
-/**
- * Wipe database tables and empty storage buckets
- */
-async function wipeDatabase() {
-  console.log('🧹 Wiping database before seeding...');
+await supabase.storage.emptyBucket('assets');
+await supabase.storage.emptyBucket('avatars');
 
-  // Use drizzle-seed reset function to truncate all tables
-  await reset(db, schema);
+const createdUsers: User[] = [];
 
-  console.log('✅ Database wipe completed\n');
-
-  // Empty storage buckets
+for (const email of adminEmails) {
   try {
-    await supabase.storage.emptyBucket('assets');
-    console.log(`  ✓ Emptied assets bucket`);
-  } catch (error: any) {
-    console.warn(`  ⚠ Warning emptying assets bucket:`, error.message);
-  }
+    // Check if user already exists in local users table
+    const existingUser = await db.query.users.findFirst({
+      where: (table, { eq }) => eq(table.email, email),
+    });
 
-  try {
-    await supabase.storage.emptyBucket('avatars');
-    console.log(`  ✓ Emptied avatars bucket`);
-  } catch (error: any) {
-    console.warn(`  ⚠ Warning emptying avatars bucket:`, error.message);
-  }
-}
+    if (existingUser) {
+      // Get the auth user data from Supabase
+      const { data: authUser } = await supabase.auth.admin.getUserById(
+        existingUser.authUserId,
+      );
+      if (authUser?.user) {
+        createdUsers.push(authUser.user as User);
+        console.log(`User ${email} already exists, using existing user`);
+        continue;
+      }
+    }
 
-/**
- * Create admin users in Supabase auth and local database
- */
-async function seedAdminUsers() {
-  console.log('👥 Creating admin users...');
-  const createdUsers: User[] = [];
+    // Check if auth user already exists in Supabase
+    const { data: existingAuthUsers } = await supabase.auth.admin.listUsers();
+    const existingAuthUser = existingAuthUsers.users?.find(
+      (user) => user.email === email,
+    );
 
-  for (const email of adminEmails) {
-    try {
-      // Check if user already exists in local users table
-      const existingUser = await db.query.users.findFirst({
-        where: (table, { eq }) => eq(table.email, email),
+    let authUser;
+    if (existingAuthUser) {
+      // Auth user exists, use it
+      authUser = existingAuthUser;
+      console.log(
+        `Auth user ${email} already exists, using existing auth user`,
+      );
+    } else {
+      // Create new auth user
+      const { data, error } = await supabase.auth.admin.createUser({
+        email,
       });
 
-      if (existingUser) {
-        // Get the auth user data from Supabase
-        const { data: authUser } = await supabase.auth.admin.getUserById(
-          existingUser.authUserId,
-        );
-        if (authUser?.user) {
-          createdUsers.push(authUser.user as User);
-          console.log(`User ${email} already exists, using existing user`);
-          continue;
-        }
+      if (error) {
+        console.log('ERROR', error);
+        throw new Error('Failed to create dev user');
       }
 
-      // Check if auth user already exists in Supabase
-      const { data: existingAuthUsers } = await supabase.auth.admin.listUsers();
-      const existingAuthUser = existingAuthUsers.users?.find(
-        (user) => user.email === email,
-      );
+      authUser = data?.user;
+    }
 
-      let authUser;
-      if (existingAuthUser) {
-        // Auth user exists, use it
-        authUser = existingAuthUser;
-        console.log(
-          `Auth user ${email} already exists, using existing auth user`,
-        );
-      } else {
-        // Create new auth user
-        const { data, error } = await supabase.auth.admin.createUser({
-          email,
+    if (authUser) {
+      // Insert or update user in local users table
+      await db
+        .insert(users)
+        .values({
+          authUserId: authUser.id,
+          email: authUser.email!,
+          name: authUser.user_metadata?.name || null,
+        })
+        .onConflictDoUpdate({
+          target: [users.email],
+          set: {
+            authUserId: authUser.id,
+            name: sql`excluded.name`,
+          },
         });
 
-        if (error) {
-          console.log('ERROR', error);
-          throw new Error('Failed to create dev user');
-        }
+      createdUsers.push(authUser as User);
+    }
+  } catch (e) {
+    console.warn(e);
+  }
+}
 
-        authUser = data?.user;
+// Run the SQL seed scripts
+const seedDataPath = path.join(process.cwd(), 'seedData');
+
+// Execute SQL files in order: Access Roles -> Taxonomies -> Terms
+const sqlFiles = ['AccessRoles.sql', 'TaxonomiesRows.sql'];
+
+for (const fileName of sqlFiles) {
+  const filePath = path.join(seedDataPath, fileName);
+  const sqlContent = fs.readFileSync(filePath, 'utf8');
+
+  // Split by statement-breakpoint if exists, otherwise execute as single statement
+  const statements = sqlContent.includes('--> statement-breakpoint')
+    ? sqlContent.split('--> statement-breakpoint')
+    : [sqlContent];
+
+  for (const statement of statements) {
+    const trimmedStatement = statement.trim();
+    if (trimmedStatement && trimmedStatement.length > 0) {
+      try {
+        await db.execute(sql.raw(trimmedStatement));
+        console.log(`Executed SQL from ${fileName}`);
+      } catch (error) {
+        console.error(`Error executing SQL from ${fileName}:`, error);
+        throw error;
       }
-
-      if (authUser) {
-        // Insert or update user in local users table
-        await db
-          .insert(users)
-          .values({
-            authUserId: authUser.id,
-            email: authUser.email!,
-            name: authUser.user_metadata?.name || null,
-          })
-          .onConflictDoUpdate({
-            target: [users.email],
-            set: {
-              authUserId: authUser.id,
-              name: sql`excluded.name`,
-            },
-          });
-
-        createdUsers.push(authUser as User);
-      }
-    } catch (e) {
-      console.warn(e);
     }
   }
-
-  console.log(`✓ Created ${createdUsers.length} admin users\n`);
-  return createdUsers;
 }
+// Import taxonomy terms from CSV
+const taxonomyTermsCsvPath = path.join(seedDataPath, 'TaxonomyTerms.csv');
+const taxonomyTermsCsvContent = fs.readFileSync(taxonomyTermsCsvPath, 'utf8');
 
-/**
- * Seed access control data including zones, roles, and permissions
- */
-async function seedAccessControl() {
-  console.log('🔐 Seeding access control data (zones, roles, permissions)...');
+// Parse CSV content
+const lines = taxonomyTermsCsvContent.trim().split('\n');
+const headers = lines?.[0]?.split(',') ?? [];
 
-  const { accessZones, accessRoles, accessRolePermissionsOnAccessZones } =
-    schema;
+// Process each row (skip header)
+const taxonomyTermsData = lines.slice(1).map((line) => {
+  // Handle CSV parsing with potential commas in quoted fields
+  const values = [];
+  let currentValue = '';
+  let inQuotes = false;
 
-  // Seed access zones using predefined constants
-  const insertedZones = await db
-    .insert(accessZones)
-    .values(ACCESS_ZONES)
-    .returning();
-  console.log(`  ✓ Inserted ${insertedZones.length} access zones`);
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
 
-  // Seed access roles using predefined constants
-  const insertedRoles = await db
-    .insert(accessRoles)
-    .values(ACCESS_ROLES)
-    .returning();
-  console.log(`  ✓ Inserted ${insertedRoles.length} access roles`);
-
-  // Seed access role permissions on access zones using predefined constants
-  await db
-    .insert(accessRolePermissionsOnAccessZones)
-    .values(ACCESS_ROLE_PERMISSIONS);
-  console.log(
-    `  ✓ Inserted ${ACCESS_ROLE_PERMISSIONS.length} role permissions on access zones`,
-  );
-}
-
-/**
- * Seed organizations with profiles, funding links, and locations
- */
-async function seedOrganizations(createdUsers: User[]) {
-  console.log('🏢 Creating seed organizations...');
-
-  const seedOrgs = [
-    {
-      name: 'One Project',
-      slug: 'one-project',
-      description:
-        'One Project collaborates with people to build tools, systems and support for the futures ahead. We build deep relationships with communities who share a vision for a new economy.We work alongside them to co- create social and digital infrastructure, and also offer material support to nurture a growing ecosystem of collective action.',
-      mission:
-        'To nurture a just transition to a regenerative democratic economy.',
-      city: 'San Francisco',
-      bio: 'One Project bio',
-      state: 'CA',
-      isOfferingFunds: true,
-      isReceivingFunds: true,
-      receivingFundsLink: 'https://oneproject.org',
-      offeringFundsLink: 'https://oneproject.org',
-      receivingFundsDescription: 'description here',
-      offeringFundsDescription: 'offering description here',
-      email: 'info@oneproject.org',
-      website: 'https://oneproject.org',
-      type: OrgType.NONPROFIT,
-    },
-  ];
-
-  const firstUser = createdUsers[0];
-
-  if (!firstUser) {
-    console.warn('⚠️  No users created, skipping organization creation');
-    return;
+    if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (char === ',' && !inQuotes) {
+      values.push(currentValue.trim());
+      currentValue = '';
+    } else {
+      currentValue += char;
+    }
   }
+  values.push(currentValue.trim()); // Add the last value
 
+  // Create object mapping headers to values
+  const row: Record<string, string> = {};
+  headers.forEach((header, index) => {
+    row[header] = values[index] || '';
+  });
+
+  return {
+    id: row.id,
+    taxonomyId: row.taxonomy_id,
+    termUri: row.term_uri,
+    facet: row.facet || null,
+    label: row.label,
+    definition: row.definition || null,
+    parentId: row.parent_id || null,
+    data: row.data ? JSON.parse(row.data) : null,
+  };
+});
+
+// Sort data so records without parent_id come first, then by parent_id
+taxonomyTermsData.sort((a, b) => {
+  // Records without parent_id come first
+  if (!a.parentId && !b.parentId) return 0;
+  if (!a.parentId) return -1;
+  if (!b.parentId) return 1;
+
+  // Both have parent_id, sort by parent_id
+  return a.parentId.localeCompare(b.parentId);
+});
+
+console.log(`Importing ${taxonomyTermsData.length} taxonomy terms...`);
+
+// Insert taxonomy terms in batches to handle large datasets
+const batchSize = 100;
+for (let i = 0; i < taxonomyTermsData.length; i += batchSize) {
+  const batch = taxonomyTermsData.slice(i, i + batchSize);
+  try {
+    await db
+      .insert(taxonomyTerms)
+      .values(batch)
+      .onConflictDoUpdate({
+        target: [taxonomyTerms.taxonomyId, taxonomyTerms.termUri],
+        set: {
+          facet: sql`excluded.facet`,
+          label: sql`excluded.label`,
+          definition: sql`excluded.definition`,
+          parentId: sql`excluded.parent_id`,
+          data: sql`excluded.data`,
+        },
+      });
+    console.log(
+      `Imported batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(taxonomyTermsData.length / batchSize)}`,
+    );
+  } catch (error) {
+    console.error(
+      `Error importing taxonomy terms batch ${Math.floor(i / batchSize) + 1}:`,
+      error,
+    );
+    throw error;
+  }
+}
+
+console.log('Taxonomy terms import completed');
+
+const seedOrgs = [
+  {
+    name: 'One Project',
+    slug: 'one-project',
+    description:
+      'One Project collaborates with people to build tools, systems and support for the futures ahead. We build deep relationships with communities who share a vision for a new economy.We work alongside them to co- create social and digital infrastructure, and also offer material support to nurture a growing ecosystem of collective action.',
+    mission:
+      'To nurture a just transition to a regenerative democratic economy.',
+    city: 'San Francisco',
+    bio: 'One Project bio',
+    state: 'CA',
+    isOfferingFunds: true,
+    isReceivingFunds: true,
+    receivingFundsLink: 'https://oneproject.org',
+    offeringFundsLink: 'https://oneproject.org',
+    receivingFundsDescription: 'description here',
+    offeringFundsDescription: 'offering description here',
+    email: 'scott@oneproject.org',
+    website: 'https://oneproject.org',
+    type: OrgType.NONPROFIT,
+    whereWeWork: [],
+  },
+];
+
+// Setup mock organizations using @op/common createOrganization
+const firstUser = createdUsers[0];
+
+if (firstUser) {
   for (const org of seedOrgs) {
     try {
+      // await createOrganization({
+      // data: {
+      // name: org.name,
+      // slug: org.slug,
+      // bio: org.description,
+      // mission: org.mission,
+      // city: org.city,
+      // state: org.state,
+      // isOfferingFunds: org.isOfferingFunds,
+      // isReceivingFunds: org.isReceivingFunds,
+      // email: org.email,
+      // website: org.website,
+      // type: org.type,
+      // profileId: null,
+      // },
+      // user: firstUser,
+      // });
+
+      // Set these up so we can pull in logic directly from createOrganization
+
       const broadDomains: string[] = [];
       const user = firstUser;
       const orgInputs = {
@@ -246,7 +334,6 @@ async function seedOrganizations(createdUsers: User[]) {
 
       const data = orgInputs;
 
-      // Parse domain from website
       let domain: string | undefined;
       if (data.website) {
         try {
@@ -271,7 +358,6 @@ async function seedOrganizations(createdUsers: User[]) {
         }
       }
 
-      // Create profile
       const [profile] = await db
         .insert(profiles)
         .values({
@@ -288,7 +374,6 @@ async function seedOrganizations(createdUsers: User[]) {
         throw new Error('Failed to create profile');
       }
 
-      // Create organization
       const [newOrg] = await db
         .insert(organizations)
         .values({
@@ -302,7 +387,7 @@ async function seedOrganizations(createdUsers: User[]) {
         throw new Error('Failed to create organization');
       }
 
-      // Link user to organization with admin role
+      // Insert organizationUser linking the user to organization, with a default role of owner
       const [[newOrgUser], adminRole] = await Promise.all([
         db
           .insert(organizationUsers)
@@ -321,6 +406,7 @@ async function seedOrganizations(createdUsers: User[]) {
           .where(eq(users.authUserId, user.id)),
       ]);
 
+      // Add admin role to the user creating the organization
       if (!(adminRole && newOrgUser)) {
         throw new Error('Failed to create organization');
       }
@@ -330,67 +416,150 @@ async function seedOrganizations(createdUsers: User[]) {
         accessRoleId: adminRole.id,
       });
 
-      // Add funding links
-      await Promise.all([
-        ...(data.receivingFundsLink
-          ? [
-              db.insert(links).values({
-                organizationId: newOrg.id,
-                href: data.receivingFundsLink,
-                description: data.receivingFundsDescription,
-                type: 'receiving',
-              }),
-            ]
-          : []),
-        ...(data.offeringFundsLink
-          ? [
-              db.insert(links).values({
-                organizationId: newOrg.id,
-                href: data.offeringFundsLink,
-                description: data.offeringFundsDescription,
-                type: 'offering',
-              }),
-            ]
-          : []),
-      ]);
+      try {
+        // Add funding links
+        await Promise.all([
+          ...(data.receivingFundsLink
+            ? [
+                db.insert(links).values({
+                  organizationId: newOrg.id,
+                  href: data.receivingFundsLink,
+                  description: data.receivingFundsDescription,
+                  type: 'receiving',
+                }),
+              ]
+            : []),
+          ...(data.offeringFundsLink
+            ? [
+                db.insert(links).values({
+                  organizationId: newOrg.id,
+                  href: data.offeringFundsLink,
+                  description: data.offeringFundsDescription,
+                  type: 'offering',
+                }),
+              ]
+            : []),
+        ]);
 
-      if (!newOrgUser) {
-        throw new Error('Failed to associate organization with user');
+        // Add where we work locations using Google Places data
+        if (data.whereWeWork?.length) {
+          await Promise.all(
+            data.whereWeWork.map(async (whereWeWork) => {
+              // @ts-ignore
+              const geoData = whereWeWork.data
+                ? // @ts-ignore
+                  geoNamesDataSchema.parse(whereWeWork.data)
+                : null;
+
+              // Create location record
+              const [location] = await db
+                .insert(locations)
+                .values({
+                  // @ts-ignore
+                  name: whereWeWork.label,
+                  placeId: geoData?.geonameId?.toString() ?? randomUUID(),
+                  address: geoData?.toponymName,
+                  location:
+                    geoData?.lat && geoData?.lng
+                      ? sql`ST_SetSRID(ST_MakePoint(${geoData.lng}, ${geoData.lat}), 4326)`
+                      : undefined,
+                  countryCode: geoData?.countryCode,
+                  countryName: geoData?.countryName,
+                  metadata: geoData,
+                })
+                .onConflictDoUpdate({
+                  target: [locations.placeId],
+                  set: {
+                    name: sql`excluded.name`,
+                    address: sql`excluded.address`,
+                    // location: sql`excluded.location`,
+                    countryCode: sql`excluded.country_code`,
+                    countryName: sql`excluded.country_name`,
+                    metadata: sql`excluded.metadata`,
+                  },
+                })
+                .returning();
+
+              if (location) {
+                // Link location to organization
+                await db
+                  .insert(organizationsWhereWeWork)
+                  .values({
+                    organizationId: newOrg.id,
+                    locationId: location.id,
+                  })
+                  .onConflictDoNothing();
+              }
+            }),
+          );
+        }
+
+        // const {
+        // focusAreas,
+        // strategies,
+        // communitiesServed,
+        // receivingFundsTerms,
+        // offeringFundsTerms,
+        // } = data;
+
+        // // add all stategy terms to the org (strategy terms already exist in the DB)
+        // // TODO: parallelize this
+
+        // if (strategies) {
+        // await Promise.all(
+        // strategies.map((strategy) =>
+        // db
+        // .insert(organizationsStrategies)
+        // .values({
+        // organizationId: newOrg.id,
+        // taxonomyTermId: strategy.id,
+        // })
+        // .onConflictDoNothing(),
+        // ),
+        // );
+        // }
+
+        // // TODO: this was changed quickly in the process. We are transitioning to this way of doing terms.
+        // if (
+        // focusAreas ||
+        // communitiesServed ||
+        // receivingFundsTerms ||
+        // offeringFundsTerms
+        // ) {
+        // const terms = [
+        // ...(communitiesServed ?? []),
+        // ...(receivingFundsTerms ?? []),
+        // ...(offeringFundsTerms ?? []),
+        // ...(focusAreas ?? []),
+        // ];
+
+        // await Promise.all(
+        // terms.map((term) =>
+        // db
+        // .insert(organizationsTerms)
+        // .values({
+        // organizationId: newOrg.id,
+        // taxonomyTermId: term.id,
+        // })
+        // .onConflictDoNothing(),
+        // ),
+        // );
+        // }
+
+        if (!newOrgUser) {
+          throw new Error('Failed to associate organization with user');
+        }
+
+        console.log(`Created organization: ${org.name}`);
+      } catch (error) {
+        console.error(`Error creating organization ${org.name}:`, error);
       }
-
-      console.log(`  ✓ Created organization: ${org.name}`);
     } catch (error) {
       console.error(`Error processing organization ${org.name}:`, error);
     }
   }
+} else {
+  console.warn('No users created, skipping organization creation');
 }
 
-/**
- * Main seed function that orchestrates all seeding operations
- */
-async function seed() {
-  console.log('🌱 Starting database seeding...\n');
-
-  // TODO: Seeding order for listUsers test case:
-  // 1. Wipe database (includes auth.users cleanup)
-  // 2. Seed auth.users table (via Supabase Admin API)
-  // 3. Seed users table (references auth.users)
-  // 4. DONE in seed.ts -- Seed access_zones table (standalone)
-  // 5. DONE in seed.ts -- Seed access_roles table (standalone)
-  // 6. DONE in seed.ts -- Seed access_role_permissions_on_access_zones table (references access_zones and access_roles)
-  // 7. Seed profiles table (optional: references storage.objects for avatarImageId/headerImageId)
-  // 8. Seed organizations table (references profiles)
-  // 9. Seed organization_users table (references auth.users and organizations)
-  // 10. Seed organizationUser_to_access_roles table (references organization_users and access_roles)
-
-  await wipeDatabase();
-  // const createdUsers = await seedAdminUsers();
-  await seedAccessControl();
-  // await seedOrganizations(createdUsers);
-
-  console.log('\n✅ Database seeding completed successfully!');
-}
-
-// Execute seed function
-await seed();
 await db.$client.end();
