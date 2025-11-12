@@ -163,15 +163,15 @@ export const updateUserProfile = async ({
               ),
             );
           }
-
-          // Add pronouns
-          if (pronouns && pronouns.length > 0) {
-            await tx
-              .update(individuals)
-              .set({ pronouns: pronouns || null })
-              .where(eq(individuals.id, individualRecord.id));
-          }
         });
+
+        // Add pronouns
+        if (pronouns !== undefined) {
+          await dbClient
+            .update(individuals)
+            .set({ pronouns: pronouns || null })
+            .where(eq(individuals.id, individualRecord.id));
+        }
       }
     }
   }
