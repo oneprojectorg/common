@@ -67,7 +67,7 @@ export const getProfile = async ({
       with: {
         avatarImage: true,
         headerImage: true,
-        individual: true,
+        individual: { columns: { pronouns: true } },
         modules: {
           with: {
             module: true,

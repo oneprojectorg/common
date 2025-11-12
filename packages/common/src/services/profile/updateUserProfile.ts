@@ -211,6 +211,7 @@ export const updateUserProfile = async ({
       profile: {
         with: {
           avatarImage: true,
+          individual: { columns: { pronouns: true } },
         },
       },
     },
