@@ -47,6 +47,7 @@ const sendPostCommentNotification = async (
     const parentPost = parentPostToOrg.post;
     const parentProfile = parentPostToOrg.organization.profile;
     const parentProfileId = parentProfile.id;
+    const parentProfileSlug = parentProfile.slug;
 
     if (parentProfileId) {
       // Parallelize commenter and post author queries
@@ -69,8 +70,8 @@ const sendPostCommentNotification = async (
               : parentPost.content.trim();
 
           // Generate URL using the organization profile ID instead of post author's profile
-          const baseUrl = OPURLConfig('APP');
-          const contentUrl = `${baseUrl}/org/${parentProfileId}`;
+          const baseUrl = OPURLConfig('APP').ENV_URL;
+          const contentUrl = `${baseUrl}/profile/${parentProfileSlug}/posts/${parentPost.id}`;
 
           await sendCommentNotificationEmail({
             to: parentProfile.email,
@@ -136,9 +137,7 @@ const sendProposalCommentNotification = async (
           // For proposals, we use 'proposal' as the content type
           const contentType = 'proposal';
 
-          // Generate appropriate URL - for proposals, use proposal view page
-          const baseUrl =
-            process.env.NEXT_PUBLIC_APP_URL || 'https://common.oneproject.org';
+          const baseUrl = OPURLConfig('APP').ENV_URL;
 
           // Get processInstanceId for the URL
           const processInstanceId = proposal.processInstance
