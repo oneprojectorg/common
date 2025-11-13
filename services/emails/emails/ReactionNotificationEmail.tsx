@@ -1,4 +1,4 @@
-import { Button, Section, Text } from '@react-email/components';
+import { Button, CodeBlock, Section, Text } from '@react-email/components';
 import * as React from 'react';
 
 import EmailTemplate from '../components/EmailTemplate';
@@ -27,12 +27,14 @@ export const ReactionNotificationEmail = ({
       previewText={`${reactorName} reacted to your ${contentType}`}
     >
       <Text className="my-8 text-lg">
-        <strong>{reactorName}</strong> reacted to your {contentType}:{' '}
+        <strong>{reactorName}</strong> reacted to your {contentType} with{' '}
         {reactionType}.
       </Text>
 
       <Section className="my-6">
-        <Text className="my-0 text-lg text-[#222D38]">{contextName}</Text>
+        <Text className="my-0 bg-[#FAFBFB] p-4 text-lg text-[#222D38]">
+          "{contextName}"
+        </Text>
       </Section>
 
       <Section className="pb-0">

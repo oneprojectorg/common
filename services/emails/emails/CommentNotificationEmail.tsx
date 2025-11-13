@@ -3,17 +3,6 @@ import * as React from 'react';
 
 import EmailTemplate from '../components/EmailTemplate';
 
-interface CommentNotificationEmailProps {
-  commenterName: string;
-  postContent: string;
-  commentContent: string;
-  postUrl: string;
-  recipientName?: string;
-  contentType?: 'post' | 'proposal';
-  contextName?: string;
-  postedIn?: string;
-}
-
 export const CommentNotificationEmail = ({
   commenterName = 'A Common user',
   postContent: _postContent,
@@ -23,8 +12,16 @@ export const CommentNotificationEmail = ({
   contentType = 'post',
   contextName,
   postedIn,
-}: CommentNotificationEmailProps) => {
-
+}: {
+  commenterName: string;
+  postContent: string;
+  commentContent: string;
+  postUrl: string;
+  recipientName?: string;
+  contentType?: 'post' | 'proposal';
+  contextName?: string;
+  postedIn?: string;
+}) => {
   return (
     <EmailTemplate
       previewText={`${commenterName} commented on your ${contentType}: "${commentContent.slice(0, 50)}${commentContent.length > 50 ? '...' : ''}"`}
