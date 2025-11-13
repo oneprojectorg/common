@@ -118,13 +118,48 @@ export async function getCurrentTestSession() {
 
   const {
     data: { session },
-    error,
   } = await supabaseTestClient.auth.getSession();
-  if (error) {
-    throw new Error(`Failed to get session: ${error.message}`);
-  }
 
   return session;
+}
+
+/**
+ * Get a JWT token for a specific user without affecting the global client state.
+ * This is safe to use in concurrent tests as it creates an isolated client.
+ */
+export async function getJWTForUser(
+  email: string,
+  password: string = 'testpassword123',
+) {
+  const { createClient } = await import('@supabase/supabase-js');
+
+  const TEST_SUPABASE_URL = 'http://127.0.0.1:55321';
+  const TEST_SUPABASE_ANON_KEY =
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0';
+
+  // Create an isolated client that won't affect other tests
+  const isolatedClient = createClient(
+    TEST_SUPABASE_URL,
+    TEST_SUPABASE_ANON_KEY,
+    {
+      auth: {
+        persistSession: false, // Don't persist session to avoid affecting other tests
+        autoRefreshToken: false,
+      },
+    },
+  );
+
+  const { data: signInData, error: signInError } =
+    await isolatedClient.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+  if (signInError || !signInData.session) {
+    throw new Error(`Failed to sign in user for JWT: ${signInError?.message}`);
+  }
+
+  return signInData.session.access_token;
 }
 
 /**
@@ -183,10 +218,7 @@ export async function waitForSupabase(
 
   for (let i = 0; i < maxRetries; i++) {
     try {
-      const { error } = await supabaseTestClient
-        .from('_test_connection')
-        .select('*')
-        .limit(1);
+      await supabaseTestClient.from('_test_connection').select('*').limit(1);
       // If we get here without throwing, connection is working
       return true;
     } catch (err) {

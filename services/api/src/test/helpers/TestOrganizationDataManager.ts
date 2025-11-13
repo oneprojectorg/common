@@ -10,7 +10,6 @@ import {
 import { ROLES } from '@op/db/seedData/accessControl';
 import { randomUUID } from 'crypto';
 import { sql } from 'drizzle-orm';
-import { onTestFinished } from 'vitest';
 
 import { createTestUser, supabaseTestAdminClient } from '../supabase-utils';
 
@@ -52,8 +51,8 @@ interface GenerateTestOrganizationOutput {
  *
  * @example
  * ```ts
- * it('should do something', async ({ task }) => {
- *   const testData = new TestOrganizationDataManager(task.id);
+ * it('should do something', async ({ task, onTestFinished }) => {
+ *   const testData = new TestOrganizationDataManager(task.id, onTestFinished);
  *
  *   // Automatically registers cleanup
  *   const { organization, adminUser } = await testData.createOrganization({
@@ -68,9 +67,14 @@ interface GenerateTestOrganizationOutput {
 export class TestOrganizationDataManager {
   private testId: string;
   private cleanupRegistered = false;
+  private onTestFinishedCallback: (fn: () => void | Promise<void>) => void;
 
-  constructor(testId: string) {
+  constructor(
+    testId: string,
+    onTestFinished: (fn: () => void | Promise<void>) => void,
+  ) {
     this.testId = testId;
+    this.onTestFinishedCallback = onTestFinished;
   }
 
   /**
@@ -264,13 +268,19 @@ export class TestOrganizationDataManager {
    * Registers the cleanup handler for this test.
    * This is called automatically by test data creation methods.
    * Ensures cleanup is only registered once per test.
+   *
+   * Uses onTestFinished from test context to clean up after each concurrent test completes.
    */
   private ensureCleanupRegistered(): void {
     if (this.cleanupRegistered) {
       return;
     }
 
-    onTestFinished(() => this.cleanup());
+    // Register cleanup for this specific test using the callback from test context
+    this.onTestFinishedCallback(async () => {
+      await this.cleanup();
+    });
+
     this.cleanupRegistered = true;
   }
 
@@ -285,36 +295,40 @@ export class TestOrganizationDataManager {
    */
   async cleanup(): Promise<void> {
     if (!supabaseTestAdminClient) {
-      console.warn('Supabase admin test client not initialized');
-      return;
+      throw new Error('Supabase admin test client not initialized');
     }
 
-    try {
-      // 1. Delete profiles with the test ID in the name
-      // This will cascade to organizations -> organizationUsers -> organizationUserToAccessRoles
-      await db
-        .delete(profiles)
-        .where(sql`${profiles.name} LIKE ${'%' + this.testId + '%'}`);
+    // 1. Delete profiles with the test ID in the name
+    // This will cascade to organizations -> organizationUsers -> organizationUserToAccessRoles
+    await db
+      .delete(profiles)
+      .where(sql`${profiles.name} LIKE ${'%' + this.testId + '%'}`);
 
-      // 2. Delete auth users with the test ID in the email
-      // This will cascade to users and organizationUsers tables
-      const { data: authUsers } =
-        await supabaseTestAdminClient.auth.admin.listUsers();
-      if (authUsers?.users) {
-        const testUsers = authUsers.users.filter((user) =>
-          user.email?.includes(this.testId),
-        );
-        await Promise.allSettled(
-          testUsers.map((user) =>
-            supabaseTestAdminClient.auth.admin.deleteUser(user.id),
-          ),
+    // 2. Delete auth users with the test ID in the email
+    // This will cascade to users and organizationUsers tables
+    const { data: authUsers, error: listError } =
+      await supabaseTestAdminClient.auth.admin.listUsers();
+
+    if (listError) {
+      throw new Error(`Failed to list auth users: ${listError.message}`);
+    }
+
+    if (authUsers?.users) {
+      const testUsers = authUsers.users.filter((user) =>
+        user.email?.includes(this.testId),
+      );
+      const deleteResults = await Promise.allSettled(
+        testUsers.map((user) =>
+          supabaseTestAdminClient.auth.admin.deleteUser(user.id),
+        ),
+      );
+
+      const failures = deleteResults.filter((r) => r.status === 'rejected');
+      if (failures.length > 0) {
+        throw new Error(
+          `Failed to delete ${failures.length}/${testUsers.length} auth users`,
         );
       }
-    } catch (error) {
-      console.warn(
-        `Failed to cleanup test data for test ${this.testId}:`,
-        error,
-      );
     }
   }
 }
