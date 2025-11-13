@@ -25,6 +25,7 @@ interface GenerateTestOrganizationOptions {
     member?: number;
   };
   organizationName?: string;
+  emailDomain?: string;
 }
 
 interface GeneratedUser {
@@ -96,6 +97,7 @@ export class TestOrganizationDataManager {
     const {
       users: userCounts = { admin: 1, member: 0 },
       organizationName = 'Test Org',
+      emailDomain = 'oneproject.org',
     } = opts || {};
 
     const orgNameWithTestId = `${organizationName}-${this.testId}`;
@@ -132,7 +134,7 @@ export class TestOrganizationDataManager {
     const createUserWithRole = async (
       role: 'Admin' | 'Member',
     ): Promise<GeneratedUser> => {
-      const { email } = this.generateUserWithRole(role);
+      const { email } = this.generateUserWithRole(role, emailDomain);
 
       // Create auth user via Supabase Admin API
       const authUser = await createTestUser(email).then((res) => res.user);
@@ -235,6 +237,7 @@ export class TestOrganizationDataManager {
    * Supports multiple users per role by adding a random suffix.
    *
    * @param role - The role to assign to the user
+   * @param emailDomain - The email domain to use (default: 'oneproject.org')
    * @returns An object with email and role properties
    *
    * @example
@@ -242,12 +245,17 @@ export class TestOrganizationDataManager {
    * const testData = new TestOrganizationDataManager(task.id);
    * const adminUser = testData.generateUserWithRole('Admin');
    * // Returns: { email: 'test-users-123-admin-a1b2c3@oneproject.org', role: 'Admin' }
+   * const regularUser = testData.generateUserWithRole('Member', 'example.com');
+   * // Returns: { email: 'test-users-123-member-a1b2c3@example.com', role: 'Member' }
    * ```
    */
-  generateUserWithRole(role: 'Admin' | 'Member'): SeedUserInput {
+  generateUserWithRole(
+    role: 'Admin' | 'Member',
+    emailDomain: string = 'oneproject.org',
+  ): SeedUserInput {
     const randomSuffix = randomUUID().slice(0, 6);
     return {
-      email: `test-users-${this.testId}-${role.toLowerCase()}-${randomSuffix}@oneproject.org`,
+      email: `test-users-${this.testId}-${role.toLowerCase()}-${randomSuffix}@${emailDomain}`,
       role,
     };
   }
