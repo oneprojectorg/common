@@ -10,30 +10,8 @@ import {
 import { ROLES } from '@op/db/seedData/accessControl';
 import { randomUUID } from 'crypto';
 import { inArray } from 'drizzle-orm';
-import { afterAll } from 'vitest';
 
 import { createTestUser, supabaseTestAdminClient } from '../supabase-utils';
-
-// Global cleanup queue for concurrent tests
-// This collects all cleanup tasks and runs them after all tests finish
-const cleanupQueue: Array<() => Promise<void>> = [];
-let cleanupRegisteredGlobally = false;
-
-function registerGlobalCleanup() {
-  if (cleanupRegisteredGlobally) {
-    return;
-  }
-  cleanupRegisteredGlobally = true;
-
-  // Run all cleanup tasks after all tests finish
-  afterAll(async () => {
-    console.log(
-      `Running cleanup for ${cleanupQueue.length} test data managers...`,
-    );
-    await Promise.allSettled(cleanupQueue.map((fn) => fn()));
-    console.log('Cleanup complete.');
-  });
-}
 
 interface SeedUserInput {
   email: string;
@@ -72,8 +50,8 @@ interface GenerateTestOrganizationOutput {
  *
  * @example
  * ```ts
- * it('should do something', async ({ task }) => {
- *   const testData = new TestOrganizationDataManager(task.id);
+ * it('should do something', async ({ task, onTestFinished }) => {
+ *   const testData = new TestOrganizationDataManager(task.id, onTestFinished);
  *
  *   // Automatically registers cleanup
  *   const { organization, adminUser } = await testData.createOrganization({
@@ -90,9 +68,14 @@ export class TestOrganizationDataManager {
   private cleanupRegistered = false;
   private createdProfileIds: string[] = [];
   private createdAuthUserIds: string[] = [];
+  private onTestFinishedCallback: (fn: () => void | Promise<void>) => void;
 
-  constructor(testId: string) {
+  constructor(
+    testId: string,
+    onTestFinished: (fn: () => void | Promise<void>) => void,
+  ) {
     this.testId = testId;
+    this.onTestFinishedCallback = onTestFinished;
   }
 
   /**
@@ -287,19 +270,17 @@ export class TestOrganizationDataManager {
    * This is called automatically by test data creation methods.
    * Ensures cleanup is only registered once per test.
    *
-   * NOTE: For concurrent tests, cleanup is deferred to avoid race conditions.
-   * Cleanup will happen after all tests in the suite finish.
+   * Uses onTestFinished from test context to clean up after each concurrent test completes.
    */
   private ensureCleanupRegistered(): void {
     if (this.cleanupRegistered) {
       return;
     }
 
-    // Register global cleanup handler if not already done
-    registerGlobalCleanup();
-
-    // Add this instance's cleanup to the queue
-    cleanupQueue.push(() => this.cleanup());
+    // Register cleanup for this specific test using the callback from test context
+    this.onTestFinishedCallback(async () => {
+      await this.cleanup();
+    });
 
     this.cleanupRegistered = true;
   }

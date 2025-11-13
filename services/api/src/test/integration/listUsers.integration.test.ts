@@ -25,12 +25,13 @@ describe('organization.listUsers', () => {
     getCookie: () => undefined,
     setCookie: () => {},
     time: Date.now(),
+    isServerSideCall: true, // Bypass rate limiting for tests
   });
 
   it.concurrent(
     'should successfully list organization users',
-    async ({ task }) => {
-      const testData = new TestOrganizationDataManager(task.id);
+    async ({ task, onTestFinished }) => {
+      const testData = new TestOrganizationDataManager(task.id, onTestFinished);
       const { organization, adminUser, memberUsers } =
         await testData.createOrganization({
           users: { admin: 1, member: 1 },
@@ -57,9 +58,9 @@ describe('organization.listUsers', () => {
 
   it.concurrent(
     'should correctly return users with multiple roles 1',
-    async ({ task }) => {
+    async ({ task, onTestFinished }) => {
       // Create test data manager - automatically registers cleanup
-      const testData = new TestOrganizationDataManager(task.id);
+      const testData = new TestOrganizationDataManager(task.id, onTestFinished);
       const { organization, adminUser } = await testData.createOrganization({
         users: { admin: 1, member: 1 },
       });
@@ -111,119 +112,9 @@ describe('organization.listUsers', () => {
 
   it.concurrent(
     'should correctly return users with multiple roles 2',
-    async ({ task }) => {
+    async ({ task, onTestFinished }) => {
       // Create test data manager - automatically registers cleanup
-      const testData = new TestOrganizationDataManager(task.id);
-      const { organization, adminUser } = await testData.createOrganization({
-        users: { admin: 1, member: 1 },
-      });
-
-      // Get the organization user
-      const orgUser = await db.query.organizationUsers.findFirst({
-        where: (table, { eq, and }) =>
-          and(
-            eq(table.organizationId, organization.id),
-            eq(table.authUserId, adminUser.authUserId),
-          ),
-      });
-
-      if (!orgUser) {
-        throw new Error('Organization user not found for admin user');
-      }
-
-      // Add multiple roles to the user using predefined role ID
-      await db.insert(organizationUserToAccessRoles).values([
-        {
-          organizationUserId: orgUser.id,
-          accessRoleId: ROLES.MEMBER.id,
-        },
-      ]);
-
-      // Get JWT for the test user (safe for concurrent tests)
-      const accessToken = await getJWTForUser(adminUser.email);
-      const caller = createCaller(createTestContext(accessToken));
-      const result = await caller.listUsers({
-        profileId: organization.profileId,
-      });
-
-      expect(result.length).toBe(2);
-
-      const userWithRoles = result.find(
-        (user: any) => user.email === adminUser.email,
-      );
-
-      if (!userWithRoles) {
-        throw new Error('Admin user not found in result');
-      }
-
-      expect(userWithRoles.roles).toMatchObject([
-        { name: ROLES.ADMIN.name },
-        { name: ROLES.MEMBER.name },
-      ]);
-    },
-  );
-
-
-  it.concurrent(
-    'should correctly return users with multiple roles',
-    async ({ task }) => {
-      // Create test data manager - automatically registers cleanup
-      const testData = new TestOrganizationDataManager(task.id);
-      const { organization, adminUser } = await testData.createOrganization({
-        users: { admin: 1, member: 1 },
-      });
-
-      // Get the organization user
-      const orgUser = await db.query.organizationUsers.findFirst({
-        where: (table, { eq, and }) =>
-          and(
-            eq(table.organizationId, organization.id),
-            eq(table.authUserId, adminUser.authUserId),
-          ),
-      });
-
-      if (!orgUser) {
-        throw new Error('Organization user not found for admin user');
-      }
-
-      // Add multiple roles to the user using predefined role ID
-      await db.insert(organizationUserToAccessRoles).values([
-        {
-          organizationUserId: orgUser.id,
-          accessRoleId: ROLES.MEMBER.id,
-        },
-      ]);
-
-      // Get JWT for the test user (safe for concurrent tests)
-      const accessToken = await getJWTForUser(adminUser.email);
-      const caller = createCaller(createTestContext(accessToken));
-      const result = await caller.listUsers({
-        profileId: organization.profileId,
-      });
-
-      expect(result.length).toBe(2);
-
-      const userWithRoles = result.find(
-        (user: any) => user.email === adminUser.email,
-      );
-
-      if (!userWithRoles) {
-        throw new Error('Admin user not found in result');
-      }
-
-      expect(userWithRoles.roles).toMatchObject([
-        { name: ROLES.ADMIN.name },
-        { name: ROLES.MEMBER.name },
-      ]);
-    },
-  );
-
-
-  it.concurrent(
-    'should correctly return users with multiple roles',
-    async ({ task }) => {
-      // Create test data manager - automatically registers cleanup
-      const testData = new TestOrganizationDataManager(task.id);
+      const testData = new TestOrganizationDataManager(task.id, onTestFinished);
       const { organization, adminUser } = await testData.createOrganization({
         users: { admin: 1, member: 1 },
       });
@@ -275,9 +166,9 @@ describe('organization.listUsers', () => {
 
   it.concurrent(
     'should correctly return users with multiple roles',
-    async ({ task }) => {
+    async ({ task, onTestFinished }) => {
       // Create test data manager - automatically registers cleanup
-      const testData = new TestOrganizationDataManager(task.id);
+      const testData = new TestOrganizationDataManager(task.id, onTestFinished);
       const { organization, adminUser } = await testData.createOrganization({
         users: { admin: 1, member: 1 },
       });
@@ -329,9 +220,9 @@ describe('organization.listUsers', () => {
 
   it.concurrent(
     'should correctly return users with multiple roles',
-    async ({ task }) => {
+    async ({ task, onTestFinished }) => {
       // Create test data manager - automatically registers cleanup
-      const testData = new TestOrganizationDataManager(task.id);
+      const testData = new TestOrganizationDataManager(task.id, onTestFinished);
       const { organization, adminUser } = await testData.createOrganization({
         users: { admin: 1, member: 1 },
       });
@@ -381,12 +272,11 @@ describe('organization.listUsers', () => {
     },
   );
 
-
   it.concurrent(
     'should correctly return users with multiple roles',
-    async ({ task }) => {
+    async ({ task, onTestFinished }) => {
       // Create test data manager - automatically registers cleanup
-      const testData = new TestOrganizationDataManager(task.id);
+      const testData = new TestOrganizationDataManager(task.id, onTestFinished);
       const { organization, adminUser } = await testData.createOrganization({
         users: { admin: 1, member: 1 },
       });
@@ -436,12 +326,119 @@ describe('organization.listUsers', () => {
     },
   );
 
+  it.concurrent(
+    'should correctly return users with multiple roles',
+    async ({ task, onTestFinished }) => {
+      // Create test data manager - automatically registers cleanup
+      const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+      const { organization, adminUser } = await testData.createOrganization({
+        users: { admin: 1, member: 1 },
+      });
+
+      // Get the organization user
+      const orgUser = await db.query.organizationUsers.findFirst({
+        where: (table, { eq, and }) =>
+          and(
+            eq(table.organizationId, organization.id),
+            eq(table.authUserId, adminUser.authUserId),
+          ),
+      });
+
+      if (!orgUser) {
+        throw new Error('Organization user not found for admin user');
+      }
+
+      // Add multiple roles to the user using predefined role ID
+      await db.insert(organizationUserToAccessRoles).values([
+        {
+          organizationUserId: orgUser.id,
+          accessRoleId: ROLES.MEMBER.id,
+        },
+      ]);
+
+      // Get JWT for the test user (safe for concurrent tests)
+      const accessToken = await getJWTForUser(adminUser.email);
+      const caller = createCaller(createTestContext(accessToken));
+      const result = await caller.listUsers({
+        profileId: organization.profileId,
+      });
+
+      expect(result.length).toBe(2);
+
+      const userWithRoles = result.find(
+        (user: any) => user.email === adminUser.email,
+      );
+
+      if (!userWithRoles) {
+        throw new Error('Admin user not found in result');
+      }
+
+      expect(userWithRoles.roles).toMatchObject([
+        { name: ROLES.ADMIN.name },
+        { name: ROLES.MEMBER.name },
+      ]);
+    },
+  );
 
   it.concurrent(
     'should correctly return users with multiple roles',
-    async ({ task }) => {
+    async ({ task, onTestFinished }) => {
       // Create test data manager - automatically registers cleanup
-      const testData = new TestOrganizationDataManager(task.id);
+      const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+      const { organization, adminUser } = await testData.createOrganization({
+        users: { admin: 1, member: 1 },
+      });
+
+      // Get the organization user
+      const orgUser = await db.query.organizationUsers.findFirst({
+        where: (table, { eq, and }) =>
+          and(
+            eq(table.organizationId, organization.id),
+            eq(table.authUserId, adminUser.authUserId),
+          ),
+      });
+
+      if (!orgUser) {
+        throw new Error('Organization user not found for admin user');
+      }
+
+      // Add multiple roles to the user using predefined role ID
+      await db.insert(organizationUserToAccessRoles).values([
+        {
+          organizationUserId: orgUser.id,
+          accessRoleId: ROLES.MEMBER.id,
+        },
+      ]);
+
+      // Get JWT for the test user (safe for concurrent tests)
+      const accessToken = await getJWTForUser(adminUser.email);
+      const caller = createCaller(createTestContext(accessToken));
+      const result = await caller.listUsers({
+        profileId: organization.profileId,
+      });
+
+      expect(result.length).toBe(2);
+
+      const userWithRoles = result.find(
+        (user: any) => user.email === adminUser.email,
+      );
+
+      if (!userWithRoles) {
+        throw new Error('Admin user not found in result');
+      }
+
+      expect(userWithRoles.roles).toMatchObject([
+        { name: ROLES.ADMIN.name },
+        { name: ROLES.MEMBER.name },
+      ]);
+    },
+  );
+
+  it.concurrent(
+    'should correctly return users with multiple roles',
+    async ({ task, onTestFinished }) => {
+      // Create test data manager - automatically registers cleanup
+      const testData = new TestOrganizationDataManager(task.id, onTestFinished);
       const { organization, adminUser } = await testData.createOrganization({
         users: { admin: 1, member: 1 },
       });
@@ -493,9 +490,9 @@ describe('organization.listUsers', () => {
 
   it.concurrent(
     'should throw error for invalid profile ID',
-    async ({ task }) => {
+    async ({ task, onTestFinished }) => {
       // Create test data manager - automatically registers cleanup
-      const testData = new TestOrganizationDataManager(task.id);
+      const testData = new TestOrganizationDataManager(task.id, onTestFinished);
       const { adminUser } = await testData.createOrganization();
 
       // Get JWT for the test user (safe for concurrent tests)
