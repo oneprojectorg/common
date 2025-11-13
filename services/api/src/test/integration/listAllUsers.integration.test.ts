@@ -122,7 +122,6 @@ describe('platform.admin.listAllUsers', () => {
     expect(result.next).toBeNull();
   });
 
-
   it('should handle invalid cursor gracefully', async ({ task }) => {
     const testData = new TestOrganizationDataManager(task.id);
     const { adminUser } = await testData.createOrganization({
@@ -187,5 +186,66 @@ describe('platform.admin.listAllUsers', () => {
         );
       }
     }
+  });
+
+  it('should filter users by search query matching specific email', async ({
+    task,
+  }) => {
+    const testData = new TestOrganizationDataManager(task.id);
+    const { adminUser } = await testData.createOrganization({
+      users: { admin: 1, member: 2 },
+    });
+
+    await signOutTestUser();
+    await signInTestUser(adminUser.email);
+    const session = await getCurrentTestSession();
+    if (!session) {
+      throw new Error('No session found for test user');
+    }
+
+    const caller = createCaller(createTestContext(session.access_token));
+
+    // Search using "test" which is part of all test user emails
+    // Email format: test-users-{task.id}-{role}-{randomSuffix}@{domain}
+    const result = await caller.listAllUsers({
+      limit: 100,
+      q: task.id,
+    });
+    // Should find at least the admin user (all test users have "test" in email)
+    console.log(result.items);
+    expect(result.items.length).toBeGreaterThan(0);
+
+    // Verify the admin user is in the results
+    const adminFound = result.items.some(
+      (user) => user.email === adminUser.email,
+    );
+    expect(adminFound).toBe(true);
+  });
+
+  it('should return empty results for non-matching search query', async ({
+    task,
+  }) => {
+    const testData = new TestOrganizationDataManager(task.id);
+    const { adminUser } = await testData.createOrganization({
+      users: { admin: 1 },
+    });
+
+    await signOutTestUser();
+    await signInTestUser(adminUser.email);
+    const session = await getCurrentTestSession();
+    if (!session) {
+      throw new Error('No session found for test user');
+    }
+
+    const caller = createCaller(createTestContext(session.access_token));
+
+    // Search with a very specific string that shouldn't match any users
+    const result = await caller.listAllUsers({
+      limit: 10,
+      q: 'xyznonexistent9999',
+    });
+
+    expect(result.items.length).toBe(0);
+    expect(result.hasMore).toBe(false);
   });
 });

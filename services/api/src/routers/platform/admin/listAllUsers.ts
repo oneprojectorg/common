@@ -1,6 +1,6 @@
 import { cache } from '@op/cache';
 import { decodeCursor, encodeCursor } from '@op/common';
-import { and, count, db, eq, lt, or } from '@op/db/client';
+import { and, count, db, eq, lt, or, sql } from '@op/db/client';
 import { users } from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
@@ -15,7 +15,13 @@ export const listAllUsersRouter = router({
   listAllUsers: loggedProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticatedPlatformAdmin)
-    .input(dbFilter.optional())
+    .input(
+      dbFilter
+        .extend({
+          q: z.string().optional(),
+        })
+        .optional(),
+    )
     .output(
       z.object({
         items: z.array(userEncoder),
@@ -25,7 +31,7 @@ export const listAllUsersRouter = router({
       }),
     )
     .query(async ({ input }) => {
-      const { limit = 10, cursor, dir = 'desc' } = input ?? {};
+      const { limit = 10, cursor, dir = 'desc', q } = input ?? {};
 
       try {
         // Cursor-based pagination using updatedAt timestamp
@@ -41,11 +47,28 @@ export const listAllUsersRouter = router({
             )
           : undefined;
 
+        // Build search condition if query is provided
+        // Uses existing GIN indexes on email and username for fast full-text search
+        let whereCondition = cursorCondition;
+        if (q && q.length >= 2) {
+          // Create tsquery with prefix matching (:*) to support partial word matches
+          // e.g., "val" will match "valentino", "one" will match "oneproject"
+          const searchQuery = sql`to_tsquery('english', ${q}::text || ':*')`;
+          const searchCondition = or(
+            sql`to_tsvector('english', ${users.email}) @@ ${searchQuery}`,
+            sql`to_tsvector('english', COALESCE(${users.username}, '')) @@ ${searchQuery}`,
+          );
+
+          whereCondition = whereCondition
+            ? and(whereCondition, searchCondition)
+            : searchCondition;
+        }
+
         // Parallel database queries for optimal performance
         const [allUsers, totalCountResult] = await Promise.all([
           // Fetch users with complete profile, organization, and role data
           db.query.users.findMany({
-            where: cursorCondition,
+            where: whereCondition,
             with: {
               authUser: true,
               profile: true,

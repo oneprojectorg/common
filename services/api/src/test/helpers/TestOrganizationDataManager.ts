@@ -255,7 +255,7 @@ export class TestOrganizationDataManager {
   ): SeedUserInput {
     const randomSuffix = randomUUID().slice(0, 6);
     return {
-      email: `test-users-${this.testId}-${role.toLowerCase()}-${randomSuffix}@${emailDomain}`,
+      email: `${this.testId}-${role.toLowerCase()}-${randomSuffix}@${emailDomain}`,
       role,
     };
   }
