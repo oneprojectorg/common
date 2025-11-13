@@ -21,6 +21,8 @@ export interface TContext {
   reqUrl: string | undefined;
   req: Request;
   isServerSideCall?: boolean;
+  /** NOTE: this is used only in tests only, Supabase Auth JWT token */
+  jwt?: string;
 }
 
 export interface TContextWithUser {
