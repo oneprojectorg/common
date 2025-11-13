@@ -205,14 +205,16 @@ describe('platform.admin.listAllUsers', () => {
 
     const caller = createCaller(createTestContext(session.access_token));
 
-    // Search using "test" which is part of all test user emails
-    // Email format: test-users-{task.id}-{role}-{randomSuffix}@{domain}
+    // Search using first word from task.id
+    // Email format: {sanitized_task_id}-{role}-{randomSuffix}@oneproject.org
+    // TestOrganizationDataManager sanitizes task.id in its constructor
+    // Extract first word for search (e.g., "should" from "should-filter-users...")
+    const firstWord = task.id.split(/[^a-zA-Z0-9]+/)[0];
     const result = await caller.listAllUsers({
       limit: 100,
-      q: task.id,
+      q: firstWord,
     });
-    // Should find at least the admin user (all test users have "test" in email)
-    console.log(result.items);
+    // Should find at least the admin user
     expect(result.items.length).toBeGreaterThan(0);
 
     // Verify the admin user is in the results
