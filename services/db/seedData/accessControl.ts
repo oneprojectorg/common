@@ -2,6 +2,7 @@
  * Access control seed data with predefined IDs
  * These constants are used in both seeding and tests to ensure consistency
  */
+import { permission } from 'access-zones';
 
 // Predefined UUIDs for access zones
 const ACCESS_ZONE_IDS = {
@@ -79,11 +80,11 @@ export const ZONES = {
 
 // Permission flags
 export const PERMISSIONS = {
-  READ: 1,
-  WRITE: 2,
-  DELETE: 4,
-  READ_WRITE: 3, // READ + WRITE
-  FULL: 7, // READ + WRITE + DELETE
+  READ: permission.READ,
+  UPDATE: permission.UPDATE,
+  DELETE: permission.DELETE,
+  READ_WRITE: permission.READ | permission.UPDATE,
+  ADMIN: permission.ADMIN,
 } as const;
 
 // Access role permissions on access zones (based on production patterns)
@@ -92,19 +93,19 @@ export const ACCESS_ROLE_PERMISSIONS = [
   {
     accessRoleId: ACCESS_ROLE_IDS.ADMIN,
     accessZoneId: ACCESS_ZONE_IDS.ADMIN,
-    permission: PERMISSIONS.FULL,
+    permission: PERMISSIONS.ADMIN,
   },
   // Admin gets full permissions on decisions zone
   {
     accessRoleId: ACCESS_ROLE_IDS.ADMIN,
     accessZoneId: ACCESS_ZONE_IDS.DECISIONS,
-    permission: PERMISSIONS.FULL,
+    permission: PERMISSIONS.ADMIN,
   },
   // Admin gets full permissions on profile zone
   {
     accessRoleId: ACCESS_ROLE_IDS.ADMIN,
     accessZoneId: ACCESS_ZONE_IDS.PROFILE,
-    permission: PERMISSIONS.FULL,
+    permission: PERMISSIONS.ADMIN,
   },
   // Member gets read permissions on profile zone
   {
