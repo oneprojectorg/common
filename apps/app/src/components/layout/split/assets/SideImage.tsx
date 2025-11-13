@@ -432,7 +432,7 @@ const sideImages = [
           rx="7.5"
           transform="rotate(-2 49.3609 60.4293)"
           stroke="#D0D3D4"
-          shape-rendering="crispEdges"
+          shapeRendering="crispEdges"
         />
         <rect
           x="49.3609"
@@ -557,9 +557,9 @@ const sideImages = [
           width="426.313"
           height="179.403"
           filterUnits="userSpaceOnUse"
-          color-interpolation-filters="sRGB"
+          colorInterpolationFilters="sRGB"
         >
-          <feFlood flood-opacity="0" result="BackgroundImageFix" />
+          <feFlood floodOpacity="0" result="BackgroundImageFix" />
           <feColorMatrix
             in="SourceAlpha"
             type="matrix"
