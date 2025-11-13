@@ -40,7 +40,7 @@ export const BannerUploader = ({
   return (
     <div className="relative flex aspect-[128/55] w-full flex-col items-center justify-center bg-offWhite">
       <div className="size-full">
-        <div className="relative flex size-full items-center justify-center bg-redTeal bg-center">
+        <div className="bg-yellowOrange relative flex size-full items-center justify-center bg-center">
           {value ? (
             <img
               src={value}

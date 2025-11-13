@@ -10,8 +10,8 @@ export const FullScreenSplitMain = ({
   children: React.ReactNode;
 }) => {
   return (
-    <main className="col-span-3 flex size-full flex-col p-4 sm:p-8 lg:col-span-2">
-      <section className="hidden lg:block">
+    <main className="relative col-span-3 flex size-full flex-col overflow-y-scroll p-4 md:p-8 lg:col-span-2 lg:max-w-[calc(100vw-24rem)]">
+      <section className="sticky top-0 hidden lg:block">
         <div className="flex items-center gap-2">
           {logo ? (
             <Link href="/" className="flex items-center gap-2">
@@ -20,7 +20,7 @@ export const FullScreenSplitMain = ({
           ) : null}
         </div>
       </section>
-      <section className="flex size-full justify-center sm:items-center">
+      <section className="flex size-full flex-col items-center">
         <div className="py-7 sm:py-20">{children}</div>
       </section>
     </main>
