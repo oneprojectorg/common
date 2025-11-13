@@ -2,7 +2,7 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
-    maxConcurrency: 4,
+    maxConcurrency: 16,
     environment: 'node',
     globals: true,
     setupFiles: ['./src/test/setup.ts'],

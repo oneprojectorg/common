@@ -9,10 +9,31 @@ import {
 } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { randomUUID } from 'crypto';
-import { sql } from 'drizzle-orm';
-import { onTestFinished } from 'vitest';
+import { inArray } from 'drizzle-orm';
+import { afterAll } from 'vitest';
 
 import { createTestUser, supabaseTestAdminClient } from '../supabase-utils';
+
+// Global cleanup queue for concurrent tests
+// This collects all cleanup tasks and runs them after all tests finish
+const cleanupQueue: Array<() => Promise<void>> = [];
+let cleanupRegisteredGlobally = false;
+
+function registerGlobalCleanup() {
+  if (cleanupRegisteredGlobally) {
+    return;
+  }
+  cleanupRegisteredGlobally = true;
+
+  // Run all cleanup tasks after all tests finish
+  afterAll(async () => {
+    console.log(
+      `Running cleanup for ${cleanupQueue.length} test data managers...`,
+    );
+    await Promise.allSettled(cleanupQueue.map((fn) => fn()));
+    console.log('Cleanup complete.');
+  });
+}
 
 interface SeedUserInput {
   email: string;
@@ -67,6 +88,8 @@ interface GenerateTestOrganizationOutput {
 export class TestOrganizationDataManager {
   private testId: string;
   private cleanupRegistered = false;
+  private createdProfileIds: string[] = [];
+  private createdAuthUserIds: string[] = [];
 
   constructor(testId: string) {
     this.testId = testId;
@@ -113,6 +136,9 @@ export class TestOrganizationDataManager {
       throw new Error('Failed to create organization profile');
     }
 
+    // Track for cleanup
+    this.createdProfileIds.push(orgProfile.id);
+
     // 2. Create organization (minimal - only required fields)
     const [organization] = await db
       .insert(organizations)
@@ -154,6 +180,10 @@ export class TestOrganizationDataManager {
       if (!userProfile) {
         throw new Error(`Failed to create profile for ${email}`);
       }
+
+      // Track for cleanup
+      this.createdProfileIds.push(userProfile.id);
+      this.createdAuthUserIds.push(authUser.id);
 
       // Create user in users table (minimal - only required fields)
       await db
@@ -256,13 +286,21 @@ export class TestOrganizationDataManager {
    * Registers the cleanup handler for this test.
    * This is called automatically by test data creation methods.
    * Ensures cleanup is only registered once per test.
+   *
+   * NOTE: For concurrent tests, cleanup is deferred to avoid race conditions.
+   * Cleanup will happen after all tests in the suite finish.
    */
   private ensureCleanupRegistered(): void {
     if (this.cleanupRegistered) {
       return;
     }
 
-    onTestFinished(() => this.cleanup());
+    // Register global cleanup handler if not already done
+    registerGlobalCleanup();
+
+    // Add this instance's cleanup to the queue
+    cleanupQueue.push(() => this.cleanup());
+
     this.cleanupRegistered = true;
   }
 
@@ -282,26 +320,23 @@ export class TestOrganizationDataManager {
     }
 
     try {
-      // 1. Delete profiles with the test ID in the name
+      // 1. Delete profiles first by their specific IDs
       // This will cascade to organizations -> organizationUsers -> organizationUserToAccessRoles
-      await db
-        .delete(profiles)
-        .where(sql`${profiles.name} LIKE ${'%' + this.testId + '%'}`);
-
-      // 2. Delete auth users with the test ID in the email
-      // This will cascade to users and organizationUsers tables
-      const { data: authUsers } =
-        await supabaseTestAdminClient.auth.admin.listUsers();
-      if (authUsers?.users) {
-        const testUsers = authUsers.users.filter((user) =>
-          user.email?.includes(this.testId),
-        );
-        await Promise.allSettled(
-          testUsers.map((user) =>
-            supabaseTestAdminClient.auth.admin.deleteUser(user.id),
-          ),
-        );
+      // We do this first to minimize race conditions with concurrent tests
+      if (this.createdProfileIds.length > 0) {
+        await db
+          .delete(profiles)
+          .where(inArray(profiles.id, this.createdProfileIds));
       }
+
+      // 2. Delete auth users after profiles are deleted
+      // This will cascade to users table
+      // By this point, organizationUsers should already be deleted by cascade
+      await Promise.allSettled(
+        this.createdAuthUserIds.map((userId) =>
+          supabaseTestAdminClient.auth.admin.deleteUser(userId),
+        ),
+      );
     } catch (error) {
       console.warn(
         `Failed to cleanup test data for test ${this.testId}:`,
