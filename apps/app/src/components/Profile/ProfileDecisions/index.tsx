@@ -41,11 +41,12 @@ const DecisionProcessList = ({
   const permission = access.getPermissionsForProfile(profileId);
   const decisionPermission = permission.decisions;
   const isOwnProfile = user?.currentProfile?.id === profileId;
+  const isProcessAdmin = decisionPermission.create && isOwnProfile;
 
   if (!data.instances || data.instances.length === 0) {
     return (
       <div className="flex min-h-[400px] flex-col items-center justify-center gap-6 px-6 py-16 text-center">
-        {decisionPermission.create && isOwnProfile ? (
+        {isProcessAdmin ? (
           <>
             <div className="flex size-10 items-center justify-center rounded-full bg-neutral-gray1">
               <LuLeaf className="size-6 text-neutral-gray4" />
@@ -94,7 +95,7 @@ const DecisionProcessList = ({
           {t('Active processes')}
         </Header2>
 
-        {decisionPermission.create && isOwnProfile ? (
+        {isProcessAdmin ? (
           <DialogTrigger>
             <Button color="primary" size="medium" variant="icon">
               <LuPlus className="size-4" />
@@ -150,7 +151,7 @@ const DecisionProcessList = ({
               </div>
 
               <div className="flex w-full flex-col gap-2.5 sm:max-w-36">
-                {decisionPermission.create ? (
+                {isProcessAdmin ? (
                   <Button
                     color="secondary"
                     className="w-full"
@@ -181,7 +182,7 @@ const DecisionProcessList = ({
                   </Button>
                 )}
 
-                {decisionPermission.create ? (
+                {isProcessAdmin ? (
                   <DialogTrigger>
                     <Button color="secondary" className="w-full">
                       {t('Edit Process')}
