@@ -1,4 +1,4 @@
-import { Button, CodeBlock, Section, Text } from '@react-email/components';
+import { Button, Section, Text } from '@react-email/components';
 import * as React from 'react';
 
 import EmailTemplate from '../components/EmailTemplate';

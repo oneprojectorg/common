@@ -12,7 +12,7 @@ import { REACTION_OPTIONS } from '@op/types';
 import { and, eq } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 
-const key = 'event.data.company_id';
+const key = 'event.data.sourceProfileId + "-" + event.data.postId';
 const { postReactionAdded } = Events;
 
 export const sendReactionNotification = inngest.createFunction(
