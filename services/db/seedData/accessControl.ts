@@ -79,13 +79,7 @@ export const ZONES = {
 } as const;
 
 // Permission flags
-export const PERMISSIONS = {
-  READ: permission.READ,
-  UPDATE: permission.UPDATE,
-  DELETE: permission.DELETE,
-  READ_WRITE: permission.READ | permission.UPDATE,
-  ADMIN: permission.ADMIN,
-} as const;
+export const PERMISSIONS = permission;
 
 // Access role permissions on access zones (based on production patterns)
 export const ACCESS_ROLE_PERMISSIONS = [
