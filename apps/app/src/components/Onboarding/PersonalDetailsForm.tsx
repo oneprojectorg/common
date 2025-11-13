@@ -208,9 +208,10 @@ export const PersonalDetailsForm = ({
         name: value.fullName,
         bio: value.title,
         email: value.email || undefined,
-        // commenting out pronouns and customPronouns until updateProfile is updated
-        // pronouns: value.pronouns || undefined,
-        // customPronouns: value.customPronouns || undefined,
+        pronouns:
+          value.pronouns === 'custom'
+            ? value.customPronouns
+            : value.pronouns || undefined,
         website: value.website || undefined,
         focusAreas: value.focusAreas || undefined,
       });
@@ -309,9 +310,9 @@ export const PersonalDetailsForm = ({
                   onSelectionChange={field.handleChange}
                   errorMessage={getFieldErrorMessage(field)}
                 >
-                  <SelectItem id="she-her">{t('She/Her')}</SelectItem>
-                  <SelectItem id="he-him">{t('He/Him')}</SelectItem>
-                  <SelectItem id="they-them">{t('They/Them')}</SelectItem>
+                  <SelectItem id="she/her">{t('She/Her')}</SelectItem>
+                  <SelectItem id="he/him">{t('He/Him')}</SelectItem>
+                  <SelectItem id="they/them">{t('They/Them')}</SelectItem>
                   <SelectItem id="custom">{t('Custom')}</SelectItem>
                 </field.Select>
               )}
