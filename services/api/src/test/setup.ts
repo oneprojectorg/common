@@ -4,8 +4,8 @@ import { afterAll, beforeAll, beforeEach, vi } from 'vitest';
 // Mock server-only modules before any other imports
 vi.mock('server-only', () => ({}));
 vi.mock('next/server', () => ({
-  NextRequest: class {},
-  NextResponse: class {},
+  NextRequest: class { },
+  NextResponse: class { },
   cookies: () => ({
     get: vi.fn(),
     set: vi.fn(),
@@ -102,8 +102,7 @@ beforeAll(async () => {
 
   // Verify Supabase is running
   try {
-    const { data, error } = await testSupabase
-      .from('_test_ping')
+    const { error } = await testSupabase.from('users')
       .select('*')
       .limit(1);
     if (
@@ -113,10 +112,12 @@ beforeAll(async () => {
       console.warn('Supabase connection test failed:', error.message);
     }
   } catch (err) {
+
     console.warn(
       "Failed to connect to test Supabase instance. Make sure it's running on",
       TEST_SUPABASE_URL,
     );
+    throw err;
   }
 });
 

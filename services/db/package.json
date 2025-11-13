@@ -18,7 +18,7 @@
     "push": "pnpm drizzle-kit push",
     "reset": "pnpx supabase db reset",
     "seed": "cross-env DB_SEEDING=true tsx ./seed.ts",
-    "seed:test": "cross-env DB_SEEDING=true DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:55322/postgres tsx ./seed.ts",
+    "seed:test": "cross-env DB_SEEDING=true DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:55322/postgres tsx ./seed-test.ts",
     "start": "pnpx supabase start",
     "status": "pnpx supabase status",
     "stop": "pnpx supabase stop",

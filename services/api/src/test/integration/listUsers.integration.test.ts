@@ -31,7 +31,7 @@ describe('organization.listUsers', () => {
     time: Date.now(),
   });
 
-  it('should successfully list organization users', async ({ task }) => {
+  it.concurrent('should successfully list organization users', async ({ task }) => {
     const testData = new TestOrganizationDataManager(task.id);
     const { organization, adminUser, memberUsers } =
       await testData.createOrganization({
@@ -62,7 +62,8 @@ describe('organization.listUsers', () => {
     ]);
   });
 
-  it('should correctly return users with multiple roles', async ({ task }) => {
+  it.concurrent
+    ('should correctly return users with multiple roles', async ({ task }) => {
     // Create test data manager - automatically registers cleanup
     const testData = new TestOrganizationDataManager(task.id);
     const { organization, adminUser } = await testData.createOrganization({
@@ -118,7 +119,8 @@ describe('organization.listUsers', () => {
     ]);
   });
 
-  it('should throw error for invalid profile ID', async ({ task }) => {
+  it.concurrent
+    ('should throw error for invalid profile ID', async ({ task }) => {
     // Create test data manager - automatically registers cleanup
     const testData = new TestOrganizationDataManager(task.id);
     const { adminUser } = await testData.createOrganization();
