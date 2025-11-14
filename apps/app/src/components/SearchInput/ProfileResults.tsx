@@ -22,7 +22,7 @@ export const ProfileResults = ({
   onSearch,
 }: ProfileResultsProps) => {
   return (
-    <div className="pb-4">
+    <div>
       {profileResults.map((profile, index) => {
         // Set up the subtitle that appears in search results
         const isIndividual = profile.type === EntityType.INDIVIDUAL;
