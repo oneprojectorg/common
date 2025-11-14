@@ -4,3 +4,4 @@ export { RichTextViewerContent, type RichTextViewerContentProps } from './RichTe
 export { RichTextEditorToolbar } from './RichTextEditorToolbar';
 export { RichTextEditorFloatingToolbar } from './RichTextEditorFloatingToolbar';
 export { useRichTextEditorFloatingToolbar } from './useRichTextEditorFloatingToolbar';
+export { useRichTextEditor, type UseRichTextEditorProps } from './useRichTextEditor';

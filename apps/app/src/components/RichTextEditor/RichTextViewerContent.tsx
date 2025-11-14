@@ -2,6 +2,7 @@
 
 import { EditorContent, useEditor } from '@tiptap/react';
 
+import { StyledRichTextContent } from './StyledRichTextContent';
 import { getViewerExtensions } from './editorConfig';
 
 // TODO: this will be replaced entirely by a new viewer that has no dependency on TipTap
@@ -29,7 +30,7 @@ export function RichTextViewerContent({
     editable: false,
     editorProps: {
       attributes: {
-        class: `prose prose-lg max-w-none focus:outline-none ${editorClassName || 'px-6 py-6 text-neutral-black'}`,
+        class: `max-w-none focus:outline-none ${editorClassName || 'px-6 py-6 text-neutral-black'}`,
       },
     },
     immediatelyRender,
@@ -45,7 +46,7 @@ export function RichTextViewerContent({
 
   return (
     <div className={className}>
-      <EditorContent editor={editor} />
+      <StyledRichTextContent editor={editor} />
     </div>
   );
 }

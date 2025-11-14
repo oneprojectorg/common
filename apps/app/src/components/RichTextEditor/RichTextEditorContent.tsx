@@ -1,9 +1,10 @@
 'use client';
 
-import { Editor, EditorContent, useEditor } from '@tiptap/react';
-import { forwardRef, useEffect, useImperativeHandle } from 'react';
+import { Editor, EditorContent } from '@tiptap/react';
+import { forwardRef, useImperativeHandle } from 'react';
 
-import { getEditorExtensions } from './editorConfig';
+import { StyledRichTextContent } from './StyledRichTextContent';
+import { useRichTextEditor } from './useRichTextEditor';
 
 export interface RichTextEditorContentProps {
   content?: string;
@@ -43,20 +44,12 @@ export const RichTextEditorContent = forwardRef<
     },
     ref,
   ) => {
-    const editor = useEditor({
-      extensions: getEditorExtensions(),
+    const editor = useRichTextEditor({
       content,
-      editable: true,
-      editorProps: {
-        attributes: {
-          class: `[&_a]:text-teal [&_a]:no-underline [&_a:hover]:underline prose prose-lg max-w-none focus:outline-none break-words overflow-wrap-anywhere ${editorClassName || 'min-h-96 px-6 py-6 text-neutral-black placeholder:text-neutral-gray2'}`,
-        },
-      },
-      onUpdate: ({ editor }) => {
-        const html = editor.getHTML();
-        onUpdate?.(html);
-        onChange?.(html);
-      },
+      editorClassName,
+      onUpdate,
+      onChange,
+      onEditorReady,
       immediatelyRender,
     });
 
@@ -76,23 +69,6 @@ export const RichTextEditorContent = forwardRef<
       [editor],
     );
 
-    // Set initial content only once when editor is first created
-    useEffect(() => {
-      if (editor && content) {
-        const currentContent = editor.getHTML();
-        if (currentContent === '' || currentContent === '<p></p>') {
-          editor.commands.setContent(content);
-        }
-      }
-    }, [editor]); // Only depend on editor, not content
-
-    // Notify parent when editor is ready
-    useEffect(() => {
-      if (editor && onEditorReady) {
-        onEditorReady(editor);
-      }
-    }, [editor, onEditorReady]);
-
     if (!editor) {
       return (
         <div className={`flex flex-1 items-center justify-center ${className}`}>
@@ -103,7 +79,7 @@ export const RichTextEditorContent = forwardRef<
 
     return (
       <div className={className}>
-        <EditorContent editor={editor} placeholder={_placeholder} />
+        <StyledRichTextContent editor={editor} placeholder={_placeholder} />
       </div>
     );
   },
