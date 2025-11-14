@@ -1,6 +1,6 @@
 import { cache } from '@op/cache';
 import { decodeCursor, encodeCursor } from '@op/common';
-import { and, count, db, eq, lt, or, sql } from '@op/db/client';
+import { and, count, db, eq, ilike, lt, or } from '@op/db/client';
 import { users } from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
@@ -51,13 +51,9 @@ export const listAllUsersRouter = router({
         // Build search condition if query is provided
         let whereCondition = cursorCondition;
         if (query && query.length >= 2) {
-          // Create tsquery with prefix matching (:*) to support partial word matches
-          // e.g., "val" will match "valentino", "one" will match "oneproject"
-          const searchQuery = sql`to_tsquery('english', ${query}::text || ':*')`;
-          const searchCondition = or(
-            sql`to_tsvector('english', ${users.email}) @@ ${searchQuery}`,
-            sql`to_tsvector('english', COALESCE(${users.username}, '')) @@ ${searchQuery}`,
-          );
+          // Use ilike for case-insensitive pattern matching
+          // NOTE: This can be optimized with full-text search (to_tsvector/to_tsquery) if needed for performance
+          const searchCondition = ilike(users.email, `%${query}%`);
 
           whereCondition = whereCondition
             ? and(whereCondition, searchCondition)

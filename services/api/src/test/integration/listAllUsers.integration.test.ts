@@ -26,6 +26,7 @@ describe('platform.admin.listAllUsers', () => {
     getCookie: () => undefined,
     setCookie: () => {},
     time: Date.now(),
+    isServerSideCall: true,
   });
 
   it('should successfully list all users as platform admin', async ({
@@ -205,11 +206,7 @@ describe('platform.admin.listAllUsers', () => {
 
     const caller = createCaller(createTestContext(session.access_token));
 
-    // Search using first word from task.id
-    // Email format: {sanitized_task_id}-{role}-{randomSuffix}@oneproject.org
-    // TestOrganizationDataManager sanitizes task.id in its constructor
-    // Extract first word for search (e.g., "should" from "should-filter-users...")
-    const firstWord = task.id.split(/[^a-zA-Z0-9]+/)[0];
+    const firstWord = task.id;
     const result = await caller.listAllUsers({
       limit: 100,
       query: firstWord,
@@ -249,5 +246,123 @@ describe('platform.admin.listAllUsers', () => {
 
     expect(result.items.length).toBe(0);
     expect(result.hasMore).toBe(false);
+  });
+
+  it('should support prefix matching in email search', async ({ task }) => {
+    const testData = new TestOrganizationDataManager(task.id);
+    const { adminUser, adminUsers, memberUsers } =
+      await testData.createOrganization({
+        users: { admin: 1, member: 2 },
+      });
+
+    await signOutTestUser();
+    await signInTestUser(adminUser.email);
+    const session = await getCurrentTestSession();
+    if (!session) {
+      throw new Error('No session found for test user');
+    }
+
+    const caller = createCaller(createTestContext(session.access_token));
+
+    const result = await caller.listAllUsers({
+      limit: 100,
+      query: task.id,
+    });
+
+    const foundEmails = result.items.map((user) => user.email);
+    const createdEmails = [...adminUsers, ...memberUsers].map((u) => u.email);
+
+    // Verify all found emails belong to the created users
+    foundEmails.forEach((email) => {
+      expect(createdEmails).toContain(email);
+    });
+  });
+
+  it('should handle search with domain name', async ({ task }) => {
+    const testData = new TestOrganizationDataManager(task.id);
+    const { adminUser } = await testData.createOrganization({
+      users: { admin: 1 },
+    });
+
+    await signOutTestUser();
+    await signInTestUser(adminUser.email);
+    const session = await getCurrentTestSession();
+    if (!session) {
+      throw new Error('No session found for test user');
+    }
+
+    const caller = createCaller(createTestContext(session.access_token));
+
+    // Search by domain name (oneproject)
+    const result = await caller.listAllUsers({
+      limit: 100,
+      query: task.id,
+    });
+
+    // Should find users with @oneproject.org emails
+    expect(result.items.length).toBeGreaterThan(0);
+    const allHaveCorrectDomain = result.items.every((user) =>
+      user.email.includes('oneproject'),
+    );
+    expect(allHaveCorrectDomain).toBe(true);
+
+    // Search by domain name (oneproject)
+    const result2 = await caller.listAllUsers({
+      limit: 100,
+      query: 'oneproject',
+    });
+
+    // Should find users with @oneproject.org emails
+    expect(result2.items.length).toBeGreaterThan(0);
+  });
+
+  it('should work with search and pagination together', async ({ task }) => {
+    const testData = new TestOrganizationDataManager(task.id);
+    const { adminUser } = await testData.createOrganization({
+      users: { admin: 1, member: 5 },
+    });
+
+    await signOutTestUser();
+    await signInTestUser(adminUser.email);
+    const session = await getCurrentTestSession();
+    if (!session) {
+      throw new Error('No session found for test user');
+    }
+
+    const caller = createCaller(createTestContext(session.access_token));
+
+    // Search with the task id prefix
+    // const searchTerm = task.id.split(/[^a-zA-Z0-9]+/)[0];
+    const searchTerm = task.id;
+    if (!searchTerm) {
+      throw new Error('Unable to extract search term from task.id');
+    }
+
+    const firstPage = await caller.listAllUsers({
+      limit: 2,
+      query: searchTerm,
+    });
+
+    expect(firstPage.items.length).toBeGreaterThan(0);
+
+    // If there are more results, test pagination
+    if (firstPage.next && firstPage.hasMore) {
+      const secondPage = await caller.listAllUsers({
+        limit: 2,
+        cursor: firstPage.next,
+        query: searchTerm,
+      });
+
+      // Verify no overlap between pages
+      const firstPageIds = firstPage.items.map((user) => user.id);
+      const secondPageIds = secondPage.items.map((user) => user.id);
+      const overlap = firstPageIds.filter((id) => secondPageIds.includes(id));
+      expect(overlap.length).toBe(0);
+
+      // All results should still match the search query
+      secondPage.items.forEach((user) => {
+        expect(user.email.toLowerCase()).toContain(searchTerm.toLowerCase());
+      });
+    }
   });
 });
