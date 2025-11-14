@@ -161,7 +161,7 @@ describe('platform.admin.listAllUsers', () => {
     expect(result.items.length).toBeLessThanOrEqual(3);
   });
 
-  it('should sort users by updatedAt descending', async ({ task }) => {
+  it('should sort users by updatedAt ascending', async ({ task }) => {
     const testData = new TestOrganizationDataManager(task.id);
     const { adminUser } = await testData.createOrganization({
       users: { admin: 1, member: 3 },
@@ -175,13 +175,13 @@ describe('platform.admin.listAllUsers', () => {
     }
 
     const caller = createCaller(createTestContext(session.access_token));
-    const result = await caller.listAllUsers({ limit: 10, dir: 'desc' });
+    const result = await caller.listAllUsers({ limit: 10, dir: 'asc' });
 
     for (let i = 0; i < result.items.length - 1; i++) {
       const current = result.items[i];
       const next = result.items[i + 1];
       if (current?.updatedAt && next?.updatedAt) {
-        expect(new Date(current.updatedAt).getTime()).toBeGreaterThanOrEqual(
+        expect(new Date(current.updatedAt).getTime()).toBeLessThanOrEqual(
           new Date(next.updatedAt).getTime(),
         );
       }
@@ -212,7 +212,7 @@ describe('platform.admin.listAllUsers', () => {
     const firstWord = task.id.split(/[^a-zA-Z0-9]+/)[0];
     const result = await caller.listAllUsers({
       limit: 100,
-      q: firstWord,
+      query: firstWord,
     });
     // Should find at least the admin user
     expect(result.items.length).toBeGreaterThan(0);
@@ -244,7 +244,7 @@ describe('platform.admin.listAllUsers', () => {
     // Search with a very specific string that shouldn't match any users
     const result = await caller.listAllUsers({
       limit: 10,
-      q: 'xyznonexistent9999',
+      query: 'xyznonexistent9999',
     });
 
     expect(result.items.length).toBe(0);

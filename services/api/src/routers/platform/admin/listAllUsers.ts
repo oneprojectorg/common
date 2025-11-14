@@ -18,7 +18,8 @@ export const listAllUsersRouter = router({
     .input(
       dbFilter
         .extend({
-          q: z.string().optional(),
+          /** string for searching users by email (for now) */
+          query: z.string().optional(),
         })
         .optional(),
     )
@@ -31,7 +32,7 @@ export const listAllUsersRouter = router({
       }),
     )
     .query(async ({ input }) => {
-      const { limit = 10, cursor, dir = 'desc', q } = input ?? {};
+      const { limit = 10, cursor, dir = 'desc', query } = input ?? {};
 
       try {
         // Cursor-based pagination using updatedAt timestamp
@@ -48,12 +49,11 @@ export const listAllUsersRouter = router({
           : undefined;
 
         // Build search condition if query is provided
-        // Uses existing GIN indexes on email and username for fast full-text search
         let whereCondition = cursorCondition;
-        if (q && q.length >= 2) {
+        if (query && query.length >= 2) {
           // Create tsquery with prefix matching (:*) to support partial word matches
           // e.g., "val" will match "valentino", "one" will match "oneproject"
-          const searchQuery = sql`to_tsquery('english', ${q}::text || ':*')`;
+          const searchQuery = sql`to_tsquery('english', ${query}::text || ':*')`;
           const searchCondition = or(
             sql`to_tsvector('english', ${users.email}) @@ ${searchQuery}`,
             sql`to_tsvector('english', COALESCE(${users.username}, '')) @@ ${searchQuery}`,
