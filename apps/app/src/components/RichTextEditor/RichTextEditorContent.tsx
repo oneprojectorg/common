@@ -1,19 +1,9 @@
 'use client';
 
-import Blockquote from '@tiptap/extension-blockquote';
-import Heading from '@tiptap/extension-heading';
-import HorizontalRule from '@tiptap/extension-horizontal-rule';
-import Image from '@tiptap/extension-image';
-import Link from '@tiptap/extension-link';
-import Strike from '@tiptap/extension-strike';
-import TextAlign from '@tiptap/extension-text-align';
-import Underline from '@tiptap/extension-underline';
 import { Editor, EditorContent, useEditor } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
 import { forwardRef, useEffect, useImperativeHandle } from 'react';
 
-import { IframelyExtension } from '../decisions/IframelyExtension';
-import { SlashCommands } from '../decisions/SlashCommands';
+import { getEditorExtensions } from './editorConfig';
 
 export interface RichTextEditorContentProps {
   content?: string;
@@ -23,7 +13,6 @@ export interface RichTextEditorContentProps {
   onEditorReady?: (editor: Editor) => void;
   className?: string;
   editorClassName?: string;
-  readOnly?: boolean;
   immediatelyRender?: boolean;
 }
 
@@ -50,40 +39,14 @@ export const RichTextEditorContent = forwardRef<
       onEditorReady,
       className = '',
       editorClassName = '',
-      readOnly = false,
       immediatelyRender = false,
     },
     ref,
   ) => {
-    // Configure extensions - all features always enabled
-    const extensions = [
-      StarterKit,
-      Link.configure({
-        openOnClick: false,
-        linkOnPaste: false, // Disable auto-linking on paste to let Iframely extension handle it
-      }),
-      TextAlign.configure({
-        types: ['heading', 'paragraph'],
-      }),
-      Image.configure({
-        inline: true,
-        allowBase64: true,
-      }),
-      Heading.configure({
-        levels: [1, 2, 3],
-      }),
-      Underline,
-      Strike,
-      Blockquote,
-      HorizontalRule,
-      SlashCommands,
-      IframelyExtension,
-    ];
-
     const editor = useEditor({
-      extensions,
+      extensions: getEditorExtensions(),
       content,
-      editable: !readOnly,
+      editable: true,
       editorProps: {
         attributes: {
           class: `[&_a]:text-teal [&_a]:no-underline [&_a:hover]:underline prose prose-lg max-w-none focus:outline-none break-words overflow-wrap-anywhere ${editorClassName || 'min-h-96 px-6 py-6 text-neutral-black placeholder:text-neutral-gray2'}`,

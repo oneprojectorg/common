@@ -15,7 +15,6 @@ export interface RichTextEditorProps {
   editorClassName?: string;
   showToolbar?: boolean;
   toolbarPosition?: 'top' | 'bottom';
-  readOnly?: boolean;
   immediatelyRender?: boolean;
 }
 
@@ -28,7 +27,6 @@ export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>
   editorClassName = '',
   showToolbar = true,
   toolbarPosition = 'top',
-  readOnly = false,
   immediatelyRender = false,
 }, ref) => {
   const editorRef = useRef<RichTextEditorRef>(null);
@@ -54,7 +52,6 @@ export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>
         onChange={onChange}
         onEditorReady={handleEditorReady}
         editorClassName={editorClassName}
-        readOnly={readOnly}
         immediatelyRender={immediatelyRender}
       />
 

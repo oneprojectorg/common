@@ -472,7 +472,6 @@ export function ProposalEditor({
             placeholder={t('Write your proposal here...')}
             onEditorReady={handleEditorReady}
             editorClassName="w-full !max-w-[32rem] sm:min-w-[32rem] min-h-[40rem] px-0 py-6 text-neutral-black placeholder:text-neutral-gray2"
-            readOnly={false}
             immediatelyRender={false}
           />
         </div>
