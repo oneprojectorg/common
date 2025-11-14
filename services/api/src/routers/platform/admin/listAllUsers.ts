@@ -1,6 +1,6 @@
 import { cache } from '@op/cache';
 import { decodeCursor, encodeCursor } from '@op/common';
-import { and, count, db, eq, lt, or } from '@op/db/client';
+import { and, count, db, eq, ilike, lt, or } from '@op/db/client';
 import { users } from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
@@ -15,7 +15,14 @@ export const listAllUsersRouter = router({
   listAllUsers: loggedProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticatedPlatformAdmin)
-    .input(dbFilter.optional())
+    .input(
+      dbFilter
+        .extend({
+          /** string for searching users by email (for now) */
+          query: z.string().optional(),
+        })
+        .optional(),
+    )
     .output(
       z.object({
         items: z.array(userEncoder),
@@ -25,7 +32,7 @@ export const listAllUsersRouter = router({
       }),
     )
     .query(async ({ input }) => {
-      const { limit = 10, cursor, dir = 'desc' } = input ?? {};
+      const { limit = 10, cursor, dir = 'desc', query } = input ?? {};
 
       try {
         // Cursor-based pagination using updatedAt timestamp
@@ -41,11 +48,23 @@ export const listAllUsersRouter = router({
             )
           : undefined;
 
+        // Build search condition if query is provided
+        let whereCondition = cursorCondition;
+        if (query && query.length >= 2) {
+          // Use ilike for case-insensitive pattern matching
+          // NOTE: This can be optimized with full-text search (to_tsvector/to_tsquery) if needed for performance
+          const searchCondition = ilike(users.email, `%${query}%`);
+
+          whereCondition = whereCondition
+            ? and(whereCondition, searchCondition)
+            : searchCondition;
+        }
+
         // Parallel database queries for optimal performance
         const [allUsers, totalCountResult] = await Promise.all([
           // Fetch users with complete profile, organization, and role data
           db.query.users.findMany({
-            where: cursorCondition,
+            where: whereCondition,
             with: {
               authUser: true,
               profile: true,
