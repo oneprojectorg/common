@@ -8,6 +8,7 @@ import { BannerUploader } from '@op/ui/BannerUploader';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { ModalFooter } from '@op/ui/Modal';
 import type { Option } from '@op/ui/MultiSelectComboBox';
+import { SelectItem } from '@op/ui/Select';
 import { Skeleton } from '@op/ui/Skeleton';
 import { toast } from '@op/ui/Toast';
 import { useRouter } from 'next/navigation';
@@ -74,6 +75,20 @@ export const BaseUpdateProfileForm = forwardRef<
       defaultValues: {
         fullName: profile.name ?? '',
         title: profile.bio ?? '',
+        pronouns: profile.individual?.pronouns
+          ? ['he/him', 'she/her', 'they/them'].includes(
+              profile.individual.pronouns,
+            )
+            ? profile.individual.pronouns
+            : 'custom'
+          : '',
+        customPronouns:
+          profile.individual?.pronouns &&
+          !['he/him', 'she/her', 'they/them'].includes(
+            profile.individual.pronouns,
+          )
+            ? profile.individual.pronouns
+            : '',
         email: profile.email ?? '',
         website: profile.website ?? '',
         focusAreas: [] as Option[],
@@ -214,6 +229,47 @@ export const BaseUpdateProfileForm = forwardRef<
             )}
           />
           <form.AppField
+            name="pronouns"
+            children={(field) => (
+              <field.Select
+                label={t('Pronouns')}
+                placeholder={t('Select your preferred pronouns')}
+                selectedKey={field.state.value}
+                onBlur={field.handleBlur}
+                onSelectionChange={(key) => field.handleChange(String(key))}
+                errorMessage={getFieldErrorMessage(field)}
+              >
+                <SelectItem id="she/her">{t('She/Her')}</SelectItem>
+                <SelectItem id="he/him">{t('He/Him')}</SelectItem>
+                <SelectItem id="they/them">{t('They/Them')}</SelectItem>
+                <SelectItem id="custom">{t('Custom')}</SelectItem>
+              </field.Select>
+            )}
+          />
+          <form.Subscribe
+            selector={(state) => state.values.pronouns}
+            children={(pronouns) =>
+              pronouns === 'custom' ? (
+                <form.AppField
+                  name="customPronouns"
+                  children={(field) => (
+                    <field.TextField
+                      label={t('Custom Pronouns')}
+                      value={field.state.value}
+                      onBlur={field.handleBlur}
+                      onChange={field.handleChange}
+                      errorMessage={getFieldErrorMessage(field)}
+                      isRequired
+                      inputProps={{
+                        placeholder: t('Enter your custom pronouns'),
+                      }}
+                    />
+                  )}
+                />
+              ) : null
+            }
+          />
+          <form.AppField
             name="email"
             children={(field) => (
               <field.TextField
@@ -276,50 +332,66 @@ export const BaseUpdateProfileForm = forwardRef<
 
 BaseUpdateProfileForm.displayName = 'BaseUpdateProfileForm';
 
-export const validator = z.object({
-  fullName: z
-    .string({
-      error: 'Enter your full name',
-    })
-    .trim()
-    .min(1, {
-      error: 'Enter your full name',
-    })
-    .max(200, {
-      error: 'Must be at most 200 characters',
-    }),
-  title: z
-    .string({
-      error: 'Enter your professional title',
-    })
-    .trim()
-    .min(1, {
-      error: 'Enter your professional title',
-    })
-    .max(200, {
-      error: 'Must be at most 200 characters',
-    }),
-  email: z
-    .email()
-    .trim()
-    .refine((val) => val === '' || z.email().safeParse(val).success, {
-      error: 'Invalid email',
-    })
-    .refine((val) => val.length <= 255, {
-      error: 'Must be at most 255 characters',
-    }),
-  website: zodUrl({
-    error: 'Enter a valid website address',
-  }),
-  focusAreas: z
-    .array(
-      z.object({
-        id: z.string(),
-        label: z.string(),
+export const validator = z
+  .object({
+    fullName: z
+      .string({
+        error: 'Enter your full name',
+      })
+      .trim()
+      .min(1, {
+        error: 'Enter your full name',
+      })
+      .max(200, {
+        error: 'Must be at most 200 characters',
       }),
-    )
-    .optional(),
-});
+    title: z
+      .string({
+        error: 'Enter your professional title',
+      })
+      .trim()
+      .min(1, {
+        error: 'Enter your professional title',
+      })
+      .max(200, {
+        error: 'Must be at most 200 characters',
+      }),
+    pronouns: z.string().trim().optional(),
+    customPronouns: z.string().trim().optional(),
+    email: z
+      .email()
+      .trim()
+      .refine((val) => val === '' || z.email().safeParse(val).success, {
+        error: 'Invalid email',
+      })
+      .refine((val) => val.length <= 255, {
+        error: 'Must be at most 255 characters',
+      }),
+    website: zodUrl({
+      error: 'Enter a valid website address',
+    }),
+    focusAreas: z
+      .array(
+        z.object({
+          id: z.string(),
+          label: z.string(),
+        }),
+      )
+      .optional(),
+  })
+  .refine(
+    (data) => {
+      // If pronouns is "custom" require custom pronouns
+      if (data.pronouns === 'custom') {
+        return data.customPronouns && data.customPronouns.trim().length > 0;
+      }
+      return true;
+    },
+    {
+      message: 'Please provide your custom pronouns',
+      path: ['customPronouns'],
+    },
+  );
 
 export type FormFields = z.infer<typeof validator>;
 

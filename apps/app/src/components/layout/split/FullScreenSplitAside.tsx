@@ -8,7 +8,7 @@ export const FullScreenSplitAside = ({
   children?: React.ReactNode;
 }) => {
   return (
-    <aside className="absolute right-0 top-0 -z-10 hidden size-full h-screen flex-col items-center justify-center bg-gradient text-offWhite sm:fixed sm:z-10 sm:w-1/3 sm:min-w-96 sm:bg-teal lg:flex">
+    <aside className="relative right-0 top-0 -z-10 hidden size-full h-screen flex-col items-center justify-center bg-gradient text-offWhite lg:sticky lg:z-10 lg:col-span-1 lg:flex lg:min-w-96 lg:bg-teal">
       <div className="absolute h-full w-full bg-gradient">
         <img
           src="/topLeft.png"
@@ -25,7 +25,7 @@ export const FullScreenSplitAside = ({
           style={{ backgroundImage: 'url(/noise.png)' }}
         />
       </div>
-      <div className="absolute right-0 top-0 -z-10 hidden size-full h-screen flex-col items-center justify-center text-offWhite sm:fixed sm:z-10 sm:w-1/3 sm:min-w-96 lg:flex">
+      <div className="absolute right-0 top-0 -z-10 hidden size-full justify-center p-4 text-offWhite lg:z-10 lg:flex lg:flex-col lg:items-center">
         <div className="flex flex-col items-center justify-center gap-4 px-12">
           <h1 className="min-w-96 text-center font-serif text-title-xxl font-light leading-[3.3rem] tracking-[-0.075rem]">
             A bridge to the
@@ -33,14 +33,13 @@ export const FullScreenSplitAside = ({
             <i>new economy.</i>
           </h1>
           <SideImage className="w-full" />
-          <div className="flex flex-col items-center justify-center gap-4 text-offWhite">
+          <div className="flex w-full max-w-80 flex-col items-center justify-center gap-4 text-offWhite">
             <Header2 className="text-center font-serif text-title-md">
               Connect with your network.
             </Header2>
             <span className="text-center text-base leading-[150%]">
-              Reinforce your real-world relationships and share resources
-              <br />
-              for the benefit of all.
+              Reinforce your real-world relationships and share resources for
+              the benefit of all.
             </span>
           </div>
         </div>
