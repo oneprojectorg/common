@@ -234,7 +234,9 @@ const VotingProposalsList = ({
                           {showCheckbox && (
                             <div onClick={(e) => e.stopPropagation()}>
                               <Checkbox
-                                isSelected={isReadOnly ? isVotedFor : isSelected}
+                                isSelected={
+                                  isReadOnly ? isVotedFor : isSelected
+                                }
                                 onChange={() => {
                                   toggleProposal(proposal.id);
                                 }}
@@ -399,6 +401,11 @@ const Proposals = (props: ProposalsProps) => {
 
   if (isLoading) {
     return <ProposalListSkeletonGrid />;
+  }
+
+  const isPastPP = new Date() > new Date('2025-11-15T00:00:00.000Z');
+  if (isPastPP && props.slug === 'people-powered') {
+    return <ViewProposalsList {...props} />;
   }
 
   return match(isVotingEnabled, {

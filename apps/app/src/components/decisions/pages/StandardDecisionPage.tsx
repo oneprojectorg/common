@@ -57,24 +57,12 @@ export function StandardDecisionPage({
   // Organization-specific content
   const heroContent = match(slug, {
     'people-powered': () => ({
-      title: t(
-        "Decide how to allocate part of People Powered's budget for 2026",
-      ),
+      title: t('SUMMARY OF RESULTS'),
       description: (
         <div className="mt-4">
           <p>
             {t(
-              'During 2023, People Powered members and staff co-created the strategic plan that guides our work from 2024 to 2026.',
-            )}
-          </p>
-          <p>
-            {t(
-              "Now, you will decide how to allocate part of People Powered's 2026 budget, in order to advance our strategic plan and move us toward the future horizons of participatory democracy.",
-            )}
-          </p>
-          <p>
-            {t(
-              'This is the idea collection phase! You can submit your ideas, even if they are not structured yet. We will have time to develop them in the next phase!',
+              'Thank you so much for your participation during PP Decides 26! People Powered staff are summarizing the results and, once the budget allocation is approved by the Board of Directors, we will announce the results!',
             )}
           </p>
         </div>
@@ -128,7 +116,9 @@ export function StandardDecisionPage({
     }),
     _: () => ({
       title: t('SHARE YOUR IDEAS.'),
-      description: <p>{t('Help determine how we invest our community budget.')}</p>,
+      description: (
+        <p>{t('Help determine how we invest our community budget.')}</p>
+      ),
     }),
   });
 
