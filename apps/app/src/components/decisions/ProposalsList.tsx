@@ -403,7 +403,7 @@ const Proposals = (props: ProposalsProps) => {
     return <ProposalListSkeletonGrid />;
   }
 
-  const isPastPP = new Date() > new Date('2025-11-15T00:00:00.000Z');
+  const isPastPP = new Date() > new Date('2025-11-15T08:00:00.000Z');
   if (isPastPP && props.slug === 'people-powered') {
     return <ViewProposalsList {...props} />;
   }
