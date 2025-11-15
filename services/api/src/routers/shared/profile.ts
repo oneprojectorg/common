@@ -54,6 +54,7 @@ export const updateUserProfileDataSchema = z
     name: z.string().trim().min(1).max(255),
     bio: z.string().trim().max(255),
     title: z.string().trim().min(1).max(255),
+    pronouns: z.string().trim().max(255).optional(),
     // underscore, numbers, lowercase letters
     username: z
       .string()
