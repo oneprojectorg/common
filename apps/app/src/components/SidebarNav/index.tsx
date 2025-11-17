@@ -1,6 +1,5 @@
 'use client';
 
-import { useMediaQuery } from '@op/hooks';
 import { Sidebar, useSidebar } from '@op/ui/Sidebar';
 import { cn } from '@op/ui/utils';
 import { House, MessageCircle, Users } from 'lucide-react';
