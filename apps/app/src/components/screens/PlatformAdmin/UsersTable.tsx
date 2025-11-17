@@ -3,9 +3,10 @@
 import type { RouterInput } from '@op/api/client';
 import { trpc } from '@op/api/client';
 import { Pagination } from '@op/ui/Pagination';
+import { SearchField } from '@op/ui/SearchField';
 import { Skeleton } from '@op/ui/Skeleton';
 import { cn } from '@op/ui/utils';
-import { Suspense } from 'react';
+import { Suspense, useState, useTransition } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -22,17 +23,34 @@ type ListAllUsersInput = RouterInput['platform']['admin']['listAllUsers'];
 /** Main users table component with suspense boundary */
 export const UsersTable = () => {
   const t = useTranslations();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isPending, startTransition] = useTransition();
+
+  const handleSearchChange = (value: string) => {
+    startTransition(() => {
+      setSearchQuery(value);
+    });
+  };
 
   return (
     <div className="mt-8">
-      <h2 className="text-md mb-4 font-serif text-neutral-black">
-        {t('platformAdmin_allUsers')}
-      </h2>
+      <div className="mb-4 flex items-center justify-between gap-4">
+        <h2 className="text-md font-serif text-neutral-black">
+          {t('platformAdmin_allUsers')}
+        </h2>
+        <div className="w-64">
+          <SearchField
+            aria-label="Search users by email"
+            value={searchQuery}
+            onChange={handleSearchChange}
+          />
+        </div>
+      </div>
       <div className="overflow-x-auto">
-        <div className={USER_TABLE_MIN_WIDTH}>
+        <div className={cn(USER_TABLE_MIN_WIDTH, isPending && 'opacity-50')}>
           <UsersTableHeader />
-          <Suspense fallback={<UsersTableContentSkeleton />}>
-            <UsersTableContent />
+          <Suspense key={searchQuery} fallback={<UsersTableContentSkeleton />}>
+            <UsersTableContentWrapper searchQuery={searchQuery} />
           </Suspense>
         </div>
       </div>
@@ -76,8 +94,13 @@ const UsersTableHeader = () => {
   );
 };
 
+/** Wrapper to pass props to suspense content */
+const UsersTableContentWrapper = ({ searchQuery }: { searchQuery: string }) => {
+  return <UsersTableContent searchQuery={searchQuery} />;
+};
+
 /** Renders users table with live data */
-const UsersTableContent = () => {
+const UsersTableContent = ({ searchQuery }: { searchQuery: string }) => {
   const t = useTranslations();
   const {
     cursor,
@@ -91,6 +114,7 @@ const UsersTableContent = () => {
   const queryInput: ListAllUsersInput = {
     cursor,
     limit,
+    query: searchQuery || undefined,
   };
 
   const [data] = trpc.platform.admin.listAllUsers.useSuspenseQuery(queryInput);
