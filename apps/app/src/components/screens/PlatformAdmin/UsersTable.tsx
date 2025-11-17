@@ -102,7 +102,13 @@ const UsersTableContent = ({ searchQuery }: { searchQuery: string }) => {
     handleNext,
     handlePrevious,
     canGoPrevious,
+    reset,
   } = useCursorPagination(10);
+
+  // Reset pagination when search query changes
+  useEffect(() => {
+    reset();
+  }, [searchQuery]);
 
   const queryInput: ListAllUsersInput = {
     cursor,
