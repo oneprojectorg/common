@@ -375,5 +375,6 @@
   "platformAdmin_columnActions": "Acciones",
   "platformAdmin_actionViewAnalytics": "Ver analíticas",
   "platformAdmin_actionEditProfile": "Editar perfil",
-  "platformAdmin_actionRemoveUser": "Eliminar Usuario"
+  "platformAdmin_actionRemoveUser": "Eliminar Usuario",
+  "platformAdmin_searchUsersPlaceholder": "Buscar usuarios por correo electrónico"
 }

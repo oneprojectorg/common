@@ -278,11 +278,26 @@ describe('platform.admin.listAllUsers', () => {
     });
   });
 
-  it('should handle search with domain name', async ({ task }) => {
+  it('should handle pagination with domain search', async ({ task }) => {
     const testData = new TestOrganizationDataManager(task.id);
+
+    // 2 oneproject.org users
     const { adminUser } = await testData.createOrganization({
-      users: { admin: 1 },
+      users: { admin: 1, member: 1 },
+      emailDomain: 'oneproject.org',
     });
+
+    // 10 custom-domain.com users
+    const { adminUser: customDomainAdmin, memberUsers: customDomainMembers } =
+      await testData.createOrganization({
+        users: { admin: 1, member: 9 },
+        emailDomain: 'custom-domain.com',
+      });
+
+    const customDomainUserEmails = new Set([
+      customDomainAdmin.email,
+      ...customDomainMembers.map((u) => u.email),
+    ]);
 
     await signOutTestUser();
     await signInTestUser(adminUser.email);
@@ -293,76 +308,47 @@ describe('platform.admin.listAllUsers', () => {
 
     const caller = createCaller(createTestContext(session.access_token));
 
-    // Search by domain name (oneproject)
+    // Search by domain name
     const result = await caller.listAllUsers({
-      limit: 100,
-      query: task.id,
+      limit: 5,
+      query: 'custom-domain.com',
     });
 
-    // Should find users with @oneproject.org emails
-    expect(result.items.length).toBeGreaterThan(0);
-    const allHaveCorrectDomain = result.items.every((user) =>
-      user.email.includes('oneproject'),
-    );
-    expect(allHaveCorrectDomain).toBe(true);
+    // Should find users with @custom-domain.com emails only, first page
+    expect(result).toMatchObject({
+      next: expect.any(String),
+      hasMore: true,
+      total: 10,
+    });
+    expect(result.items).toSatisfy((items: typeof result.items) => {
+      const satisfies = items.every((user: (typeof result.items)[number]) =>
+        customDomainUserEmails.has(user.email),
+      );
 
-    // Search by domain name (oneproject)
+      items.forEach((user: (typeof result.items)[number]) => {
+        customDomainUserEmails.delete(user.email);
+      });
+
+      return satisfies;
+    });
+
+    // Should find users with @custom-domain.com emails only, second page
     const result2 = await caller.listAllUsers({
-      limit: 100,
-      query: 'oneproject',
+      cursor: result.next!,
+      limit: 5,
+      query: 'custom-domain.com',
     });
 
-    // Should find users with @oneproject.org emails
-    expect(result2.items.length).toBeGreaterThan(0);
-  });
-
-  it('should work with search and pagination together', async ({ task }) => {
-    const testData = new TestOrganizationDataManager(task.id);
-    const { adminUser } = await testData.createOrganization({
-      users: { admin: 1, member: 5 },
+    // Should find users with @custom-domain.com emails only
+    expect(result2).toMatchObject({
+      next: null,
+      hasMore: false,
+      total: 10,
     });
-
-    await signOutTestUser();
-    await signInTestUser(adminUser.email);
-    const session = await getCurrentTestSession();
-    if (!session) {
-      throw new Error('No session found for test user');
-    }
-
-    const caller = createCaller(createTestContext(session.access_token));
-
-    // Search with the task id prefix
-    // const searchTerm = task.id.split(/[^a-zA-Z0-9]+/)[0];
-    const searchTerm = task.id;
-    if (!searchTerm) {
-      throw new Error('Unable to extract search term from task.id');
-    }
-
-    const firstPage = await caller.listAllUsers({
-      limit: 2,
-      query: searchTerm,
-    });
-
-    expect(firstPage.items.length).toBeGreaterThan(0);
-
-    // If there are more results, test pagination
-    if (firstPage.next && firstPage.hasMore) {
-      const secondPage = await caller.listAllUsers({
-        limit: 2,
-        cursor: firstPage.next,
-        query: searchTerm,
-      });
-
-      // Verify no overlap between pages
-      const firstPageIds = firstPage.items.map((user) => user.id);
-      const secondPageIds = secondPage.items.map((user) => user.id);
-      const overlap = firstPageIds.filter((id) => secondPageIds.includes(id));
-      expect(overlap.length).toBe(0);
-
-      // All results should still match the search query
-      secondPage.items.forEach((user) => {
-        expect(user.email.toLowerCase()).toContain(searchTerm.toLowerCase());
-      });
-    }
+    expect(result2.items).toSatisfy((items: typeof result2.items) =>
+      items.every((user: (typeof result2.items)[number]) =>
+        customDomainUserEmails.has(user.email),
+      ),
+    );
   });
 });

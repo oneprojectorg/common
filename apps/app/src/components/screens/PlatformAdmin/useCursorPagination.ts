@@ -2,18 +2,18 @@ import { useState } from 'react';
 
 /**
  * Custom hook for managing cursor-based pagination state.
- * 
+ *
  * This maintains a history of cursors to enable backward navigation without
  * requiring the API to support bidirectional queries. The API only needs to
  * return the next cursor and a hasMore flag.
- * 
+ *
  * @param limit - Number of items per page
  * @returns Pagination state and navigation handlers
- * 
+ *
  * @example
  * const { cursor, currentPage, handleNext, handlePrevious } = useCursorPagination(10);
  * const [data] = trpc.users.list.useSuspenseQuery({ cursor, limit: 10 });
- * 
+ *
  * @todo Move this to @op/common or @op/hooks for reuse across the application
  */
 export function useCursorPagination(limit: number) {
@@ -27,7 +27,7 @@ export function useCursorPagination(limit: number) {
   /**
    * Navigate to the next page using the provided cursor.
    * Adds the new cursor to history for backward navigation.
-   * 
+   *
    * @param nextCursor - The cursor for the next page (from API response)
    */
   const handleNext = (nextCursor: string) => {
@@ -53,6 +53,15 @@ export function useCursorPagination(limit: number) {
    */
   const canGoPrevious = cursorHistory.length > 1;
 
+  /**
+   * Reset pagination to the first page.
+   * Useful when filters or search queries change.
+   */
+  const reset = () => {
+    setCursor(null);
+    setCursorHistory([null]);
+  };
+
   return {
     cursor,
     currentPage,
@@ -60,5 +69,6 @@ export function useCursorPagination(limit: number) {
     handleNext,
     handlePrevious,
     canGoPrevious,
+    reset,
   };
 }
