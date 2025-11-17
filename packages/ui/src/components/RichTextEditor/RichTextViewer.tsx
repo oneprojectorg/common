@@ -1,10 +1,10 @@
 'use client';
 
 import type { Extensions } from '@tiptap/react';
-import { useEditor } from '@tiptap/react';
 
-import { defaultViewerExtensions } from './editorConfig';
 import { StyledRichTextContent } from './StyledRichTextContent';
+import { defaultViewerExtensions } from './editorConfig';
+import { useRichTextEditor } from './useRichTextEditor';
 
 // TODO: this will be replaced entirely by a new viewer that has no dependency on TipTap
 export interface RichTextViewerProps {
@@ -12,7 +12,6 @@ export interface RichTextViewerProps {
   content: string;
   className?: string;
   editorClassName?: string;
-  immediatelyRender?: boolean;
 }
 
 /**
@@ -25,24 +24,18 @@ export function RichTextViewer({
   content,
   className = '',
   editorClassName = '',
-  immediatelyRender = false,
 }: RichTextViewerProps) {
-  const editor = useEditor({
+  const editor = useRichTextEditor({
     extensions,
     content,
+    editorClassName,
     editable: false,
-    editorProps: {
-      attributes: {
-        class: `max-w-none focus:outline-none ${editorClassName || 'px-6 py-6 text-neutral-black'}`,
-      },
-    },
-    immediatelyRender,
   });
 
   if (!editor) {
     return (
       <div className={`flex flex-1 items-center justify-center ${className}`}>
-        <div className="text-gray-500">Loading content...</div>
+        <div className="text-neutral-charcoal">Loading content...</div>
       </div>
     );
   }

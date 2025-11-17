@@ -3,7 +3,7 @@ import { useEditor } from '@tiptap/react';
 import { useEffect } from 'react';
 
 import { cn } from '../../lib/utils';
-import { defaultEditorExtensions } from './editorConfig';
+import { baseEditorStyles, defaultEditorExtensions } from './editorConfig';
 
 export interface UseRichTextEditorProps {
   extensions?: Extensions;
@@ -12,7 +12,7 @@ export interface UseRichTextEditorProps {
   onUpdate?: (content: string) => void;
   onChange?: (content: string) => void;
   onEditorReady?: (editor: Editor) => void;
-  immediatelyRender?: boolean;
+  editable?: boolean;
 }
 
 export function useRichTextEditor({
@@ -22,19 +22,17 @@ export function useRichTextEditor({
   onUpdate,
   onChange,
   onEditorReady,
-  immediatelyRender = false,
+  editable = true,
 }: UseRichTextEditorProps) {
   const editor = useEditor({
     extensions,
     content,
-    editable: true,
+    editable,
     editorProps: {
       attributes: {
         class: cn(
-          'overflow-wrap-anywhere prose prose-lg max-w-none break-words !text-base focus:outline-none [&_a:hover]:underline [&_a]:text-teal [&_a]:no-underline',
-          editorClassName ||
-            'min-h-96 px-6 py-6 text-neutral-black placeholder:text-neutral-gray2',
-          '[&_li_p]:my-0',
+          baseEditorStyles,
+          editorClassName || (editable ? 'min-h-96' : ''),
         ),
       },
     },
@@ -43,7 +41,7 @@ export function useRichTextEditor({
       onUpdate?.(html);
       onChange?.(html);
     },
-    immediatelyRender,
+    immediatelyRender: false,
   });
 
   // Set initial content only once when editor is first created

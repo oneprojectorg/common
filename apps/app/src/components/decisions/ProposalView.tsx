@@ -12,6 +12,7 @@ import { trpc } from '@op/api/client';
 import type { proposalEncoder } from '@op/api/encoders';
 import { Avatar } from '@op/ui/Avatar';
 import { Header1 } from '@op/ui/Header';
+import { RichTextViewer } from '@op/ui/RichTextEditor';
 import { Surface } from '@op/ui/Surface';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
 import { Heart, MessageCircle } from 'lucide-react';
@@ -24,7 +25,6 @@ import { useTranslations } from '@/lib/i18n';
 
 import { PostFeed, PostItem, usePostFeedActions } from '../PostFeed';
 import { PostUpdate } from '../PostUpdate';
-import { RichTextViewer } from '@op/ui/RichTextEditor';
 import { getViewerExtensions } from '../RichTextEditor/editorConfig';
 import { ProposalViewLayout } from './ProposalViewLayout';
 
@@ -86,7 +86,6 @@ export function ProposalView({
     user,
     profileId: currentProposal.profileId || undefined, // Add profileId for optimistic updates
   });
-
 
   // Function to scroll to show comments after adding a new one
   const scrollToComments = useCallback(() => {
@@ -224,8 +223,7 @@ export function ProposalView({
           <RichTextViewer
             extensions={getViewerExtensions()}
             content={proposalContent}
-            editorClassName="px-0 py-0 text-neutral-black"
-            immediatelyRender={false}
+            editorClassName="p-0"
           />
 
           {/* Comments Section */}

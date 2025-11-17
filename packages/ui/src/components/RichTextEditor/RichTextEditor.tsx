@@ -15,7 +15,6 @@ export interface RichTextEditorProps {
   onEditorReady?: (editor: Editor) => void;
   className?: string;
   editorClassName?: string;
-  immediatelyRender?: boolean;
 }
 
 export interface RichTextEditorRef {
@@ -42,7 +41,6 @@ export const RichTextEditor = forwardRef<
       onEditorReady,
       className = '',
       editorClassName = '',
-      immediatelyRender = false,
     },
     ref,
   ) => {
@@ -53,7 +51,6 @@ export const RichTextEditor = forwardRef<
       onUpdate,
       onChange,
       onEditorReady,
-      immediatelyRender,
     });
 
     // Expose editor methods through ref
