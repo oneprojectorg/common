@@ -1,3 +1,4 @@
+import { cn } from '@op/ui/utils';
 import type { Editor } from '@tiptap/react';
 import { useEditor } from '@tiptap/react';
 import { useEffect } from 'react';
@@ -15,6 +16,7 @@ export interface UseRichTextEditorProps {
 
 export function useRichTextEditor({
   content = '',
+  editorClassName = '',
   onUpdate,
   onChange,
   onEditorReady,
@@ -24,6 +26,15 @@ export function useRichTextEditor({
     extensions: getEditorExtensions(),
     content,
     editable: true,
+    editorProps: {
+      attributes: {
+        class: cn(
+          'overflow-wrap-anywhere max-w-none break-words focus:outline-none [&_a:hover]:underline [&_a]:text-teal [&_a]:no-underline [&_h1]:text-teal',
+          editorClassName ||
+            'min-h-96 px-6 py-6 text-neutral-black placeholder:text-neutral-gray2',
+        ),
+      },
+    },
     onUpdate: ({ editor }) => {
       const html = editor.getHTML();
       onUpdate?.(html);
