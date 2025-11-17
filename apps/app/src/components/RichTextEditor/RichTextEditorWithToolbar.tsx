@@ -25,7 +25,7 @@ export const RichTextEditorWithToolbar = forwardRef<
   (
     {
       content = '',
-      placeholder = 'Start writing...',
+      placeholder,
       onUpdate,
       onChange,
       className = '',

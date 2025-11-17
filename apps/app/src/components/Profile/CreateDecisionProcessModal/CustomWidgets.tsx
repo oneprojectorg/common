@@ -392,7 +392,7 @@ export const RichTextEditorWidget = (props: WidgetProps) => {
       <div className="flex flex-col rounded-md border">
         <RichTextEditorWithToolbar
           content={value || ''}
-          placeholder={uiSchema?.['ui:placeholder'] || 'Start writing...'}
+          placeholder={uiSchema?.['ui:placeholder']}
           onChange={handleChange}
           onUpdate={handleChange}
           className="flex flex-1 flex-col"
