@@ -122,6 +122,7 @@ export const updateProcess = async ({
       throw new NotFoundError('Decision process not found');
     }
 
+    // Only allow editing from the context of the process owner (usually an org)
     if (existingProcess.createdByProfileId !== dbUser.currentProfileId) {
       throw new UnauthorizedError('Not authorized to update this process');
     }

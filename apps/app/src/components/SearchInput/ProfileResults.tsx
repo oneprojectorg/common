@@ -22,7 +22,7 @@ export const ProfileResults = ({
   onSearch,
 }: ProfileResultsProps) => {
   return (
-    <div className="pb-4">
+    <div>
       {profileResults.map((profile, index) => {
         // Set up the subtitle that appears in search results
         const isIndividual = profile.type === EntityType.INDIVIDUAL;
@@ -87,7 +87,7 @@ export const ProfileResults = ({
             >
               <Avatar
                 placeholder={profile.name}
-                className="size-8 group-hover/result:no-underline"
+                className="aspect-square size-8 shrink-0 group-hover/result:no-underline"
               >
                 {profile.avatarImage?.name ? (
                   <Image
