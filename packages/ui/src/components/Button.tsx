@@ -29,6 +29,8 @@ const buttonStyle = tv({
         'border border-neutral-gray1 bg-white text-neutral-charcoal shadow-light hover:bg-neutral-50 pressed:bg-white',
       destructive:
         'border-functional-red bg-functional-red text-neutral-offWhite hover:bg-functional-redBlack',
+      ghost:
+        'border-0 bg-transparent text-midGray shadow-none hover:text-darkGray pressed:text-darkGray',
       pill: '',
     },
     size: {
