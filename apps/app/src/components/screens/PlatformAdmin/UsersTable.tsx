@@ -43,7 +43,7 @@ export const UsersTable = () => {
         </div>
       </div>
       <div className="overflow-x-auto">
-        <div className={cn(USER_TABLE_MIN_WIDTH)}>
+        <div className={USER_TABLE_MIN_WIDTH}>
           <UsersTableHeader />
           <Suspense fallback={<UsersTableContentSkeleton />}>
             <UsersTableContent searchQuery={debouncedQuery} />

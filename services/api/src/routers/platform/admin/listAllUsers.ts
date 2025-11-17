@@ -99,7 +99,8 @@ export const listAllUsersRouter = router({
               return result;
             },
             options: {
-              ttl: 5 * 60 * 1000, // 5 minutes
+              ttl: 1 * 60 * 1000, // 1 min
+              skipMemCache: true,
             },
           }),
         ]);
