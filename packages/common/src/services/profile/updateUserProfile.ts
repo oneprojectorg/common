@@ -14,6 +14,7 @@ export interface UpdateUserProfileInput {
   name?: string;
   bio?: string;
   title?: string;
+  pronouns?: string;
   username?: string;
   email?: string;
   website?: string;
@@ -31,7 +32,8 @@ export const updateUserProfile = async ({
   user,
   db: dbClient = db, // Use provided db or fall back to imported client
 }: UpdateUserProfileParams) => {
-  const { name, bio, title, username, email, website, focusAreas } = input;
+  const { name, bio, title, pronouns, username, email, website, focusAreas } =
+    input;
 
   // Get the current user to check if they have a profile
   const currentUser = await dbClient.query.users.findFirst({
@@ -105,8 +107,8 @@ export const updateUserProfile = async ({
       .where(eq(users.authUserId, user.id));
   }
 
-  // Handle focus areas if provided
-  if (focusAreas !== undefined) {
+  // Handle focus areas and pronouns if provided
+  if (focusAreas !== undefined || pronouns !== undefined) {
     // TODO: optimize this
     // First, ensure the user has an individual record
     const updatedCurrentUser = await dbClient.query.users.findFirst({
@@ -148,7 +150,7 @@ export const updateUserProfile = async ({
             .where(eq(individualsTerms.individualId, individualRecord.id));
 
           // Add new focus areas
-          if (focusAreas.length > 0) {
+          if (focusAreas && focusAreas.length > 0) {
             await Promise.all(
               focusAreas.map((term) =>
                 tx
@@ -162,6 +164,14 @@ export const updateUserProfile = async ({
             );
           }
         });
+
+        // Add pronouns
+        if (pronouns !== undefined) {
+          await dbClient
+            .update(individuals)
+            .set({ pronouns: pronouns || null })
+            .where(eq(individuals.id, individualRecord.id));
+        }
       }
     }
   }
@@ -201,6 +211,7 @@ export const updateUserProfile = async ({
       profile: {
         with: {
           avatarImage: true,
+          individual: { columns: { pronouns: true } },
         },
       },
     },

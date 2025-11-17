@@ -35,6 +35,7 @@ const profileResultSchema = z.object({
       metadata: z.any(),
     })
     .nullable(),
+  individual: z.object({ pronouns: z.string().nullable() }).nullable(),
   modules: z.array(
     z.object({
       profileId: z.string(),
@@ -50,7 +51,7 @@ const profileResultSchema = z.object({
         isActive: z.boolean(),
         metadata: z.any().nullable(),
       }),
-    })
+    }),
   ),
 });
 
@@ -66,6 +67,7 @@ export const getProfile = async ({
       with: {
         avatarImage: true,
         headerImage: true,
+        individual: { columns: { pronouns: true } },
         modules: {
           with: {
             module: true,

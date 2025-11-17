@@ -7,6 +7,7 @@ import { entityTermsEncoder } from './shared';
 export const individualsEncoder = createSelectSchema(individuals).pick({
   id: true,
   profileId: true,
+  pronouns: true,
 });
 
 export const individualsTermsEncoder = entityTermsEncoder;
