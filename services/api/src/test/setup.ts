@@ -1,5 +1,5 @@
 import { type SupabaseClient, createClient } from '@supabase/supabase-js';
-import { afterAll, beforeAll, beforeEach, vi } from 'vitest';
+import { beforeAll, beforeEach, vi } from 'vitest';
 
 // Mock server-only modules before any other imports
 vi.mock('server-only', () => ({}));
@@ -31,13 +31,10 @@ vi.mock('@op/logging', () => ({
 }));
 
 // Test environment configuration for isolated test Supabase instance
-const TEST_SUPABASE_URL = 'http://127.0.0.1:55321'; // Test instance port
-const TEST_SUPABASE_ANON_KEY =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0';
-const TEST_SUPABASE_SERVICE_ROLE_KEY =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU';
-const TEST_DATABASE_URL =
-  'postgresql://postgres:postgres@127.0.0.1:55322/postgres';
+// These values are defined in vitest.config.ts and injected via process.env
+const TEST_SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const TEST_SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const TEST_SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_ANON_KEY!;
 
 let testSupabase: SupabaseClient;
 let testSupabaseAdmin: SupabaseClient;
@@ -46,15 +43,6 @@ let testSupabaseAdmin: SupabaseClient;
 export let supabaseTestClient: SupabaseClient;
 // Export admin client for test setup/teardown (bypasses RLS)
 export let supabaseTestAdminClient: SupabaseClient;
-
-// Mock environment variables for testing
-vi.stubEnv('NODE_ENV', 'test');
-vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', TEST_SUPABASE_URL);
-vi.stubEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY', TEST_SUPABASE_ANON_KEY);
-vi.stubEnv('SUPABASE_URL', TEST_SUPABASE_URL);
-vi.stubEnv('SUPABASE_ANON_KEY', TEST_SUPABASE_ANON_KEY);
-vi.stubEnv('SUPABASE_SERVICE_ROLE', TEST_SUPABASE_SERVICE_ROLE_KEY);
-vi.stubEnv('DATABASE_URL', TEST_DATABASE_URL);
 
 // Mock @op/core to return test environment values
 vi.mock('@op/core', async () => {
@@ -118,16 +106,4 @@ beforeAll(async () => {
 // Setup test environment for each test
 beforeEach(async () => {
   vi.clearAllMocks();
-
-  // Reset auth state for each test
-  if (testSupabase) {
-    await testSupabase.auth.signOut();
-  }
-});
-
-// Global cleanup
-afterAll(async () => {
-  if (testSupabase) {
-    await testSupabase.auth.signOut();
-  }
 });

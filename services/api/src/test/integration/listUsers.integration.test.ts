@@ -7,13 +7,11 @@ import { organizationRouter } from '../../routers/organization';
 import { createCallerFactory } from '../../trpcFactory';
 import { TestOrganizationDataManager } from '../helpers/TestOrganizationDataManager';
 import {
+  createIsolatedSession,
   createTestContextWithSession,
-  getCurrentTestSession,
-  signInTestUser,
-  signOutTestUser,
 } from '../supabase-utils';
 
-describe('organization.listUsers', () => {
+describe.concurrent('organization.listUsers', () => {
   const createCaller = createCallerFactory(organizationRouter);
 
   it('should successfully list organization users', async ({
@@ -26,13 +24,8 @@ describe('organization.listUsers', () => {
         users: { admin: 1, member: 1 },
       });
 
-    // Sign in the test user
-    await signOutTestUser();
-    await signInTestUser(adminUser.email);
-    const session = await getCurrentTestSession();
-    if (!session) {
-      throw new Error('No session found for test user');
-    }
+    // Create isolated session for this test
+    const { session } = await createIsolatedSession(adminUser.email);
 
     const caller = createCaller(await createTestContextWithSession(session));
 
@@ -81,13 +74,8 @@ describe('organization.listUsers', () => {
       },
     ]);
 
-    // Sign in the test user
-    await signOutTestUser();
-    await signInTestUser(adminUser.email);
-    const session = await getCurrentTestSession();
-    if (!session) {
-      throw new Error('No session found for test user');
-    }
+    // Create isolated session for this test
+    const { session } = await createIsolatedSession(adminUser.email);
     const caller = createCaller(await createTestContextWithSession(session));
     const result = await caller.listUsers({
       profileId: organization.profileId,
@@ -117,13 +105,8 @@ describe('organization.listUsers', () => {
     const testData = new TestOrganizationDataManager(task.id, onTestFinished);
     const { adminUser } = await testData.createOrganization();
 
-    // Sign in the test user
-    await signOutTestUser();
-    await signInTestUser(adminUser.email);
-    const session = await getCurrentTestSession();
-    if (!session) {
-      throw new Error('No session found for test user');
-    }
+    // Create isolated session for this test
+    const { session } = await createIsolatedSession(adminUser.email);
     const caller = createCaller(await createTestContextWithSession(session));
     await expect(async () => {
       await caller.listUsers({

@@ -9,7 +9,7 @@ import {
 } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { randomUUID } from 'crypto';
-import { sql } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 
 import { createTestUser, supabaseTestAdminClient } from '../supabase-utils';
 
@@ -69,6 +69,10 @@ export class TestOrganizationDataManager {
   private cleanupRegistered = false;
   private onTestFinishedCallback: (fn: () => void | Promise<void>) => void;
 
+  // Track exact IDs created by this test instance for precise cleanup
+  private createdProfileIds: string[] = [];
+  private createdAuthUserIds: string[] = [];
+
   constructor(
     testId: string,
     onTestFinished: (fn: () => void | Promise<void>) => void,
@@ -119,6 +123,9 @@ export class TestOrganizationDataManager {
       throw new Error('Failed to create organization profile');
     }
 
+    // Track this profile ID for cleanup
+    this.createdProfileIds.push(orgProfile.id);
+
     // 2. Create organization (minimal - only required fields)
     const [organization] = await db
       .insert(organizations)
@@ -141,39 +148,33 @@ export class TestOrganizationDataManager {
       const { email } = this.generateUserWithRole(role, emailDomain);
 
       // Create auth user via Supabase Admin API
+      // This triggers the database trigger which automatically creates:
+      // - A row in the users table
+      // - A profile for the user
       const authUser = await createTestUser(email).then((res) => res.user);
 
       if (!authUser || !authUser.email) {
         throw new Error(`Failed to create auth user for ${email}`);
       }
 
-      // Create user profile (minimal - only required fields)
-      const username = email.split('@')[0] || 'user';
-      const [userProfile] = await db
-        .insert(profiles)
-        .values({
-          name: username,
-          slug: `${username}-${randomUUID()}`,
-        })
-        .returning();
+      // Track auth user ID for cleanup
+      this.createdAuthUserIds.push(authUser.id);
 
-      if (!userProfile) {
-        throw new Error(`Failed to create profile for ${email}`);
+      // Get the user record that was created by the trigger
+      // The trigger creates both the user and profile automatically
+      const [userRecord] = await db
+        .select()
+        .from(users)
+        .where(eq(users.authUserId, authUser.id));
+
+      if (!userRecord) {
+        throw new Error(`Failed to find user record for ${email}`);
       }
 
-      // Create user in users table (minimal - only required fields)
-      await db
-        .insert(users)
-        .values({
-          authUserId: authUser.id,
-          email: authUser.email!,
-        })
-        .onConflictDoUpdate({
-          target: [users.email],
-          set: {
-            authUserId: authUser.id,
-          },
-        });
+      // Track the profile ID that was created by the trigger for cleanup
+      if (userRecord.profileId) {
+        this.createdProfileIds.push(userRecord.profileId);
+      }
 
       // Create organization user (minimal - only required fields)
       const [orgUser] = await db
@@ -286,6 +287,7 @@ export class TestOrganizationDataManager {
 
   /**
    * Cleans up test data by deleting profiles and auth users created for this test.
+   * Uses exact IDs tracked during creation to avoid race conditions with concurrent tests.
    * Relies on database cascade deletes to automatically clean up related records:
    * - Deleting profiles cascades to organizations, which cascades to organizationUsers and roles
    * - Deleting auth users cascades to users and organizationUsers tables
@@ -298,36 +300,29 @@ export class TestOrganizationDataManager {
       throw new Error('Supabase admin test client not initialized');
     }
 
-    // 1. Delete profiles with the test ID in the name
+    // 1. Delete profiles by exact IDs (not pattern matching)
     // This will cascade to organizations -> organizationUsers -> organizationUserToAccessRoles
-    await db
-      .delete(profiles)
-      .where(sql`${profiles.name} LIKE ${'%' + this.testId + '%'}`);
-
-    // 2. Delete auth users with the test ID in the email
-    // This will cascade to users and organizationUsers tables
-    const { data: authUsers, error: listError } =
-      await supabaseTestAdminClient.auth.admin.listUsers();
-
-    if (listError) {
-      throw new Error(`Failed to list auth users: ${listError.message}`);
+    if (this.createdProfileIds.length > 0) {
+      await db
+        .delete(profiles)
+        .where(inArray(profiles.id, this.createdProfileIds));
     }
 
-    if (authUsers?.users) {
-      const testUsers = authUsers.users.filter((user) =>
-        user.email?.includes(this.testId),
-      );
+    // 2. Delete auth users by exact IDs (not pattern matching)
+    // This will cascade to users and organizationUsers tables
+    if (this.createdAuthUserIds.length > 0) {
       const deleteResults = await Promise.allSettled(
-        testUsers.map((user) =>
-          supabaseTestAdminClient.auth.admin.deleteUser(user.id),
+        this.createdAuthUserIds.map((userId) =>
+          supabaseTestAdminClient.auth.admin.deleteUser(userId),
         ),
       );
 
       const failures = deleteResults.filter((r) => r.status === 'rejected');
       if (failures.length > 0) {
-        throw new Error(
-          `Failed to delete ${failures.length}/${testUsers.length} auth users`,
+        console.warn(
+          `Failed to delete ${failures.length}/${this.createdAuthUserIds.length} auth users`,
         );
+        // Don't throw - auth user deletion failures shouldn't break tests
       }
     }
   }

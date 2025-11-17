@@ -123,7 +123,6 @@ Utility functions for common test operations:
 - `createTestUser()` - Create test users
 - `signInTestUser()` - Authenticate test users  
 - `insertTestData()` - Insert test data
-- `resetTestDatabase()` - Reset database to clean state
 
 ## Writing Integration Tests
 

@@ -1,4 +1,5 @@
-import type { Session } from '@supabase/supabase-js';
+import { createServerClient } from '@supabase/ssr';
+import { type Session, createClient } from '@supabase/supabase-js';
 import { TContext } from 'src/types';
 
 import { supabaseTestAdminClient, supabaseTestClient } from './setup';
@@ -16,7 +17,6 @@ export async function sessionToCookies(
     return {};
   }
 
-  const { createServerClient } = await import('@supabase/ssr');
   const cookies: Record<string, string> = {};
 
   // Create a temporary server client that will store cookies
@@ -48,7 +48,7 @@ export async function sessionToCookies(
 
 /**
  * Creates a test context with proper cookie handling for authentication
- * This allows the server-side Supabase client to authenticate properly without the JWT hack
+ * This allows the server-side Supabase client to authenticate properly in tests
  */
 export async function createTestContextWithSession(
   session: Session | null,
@@ -72,10 +72,6 @@ export async function createTestContextWithSession(
     isServerSideCall: true,
   };
 }
-
-/**
- * Test utilities for Supabase integration tests
- */
 
 /**
  * Clean up test data from tables after tests
@@ -204,17 +200,13 @@ export async function getJWTForUser(
 ) {
   const { createClient } = await import('@supabase/supabase-js');
 
-  const TEST_SUPABASE_URL = 'http://127.0.0.1:55321';
-  const TEST_SUPABASE_ANON_KEY =
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0';
-
   // Create an isolated client that won't affect other tests
   const isolatedClient = createClient(
-    TEST_SUPABASE_URL,
-    TEST_SUPABASE_ANON_KEY,
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       auth: {
-        persistSession: false, // Don't persist session to avoid affecting other tests
+        persistSession: false,
         autoRefreshToken: false,
       },
     },
@@ -231,6 +223,51 @@ export async function getJWTForUser(
   }
 
   return signInData.session.access_token;
+}
+
+/**
+ * Create an isolated Supabase client for a test.
+ * This client won't interfere with other tests running in parallel.
+ * Safe for concurrent test execution.
+ */
+export function createIsolatedTestClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+      },
+    },
+  );
+}
+
+/**
+ * Sign in a user with an isolated client and return the session.
+ * This is safe for parallel test execution as it doesn't affect global state.
+ *
+ * @returns An object containing the isolated client and session
+ */
+export async function createIsolatedSession(
+  email: string,
+  password: string = 'testpassword123',
+) {
+  const client = createIsolatedTestClient();
+
+  const { data, error } = await client.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (error || !data.session) {
+    throw new Error(`Failed to sign in user: ${error?.message}`);
+  }
+
+  return {
+    client,
+    session: data.session,
+  };
 }
 
 /**
@@ -254,88 +291,4 @@ export async function insertTestData<T = any>(table: string, data: T | T[]) {
   }
 
   return response.data;
-}
-
-/**
- * Execute a raw SQL query (useful for complex setup/teardown)
- */
-export async function executeTestSQL(sql: string, params: any[] = []) {
-  if (!supabaseTestClient) {
-    throw new Error('Supabase test client not initialized');
-  }
-
-  const { data, error } = await supabaseTestClient.rpc('execute_sql', {
-    sql_query: sql,
-    sql_params: params,
-  });
-
-  if (error) {
-    console.warn(`SQL execution warning: ${error.message}`);
-  }
-
-  return { data, error };
-}
-
-/**
- * Wait for the Supabase instance to be ready
- */
-export async function waitForSupabase(
-  maxRetries: number = 10,
-  delayMs: number = 1000,
-) {
-  if (!supabaseTestClient) {
-    throw new Error('Supabase test client not initialized');
-  }
-
-  for (let i = 0; i < maxRetries; i++) {
-    try {
-      await supabaseTestClient.from('_test_connection').select('*').limit(1);
-      // If we get here without throwing, connection is working
-      return true;
-    } catch (err) {
-      if (i === maxRetries - 1) {
-        throw new Error('Supabase not ready after maximum retries');
-      }
-      await new Promise((resolve) => setTimeout(resolve, delayMs));
-    }
-  }
-
-  return false;
-}
-
-/**
- * Reset database to clean state (removes all data from specified tables)
- * Uses admin client to bypass RLS policies
- */
-export async function resetTestDatabase(tablesToReset: string[] = []) {
-  if (!supabaseTestAdminClient) {
-    throw new Error('Supabase admin test client not initialized');
-  }
-
-  // Default tables to reset if none specified
-  const defaultTables = [
-    'profiles',
-    'organizations',
-    'posts',
-    'comments',
-    // Add more default tables as needed
-  ];
-
-  const tables = tablesToReset.length > 0 ? tablesToReset : defaultTables;
-
-  await cleanupTestData(tables);
-
-  // Clear auth users using admin client
-  try {
-    const { data: users } =
-      await supabaseTestAdminClient.auth.admin.listUsers();
-    if (users?.users) {
-      const deletePromises = users.users.map((user) =>
-        supabaseTestAdminClient.auth.admin.deleteUser(user.id),
-      );
-      await Promise.allSettled(deletePromises);
-    }
-  } catch (err) {
-    console.warn('Could not reset auth users:', err);
-  }
 }
