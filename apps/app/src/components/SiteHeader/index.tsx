@@ -483,7 +483,7 @@ export const SiteHeader = () => {
       <header className="flex h-auto w-full items-center justify-between px-4 py-2 sm:hidden">
         {!isMobileSearchExpanded && (
           <div className="flex items-center gap-3">
-            <SidebarTrigger className="p-1" />
+            <SidebarTrigger className="p-1" size="small" />
             <Link href="/" className="flex gap-1">
               <CommonLogo />
             </Link>

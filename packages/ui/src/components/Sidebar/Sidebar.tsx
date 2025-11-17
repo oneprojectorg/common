@@ -3,11 +3,18 @@
 import { useMediaQuery } from '@op/hooks';
 import { AlignJustify } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { createContext, use, useCallback, useMemo, useState } from 'react';
+import {
+  createContext,
+  use,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import { Dialog, Modal, ModalOverlay } from 'react-aria-components';
 
 import { cn } from '../../lib/utils';
-import { IconButton } from '../IconButton';
+import { IconButton, IconButtonProps } from '../IconButton';
 
 const SIDEBAR_WIDTH = '16rem';
 
@@ -61,14 +68,18 @@ const SidebarProvider = ({
       } else {
         setInternalOpenState(openState);
       }
-
-      // Todo: store sidebar state in localstorage
-      localStorage.setItem('sidebarOpen', JSON.stringify(openState));
     },
     [setOpenProp, open],
   );
 
   const isMobile = useMediaQuery('(max-width: 640px)');
+
+  // Persist sidebar state to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('sidebarOpen', JSON.stringify(open));
+    }
+  }, [open]);
 
   // Helper to toggle the sidebar.
   const toggleSidebar = useCallback(() => {
@@ -92,11 +103,6 @@ const SidebarProvider = ({
     [state, open, setOpen, isMobile, openMobile, toggleSidebar],
   );
 
-  // Don't render on server side
-  if (isMobile === undefined) {
-    return null;
-  }
-
   return (
     <SidebarContext.Provider value={contextValue}>
       <div
@@ -109,6 +115,7 @@ const SidebarProvider = ({
         }
         className={cn('min-h-svh w-full', className)}
         {...props}
+        suppressHydrationWarning
       >
         {children}
       </div>
@@ -153,7 +160,7 @@ const Sidebar = ({
           >
             <MotionModal
               className={cn(
-                'fixed top-0 h-full w-[--sidebar-width] border-red-500 bg-white',
+                'fixed top-0 h-full w-[--sidebar-width] bg-white',
               )}
               style={
                 {
@@ -224,7 +231,10 @@ const SidebarLayout = ({
   );
 };
 
-const SidebarTrigger = ({ className, ...props }: { className?: string }) => {
+const SidebarTrigger = ({
+  className,
+  ...props
+}: Omit<IconButtonProps, 'children' | 'onPress'>) => {
   const { toggleSidebar } = useSidebar();
   return (
     <IconButton onPress={toggleSidebar} className={className} {...props}>
