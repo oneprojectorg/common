@@ -30,7 +30,7 @@ const buttonStyle = tv({
       destructive:
         'border-functional-red bg-functional-red text-neutral-offWhite hover:bg-functional-redBlack',
       ghost:
-        'border-0 bg-transparent text-neutral-600 shadow-none hover:text-neutral-900',
+        'border-0 bg-transparent text-midGray shadow-none hover:text-darkGray pressed:text-darkGray',
       pill: '',
     },
     size: {
