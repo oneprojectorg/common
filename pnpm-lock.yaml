@@ -750,6 +750,9 @@ importers:
       react:
         specifier: ^19.0.0
         version: 19.0.0
+      use-debounce:
+        specifier: ^10.0.4
+        version: 10.0.4(react@19.0.0)
     devDependencies:
       '@op/typescript-config':
         specifier: workspace:*

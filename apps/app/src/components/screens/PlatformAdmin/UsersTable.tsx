@@ -2,11 +2,12 @@
 
 import type { RouterInput } from '@op/api/client';
 import { trpc } from '@op/api/client';
+import { useDebounce } from '@op/hooks';
 import { Pagination } from '@op/ui/Pagination';
 import { SearchField } from '@op/ui/SearchField';
 import { Skeleton } from '@op/ui/Skeleton';
 import { cn } from '@op/ui/utils';
-import { Suspense, useState, useTransition } from 'react';
+import { Suspense, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -24,13 +25,7 @@ type ListAllUsersInput = RouterInput['platform']['admin']['listAllUsers'];
 export const UsersTable = () => {
   const t = useTranslations();
   const [searchQuery, setSearchQuery] = useState('');
-  const [isPending, startTransition] = useTransition();
-
-  const handleSearchChange = (value: string) => {
-    startTransition(() => {
-      setSearchQuery(value);
-    });
-  };
+  const [debouncedQuery] = useDebounce(searchQuery, 200);
 
   return (
     <div className="mt-8">
@@ -42,15 +37,15 @@ export const UsersTable = () => {
           <SearchField
             aria-label="Search users by email"
             value={searchQuery}
-            onChange={handleSearchChange}
+            onChange={setSearchQuery}
           />
         </div>
       </div>
       <div className="overflow-x-auto">
-        <div className={cn(USER_TABLE_MIN_WIDTH, isPending && 'opacity-50')}>
+        <div className={cn(USER_TABLE_MIN_WIDTH)}>
           <UsersTableHeader />
-          <Suspense key={searchQuery} fallback={<UsersTableContentSkeleton />}>
-            <UsersTableContentWrapper searchQuery={searchQuery} />
+          <Suspense fallback={<UsersTableContentSkeleton />}>
+            <UsersTableContent searchQuery={debouncedQuery} />
           </Suspense>
         </div>
       </div>
@@ -92,11 +87,6 @@ const UsersTableHeader = () => {
       ))}
     </div>
   );
-};
-
-/** Wrapper to pass props to suspense content */
-const UsersTableContentWrapper = ({ searchQuery }: { searchQuery: string }) => {
-  return <UsersTableContent searchQuery={searchQuery} />;
 };
 
 /** Renders users table with live data */

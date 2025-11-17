@@ -1,5 +1,6 @@
 import useAuthLogout from './src/useAuthLogout';
 import useAuthUser from './src/useAuthUser';
+import { useDebounce } from './src/useDebounce';
 import { useInfiniteScroll } from './src/useInfiniteScroll';
 import { useIntersectionObserver } from './src/useIntersectionObserver';
 import useMediaQuery from './src/useMediaQuery';
@@ -14,4 +15,5 @@ export {
   useMediaQuery,
   useMount,
   useRelativeTime,
+  useDebounce,
 };

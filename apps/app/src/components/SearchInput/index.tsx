@@ -2,13 +2,13 @@ import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { useLocalStorage } from '@/utils/useLocalStorage';
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
+import { useDebounce } from '@op/hooks';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { TextField } from '@op/ui/TextField';
 import { cn } from '@op/ui/utils';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { LuSearch } from 'react-icons/lu';
-import { useDebounce } from 'use-debounce';
 
 import { Link, useRouter } from '@/lib/i18n';
 
