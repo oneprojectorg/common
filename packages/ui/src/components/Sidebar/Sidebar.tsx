@@ -74,12 +74,27 @@ const SidebarProvider = ({
 
   const isMobile = useMediaQuery('(max-width: 640px)');
 
+  // Restore sidebar state from localStorage on mount (desktop only)
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !openProp && isMobile === false) {
+      const storedValue = localStorage.getItem('sidebarOpen');
+      if (storedValue !== null) {
+        try {
+          const parsedValue = JSON.parse(storedValue);
+          setInternalOpenState(parsedValue);
+        } catch {
+          // Invalid JSON, ignore
+        }
+      }
+    }
+  }, [isMobile, openProp]);
+
   // Persist sidebar state to localStorage
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && isMobile === false) {
       localStorage.setItem('sidebarOpen', JSON.stringify(open));
     }
-  }, [open]);
+  }, [open, isMobile]);
 
   // Helper to toggle the sidebar.
   const toggleSidebar = useCallback(() => {
