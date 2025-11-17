@@ -31,9 +31,10 @@ export function useRichTextEditor({
     editorProps: {
       attributes: {
         class: cn(
-          'overflow-wrap-anywhere max-w-none break-words focus:outline-none [&_a:hover]:underline [&_a]:text-teal [&_a]:no-underline [&_h1]:text-teal',
+          'overflow-wrap-anywhere prose prose-lg max-w-none break-words !text-base focus:outline-none [&_a:hover]:underline [&_a]:text-teal [&_a]:no-underline',
           editorClassName ||
             'min-h-96 px-6 py-6 text-neutral-black placeholder:text-neutral-gray2',
+          '[&_li_p]:my-0',
         ),
       },
     },
