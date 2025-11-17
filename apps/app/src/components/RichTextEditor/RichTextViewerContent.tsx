@@ -1,6 +1,6 @@
 'use client';
 
-import { EditorContent, useEditor } from '@tiptap/react';
+import { useEditor } from '@tiptap/react';
 
 import { StyledRichTextContent } from './StyledRichTextContent';
 import { getViewerExtensions } from './editorConfig';

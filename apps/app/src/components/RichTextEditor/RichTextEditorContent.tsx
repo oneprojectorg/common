@@ -1,6 +1,6 @@
 'use client';
 
-import { Editor, EditorContent } from '@tiptap/react';
+import { Editor } from '@tiptap/react';
 import { forwardRef, useImperativeHandle } from 'react';
 
 import { StyledRichTextContent } from './StyledRichTextContent';
