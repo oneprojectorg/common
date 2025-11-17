@@ -1,8 +1,9 @@
 import { relations } from 'drizzle-orm';
 import type { InferModel } from 'drizzle-orm';
-import { index, jsonb, pgTable, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { index, pgTable, timestamp, uuid } from 'drizzle-orm/pg-core';
 
 import { autoId, serviceRolePolicies } from '../../helpers';
+import { proposalSnapshotColumns } from './proposalColumns';
 import { proposals, proposalStatusEnum } from './proposals.sql';
 import { profiles } from './profiles.sql';
 
@@ -17,27 +18,11 @@ export const proposalHistory = pgTable(
         onDelete: 'cascade',
       }),
 
-    // Snapshot of proposal data at this point in time
-    proposalData: jsonb('proposal_data').notNull(),
+    // Shared snapshot columns (same as in proposals table)
+    ...proposalSnapshotColumns,
 
-    // Snapshot of status at this point in time
+    // Override status to make it required (no default in history)
     status: proposalStatusEnum('status').notNull(),
-
-    // Snapshot of the original submitter (typically doesn't change)
-    submittedByProfileId: uuid('submitted_by_profile_id')
-      .notNull()
-      .references(() => profiles.id, {
-        onUpdate: 'cascade',
-        onDelete: 'cascade',
-      }),
-
-    // Snapshot of the proposal's profile (typically doesn't change)
-    profileId: uuid('profile_id')
-      .references(() => profiles.id, {
-        onUpdate: 'cascade',
-        onDelete: 'cascade',
-      })
-      .notNull(),
 
     // Who made the edit that created this version
     editedByProfileId: uuid('edited_by_profile_id')

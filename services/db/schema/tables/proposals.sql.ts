@@ -2,7 +2,6 @@ import { relations } from 'drizzle-orm';
 import type { InferModel } from 'drizzle-orm';
 import {
   index,
-  jsonb,
   pgEnum,
   pgTable,
   primaryKey,
@@ -20,6 +19,7 @@ import { decisionsVoteProposals } from './decisions_vote_proposals.sql';
 import { processInstances } from './processInstances.sql';
 import { profiles } from './profiles.sql';
 import { proposalAttachments } from './proposalAttachments.sql';
+import { proposalSnapshotColumns } from './proposalColumns';
 import { taxonomyTerms } from './taxonomies.sql';
 
 export enum ProposalStatus {
@@ -49,15 +49,11 @@ export const proposals = pgTable(
         onDelete: 'cascade',
       }),
 
-    // Proposal data following the template schema
-    proposalData: jsonb('proposal_data').notNull(),
+    // Shared snapshot columns (also used in proposalHistory)
+    ...proposalSnapshotColumns,
 
-    submittedByProfileId: uuid('submitted_by_profile_id')
-      .notNull()
-      .references(() => profiles.id, {
-        onUpdate: 'cascade',
-        onDelete: 'cascade',
-      }),
+    // Override status to add default value
+    status: proposalStatusEnum('status').default(ProposalStatus.DRAFT),
 
     // Track who last edited this proposal (for version history)
     lastEditedByProfileId: uuid('last_edited_by_profile_id').references(
@@ -67,15 +63,6 @@ export const proposals = pgTable(
         onDelete: 'cascade',
       },
     ),
-
-    profileId: uuid('profile_id')
-      .references(() => profiles.id, {
-        onUpdate: 'cascade',
-        onDelete: 'cascade',
-      })
-      .notNull(),
-
-    status: proposalStatusEnum('status').default(ProposalStatus.DRAFT),
 
     ...timestamps,
   },
