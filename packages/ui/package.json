@@ -48,6 +48,7 @@
     "./RAH": "./src/RAH.ts",
     "./RAS": "./src/RAS.ts",
     "./Scroller": "./src/components/Scroller.tsx",
+    "./SearchField": "./src/components/SearchField.tsx",
     "./Select": "./src/components/Select.tsx",
     "./Skeleton": "./src/components/Skeleton.tsx",
     "./SocialLinks": "./src/components/SocialLinks.tsx",
