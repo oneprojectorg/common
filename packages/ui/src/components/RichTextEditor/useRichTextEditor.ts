@@ -5,16 +5,6 @@ import { useEffect } from 'react';
 import { cn } from '../../lib/utils';
 import { baseEditorStyles, defaultEditorExtensions } from './editorConfig';
 
-export interface UseRichTextEditorProps {
-  extensions?: Extensions;
-  content?: string;
-  editorClassName?: string;
-  onUpdate?: (content: string) => void;
-  onChange?: (content: string) => void;
-  onEditorReady?: (editor: Editor) => void;
-  editable?: boolean;
-}
-
 export function useRichTextEditor({
   extensions = defaultEditorExtensions,
   content = '',
@@ -23,7 +13,15 @@ export function useRichTextEditor({
   onChange,
   onEditorReady,
   editable = true,
-}: UseRichTextEditorProps) {
+}: {
+  extensions?: Extensions;
+  content?: string;
+  editorClassName?: string;
+  onUpdate?: (content: string) => void;
+  onChange?: (content: string) => void;
+  onEditorReady?: (editor: Editor) => void;
+  editable?: boolean;
+}) {
   const editor = useEditor({
     extensions,
     content,

@@ -8,12 +8,6 @@ import { defaultViewerExtensions } from './editorConfig';
 import { useRichTextEditor } from './useRichTextEditor';
 
 // TODO: this will be replaced entirely by a new viewer that has no dependency on TipTap
-export interface RichTextViewerProps {
-  extensions?: Extensions;
-  content: string;
-  className?: string;
-  editorClassName?: string;
-}
 
 /**
  * Read-only viewer component for displaying rich text content.
@@ -25,7 +19,12 @@ export function RichTextViewer({
   content,
   className = '',
   editorClassName = '',
-}: RichTextViewerProps) {
+}: {
+  extensions?: Extensions;
+  content: string;
+  className?: string;
+  editorClassName?: string;
+}) {
   const editor = useRichTextEditor({
     extensions,
     content,

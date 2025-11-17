@@ -6,7 +6,6 @@ export {
   RichTextEditor,
   RichTextViewer,
   type RichTextEditorRef,
-  type RichTextViewerProps,
 } from '@op/ui/RichTextEditor';
 
 // App-specific toolbar components

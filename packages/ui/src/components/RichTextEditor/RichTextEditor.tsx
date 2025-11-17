@@ -7,17 +7,6 @@ import { RichTextEditorSkeleton } from './RichTextEditorSkeleton';
 import { StyledRichTextContent } from './StyledRichTextContent';
 import { useRichTextEditor } from './useRichTextEditor';
 
-export interface RichTextEditorProps {
-  extensions?: Extensions;
-  content?: string;
-  placeholder?: string;
-  onUpdate?: (content: string) => void;
-  onChange?: (content: string) => void;
-  onEditorReady?: (editor: Editor) => void;
-  className?: string;
-  editorClassName?: string;
-}
-
 export interface RichTextEditorRef {
   getHTML: () => string;
   setContent: (content: string) => void;
@@ -30,7 +19,16 @@ export interface RichTextEditorRef {
 
 export const RichTextEditor = forwardRef<
   RichTextEditorRef,
-  RichTextEditorProps
+  {
+    extensions?: Extensions;
+    content?: string;
+    placeholder?: string;
+    onUpdate?: (content: string) => void;
+    onChange?: (content: string) => void;
+    onEditorReady?: (editor: Editor) => void;
+    className?: string;
+    editorClassName?: string;
+  }
 >(
   (
     {
