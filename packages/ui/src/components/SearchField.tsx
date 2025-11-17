@@ -16,7 +16,6 @@ export interface SearchFieldProps extends AriaSearchFieldProps {
   description?: string;
   errorMessage?: string | ((validation: ValidationResult) => string);
   placeholder?: string;
-  isLoading?: boolean;
 }
 
 export const SearchField = ({
@@ -24,7 +23,6 @@ export const SearchField = ({
   description,
   errorMessage,
   placeholder,
-  isLoading = false,
   ...props
 }: SearchFieldProps) => {
   return (
@@ -39,7 +37,7 @@ export const SearchField = ({
       <FieldGroup className="relative">
         <SearchIcon
           aria-hidden
-          className={`pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-darkGray ${isLoading ? 'animate-pulse' : ''}`}
+          className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-darkGray"
         />
         <Input
           placeholder={placeholder}

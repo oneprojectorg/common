@@ -26,7 +26,6 @@ export const UsersTable = () => {
   const t = useTranslations();
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery] = useDebounce(searchQuery, 200);
-  const isSearching = searchQuery !== debouncedQuery;
 
   return (
     <div className="mt-8">
@@ -40,7 +39,6 @@ export const UsersTable = () => {
             placeholder={t('platformAdmin_searchUsersPlaceholder')}
             value={searchQuery}
             onChange={setSearchQuery}
-            isLoading={isSearching}
           />
         </div>
       </div>
