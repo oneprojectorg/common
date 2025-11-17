@@ -320,12 +320,12 @@ describe('platform.admin.listAllUsers', () => {
       hasMore: true,
       total: 10,
     });
-    expect(result.items).toSatisfy((items) => {
-      const satisfies = items.every((user) =>
+    expect(result.items).toSatisfy((items: typeof result.items) => {
+      const satisfies = items.every((user: (typeof result.items)[number]) =>
         customDomainUserEmails.has(user.email),
       );
 
-      items.forEach((user) => {
+      items.forEach((user: (typeof result.items)[number]) => {
         customDomainUserEmails.delete(user.email);
       });
 
@@ -345,8 +345,10 @@ describe('platform.admin.listAllUsers', () => {
       hasMore: false,
       total: 10,
     });
-    expect(result2.items).toSatisfy((items) =>
-      items.every((user) => customDomainUserEmails.has(user.email)),
+    expect(result2.items).toSatisfy((items: typeof result2.items) =>
+      items.every((user: (typeof result2.items)[number]) =>
+        customDomainUserEmails.has(user.email),
+      ),
     );
   });
 });
