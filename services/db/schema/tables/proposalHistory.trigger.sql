@@ -17,29 +17,14 @@ BEGIN
   IF (OLD.proposal_data IS DISTINCT FROM NEW.proposal_data) OR
      (OLD.status IS DISTINCT FROM NEW.status) THEN
 
-    -- Insert the OLD version into history table
-    INSERT INTO public.decision_proposal_history (
-      proposal_id,
-      proposal_data,
-      status,
-      submitted_by_profile_id,
-      profile_id,
-      edited_by_profile_id,
-      valid_from,
-      valid_to,
-      created_at
-    ) VALUES (
-      OLD.id,
-      OLD.proposal_data,
-      OLD.status,
-      OLD.submitted_by_profile_id,
-      OLD.profile_id,
-      -- Use lastEditedByProfileId if set, otherwise fall back to submitter
-      COALESCE(OLD.last_edited_by_profile_id, OLD.submitted_by_profile_id),
-      OLD.updated_at,  -- When this version became valid
-      NEW.updated_at,  -- When this version was superseded
-      NOW()            -- When the history record was created
-    );
+    -- Insert the complete OLD row into history using SELECT OLD.*
+    -- This automatically copies all columns from the proposals table
+    INSERT INTO public.decision_proposal_history
+    SELECT
+      OLD.*,                                     -- All columns from proposals table
+      gen_random_uuid(),                         -- history_id (new unique ID)
+      tstzrange(OLD.updated_at, NEW.updated_at), -- valid_during (temporal range)
+      NOW();                                     -- history_created_at
   END IF;
 
   RETURN NEW;
@@ -52,5 +37,11 @@ CREATE TRIGGER proposal_history_trigger
   FOR EACH ROW
   EXECUTE FUNCTION public.create_proposal_history();
 
--- Note: The trigger uses the lastEditedByProfileId field from the proposals table
--- to track who made each edit. Make sure to set this field when updating proposals.
+-- Note: This trigger uses SELECT OLD.* to copy the entire row from proposals
+-- into the history table. When you add or remove columns from the proposals table,
+-- ensure you also update the history table structure to match.
+--
+-- The history table includes ALL columns from proposals, plus three additional columns:
+-- - history_id: Unique identifier for this history record
+-- - valid_during: Temporal range showing when this version was valid
+-- - history_created_at: When this history record was created

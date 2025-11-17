@@ -2,49 +2,26 @@ import { relations } from 'drizzle-orm';
 import type { InferModel } from 'drizzle-orm';
 import { index, pgTable, timestamp, uuid } from 'drizzle-orm/pg-core';
 
-import { autoId, serviceRolePolicies } from '../../helpers';
-import { proposalSnapshotColumns } from './proposalColumns';
-import { proposals, proposalStatusEnum } from './proposals.sql';
+import { autoId, serviceRolePolicies, tstzrange } from '../../helpers';
+import { processInstances } from './processInstances.sql';
 import { profiles } from './profiles.sql';
+import { proposalColumns } from './proposalColumns';
+import { proposals } from './proposals.sql';
 
 export const proposalHistory = pgTable(
   'decision_proposal_history',
   {
-    id: autoId().primaryKey(),
-    proposalId: uuid('proposal_id')
-      .notNull()
-      .references(() => proposals.id, {
-        onUpdate: 'cascade',
-        onDelete: 'cascade',
-      }),
+    // Full row snapshot - includes ALL columns from proposals table (except id)
+    // This allows using SELECT OLD.* in the trigger
+    id: uuid('id').notNull(), // Original proposal ID (from OLD.id)
 
-    // Shared snapshot columns (same as in proposals table)
-    ...proposalSnapshotColumns,
+    // All columns copied from proposals table (single source of truth!)
+    ...proposalColumns,
 
-    // Override status to make it required (no default in history)
-    status: proposalStatusEnum('status').notNull(),
-
-    // Who made the edit that created this version
-    editedByProfileId: uuid('edited_by_profile_id')
-      .references(() => profiles.id, {
-        onUpdate: 'cascade',
-        onDelete: 'cascade',
-      })
-      .notNull(),
-
-    // Temporal validity range
-    validFrom: timestamp('valid_from', {
-      withTimezone: true,
-      mode: 'string',
-    }).notNull(),
-
-    validTo: timestamp('valid_to', {
-      withTimezone: true,
-      mode: 'string',
-    }), // NULL for current version
-
-    // When this history record was created
-    createdAt: timestamp('created_at', {
+    // History-specific columns (appended after OLD.*)
+    historyId: autoId().primaryKey(), // Unique ID for this history record
+    validDuring: tstzrange('valid_during').notNull(), // Temporal validity range
+    historyCreatedAt: timestamp('history_created_at', {
       withTimezone: true,
       mode: 'string',
     })
@@ -53,14 +30,16 @@ export const proposalHistory = pgTable(
   },
   (table) => [
     ...serviceRolePolicies,
-    index().on(table.id).concurrently(),
-    index().on(table.proposalId).concurrently(),
-    index().on(table.validFrom).concurrently(),
+    index().on(table.historyId).concurrently(),
+    index().on(table.id).concurrently(), // Original proposal ID
+    index().on(table.processInstanceId).concurrently(),
+    // GiST index for efficient temporal range queries
+    // Note: This will need to be created manually in migration with USING GIST
     index('proposal_history_temporal_idx')
-      .on(table.proposalId, table.validFrom, table.validTo)
+      .on(table.id, table.validDuring)
       .concurrently(),
     index('proposal_history_edited_by_idx')
-      .on(table.editedByProfileId)
+      .on(table.lastEditedByProfileId)
       .concurrently(),
   ],
 );
@@ -69,8 +48,12 @@ export const proposalHistoryRelations = relations(
   proposalHistory,
   ({ one }) => ({
     proposal: one(proposals, {
-      fields: [proposalHistory.proposalId],
+      fields: [proposalHistory.id], // Links to original proposal
       references: [proposals.id],
+    }),
+    processInstance: one(processInstances, {
+      fields: [proposalHistory.processInstanceId],
+      references: [processInstances.id],
     }),
     submittedBy: one(profiles, {
       fields: [proposalHistory.submittedByProfileId],
@@ -80,8 +63,8 @@ export const proposalHistoryRelations = relations(
       fields: [proposalHistory.profileId],
       references: [profiles.id],
     }),
-    editedBy: one(profiles, {
-      fields: [proposalHistory.editedByProfileId],
+    lastEditedBy: one(profiles, {
+      fields: [proposalHistory.lastEditedByProfileId],
       references: [profiles.id],
     }),
   }),

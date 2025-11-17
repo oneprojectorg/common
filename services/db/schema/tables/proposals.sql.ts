@@ -1,25 +1,14 @@
 import { relations } from 'drizzle-orm';
 import type { InferModel } from 'drizzle-orm';
-import {
-  index,
-  pgEnum,
-  pgTable,
-  primaryKey,
-  uuid,
-} from 'drizzle-orm/pg-core';
+import { index, pgEnum, pgTable, primaryKey, uuid } from 'drizzle-orm/pg-core';
 
-import {
-  autoId,
-  enumToPgEnum,
-  serviceRolePolicies,
-  timestamps,
-} from '../../helpers';
+import { autoId, enumToPgEnum, serviceRolePolicies } from '../../helpers';
 import { decisions } from './decisions.sql';
 import { decisionsVoteProposals } from './decisions_vote_proposals.sql';
 import { processInstances } from './processInstances.sql';
 import { profiles } from './profiles.sql';
 import { proposalAttachments } from './proposalAttachments.sql';
-import { proposalSnapshotColumns } from './proposalColumns';
+import { proposalColumns } from './proposalColumns';
 import { taxonomyTerms } from './taxonomies.sql';
 
 export enum ProposalStatus {
@@ -42,29 +31,9 @@ export const proposals = pgTable(
   'decision_proposals',
   {
     id: autoId().primaryKey(),
-    processInstanceId: uuid('process_instance_id')
-      .notNull()
-      .references(() => processInstances.id, {
-        onUpdate: 'cascade',
-        onDelete: 'cascade',
-      }),
 
-    // Shared snapshot columns (also used in proposalHistory)
-    ...proposalSnapshotColumns,
-
-    // Override status to add default value
-    status: proposalStatusEnum('status').default(ProposalStatus.DRAFT),
-
-    // Track who last edited this proposal (for version history)
-    lastEditedByProfileId: uuid('last_edited_by_profile_id').references(
-      () => profiles.id,
-      {
-        onUpdate: 'cascade',
-        onDelete: 'cascade',
-      },
-    ),
-
-    ...timestamps,
+    // All columns that get copied to history (single source of truth)
+    ...proposalColumns,
   },
   (table) => [
     ...serviceRolePolicies,
