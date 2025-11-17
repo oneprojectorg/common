@@ -7,7 +7,7 @@ import { Pagination } from '@op/ui/Pagination';
 import { SearchField } from '@op/ui/SearchField';
 import { Skeleton } from '@op/ui/Skeleton';
 import { cn } from '@op/ui/utils';
-import { Suspense, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -26,6 +26,7 @@ export const UsersTable = () => {
   const t = useTranslations();
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery] = useDebounce(searchQuery, 200);
+  const isSearching = searchQuery !== debouncedQuery;
 
   return (
     <div className="mt-8">
@@ -35,9 +36,11 @@ export const UsersTable = () => {
         </h2>
         <div className="w-64">
           <SearchField
-            aria-label="Search users by email"
+            aria-label={t('platformAdmin_searchUsersPlaceholder')}
+            placeholder={t('platformAdmin_searchUsersPlaceholder')}
             value={searchQuery}
             onChange={setSearchQuery}
+            isLoading={isSearching}
           />
         </div>
       </div>

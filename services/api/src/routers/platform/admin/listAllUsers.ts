@@ -49,17 +49,17 @@ export const listAllUsersRouter = router({
             )
           : undefined;
 
-        // Build search condition if query is provided
-        let whereCondition = cursorCondition;
-        if (query && query.length >= 2) {
-          // Use ilike for case-insensitive pattern matching
-          // NOTE: This can be optimized with full-text search (to_tsvector/to_tsquery) if needed for performance
-          const searchCondition = ilike(users.email, `%${query}%`);
+        // Build search condition if query is provided (separate from cursor for total count)
+        const searchCondition =
+          query && query.length >= 2
+            ? ilike(users.email, `%${query}%`)
+            : undefined;
 
-          whereCondition = whereCondition
-            ? and(whereCondition, searchCondition)
-            : searchCondition;
-        }
+        // Combine search with cursor for pagination query
+        const whereCondition =
+          searchCondition && cursorCondition
+            ? and(cursorCondition, searchCondition)
+            : searchCondition || cursorCondition;
 
         // Parallel database queries for optimal performance
         const [allUsers, totalCountResult] = await Promise.all([
@@ -95,7 +95,7 @@ export const listAllUsersRouter = router({
               const [result] = await db
                 .select({ value: count() })
                 .from(users)
-                .where(whereCondition);
+                .where(searchCondition);
               return result;
             },
             options: {
