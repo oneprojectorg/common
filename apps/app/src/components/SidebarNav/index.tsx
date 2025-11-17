@@ -38,7 +38,7 @@ const NavLink = ({
 }) => {
   const { toggleSidebar, isMobile } = useSidebar();
   const { pressProps } = usePress({
-    onPress: isMobile ? toggleSidebar : (e) => e,
+    onPress: isMobile ? toggleSidebar : undefined,
   });
   return (
     <Link
