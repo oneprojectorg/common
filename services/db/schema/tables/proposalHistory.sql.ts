@@ -5,8 +5,7 @@ import { index, pgTable, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { autoId, serviceRolePolicies, tstzrange } from '../../helpers';
 import { processInstances } from './processInstances.sql';
 import { profiles } from './profiles.sql';
-import { proposalColumns } from './proposalColumns';
-import { proposals } from './proposals.sql';
+import { proposalColumns, proposals } from './proposals.sql';
 
 export const proposalHistory = pgTable(
   'decision_proposal_history',
@@ -15,12 +14,10 @@ export const proposalHistory = pgTable(
     // This allows using SELECT OLD.* in the trigger
     id: uuid('id').notNull(), // Original proposal ID (from OLD.id)
 
-    // All columns copied from proposals table (single source of truth!)
     ...proposalColumns,
 
-    // History-specific columns (appended after OLD.*)
     historyId: autoId().primaryKey(), // Unique ID for this history record
-    validDuring: tstzrange('valid_during').notNull(), // Temporal validity range
+    validDuring: tstzrange('valid_during').notNull(),
     historyCreatedAt: timestamp('history_created_at', {
       withTimezone: true,
       mode: 'string',
