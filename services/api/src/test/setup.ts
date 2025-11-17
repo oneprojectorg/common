@@ -4,8 +4,8 @@ import { afterAll, beforeAll, beforeEach, vi } from 'vitest';
 // Mock server-only modules before any other imports
 vi.mock('server-only', () => ({}));
 vi.mock('next/server', () => ({
-  NextRequest: class { },
-  NextResponse: class { },
+  NextRequest: class {},
+  NextResponse: class {},
   cookies: () => ({
     get: vi.fn(),
     set: vi.fn(),
@@ -72,7 +72,7 @@ vi.mock('@op/core', async () => {
   };
 });
 
-// Global setup for all tests
+// Global setup for all tests (per test file)
 beforeAll(async () => {
   // Initialize test Supabase client (anon key for user operations)
   testSupabase = createClient(TEST_SUPABASE_URL, TEST_SUPABASE_ANON_KEY, {
@@ -97,14 +97,9 @@ beforeAll(async () => {
   supabaseTestClient = testSupabase;
   supabaseTestAdminClient = testSupabaseAdmin;
 
-  // Run database migrations before tests
-  await runMigrations();
-
   // Verify Supabase is running
   try {
-    const { error } = await testSupabase.from('users')
-      .select('*')
-      .limit(1);
+    const { error } = await testSupabase.from('users').select('*').limit(1);
     if (
       error &&
       !error.message.includes('relation "_test_ping" does not exist')
@@ -112,7 +107,6 @@ beforeAll(async () => {
       console.warn('Supabase connection test failed:', error.message);
     }
   } catch (err) {
-
     console.warn(
       "Failed to connect to test Supabase instance. Make sure it's running on",
       TEST_SUPABASE_URL,
@@ -120,53 +114,6 @@ beforeAll(async () => {
     throw err;
   }
 });
-
-/**
- * Run database migrations and seed data using Drizzle
- */
-async function runMigrations() {
-  try {
-    console.log('🔄 Running Drizzle migrations...');
-
-    // Import necessary modules for running shell commands
-    const { execSync } = await import('child_process');
-    const path = await import('path');
-
-    // Navigate to project root and run Drizzle migrations
-    const projectRoot = path.resolve(process.cwd(), '../..');
-    const migrationCommand = 'pnpm w:db migrate:test';
-
-    execSync(migrationCommand, {
-      cwd: projectRoot,
-      stdio: 'pipe', // Suppress output unless there's an error
-    });
-
-    console.log('✅ Drizzle migrations completed successfully');
-
-    // Run seed command after migrations (optional)
-    try {
-      console.log('🌱 Running database seed...');
-      const seedCommand = 'pnpm w:db seed:test';
-
-      execSync(seedCommand, {
-        cwd: projectRoot,
-        stdio: 'pipe', // Suppress output unless there's an error
-      });
-
-      console.log('✅ Database seed completed successfully');
-    } catch (seedError: any) {
-      // Seeding is optional - don't fail tests if it doesn't work
-      console.warn('⚠️  Seeding warning:', seedError.message.split('\n')[0]);
-      console.warn('   Tests will continue without seed data');
-    }
-  } catch (error: any) {
-    // Don't fail tests if migrations/seeding fail - just warn
-    console.warn('⚠️  Migration/seed warning:', error.message);
-    console.warn(
-      '   Tests will continue, but some may fail if schema is outdated or data is missing',
-    );
-  }
-}
 
 // Setup test environment for each test
 beforeEach(async () => {

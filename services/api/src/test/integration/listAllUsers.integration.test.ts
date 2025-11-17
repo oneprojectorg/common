@@ -1,10 +1,10 @@
-import { TContext } from 'src/types';
 import { describe, expect, it } from 'vitest';
 
 import { platformAdminRouter } from '../../routers/platform/admin';
 import { createCallerFactory } from '../../trpcFactory';
 import { TestOrganizationDataManager } from '../helpers/TestOrganizationDataManager';
 import {
+  createTestContextWithSession,
   getCurrentTestSession,
   signInTestUser,
   signOutTestUser,
@@ -13,26 +13,11 @@ import {
 describe('platform.admin.listAllUsers', () => {
   const createCaller = createCallerFactory(platformAdminRouter);
 
-  const createTestContext = (jwt: string): TContext => ({
-    jwt,
-    req: {
-      headers: { get: () => '127.0.0.1' },
-      url: 'http://localhost:3000/api/trpc',
-    } as any,
-    ip: '127.0.0.1',
-    reqUrl: 'http://localhost:3000/api/trpc',
-    requestId: 'test-request-id',
-    getCookies: () => ({}),
-    getCookie: () => undefined,
-    setCookie: () => {},
-    time: Date.now(),
-    isServerSideCall: true,
-  });
-
   it('should successfully list all users as platform admin', async ({
     task,
+    onTestFinished,
   }) => {
-    const testData = new TestOrganizationDataManager(task.id);
+    const testData = new TestOrganizationDataManager(task.id, onTestFinished);
     const { adminUser } = await testData.createOrganization({
       users: { admin: 1, member: 2 },
     });
@@ -44,7 +29,7 @@ describe('platform.admin.listAllUsers', () => {
       throw new Error('No session found for test user');
     }
 
-    const caller = createCaller(createTestContext(session.access_token));
+    const caller = createCaller(await createTestContextWithSession(session));
     const result = await caller.listAllUsers({ limit: 10 });
 
     expect(result.items.length).toBeGreaterThan(0);
@@ -53,8 +38,9 @@ describe('platform.admin.listAllUsers', () => {
 
   it('should throw error when non-platform admin tries to list all users', async ({
     task,
+    onTestFinished,
   }) => {
-    const testData = new TestOrganizationDataManager(task.id);
+    const testData = new TestOrganizationDataManager(task.id, onTestFinished);
     const { adminUser } = await testData.createOrganization({
       users: { admin: 1 },
       emailDomain: 'example.com',
@@ -67,13 +53,16 @@ describe('platform.admin.listAllUsers', () => {
       throw new Error('No session found for test user');
     }
 
-    const caller = createCaller(createTestContext(session.access_token));
+    const caller = createCaller(await createTestContextWithSession(session));
 
     await expect(() => caller.listAllUsers()).rejects.toThrow();
   });
 
-  it('should support pagination with cursor', async ({ task }) => {
-    const testData = new TestOrganizationDataManager(task.id);
+  it('should support pagination with cursor', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestOrganizationDataManager(task.id, onTestFinished);
     const { adminUser } = await testData.createOrganization({
       users: { admin: 1, member: 3 },
     });
@@ -85,7 +74,7 @@ describe('platform.admin.listAllUsers', () => {
       throw new Error('No session found for test user');
     }
 
-    const caller = createCaller(createTestContext(session.access_token));
+    const caller = createCaller(await createTestContextWithSession(session));
 
     const firstPage = await caller.listAllUsers({ limit: 2 });
     expect(firstPage.items.length).toBeLessThanOrEqual(2);
@@ -103,8 +92,8 @@ describe('platform.admin.listAllUsers', () => {
     }
   });
 
-  it('should return correct hasMore flag', async ({ task }) => {
-    const testData = new TestOrganizationDataManager(task.id);
+  it('should return correct hasMore flag', async ({ task, onTestFinished }) => {
+    const testData = new TestOrganizationDataManager(task.id, onTestFinished);
     const { adminUser } = await testData.createOrganization({
       users: { admin: 1, member: 5 },
     });
@@ -116,15 +105,18 @@ describe('platform.admin.listAllUsers', () => {
       throw new Error('No session found for test user');
     }
 
-    const caller = createCaller(createTestContext(session.access_token));
+    const caller = createCaller(await createTestContextWithSession(session));
     const result = await caller.listAllUsers({ limit: 1000 });
 
     expect(result.hasMore).toBe(false);
     expect(result.next).toBeNull();
   });
 
-  it('should handle invalid cursor gracefully', async ({ task }) => {
-    const testData = new TestOrganizationDataManager(task.id);
+  it('should handle invalid cursor gracefully', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestOrganizationDataManager(task.id, onTestFinished);
     const { adminUser } = await testData.createOrganization({
       users: { admin: 1 },
     });
@@ -136,15 +128,15 @@ describe('platform.admin.listAllUsers', () => {
       throw new Error('No session found for test user');
     }
 
-    const caller = createCaller(createTestContext(session.access_token));
+    const caller = createCaller(await createTestContextWithSession(session));
 
     await expect(() =>
       caller.listAllUsers({ limit: 10, cursor: 'invalid-cursor' }),
     ).rejects.toThrow();
   });
 
-  it('should respect limit parameter', async ({ task }) => {
-    const testData = new TestOrganizationDataManager(task.id);
+  it('should respect limit parameter', async ({ task, onTestFinished }) => {
+    const testData = new TestOrganizationDataManager(task.id, onTestFinished);
     const { adminUser } = await testData.createOrganization({
       users: { admin: 1, member: 5 },
     });
@@ -156,14 +148,17 @@ describe('platform.admin.listAllUsers', () => {
       throw new Error('No session found for test user');
     }
 
-    const caller = createCaller(createTestContext(session.access_token));
+    const caller = createCaller(await createTestContextWithSession(session));
     const result = await caller.listAllUsers({ limit: 3 });
 
     expect(result.items.length).toBeLessThanOrEqual(3);
   });
 
-  it('should sort users by updatedAt ascending', async ({ task }) => {
-    const testData = new TestOrganizationDataManager(task.id);
+  it('should sort users by updatedAt ascending', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestOrganizationDataManager(task.id, onTestFinished);
     const { adminUser } = await testData.createOrganization({
       users: { admin: 1, member: 3 },
     });
@@ -175,7 +170,7 @@ describe('platform.admin.listAllUsers', () => {
       throw new Error('No session found for test user');
     }
 
-    const caller = createCaller(createTestContext(session.access_token));
+    const caller = createCaller(await createTestContextWithSession(session));
     const result = await caller.listAllUsers({ limit: 10, dir: 'asc' });
 
     for (let i = 0; i < result.items.length - 1; i++) {
@@ -191,8 +186,9 @@ describe('platform.admin.listAllUsers', () => {
 
   it('should filter users by search query matching specific email', async ({
     task,
+    onTestFinished,
   }) => {
-    const testData = new TestOrganizationDataManager(task.id);
+    const testData = new TestOrganizationDataManager(task.id, onTestFinished);
     const { adminUser } = await testData.createOrganization({
       users: { admin: 1, member: 2 },
     });
@@ -204,7 +200,7 @@ describe('platform.admin.listAllUsers', () => {
       throw new Error('No session found for test user');
     }
 
-    const caller = createCaller(createTestContext(session.access_token));
+    const caller = createCaller(await createTestContextWithSession(session));
 
     const firstWord = task.id;
     const result = await caller.listAllUsers({
@@ -223,8 +219,9 @@ describe('platform.admin.listAllUsers', () => {
 
   it('should return empty results for non-matching search query', async ({
     task,
+    onTestFinished,
   }) => {
-    const testData = new TestOrganizationDataManager(task.id);
+    const testData = new TestOrganizationDataManager(task.id, onTestFinished);
     const { adminUser } = await testData.createOrganization({
       users: { admin: 1 },
     });
@@ -236,7 +233,7 @@ describe('platform.admin.listAllUsers', () => {
       throw new Error('No session found for test user');
     }
 
-    const caller = createCaller(createTestContext(session.access_token));
+    const caller = createCaller(await createTestContextWithSession(session));
 
     // Search with a very specific string that shouldn't match any users
     const result = await caller.listAllUsers({
@@ -248,8 +245,11 @@ describe('platform.admin.listAllUsers', () => {
     expect(result.hasMore).toBe(false);
   });
 
-  it('should support prefix matching in email search', async ({ task }) => {
-    const testData = new TestOrganizationDataManager(task.id);
+  it('should support prefix matching in email search', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestOrganizationDataManager(task.id, onTestFinished);
     const { adminUser, adminUsers, memberUsers } =
       await testData.createOrganization({
         users: { admin: 1, member: 2 },
@@ -262,7 +262,7 @@ describe('platform.admin.listAllUsers', () => {
       throw new Error('No session found for test user');
     }
 
-    const caller = createCaller(createTestContext(session.access_token));
+    const caller = createCaller(await createTestContextWithSession(session));
 
     const result = await caller.listAllUsers({
       limit: 100,
@@ -278,8 +278,11 @@ describe('platform.admin.listAllUsers', () => {
     });
   });
 
-  it('should handle pagination with domain search', async ({ task }) => {
-    const testData = new TestOrganizationDataManager(task.id);
+  it('should handle pagination with domain search', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestOrganizationDataManager(task.id, onTestFinished);
 
     // 2 oneproject.org users
     const { adminUser } = await testData.createOrganization({
@@ -306,7 +309,7 @@ describe('platform.admin.listAllUsers', () => {
       throw new Error('No session found for test user');
     }
 
-    const caller = createCaller(createTestContext(session.access_token));
+    const caller = createCaller(await createTestContextWithSession(session));
 
     // Search by domain name
     const result = await caller.listAllUsers({

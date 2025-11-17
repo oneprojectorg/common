@@ -2,9 +2,11 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
-    maxConcurrency: 8,
+    fileParallelism: true,
+    maxConcurrency: 1,
     environment: 'node',
     globals: true,
+    globalSetup: ['./src/test/globalSetup.ts'],
     setupFiles: ['./src/test/setup.ts'],
     testTimeout: 30000, // Increased timeout for database operations
     hookTimeout: 30000, // Increased timeout for setup/teardown
