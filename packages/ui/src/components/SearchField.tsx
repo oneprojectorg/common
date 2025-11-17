@@ -37,7 +37,7 @@ export const SearchField = ({
           aria-hidden
           className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-darkGray"
         />
-        <Input className="pl-10 pr-10 [&::-webkit-search-cancel-button]:hidden" />
+        <Input className="px-10 [&::-webkit-search-cancel-button]:hidden" />
         <Button
           variant="icon"
           color="ghost"
