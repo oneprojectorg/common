@@ -22,10 +22,11 @@ import { z } from 'zod';
 import { useTranslations } from '@/lib/i18n';
 
 import {
-  RichTextEditorContent,
-  RichTextEditorRef,
-  RichTextEditorToolbar,
-} from '../RichTextEditor';
+  RichTextEditor,
+  type RichTextEditorRef,
+} from '@op/ui/RichTextEditor';
+import { getEditorExtensions } from '../RichTextEditor/editorConfig';
+import { RichTextEditorToolbar } from '../RichTextEditor';
 import { ProposalInfoModal } from './ProposalInfoModal';
 import { ProposalEditorLayout } from './layout';
 
@@ -466,8 +467,9 @@ export function ProposalEditor({
             )}
           </div>
 
-          <RichTextEditorContent
+          <RichTextEditor
             ref={editorRef}
+            extensions={getEditorExtensions()}
             content={initialContent || ''}
             onUpdate={handleEditorUpdate}
             placeholder={t('Write your proposal here...')}

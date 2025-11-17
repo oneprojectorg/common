@@ -1,5 +1,6 @@
-import { cn } from '@op/ui/utils';
 import { EditorContent, EditorContentProps } from '@tiptap/react';
+
+import { cn } from '../../lib/utils';
 
 export const StyledRichTextContent = ({
   className,

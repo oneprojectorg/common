@@ -1,12 +1,16 @@
 'use client';
 
-import { forwardRef, useRef, useState } from 'react';
+import {
+  RichTextEditor,
+  type RichTextEditorRef,
+} from '@op/ui/RichTextEditor';
 import type { Editor } from '@tiptap/react';
+import { forwardRef, useRef, useState } from 'react';
 
-import { RichTextEditorContent, type RichTextEditorRef } from './RichTextEditorContent';
+import { getEditorExtensions } from './editorConfig';
 import { RichTextEditorToolbar } from './RichTextEditorToolbar';
 
-export interface RichTextEditorProps {
+export interface RichTextEditorWithToolbarProps {
   content?: string;
   placeholder?: string;
   onUpdate?: (content: string) => void;
@@ -18,7 +22,7 @@ export interface RichTextEditorProps {
   immediatelyRender?: boolean;
 }
 
-export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>(({
+export const RichTextEditorWithToolbar = forwardRef<RichTextEditorRef, RichTextEditorWithToolbarProps>(({
   content = '',
   placeholder = 'Start writing...',
   onUpdate,
@@ -44,8 +48,9 @@ export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>
         />
       )}
 
-      <RichTextEditorContent
+      <RichTextEditor
         ref={ref || editorRef}
+        extensions={getEditorExtensions()}
         content={content}
         placeholder={placeholder}
         onUpdate={onUpdate}
@@ -65,4 +70,4 @@ export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>
   );
 });
 
-RichTextEditor.displayName = 'RichTextEditor';
+RichTextEditorWithToolbar.displayName = 'RichTextEditorWithToolbar';

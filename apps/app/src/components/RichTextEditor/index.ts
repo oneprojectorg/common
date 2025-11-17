@@ -1,7 +1,18 @@
-export { RichTextEditor, type RichTextEditorProps } from './RichTextEditor';
-export { RichTextEditorContent, type RichTextEditorRef } from './RichTextEditorContent';
-export { RichTextViewerContent, type RichTextViewerContentProps } from './RichTextViewerContent';
+// App-specific RichTextEditor with toolbar
+export { RichTextEditorWithToolbar, type RichTextEditorWithToolbarProps } from './RichTextEditorWithToolbar';
+
+// Re-export from @op/ui for convenience
+export {
+  RichTextEditor,
+  RichTextViewer,
+  type RichTextEditorRef,
+  type RichTextViewerProps,
+} from '@op/ui/RichTextEditor';
+
+// App-specific toolbar components
 export { RichTextEditorToolbar } from './RichTextEditorToolbar';
 export { RichTextEditorFloatingToolbar } from './RichTextEditorFloatingToolbar';
 export { useRichTextEditorFloatingToolbar } from './useRichTextEditorFloatingToolbar';
-export { useRichTextEditor, type UseRichTextEditorProps } from './useRichTextEditor';
+
+// App-specific editor extensions
+export { getEditorExtensions, getViewerExtensions } from './editorConfig';

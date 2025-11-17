@@ -24,7 +24,8 @@ import { useTranslations } from '@/lib/i18n';
 
 import { PostFeed, PostItem, usePostFeedActions } from '../PostFeed';
 import { PostUpdate } from '../PostUpdate';
-import { RichTextViewerContent } from '../RichTextEditor/RichTextViewerContent';
+import { RichTextViewer } from '@op/ui/RichTextEditor';
+import { getViewerExtensions } from '../RichTextEditor/editorConfig';
 import { ProposalViewLayout } from './ProposalViewLayout';
 
 type Proposal = z.infer<typeof proposalEncoder>;
@@ -220,7 +221,8 @@ export function ProposalView({
           </div>
 
           {/* Proposal Content */}
-          <RichTextViewerContent
+          <RichTextViewer
+            extensions={getViewerExtensions()}
             content={proposalContent}
             editorClassName="px-0 py-0 text-neutral-black"
             immediatelyRender={false}

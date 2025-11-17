@@ -1,12 +1,13 @@
 'use client';
 
-import { Editor } from '@tiptap/react';
+import type { Editor, Extensions } from '@tiptap/react';
 import { forwardRef, useImperativeHandle } from 'react';
 
 import { StyledRichTextContent } from './StyledRichTextContent';
 import { useRichTextEditor } from './useRichTextEditor';
 
-export interface RichTextEditorContentProps {
+export interface RichTextEditorProps {
+  extensions?: Extensions;
   content?: string;
   placeholder?: string;
   onUpdate?: (content: string) => void;
@@ -27,12 +28,13 @@ export interface RichTextEditorRef {
   editor: Editor | null;
 }
 
-export const RichTextEditorContent = forwardRef<
+export const RichTextEditor = forwardRef<
   RichTextEditorRef,
-  RichTextEditorContentProps
+  RichTextEditorProps
 >(
   (
     {
+      extensions,
       content = '',
       placeholder: _placeholder = 'Start writing...',
       onUpdate,
@@ -45,6 +47,7 @@ export const RichTextEditorContent = forwardRef<
     ref,
   ) => {
     const editor = useRichTextEditor({
+      extensions,
       content,
       editorClassName,
       onUpdate,
@@ -72,7 +75,7 @@ export const RichTextEditorContent = forwardRef<
     if (!editor) {
       return (
         <div className={`flex flex-1 items-center justify-center ${className}`}>
-          <div className="text-gray-500">Loading editor...</div>
+          <div className="text-neutral-charcoal">Loading editor...</div>
         </div>
       );
     }
@@ -85,4 +88,4 @@ export const RichTextEditorContent = forwardRef<
   },
 );
 
-RichTextEditorContent.displayName = 'RichTextEditorContent';
+RichTextEditor.displayName = 'RichTextEditor';

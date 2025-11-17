@@ -1,11 +1,12 @@
-import { cn } from '@op/ui/utils';
-import type { Editor } from '@tiptap/react';
+import type { Editor, Extensions } from '@tiptap/react';
 import { useEditor } from '@tiptap/react';
 import { useEffect } from 'react';
 
-import { getEditorExtensions } from './editorConfig';
+import { cn } from '../../lib/utils';
+import { defaultEditorExtensions } from './editorConfig';
 
 export interface UseRichTextEditorProps {
+  extensions?: Extensions;
   content?: string;
   editorClassName?: string;
   onUpdate?: (content: string) => void;
@@ -15,6 +16,7 @@ export interface UseRichTextEditorProps {
 }
 
 export function useRichTextEditor({
+  extensions = defaultEditorExtensions,
   content = '',
   editorClassName = '',
   onUpdate,
@@ -23,7 +25,7 @@ export function useRichTextEditor({
   immediatelyRender = false,
 }: UseRichTextEditorProps) {
   const editor = useEditor({
-    extensions: getEditorExtensions(),
+    extensions,
     content,
     editable: true,
     editorProps: {

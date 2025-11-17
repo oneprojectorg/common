@@ -1,12 +1,14 @@
 'use client';
 
+import type { Extensions } from '@tiptap/react';
 import { useEditor } from '@tiptap/react';
 
+import { defaultViewerExtensions } from './editorConfig';
 import { StyledRichTextContent } from './StyledRichTextContent';
-import { getViewerExtensions } from './editorConfig';
 
 // TODO: this will be replaced entirely by a new viewer that has no dependency on TipTap
-export interface RichTextViewerContentProps {
+export interface RichTextViewerProps {
+  extensions?: Extensions;
   content: string;
   className?: string;
   editorClassName?: string;
@@ -18,14 +20,15 @@ export interface RichTextViewerContentProps {
  * Use this for displaying content that should not be edited.
  * Links will open on click.
  */
-export function RichTextViewerContent({
+export function RichTextViewer({
+  extensions = defaultViewerExtensions,
   content,
   className = '',
   editorClassName = '',
   immediatelyRender = false,
-}: RichTextViewerContentProps) {
+}: RichTextViewerProps) {
   const editor = useEditor({
-    extensions: getViewerExtensions(),
+    extensions,
     content,
     editable: false,
     editorProps: {

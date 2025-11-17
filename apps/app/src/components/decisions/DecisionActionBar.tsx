@@ -10,7 +10,8 @@ import { useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n/routing';
 
-import { RichTextViewerContent } from '../RichTextEditor';
+import { RichTextViewer } from '@op/ui/RichTextEditor';
+import { getViewerExtensions } from '../RichTextEditor/editorConfig';
 
 export const DecisionActionBar = ({
   instanceId,
@@ -49,7 +50,8 @@ export const DecisionActionBar = ({
                       }}
                     />
                   ) : (
-                    <RichTextViewerContent
+                    <RichTextViewer
+                      extensions={getViewerExtensions()}
                       content={description}
                       editorClassName="prose prose-base max-w-none [&_p]:text-base"
                     />
