@@ -59,6 +59,15 @@ export const proposals = pgTable(
         onDelete: 'cascade',
       }),
 
+    // Track who last edited this proposal (for version history)
+    lastEditedByProfileId: uuid('last_edited_by_profile_id').references(
+      () => profiles.id,
+      {
+        onUpdate: 'cascade',
+        onDelete: 'cascade',
+      },
+    ),
+
     profileId: uuid('profile_id')
       .references(() => profiles.id, {
         onUpdate: 'cascade',
@@ -75,6 +84,7 @@ export const proposals = pgTable(
     index().on(table.id).concurrently(),
     index().on(table.processInstanceId).concurrently(),
     index().on(table.submittedByProfileId).concurrently(),
+    index().on(table.lastEditedByProfileId).concurrently(),
     index().on(table.profileId).concurrently(),
     index().on(table.status).concurrently(),
     index('proposals_status_created_at_idx')
