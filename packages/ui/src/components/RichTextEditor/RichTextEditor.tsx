@@ -3,6 +3,7 @@
 import type { Editor, Extensions } from '@tiptap/react';
 import { forwardRef, useImperativeHandle } from 'react';
 
+import { RichTextEditorSkeleton } from './RichTextEditorSkeleton';
 import { StyledRichTextContent } from './StyledRichTextContent';
 import { useRichTextEditor } from './useRichTextEditor';
 
@@ -70,11 +71,7 @@ export const RichTextEditor = forwardRef<
     );
 
     if (!editor) {
-      return (
-        <div className={`flex flex-1 items-center justify-center ${className}`}>
-          <div className="text-neutral-charcoal">Loading editor...</div>
-        </div>
-      );
+      return <RichTextEditorSkeleton className={className} />;
     }
 
     return (
