@@ -21,13 +21,14 @@ export const InviteToOrganizationButton = ({
   const { user } = useUser();
   const isOnline = useConnectionStatus();
 
-  const [rolesData] = trpc.organization.getRoles.useSuspenseQuery();
+  const [[rolesData, membershipData]] = trpc.useSuspenseQueries((t) => [
+    t.organization.getRoles(),
+    t.organization.checkMembership({
+      email: profile.profile.email!,
+      organizationId: user?.currentOrganization?.id!,
+    }),
+  ]);
 
-  // Check if user is  a member on
-  const [membershipData] = trpc.organization.checkMembership.useSuspenseQuery({
-    email: profile.profile.email!,
-    organizationId: user?.currentOrganization?.id!,
-  });
   const [isMember, setIsMember] = useState(membershipData.isMember);
 
   const inviteUser = trpc.organization.invite.useMutation({
