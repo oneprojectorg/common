@@ -3,6 +3,7 @@ import { decodeCursor, encodeCursor } from '@op/common';
 import { and, count, db, eq, ilike, lt, or } from '@op/db/client';
 import { users } from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
+import crypto from 'crypto';
 import { z } from 'zod';
 
 import { userEncoder } from '../../../encoders/';
@@ -87,12 +88,14 @@ export const listAllUsersRouter = router({
               dir === 'asc' ? asc(users.updatedAt) : desc(users.updatedAt),
             limit: limit + 1, // Fetch one extra item to determine if more pages exist
           }),
-          // Total user count with 5-minute cache to reduce database load
           cache<{ value: number }>({
             type: 'user',
-            params: ['total-count'],
+            params: ['search-total-' + (query ? hashSearch(query) : 'all')],
             fetch: async () => {
-              const [result] = await db.select({ value: count() }).from(users);
+              const [result] = await db
+                .select({ value: count() })
+                .from(users)
+                .where(whereCondition);
               return result;
             },
             options: {
@@ -124,3 +127,8 @@ export const listAllUsersRouter = router({
       }
     }),
 });
+
+/** Utility to hash search strings for cache keys */
+function hashSearch(search: string) {
+  return crypto.createHash('md5').update(search).digest('hex').substring(0, 16);
+}
