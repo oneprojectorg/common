@@ -1,4 +1,9 @@
+import { invalidate } from '@op/cache';
 import { db } from '@op/db/client';
+import {
+  organizationUserToAccessRoles,
+  organizationUsers,
+} from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
@@ -55,7 +60,7 @@ export const addUsersToOrganizationRouter = router({
         );
         const allAuthUserIds = usersToAdd.map((user) => user.authUserId);
 
-        // Validate all entities exist in parallel
+        // Validate all entities exist
         const [organization, existingRoles, existingUsers] = await Promise.all([
           // Validate organization exists
           db.query.organizations.findFirst({
@@ -67,11 +72,12 @@ export const addUsersToOrganizationRouter = router({
             where: (table, { inArray }) => inArray(table.id, allRoleIds),
             columns: { id: true },
           }),
-          // Validate all users exist
+          // Validate all users exist and get their details
+          // TODO: do we need both auth.users and users? or do we have type guarantees?
           db.query.users.findMany({
             where: (table, { inArray }) =>
               inArray(table.authUserId, allAuthUserIds),
-            columns: { authUserId: true },
+            columns: { authUserId: true, email: true, name: true },
           }),
         ]);
 
@@ -111,15 +117,95 @@ export const addUsersToOrganizationRouter = router({
           });
         }
 
-        // TODO: Check users are not already in the organization
-        // TODO: Use database transaction for atomicity
-        // TODO: Add users to organization with their roles
-        // TODO: Invalidate relevant caches
-
-        throw new TRPCError({
-          code: 'NOT_IMPLEMENTED',
-          message: 'Endpoint not yet implemented',
+        // Check if any users are already in the organization
+        const existingMemberships = await db.query.organizationUsers.findMany({
+          where: (table, { and, eq, inArray }) =>
+            and(
+              inArray(table.authUserId, allAuthUserIds),
+              eq(table.organizationId, organizationId),
+            ),
+          columns: { authUserId: true },
         });
+
+        if (existingMemberships.length > 0) {
+          const existingUserIds = existingMemberships.map(
+            (membership) => membership.authUserId,
+          );
+          throw new TRPCError({
+            code: 'CONFLICT',
+            message: `User(s) already in organization: ${existingUserIds.join(', ')}`,
+          });
+        }
+
+        // Use database transaction for atomicity
+        const result = await db.transaction(async (tx) => {
+          const addedUsers: Array<{
+            authUserId: string;
+            organizationUserId: string;
+          }> = [];
+
+          for (const userToAdd of usersToAdd) {
+            // Get the user's email and name from the users table
+            const userDetails = existingUsers.find(
+              (u) => u.authUserId === userToAdd.authUserId,
+            );
+
+            if (!userDetails) {
+              throw new TRPCError({
+                code: 'INTERNAL_SERVER_ERROR',
+                message: `Failed to find user details for ${userToAdd.authUserId}`,
+              });
+            }
+
+            // Create organizationUser record
+            const [newOrgUser] = await tx
+              .insert(organizationUsers)
+              .values({
+                organizationId,
+                authUserId: userToAdd.authUserId,
+                email: userDetails.email || '',
+                name:
+                  userDetails.name ||
+                  userDetails.email?.split('@')[0] ||
+                  'Unknown',
+              })
+              .returning({ id: organizationUsers.id });
+
+            if (!newOrgUser) {
+              throw new TRPCError({
+                code: 'INTERNAL_SERVER_ERROR',
+                message: `Failed to create organization user for ${userToAdd.authUserId}`,
+              });
+            }
+
+            // Assign roles to the user
+            await tx.insert(organizationUserToAccessRoles).values(
+              userToAdd.roleIds.map((roleId) => ({
+                organizationUserId: newOrgUser.id,
+                accessRoleId: roleId,
+              })),
+            );
+
+            addedUsers.push({
+              authUserId: userToAdd.authUserId,
+              organizationUserId: newOrgUser.id,
+            });
+          }
+
+          return addedUsers;
+        });
+
+        // Invalidate relevant caches for each added user
+        await Promise.all(
+          result.map((addedUser) =>
+            invalidate({
+              type: 'orgUser',
+              params: [organizationId, addedUser.authUserId],
+            }),
+          ),
+        );
+
+        return result;
       } catch (error) {
         if (error instanceof TRPCError) {
           throw error;

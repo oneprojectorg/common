@@ -14,6 +14,7 @@
  * - Database constraints
  * - Transaction atomicity
  */
+import { db } from '@op/db/client';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { describe, expect, it } from 'vitest';
 
@@ -28,7 +29,7 @@ import { platformAdminRouter } from './index';
 const createCaller = createCallerFactory(platformAdminRouter);
 
 describe.concurrent('platform.admin.addUsersToOrganization', () => {
-  describe('Authorization', () => {
+  describe.concurrent('Authorization', () => {
     it('should reject requests from non-platform-admin users', async ({
       task,
       onTestFinished,
@@ -113,7 +114,7 @@ describe.concurrent('platform.admin.addUsersToOrganization', () => {
     });
   });
 
-  describe('Input Validation', () => {
+  describe.concurrent('Input Validation', () => {
     it('should reject non-existent organizationId', async ({
       task,
       onTestFinished,
@@ -385,43 +386,307 @@ describe.concurrent('platform.admin.addUsersToOrganization', () => {
     });
   });
 
-  describe('Adding Existing Users', () => {
-    it('should add a single existing user with one role', async () => {
-      // TODO: Create platform admin
-      // TODO: Create organization
-      // TODO: Create existing user (not in the org)
-      // TODO: Add user to organization with Admin role
-      // TODO: Verify user is added with correct role
-      // TODO: Verify organizationUser record created
-      // TODO: Verify role assignment created
-      expect(true).toBe(true);
+  describe.concurrent('Adding Existing Users', () => {
+    it('should add a single existing user with one role', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+
+      // Create platform admin
+      const { adminUser: platformAdmin } = await testData.createOrganization({
+        users: { admin: 1 },
+        emailDomain: 'oneproject.org',
+      });
+
+      // Create organization (target org to add users to)
+      const { organization: targetOrg } = await testData.createOrganization({
+        users: { admin: 1 },
+        organizationName: 'Target Organization',
+        emailDomain: 'example.com',
+      });
+
+      // Create existing user (not in the target org)
+      const { adminUser: userToAdd } = await testData.createOrganization({
+        users: { admin: 1 },
+        emailDomain: 'test.com',
+      });
+
+      // Setup platform admin session
+      const { session } = await createIsolatedSession(platformAdmin.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      // Add user to organization with Member role
+      const result = await caller.addUsersToOrganization({
+        organizationId: targetOrg.id,
+        users: [
+          {
+            authUserId: userToAdd.authUserId,
+            roleIds: [ROLES.MEMBER.id],
+          },
+        ],
+      });
+
+      // Verify response structure
+      expect(result).toMatchObject([
+        {
+          authUserId: userToAdd.authUserId,
+          organizationUserId: expect.any(String),
+        },
+      ]);
+
+      // Verify organizationUser record and role assignment
+      const orgUser = await db.query.organizationUsers.findFirst({
+        where: (table, { and, eq }) =>
+          and(
+            eq(table.authUserId, userToAdd.authUserId),
+            eq(table.organizationId, targetOrg.id),
+          ),
+        with: {
+          roles: {
+            with: {
+              accessRole: true,
+            },
+          },
+        },
+      });
+
+      expect(orgUser).toMatchObject({
+        authUserId: userToAdd.authUserId,
+        organizationId: targetOrg.id,
+        roles: [
+          {
+            accessRole: {
+              id: ROLES.MEMBER.id,
+            },
+          },
+        ],
+      });
     });
 
-    it('should add a single existing user with multiple roles', async () => {
-      // TODO: Create platform admin
-      // TODO: Create organization
-      // TODO: Create existing user
-      // TODO: Add user with multiple roles (e.g., Admin + Editor)
-      // TODO: Verify all roles are assigned
-      expect(true).toBe(true);
+    it('should add a single existing user with multiple roles', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+
+      // Create platform admin
+      const { adminUser: platformAdmin } = await testData.createOrganization({
+        users: { admin: 1 },
+        emailDomain: 'oneproject.org',
+      });
+
+      // Create organization
+      const { organization: targetOrg } = await testData.createOrganization({
+        users: { admin: 1 },
+        organizationName: 'Target Organization',
+        emailDomain: 'example.com',
+      });
+
+      // Create existing user
+      const { adminUser: userToAdd } = await testData.createOrganization({
+        users: { admin: 1 },
+        emailDomain: 'test.com',
+      });
+
+      // Setup platform admin session
+      const { session } = await createIsolatedSession(platformAdmin.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      // Add user with multiple roles (Admin + Member)
+      const result = await caller.addUsersToOrganization({
+        organizationId: targetOrg.id,
+        users: [
+          {
+            authUserId: userToAdd.authUserId,
+            roleIds: [ROLES.ADMIN.id, ROLES.MEMBER.id],
+          },
+        ],
+      });
+
+      // Verify response
+      expect(result).toHaveLength(1);
+      expect(result[0]?.authUserId).toBe(userToAdd.authUserId);
+
+      // Verify all roles are assigned
+      const orgUser = await db.query.organizationUsers.findFirst({
+        where: (table, { and, eq }) =>
+          and(
+            eq(table.authUserId, userToAdd.authUserId),
+            eq(table.organizationId, targetOrg.id),
+          ),
+        with: {
+          roles: {
+            with: {
+              accessRole: true,
+            },
+          },
+        },
+      });
+
+      expect(orgUser?.roles).toHaveLength(2);
+      const roleIds = orgUser?.roles.map((r) => r.accessRole.id).sort();
+      expect(roleIds).toEqual([ROLES.ADMIN.id, ROLES.MEMBER.id].sort());
     });
 
-    it('should add multiple existing users in a batch', async () => {
-      // TODO: Create platform admin
-      // TODO: Create organization
-      // TODO: Create 3 existing users
-      // TODO: Add all 3 users in one request
-      // TODO: Verify all users added successfully
-      // TODO: Verify correct roles for each user
-      expect(true).toBe(true);
+    it('should add multiple existing users in a batch', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+
+      // Create platform admin
+      const { adminUser: platformAdmin } = await testData.createOrganization({
+        users: { admin: 1 },
+        emailDomain: 'oneproject.org',
+      });
+
+      // Create organization
+      const { organization: targetOrg } = await testData.createOrganization({
+        organizationName: 'Target Organization',
+        emailDomain: 'example.com',
+      });
+
+      // Create 3 existing users
+      const user1 = await testData.createOrganization({
+        users: { admin: 1 },
+        emailDomain: 'user1.com',
+      });
+      const user2 = await testData.createOrganization({
+        users: { admin: 1 },
+        emailDomain: 'user2.com',
+      });
+      const user3 = await testData.createOrganization({
+        users: { admin: 1 },
+        emailDomain: 'user3.com',
+      });
+
+      // Setup platform admin session
+      const { session } = await createIsolatedSession(platformAdmin.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      // Add all 3 users in one request with different role combinations
+      const result = await caller.addUsersToOrganization({
+        organizationId: targetOrg.id,
+        users: [
+          {
+            authUserId: user1.adminUser.authUserId,
+            roleIds: [ROLES.ADMIN.id],
+          },
+          {
+            authUserId: user2.adminUser.authUserId,
+            roleIds: [ROLES.MEMBER.id],
+          },
+          {
+            authUserId: user3.adminUser.authUserId,
+            roleIds: [ROLES.ADMIN.id, ROLES.MEMBER.id],
+          },
+        ],
+      });
+
+      // Verify all users added successfully
+      expect(result).toHaveLength(3);
+
+      // Verify each user has correct roles
+      const orgUsers = await db.query.organizationUsers.findMany({
+        where: (table, { eq }) => eq(table.organizationId, targetOrg.id),
+        with: {
+          roles: {
+            with: {
+              accessRole: true,
+            },
+          },
+        },
+      });
+
+      // Filter out the original admin user, only check the 3 newly added users
+      const addedUsers = orgUsers.filter((ou) =>
+        [
+          user1.adminUser.authUserId,
+          user2.adminUser.authUserId,
+          user3.adminUser.authUserId,
+        ].includes(ou.authUserId),
+      );
+
+      expect(addedUsers).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            authUserId: user1.adminUser.authUserId,
+            roles: [
+              expect.objectContaining({
+                accessRole: expect.objectContaining({
+                  id: ROLES.ADMIN.id,
+                }),
+              }),
+            ],
+          }),
+          expect.objectContaining({
+            authUserId: user2.adminUser.authUserId,
+            roles: [
+              expect.objectContaining({
+                accessRole: expect.objectContaining({
+                  id: ROLES.MEMBER.id,
+                }),
+              }),
+            ],
+          }),
+          expect.objectContaining({
+            authUserId: user3.adminUser.authUserId,
+            roles: expect.arrayContaining([
+              expect.objectContaining({
+                accessRole: expect.objectContaining({
+                  id: ROLES.ADMIN.id,
+                }),
+              }),
+              expect.objectContaining({
+                accessRole: expect.objectContaining({
+                  id: ROLES.MEMBER.id,
+                }),
+              }),
+            ]),
+          }),
+        ]),
+      );
     });
 
-    it('should handle existing user already in the organization gracefully', async () => {
-      // TODO: Create platform admin
-      // TODO: Create organization with existing member
-      // TODO: Attempt to add the same user again
-      // TODO: Expect appropriate error or skip (to be determined)
-      expect(true).toBe(true);
+    it('should handle existing user already in the organization gracefully', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+
+      // Create platform admin
+      const { adminUser: platformAdmin } = await testData.createOrganization({
+        users: { admin: 1 },
+        emailDomain: 'oneproject.org',
+      });
+
+      // Create organization with existing member
+      const { organization: targetOrg, adminUser: existingMember } =
+        await testData.createOrganization({
+          users: { admin: 1 },
+          organizationName: 'Target Organization',
+          emailDomain: 'example.com',
+        });
+
+      // Setup platform admin session
+      const { session } = await createIsolatedSession(platformAdmin.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      // Attempt to add the same user again
+      await expect(() =>
+        caller.addUsersToOrganization({
+          organizationId: targetOrg.id,
+          users: [
+            {
+              authUserId: existingMember.authUserId,
+              roleIds: [ROLES.MEMBER.id],
+            },
+          ],
+        }),
+      ).rejects.toMatchObject({
+        code: 'CONFLICT',
+      });
     });
   });
 
@@ -471,24 +736,6 @@ describe.concurrent('platform.admin.addUsersToOrganization', () => {
       // TODO: Create platform admin, organization, and users
       // TODO: Add users to organization
       // TODO: Verify cache invalidation called for orgUser
-      expect(true).toBe(true);
-    });
-  });
-
-  describe('Response Format', () => {
-    it('should return array of successfully added users', async () => {
-      // TODO: Create platform admin, organization, and user
-      // TODO: Add user successfully
-      // TODO: Verify response is an array
-      // TODO: Verify each item contains authUserId and organizationUserId
-      expect(true).toBe(true);
-    });
-
-    it('should return multiple users for batch additions', async () => {
-      // TODO: Create platform admin, organization, and multiple users
-      // TODO: Add all users successfully
-      // TODO: Verify response array has correct length
-      // TODO: Verify all users are in the response with their organizationUserIds
       expect(true).toBe(true);
     });
   });
