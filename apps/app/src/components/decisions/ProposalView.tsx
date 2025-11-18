@@ -12,21 +12,12 @@ import { trpc } from '@op/api/client';
 import type { proposalEncoder } from '@op/api/encoders';
 import { Avatar } from '@op/ui/Avatar';
 import { Header1 } from '@op/ui/Header';
+import { RichTextViewer } from '@op/ui/RichTextEditor';
 import { Surface } from '@op/ui/Surface';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
-import Blockquote from '@tiptap/extension-blockquote';
-import Heading from '@tiptap/extension-heading';
-import HorizontalRule from '@tiptap/extension-horizontal-rule';
-import TiptapImage from '@tiptap/extension-image';
-import Link from '@tiptap/extension-link';
-import Strike from '@tiptap/extension-strike';
-import TextAlign from '@tiptap/extension-text-align';
-import Underline from '@tiptap/extension-underline';
-import { EditorContent, useEditor } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
 import { Heart, MessageCircle } from 'lucide-react';
 import Image from 'next/image';
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useRef } from 'react';
 import { LuBookmark } from 'react-icons/lu';
 import { z } from 'zod';
 
@@ -34,7 +25,7 @@ import { useTranslations } from '@/lib/i18n';
 
 import { PostFeed, PostItem, usePostFeedActions } from '../PostFeed';
 import { PostUpdate } from '../PostUpdate';
-import { IframelyExtension } from './IframelyExtension';
+import { getViewerExtensions } from '../RichTextEditor/editorConfig';
 import { ProposalViewLayout } from './ProposalViewLayout';
 
 type Proposal = z.infer<typeof proposalEncoder>;
@@ -96,7 +87,6 @@ export function ProposalView({
     profileId: currentProposal.profileId || undefined, // Add profileId for optimistic updates
   });
 
-
   // Function to scroll to show comments after adding a new one
   const scrollToComments = useCallback(() => {
     if (commentsContainerRef.current) {
@@ -118,67 +108,7 @@ export function ProposalView({
     currentProposal.proposalData,
   );
 
-  const proposalContent = description;
-
-  // Memoize editor configuration for performance
-  const editorConfig = useMemo(
-    () => ({
-      extensions: [
-        StarterKit,
-        Link.configure({
-          openOnClick: true, // Allow clicking links in view mode
-        }),
-        TextAlign.configure({
-          types: ['heading', 'paragraph'],
-        }),
-        TiptapImage.configure({
-          inline: true,
-          allowBase64: true,
-        }),
-        Heading.configure({
-          levels: [1, 2, 3],
-        }),
-        Underline,
-        Strike,
-        Blockquote,
-        HorizontalRule,
-        IframelyExtension,
-      ],
-      content: proposalContent || `<p>${t('No content available')}</p>`,
-      editable: false, // Make editor read-only
-      editorProps: {
-        attributes: {
-          class:
-            'prose prose-lg max-w-none focus:outline-none px-6 py-6 text-neutral-black',
-        },
-      },
-      immediatelyRender: false,
-    }),
-    [proposalContent],
-  );
-
-  // Create read-only editor for content display
-  const editor = useEditor(editorConfig);
-
-  if (!editor) {
-    return (
-      <ProposalViewLayout
-        backHref={backHref}
-        title={title || t('Untitled Proposal')}
-        onLike={handleLike}
-        onFollow={handleFollow}
-        isLiked={isLikedByUser}
-        isFollowing={isFollowedByUser}
-        isLoading={isLoading}
-        editHref={editHref}
-        canEdit={canEdit}
-      >
-        <div className="flex flex-1 items-center justify-center">
-          <div className="text-gray-500">{t('Loading proposal...')}</div>
-        </div>
-      </ProposalViewLayout>
-    );
-  }
+  const proposalContent = description || `<p>${t('No content available')}</p>`;
 
   return (
     <ProposalViewLayout
@@ -290,9 +220,10 @@ export function ProposalView({
           </div>
 
           {/* Proposal Content */}
-          <EditorContent
-            className="[&>div]:px-0 [&>div]:py-0"
-            editor={editor}
+          <RichTextViewer
+            extensions={getViewerExtensions()}
+            content={proposalContent}
+            editorClassName="p-0"
           />
 
           {/* Comments Section */}

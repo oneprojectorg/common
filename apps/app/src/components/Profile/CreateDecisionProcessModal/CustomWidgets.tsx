@@ -13,7 +13,7 @@ import React from 'react';
 
 import { ToggleRow } from '@/components/layout/split/form/ToggleRow';
 
-import { RichTextEditor } from '../../RichTextEditor';
+import { RichTextEditorWithToolbar } from '../../RichTextEditor';
 
 // Higher-order component to wrap widgets with error boundaries
 const withWidgetErrorBoundary = <P extends WidgetProps>(
@@ -390,14 +390,14 @@ export const RichTextEditorWidget = (props: WidgetProps) => {
         {required && <span className="ml-1 text-functional-red">*</span>}
       </label>
       <div className="flex flex-col rounded-md border">
-        <RichTextEditor
+        <RichTextEditorWithToolbar
           content={value || ''}
-          placeholder={uiSchema?.['ui:placeholder'] || 'Start writing...'}
+          placeholder={uiSchema?.['ui:placeholder']}
           onChange={handleChange}
           onUpdate={handleChange}
           className="flex flex-1 flex-col"
           editorClassName={cn(
-            'prose prose-sm min-h-52 max-w-none flex-1 p-4 focus:outline-none',
+            'min-h-52 max-w-none flex-1 p-4 focus:outline-none',
             customClassName,
           )}
           showToolbar={showToolbar}
