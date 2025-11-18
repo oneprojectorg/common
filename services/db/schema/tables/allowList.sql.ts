@@ -40,3 +40,5 @@ export const allowListRelations = relations(allowList, ({ one }) => ({
     references: [organizations.id],
   }),
 }));
+
+export type AllowList = typeof allowList.$inferSelect;

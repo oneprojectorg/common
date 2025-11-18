@@ -12,6 +12,7 @@ import { type UserWithRoles, getGlobalPermissions } from 'access-zones';
 
 import { getNormalizedRoles } from '../access';
 import { generateUniqueProfileSlug } from '../profile/utils';
+import { AllowListUser, allowListMetadataSchema } from './validators';
 
 export interface User {
   id: number;
@@ -96,12 +97,19 @@ export const createUserByEmail = async ({
   }
 };
 
-export const getAllowListUser = async ({ email }: { email?: string }) => {
+/**
+ * Fetch an allow list entry by email.
+ */
+export const getAllowListUser = async ({
+  email,
+}: {
+  email?: string;
+}): Promise<AllowListUser | undefined> => {
   if (!email) {
     return;
   }
 
-  const [allowedEmail] = await db
+  const [allowedResult] = await db
     .select({
       email: allowList.email,
       organizationId: allowList.organizationId,
@@ -111,7 +119,19 @@ export const getAllowListUser = async ({ email }: { email?: string }) => {
     .where(eq(allowList.email, email.toLowerCase()))
     .limit(1);
 
-  return allowedEmail;
+  if (!allowedResult) {
+    return;
+  }
+
+  // Extract role from allowListUser metadata if present
+  const metadata = allowListMetadataSchema.safeParse(
+    allowedResult.metadata ?? {},
+  );
+
+  return {
+    ...allowedResult,
+    metadata: metadata.success ? metadata.data : null,
+  };
 };
 
 export const getUserByAuthId = async ({

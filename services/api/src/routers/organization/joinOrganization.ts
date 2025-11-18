@@ -1,5 +1,6 @@
 import { invalidate } from '@op/cache';
 import { joinOrganization as joinOrganizationService } from '@op/common';
+import { db } from '@op/db/client';
 import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
@@ -35,15 +36,26 @@ export const joinOrganization = router({
     .input(inputSchema)
     .output(
       z.object({
-        success: z.boolean(),
         organizationUserId: z.string(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
       try {
+        // Fetch organization
+        const organization = await db.query.organizations.findFirst({
+          where: (table, { eq }) => eq(table.id, input.organizationId),
+        });
+
+        if (!organization) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'Organization not found',
+          });
+        }
+
         const result = await joinOrganizationService({
           user: ctx.user,
-          organizationId: input.organizationId,
+          organization,
         });
 
         // Invalidate user cache since organization membership has changed. This should be awaited since we want to kill cache BEFORE returning
@@ -53,7 +65,6 @@ export const joinOrganization = router({
         });
 
         return {
-          success: true,
           organizationUserId: result?.id || '',
         };
       } catch (error) {
