@@ -1,3 +1,4 @@
+import { db } from '@op/db/client';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
@@ -44,16 +45,75 @@ export const addUsersToOrganizationRouter = router({
     .use(withAuthenticatedPlatformAdmin)
     .input(inputSchema)
     .output(outputSchema)
-    .mutation(async () => {
-      // TODO: Implement the handler logic
-      // Will accept: { input } and destructure: const { organizationId, users } = input;
+    .mutation(async ({ input }) => {
+      const { organizationId, users: usersToAdd } = input;
 
       try {
-        // TODO: Validate organization exists
-        // TODO: Validate role IDs exist
-        // TODO: Validate users exist
+        // Collect all unique IDs from the input
+        const allRoleIds = Array.from(
+          new Set(usersToAdd.flatMap((user) => user.roleIds)),
+        );
+        const allAuthUserIds = usersToAdd.map((user) => user.authUserId);
+
+        // Validate all entities exist in parallel
+        const [organization, existingRoles, existingUsers] = await Promise.all([
+          // Validate organization exists
+          db.query.organizations.findFirst({
+            where: (table, { eq }) => eq(table.id, organizationId),
+            columns: { id: true },
+          }),
+          // Validate all role IDs exist
+          db.query.accessRoles.findMany({
+            where: (table, { inArray }) => inArray(table.id, allRoleIds),
+            columns: { id: true },
+          }),
+          // Validate all users exist
+          db.query.users.findMany({
+            where: (table, { inArray }) =>
+              inArray(table.authUserId, allAuthUserIds),
+            columns: { authUserId: true },
+          }),
+        ]);
+
+        // Check organization exists
+        if (!organization) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: `Organization with ID ${organizationId} does not exist`,
+          });
+        }
+
+        // Check all role IDs exist
+        const existingRoleIds = new Set(existingRoles.map((role) => role.id));
+        const invalidRoleIds = allRoleIds.filter(
+          (roleId) => !existingRoleIds.has(roleId),
+        );
+
+        if (invalidRoleIds.length > 0) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: `Invalid role ID(s): ${invalidRoleIds.join(', ')}`,
+          });
+        }
+
+        // Check all users exist
+        const existingUserIds = new Set(
+          existingUsers.map((user) => user.authUserId),
+        );
+        const invalidUserIds = allAuthUserIds.filter(
+          (authUserId) => !existingUserIds.has(authUserId),
+        );
+
+        if (invalidUserIds.length > 0) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: `User(s) not found: ${invalidUserIds.join(', ')}`,
+          });
+        }
+
         // TODO: Check users are not already in the organization
         // TODO: Use database transaction for atomicity
+        // TODO: Add users to organization with their roles
         // TODO: Invalidate relevant caches
 
         throw new TRPCError({

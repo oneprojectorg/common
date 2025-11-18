@@ -14,7 +14,6 @@
  * - Database constraints
  * - Transaction atomicity
  */
-import { db } from '@op/db/client';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { describe, expect, it } from 'vitest';
 
@@ -22,7 +21,6 @@ import { TestOrganizationDataManager } from '../../../test/helpers/TestOrganizat
 import {
   createIsolatedSession,
   createTestContextWithSession,
-  createTestUser,
 } from '../../../test/supabase-utils';
 import { createCallerFactory } from '../../../trpcFactory';
 import { platformAdminRouter } from './index';
@@ -116,46 +114,274 @@ describe.concurrent('platform.admin.addUsersToOrganization', () => {
   });
 
   describe('Input Validation', () => {
-    it('should reject invalid organizationId', async () => {
-      // TODO: Create platform admin
-      // TODO: Call with invalid UUID format
-      // TODO: Expect validation error
-      expect(true).toBe(true);
+    it('should reject non-existent organizationId', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+
+      // Create a platform admin user
+      const { adminUser: platformAdmin } = await testData.createOrganization({
+        users: { admin: 1 },
+        emailDomain: 'oneproject.org',
+      });
+
+      // Create a user to add
+      const { adminUser: userToAdd } = await testData.createOrganization({
+        users: { admin: 1 },
+        emailDomain: 'example.com',
+      });
+
+      const { session } = await createIsolatedSession(platformAdmin.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      // Use a non-existent organization ID (random UUID)
+      const fakeOrgId = '00000000-0000-0000-0000-999999999999';
+
+      await expect(() =>
+        caller.addUsersToOrganization({
+          organizationId: fakeOrgId,
+          users: [
+            {
+              authUserId: userToAdd.authUserId,
+              roleIds: [ROLES.MEMBER.id],
+            },
+          ],
+        }),
+      ).rejects.toMatchObject({
+        code: 'NOT_FOUND',
+      });
     });
 
-    it('should reject empty users array', async () => {
-      // TODO: Create platform admin and organization
-      // TODO: Call with empty users array
-      // TODO: Expect validation error
-      expect(true).toBe(true);
+    it('should reject empty users array', async ({ task, onTestFinished }) => {
+      const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+
+      // Create a platform admin user
+      const { adminUser: platformAdmin } = await testData.createOrganization({
+        users: { admin: 1 },
+        emailDomain: 'oneproject.org',
+      });
+
+      // Create an organization to add users to
+      const { organization: targetOrg } = await testData.createOrganization({
+        users: { admin: 1 },
+        emailDomain: 'example.com',
+      });
+
+      const { session } = await createIsolatedSession(platformAdmin.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      // Attempt to add empty users array - Zod validation should catch this
+      await expect(() =>
+        caller.addUsersToOrganization({
+          organizationId: targetOrg.id,
+          users: [],
+        }),
+      ).rejects.toMatchObject({
+        code: 'BAD_REQUEST',
+      });
     });
 
-    it('should reject users without authUserId', async () => {
-      // TODO: Create platform admin and organization
-      // TODO: Call with user missing authUserId
-      // TODO: Expect validation error
-      expect(true).toBe(true);
+    it('should reject users without authUserId', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+
+      // Create a platform admin user
+      const { adminUser: platformAdmin } = await testData.createOrganization({
+        users: { admin: 1 },
+        emailDomain: 'oneproject.org',
+      });
+
+      // Create an organization to add users to
+      const { organization: targetOrg } = await testData.createOrganization({
+        users: { admin: 1 },
+        emailDomain: 'example.com',
+      });
+
+      const { session } = await createIsolatedSession(platformAdmin.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      // Attempt to add user without authUserId - Zod validation should catch this
+      await expect(() =>
+        caller.addUsersToOrganization({
+          organizationId: targetOrg.id,
+          users: [
+            {
+              roleIds: [ROLES.MEMBER.id],
+            } as any,
+          ],
+        }),
+      ).rejects.toMatchObject({
+        code: 'BAD_REQUEST',
+      });
     });
 
-    it('should reject users without roleIds', async () => {
-      // TODO: Create platform admin and organization
-      // TODO: Call with user missing roleIds
-      // TODO: Expect validation error
-      expect(true).toBe(true);
+    it('should reject users without roleIds', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+
+      // Create a platform admin user
+      const { adminUser: platformAdmin } = await testData.createOrganization({
+        users: { admin: 1 },
+        emailDomain: 'oneproject.org',
+      });
+
+      // Create an organization and user to add
+      const { organization: targetOrg } = await testData.createOrganization({
+        users: { admin: 1 },
+        emailDomain: 'example.com',
+      });
+
+      const { adminUser: userToAdd } = await testData.createOrganization({
+        users: { admin: 1 },
+        emailDomain: 'test.com',
+      });
+
+      const { session } = await createIsolatedSession(platformAdmin.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      // Attempt to add user without roleIds - Zod validation should catch this
+      await expect(() =>
+        caller.addUsersToOrganization({
+          organizationId: targetOrg.id,
+          users: [
+            {
+              authUserId: userToAdd.authUserId,
+            } as any,
+          ],
+        }),
+      ).rejects.toMatchObject({
+        code: 'BAD_REQUEST',
+      });
     });
 
-    it('should reject users with empty roleIds array', async () => {
-      // TODO: Create platform admin and organization
-      // TODO: Call with user having empty roleIds array
-      // TODO: Expect validation error
-      expect(true).toBe(true);
+    it('should reject users with empty roleIds array', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+
+      // Create a platform admin user
+      const { adminUser: platformAdmin } = await testData.createOrganization({
+        users: { admin: 1 },
+        emailDomain: 'oneproject.org',
+      });
+
+      // Create an organization and user to add
+      const { organization: targetOrg } = await testData.createOrganization({
+        users: { admin: 1 },
+        emailDomain: 'example.com',
+      });
+
+      const { adminUser: userToAdd } = await testData.createOrganization({
+        users: { admin: 1 },
+        emailDomain: 'test.com',
+      });
+
+      const { session } = await createIsolatedSession(platformAdmin.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      // Attempt to add user with empty roleIds array - Zod validation should catch this
+      await expect(() =>
+        caller.addUsersToOrganization({
+          organizationId: targetOrg.id,
+          users: [
+            {
+              authUserId: userToAdd.authUserId,
+              roleIds: [],
+            },
+          ],
+        }),
+      ).rejects.toMatchObject({
+        code: 'BAD_REQUEST',
+      });
     });
 
-    it('should reject invalid role UUIDs', async () => {
-      // TODO: Create platform admin and organization
-      // TODO: Call with invalid role UUID format
-      // TODO: Expect validation error
-      expect(true).toBe(true);
+    it('should reject non-existent role ids', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+
+      // Create a platform admin user
+      const { adminUser: platformAdmin } = await testData.createOrganization({
+        users: { admin: 1 },
+        emailDomain: 'oneproject.org',
+      });
+
+      // Create an organization and user to add
+      const { organization: targetOrg } = await testData.createOrganization({
+        users: { admin: 1 },
+        emailDomain: 'example.com',
+      });
+
+      const { adminUser: userToAdd } = await testData.createOrganization({
+        users: { admin: 1 },
+        emailDomain: 'test.com',
+      });
+
+      const { session } = await createIsolatedSession(platformAdmin.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      // Use a non-existent role ID (random UUID)
+      const fakeRoleId = '00000000-0000-0000-0000-888888888888';
+
+      await expect(() =>
+        caller.addUsersToOrganization({
+          organizationId: targetOrg.id,
+          users: [
+            {
+              authUserId: userToAdd.authUserId,
+              roleIds: [fakeRoleId],
+            },
+          ],
+        }),
+      ).rejects.toMatchObject({
+        code: 'NOT_FOUND',
+      });
+    });
+
+    it('should reject non-existent authUserId', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+
+      // Create a platform admin user
+      const { adminUser: platformAdmin } = await testData.createOrganization({
+        users: { admin: 1 },
+        emailDomain: 'oneproject.org',
+      });
+
+      // Create an organization to add users to
+      const { organization: targetOrg } = await testData.createOrganization({
+        users: { admin: 1 },
+        emailDomain: 'example.com',
+      });
+
+      const { session } = await createIsolatedSession(platformAdmin.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      // Use a non-existent authUserId (random UUID)
+      const fakeAuthUserId = '00000000-0000-0000-0000-777777777777';
+
+      await expect(() =>
+        caller.addUsersToOrganization({
+          organizationId: targetOrg.id,
+          users: [
+            {
+              authUserId: fakeAuthUserId,
+              roleIds: [ROLES.MEMBER.id],
+            },
+          ],
+        }),
+      ).rejects.toMatchObject({
+        code: 'NOT_FOUND',
+      });
     });
   });
 
