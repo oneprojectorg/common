@@ -111,9 +111,17 @@ export const createProcess = async ({
       throw new UnauthorizedError('User must have an active profile');
     }
 
-    // Extract categories from the process schema
-    const categories =
-      ((data.processSchema?.fields as any)?.categories as string[]) || [];
+    // Extract and trim categories from the process schema
+    const categories = (
+      ((data.processSchema?.fields as any)?.categories as string[]) || []
+    )
+      .map((category) => category.trim())
+      .filter((category) => category.length > 0);
+
+    // Update the input data with trimmed categories
+    if (data.processSchema?.fields) {
+      (data.processSchema.fields as any).categories = categories;
+    }
 
     // Ensure proposal taxonomy and terms exist for the categories
     await ensureProposalTaxonomy(categories);

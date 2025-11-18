@@ -153,11 +153,18 @@ export const updateInstance = async ({
     // and update the process schema to keep them in sync
     if (data.instanceData && data.instanceData.fieldValues?.categories) {
       const categories = Array.isArray(data.instanceData.fieldValues.categories)
-        ? data.instanceData.fieldValues.categories.filter(
-            (cat: unknown): cat is string =>
-              typeof cat === 'string' && cat.trim() !== '',
-          )
+        ? data.instanceData.fieldValues.categories
+            .filter(
+              (cat: unknown): cat is string =>
+                typeof cat === 'string' && cat.trim() !== '',
+            )
+            .map((cat: string) => cat.trim())
         : [];
+
+      // Update the input data with trimmed categories
+      if (data.instanceData.fieldValues) {
+        data.instanceData.fieldValues.categories = categories;
+      }
 
       // Ensure proposal taxonomy and terms exist for the categories
       await ensureProposalTaxonomy(categories);
