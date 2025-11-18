@@ -191,41 +191,6 @@ export async function getCurrentTestSession() {
 }
 
 /**
- * Get a JWT token for a specific user without affecting the global client state.
- * This is safe to use in concurrent tests as it creates an isolated client.
- */
-export async function getJWTForUser(
-  email: string,
-  password: string = 'testpassword123',
-) {
-  const { createClient } = await import('@supabase/supabase-js');
-
-  // Create an isolated client that won't affect other tests
-  const isolatedClient = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-      },
-    },
-  );
-
-  const { data: signInData, error: signInError } =
-    await isolatedClient.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-  if (signInError || !signInData.session) {
-    throw new Error(`Failed to sign in user for JWT: ${signInError?.message}`);
-  }
-
-  return signInData.session.access_token;
-}
-
-/**
  * Create an isolated Supabase client for a test.
  * This client won't interfere with other tests running in parallel.
  * Safe for concurrent test execution.
