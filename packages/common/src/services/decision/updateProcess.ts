@@ -132,8 +132,8 @@ export const updateProcess = async ({
       const categories = (
         ((data.processSchema?.fields as any)?.categories as string[]) || []
       )
-        .map(c => c.trim())
-        .filter(c => c.length > 0);
+        .map((category) => category.trim())
+        .filter((category) => category.length > 0);
 
       // Update the input data with trimmed categories
       if (data.processSchema?.fields) {
@@ -145,7 +145,8 @@ export const updateProcess = async ({
 
       // Update the proposal template to include the new category enums
       if (data.processSchema.proposalTemplate) {
-        const currentProposalTemplate = data.processSchema.proposalTemplate as any;
+        const currentProposalTemplate = data.processSchema
+          .proposalTemplate as any;
         const updatedProposalTemplate = {
           ...currentProposalTemplate,
           properties: {
@@ -162,7 +163,10 @@ export const updateProcess = async ({
         };
 
         // If no categories, remove the category field from the proposal template
-        if (categories.length === 0 && updatedProposalTemplate.properties.category) {
+        if (
+          categories.length === 0 &&
+          updatedProposalTemplate.properties.category
+        ) {
           delete updatedProposalTemplate.properties.category;
         }
 

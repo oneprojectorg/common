@@ -115,8 +115,8 @@ export const createProcess = async ({
     const categories = (
       ((data.processSchema?.fields as any)?.categories as string[]) || []
     )
-      .map(c => c.trim())
-      .filter(c => c.length > 0);
+      .map((category) => category.trim())
+      .filter((category) => category.length > 0);
 
     // Update the input data with trimmed categories
     if (data.processSchema?.fields) {
