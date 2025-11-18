@@ -36,6 +36,7 @@ export const proposalStatusEnum = pgEnum(
 
 /**
  * ALL fields that are copied to history
+ * When adding/removing columns, also update the proposal_history_trigger
  */
 export const proposalColumns = {
   // Reference to the process instance
