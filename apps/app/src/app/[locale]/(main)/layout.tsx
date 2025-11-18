@@ -25,9 +25,7 @@ const AppRoot = async ({ children }: { children: React.ReactNode }) => {
         <SidebarProvider>
           <SiteHeader />
           <SidebarLayout>
-            <ErrorBoundary>
-              <SidebarNav />
-            </ErrorBoundary>
+            <SidebarNav />
             <AppLayout>{children}</AppLayout>
           </SidebarLayout>
         </SidebarProvider>
