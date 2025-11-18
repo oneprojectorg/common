@@ -4,7 +4,6 @@ import { SidebarLayout, SidebarProvider } from '@op/ui/Sidebar';
 import { redirect } from 'next/navigation';
 import Script from 'next/script';
 
-import ErrorBoundary from '@/components/ErrorBoundary';
 import { SidebarNav } from '@/components/SidebarNav';
 import { SiteHeader } from '@/components/SiteHeader';
 import { AppLayout } from '@/components/layout/split/AppLayout';
