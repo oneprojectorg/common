@@ -266,7 +266,6 @@ src/test/
 ├── setup.ts                       # Global test setup
 ├── supabase-utils.ts              # Test utility functions
 ├── check-supabase.ts              # Supabase health check script
-├── sample.test.ts                 # Basic unit tests
 └── integration/
     └── supabase.integration.test.ts   # Integration test examples
 ```
