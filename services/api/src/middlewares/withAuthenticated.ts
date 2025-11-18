@@ -52,7 +52,7 @@ const withAuthenticated: MiddlewareBuilderBase<TContextWithUser> = async ({
   next,
 }) => {
   const supabase = createSBAdminClient(ctx);
-  const data = await supabase.auth.getUser(ctx.jwt);
+  const data = await supabase.auth.getUser();
 
   const user = verifyAuthentication(data);
 
@@ -104,7 +104,7 @@ export const withAuthenticatedPlatformAdmin: MiddlewareBuilderBase<
 > = async ({ ctx, next }) => {
   const supabase = createSBAdminClient(ctx);
   // Pass ctx.jwt for testing purposes only (see types.ts)
-  const data = await supabase.auth.getUser(ctx.jwt);
+  const data = await supabase.auth.getUser();
 
   const user = verifyAuthentication(data);
   const isAdmin = isUserPlatformAdmin(user);

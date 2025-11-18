@@ -1,10 +1,77 @@
+import { createServerClient } from '@supabase/ssr';
+import { type Session, createClient } from '@supabase/supabase-js';
+import { TContext } from 'src/types';
+
 import { supabaseTestAdminClient, supabaseTestClient } from './setup';
 
 export { supabaseTestClient, supabaseTestAdminClient } from './setup';
 
 /**
- * Test utilities for Supabase integration tests
+ * Converts a Supabase session into cookies using the actual Supabase SSR logic
+ * This creates a server client, sets the session, and captures the resulting cookies
  */
+export async function sessionToCookies(
+  session: Session,
+): Promise<Record<string, string>> {
+  if (!session) {
+    return {};
+  }
+
+  const cookies: Record<string, string> = {};
+
+  // Create a temporary server client that will store cookies
+  const tempClient = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE!,
+    {
+      cookies: {
+        getAll: async () => {
+          return Object.entries(cookies).map(([name, value]) => ({
+            name,
+            value,
+          }));
+        },
+        setAll: async (cookiesToSet) => {
+          cookiesToSet.forEach(({ name, value }) => {
+            cookies[name] = value;
+          });
+        },
+      },
+    },
+  );
+
+  // Set the session - this will trigger the cookie storage
+  await tempClient.auth.setSession(session);
+
+  return cookies;
+}
+
+/**
+ * Creates a test context with proper cookie handling for authentication
+ * This allows the server-side Supabase client to authenticate properly in tests
+ */
+export async function createTestContextWithSession(
+  session: Session | null,
+): Promise<TContext> {
+  const cookies = session ? await sessionToCookies(session) : {};
+
+  return {
+    req: {
+      headers: { get: () => '127.0.0.1' },
+      url: 'http://localhost:3000/api/trpc',
+    } as any,
+    ip: '127.0.0.1',
+    reqUrl: 'http://localhost:3000/api/trpc',
+    requestId: 'test-request-id',
+    getCookies: () => cookies,
+    getCookie: (name: string) => cookies[name],
+    setCookie: ({ name, value }: { name: string; value: string }) => {
+      cookies[name] = value;
+    },
+    time: Date.now(),
+    isServerSideCall: true,
+  };
+}
 
 /**
  * Clean up test data from tables after tests
@@ -118,13 +185,54 @@ export async function getCurrentTestSession() {
 
   const {
     data: { session },
-    error,
   } = await supabaseTestClient.auth.getSession();
-  if (error) {
-    throw new Error(`Failed to get session: ${error.message}`);
-  }
 
   return session;
+}
+
+/**
+ * Create an isolated Supabase client for a test.
+ * This client won't interfere with other tests running in parallel.
+ * Safe for concurrent test execution.
+ */
+export function createIsolatedTestClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+      },
+    },
+  );
+}
+
+/**
+ * Sign in a user with an isolated client and return the session.
+ * This is safe for parallel test execution as it doesn't affect global state.
+ *
+ * @returns An object containing the isolated client and session
+ */
+export async function createIsolatedSession(
+  email: string,
+  password: string = 'testpassword123',
+) {
+  const client = createIsolatedTestClient();
+
+  const { data, error } = await client.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (error || !data.session) {
+    throw new Error(`Failed to sign in user: ${error?.message}`);
+  }
+
+  return {
+    client,
+    session: data.session,
+  };
 }
 
 /**
@@ -148,91 +256,4 @@ export async function insertTestData<T = any>(table: string, data: T | T[]) {
   }
 
   return response.data;
-}
-
-/**
- * Execute a raw SQL query (useful for complex setup/teardown)
- */
-export async function executeTestSQL(sql: string, params: any[] = []) {
-  if (!supabaseTestClient) {
-    throw new Error('Supabase test client not initialized');
-  }
-
-  const { data, error } = await supabaseTestClient.rpc('execute_sql', {
-    sql_query: sql,
-    sql_params: params,
-  });
-
-  if (error) {
-    console.warn(`SQL execution warning: ${error.message}`);
-  }
-
-  return { data, error };
-}
-
-/**
- * Wait for the Supabase instance to be ready
- */
-export async function waitForSupabase(
-  maxRetries: number = 10,
-  delayMs: number = 1000,
-) {
-  if (!supabaseTestClient) {
-    throw new Error('Supabase test client not initialized');
-  }
-
-  for (let i = 0; i < maxRetries; i++) {
-    try {
-      const { error } = await supabaseTestClient
-        .from('_test_connection')
-        .select('*')
-        .limit(1);
-      // If we get here without throwing, connection is working
-      return true;
-    } catch (err) {
-      if (i === maxRetries - 1) {
-        throw new Error('Supabase not ready after maximum retries');
-      }
-      await new Promise((resolve) => setTimeout(resolve, delayMs));
-    }
-  }
-
-  return false;
-}
-
-/**
- * Reset database to clean state (removes all data from specified tables)
- * Uses admin client to bypass RLS policies
- */
-export async function resetTestDatabase(tablesToReset: string[] = []) {
-  if (!supabaseTestAdminClient) {
-    throw new Error('Supabase admin test client not initialized');
-  }
-
-  // Default tables to reset if none specified
-  const defaultTables = [
-    'profiles',
-    'organizations',
-    'posts',
-    'comments',
-    // Add more default tables as needed
-  ];
-
-  const tables = tablesToReset.length > 0 ? tablesToReset : defaultTables;
-
-  await cleanupTestData(tables);
-
-  // Clear auth users using admin client
-  try {
-    const { data: users } =
-      await supabaseTestAdminClient.auth.admin.listUsers();
-    if (users?.users) {
-      const deletePromises = users.users.map((user) =>
-        supabaseTestAdminClient.auth.admin.deleteUser(user.id),
-      );
-      await Promise.allSettled(deletePromises);
-    }
-  } catch (err) {
-    console.warn('Could not reset auth users:', err);
-  }
 }

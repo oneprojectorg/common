@@ -2,8 +2,11 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
+    fileParallelism: true,
+    maxConcurrency: 10, // Allow up to 10 concurrent tests
     environment: 'node',
     globals: true,
+    globalSetup: ['./src/test/globalSetup.ts'],
     setupFiles: ['./src/test/setup.ts'],
     testTimeout: 30000, // Increased timeout for database operations
     hookTimeout: 30000, // Increased timeout for setup/teardown
@@ -12,10 +15,12 @@ export default defineConfig({
       reporter: ['text', 'json', 'html'],
       exclude: ['node_modules/', 'src/test/', '**/*.config.ts', '**/*.d.ts'],
     },
-    // Run integration tests sequentially to avoid database conflicts
+    // Enable parallel execution with multiple threads
     poolOptions: {
       threads: {
-        singleThread: true,
+        singleThread: false,
+        minThreads: 1,
+        maxThreads: 4, // Use up to 4 worker threads
       },
     },
   },
