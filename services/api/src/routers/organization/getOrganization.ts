@@ -12,8 +12,8 @@ import {
   organizationsTermsEncoder,
   organizationsWithProfileEncoder,
 } from '../../encoders/organizations';
-import withAuthenticated from '../../middlewares/withAuthenticated';
 import withAnalytics from '../../middlewares/withAnalytics';
+import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
@@ -51,60 +51,6 @@ export const getOrganizationRouter = router({
           type: 'organization',
           params: [slug],
           fetch: () => getOrganization({ slug, user }),
-        });
-
-        if (!result) {
-          throw new TRPCError({
-            message: 'Organization not found',
-            code: 'NOT_FOUND',
-          });
-        }
-
-        // Transform profile modules to simplified format
-        const transformedResult = {
-          ...result,
-          profile: {
-            ...result.profile,
-            modules: result.profile.modules?.map((profileModule: any) => ({
-              slug: profileModule.module.slug,
-            })),
-          },
-        };
-
-        return organizationsWithProfileEncoder.parse(transformedResult);
-      } catch (error: unknown) {
-        console.log(error);
-        if (error instanceof UnauthorizedError) {
-          throw new TRPCError({
-            message: 'You do not have acess to this organization',
-            code: 'UNAUTHORIZED',
-          });
-        }
-
-        throw new TRPCError({
-          message: 'Organization not found',
-          code: 'NOT_FOUND',
-        });
-      }
-    }),
-  getById: loggedProcedure
-    // Middlewares
-    .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
-    .use(withAuthenticated)
-    .use(withAnalytics)
-    // Router
-    // .meta(meta)
-    .input(z.object({ id: z.string() }))
-    .output(organizationsWithProfileEncoder)
-    .query(async ({ ctx, input }) => {
-      const { id } = input;
-      const { user } = ctx;
-
-      try {
-        const result = await cache({
-          type: 'organization',
-          params: [id],
-          fetch: () => getOrganization({ id, user }),
         });
 
         if (!result) {

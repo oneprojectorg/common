@@ -6,28 +6,25 @@ import { NotFoundError, UnauthorizedError } from '../../utils';
 
 export const getOrganization = async ({
   slug,
-  id,
   user,
-}: { user: User } & (
-  | { id: string; slug?: undefined }
-  | { id?: undefined; slug: string }
-)) => {
+}: {
+  slug: string;
+  user: User;
+}) => {
   if (!user) {
     throw new UnauthorizedError();
   }
 
-  if (!slug && !id) {
+  if (!slug) {
     return;
   }
 
   try {
-    const profile = slug
-      ? await db
-          .select({ id: profiles.id })
-          .from(profiles)
-          .where(eq(profiles.slug, slug))
-          .limit(1)
-      : null;
+    const profile = await db
+      .select({ id: profiles.id })
+      .from(profiles)
+      .where(eq(profiles.slug, slug))
+      .limit(1);
 
     const profileId = profile?.[0]?.id;
 
@@ -36,9 +33,7 @@ export const getOrganization = async ({
     }
 
     const org = await db.query.organizations.findFirst({
-      where: profileId
-        ? (table, { eq }) => eq(table.profileId, profileId)
-        : (table, { eq }) => eq(table.id, id!),
+      where: (table, { eq }) => eq(table.profileId, profileId),
       with: {
         projects: true,
         links: true,
