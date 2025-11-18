@@ -293,7 +293,7 @@ const config: Omit<Config, 'content'> = {
         orangePurple:
           'radial-gradient(70.56% 70.56% at 72.75% 33.21%, #6200C3 0%, #FF613D 100%)',
         yellowOrange:
-          'radial-gradient(74.88% 74.88% at 42.58% 76.89%, #F29F05 0%, #F2B705 100%))',
+          'radial-gradient(74.88% 74.88% at 42.58% 76.89%, #F29F05 0%, #F2B705 100%)',
       },
       gridTemplateColumns: {
         '15': 'repeat(15, minmax(0, 1fr))',

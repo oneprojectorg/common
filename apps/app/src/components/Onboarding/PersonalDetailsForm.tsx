@@ -1,9 +1,11 @@
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { DEFAULT_MAX_SIZE } from '@/hooks/useFileUpload';
 import { trpc } from '@op/api/client';
 import { zodUrl } from '@op/common/validation';
 import { AvatarUploader } from '@op/ui/AvatarUploader';
 import { BannerUploader } from '@op/ui/BannerUploader';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
+import { SelectItem } from '@op/ui/Select';
 import { Skeleton } from '@op/ui/Skeleton';
 import { toast } from '@op/ui/Toast';
 import { ReactNode, Suspense, useState } from 'react';
@@ -21,48 +23,67 @@ import { useOnboardingFormStore } from './useOnboardingFormStore';
 type FormFields = z.infer<typeof validator>;
 
 export const createValidator = (t: (key: string) => string) =>
-  z.object({
-    fullName: z
-      .string({ message: t('Enter your full name') })
-      .trim()
-      .min(1, {
-        message: t('Enter your full name'),
-      })
-      .max(200, {
-        message: t('Must be at most 200 characters'),
-      }),
-    title: z
-      .string({
-        message: t('Enter your professional title'),
-      })
-      .trim()
-      .min(1, {
-        message: t('Enter your professional title'),
-      })
-      .max(200, {
-        message: t('Must be at most 200 characters'),
-      }),
-    email: z
-      .email()
-      .trim()
-      .refine((val) => val === '' || z.email().safeParse(val).success, {
-        message: t('Invalid email'),
-      })
-      .refine((val) => val.length <= 255, {
-        message: t('Must be at most 255 characters'),
-      }),
-    website: zodUrl({ error: t('Enter a valid website address') }),
-    focusAreas: z
-      .array(
-        z.object({
-          id: z.string(),
-          label: z.string(),
+  z
+    .object({
+      fullName: z
+        .string({ message: t('Enter your full name') })
+        .trim()
+        .min(1, {
+          message: t('Enter your full name'),
+        })
+        .max(200, {
+          message: t('Must be at most 200 characters'),
         }),
-      )
-      .optional(),
-    profileImageUrl: z.string().optional(),
-    bannerImageUrl: z.string().optional(),
-  });
+      title: z
+        .string({
+          message: t('Enter your professional title'),
+        })
+        .trim()
+        .min(1, {
+          message: t('Enter your professional title'),
+        })
+        .max(200, {
+          message: t('Must be at most 200 characters'),
+        }),
+      pronouns: z
+        .string({ message: t('Pronouns') })
+        .trim()
+        .optional(),
+      customPronouns: z.string().optional(),
+      email: z
+        .email()
+        .trim()
+        .refine((val) => val === '' || z.email().safeParse(val).success, {
+          message: t('Invalid email'),
+        })
+        .refine((val) => val.length <= 255, {
+          message: t('Must be at most 255 characters'),
+        }),
+      website: zodUrl({ error: t('Enter a valid website address') }),
+      focusAreas: z
+        .array(
+          z.object({
+            id: z.string(),
+            label: z.string(),
+          }),
+        )
+        .optional(),
+      profileImageUrl: z.string().optional(),
+      bannerImageUrl: z.string().optional(),
+    })
+    .refine(
+      (data) => {
+        // If pronouns is "custom" require custom pronouns
+        if (data.pronouns === 'custom') {
+          return data.customPronouns && data.customPronouns.trim().length > 0;
+        }
+        return true;
+      },
+      {
+        message: t('Please provide your custom pronouns'),
+        path: ['customPronouns'],
+      },
+    );
 
 // Fallback validator for external use
 export const validator = z.object({
@@ -70,6 +91,8 @@ export const validator = z.object({
   title: z.string().trim().min(1).max(200),
   email: z.string().optional(),
   website: z.string().optional(),
+  pronouns: z.string().optional(),
+  customPronouns: z.string().optional(),
   focusAreas: z
     .array(
       z.object({
@@ -96,6 +119,7 @@ export const PersonalDetailsForm = ({
   const uploadImage = trpc.account.uploadImage.useMutation();
   const uploadBannerImage = trpc.account.uploadBannerImage.useMutation();
   const updateProfile = trpc.account.updateUserProfile.useMutation();
+  const isOnboardingV2 = useFeatureFlag('onboarding-v2');
 
   // Get current user's profile ID for the focus areas component
   const { data: userAccount } = trpc.account.getMyAccount.useQuery();
@@ -168,6 +192,8 @@ export const PersonalDetailsForm = ({
     defaultValues: {
       fullName: personalDetails?.fullName ?? '',
       title: personalDetails?.title ?? '',
+      pronouns: personalDetails?.pronouns ?? '',
+      customPronouns: personalDetails?.customPronouns ?? '',
       email: personalDetails?.email ?? '',
       website: personalDetails?.website ?? '',
       focusAreas: personalDetails?.focusAreas ?? [],
@@ -182,6 +208,10 @@ export const PersonalDetailsForm = ({
         name: value.fullName,
         bio: value.title,
         email: value.email || undefined,
+        pronouns:
+          value.pronouns === 'custom'
+            ? value.customPronouns
+            : value.pronouns || undefined,
         website: value.website || undefined,
         focusAreas: value.focusAreas || undefined,
       });
@@ -193,7 +223,6 @@ export const PersonalDetailsForm = ({
         });
       }
       setPersonalDetails({ ...value, profileImageUrl, bannerImageUrl }); // Persist to store on submit
-
       onNext(value);
     },
   });
@@ -208,7 +237,7 @@ export const PersonalDetailsForm = ({
       className={className}
     >
       <FormContainer className="max-w-lg">
-        <FormHeader text={t('Add your personal details')}>
+        <FormHeader text={t('Set up your individual profile.')}>
           {t('Tell us about yourself so others can find you.')}
         </FormHeader>
 
@@ -268,6 +297,51 @@ export const PersonalDetailsForm = ({
             />
           )}
         />
+        {isOnboardingV2 && (
+          <>
+            <form.AppField
+              name="pronouns"
+              children={(field) => (
+                <field.Select
+                  label={t('Pronouns')}
+                  placeholder={t('Select your preferred pronouns')}
+                  selectedKey={field.state.value}
+                  onBlur={field.handleBlur}
+                  onSelectionChange={field.handleChange}
+                  errorMessage={getFieldErrorMessage(field)}
+                >
+                  <SelectItem id="she/her">{t('She/Her')}</SelectItem>
+                  <SelectItem id="he/him">{t('He/Him')}</SelectItem>
+                  <SelectItem id="they/them">{t('They/Them')}</SelectItem>
+                  <SelectItem id="custom">{t('Custom')}</SelectItem>
+                </field.Select>
+              )}
+            />
+            <form.Subscribe
+              selector={(state) => state.values.pronouns}
+              children={(pronouns) =>
+                pronouns === 'custom' ? (
+                  <form.AppField
+                    name="customPronouns"
+                    children={(field) => (
+                      <field.TextField
+                        label={t('Custom Pronouns')}
+                        value={field.state.value}
+                        onBlur={field.handleBlur}
+                        onChange={field.handleChange}
+                        errorMessage={getFieldErrorMessage(field)}
+                        isRequired
+                        inputProps={{
+                          placeholder: t('Enter your custom pronouns'),
+                        }}
+                      />
+                    )}
+                  />
+                ) : null
+              }
+            />
+          </>
+        )}
         <form.AppField
           name="email"
           children={(field) => (

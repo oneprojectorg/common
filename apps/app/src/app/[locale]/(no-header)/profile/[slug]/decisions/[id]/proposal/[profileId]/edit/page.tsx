@@ -1,7 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import { Suspense } from 'react';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
@@ -16,13 +16,11 @@ function ProposalEditPageContent({
   instanceId: string;
   slug: string;
 }) {
-  // Get both the proposal and the instance
-  const [proposal] = trpc.decision.getProposal.useSuspenseQuery({
-    profileId,
-  });
-  const [instance] = trpc.decision.getInstance.useSuspenseQuery({
-    instanceId,
-  });
+  // Get both the proposal and the instance in parallel
+  const [[proposal, instance]] = trpc.useSuspenseQueries((t) => [
+    t.decision.getProposal({ profileId }),
+    t.decision.getInstance({ instanceId }),
+  ]);
 
   if (!proposal || !instance) {
     notFound();
@@ -63,12 +61,12 @@ function ProposalEditPageSkeleton() {
   );
 }
 
-const ProposalEditPage = async ({
-  params,
-}: {
-  params: Promise<{ profileId: string; id: string; slug: string }>;
-}) => {
-  const { profileId, id, slug } = await params;
+const ProposalEditPage = () => {
+  const { profileId, id, slug } = useParams<{
+    profileId: string;
+    id: string;
+    slug: string;
+  }>();
 
   return (
     <ErrorBoundary>

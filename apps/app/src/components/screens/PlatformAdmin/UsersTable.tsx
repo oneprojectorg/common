@@ -2,10 +2,12 @@
 
 import type { RouterInput } from '@op/api/client';
 import { trpc } from '@op/api/client';
+import { useDebounce } from '@op/hooks';
 import { Pagination } from '@op/ui/Pagination';
+import { SearchField } from '@op/ui/SearchField';
 import { Skeleton } from '@op/ui/Skeleton';
 import { cn } from '@op/ui/utils';
-import { Suspense } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -22,17 +24,29 @@ type ListAllUsersInput = RouterInput['platform']['admin']['listAllUsers'];
 /** Main users table component with suspense boundary */
 export const UsersTable = () => {
   const t = useTranslations();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedQuery] = useDebounce(searchQuery, 200);
 
   return (
     <div className="mt-8">
-      <h2 className="text-md mb-4 font-serif text-neutral-black">
-        {t('platformAdmin_allUsers')}
-      </h2>
+      <div className="mb-4 flex items-center justify-between gap-4">
+        <h2 className="text-md font-serif text-neutral-black">
+          {t('platformAdmin_allUsers')}
+        </h2>
+        <div className="w-64">
+          <SearchField
+            aria-label={t('platformAdmin_searchUsersPlaceholder')}
+            placeholder={t('platformAdmin_searchUsersPlaceholder')}
+            value={searchQuery}
+            onChange={setSearchQuery}
+          />
+        </div>
+      </div>
       <div className="overflow-x-auto">
         <div className={USER_TABLE_MIN_WIDTH}>
           <UsersTableHeader />
           <Suspense fallback={<UsersTableContentSkeleton />}>
-            <UsersTableContent />
+            <UsersTableContent searchQuery={debouncedQuery} />
           </Suspense>
         </div>
       </div>
@@ -77,7 +91,7 @@ const UsersTableHeader = () => {
 };
 
 /** Renders users table with live data */
-const UsersTableContent = () => {
+const UsersTableContent = ({ searchQuery }: { searchQuery: string }) => {
   const t = useTranslations();
   const {
     cursor,
@@ -86,11 +100,18 @@ const UsersTableContent = () => {
     handleNext,
     handlePrevious,
     canGoPrevious,
+    reset,
   } = useCursorPagination(10);
+
+  // Reset pagination when search query changes
+  useEffect(() => {
+    reset();
+  }, [searchQuery]);
 
   const queryInput: ListAllUsersInput = {
     cursor,
     limit,
+    query: searchQuery || undefined,
   };
 
   const [data] = trpc.platform.admin.listAllUsers.useSuspenseQuery(queryInput);

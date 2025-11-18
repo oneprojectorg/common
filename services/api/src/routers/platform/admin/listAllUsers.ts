@@ -3,6 +3,7 @@ import { decodeCursor, encodeCursor } from '@op/common';
 import { and, count, db, eq, ilike, lt, or } from '@op/db/client';
 import { users } from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
+import crypto from 'crypto';
 import { z } from 'zod';
 
 import { userEncoder } from '../../../encoders/';
@@ -48,17 +49,17 @@ export const listAllUsersRouter = router({
             )
           : undefined;
 
-        // Build search condition if query is provided
-        let whereCondition = cursorCondition;
-        if (query && query.length >= 2) {
-          // Use ilike for case-insensitive pattern matching
-          // NOTE: This can be optimized with full-text search (to_tsvector/to_tsquery) if needed for performance
-          const searchCondition = ilike(users.email, `%${query}%`);
+        // Build search condition if query is provided (separate from cursor for total count)
+        const searchCondition =
+          query && query.length >= 2
+            ? ilike(users.email, `%${query}%`)
+            : undefined;
 
-          whereCondition = whereCondition
-            ? and(whereCondition, searchCondition)
-            : searchCondition;
-        }
+        // Combine search with cursor for pagination query
+        const whereCondition =
+          searchCondition && cursorCondition
+            ? and(cursorCondition, searchCondition)
+            : searchCondition || cursorCondition;
 
         // Parallel database queries for optimal performance
         const [allUsers, totalCountResult] = await Promise.all([
@@ -87,16 +88,19 @@ export const listAllUsersRouter = router({
               dir === 'asc' ? asc(users.updatedAt) : desc(users.updatedAt),
             limit: limit + 1, // Fetch one extra item to determine if more pages exist
           }),
-          // Total user count with 5-minute cache to reduce database load
           cache<{ value: number }>({
             type: 'user',
-            params: ['total-count'],
+            params: ['search-total-' + (query ? hashSearch(query) : 'all')],
             fetch: async () => {
-              const [result] = await db.select({ value: count() }).from(users);
+              const [result] = await db
+                .select({ value: count() })
+                .from(users)
+                .where(searchCondition);
               return result;
             },
             options: {
-              ttl: 5 * 60 * 1000, // 5 minutes
+              ttl: 1 * 60 * 1000, // 1 min
+              skipMemCache: true,
             },
           }),
         ]);
@@ -124,3 +128,8 @@ export const listAllUsersRouter = router({
       }
     }),
 });
+
+/** Utility to hash search strings for cache keys */
+function hashSearch(search: string) {
+  return crypto.createHash('md5').update(search).digest('hex').substring(0, 16);
+}

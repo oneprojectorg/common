@@ -18,13 +18,15 @@ import { useRouter } from 'next/navigation';
 import { usePostHog } from 'posthog-js/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
+
 import { useTranslations } from '@/lib/i18n';
 
 import {
-  RichTextEditorContent,
-  RichTextEditorRef,
-  RichTextEditorToolbar,
-} from '../RichTextEditor';
+  RichTextEditor,
+  type RichTextEditorRef,
+} from '@op/ui/RichTextEditor';
+import { getEditorExtensions } from '../RichTextEditor/editorConfig';
+import { RichTextEditorToolbar } from '../RichTextEditor';
 import { ProposalInfoModal } from './ProposalInfoModal';
 import { ProposalEditorLayout } from './layout';
 
@@ -403,7 +405,7 @@ export function ProposalEditor({
       {/* Content */}
       <div className="flex flex-1 flex-col gap-12">
         {editorInstance && <RichTextEditorToolbar editor={editorInstance} />}
-        <div className="mx-auto flex max-w-4xl flex-col gap-6">
+        <div className="mx-auto flex max-w-4xl flex-col gap-4">
           {/* Title input */}
           <TextField
             type="text"
@@ -465,15 +467,14 @@ export function ProposalEditor({
             )}
           </div>
 
-          <RichTextEditorContent
+          <RichTextEditor
             ref={editorRef}
+            extensions={getEditorExtensions()}
             content={initialContent || ''}
             onUpdate={handleEditorUpdate}
             placeholder={t('Write your proposal here...')}
             onEditorReady={handleEditorReady}
-            editorClassName="w-full !max-w-[32rem] sm:min-w-[32rem] min-h-[40rem] px-0 py-6 text-neutral-black placeholder:text-neutral-gray2"
-            readOnly={false}
-            immediatelyRender={false}
+            editorClassName="w-full !max-w-[32rem] sm:min-w-[32rem] min-h-[40rem] px-0 py-4"
           />
         </div>
       </div>
