@@ -7,9 +7,10 @@ import { ReactNode } from 'react';
 import { usePress } from 'react-aria';
 import { LuHouse, LuMessageCircle, LuUsers } from 'react-icons/lu';
 
-import { Link, usePathname } from '@/lib/i18n';
+import { Link, usePathname, useTranslations } from '@/lib/i18n';
 
 export const SidebarNav = () => {
+  const t = useTranslations();
   const pathname = usePathname();
   const isSidebarEnabled = useFeatureFlag('sidebar_enabled');
 
@@ -21,13 +22,13 @@ export const SidebarNav = () => {
     <Sidebar className="border-r" label="Navigation">
       <nav className="flex flex-col gap-1 p-4">
         <NavLink href="/" active={pathname === '/'}>
-          <LuHouse className="size-4" /> Home
+          <LuHouse className="size-4" /> {t('Home')}
         </NavLink>
         <NavLink href="/org" active={pathname.startsWith('/org')}>
-          <LuUsers className="size-4" /> Organizations
+          <LuUsers className="size-4" /> {t('Organizations')}
         </NavLink>
         <NavLink href="/processes" active={pathname.startsWith('/processes')}>
-          <LuMessageCircle className="size-4" /> Processes
+          <LuMessageCircle className="size-4" /> {t('Processes')}
         </NavLink>
       </nav>
     </Sidebar>
