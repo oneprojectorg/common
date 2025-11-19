@@ -15,7 +15,7 @@ export const generateUniqueProfileSlug = async ({
   db?: DatabaseType | TransactionType;
 }): Promise<string> => {
   const MAX_ATTEMPTS = 10;
-  const MAX_SLUG_LENGTH = 256;
+  const MAX_SLUG_LENGTH = 50; // Rough good practice of max slug length
 
   if (!db) {
     db = database;

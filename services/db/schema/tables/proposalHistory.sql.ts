@@ -40,6 +40,9 @@ export const proposalHistory = pgTable(
     index('proposal_history_temporal_idx')
       .on(table.id, table.validDuring)
       .concurrently(),
+    index('proposal_history_valid_during_gist')
+      .using('gist', table.validDuring)
+      .concurrently(),
     index('proposal_history_edited_by_idx')
       .on(table.lastEditedByProfileId)
       .concurrently(),
