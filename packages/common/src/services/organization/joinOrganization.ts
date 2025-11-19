@@ -50,7 +50,7 @@ export const joinOrganization = async ({
       params: [userEmailDomain],
       fetch: () => getAllowListUser({ email: userEmailDomain }),
       options: {
-        storeNulls: true,
+        skipMemCache: true,
         ttl: 30 * 60 * 1000,
       },
     }),
