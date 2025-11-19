@@ -1,4 +1,6 @@
 import { commonColors } from '@op/core';
+import sharedConfig from '@op/ui/tailwind-config';
+import '@op/ui/tailwind-styles';
 import type { TailwindConfig } from '@react-email/tailwind';
 
 export default {
@@ -6,7 +8,9 @@ export default {
     extend: {
       colors: {
         neutral: commonColors,
+        ...sharedConfig.theme?.extend?.colors,
       },
+      fontSize: sharedConfig.theme?.extend?.fontSize,
     },
     fontFamily: {
       sans: [
