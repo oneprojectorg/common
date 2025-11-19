@@ -111,6 +111,7 @@ export const processInstancesRelations = relations(
     profile: one(profiles, {
       fields: [processInstances.profileId],
       references: [profiles.id],
+      relationName: 'profile',
     }),
     proposals: many(proposals),
     stateTransitions: many(stateTransitionHistory),
