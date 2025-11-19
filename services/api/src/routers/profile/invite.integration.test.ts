@@ -1,6 +1,5 @@
 import { db } from '@op/db/client';
 import {
-  accessRoles,
   profileUserToAccessRoles,
   profileUsers,
   profiles,
@@ -69,7 +68,7 @@ describe('Profile Invite Integration Tests', () => {
     createdProfileIds.push(profile.id);
 
     // 2. Create admin user who will send invites
-    const adminEmail = `admin-${testId}@test.oneproject.org`;
+    const adminEmail = `admin-${testId}@oneproject.org`;
     const adminAuthUser = await createTestUser(adminEmail).then(
       (res) => res.user,
     );
@@ -86,15 +85,6 @@ describe('Profile Invite Integration Tests', () => {
 
     if (!adminUserRecord) {
       throw new Error('Failed to find admin user record');
-    }
-
-    // Get admin role
-    const adminRole = await db.query.accessRoles.findFirst({
-      where: eq(accessRoles.name, ROLES.ADMIN.name),
-    });
-
-    if (!adminRole) {
-      throw new Error('Admin role not found');
     }
 
     // Create admin as profileUser with admin role
@@ -115,11 +105,11 @@ describe('Profile Invite Integration Tests', () => {
     // Assign admin role to profile user
     await db.insert(profileUserToAccessRoles).values({
       profileUserId: adminProfileUser.id,
-      accessRoleId: adminRole.id,
+      accessRoleId: ROLES.ADMIN.id,
     });
 
     // 3. Create user to be invited
-    const inviteeEmail = `invitee-${testId}@test.oneproject.org`;
+    const inviteeEmail = `invitee-${testId}@oneproject.org`;
     const inviteeAuthUser = await createTestUser(inviteeEmail).then(
       (res) => res.user,
     );
@@ -129,22 +119,13 @@ describe('Profile Invite Integration Tests', () => {
     }
     createdAuthUserIds.push(inviteeAuthUser.id);
 
-    // Get member role for inviting
-    const memberRole = await db.query.accessRoles.findFirst({
-      where: eq(accessRoles.name, ROLES.MEMBER.name),
-    });
-
-    if (!memberRole) {
-      throw new Error('Member role not found');
-    }
-
     // 4. Create session as admin and call invite endpoint
     const { session } = await createIsolatedSession(adminEmail);
     const caller = createCaller(await createTestContextWithSession(session));
 
     const result = await caller.invite({
       emails: [inviteeEmail],
-      roleId: memberRole.id,
+      roleId: ROLES.MEMBER.id,
       profileId: profile.id,
     });
 
@@ -172,7 +153,7 @@ describe('Profile Invite Integration Tests', () => {
     expect(createdProfileUser).toBeDefined();
     expect(createdProfileUser?.email).toBe(inviteeEmail);
     expect(createdProfileUser?.roles).toHaveLength(1);
-    expect(createdProfileUser?.roles[0]?.accessRole.name).toBe(ROLES.MEMBER.name);
+    expect(createdProfileUser?.roles[0]?.accessRole.id).toBe(ROLES.MEMBER.id);
   });
 
   it('should fail when user is already a member of the profile', async ({
@@ -214,7 +195,7 @@ describe('Profile Invite Integration Tests', () => {
     createdProfileIds.push(profile.id);
 
     // Create admin user
-    const adminEmail = `admin-${testId}@test.oneproject.org`;
+    const adminEmail = `admin-${testId}@oneproject.org`;
     const adminAuthUser = await createTestUser(adminEmail).then(
       (res) => res.user,
     );
@@ -223,14 +204,6 @@ describe('Profile Invite Integration Tests', () => {
       throw new Error('Failed to create admin auth user');
     }
     createdAuthUserIds.push(adminAuthUser.id);
-
-    const adminRole = await db.query.accessRoles.findFirst({
-      where: eq(accessRoles.name, ROLES.ADMIN.name),
-    });
-
-    if (!adminRole) {
-      throw new Error('Admin role not found');
-    }
 
     const [adminProfileUser] = await db
       .insert(profileUsers)
@@ -248,11 +221,11 @@ describe('Profile Invite Integration Tests', () => {
 
     await db.insert(profileUserToAccessRoles).values({
       profileUserId: adminProfileUser.id,
-      accessRoleId: adminRole.id,
+      accessRoleId: ROLES.ADMIN.id,
     });
 
     // Create user who is already a member
-    const memberEmail = `member-${testId}@test.oneproject.org`;
+    const memberEmail = `member-${testId}@oneproject.org`;
     const memberAuthUser = await createTestUser(memberEmail).then(
       (res) => res.user,
     );
@@ -261,14 +234,6 @@ describe('Profile Invite Integration Tests', () => {
       throw new Error('Failed to create member auth user');
     }
     createdAuthUserIds.push(memberAuthUser.id);
-
-    const memberRole = await db.query.accessRoles.findFirst({
-      where: eq(accessRoles.name, ROLES.MEMBER.name),
-    });
-
-    if (!memberRole) {
-      throw new Error('Member role not found');
-    }
 
     // Add them as existing member
     const [existingMember] = await db
@@ -287,7 +252,7 @@ describe('Profile Invite Integration Tests', () => {
 
     await db.insert(profileUserToAccessRoles).values({
       profileUserId: existingMember.id,
-      accessRoleId: memberRole.id,
+      accessRoleId: ROLES.MEMBER.id,
     });
 
     // Try to invite existing member
@@ -296,7 +261,7 @@ describe('Profile Invite Integration Tests', () => {
 
     const result = await caller.invite({
       emails: [memberEmail],
-      roleId: memberRole.id,
+      roleId: ROLES.MEMBER.id,
       profileId: profile.id,
     });
 
