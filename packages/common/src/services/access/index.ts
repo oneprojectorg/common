@@ -58,21 +58,23 @@ export const getOrgAccessUser = async ({
       },
     });
 
-    if (orgUser) {
-      // Transform the relational data into normalized format for access-zones library
-      // Type assertion needed because Drizzle query result type is complex but we know it has the right structure
-      const normalizedRoles = getNormalizedRoles(
-        orgUser.roles as Array<{ accessRole: any }>,
-      );
-
-      // Replace roles with normalized format
-      return {
-        ...orgUser,
-        roles: normalizedRoles,
-      } as OrgUserWithNormalizedRoles;
+    if (!orgUser) {
+      return;
     }
 
-    return orgUser as OrgUserWithNormalizedRoles | undefined;
+    // Transform the relational data into normalized format for access-zones library
+    // Type assertion needed because Drizzle query result type is complex but we know it has the right structure
+    const normalizedRoles = getNormalizedRoles(
+      orgUser.roles as Array<{ accessRole: any }>,
+    );
+
+    const { roles: _, ...orgUserWithoutRoles } = orgUser;
+
+    // Replace roles with normalized format
+    return {
+      ...orgUserWithoutRoles,
+      roles: normalizedRoles,
+    };
   };
 
   return cache({
