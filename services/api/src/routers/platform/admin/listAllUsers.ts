@@ -69,6 +69,7 @@ export const listAllUsersRouter = router({
             with: {
               authUser: true,
               profile: true,
+              avatarImage: true,
               organizationUsers: {
                 with: {
                   organization: {
