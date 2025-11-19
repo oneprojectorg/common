@@ -1,5 +1,6 @@
 export class CommonError extends Error {
   public readonly timestamp: number;
+  public readonly statusCode: number = 500;
 
   constructor(message: string) {
     super(message);
@@ -15,7 +16,7 @@ export class CommonError extends Error {
 export class NotFoundError extends CommonError {
   public readonly resourceType: string;
   public readonly resourceId?: string | number;
-  public readonly suggestedStatusCode: number = 404;
+  public readonly statusCode: number = 404;
 
   constructor(
     resourceType: string,
@@ -34,7 +35,7 @@ export class NotFoundError extends CommonError {
 /** Error for invalid input data. */
 export class ValidationError extends CommonError {
   public readonly fieldErrors?: Record<string, string>; // Optional: specific field issues
-  public readonly suggestedStatusCode: number = 400;
+  public readonly statusCode: number = 400;
 
   constructor(message: string, fieldErrors?: Record<string, string>) {
     super(message);
@@ -43,7 +44,7 @@ export class ValidationError extends CommonError {
 }
 
 export class UnauthorizedError extends CommonError {
-  public readonly suggestedStatusCode: number = 403;
+  public readonly statusCode: number = 403;
 
   constructor(message?: string) {
     const defaultMessage =
