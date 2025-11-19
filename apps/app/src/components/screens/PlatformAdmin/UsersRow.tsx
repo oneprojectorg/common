@@ -17,6 +17,7 @@ import { Button } from 'react-aria-components';
 import { useTranslations } from '@/lib/i18n';
 
 import { UpdateProfileModal } from './UpdateProfile';
+import { AddUserToOrgModal } from './AddUserToOrgModal';
 
 const USERS_TABLE_GRID =
   'grid grid-cols-[minmax(120px,1fr)_minmax(180px,1.5fr)_minmax(100px,0.8fr)_minmax(200px,2.2fr)_minmax(80px,0.5fr)_minmax(80px,0.5fr)_80px] gap-4';
@@ -31,6 +32,7 @@ export const UsersRow = ({ user }: { user: User }) => {
   const t = useTranslations();
   const utils = trpc.useUtils();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isAddToOrgModalOpen, setIsAddToOrgModalOpen] = useState(false);
   const updatedAt = user.updatedAt ? new Date(user.updatedAt) : null;
   const relativeUpdatedAt = updatedAt ? useRelativeTime(updatedAt) : null;
   const lastSignInAt = user.authUser?.lastSignInAt
@@ -109,6 +111,15 @@ export const UsersRow = ({ user }: { user: User }) => {
               >
                 {t('platformAdmin_actionEditProfile')}
               </MenuItem>
+              <MenuItem
+                key="add-to-org"
+                onAction={() => {
+                  setIsAddToOrgModalOpen(true);
+                }}
+                className="px-3 py-1"
+              >
+                Add to Organization
+              </MenuItem>
               <MenuSeparator />
               <MenuItem
                 key="remove-user"
@@ -136,6 +147,11 @@ export const UsersRow = ({ user }: { user: User }) => {
           }}
         />
       ) : null}
+      <AddUserToOrgModal
+        user={user}
+        isOpen={isAddToOrgModalOpen}
+        onOpenChange={setIsAddToOrgModalOpen}
+      />
     </>
   );
 };
