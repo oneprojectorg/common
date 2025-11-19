@@ -1,9 +1,8 @@
-import { invalidate } from '@op/cache';
+import { cache, invalidate } from '@op/cache';
+import { getAllowListUser, joinOrganization } from '@op/common';
 import { db } from '@op/db/client';
-import {
-  organizationUserToAccessRoles,
-  organizationUsers,
-} from '@op/db/schema';
+import { allowList } from '@op/db/schema';
+import { createSBServiceClient } from '@op/supabase/server';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
@@ -25,7 +24,7 @@ const inputSchema = z.object({
     .array(
       z.object({
         authUserId: z.string(),
-        roleIds: z.array(z.string()).min(1, 'At least one role is required'),
+        roleId: z.string(),
       }),
     )
     .min(1, 'At least one user is required'),
@@ -50,36 +49,48 @@ export const addUsersToOrganizationRouter = router({
     .use(withAuthenticatedPlatformAdmin)
     .input(inputSchema)
     .output(outputSchema)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const { organizationId, users: usersToAdd } = input;
 
       try {
         // Collect all unique IDs from the input
         const allRoleIds = Array.from(
-          new Set(usersToAdd.flatMap((user) => user.roleIds)),
+          new Set(usersToAdd.flatMap((user) => user.roleId)),
         );
         const allAuthUserIds = usersToAdd.map((user) => user.authUserId);
 
+        const supabase = createSBServiceClient();
         // Validate all entities exist
-        const [organization, existingRoles, existingUsers] = await Promise.all([
-          // Validate organization exists
-          db.query.organizations.findFirst({
-            where: (table, { eq }) => eq(table.id, organizationId),
-            columns: { id: true },
-          }),
-          // Validate all role IDs exist
-          db.query.accessRoles.findMany({
-            where: (table, { inArray }) => inArray(table.id, allRoleIds),
-            columns: { id: true },
-          }),
-          // Validate all users exist and get their details
-          // TODO: do we need both auth.users and users? or do we have type guarantees?
-          db.query.users.findMany({
-            where: (table, { inArray }) =>
-              inArray(table.authUserId, allAuthUserIds),
-            columns: { authUserId: true, email: true, name: true },
-          }),
-        ]);
+        // TODO: we should replace all these queries with utilities that assert existence, e.g `assertOrganization`, `assertAccessRoles`, `assertUsers` and remove the manual checks below.
+        const [organization, existingRoles, ...existingUsers] =
+          await Promise.all([
+            // Validate organization exists
+            db.query.organizations.findFirst({
+              where: (table, { eq }) => eq(table.id, organizationId),
+            }),
+            // Validate all role IDs exist
+            db.query.accessRoles.findMany({
+              where: (table, { inArray }) => inArray(table.id, allRoleIds),
+              columns: { id: true },
+            }),
+            // Validate all users exist and get their details
+            // TODO: do we need both auth.users and users? or do we have type guarantees?
+            //
+            ...allAuthUserIds.map((authUserId) =>
+              supabase.auth.admin
+                .getUserById(authUserId)
+                .then(({ data, error }) => {
+                  if (error || !data?.user) {
+                    throw new TRPCError({
+                      code: 'NOT_FOUND',
+                      message: `User(s) ID: ${authUserId} not found`,
+                    });
+                  }
+
+                  return data.user;
+                }),
+            ),
+          ]);
 
         // Check organization exists
         if (!organization) {
@@ -102,102 +113,117 @@ export const addUsersToOrganizationRouter = router({
           });
         }
 
-        // Check all users exist
-        const existingUserIds = new Set(
-          existingUsers.map((user) => user.authUserId),
-        );
-        const invalidUserIds = allAuthUserIds.filter(
-          (authUserId) => !existingUserIds.has(authUserId),
-        );
-
-        if (invalidUserIds.length > 0) {
-          throw new TRPCError({
-            code: 'NOT_FOUND',
-            message: `User(s) not found: ${invalidUserIds.join(', ')}`,
-          });
-        }
-
-        // Check if any users are already in the organization
-        const existingMemberships = await db.query.organizationUsers.findMany({
-          where: (table, { and, eq, inArray }) =>
-            and(
-              inArray(table.authUserId, allAuthUserIds),
-              eq(table.organizationId, organizationId),
-            ),
-          columns: { authUserId: true },
-        });
-
-        if (existingMemberships.length > 0) {
-          const existingUserIds = existingMemberships.map(
-            (membership) => membership.authUserId,
-          );
-          throw new TRPCError({
-            code: 'CONFLICT',
-            message: `User(s) already in organization: ${existingUserIds.join(', ')}`,
-          });
-        }
-
-        // Use database transaction for atomicity
-        const result = await db.transaction(async (tx) => {
-          const addedUsers: Array<{
-            authUserId: string;
-            organizationUserId: string;
-          }> = [];
-
-          for (const userToAdd of usersToAdd) {
-            // Get the user's email and name from the users table
-            const userDetails = existingUsers.find(
-              (u) => u.authUserId === userToAdd.authUserId,
-            );
-
-            if (!userDetails) {
+        // Ensure each user has an allowList entry.
+        // If not, we create one for them with metadata invitation based on the platform admin adding them
+        await Promise.all(
+          existingUsers.map(async (user) => {
+            if (!user.email) {
               throw new TRPCError({
                 code: 'INTERNAL_SERVER_ERROR',
-                message: `Failed to find user details for ${userToAdd.authUserId}`,
+                message: `User with ID ${user.id} does not have an email`,
               });
             }
+            const userEmail = user.email.toLowerCase();
 
-            // Create organizationUser record
-            const [newOrgUser] = await tx
-              .insert(organizationUsers)
-              .values({
-                organizationId,
-                authUserId: userToAdd.authUserId,
-                email: userDetails.email || '',
-                name:
-                  userDetails.name ||
-                  userDetails.email?.split('@')[0] ||
-                  'Unknown',
-              })
-              .returning({ id: organizationUsers.id });
-
-            if (!newOrgUser) {
-              throw new TRPCError({
-                code: 'INTERNAL_SERVER_ERROR',
-                message: `Failed to create organization user for ${userToAdd.authUserId}`,
-              });
-            }
-
-            // Assign roles to the user
-            await tx.insert(organizationUserToAccessRoles).values(
-              userToAdd.roleIds.map((roleId) => ({
-                organizationUserId: newOrgUser.id,
-                accessRoleId: roleId,
-              })),
-            );
-
-            addedUsers.push({
-              authUserId: userToAdd.authUserId,
-              organizationUserId: newOrgUser.id,
+            // Check if allowList entry exists
+            const allowListUser = await cache<
+              ReturnType<typeof getAllowListUser>
+            >({
+              type: 'allowList',
+              params: [userEmail],
+              fetch: () => getAllowListUser({ email: userEmail }),
+              options: {
+                storeNulls: true,
+                ttl: 30 * 60 * 1000,
+              },
             });
-          }
 
-          return addedUsers;
-        });
+            // Create allowList entry if it doesn't exist
+            if (!allowListUser) {
+              const userToAdd = usersToAdd.find(
+                (u) => u.authUserId === user.id,
+              );
+              if (!userToAdd) {
+                throw new TRPCError({
+                  code: 'INTERNAL_SERVER_ERROR',
+                  message: 'User to add not found',
+                });
+              }
+
+              await db.insert(allowList).values({
+                email: userEmail,
+                organizationId,
+                metadata: {
+                  roleId: userToAdd.roleId,
+                  // TODO: see invidation schema or metadatSchema
+                  addedByAuthUserId: ctx.user.id,
+                },
+              });
+            }
+          }),
+        );
+
+        // TODO: the following can go because I think it's done in joinOrganization already. double check adn remove.
+        //
+        // // Check for existing memberships first
+        // const existingMemberships = await db.query.organizationUsers.findMany({
+        //   where: (table, { and, inArray, eq }) =>
+        //     and(
+        //       inArray(table.authUserId, allAuthUserIds),
+        //       eq(table.organizationId, organizationId),
+        //     ),
+        //   columns: { authUserId: true },
+        // });
+        //
+        // if (existingMemberships.length > 0) {
+        //   const conflictingUserIds = existingMemberships.map(
+        //     (m) => m.authUserId,
+        //   );
+        //   throw new TRPCError({
+        //     code: 'CONFLICT',
+        //     message: `User(s) already in organization: ${conflictingUserIds.join(', ')}`,
+        //   });
+        // }
+
+        // Join each user to the organization
+        const joinResults = await Promise.all(
+          existingUsers.map(async (user) => {
+            if (!user.email) {
+              throw new TRPCError({
+                code: 'INTERNAL_SERVER_ERROR',
+                message: `User with ID ${user.id} does not have an email`,
+              });
+            }
+
+            // Get allowList user (should exist now)
+            const allowListUser = await getAllowListUser({
+              email: user.email.toLowerCase(),
+            });
+
+            if (!allowListUser) {
+              throw new TRPCError({
+                code: 'INTERNAL_SERVER_ERROR',
+                message: 'AllowList entry not found',
+              });
+            }
+
+            // Join the organization
+            const orgUser = await joinOrganization({
+              user,
+              organization,
+              allowListUser,
+            });
+
+            return {
+              authUserId: user.id,
+              organizationUserId: orgUser.id,
+            };
+          }),
+        );
 
         // Invalidate relevant caches for each added user
         await Promise.all(
-          result.map((addedUser) =>
+          joinResults.map((addedUser) =>
             invalidate({
               type: 'orgUser',
               params: [organizationId, addedUser.authUserId],
@@ -205,7 +231,7 @@ export const addUsersToOrganizationRouter = router({
           ),
         );
 
-        return result;
+        return joinResults;
       } catch (error) {
         if (error instanceof TRPCError) {
           throw error;
