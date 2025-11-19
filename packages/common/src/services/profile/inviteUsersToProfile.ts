@@ -5,11 +5,11 @@ import {
   profileUserToAccessRoles,
   profileUsers,
 } from '@op/db/schema';
+import { Events, event } from '@op/events';
 import { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
 import { getProfileAccessUser } from '../access';
-import { sendBatchInvitationEmails } from '../email';
 
 export interface InviteUsersToProfileInput {
   emails: string[];
@@ -86,11 +86,11 @@ export const inviteUsersToProfile = async (
   };
 
   const emailsToInvite: Array<{
-    to: string;
+    email: string;
     inviterName: string;
-    organizationName: string;
+    profileName: string;
     inviteUrl: string;
-    message?: string;
+    personalMessage?: string;
   }> = [];
 
   // Process each email
@@ -186,13 +186,13 @@ export const inviteUsersToProfile = async (
         });
       }
 
-      // Prepare email for batch sending
+      // Prepare email for event-based sending
       emailsToInvite.push({
-        to: email,
+        email,
         inviterName: profileUser?.name || user.email || 'A team member',
-        organizationName: profile.name,
+        profileName: profile.name,
         inviteUrl: OPURLConfig('APP').ENV_URL,
-        message: personalMessage,
+        personalMessage,
       });
     } catch (error) {
       console.error(`Failed to process invitation for ${email}:`, error);
@@ -203,45 +203,37 @@ export const inviteUsersToProfile = async (
     }
   }
 
-  // Send all invitation emails in batch
+  // Send single event with all invitations - workflow handles retries per email
   if (emailsToInvite.length > 0) {
     try {
-      console.log(
-        'Sending batch emails to:',
-        emailsToInvite.map((e) => e.to),
-      );
-      const batchResult = await sendBatchInvitationEmails({
-        invitations: emailsToInvite,
+      await event.send({
+        name: Events.profileInviteSent.name,
+        data: { invitations: emailsToInvite },
       });
 
-      results.successful.push(...batchResult.successful);
+      // Mark all as successful since invite was processed
+      results.successful.push(...emailsToInvite.map((e) => e.email));
+    } catch (eventError) {
+      console.error('Failed to send profile invite event:', eventError);
 
-      // Add any batch email failures to results
-      batchResult.failed.forEach((failure) => {
-        results.failed.push({
-          email: failure.email,
-          reason: 'Email delivery failed. User may need to be re-invited.',
-        });
-      });
-    } catch (batchError) {
-      console.error('Failed to send batch invitation emails:', batchError);
-      // If batch sending fails entirely, mark all prepared emails as failed
+      // Mark all as failed since event couldn't be queued
       emailsToInvite.forEach((emailData) => {
         results.failed.push({
-          email: emailData.to,
-          reason:
-            'Invitation recorded but email delivery failed. User may need to be re-invited.',
+          email: emailData.email,
+          reason: 'Failed to queue invitation email.',
         });
       });
     }
   }
 
   const totalEmails = emails.length;
-  const successCount = results.successful.length;
-  const message = generateInviteResultMessage(successCount, totalEmails);
+  const message = generateInviteResultMessage(
+    results.successful.length,
+    totalEmails,
+  );
 
   return {
-    success: successCount > 0,
+    success: results.successful.length > 0,
     message,
     details: {
       successful: results.successful,

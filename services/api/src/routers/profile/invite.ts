@@ -22,17 +22,15 @@ const inputSchema = z.object({
 const outputSchema = z.object({
   success: z.boolean(),
   message: z.string(),
-  details: z
-    .object({
-      successful: z.array(z.string()),
-      failed: z.array(
-        z.object({
-          email: z.string(),
-          reason: z.string(),
-        }),
-      ),
-    })
-    .optional(),
+  details: z.object({
+    successful: z.array(z.string()),
+    failed: z.array(
+      z.object({
+        email: z.string(),
+        reason: z.string(),
+      }),
+    ),
+  }),
 });
 
 export const inviteProfileUserRouter = router({
@@ -54,8 +52,8 @@ export const inviteProfileUserRouter = router({
           user,
         });
 
-        // Invalidate caches for users who were successfully added to the profile
-        if (result.details?.successful.length > 0) {
+        // Invalidate caches for users who were successfully invited
+        if (result.details.successful.length > 0) {
           // Find existing users by email to get their auth user IDs
           const existingUsers = await db.query.users.findMany({
             where: (table, { inArray }) =>
