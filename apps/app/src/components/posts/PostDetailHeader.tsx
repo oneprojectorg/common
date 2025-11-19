@@ -1,18 +1,18 @@
 'use client';
 
-import { LuArrowLeft } from 'react-icons/lu';
+import { ClientOnly } from '@/utils/ClientOnly';
+import { Skeleton } from '@op/ui/Skeleton';
 import { Suspense } from 'react';
+import { LuArrowLeft } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
-import { Skeleton } from '@op/ui/Skeleton';
-import { ClientOnly } from '@/utils/ClientOnly';
 
-import { LocaleChooser } from '../LocaleChooser';
-import { UserAvatarMenu } from '../SiteHeader';
-import { SearchInput } from '../SearchInput';
-import { InviteUserModal } from '../InviteUserModal';
 import ErrorBoundary from '../ErrorBoundary';
+import { LocaleChooser } from '../LocaleChooser';
+import { SearchInput } from '../SearchInput';
+import { UserAvatarMenu } from '../SiteHeader';
+import { CreateMenu } from '../SiteHeader/CreateMenu';
 
 export const PostDetailHeader = () => {
   const t = useTranslations();
@@ -38,7 +38,7 @@ export const PostDetailHeader = () => {
 
       <div className="flex items-center justify-end gap-2">
         <ClientOnly>
-          <InviteUserModal />
+          <CreateMenu />
           <LocaleChooser />
           <ErrorBoundary
             fallback={
