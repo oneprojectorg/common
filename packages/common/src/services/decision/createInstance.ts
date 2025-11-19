@@ -38,11 +38,11 @@ export const createInstance = async ({
       where: eq(users.authUserId, user.id),
     });
 
-    if (!dbUser || !dbUser.currentProfileId) {
+    const ownerProfileId = dbUser?.currentProfileId ?? dbUser?.profileId;
+
+    if (!dbUser || !ownerProfileId) {
       throw new UnauthorizedError('User must have an active profile');
     }
-
-    const ownerProfileId = dbUser.currentProfileId;
 
     // Verify the process exists
     const process = await db.query.decisionProcesses.findFirst({
