@@ -61,7 +61,7 @@ export const createInstance = async ({
     const instance = await db.transaction(async (tx) => {
       // Generate a unique slug for the profile
       const slug = await generateUniqueProfileSlug({
-        name: data.name,
+        name: `decision-${data.name}`,
         db: tx,
       });
 
