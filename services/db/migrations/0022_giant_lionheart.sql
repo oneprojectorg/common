@@ -16,10 +16,6 @@ CREATE TABLE "decision_proposal_history" (
 --> statement-breakpoint
 ALTER TABLE "decision_proposal_history" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 ALTER TABLE "decision_proposals" ADD COLUMN "last_edited_by_profile_id" uuid;--> statement-breakpoint
-ALTER TABLE "decision_proposal_history" ADD CONSTRAINT "decision_proposal_history_process_instance_id_decision_process_instances_id_fk" FOREIGN KEY ("process_instance_id") REFERENCES "public"."decision_process_instances"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
-ALTER TABLE "decision_proposal_history" ADD CONSTRAINT "decision_proposal_history_submitted_by_profile_id_profiles_id_fk" FOREIGN KEY ("submitted_by_profile_id") REFERENCES "public"."profiles"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
-ALTER TABLE "decision_proposal_history" ADD CONSTRAINT "decision_proposal_history_profile_id_profiles_id_fk" FOREIGN KEY ("profile_id") REFERENCES "public"."profiles"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
-ALTER TABLE "decision_proposal_history" ADD CONSTRAINT "decision_proposal_history_last_edited_by_profile_id_profiles_id_fk" FOREIGN KEY ("last_edited_by_profile_id") REFERENCES "public"."profiles"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "decision_proposal_history" ADD CONSTRAINT "prop_hist_process_instance_fkey" FOREIGN KEY ("process_instance_id") REFERENCES "public"."decision_process_instances"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "decision_proposal_history" ADD CONSTRAINT "prop_hist_submitted_by_fkey" FOREIGN KEY ("submitted_by_profile_id") REFERENCES "public"."profiles"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "decision_proposal_history" ADD CONSTRAINT "prop_hist_profile_fkey" FOREIGN KEY ("profile_id") REFERENCES "public"."profiles"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
@@ -81,7 +77,7 @@ BEGIN
       -- History-specific values
       gen_random_uuid(),                         -- history_id
       tstzrange(OLD.updated_at, NEW.updated_at), -- valid_during
-      NOW();                                     -- history_created_at
+      NOW()                                      -- history_created_at;
   END IF;
 
   RETURN NEW;
