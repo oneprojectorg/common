@@ -2,7 +2,7 @@
 
 import type { RouterInput } from '@op/api/client';
 import { trpc } from '@op/api/client';
-import { useDebounce } from '@op/hooks';
+import { useCursorPagination, useDebounce } from '@op/hooks';
 import { Pagination } from '@op/ui/Pagination';
 import { SearchField } from '@op/ui/SearchField';
 import { Skeleton } from '@op/ui/Skeleton';
@@ -12,7 +12,6 @@ import { Suspense, useEffect, useState } from 'react';
 import { useTranslations } from '@/lib/i18n';
 
 import { UsersRow } from './UsersRow';
-import { useCursorPagination } from './useCursorPagination';
 
 const USER_TABLE_MIN_WIDTH = 'min-w-[850px]';
 const USERS_TABLE_GRID =
