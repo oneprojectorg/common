@@ -1,5 +1,5 @@
 import { invalidateMultiple } from '@op/cache';
-import { UnauthorizedError, inviteUsersToProfile } from '@op/common';
+import { CommonError, inviteUsersToProfile } from '@op/common';
 import { db } from '@op/db/client';
 import { TRPCError } from '@trpc/server';
 import { waitUntil } from '@vercel/functions';
@@ -10,7 +10,8 @@ import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
-const uuidPattern = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+const uuidPattern =
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
 
 const inputSchema = z.object({
   emails: z
@@ -76,16 +77,8 @@ export const inviteProfileUserRouter = router({
 
         return result;
       } catch (error) {
-        if (error instanceof TRPCError) {
+        if (error instanceof CommonError) {
           throw error;
-        }
-
-        // Handle specific errors
-        if (
-          error instanceof Error &&
-          error.message.includes('User must be associated')
-        ) {
-          throw new UnauthorizedError(error.message);
         }
 
         // Handle other errors
