@@ -51,8 +51,10 @@
     "./Scroller": "./src/components/Scroller.tsx",
     "./SearchField": "./src/components/SearchField.tsx",
     "./Select": "./src/components/Select.tsx",
+    "./Sidebar": "./src/components/Sidebar/index.ts",
     "./Skeleton": "./src/components/Skeleton.tsx",
     "./SocialLinks": "./src/components/SocialLinks.tsx",
+    "./Surface": "./src/components/Surface.tsx",
     "./Stepper": "./src/components/Stepper/index.ts",
     "./Switch": "./src/components/Switch.tsx",
     "./Tabs": "./src/components/Tabs.tsx",
@@ -78,6 +80,7 @@
   "dependencies": {
     "@internationalized/date": "^3.8.2",
     "@op/core": "workspace:*",
+    "@op/hooks": "workspace:*",
     "@tailwindcss/container-queries": "^0.1.1",
     "@tailwindcss/typography": "^0.5.16",
     "@tiptap/core": "^3.2.0",

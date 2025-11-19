@@ -1,5 +1,6 @@
 'use client';
 
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { getPublicUrl } from '@/utils';
 import { ClientOnly } from '@/utils/ClientOnly';
 import { useUser } from '@/utils/UserProvider';
@@ -13,6 +14,7 @@ import { Menu, MenuItem, MenuItemSimple, MenuSeparator } from '@op/ui/Menu';
 import { Modal, ModalBody } from '@op/ui/Modal';
 import { Popover } from '@op/ui/Popover';
 import { MenuTrigger } from '@op/ui/RAC';
+import { SidebarTrigger } from '@op/ui/Sidebar';
 import { Skeleton } from '@op/ui/Skeleton';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';
@@ -442,13 +444,17 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
 
 export const SiteHeader = () => {
   const [isMobileSearchExpanded, setIsMobileSearchExpanded] = useState(false);
+  const isSidebarEnabled = useFeatureFlag('sidebar_enabled');
 
   return (
     <>
-      <header className="gridCentered hidden h-auto w-full items-center justify-between border-b border-offWhite px-4 py-3 sm:grid md:px-28">
-        <Link href="/" className="flex gap-1">
-          <CommonLogo />
-        </Link>
+      <header className="gridCentered hidden h-auto w-full items-center justify-between border-b border-offWhite px-4 py-3 sm:grid">
+        <div className="flex items-center gap-3">
+          {isSidebarEnabled ? <SidebarTrigger /> : null}
+          <Link href="/" className="flex gap-1">
+            <CommonLogo />
+          </Link>
+        </div>
         <span className="flex items-center justify-center">
           <ErrorBoundary fallback={<Skeleton className="h-10 w-96" />}>
             <SearchInput />
@@ -478,9 +484,14 @@ export const SiteHeader = () => {
       {/* Mobile */}
       <header className="flex h-auto w-full items-center justify-between px-4 py-2 sm:hidden">
         {!isMobileSearchExpanded && (
-          <Link href="/">
-            <CommonLogo />
-          </Link>
+          <div className="flex items-center gap-3">
+            {isSidebarEnabled ? (
+              <SidebarTrigger className="p-1" size="small" />
+            ) : null}
+            <Link href="/" className="flex gap-1">
+              <CommonLogo />
+            </Link>
+          </div>
         )}
 
         <div
