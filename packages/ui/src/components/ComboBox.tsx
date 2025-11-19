@@ -65,7 +65,7 @@ export const ComboBox = <T extends object>({
       </FieldGroup>
       {description && <Description>{description}</Description>}
       <FieldError>{errorMessage}</FieldError>
-      <Popover className="min-w-[--trigger-width]">
+      <Popover className="min-w-[--trigger-width] bg-white">
         <ListBox
           items={items}
           className={cn(
