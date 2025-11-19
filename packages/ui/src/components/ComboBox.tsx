@@ -49,23 +49,23 @@ export const ComboBox = <T extends object>({
       )}
     >
       <Label className={props.labelClassName}>{label}</Label>
-      <FieldGroup className={props.fieldGroupClassName}>
+      <FieldGroup className={cn('relative', props.fieldGroupClassName)}>
         <Input className={props.inputClassName} />
         <Button
           variant="icon"
-          padding="none"
+          color="ghost"
           {...props.buttonProps}
           className={cn(
-            'mr-1 aspect-square w-6 rounded outline-offset-0',
+            'absolute right-1 top-1/2 aspect-square w-6 -translate-y-1/2 p-0',
             props.buttonProps?.className,
           )}
         >
-          <ChevronDown aria-hidden className="size-[1em]" />
+          <ChevronDown aria-hidden className="size-4" />
         </Button>
       </FieldGroup>
       {description && <Description>{description}</Description>}
       <FieldError>{errorMessage}</FieldError>
-      <Popover className="min-w-[--trigger-width]">
+      <Popover className="min-w-[--trigger-width] bg-white">
         <ListBox
           items={items}
           className={cn(
