@@ -115,6 +115,7 @@ export const addUsersToOrganizationRouter = router({
 
         // Ensure each user has an allowList entry.
         // If not, we create one for them with metadata invitation based on the platform admin adding them
+        // TODO: move all this logic in joinOrganization
         await Promise.all(
           existingUsers.map(async (user) => {
             if (!user.email) {
@@ -138,19 +139,21 @@ export const addUsersToOrganizationRouter = router({
               },
             });
 
+            if (allowListUser) {
+              return allowListUser;
+            }
             // Create allowList entry if it doesn't exist
-            if (!allowListUser) {
-              const userToAdd = usersToAdd.find(
-                (u) => u.authUserId === user.id,
-              );
-              if (!userToAdd) {
-                throw new TRPCError({
-                  code: 'INTERNAL_SERVER_ERROR',
-                  message: 'User to add not found',
-                });
-              }
+            const userToAdd = usersToAdd.find((u) => u.authUserId === user.id);
+            if (!userToAdd) {
+              throw new TRPCError({
+                code: 'INTERNAL_SERVER_ERROR',
+                message: 'User to add not found',
+              });
+            }
 
-              await db.insert(allowList).values({
+            const [addedAllowListUser] = await db
+              .insert(allowList)
+              .values({
                 email: userEmail,
                 organizationId,
                 metadata: {
@@ -160,32 +163,19 @@ export const addUsersToOrganizationRouter = router({
                   roleId: userToAdd.roleId,
                   organizationId,
                 },
+              })
+              .returning();
+
+            if (!addedAllowListUser) {
+              throw new TRPCError({
+                code: 'INTERNAL_SERVER_ERROR',
+                message: 'Failed to create allowList entry',
               });
             }
+
+            return allowListUser;
           }),
         );
-
-        // TODO: the following can go because I think it's done in joinOrganization already. double check adn remove.
-        //
-        // // Check for existing memberships first
-        // const existingMemberships = await db.query.organizationUsers.findMany({
-        //   where: (table, { and, inArray, eq }) =>
-        //     and(
-        //       inArray(table.authUserId, allAuthUserIds),
-        //       eq(table.organizationId, organizationId),
-        //     ),
-        //   columns: { authUserId: true },
-        // });
-        //
-        // if (existingMemberships.length > 0) {
-        //   const conflictingUserIds = existingMemberships.map(
-        //     (m) => m.authUserId,
-        //   );
-        //   throw new TRPCError({
-        //     code: 'CONFLICT',
-        //     message: `User(s) already in organization: ${conflictingUserIds.join(', ')}`,
-        //   });
-        // }
 
         // Join each user to the organization
         const joinResults = await Promise.all(
@@ -197,23 +187,10 @@ export const addUsersToOrganizationRouter = router({
               });
             }
 
-            // Get allowList user (should exist now)
-            const allowListUser = await getAllowListUser({
-              email: user.email.toLowerCase(),
-            });
-
-            if (!allowListUser) {
-              throw new TRPCError({
-                code: 'INTERNAL_SERVER_ERROR',
-                message: 'AllowList entry not found',
-              });
-            }
-
             // Join the organization
             const orgUser = await joinOrganization({
               user,
               organization,
-              allowListUser,
             });
 
             return {
