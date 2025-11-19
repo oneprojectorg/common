@@ -1,5 +1,6 @@
 import { cache } from '@op/cache';
 import { and, db, eq } from '@op/db/client';
+import type { ProfileUser } from '@op/db/schema';
 import { organizations, users } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import type { NormalizedRole } from 'access-zones';
@@ -18,6 +19,10 @@ type OrgUserWithNormalizedRoles = {
   createdAt: string | Date | null;
   updatedAt: string | Date | null;
   deletedAt?: string | Date | null;
+  roles: NormalizedRole[];
+};
+
+type ProfileUserWithNormalizedRoles = ProfileUser & {
   roles: NormalizedRole[];
 };
 
@@ -74,6 +79,61 @@ export const getOrgAccessUser = async ({
     type: 'orgUser',
     params: [organizationId, user.id],
     fetch: getOrgUser,
+    options: {
+      skipMemCache: true,
+    },
+  });
+};
+
+// gets a user's access for a specific profile
+export const getProfileAccessUser = async ({
+  user,
+  profileId,
+}: {
+  user: { id: string };
+  profileId: string;
+}): Promise<ProfileUserWithNormalizedRoles | undefined> => {
+  const getProfileUser = async () => {
+    const profileUser = await db.query.profileUsers.findFirst({
+      where: (table, { eq }) =>
+        and(eq(table.profileId, profileId), eq(table.authUserId, user.id)),
+      with: {
+        roles: {
+          with: {
+            accessRole: {
+              with: {
+                zonePermissions: {
+                  with: {
+                    accessZone: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!profileUser) {
+      return undefined;
+    }
+
+    // Transform the relational data into normalized format for access-zones library
+    const normalizedRoles = getNormalizedRoles(
+      profileUser.roles as Array<{ accessRole: any }>,
+    );
+
+    const { roles: _, ...profileUserWithoutRoles } = profileUser;
+    return {
+      ...profileUserWithoutRoles,
+      roles: normalizedRoles,
+    };
+  };
+
+  return cache({
+    type: 'profileUser',
+    params: [profileId, user.id],
+    fetch: getProfileUser,
     options: {
       skipMemCache: true,
     },

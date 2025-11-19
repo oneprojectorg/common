@@ -40,6 +40,7 @@ export {
   profileUserToAccessRoles,
   profileUserToAccessRolesRelations,
 } from './tables/profileUsers.sql';
+export type { ProfileUser } from './tables/profileUsers.sql';
 
 export {
   posts,
