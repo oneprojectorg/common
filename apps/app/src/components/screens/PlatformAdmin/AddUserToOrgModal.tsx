@@ -8,7 +8,6 @@ import { ComboBox, ComboBoxItem } from '@op/ui/ComboBox';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Dialog, DialogTrigger } from '@op/ui/RAC';
-import { Select, SelectItem } from '@op/ui/Select';
 import { toast } from '@op/ui/Toast';
 import Image from 'next/image';
 import {
@@ -176,14 +175,15 @@ const AddUserToOrgModalContent = ({ user }: { user: User }) => {
         </ComboBox>
 
         {/* Role Selection */}
-        <Select
+        <ComboBox
           label="Role"
-          placeholder="Select a role"
           selectedKey={selectedRoleId}
           onSelectionChange={(key) => setSelectedRoleId(String(key))}
+          defaultSelectedKey={memberRole?.id}
+          items={rolesData.roles}
         >
-          {rolesData.roles.map((role) => (
-            <SelectItem key={role.id} id={role.id} textValue={role.name}>
+          {(role) => (
+            <ComboBoxItem key={role.id} id={role.id} textValue={role.name}>
               <div>
                 <div className="text-sm font-medium">{role.name}</div>
                 {role.description && (
@@ -192,9 +192,9 @@ const AddUserToOrgModalContent = ({ user }: { user: User }) => {
                   </div>
                 )}
               </div>
-            </SelectItem>
-          ))}
-        </Select>
+            </ComboBoxItem>
+          )}
+        </ComboBox>
       </ModalBody>
 
       <ModalFooter>
