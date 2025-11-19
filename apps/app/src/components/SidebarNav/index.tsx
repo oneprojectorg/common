@@ -1,22 +1,16 @@
 'use client';
 
-import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { Sidebar, useSidebar } from '@op/ui/Sidebar';
 import { cn } from '@op/ui/utils';
 import { ReactNode } from 'react';
 import { usePress } from 'react-aria';
-import { LuHouse, LuMessageCircle, LuUsers } from 'react-icons/lu';
+import { LuHouse, LuUsers } from 'react-icons/lu';
 
 import { Link, usePathname, useTranslations } from '@/lib/i18n';
 
 export const SidebarNav = () => {
   const t = useTranslations();
   const pathname = usePathname();
-  const isSidebarEnabled = useFeatureFlag('sidebar_enabled');
-
-  if (!isSidebarEnabled) {
-    return null;
-  }
 
   return (
     <Sidebar className="border-r" label="Navigation">
@@ -26,9 +20,6 @@ export const SidebarNav = () => {
         </NavLink>
         <NavLink href="/org" active={pathname.startsWith('/org')}>
           <LuUsers className="size-4" /> {t('Organizations')}
-        </NavLink>
-        <NavLink href="/processes" active={pathname.startsWith('/processes')}>
-          <LuMessageCircle className="size-4" /> {t('Processes')}
         </NavLink>
       </nav>
     </Sidebar>
