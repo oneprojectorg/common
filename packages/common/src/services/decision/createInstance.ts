@@ -1,7 +1,14 @@
 import { db, eq } from '@op/db/client';
-import { decisionProcesses, processInstances, users } from '@op/db/schema';
+import {
+  decisionProcesses,
+  EntityType,
+  processInstances,
+  profiles,
+  users,
+} from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
+import { generateUniqueProfileSlug } from '../profile/utils';
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { createTransitionsForProcess } from './createTransitionsForProcess';
 import type { InstanceData, ProcessSchema } from './types';
@@ -34,6 +41,8 @@ export const createInstance = async ({
       throw new UnauthorizedError('User must have an active profile');
     }
 
+    const ownerProfileId = dbUser.currentProfileId;
+
     // Verify the process exists
     const process = await db.query.decisionProcesses.findFirst({
       where: eq(decisionProcesses.id, data.processId),
@@ -46,24 +55,49 @@ export const createInstance = async ({
     // Get initial state from process schema
     const processSchema = process.processSchema as ProcessSchema;
     const initialStateId =
-      processSchema.initialState || processSchema.states?.[0]?.id || null;
+      processSchema.initialState || processSchema.states?.[0]?.id || undefined;
 
-    const [instance] = await db
-      .insert(processInstances)
-      .values({
-        processId: data.processId,
+    const instance = await db.transaction(async (tx) => {
+      // Generate a unique slug for the profile
+      const slug = await generateUniqueProfileSlug({
         name: data.name,
-        description: data.description,
-        instanceData: data.instanceData,
-        currentStateId: initialStateId,
-        ownerProfileId: dbUser.currentProfileId,
-        status: 'draft',
-      })
-      .returning();
+        db: tx,
+      });
 
-    if (!instance) {
-      throw new CommonError('Failed to create decision process instance');
-    }
+      // Create a profile for the decision process instance
+      const [instanceProfile] = await tx
+        .insert(profiles)
+        .values({
+          type: EntityType.DECISION,
+          name: data.name,
+          slug,
+        })
+        .returning();
+
+      if (!instanceProfile) {
+        throw new CommonError('Failed to create decision instance profile');
+      }
+
+      const [newInstance] = await tx
+        .insert(processInstances)
+        .values({
+          processId: data.processId,
+          name: data.name,
+          description: data.description,
+          instanceData: data.instanceData,
+          currentStateId: initialStateId,
+          ownerProfileId,
+          profileId: instanceProfile.id,
+          status: 'draft',
+        })
+        .returning();
+
+      if (!newInstance) {
+        throw new CommonError('Failed to create decision process instance');
+      }
+
+      return newInstance;
+    });
 
     // Create transitions for the process phases
     // This is critical - if transitions can't be created, the process won't auto-advance

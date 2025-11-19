@@ -7,6 +7,7 @@ export enum EntityType {
   USER = 'user',
   INDIVIDUAL = 'individual',
   PROPOSAL = 'proposal',
+  DECISION = 'decision',
 }
 
 export const entityTypeEnum = pgEnum('entity_type', enumToPgEnum(EntityType));

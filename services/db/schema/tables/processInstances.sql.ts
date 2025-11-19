@@ -71,6 +71,13 @@ export const processInstances = pgTable(
         onDelete: 'cascade',
       }),
 
+    // The process instance's own profile (for social features)
+    profileId: uuid('profile_id').references(() => profiles.id, {
+      onUpdate: 'cascade',
+      onDelete: 'cascade',
+    }),
+    // .notNull(), // TODO: This needs to temporarily be nullable so that we can create a migration on current decision processes
+
     status: processStatusEnum('status').default(ProcessStatus.DRAFT),
     search: tsvector('search').generatedAlwaysAs(
       (): SQL =>
@@ -84,6 +91,7 @@ export const processInstances = pgTable(
     index().on(table.id).concurrently(),
     index().on(table.processId).concurrently(),
     index().on(table.ownerProfileId).concurrently(),
+    index().on(table.profileId).concurrently(),
     index().on(table.currentStateId).concurrently(),
     index('process_instances_search_index').using('gin', table.search),
   ],
@@ -98,6 +106,11 @@ export const processInstancesRelations = relations(
     }),
     owner: one(profiles, {
       fields: [processInstances.ownerProfileId],
+      references: [profiles.id],
+      relationName: 'processInstanceOwner',
+    }),
+    profile: one(profiles, {
+      fields: [processInstances.profileId],
       references: [profiles.id],
     }),
     proposals: many(proposals),
