@@ -1,15 +1,16 @@
 import { db, eq } from '@op/db/client';
 import {
-  decisionProcesses,
   EntityType,
+  ProcessStatus,
+  decisionProcesses,
   processInstances,
   profiles,
   users,
 } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
-import { generateUniqueProfileSlug } from '../profile/utils';
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
+import { generateUniqueProfileSlug } from '../profile/utils';
 import { createTransitionsForProcess } from './createTransitionsForProcess';
 import type { InstanceData, ProcessSchema } from './types';
 
@@ -88,7 +89,7 @@ export const createInstance = async ({
           currentStateId: initialStateId,
           ownerProfileId,
           profileId: instanceProfile.id,
-          status: 'draft',
+          status: ProcessStatus.DRAFT,
         })
         .returning();
 

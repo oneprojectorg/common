@@ -24,8 +24,7 @@ import { stateTransitionHistory } from './stateTransitionHistory.sql';
 
 export enum ProcessStatus {
   DRAFT = 'draft',
-  ACTIVE = 'active',
-  PAUSED = 'paused',
+  PUBLISHED = 'published',
   COMPLETED = 'completed',
   CANCELLED = 'cancelled',
 }
