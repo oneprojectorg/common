@@ -1,5 +1,5 @@
-import { and, db, eq, inArray, lt, or } from '@op/db/client';
-import { postsToOrganizations } from '@op/db/schema';
+import { and, count, db, eq, inArray, isNull, lt, or } from '@op/db/client';
+import { posts, postsToOrganizations } from '@op/db/schema';
 import type { User } from '@supabase/supabase-js';
 
 import {
@@ -31,16 +31,16 @@ export const listAllRelatedOrganizationPosts = async (
   // Build cursor condition for pagination
   const cursorCondition = cursorData
     ? or(
-        lt(postsToOrganizations.createdAt, cursorData.createdAt),
+        lt(postsToOrganizations.createdAt, cursorData.updatedAt),
         and(
-          eq(postsToOrganizations.createdAt, cursorData.createdAt),
+          eq(postsToOrganizations.createdAt, cursorData.updatedAt),
           lt(postsToOrganizations.postId, cursorData.id),
         ),
       )
     : undefined;
 
   // Fetch posts for all organizations with pagination
-  const [result, profileId] = await Promise.all([
+  const [result, profileId, totalCountResult] = await Promise.all([
     db.query.postsToOrganizations.findMany({
       where: cursorCondition,
       with: {
@@ -73,6 +73,12 @@ export const listAllRelatedOrganizationPosts = async (
       limit: limit + 1, // Fetch one extra to check hasMore
     }),
     getCurrentProfileId(authUserId),
+    db
+      .select({ value: count() })
+      .from(postsToOrganizations)
+      .leftJoin(posts, eq(postsToOrganizations.postId, posts.id))
+      .where(isNull(posts.parentPostId))
+      .then(([result]) => result),
   ]);
 
   // Filter out any items where post is null (due to parentPostId filtering)
@@ -91,10 +97,13 @@ export const listAllRelatedOrganizationPosts = async (
     profileId,
   });
 
+  const totalCount = totalCountResult?.value ?? 0;
+
   return {
     items: itemsWithReactionsAndComments,
     next: nextCursor,
     hasMore,
+    total: totalCount,
   };
 };
 

@@ -62,10 +62,11 @@ export const listRelatedOrganizationPostsRouter = router({
         items: z.array(postsToOrganizationsEncoder),
         next: z.string().nullish(),
         hasMore: z.boolean(),
+        total: z.number(),
       }),
     )
     .query(async ({ input, ctx }) => {
-      const { limit = 200, cursor } = input ?? {};
+      const { limit = 10, cursor } = input ?? {};
 
       const result = await listAllRelatedOrganizationPosts(ctx.user.id, {
         limit,
@@ -82,6 +83,7 @@ export const listRelatedOrganizationPostsRouter = router({
         })),
         next: result.next,
         hasMore: result.hasMore,
+        total: result.total,
       };
     }),
   listRelatedPosts: loggedProcedure
