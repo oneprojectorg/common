@@ -35,6 +35,13 @@ export {
 } from './tables/organizationUsers.sql';
 
 export {
+  profileUsers,
+  profileUsersRelations,
+  profileUserToAccessRoles,
+  profileUserToAccessRolesRelations,
+} from './tables/profileUsers.sql';
+
+export {
   posts,
   postsRelations,
   postsToOrganizations,
