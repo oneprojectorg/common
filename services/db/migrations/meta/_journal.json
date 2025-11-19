@@ -169,6 +169,13 @@
       "when": 1763547825313,
       "tag": "0023_zippy_texas_twister",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1763567205679,
+      "tag": "0024_smiling_beast",
+      "breakpoints": true
     }
   ]
 }
