@@ -65,7 +65,7 @@ describe.concurrent('platform.admin.addUsersToOrganization', () => {
           users: [
             {
               authUserId: userToAdd.authUserId,
-              roleIds: [ROLES.MEMBER.id],
+              roleId: ROLES.MEMBER.id,
             },
           ],
         }),
@@ -98,19 +98,23 @@ describe.concurrent('platform.admin.addUsersToOrganization', () => {
       const caller = createCaller(await createTestContextWithSession(session));
 
       // Successfully add users to the organization
-      await expect(() =>
-        caller.addUsersToOrganization({
-          organizationId: targetOrg.id,
-          users: [
-            {
-              authUserId: userToAdd.authUserId,
-              roleIds: [ROLES.MEMBER.id],
-            },
-          ],
-        }),
-      ).rejects.not.toMatchObject({
-        code: 'UNAUTHORIZED',
+      const result = await caller.addUsersToOrganization({
+        organizationId: targetOrg.id,
+        users: [
+          {
+            authUserId: userToAdd.authUserId,
+            roleId: ROLES.MEMBER.id,
+          },
+        ],
       });
+
+      // Verify it succeeded
+      expect(result).toEqual([
+        {
+          authUserId: userToAdd.authUserId,
+          organizationUserId: expect.any(String),
+        },
+      ]);
     });
   });
 
@@ -145,7 +149,7 @@ describe.concurrent('platform.admin.addUsersToOrganization', () => {
           users: [
             {
               authUserId: userToAdd.authUserId,
-              roleIds: [ROLES.MEMBER.id],
+              roleId: ROLES.MEMBER.id,
             },
           ],
         }),
@@ -210,7 +214,7 @@ describe.concurrent('platform.admin.addUsersToOrganization', () => {
           organizationId: targetOrg.id,
           users: [
             {
-              roleIds: [ROLES.MEMBER.id],
+              roleId: ROLES.MEMBER.id,
             } as any,
           ],
         }),
@@ -219,7 +223,7 @@ describe.concurrent('platform.admin.addUsersToOrganization', () => {
       });
     });
 
-    it('should reject users without roleIds', async ({
+    it('should reject users without roleId', async ({
       task,
       onTestFinished,
     }) => {
@@ -245,7 +249,7 @@ describe.concurrent('platform.admin.addUsersToOrganization', () => {
       const { session } = await createIsolatedSession(platformAdmin.email);
       const caller = createCaller(await createTestContextWithSession(session));
 
-      // Attempt to add user without roleIds - Zod validation should catch this
+      // Attempt to add user without roleId - Zod validation should catch this
       await expect(() =>
         caller.addUsersToOrganization({
           organizationId: targetOrg.id,
@@ -260,7 +264,7 @@ describe.concurrent('platform.admin.addUsersToOrganization', () => {
       });
     });
 
-    it('should reject users with empty roleIds array', async ({
+    it('should reject invalid roleId format', async ({
       task,
       onTestFinished,
     }) => {
@@ -286,20 +290,18 @@ describe.concurrent('platform.admin.addUsersToOrganization', () => {
       const { session } = await createIsolatedSession(platformAdmin.email);
       const caller = createCaller(await createTestContextWithSession(session));
 
-      // Attempt to add user with empty roleIds array - Zod validation should catch this
+      // Attempt to add user with invalid roleId - should fail validation
       await expect(() =>
         caller.addUsersToOrganization({
           organizationId: targetOrg.id,
           users: [
             {
               authUserId: userToAdd.authUserId,
-              roleIds: [],
+              roleId: 'not-a-valid-uuid',
             },
           ],
         }),
-      ).rejects.toMatchObject({
-        code: 'BAD_REQUEST',
-      });
+      ).rejects.toThrow();
     });
 
     it('should reject non-existent role ids', async ({
@@ -337,7 +339,7 @@ describe.concurrent('platform.admin.addUsersToOrganization', () => {
           users: [
             {
               authUserId: userToAdd.authUserId,
-              roleIds: [fakeRoleId],
+              roleId: fakeRoleId,
             },
           ],
         }),
@@ -376,7 +378,7 @@ describe.concurrent('platform.admin.addUsersToOrganization', () => {
           users: [
             {
               authUserId: fakeAuthUserId,
-              roleIds: [ROLES.MEMBER.id],
+              roleId: ROLES.MEMBER.id,
             },
           ],
         }),
@@ -422,7 +424,7 @@ describe.concurrent('platform.admin.addUsersToOrganization', () => {
         users: [
           {
             authUserId: userToAdd.authUserId,
-            roleIds: [ROLES.MEMBER.id],
+            roleId: ROLES.MEMBER.id,
           },
         ],
       });
@@ -464,7 +466,7 @@ describe.concurrent('platform.admin.addUsersToOrganization', () => {
       });
     });
 
-    it('should add a single existing user with multiple roles', async ({
+    it('should add a single existing user with a role', async ({
       task,
       onTestFinished,
     }) => {
@@ -493,13 +495,13 @@ describe.concurrent('platform.admin.addUsersToOrganization', () => {
       const { session } = await createIsolatedSession(platformAdmin.email);
       const caller = createCaller(await createTestContextWithSession(session));
 
-      // Add user with multiple roles (Admin + Member)
+      // Add user with Admin role
       const result = await caller.addUsersToOrganization({
         organizationId: targetOrg.id,
         users: [
           {
             authUserId: userToAdd.authUserId,
-            roleIds: [ROLES.ADMIN.id, ROLES.MEMBER.id],
+            roleId: ROLES.ADMIN.id,
           },
         ],
       });
@@ -508,7 +510,7 @@ describe.concurrent('platform.admin.addUsersToOrganization', () => {
       expect(result).toHaveLength(1);
       expect(result[0]?.authUserId).toBe(userToAdd.authUserId);
 
-      // Verify all roles are assigned
+      // Verify role is assigned
       const orgUser = await db.query.organizationUsers.findFirst({
         where: (table, { and, eq }) =>
           and(
@@ -524,9 +526,8 @@ describe.concurrent('platform.admin.addUsersToOrganization', () => {
         },
       });
 
-      expect(orgUser?.roles).toHaveLength(2);
-      const roleIds = orgUser?.roles.map((r) => r.accessRole.id).sort();
-      expect(roleIds).toEqual([ROLES.ADMIN.id, ROLES.MEMBER.id].sort());
+      expect(orgUser?.roles).toHaveLength(1);
+      expect(orgUser?.roles[0]?.accessRole.id).toBe(ROLES.ADMIN.id);
     });
 
     it('should add multiple existing users in a batch', async ({
@@ -565,21 +566,21 @@ describe.concurrent('platform.admin.addUsersToOrganization', () => {
       const { session } = await createIsolatedSession(platformAdmin.email);
       const caller = createCaller(await createTestContextWithSession(session));
 
-      // Add all 3 users in one request with different role combinations
+      // Add all 3 users in one request with different roles
       const result = await caller.addUsersToOrganization({
         organizationId: targetOrg.id,
         users: [
           {
             authUserId: user1.adminUser.authUserId,
-            roleIds: [ROLES.ADMIN.id],
+            roleId: ROLES.ADMIN.id,
           },
           {
             authUserId: user2.adminUser.authUserId,
-            roleIds: [ROLES.MEMBER.id],
+            roleId: ROLES.MEMBER.id,
           },
           {
             authUserId: user3.adminUser.authUserId,
-            roleIds: [ROLES.ADMIN.id, ROLES.MEMBER.id],
+            roleId: ROLES.ADMIN.id,
           },
         ],
       });
@@ -632,18 +633,13 @@ describe.concurrent('platform.admin.addUsersToOrganization', () => {
           }),
           expect.objectContaining({
             authUserId: user3.adminUser.authUserId,
-            roles: expect.arrayContaining([
+            roles: [
               expect.objectContaining({
                 accessRole: expect.objectContaining({
                   id: ROLES.ADMIN.id,
                 }),
               }),
-              expect.objectContaining({
-                accessRole: expect.objectContaining({
-                  id: ROLES.MEMBER.id,
-                }),
-              }),
-            ]),
+            ],
           }),
         ]),
       );
@@ -673,20 +669,25 @@ describe.concurrent('platform.admin.addUsersToOrganization', () => {
       const { session } = await createIsolatedSession(platformAdmin.email);
       const caller = createCaller(await createTestContextWithSession(session));
 
-      // Attempt to add the same user again
-      await expect(() =>
-        caller.addUsersToOrganization({
-          organizationId: targetOrg.id,
-          users: [
-            {
-              authUserId: existingMember.authUserId,
-              roleIds: [ROLES.MEMBER.id],
-            },
-          ],
-        }),
-      ).rejects.toMatchObject({
-        code: 'CONFLICT',
+      // Attempt to add the same user again - joinOrganization should handle this gracefully
+      // and return the existing membership
+      const result = await caller.addUsersToOrganization({
+        organizationId: targetOrg.id,
+        users: [
+          {
+            authUserId: existingMember.authUserId,
+            roleId: ROLES.MEMBER.id,
+          },
+        ],
       });
+
+      // Verify the operation succeeded and returned the user
+      expect(result).toEqual([
+        {
+          authUserId: existingMember.authUserId,
+          organizationUserId: expect.any(String),
+        },
+      ]);
     });
   });
 

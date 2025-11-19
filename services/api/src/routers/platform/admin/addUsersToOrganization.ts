@@ -154,9 +154,11 @@ export const addUsersToOrganizationRouter = router({
                 email: userEmail,
                 organizationId,
                 metadata: {
+                  invitedBy: ctx.user.id,
+                  invitedAt: new Date().toISOString(),
+                  inviteType: 'existing_organization',
                   roleId: userToAdd.roleId,
-                  // TODO: see invidation schema or metadatSchema
-                  addedByAuthUserId: ctx.user.id,
+                  organizationId,
                 },
               });
             }
