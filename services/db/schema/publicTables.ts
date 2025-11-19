@@ -1,5 +1,5 @@
 // Public tables are included in migrations
-export { accessRoles } from './tables/access.sql';
+export { accessRoles, type AccessRole } from './tables/access.sql';
 export {
   accessZones,
   accessZonesRelations,
@@ -27,6 +27,7 @@ export {
 } from './tables/individuals.sql';
 export type { Organization } from './tables/organizations.sql';
 export {
+  type OrganizationUser,
   organizationUsers,
   organizationUsersRelations,
   organizationUserToAccessRoles,
@@ -86,6 +87,7 @@ export { profiles, profilesRelations } from './tables/profiles.sql';
 export type { Profile } from './tables/profiles.sql';
 export { EntityType, entityTypeEnum } from './tables/entities.sql';
 export { allowList, allowListRelations } from './tables/allowList.sql';
+export type { AllowList } from './tables/allowList.sql';
 
 // Decision system tables
 export {

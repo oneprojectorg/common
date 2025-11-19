@@ -107,3 +107,5 @@ export const organizationUserToAccessRolesRelations = relations(
     }),
   }),
 );
+
+export type OrganizationUser = typeof organizationUsers.$inferSelect;
