@@ -1,5 +1,5 @@
 import { db, eq } from '@op/db/client';
-import { organizations, proposals } from '@op/db/schema';
+import { organizations, proposals, users } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
@@ -20,13 +20,22 @@ export const updateProposalStatus = async ({
   }
 
   try {
-    // Get proposal with process instance relationship
-    const existingProposal = await db.query.proposals.findFirst({
-      where: eq(proposals.profileId, profileId),
-      with: {
-        processInstance: true,
-      },
-    });
+    // Fetch user and proposal in parallel for better performance
+    const [dbUser, existingProposal] = await Promise.all([
+      db.query.users.findFirst({
+        where: eq(users.authUserId, user.id),
+      }),
+      db.query.proposals.findFirst({
+        where: eq(proposals.profileId, profileId),
+        with: {
+          processInstance: true,
+        },
+      }),
+    ]);
+
+    if (!dbUser || !dbUser.currentProfileId) {
+      throw new UnauthorizedError('User must have an active profile');
+    }
 
     if (!existingProposal) {
       throw new NotFoundError('Proposal not found');
@@ -64,6 +73,7 @@ export const updateProposalStatus = async ({
       .update(proposals)
       .set({
         status,
+        lastEditedByProfileId: dbUser.currentProfileId,
         updatedAt: new Date().toISOString(),
       })
       .where(eq(proposals.profileId, profileId))

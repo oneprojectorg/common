@@ -113,6 +113,12 @@ export {
 export type { Proposal, ProposalCategory } from './tables/proposals.sql';
 
 export {
+  proposalHistory,
+  proposalHistoryRelations,
+} from './tables/proposalHistory.sql';
+export type { ProposalHistory } from './tables/proposalHistory.sql';
+
+export {
   proposalAttachments,
   proposalAttachmentsRelations,
 } from './tables/proposalAttachments.sql';

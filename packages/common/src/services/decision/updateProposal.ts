@@ -185,6 +185,7 @@ export const updateProposal = async ({
       .update(proposals)
       .set({
         ...data,
+        lastEditedByProfileId: dbUser.currentProfileId,
         updatedAt: new Date().toISOString(),
       })
       .where(eq(proposals.id, proposalId))

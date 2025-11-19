@@ -1,4 +1,4 @@
-import { relations } from 'drizzle-orm';
+import { relations, sql } from 'drizzle-orm';
 import type { InferModel } from 'drizzle-orm';
 import {
   index,
@@ -6,15 +6,11 @@ import {
   pgEnum,
   pgTable,
   primaryKey,
+  timestamp,
   uuid,
 } from 'drizzle-orm/pg-core';
 
-import {
-  autoId,
-  enumToPgEnum,
-  serviceRolePolicies,
-  timestamps,
-} from '../../helpers';
+import { autoId, enumToPgEnum, serviceRolePolicies } from '../../helpers';
 import { decisions } from './decisions.sql';
 import { decisionsVoteProposals } from './decisions_vote_proposals.sql';
 import { processInstances } from './processInstances.sql';
@@ -38,43 +34,83 @@ export const proposalStatusEnum = pgEnum(
   enumToPgEnum(ProposalStatus),
 );
 
+/**
+ * ALL fields that are copied to history
+ * When adding/removing columns, also update the proposal_history_trigger
+ */
+export const proposalColumns = {
+  // Reference to the process instance
+  processInstanceId: uuid('process_instance_id')
+    .notNull()
+    .references(() => processInstances.id, {
+      onUpdate: 'cascade',
+      onDelete: 'cascade',
+    }),
+
+  // Proposal data following the template schema
+  proposalData: jsonb('proposal_data').notNull(),
+
+  // Proposal status (defaults to DRAFT for new proposals)
+  status: proposalStatusEnum('status').default(ProposalStatus.DRAFT),
+
+  // Who originally submitted this proposal
+  submittedByProfileId: uuid('submitted_by_profile_id')
+    .notNull()
+    .references(() => profiles.id, {
+      onUpdate: 'cascade',
+      onDelete: 'cascade',
+    }),
+
+  // The proposal's own profile (for social features)
+  profileId: uuid('profile_id')
+    .references(() => profiles.id, {
+      onUpdate: 'cascade',
+      onDelete: 'cascade',
+    })
+    .notNull(),
+
+  // Who last edited this proposal (for version history tracking)
+  lastEditedByProfileId: uuid('last_edited_by_profile_id').references(
+    () => profiles.id,
+    {
+      onUpdate: 'cascade',
+      onDelete: 'cascade',
+    },
+  ),
+
+  // Timestamps
+  createdAt: timestamp({
+    withTimezone: true,
+    mode: 'string',
+  }).default(sql`(now() AT TIME ZONE 'utc'::text)`),
+
+  updatedAt: timestamp({
+    withTimezone: true,
+    mode: 'string',
+  })
+    .default(sql`(now() AT TIME ZONE 'utc'::text)`)
+    .$onUpdate(() => sql`(now() AT TIME ZONE 'utc'::text)`),
+
+  deletedAt: timestamp({
+    withTimezone: true,
+    mode: 'string',
+  }),
+} as const;
+
 export const proposals = pgTable(
   'decision_proposals',
   {
     id: autoId().primaryKey(),
-    processInstanceId: uuid('process_instance_id')
-      .notNull()
-      .references(() => processInstances.id, {
-        onUpdate: 'cascade',
-        onDelete: 'cascade',
-      }),
 
-    // Proposal data following the template schema
-    proposalData: jsonb('proposal_data').notNull(),
-
-    submittedByProfileId: uuid('submitted_by_profile_id')
-      .notNull()
-      .references(() => profiles.id, {
-        onUpdate: 'cascade',
-        onDelete: 'cascade',
-      }),
-
-    profileId: uuid('profile_id')
-      .references(() => profiles.id, {
-        onUpdate: 'cascade',
-        onDelete: 'cascade',
-      })
-      .notNull(),
-
-    status: proposalStatusEnum('status').default(ProposalStatus.DRAFT),
-
-    ...timestamps,
+    // All columns that get copied to history (single source of truth)
+    ...proposalColumns,
   },
   (table) => [
     ...serviceRolePolicies,
     index().on(table.id).concurrently(),
     index().on(table.processInstanceId).concurrently(),
     index().on(table.submittedByProfileId).concurrently(),
+    index().on(table.lastEditedByProfileId).concurrently(),
     index().on(table.profileId).concurrently(),
     index().on(table.status).concurrently(),
     index('proposals_status_created_at_idx')

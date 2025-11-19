@@ -155,6 +155,13 @@
       "when": 1762817915259,
       "tag": "0021_classy_maelstrom",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1763459753986,
+      "tag": "0022_giant_lionheart",
+      "breakpoints": true
     }
   ]
 }
