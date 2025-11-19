@@ -124,8 +124,12 @@ export const MatchingOrganizationsForm = ({
   return (
     <div className={cn('max-w-lg', className)}>
       <FormContainer>
-        <FormHeader text={t("We've found your organization")}>
-          {t('join_subheader')}
+        <FormHeader
+          text={t("We've found your organization", {
+            count: matchingOrgs.length,
+          })}
+        >
+          {t('join_subheader', { count: matchingOrgs.length })}
         </FormHeader>
         <div className="flex flex-col items-center space-y-4">
           {matchingOrgs.map((org) => (
