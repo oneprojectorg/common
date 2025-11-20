@@ -59,6 +59,7 @@ export const createUserByEmail = async ({
         .from(users)
         .where(eq(users.authUserId, authUserId))
         .for('update'); // Lock the row to prevent concurrent modifications
+
       if (existingUser?.profileId) {
         // Another request already created the profile
         return;
@@ -97,7 +98,7 @@ export const createUserByEmail = async ({
 };
 
 /**
- * Fetch an allow list entry by email. Limited to 1, so use as prsensence check.
+ * Fetch an allow list entry by email.
  */
 export const getAllowListUser = async ({
   email,
