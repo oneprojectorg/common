@@ -179,14 +179,9 @@ const AddUserToOrgModalContent = ({
                         showBio={false}
                         avatarSize="sm"
                       />
-                      <div className="flex gap-2">
+                      <div className="ml-14 flex gap-2">
                         {roles.map((role) => (
-                          <Chip
-                            key={role}
-                            className="bg-teal-100 text-teal-800"
-                          >
-                            {role}
-                          </Chip>
+                          <Chip key={role}>{role}</Chip>
                         ))}
                       </div>
                     </Surface>
