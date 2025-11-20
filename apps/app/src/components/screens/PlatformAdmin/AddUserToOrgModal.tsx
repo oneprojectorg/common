@@ -284,6 +284,7 @@ const DynamicFormFields = ({
         selectedKey={selectedOrgId}
         onSelectionChange={(key) => setSelectedOrgId(String(key))}
         items={availableOrganizations}
+        popoverProps={{ className: 'max-w-md' }}
       >
         {(org) => (
           <ComboBoxItem key={org.id} id={org.id} textValue={org.profile.name}>
@@ -316,7 +317,7 @@ const DynamicFormFields = ({
         {(role) => (
           <ComboBoxItem key={role.id} id={role.id} textValue={role.name}>
             <div>
-              <div className="text-sm font-medium">{role.name}</div>
+              <div className="leading-base text-neutral-black">{role.name}</div>
               {role.description && (
                 <div className="text-xs text-neutral-charcoal">
                   {role.description}
