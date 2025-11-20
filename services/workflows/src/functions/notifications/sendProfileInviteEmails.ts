@@ -1,3 +1,4 @@
+import { OPBatchSend, OPInvitationEmail } from '@op/emails';
 import { Events, inngest } from '@op/events';
 
 const { profileInviteSent } = Events;
@@ -13,8 +14,6 @@ export const sendProfileInviteEmails = inngest.createFunction(
     );
 
     const result = await step.run('send-profile-invite-emails', async () => {
-      const { OPBatchSend, OPInvitationEmail } = await import('@op/emails');
-
       console.log(
         `Sending profile invite emails from ${senderProfileId}`,
         invitations.map((i) => i.email),
@@ -38,7 +37,9 @@ export const sendProfileInviteEmails = inngest.createFunction(
       const { data, errors } = await OPBatchSend(emails);
 
       if (errors.length > 0) {
-        console.error('Some profile invite emails failed:', errors);
+        // Resend batch API by default sends nothing of a batch if there is an error on
+        // any of the batch. So we throw to get a retry in the Workflow step
+        throw Error(`Email batch failed: ${JSON.stringify(errors)}`);
       }
 
       return {
