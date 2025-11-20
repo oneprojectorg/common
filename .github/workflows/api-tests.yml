@@ -42,8 +42,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Install Supabase CLI
-        run: npm install -g supabase
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
 
       - name: Start Supabase test instance
         run: supabase start -x studio,edge-runtime,imgproxy,inbucket --config supabase-test.toml
