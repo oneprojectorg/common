@@ -11,7 +11,7 @@ import { Suspense, useEffect, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { UsersRow } from './UsersRow';
+import { UsersRowDesktop, UsersRowMobile } from './UsersRow';
 import { useCursorPagination } from './useCursorPagination';
 
 const USER_TABLE_MIN_WIDTH = 'min-w-[850px]';
@@ -29,11 +29,11 @@ export const UsersTable = () => {
 
   return (
     <div className="mt-8">
-      <div className="mb-4 flex items-center justify-between gap-4">
+      <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-md font-serif text-neutral-black">
           {t('platformAdmin_allUsers')}
         </h2>
-        <div className="w-64">
+        <div className="w-full sm:w-64">
           <SearchField
             aria-label={t('platformAdmin_searchUsersPlaceholder')}
             placeholder={t('platformAdmin_searchUsersPlaceholder')}
@@ -42,13 +42,20 @@ export const UsersTable = () => {
           />
         </div>
       </div>
-      <div className="overflow-x-auto">
+      {/* Desktop table view */}
+      <div className="hidden overflow-x-auto lg:block">
         <div className={USER_TABLE_MIN_WIDTH}>
           <UsersTableHeader />
           <Suspense fallback={<UsersTableContentSkeleton />}>
             <UsersTableContent searchQuery={debouncedQuery} />
           </Suspense>
         </div>
+      </div>
+      {/* Mobile card view */}
+      <div className="lg:hidden">
+        <Suspense fallback={<UsersTableContentSkeleton />}>
+          <UsersTableContent searchQuery={debouncedQuery} />
+        </Suspense>
       </div>
     </div>
   );
@@ -126,9 +133,16 @@ const UsersTableContent = ({ searchQuery }: { searchQuery: string }) => {
 
   return (
     <>
-      <div className="divide-y divide-neutral-gray1">
+      {/* Desktop table rows */}
+      <div className="hidden divide-y divide-neutral-gray1 lg:block">
         {users.map((user) => (
-          <UsersRow key={user.id} user={user} />
+          <UsersRowDesktop key={user.id} user={user} />
+        ))}
+      </div>
+      {/* Mobile cards */}
+      <div className="lg:hidden">
+        {users.map((user) => (
+          <UsersRowMobile key={user.id} user={user} />
         ))}
       </div>
       <div className="mt-4">
