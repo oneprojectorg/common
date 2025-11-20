@@ -1,5 +1,6 @@
 import { getPublicUrl } from '@/utils';
 import { Avatar } from '@op/ui/Avatar';
+import { ProfileAvatar } from '@op/ui/ProfileAvatar';
 import Image from 'next/image';
 import { ReactNode } from 'react';
 
@@ -54,44 +55,44 @@ export const OrganizationListItem = ({
     lg: 'size-12',
   };
 
-  const hasAdditionalContent =
-    (whereWeWork && whereWeWork.length > 0) || trimmedBio || children;
+  const avatar = (
+    <Avatar
+      placeholder={organization.profile.name}
+      className={`${avatarSizeClasses[avatarSize]} shrink-0`}
+    >
+      {organization.avatarImage?.name ? (
+        <Image
+          src={getPublicUrl(organization.avatarImage.name) ?? ''}
+          alt={`${organization.profile.name} avatar`}
+          fill
+          className="object-cover"
+        />
+      ) : null}
+    </Avatar>
+  );
+
+  const description = (
+    <>
+      {whereWeWork && whereWeWork.length > 0 ? (
+        <div className="mt-1 truncate text-sm text-neutral-gray4 sm:text-base">
+          {whereWeWork}
+        </div>
+      ) : null}
+
+      {trimmedBio ? (
+        <div className="mt-2 text-neutral-charcoal">{trimmedBio}</div>
+      ) : null}
+    </>
+  );
 
   return (
-    <div
-      className={`flex gap-2 sm:gap-6 ${hasAdditionalContent ? 'items-start' : 'items-center'} ${className}`}
+    <ProfileAvatar
+      avatar={avatar}
+      title={organization.profile.name}
+      className={className}
     >
-      <Avatar
-        placeholder={organization.profile.name}
-        className={`${avatarSizeClasses[avatarSize]} shrink-0`}
-      >
-        {organization.avatarImage?.name ? (
-          <Image
-            src={getPublicUrl(organization.avatarImage.name) ?? ''}
-            alt={`${organization.profile.name} avatar`}
-            fill
-            className="object-cover"
-          />
-        ) : null}
-      </Avatar>
-
-      <div className="min-w-0 flex-1">
-        <div className="font-semibold leading-base text-neutral-black">
-          {organization.profile.name}
-        </div>
-
-        {whereWeWork && whereWeWork.length > 0 ? (
-          <div className="mt-1 truncate text-sm text-neutral-gray4 sm:text-base">
-            {whereWeWork}
-          </div>
-        ) : null}
-
-        {trimmedBio ? (
-          <div className="mt-2 text-neutral-charcoal">{trimmedBio}</div>
-        ) : null}
-
-        {children}
-      </div>
-    </div>
+      {whereWeWork || trimmedBio ? description : null}
+      {children}
+    </ProfileAvatar>
   );
 };
