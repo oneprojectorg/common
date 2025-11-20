@@ -35,14 +35,14 @@ export const listPosts = async ({
 
   try {
     // Build cursor condition for pagination
-    const cursorCondition = cursor
-      ? getGenericCursorCondition({
-          columns: {
-            id: postsToOrganizations.postId,
-            date: postsToOrganizations.createdAt,
-          },
-          cursor: decodeCursor(cursor),
-        })
+    const cursorCondition = cursorData
+      ? or(
+          lt(postsToOrganizations.createdAt, cursorData.updatedAt),
+          and(
+            eq(postsToOrganizations.createdAt, cursorData.updatedAt),
+            lt(postsToOrganizations.postId, cursorData.id),
+          ),
+        )
       : undefined;
 
     const profile = slug
