@@ -24,7 +24,7 @@ export const Feed = () => {
 };
 
 /** Feed content component with live data */
-const FeedContent = () => {
+const FeedContent = ({ limit = 10 }: { limit?: number }) => {
   const { user } = useUser() ?? {};
 
   const {
@@ -33,7 +33,7 @@ const FeedContent = () => {
     hasNextPage,
     isFetchingNextPage,
   } = trpc.organization.listAllPosts.useInfiniteQuery(
-    { limit: 10 },
+    { limit },
     {
       getNextPageParam: (lastPage) => lastPage.next,
       staleTime: 30 * 1000,
