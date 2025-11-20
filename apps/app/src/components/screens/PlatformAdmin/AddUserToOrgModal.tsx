@@ -4,10 +4,12 @@ import { getPublicUrl } from '@/utils';
 import { trpc } from '@op/api/client';
 import { Avatar } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
+import { Chip } from '@op/ui/Chip';
 import { ComboBox, ComboBoxItem } from '@op/ui/ComboBox';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Skeleton } from '@op/ui/Skeleton';
+import { Surface } from '@op/ui/Surface';
 import { toast } from '@op/ui/Toast';
 import Image from 'next/image';
 import {
@@ -20,6 +22,8 @@ import {
 } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
+
+import { OrganizationListItem } from '@/components/Organizations/OrganizationListItem';
 
 import type { User } from './types';
 
@@ -115,19 +119,6 @@ const AddUserToOrgModalContent = ({
     />
   ) : null;
 
-  // Get user's current memberships
-  const currentMemberships = useMemo(() => {
-    return (
-      user.organizationUsers?.map((ou) => ({
-        orgName: ou.organization?.profile?.name ?? 'Unknown Organization',
-        roles:
-          ou.roles && ou.roles.length > 0
-            ? ou.roles.map((r) => r.accessRole.name).join(', ')
-            : 'No roles',
-      })) ?? []
-    );
-  }, [user.organizationUsers]);
-
   return (
     <form onSubmit={handleSubmit} className="contents">
       {/* Header */}
@@ -152,26 +143,55 @@ const AddUserToOrgModalContent = ({
         </div>
 
         {/* Current Memberships */}
-        {currentMemberships.length > 0 ? (
+        {user.organizationUsers && user.organizationUsers.length > 0 ? (
           <>
             <div>
               <div className="mb-2 text-sm font-medium text-neutral-black">
                 Current Organizations
               </div>
               <div className="space-y-2">
-                {currentMemberships.map((membership, index) => (
-                  <div
-                    key={index}
-                    className="border-neutral-gray10 rounded-lg border p-3"
-                  >
-                    <div className="text-sm text-neutral-black">
-                      {membership.orgName}
-                    </div>
-                    <div className="text-xs text-neutral-charcoal">
-                      {membership.roles}
-                    </div>
-                  </div>
-                ))}
+                {user.organizationUsers.map((orgUser) => {
+                  if (!orgUser.organization?.profile) {
+                    return null;
+                  }
+
+                  const roles =
+                    orgUser.roles && orgUser.roles.length > 0
+                      ? orgUser.roles.map((r) => r.accessRole.name)
+                      : ['No roles'];
+
+                  return (
+                    <Surface
+                      key={orgUser.organizationId}
+                      className="flex flex-col gap-2 p-3"
+                    >
+                      <OrganizationListItem
+                        organization={{
+                          id: orgUser.organizationId,
+                          profile: {
+                            name: orgUser.organization.profile.name,
+                            slug: orgUser.organization.profile.slug,
+                            bio: orgUser.organization.profile.bio,
+                          },
+                          avatarImage: orgUser.organization.profile.avatarImage,
+                          whereWeWork: orgUser.organization.whereWeWork ?? [],
+                        }}
+                        showBio={false}
+                        avatarSize="sm"
+                      />
+                      <div className="flex gap-2">
+                        {roles.map((role) => (
+                          <Chip
+                            key={role}
+                            className="bg-teal-100 text-teal-800"
+                          >
+                            {role}
+                          </Chip>
+                        ))}
+                      </div>
+                    </Surface>
+                  );
+                })}
               </div>
             </div>
             <hr />
@@ -272,7 +292,20 @@ const DynamicFormFields = ({
       >
         {(org) => (
           <ComboBoxItem key={org.id} id={org.id} textValue={org.profile.name}>
-            {org.profile.name}
+            <OrganizationListItem
+              organization={{
+                id: org.id,
+                profile: {
+                  name: org.profile.name,
+                  slug: org.profile.slug,
+                  bio: org.profile.bio,
+                },
+                avatarImage: org.avatarImage,
+                whereWeWork: org.whereWeWork,
+              }}
+              showBio={false}
+              avatarSize="sm"
+            />
           </ComboBoxItem>
         )}
       </ComboBox>

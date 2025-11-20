@@ -74,7 +74,16 @@ export const listAllUsersRouter = router({
                 with: {
                   organization: {
                     with: {
-                      profile: true,
+                      profile: {
+                        with: {
+                          avatarImage: true,
+                        },
+                      },
+                      whereWeWork: {
+                        with: {
+                          location: true,
+                        },
+                      },
                     },
                   },
                   roles: {
@@ -114,6 +123,18 @@ export const listAllUsersRouter = router({
           hasMore && lastItem && lastItem.updatedAt
             ? encodeCursor(new Date(lastItem.updatedAt), lastItem.id)
             : null;
+
+        // Transform whereWeWork from join table to location array for each organization
+        items.forEach((user) => {
+          user.organizationUsers?.forEach((orgUser) => {
+            if (orgUser.organization?.whereWeWork) {
+              orgUser.organization.whereWeWork =
+                orgUser.organization.whereWeWork.map(
+                  (item: any) => item.location,
+                );
+            }
+          });
+        });
 
         return {
           items: items.map((user) => userEncoder.parse(user)),
