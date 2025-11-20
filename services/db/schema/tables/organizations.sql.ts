@@ -1,5 +1,4 @@
 import { relations } from 'drizzle-orm';
-import type { InferModel } from 'drizzle-orm';
 import {
   boolean,
   index,
@@ -197,4 +196,4 @@ export const organizationsStrategiesRelations = relations(
   }),
 );
 
-export type Organization = InferModel<typeof organizations>;
+export type Organization = typeof organizations.$inferSelect;
