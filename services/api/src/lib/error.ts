@@ -1,6 +1,5 @@
 import { CommonError } from '@op/common';
 import { TRPCError } from '@trpc/server';
-import { getHTTPStatusCodeFromError } from '@trpc/server/http';
 import type { TRPCErrorShape, TRPC_ERROR_CODE_KEY } from '@trpc/server/rpc';
 import {
   type ErrorFormatter,
@@ -9,18 +8,6 @@ import {
 import { ZodError } from 'zod';
 
 import type { TContext } from '../types';
-
-// Example error you might get if your input validation fails
-const error: TRPCError = {
-  name: 'TRPCError',
-  code: 'BAD_REQUEST',
-  message: '"password" must be at least 4 characters',
-};
-
-if (error instanceof TRPCError) {
-  const httpCode = getHTTPStatusCodeFromError(error);
-  console.log(httpCode); // 400
-}
 
 class BackendError extends TRPCError {
   public readonly clientMessage;
