@@ -378,5 +378,6 @@
   "platformAdmin_actionViewAnalytics": "Ver análises",
   "platformAdmin_actionEditProfile": "Editar perfil",
   "platformAdmin_actionRemoveUser": "Remover Usuário",
-  "platformAdmin_searchUsersPlaceholder": "Pesquisar usuários por e-mail"
+  "platformAdmin_searchUsersPlaceholder": "Pesquisar usuários por e-mail",
+  "No more updates.": "Não há mais atualizações."
 }
