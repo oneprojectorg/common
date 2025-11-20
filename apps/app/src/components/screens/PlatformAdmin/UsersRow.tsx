@@ -26,7 +26,8 @@ type ListAllUsersOutput = RouterOutput['platform']['admin']['listAllUsers'];
 type User = ListAllUsersOutput['items'][number];
 type OrganizationUsers = User['organizationUsers'];
 
-export const UsersRowDesktop = ({ user }: { user: User }) => {
+// Shared hook for user data
+const useUserRowData = (user: User) => {
   const format = useFormatter();
   const t = useTranslations();
   const utils = trpc.useUtils();
@@ -39,6 +40,31 @@ export const UsersRowDesktop = ({ user }: { user: User }) => {
   const relativeLastSignIn = lastSignInAt
     ? useRelativeTime(lastSignInAt)
     : null;
+
+  return {
+    format,
+    t,
+    utils,
+    isEditModalOpen,
+    setIsEditModalOpen,
+    updatedAt,
+    relativeUpdatedAt,
+    lastSignInAt,
+    relativeLastSignIn,
+  };
+};
+
+export const UsersRowDesktop = ({ user }: { user: User }) => {
+  const {
+    format,
+    utils,
+    isEditModalOpen,
+    setIsEditModalOpen,
+    updatedAt,
+    relativeUpdatedAt,
+    lastSignInAt,
+    relativeLastSignIn,
+  } = useUserRowData(user);
 
   return (
     <>
@@ -87,45 +113,10 @@ export const UsersRowDesktop = ({ user }: { user: User }) => {
           )}
         </div>
         <div className="flex items-center justify-end pr-1 text-sm text-neutral-charcoal">
-          <OptionMenu variant="outline" size="medium">
-            <Menu className="min-w-48 p-2">
-              <MenuItem
-                key="view-analytics"
-                onAction={() => {
-                  window.open(getAnalyticsUserUrl(user.authUserId), '_blank');
-                }}
-                className="px-3 py-1"
-              >
-                {t('platformAdmin_actionViewAnalytics')}
-              </MenuItem>
-              <MenuItem
-                key="edit-profile"
-                onAction={() => {
-                  if (user.profile) {
-                    setIsEditModalOpen(true);
-                  }
-                }}
-                className="px-3 py-1"
-                isDisabled={!user.profile}
-              >
-                {t('platformAdmin_actionEditProfile')}
-              </MenuItem>
-              <MenuSeparator />
-              <MenuItem
-                key="remove-user"
-                onAction={() => {
-                  alert('coming soon');
-                }}
-                className="px-3 py-1"
-              >
-                <span className="text-red-500">
-                  {t('platformAdmin_actionRemoveUser')}
-                </span>
-              </MenuItem>
-            </Menu>
-          </OptionMenu>
+          <ActionsMenu user={user} setIsEditModalOpen={setIsEditModalOpen} />
         </div>
       </div>
+
       {user.profile ? (
         <UpdateProfileModal
           authUserId={user.authUserId}
@@ -142,18 +133,17 @@ export const UsersRowDesktop = ({ user }: { user: User }) => {
 };
 
 export const UsersRowMobile = ({ user }: { user: User }) => {
-  const format = useFormatter();
-  const t = useTranslations();
-  const utils = trpc.useUtils();
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const updatedAt = user.updatedAt ? new Date(user.updatedAt) : null;
-  const relativeUpdatedAt = updatedAt ? useRelativeTime(updatedAt) : null;
-  const lastSignInAt = user.authUser?.lastSignInAt
-    ? new Date(user.authUser.lastSignInAt)
-    : null;
-  const relativeLastSignIn = lastSignInAt
-    ? useRelativeTime(lastSignInAt)
-    : null;
+  const {
+    format,
+    t,
+    utils,
+    isEditModalOpen,
+    setIsEditModalOpen,
+    updatedAt,
+    relativeUpdatedAt,
+    lastSignInAt,
+    relativeLastSignIn,
+  } = useUserRowData(user);
 
   return (
     <>
@@ -168,43 +158,7 @@ export const UsersRowMobile = ({ user }: { user: User }) => {
               {user.email}
             </div>
           </div>
-          <OptionMenu variant="outline" size="medium">
-            <Menu className="min-w-48 p-2">
-              <MenuItem
-                key="view-analytics"
-                onAction={() => {
-                  window.open(getAnalyticsUserUrl(user.authUserId), '_blank');
-                }}
-                className="px-3 py-1"
-              >
-                {t('platformAdmin_actionViewAnalytics')}
-              </MenuItem>
-              <MenuItem
-                key="edit-profile"
-                onAction={() => {
-                  if (user.profile) {
-                    setIsEditModalOpen(true);
-                  }
-                }}
-                className="px-3 py-1"
-                isDisabled={!user.profile}
-              >
-                {t('platformAdmin_actionEditProfile')}
-              </MenuItem>
-              <MenuSeparator />
-              <MenuItem
-                key="remove-user"
-                onAction={() => {
-                  alert('coming soon');
-                }}
-                className="px-3 py-1"
-              >
-                <span className="text-red-500">
-                  {t('platformAdmin_actionRemoveUser')}
-                </span>
-              </MenuItem>
-            </Menu>
-          </OptionMenu>
+          <ActionsMenu user={user} setIsEditModalOpen={setIsEditModalOpen} />
         </div>
 
         <div className="space-y-2 text-sm">
@@ -266,6 +220,56 @@ export const UsersRowMobile = ({ user }: { user: User }) => {
         />
       ) : null}
     </>
+  );
+};
+
+const ActionsMenu = ({
+  user,
+  setIsEditModalOpen,
+}: {
+  user: User;
+  setIsEditModalOpen: (open: boolean) => void;
+}) => {
+  const t = useTranslations();
+
+  return (
+    <OptionMenu variant="outline" size="medium">
+      <Menu className="min-w-48 p-2">
+        <MenuItem
+          key="view-analytics"
+          onAction={() => {
+            window.open(getAnalyticsUserUrl(user.authUserId), '_blank');
+          }}
+          className="px-3 py-1"
+        >
+          {t('platformAdmin_actionViewAnalytics')}
+        </MenuItem>
+        <MenuItem
+          key="edit-profile"
+          onAction={() => {
+            if (user.profile) {
+              setIsEditModalOpen(true);
+            }
+          }}
+          className="px-3 py-1"
+          isDisabled={!user.profile}
+        >
+          {t('platformAdmin_actionEditProfile')}
+        </MenuItem>
+        <MenuSeparator />
+        <MenuItem
+          key="remove-user"
+          onAction={() => {
+            alert('coming soon');
+          }}
+          className="px-3 py-1"
+        >
+          <span className="text-red-500">
+            {t('platformAdmin_actionRemoveUser')}
+          </span>
+        </MenuItem>
+      </Menu>
+    </OptionMenu>
   );
 };
 

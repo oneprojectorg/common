@@ -133,13 +133,11 @@ const UsersTableContent = ({ searchQuery }: { searchQuery: string }) => {
 
   return (
     <>
-      {/* Desktop table rows */}
       <div className="hidden divide-y divide-neutral-gray1 lg:block">
         {users.map((user) => (
           <UsersRowDesktop key={user.id} user={user} />
         ))}
       </div>
-      {/* Mobile cards */}
       <div className="lg:hidden">
         {users.map((user) => (
           <UsersRowMobile key={user.id} user={user} />
