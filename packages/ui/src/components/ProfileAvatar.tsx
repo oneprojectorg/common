@@ -1,5 +1,7 @@
 import { ReactNode } from 'react';
 
+import { cn } from '../lib/utils';
+
 type ProfileAvatarProps = {
   avatar: ReactNode;
   title: string;
@@ -15,14 +17,18 @@ export const ProfileAvatar = ({
   avatar,
   title,
   description,
-  className = '',
+  className,
   children,
 }: ProfileAvatarProps) => {
   const hasAdditionalContent = description || children;
 
   return (
     <div
-      className={`flex gap-2 sm:gap-6 ${hasAdditionalContent ? 'items-start' : 'items-center'} ${className}`}
+      className={cn(
+        'flex gap-3',
+        hasAdditionalContent ? 'items-start' : 'items-center',
+        className,
+      )}
     >
       {avatar}
 
