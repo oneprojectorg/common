@@ -391,4 +391,5 @@
   "platformAdmin_addUserToOrg_errorSelectBoth": "Please select both an organization and a role",
   "platformAdmin_addUserToOrg_selectOrganization": "Select Organization",
   "platformAdmin_addUserToOrg_selectRole": "Select Role"
+  "No more updates.": "No more updates."
 }
