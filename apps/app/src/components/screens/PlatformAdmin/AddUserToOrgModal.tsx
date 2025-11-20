@@ -7,7 +7,6 @@ import { Button } from '@op/ui/Button';
 import { ComboBox, ComboBoxItem } from '@op/ui/ComboBox';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { Dialog, DialogTrigger } from '@op/ui/RAC';
 import { Skeleton } from '@op/ui/Skeleton';
 import { toast } from '@op/ui/Toast';
 import Image from 'next/image';
@@ -37,21 +36,17 @@ export const AddUserToOrgModal = ({
   onOpenChange: (isOpen: boolean) => void;
 }) => {
   return (
-    <DialogTrigger>
-      <Modal isOpen={isOpen} onOpenChange={onOpenChange} isDismissable>
-        <Dialog>
-          <Suspense
-            fallback={
-              <div className="p-6">
-                <LoadingSpinner />
-              </div>
-            }
-          >
-            <AddUserToOrgModalContent user={user} onOpenChange={onOpenChange} />
-          </Suspense>
-        </Dialog>
-      </Modal>
-    </DialogTrigger>
+    <Modal isOpen={isOpen} onOpenChange={onOpenChange} isDismissable>
+      <Suspense
+        fallback={
+          <div className="p-6">
+            <LoadingSpinner />
+          </div>
+        }
+      >
+        <AddUserToOrgModalContent user={user} onOpenChange={onOpenChange} />
+      </Suspense>
+    </Modal>
   );
 };
 
