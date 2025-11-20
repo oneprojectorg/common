@@ -110,7 +110,6 @@ export const addUsersToOrganizationRouter = router({
               });
             }
 
-            // Create allowList entry if it doesn't exist
             const userToAdd = usersToAdd.find((u) => u.authUserId === user.id);
             if (!userToAdd) {
               throw new TRPCError({

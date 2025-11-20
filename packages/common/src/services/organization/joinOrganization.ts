@@ -25,7 +25,7 @@ export const joinOrganization = async ({
 }: {
   user: User;
   organization: Organization;
-  /** If providced the allowlist checks are skipped and this role is assigned */
+  /** If provided the allowlist checks are skipped and this role is assigned */
   roleId?: AccessRole['id'];
 }): Promise<OrganizationUser> => {
   if (!user.email) {
