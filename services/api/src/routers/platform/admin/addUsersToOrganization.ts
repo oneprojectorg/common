@@ -1,7 +1,6 @@
 import { invalidate } from '@op/cache';
-import { joinOrganization } from '@op/common';
+import { CommonError, NotFoundError, joinOrganization } from '@op/common';
 import { db } from '@op/db/client';
-import { createSBServiceClient } from '@op/supabase/server';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
@@ -49,42 +48,35 @@ export const addUsersToOrganizationRouter = router({
         );
         const allAuthUserIds = usersToAdd.map((user) => user.authUserId);
 
-        const supabase = createSBServiceClient();
-
         // Validate all entities exist
-        const [organization, existingRoles, ...authUsers] = await Promise.all([
-          // Validate organization exists
+        const [organization, users, existingRoles] = await Promise.all([
           db.query.organizations.findFirst({
             where: (table, { eq }) => eq(table.id, organizationId),
           }),
-          // Validate all role IDs exist
+          db.query.users.findMany({
+            where: (table, { inArray }) =>
+              inArray(table.authUserId, allAuthUserIds),
+          }),
           db.query.accessRoles.findMany({
             where: (table, { inArray }) => inArray(table.id, allRoleIds),
             columns: { id: true },
           }),
-          // Validate all users exist and get their details
-          ...allAuthUserIds.map((authUserId) =>
-            supabase.auth.admin
-              .getUserById(authUserId)
-              .then(({ data, error }) => {
-                if (error || !data?.user) {
-                  throw new TRPCError({
-                    code: 'NOT_FOUND',
-                    message: `User(s) ID: ${authUserId} not found`,
-                  });
-                }
-
-                return data.user;
-              }),
-          ),
         ]);
 
         // Check organization exists
         if (!organization) {
-          throw new TRPCError({
-            code: 'NOT_FOUND',
-            message: `Organization with ID ${organizationId} does not exist`,
-          });
+          throw new NotFoundError('Organization', organizationId);
+        }
+
+        // Check all users exist
+        const existingAuthUserIds = new Set(
+          users.map((user) => user.authUserId),
+        );
+        const invalidAuthUserIds = allAuthUserIds.filter(
+          (authUserId) => !existingAuthUserIds.has(authUserId),
+        );
+        if (invalidAuthUserIds.length > 0) {
+          throw new NotFoundError('User');
         }
 
         // Check all role IDs exist
@@ -92,25 +84,16 @@ export const addUsersToOrganizationRouter = router({
         const invalidRoleIds = allRoleIds.filter(
           (roleId) => !existingRoleIds.has(roleId),
         );
-
         if (invalidRoleIds.length > 0) {
-          throw new TRPCError({
-            code: 'NOT_FOUND',
-            message: `Invalid role ID(s): ${invalidRoleIds.join(', ')}`,
-          });
+          throw new NotFoundError('Role');
         }
 
         // Join each user to the organization
         const joinResults = await Promise.all(
-          authUsers.map(async (user) => {
-            if (!user.email) {
-              throw new TRPCError({
-                code: 'INTERNAL_SERVER_ERROR',
-                message: `User with ID ${user.id} does not have an email`,
-              });
-            }
-
-            const userToAdd = usersToAdd.find((u) => u.authUserId === user.id);
+          users.map(async (user) => {
+            const userToAdd = usersToAdd.find(
+              (u) => u.authUserId === user.authUserId,
+            );
             if (!userToAdd) {
               throw new TRPCError({
                 code: 'INTERNAL_SERVER_ERROR',
@@ -126,7 +109,7 @@ export const addUsersToOrganizationRouter = router({
             });
 
             return {
-              authUserId: user.id,
+              authUserId: user.authUserId,
               organizationUserId: orgUser.id,
             };
           }),
@@ -144,7 +127,7 @@ export const addUsersToOrganizationRouter = router({
 
         return joinResults;
       } catch (error) {
-        if (error instanceof TRPCError) {
+        if (error instanceof CommonError) {
           throw error;
         }
 

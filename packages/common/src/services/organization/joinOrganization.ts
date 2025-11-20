@@ -2,13 +2,13 @@ import { cache } from '@op/cache';
 import { TransactionType, db, eq } from '@op/db/client';
 import {
   type AccessRole,
+  type CommonUser,
   type Organization,
   OrganizationUser,
   accessRoles,
   organizationUserToAccessRoles,
   organizationUsers,
 } from '@op/db/schema';
-import { User } from '@op/supabase/lib';
 
 import { CommonError, UnauthorizedError } from '../../utils';
 import { getAllowListUser } from '../user';
@@ -23,15 +23,11 @@ export const joinOrganization = async ({
   organization,
   roleId,
 }: {
-  user: User;
+  user: CommonUser;
   organization: Organization;
   /** If provided the allowlist checks are skipped and this role is assigned */
   roleId?: AccessRole['id'];
 }): Promise<OrganizationUser> => {
-  if (!user.email) {
-    throw new CommonError('User email is required');
-  }
-
   const userEmailDomainPart = user.email.split('@')[1];
   if (!userEmailDomainPart) {
     throw new CommonError('User email is invalid');
@@ -84,9 +80,9 @@ export const joinOrganization = async ({
         .insert(organizationUsers)
         .values({
           organizationId: organization.id,
-          authUserId: user.id,
-          email: user.email!,
-          name: user.user_metadata?.full_name || userEmailDomain,
+          authUserId: user.authUserId,
+          email: user.email,
+          name: user.name ?? userEmailDomain,
         })
         .returning(),
       // Determine the role to assign

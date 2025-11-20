@@ -1,5 +1,4 @@
 import { relations, sql } from 'drizzle-orm';
-import type { InferModel } from 'drizzle-orm';
 import {
   boolean,
   index,
@@ -89,4 +88,4 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   }),
 }));
 
-export type CommonUser = InferModel<typeof users>;
+export type CommonUser = typeof users.$inferSelect;

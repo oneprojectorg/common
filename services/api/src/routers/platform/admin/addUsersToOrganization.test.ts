@@ -138,7 +138,9 @@ describe.concurrent('platform.admin.addUsersToOrganization', () => {
           ],
         }),
       ).rejects.toMatchObject({
-        code: 'NOT_FOUND',
+        cause: {
+          name: 'NotFoundError',
+        },
       });
     });
 
@@ -288,7 +290,9 @@ describe.concurrent('platform.admin.addUsersToOrganization', () => {
           ],
         }),
       ).rejects.toMatchObject({
-        code: 'NOT_FOUND',
+        cause: {
+          name: 'NotFoundError',
+        },
       });
     });
 
@@ -327,7 +331,9 @@ describe.concurrent('platform.admin.addUsersToOrganization', () => {
           ],
         }),
       ).rejects.toMatchObject({
-        code: 'NOT_FOUND',
+        cause: {
+          name: 'NotFoundError',
+        },
       });
     });
   });
