@@ -10,11 +10,12 @@ import {
 } from '../../helpers';
 import { EntityType, entityTypeEnum } from './entities.sql';
 import { individuals } from './individuals.sql';
+import { profileModules } from './modules.sql';
 import { organizations } from './organizations.sql';
 import { posts } from './posts.sql';
-import { objectsInStorage } from './storage.sql';
-import { profileModules } from './modules.sql';
+import { processInstances } from './processInstances.sql';
 import { profileUsers } from './profileUsers.sql';
+import { objectsInStorage } from './storage.sql';
 
 export const profiles = pgTable(
   'profiles',
@@ -81,6 +82,10 @@ export const profilesRelations = relations(profiles, ({ many, one }) => ({
   individual: one(individuals, {
     fields: [profiles.id],
     references: [individuals.profileId],
+  }),
+  processInstance: one(processInstances, {
+    fields: [profiles.id],
+    references: [processInstances.profileId],
   }),
   modules: many(profileModules),
   profileUsers: many(profileUsers),
