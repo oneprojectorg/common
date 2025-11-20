@@ -1,6 +1,10 @@
+import { CommonError } from '@op/common';
 import { TRPCError } from '@trpc/server';
 import type { TRPCErrorShape, TRPC_ERROR_CODE_KEY } from '@trpc/server/rpc';
-import type { ErrorFormatter } from '@trpc/server/unstable-core-do-not-import';
+import {
+  type ErrorFormatter,
+  getStatusKeyFromCode,
+} from '@trpc/server/unstable-core-do-not-import';
 import { ZodError } from 'zod';
 
 import type { TContext } from '../types';
@@ -28,6 +32,22 @@ export const errorFormatter: ErrorFormatter<TContext, TRPCErrorShape> = ({
   shape,
   error,
 }) => {
+  const cause = error.cause;
+
+  if (cause instanceof CommonError) {
+    return {
+      ...shape,
+      message: cause.message,
+      data: {
+        ...shape.data,
+        code: getStatusKeyFromCode(cause.statusCode ?? 500),
+        httpStatus: cause.statusCode ?? 500,
+        timestamp: cause.timestamp,
+        // Omit the entire error object before it goes to the client
+      },
+    };
+  }
+
   const backendError = error as BackendError;
 
   return {
