@@ -377,3 +377,24 @@ export const proposalFilterSchema = z
     proposalIds: z.array(z.uuid()).optional(),
   })
   .extend(paginationInputSchema.shape);
+
+// Decision Profile Encoder (profile with processInstance)
+export const decisionProfileEncoder = baseProfileEncoder.extend({
+  processInstance: processInstanceEncoder.nullish(),
+});
+
+// Decision Profile List Encoder
+export const decisionProfileListEncoder = z.object({
+  items: z.array(decisionProfileEncoder),
+  next: z.string().nullish(),
+  hasMore: z.boolean(),
+});
+
+// Decision Profile Filter Schema
+export const decisionProfileFilterSchema = z.object({
+  cursor: z.string().nullish(),
+  limit: z.number().min(1).max(100).prefault(10),
+  orderBy: z.enum(['createdAt', 'updatedAt', 'name']).prefault('updatedAt'),
+  dir: z.enum(['asc', 'desc']).prefault('desc'),
+  search: z.string().optional(),
+});
