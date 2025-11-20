@@ -17,6 +17,8 @@ export const Avatar = ({
     [],
   );
 
+  const showLetterAvatar = !children;
+
   return (
     <div
       className={cn(
@@ -24,10 +26,10 @@ export const Avatar = ({
         className,
       )}
     >
-      {children === null ? (
+      {showLetterAvatar ? (
         <div
           className={cn(
-            'bg-yellowOrange flex size-full items-center justify-center text-white',
+            'flex size-full items-center justify-center bg-yellowOrange text-white',
             gradientBg,
           )}
         >
