@@ -29,4 +29,19 @@ export const Events = {
       }),
     }),
   },
+  profileInviteSent: {
+    name: 'profile/invites-sent' as const,
+    schema: z.object({
+      senderProfileId: z.string(),
+      invitations: z.array(
+        z.object({
+          email: z.string().email(),
+          inviterName: z.string(),
+          profileName: z.string(),
+          inviteUrl: z.string().url(),
+          personalMessage: z.string().optional(),
+        }),
+      ),
+    }),
+  },
 } as const;
