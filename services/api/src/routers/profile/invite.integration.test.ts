@@ -8,16 +8,27 @@ import {
 import { ROLES } from '@op/db/seedData/accessControl';
 import { randomUUID } from 'crypto';
 import { eq } from 'drizzle-orm';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
-import { createCallerFactory } from '../../trpcFactory';
 import {
   createIsolatedSession,
   createTestContextWithSession,
   createTestUser,
   supabaseTestAdminClient,
 } from '../../test/supabase-utils';
+import { createCallerFactory } from '../../trpcFactory';
 import { inviteProfileUserRouter } from './invite';
+
+// Mock the event system to avoid Inngest API calls in tests
+vi.mock('@op/events', async () => {
+  const actual = await vi.importActual('@op/events');
+  return {
+    ...actual,
+    event: {
+      send: vi.fn().mockResolvedValue({ ids: ['mock-event-id'] }),
+    },
+  };
+});
 
 describe('Profile Invite Integration Tests', () => {
   const createCaller = createCallerFactory(inviteProfileUserRouter);
@@ -35,10 +46,10 @@ describe('Profile Invite Integration Tests', () => {
     // Register cleanup
     onTestFinished(async () => {
       // Clean up profile users first (due to foreign keys)
-      if (createdProfileIds.length > 0) {
+      for (const profileId of createdProfileIds) {
         await db
           .delete(profileUsers)
-          .where(eq(profileUsers.profileId, createdProfileIds[0]!));
+          .where(eq(profileUsers.profileId, profileId));
       }
 
       // Clean up profiles
@@ -166,14 +177,19 @@ describe('Profile Invite Integration Tests', () => {
     const createdAuthUserIds: string[] = [];
 
     onTestFinished(async () => {
-      if (createdProfileIds.length > 0) {
+      // Clean up profile users first (due to foreign keys)
+      for (const profileId of createdProfileIds) {
         await db
           .delete(profileUsers)
-          .where(eq(profileUsers.profileId, createdProfileIds[0]!));
+          .where(eq(profileUsers.profileId, profileId));
       }
+
+      // Clean up profiles
       for (const profileId of createdProfileIds) {
         await db.delete(profiles).where(eq(profiles.id, profileId));
       }
+
+      // Clean up auth users
       for (const authUserId of createdAuthUserIds) {
         await supabaseTestAdminClient.auth.admin.deleteUser(authUserId);
         await db.delete(users).where(eq(users.authUserId, authUserId));

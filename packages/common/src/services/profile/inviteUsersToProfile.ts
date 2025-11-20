@@ -160,8 +160,6 @@ export const inviteUsersToProfile = async (input: {
             });
           }
         });
-
-        results.successful.push(email);
       }
 
       // Check if email is already in the allowList using the Set
