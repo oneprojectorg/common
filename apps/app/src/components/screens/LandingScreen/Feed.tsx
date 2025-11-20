@@ -2,11 +2,8 @@
 
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import { useCursorPagination } from '@op/hooks';
-import { Pagination } from '@op/ui/Pagination';
-import { Fragment, Suspense } from 'react';
-
-import { useTranslations } from '@/lib/i18n';
+import { useInfiniteScroll } from '@op/hooks';
+import { Fragment, Suspense, useCallback } from 'react';
 
 import {
   DiscussionModalContainer,
@@ -28,20 +25,35 @@ export const Feed = () => {
 
 /** Feed content component with live data */
 const FeedContent = () => {
-  const t = useTranslations();
   const { user } = useUser() ?? {};
-  const {
-    cursor,
-    currentPage,
-    limit,
-    handleNext,
-    handlePrevious,
-    canGoPrevious,
-  } = useCursorPagination(10);
 
-  const [postsData] = trpc.organization.listAllPosts.useSuspenseQuery({
-    limit,
-    cursor,
+  const {
+    data: paginatedData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = trpc.organization.listAllPosts.useInfiniteQuery(
+    { limit: 10 },
+    {
+      getNextPageParam: (lastPage) => lastPage.next,
+      staleTime: 30 * 1000,
+      refetchOnMount: true,
+      refetchOnWindowFocus: true,
+      refetchOnReconnect: true,
+    },
+  );
+
+  const allPosts = paginatedData?.pages.flatMap((page) => page.items) || [];
+
+  const stableFetchNextPage = useCallback(() => {
+    fetchNextPage();
+  }, [fetchNextPage]);
+
+  const { ref, shouldShowTrigger } = useInfiniteScroll(stableFetchNextPage, {
+    hasNextPage,
+    isFetchingNextPage,
+    threshold: 0.1,
+    rootMargin: '50px',
   });
 
   const {
@@ -51,22 +63,14 @@ const FeedContent = () => {
     handleModalClose,
   } = usePostFeedActions({ user });
 
-  if (!postsData || !user) {
+  if (!paginatedData || !user) {
     return <PostFeedSkeleton numPosts={4} />;
   }
 
-  const { items, next, hasMore, total } = postsData;
-
-  const onNext = () => {
-    if (hasMore && next) {
-      handleNext(next);
-    }
-  };
-
   return (
     <PostFeed>
-      {items.length > 0 ? (
-        items.map((postToOrg) => (
+      {allPosts.length > 0 ? (
+        allPosts.map((postToOrg) => (
           <Fragment key={postToOrg.postId}>
             <PostItem
               post={postToOrg.post}
@@ -83,18 +87,9 @@ const FeedContent = () => {
         <EmptyPostsState />
       )}
 
-      {items.length > 0 && (
-        <div className="mt-6 flex justify-center">
-          <Pagination
-            range={{
-              totalItems: total,
-              itemsPerPage: limit,
-              page: currentPage,
-              label: t('posts'),
-            }}
-            next={hasMore ? onNext : undefined}
-            previous={canGoPrevious ? handlePrevious : undefined}
-          />
+      {shouldShowTrigger && (
+        <div ref={ref as React.RefObject<HTMLDivElement>}>
+          {isFetchingNextPage ? <PostFeedSkeleton numPosts={1} /> : null}
         </div>
       )}
 
