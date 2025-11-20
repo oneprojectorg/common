@@ -9,35 +9,13 @@ import { Events, event } from '@op/events';
 import { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
+import {
+  CommonError,
+  NotFoundError,
+  UnauthorizedError,
+} from '../../utils/error';
 import { getProfileAccessUser } from '../access';
-
-export interface InviteUsersToProfileInput {
-  emails: string[];
-  roleId: string;
-  profileId: string;
-  personalMessage?: string;
-  user: User;
-}
-
-export interface InviteResult {
-  success: boolean;
-  message: string;
-  details: {
-    successful: string[];
-    failed: { email: string; reason: string }[];
-  };
-}
-
-// Type definitions for invite metadata
-interface InviteMetadata {
-  invitedBy: string;
-  invitedAt: string;
-  inviteType: 'profile';
-  personalMessage?: string;
-  roleId?: string;
-  profileId?: string;
-  inviterProfileName?: string;
-}
+import type { InviteMetadata, InviteResult } from '../invite';
 
 // Utility function to generate consistent result messages
 const generateInviteResultMessage = (
@@ -56,28 +34,61 @@ const generateInviteResultMessage = (
 /**
  * Invite users to a profile with a specific role
  */
-export const inviteUsersToProfile = async (
-  input: InviteUsersToProfileInput,
-): Promise<InviteResult> => {
+export const inviteUsersToProfile = async (input: {
+  emails: string[];
+  roleId: string;
+  profileId: string;
+  personalMessage?: string;
+  user: User;
+}): Promise<InviteResult> => {
   const { emails, roleId, profileId, personalMessage, user } = input;
 
   const profileUser = await getProfileAccessUser({ user, profileId });
 
   if (!profileUser) {
-    throw new Error(
+    throw new UnauthorizedError(
       'User must be associated with this profile to send invites',
     );
   }
 
-  assertAccess({ profile: permission.ADMIN }, profileUser.roles || []);
+  // If this is the inviter's profile, we let them through. Otherwise assert admin access
+  if (profileUser.profileId !== profileId) {
+    assertAccess({ profile: permission.ADMIN }, profileUser.roles || []);
+  }
 
-  // Get the profile details for the invite
-  const profile = await db.query.profiles.findFirst({
-    where: (table, { eq }) => eq(table.id, profileId),
-  });
+  const normalizedEmails = emails.map((e) => e.toLowerCase());
+
+  const [profile, targetRole, existingUsers, existingAllowListEntries] =
+    await Promise.all([
+      // Get the profile details for the invite
+      db.query.profiles.findFirst({
+        where: (table, { eq }) => eq(table.id, profileId),
+      }),
+      // Get the target role
+      db.query.accessRoles.findFirst({
+        where: (table, { eq }) => eq(table.id, roleId),
+      }),
+      // Get all users with their profile memberships for this profile
+      db.query.users.findMany({
+        where: (table, { inArray }) => inArray(table.email, normalizedEmails),
+        with: {
+          profileUsers: {
+            where: (table, { eq }) => eq(table.profileId, profileId),
+          },
+        },
+      }),
+      // Get all existing allowList entries for these emails
+      db.query.allowList.findMany({
+        where: (table, { inArray }) => inArray(table.email, normalizedEmails),
+      }),
+    ]);
 
   if (!profile) {
-    throw new Error('Profile not found');
+    throw new NotFoundError('Profile not found');
+  }
+
+  if (!targetRole) {
+    throw new CommonError('Invalid role specified for profile invite');
   }
 
   const results = {
@@ -93,26 +104,34 @@ export const inviteUsersToProfile = async (
     personalMessage?: string;
   }> = [];
 
+  const usersByEmail = new Map(
+    existingUsers.map((user) => [user.email.toLowerCase(), user]),
+  );
+
+  const existingProfileUserAuthIds = new Set(
+    existingUsers
+      .filter((user) => user.profileUsers.length > 0)
+      .map((user) => user.authUserId),
+  );
+
+  const allowListEmailsSet = new Set(
+    existingAllowListEntries.map((entry) => entry.email.toLowerCase()),
+  );
+
   // Process each email
   for (const rawEmail of emails) {
     const email = rawEmail.toLowerCase();
     try {
-      // Check if user already exists in the system
-      const existingUser = await db.query.users.findFirst({
-        where: (table, { eq }) => eq(table.email, email),
-      });
+      // Look up user from the batched results
+      const existingUser = usersByEmail.get(email);
 
       // Check if user is already a member of this profile
       if (existingUser) {
-        const existingProfileUser = await db.query.profileUsers.findFirst({
-          where: (table, { eq, and }) =>
-            and(
-              eq(table.profileId, profileId),
-              eq(table.authUserId, existingUser.authUserId),
-            ),
-        });
+        const isAlreadyMember = existingProfileUserAuthIds.has(
+          existingUser.authUserId,
+        );
 
-        if (existingProfileUser) {
+        if (isAlreadyMember) {
           results.failed.push({
             email,
             reason: 'User is already a member of this profile',
@@ -121,53 +140,34 @@ export const inviteUsersToProfile = async (
         }
 
         // User exists but not in this profile - add them directly
-        const targetRole = await db.query.accessRoles.findFirst({
-          where: (table, { eq }) => eq(table.id, roleId),
+        await db.transaction(async (tx) => {
+          // Add user to profile
+          const [newProfileUser] = await tx
+            .insert(profileUsers)
+            .values({
+              authUserId: existingUser.authUserId,
+              profileId,
+              email: existingUser.email,
+              name: existingUser.name || existingUser.email.split('@')[0],
+            })
+            .returning();
+
+          // Assign role
+          if (newProfileUser) {
+            await tx.insert(profileUserToAccessRoles).values({
+              profileUserId: newProfileUser.id,
+              accessRoleId: targetRole.id,
+            });
+          }
         });
 
-        if (targetRole) {
-          await db.transaction(async (tx) => {
-            // Add user to profile
-            const [newProfileUser] = await tx
-              .insert(profileUsers)
-              .values({
-                authUserId: existingUser.authUserId,
-                profileId,
-                email: existingUser.email,
-                name: existingUser.name || existingUser.email.split('@')[0],
-              })
-              .returning();
-
-            // Assign role
-            if (newProfileUser) {
-              await tx.insert(profileUserToAccessRoles).values({
-                profileUserId: newProfileUser.id,
-                accessRoleId: targetRole.id,
-              });
-            } else {
-              console.error('Could not add user to profile');
-            }
-          });
-
-          results.successful.push(email);
-          continue; // Skip email sending for existing users
-        } else {
-          console.error('Invalid role specified for profile invite');
-
-          results.failed.push({
-            email,
-            reason: 'Invalid role specified for profile invite',
-          });
-          continue;
-        }
+        results.successful.push(email);
       }
 
-      // Check if email is already in the allowList
-      const existingEntry = await db.query.allowList.findFirst({
-        where: (table, { eq }) => eq(table.email, email),
-      });
+      // Check if email is already in the allowList using the Set
+      const isInAllowList = allowListEmailsSet.has(email);
 
-      if (!existingEntry) {
+      if (!isInAllowList) {
         const metadata: InviteMetadata = {
           invitedBy: user.id,
           invitedAt: new Date().toISOString(),
@@ -226,10 +226,9 @@ export const inviteUsersToProfile = async (
     }
   }
 
-  const totalEmails = emails.length;
   const message = generateInviteResultMessage(
     results.successful.length,
-    totalEmails,
+    emails.length,
   );
 
   return {

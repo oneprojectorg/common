@@ -2,6 +2,7 @@ export * from './terms';
 export * from './access';
 export * from './comments';
 export * from './email';
+export * from './invite';
 export * from './organization';
 export * from './platform';
 export * from './individual';

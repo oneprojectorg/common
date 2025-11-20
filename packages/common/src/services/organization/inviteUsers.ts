@@ -13,17 +13,7 @@ import { assertAccess, permission } from 'access-zones';
 
 import { getOrgAccessUser } from '../access';
 import { sendBatchInvitationEmails } from '../email';
-
-// Type definitions for invite metadata
-export interface InviteMetadata {
-  invitedBy: string;
-  invitedAt: string;
-  inviteType: 'existing_organization' | 'new_organization';
-  personalMessage?: string;
-  roleId?: string;
-  organizationId?: string;
-  inviterOrganizationName?: string;
-}
+import type { InviteMetadata, InviteResult } from '../invite';
 
 // Type for user queries in this file
 type CommonUserWithProfile = CommonUser & {
@@ -58,15 +48,6 @@ export interface InviteNewUsersInput {
   emails: string[];
   personalMessage?: string;
   user: User;
-}
-
-export interface InviteResult {
-  success: boolean;
-  message: string;
-  details: {
-    successful: string[];
-    failed: { email: string; reason: string }[];
-  };
 }
 
 /**

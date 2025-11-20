@@ -12,6 +12,7 @@ import { authUsers } from 'drizzle-orm/supabase';
 import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
 import { organizationUsers } from './organizationUsers.sql';
 import { organizations } from './organizations.sql';
+import { profileUsers } from './profileUsers.sql';
 import { profiles } from './profiles.sql';
 import { objectsInStorage } from './storage.sql';
 
@@ -70,6 +71,7 @@ export const usersRelations = relations(users, ({ many, one }) => ({
     references: [authUsers.id],
   }),
   organizationUsers: many(organizationUsers),
+  profileUsers: many(profileUsers),
   currentOrganization: one(organizations, {
     fields: [users.lastOrgId],
     references: [organizations.id],
