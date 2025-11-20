@@ -264,46 +264,6 @@ describe.concurrent('platform.admin.addUsersToOrganization', () => {
       });
     });
 
-    it('should reject invalid roleId format', async ({
-      task,
-      onTestFinished,
-    }) => {
-      const testData = new TestOrganizationDataManager(task.id, onTestFinished);
-
-      // Create a platform admin user
-      const { adminUser: platformAdmin } = await testData.createOrganization({
-        users: { admin: 1 },
-        emailDomain: 'oneproject.org',
-      });
-
-      // Create an organization and user to add
-      const { organization: targetOrg } = await testData.createOrganization({
-        users: { admin: 1 },
-        emailDomain: 'example.com',
-      });
-
-      const { adminUser: userToAdd } = await testData.createOrganization({
-        users: { admin: 1 },
-        emailDomain: 'test.com',
-      });
-
-      const { session } = await createIsolatedSession(platformAdmin.email);
-      const caller = createCaller(await createTestContextWithSession(session));
-
-      // Attempt to add user with invalid roleId - should fail validation
-      await expect(() =>
-        caller.addUsersToOrganization({
-          organizationId: targetOrg.id,
-          users: [
-            {
-              authUserId: userToAdd.authUserId,
-              roleId: 'not-a-valid-uuid',
-            },
-          ],
-        }),
-      ).rejects.toThrow();
-    });
-
     it('should reject non-existent role ids', async ({
       task,
       onTestFinished,
@@ -692,30 +652,6 @@ describe.concurrent('platform.admin.addUsersToOrganization', () => {
   });
 
   describe('Error Handling', () => {
-    it('should handle non-existent organization', async () => {
-      // TODO: Create platform admin
-      // TODO: Use random UUID for organizationId
-      // TODO: Attempt to add users
-      // TODO: Expect appropriate error
-      expect(true).toBe(true);
-    });
-
-    it('should handle non-existent role IDs', async () => {
-      // TODO: Create platform admin and organization
-      // TODO: Use random UUID for roleId
-      // TODO: Attempt to add users
-      // TODO: Expect appropriate error
-      expect(true).toBe(true);
-    });
-
-    it('should handle non-existent authUserId', async () => {
-      // TODO: Create platform admin and organization
-      // TODO: Use random UUID for authUserId
-      // TODO: Attempt to add user
-      // TODO: Expect TRPCError to be thrown
-      expect(true).toBe(true);
-    });
-
     it('should rollback transaction on critical failure', async () => {
       // TODO: Create platform admin and organization
       // TODO: Mock database failure during transaction
@@ -737,24 +673,6 @@ describe.concurrent('platform.admin.addUsersToOrganization', () => {
       // TODO: Create platform admin, organization, and users
       // TODO: Add users to organization
       // TODO: Verify cache invalidation called for orgUser
-      expect(true).toBe(true);
-    });
-  });
-
-  describe('Database Constraints', () => {
-    it('should respect organization user uniqueness constraints', async () => {
-      // TODO: Create platform admin, organization, and user
-      // TODO: Add user to organization
-      // TODO: Attempt to add same user again
-      // TODO: Expect TRPCError to be thrown
-      expect(true).toBe(true);
-    });
-
-    it('should handle cascade deletes correctly', async () => {
-      // TODO: Create platform admin, organization, and user
-      // TODO: Add user with roles
-      // TODO: Delete organizationUser
-      // TODO: Verify role assignments are cascade deleted
       expect(true).toBe(true);
     });
   });

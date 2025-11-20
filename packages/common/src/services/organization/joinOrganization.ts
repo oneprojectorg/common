@@ -1,10 +1,11 @@
 import { cache } from '@op/cache';
-import { db, eq } from '@op/db/client';
+import { DatabaseType, TransactionType, db, eq } from '@op/db/client';
 import {
   type AccessRole,
   type Organization,
   OrganizationUser,
   accessRoles,
+  allowList,
   organizationUserToAccessRoles,
   organizationUsers,
 } from '@op/db/schema';
@@ -12,6 +13,7 @@ import { User } from '@op/supabase/lib';
 
 import { CommonError, UnauthorizedError } from '../../utils';
 import { getAllowListUser } from '../user';
+import { AllowListMetadata, AllowListUser } from '../user/validators';
 
 /**
  * Adds a user to an organization with the specified or default role.
@@ -21,9 +23,11 @@ import { getAllowListUser } from '../user';
 export const joinOrganization = async ({
   user,
   organization,
+  inviteMetadata,
 }: {
   user: User;
   organization: Organization;
+  inviteMetadata?: AllowListMetadata;
 }): Promise<OrganizationUser> => {
   if (!user.email) {
     throw new CommonError('User email is required');
@@ -37,7 +41,7 @@ export const joinOrganization = async ({
   const userEmailDomain = userEmailDomainPart.toLocaleLowerCase();
 
   // Check if user is already a member of this organization and if they are on the allow list
-  const [existingMembership, allowListUser] = await Promise.all([
+  const [existingMembership, existinAllowListUser] = await Promise.all([
     db.query.organizationUsers.findFirst({
       where: (table, { and, eq }) =>
         and(
@@ -60,36 +64,54 @@ export const joinOrganization = async ({
     return existingMembership;
   }
 
-  if (!organization.domain) {
-    throw new CommonError('Organization does not have a domain set');
-  }
-
-  // Verify user's email domain matches organization domain
-  if (userEmailDomain !== organization.domain.toLocaleLowerCase()) {
-    if (
-      !allowListUser?.organizationId ||
-      allowListUser?.organizationId !== organization.id
-    ) {
+  return await db.transaction<OrganizationUser>(async (tx) => {
+    // add user to allowList if not already present
+    if (!existinAllowListUser && !inviteMetadata) {
       throw new UnauthorizedError(
         'Your email does not have access to join this organization',
       );
     }
-  }
 
-  // Determine the role to assign
-  const targetRole = await determineTargetRole(allowListUser?.metadata?.roleId);
+    const [allowListUser] = inviteMetadata
+      ? ((await tx
+          .insert(allowList)
+          .values({
+            email: user.email!,
+            organizationId: organization.id,
+            metadata: inviteMetadata,
+          })
+          // since there's an invitation we keep it
+          .onConflictDoNothing()
+          // this is safe as we just inserted it with the same type
+          .returning()) as AllowListUser[])
+      : [existinAllowListUser];
 
-  return await db.transaction<OrganizationUser>(async (tx) => {
+    // Verify user's email domain matches organization domain
+    if (userEmailDomain !== organization.domain?.toLocaleLowerCase()) {
+      if (
+        !allowListUser?.organizationId ||
+        allowListUser?.organizationId !== organization.id
+      ) {
+        throw new UnauthorizedError(
+          'Your email does not have access to join this organization',
+        );
+      }
+    }
+
     // Create organizationUser record
-    const [newOrgUser] = await tx
-      .insert(organizationUsers)
-      .values({
-        organizationId: organization.id,
-        authUserId: user.id,
-        email: user.email!,
-        name: user.user_metadata?.full_name || userEmailDomain,
-      })
-      .returning();
+    const [[newOrgUser], targetRole] = await Promise.all([
+      tx
+        .insert(organizationUsers)
+        .values({
+          organizationId: organization.id,
+          authUserId: user.id,
+          email: user.email!,
+          name: user.user_metadata?.full_name || userEmailDomain,
+        })
+        .returning(),
+      // Determine the role to assign
+      determineTargetRole(tx, allowListUser?.metadata?.roleId),
+    ]);
 
     if (!newOrgUser) {
       throw new CommonError('Failed to add user to organization');
@@ -110,6 +132,7 @@ export const joinOrganization = async ({
  * Otherwise, falls back to the "Member" role.
  */
 const determineTargetRole = async (
+  db: TransactionType,
   roleId?: AccessRole['id'],
 ): Promise<AccessRole> => {
   if (roleId) {
