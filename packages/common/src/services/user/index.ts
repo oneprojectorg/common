@@ -59,7 +59,6 @@ export const createUserByEmail = async ({
         .from(users)
         .where(eq(users.authUserId, authUserId))
         .for('update'); // Lock the row to prevent concurrent modifications
-
       if (existingUser?.profileId) {
         // Another request already created the profile
         return;
@@ -98,7 +97,7 @@ export const createUserByEmail = async ({
 };
 
 /**
- * Fetch an allow list entry by email.
+ * Fetch an allow list entry by email. Limited to 1, so use as prsensence check.
  */
 export const getAllowListUser = async ({
   email,
@@ -117,6 +116,53 @@ export const getAllowListUser = async ({
     })
     .from(allowList)
     .where(eq(allowList.email, email.toLowerCase()))
+    .limit(1);
+
+  if (!allowedResult) {
+    return;
+  }
+
+  // Extract role from allowListUser metadata if present
+  const metadata = allowListMetadataSchema.safeParse(
+    allowedResult.metadata ?? {},
+  );
+
+  return {
+    ...allowedResult,
+    metadata: metadata.success ? metadata.data : null,
+  };
+};
+
+/**
+ * Fetch an allow list entry by email and organization
+ *
+ * NOTE: It's currently used as an invite check when joining an organization,
+ * pontetially to be removed when we switch to profile invites.
+ */
+export const getAllowListOrganization = async ({
+  email,
+  organizationId,
+}: {
+  email?: string;
+  organizationId: string;
+}): Promise<AllowListUser | undefined> => {
+  if (!email) {
+    return;
+  }
+
+  const [allowedResult] = await db
+    .select({
+      email: allowList.email,
+      organizationId: allowList.organizationId,
+      metadata: allowList.metadata,
+    })
+    .from(allowList)
+    .where(
+      and(
+        eq(allowList.email, email.toLowerCase()),
+        eq(allowList.organizationId, organizationId),
+      ),
+    )
     .limit(1);
 
   if (!allowedResult) {

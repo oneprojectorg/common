@@ -1,5 +1,4 @@
-import { cache } from '@op/cache';
-import { DatabaseType, TransactionType, db, eq } from '@op/db/client';
+import { TransactionType, db, eq } from '@op/db/client';
 import {
   type AccessRole,
   type Organization,
@@ -12,7 +11,7 @@ import {
 import { User } from '@op/supabase/lib';
 
 import { CommonError, UnauthorizedError } from '../../utils';
-import { getAllowListUser } from '../user';
+import { getAllowListOrganization } from '../user';
 import { AllowListMetadata, AllowListUser } from '../user/validators';
 
 /**
@@ -49,14 +48,9 @@ export const joinOrganization = async ({
           eq(table.organizationId, organization.id),
         ),
     }),
-    cache<ReturnType<typeof getAllowListUser>>({
-      type: 'allowList',
-      params: [userEmailDomain],
-      fetch: () => getAllowListUser({ email: userEmailDomain }),
-      options: {
-        skipMemCache: true,
-        ttl: 30 * 60 * 1000,
-      },
+    getAllowListOrganization({
+      email: userEmailDomain,
+      organizationId: organization.id,
     }),
   ]);
 

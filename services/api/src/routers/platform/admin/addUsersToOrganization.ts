@@ -125,13 +125,12 @@ export const addUsersToOrganizationRouter = router({
               user,
               organization,
               // platform admin is inviting user to this organization if not already invited
+              // NOTE: it should be switched to the new profile invite or bypassed altogether
               inviteMetadata: {
                 invitedBy: ctx.user.id,
                 invitedAt: new Date().toISOString(),
                 inviteType: 'existing_organization',
                 roleId: userToAdd.roleId,
-                // TODO: should be the organiztion of the platform admin
-                organizationId,
               },
             });
 
@@ -143,14 +142,14 @@ export const addUsersToOrganizationRouter = router({
         );
 
         // Invalidate relevant caches for each added user
-        await Promise.all(
-          joinResults.map((addedUser) =>
+        await Promise.all([
+          ...joinResults.map((addedUser) =>
             invalidate({
               type: 'orgUser',
               params: [organizationId, addedUser.authUserId],
             }),
           ),
-        );
+        ]);
 
         return joinResults;
       } catch (error) {
