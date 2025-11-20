@@ -62,7 +62,6 @@ export const listRelatedOrganizationPostsRouter = router({
         items: z.array(postsToOrganizationsEncoder),
         next: z.string().nullish(),
         hasMore: z.boolean(),
-        total: z.number(),
       }),
     )
     .query(async ({ input, ctx }) => {
@@ -83,7 +82,6 @@ export const listRelatedOrganizationPostsRouter = router({
         })),
         next: result.next,
         hasMore: result.hasMore,
-        total: result.total,
       };
     }),
   listRelatedPosts: loggedProcedure
