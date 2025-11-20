@@ -48,7 +48,7 @@ jobs:
           version: latest
 
       - name: Start Supabase test instance
-        run: supabase start -x studio,edge-runtime,imgproxy,inbucket --config supabase-test.toml
+        run: pnpm w:api test:supabase:start
 
       - name: Run database migrations
         run: pnpm w:db migrate:test
@@ -56,6 +56,6 @@ jobs:
       - name: Run API tests
         run: pnpm w:api test
 
-      - name: Stop Supabase
+      - name: Stop Supabase test instance
         if: always()
-        run: supabase stop --config supabase-test.toml --no-backup
+        run: pnpm w:api test:supabase:stop
