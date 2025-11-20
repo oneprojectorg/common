@@ -7,7 +7,7 @@ import type { NormalizedRole } from 'access-zones';
 import { z } from 'zod';
 
 import { UnauthorizedError } from '../../utils/error';
-import { getNormalizedRoles } from './utils';
+import { getNormalizedRoles, type RoleJunction } from './utils';
 
 type OrgUserWithNormalizedRoles = {
   id: string;
@@ -65,7 +65,7 @@ export const getOrgAccessUser = async ({
     // Transform the relational data into normalized format for access-zones library
     // Type assertion needed because Drizzle query result type is complex but we know it has the right structure
     const normalizedRoles = getNormalizedRoles(
-      orgUser.roles as Array<{ accessRole: any }>,
+      orgUser.roles as Array<Pick<RoleJunction, 'accessRole'>>,
     );
 
     const { roles: _, ...orgUserWithoutRoles } = orgUser;
@@ -121,8 +121,9 @@ export const getProfileAccessUser = async ({
     }
 
     // Transform the relational data into normalized format for access-zones library
+    // Type assertion needed because Drizzle query result type is complex but we know it has the right structure
     const normalizedRoles = getNormalizedRoles(
-      profileUser.roles as Array<{ accessRole: any }>,
+      profileUser.roles as Array<Pick<RoleJunction, 'accessRole'>>,
     );
 
     const { roles: _, ...profileUserWithoutRoles } = profileUser;
