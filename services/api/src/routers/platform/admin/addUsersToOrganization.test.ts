@@ -1,19 +1,3 @@
-/**
- * Test suite for platform.admin.addUsersToOrganization endpoint
- *
- * This is a scaffold for TDD (Test-Driven Development).
- * All imports are intentionally included for when tests are implemented.
- *
- * Test coverage areas:
- * - Authorization (platform admin only)
- * - Input validation
- * - Adding existing users with roles
- * - Error handling (all failures throw TRPCError)
- * - Cache invalidation
- * - Response format (array of successful additions)
- * - Database constraints
- * - Transaction atomicity
- */
 import { db } from '@op/db/client';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { describe, expect, it } from 'vitest';
@@ -648,48 +632,6 @@ describe.concurrent('platform.admin.addUsersToOrganization', () => {
           organizationUserId: expect.any(String),
         },
       ]);
-    });
-  });
-
-  describe('Error Handling', () => {
-    it('should rollback transaction on critical failure', async () => {
-      // TODO: Create platform admin and organization
-      // TODO: Mock database failure during transaction
-      // TODO: Verify no partial data committed
-      // TODO: Expect appropriate error
-      expect(true).toBe(true);
-    });
-  });
-
-  describe('Cache Invalidation', () => {
-    it('should invalidate user cache after adding to organization', async () => {
-      // TODO: Create platform admin, organization, and user
-      // TODO: Add user to organization
-      // TODO: Verify cache invalidation called for user
-      expect(true).toBe(true);
-    });
-
-    it('should invalidate orgUser cache after adding users', async () => {
-      // TODO: Create platform admin, organization, and users
-      // TODO: Add users to organization
-      // TODO: Verify cache invalidation called for orgUser
-      expect(true).toBe(true);
-    });
-  });
-
-  describe('Transaction Atomicity', () => {
-    it('should commit all user additions and role assignments atomically', async () => {
-      // TODO: Create platform admin, organization, and users
-      // TODO: Add multiple users with roles in one request
-      // TODO: Verify all or nothing is committed
-      expect(true).toBe(true);
-    });
-
-    it('should not create organizationUser if role assignment fails', async () => {
-      // TODO: Create platform admin, organization, and user
-      // TODO: Mock failure during role assignment
-      // TODO: Verify organizationUser is not created
-      expect(true).toBe(true);
     });
   });
 });
