@@ -206,7 +206,10 @@ export const inviteUsersToProfile = async (input: {
     try {
       await event.send({
         name: Events.profileInviteSent.name,
-        data: { invitations: emailsToInvite },
+        data: {
+          senderProfileId: profileUser.profileId,
+          invitations: emailsToInvite,
+        },
       });
 
       // Mark all as successful since invite was processed
