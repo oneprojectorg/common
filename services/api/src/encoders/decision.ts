@@ -380,7 +380,7 @@ export const proposalFilterSchema = z
 
 // Decision Profile Encoder (profile with processInstance)
 export const decisionProfileEncoder = baseProfileEncoder.extend({
-  processInstance: processInstanceEncoder.nullish(),
+  processInstance: processInstanceEncoder,
 });
 
 // Decision Profile List Encoder
@@ -397,4 +397,7 @@ export const decisionProfileFilterSchema = z.object({
   orderBy: z.enum(['createdAt', 'updatedAt', 'name']).prefault('updatedAt'),
   dir: z.enum(['asc', 'desc']).prefault('desc'),
   search: z.string().optional(),
+  status: z
+    .enum(['draft', 'published', 'completed', 'cancelled'])
+    .optional(),
 });

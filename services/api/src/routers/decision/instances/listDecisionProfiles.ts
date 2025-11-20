@@ -17,7 +17,7 @@ const meta: OpenApiMeta = {
     path: '/decision/profiles',
     protect: true,
     tags: ['decision'],
-    summary: 'List decision profiles',
+    summary: 'List decision profiles with their process instances',
   },
 };
 
@@ -42,28 +42,28 @@ export const listDecisionProfilesRouter = router({
           const processInstance = profile.processInstance as any;
           return {
             ...profile,
-            processInstance: processInstance
-              ? {
-                  ...processInstance,
-                  instanceData: processInstance.instanceData as Record<
-                    string,
-                    any
-                  >,
-                  process: processInstance.process
-                    ? {
-                        ...processInstance.process,
-                        processSchema: (() => {
-                          const schema = processInstance.process?.processSchema;
-                          return typeof schema === 'object' &&
-                            schema !== null &&
-                            !Array.isArray(schema)
-                            ? schema
-                            : {};
-                        })(),
-                      }
-                    : undefined,
-                }
-              : undefined,
+            processInstance: {
+              ...processInstance,
+              instanceData: processInstance.instanceData as Record<
+                string,
+                any
+              >,
+              process: processInstance.process
+                ? {
+                    ...processInstance.process,
+                    processSchema: (() => {
+                      const schema = processInstance.process?.processSchema;
+                      return typeof schema === 'object' &&
+                        schema !== null &&
+                        !Array.isArray(schema)
+                        ? schema
+                        : {};
+                    })(),
+                  }
+                : undefined,
+              proposalCount: processInstance.proposalCount,
+              participantCount: processInstance.participantCount,
+            },
           };
         }),
         next: result.next,

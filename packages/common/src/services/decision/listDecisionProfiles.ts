@@ -1,4 +1,4 @@
-import { and, db, eq, lt, or, sql } from '@op/db/client';
+import { and, asc, db, desc, eq, lt, or, sql } from '@op/db/client';
 import { EntityType, profiles } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
@@ -29,6 +29,7 @@ export const listDecisionProfiles = async ({
   orderBy = 'updatedAt',
   dir = 'desc',
   search,
+  status,
 }: {
   user: User;
   cursor?: string | null;
@@ -36,6 +37,7 @@ export const listDecisionProfiles = async ({
   orderBy?: string;
   dir?: 'asc' | 'desc';
   search?: string;
+  status?: 'draft' | 'published' | 'completed' | 'cancelled';
 }) => {
   if (!user) {
     throw new UnauthorizedError();
@@ -58,12 +60,13 @@ export const listDecisionProfiles = async ({
     // Filter by DECISION type
     const typeCondition = eq(profiles.type, EntityType.DECISION);
 
-    // Build search condition if provided
+    // Build search condition if provided (search on profile name/bio)
     const searchCondition = search
       ? sql`${profiles.search} @@ plainto_tsquery('english', ${search})`
       : undefined;
 
     const orderByColumn = getOrderByColumn(orderBy);
+    const orderFn = dir === 'asc' ? asc : desc;
 
     // TODO: assert authorization
     const whereConditions = [
@@ -78,7 +81,8 @@ export const listDecisionProfiles = async ({
           : and(...whereConditions)
         : undefined;
 
-    const result = await db.query.profiles.findMany({
+    // Get profiles with their process instances
+    const profileList = await db.query.profiles.findMany({
       where: whereClause,
       with: {
         headerImage: true,
@@ -101,17 +105,52 @@ export const listDecisionProfiles = async ({
           },
         },
       },
-      orderBy: (_, { asc, desc }) =>
-        dir === 'asc' ? asc(orderByColumn) : desc(orderByColumn),
+      orderBy: orderFn(orderByColumn),
       limit: limit + 1, // Fetch one extra to check hasMore
     });
 
-    if (!result) {
+    // Transform profiles to include proposal and participant counts in processInstance
+    const profilesWithCounts = profileList.map((profile) => {
+      if (profile.processInstance) {
+        const instance = profile.processInstance as any;
+        const proposalCount = instance.proposals?.length || 0;
+        const uniqueParticipants = new Set(
+          instance.proposals?.map((p: any) => p.submittedByProfileId),
+        );
+        const participantCount = uniqueParticipants.size;
+
+        return {
+          ...profile,
+          processInstance: {
+            ...instance,
+            proposalCount,
+            participantCount,
+          },
+        };
+      }
+      return profile;
+    });
+
+    // Filter out profiles without processInstance and optionally by status
+    const filteredProfiles = profilesWithCounts.filter((profile) => {
+      if (!profile.processInstance) {
+        return false;
+      }
+      const instance = profile.processInstance as any;
+      if (status && instance.status !== status) {
+        return false;
+      }
+      return true;
+    });
+
+    if (!filteredProfiles) {
       throw new NotFoundError('Decision profiles not found');
     }
 
-    const hasMore = result.length > limit;
-    const items = hasMore ? result.slice(0, limit) : result;
+    const hasMore = filteredProfiles.length > limit;
+    const items = hasMore
+      ? filteredProfiles.slice(0, limit)
+      : filteredProfiles;
     const lastItem = items[items.length - 1];
     const nextCursor =
       hasMore && lastItem && lastItem.updatedAt
