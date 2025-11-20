@@ -1,4 +1,3 @@
-import { CommonError } from '@op/common';
 import { TRPCError } from '@trpc/server';
 import type { TRPCErrorShape, TRPC_ERROR_CODE_KEY } from '@trpc/server/rpc';
 import {
