@@ -20,6 +20,7 @@ const localeDisplayNames: Record<string, string> = {
   es: 'Español',
   fr: 'Français',
   pt: 'Português',
+  bn: 'বাংলা',
 };
 
 export const LocaleChooser = ({ onClose }: LocaleChooserProps) => {
