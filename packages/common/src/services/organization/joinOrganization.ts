@@ -1,18 +1,17 @@
+import { cache } from '@op/cache';
 import { TransactionType, db, eq } from '@op/db/client';
 import {
   type AccessRole,
   type Organization,
   OrganizationUser,
   accessRoles,
-  allowList,
   organizationUserToAccessRoles,
   organizationUsers,
 } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
 import { CommonError, UnauthorizedError } from '../../utils';
-import { getAllowListOrganization } from '../user';
-import { AllowListMetadata, AllowListUser } from '../user/validators';
+import { getAllowListUser } from '../user';
 
 /**
  * Adds a user to an organization with the specified or default role.
@@ -22,11 +21,11 @@ import { AllowListMetadata, AllowListUser } from '../user/validators';
 export const joinOrganization = async ({
   user,
   organization,
-  inviteMetadata,
+  roleId,
 }: {
   user: User;
   organization: Organization;
-  inviteMetadata?: AllowListMetadata;
+  roleId?: AccessRole['id'];
 }): Promise<OrganizationUser> => {
   if (!user.email) {
     throw new CommonError('User email is required');
@@ -40,7 +39,7 @@ export const joinOrganization = async ({
   const userEmailDomain = userEmailDomainPart.toLocaleLowerCase();
 
   // Check if user is already a member of this organization and if they are on the allow list
-  const [existingMembership, existinAllowListUser] = await Promise.all([
+  const [existingMembership, allowListUser] = await Promise.all([
     db.query.organizationUsers.findFirst({
       where: (table, { and, eq }) =>
         and(
@@ -48,50 +47,36 @@ export const joinOrganization = async ({
           eq(table.organizationId, organization.id),
         ),
     }),
-    getAllowListOrganization({
-      email: userEmailDomain,
-      organizationId: organization.id,
-    }),
+    roleId
+      ? null
+      : cache<ReturnType<typeof getAllowListUser>>({
+          type: 'allowList',
+          params: [userEmailDomain],
+          fetch: () => getAllowListUser({ email: userEmailDomain }),
+          options: {
+            skipMemCache: true,
+            ttl: 30 * 60 * 1000,
+          },
+        }),
   ]);
 
   if (existingMembership) {
     return existingMembership;
   }
 
-  return await db.transaction<OrganizationUser>(async (tx) => {
-    // add user to allowList if not already present
-    if (!existinAllowListUser && !inviteMetadata) {
+  // Verify user's email domain matches organization domain
+  if (!roleId && userEmailDomain !== organization.domain?.toLocaleLowerCase()) {
+    if (
+      !allowListUser?.organizationId ||
+      allowListUser?.organizationId !== organization.id
+    ) {
       throw new UnauthorizedError(
         'Your email does not have access to join this organization',
       );
     }
+  }
 
-    const [allowListUser] = inviteMetadata
-      ? ((await tx
-          .insert(allowList)
-          .values({
-            email: user.email!,
-            organizationId: organization.id,
-            metadata: inviteMetadata,
-          })
-          // since there's an invitation we keep it
-          .onConflictDoNothing()
-          // this is safe as we just inserted it with the same type
-          .returning()) as AllowListUser[])
-      : [existinAllowListUser];
-
-    // Verify user's email domain matches organization domain
-    if (userEmailDomain !== organization.domain?.toLocaleLowerCase()) {
-      if (
-        !allowListUser?.organizationId ||
-        allowListUser?.organizationId !== organization.id
-      ) {
-        throw new UnauthorizedError(
-          'Your email does not have access to join this organization',
-        );
-      }
-    }
-
+  return await db.transaction<OrganizationUser>(async (tx) => {
     // Create organizationUser record
     const [[newOrgUser], targetRole] = await Promise.all([
       tx
@@ -104,7 +89,7 @@ export const joinOrganization = async ({
         })
         .returning(),
       // Determine the role to assign
-      determineTargetRole(tx, allowListUser?.metadata?.roleId),
+      determineTargetRole(tx, roleId ?? allowListUser?.metadata?.roleId),
     ]);
 
     if (!newOrgUser) {

@@ -39,7 +39,7 @@ export const addUsersToOrganizationRouter = router({
     .use(withAuthenticatedPlatformAdmin)
     .input(inputSchema)
     .output(outputSchema)
-    .mutation(async ({ input, ctx }) => {
+    .mutation(async ({ input }) => {
       const { organizationId, users: usersToAdd } = input;
 
       try {
@@ -50,35 +50,34 @@ export const addUsersToOrganizationRouter = router({
         const allAuthUserIds = usersToAdd.map((user) => user.authUserId);
 
         const supabase = createSBServiceClient();
-        // Validate all entities exist
-        // TODO: we should replace all these queries with utilities that assert existence, e.g `assertOrganization`, `assertAccessRoles`, `assertUsers` and remove the manual checks below.
-        const [organization, existingRoles, ...existingUsers] =
-          await Promise.all([
-            // Validate organization exists
-            db.query.organizations.findFirst({
-              where: (table, { eq }) => eq(table.id, organizationId),
-            }),
-            // Validate all role IDs exist
-            db.query.accessRoles.findMany({
-              where: (table, { inArray }) => inArray(table.id, allRoleIds),
-              columns: { id: true },
-            }),
-            // Validate all users exist and get their details
-            ...allAuthUserIds.map((authUserId) =>
-              supabase.auth.admin
-                .getUserById(authUserId)
-                .then(({ data, error }) => {
-                  if (error || !data?.user) {
-                    throw new TRPCError({
-                      code: 'NOT_FOUND',
-                      message: `User(s) ID: ${authUserId} not found`,
-                    });
-                  }
 
-                  return data.user;
-                }),
-            ),
-          ]);
+        // Validate all entities exist
+        const [organization, existingRoles, ...authUsers] = await Promise.all([
+          // Validate organization exists
+          db.query.organizations.findFirst({
+            where: (table, { eq }) => eq(table.id, organizationId),
+          }),
+          // Validate all role IDs exist
+          db.query.accessRoles.findMany({
+            where: (table, { inArray }) => inArray(table.id, allRoleIds),
+            columns: { id: true },
+          }),
+          // Validate all users exist and get their details
+          ...allAuthUserIds.map((authUserId) =>
+            supabase.auth.admin
+              .getUserById(authUserId)
+              .then(({ data, error }) => {
+                if (error || !data?.user) {
+                  throw new TRPCError({
+                    code: 'NOT_FOUND',
+                    message: `User(s) ID: ${authUserId} not found`,
+                  });
+                }
+
+                return data.user;
+              }),
+          ),
+        ]);
 
         // Check organization exists
         if (!organization) {
@@ -103,7 +102,7 @@ export const addUsersToOrganizationRouter = router({
 
         // Join each user to the organization
         const joinResults = await Promise.all(
-          existingUsers.map(async (user) => {
+          authUsers.map(async (user) => {
             if (!user.email) {
               throw new TRPCError({
                 code: 'INTERNAL_SERVER_ERROR',
@@ -124,14 +123,7 @@ export const addUsersToOrganizationRouter = router({
             const orgUser = await joinOrganization({
               user,
               organization,
-              // platform admin is inviting user to this organization if not already invited
-              // NOTE: it should be switched to the new profile invite or bypassed altogether
-              inviteMetadata: {
-                invitedBy: ctx.user.id,
-                invitedAt: new Date().toISOString(),
-                inviteType: 'existing_organization',
-                roleId: userToAdd.roleId,
-              },
+              roleId: userToAdd.roleId,
             });
 
             return {

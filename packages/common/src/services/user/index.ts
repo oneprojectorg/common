@@ -133,53 +133,6 @@ export const getAllowListUser = async ({
   };
 };
 
-/**
- * Fetch an allow list entry by email and organization
- *
- * NOTE: It's currently used as an invite check when joining an organization,
- * pontetially to be removed when we switch to profile invites.
- */
-export const getAllowListOrganization = async ({
-  email,
-  organizationId,
-}: {
-  email?: string;
-  organizationId: string;
-}): Promise<AllowListUser | undefined> => {
-  if (!email) {
-    return;
-  }
-
-  const [allowedResult] = await db
-    .select({
-      email: allowList.email,
-      organizationId: allowList.organizationId,
-      metadata: allowList.metadata,
-    })
-    .from(allowList)
-    .where(
-      and(
-        eq(allowList.email, email.toLowerCase()),
-        eq(allowList.organizationId, organizationId),
-      ),
-    )
-    .limit(1);
-
-  if (!allowedResult) {
-    return;
-  }
-
-  // Extract role from allowListUser metadata if present
-  const metadata = allowListMetadataSchema.safeParse(
-    allowedResult.metadata ?? {},
-  );
-
-  return {
-    ...allowedResult,
-    metadata: metadata.success ? metadata.data : null,
-  };
-};
-
 export const getUserByAuthId = async ({
   authUserId,
   includePermissions = false,
