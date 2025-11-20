@@ -8,6 +8,15 @@ jobs:
     name: API Tests
     runs-on: ubuntu-latest
 
+    env:
+      # Supabase test instance environment variables (using local dev keys)
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:55321
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
+      SUPABASE_URL: http://127.0.0.1:55321
+      SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+      SUPABASE_SERVICE_ROLE: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:55322/postgres
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -47,15 +56,42 @@ jobs:
         with:
           version: latest
 
-      - name: Start Supabase test instance
-        run: pnpm w:api test:supabase:start
+      - name: Verify test config exists
+        run: |
+          echo "Checking config files:"
+          ls -la supabase-test.toml supabase/config.toml
+          echo "---"
+          echo "Test config project_id:"
+          grep "project_id" supabase-test.toml
+          echo "Dev config project_id:"
+          grep "project_id" supabase/config.toml
 
-      - name: Run database migrations
+      - name: Swap to test config
+        run: |
+          echo "Backing up dev config and swapping to test config..."
+          cp supabase/config.toml supabase/config.toml.backup
+          cp supabase-test.toml supabase/config.toml
+          echo "Verifying swap:"
+          grep "project_id" supabase/config.toml
+
+      - name: Start Supabase
+        run: |
+          echo "Starting Supabase with test config..."
+          supabase start
+          echo "Supabase started successfully"
+
+      - name: Check Supabase status
+        run: supabase status
+
+      - name: Wait for Supabase to be ready and run migrations
         run: pnpm w:db migrate:test
 
       - name: Run API tests
         run: pnpm w:api test
 
-      - name: Stop Supabase test instance
+      - name: Stop Supabase
         if: always()
-        run: pnpm w:api test:supabase:stop
+        run: |
+          supabase stop --no-backup
+          echo "Restoring original config..."
+          cp supabase/config.toml.backup supabase/config.toml || echo "No backup to restore"

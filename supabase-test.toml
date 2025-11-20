@@ -27,7 +27,7 @@ shadow_port = 55320
 major_version = 15
 
 [db.pooler]
-enabled = true
+enabled = false
 # Test pooler port (different from dev port 54329)
 port = 55329
 pool_mode = "transaction"
