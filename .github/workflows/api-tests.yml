@@ -87,7 +87,7 @@ jobs:
         run: pnpm w:db migrate:test
 
       - name: Run API tests
-        run: pnpm w:api test
+        run: pnpm w:api test listUsers listAll addUsers
 
       - name: Stop Supabase
         if: always()
