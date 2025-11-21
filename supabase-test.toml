@@ -28,28 +28,23 @@ major_version = 15
 
 [db.pooler]
 enabled = false
-# Test pooler port (different from dev port 54329)
-port = 55329
-pool_mode = "transaction"
-default_pool_size = 20
-max_client_conn = 100
 
 [db.seed]
 enabled = true
 sql_paths = [ './seed.sql' ]
 
 [realtime]
-enabled = true
+enabled = false
 
 [studio]
-enabled = true
+enabled = false
 # Test Studio port (different from dev port 54323)
 port = 55323
 api_url = "http://127.0.0.1"
 openai_api_key = "env(OPENAI_API_KEY)"
 
 [inbucket]
-enabled = true
+enabled = false
 # Test Inbucket port (different from dev port 54324)
 port = 55324
 
@@ -140,12 +135,12 @@ enabled = false
 enabled = false
 
 [edge_runtime]
-enabled = true
+enabled = false
 policy = "oneshot"
 inspector_port = 8084  # Different from dev port 8083
 
 [analytics]
-enabled = true
+enabled = false
 port = 55327  # Different from dev port 54327
 backend = "postgres"
 

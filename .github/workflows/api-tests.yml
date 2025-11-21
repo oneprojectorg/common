@@ -57,6 +57,11 @@ jobs:
         with:
           version: latest
 
+      - name: Cache Supabase Docker images
+        uses: ScribeMD/docker-cache@0.5.0
+        with:
+          key: docker-${{ runner.os }}-supabase-${{ hashFiles('supabase-test.toml') }}
+
       - name: Verify test config exists
         run: |
           echo "Checking config files:"
