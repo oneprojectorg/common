@@ -55,7 +55,7 @@ const FeedContent = ({ limit = 10 }: { limit?: number }) => {
   // Only enable infinite scroll if we have enough content and multiple pages
   const hasMultiplePages =
     paginatedData?.pages && paginatedData.pages.length > 1;
-  const hasEnoughContent = allPosts.length >= limit;
+  const hasMoreContent = allPosts.length >= limit;
   const enableInfiniteScroll = hasEnoughContent || hasMultiplePages;
 
   const { ref, shouldShowTrigger } = useInfiniteScroll(stableFetchNextPage, {
