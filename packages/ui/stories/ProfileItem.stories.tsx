@@ -1,10 +1,10 @@
 import { Avatar } from '../src/components/Avatar';
 import { Button } from '../src/components/Button';
-import { ProfileAvatar } from '../src/components/ProfileAvatar';
+import { ProfileItem } from '../src/components/ProfileItem';
 
 export default {
-  title: 'ProfileAvatar',
-  component: ProfileAvatar,
+  title: 'ProfileItem',
+  component: ProfileItem,
   parameters: {
     layout: 'padded',
   },
@@ -30,17 +30,17 @@ export const Example = () => (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold">Organizations</h3>
       <div className="space-y-4">
-        <ProfileAvatar
+        <ProfileItem
           avatar={<Avatar placeholder="Tech Innovation Hub" />}
           title="Tech Innovation Hub"
           description="Building the future of decentralized technology"
         />
-        <ProfileAvatar
+        <ProfileItem
           avatar={<Avatar placeholder="Green Earth Foundation" />}
           title="Green Earth Foundation"
           description="Environmental conservation and sustainability initiatives"
         />
-        <ProfileAvatar
+        <ProfileItem
           avatar={<Avatar placeholder="OpenSource Collective" />}
           title="OpenSource Collective"
           description="Supporting open source projects and communities"
@@ -51,19 +51,19 @@ export const Example = () => (
               Learn More
             </Button>
           </div>
-        </ProfileAvatar>
+        </ProfileItem>
       </div>
     </div>
 
     <div className="space-y-4">
       <h3 className="text-lg font-semibold">Users</h3>
       <div className="space-y-4">
-        <ProfileAvatar
+        <ProfileItem
           avatar={<Avatar placeholder="Sarah Chen" />}
           title="Sarah Chen"
           description="Product Designer specializing in accessible interfaces"
         />
-        <ProfileAvatar
+        <ProfileItem
           avatar={<Avatar placeholder="Marcus Rodriguez" />}
           title="Marcus Rodriguez"
           description="Full-stack developer and open source contributor"
@@ -74,8 +74,8 @@ export const Example = () => (
               Message
             </Button>
           </div>
-        </ProfileAvatar>
-        <ProfileAvatar
+        </ProfileItem>
+        <ProfileItem
           avatar={<Avatar placeholder="Aisha Patel" className="size-12" />}
           title="Aisha Patel"
           description="Community organizer and blockchain advocate"
@@ -86,7 +86,7 @@ export const Example = () => (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold">Proposals</h3>
       <div className="space-y-4">
-        <ProfileAvatar
+        <ProfileItem
           avatar={<Avatar placeholder="Community Garden Initiative" />}
           title="Community Garden Initiative"
           description="Proposal to establish urban gardens in underserved neighborhoods"
@@ -94,8 +94,8 @@ export const Example = () => (
           <div className="mt-3 text-sm text-neutral-charcoal">
             Funding Goal: $50,000 • Status: Active
           </div>
-        </ProfileAvatar>
-        <ProfileAvatar
+        </ProfileItem>
+        <ProfileItem
           avatar={
             <Avatar placeholder="Youth Education Program" className="size-16" />
           }
@@ -116,7 +116,7 @@ export const Example = () => (
               </Button>
             </div>
           </div>
-        </ProfileAvatar>
+        </ProfileItem>
       </div>
     </div>
   </div>

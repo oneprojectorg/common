@@ -2,7 +2,7 @@ import { ReactNode } from 'react';
 
 import { cn } from '../lib/utils';
 
-type ProfileAvatarProps = {
+type ProfileItemProps = {
   avatar: ReactNode;
   title: string;
   description?: string;
@@ -13,13 +13,13 @@ type ProfileAvatarProps = {
 /**
  * Generic component for displaying a profile with avatar, title, and description.
  */
-export const ProfileAvatar = ({
+export const ProfileItem = ({
   avatar,
   title,
   description,
   className,
   children,
-}: ProfileAvatarProps) => {
+}: ProfileItemProps) => {
   const hasAdditionalContent = description || children;
 
   return (
