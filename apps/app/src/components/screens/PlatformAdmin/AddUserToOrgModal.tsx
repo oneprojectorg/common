@@ -8,6 +8,7 @@ import { Chip } from '@op/ui/Chip';
 import { ComboBox, ComboBoxItem } from '@op/ui/ComboBox';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
+import { ProfileItem } from '@op/ui/ProfileItem';
 import { Skeleton } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
 import { toast } from '@op/ui/Toast';
@@ -127,19 +128,19 @@ const AddUserToOrgModalContent = ({
       {/* Body */}
       <ModalBody className="space-y-4">
         {/* User Info */}
-        <div className="bg-neutral-gray0 flex items-start gap-3 rounded-lg p-4">
-          <Avatar
-            placeholder={user.profile?.name ?? user.name ?? 'Unknown User'}
-            className="size-10 shrink-0"
-          >
-            {avatarContent}
-          </Avatar>
-          <div className="min-w-0 flex-1">
-            <div className="text-sm font-medium text-neutral-black">
-              {user.profile?.name ?? user.name ?? 'Unknown User'}
-            </div>
-            <div className="text-sm text-neutral-charcoal">{user.email}</div>
-          </div>
+        <div className="bg-neutral-gray0 rounded-lg p-4">
+          <ProfileItem
+            avatar={
+              <Avatar
+                placeholder={user.profile?.name ?? user.name ?? 'Unknown User'}
+                className="size-10 shrink-0"
+              >
+                {avatarContent}
+              </Avatar>
+            }
+            title={user.profile?.name ?? user.name ?? 'Unknown User'}
+            description={user.email}
+          />
         </div>
 
         {/* Current Memberships */}
