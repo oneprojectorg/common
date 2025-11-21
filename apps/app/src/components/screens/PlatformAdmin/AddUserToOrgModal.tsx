@@ -215,13 +215,12 @@ const AddUserToOrgModalContent = ({
           color="primary"
           type="submit"
           isPending={isSubmitting}
-          isDisabled={!selectedOrgId || !selectedRoleId}
+          isDisabled={!selectedOrgId || !selectedRoleId || isSubmitting}
         >
-          {isSubmitting ? (
-            <LoadingSpinner />
-          ) : (
-            t('platformAdmin_addUserToOrg_submitButton')
-          )}
+          <div className="flex gap-2">
+            {isSubmitting ? <LoadingSpinner /> : null}
+            {t('platformAdmin_addUserToOrg_submitButton')}
+          </div>
         </Button>
       </ModalFooter>
     </form>
