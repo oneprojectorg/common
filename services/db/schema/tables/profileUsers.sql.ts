@@ -103,4 +103,4 @@ export const profileUserToAccessRolesRelations = relations(
   }),
 );
 
-export type ProfileUser = InferModel<typeof profileUsers>;
+export type ProfileUser = typeof profileUsers.$inferSelect;
