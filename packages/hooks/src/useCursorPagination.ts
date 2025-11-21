@@ -13,8 +13,6 @@ import { useState } from 'react';
  * @example
  * const { cursor, currentPage, handleNext, handlePrevious } = useCursorPagination(10);
  * const [data] = trpc.users.list.useSuspenseQuery({ cursor, limit: 10 });
- *
- * @todo Move this to @op/common or @op/hooks for reuse across the application
  */
 export function useCursorPagination(limit: number) {
   const [cursor, setCursor] = useState<string | null>(null);

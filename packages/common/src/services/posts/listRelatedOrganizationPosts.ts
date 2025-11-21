@@ -31,9 +31,9 @@ export const listAllRelatedOrganizationPosts = async (
   // Build cursor condition for pagination
   const cursorCondition = cursorData
     ? or(
-        lt(postsToOrganizations.createdAt, cursorData.createdAt),
+        lt(postsToOrganizations.createdAt, cursorData.updatedAt),
         and(
-          eq(postsToOrganizations.createdAt, cursorData.createdAt),
+          eq(postsToOrganizations.createdAt, cursorData.updatedAt),
           lt(postsToOrganizations.postId, cursorData.id),
         ),
       )

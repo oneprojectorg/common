@@ -39,9 +39,9 @@ export const listPosts = async ({
     // Build cursor condition for pagination
     const cursorCondition = cursorData
       ? or(
-          lt(postsToOrganizations.createdAt, cursorData.createdAt),
+          lt(postsToOrganizations.createdAt, cursorData.updatedAt),
           and(
-            eq(postsToOrganizations.createdAt, cursorData.createdAt),
+            eq(postsToOrganizations.createdAt, cursorData.updatedAt),
             lt(postsToOrganizations.postId, cursorData.id),
           ),
         )
@@ -174,7 +174,9 @@ type EnhancedPostFields = {
  * @param profileId - The current user's profile ID to determine their reaction
  * @returns Items with enhanced post data including reaction counts and comment counts
  */
-export const getItemsWithReactionsAndComments = async <T extends { post: any }>({
+export const getItemsWithReactionsAndComments = async <
+  T extends { post: any },
+>({
   items,
   profileId,
 }: {
