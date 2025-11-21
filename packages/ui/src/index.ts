@@ -37,6 +37,7 @@ export * from './components/Modal';
 export * from './components/NumberField';
 export * from './components/Pagination';
 export * from './components/Popover';
+export * from './components/ProfileItem';
 export * from './components/ProgressBar';
 export * from './components/RadioGroup';
 export * from './components/RangeCalendar';

@@ -318,6 +318,13 @@ const config: Omit<Config, 'content'> = {
     // These are used in ScreenCapturer.tsx to temporarily hide the scrollbars
     '[&_.scroller]:!overflow-hidden',
     '[&_textarea]:!overflow-hidden',
+    // Avatar gradient backgrounds - dynamically applied via getGradientForString
+    'bg-gradient',
+    'bg-tealGreen',
+    'bg-redTeal',
+    'bg-blueGreen',
+    'bg-orangePurple',
+    'bg-yellowOrange',
   ],
 };
 
