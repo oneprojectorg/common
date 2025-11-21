@@ -75,7 +75,7 @@ const AddUserToOrgModalContent = ({
 
     if (!selectedOrgId || !selectedRoleId) {
       toast.error({
-        message: 'Please select both an organization and a role',
+        message: t('platformAdmin_addUserToOrg_errorSelectBoth'),
       });
       return;
     }
@@ -95,7 +95,7 @@ const AddUserToOrgModalContent = ({
         onOpenChange(false);
 
         toast.success({
-          message: 'User successfully added to organization',
+          message: t('platformAdmin_addUserToOrg_successMessage'),
         });
 
         utils.platform.admin.listAllUsers.invalidate();
@@ -105,7 +105,7 @@ const AddUserToOrgModalContent = ({
         setSelectedRoleId('');
       } catch (error) {
         toast.error({
-          message: 'Failed to add user to organization',
+          message: t('platformAdmin_addUserToOrg_errorMessage'),
         });
       }
     });
@@ -123,7 +123,7 @@ const AddUserToOrgModalContent = ({
   return (
     <form onSubmit={handleSubmit} className="contents">
       {/* Header */}
-      <ModalHeader>{t('Add User to Organization')}</ModalHeader>
+      <ModalHeader>{t('platformAdmin_addUserToOrg_modalTitle')}</ModalHeader>
 
       {/* Body */}
       <ModalBody className="space-y-4">
@@ -132,13 +132,21 @@ const AddUserToOrgModalContent = ({
           <ProfileItem
             avatar={
               <Avatar
-                placeholder={user.profile?.name ?? user.name ?? 'Unknown User'}
+                placeholder={
+                  user.profile?.name ??
+                  user.name ??
+                  t('platformAdmin_addUserToOrg_unknownUser')
+                }
                 className="size-10 shrink-0"
               >
                 {avatarContent}
               </Avatar>
             }
-            title={user.profile?.name ?? user.name ?? 'Unknown User'}
+            title={
+              user.profile?.name ??
+              user.name ??
+              t('platformAdmin_addUserToOrg_unknownUser')
+            }
             description={user.email}
           />
         </div>
@@ -148,7 +156,7 @@ const AddUserToOrgModalContent = ({
           <>
             <div>
               <div className="mb-2 text-sm font-medium text-neutral-black">
-                Current Organizations
+                {t('platformAdmin_addUserToOrg_currentOrganizations')}
               </div>
               <div className="space-y-2">
                 {user.organizationUsers.map((orgUser) => {
@@ -159,7 +167,7 @@ const AddUserToOrgModalContent = ({
                   const roles =
                     orgUser.roles && orgUser.roles.length > 0
                       ? orgUser.roles.map((r) => r.accessRole.name)
-                      : ['No roles'];
+                      : [t('platformAdmin_addUserToOrg_noRoles')];
 
                   return (
                     <Surface
@@ -211,7 +219,11 @@ const AddUserToOrgModalContent = ({
           isPending={isSubmitting}
           isDisabled={!selectedOrgId || !selectedRoleId}
         >
-          {isSubmitting ? <LoadingSpinner /> : 'Add to Organization'}
+          {isSubmitting ? (
+            <LoadingSpinner />
+          ) : (
+            t('platformAdmin_addUserToOrg_submitButton')
+          )}
         </Button>
       </ModalFooter>
     </form>

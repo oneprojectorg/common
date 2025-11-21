@@ -1,22 +1,19 @@
 import { getPublicUrl } from '@/utils';
+import type { Organization } from '@op/api/encoders';
 import { Avatar } from '@op/ui/Avatar';
 import { ProfileItem } from '@op/ui/ProfileItem';
 import Image from 'next/image';
 import { ReactNode } from 'react';
 
-type Organization = {
-  id: string;
-  profile: {
-    name: string;
-    slug: string;
-    bio?: string | null;
-  };
-  avatarImage?: { name: string | null } | null;
-  whereWeWork?: Array<{ name?: string | null }>;
+type OrganizationForList = Pick<
+  Organization,
+  'id' | 'avatarImage' | 'whereWeWork'
+> & {
+  profile: Pick<Organization['profile'], 'name' | 'slug' | 'bio'>;
 };
 
 type OrganizationListItemProps = {
-  organization: Organization;
+  organization: OrganizationForList;
   showBio?: boolean;
   trimBioLength?: number;
   className?: string;
@@ -71,19 +68,20 @@ export const OrganizationListItem = ({
     </Avatar>
   );
 
-  const description = (
-    <>
-      {whereWeWork && whereWeWork.length > 0 ? (
-        <div className="mt-1 truncate text-sm text-neutral-gray4 sm:text-base">
-          {whereWeWork}
-        </div>
-      ) : null}
+  const description =
+    whereWeWork || trimmedBio ? (
+      <>
+        {whereWeWork && whereWeWork.length > 0 ? (
+          <div className="mt-1 truncate text-sm text-neutral-gray4 sm:text-base">
+            {whereWeWork}
+          </div>
+        ) : null}
 
-      {trimmedBio ? (
-        <div className="mt-2 text-neutral-charcoal">{trimmedBio}</div>
-      ) : null}
-    </>
-  );
+        {trimmedBio ? (
+          <div className="mt-2 text-neutral-charcoal">{trimmedBio}</div>
+        ) : null}
+      </>
+    ) : null;
 
   return (
     <ProfileItem
@@ -91,7 +89,7 @@ export const OrganizationListItem = ({
       title={organization.profile.name}
       className={className}
     >
-      {whereWeWork || trimmedBio ? description : null}
+      {description}
       {children}
     </ProfileItem>
   );
