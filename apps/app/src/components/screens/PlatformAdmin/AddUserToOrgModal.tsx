@@ -190,9 +190,9 @@ const AddUserToOrgModalContent = ({
           </>
         ) : null}
 
-        {/* Dynamic Form Fields - Suspense Boundary */}
+        {/* Organization and Role Selection */}
         <Suspense fallback={<FormFieldsSkeleton />}>
-          <DynamicFormFields
+          <OrganizationAndRoleSelection
             user={user}
             selectedOrgId={selectedOrgId}
             setSelectedOrgId={setSelectedOrgId}
@@ -236,10 +236,9 @@ const FormFieldsSkeleton = () => {
 };
 
 /**
- * Dynamic form fields that require data fetching
- * Isolated to minimize the Suspense boundary
+ * Form fields for selecting organization and role with data fetching
  */
-const DynamicFormFields = ({
+const OrganizationAndRoleSelection = ({
   user,
   selectedOrgId,
   setSelectedOrgId,
