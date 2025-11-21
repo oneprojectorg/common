@@ -168,22 +168,19 @@ const AddUserToOrgModalContent = ({
                       <OrganizationListItem
                         organization={{
                           id: orgUser.organizationId,
-                          profile: {
-                            name: orgUser.organization.profile.name,
-                            slug: orgUser.organization.profile.slug,
-                            bio: orgUser.organization.profile.bio,
-                          },
+                          profile: orgUser.organization.profile,
                           avatarImage: orgUser.organization.profile.avatarImage,
                           whereWeWork: orgUser.organization.whereWeWork ?? [],
                         }}
                         showBio={false}
                         avatarSize="sm"
-                      />
-                      <div className="ml-14 flex gap-2">
-                        {roles.map((role) => (
-                          <Chip key={role}>{role}</Chip>
-                        ))}
-                      </div>
+                      >
+                        <div className="mt-2 flex gap-2">
+                          {roles.map((role) => (
+                            <Chip key={role}>{role}</Chip>
+                          ))}
+                        </div>
+                      </OrganizationListItem>
                     </Surface>
                   );
                 })}

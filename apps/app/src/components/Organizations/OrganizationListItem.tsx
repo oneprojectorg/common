@@ -1,6 +1,6 @@
 import { getPublicUrl } from '@/utils';
 import { Avatar } from '@op/ui/Avatar';
-import { ProfileAvatar } from '@op/ui/ProfileAvatar';
+import { ProfileItem } from '@op/ui/ProfileItem';
 import Image from 'next/image';
 import { ReactNode } from 'react';
 
@@ -86,13 +86,13 @@ export const OrganizationListItem = ({
   );
 
   return (
-    <ProfileAvatar
+    <ProfileItem
       avatar={avatar}
       title={organization.profile.name}
       className={className}
     >
       {whereWeWork || trimmedBio ? description : null}
       {children}
-    </ProfileAvatar>
+    </ProfileItem>
   );
 };
