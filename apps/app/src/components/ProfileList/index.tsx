@@ -1,9 +1,10 @@
+import { getPublicUrl } from '@/utils';
 import { RouterOutput } from '@op/api/client';
 import { EntityType, Profile } from '@op/api/encoders';
+import { Avatar } from '@op/ui/Avatar';
+import Image from 'next/image';
 
 import { Link } from '@/lib/i18n';
-
-import { OrganizationListItem } from '@/components/Organizations/OrganizationListItem';
 
 type Profiles = RouterOutput['profile']['list']['items'];
 
@@ -23,31 +24,60 @@ export const ProfileSummaryList = ({
   return (
     <div className="flex flex-col gap-6">
       {profiles.map((profile) => {
-        const href =
-          profile.type === EntityType.INDIVIDUAL
-            ? `/profile/${profile.slug}`
-            : `/org/${profile.slug}`;
+        const whereWeWork =
+          profile.organization?.whereWeWork
+            ?.map((location) => location.name)
+            .join(' • ') ?? [];
+
+        const trimmedBio =
+          profile.bio && profile.bio.length > 325
+            ? `${profile.bio.slice(0, 325)}...`
+            : profile.bio;
 
         return (
-          <Link key={profile.id} href={href} className="hover:no-underline">
-            <div className="flex flex-col gap-3 py-2">
-              <OrganizationListItem
-                organization={{
-                  id: profile.id,
-                  profile: {
-                    name: profile.name,
-                    slug: profile.slug,
-                    bio: profile.bio,
-                  },
-                  avatarImage: profile.avatarImage,
-                  whereWeWork: profile.organization?.whereWeWork,
-                }}
-                showBio={true}
-                trimBioLength={325}
-                avatarSize="md"
-              />
+          <div key={profile.id}>
+            <div className="flex items-start gap-2 py-2 sm:gap-6">
+              <Link
+                href={
+                  profile.type === EntityType.INDIVIDUAL
+                    ? `/profile/${profile.slug}`
+                    : `/org/${profile.slug}`
+                }
+                className="hover:no-underline"
+              >
+                <Avatar
+                  placeholder={profile.name}
+                  className="size-8 hover:opacity-80 sm:size-12"
+                >
+                  {profile.avatarImage?.name ? (
+                    <Image
+                      src={getPublicUrl(profile.avatarImage.name) ?? ''}
+                      alt={`${profile.name} avatar`}
+                      fill
+                      className="object-cover"
+                    />
+                  ) : null}
+                </Avatar>
+              </Link>
+
+              <div className="flex flex-col gap-3 text-neutral-black">
+                <div className="flex flex-col gap-2">
+                  <Link
+                    href={`/profile/${profile.slug}`}
+                    className="font-semibold leading-base"
+                  >
+                    {profile.name}
+                  </Link>
+                  {whereWeWork?.length > 0 ? (
+                    <span className="text-sm text-neutral-gray4 sm:text-base">
+                      {whereWeWork}
+                    </span>
+                  ) : null}
+                </div>
+                <span className="text-neutral-charcoal">{trimmedBio}</span>
+              </div>
             </div>
-          </Link>
+          </div>
         );
       })}
     </div>
