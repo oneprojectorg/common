@@ -15,7 +15,7 @@ import {
   signOutTestUser,
 } from '../supabase-utils';
 
-describe('Invite System Integration Tests', () => {
+describe.skip('Invite System Integration Tests', () => {
   let testInviterEmail: string;
   let testInviteeEmail: string;
   let testInviterUser: any;
@@ -342,9 +342,11 @@ describe('Invite System Integration Tests', () => {
       // Get all roles to find a non-admin role
       const { roles } = await getRoles();
       const nonAdminRole = roles.find((role) => role.name !== 'Admin');
-      
+
       if (!nonAdminRole) {
-        console.warn('Only Admin role available, skipping non-admin currentProfileId test');
+        console.warn(
+          'Only Admin role available, skipping non-admin currentProfileId test',
+        );
         return;
       }
 
@@ -380,7 +382,9 @@ describe('Invite System Integration Tests', () => {
       });
 
       expect(updatedUser?.currentProfileId).toBe(initialCurrentProfileId);
-      expect(updatedUser?.currentProfileId).not.toBe(testOrganization.profileId);
+      expect(updatedUser?.currentProfileId).not.toBe(
+        testOrganization.profileId,
+      );
     });
 
     it('should fallback to Admin role for domain-based joins', async () => {

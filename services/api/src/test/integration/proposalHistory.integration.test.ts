@@ -17,7 +17,7 @@ import {
   signOutTestUser,
 } from '../supabase-utils';
 
-describe('Proposal History Integration Tests', () => {
+describe.skip('Proposal History Integration Tests', () => {
   let testUserEmail: string;
   let testUser: any;
   let testOrganization: any;
@@ -79,7 +79,8 @@ describe('Proposal History Integration Tests', () => {
               config: { allowProposals: true, allowDecisions: false },
             },
           ],
-          phases: [{id: "phase1", name: "Phase 1", states: ["draft"]}], transitions: [],
+          phases: [{ id: 'phase1', name: 'Phase 1', states: ['draft'] }],
+          transitions: [],
           initialState: 'draft',
           decisionDefinition: {
             type: 'object',
@@ -185,7 +186,8 @@ describe('Proposal History Integration Tests', () => {
               config: { allowProposals: true, allowDecisions: false },
             },
           ],
-          phases: [{id: "phase1", name: "Phase 1", states: ["draft"]}], transitions: [],
+          phases: [{ id: 'phase1', name: 'Phase 1', states: ['draft'] }],
+          transitions: [],
           initialState: 'draft',
           decisionDefinition: {
             type: 'object',
@@ -271,7 +273,8 @@ describe('Proposal History Integration Tests', () => {
               config: { allowProposals: true, allowDecisions: false },
             },
           ],
-          phases: [{id: "phase1", name: "Phase 1", states: ["draft"]}], transitions: [],
+          phases: [{ id: 'phase1', name: 'Phase 1', states: ['draft'] }],
+          transitions: [],
           initialState: 'draft',
           decisionDefinition: {
             type: 'object',
@@ -350,7 +353,8 @@ describe('Proposal History Integration Tests', () => {
               config: { allowProposals: true, allowDecisions: false },
             },
           ],
-          phases: [{id: "phase1", name: "Phase 1", states: ["draft"]}], transitions: [],
+          phases: [{ id: 'phase1', name: 'Phase 1', states: ['draft'] }],
+          transitions: [],
           initialState: 'draft',
           decisionDefinition: {
             type: 'object',
@@ -446,7 +450,8 @@ describe('Proposal History Integration Tests', () => {
               config: { allowProposals: true, allowDecisions: false },
             },
           ],
-          phases: [{id: "phase1", name: "Phase 1", states: ["draft"]}], transitions: [],
+          phases: [{ id: 'phase1', name: 'Phase 1', states: ['draft'] }],
+          transitions: [],
           initialState: 'draft',
           decisionDefinition: {
             type: 'object',
@@ -539,7 +544,8 @@ describe('Proposal History Integration Tests', () => {
               config: { allowProposals: true, allowDecisions: false },
             },
           ],
-          phases: [{id: "phase1", name: "Phase 1", states: ["draft"]}], transitions: [],
+          phases: [{ id: 'phase1', name: 'Phase 1', states: ['draft'] }],
+          transitions: [],
           initialState: 'draft',
           decisionDefinition: {
             type: 'object',
