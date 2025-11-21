@@ -60,29 +60,29 @@ jobs:
       - name: Cache Supabase Docker images
         uses: ScribeMD/docker-cache@0.5.0
         with:
-          key: docker-${{ runner.os }}-supabase-${{ hashFiles('supabase-test.toml') }}
+          key: docker-${{ runner.os }}-supabase-${{ hashFiles('supabase-ci.toml') }}
 
-      - name: Verify test config exists
+      - name: Verify CI config exists
         run: |
           echo "Checking config files:"
-          ls -la supabase-test.toml supabase/config.toml
+          ls -la supabase-ci.toml supabase/config.toml
           echo "---"
-          echo "Test config project_id:"
-          grep "project_id" supabase-test.toml
+          echo "CI config project_id:"
+          grep "project_id" supabase-ci.toml
           echo "Dev config project_id:"
           grep "project_id" supabase/config.toml
 
-      - name: Swap to test config
+      - name: Swap to CI config
         run: |
-          echo "Backing up dev config and swapping to test config..."
+          echo "Backing up dev config and swapping to CI config..."
           cp supabase/config.toml supabase/config.toml.backup
-          cp supabase-test.toml supabase/config.toml
+          cp supabase-ci.toml supabase/config.toml
           echo "Verifying swap:"
           grep "project_id" supabase/config.toml
 
       - name: Start Supabase
         run: |
-          echo "Starting Supabase with test config..."
+          echo "Starting Supabase with CI config..."
           supabase start
           echo "Supabase started successfully"
 
