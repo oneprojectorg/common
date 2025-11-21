@@ -62,23 +62,8 @@ jobs:
         with:
           key: docker-${{ runner.os }}-supabase-${{ hashFiles('supabase-ci.toml') }}
 
-      - name: Verify CI config exists
-        run: |
-          echo "Checking config files:"
-          ls -la supabase-ci.toml supabase/config.toml
-          echo "---"
-          echo "CI config project_id:"
-          grep "project_id" supabase-ci.toml
-          echo "Dev config project_id:"
-          grep "project_id" supabase/config.toml
-
-      - name: Swap to CI config
-        run: |
-          echo "Backing up dev config and swapping to CI config..."
-          cp supabase/config.toml supabase/config.toml.backup
-          cp supabase-ci.toml supabase/config.toml
-          echo "Verifying swap:"
-          grep "project_id" supabase/config.toml
+      - name: Use CI config
+        run: cp supabase-ci.toml supabase/config.toml
 
       - name: Start Supabase
         run: |
@@ -94,10 +79,3 @@ jobs:
 
       - name: Run API tests
         run: pnpm w:api test listUsers listAll addUsers
-
-      - name: Stop Supabase
-        if: always()
-        run: |
-          supabase stop --no-backup
-          echo "Restoring original config..."
-          cp supabase/config.toml.backup supabase/config.toml || echo "No backup to restore"
