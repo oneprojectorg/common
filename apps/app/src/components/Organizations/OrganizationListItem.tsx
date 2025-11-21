@@ -14,23 +14,15 @@ type OrganizationForList = Pick<
 
 type OrganizationListItemProps = {
   organization: OrganizationForList;
-  showBio?: boolean;
-  trimBioLength?: number;
-  className?: string;
-  avatarSize?: 'sm' | 'md' | 'lg';
   children?: ReactNode;
 };
 
 /**
  * Reusable component for displaying organization information consistently
- * across the application (avatar, name, location, bio).
+ * across the application (avatar, name, location).
  */
 export const OrganizationListItem = ({
   organization,
-  showBio = true,
-  trimBioLength = 325,
-  className = '',
-  avatarSize = 'md',
   children,
 }: OrganizationListItemProps) => {
   const whereWeWork =
@@ -39,24 +31,8 @@ export const OrganizationListItem = ({
       .filter((name): name is string => !!name)
       .join(' • ') ?? '';
 
-  const trimmedBio =
-    showBio && organization.profile.bio
-      ? organization.profile.bio.length > trimBioLength
-        ? `${organization.profile.bio.slice(0, trimBioLength)}...`
-        : organization.profile.bio
-      : null;
-
-  const avatarSizeClasses = {
-    sm: 'size-8',
-    md: 'size-8 sm:size-12',
-    lg: 'size-12',
-  };
-
   const avatar = (
-    <Avatar
-      placeholder={organization.profile.name}
-      className={`${avatarSizeClasses[avatarSize]} shrink-0`}
-    >
+    <Avatar placeholder={organization.profile.name} className="size-8 shrink-0">
       {organization.avatarImage?.name ? (
         <Image
           src={getPublicUrl(organization.avatarImage.name) ?? ''}
@@ -69,26 +45,14 @@ export const OrganizationListItem = ({
   );
 
   const description =
-    whereWeWork || trimmedBio ? (
-      <>
-        {whereWeWork && whereWeWork.length > 0 ? (
-          <div className="mt-1 truncate text-sm text-neutral-gray4 sm:text-base">
-            {whereWeWork}
-          </div>
-        ) : null}
-
-        {trimmedBio ? (
-          <div className="mt-2 text-neutral-charcoal">{trimmedBio}</div>
-        ) : null}
-      </>
+    whereWeWork && whereWeWork.length > 0 ? (
+      <div className="mt-1 truncate text-sm text-neutral-gray4 sm:text-base">
+        {whereWeWork}
+      </div>
     ) : null;
 
   return (
-    <ProfileItem
-      avatar={avatar}
-      title={organization.profile.name}
-      className={className}
-    >
+    <ProfileItem avatar={avatar} title={organization.profile.name}>
       {description}
       {children}
     </ProfileItem>

@@ -386,5 +386,7 @@
   "platformAdmin_addUserToOrg_submitButton": "Add to Organization",
   "platformAdmin_addUserToOrg_successMessage": "User successfully added to organization",
   "platformAdmin_addUserToOrg_errorMessage": "Failed to add user to organization",
-  "platformAdmin_addUserToOrg_errorSelectBoth": "Please select both an organization and a role"
+  "platformAdmin_addUserToOrg_errorSelectBoth": "Please select both an organization and a role",
+  "platformAdmin_addUserToOrg_selectOrganization": "Select Organization",
+  "platformAdmin_addUserToOrg_selectRole": "Select Role"
 }

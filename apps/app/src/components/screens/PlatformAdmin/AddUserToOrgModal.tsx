@@ -181,8 +181,6 @@ const AddUserToOrgModalContent = ({
                           avatarImage: orgUser.organization.profile.avatarImage,
                           whereWeWork: orgUser.organization.whereWeWork ?? [],
                         }}
-                        showBio={false}
-                        avatarSize="sm"
                       >
                         <div className="mt-2 flex gap-2">
                           {roles.map((role) => (
@@ -289,7 +287,7 @@ const OrganizationAndRoleSelection = ({
     <>
       {/* Organization Selection */}
       <ComboBox
-        label={t('Organization')}
+        label={t('platformAdmin_addUserToOrg_selectOrganization')}
         selectedKey={selectedOrgId}
         onSelectionChange={(key) => setSelectedOrgId(String(key))}
         items={availableOrganizations}
@@ -308,8 +306,6 @@ const OrganizationAndRoleSelection = ({
                 avatarImage: org.avatarImage,
                 whereWeWork: org.whereWeWork,
               }}
-              showBio={false}
-              avatarSize="sm"
             />
           </ComboBoxItem>
         )}
@@ -317,7 +313,7 @@ const OrganizationAndRoleSelection = ({
 
       {/* Role Selection */}
       <ComboBox
-        label={t('Role')}
+        label={t('platformAdmin_addUserToOrg_selectRole')}
         selectedKey={selectedRoleId}
         onSelectionChange={(key) => setSelectedRoleId(String(key))}
         defaultSelectedKey={memberRole?.id}
