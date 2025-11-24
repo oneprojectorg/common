@@ -40,7 +40,7 @@ const selectStyles = tv({
   },
   defaultVariants: {
     variant: 'default',
-    size: 'small',
+    size: 'medium',
   },
 });
 
@@ -76,6 +76,7 @@ export interface SelectProps<T extends object>
   selectionMode?: 'single' | 'multiple';
   variant?: 'default' | 'pill';
   icon?: ReactNode;
+  size?: 'small' | 'medium';
 }
 
 export const Select = <T extends object>({
@@ -87,6 +88,7 @@ export const Select = <T extends object>({
   selectionMode = 'single',
   isRequired,
   variant = 'default',
+  size,
   icon,
   ...props
 }: SelectProps<T>) => {
@@ -111,7 +113,7 @@ export const Select = <T extends object>({
       ) : (
         <Button
           className={cn(
-            selectStyles({ ...props, variant } as SelectVariantsProps),
+            selectStyles({ ...props, variant, size } as SelectVariantsProps),
             props.buttonClassName,
           )}
         >

@@ -108,6 +108,17 @@ export const PillVariant = (args: any) => (
   </div>
 );
 
+export const SmallVariant = (args: any) => (
+  <div className="flex flex-col gap-4">
+    <Select {...args} size="small" placeholder="Select category">
+      <SelectItem id="chocolate">All proposals</SelectItem>
+      <SelectItem id="mint">Mint</SelectItem>
+      <SelectItem id="strawberry">Strawberry</SelectItem>
+      <SelectItem id="vanilla">Vanilla</SelectItem>
+    </Select>
+  </div>
+);
+
 PillVariant.args = {
   label: undefined,
 };
