@@ -15,7 +15,7 @@ import {
   UnauthorizedError,
 } from '../../utils/error';
 import { getProfileAccessUser } from '../access';
-import type { InviteMetadata } from '../invite';
+import { AllowListMetadata } from '../user/validators';
 
 // Utility function to generate consistent result messages
 const generateInviteResultMessage = (
@@ -173,7 +173,7 @@ export const inviteUsersToProfile = async (input: {
       const isInAllowList = allowListEmailsSet.has(email);
 
       if (!isInAllowList) {
-        const metadata: InviteMetadata = {
+        const metadata: AllowListMetadata = {
           invitedBy: user.id,
           invitedAt: new Date().toISOString(),
           inviteType: 'profile',

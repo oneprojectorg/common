@@ -13,7 +13,7 @@ import { assertAccess, permission } from 'access-zones';
 
 import { getOrgAccessUser } from '../access';
 import { sendBatchInvitationEmails } from '../email';
-import type { InviteMetadata } from '../invite';
+import { AllowListMetadata } from '../user/validators';
 
 // Type for user queries in this file
 type CommonUserWithProfile = CommonUser & {
@@ -169,7 +169,7 @@ export const inviteUsersToOrganization = async (
       });
 
       if (!existingEntry) {
-        const metadata: InviteMetadata = {
+        const metadata: AllowListMetadata = {
           invitedBy: user.id,
           invitedAt: new Date().toISOString(),
           inviteType: 'existing_organization',
@@ -305,7 +305,7 @@ export const inviteNewUsers = async (input: InviteNewUsersInput) => {
       });
 
       if (!existingEntry) {
-        const metadata: InviteMetadata = {
+        const metadata: AllowListMetadata = {
           invitedBy: user.id,
           invitedAt: new Date().toISOString(),
           inviteType: 'new_organization',
