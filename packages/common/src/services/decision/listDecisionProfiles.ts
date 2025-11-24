@@ -1,4 +1,4 @@
-import { and, asc, db, desc, eq } from '@op/db/client';
+import { and, asc, db, desc, eq, inArray } from '@op/db/client';
 import {
   DecisionProcess,
   EntityType,
@@ -7,12 +7,13 @@ import {
   ProcessStatus,
   Profile,
   Proposal,
+  processInstances,
+  profileUsers,
   profiles,
 } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
 import {
-  NotFoundError,
   UnauthorizedError,
   constructTextSearch,
   decodeCursor,
@@ -53,6 +54,9 @@ export const listDecisionProfiles = async ({
       : undefined;
 
     const typeCondition = eq(profiles.type, EntityType.DECISION);
+    const statusCondition = status
+      ? eq(processInstances.status, status)
+      : undefined;
 
     // Build search condition if provided (search on profile name/bio)
     const searchCondition = search
@@ -64,9 +68,11 @@ export const listDecisionProfiles = async ({
     // TODO: assert authorization
     const whereConditions = [
       cursorCondition,
+      statusCondition,
       typeCondition,
       searchCondition,
     ].filter(Boolean);
+
     const whereClause =
       whereConditions.length > 0
         ? whereConditions.length === 1
@@ -116,7 +122,7 @@ export const listDecisionProfiles = async ({
     const profilesWithCounts = profileList.map((profile) => {
       if (profile.processInstance) {
         const instance = profile.processInstance;
-        const proposalCount = instance.proposals?.length || 0;
+        const proposalCount = instance.proposals?.length ?? 0;
         const uniqueParticipants = new Set(
           instance.proposals?.map((proposal) => proposal.submittedByProfileId),
         );
@@ -134,21 +140,10 @@ export const listDecisionProfiles = async ({
       return profile;
     });
 
-    // Filter out profiles without processInstance and optionally by status
-    const filteredProfiles = profilesWithCounts.filter((profile) => {
-      if (!profile.processInstance) {
-        return false;
-      }
-      const instance = profile.processInstance as ProcessInstance;
-      if (status && instance.status !== status) {
-        return false;
-      }
-      return true;
-    });
-
-    if (!filteredProfiles) {
-      throw new NotFoundError('Decision profiles not found');
-    }
+    // Filter out profiles without processInstance
+    const filteredProfiles = profilesWithCounts.filter(
+      (profile) => !!profile.processInstance,
+    );
 
     const hasMore = filteredProfiles.length > limit;
     const items = hasMore ? filteredProfiles.slice(0, limit) : filteredProfiles;
