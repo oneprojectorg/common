@@ -1,26 +1,15 @@
-import { and, asc, db, desc, eq, lt, or, sql } from '@op/db/client';
+import { and, asc, db, desc, eq } from '@op/db/client';
 import { EntityType, profiles } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
 import {
   NotFoundError,
   UnauthorizedError,
+  constructTextSearch,
   decodeCursor,
   encodeCursor,
+  getGenericCursorCondition,
 } from '../../utils';
-
-const getOrderByColumn = (orderBy: string) => {
-  switch (orderBy) {
-    case 'updatedAt':
-      return profiles.updatedAt;
-    case 'createdAt':
-      return profiles.createdAt;
-    case 'name':
-      return profiles.name;
-    default:
-      return profiles.updatedAt;
-  }
-};
 
 export const listDecisionProfiles = async ({
   cursor,
@@ -33,10 +22,10 @@ export const listDecisionProfiles = async ({
 }: {
   user: User;
   cursor?: string | null;
-  limit?: number;
-  orderBy?: string;
-  dir?: 'asc' | 'desc';
   search?: string;
+  limit?: number;
+  orderBy?: 'createdAt' | 'updatedAt' | 'name';
+  dir?: 'asc' | 'desc';
   status?: 'draft' | 'published' | 'completed' | 'cancelled';
 }) => {
   if (!user) {
@@ -44,17 +33,15 @@ export const listDecisionProfiles = async ({
   }
 
   try {
-    const cursorData = cursor ? decodeCursor(cursor) : null;
-
     // Build cursor condition for pagination
-    const cursorCondition = cursorData
-      ? or(
-          lt(profiles.updatedAt, cursorData.updatedAt),
-          and(
-            eq(profiles.updatedAt, cursorData.updatedAt),
-            lt(profiles.id, cursorData.id),
-          ),
-        )
+    const cursorCondition = cursor
+      ? getGenericCursorCondition({
+          columns: {
+            id: profiles.id,
+            date: profiles.updatedAt,
+          },
+          cursor: decodeCursor(cursor),
+        })
       : undefined;
 
     // Filter by DECISION type
@@ -62,10 +49,9 @@ export const listDecisionProfiles = async ({
 
     // Build search condition if provided (search on profile name/bio)
     const searchCondition = search
-      ? sql`${profiles.search} @@ plainto_tsquery('english', ${search})`
+      ? constructTextSearch({ column: profiles.search, query: search })
       : undefined;
 
-    const orderByColumn = getOrderByColumn(orderBy);
     const orderFn = dir === 'asc' ? asc : desc;
 
     // TODO: assert authorization
@@ -105,7 +91,7 @@ export const listDecisionProfiles = async ({
           },
         },
       },
-      orderBy: orderFn(orderByColumn),
+      orderBy: orderFn(profiles[orderBy]),
       limit: limit + 1, // Fetch one extra to check hasMore
     });
 
@@ -148,13 +134,14 @@ export const listDecisionProfiles = async ({
     }
 
     const hasMore = filteredProfiles.length > limit;
-    const items = hasMore
-      ? filteredProfiles.slice(0, limit)
-      : filteredProfiles;
+    const items = hasMore ? filteredProfiles.slice(0, limit) : filteredProfiles;
     const lastItem = items[items.length - 1];
     const nextCursor =
       hasMore && lastItem && lastItem.updatedAt
-        ? encodeCursor(new Date(lastItem.updatedAt), lastItem.id)
+        ? encodeCursor({
+            date: new Date(lastItem.updatedAt),
+            id: lastItem.id,
+          })
         : null;
 
     return { items, next: nextCursor, hasMore };

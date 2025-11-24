@@ -1,6 +1,10 @@
 import { cache } from '@op/cache';
-import { decodeCursor, encodeCursor } from '@op/common';
-import { and, count, db, eq, ilike, lt, or } from '@op/db/client';
+import {
+  decodeCursor,
+  encodeCursor,
+  getGenericCursorCondition,
+} from '@op/common';
+import { and, count, db, ilike } from '@op/db/client';
 import { users } from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
 import crypto from 'crypto';
@@ -38,15 +42,14 @@ export const listAllUsersRouter = router({
       try {
         // Cursor-based pagination using updatedAt timestamp
         // Combines updatedAt with id as tiebreaker for users created at the same time
-        const cursorData = cursor ? decodeCursor(cursor) : null;
-        const cursorCondition = cursorData
-          ? or(
-              lt(users.updatedAt, cursorData.updatedAt),
-              and(
-                eq(users.updatedAt, cursorData.updatedAt),
-                lt(users.id, cursorData.id),
-              ),
-            )
+        const cursorCondition = cursor
+          ? getGenericCursorCondition({
+              columns: {
+                id: users.id,
+                date: users.updatedAt,
+              },
+              cursor: decodeCursor(cursor),
+            })
           : undefined;
 
         // Build search condition if query is provided (separate from cursor for total count)
@@ -121,7 +124,10 @@ export const listAllUsersRouter = router({
         const lastItem = items[items.length - 1];
         const nextCursor =
           hasMore && lastItem && lastItem.updatedAt
-            ? encodeCursor(new Date(lastItem.updatedAt), lastItem.id)
+            ? encodeCursor({
+                updatedAt: new Date(lastItem.updatedAt),
+                id: lastItem.id,
+              })
             : null;
 
         // Transform whereWeWork from join table to location array for each organization

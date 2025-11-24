@@ -1,4 +1,4 @@
-import { and, db, eq, lt, or, sql } from '@op/db/client';
+import { db, sql } from '@op/db/client';
 import { locations, organizations } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
@@ -7,6 +7,7 @@ import {
   UnauthorizedError,
   decodeCursor,
   encodeCursor,
+  getGenericCursorCondition,
 } from '../../utils';
 
 const getOrderByColumn = (orderBy: string) => {
@@ -38,17 +39,15 @@ export const listOrganizations = async ({
   }
 
   try {
-    const cursorData = cursor ? decodeCursor(cursor) : null;
-
     // Build cursor condition for unfiltered query
-    const cursorCondition = cursorData
-      ? or(
-          lt(organizations.updatedAt, cursorData.updatedAt),
-          and(
-            eq(organizations.updatedAt, cursorData.updatedAt),
-            lt(organizations.id, cursorData.id),
-          ),
-        )
+    const cursorCondition = cursor
+      ? getGenericCursorCondition({
+          columns: {
+            id: organizations.id,
+            date: organizations.updatedAt,
+          },
+          cursor: decodeCursor(cursor),
+        })
       : undefined;
 
     const orderByColumn = getOrderByColumn(orderBy);
@@ -103,7 +102,10 @@ export const listOrganizations = async ({
     const lastItem = items[items.length - 1];
     const nextCursor =
       hasMore && lastItem && lastItem.updatedAt
-        ? encodeCursor(new Date(lastItem.updatedAt), lastItem.id)
+        ? encodeCursor({
+            date: new Date(lastItem.updatedAt),
+            id: lastItem.id,
+          })
         : null;
 
     return { items, next: nextCursor, hasMore };

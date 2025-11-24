@@ -1,4 +1,4 @@
-import { and, count, db, eq, inArray, isNotNull, lt, or } from '@op/db/client';
+import { and, count, db, eq, inArray, isNotNull } from '@op/db/client';
 import {
   organizations,
   posts,
@@ -12,6 +12,7 @@ import {
   UnauthorizedError,
   decodeCursor,
   encodeCursor,
+  getGenericCursorCondition,
 } from '../../utils';
 import { getCurrentProfileId } from '../access';
 
@@ -33,18 +34,15 @@ export const listPosts = async ({
   }
 
   try {
-    // Parse cursor
-    const cursorData = cursor ? decodeCursor(cursor) : null;
-
     // Build cursor condition for pagination
-    const cursorCondition = cursorData
-      ? or(
-          lt(postsToOrganizations.createdAt, cursorData.createdAt),
-          and(
-            eq(postsToOrganizations.createdAt, cursorData.createdAt),
-            lt(postsToOrganizations.postId, cursorData.id),
-          ),
-        )
+    const cursorCondition = cursor
+      ? getGenericCursorCondition({
+          columns: {
+            id: postsToOrganizations.postId,
+            date: postsToOrganizations.createdAt,
+          },
+          cursor: decodeCursor(cursor),
+        })
       : undefined;
 
     const profile = slug
@@ -115,7 +113,10 @@ export const listPosts = async ({
     const lastItem = items[items.length - 1];
     const nextCursor =
       hasMore && lastItem && lastItem.createdAt
-        ? encodeCursor(new Date(lastItem.createdAt), lastItem.postId)
+        ? encodeCursor({
+            date: new Date(lastItem.createdAt),
+            id: lastItem.postId,
+          })
         : null;
 
     const actorProfileId = await getCurrentProfileId(authUserId);
@@ -174,7 +175,9 @@ type EnhancedPostFields = {
  * @param profileId - The current user's profile ID to determine their reaction
  * @returns Items with enhanced post data including reaction counts and comment counts
  */
-export const getItemsWithReactionsAndComments = async <T extends { post: any }>({
+export const getItemsWithReactionsAndComments = async <
+  T extends { post: any },
+>({
   items,
   profileId,
 }: {

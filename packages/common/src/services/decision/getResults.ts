@@ -11,15 +11,12 @@ import { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 import { count as countFn } from 'drizzle-orm';
 
-import { NotFoundError, decodeCursor } from '../../utils';
+import { NotFoundError, decodeCursor, encodeCursor } from '../../utils';
 import { getOrgAccessUser } from '../access';
 import { listProposals } from './listProposals';
 
-// Custom cursor encoding for selection rank pagination
 // Uses selectionRank with id as tiebreaker for stable ordering
-const encodeSelectionCursor = (selectionRank: number | null, id: string) => {
-  return Buffer.from(JSON.stringify({ selectionRank, id })).toString('base64');
-};
+type SelectionCursor = { selectionRank: number | null; id: string };
 
 export const getLatestResultWithProposals = async ({
   processInstanceId,
@@ -83,9 +80,7 @@ export const getLatestResultWithProposals = async ({
   }
 
   // Decode cursor to get the last selectionRank and id from previous page
-  const cursorData = cursor
-    ? (decodeCursor(cursor) as { selectionRank: number | null; id: string })
-    : null;
+  const cursorData = cursor ? decodeCursor<SelectionCursor>(cursor) : null;
 
   // Build cursor condition - fetch items after the cursor position
   // Uses (selectionRank, id) for stable ordering even when ranks are equal
@@ -221,7 +216,10 @@ export const getLatestResultWithProposals = async ({
   const lastItem = selections[selections.length - 1];
   const nextCursor =
     hasMore && lastItem
-      ? encodeSelectionCursor(lastItem.selectionRank, lastItem.id)
+      ? encodeCursor<SelectionCursor>({
+          selectionRank: lastItem.selectionRank,
+          id: lastItem.id,
+        })
       : null;
 
   return {

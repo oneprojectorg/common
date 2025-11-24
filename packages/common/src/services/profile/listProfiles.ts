@@ -1,4 +1,4 @@
-import { and, db, eq, inArray, lt, or, sql } from '@op/db/client';
+import { and, db, inArray, sql } from '@op/db/client';
 import { type EntityType, locations, profiles } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
@@ -7,6 +7,7 @@ import {
   UnauthorizedError,
   decodeCursor,
   encodeCursor,
+  getGenericCursorCondition,
 } from '../../utils';
 
 const getOrderByColumn = (orderBy: string) => {
@@ -42,17 +43,15 @@ export const listProfiles = async ({
   }
 
   try {
-    const cursorData = cursor ? decodeCursor(cursor) : null;
-
     // Build cursor condition for pagination
-    const cursorCondition = cursorData
-      ? or(
-          lt(profiles.updatedAt, cursorData.updatedAt),
-          and(
-            eq(profiles.updatedAt, cursorData.updatedAt),
-            lt(profiles.id, cursorData.id),
-          ),
-        )
+    const cursorCondition = cursor
+      ? getGenericCursorCondition({
+          columns: {
+            id: profiles.id,
+            date: profiles.updatedAt,
+          },
+          cursor: decodeCursor(cursor),
+        })
       : undefined;
 
     // Build type filter condition
@@ -129,7 +128,10 @@ export const listProfiles = async ({
     const lastItem = items[items.length - 1];
     const nextCursor =
       hasMore && lastItem && lastItem.updatedAt
-        ? encodeCursor(new Date(lastItem.updatedAt), lastItem.id)
+        ? encodeCursor({
+            updatedAt: new Date(lastItem.updatedAt),
+            id: lastItem.id,
+          })
         : null;
 
     return { items, next: nextCursor, hasMore };
