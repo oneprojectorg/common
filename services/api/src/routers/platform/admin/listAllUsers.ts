@@ -125,7 +125,7 @@ export const listAllUsersRouter = router({
         const nextCursor =
           hasMore && lastItem && lastItem.updatedAt
             ? encodeCursor({
-                updatedAt: new Date(lastItem.updatedAt),
+                date: new Date(lastItem.updatedAt),
                 id: lastItem.id,
               })
             : null;
