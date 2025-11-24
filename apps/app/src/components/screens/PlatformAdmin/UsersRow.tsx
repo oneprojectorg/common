@@ -26,7 +26,8 @@ type ListAllUsersOutput = RouterOutput['platform']['admin']['listAllUsers'];
 type User = ListAllUsersOutput['items'][number];
 type OrganizationUsers = User['organizationUsers'];
 
-export const UsersRow = ({ user }: { user: User }) => {
+// Shared hook for user data
+const useUserRowData = (user: User) => {
   const format = useFormatter();
   const t = useTranslations();
   const utils = trpc.useUtils();
@@ -40,8 +41,34 @@ export const UsersRow = ({ user }: { user: User }) => {
     ? useRelativeTime(lastSignInAt)
     : null;
 
+  return {
+    format,
+    t,
+    utils,
+    isEditModalOpen,
+    setIsEditModalOpen,
+    updatedAt,
+    relativeUpdatedAt,
+    lastSignInAt,
+    relativeLastSignIn,
+  };
+};
+
+export const UsersRowDesktop = ({ user }: { user: User }) => {
+  const {
+    format,
+    utils,
+    isEditModalOpen,
+    setIsEditModalOpen,
+    updatedAt,
+    relativeUpdatedAt,
+    lastSignInAt,
+    relativeLastSignIn,
+  } = useUserRowData(user);
+
   return (
     <>
+      {/* Desktop table row */}
       <div
         className={cn(
           'hover:bg-neutral-gray0 py-4 transition-colors',
@@ -86,45 +113,10 @@ export const UsersRow = ({ user }: { user: User }) => {
           )}
         </div>
         <div className="flex items-center justify-end pr-1 text-sm text-neutral-charcoal">
-          <OptionMenu variant="outline" size="medium">
-            <Menu className="min-w-48 p-2">
-              <MenuItem
-                key="view-analytics"
-                onAction={() => {
-                  window.open(getAnalyticsUserUrl(user.authUserId), '_blank');
-                }}
-                className="px-3 py-1"
-              >
-                {t('platformAdmin_actionViewAnalytics')}
-              </MenuItem>
-              <MenuItem
-                key="edit-profile"
-                onAction={() => {
-                  if (user.profile) {
-                    setIsEditModalOpen(true);
-                  }
-                }}
-                className="px-3 py-1"
-                isDisabled={!user.profile}
-              >
-                {t('platformAdmin_actionEditProfile')}
-              </MenuItem>
-              <MenuSeparator />
-              <MenuItem
-                key="remove-user"
-                onAction={() => {
-                  alert('coming soon');
-                }}
-                className="px-3 py-1"
-              >
-                <span className="text-red-500">
-                  {t('platformAdmin_actionRemoveUser')}
-                </span>
-              </MenuItem>
-            </Menu>
-          </OptionMenu>
+          <ActionsMenu user={user} setIsEditModalOpen={setIsEditModalOpen} />
         </div>
       </div>
+
       {user.profile ? (
         <UpdateProfileModal
           authUserId={user.authUserId}
@@ -137,6 +129,147 @@ export const UsersRow = ({ user }: { user: User }) => {
         />
       ) : null}
     </>
+  );
+};
+
+export const UsersRowMobile = ({ user }: { user: User }) => {
+  const {
+    format,
+    t,
+    utils,
+    isEditModalOpen,
+    setIsEditModalOpen,
+    updatedAt,
+    relativeUpdatedAt,
+    lastSignInAt,
+    relativeLastSignIn,
+  } = useUserRowData(user);
+
+  return (
+    <>
+      {/* Mobile card view */}
+      <div className="bg-neutral-gray0 mb-3 rounded-lg border border-neutral-gray1 p-4">
+        <div className="mb-3 flex items-start justify-between gap-2">
+          <div>
+            <div className="text-sm font-medium text-neutral-black">
+              {user.profile?.name ?? user.name ?? '—'}
+            </div>
+            <div className="mt-1 text-sm text-neutral-charcoal">
+              {user.email}
+            </div>
+          </div>
+          <ActionsMenu user={user} setIsEditModalOpen={setIsEditModalOpen} />
+        </div>
+
+        <div className="space-y-2 text-sm">
+          <UserRolesAndOrganizationsMobile
+            organizationUsers={user.organizationUsers ?? []}
+          />
+
+          <div className="flex justify-between">
+            <span className="text-neutral-charcoal">
+              {t('platformAdmin_columnLastUpdated')}:
+            </span>
+            <span className="text-neutral-black">
+              {updatedAt ? (
+                <TooltipTrigger>
+                  <Button className="cursor-default text-sm font-normal underline decoration-dotted underline-offset-2 outline-none">
+                    {relativeUpdatedAt}
+                  </Button>
+                  <Tooltip>
+                    {format.dateTime(updatedAt, DATE_TIME_UTC_FORMAT)}
+                  </Tooltip>
+                </TooltipTrigger>
+              ) : (
+                '—'
+              )}
+            </span>
+          </div>
+
+          <div className="flex justify-between">
+            <span className="text-neutral-charcoal">
+              {t('platformAdmin_columnLastSignIn')}:
+            </span>
+            <span className="text-neutral-black">
+              {lastSignInAt ? (
+                <TooltipTrigger>
+                  <Button className="cursor-default text-sm font-normal underline decoration-dotted underline-offset-2 outline-none">
+                    {relativeLastSignIn}
+                  </Button>
+                  <Tooltip>
+                    {format.dateTime(lastSignInAt, DATE_TIME_UTC_FORMAT)}
+                  </Tooltip>
+                </TooltipTrigger>
+              ) : (
+                '—'
+              )}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {user.profile ? (
+        <UpdateProfileModal
+          authUserId={user.authUserId}
+          profile={user.profile}
+          isOpen={isEditModalOpen}
+          onOpenChange={setIsEditModalOpen}
+          onSuccess={() => {
+            utils.platform.admin.listAllUsers.invalidate();
+          }}
+        />
+      ) : null}
+    </>
+  );
+};
+
+const ActionsMenu = ({
+  user,
+  setIsEditModalOpen,
+}: {
+  user: User;
+  setIsEditModalOpen: (open: boolean) => void;
+}) => {
+  const t = useTranslations();
+
+  return (
+    <OptionMenu variant="outline" size="medium">
+      <Menu className="min-w-48 p-2">
+        <MenuItem
+          key="view-analytics"
+          onAction={() => {
+            window.open(getAnalyticsUserUrl(user.authUserId), '_blank');
+          }}
+          className="px-3 py-1"
+        >
+          {t('platformAdmin_actionViewAnalytics')}
+        </MenuItem>
+        <MenuItem
+          key="edit-profile"
+          onAction={() => {
+            if (user.profile) {
+              setIsEditModalOpen(true);
+            }
+          }}
+          className="px-3 py-1"
+          isDisabled={!user.profile}
+        >
+          {t('platformAdmin_actionEditProfile')}
+        </MenuItem>
+        <MenuSeparator />
+        <MenuItem
+          key="remove-user"
+          onAction={() => {
+            alert('coming soon');
+          }}
+          className="px-3 py-1"
+        >
+          <span className="text-red-500">
+            {t('platformAdmin_actionRemoveUser')}
+          </span>
+        </MenuItem>
+      </Menu>
+    </OptionMenu>
   );
 };
 
@@ -200,6 +333,94 @@ const UserRolesAndOrganizations = ({
             </SelectItem>
           ))}
         </Select>
+      </div>
+    </>
+  );
+};
+
+const UserRolesAndOrganizationsMobile = ({
+  organizationUsers,
+}: {
+  organizationUsers: OrganizationUsers;
+}) => {
+  const t = useTranslations();
+  const [selectedOrgUserId, setSelectedOrgUserId] = useState<
+    string | undefined
+  >(organizationUsers?.[0]?.id);
+
+  if (!organizationUsers || organizationUsers.length === 0) {
+    return (
+      <>
+        <div className="flex justify-between">
+          <span className="text-neutral-charcoal">
+            {t('platformAdmin_columnRole')}:
+          </span>
+          <span className="text-neutral-black">-</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-neutral-charcoal">
+            {t('platformAdmin_columnOrganization')}:
+          </span>
+          <span className="text-neutral-black">-</span>
+        </div>
+      </>
+    );
+  }
+
+  const selectedOrgUser = organizationUsers.find(
+    ({ id: orgUserId }) => orgUserId === selectedOrgUserId,
+  );
+
+  if (!selectedOrgUser) {
+    return (
+      <>
+        <div className="flex justify-between">
+          <span className="text-neutral-charcoal">
+            {t('platformAdmin_columnRole')}:
+          </span>
+          <span className="text-neutral-black">Something went wrong</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-neutral-charcoal">
+            {t('platformAdmin_columnOrganization')}:
+          </span>
+          <span className="text-neutral-black">Something went wrong</span>
+        </div>
+      </>
+    );
+  }
+
+  const roles = selectedOrgUser.roles;
+  const roleNames =
+    roles && roles.length > 0
+      ? roles.map((roleJunction) => roleJunction.accessRole.name).join(', ')
+      : 'No roles';
+
+  return (
+    <>
+      <div className="flex justify-between">
+        <span className="text-neutral-charcoal">
+          {t('platformAdmin_columnRole')}:
+        </span>
+        <span className="text-neutral-black">{roleNames}</span>
+      </div>
+      <div className="flex justify-between">
+        <span className="text-neutral-charcoal">
+          {t('platformAdmin_columnOrganization')}:
+        </span>
+        <div className="max-w-[60%] text-neutral-black">
+          <Select
+            className="w-full"
+            defaultSelectedKey={selectedOrgUserId}
+            onSelectionChange={(key) => setSelectedOrgUserId(String(key))}
+          >
+            {organizationUsers.map(({ id: orgUserId, organization }) => (
+              <SelectItem key={orgUserId} id={orgUserId}>
+                {organization?.profile?.name ?? 'Unknown Organization'}
+              </SelectItem>
+            ))}
+          </Select>
+        </div>
       </div>
     </>
   );
