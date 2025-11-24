@@ -20,26 +20,25 @@ import {
 export const listDecisionProfiles = async ({
   cursor,
   user,
+  search,
+  status,
   limit = 10,
   orderBy = 'updatedAt',
   dir = 'desc',
-  search,
-  status,
 }: {
   user: User;
   cursor?: string | null;
   search?: string;
+  status?: ProcessStatus;
   limit?: number;
   orderBy?: 'createdAt' | 'updatedAt' | 'name';
   dir?: 'asc' | 'desc';
-  status?: ProcessStatus;
 }) => {
   if (!user) {
     throw new UnauthorizedError();
   }
 
   try {
-    // Build cursor condition for pagination
     const cursorCondition = cursor
       ? getGenericCursorCondition({
           columns: {
@@ -50,7 +49,6 @@ export const listDecisionProfiles = async ({
         })
       : undefined;
 
-    // Filter by DECISION type
     const typeCondition = eq(profiles.type, EntityType.DECISION);
 
     // Build search condition if provided (search on profile name/bio)
@@ -109,7 +107,7 @@ export const listDecisionProfiles = async ({
         };
         const proposalCount = instance.proposals?.length || 0;
         const uniqueParticipants = new Set(
-          instance.proposals?.map((p: any) => p.submittedByProfileId),
+          instance.proposals?.map((proposal) => proposal.submittedByProfileId),
         );
         const participantCount = uniqueParticipants.size;
 
