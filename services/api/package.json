@@ -37,6 +37,7 @@
     "@op/db": "workspace:*",
     "@op/events": "workspace:*",
     "@op/logging": "workspace:*",
+    "@op/realtime": "workspace:*",
     "@op/supabase": "workspace:*",
     "@op/types": "workspace:*",
     "@supabase/supabase-js": "^2.49.3",

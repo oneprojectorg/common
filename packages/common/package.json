@@ -5,13 +5,14 @@
   "keywords": [],
   "license": "SEE LICENSE in /LICENSE",
   "author": "",
-  "main": "src/index.ts",
   "exports": {
     ".": "./src/index.ts",
     "./validation": "./src/utils/validation.ts",
     "./src/services/access": "./src/services/access/index.ts",
+    "./types/invalidations": "./src/types/invalidations.ts",
     "./src/*": "./src/*"
   },
+  "main": "src/index.ts",
   "scripts": {
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",

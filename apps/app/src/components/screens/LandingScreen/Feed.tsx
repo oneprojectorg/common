@@ -2,6 +2,8 @@
 
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
+import { useRealtimeInvalidations } from '@op/hooks';
+import { Channels } from '@op/realtime';
 import { Fragment } from 'react';
 
 import {
@@ -16,6 +18,9 @@ import {
 export const Feed = () => {
   const { user } = useUser() ?? {};
   const [postsData] = trpc.organization.listAllPosts.useSuspenseQuery({});
+
+  // Subscribe to global feed updates
+  useRealtimeInvalidations([Channels.global()]);
 
   const {
     discussionModal,

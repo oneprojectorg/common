@@ -5,10 +5,13 @@ import {
 } from '@op/common';
 import { db, eq } from '@op/db/client';
 import { organizations } from '@op/db/schema';
+import { Channels, publishMessage } from '@op/realtime';
 import { TRPCError } from '@trpc/server';
+import { waitUntil } from '@vercel/functions';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
+import { getTRPCQueryKey } from '../../lib/getTRPCQueryKey';
 import withAnalytics from '../../middlewares/withAnalytics';
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
@@ -70,7 +73,22 @@ export const deletePost = router({
       }
 
       try {
-        return await deletePostById({ postId: id, organizationId });
+        const postRes = await deletePostById({ postId: id, organizationId });
+
+        // Publish invalidation to both global and org-specific channels
+        // Use type-safe query keys from the router structure
+        const listAllPostsKey = getTRPCQueryKey('organization', 'listAllPosts');
+
+        // Publish to multiple channels
+        waitUntil(
+          publishMessage(Channels.global(), {
+            type: 'cache-invalidation',
+            queryKey: [listAllPostsKey],
+            timestamp: Date.now(),
+          }),
+        );
+
+        return postRes;
       } catch (error) {
         if (
           error instanceof Error &&

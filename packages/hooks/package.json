@@ -15,8 +15,10 @@
   "dependencies": {
     "@op/api": "workspace:*",
     "@op/core": "workspace:*",
+    "@op/realtime": "workspace:*",
     "@op/supabase": "workspace:*",
     "@tanstack/react-query": "5.66.11",
+    "centrifuge": "^5.5.2",
     "js-cookie": "^3.0.5",
     "next-intl": "^4.1.0",
     "react": "^19.0.0",
