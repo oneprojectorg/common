@@ -5,7 +5,7 @@ import { CommonError } from './error';
 
 // Cursor utilities
 type GenericCursor = {
-  date: string;
+  date: Date;
   id: string;
 };
 
@@ -17,7 +17,7 @@ export const decodeCursor = <T = GenericCursor>(cursor: string): T => {
   }
 };
 
-export const encodeCursor = <T = GenericCursor>(cursor: T): string => {
+export const encodeCursor = <T = GenericCursor>(cursor: NoInfer<T>): string => {
   return Buffer.from(JSON.stringify(cursor)).toString('base64');
 };
 
