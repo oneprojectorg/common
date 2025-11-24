@@ -1,8 +1,11 @@
 import { and, asc, db, desc, eq } from '@op/db/client';
 import {
+  DecisionProcess,
   EntityType,
+  ObjectsInStorage,
   ProcessInstance,
   ProcessStatus,
+  Profile,
   Proposal,
   profiles,
 } from '@op/db/schema';
@@ -72,7 +75,7 @@ export const listDecisionProfiles = async ({
         : undefined;
 
     // Get profiles with their process instances
-    const profileList = await db.query.profiles.findMany({
+    const profileList = (await db.query.profiles.findMany({
       where: whereClause,
       with: {
         headerImage: true,
@@ -97,14 +100,22 @@ export const listDecisionProfiles = async ({
       },
       orderBy: orderFn(profiles[orderBy]),
       limit: limit + 1, // Fetch one extra to check hasMore
-    });
+    })) as Array<
+      Profile & {
+        headerImage: ObjectsInStorage;
+        avatarImage: ObjectsInStorage;
+        processInstance: ProcessInstance & {
+          process: DecisionProcess;
+          owner: Profile;
+          proposals: Proposal[];
+        };
+      }
+    >; // TODO: Typing due to drizzle type issues
 
     // Transform profiles to include proposal and participant counts in processInstance
     const profilesWithCounts = profileList.map((profile) => {
       if (profile.processInstance) {
-        const instance = profile.processInstance as ProcessInstance & {
-          proposals: Proposal[];
-        };
+        const instance = profile.processInstance;
         const proposalCount = instance.proposals?.length || 0;
         const uniqueParticipants = new Set(
           instance.proposals?.map((proposal) => proposal.submittedByProfileId),
