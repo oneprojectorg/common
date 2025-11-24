@@ -45,6 +45,7 @@ const TypeMap = {
   linkPreview: 'linkPreview',
   user: 'user',
   orgUser: 'orgUser',
+  profileUser: 'profileUser',
   profile: 'profile',
   decision: 'decision',
 };

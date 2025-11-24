@@ -1,12 +1,13 @@
 import { cache } from '@op/cache';
 import { and, db, eq } from '@op/db/client';
+import type { ProfileUser } from '@op/db/schema';
 import { organizations, users } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import type { NormalizedRole } from 'access-zones';
 import { z } from 'zod';
 
 import { UnauthorizedError } from '../../utils/error';
-import { getNormalizedRoles } from './utils';
+import { getNormalizedRoles, type RoleJunction } from './utils';
 
 type OrgUserWithNormalizedRoles = {
   id: string;
@@ -18,6 +19,10 @@ type OrgUserWithNormalizedRoles = {
   createdAt: string | Date | null;
   updatedAt: string | Date | null;
   deletedAt?: string | Date | null;
+  roles: NormalizedRole[];
+};
+
+type ProfileUserWithNormalizedRoles = ProfileUser & {
   roles: NormalizedRole[];
 };
 
@@ -53,27 +58,85 @@ export const getOrgAccessUser = async ({
       },
     });
 
-    if (orgUser) {
-      // Transform the relational data into normalized format for access-zones library
-      // Type assertion needed because Drizzle query result type is complex but we know it has the right structure
-      const normalizedRoles = getNormalizedRoles(
-        orgUser.roles as Array<{ accessRole: any }>,
-      );
-
-      // Replace roles with normalized format
-      return {
-        ...orgUser,
-        roles: normalizedRoles,
-      } as OrgUserWithNormalizedRoles;
+    if (!orgUser) {
+      return;
     }
 
-    return orgUser as OrgUserWithNormalizedRoles | undefined;
+    // Transform the relational data into normalized format for access-zones library
+    // Type assertion needed because Drizzle query result type is complex but we know it has the right structure
+    const normalizedRoles = getNormalizedRoles(
+      orgUser.roles as Array<Pick<RoleJunction, 'accessRole'>>,
+    );
+
+    const { roles: _, ...orgUserWithoutRoles } = orgUser;
+
+    // Replace roles with normalized format
+    return {
+      ...orgUserWithoutRoles,
+      roles: normalizedRoles,
+    };
   };
 
   return cache({
     type: 'orgUser',
     params: [organizationId, user.id],
     fetch: getOrgUser,
+    options: {
+      skipMemCache: true,
+    },
+  });
+};
+
+// gets a user's access for a specific profile
+export const getProfileAccessUser = async ({
+  user,
+  profileId,
+}: {
+  user: { id: string };
+  profileId: string;
+}): Promise<ProfileUserWithNormalizedRoles | undefined> => {
+  const getProfileUser = async () => {
+    const profileUser = await db.query.profileUsers.findFirst({
+      where: (table, { eq }) =>
+        and(eq(table.profileId, profileId), eq(table.authUserId, user.id)),
+      with: {
+        roles: {
+          with: {
+            accessRole: {
+              with: {
+                zonePermissions: {
+                  with: {
+                    accessZone: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!profileUser) {
+      return undefined;
+    }
+
+    // Transform the relational data into normalized format for access-zones library
+    // Type assertion needed because Drizzle query result type is complex but we know it has the right structure
+    const normalizedRoles = getNormalizedRoles(
+      profileUser.roles as Array<Pick<RoleJunction, 'accessRole'>>,
+    );
+
+    const { roles: _, ...profileUserWithoutRoles } = profileUser;
+    return {
+      ...profileUserWithoutRoles,
+      roles: normalizedRoles,
+    };
+  };
+
+  return cache({
+    type: 'profileUser',
+    params: [profileId, user.id],
+    fetch: getProfileUser,
     options: {
       skipMemCache: true,
     },

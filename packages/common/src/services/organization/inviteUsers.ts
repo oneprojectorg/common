@@ -13,17 +13,7 @@ import { assertAccess, permission } from 'access-zones';
 
 import { getOrgAccessUser } from '../access';
 import { sendBatchInvitationEmails } from '../email';
-
-// Type definitions for invite metadata
-export interface InviteMetadata {
-  invitedBy: string;
-  invitedAt: string;
-  inviteType: 'existing_organization' | 'new_organization';
-  personalMessage?: string;
-  roleId?: string;
-  organizationId?: string;
-  inviterOrganizationName?: string;
-}
+import { AllowListMetadata } from '../user/validators';
 
 // Type for user queries in this file
 type CommonUserWithProfile = CommonUser & {
@@ -60,21 +50,12 @@ export interface InviteNewUsersInput {
   user: User;
 }
 
-export interface InviteResult {
-  success: boolean;
-  message: string;
-  details: {
-    successful: string[];
-    failed: { email: string; reason: string }[];
-  };
-}
-
 /**
  * Invite users to an existing organization with a specific role
  */
 export const inviteUsersToOrganization = async (
   input: InviteUsersToOrganizationInput,
-): Promise<InviteResult> => {
+) => {
   const { emails, roleId, organizationId, personalMessage, user } = input;
 
   const orgUser = await getOrgAccessUser({ user, organizationId });
@@ -188,7 +169,7 @@ export const inviteUsersToOrganization = async (
       });
 
       if (!existingEntry) {
-        const metadata: InviteMetadata = {
+        const metadata: AllowListMetadata = {
           invitedBy: user.id,
           invitedAt: new Date().toISOString(),
           inviteType: 'existing_organization',
@@ -273,9 +254,7 @@ export const inviteUsersToOrganization = async (
 /**
  * Invite new users to create their own organizations
  */
-export const inviteNewUsers = async (
-  input: InviteNewUsersInput,
-): Promise<InviteResult> => {
+export const inviteNewUsers = async (input: InviteNewUsersInput) => {
   const { emails, personalMessage, user } = input;
 
   // Get the current user's database record with profile details
@@ -326,7 +305,7 @@ export const inviteNewUsers = async (
       });
 
       if (!existingEntry) {
-        const metadata: InviteMetadata = {
+        const metadata: AllowListMetadata = {
           invitedBy: user.id,
           invitedAt: new Date().toISOString(),
           inviteType: 'new_organization',

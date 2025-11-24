@@ -10,12 +10,14 @@ export const allowListMetadataSchema = z
     invitedBy: z.string().optional(),
     invitedAt: z.string().optional(),
     inviteType: z
-      .enum(['existing_organization', 'new_organization'])
+      .enum(['existing_organization', 'new_organization', 'profile'])
       .optional(),
     personalMessage: z.string().optional(),
     roleId: z.string().optional(),
+    profileId: z.string().optional(),
     organizationId: z.string().optional(),
     inviterOrganizationName: z.string().optional(),
+    inviterProfileName: z.string().optional(),
   })
   .nullable();
 

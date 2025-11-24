@@ -15,6 +15,7 @@ export {
   getProfile,
   searchProfiles,
   listProfiles,
+  inviteUsersToProfile,
 } from './profile';
 export {
   addRelationship as addProfileRelationship,
