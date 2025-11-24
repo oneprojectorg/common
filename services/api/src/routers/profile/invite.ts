@@ -10,15 +10,12 @@ import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
-const uuidPattern =
-  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
-
 const inputSchema = z.object({
   emails: z
     .array(z.email('Must be a valid email address'))
     .min(1, 'At least one email address is required'),
-  roleId: z.string().regex(uuidPattern, 'Role ID must be a valid UUID'),
-  profileId: z.string().regex(uuidPattern, 'Profile ID must be a valid UUID'),
+  roleId: z.string().uuid(),
+  profileId: z.string().uuid(),
   personalMessage: z.string().optional(),
 });
 
