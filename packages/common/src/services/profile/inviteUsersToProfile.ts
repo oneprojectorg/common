@@ -43,10 +43,41 @@ export const inviteUsersToProfile = async (input: {
 }): Promise<InviteResult> => {
   const { emails, roleId, requesterProfileId, personalMessage, user } = input;
 
-  const profileUser = await getProfileAccessUser({
-    user,
-    profileId: requesterProfileId,
-  });
+  const normalizedEmails = emails.map((e) => e.toLowerCase());
+
+  const [
+    profile,
+    targetRole,
+    existingUsers,
+    existingAllowListEntries,
+    profileUser,
+  ] = await Promise.all([
+    // Get the profile details for the invite
+    db.query.profiles.findFirst({
+      where: (table, { eq }) => eq(table.id, requesterProfileId),
+    }),
+    // Get the target role
+    db.query.accessRoles.findFirst({
+      where: (table, { eq }) => eq(table.id, roleId),
+    }),
+    // Get all users with their profile memberships for this profile
+    db.query.users.findMany({
+      where: (table, { inArray }) => inArray(table.email, normalizedEmails),
+      with: {
+        profileUsers: {
+          where: (table, { eq }) => eq(table.profileId, requesterProfileId),
+        },
+      },
+    }),
+    // Get all existing allowList entries for these emails
+    db.query.allowList.findMany({
+      where: (table, { inArray }) => inArray(table.email, normalizedEmails),
+    }),
+    getProfileAccessUser({
+      user,
+      profileId: requesterProfileId,
+    }),
+  ]);
 
   if (!profileUser) {
     throw new UnauthorizedError(
@@ -58,33 +89,6 @@ export const inviteUsersToProfile = async (input: {
   if (profileUser.profileId !== requesterProfileId) {
     assertAccess({ profile: permission.ADMIN }, profileUser.roles || []);
   }
-
-  const normalizedEmails = emails.map((e) => e.toLowerCase());
-
-  const [profile, targetRole, existingUsers, existingAllowListEntries] =
-    await Promise.all([
-      // Get the profile details for the invite
-      db.query.profiles.findFirst({
-        where: (table, { eq }) => eq(table.id, requesterProfileId),
-      }),
-      // Get the target role
-      db.query.accessRoles.findFirst({
-        where: (table, { eq }) => eq(table.id, roleId),
-      }),
-      // Get all users with their profile memberships for this profile
-      db.query.users.findMany({
-        where: (table, { inArray }) => inArray(table.email, normalizedEmails),
-        with: {
-          profileUsers: {
-            where: (table, { eq }) => eq(table.profileId, requesterProfileId),
-          },
-        },
-      }),
-      // Get all existing allowList entries for these emails
-      db.query.allowList.findMany({
-        where: (table, { inArray }) => inArray(table.email, normalizedEmails),
-      }),
-    ]);
 
   if (!profile) {
     throw new NotFoundError('Profile not found');
