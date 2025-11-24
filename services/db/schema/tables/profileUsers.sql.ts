@@ -1,4 +1,4 @@
-import { type InferModel, relations, sql } from 'drizzle-orm';
+import { relations, sql } from 'drizzle-orm';
 import {
   index,
   pgTable,

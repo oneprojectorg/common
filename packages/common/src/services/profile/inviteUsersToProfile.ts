@@ -37,13 +37,16 @@ const generateInviteResultMessage = (
 export const inviteUsersToProfile = async (input: {
   emails: string[];
   roleId: string;
-  profileId: string;
+  requesterProfileId: string;
   personalMessage?: string;
   user: User;
 }): Promise<InviteResult> => {
-  const { emails, roleId, profileId, personalMessage, user } = input;
+  const { emails, roleId, requesterProfileId, personalMessage, user } = input;
 
-  const profileUser = await getProfileAccessUser({ user, profileId });
+  const profileUser = await getProfileAccessUser({
+    user,
+    profileId: requesterProfileId,
+  });
 
   if (!profileUser) {
     throw new UnauthorizedError(
@@ -52,7 +55,7 @@ export const inviteUsersToProfile = async (input: {
   }
 
   // If this is the inviter's profile, we let them through. Otherwise assert admin access
-  if (profileUser.profileId !== profileId) {
+  if (profileUser.profileId !== requesterProfileId) {
     assertAccess({ profile: permission.ADMIN }, profileUser.roles || []);
   }
 
@@ -62,7 +65,7 @@ export const inviteUsersToProfile = async (input: {
     await Promise.all([
       // Get the profile details for the invite
       db.query.profiles.findFirst({
-        where: (table, { eq }) => eq(table.id, profileId),
+        where: (table, { eq }) => eq(table.id, requesterProfileId),
       }),
       // Get the target role
       db.query.accessRoles.findFirst({
@@ -73,7 +76,7 @@ export const inviteUsersToProfile = async (input: {
         where: (table, { inArray }) => inArray(table.email, normalizedEmails),
         with: {
           profileUsers: {
-            where: (table, { eq }) => eq(table.profileId, profileId),
+            where: (table, { eq }) => eq(table.profileId, requesterProfileId),
           },
         },
       }),
@@ -146,7 +149,7 @@ export const inviteUsersToProfile = async (input: {
             .insert(profileUsers)
             .values({
               authUserId: existingUser.authUserId,
-              profileId,
+              profileId: requesterProfileId,
               email: existingUser.email,
               name: existingUser.name || existingUser.email.split('@')[0],
             })
@@ -172,7 +175,7 @@ export const inviteUsersToProfile = async (input: {
           inviteType: 'profile',
           personalMessage: personalMessage,
           roleId,
-          profileId,
+          profileId: requesterProfileId,
           inviterProfileName: profile.name,
         };
 

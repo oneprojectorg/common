@@ -47,7 +47,7 @@ export const inviteProfileUserRouter = router({
         const result = await inviteUsersToProfile({
           emails: input.emails,
           roleId: input.roleId,
-          profileId: input.profileId,
+          requesterProfileId: input.profileId,
           personalMessage: input.personalMessage,
           user,
         });
