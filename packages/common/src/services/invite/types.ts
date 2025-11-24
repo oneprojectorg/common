@@ -1,12 +1,3 @@
-export interface InviteResult {
-  success: boolean;
-  message: string;
-  details: {
-    successful: string[];
-    failed: { email: string; reason: string }[];
-  };
-}
-
 export interface InviteMetadata {
   invitedBy: string;
   invitedAt: string;

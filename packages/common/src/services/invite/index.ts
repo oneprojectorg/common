@@ -1,1 +1,1 @@
-export type { InviteResult, InviteMetadata } from './types';
+export type { InviteMetadata } from './types';

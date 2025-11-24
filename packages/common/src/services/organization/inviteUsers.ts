@@ -13,7 +13,7 @@ import { assertAccess, permission } from 'access-zones';
 
 import { getOrgAccessUser } from '../access';
 import { sendBatchInvitationEmails } from '../email';
-import type { InviteMetadata, InviteResult } from '../invite';
+import type { InviteMetadata } from '../invite';
 
 // Type for user queries in this file
 type CommonUserWithProfile = CommonUser & {
@@ -55,7 +55,7 @@ export interface InviteNewUsersInput {
  */
 export const inviteUsersToOrganization = async (
   input: InviteUsersToOrganizationInput,
-): Promise<InviteResult> => {
+) => {
   const { emails, roleId, organizationId, personalMessage, user } = input;
 
   const orgUser = await getOrgAccessUser({ user, organizationId });
@@ -254,9 +254,7 @@ export const inviteUsersToOrganization = async (
 /**
  * Invite new users to create their own organizations
  */
-export const inviteNewUsers = async (
-  input: InviteNewUsersInput,
-): Promise<InviteResult> => {
+export const inviteNewUsers = async (input: InviteNewUsersInput) => {
   const { emails, personalMessage, user } = input;
 
   // Get the current user's database record with profile details

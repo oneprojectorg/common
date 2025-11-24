@@ -15,7 +15,7 @@ import {
   UnauthorizedError,
 } from '../../utils/error';
 import { getProfileAccessUser } from '../access';
-import type { InviteMetadata, InviteResult } from '../invite';
+import type { InviteMetadata } from '../invite';
 
 // Utility function to generate consistent result messages
 const generateInviteResultMessage = (
@@ -40,7 +40,7 @@ export const inviteUsersToProfile = async (input: {
   requesterProfileId: string;
   personalMessage?: string;
   user: User;
-}): Promise<InviteResult> => {
+}) => {
   const { emails, roleId, requesterProfileId, personalMessage, user } = input;
 
   const normalizedEmails = emails.map((e) => e.toLowerCase());
