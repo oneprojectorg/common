@@ -1,4 +1,10 @@
-import { authUsers, organizations, profiles, users } from '@op/db/schema';
+import {
+  authUsers,
+  organizations,
+  profileUsers,
+  profiles,
+  users,
+} from '@op/db/schema';
 import { count } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
@@ -71,11 +77,15 @@ export async function teardown() {
   const [authUserCountResult] = await db
     .select({ count: count() })
     .from(authUsers);
+  const [profileUsersCountResult] = await db
+    .select({ count: count() })
+    .from(profileUsers);
 
   const profileCount = profileCountResult?.count ?? 0;
   const userCount = userCountResult?.count ?? 0;
   const orgCount = orgCountResult?.count ?? 0;
   const authUserCount = authUserCountResult?.count ?? 0;
+  const profileUsersCount = profileUsersCountResult?.count ?? 0;
 
   if (profileCount !== 0) {
     throw new Error(
@@ -98,6 +108,12 @@ export async function teardown() {
   if (authUserCount !== 0) {
     throw new Error(
       `Expected 0 auth.users but found ${authUserCount}. This indicates that some test cleanup failed.`,
+    );
+  }
+
+  if (profileUsersCount !== 0) {
+    throw new Error(
+      `Expected 0 profileUsers but found ${profileUsersCount}. This indicates that some test cleanup failed.`,
     );
   }
 
