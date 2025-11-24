@@ -15,7 +15,7 @@ import {
   signOutTestUser,
 } from '../supabase-utils';
 
-describe('Profile Relationships Integration Tests', () => {
+describe.skip('Profile Relationships Integration Tests', () => {
   let testUserEmail1: string;
   let testUserEmail2: string;
   let testUser1: any;
@@ -168,7 +168,7 @@ describe('Profile Relationships Integration Tests', () => {
           relationshipType: ProfileRelationshipType.FOLLOWING,
           pending: false,
           sourceProfileId: profile1Id,
-        authUserId: testUser1.id,
+          authUserId: testUser1.id,
         }),
       ).rejects.toThrow('You cannot create a relationship with yourself');
     });

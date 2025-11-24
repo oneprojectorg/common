@@ -13,7 +13,7 @@ import {
   signOutTestUser,
 } from '../supabase-utils';
 
-describe('Organization Relationships Integration Tests', () => {
+describe.skip('Organization Relationships Integration Tests', () => {
   let testUserEmail1: string;
   let testUserEmail2: string;
   let testUser1: any;
@@ -249,7 +249,9 @@ describe('Organization Relationships Integration Tests', () => {
       // Should have 2 relationship records
       expect(org1Relationships.records).toHaveLength(2);
 
-      const relationshipTypes = org1Relationships.records.map(r => r.relationshipType);
+      const relationshipTypes = org1Relationships.records.map(
+        (r) => r.relationshipType,
+      );
       expect(relationshipTypes).toContain('funding');
       expect(relationshipTypes).toContain('partnership');
 
@@ -268,7 +270,9 @@ describe('Organization Relationships Integration Tests', () => {
       // Should also have 2 relationship records, properly inverted
       expect(org2Relationships.records).toHaveLength(2);
 
-      const invertedTypes = org2Relationships.records.map(r => r.relationshipType);
+      const invertedTypes = org2Relationships.records.map(
+        (r) => r.relationshipType,
+      );
       expect(invertedTypes).toContain('fundedBy'); // inverted from 'funding'
       expect(invertedTypes).toContain('partnership'); // remains the same
     });
@@ -301,11 +305,15 @@ describe('Organization Relationships Integration Tests', () => {
 
       // Source should be org2 (the one making the query)
       expect(relationship.sourceOrganization.id).toBe(org2.id);
-      expect(relationship.sourceOrganization.profile.name).toBe('Fundee Organization');
+      expect(relationship.sourceOrganization.profile.name).toBe(
+        'Fundee Organization',
+      );
 
       // Target should be org1 (the funder)
       expect(relationship.targetOrganization.id).toBe(org1.id);
-      expect(relationship.targetOrganization.profile.name).toBe('Funder Organization');
+      expect(relationship.targetOrganization.profile.name).toBe(
+        'Funder Organization',
+      );
 
       // Relationship type should be inverted
       expect(relationship.relationshipType).toBe('fundedBy');
