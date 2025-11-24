@@ -1,5 +1,11 @@
 import { and, asc, db, desc, eq } from '@op/db/client';
-import { EntityType, profiles } from '@op/db/schema';
+import {
+  EntityType,
+  ProcessInstance,
+  ProcessStatus,
+  Proposal,
+  profiles,
+} from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
 import {
@@ -26,7 +32,7 @@ export const listDecisionProfiles = async ({
   limit?: number;
   orderBy?: 'createdAt' | 'updatedAt' | 'name';
   dir?: 'asc' | 'desc';
-  status?: 'draft' | 'published' | 'completed' | 'cancelled';
+  status?: ProcessStatus;
 }) => {
   if (!user) {
     throw new UnauthorizedError();
@@ -98,7 +104,9 @@ export const listDecisionProfiles = async ({
     // Transform profiles to include proposal and participant counts in processInstance
     const profilesWithCounts = profileList.map((profile) => {
       if (profile.processInstance) {
-        const instance = profile.processInstance as any;
+        const instance = profile.processInstance as ProcessInstance & {
+          proposals: Proposal[];
+        };
         const proposalCount = instance.proposals?.length || 0;
         const uniqueParticipants = new Set(
           instance.proposals?.map((p: any) => p.submittedByProfileId),
@@ -122,7 +130,7 @@ export const listDecisionProfiles = async ({
       if (!profile.processInstance) {
         return false;
       }
-      const instance = profile.processInstance as any;
+      const instance = profile.processInstance as ProcessInstance;
       if (status && instance.status !== status) {
         return false;
       }

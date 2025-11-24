@@ -1,5 +1,5 @@
 import { relations, sql } from 'drizzle-orm';
-import type { InferModel, SQL } from 'drizzle-orm';
+import type { SQL } from 'drizzle-orm';
 import { index, pgTable, text, uuid, varchar } from 'drizzle-orm/pg-core';
 
 import {
@@ -91,4 +91,4 @@ export const profilesRelations = relations(profiles, ({ many, one }) => ({
   profileUsers: many(profileUsers),
 }));
 
-export type Profile = InferModel<typeof profiles>;
+export type Profile = typeof profiles.$inferSelect;

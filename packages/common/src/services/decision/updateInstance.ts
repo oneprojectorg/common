@@ -1,5 +1,6 @@
 import { db, eq } from '@op/db/client';
 import {
+  ProcessStatus,
   decisionProcesses,
   processInstances,
   taxonomies,
@@ -93,7 +94,7 @@ export interface UpdateInstanceInput {
   name?: string;
   description?: string;
   instanceData?: InstanceData;
-  status?: 'draft' | 'active' | 'paused' | 'completed' | 'cancelled';
+  status?: ProcessStatus;
 }
 
 // Zod schema for the update data (excluding instanceId)
@@ -102,9 +103,7 @@ const updateDataSchema = z
     name: z.string().min(3).max(256).optional(),
     description: z.string().optional(),
     instanceData: z.any().optional(), // Using any for now since InstanceData is a complex type
-    status: z
-      .enum(['draft', 'active', 'paused', 'completed', 'cancelled'])
-      .optional(),
+    status: z.enum(ProcessStatus).optional(),
   }) // Remove any extra fields
   .transform((data) => {
     // Remove undefined fields for cleaner database updates
@@ -239,7 +238,10 @@ export const updateInstance = async ({
       try {
         await updateTransitionsForProcess({ processInstance: updatedInstance });
       } catch (error) {
-        console.error('Error updating transitions for process instance:', error);
+        console.error(
+          'Error updating transitions for process instance:',
+          error,
+        );
         // Log the error but don't fail the entire update
         // The instance was updated successfully, just the transitions sync failed
       }

@@ -1,6 +1,7 @@
 import { and, asc, db, desc, eq, ilike, inArray, sql } from '@op/db/client';
 import {
   ProfileRelationshipType,
+  ProposalStatus,
   organizations,
   posts,
   postsToProfiles,
@@ -19,7 +20,7 @@ import { getCurrentProfileId, getOrgAccessUser } from '../access';
 export interface ListProposalsInput {
   processInstanceId: string;
   submittedByProfileId?: string;
-  status?: 'draft' | 'submitted' | 'under_review' | 'approved' | 'rejected';
+  status?: ProposalStatus;
   search?: string;
   categoryId?: string;
   proposalIds?: string[];
@@ -33,8 +34,13 @@ export interface ListProposalsInput {
 
 // Shared function to build WHERE conditions for both count and data queries
 const buildWhereConditions = (input: ListProposalsInput) => {
-  const { processInstanceId, submittedByProfileId, status, search, proposalIds } =
-    input;
+  const {
+    processInstanceId,
+    submittedByProfileId,
+    status,
+    search,
+    proposalIds,
+  } = input;
 
   const conditions = [];
 
@@ -206,48 +212,48 @@ export const listProposals = async ({
     const currentProfileId = await getCurrentProfileId(input.authUserId);
 
     if (proposalIds.length > 0) {
-
       // Optimized: Get relationship counts, user relationships, and comment counts in parallel
-      const [relationshipCounts, userRelationships, commentCounts] = await Promise.all([
-        // Get relationship counts for all profile IDs (likes and follows)
-        db
-          .select({
-            targetProfileId: profileRelationships.targetProfileId,
-            relationshipType: profileRelationships.relationshipType,
-            count: countFn(),
-          })
-          .from(profileRelationships)
-          .where(inArray(profileRelationships.targetProfileId, proposalIds))
-          .groupBy(
-            profileRelationships.targetProfileId,
-            profileRelationships.relationshipType,
-          ),
-
-        // Get user's relationships to these profiles
-        db
-          .select({
-            targetProfileId: profileRelationships.targetProfileId,
-            relationshipType: profileRelationships.relationshipType,
-          })
-          .from(profileRelationships)
-          .where(
-            and(
-              eq(profileRelationships.sourceProfileId, currentProfileId),
-              inArray(profileRelationships.targetProfileId, proposalIds),
+      const [relationshipCounts, userRelationships, commentCounts] =
+        await Promise.all([
+          // Get relationship counts for all profile IDs (likes and follows)
+          db
+            .select({
+              targetProfileId: profileRelationships.targetProfileId,
+              relationshipType: profileRelationships.relationshipType,
+              count: countFn(),
+            })
+            .from(profileRelationships)
+            .where(inArray(profileRelationships.targetProfileId, proposalIds))
+            .groupBy(
+              profileRelationships.targetProfileId,
+              profileRelationships.relationshipType,
             ),
-          ),
 
-        // Get comment counts for all profile IDs
-        db
-          .select({
-            profileId: postsToProfiles.profileId,
-            count: countFn(),
-          })
-          .from(posts)
-          .innerJoin(postsToProfiles, eq(posts.id, postsToProfiles.postId))
-          .where(inArray(postsToProfiles.profileId, proposalIds))
-          .groupBy(postsToProfiles.profileId),
-      ]);
+          // Get user's relationships to these profiles
+          db
+            .select({
+              targetProfileId: profileRelationships.targetProfileId,
+              relationshipType: profileRelationships.relationshipType,
+            })
+            .from(profileRelationships)
+            .where(
+              and(
+                eq(profileRelationships.sourceProfileId, currentProfileId),
+                inArray(profileRelationships.targetProfileId, proposalIds),
+              ),
+            ),
+
+          // Get comment counts for all profile IDs
+          db
+            .select({
+              profileId: postsToProfiles.profileId,
+              count: countFn(),
+            })
+            .from(posts)
+            .innerJoin(postsToProfiles, eq(posts.id, postsToProfiles.postId))
+            .where(inArray(postsToProfiles.profileId, proposalIds))
+            .groupBy(postsToProfiles.profileId),
+        ]);
 
       // Build the relationship data map efficiently
       proposalIds.forEach((profileId: string) => {
@@ -314,7 +320,7 @@ export const listProposals = async ({
       const isOwner = proposal.submittedByProfileId === currentProfileId;
       const hasAdminPermission = checkPermission(
         { decisions: permission.ADMIN },
-        orgUser?.roles ?? []
+        orgUser?.roles ?? [],
       );
       const isEditable = isOwner || hasAdminPermission;
 

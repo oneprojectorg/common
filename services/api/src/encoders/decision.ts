@@ -1,4 +1,6 @@
 import {
+  ProcessStatus,
+  ProposalStatus,
   decisionProcesses,
   decisions,
   processInstances,
@@ -287,9 +289,7 @@ export const updateInstanceInputSchema = createInstanceInputSchema
   .partial()
   .extend({
     instanceId: z.uuid(),
-    status: z
-      .enum(['draft', 'active', 'paused', 'completed', 'cancelled'])
-      .optional(),
+    status: z.enum(ProcessStatus).optional(),
   });
 
 export const getInstanceInputSchema = z.object({
@@ -358,9 +358,7 @@ export const instanceFilterSchema = z
   .object({
     processId: z.uuid().optional(),
     ownerProfileId: z.uuid(),
-    status: z
-      .enum(['draft', 'active', 'paused', 'completed', 'cancelled'])
-      .optional(),
+    status: z.enum(ProcessStatus).optional(),
     search: z.string().optional(),
   })
   .extend(paginationInputSchema.shape);
@@ -369,9 +367,7 @@ export const proposalFilterSchema = z
   .object({
     processInstanceId: z.uuid(),
     submittedByProfileId: z.uuid().optional(),
-    status: z
-      .enum(['draft', 'submitted', 'under_review', 'approved', 'rejected'])
-      .optional(),
+    status: z.enum(ProposalStatus).optional(),
     categoryId: z.string().optional(),
     dir: z.enum(['asc', 'desc']).optional(),
     proposalIds: z.array(z.uuid()).optional(),
@@ -397,7 +393,5 @@ export const decisionProfileFilterSchema = z.object({
   orderBy: z.enum(['createdAt', 'updatedAt', 'name']).prefault('updatedAt'),
   dir: z.enum(['asc', 'desc']).prefault('desc'),
   search: z.string().optional(),
-  status: z
-    .enum(['draft', 'published', 'completed', 'cancelled'])
-    .optional(),
+  status: z.enum(ProcessStatus).optional(),
 });
