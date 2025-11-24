@@ -14,7 +14,6 @@ import {
 import { User } from '@op/supabase/lib';
 
 import {
-  UnauthorizedError,
   constructTextSearch,
   decodeCursor,
   encodeCursor,
@@ -38,10 +37,6 @@ export const listDecisionProfiles = async ({
   orderBy?: 'createdAt' | 'updatedAt' | 'name';
   dir?: 'asc' | 'desc';
 }) => {
-  if (!user) {
-    throw new UnauthorizedError();
-  }
-
   try {
     const cursorCondition = cursor
       ? getGenericCursorCondition({
@@ -63,14 +58,24 @@ export const listDecisionProfiles = async ({
       ? constructTextSearch({ column: profiles.search, query: search })
       : undefined;
 
+    // Filter profiles to only those the user has access to via profileUsers
+    // This uses a subquery which executes as a single query at the database level
+    const authorizationCondition = inArray(
+      profiles.id,
+      db
+        .select({ profileId: profileUsers.profileId })
+        .from(profileUsers)
+        .where(eq(profileUsers.authUserId, user.id)),
+    );
+
     const orderFn = dir === 'asc' ? asc : desc;
 
-    // TODO: assert authorization
     const whereConditions = [
       cursorCondition,
       statusCondition,
       typeCondition,
       searchCondition,
+      authorizationCondition,
     ].filter(Boolean);
 
     const whereClause =
