@@ -377,5 +377,15 @@
   "platformAdmin_actionViewAnalytics": "Ver analíticas",
   "platformAdmin_actionEditProfile": "Editar perfil",
   "platformAdmin_actionRemoveUser": "Eliminar Usuario",
-  "platformAdmin_searchUsersPlaceholder": "Buscar usuarios por correo electrónico"
+  "platformAdmin_searchUsersPlaceholder": "Buscar usuarios por correo electrónico",
+  "platformAdmin_addUserToOrg_modalTitle": "Agregar Usuario a la Organización",
+  "platformAdmin_addUserToOrg_unknownUser": "Usuario Desconocido",
+  "platformAdmin_addUserToOrg_currentOrganizations": "Organizaciones Actuales",
+  "platformAdmin_addUserToOrg_noRoles": "Sin roles",
+  "platformAdmin_addUserToOrg_submitButton": "Agregar a la Organización",
+  "platformAdmin_addUserToOrg_successMessage": "Usuario agregado exitosamente a la organización",
+  "platformAdmin_addUserToOrg_errorMessage": "Error al agregar usuario a la organización",
+  "platformAdmin_addUserToOrg_errorSelectBoth": "Por favor seleccione una organización y un rol",
+  "platformAdmin_addUserToOrg_selectOrganization": "Seleccionar Organización",
+  "platformAdmin_addUserToOrg_selectRole": "Seleccionar Rol"
 }

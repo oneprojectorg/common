@@ -378,5 +378,15 @@
   "platformAdmin_actionViewAnalytics": "View analytics",
   "platformAdmin_actionEditProfile": "Edit profile",
   "platformAdmin_actionRemoveUser": "Remove User",
-  "platformAdmin_searchUsersPlaceholder": "Search users by email"
+  "platformAdmin_searchUsersPlaceholder": "Search users by email",
+  "platformAdmin_addUserToOrg_modalTitle": "Add User to Organization",
+  "platformAdmin_addUserToOrg_unknownUser": "Unknown User",
+  "platformAdmin_addUserToOrg_currentOrganizations": "Current Organizations",
+  "platformAdmin_addUserToOrg_noRoles": "No roles",
+  "platformAdmin_addUserToOrg_submitButton": "Add to Organization",
+  "platformAdmin_addUserToOrg_successMessage": "User successfully added to organization",
+  "platformAdmin_addUserToOrg_errorMessage": "Failed to add user to organization",
+  "platformAdmin_addUserToOrg_errorSelectBoth": "Please select both an organization and a role",
+  "platformAdmin_addUserToOrg_selectOrganization": "Select Organization",
+  "platformAdmin_addUserToOrg_selectRole": "Select Role"
 }
