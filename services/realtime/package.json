@@ -14,11 +14,11 @@
     "lint": "eslint . --max-warnings 0"
   },
   "dependencies": {
+    "centrifuge": "^5.5.2",
     "jsonwebtoken": "^9.0.2"
   },
   "devDependencies": {
     "@op/typescript-config": "workspace:*",
-    "@types/jsonwebtoken": "^9.0.10",
-    "typescript": "^5.7.2"
+    "@types/jsonwebtoken": "^9.0.10"
   }
 }
