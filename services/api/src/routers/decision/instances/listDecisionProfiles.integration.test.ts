@@ -1,8 +1,4 @@
-import {
-  createProcess,
-  createInstance,
-  createOrganization,
-} from '@op/common';
+import { createInstance, createOrganization, createProcess } from '@op/common';
 import { db, eq } from '@op/db/client';
 import { processInstances, profileUsers } from '@op/db/schema';
 import { appRouter } from 'src/routers';
@@ -17,7 +13,7 @@ import {
   getCurrentTestSession,
   signInTestUser,
   signOutTestUser,
-} from '../supabase-utils';
+} from '../../../test/supabase-utils';
 
 const createCaller = createCallerFactory(appRouter);
 
@@ -55,12 +51,18 @@ describe('List Decision Profiles Integration Tests', () => {
       {
         stateId: 'initial',
         plannedStartDate: new Date().toISOString(),
-        plannedEndDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        plannedEndDate: new Date(
+          Date.now() + 7 * 24 * 60 * 60 * 1000,
+        ).toISOString(),
       },
       {
         stateId: 'final',
-        plannedStartDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-        plannedEndDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+        plannedStartDate: new Date(
+          Date.now() + 7 * 24 * 60 * 60 * 1000,
+        ).toISOString(),
+        plannedEndDate: new Date(
+          Date.now() + 14 * 24 * 60 * 60 * 1000,
+        ).toISOString(),
       },
     ],
   });
@@ -183,7 +185,9 @@ describe('List Decision Profiles Integration Tests', () => {
       expect(result.hasMore).toBe(false);
 
       // Verify first profile
-      const profile1 = result.items.find((p) => p.name === 'Decision Process 1');
+      const profile1 = result.items.find(
+        (p) => p.name === 'Decision Process 1',
+      );
       expect(profile1).toBeDefined();
       expect(profile1?.type).toBe('decision');
       expect(profile1?.processInstance).toBeDefined();
@@ -197,7 +201,9 @@ describe('List Decision Profiles Integration Tests', () => {
       });
 
       // Verify second profile
-      const profile2 = result.items.find((p) => p.name === 'Decision Process 2');
+      const profile2 = result.items.find(
+        (p) => p.name === 'Decision Process 2',
+      );
       expect(profile2).toBeDefined();
       expect(profile2?.processInstance).toBeDefined();
       expect(profile2?.processInstance.name).toBe('Decision Process 2');
@@ -260,7 +266,11 @@ describe('List Decision Profiles Integration Tests', () => {
         });
 
         // Grant access to each profile
-        await grantProfileAccess(instance.profileId, testUser.id, testUserEmail);
+        await grantProfileAccess(
+          instance.profileId,
+          testUser.id,
+          testUserEmail,
+        );
       }
 
       const caller = await createAuthenticatedCaller(testUserEmail);
@@ -309,7 +319,9 @@ describe('List Decision Profiles Integration Tests', () => {
       expect(profile?.processInstance.process).toBeDefined();
       expect(profile?.processInstance.process?.name).toBe('Test Process');
       expect(profile?.processInstance.owner).toBeDefined();
-      expect(profile?.processInstance.owner?.id).toBe(testOrganization.profileId);
+      expect(profile?.processInstance.owner?.id).toBe(
+        testOrganization.profileId,
+      );
     });
 
     it('should return empty list when no decision profiles exist', async () => {
