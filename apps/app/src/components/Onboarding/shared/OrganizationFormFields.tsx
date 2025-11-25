@@ -5,6 +5,7 @@ import { BannerUploader } from '@op/ui/BannerUploader';
 import type { Option } from '@op/ui/MultiSelectComboBox';
 import { SelectItem } from '@op/ui/Select';
 import { toast } from '@op/ui/Toast';
+import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
 import { LuLink } from 'react-icons/lu';
 
@@ -44,8 +45,14 @@ export const OrganizationFormFields = ({
   children,
 }: OrganizationFormFieldsProps) => {
   const t = useTranslations();
-  const uploadAvatarImage = trpc.organization.uploadAvatarImage.useMutation();
-  const uploadImage = trpc.organization.uploadAvatarImage.useMutation();
+  const uploadAvatarImage = useMutation({
+    mutationFn: (input: { file: string; fileName: string; mimeType: string }) =>
+      trpc.organization.uploadAvatarImage.mutate(input),
+  });
+  const uploadImage = useMutation({
+    mutationFn: (input: { file: string; fileName: string; mimeType: string }) =>
+      trpc.organization.uploadAvatarImage.mutate(input),
+  });
 
   const [profileImage, setProfileImage] = useState<ImageData | undefined>(
     initialProfileImage,

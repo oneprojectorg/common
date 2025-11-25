@@ -4,6 +4,7 @@ import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { Checkbox } from '@op/ui/Checkbox';
 import { Header3 } from '@op/ui/Header';
+import { useSuspenseQuery } from '@tanstack/react-query';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -42,13 +43,20 @@ export const MyBallot = ({
     return <NoVoteFound />;
   }
 
-  const [voteStatus] = trpc.decision.getVotingStatus.useSuspenseQuery({
-    processInstanceId: instanceId,
+  const { data: voteStatus } = useSuspenseQuery({
+    queryKey: [['decision', 'getVotingStatus'], { processInstanceId: instanceId }],
+    queryFn: () => trpc.decision.getVotingStatus.query({ processInstanceId: instanceId }),
   });
 
-  const [proposalsData] = trpc.decision.listProposals.useSuspenseQuery({
-    processInstanceId: instanceId,
-    proposalIds: voteStatus.selectedProposals?.map((p) => p.id) || [],
+  const { data: proposalsData } = useSuspenseQuery({
+    queryKey: [['decision', 'listProposals'], {
+      processInstanceId: instanceId,
+      proposalIds: voteStatus.selectedProposals?.map((p) => p.id) || [],
+    }],
+    queryFn: () => trpc.decision.listProposals.query({
+      processInstanceId: instanceId,
+      proposalIds: voteStatus.selectedProposals?.map((p) => p.id) || [],
+    }),
   });
 
   if (!voteStatus.hasVoted || !voteStatus.selectedProposals) {

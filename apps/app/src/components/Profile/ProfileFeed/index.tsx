@@ -5,6 +5,7 @@ import { trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
 import { useInfiniteScroll } from '@op/hooks';
 import { SkeletonLine } from '@op/ui/Skeleton';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { Fragment, useCallback } from 'react';
 
 import {
@@ -25,24 +26,27 @@ export const ProfileFeed = ({
   limit?: number;
 }) => {
   const { user } = useUser();
+  const input = {
+    slug: profile.profile.slug,
+    limit,
+  };
+
   const {
     data: paginatedData,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = trpc.organization.listPosts.useInfiniteQuery(
-    {
-      slug: profile.profile.slug,
-      limit,
-    },
-    {
-      getNextPageParam: (lastPage) => lastPage.next,
-      staleTime: 30 * 1000,
-      refetchOnMount: true,
-      refetchOnWindowFocus: true,
-      refetchOnReconnect: true,
-    },
-  );
+  } = useInfiniteQuery({
+    queryKey: [['organization', 'listPosts'], input],
+    queryFn: ({ pageParam }) =>
+      trpc.organization.listPosts.query({ ...input, cursor: pageParam }),
+    initialPageParam: null as string | null | undefined,
+    getNextPageParam: (lastPage) => lastPage.next,
+    staleTime: 30 * 1000,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+  });
 
   const allPosts = paginatedData?.pages.flatMap((page) => page.items) || [];
 

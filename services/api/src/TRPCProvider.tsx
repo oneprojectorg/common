@@ -1,15 +1,11 @@
 'use client';
 
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
-import { QueryClient } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
-import { TRPCClientError } from '@trpc/client';
-import {
-  createTRPCReact,
-  getQueryKey as getQueryKeyTRPC,
-} from '@trpc/react-query';
+import { createTRPCClient, TRPCClientError } from '@trpc/client';
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
-import React, { useState } from 'react';
+import React from 'react';
 
 import { links } from './links';
 import type { AppRouter } from './routers';
@@ -28,12 +24,13 @@ const persister = createSyncStoragePersister({
   storage: typeof window !== 'undefined' ? window.localStorage : undefined,
 });
 
-export const trpc = createTRPCReact<AppRouter>();
+// Create vanilla tRPC client for the new TanStack React Query integration
+export const trpc = createTRPCClient<AppRouter>({
+  links,
+});
 
 export type RouterInput = inferRouterInputs<AppRouter>;
 export type RouterOutput = inferRouterOutputs<AppRouter>;
-
-export const getQueryKey = getQueryKeyTRPC;
 
 export function isTRPCClientError(
   cause: unknown,
@@ -42,15 +39,8 @@ export function isTRPCClientError(
 }
 
 export function TRPCProvider({ children }: { children: React.ReactNode }) {
-  const [trpcClient] = useState(() =>
-    trpc.createClient({
-      links,
-    }),
-  );
-
   return (
-    // eslint-disable-next-line react/no-context-provider
-    <trpc.Provider client={trpcClient} queryClient={queryClient}>
+    <QueryClientProvider client={queryClient}>
       <PersistQueryClientProvider
         client={queryClient}
         persistOptions={{
@@ -75,7 +65,7 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
       >
         {children}
       </PersistQueryClientProvider>
-    </trpc.Provider>
+    </QueryClientProvider>
   );
 }
 

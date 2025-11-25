@@ -8,6 +8,7 @@ import { Popover } from '@op/ui/Popover';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
 import { toast } from '@op/ui/Toast';
+import { useMutation, useQuery, useSuspenseQuery, useQueryClient } from '@tanstack/react-query';
 import React, { useMemo } from 'react';
 import { LuEllipsis, LuUsers } from 'react-icons/lu';
 
@@ -50,15 +51,18 @@ const MemberMenu = ({
   organizationId: string;
   profileId: string;
 }) => {
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
   const t = useTranslations();
 
-  // Query for all available roles to find the "Member" role ID
-  const { data: roles } = trpc.organization.getRoles.useQuery();
+  const { data: roles } = useQuery({
+    queryKey: [['organization', 'getRoles']],
+    queryFn: () => trpc.organization.getRoles.query(),
+  });
 
-  const updateUser = trpc.organization.updateOrganizationUser.useMutation({
+  const updateUser = useMutation({
+    mutationFn: (input: { organizationId: string; organizationUserId: string; data: { roleIds: string[] } }) =>
+      trpc.organization.updateOrganizationUser.mutate(input),
     onSuccess: (_, variables) => {
-      // Determine what role was assigned for the success message
       const wasChangingToAdmin = variables.data.roleIds?.some((roleId) =>
         roles?.roles?.find(
           (role: any) =>
@@ -71,25 +75,29 @@ const MemberMenu = ({
         : t('User changed to Member successfully');
 
       toast.success({ message });
-      // Invalidate listUsers query to refresh the UI
-      void utils.organization.listUsers.invalidate({ profileId });
+      void queryClient.invalidateQueries({
+        queryKey: [['organization', 'listUsers'], { profileId }],
+      });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error({
         message: error.message || t('Failed to update user role'),
       });
     },
   });
 
-  const deleteUser = trpc.organization.deleteOrganizationUser.useMutation({
+  const deleteUser = useMutation({
+    mutationFn: (input: { organizationId: string; organizationUserId: string }) =>
+      trpc.organization.deleteOrganizationUser.mutate(input),
     onSuccess: () => {
       toast.success({
         message: t('User removed from organization successfully'),
       });
-      // Invalidate listUsers query to refresh the UI
-      void utils.organization.listUsers.invalidate({ profileId });
+      void queryClient.invalidateQueries({
+        queryKey: [['organization', 'listUsers'], { profileId }],
+      });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error({
         message: error.message || t('Failed to remove user from organization'),
       });
@@ -302,8 +310,10 @@ const MembersListContent = ({
 export const MembersList = ({ profileId }: { profileId: string }) => {
   const t = useTranslations();
 
-  const [members] = trpc.organization.listUsers.useSuspenseQuery({
-    profileId,
+  const input = { profileId };
+  const { data: members } = useSuspenseQuery({
+    queryKey: [['organization', 'listUsers'], input],
+    queryFn: () => trpc.organization.listUsers.query(input),
   });
 
   // We need to get the organizationId from the profileId

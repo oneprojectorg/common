@@ -14,6 +14,7 @@ import {
   ModalStepper,
 } from '@op/ui/Modal';
 import { toast } from '@op/ui/Toast';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import Form from '@rjsf/core';
 import type { RJSFValidationError } from '@rjsf/utils';
 import { customizeValidator } from '@rjsf/validator-ajv8';
@@ -144,7 +145,7 @@ interface CreateDecisionProcessModalProps {
 export const CreateDecisionProcessModal = ({
   schema = 'simple'
 }: CreateDecisionProcessModalProps = {}) => {
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
 
   // Load the appropriate schema based on the prop
   const { stepSchemas, schemaDefaults, transformFormDataToProcessSchema } = loadSchema(schema);
@@ -161,10 +162,10 @@ export const CreateDecisionProcessModal = ({
   const overlayTriggerState = useContext(OverlayTriggerStateContext);
   const { onClose } = useContext(ModalContext);
 
-  // tRPC mutations for creating process and instance
-  const createProcess = trpc.decision.createProcess.useMutation({
+  const createProcess = useMutation({
+    mutationFn: (input: { name: string; description: string; processSchema: unknown }) =>
+      trpc.decision.createProcess.mutate(input),
     onSuccess: (process) => {
-      // After process is created, create an instance
       createInstance.mutate({
         processId: process.id,
         name: formData.processName as string,
@@ -177,17 +178,17 @@ export const CreateDecisionProcessModal = ({
     },
   });
 
-  const createInstance = trpc.decision.createInstance.useMutation({
+  const createInstance = useMutation({
+    mutationFn: (input: { processId: string; name: string; description: string; instanceData: unknown }) =>
+      trpc.decision.createInstance.mutate(input),
     onSuccess: (instance) => {
       toast.success({
         title: 'Decision process created successfully!',
         message: `"${instance.name}" is now ready for proposals.`,
       });
 
-      // Invalidate the instances list to refresh the UI
-      utils.decision.listInstances.invalidate();
+      queryClient.invalidateQueries({ queryKey: [['decision', 'listInstances']] });
 
-      // Close the modal after successful creation
       if (overlayTriggerState?.close) {
         overlayTriggerState.close();
       } else {

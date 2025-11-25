@@ -26,6 +26,7 @@ import { ReactionsButton } from '@op/ui/ReactionsButton';
 import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
 import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import Image from 'next/image';
 import { ReactNode, memo, useMemo, useState } from 'react';
 import { LuLeaf } from 'react-icons/lu';
@@ -426,7 +427,7 @@ export const usePostFeedActions = ({
   profileId?: string;
   user?: PostFeedUser;
 } = {}) => {
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
   const [discussionModal, setDiscussionModal] = useState<{
     isOpen: boolean;
     post?: Post | null;
@@ -437,13 +438,14 @@ export const usePostFeedActions = ({
     organization: null,
   });
 
-  const toggleReaction = trpc.organization.toggleReaction.useMutation({
+  const toggleReaction = useMutation({
+    mutationFn: (input: Parameters<typeof trpc.organization.toggleReaction.mutate>[0]) => trpc.organization.toggleReaction.mutate(input),
     onMutate: async ({ postId, reactionType }) => {
       // Cancel any outgoing refetches
       if (slug) {
-        await utils.organization.listPosts.cancel({ slug, limit });
+        await queryClient.cancelQueries({ queryKey: [['organization', 'listPosts'], { input: { slug, limit }, type: 'infinite' }] });
       }
-      await utils.organization.listAllPosts.cancel({});
+      await queryClient.cancelQueries({ queryKey: [['organization', 'listAllPosts'], {}] });
 
       // Cancel comments cache if we're in a modal context
       if (parentPostId) {
@@ -451,7 +453,7 @@ export const usePostFeedActions = ({
           parentPostId,
           profileId,
         );
-        await utils.posts.getPosts.cancel(commentsQueryKey);
+        await queryClient.cancelQueries({ queryKey: [['posts', 'getPosts'], commentsQueryKey] });
       }
 
       // Cancel profile posts cache if we're working with profile posts
@@ -464,18 +466,18 @@ export const usePostFeedActions = ({
           offset: 0,
           includeChildren: false,
         };
-        await utils.posts.getPosts.cancel(profileQueryKey);
-        previousProfilePosts = utils.posts.getPosts.getData(profileQueryKey);
+        await queryClient.cancelQueries({ queryKey: [['posts', 'getPosts'], profileQueryKey] });
+        previousProfilePosts = queryClient.getQueryData<Post[]>([['posts', 'getPosts'], profileQueryKey]);
       }
 
       // Snapshot the previous values
       const previousListPosts = slug
-        ? utils.organization.listPosts.getInfiniteData({ slug, limit })
+        ? queryClient.getQueryData([['organization', 'listPosts'], { input: { slug, limit }, type: 'infinite' }])
         : undefined;
-      const previousListAllPosts = utils.organization.listAllPosts.getData({});
+      const previousListAllPosts = queryClient.getQueryData([['organization', 'listAllPosts'], {}]);
       const previousComments = parentPostId
-        ? utils.posts.getPosts.getData(
-            createCommentsQueryKey(parentPostId, profileId),
+        ? queryClient.getQueryData<Post[]>(
+            [['posts', 'getPosts'], createCommentsQueryKey(parentPostId, profileId)],
           )
         : undefined;
 
@@ -486,23 +488,26 @@ export const usePostFeedActions = ({
 
       // Optimistically update listPosts cache (if slug is provided)
       if (slug) {
-        utils.organization.listPosts.setInfiniteData({ slug, limit }, (old) => {
-          if (!old) {
-            return old;
-          }
+        queryClient.setQueryData(
+          [['organization', 'listPosts'], { input: { slug, limit }, type: 'infinite' }],
+          (old: any) => {
+            if (!old) {
+              return old;
+            }
 
-          return {
-            ...old,
-            pages: old.pages.map((page) => ({
-              ...page,
-              items: page.items.map(updatePostReactions),
-            })),
-          };
-        });
+            return {
+              ...old,
+              pages: old.pages.map((page: any) => ({
+                ...page,
+                items: page.items.map(updatePostReactions),
+              })),
+            };
+          },
+        );
       }
 
       // Optimistically update listAllPosts cache
-      utils.organization.listAllPosts.setData({}, (old) => {
+      queryClient.setQueryData([['organization', 'listAllPosts'], {}], (old: any) => {
         if (!old) {
           return old;
         }
@@ -522,7 +527,7 @@ export const usePostFeedActions = ({
           offset: 0,
           includeChildren: false,
         };
-        utils.posts.getPosts.setData(profileQueryKey, (old) => {
+        queryClient.setQueryData<Post[]>([['posts', 'getPosts'], profileQueryKey], (old) => {
           if (!old) {
             return old;
           }
@@ -551,7 +556,7 @@ export const usePostFeedActions = ({
           parentPostId,
           profileId,
         );
-        utils.posts.getPosts.setData(commentsQueryKey, (old) => {
+        queryClient.setQueryData<Post[]>([['posts', 'getPosts'], commentsQueryKey], (old) => {
           if (!old) {
             return old;
           }
@@ -584,14 +589,14 @@ export const usePostFeedActions = ({
     onError: (err, _variables, context) => {
       // Rollback on error
       if (context?.previousListPosts && slug) {
-        utils.organization.listPosts.setInfiniteData(
-          { slug, limit },
+        queryClient.setQueryData(
+          [['organization', 'listPosts'], { input: { slug, limit }, type: 'infinite' }],
           context.previousListPosts,
         );
       }
       if (context?.previousListAllPosts) {
-        utils.organization.listAllPosts.setData(
-          {},
+        queryClient.setQueryData(
+          [['organization', 'listAllPosts'], {}],
           context.previousListAllPosts,
         );
       }
@@ -600,8 +605,8 @@ export const usePostFeedActions = ({
           parentPostId,
           profileId,
         );
-        utils.posts.getPosts.setData(
-          commentsQueryKey,
+        queryClient.setQueryData(
+          [['posts', 'getPosts'], commentsQueryKey],
           context.previousComments,
         );
       }
@@ -613,8 +618,8 @@ export const usePostFeedActions = ({
           offset: 0,
           includeChildren: false,
         };
-        utils.posts.getPosts.setData(
-          profileQueryKey,
+        queryClient.setQueryData(
+          [['posts', 'getPosts'], profileQueryKey],
           context.previousProfilePosts,
         );
       }

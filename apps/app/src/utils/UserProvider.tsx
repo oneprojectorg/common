@@ -1,6 +1,7 @@
 'use client';
 
 import { RouterOutput, trpc } from '@op/api/client';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import type { Permission } from 'access-zones';
 import { useRouter } from 'next/navigation';
 import posthog from 'posthog-js';
@@ -43,7 +44,10 @@ export const UserProviderSuspense = ({
   children: React.ReactNode;
 }) => {
   const router = useRouter();
-  const [user] = trpc.account.getMyAccount.useSuspenseQuery();
+  const { data: user } = useSuspenseQuery({
+    queryKey: [['account', 'getMyAccount']],
+    queryFn: () => trpc.account.getMyAccount.query(),
+  });
 
   if (user.organizationUsers?.length === 0) {
     router.push('/start');

@@ -6,6 +6,7 @@ import { Organization } from '@op/api/encoders';
 import { DropDownButton } from '@op/ui/DropDownButton';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { toast } from '@op/ui/Toast';
+import { useMutation, useSuspenseQuery, useQueryClient } from '@tanstack/react-query';
 import { Suspense } from 'react';
 import { LuCheck, LuUserPlus, LuX } from 'react-icons/lu';
 
@@ -13,31 +14,32 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 
 const RespondButtonSuspense = ({ profile }: { profile: Organization }) => {
   const { user } = useUser();
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
 
   if (!user?.currentOrganization?.id) {
     return null;
   }
 
-  // Get pending relationships FROM the profile TO our current organization
-  const [{ organizations: pendingOrgs }] =
-    trpc.organization.listPendingRelationships.useSuspenseQuery(undefined, {
-      ...skipBatch,
-    });
+  const { data: { organizations: pendingOrgs } } = useSuspenseQuery({
+    queryKey: [['organization', 'listPendingRelationships'], undefined],
+    queryFn: () => trpc.organization.listPendingRelationships.query(undefined),
+    ...skipBatch,
+  });
 
-  // Filter to only show requests from the profile we're viewing
   const pendingFromProfile = pendingOrgs.find((org) => org.id === profile.id);
 
   if (!pendingFromProfile?.relationships?.some((r) => r.pending)) {
     return null;
   }
 
-  const approve = trpc.organization.approveRelationship.useMutation({
+  const approve = useMutation({
+    mutationFn: (input: { sourceOrganizationId: string; targetOrganizationId: string }) =>
+      trpc.organization.approveRelationship.mutate(input),
     onSuccess: () => {
-      utils.organization.invalidate();
-      utils.organization.listPendingRelationships.invalidate();
-      utils.organization.listDirectedRelationships.invalidate();
-      utils.organization.listRelationships.invalidate();
+      queryClient.invalidateQueries({ queryKey: [['organization']] });
+      queryClient.invalidateQueries({ queryKey: [['organization', 'listPendingRelationships']] });
+      queryClient.invalidateQueries({ queryKey: [['organization', 'listDirectedRelationships']] });
+      queryClient.invalidateQueries({ queryKey: [['organization', 'listRelationships']] });
       toast.success({
         message: 'Relationship approved',
       });
@@ -49,12 +51,14 @@ const RespondButtonSuspense = ({ profile }: { profile: Organization }) => {
     },
   });
 
-  const decline = trpc.organization.declineRelationship.useMutation({
+  const decline = useMutation({
+    mutationFn: (input: { targetOrganizationId: string; ids: string[] }) =>
+      trpc.organization.declineRelationship.mutate(input),
     onSuccess: () => {
-      utils.organization.invalidate();
-      utils.organization.listPendingRelationships.invalidate();
-      utils.organization.listDirectedRelationships.invalidate();
-      utils.organization.listRelationships.invalidate();
+      queryClient.invalidateQueries({ queryKey: [['organization']] });
+      queryClient.invalidateQueries({ queryKey: [['organization', 'listPendingRelationships']] });
+      queryClient.invalidateQueries({ queryKey: [['organization', 'listDirectedRelationships']] });
+      queryClient.invalidateQueries({ queryKey: [['organization', 'listRelationships']] });
       toast.success({
         message: 'Relationship declined',
       });

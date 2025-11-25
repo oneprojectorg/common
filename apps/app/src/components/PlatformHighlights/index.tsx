@@ -7,6 +7,7 @@ import { Avatar } from '@op/ui/Avatar';
 import { FacePile } from '@op/ui/FacePile';
 import { Surface } from '@op/ui/Surface';
 import { cn } from '@op/ui/utils';
+import { useSuspenseQuery, useSuspenseQueries } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import { ReactNode, Suspense, useEffect, useRef, useState } from 'react';
@@ -16,7 +17,10 @@ import { Link } from '@/lib/i18n';
 const hello = () => {};
 
 export const PlatformHighlights = () => {
-  const [stats] = trpc.platform.getStats.useSuspenseQuery();
+  const { data: stats } = useSuspenseQuery({
+    queryKey: [['platform', 'getStats']],
+    queryFn: () => trpc.platform.getStats.query(),
+  });
   const t = useTranslations();
 
   return (
@@ -105,10 +109,20 @@ const Highlight = ({ children }: { children?: ReactNode }) => {
 };
 
 const OrganizationFacePile = ({ children }: { children?: ReactNode }) => {
-  const [[{ items: organizations }, stats]] = trpc.useSuspenseQueries((t) => [
-    t.organization.list({ limit: 100 }),
-    t.platform.getStats(),
-  ]);
+  const [organizationsResult, statsResult] = useSuspenseQueries({
+    queries: [
+      {
+        queryKey: [['organization', 'list'], { limit: 100 }],
+        queryFn: () => trpc.organization.list.query({ limit: 100 }),
+      },
+      {
+        queryKey: [['platform', 'getStats']],
+        queryFn: () => trpc.platform.getStats.query(),
+      },
+    ],
+  });
+  const { items: organizations } = organizationsResult.data;
+  const stats = statsResult.data;
   const facePileRef = useRef<HTMLDivElement>(null);
   const [numItems, setNumItems] = useState(20);
 

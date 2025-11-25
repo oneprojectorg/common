@@ -5,6 +5,7 @@ import { trpc } from '@op/api/client';
 import { EntityType, SearchProfilesResult } from '@op/api/encoders';
 import { match } from '@op/core';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -23,12 +24,25 @@ export const ProfileSearchResultsSuspense = ({
 }) => {
   const individualSearchEnabled = useFeatureFlag('individual_search');
 
-  const [profileSearchResults] = trpc.profile.search.useSuspenseQuery({
-    limit,
-    q: query,
-    types: individualSearchEnabled
-      ? [EntityType.ORG, EntityType.INDIVIDUAL]
-      : [EntityType.ORG],
+  const { data: profileSearchResults } = useSuspenseQuery({
+    queryKey: [
+      ['profile', 'search'],
+      {
+        limit,
+        q: query,
+        types: individualSearchEnabled
+          ? [EntityType.ORG, EntityType.INDIVIDUAL]
+          : [EntityType.ORG],
+      },
+    ],
+    queryFn: () =>
+      trpc.profile.search.query({
+        limit,
+        q: query,
+        types: individualSearchEnabled
+          ? [EntityType.ORG, EntityType.INDIVIDUAL]
+          : [EntityType.ORG],
+      }),
   });
 
   const totalResults = profileSearchResults.reduce(

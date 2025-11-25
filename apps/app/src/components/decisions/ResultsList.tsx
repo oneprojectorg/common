@@ -1,6 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
+import { useSuspenseQueries } from '@tanstack/react-query';
 import { Header3 } from '@op/ui/Header';
 
 import { useTranslations } from '@/lib/i18n';
@@ -38,14 +39,21 @@ export const ResultsList = ({
 }) => {
   const t = useTranslations();
 
-  const [[instanceResults, resultStats]] = trpc.useSuspenseQueries((t) => [
-    t.decision.getInstanceResults({
-      instanceId,
-    }),
-    t.decision.getResultsStats({
-      instanceId,
-    }),
-  ]);
+  const results = useSuspenseQueries({
+    queries: [
+      {
+        queryKey: [['decision', 'getInstanceResults'], { input: { instanceId } }],
+        queryFn: () => trpc.decision.getInstanceResults.query({ instanceId }),
+      },
+      {
+        queryKey: [['decision', 'getResultsStats'], { input: { instanceId } }],
+        queryFn: () => trpc.decision.getResultsStats.query({ instanceId }),
+      },
+    ],
+  });
+
+  const instanceResults = results[0].data;
+  const resultStats = results[1].data;
 
   const { items: proposals } = instanceResults;
 

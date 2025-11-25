@@ -20,6 +20,7 @@ import Image from 'next/image';
 import { useCallback, useRef } from 'react';
 import { LuBookmark } from 'react-icons/lu';
 import { z } from 'zod';
+import { useQuery } from '@tanstack/react-query';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -40,8 +41,9 @@ export function ProposalView({
   const t = useTranslations();
   const commentsContainerRef = useRef<HTMLDivElement>(null);
 
-  const { data: proposal } = trpc.decision.getProposal.useQuery({
-    profileId: initialProposal.profileId,
+  const { data: proposal } = useQuery({
+    queryKey: [['decision', 'getProposal'], { profileId: initialProposal.profileId }],
+    queryFn: () => trpc.decision.getProposal.query({ profileId: initialProposal.profileId }),
   });
 
   // Safety check - fallback to initial data if query returns undefined
@@ -69,15 +71,22 @@ export function ProposalView({
     ? `${backHref}/proposal/${currentProposal.profileId}/edit`
     : undefined;
 
-  // Get comments for the proposal using the posts API
-  const { data: commentsData, isLoading: commentsLoading } =
-    trpc.posts.getPosts.useQuery({
+  const { data: commentsData, isLoading: commentsLoading } = useQuery({
+    queryKey: [['posts', 'getPosts'], {
       profileId: currentProposal.profileId || undefined,
-      parentPostId: null, // Get top-level comments only
+      parentPostId: null,
       limit: 50,
       offset: 0,
       includeChildren: false,
-    });
+    }],
+    queryFn: () => trpc.posts.getPosts.query({
+      profileId: currentProposal.profileId || undefined,
+      parentPostId: null,
+      limit: 50,
+      offset: 0,
+      includeChildren: false,
+    }),
+  });
 
   const comments = commentsData || [];
 

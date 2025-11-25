@@ -15,6 +15,7 @@ import { MediaDisplay } from '@op/ui/MediaDisplay';
 import { Skeleton } from '@op/ui/Skeleton';
 import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
@@ -81,7 +82,7 @@ const PostUpdateWithUser = ({
   );
   const optimisticCommentRef = useRef<string | null>(null);
   const t = useTranslations();
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
   const router = useRouter();
   const isOnline = useConnectionStatus();
 
@@ -97,7 +98,8 @@ const PostUpdateWithUser = ({
   });
 
   // For organization posts (main feed posts)
-  const createOrganizationPost = trpc.organization.createPost.useMutation({
+  const createOrganizationPost = useMutation({
+    mutationFn: (input: Parameters<typeof trpc.organization.createPost.mutate>[0]) => trpc.organization.createPost.mutate(input),
     onSuccess: () => {
       // Clear form on success
       setContent('');
@@ -107,8 +109,8 @@ const PostUpdateWithUser = ({
 
       // Invalidate organization feeds to show new post
       if (organization?.profile?.slug) {
-        void utils.organization.listPosts.invalidate();
-        void utils.organization.listAllPosts.invalidate();
+        void queryClient.invalidateQueries({ queryKey: [['organization', 'listPosts']] });
+        void queryClient.invalidateQueries({ queryKey: [['organization', 'listAllPosts']] });
       }
 
       // Call onSuccess callback if provided
@@ -138,7 +140,8 @@ const PostUpdateWithUser = ({
   });
 
   // For profile posts (comments, etc.)
-  const createPost = trpc.posts.createPost.useMutation({
+  const createPost = useMutation({
+    mutationFn: (input: Parameters<typeof trpc.posts.createPost.mutate>[0]) => trpc.posts.createPost.mutate(input),
     onMutate: async (variables) => {
       const tempId = `optimistic-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       optimisticCommentRef.current = tempId;
@@ -151,10 +154,10 @@ const PostUpdateWithUser = ({
           variables.parentPostId,
           profileId,
         );
-        await utils.posts.getPosts.cancel(queryKey);
+        await queryClient.cancelQueries({ queryKey: [['posts', 'getPosts'], queryKey] });
 
         // Snapshot previous value
-        const previousComments = utils.posts.getPosts.getData(queryKey);
+        const previousComments = queryClient.getQueryData<Post[]>([['posts', 'getPosts'], queryKey]);
 
         // Add optimistic comment immediately
         const optimisticComment: Post = {
@@ -176,7 +179,7 @@ const PostUpdateWithUser = ({
         };
 
         // Add optimistic comment
-        utils.posts.getPosts.setData(queryKey, (old) => {
+        queryClient.setQueryData<Post[]>([['posts', 'getPosts'], queryKey], (old) => {
           if (!old) return [optimisticComment];
           return [optimisticComment, ...old];
         });
@@ -194,10 +197,10 @@ const PostUpdateWithUser = ({
           offset: 0,
           includeChildren: false,
         };
-        await utils.posts.getPosts.cancel(queryKey);
+        await queryClient.cancelQueries({ queryKey: [['posts', 'getPosts'], queryKey] });
 
         // Snapshot previous value
-        const previousPosts = utils.posts.getPosts.getData(queryKey);
+        const previousPosts = queryClient.getQueryData<Post[]>([['posts', 'getPosts'], queryKey]);
 
         // Add optimistic post immediately
         const optimisticPost: Post = {
@@ -219,7 +222,7 @@ const PostUpdateWithUser = ({
         };
 
         // Add optimistic post
-        utils.posts.getPosts.setData(queryKey, (old) => {
+        queryClient.setQueryData<Post[]>([['posts', 'getPosts'], queryKey], (old) => {
           if (!old) return [optimisticPost];
           return [optimisticPost, ...old];
         });
@@ -241,12 +244,12 @@ const PostUpdateWithUser = ({
             variables.parentPostId,
             profileId,
           );
-          utils.posts.getPosts.setData(queryKey, context.previousComments);
+          queryClient.setQueryData([['posts', 'getPosts'], queryKey], context.previousComments);
 
           // Revert parent post comment count - only for organization posts
           if (organization?.profile?.slug) {
-            void utils.organization.listPosts.invalidate();
-            void utils.organization.listAllPosts.invalidate();
+            void queryClient.invalidateQueries({ queryKey: [['organization', 'listPosts']] });
+            void queryClient.invalidateQueries({ queryKey: [['organization', 'listAllPosts']] });
           }
         }
 
@@ -260,7 +263,7 @@ const PostUpdateWithUser = ({
             offset: 0,
             includeChildren: false,
           };
-          utils.posts.getPosts.setData(queryKey, context.previousPosts);
+          queryClient.setQueryData([['posts', 'getPosts'], queryKey], context.previousPosts);
         }
 
         // Clear the optimistic comment ID
@@ -308,7 +311,7 @@ const PostUpdateWithUser = ({
             variables.parentPostId,
             profileId,
           );
-          utils.posts.getPosts.setData(queryKey, (old) => {
+          queryClient.setQueryData<Post[]>([['posts', 'getPosts'], queryKey], (old) => {
             if (!old) return [enhancedData];
             // Replace optimistic comment with real data, or add if not found
             if (optimisticCommentId) {
@@ -341,13 +344,13 @@ const PostUpdateWithUser = ({
 
           // Update organization.listPosts cache only if organization exists
           if (organization?.profile?.slug) {
-            utils.organization.listPosts.setInfiniteData(
-              { slug: organization.profile.slug },
-              (old) => {
+            queryClient.setQueryData(
+              [['organization', 'listPosts'], { input: { slug: organization.profile.slug }, type: 'infinite' }],
+              (old: any) => {
                 if (!old) return old;
                 return {
                   ...old,
-                  pages: old.pages.map((page) => ({
+                  pages: old.pages.map((page: any) => ({
                     ...page,
                     items: page.items.map(updateCommentCount),
                   })),
@@ -356,7 +359,7 @@ const PostUpdateWithUser = ({
             );
 
             // Update organization.listAllPosts cache
-            utils.organization.listAllPosts.setData({}, (old) => {
+            queryClient.setQueryData([['organization', 'listAllPosts'], {}], (old: any) => {
               if (!old) return old;
               return {
                 ...old,
@@ -375,7 +378,7 @@ const PostUpdateWithUser = ({
             offset: 0,
             includeChildren: false,
           };
-          utils.posts.getPosts.setData(queryKey, (old) => {
+          queryClient.setQueryData<Post[]>([['posts', 'getPosts'], queryKey], (old) => {
             if (!old) return [enhancedData];
             // Replace optimistic post with real data, or add if not found
             if (optimisticCommentId) {
@@ -394,8 +397,8 @@ const PostUpdateWithUser = ({
 
           // If this is a proposal comment, invalidate proposal queries to refresh comment counts
           if (proposalId) {
-            void utils.decision.getProposal.invalidate({ profileId });
-            void utils.decision.listProposals.invalidate();
+            void queryClient.invalidateQueries({ queryKey: [['decision', 'getProposal'], { profileId }] });
+            void queryClient.invalidateQueries({ queryKey: [['decision', 'listProposals']] });
           }
         }
       }
@@ -415,11 +418,11 @@ const PostUpdateWithUser = ({
             variables.parentPostId,
             profileId,
           );
-          void utils.posts.getPosts.invalidate(queryKey);
+          void queryClient.invalidateQueries({ queryKey: [['posts', 'getPosts'], queryKey] });
           // Also invalidate main feeds on error to refresh comment counts - only for organization posts
           if (organization?.profile?.slug) {
-            void utils.organization.listPosts.invalidate();
-            void utils.organization.listAllPosts.invalidate();
+            void queryClient.invalidateQueries({ queryKey: [['organization', 'listPosts']] });
+            void queryClient.invalidateQueries({ queryKey: [['organization', 'listAllPosts']] });
           }
         }
         // Don't refresh router for comments to avoid layout shifts
@@ -435,19 +438,19 @@ const PostUpdateWithUser = ({
               offset: 0,
               includeChildren: false,
             };
-            void utils.posts.getPosts.invalidate(queryKey);
+            void queryClient.invalidateQueries({ queryKey: [['posts', 'getPosts'], queryKey] });
 
             // If this was a proposal comment, also invalidate proposal queries on error
             if (variables.proposalId) {
-              void utils.decision.getProposal.invalidate({ profileId });
-              void utils.decision.listProposals.invalidate();
+              void queryClient.invalidateQueries({ queryKey: [['decision', 'getProposal'], { profileId }] });
+              void queryClient.invalidateQueries({ queryKey: [['decision', 'listProposals']] });
             }
           }
           // Don't refresh router for profile posts to avoid layout shifts
         } else if (organization?.profile?.slug) {
           // For organization posts, invalidate organization caches
-          void utils.organization.listPosts.invalidate();
-          void utils.organization.listAllPosts.invalidate();
+          void queryClient.invalidateQueries({ queryKey: [['organization', 'listPosts']] });
+          void queryClient.invalidateQueries({ queryKey: [['organization', 'listAllPosts']] });
           router.refresh();
         }
       }

@@ -2,6 +2,7 @@ import { trpc } from '@op/api/client';
 import { ProfileRelationshipType } from '@op/api/encoders';
 import { toast } from '@op/ui/Toast';
 import { useCallback } from 'react';
+import { useQueryClient, useQuery, useMutation } from '@tanstack/react-query';
 
 interface UseRelationshipMutationsOptions {
   targetProfileId?: string | null;
@@ -51,7 +52,7 @@ export function useRelationshipMutations({
   onSuccess,
   invalidateQueries = [],
 }: UseRelationshipMutationsOptions) {
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
 
   // Query key for relationship data
   const relationshipQueryKey = {
@@ -62,7 +63,10 @@ export function useRelationshipMutations({
   const {
     data: userRelationships,
     isLoading: isLoadingRelationships,
-  } = trpc.profile.getRelationships.useQuery(relationshipQueryKey);
+  } = useQuery({
+    queryKey: [['profile', 'getRelationships'], relationshipQueryKey],
+    queryFn: () => trpc.profile.getRelationships.query(relationshipQueryKey),
+  });
 
   // Check if current user has liked/followed this profile
   const isLiked = Boolean(
@@ -78,14 +82,16 @@ export function useRelationshipMutations({
   );
 
   // Add relationship mutation with optimistic updates
-  const addRelationshipMutation = trpc.profile.addRelationship.useMutation({
+  const addRelationshipMutation = useMutation({
+    mutationFn: (input: { targetProfileId: string; relationshipType: ProfileRelationshipType; pending: boolean }) =>
+      trpc.profile.addRelationship.mutate(input),
     onMutate: async (variables) => {
       // Cancel outgoing refetches for the relationship queries
-      await utils.profile.getRelationships.cancel(relationshipQueryKey);
+      await queryClient.cancelQueries({ queryKey: [['profile', 'getRelationships'], relationshipQueryKey] });
 
       // Snapshot the previous value
       const previousData =
-        utils.profile.getRelationships.getData(relationshipQueryKey);
+        queryClient.getQueryData<UserRelationships>([['profile', 'getRelationships'], relationshipQueryKey]);
 
       // Optimistically update the cache
       if (
@@ -95,7 +101,7 @@ export function useRelationshipMutations({
         !Array.isArray(previousData)
       ) {
         // Create a minimal relationship object for optimistic update
-        const optimisticRelationship = {
+        const optimisticRelationship: RelationshipItem = {
           relationshipType: variables.relationshipType,
           pending: false,
           createdAt: new Date().toISOString(),
@@ -109,7 +115,7 @@ export function useRelationshipMutations({
           },
         };
 
-        const optimisticData = { ...previousData };
+        const optimisticData: UserRelationships = { ...previousData };
         const existingRelationships =
           optimisticData[variables.relationshipType] || [];
         optimisticData[variables.relationshipType] = [
@@ -117,8 +123,8 @@ export function useRelationshipMutations({
           optimisticRelationship,
         ];
 
-        utils.profile.getRelationships.setData(
-          relationshipQueryKey,
+        queryClient.setQueryData(
+          [['profile', 'getRelationships'], relationshipQueryKey],
           optimisticData,
         );
       }
@@ -134,8 +140,8 @@ export function useRelationshipMutations({
     onError: (error, variables, context) => {
       // Rollback on error
       if (context?.previousData) {
-        utils.profile.getRelationships.setData(
-          relationshipQueryKey,
+        queryClient.setQueryData(
+          [['profile', 'getRelationships'], relationshipQueryKey],
           context.previousData,
         );
       }
@@ -154,21 +160,21 @@ export function useRelationshipMutations({
       // Always refetch relationship data after error or success
       // Await all invalidations to ensure they complete before proceeding
       await Promise.all([
-        utils.profile.getRelationships.invalidate(relationshipQueryKey),
+        queryClient.invalidateQueries({ queryKey: [['profile', 'getRelationships'], relationshipQueryKey] }),
         ...invalidateQueries.flatMap((query) => {
           const promises = [];
           if (query.profileId) {
             promises.push(
-              utils.decision.getProposal.invalidate({
+              queryClient.invalidateQueries({ queryKey: [['decision', 'getProposal'], {
                 profileId: query.profileId,
-              }),
+              }] }),
             );
           }
           if (query.processInstanceId) {
             promises.push(
-              utils.decision.listProposals.invalidate({
+              queryClient.invalidateQueries({ queryKey: [['decision', 'listProposals'], {
                 processInstanceId: query.processInstanceId,
-              }),
+              }] }),
             );
           }
           return promises;
@@ -179,14 +185,16 @@ export function useRelationshipMutations({
 
   // Remove relationship mutation with optimistic updates
   const removeRelationshipMutation =
-    trpc.profile.removeRelationship.useMutation({
+    useMutation({
+      mutationFn: (input: { targetProfileId: string; relationshipType: ProfileRelationshipType }) =>
+        trpc.profile.removeRelationship.mutate(input),
       onMutate: async (variables) => {
         // Cancel outgoing refetches for the relationship queries
-        await utils.profile.getRelationships.cancel(relationshipQueryKey);
+        await queryClient.cancelQueries({ queryKey: [['profile', 'getRelationships'], relationshipQueryKey] });
 
         // Snapshot the previous value
         const previousData =
-          utils.profile.getRelationships.getData(relationshipQueryKey);
+          queryClient.getQueryData<UserRelationships>([['profile', 'getRelationships'], relationshipQueryKey]);
 
         // Optimistically update the cache
         if (
@@ -195,16 +203,16 @@ export function useRelationshipMutations({
           typeof previousData === 'object' &&
           !Array.isArray(previousData)
         ) {
-          const optimisticData = { ...previousData };
+          const optimisticData: UserRelationships = { ...previousData };
           const existingRelationships =
             optimisticData[variables.relationshipType] || [];
           optimisticData[variables.relationshipType] =
             existingRelationships.filter(
-              (rel) => rel.targetProfile?.id !== variables.targetProfileId,
+              (rel: RelationshipItem) => rel.targetProfile?.id !== variables.targetProfileId,
             );
 
-          utils.profile.getRelationships.setData(
-            relationshipQueryKey,
+          queryClient.setQueryData(
+            [['profile', 'getRelationships'], relationshipQueryKey],
             optimisticData,
           );
         }
@@ -220,8 +228,8 @@ export function useRelationshipMutations({
       onError: (error, variables, context) => {
         // Rollback on error
         if (context?.previousData) {
-          utils.profile.getRelationships.setData(
-            relationshipQueryKey,
+          queryClient.setQueryData(
+            [['profile', 'getRelationships'], relationshipQueryKey],
             context.previousData,
           );
         }
@@ -240,21 +248,21 @@ export function useRelationshipMutations({
         // Always refetch relationship data after error or success
         // Await all invalidations to ensure they complete before proceeding
         await Promise.all([
-          utils.profile.getRelationships.invalidate(relationshipQueryKey),
+          queryClient.invalidateQueries({ queryKey: [['profile', 'getRelationships'], relationshipQueryKey] }),
           ...invalidateQueries.flatMap((query) => {
             const promises = [];
             if (query.profileId) {
               promises.push(
-                utils.decision.getProposal.invalidate({
+                queryClient.invalidateQueries({ queryKey: [['decision', 'getProposal'], {
                   profileId: query.profileId,
-                }),
+                }] }),
               );
             }
             if (query.processInstanceId) {
               promises.push(
-                utils.decision.listProposals.invalidate({
+                queryClient.invalidateQueries({ queryKey: [['decision', 'listProposals'], {
                   processInstanceId: query.processInstanceId,
-                }),
+                }] }),
               );
             }
             return promises;

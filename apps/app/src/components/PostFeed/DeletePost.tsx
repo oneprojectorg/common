@@ -5,6 +5,7 @@ import { trpc } from '@op/api/client';
 import type { Post } from '@op/api/encoders';
 import { Menu, MenuItem } from '@op/ui/Menu';
 import { toast } from '@op/ui/Toast';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 
 export const DeletePost = ({
@@ -14,23 +15,24 @@ export const DeletePost = ({
   post: Post;
   profileId: string;
 }) => {
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
   const router = useRouter();
 
-  const deletePost = trpc.organization.deletePost.useMutation({
+  const deletePost = useMutation({
+    mutationFn: (input: Parameters<typeof trpc.organization.deletePost.mutate>[0]) => trpc.organization.deletePost.mutate(input),
     onMutate: async () => {
       // If this is a comment (has parentPostId), update the comments cache optimistically
       if (post.parentPostId) {
         const queryKey = createCommentsQueryKey(post.parentPostId);
 
         // Cancel any outgoing refetches for comments
-        await utils.posts.getPosts.cancel(queryKey);
+        await queryClient.cancelQueries({ queryKey: [['posts', 'getPosts'], queryKey] });
 
         // Snapshot previous comments
-        const previousComments = utils.posts.getPosts.getData(queryKey);
+        const previousComments = queryClient.getQueryData<Post[]>([['posts', 'getPosts'], queryKey]);
 
         // Optimistically remove the comment
-        utils.posts.getPosts.setData(queryKey, (old) => {
+        queryClient.setQueryData<Post[]>([['posts', 'getPosts'], queryKey], (old) => {
           if (!old) return old;
           return old.filter((comment) => comment.id !== post.id);
         });
@@ -41,8 +43,8 @@ export const DeletePost = ({
       return {};
     },
     onSuccess: () => {
-      void utils.organization.listPosts.invalidate();
-      void utils.organization.listAllPosts.invalidate();
+      void queryClient.invalidateQueries({ queryKey: [['organization', 'listPosts']] });
+      void queryClient.invalidateQueries({ queryKey: [['organization', 'listAllPosts']] });
       router.refresh();
       toast.success({ message: 'Post deleted' });
     },
@@ -50,7 +52,7 @@ export const DeletePost = ({
       // Rollback optimistic update for comments on error
       if (post.parentPostId && context?.previousComments) {
         const queryKey = createCommentsQueryKey(post.parentPostId);
-        utils.posts.getPosts.setData(queryKey, context.previousComments);
+        queryClient.setQueryData([['posts', 'getPosts'], queryKey], context.previousComments);
       }
 
       toast.error({ message: error.message || 'Failed to delete post' });

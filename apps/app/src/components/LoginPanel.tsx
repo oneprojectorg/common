@@ -12,6 +12,7 @@ import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { SocialLinks } from '@op/ui/SocialLinks';
 import { TextField } from '@op/ui/TextField';
 import { cn } from '@op/ui/utils';
+import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'next/navigation';
 import React, { useCallback } from 'react';
 import { z } from 'zod';
@@ -94,17 +95,13 @@ export const LoginPanel = () => {
     enabled: false,
   });
 
-  const login = trpc.account.login.useQuery(
-    {
-      email,
-      usingOAuth: false,
-    },
-    {
-      enabled: false,
-      staleTime: 0,
-      initialData: false,
-    },
-  );
+  const login = useQuery({
+    queryKey: [['account', 'login'], { email, usingOAuth: false }],
+    queryFn: () => trpc.account.login.query({ email, usingOAuth: false }),
+    enabled: false,
+    staleTime: 0,
+    initialData: false,
+  });
 
   const combinedError = (login.error?.message || error) ?? undefined;
 

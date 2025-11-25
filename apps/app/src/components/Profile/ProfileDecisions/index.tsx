@@ -10,6 +10,7 @@ import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { useParams, useRouter } from 'next/navigation';
 import { Suspense, useState } from 'react';
 import { LuLeaf, LuPlus } from 'react-icons/lu';
+import { useSuspenseQuery } from '@tanstack/react-query';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -30,10 +31,9 @@ const DecisionProcessList = ({
   const [navigatingInstanceId, setNavigatingInstanceId] = useState<
     string | null
   >(null);
-  const [data] = trpc.decision.listInstances.useSuspenseQuery({
-    ownerProfileId: profileId,
-    limit: 20,
-    offset: 0,
+  const { data } = useSuspenseQuery({
+    queryKey: [['decision', 'listInstances'], { ownerProfileId: profileId, limit: 20, offset: 0 }],
+    queryFn: () => trpc.decision.listInstances.query({ ownerProfileId: profileId, limit: 20, offset: 0 }),
   });
   const access = useUser();
   const { user } = access;

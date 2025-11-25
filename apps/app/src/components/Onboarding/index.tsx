@@ -5,6 +5,7 @@ import { trpc } from '@op/api/client';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { StepperProgressIndicator } from '@op/ui/Stepper';
 import { toast } from '@op/ui/Toast';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import React, { useCallback, useState } from 'react';
 import { z } from 'zod';
@@ -57,8 +58,14 @@ const ProgressInPortal = (props: ProgressComponentProps) => (
 export const OnboardingFlow = () => {
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [hasHydrated, setHasHydrated] = useState(false);
-  const createOrganization = trpc.organization.create.useMutation();
-  void trpc.account.listMatchingDomainOrganizations.usePrefetchQuery();
+  const createOrganization = useMutation({
+    mutationFn: (input: any) => trpc.organization.create.mutate(input),
+  });
+  const queryClient = useQueryClient();
+  void queryClient.prefetchQuery({
+    queryKey: [['account', 'listMatchingDomainOrganizations']],
+    queryFn: () => trpc.account.listMatchingDomainOrganizations.query(),
+  });
   const router = useRouter();
   const isOnline = useConnectionStatus();
   const {
@@ -69,7 +76,6 @@ export const OnboardingFlow = () => {
     tos,
     privacyPolicy,
   } = useOnboardingFormStore();
-  const trpcUtil = trpc.useUtils();
 
   // Handle hydration detection
   React.useEffect(() => {
@@ -129,14 +135,18 @@ export const OnboardingFlow = () => {
 
       createOrganization
         .mutateAsync(processInputs(formData))
-        .then(() => {
+        .then(async () => {
           sendOnboardingAnalytics(formData);
-          // invalidate account so we refetch organization users again
-          trpcUtil.account.getMyAccount.invalidate();
-          trpcUtil.account.getMyAccount.reset();
-          trpcUtil.account.getMyAccount.refetch().then(() => {
-            router.push(`/?new=1`);
+          await queryClient.invalidateQueries({
+            queryKey: [['account', 'getMyAccount']],
           });
+          await queryClient.resetQueries({
+            queryKey: [['account', 'getMyAccount']],
+          });
+          await queryClient.refetchQueries({
+            queryKey: [['account', 'getMyAccount']],
+          });
+          router.push(`/?new=1`);
         })
         .catch((err) => {
           console.error('ERROR', err);
@@ -158,7 +168,7 @@ export const OnboardingFlow = () => {
           }
         });
     },
-    [createOrganization, isOnline, router, trpcUtil],
+    [createOrganization, isOnline, router, queryClient],
   );
 
   const onReturn = useCallback<any>(

@@ -3,6 +3,7 @@
 import { trpc } from '@op/api/client';
 import type { Option } from '@op/ui/MultiSelectComboBox';
 import { useEffect, useMemo } from 'react';
+import { useSuspenseQuery } from '@tanstack/react-query';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -17,10 +18,10 @@ interface FocusAreasFieldProps {
 export const FocusAreasField = ({ profileId, field }: FocusAreasFieldProps) => {
   const t = useTranslations();
 
-  const [individualTermsData] =
-    trpc.individual.getTermsByProfile.useSuspenseQuery({
-      profileId,
-    });
+  const { data: individualTermsData } = useSuspenseQuery({
+    queryKey: [['individual', 'getTermsByProfile'], { profileId }],
+    queryFn: () => trpc.individual.getTermsByProfile.query({ profileId }),
+  });
 
   // Transform individual terms into Options for the form
   const currentFocusAreas = useMemo((): Option[] => {

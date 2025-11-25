@@ -5,6 +5,7 @@ import { skipBatch, trpc } from '@op/api/client';
 import { RELATIONSHIP_OPTIONS, relationshipMap } from '@op/types/relationships';
 import { Breadcrumb, Breadcrumbs } from '@op/ui/Breadcrumbs';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { ErrorBoundary } from 'next/dist/client/components/error-boundary';
 import React, { Suspense, useMemo, useState } from 'react';
 import { LuArrowLeft } from 'react-icons/lu';
@@ -30,19 +31,23 @@ export const ProfileRelationshipsSuspense = ({
 }) => {
   const [searchTerm] = useState('');
   const t = useTranslations();
-  const [organization] = trpc.organization.getBySlug.useSuspenseQuery({
-    slug,
+
+  const orgQueryInput = { slug };
+
+  const { data: organization } = useSuspenseQuery({
+    queryKey: [['organization', 'getBySlug'], orgQueryInput],
+    queryFn: () => trpc.organization.getBySlug.query(orgQueryInput),
   });
 
-  const [{ organizations, count }] =
-    trpc.organization.listRelationships.useSuspenseQuery(
-      {
-        organizationId: organization.id,
-      },
-      {
-        ...skipBatch,
-      },
-    );
+  const relationshipsQueryInput = {
+    organizationId: organization.id,
+  };
+
+  const { data: { organizations, count } } = useSuspenseQuery({
+    queryKey: [['organization', 'listRelationships'], relationshipsQueryInput],
+    queryFn: () => trpc.organization.listRelationships.query(relationshipsQueryInput),
+    ...skipBatch,
+  });
 
   // Convert organization data to RelationshipListItem format
   const relationshipItems: RelationshipListItem[] = useMemo(

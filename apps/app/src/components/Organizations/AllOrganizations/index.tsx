@@ -4,6 +4,7 @@ import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
 import { useInfiniteScroll } from '@op/hooks';
 import { SkeletonLine } from '@op/ui/Skeleton';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { Suspense } from 'react';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
@@ -24,26 +25,31 @@ export const AllOrganizationsSuspense = ({
   initialData?: ProfileListResponse;
   types?: EntityType[];
 }) => {
+  const input = {
+    limit,
+    types: types ?? [EntityType.ORG],
+  };
+
   const {
     data: paginatedData,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = trpc.profile.list.useInfiniteQuery(
-    {
-      limit,
-      types: types ?? [EntityType.ORG],
-    },
-    initialData
+  } = useInfiniteQuery({
+    queryKey: [['profile', 'list'], input],
+    queryFn: ({ pageParam }) =>
+      trpc.profile.list.query({ ...input, cursor: pageParam }),
+    initialPageParam: null as string | null | undefined,
+    getNextPageParam: (lastPage) => lastPage.next,
+    ...(initialData
       ? {
           initialData: {
             pages: [initialData],
             pageParams: [null],
           },
-          getNextPageParam: (lastPage) => lastPage.next,
         }
-      : undefined,
-  );
+      : {}),
+  });
 
   const { ref, shouldShowTrigger } = useInfiniteScroll(fetchNextPage, {
     hasNextPage,

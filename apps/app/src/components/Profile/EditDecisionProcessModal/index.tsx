@@ -19,6 +19,7 @@ import {
   ModalStepper,
 } from '@op/ui/Modal';
 import { toast } from '@op/ui/Toast';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import Form from '@rjsf/core';
 import type { RJSFValidationError } from '@rjsf/utils';
 import validator from '@rjsf/validator-ajv8';
@@ -50,7 +51,7 @@ export const EditDecisionProcessModal = ({
   instance,
   schema = 'simple',
 }: EditDecisionProcessModalProps) => {
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
 
   // Load the appropriate schema based on the prop
   const { stepSchemas, schemaDefaults, transformFormDataToProcessSchema } =
@@ -79,10 +80,10 @@ export const EditDecisionProcessModal = ({
     }
   }, [instance, schemaDefaults]);
 
-  // tRPC mutations for creating process and instance
-  const createProcess = trpc.decision.createProcess.useMutation({
+  const createProcess = useMutation({
+    mutationFn: (input: { name: string; description: string; processSchema: unknown }) =>
+      trpc.decision.createProcess.mutate(input),
     onSuccess: (process) => {
-      // After process is created, create an instance
       createInstance.mutate({
         processId: process.id,
         name: formData.processName as string,
@@ -100,7 +101,9 @@ export const EditDecisionProcessModal = ({
     },
   });
 
-  const createInstance = trpc.decision.createInstance.useMutation({
+  const createInstance = useMutation({
+    mutationFn: (input: { processId: string; name: string; description: string; instanceData: unknown }) =>
+      trpc.decision.createInstance.mutate(input),
     onSuccess: (instance) => {
       toast.success({
         title: isEditing
@@ -109,11 +112,9 @@ export const EditDecisionProcessModal = ({
         message: `"${instance.name}" is now ready for proposals.`,
       });
 
-      // Invalidate the lists to refresh the UI
-      utils.decision.listProcesses.invalidate();
-      utils.decision.listInstances.invalidate();
+      queryClient.invalidateQueries({ queryKey: [['decision', 'listProcesses']] });
+      queryClient.invalidateQueries({ queryKey: [['decision', 'listInstances']] });
 
-      // Close the modal after successful creation
       if (overlayTriggerState?.close) {
         overlayTriggerState.close();
       } else {
@@ -130,17 +131,17 @@ export const EditDecisionProcessModal = ({
     },
   });
 
-  const updateInstance = trpc.decision.updateInstance.useMutation({
+  const updateInstance = useMutation({
+    mutationFn: (input: { instanceId: string; name: string; description: string; instanceData: unknown }) =>
+      trpc.decision.updateInstance.mutate(input),
     onSuccess: (updatedInstance) => {
       toast.success({
         title: 'Decision process updated successfully!',
         message: `"${updatedInstance.name}" has been updated.`,
       });
 
-      // Invalidate the lists to refresh the UI
-      utils.decision.listInstances.invalidate();
+      queryClient.invalidateQueries({ queryKey: [['decision', 'listInstances']] });
 
-      // Close the modal after successful update
       if (overlayTriggerState?.close) {
         overlayTriggerState.close();
       } else {

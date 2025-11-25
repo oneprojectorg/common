@@ -1,25 +1,32 @@
 import { trpc } from '@op/api/client';
 import { toast } from '@op/ui/Toast';
 import { useEffect, useState } from 'react';
+import { useMutation, useQuery } from '@tanstack/react-query';
 
 export const useProposalExport = () => {
   const [exportId, setExportId] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [isDownloadReady, setIsDownloadReady] = useState(false);
 
-  const exportMutation = trpc.decision.export.useMutation();
+  const exportMutation = useMutation({
+    mutationFn: (input: {
+      processInstanceId: string;
+      categoryId?: string;
+      dir?: 'asc' | 'desc';
+      proposalFilter?: 'all' | 'my' | 'shortlisted' | 'my-ballot';
+      format: 'csv';
+    }) => trpc.decision.export.mutate(input),
+  });
 
-  // Use nil UUID when no exportId to satisfy UUID validation
-  const { data: exportStatus } = trpc.decision.getExportStatus.useQuery(
-    { exportId: exportId || '' },
-    {
-      enabled: !!exportId && isExporting,
-      refetchInterval: 2000,
-      gcTime: 0, // Don't cache query results
-      staleTime: 0, // Always fetch fresh data
-      retry: false, // Don't retry validation errors
-    },
-  );
+  const { data: exportStatus } = useQuery({
+    queryKey: [['decision', 'getExportStatus'], { exportId: exportId || '' }],
+    queryFn: () => trpc.decision.getExportStatus.query({ exportId: exportId || '' }),
+    enabled: !!exportId && isExporting,
+    refetchInterval: 2000,
+    gcTime: 0,
+    staleTime: 0,
+    retry: false,
+  });
 
   // Handle status changes
   useEffect(() => {

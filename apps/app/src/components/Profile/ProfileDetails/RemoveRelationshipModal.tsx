@@ -5,6 +5,7 @@ import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Dialog } from '@op/ui/RAC';
 import { toast } from '@op/ui/Toast';
+import { useMutation } from '@tanstack/react-query';
 import { FormEvent, useTransition } from 'react';
 
 export const RemoveRelationshipModal = ({
@@ -14,7 +15,10 @@ export const RemoveRelationshipModal = ({
   relationship: Relationship;
   onChange: () => void;
 }) => {
-  const removeRelationship = trpc.organization.removeRelationship.useMutation();
+  const removeRelationship = useMutation({
+    mutationFn: (input: { id: string }) =>
+      trpc.organization.removeRelationship.mutate(input),
+  });
 
   const [isSubmitting, startTransition] = useTransition();
 

@@ -6,43 +6,57 @@ import { Button } from '@op/ui/Button';
 import { Header2 } from '@op/ui/Header';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Surface } from '@op/ui/Surface';
+import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
 import { Suspense, useState } from 'react';
 
 import ErrorBoundary from '../ErrorBoundary';
 import { OrganizationAvatar } from '../OrganizationAvatar';
 
 const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
-  const [organization] = trpc.organization.getBySlug.useSuspenseQuery({
-    slug,
+  const { data: organization } = useSuspenseQuery({
+    queryKey: [['organization', 'getBySlug'], { slug }],
+    queryFn: () => trpc.organization.getBySlug.query({ slug }),
   });
 
-  const [{ organizations, count }] =
-    trpc.organization.listPendingRelationships.useSuspenseQuery(undefined, {
-      ...skipBatch,
-    });
+  const { data: { organizations, count } } = useSuspenseQuery({
+    queryKey: [['organization', 'listPendingRelationships'], undefined],
+    queryFn: () => trpc.organization.listPendingRelationships.query(undefined),
+    ...skipBatch,
+  });
 
   const [acceptedRelationships, setAcceptedRelationships] = useState<
     Set<string>
   >(new Set());
 
-  const utils = trpc.useUtils();
-  const remove = trpc.organization.declineRelationship.useMutation({
+  const queryClient = useQueryClient();
+  const remove = useMutation({
+    mutationFn: (input: Parameters<typeof trpc.organization.declineRelationship.mutate>[0]) => trpc.organization.declineRelationship.mutate(input),
     onSuccess: () => {
-      utils.organization.invalidate();
-      utils.organization.listPendingRelationships.invalidate();
+      queryClient.invalidateQueries({
+        queryKey: [['organization']],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [['organization', 'listPendingRelationships']],
+      });
     },
   });
-  const approve = trpc.organization.approveRelationship.useMutation({
+  const approve = useMutation({
+    mutationFn: (input: Parameters<typeof trpc.organization.approveRelationship.mutate>[0]) => trpc.organization.approveRelationship.mutate(input),
     onSuccess: (_, variables) => {
       const relationshipKey = `${variables.sourceOrganizationId}-${variables.targetOrganizationId}`;
       setAcceptedRelationships((prev) => new Set(prev).add(relationshipKey));
 
-      utils.organization.listPosts.invalidate();
+      queryClient.invalidateQueries({
+        queryKey: [['organization', 'listPosts']],
+      });
 
-      // invalidate so we remove it from the list.
       setTimeout(() => {
-        utils.organization.invalidate();
-        utils.organization.listPendingRelationships.invalidate();
+        queryClient.invalidateQueries({
+          queryKey: [['organization']],
+        });
+        queryClient.invalidateQueries({
+          queryKey: [['organization', 'listPendingRelationships']],
+        });
       }, 5_000);
     },
   });

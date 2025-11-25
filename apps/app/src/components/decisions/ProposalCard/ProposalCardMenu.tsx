@@ -1,5 +1,6 @@
 'use client';
 
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { trpc } from '@op/api/client';
 import type { proposalEncoder } from '@op/api/encoders';
 import { ProposalStatus } from '@op/api/encoders';
@@ -26,31 +27,34 @@ export function ProposalCardMenu({
   canManage?: boolean;
 }) {
   const t = useTranslations();
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
   const profileId = proposal.profileId;
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
-  const updateStatusMutation = trpc.decision.updateProposalStatus.useMutation({
+  const updateStatusMutation = useMutation({
+    mutationFn: (input: { profileId: string; status: 'approved' | 'rejected' }) =>
+      trpc.decision.updateProposalStatus.mutate(input),
     onMutate: async (variables) => {
-      // Cancel outgoing refetches
       if (proposal.processInstance?.id) {
-        await utils.decision.listProposals.cancel({
-          processInstanceId: proposal.processInstance.id,
+        await queryClient.cancelQueries({
+          queryKey: [
+            ['decision', 'listProposals'],
+            { processInstanceId: proposal.processInstance.id },
+          ],
         });
       }
 
-      // Snapshot the previous value
       const previousListData = proposal.processInstance?.id
-        ? utils.decision.listProposals.getData({
-            processInstanceId: proposal.processInstance.id,
-          })
+        ? queryClient.getQueryData([
+            ['decision', 'listProposals'],
+            { processInstanceId: proposal.processInstance.id },
+          ])
         : null;
 
-      // Optimistically update list data
       if (previousListData && proposal.processInstance?.id) {
         const optimisticListData = {
           ...previousListData,
-          proposals: previousListData.proposals.map((p) =>
+          proposals: (previousListData as any).proposals.map((p: any) =>
             p.id === proposal.id
               ? {
                   ...p,
@@ -59,8 +63,11 @@ export function ProposalCardMenu({
               : p,
           ),
         };
-        utils.decision.listProposals.setData(
-          { processInstanceId: proposal.processInstance.id },
+        queryClient.setQueryData(
+          [
+            ['decision', 'listProposals'],
+            { processInstanceId: proposal.processInstance.id },
+          ],
           optimisticListData,
         );
       }
@@ -68,16 +75,18 @@ export function ProposalCardMenu({
       return { previousListData };
     },
     onError: (error, _variables, context) => {
-      // Rollback on error
       if (context?.previousListData && proposal.processInstance?.id) {
-        utils.decision.listProposals.setData(
-          { processInstanceId: proposal.processInstance.id },
+        queryClient.setQueryData(
+          [
+            ['decision', 'listProposals'],
+            { processInstanceId: proposal.processInstance.id },
+          ],
           context.previousListData,
         );
       }
 
       toast.error({
-        message: error.message || t('Failed to update proposal status'),
+        message: (error as Error).message || t('Failed to update proposal status'),
       });
     },
     onSuccess: (_, variables) => {
@@ -91,19 +100,23 @@ export function ProposalCardMenu({
       });
     },
     onSettled: () => {
-      // Always refetch after error or success
       if (proposal.processInstance?.id) {
-        utils.decision.listProposals.invalidate({
-          processInstanceId: proposal.processInstance.id,
+        queryClient.invalidateQueries({
+          queryKey: [
+            ['decision', 'listProposals'],
+            { processInstanceId: proposal.processInstance.id },
+          ],
         });
       }
     },
   });
 
-  const deleteProposalMutation = trpc.decision.deleteProposal.useMutation({
+  const deleteProposalMutation = useMutation({
+    mutationFn: (input: { proposalId: string }) =>
+      trpc.decision.deleteProposal.mutate(input),
     onError: (error, _variables) => {
       toast.error({
-        message: error.message || t('Failed to delete proposal'),
+        message: (error as Error).message || t('Failed to delete proposal'),
       });
     },
     onSuccess: () => {
@@ -112,10 +125,12 @@ export function ProposalCardMenu({
       });
     },
     onSettled: () => {
-      // Always refetch after error or success
       if (proposal.processInstance?.id) {
-        utils.decision.listProposals.invalidate({
-          processInstanceId: proposal.processInstance.id,
+        queryClient.invalidateQueries({
+          queryKey: [
+            ['decision', 'listProposals'],
+            { processInstanceId: proposal.processInstance.id },
+          ],
         });
       }
     },

@@ -1,5 +1,6 @@
 'use client';
 
+import { useMutation, useSuspenseQuery, useQueryClient } from '@tanstack/react-query';
 import { ProcessInstance } from '@/utils/decisionProcessTransforms';
 import {
   type ImageAttachment,
@@ -93,13 +94,17 @@ export function ProposalEditor({
   const editorRef = useRef<RichTextEditorRef>(null);
   const budgetInputRef = useRef<HTMLInputElement>(null);
   const initializedRef = useRef(false);
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
   const posthog = usePostHog();
   const t = useTranslations();
 
-  const createProposalMutation = trpc.decision.createProposal.useMutation({
+  const createProposalMutation = useMutation({
+    mutationFn: (input: {
+      processInstanceId: string;
+      proposalData: Record<string, unknown>;
+      attachmentIds: string[];
+    }) => trpc.decision.createProposal.mutate(input),
     onSuccess: async () => {
-      // Track successful proposal creation
       if (posthog) {
         posthog.capture('create_proposal_success', {
           process_instance_id: instance.id,
@@ -107,24 +112,38 @@ export function ProposalEditor({
         });
       }
 
-      await utils.decision.listProposals.invalidate({
-        processInstanceId: instance.id,
+      await queryClient.invalidateQueries({
+        queryKey: [
+          ['decision', 'listProposals'],
+          { processInstanceId: instance.id },
+        ],
       });
-      // Navigate after cache invalidation completes
       router.push(backHref);
     },
     onError: (error) => handleValidationError(error, 'create'),
   });
 
-  const updateProposalMutation = trpc.decision.updateProposal.useMutation({
+  const updateProposalMutation = useMutation({
+    mutationFn: (input: {
+      proposalId: string;
+      data: {
+        proposalData: Record<string, unknown>;
+        attachmentIds: string[];
+      };
+    }) => trpc.decision.updateProposal.mutate(input),
     onSuccess: async () => {
-      await utils.decision.getProposal.invalidate({
-        profileId: existingProposal?.profileId,
+      await queryClient.invalidateQueries({
+        queryKey: [
+          ['decision', 'getProposal'],
+          { profileId: existingProposal?.profileId },
+        ],
       });
-      await utils.decision.listProposals.invalidate({
-        processInstanceId: instance.id,
+      await queryClient.invalidateQueries({
+        queryKey: [
+          ['decision', 'listProposals'],
+          { processInstanceId: instance.id },
+        ],
       });
-      // Navigate after cache invalidation completes
       router.push(backHref);
     },
     onError: (error) => handleValidationError(error, 'update'),
@@ -141,9 +160,13 @@ export function ProposalEditor({
   const proposalInfoContent = instance.instanceData?.fieldValues
     ?.proposalInfoContent as string | undefined;
 
-  // Get categories dynamically from the database
-  const [categoriesData] = trpc.decision.getCategories.useSuspenseQuery({
-    processInstanceId: instance.id,
+  const { data: categoriesData } = useSuspenseQuery({
+    queryKey: [
+      ['decision', 'getCategories'],
+      { processInstanceId: instance.id },
+    ],
+    queryFn: () =>
+      trpc.decision.getCategories.query({ processInstanceId: instance.id }),
   });
   const { categories } = categoriesData;
   let budgetCapAmount: number | undefined;

@@ -2,6 +2,7 @@
 
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
+import { useSuspenseQueries } from '@tanstack/react-query';
 import { Surface } from '@op/ui/Surface';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
@@ -21,10 +22,21 @@ export function PostDetail({ postId, slug }: { postId: string; slug: string }) {
   const t = useTranslations();
   const { user } = useUser();
 
-  const [[post, organization]] = trpc.useSuspenseQueries((t) => [
-    t.posts.getPost({ postId, includeChildren: false }),
-    t.organization.getBySlug({ slug }),
-  ]);
+  const results = useSuspenseQueries({
+    queries: [
+      {
+        queryKey: [['posts', 'getPost'], { input: { postId, includeChildren: false } }],
+        queryFn: () => trpc.posts.getPost.query({ postId, includeChildren: false }),
+      },
+      {
+        queryKey: [['organization', 'getBySlug'], { input: { slug } }],
+        queryFn: () => trpc.organization.getBySlug.query({ slug }),
+      },
+    ],
+  });
+
+  const post = results[0].data;
+  const organization = results[1].data;
 
   if (!post) {
     notFound();

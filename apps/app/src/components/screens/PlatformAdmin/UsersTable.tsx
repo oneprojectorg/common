@@ -7,6 +7,7 @@ import { Pagination } from '@op/ui/Pagination';
 import { SearchField } from '@op/ui/SearchField';
 import { Skeleton } from '@op/ui/Skeleton';
 import { cn } from '@op/ui/utils';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { Suspense, useEffect, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -114,7 +115,10 @@ const UsersTableContent = ({ searchQuery }: { searchQuery: string }) => {
     query: searchQuery || undefined,
   };
 
-  const [data] = trpc.platform.admin.listAllUsers.useSuspenseQuery(queryInput);
+  const { data } = useSuspenseQuery({
+    queryKey: [['platform', 'admin', 'listAllUsers'], queryInput],
+    queryFn: () => trpc.platform.admin.listAllUsers.query(queryInput),
+  });
 
   const { items: users, next, hasMore, total } = data;
 

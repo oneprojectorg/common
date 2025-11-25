@@ -14,6 +14,7 @@ import { toast } from '@op/ui/Toast';
 import { useRouter } from 'next/navigation';
 import { ReactNode, Suspense, forwardRef, useState } from 'react';
 import { z } from 'zod';
+import { useMutation } from '@tanstack/react-query';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -58,8 +59,12 @@ export const BaseUpdateProfileForm = forwardRef<
     const t = useTranslations();
     const router = useRouter();
 
-    const uploadImage = trpc.account.uploadImage.useMutation();
-    const uploadBannerImage = trpc.account.uploadBannerImage.useMutation();
+    const uploadImage = useMutation({
+      mutationFn: (input: { file: string; fileName: string; mimeType: string }) => trpc.account.uploadImage.mutate(input),
+    });
+    const uploadBannerImage = useMutation({
+      mutationFn: (input: { file: string; fileName: string; mimeType: string }) => trpc.account.uploadBannerImage.mutate(input),
+    });
 
     const profileId = profile.id;
 
@@ -136,22 +141,16 @@ export const BaseUpdateProfileForm = forwardRef<
         const dataUrl = `data:${file.type};base64,${base64}`;
         setImageUrl(dataUrl);
 
-        const res = await uploadMutation.mutateAsync(
-          {
-            file: base64,
-            fileName: file.name,
-            mimeType: file.type,
-          },
-          {
-            onSuccess: () => {
-              onImageUploadSuccess?.();
-              router.refresh();
-            },
-          },
-        );
+        const res = await uploadMutation.mutateAsync({
+          file: base64,
+          fileName: file.name,
+          mimeType: file.type,
+        });
 
         if (res?.url) {
           setImageUrl(res.url);
+          onImageUploadSuccess?.();
+          router.refresh();
         }
       };
 

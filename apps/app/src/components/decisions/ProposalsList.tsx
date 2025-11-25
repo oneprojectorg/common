@@ -1,5 +1,6 @@
 'use client';
 
+import { useQuery, useSuspenseQuery, useQueryClient } from '@tanstack/react-query';
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { ProposalStatus, type proposalEncoder } from '@op/api/encoders';
@@ -145,14 +146,17 @@ const VotingProposalsList = ({
 
   const numSelected = selectedProposalIds.length;
 
-  // Get voting status for this user and process
-  const { data: voteStatus } = trpc.decision.getVotingStatus.useQuery({
-    processInstanceId: instanceId,
+  const { data: voteStatus } = useQuery({
+    queryKey: [
+      ['decision', 'getVotingStatus'],
+      { processInstanceId: instanceId },
+    ],
+    queryFn: () =>
+      trpc.decision.getVotingStatus.query({ processInstanceId: instanceId }),
   });
 
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
 
-  // Determine voting state
   const hasVoted = voteStatus?.hasVoted || false;
   const isReadOnly = hasVoted;
   const maxVotesPerMember =
@@ -183,12 +187,14 @@ const VotingProposalsList = ({
   const selectedProposals =
     proposals?.filter((p) => selectedProposalIds.includes(p.id)) || [];
 
-  // Handle successful vote submission
   const handleVoteSuccess = () => {
     setSelectedProposalIds([]);
-    setShowSuccessModal(true); // Show success modal
-    utils.decision.getVotingStatus.invalidate({
-      processInstanceId: instanceId,
+    setShowSuccessModal(true);
+    queryClient.invalidateQueries({
+      queryKey: [
+        ['decision', 'getVotingStatus'],
+        { processInstanceId: instanceId },
+      ],
     });
   };
 
@@ -391,12 +397,15 @@ const ViewProposalsList = ({
 const Proposals = (props: ProposalsProps) => {
   const { isLoading, instanceId } = props;
 
-  // Get voting status for this user and process
-  const { data: voteStatus } = trpc.decision.getVotingStatus.useQuery({
-    processInstanceId: instanceId,
+  const { data: voteStatus } = useQuery({
+    queryKey: [
+      ['decision', 'getVotingStatus'],
+      { processInstanceId: instanceId },
+    ],
+    queryFn: () =>
+      trpc.decision.getVotingStatus.query({ processInstanceId: instanceId }),
   });
 
-  // Determine voting state
   const isVotingEnabled = !!voteStatus?.votingConfiguration?.allowDecisions;
 
   if (isLoading) {
@@ -435,16 +444,25 @@ export const ProposalsList = ({
     searchParams.get('sort') || 'newest',
   );
 
-  // Get current user's profile ID for "My Proposals" filter
   const currentProfileId = user?.currentProfile?.id;
-  const [[categoriesData, voteStatus]] = trpc.useSuspenseQueries((t) => [
-    t.decision.getCategories({
-      processInstanceId: instanceId,
-    }),
-    t.decision.getVotingStatus({
-      processInstanceId: instanceId,
-    }),
-  ]);
+
+  const { data: categoriesData } = useSuspenseQuery({
+    queryKey: [
+      ['decision', 'getCategories'],
+      { processInstanceId: instanceId },
+    ],
+    queryFn: () =>
+      trpc.decision.getCategories.query({ processInstanceId: instanceId }),
+  });
+
+  const { data: voteStatus } = useSuspenseQuery({
+    queryKey: [
+      ['decision', 'getVotingStatus'],
+      { processInstanceId: instanceId },
+    ],
+    queryFn: () =>
+      trpc.decision.getVotingStatus.query({ processInstanceId: instanceId }),
+  });
 
   const categories = categoriesData.categories;
 
@@ -501,8 +519,10 @@ export const ProposalsList = ({
     return params;
   }, [instanceId, selectedCategory, sortOrder]);
 
-  const { data: proposalsData, isLoading } =
-    trpc.decision.listProposals.useQuery(queryParams);
+  const { data: proposalsData, isLoading } = useQuery({
+    queryKey: [['decision', 'listProposals'], queryParams],
+    queryFn: () => trpc.decision.listProposals.query(queryParams),
+  });
 
   const { proposals: allProposals, canManageProposals = false } =
     proposalsData ?? {};

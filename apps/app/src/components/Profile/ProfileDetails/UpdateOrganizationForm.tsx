@@ -13,6 +13,7 @@ import type { Option } from '@op/ui/MultiSelectComboBox';
 import { SelectItem } from '@op/ui/Select';
 import { toast } from '@op/ui/Toast';
 import { ToggleButton } from '@op/ui/ToggleButton';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { forwardRef, useState } from 'react';
 import { LuLink } from 'react-icons/lu';
@@ -97,18 +98,17 @@ export const UpdateOrganizationForm = forwardRef<
   UpdateOrganizationFormProps
 >(({ profile, onSuccess, className }, ref) => {
   const t = useTranslations();
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
   const router = useRouter();
 
-  // Fetch organization terms for focus areas and communities served
-  const { data: terms } = trpc.organization.getTerms.useQuery({
-    id: profile.id,
+  const input = { id: profile.id };
+  const { data: terms } = useQuery({
+    queryKey: [['organization', 'getTerms'], input],
+    queryFn: () => trpc.organization.getTerms.query(input),
   });
 
-  // Initialize form data from profile and terms
   const initialData = transformOrganizationToFormData(profile, terms);
 
-  // Initialize images from profile
   const initialProfileImage: ImageData | undefined = profile.profile.avatarImage
     ? {
         url: getPublicUrl(profile.profile.avatarImage.name) || '',
@@ -123,9 +123,17 @@ export const UpdateOrganizationForm = forwardRef<
       }
     : undefined;
 
-  const updateOrganization = trpc.organization.update.useMutation();
-  const uploadAvatarImage = trpc.organization.uploadAvatarImage.useMutation();
-  const uploadImage = trpc.organization.uploadAvatarImage.useMutation();
+  const updateOrganization = useMutation({
+    mutationFn: (input: any) => trpc.organization.update.mutate(input),
+  });
+  const uploadAvatarImage = useMutation({
+    mutationFn: (input: { file: string; fileName: string; mimeType: string }) =>
+      trpc.organization.uploadAvatarImage.mutate(input),
+  });
+  const uploadImage = useMutation({
+    mutationFn: (input: { file: string; fileName: string; mimeType: string }) =>
+      trpc.organization.uploadAvatarImage.mutate(input),
+  });
 
   const [profileImage, setProfileImage] = useState<ImageData | undefined>(
     initialProfileImage,
@@ -160,9 +168,8 @@ export const UpdateOrganizationForm = forwardRef<
     try {
       await updateOrganization.mutateAsync(updateData);
 
-      // Invalidate relevant queries
-      await utils.organization.getBySlug.invalidate({
-        slug: profile.profile.slug,
+      await queryClient.invalidateQueries({
+        queryKey: [['organization', 'getBySlug'], { slug: profile.profile.slug }],
       });
       router.refresh();
 

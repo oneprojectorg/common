@@ -3,6 +3,7 @@
 import { formatCurrency } from '@/utils/formatting';
 import { getUniqueSubmitters } from '@/utils/proposalUtils';
 import { trpc } from '@op/api/client';
+import { useSuspenseQueries } from '@tanstack/react-query';
 import { match } from '@op/core';
 import { Suspense } from 'react';
 
@@ -22,20 +23,26 @@ export function VotingPage({
 }) {
   const t = useTranslations();
 
-  const [[{ proposals }, instance, voteStatus]] = trpc.useSuspenseQueries(
-    (t) => [
-      t.decision.listProposals({
-        processInstanceId: instanceId,
-        limit: 20,
-      }),
-      t.decision.getInstance({
-        instanceId,
-      }),
-      t.decision.getVotingStatus({
-        processInstanceId: instanceId,
-      }),
+  const results = useSuspenseQueries({
+    queries: [
+      {
+        queryKey: [['decision', 'listProposals'], { input: { processInstanceId: instanceId, limit: 20 } }],
+        queryFn: () => trpc.decision.listProposals.query({ processInstanceId: instanceId, limit: 20 }),
+      },
+      {
+        queryKey: [['decision', 'getInstance'], { input: { instanceId } }],
+        queryFn: () => trpc.decision.getInstance.query({ instanceId }),
+      },
+      {
+        queryKey: [['decision', 'getVotingStatus'], { input: { processInstanceId: instanceId } }],
+        queryFn: () => trpc.decision.getVotingStatus.query({ processInstanceId: instanceId }),
+      },
     ],
-  );
+  });
+
+  const { proposals } = results[0].data;
+  const instance = results[1].data;
+  const voteStatus = results[2].data;
 
   const hasVoted = voteStatus?.hasVoted || false;
   const uniqueSubmitters = getUniqueSubmitters(proposals);

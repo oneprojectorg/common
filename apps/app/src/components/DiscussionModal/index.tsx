@@ -7,6 +7,7 @@ import { Modal, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Surface } from '@op/ui/Surface';
 import { useCallback, useRef } from 'react';
 import React from 'react';
+import { useQuery } from '@tanstack/react-query';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -35,16 +36,21 @@ export function DiscussionModal({
     user,
   });
 
-  // Get comments for the post using getPosts without profileId (works for all post types)
-  const { data: commentsData, isLoading } = trpc.posts.getPosts.useQuery(
-    {
+  const { data: commentsData, isLoading } = useQuery({
+    queryKey: [['posts', 'getPosts'], {
       parentPostId: post.id,
       limit: 50,
       offset: 0,
       includeChildren: false,
-    },
-    { enabled: isOpen },
-  );
+    }],
+    queryFn: () => trpc.posts.getPosts.query({
+      parentPostId: post.id,
+      limit: 50,
+      offset: 0,
+      includeChildren: false,
+    }),
+    enabled: isOpen,
+  });
 
   const comments = commentsData || [];
 

@@ -6,6 +6,7 @@ import { match } from '@op/core';
 import { Header3 } from '@op/ui/Header';
 import { Skeleton } from '@op/ui/Skeleton';
 import { Suspense } from 'react';
+import { useSuspenseQuery } from '@tanstack/react-query';
 
 import { useTranslations } from '@/lib/i18n/routing';
 
@@ -30,8 +31,9 @@ export function ResultsPage({
 }) {
   const t = useTranslations();
 
-  const [instance] = trpc.decision.getInstance.useSuspenseQuery({
-    instanceId,
+  const { data: instance } = useSuspenseQuery({
+    queryKey: [['decision', 'getInstance'], { instanceId }],
+    queryFn: () => trpc.decision.getInstance.query({ instanceId }),
   });
 
   // Organization-specific content

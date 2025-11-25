@@ -1,8 +1,7 @@
 'use client';
 
-import { trpc } from '@op/api/client';
 import type { AuthError } from '@op/supabase/lib';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { DefinedUseQueryResult } from '@tanstack/react-query';
 
 import useAuthUser from './useAuthUser';
@@ -15,7 +14,7 @@ const useAuthLogout: () => DefinedUseQueryResult<
   Error
 > = () => {
   const user = useAuthUser();
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
   const logout = useQuery<{
     error: AuthError | null;
   } | null>({
@@ -30,7 +29,9 @@ const useAuthLogout: () => DefinedUseQueryResult<
       nukeCookies();
 
       await user.refetch();
-      utils.account.getMyAccount.invalidate();
+      queryClient.invalidateQueries({
+        queryKey: [['account', 'getMyAccount']],
+      });
 
       if (locData.error) {
         throw new Error(locData.error.message);

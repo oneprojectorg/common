@@ -1,6 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { notFound, useParams } from 'next/navigation';
 import { Suspense } from 'react';
 
@@ -16,8 +17,11 @@ function ProposalViewPageContent({
   instanceId: string;
   slug: string;
 }) {
-  const [proposal] = trpc.decision.getProposal.useSuspenseQuery({
-    profileId,
+  const queryInput = { profileId };
+
+  const { data: proposal } = useSuspenseQuery({
+    queryKey: [['decision', 'getProposal'], queryInput],
+    queryFn: () => trpc.decision.getProposal.query(queryInput),
   });
 
   if (!proposal) {

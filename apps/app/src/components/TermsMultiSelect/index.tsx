@@ -3,6 +3,7 @@
 import { trpc } from '@op/api/client';
 import type { TermWithChildren } from '@op/common';
 import { MultiSelectComboBox, type Option } from '@op/ui/MultiSelectComboBox';
+import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 
 type FlattenedTerm = Option & {
@@ -53,9 +54,15 @@ export const TermsMultiSelect = ({
   showDefinitions?: boolean;
 }) => {
   const [termsQuery, setTermsQuery] = useState('');
-  const { data: terms, isLoading } = trpc.taxonomy.getTerms.useQuery({
+
+  const queryInput = {
     name: taxonomy,
     q: termsQuery.length >= 2 ? termsQuery : undefined,
+  };
+
+  const { data: terms, isLoading } = useQuery({
+    queryKey: [['taxonomy', 'getTerms'], queryInput],
+    queryFn: () => trpc.taxonomy.getTerms.query(queryInput),
   });
 
   const flattenedTerms = terms ? flattenTermTree(terms) : [];

@@ -3,6 +3,7 @@
 import { trpc } from '@op/api/client';
 import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
 import { Suspense } from 'react';
+import { useSuspenseQuery } from '@tanstack/react-query';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { OrganizationSummaryList } from '@/components/OrganizationList';
@@ -13,10 +14,10 @@ export const ProfileOrganizationsSuspense = ({
 }: {
   profileId: string;
 }) => {
-  const [organizations] =
-    trpc.organization.getOrganizationsByProfile.useSuspenseQuery({
-      profileId,
-    });
+  const { data: organizations } = useSuspenseQuery({
+    queryKey: [['organization', 'getOrganizationsByProfile'], { profileId }],
+    queryFn: () => trpc.organization.getOrganizationsByProfile.query({ profileId }),
+  });
 
   if (!organizations || organizations.length === 0) {
     return (

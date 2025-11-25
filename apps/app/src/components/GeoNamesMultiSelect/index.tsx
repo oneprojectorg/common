@@ -3,6 +3,7 @@
 import { trpc } from '@op/api/client';
 import { MultiSelectComboBox } from '@op/ui/MultiSelectComboBox';
 import type { Option } from '@op/ui/MultiSelectComboBox';
+import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 
 export const GeoNamesMultiSelect = ({
@@ -17,15 +18,12 @@ export const GeoNamesMultiSelect = ({
   isRequired?: boolean;
 }) => {
   const [whereWeWorkQuery, setWhereWeWorkQuery] = useState('');
-  const { data: geoNames, isLoading } = trpc.taxonomy.getGeoNames.useQuery(
-    {
-      q: whereWeWorkQuery,
-    },
-    {
-      enabled: whereWeWorkQuery.length >= 2,
-      placeholderData: (prev) => prev,
-    },
-  );
+  const { data: geoNames, isLoading } = useQuery({
+    queryKey: [['taxonomy', 'getGeoNames'], { q: whereWeWorkQuery }],
+    queryFn: () => trpc.taxonomy.getGeoNames.query({ q: whereWeWorkQuery }),
+    enabled: whereWeWorkQuery.length >= 2,
+    placeholderData: (prev) => prev,
+  });
 
   return (
     <MultiSelectComboBox

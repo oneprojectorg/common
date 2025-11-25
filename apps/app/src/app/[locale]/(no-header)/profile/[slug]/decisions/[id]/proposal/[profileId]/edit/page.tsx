@@ -1,6 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
+import { useSuspenseQueries } from '@tanstack/react-query';
 import { notFound, useParams } from 'next/navigation';
 import { Suspense } from 'react';
 
@@ -16,11 +17,21 @@ function ProposalEditPageContent({
   instanceId: string;
   slug: string;
 }) {
-  // Get both the proposal and the instance in parallel
-  const [[proposal, instance]] = trpc.useSuspenseQueries((t) => [
-    t.decision.getProposal({ profileId }),
-    t.decision.getInstance({ instanceId }),
-  ]);
+  const results = useSuspenseQueries({
+    queries: [
+      {
+        queryKey: [['decision', 'getProposal'], { input: { profileId } }],
+        queryFn: () => trpc.decision.getProposal.query({ profileId }),
+      },
+      {
+        queryKey: [['decision', 'getInstance'], { input: { instanceId } }],
+        queryFn: () => trpc.decision.getInstance.query({ instanceId }),
+      },
+    ],
+  });
+
+  const proposal = results[0].data;
+  const instance = results[1].data;
 
   if (!proposal || !instance) {
     notFound();

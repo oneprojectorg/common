@@ -4,6 +4,7 @@ import { trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
 import { AvatarSkeleton } from '@op/ui/Avatar';
 import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
+import { useSuspenseQuery } from '@tanstack/react-query';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -46,11 +47,18 @@ export function Comments({
 }) {
   const t = useTranslations();
 
-  const [comments] = trpc.posts.getPosts.useSuspenseQuery({
-    parentPostId: postId,
-    limit: 50,
-    offset: 0,
-    includeChildren: false,
+  const { data: comments } = useSuspenseQuery({
+    queryKey: [
+      ['posts', 'getPosts'],
+      { parentPostId: postId, limit: 50, offset: 0, includeChildren: false },
+    ],
+    queryFn: () =>
+      trpc.posts.getPosts.query({
+        parentPostId: postId,
+        limit: 50,
+        offset: 0,
+        includeChildren: false,
+      }),
   });
 
   if (comments.length === 0) {

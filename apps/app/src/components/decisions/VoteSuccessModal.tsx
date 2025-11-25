@@ -8,6 +8,7 @@ import { Header1, Header3 } from '@op/ui/Header';
 import { Modal } from '@op/ui/Modal';
 import { Skeleton } from '@op/ui/Skeleton';
 import { Suspense } from 'react';
+import { useSuspenseQuery } from '@tanstack/react-query';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -27,8 +28,9 @@ const VoteSuccessModalSuspense = ({
 }: VoteSuccessModalProps) => {
   const t = useTranslations();
 
-  const [processInstance] = trpc.decision.getInstance.useSuspenseQuery({
-    instanceId,
+  const { data: processInstance } = useSuspenseQuery({
+    queryKey: [['decision', 'getInstance'], { instanceId }],
+    queryFn: () => trpc.decision.getInstance.query({ instanceId }),
   });
 
   const nextSteps =

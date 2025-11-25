@@ -1,6 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
+import { useQuery } from '@tanstack/react-query';
 import { Header3 } from '@op/ui/Header';
 import { Skeleton } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
@@ -25,13 +26,12 @@ export const LinkPreview = memo(({ url, className }: LinkPreviewProps) => {
     data: previewData,
     isLoading: loading,
     error,
-  } = trpc.content.linkPreview.useQuery(
-    { url },
-    {
-      enabled: !!url,
-      retry: false,
-    },
-  );
+  } = useQuery({
+    queryKey: [['content', 'linkPreview'], { url }],
+    queryFn: () => trpc.content.linkPreview.query({ url }),
+    enabled: !!url,
+    retry: false,
+  });
 
   useEffect(() => {
     // relies on the embed.js from iframely being loaded

@@ -2,6 +2,7 @@
 
 import { getUniqueSubmitters } from '@/utils/proposalUtils';
 import { trpc } from '@op/api/client';
+import { useSuspenseQueries } from '@tanstack/react-query';
 import { match } from '@op/core';
 import { Header3 } from '@op/ui/Header';
 import { Suspense } from 'react';
@@ -24,15 +25,21 @@ export function StandardDecisionPage({
 }) {
   const t = useTranslations();
 
-  const [[{ proposals }, instance]] = trpc.useSuspenseQueries((t) => [
-    t.decision.listProposals({
-      processInstanceId: instanceId,
-      limit: 20,
-    }),
-    t.decision.getInstance({
-      instanceId,
-    }),
-  ]);
+  const results = useSuspenseQueries({
+    queries: [
+      {
+        queryKey: [['decision', 'listProposals'], { input: { processInstanceId: instanceId, limit: 20 } }],
+        queryFn: () => trpc.decision.listProposals.query({ processInstanceId: instanceId, limit: 20 }),
+      },
+      {
+        queryKey: [['decision', 'getInstance'], { input: { instanceId } }],
+        queryFn: () => trpc.decision.getInstance.query({ instanceId }),
+      },
+    ],
+  });
+
+  const { proposals } = results[0].data;
+  const instance = results[1].data;
 
   const instanceData = instance.instanceData as any;
   const processSchema = instance.process?.processSchema as any;

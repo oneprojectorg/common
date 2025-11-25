@@ -8,6 +8,7 @@ import { Button } from '@op/ui/Button';
 import { toast } from '@op/ui/Toast';
 import { useState } from 'react';
 import { LuCheck, LuUserPlus } from 'react-icons/lu';
+import { useSuspenseQuery, useMutation } from '@tanstack/react-query';
 
 import { OrganizationAvatar } from '@/components/OrganizationAvatar';
 
@@ -21,17 +22,20 @@ export const InviteToOrganizationButton = ({
   const { user } = useUser();
   const isOnline = useConnectionStatus();
 
-  const [[rolesData, membershipData]] = trpc.useSuspenseQueries((t) => [
-    t.organization.getRoles(),
-    t.organization.checkMembership({
-      email: profile.profile.email!,
-      organizationId: user?.currentOrganization?.id!,
-    }),
-  ]);
+  const { data: rolesData } = useSuspenseQuery({
+    queryKey: [['organization', 'getRoles'], {}],
+    queryFn: () => trpc.organization.getRoles.query(),
+  });
+
+  const { data: membershipData } = useSuspenseQuery({
+    queryKey: [['organization', 'checkMembership'], { email: profile.profile.email!, organizationId: user?.currentOrganization?.id! }],
+    queryFn: () => trpc.organization.checkMembership.query({ email: profile.profile.email!, organizationId: user?.currentOrganization?.id! }),
+  });
 
   const [isMember, setIsMember] = useState(membershipData.isMember);
 
-  const inviteUser = trpc.organization.invite.useMutation({
+  const inviteUser = useMutation({
+    mutationFn: (input: { emails: string[]; roleId: string; organizationId: string }) => trpc.organization.invite.mutate(input),
     onSuccess: (result) => {
       const successfulInvites = result.details?.successful || [];
       const failedInvites = result.details?.failed || [];

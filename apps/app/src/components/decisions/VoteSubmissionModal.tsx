@@ -1,5 +1,6 @@
 'use client';
 
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { trpc } from '@op/api/client';
 import type { proposalEncoder } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
@@ -66,17 +67,25 @@ export const VoteSubmissionModal = ({
     easeOfUse: '',
   });
 
-  const utils = trpc.useUtils();
-  const submitVoteMutation = trpc.decision.submitVote.useMutation({
+  const queryClient = useQueryClient();
+  const submitVoteMutation = useMutation({
+    mutationFn: (input: {
+      processInstanceId: string;
+      selectedProposalIds: string[];
+      schemaVersion: string;
+      customData: CustomData;
+    }) => trpc.decision.submitVote.mutate(input),
     onSuccess: () => {
-      utils.decision.getVotingStatus.invalidate();
-      overlayState?.close(); // Close the submission modal
-      onSuccess(); // Trigger success callback to show success modal
+      queryClient.invalidateQueries({
+        queryKey: [['decision', 'getVotingStatus']],
+      });
+      overlayState?.close();
+      onSuccess();
     },
     onError: (error) => {
       console.error('Failed to submit vote:', error);
       toast.error({
-        message: error.message || 'Failed to submit vote',
+        message: (error as Error).message || 'Failed to submit vote',
       });
     },
   });

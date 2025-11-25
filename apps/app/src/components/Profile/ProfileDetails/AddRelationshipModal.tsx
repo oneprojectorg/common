@@ -12,6 +12,7 @@ import { Dialog, DialogTrigger } from '@op/ui/RAC';
 import { toast } from '@op/ui/Toast';
 import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
 import { cn } from '@op/ui/utils';
+import { useMutation, useSuspenseQuery, useQueryClient } from '@tanstack/react-query';
 import { FormEvent, Suspense, useState, useTransition } from 'react';
 import { LuCheck, LuChevronDown, LuClock, LuPlus } from 'react-icons/lu';
 
@@ -26,16 +27,18 @@ import { RespondButton } from './RespondButton';
 
 const RemoveRelationshipModalContent = ({
   relationship,
-  utils,
+  queryClient,
   profileId,
   onClose,
 }: {
   relationship: any;
-  utils: any;
+  queryClient: any;
   profileId: string;
   onClose: () => void;
 }) => {
-  const removeRelationship = trpc.organization.removeRelationship.useMutation();
+  const removeRelationship = useMutation({
+    mutationFn: (input: { id: string }) => trpc.organization.removeRelationship.mutate(input),
+  });
   const [isSubmitting, startTransition] = useTransition();
 
   const handleSubmit = (e: FormEvent) => {
@@ -47,11 +50,11 @@ const RemoveRelationshipModalContent = ({
           id: relationship.id,
         });
 
-        utils.organization.listRelationships.invalidate({
-          organizationId: profileId,
+        queryClient.invalidateQueries({
+          queryKey: [['organization', 'listRelationships'], { organizationId: profileId }],
         });
-        utils.organization.listDirectedRelationships.invalidate({
-          from: profileId,
+        queryClient.invalidateQueries({
+          queryKey: [['organization', 'listDirectedRelationships'], { from: profileId }],
         });
 
         toast.success({
@@ -96,21 +99,17 @@ export const AddRelationshipModalSuspense = ({
 }) => {
   const { user } = useUser();
   const t = useTranslations();
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
   const [selectedRelationshipId, setSelectedRelationshipId] = useState<
     string | null
   >(null);
 
-  // checking for our relationships TOWARDS the profile
-  const [{ relationships }] =
-    trpc.organization.listDirectedRelationships.useSuspenseQuery(
-      {
-        from: profile.id,
-      },
-      {
-        ...skipBatch,
-      },
-    );
+  const input = { from: profile.id };
+  const { data: { relationships } } = useSuspenseQuery({
+    queryKey: [['organization', 'listDirectedRelationships'], input],
+    queryFn: () => trpc.organization.listDirectedRelationships.query(input),
+    ...skipBatch,
+  });
 
   const selectedRelationship = relationships.find(
     (r) => r.id === selectedRelationshipId,
@@ -181,11 +180,11 @@ export const AddRelationshipModalSuspense = ({
               <RemoveRelationshipModal
                 relationship={relationship}
                 onChange={() => {
-                  utils.organization.listRelationships.invalidate({
-                    organizationId: profile.id,
+                  queryClient.invalidateQueries({
+                    queryKey: [['organization', 'listRelationships'], { organizationId: profile.id }],
                   });
-                  utils.organization.listDirectedRelationships.invalidate({
-                    from: profile.id,
+                  queryClient.invalidateQueries({
+                    queryKey: [['organization', 'listDirectedRelationships'], { from: profile.id }],
                   });
                 }}
               />
@@ -202,11 +201,11 @@ export const AddRelationshipModalSuspense = ({
             <AddRelationshipForm
               profile={profile}
               onChange={() => {
-                utils.organization.listRelationships.invalidate({
-                  organizationId: profile.id,
+                queryClient.invalidateQueries({
+                  queryKey: [['organization', 'listRelationships'], { organizationId: profile.id }],
                 });
-                utils.organization.listDirectedRelationships.invalidate({
-                  from: profile.id,
+                queryClient.invalidateQueries({
+                  queryKey: [['organization', 'listDirectedRelationships'], { from: profile.id }],
                 });
               }}
             />
@@ -224,7 +223,7 @@ export const AddRelationshipModalSuspense = ({
             {({ close }) => (
               <RemoveRelationshipModalContent
                 relationship={selectedRelationship}
-                utils={utils}
+                queryClient={queryClient}
                 profileId={profile.id}
                 onClose={() => {
                   setSelectedRelationshipId(null);

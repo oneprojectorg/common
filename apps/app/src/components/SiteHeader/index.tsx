@@ -16,6 +16,7 @@ import { MenuTrigger } from '@op/ui/RAC';
 import { SidebarTrigger } from '@op/ui/Sidebar';
 import { Skeleton } from '@op/ui/Skeleton';
 import { cn } from '@op/ui/utils';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Suspense, useEffect, useRef, useState } from 'react';
@@ -71,13 +72,15 @@ const ProfileMenuItem = ({
 }) => {
   const { user } = useUser();
   const router = useRouter();
-  const utils = trpc.useUtils();
-  const switchProfile = trpc.account.switchProfile.useMutation({
+  const queryClient = useQueryClient();
+  const switchProfile = useMutation({
+    mutationFn: (input: Parameters<typeof trpc.account.switchProfile.mutate>[0]) =>
+      trpc.account.switchProfile.mutate(input),
     onSuccess: () => {
-      utils.invalidate();
-      // TODO: something is happening when switching so trying this out to see if it helps to continue debugging
-      utils.organization.listAllPosts.refetch();
-      // Reset all SSR fetches as well
+      queryClient.invalidateQueries();
+      queryClient.refetchQueries({
+        queryKey: [['organization', 'listAllPosts']],
+      });
       router.refresh();
     },
   });
@@ -140,7 +143,10 @@ const AvatarMenuContent = ({
   const router = useRouter();
   const t = useTranslations();
 
-  const { data: profiles } = trpc.account.getUserProfiles.useQuery();
+  const { data: profiles } = useQuery({
+    queryKey: [['account', 'getUserProfiles']],
+    queryFn: () => trpc.account.getUserProfiles.query(),
+  });
 
   const { userProfiles, orgProfiles } =
     profiles?.reduce<{

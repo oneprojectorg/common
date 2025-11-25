@@ -5,6 +5,7 @@ import { skipBatch, trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
 import { Header1 } from '@op/ui/Header';
 import { Skeleton } from '@op/ui/Skeleton';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { Suspense } from 'react';
 
 import { Link, useTranslations } from '@/lib/i18n';
@@ -13,14 +14,12 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 
 const RelationshipCount = ({ profile }: { profile: Organization }) => {
   const t = useTranslations();
-  const [{ count }] = trpc.organization.listRelationships.useSuspenseQuery(
-    {
-      organizationId: profile.id,
-    },
-    {
-      ...skipBatch,
-    },
-  );
+  const input = { organizationId: profile.id };
+  const { data: { count } } = useSuspenseQuery({
+    queryKey: [['organization', 'listRelationships'], input],
+    queryFn: () => trpc.organization.listRelationships.query(input),
+    ...skipBatch,
+  });
 
   return (
     count > 0 && (

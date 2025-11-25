@@ -14,6 +14,7 @@ import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
 import { ReactNode, Suspense } from 'react';
 import { LuCopy, LuGlobe, LuMail } from 'react-icons/lu';
+import { useSuspenseQuery } from '@tanstack/react-query';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
@@ -58,8 +59,9 @@ const FocusAreas = ({
 };
 
 const IndividualFocusAreas = ({ profileId }: { profileId: string }) => {
-  const [terms] = trpc.individual.getTermsByProfile.useSuspenseQuery({
-    profileId,
+  const { data: terms } = useSuspenseQuery({
+    queryKey: [['individual', 'getTermsByProfile'], { profileId }],
+    queryFn: () => trpc.individual.getTermsByProfile.query({ profileId }),
   });
 
   const focusAreas = terms['necSimple:focusArea'];
@@ -70,8 +72,9 @@ const IndividualFocusAreas = ({ profileId }: { profileId: string }) => {
 };
 
 const OrganizationFocusAreas = ({ profileId }: { profileId: string }) => {
-  const [terms] = trpc.organization.getTerms.useSuspenseQuery({
-    id: profileId,
+  const { data: terms } = useSuspenseQuery({
+    queryKey: [['organization', 'getTerms'], { id: profileId }],
+    queryFn: () => trpc.organization.getTerms.query({ id: profileId }),
   });
 
   const focusAreas = terms['necSimple:focusArea'];
@@ -82,8 +85,9 @@ const OrganizationFocusAreas = ({ profileId }: { profileId: string }) => {
 };
 
 const CommunitiesServed = ({ profileId }: { profileId: string }) => {
-  const [terms] = trpc.organization.getTerms.useSuspenseQuery({
-    id: profileId,
+  const { data: terms } = useSuspenseQuery({
+    queryKey: [['organization', 'getTerms'], { id: profileId }],
+    queryFn: () => trpc.organization.getTerms.query({ id: profileId }),
   });
   const t = useTranslations();
 

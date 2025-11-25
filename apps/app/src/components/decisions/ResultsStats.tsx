@@ -4,6 +4,7 @@ import { formatCurrency } from '@/utils/formatting';
 import { trpc } from '@op/api/client';
 import { cn } from '@op/ui/utils';
 import { ReactNode } from 'react';
+import { useSuspenseQuery } from '@tanstack/react-query';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -47,8 +48,9 @@ interface ResultsStatsProps {
 export function ResultsStats({ instanceId }: ResultsStatsProps) {
   const t = useTranslations();
 
-  const [stats] = trpc.decision.getResultsStats.useSuspenseQuery({
-    instanceId,
+  const { data: stats } = useSuspenseQuery({
+    queryKey: [['decision', 'getResultsStats'], { instanceId }],
+    queryFn: () => trpc.decision.getResultsStats.query({ instanceId }),
   });
 
   if (!stats) {

@@ -7,6 +7,7 @@ import { Button } from '@op/ui/Button';
 import { Heart } from 'lucide-react';
 import { LuBookmark } from 'react-icons/lu';
 import { z } from 'zod';
+import { useQuery } from '@tanstack/react-query';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -19,14 +20,12 @@ export function ProposalCardActions({
 }) {
   const t = useTranslations();
 
-  // Subscribe to the individual proposal data which gets optimistically updated
-  const { data: currentProposal } = trpc.decision.getProposal.useQuery(
-    { profileId: initialProposal.profileId },
-    {
-      refetchOnMount: false,
-      initialData: initialProposal,
-    },
-  );
+  const { data: currentProposal } = useQuery({
+    queryKey: [['decision', 'getProposal'], { profileId: initialProposal.profileId }],
+    queryFn: () => trpc.decision.getProposal.query({ profileId: initialProposal.profileId }),
+    refetchOnMount: false,
+    initialData: initialProposal,
+  });
 
   // Use relationship mutations hook for like/follow functionality
   const {

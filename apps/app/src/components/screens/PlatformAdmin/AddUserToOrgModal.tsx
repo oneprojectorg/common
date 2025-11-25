@@ -12,6 +12,7 @@ import { ProfileItem } from '@op/ui/ProfileItem';
 import { Skeleton } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
 import { toast } from '@op/ui/Toast';
+import { useMutation, useQueryClient, useSuspenseQueries } from '@tanstack/react-query';
 import Image from 'next/image';
 import {
   FormEvent,
@@ -63,12 +64,15 @@ const AddUserToOrgModalContent = ({
   onOpenChange: (isOpen: boolean) => void;
 }) => {
   const t = useTranslations();
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
   const [selectedOrgId, setSelectedOrgId] = useState<string>('');
   const [selectedRoleId, setSelectedRoleId] = useState<string>('');
   const [isSubmitting, startTransition] = useTransition();
 
-  const addUserToOrg = trpc.platform.admin.addUsersToOrganization.useMutation();
+  const addUserToOrg = useMutation({
+    mutationFn: (input: Parameters<typeof trpc.platform.admin.addUsersToOrganization.mutate>[0]) =>
+      trpc.platform.admin.addUsersToOrganization.mutate(input),
+  });
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -98,7 +102,9 @@ const AddUserToOrgModalContent = ({
           message: t('platformAdmin_addUserToOrg_successMessage'),
         });
 
-        utils.platform.admin.listAllUsers.invalidate();
+        queryClient.invalidateQueries({
+          queryKey: [['platform', 'admin', 'listAllUsers']],
+        });
 
         // Reset form
         setSelectedOrgId('');
@@ -263,13 +269,26 @@ const OrganizationAndRoleSelection = ({
 }) => {
   const t = useTranslations();
 
-  const [[organizationsData, rolesData]] = trpc.useSuspenseQueries((t) => [
-    t.organization.list({
-      // TODO: because we lack a proper search/filter UI at this point, we set a high limit here. To be changed.
-      limit: 500,
-    }),
-    t.organization.getRoles(),
-  ]);
+  const [{ data: organizationsData }, { data: rolesData }] = useSuspenseQueries({
+    queries: [
+      {
+        queryKey: [
+          ['organization', 'list'],
+          {
+            limit: 500,
+          },
+        ],
+        queryFn: () =>
+          trpc.organization.list.query({
+            limit: 500,
+          }),
+      },
+      {
+        queryKey: [['organization', 'getRoles']],
+        queryFn: () => trpc.organization.getRoles.query(),
+      },
+    ],
+  });
 
   // Find Member role and set as default
   const memberRole = rolesData.roles.find((role) => role.name === 'Member');

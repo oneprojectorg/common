@@ -8,6 +8,7 @@ import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { SelectItem } from '@op/ui/Select';
 import { Skeleton } from '@op/ui/Skeleton';
 import { toast } from '@op/ui/Toast';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ReactNode, Suspense, useState } from 'react';
 import { z } from 'zod';
 
@@ -115,14 +116,31 @@ export const PersonalDetailsForm = ({
     (s) => s.setPersonalDetails,
   );
   const t = useTranslations();
-  const utils = trpc.useUtils();
-  const uploadImage = trpc.account.uploadImage.useMutation();
-  const uploadBannerImage = trpc.account.uploadBannerImage.useMutation();
-  const updateProfile = trpc.account.updateUserProfile.useMutation();
+  const queryClient = useQueryClient();
+  const uploadImage = useMutation({
+    mutationFn: (input: { file: string; fileName: string; mimeType: string }) =>
+      trpc.account.uploadImage.mutate(input),
+  });
+  const uploadBannerImage = useMutation({
+    mutationFn: (input: { file: string; fileName: string; mimeType: string }) =>
+      trpc.account.uploadBannerImage.mutate(input),
+  });
+  const updateProfile = useMutation({
+    mutationFn: (input: {
+      name?: string;
+      bio?: string;
+      email?: string;
+      pronouns?: string;
+      website?: string;
+      focusAreas?: Array<{ id: string; label: string }>;
+    }) => trpc.account.updateUserProfile.mutate(input),
+  });
   const isOnboardingV2 = useFeatureFlag('onboarding-v2');
 
-  // Get current user's profile ID for the focus areas component
-  const { data: userAccount } = trpc.account.getMyAccount.useQuery();
+  const { data: userAccount } = useQuery({
+    queryKey: [['account', 'getMyAccount']],
+    queryFn: () => trpc.account.getMyAccount.query(),
+  });
   const profileId = userAccount?.profile?.id;
 
   // Hydrate profileImageUrl from store if present, else undefined
@@ -173,8 +191,12 @@ export const PersonalDetailsForm = ({
         },
         {
           onSuccess: () => {
-            utils.account.getMyAccount.invalidate();
-            utils.account.getUserProfiles.invalidate();
+            queryClient.invalidateQueries({
+              queryKey: [['account', 'getMyAccount']],
+            });
+            queryClient.invalidateQueries({
+              queryKey: [['account', 'getUserProfiles']],
+            });
           },
         },
       );
@@ -215,14 +237,18 @@ export const PersonalDetailsForm = ({
         website: value.website || undefined,
         focusAreas: value.focusAreas || undefined,
       });
-      utils.account.getMyAccount.invalidate();
-      utils.account.getUserProfiles.invalidate();
+      queryClient.invalidateQueries({
+        queryKey: [['account', 'getMyAccount']],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [['account', 'getUserProfiles']],
+      });
       if (profileId) {
-        utils.individual.getTermsByProfile.invalidate({
-          profileId,
+        queryClient.invalidateQueries({
+          queryKey: [['individual', 'getTermsByProfile'], { profileId }],
         });
       }
-      setPersonalDetails({ ...value, profileImageUrl, bannerImageUrl }); // Persist to store on submit
+      setPersonalDetails({ ...value, profileImageUrl, bannerImageUrl });
       onNext(value);
     },
   });

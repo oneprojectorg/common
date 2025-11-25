@@ -7,6 +7,7 @@ import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Surface } from '@op/ui/Surface';
 import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
+import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { ReactNode, Suspense, useEffect, useState } from 'react';
 import { LuGlobe, LuMail } from 'react-icons/lu';
@@ -35,17 +36,20 @@ export const MatchingOrganizationsForm = ({
 }: MatchingOrganizationsFormProps): ReactNode => {
   const t = useTranslations();
   const router = useRouter();
-  const [matchingOrgs] =
-    trpc.account.listMatchingDomainOrganizations.useSuspenseQuery();
-  const utils = trpc.useUtils();
+  const { data: matchingOrgs } = useSuspenseQuery({
+    queryKey: [['account', 'listMatchingDomainOrganizations']],
+    queryFn: () => trpc.account.listMatchingDomainOrganizations.query(),
+  });
+  const queryClient = useQueryClient();
 
-  const joinOrganization = trpc.organization.join.useMutation({
+  const joinOrganization = useMutation({
+    mutationFn: (input: { organizationId: string }) => trpc.organization.join.mutate(input),
     onSuccess: () => {
-      utils.account.getMyAccount.invalidate();
+      queryClient.invalidateQueries({
+        queryKey: [['account', 'getMyAccount']],
+      });
     },
   });
-
-  const trpcUtil = trpc.useUtils();
   const [isLoading, setLoading] = useState(false);
   const [selectedOrganizationId, setSelectedOrganizationId] = useState<
     string | undefined
@@ -81,22 +85,20 @@ export const MatchingOrganizationsForm = ({
         organizationId: selectedOrganizationId,
       });
 
-      // Invalidate account data to refetch organization users
-      await trpcUtil.account.getMyAccount.invalidate(
-        undefined,
-        {
-          refetchType: 'all',
-        },
-        {},
-      );
-
-      trpcUtil.account.getMyAccount.refetch().then(() => {
-        if (shouldContinue) {
-          router.push(`/start?step=2`);
-        } else {
-          router.push(`/?new=1`);
-        }
+      await queryClient.invalidateQueries({
+        queryKey: [['account', 'getMyAccount']],
+        refetchType: 'all',
       });
+
+      await queryClient.refetchQueries({
+        queryKey: [['account', 'getMyAccount']],
+      });
+
+      if (shouldContinue) {
+        router.push(`/start?step=2`);
+      } else {
+        router.push(`/?new=1`);
+      }
       // Redirect to the main app with new org flag
     } catch (error) {
       setLoading(false);

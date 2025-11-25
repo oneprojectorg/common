@@ -4,6 +4,7 @@ import { Button } from '@op/ui/Button';
 import { trpc } from '@op/api/client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useMutation, useQuery } from '@tanstack/react-query';
 
 interface Phase {
   id: string;
@@ -24,11 +25,14 @@ export function AdminTransitionControls({
 }: AdminTransitionControlsProps) {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const router = useRouter();
-  const executeTransitionMutation = trpc.decision.executeTransition.useMutation();
+  const executeTransitionMutation = useMutation({
+    mutationFn: (input: { instanceId: string; toStateId: string }) =>
+      trpc.decision.executeTransition.mutate(input),
+  });
 
-  // Use the API to check available transitions instead of static filtering
-  const { data: transitionCheck, isLoading: isCheckingTransitions } = trpc.decision.checkTransitions.useQuery({
-    instanceId,
+  const { data: transitionCheck, isLoading: isCheckingTransitions } = useQuery({
+    queryKey: [['decision', 'checkTransitions'], { instanceId }],
+    queryFn: () => trpc.decision.checkTransitions.query({ instanceId }),
   });
 
   const currentPhase = phases.find((phase) => phase.id === currentStateId);

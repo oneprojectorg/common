@@ -3,6 +3,7 @@
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { Fragment } from 'react';
+import { useSuspenseQuery } from '@tanstack/react-query';
 
 import {
   DiscussionModalContainer,
@@ -15,7 +16,10 @@ import {
 
 export const Feed = () => {
   const { user } = useUser() ?? {};
-  const [postsData] = trpc.organization.listAllPosts.useSuspenseQuery({});
+  const { data: postsData } = useSuspenseQuery({
+    queryKey: [['organization', 'listAllPosts'], {}],
+    queryFn: () => trpc.organization.listAllPosts.query({}),
+  });
 
   const {
     discussionModal,

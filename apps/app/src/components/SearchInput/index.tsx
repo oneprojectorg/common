@@ -6,6 +6,7 @@ import { useDebounce } from '@op/hooks';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { TextField } from '@op/ui/TextField';
 import { cn } from '@op/ui/utils';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { LuSearch } from 'react-icons/lu';
@@ -39,21 +40,20 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  const { data: profileResults, isFetching: isSearching } =
-    trpc.profile.search.useQuery(
-      {
-        q: debouncedQuery,
-        types: individualSearchEnabled
-          ? [EntityType.INDIVIDUAL, EntityType.ORG]
-          : [EntityType.ORG],
-      },
-      {
-        staleTime: 30_000,
-        gcTime: 30_000,
-        // make sure we don't remove results while continuing to type
-        placeholderData: (prev) => prev,
-      },
-    );
+  const queryInput = {
+    q: debouncedQuery,
+    types: individualSearchEnabled
+      ? [EntityType.INDIVIDUAL, EntityType.ORG]
+      : [EntityType.ORG],
+  };
+
+  const { data: profileResults, isFetching: isSearching } = useQuery({
+    queryKey: [['profile', 'search'], queryInput],
+    queryFn: () => trpc.profile.search.query(queryInput),
+    staleTime: 30_000,
+    gcTime: 30_000,
+    placeholderData: (prev) => prev,
+  });
 
   const mergedProfileResults = profileResults
     ? profileResults

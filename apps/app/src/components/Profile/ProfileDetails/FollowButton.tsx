@@ -5,26 +5,36 @@ import { Organization, ProfileRelationshipType } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { toast } from '@op/ui/Toast';
+import { useMutation, useSuspenseQuery, useQueryClient } from '@tanstack/react-query';
 import { Suspense, useTransition } from 'react';
 import { LuCheck, LuPlus } from 'react-icons/lu';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
 
 const FollowButtonSuspense = ({ profile }: { profile: Organization }) => {
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
   const [isPending, startTransition] = useTransition();
 
-  // Check if we're currently following this profile
-  const [relationships] = trpc.profile.getRelationships.useSuspenseQuery({
+  const input = {
     targetProfileId: profile.profile.id,
     types: [ProfileRelationshipType.FOLLOWING],
+  };
+  const { data: relationships } = useSuspenseQuery({
+    queryKey: [['profile', 'getRelationships'], input],
+    queryFn: () => trpc.profile.getRelationships.query(input),
   });
 
   const followingRelationships = relationships.following || [];
   const isFollowing = followingRelationships.length > 0;
 
-  const addRelationship = trpc.profile.addRelationship.useMutation();
-  const removeRelationship = trpc.profile.removeRelationship.useMutation();
+  const addRelationship = useMutation({
+    mutationFn: (input: { targetProfileId: string; relationshipType: ProfileRelationshipType; pending: boolean }) =>
+      trpc.profile.addRelationship.mutate(input),
+  });
+  const removeRelationship = useMutation({
+    mutationFn: (input: { targetProfileId: string; relationshipType: ProfileRelationshipType }) =>
+      trpc.profile.removeRelationship.mutate(input),
+  });
 
   const handleFollowToggle = () => {
     startTransition(async () => {
@@ -50,20 +60,22 @@ const FollowButtonSuspense = ({ profile }: { profile: Organization }) => {
           });
         }
 
-        // Invalidate all relationship-related queries
         await Promise.all([
-          // Invalidate the query that checks if we're following this profile
-          utils.profile.getRelationships.invalidate({
-            targetProfileId: profile.profile.id,
-            types: [ProfileRelationshipType.FOLLOWING],
+          queryClient.invalidateQueries({
+            queryKey: [['profile', 'getRelationships'], {
+              targetProfileId: profile.profile.id,
+              types: [ProfileRelationshipType.FOLLOWING],
+            }],
           }),
-          // Invalidate the current user's following list
-          utils.profile.getRelationships.invalidate({
-            types: [ProfileRelationshipType.FOLLOWING],
-            profileType: 'org',
+          queryClient.invalidateQueries({
+            queryKey: [['profile', 'getRelationships'], {
+              types: [ProfileRelationshipType.FOLLOWING],
+              profileType: 'org',
+            }],
           }),
-          // Invalidate all relationship queries for this target profile
-          utils.profile.getRelationships.invalidate(),
+          queryClient.invalidateQueries({
+            queryKey: [['profile', 'getRelationships']],
+          }),
         ]);
       } catch (error) {
         toast.error({

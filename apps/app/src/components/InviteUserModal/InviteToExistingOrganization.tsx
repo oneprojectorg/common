@@ -5,6 +5,7 @@ import { trpc } from '@op/api/client';
 import { Select, SelectItem } from '@op/ui/Select';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
 import { toast } from '@op/ui/Toast';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import React from 'react';
 import { LuX } from 'react-icons/lu';
 
@@ -37,7 +38,10 @@ export const InviteToExistingOrganization = ({
   const t = useTranslations();
   const { user } = useUser();
 
-  const [rolesData] = trpc.organization.getRoles.useSuspenseQuery();
+  const { data: rolesData } = useSuspenseQuery({
+    queryKey: [['organization', 'getRoles']],
+    queryFn: () => trpc.organization.getRoles.query(),
+  });
 
   React.useEffect(() => {
     if (!selectedRole) {

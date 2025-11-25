@@ -1,5 +1,6 @@
 import { trpc } from '@op/api/client';
 import type { Profile } from '@op/api/encoders';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ReactNode, forwardRef } from 'react';
 
 import { BaseUpdateProfileForm, FormFields } from './BaseUpdateProfileForm';
@@ -12,11 +13,22 @@ export const UpdateProfileForm = forwardRef<
     className?: string;
   }
 >(({ profile, onSuccess, className }, ref): ReactNode => {
-  const utils = trpc.useUtils();
-  const updateProfile = trpc.account.updateUserProfile.useMutation();
+  const queryClient = useQueryClient();
+  const updateProfile = useMutation({
+    mutationFn: (input: {
+      name: string;
+      bio: string;
+      pronouns?: string;
+      email?: string;
+      website?: string;
+      focusAreas?: any;
+    }) => trpc.account.updateUserProfile.mutate(input),
+  });
 
-  // Get current user's profile ID for the focus areas component
-  const { data: userAccount } = trpc.account.getMyAccount.useQuery();
+  const { data: userAccount } = useQuery({
+    queryKey: [['account', 'getMyAccount']],
+    queryFn: () => trpc.account.getMyAccount.query(),
+  });
   const profileId = userAccount?.profile?.id;
 
   const handleSubmit = async (value: FormFields) => {
@@ -31,22 +43,22 @@ export const UpdateProfileForm = forwardRef<
       website: value.website || undefined,
       focusAreas: value.focusAreas || undefined,
     });
-    utils.account.getMyAccount.invalidate();
-    utils.account.getUserProfiles.invalidate();
-    utils.profile.getBySlug.invalidate({
-      slug: profile.slug,
+    queryClient.invalidateQueries({ queryKey: [['account', 'getMyAccount']] });
+    queryClient.invalidateQueries({ queryKey: [['account', 'getUserProfiles']] });
+    queryClient.invalidateQueries({
+      queryKey: [['profile', 'getBySlug'], { slug: profile.slug }],
     });
-    utils.profile.list.invalidate();
-    utils.individual.getTermsByProfile.invalidate({
-      profileId,
+    queryClient.invalidateQueries({ queryKey: [['profile', 'list']] });
+    queryClient.invalidateQueries({
+      queryKey: [['individual', 'getTermsByProfile'], { profileId }],
     });
   };
 
   const handleImageUploadSuccess = () => {
-    utils.account.getMyAccount.invalidate();
-    utils.account.getUserProfiles.invalidate();
-    utils.profile.getBySlug.invalidate({
-      slug: profile.slug,
+    queryClient.invalidateQueries({ queryKey: [['account', 'getMyAccount']] });
+    queryClient.invalidateQueries({ queryKey: [['account', 'getUserProfiles']] });
+    queryClient.invalidateQueries({
+      queryKey: [['profile', 'getBySlug'], { slug: profile.slug }],
     });
   };
 

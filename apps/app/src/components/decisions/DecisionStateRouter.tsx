@@ -2,6 +2,7 @@
 
 import { trpc } from '@op/api/client';
 import { match } from '@op/core';
+import { useSuspenseQuery } from '@tanstack/react-query';
 
 import { ResultsPage } from './pages/ResultsPage';
 import { StandardDecisionPage } from './pages/StandardDecisionPage';
@@ -14,8 +15,9 @@ export function DecisionStateRouter({
   instanceId: string;
   slug: string;
 }) {
-  const [instance] = trpc.decision.getInstance.useSuspenseQuery({
-    instanceId,
+  const { data: instance } = useSuspenseQuery({
+    queryKey: [['decision', 'getInstance'], { instanceId }],
+    queryFn: () => trpc.decision.getInstance.query({ instanceId }),
   });
 
   const { currentStateId } = instance;

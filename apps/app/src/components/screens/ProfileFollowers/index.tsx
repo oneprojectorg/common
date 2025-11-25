@@ -3,6 +3,7 @@
 import { pluralize } from '@/utils/pluralize';
 import { trpc } from '@op/api/client';
 import { ProfileRelationshipType } from '@op/api/encoders';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import React, { Suspense, useMemo } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -22,10 +23,14 @@ export const ProfileFollowersSuspense = ({
 }) => {
   const t = useTranslations();
 
-  // Get relationships where this profile is the target (people following this profile)
-  const [relationships] = trpc.profile.getRelationships.useSuspenseQuery({
+  const queryInput = {
     targetProfileId: profileId,
     types: [ProfileRelationshipType.FOLLOWING],
+  };
+
+  const { data: relationships } = useSuspenseQuery({
+    queryKey: [['profile', 'getRelationships'], queryInput],
+    queryFn: () => trpc.profile.getRelationships.query(queryInput),
   });
 
   // Filter for following relationships and extract source profiles (followers)

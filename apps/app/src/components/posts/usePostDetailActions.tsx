@@ -6,14 +6,10 @@ import { createCommentsQueryKey } from '@/utils/queryKeys';
 import { trpc } from '@op/api/client';
 import { REACTION_OPTIONS } from '@op/types';
 import { toast } from '@op/ui/Toast';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { useTranslations } from '@/lib/i18n';
 
-/**
- * Hook for handling reactions on the post detail page.
- * Manages optimistic updates for both the main post and its comments.
- * Isolates the complexity of the optimistic updates to a single hook.
- */
 export const usePostDetailActions = ({
   postId,
   user,
@@ -21,10 +17,12 @@ export const usePostDetailActions = ({
   postId: string;
   user?: PostFeedUser;
 }) => {
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
   const t = useTranslations();
 
-  const toggleReaction = trpc.organization.toggleReaction.useMutation({
+  const toggleReaction = useMutation({
+    mutationFn: (input: Parameters<typeof trpc.organization.toggleReaction.mutate>[0]) =>
+      trpc.organization.toggleReaction.mutate(input),
     onMutate: async ({ postId: reactionPostId, reactionType }) => {
       // Query keys for the detail page
       const mainPostQueryKey = {
@@ -34,18 +32,18 @@ export const usePostDetailActions = ({
       const commentsQueryKey = createCommentsQueryKey(postId, undefined);
 
       // Cancel outgoing refetches
-      await utils.posts.getPost.cancel(mainPostQueryKey);
-      await utils.posts.getPosts.cancel(commentsQueryKey);
+      await queryClient.cancelQueries({ queryKey: [['posts', 'getPost'], mainPostQueryKey] });
+      await queryClient.cancelQueries({ queryKey: [['posts', 'getPosts'], commentsQueryKey] });
 
       // Snapshot previous values
-      const previousMainPost = utils.posts.getPost.getData(mainPostQueryKey);
-      const previousComments = utils.posts.getPosts.getData(commentsQueryKey);
+      const previousMainPost = queryClient.getQueryData([['posts', 'getPost'], mainPostQueryKey]);
+      const previousComments = queryClient.getQueryData([['posts', 'getPosts'], commentsQueryKey]);
 
       // Create optimistic updater
       const optimisticUpdater = createOptimisticUpdater(user);
 
       // Optimistically update main post
-      utils.posts.getPost.setData(mainPostQueryKey, (old) => {
+      queryClient.setQueryData([['posts', 'getPost'], mainPostQueryKey], (old: any) => {
         if (!old) {
           return old;
         }
@@ -59,12 +57,12 @@ export const usePostDetailActions = ({
       });
 
       // Optimistically update comments
-      utils.posts.getPosts.setData(commentsQueryKey, (old) => {
+      queryClient.setQueryData([['posts', 'getPosts'], commentsQueryKey], (old: any) => {
         if (!old) {
           return old;
         }
 
-        return old.map((comment) => {
+        return old.map((comment: any) => {
           const updated = optimisticUpdater.updatePostReactions(
             { post: comment },
             reactionPostId,
@@ -85,11 +83,11 @@ export const usePostDetailActions = ({
 
       // Rollback on error
       if (context?.previousMainPost) {
-        utils.posts.getPost.setData(mainPostQueryKey, context.previousMainPost);
+        queryClient.setQueryData([['posts', 'getPost'], mainPostQueryKey], context.previousMainPost);
       }
       if (context?.previousComments) {
-        utils.posts.getPosts.setData(
-          commentsQueryKey,
+        queryClient.setQueryData(
+          [['posts', 'getPosts'], commentsQueryKey],
           context.previousComments,
         );
       }

@@ -3,6 +3,7 @@
 import { pluralize } from '@/utils/pluralize';
 import { trpc } from '@op/api/client';
 import { Breadcrumb, Breadcrumbs } from '@op/ui/Breadcrumbs';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { ErrorBoundary } from 'next/dist/client/components/error-boundary';
 import { ReactNode, Suspense } from 'react';
 import { LuArrowLeft } from 'react-icons/lu';
@@ -22,15 +23,19 @@ export const ProfileOrganizationsSuspense = ({
   slug: string;
   showBreadcrumb?: boolean;
 }) => {
-  // const [searchTerm] = useState('');
-  const [profile] = trpc.profile.getBySlug.useSuspenseQuery({
-    slug,
+  const profileQueryInput = { slug };
+
+  const { data: profile } = useSuspenseQuery({
+    queryKey: [['profile', 'getBySlug'], profileQueryInput],
+    queryFn: () => trpc.profile.getBySlug.query(profileQueryInput),
   });
 
-  const [organizations] =
-    trpc.organization.getOrganizationsByProfile.useSuspenseQuery({
-      profileId: profile.id,
-    });
+  const orgsQueryInput = { profileId: profile.id };
+
+  const { data: organizations } = useSuspenseQuery({
+    queryKey: [['organization', 'getOrganizationsByProfile'], orgsQueryInput],
+    queryFn: () => trpc.organization.getOrganizationsByProfile.query(orgsQueryInput),
+  });
 
   return (
     <>
@@ -54,8 +59,11 @@ export const ProfileOrganizationsSuspense = ({
 };
 
 export const OrganizationNameSuspense = ({ slug }: { slug: string }) => {
-  const [organization] = trpc.organization.getBySlug.useSuspenseQuery({
-    slug,
+  const queryInput = { slug };
+
+  const { data: organization } = useSuspenseQuery({
+    queryKey: [['organization', 'getBySlug'], queryInput],
+    queryFn: () => trpc.organization.getBySlug.query(queryInput),
   });
 
   return (

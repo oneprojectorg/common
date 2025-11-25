@@ -12,6 +12,7 @@ import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Dialog } from '@op/ui/RAC';
 import { toast } from '@op/ui/Toast';
+import { useMutation } from '@tanstack/react-query';
 import { FormEvent, useState, useTransition } from 'react';
 
 import { FundingRole, FundingRoleModal } from './FundingRoleModal';
@@ -24,7 +25,10 @@ export const AddRelationshipForm = ({
   onChange: () => void;
 }) => {
   const t = useTranslations();
-  const addRelationship = trpc.organization.addRelationship.useMutation();
+  const addRelationship = useMutation({
+    mutationFn: (input: { to: string; relationships: string[] }) =>
+      trpc.organization.addRelationship.mutate(input),
+  });
 
   const [selectedRelations, setSelectedRelations] = useState<Array<string>>([]);
   const [isSubmitting, startTransition] = useTransition();

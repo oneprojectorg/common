@@ -8,6 +8,7 @@ import { DialogTrigger } from '@op/ui/Dialog';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { toast } from '@op/ui/Toast';
+import { useMutation } from '@tanstack/react-query';
 import { useFeatureFlagEnabled } from 'posthog-js/react';
 import { Suspense, useEffect, useState } from 'react';
 import { LuUserPlus } from 'react-icons/lu';
@@ -58,7 +59,8 @@ export const InviteUserModal = ({ children }: InviteUserModalProps) => {
     return emailRegex.test(email.trim());
   };
 
-  const inviteUser = trpc.organization.invite.useMutation({
+  const inviteUser = useMutation({
+    mutationFn: (input: any) => trpc.organization.invite.mutate(input),
     onSuccess: () => {
       handleInviteSuccess();
     },

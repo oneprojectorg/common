@@ -1,5 +1,6 @@
 import { trpc } from '@op/api/client';
 import { toast } from '@op/ui/Toast';
+import { useMutation } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
 
 export interface FilePreview {
@@ -42,7 +43,13 @@ export const useProposalFileUpload = (
   const [filePreviews, setFilePreviews] = useState<FilePreview[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
 
-  const uploadAttachment = trpc.decision.uploadProposalAttachment.useMutation();
+  const uploadAttachment = useMutation({
+    mutationFn: (input: {
+      file: string;
+      fileName: string;
+      mimeType: string;
+    }) => trpc.decision.uploadProposalAttachment.mutate(input),
+  });
 
   const validateFile = (file: File): string | null => {
     if (!acceptedTypes.includes(file.type)) {
