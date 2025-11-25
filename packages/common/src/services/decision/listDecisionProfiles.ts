@@ -65,21 +65,21 @@ type ListDecisionProfilesResult = {
 };
 
 export const listDecisionProfiles = async ({
-  cursor,
   user,
   search,
   status,
   limit = 10,
   orderBy = 'updatedAt',
   dir = 'desc',
+  cursor,
 }: {
   user: User;
-  cursor?: string | null;
   search?: string;
   status?: ProcessStatus;
   limit?: number;
   orderBy?: 'createdAt' | 'updatedAt' | 'name';
   dir?: 'asc' | 'desc';
+  cursor?: string | null;
 }): Promise<ListDecisionProfilesResult> => {
   // Get the column to order by
   const orderByColumn =
