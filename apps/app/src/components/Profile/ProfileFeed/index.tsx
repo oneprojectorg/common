@@ -3,8 +3,7 @@
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
-import { useInfiniteScroll, useRealtimeInvalidations } from '@op/hooks';
-import { Channels } from '@op/realtime/client';
+import { useInfiniteScroll } from '@op/hooks';
 import { SkeletonLine } from '@op/ui/Skeleton';
 import { Fragment, useCallback } from 'react';
 
@@ -26,10 +25,6 @@ export const ProfileFeed = ({
   limit?: number;
 }) => {
   const { user } = useUser();
-
-  // Subscribe to org-specific posts channel for this profile
-  useRealtimeInvalidations([Channels.org(profile.id)]);
-
   const {
     data: paginatedData,
     fetchNextPage,
