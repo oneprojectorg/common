@@ -49,8 +49,16 @@ export const listDecisionProfiles = async ({
       : undefined;
 
     const typeCondition = eq(profiles.type, EntityType.DECISION);
+
+    // Filter profiles by process instance status using a subquery
     const statusCondition = status
-      ? eq(processInstances.status, status)
+      ? inArray(
+          profiles.id,
+          db
+            .select({ profileId: processInstances.profileId })
+            .from(processInstances)
+            .where(eq(processInstances.status, status)),
+        )
       : undefined;
 
     // Build search condition if provided (search on profile name/bio)
