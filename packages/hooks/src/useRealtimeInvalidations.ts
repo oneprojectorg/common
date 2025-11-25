@@ -1,4 +1,7 @@
-import { CentrifugeManager, type InvalidationMessage } from '@op/realtime';
+import {
+  CentrifugeManager,
+  type InvalidationMessage,
+} from '@op/realtime/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 

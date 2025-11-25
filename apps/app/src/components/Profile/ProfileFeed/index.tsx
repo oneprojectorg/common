@@ -4,7 +4,7 @@ import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
 import { useInfiniteScroll, useRealtimeInvalidations } from '@op/hooks';
-import { Channels } from '@op/realtime';
+import { Channels } from '@op/realtime/client';
 import { SkeletonLine } from '@op/ui/Skeleton';
 import { Fragment, useCallback } from 'react';
 

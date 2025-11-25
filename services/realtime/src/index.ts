@@ -1,61 +1,37 @@
-import { CentrifugoClient } from './client';
-import type { CentrifugoMessage } from './types';
-
-// Singleton client instance
-let client: CentrifugoClient | null = null;
-
-function getClient(): CentrifugoClient {
-  if (!client) {
-    const apiUrl =
-      process.env.CENTRIFUGO_API_URL || 'http://localhost:8000/api';
-    const apiKey =
-      process.env.CENTRIFUGO_API_KEY ||
-      'c0wd5CQ8qy-7wmoehh_2Yda2-C7OqMno40cHbGxkxkkJDFd0ihj9rre0U66pMEDxJ889SuqIjIxXzm1ckLlcMQ';
-
-    client = new CentrifugoClient({
-      apiUrl,
-      apiKey,
-    });
-  }
-  return client;
-}
-
 /**
- * Publish a message to one or more channels
+ * @op/realtime - Real-time messaging service
  *
- * Channel Selection Guide:
- * - Use `Channels.global()` for data visible to all users (explore page, global feed)
- * - Use `Channels.org(orgId)` for org-specific data (org feeds, org updates)
- * - Use `Channels.user(userId)` for personal notifications and user-specific data
+ * This package provides both server-side and client-side real-time functionality:
  *
- * Important: Never query the database to determine channels. Channel selection should
- * be based on data you already have in the mutation context (orgId, userId, etc.)
+ * - Server-side: HTTP API for publishing messages to channels
+ * - Client-side: WebSocket manager for subscribing to channels and receiving messages
  *
- * @example
- * // User-specific notification
+ * Usage:
+ * ```ts
+ * // Server-side (API routes, tRPC mutations)
+ * import { publishMessage, Channels } from '@op/realtime/server';
+ *
  * await publishMessage(Channels.user(userId), {
  *   type: 'cache-invalidation',
  *   queryKey: ['user', 'notifications'],
  *   timestamp: Date.now(),
  * });
+ *
+ * // Client-side (React components)
+ * import { CentrifugeManager, Channels } from '@op/realtime/client';
+ *
+ * const manager = CentrifugeManager.getInstance();
+ * manager.subscribe(Channels.user(userId), (data) => {
+ *   console.log('Received:', data);
+ * });
+ * ```
  */
-export async function publishMessage(
-  channel: string,
-  message: CentrifugoMessage,
-): Promise<void> {
-  const centrifugo = getClient();
 
-  try {
-    await centrifugo.publish({ channel, data: message });
-
-    console.log('[Realtime] Published:', { channel, type: message.type });
-  } catch (error) {
-    // Log but don't throw - realtime is not critical
-    console.error('[Realtime] Publish failed:', error);
-  }
-}
-
-// Re-export for convenience
+// Re-export shared types and utilities
 export { Channels } from './channels';
-export { CentrifugeManager } from './manager';
-export type { CentrifugoMessage, InvalidationMessage } from './types';
+export type { GlobalChannel, OrgChannel, UserChannel } from './channels';
+export type {
+  CentrifugoMessage,
+  InvalidationMessage,
+  BaseMessage,
+} from './types';

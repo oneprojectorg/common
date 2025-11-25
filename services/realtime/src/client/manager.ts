@@ -1,6 +1,6 @@
 import { Centrifuge, type Subscription } from 'centrifuge';
 
-import type { InvalidationMessage } from './types';
+import type { InvalidationMessage } from '../types';
 
 // TODO: SSE vs WebSocket
 const CENTRIFUGE_WS_URL = 'ws://localhost:8000/connection/websocket';

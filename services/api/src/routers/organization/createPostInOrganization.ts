@@ -1,5 +1,5 @@
 import { createPostInOrganization } from '@op/common';
-import { Channels, publishMessage } from '@op/realtime';
+import { Channels, publishMessage } from '@op/realtime/server';
 import { waitUntil } from '@vercel/functions';
 // import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
