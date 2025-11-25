@@ -6,11 +6,14 @@ let client: RealtimeClient | null = null;
 
 function getClient(): RealtimeClient {
   if (!client) {
-    const apiUrl =
-      process.env.CENTRIFUGO_API_URL || 'http://localhost:8000/api';
-    const apiKey =
-      process.env.CENTRIFUGO_API_KEY ||
-      'c0wd5CQ8qy-7wmoehh_2Yda2-C7OqMno40cHbGxkxkkJDFd0ihj9rre0U66pMEDxJ889SuqIjIxXzm1ckLlcMQ';
+    const apiUrl = process.env.CENTRIFUGO_API_URL;
+    const apiKey = process.env.CENTRIFUGO_API_KEY;
+
+    if (!apiUrl || !apiKey) {
+      throw new Error(
+        'Missing required environment variables: CENTRIFUGO_API_URL and CENTRIFUGO_API_KEY',
+      );
+    }
 
     client = new RealtimeClient({
       apiUrl,

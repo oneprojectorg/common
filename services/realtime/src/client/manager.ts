@@ -2,10 +2,24 @@ import { Centrifuge, type Subscription } from 'centrifuge';
 
 import type { InvalidationMessage } from '../types';
 
-// TODO: SSE vs WebSocket
-const CENTRIFUGE_WS_URL = 'ws://localhost:8000/connection/websocket';
-const CENTRIFUGE_TOKEN =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM3MjIiLCJleHAiOjE3NjQ2MDAxNzMsImlhdCI6MTc2Mzk5NTM3M30.GFAmIdKybbKF9vCTDdyZ5Irn4HPyxYm-vgPvjab9qt0';
+function getCentrifugoConfig() {
+  const wsUrl = process.env.NEXT_PUBLIC_CENTRIFUGO_WS_URL;
+  const token = process.env.NEXT_PUBLIC_CENTRIFUGO_TOKEN;
+
+  if (!wsUrl) {
+    throw new Error(
+      'Missing required environment variable: NEXT_PUBLIC_CENTRIFUGO_WS_URL',
+    );
+  }
+
+  if (!token) {
+    throw new Error(
+      'Missing required environment variable: NEXT_PUBLIC_CENTRIFUGO_TOKEN',
+    );
+  }
+
+  return { wsUrl, token };
+}
 
 /**
  * Singleton realtime manager to ensure only one WebSocket connection
@@ -50,9 +64,11 @@ export class RealtimeManager {
       return;
     }
 
-    this.centrifuge = new Centrifuge(CENTRIFUGE_WS_URL, {
+    const { wsUrl, token } = getCentrifugoConfig();
+
+    this.centrifuge = new Centrifuge(wsUrl, {
       // TODO: should use getToken function to generate token per user (on tRPC API)
-      token: CENTRIFUGE_TOKEN,
+      token,
     });
 
     this.centrifuge.on('connected', () => {
