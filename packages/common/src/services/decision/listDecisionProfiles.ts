@@ -17,7 +17,7 @@ import {
   constructTextSearch,
   decodeCursor,
   encodeCursor,
-  getGenericCursorCondition,
+  getCursorCondition,
 } from '../../utils';
 
 export const listDecisionProfiles = async ({
@@ -38,13 +38,20 @@ export const listDecisionProfiles = async ({
   dir?: 'asc' | 'desc';
 }) => {
   try {
+    // Get the column to order by
+    const orderByColumn =
+      orderBy === 'name'
+        ? profiles.name
+        : orderBy === 'createdAt'
+          ? profiles.createdAt
+          : profiles.updatedAt;
+
     const cursorCondition = cursor
-      ? getGenericCursorCondition({
-          columns: {
-            id: profiles.id,
-            date: profiles.updatedAt,
-          },
-          cursor: decodeCursor(cursor),
+      ? getCursorCondition({
+          column: orderByColumn,
+          tieBreakerColumn: profiles.id,
+          cursor: decodeCursor<{ value: string | Date; id: string }>(cursor),
+          direction: dir,
         })
       : undefined;
 
@@ -161,10 +168,26 @@ export const listDecisionProfiles = async ({
     const hasMore = filteredProfiles.length > limit;
     const items = hasMore ? filteredProfiles.slice(0, limit) : filteredProfiles;
     const lastItem = items[items.length - 1];
+
+    // Get the cursor value based on the orderBy column
+    const getCursorValue = () => {
+      if (!lastItem) {
+        return null;
+      }
+      if (orderBy === 'name') {
+        return lastItem.name;
+      }
+      if (orderBy === 'createdAt') {
+        return lastItem.createdAt ? new Date(lastItem.createdAt) : null;
+      }
+      return lastItem.updatedAt ? new Date(lastItem.updatedAt) : null;
+    };
+
+    const cursorValue = getCursorValue();
     const nextCursor =
-      hasMore && lastItem && lastItem.updatedAt
-        ? encodeCursor({
-            date: new Date(lastItem.updatedAt),
+      hasMore && lastItem && cursorValue
+        ? encodeCursor<{ value: string | Date; id: string }>({
+            value: cursorValue,
             id: lastItem.id,
           })
         : null;
