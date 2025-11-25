@@ -1,10 +1,10 @@
-import type { CentrifugoMessage } from '../types';
-import { CentrifugoClient } from './client';
+import type { RealtimeMessage } from '../types';
+import { RealtimeClient } from './client';
 
 // Singleton client instance
-let client: CentrifugoClient | null = null;
+let client: RealtimeClient | null = null;
 
-function getClient(): CentrifugoClient {
+function getClient(): RealtimeClient {
   if (!client) {
     const apiUrl =
       process.env.CENTRIFUGO_API_URL || 'http://localhost:8000/api';
@@ -12,7 +12,7 @@ function getClient(): CentrifugoClient {
       process.env.CENTRIFUGO_API_KEY ||
       'c0wd5CQ8qy-7wmoehh_2Yda2-C7OqMno40cHbGxkxkkJDFd0ihj9rre0U66pMEDxJ889SuqIjIxXzm1ckLlcMQ';
 
-    client = new CentrifugoClient({
+    client = new RealtimeClient({
       apiUrl,
       apiKey,
     });
@@ -41,12 +41,12 @@ function getClient(): CentrifugoClient {
  */
 export async function publishMessage(
   channel: string,
-  message: CentrifugoMessage,
+  message: RealtimeMessage,
 ): Promise<void> {
-  const centrifugo = getClient();
+  const realtimeClient = getClient();
 
   try {
-    await centrifugo.publish({ channel, data: message });
+    await realtimeClient.publish({ channel, data: message });
 
     console.log('[Realtime] Published:', { channel, type: message.type });
   } catch (error) {
@@ -57,4 +57,4 @@ export async function publishMessage(
 
 // Re-export for convenience
 export { Channels } from '../channels';
-export type { CentrifugoMessage, InvalidationMessage } from '../types';
+export type { RealtimeMessage, InvalidationMessage } from '../types';

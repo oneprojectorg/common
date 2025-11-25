@@ -1,5 +1,5 @@
 /**
- * Base message structure for all Centrifugo messages
+ * Base message structure for all realtime messages
  */
 export interface BaseMessage {
   type: string;
@@ -18,4 +18,4 @@ export interface InvalidationMessage extends BaseMessage {
 /**
  * All possible message types
  */
-export type CentrifugoMessage = InvalidationMessage;
+export type RealtimeMessage = InvalidationMessage;

@@ -1,15 +1,10 @@
 /**
- * Channel name builders for Centrifugo
+ * Channel name builders for realtime service.
  *
- * Hybrid channel strategy:
+ * Channel strategy:
  * - `global`: For truly global data (explore page, global feed)
  * - `org:${orgId}`: For organization-scoped data (org feeds, org-specific updates)
  * - `user:${userId}`: For user-specific data (notifications, personal updates)
- *
- * Benefits:
- * - Efficient broadcasting (1 publish per scope instead of N publishes to individual users)
- * - Simple mental model (scope-based)
- * - No database queries needed to determine channels
  *
  * Convention: scope[:id]
  */

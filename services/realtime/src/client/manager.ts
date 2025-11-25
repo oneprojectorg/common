@@ -8,17 +8,17 @@ const CENTRIFUGE_TOKEN =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM3MjIiLCJleHAiOjE3NjQ2MDAxNzMsImlhdCI6MTc2Mzk5NTM3M30.GFAmIdKybbKF9vCTDdyZ5Irn4HPyxYm-vgPvjab9qt0';
 
 /**
- * Singleton Centrifuge manager to ensure only one WebSocket connection
+ * Singleton realtime manager to ensure only one WebSocket connection
  * across the entire application.
  *
  * This class manages:
- * - A single Centrifuge WebSocket connection
+ * - A single WebSocket connection
  * - Multiple channel subscriptions
  * - Multiple listeners per channel
  * - Automatic cleanup when no listeners remain
  */
-export class CentrifugeManager {
-  private static instance: CentrifugeManager | null = null;
+export class RealtimeManager {
+  private static instance: RealtimeManager | null = null;
   private centrifuge: Centrifuge | null = null;
   private subscriptions = new Map<string, Subscription>();
   private channelListeners = new Map<
@@ -33,17 +33,17 @@ export class CentrifugeManager {
   }
 
   /**
-   * Get the singleton instance of CentrifugeManager
+   * Get the singleton instance of RealtimeManager
    */
-  static getInstance(): CentrifugeManager {
-    if (!CentrifugeManager.instance) {
-      CentrifugeManager.instance = new CentrifugeManager();
+  static getInstance(): RealtimeManager {
+    if (!RealtimeManager.instance) {
+      RealtimeManager.instance = new RealtimeManager();
     }
-    return CentrifugeManager.instance;
+    return RealtimeManager.instance;
   }
 
   /**
-   * Initialize the Centrifuge connection if not already connected
+   * Initialize the connection if not already connected
    */
   private ensureConnected() {
     if (this.centrifuge) {
@@ -56,17 +56,17 @@ export class CentrifugeManager {
     });
 
     this.centrifuge.on('connected', () => {
-      console.log('[Centrifugo] Connected');
+      console.log('[Realtime] Connected');
       this.connectionListeners.forEach((listener) => listener(true));
     });
 
     this.centrifuge.on('disconnected', () => {
-      console.log('[Centrifugo] Disconnected');
+      console.log('[Realtime] Disconnected');
       this.connectionListeners.forEach((listener) => listener(false));
     });
 
     this.centrifuge.on('error', (ctx: any) => {
-      console.error('[Centrifugo] Error:', ctx);
+      console.error('[Realtime] Error:', ctx);
     });
 
     this.centrifuge.connect();
@@ -106,7 +106,7 @@ export class CentrifugeManager {
       });
 
       sub.on('subscribed', () => {
-        console.log('[Centrifugo] Subscribed to channel:', channel);
+        console.log('[Realtime] Subscribed to channel:', channel);
       });
 
       sub.subscribe();
@@ -135,7 +135,7 @@ export class CentrifugeManager {
         if (sub) {
           sub.unsubscribe();
           this.subscriptions.delete(channel);
-          console.log('[Centrifugo] Unsubscribed from channel:', channel);
+          console.log('[Realtime] Unsubscribed from channel:', channel);
         }
       }
     }
@@ -144,7 +144,7 @@ export class CentrifugeManager {
 
     // Disconnect if no more references
     if (this.refCount === 0 && this.centrifuge) {
-      console.log('[Centrifugo] No more subscribers, disconnecting');
+      console.log('[Realtime] No more subscribers, disconnecting');
       this.centrifuge.disconnect();
       this.centrifuge = null;
     }

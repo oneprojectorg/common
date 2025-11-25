@@ -18,9 +18,9 @@
  * });
  *
  * // Client-side (React components)
- * import { CentrifugeManager, Channels } from '@op/realtime/client';
+ * import { RealtimeManager, Channels } from '@op/realtime/client';
  *
- * const manager = CentrifugeManager.getInstance();
+ * const manager = RealtimeManager.getInstance();
  * manager.subscribe(Channels.user(userId), (data) => {
  *   console.log('Received:', data);
  * });
@@ -31,7 +31,7 @@
 export { Channels } from './channels';
 export type { GlobalChannel, OrgChannel, UserChannel } from './channels';
 export type {
-  CentrifugoMessage,
+  RealtimeMessage,
   InvalidationMessage,
   BaseMessage,
 } from './types';

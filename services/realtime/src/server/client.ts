@@ -1,6 +1,6 @@
-export interface CentrifugoConfig {
+export interface RealtimeConfig {
   apiUrl: string; // e.g., 'http://localhost:8000/api'
-  apiKey: string; // Centrifugo API key
+  apiKey: string; // API key for authentication
 }
 
 export interface PublishOptions {
@@ -13,11 +13,11 @@ export interface BroadcastOptions {
   data: unknown;
 }
 
-export class CentrifugoClient {
+export class RealtimeClient {
   private apiUrl: string;
   private apiKey: string;
 
-  constructor(config: CentrifugoConfig) {
+  constructor(config: RealtimeConfig) {
     this.apiUrl = config.apiUrl;
     this.apiKey = config.apiKey;
   }
@@ -38,12 +38,12 @@ export class CentrifugoClient {
     });
 
     if (!response.ok) {
-      throw new Error(`Centrifugo publish failed: ${response.statusText}`);
+      throw new Error(`Realtime publish failed: ${response.statusText}`);
     }
 
     const result = await response.json();
     if (result.error) {
-      throw new Error(`Centrifugo error: ${result.error.message}`);
+      throw new Error(`Realtime error: ${result.error.message}`);
     }
   }
 }
