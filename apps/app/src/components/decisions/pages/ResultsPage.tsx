@@ -48,6 +48,7 @@ export function ResultsPage({
     'one-project': () => ({
       title: t('The results are in.'),
       description: `Thank you to everyone who participated in ${instance.name}`,
+      about: t('HORIZONRESULTSABOUT'),
     }),
     _: () => ({
       title: t('The results are in.'),
@@ -70,10 +71,10 @@ export function ResultsPage({
             <ResultsStats instanceId={instanceId} />
           </Suspense>
 
-          {slug === 'cowop' ? (
+          {['cowop', 'one-project'].includes(slug) ? (
             <DecisionActionBar
               instanceId={instanceId}
-              markup={slug === 'cowop'}
+              markup={true}
               description={
                 heroContent.about ??
                 instance.description ??
