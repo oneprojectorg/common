@@ -15,11 +15,11 @@
  * */
 export const match = <T>(
   value: any,
-  cases: Record<string | number, () => T>,
-) => {
+  cases: Record<string | number, T | (() => T)>,
+): T => {
   for (const [pattern, result] of Object.entries(cases)) {
     if (pattern === '_' || pattern == value || String(value) === pattern) {
-      return typeof result === 'function' ? result() : result;
+      return typeof result === 'function' ? (result as () => T)() : result;
     }
   }
 

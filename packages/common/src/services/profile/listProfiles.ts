@@ -32,9 +32,9 @@ export const listProfiles = async ({
 
   try {
     const orderByColumn = match(orderBy, {
-      name: () => profiles.name,
-      createdAt: () => profiles.createdAt,
-      _: () => profiles.updatedAt,
+      name: profiles.name,
+      createdAt: profiles.createdAt,
+      _: profiles.updatedAt,
     });
 
     // Build cursor condition for pagination
@@ -117,11 +117,10 @@ export const listProfiles = async ({
     const items = hasMore ? result.slice(0, limit) : result;
     const lastItem = items[items.length - 1];
 
-    const cursorValue = match<Date | string | null>(orderBy, {
-      name: () => lastItem?.name ?? null,
-      createdAt: () =>
-        lastItem?.createdAt ? new Date(lastItem.createdAt) : null,
-      _: () => (lastItem?.updatedAt ? new Date(lastItem.updatedAt) : null),
+    const cursorValue = match(orderBy, {
+      name: lastItem?.name ?? null,
+      createdAt: lastItem?.createdAt ? new Date(lastItem.createdAt) : null,
+      _: lastItem?.updatedAt ? new Date(lastItem.updatedAt) : null,
     });
 
     const nextCursor =
