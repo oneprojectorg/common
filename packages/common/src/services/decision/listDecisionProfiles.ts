@@ -41,11 +41,18 @@ const decisionProfileQueryConfig = {
 } as const;
 
 type DecisionProfileQueryResult = Awaited<
-  ReturnType<typeof db.query.profiles.findMany<typeof decisionProfileQueryConfig>>
+  ReturnType<
+    typeof db.query.profiles.findMany<typeof decisionProfileQueryConfig>
+  >
 >[number];
 
-type DecisionProfileItem = Omit<DecisionProfileQueryResult, 'processInstance'> & {
-  processInstance: NonNullable<DecisionProfileQueryResult['processInstance']> & {
+type DecisionProfileItem = Omit<
+  DecisionProfileQueryResult,
+  'processInstance'
+> & {
+  processInstance: NonNullable<
+    DecisionProfileQueryResult['processInstance']
+  > & {
     proposalCount: number;
     participantCount: number;
   };
@@ -137,11 +144,7 @@ export const listDecisionProfiles = async ({
   ].filter(Boolean);
 
   const whereClause =
-    whereConditions.length > 0
-      ? whereConditions.length === 1
-        ? whereConditions[0]
-        : and(...whereConditions)
-      : undefined;
+    whereConditions.length > 0 ? and(...whereConditions) : undefined;
 
   // Get profiles with their process instances
   const profileList = await db.query.profiles.findMany({
