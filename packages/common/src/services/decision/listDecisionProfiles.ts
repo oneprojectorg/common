@@ -15,6 +15,48 @@ import {
   getCursorCondition,
 } from '../../utils';
 
+// Query configuration for fetching decision profiles with relations
+const decisionProfileQueryConfig = {
+  with: {
+    headerImage: true,
+    avatarImage: true,
+    processInstance: {
+      with: {
+        process: true,
+        owner: {
+          with: {
+            avatarImage: true,
+            organization: true,
+          },
+        },
+        proposals: {
+          columns: {
+            id: true,
+            submittedByProfileId: true,
+          },
+        },
+      },
+    },
+  },
+} as const;
+
+type DecisionProfileQueryResult = Awaited<
+  ReturnType<typeof db.query.profiles.findMany<typeof decisionProfileQueryConfig>>
+>[number];
+
+type DecisionProfileItem = Omit<DecisionProfileQueryResult, 'processInstance'> & {
+  processInstance: NonNullable<DecisionProfileQueryResult['processInstance']> & {
+    proposalCount: number;
+    participantCount: number;
+  };
+};
+
+type ListDecisionProfilesResult = {
+  items: DecisionProfileItem[];
+  next: string | null;
+  hasMore: boolean;
+};
+
 export const listDecisionProfiles = async ({
   cursor,
   user,
@@ -31,7 +73,7 @@ export const listDecisionProfiles = async ({
   limit?: number;
   orderBy?: 'createdAt' | 'updatedAt' | 'name';
   dir?: 'asc' | 'desc';
-}) => {
+}): Promise<ListDecisionProfilesResult> => {
   // Get the column to order by
   const orderByColumn =
     orderBy === 'name'
@@ -77,6 +119,12 @@ export const listDecisionProfiles = async ({
       .where(eq(profileUsers.authUserId, user.id)),
   );
 
+  // Filter to only profiles that have a processInstance (decision profiles must have one)
+  const hasProcessInstanceCondition = inArray(
+    profiles.id,
+    db.select({ profileId: processInstances.profileId }).from(processInstances),
+  );
+
   const orderFn = dir === 'asc' ? asc : desc;
 
   const whereConditions = [
@@ -85,6 +133,7 @@ export const listDecisionProfiles = async ({
     typeCondition,
     searchCondition,
     authorizationCondition,
+    hasProcessInstanceCondition,
   ].filter(Boolean);
 
   const whereClause =
@@ -97,27 +146,7 @@ export const listDecisionProfiles = async ({
   // Get profiles with their process instances
   const profileList = await db.query.profiles.findMany({
     where: whereClause,
-    with: {
-      headerImage: true,
-      avatarImage: true,
-      processInstance: {
-        with: {
-          process: true,
-          owner: {
-            with: {
-              avatarImage: true,
-              organization: true,
-            },
-          },
-          proposals: {
-            columns: {
-              id: true,
-              submittedByProfileId: true,
-            },
-          },
-        },
-      },
-    },
+    ...decisionProfileQueryConfig,
     orderBy: orderFn(profiles[orderBy]),
     limit: limit + 1, // Fetch one extra to check hasMore
   });
@@ -147,13 +176,10 @@ export const listDecisionProfiles = async ({
     return profile;
   });
 
-  // Filter out profiles without processInstance
-  const filteredProfiles = profilesWithCounts.filter(
-    (profile) => !!profile.processInstance,
-  );
-
-  const hasMore = filteredProfiles.length > limit;
-  const items = hasMore ? filteredProfiles.slice(0, limit) : filteredProfiles;
+  const hasMore = profilesWithCounts.length > limit;
+  const items = (
+    hasMore ? profilesWithCounts.slice(0, limit) : profilesWithCounts
+  ) as DecisionProfileItem[];
   const lastItem = items[items.length - 1];
 
   // Get the cursor value based on the orderBy column

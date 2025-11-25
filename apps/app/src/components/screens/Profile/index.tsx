@@ -32,7 +32,7 @@ const ProfileWithData = async ({
       slug,
     });
 
-    const schema = match(slug, {
+    const schema = match<'simple' | 'horizon' | 'cowop'>(slug, {
       'people-powered': 'simple',
       cowop: 'cowop',
       'one-project': 'horizon',
