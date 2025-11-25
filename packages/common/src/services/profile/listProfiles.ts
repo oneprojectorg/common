@@ -1,3 +1,4 @@
+import { match } from '@op/core';
 import { and, db, inArray, sql } from '@op/db/client';
 import { type EntityType, locations, profiles } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
@@ -7,21 +8,8 @@ import {
   UnauthorizedError,
   decodeCursor,
   encodeCursor,
-  getGenericCursorCondition,
+  getCursorCondition,
 } from '../../utils';
-
-const getOrderByColumn = (orderBy: string) => {
-  switch (orderBy) {
-    case 'updatedAt':
-      return profiles.updatedAt;
-    case 'createdAt':
-      return profiles.createdAt;
-    case 'name':
-      return profiles.name;
-    default:
-      return profiles.updatedAt;
-  }
-};
 
 export const listProfiles = async ({
   cursor,
@@ -34,7 +22,7 @@ export const listProfiles = async ({
   user: User;
   cursor?: string | null;
   limit?: number;
-  orderBy?: string;
+  orderBy?: 'createdAt' | 'updatedAt' | 'name';
   dir?: 'asc' | 'desc';
   types?: EntityType[];
 }) => {
@@ -43,14 +31,19 @@ export const listProfiles = async ({
   }
 
   try {
+    const orderByColumn = match(orderBy, {
+      name: () => profiles.name,
+      createdAt: () => profiles.createdAt,
+      _: () => profiles.updatedAt,
+    });
+
     // Build cursor condition for pagination
     const cursorCondition = cursor
-      ? getGenericCursorCondition({
-          columns: {
-            id: profiles.id,
-            date: profiles.updatedAt,
-          },
-          cursor: decodeCursor(cursor),
+      ? getCursorCondition({
+          column: orderByColumn,
+          tieBreakerColumn: orderBy === 'name' ? profiles.id : undefined,
+          cursor: decodeCursor<{ value: string | Date; id?: string }>(cursor),
+          direction: dir,
         })
       : undefined;
 
@@ -58,9 +51,6 @@ export const listProfiles = async ({
     const typeCondition =
       types && types.length > 0 ? inArray(profiles.type, types) : undefined;
 
-    const orderByColumn = getOrderByColumn(orderBy);
-
-    // TODO: assert authorization, setup a common package
     const whereConditions = [cursorCondition, typeCondition].filter(Boolean);
     const whereClause =
       whereConditions.length > 0
@@ -126,11 +116,19 @@ export const listProfiles = async ({
     const hasMore = result.length > limit;
     const items = hasMore ? result.slice(0, limit) : result;
     const lastItem = items[items.length - 1];
+
+    const cursorValue = match<Date | string | null>(orderBy, {
+      name: () => lastItem?.name ?? null,
+      createdAt: () =>
+        lastItem?.createdAt ? new Date(lastItem.createdAt) : null,
+      _: () => (lastItem?.updatedAt ? new Date(lastItem.updatedAt) : null),
+    });
+
     const nextCursor =
-      hasMore && lastItem && lastItem.updatedAt
-        ? encodeCursor({
-            date: new Date(lastItem.updatedAt),
-            id: lastItem.id,
+      hasMore && lastItem && cursorValue
+        ? encodeCursor<{ value: string | Date; id?: string }>({
+            value: cursorValue,
+            id: orderBy === 'name' ? lastItem.id : undefined,
           })
         : null;
 

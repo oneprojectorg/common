@@ -13,7 +13,10 @@
  * });
  *
  * */
-export const match = (value: any, cases: Record<any, any>) => {
+export const match = <T>(
+  value: any,
+  cases: Record<string | number, () => T>,
+) => {
   for (const [pattern, result] of Object.entries(cases)) {
     if (pattern === '_' || pattern == value || String(value) === pattern) {
       return typeof result === 'function' ? result() : result;
