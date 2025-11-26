@@ -33,7 +33,18 @@ await realtime.publish(Channels.user(userId), {
 
 ```typescript
 import { RealtimeManager } from '@op/realtime/client';
+import { trpc } from './trpc'; // Your tRPC client
 
+// Initialize the manager with configuration (do this once at app startup)
+RealtimeManager.initialize({
+  wsUrl: process.env.NEXT_PUBLIC_CENTRIFUGO_WS_URL!,
+  getToken: async () => {
+    const result = await trpc.realtime.getToken.query();
+    return result.token;
+  },
+});
+
+// Subscribe to channels
 const manager = RealtimeManager.getInstance();
 
 manager.subscribe('user:123', (message) => {
@@ -41,14 +52,19 @@ manager.subscribe('user:123', (message) => {
 });
 ```
 
+**Note:** The `getToken` function is called automatically by Centrifuge when:
+
+- Initially connecting to the WebSocket server
+- The token is about to expire (tokens are valid for 24 hours)
+
 ## Environment Variables
 
 **Server:**
 
 - `CENTRIFUGO_API_URL` - Centrifugo HTTP API endpoint
 - `CENTRIFUGO_API_KEY` - API key for server publishing
+- `CENTRIFUGO_TOKEN_SECRET` - Secret key for signing JWT tokens
 
 **Client:**
 
 - `NEXT_PUBLIC_CENTRIFUGO_WS_URL` - WebSocket endpoint
-- `NEXT_PUBLIC_CENTRIFUGO_TOKEN` - Connection token

@@ -2,23 +2,9 @@ import { Centrifuge, type Subscription } from 'centrifuge';
 
 import type { InvalidationMessage, RealtimeMessage } from '../types';
 
-function getCentrifugoConfig() {
-  const wsUrl = process.env.NEXT_PUBLIC_CENTRIFUGO_WS_URL;
-  const token = process.env.NEXT_PUBLIC_CENTRIFUGO_TOKEN;
-
-  if (!wsUrl) {
-    throw new Error(
-      'Missing required environment variable: NEXT_PUBLIC_CENTRIFUGO_WS_URL',
-    );
-  }
-
-  if (!token) {
-    throw new Error(
-      'Missing required environment variable: NEXT_PUBLIC_CENTRIFUGO_TOKEN',
-    );
-  }
-
-  return { wsUrl, token };
+export interface RealtimeConfig {
+  wsUrl: string;
+  getToken: () => Promise<string>;
 }
 
 /**
@@ -33,6 +19,7 @@ export class RealtimeManager {
     Set<(data: RealtimeMessage) => void>
   >();
   private connectionListeners = new Set<(isConnected: boolean) => void>();
+  private config: RealtimeConfig | null = null;
   private refCount = 0;
 
   private constructor() {
@@ -46,16 +33,33 @@ export class RealtimeManager {
     return RealtimeManager.instance;
   }
 
+  /**
+   * Initialize the RealtimeManager with configuration
+   * Must be called before using subscribe()
+   */
+  static initialize(config: RealtimeConfig): void {
+    const instance = RealtimeManager.getInstance();
+    instance.config = config;
+  }
+
   private ensureConnected() {
     if (this.centrifuge) {
       return;
     }
 
-    const { wsUrl, token } = getCentrifugoConfig();
+    if (!this.config) {
+      throw new Error(
+        'RealtimeManager not initialized. Call RealtimeManager.initialize() first.',
+      );
+    }
 
-    this.centrifuge = new Centrifuge(wsUrl, {
-      // TODO: should use getToken function to generate token per user (on tRPC API)
-      token,
+    this.centrifuge = new Centrifuge(this.config.wsUrl, {
+      // Centrifuge will automatically call getToken when connecting
+      // and when the token is about to expire for automatic refresh
+      getToken: async () => {
+        const token = await this.config!.getToken();
+        return token;
+      },
     });
 
     this.centrifuge.on('connected', () => {
