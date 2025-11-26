@@ -4,16 +4,16 @@ import { skipBatch, trpc } from '@op/api/client';
 import { relationshipMap } from '@op/types/relationships';
 import { Button } from '@op/ui/Button';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { Suspense, useState } from 'react';
-
-import ErrorBoundary from '../ErrorBoundary';
 import {
   NotificationPanel,
   NotificationPanelActions,
   NotificationPanelHeader,
   NotificationPanelItem,
   NotificationPanelList,
-} from '../NotificationPanel';
+} from '@op/ui/NotificationPanel';
+import { Suspense, useState } from 'react';
+
+import ErrorBoundary from '../ErrorBoundary';
 import { OrganizationAvatar } from '../OrganizationAvatar';
 
 const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {

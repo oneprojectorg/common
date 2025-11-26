@@ -5,18 +5,18 @@ import { ProcessStatus } from '@op/api/encoders';
 import { getTextPreview } from '@op/core';
 import { Button } from '@op/ui/Button';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { ProfileItem } from '@op/ui/ProfileItem';
-import { useRouter } from 'next/navigation';
-import { Suspense, useState } from 'react';
-
-import ErrorBoundary from '../ErrorBoundary';
 import {
   NotificationPanel,
   NotificationPanelActions,
   NotificationPanelHeader,
   NotificationPanelItem,
   NotificationPanelList,
-} from '../NotificationPanel';
+} from '@op/ui/NotificationPanel';
+import { ProfileItem } from '@op/ui/ProfileItem';
+import { useRouter } from 'next/navigation';
+import { Suspense, useState } from 'react';
+
+import ErrorBoundary from '../ErrorBoundary';
 import { OrganizationAvatar } from '../OrganizationAvatar';
 
 const ActiveDecisionsNotificationsSuspense = () => {
