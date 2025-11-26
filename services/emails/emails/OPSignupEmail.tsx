@@ -39,7 +39,7 @@ const OPSignupEmail = () => {
       <Text className="mt-8 text-center text-sm text-neutral-500">
         This code will only be valid for the next 10 minutes. <br /> If you’re
         having problems, send us an{' '}
-        <Link href={`mailto:${OP_EMAIL_HELP}`} className="text-[#0396A6]/60">
+        <Link href={`mailto:${OP_EMAIL_HELP}`} className="text-primary-teal/60">
           email
         </Link>
         .

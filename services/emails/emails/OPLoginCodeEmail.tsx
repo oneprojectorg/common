@@ -29,10 +29,10 @@ const OPLoginCodeEmail = () => {
         </code>
       </Section>
 
-      <Text className="mb-0 text-xs text-[#606A6C]">
+      <Text className="mb-0 text-xs text-neutral-gray4">
         This code will only be valid for the next 10 minutes. If you’re having
         problems, send us an{' '}
-        <Link href={`mailto:${OP_EMAIL_HELP}`} className="text-[#0396A6]">
+        <Link href={`mailto:${OP_EMAIL_HELP}`} className="text-primary-teal">
           email
         </Link>
         .

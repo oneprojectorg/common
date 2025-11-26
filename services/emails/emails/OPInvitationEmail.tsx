@@ -31,7 +31,7 @@ export const OPInvitationEmail = ({
       <Section className="pb-0">
         <Button
           href={inviteUrl}
-          className="rounded-lg bg-[#0396A6] px-4 py-3 text-white no-underline hover:bg-[#0396A6]/90"
+          className="rounded-lg bg-primary-teal px-4 py-3 text-white no-underline hover:bg-primary-teal/90"
           style={{
             fontSize: '0.875rem',
             textAlign: 'center',
@@ -43,7 +43,7 @@ export const OPInvitationEmail = ({
         {message ? <Text>{message}</Text> : null}
       </Section>
 
-      <Text className="mb-0 text-xs text-[#606A6C]">
+      <Text className="mb-0 text-xs text-neutral-gray4">
         This invite will expire after 1 week
       </Text>
     </EmailTemplate>

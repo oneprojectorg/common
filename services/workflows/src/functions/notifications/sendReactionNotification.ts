@@ -115,19 +115,13 @@ export const sendReactionNotification = inngest.createFunction(
           return;
         }
 
-        const contextName = data.parentPostContent || data.postContent;
+        const content = data.parentPostContent || data.postContent;
 
         const reactorName = data.sourceProfileName;
         const contentType = data.parentPostId ? 'comment' : 'post';
         const { OPNodemailer } = await import('@op/emails');
         const { ReactionNotificationEmail } = await import('@op/emails');
         const postUrl = `${OPURLConfig('APP').ENV_URL}/profile/${data.orgProfileSlug}/posts/${postId}`;
-
-        console.log('Sending post react notification email', {
-          sourceProfileId,
-          postId,
-          contextName,
-        });
 
         await OPNodemailer({
           to: authorProfile.email,
@@ -141,7 +135,7 @@ export const sendReactionNotification = inngest.createFunction(
               reactionType: reactionEmoji.emoji,
               contentType,
               postUrl,
-              contextName,
+              content,
             }),
         });
       } catch (error) {
