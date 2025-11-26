@@ -5,7 +5,10 @@ import {
 } from '@op/common';
 import { db, eq } from '@op/db/client';
 import { organizations } from '@op/db/schema';
+import { Channels } from '@op/realtime';
+import { realtime } from '@op/realtime/server';
 import { TRPCError } from '@trpc/server';
+import { waitUntil } from '@vercel/functions';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
@@ -13,6 +16,7 @@ import withAnalytics from '../../middlewares/withAnalytics';
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
+import { getTRPCQueryKey } from '../../utils';
 
 const meta: OpenApiMeta = {
   openapi: {
@@ -70,7 +74,17 @@ export const deletePost = router({
       }
 
       try {
-        return await deletePostById({ postId: id, organizationId });
+        const result = await deletePostById({ postId: id, organizationId });
+
+        // Publish realtime invalidation for all posts feed
+        waitUntil(
+          realtime.publish(Channels.global(), {
+            type: 'query-invalidation',
+            queryKey: getTRPCQueryKey('organization', 'listAllPosts'),
+          }),
+        );
+
+        return { success: result.success };
       } catch (error) {
         if (
           error instanceof Error &&

@@ -1,12 +1,41 @@
 import sanitizeForS3 from 'sanitize-s3-objectkey';
 import { z } from 'zod';
 
+import type { AppRouter } from '../routers';
+
 export const dbFilter = z.object({
   limit: z.number().optional(),
   cursor: z.string().nullish(),
   orderBy: z.string().optional(),
   dir: z.enum(['asc', 'desc']).optional(),
 });
+
+/**
+ * Type-safe helper to construct tRPC query keys for cache invalidation
+ *
+ * @example
+ * // Without input
+ * getTRPCQueryKey('account', 'getMyAccount')
+ * // Returns: [['account', 'getMyAccount']]
+ *
+ * @example
+ * // With input
+ * getTRPCQueryKey('organization', 'listPosts', { slug: 'myorg' })
+ * // Returns: [['organization', 'listPosts'], { slug: 'myorg' }]
+ */
+export function getTRPCQueryKey<
+  TRouter extends keyof AppRouter,
+  TProcedure extends keyof AppRouter[TRouter],
+>(
+  router: TRouter,
+  procedure: TProcedure,
+  input?: any,
+): readonly [readonly [TRouter, TProcedure], ...any[]] {
+  if (input === undefined) {
+    return [[router, procedure]] as const;
+  }
+  return [[router, procedure], input] as const;
+}
 
 export function sanitizeS3Filename(filename: string) {
   if (!filename) {

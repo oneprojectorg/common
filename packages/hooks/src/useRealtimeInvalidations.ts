@@ -1,6 +1,27 @@
+import type { AppRouter } from '@op/api';
+import { OPURLConfig } from '@op/core';
 import { type InvalidationMessage, RealtimeManager } from '@op/realtime/client';
 import { useQueryClient } from '@tanstack/react-query';
+import { createTRPCProxyClient, httpLink } from '@trpc/client';
 import { useEffect, useState } from 'react';
+import superjson from 'superjson';
+
+// Create a vanilla tRPC client for imperative API calls in the browser
+const envURL = OPURLConfig('API');
+const vanillaClient = createTRPCProxyClient<AppRouter>({
+  links: [
+    httpLink({
+      url: envURL.TRPC_URL,
+      transformer: superjson,
+      fetch(url, options) {
+        return fetch(url, {
+          ...options,
+          credentials: 'include',
+        });
+      },
+    }),
+  ],
+});
 
 /**
  * Hook to listen for realtime cache invalidations
@@ -31,11 +52,21 @@ export function useRealtimeInvalidations(channels: string[] = ['global']) {
   const [messageCount, setMessageCount] = useState(0);
 
   useEffect(() => {
+    // Initialize the manager with configuration (do this once at app startup)
+    RealtimeManager.initialize({
+      wsUrl: process.env.NEXT_PUBLIC_CENTRIFUGO_WS_URL!,
+      getToken: async () => {
+        console.log('[Centrifugo] Fetching token for WebSocket connection');
+        const result = await vanillaClient.realtime.getToken.query();
+        return result.token;
+      },
+    });
+
     const manager = RealtimeManager.getInstance();
 
     // Handler for invalidation messages
     const handleInvalidation = (data: InvalidationMessage) => {
-      if (data.type === 'cache-invalidation') {
+      if (data.type === 'query-invalidation') {
         console.log('[Centrifugo] Invalidating:', {
           queryKey: data.queryKey,
         });
@@ -44,19 +75,17 @@ export function useRealtimeInvalidations(channels: string[] = ['global']) {
       }
     };
 
-    // Subscribe to all channels
-    channels.forEach((channel) => {
-      manager.subscribe(channel, handleInvalidation);
-    });
+    // Subscribe to all channels and collect unsubscribe functions
+    const unsubscribeFunctions = channels.map((channel) =>
+      manager.subscribe(channel, handleInvalidation),
+    );
 
     // Listen for connection state changes
     manager.addConnectionListener(setIsConnected);
 
     // Cleanup
     return () => {
-      channels.forEach((channel) => {
-        manager.unsubscribe(channel, handleInvalidation);
-      });
+      unsubscribeFunctions.forEach((unsubscribe) => unsubscribe());
       manager.removeConnectionListener(setIsConnected);
     };
   }, [queryClient, ...channels]);

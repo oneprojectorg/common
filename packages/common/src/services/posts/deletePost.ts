@@ -15,7 +15,10 @@ export const deletePostById = async (options: DeletePostByIdOptions) => {
   }
 
   let query = db
-    .select({ postId: posts.id })
+    .select({
+      postId: posts.id,
+      organizationId: postsToOrganizations.organizationId,
+    })
     .from(posts)
     .innerJoin(postsToOrganizations, eq(posts.id, postsToOrganizations.postId));
 
@@ -41,7 +44,9 @@ export const deletePostById = async (options: DeletePostByIdOptions) => {
     );
   }
 
+  const orgId = postExists[0]!.organizationId;
+
   await db.delete(posts).where(eq(posts.id, postId));
 
-  return { success: true };
+  return { success: true, organizationId: orgId };
 };

@@ -1,4 +1,6 @@
 import { createPostInOrganization } from '@op/common';
+import { Channels } from '@op/realtime';
+import { realtime } from '@op/realtime/server';
 import { waitUntil } from '@vercel/functions';
 // import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
@@ -8,6 +10,7 @@ import withAnalytics from '../../middlewares/withAnalytics';
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
+import { getTRPCQueryKey } from '../../utils';
 import { trackUserPost } from '../../utils/analytics';
 
 // const meta: OpenApiMeta = {
@@ -48,6 +51,14 @@ export const createPostInOrganizationRouter = router({
       });
 
       waitUntil(trackUserPost(ctx, input.content, allStorageObjects));
+
+      // Publish realtime invalidation for all posts feed
+      waitUntil(
+        realtime.publish(Channels.global(), {
+          type: 'query-invalidation',
+          queryKey: getTRPCQueryKey('organization', 'listAllPosts'),
+        }),
+      );
 
       return outputSchema.parse(result);
     }),

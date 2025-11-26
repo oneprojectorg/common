@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 function getTokenSecret(): string {
   const secret = process.env.CENTRIFUGO_TOKEN_SECRET;
 
+  console.log('===== Using Centrifugo token secret:', secret);
   if (!secret) {
     throw new Error(
       'Missing required environment variable: CENTRIFUGO_TOKEN_SECRET',
@@ -22,6 +23,7 @@ function getTokenSecret(): string {
  */
 export function generateConnectionToken(userId: string): string {
   const secret = getTokenSecret();
+  console.log('===== Using Centrifugo token secret:', secret);
 
   // Token expires in 24 hours
   const expiresIn = 60 * 60 * 24;

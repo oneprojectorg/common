@@ -8,7 +8,8 @@
     ".": "./index.ts",
     "./client": "./src/TRPCProvider.tsx",
     "./serverClient": "./src/serverClient.ts",
-    "./encoders": "./src/encoders/index.ts"
+    "./encoders": "./src/encoders/index.ts",
+    "./utils": "./src/utils/index.ts"
   },
   "scripts": {
     "lint": "pnpm tsc --noEmit",

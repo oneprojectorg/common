@@ -12,6 +12,10 @@ export const getToken = router({
     .input(z.undefined())
     .output(z.object({ token: z.string() }))
     .query(async ({ ctx }) => {
+      console.log(
+        '=====Generating Centrifugo connection token for user:',
+        ctx.user.id,
+      );
       const token = generateConnectionToken(ctx.user.id);
 
       return { token };
