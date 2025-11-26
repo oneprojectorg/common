@@ -11,7 +11,7 @@ import { realtimeRouter } from './index';
 
 const createCaller = createCallerFactory(realtimeRouter);
 
-describe.concurrent('realtime.getToken', () => {
+describe('realtime.getToken', () => {
   it('should reject requests from unauthenticated users', async () => {
     const caller = createCaller(await createTestContextWithSession(null));
 
