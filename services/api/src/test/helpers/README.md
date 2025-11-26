@@ -2,14 +2,19 @@
 
 This directory contains utilities to help write consistent, maintainable integration tests.
 
-## TestOrganizationDataManager
+
+## Testing philosophy
+
+- **No seed data**: Tests should not rely on seed data (except for roles). Each test creates its own data.
+- **Isolated**: Tests should be fully isolated from each other and clean up after themselves.
+- **Concurrent**: Tests should be able to run concurrently without interfering with each other.
+
+The `TestOrganizationDataManager` is an example utility that handles creation and cleanup of test data to support these principles.
+
+### TestOrganizationDataManager
 
 The `TestOrganizationDataManager` class provides a standardized pattern for managing test data lifecycle with automatic cleanup.
-It's very early days so it's not an abstract class yet.
-
-### Testing philosophy
-
-The idea is to have a minaml seed data setup for each test, and have the test data manager handle creation and cleanup of that data.
+It's very early days so it's not an abstract class yet. If you find yourself writing similar setup/teardown code for organization-related tests, consider extending this class. Otherwise, you can introduce a similar class for your own domain entities. 
 
 ### Basic Usage
 
