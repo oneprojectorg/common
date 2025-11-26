@@ -2,7 +2,7 @@
 
 import { Skeleton } from '@op/ui/Skeleton';
 
-import { HeaderSkeleton } from './HomepageSkeleton';
+import { HeaderSkeleton } from './HeaderSkeleton';
 
 /**
  * Generic screen skeleton with header and content area.
