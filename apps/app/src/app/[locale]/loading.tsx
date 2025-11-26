@@ -1,4 +1,4 @@
-import { GenericScreenSkeleton } from '@/components/skeletons/HomepageSkeleton';
+import { GenericScreenSkeleton } from '@/components/skeletons/GenericScreenSkeleton';
 
 export default function Loading() {
   return <GenericScreenSkeleton />;
