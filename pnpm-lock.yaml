@@ -1198,9 +1198,6 @@ importers:
       '@op/types':
         specifier: workspace:*
         version: link:../../packages/types
-      '@op/ui':
-        specifier: workspace:*
-        version: link:../../packages/ui
       '@react-email/components':
         specifier: ^0.1.0
         version: 0.1.0(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
