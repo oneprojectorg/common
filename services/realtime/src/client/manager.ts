@@ -1,4 +1,9 @@
-import { Centrifuge, type Subscription } from 'centrifuge';
+import {
+  Centrifuge,
+  type ErrorContext,
+  type PublicationContext,
+  type Subscription,
+} from 'centrifuge';
 
 import type { InvalidationMessage, RealtimeMessage } from '../types';
 
@@ -72,7 +77,7 @@ export class RealtimeManager {
       this.connectionListeners.forEach((listener) => listener(false));
     });
 
-    this.centrifuge.on('error', (ctx: any) => {
+    this.centrifuge.on('error', (ctx: ErrorContext) => {
       console.error('[Realtime] Error:', ctx);
     });
 
@@ -98,7 +103,10 @@ export class RealtimeManager {
 
     // Prevent duplicate handlers
     if (listeners.has(handler)) {
-      console.warn('[Realtime] Handler already subscribed to channel:', channel);
+      console.warn(
+        '[Realtime] Handler already subscribed to channel:',
+        channel,
+      );
       this.refCount--;
       return () => {}; // Return no-op function
     }
@@ -109,7 +117,7 @@ export class RealtimeManager {
     if (!this.subscriptions.has(channel)) {
       const sub = this.centrifuge!.newSubscription(channel);
 
-      sub.on('publication', (ctx: any) => {
+      sub.on('publication', (ctx: PublicationContext) => {
         const data = ctx.data as InvalidationMessage;
 
         // Notify all listeners for this channel

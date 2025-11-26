@@ -55,28 +55,6 @@ const unsubscribe = manager.subscribe('user:123', (message) => {
 unsubscribe();
 ```
 
-### React Example
-
-```typescript
-import { useEffect } from 'react';
-import { RealtimeManager } from '@op/realtime/client';
-
-function MyComponent() {
-  useEffect(() => {
-    const manager = RealtimeManager.getInstance();
-
-    const unsubscribe = manager.subscribe('user:123', (message) => {
-      console.log('Received:', message);
-    });
-
-    // Cleanup subscription when component unmounts
-    return unsubscribe;
-  }, []);
-
-  return <div>My Component</div>;
-}
-```
-
 **Note:** The `getToken` function is called automatically by Centrifuge when:
 
 - Initially connecting to the WebSocket server
