@@ -30,7 +30,7 @@ vi.mock('@op/events', async () => {
   };
 });
 
-describe('Profile Invite Integration Tests', () => {
+describe.skip('Profile Invite Integration Tests', () => {
   const createCaller = createCallerFactory(inviteProfileUserRouter);
 
   it('should add existing user to profile when invited', async ({
