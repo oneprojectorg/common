@@ -31,13 +31,15 @@ export const CommentNotificationEmail = ({
       </Text>
 
       <Section className="my-6">
-        <Text className="my-0 text-lg text-[#222D38]">"{commentContent}"</Text>
+        <Text className="my-0 text-lg text-neutral-charcoal">
+          "{commentContent}"
+        </Text>
       </Section>
 
       <Section className="pb-0">
         <Button
           href={postUrl}
-          className="rounded-lg bg-[#0396A6] px-4 py-3 text-white no-underline hover:bg-[#0396A6]/90"
+          className="rounded-lg bg-primary-teal px-4 py-3 text-white no-underline hover:bg-primary-teal/90"
           style={{
             fontSize: '0.875rem',
             textAlign: 'center',
@@ -49,12 +51,12 @@ export const CommentNotificationEmail = ({
       </Section>
 
       {contextName && (
-        <Text className="mb-0 text-xs text-[#606A6C]">
+        <Text className="mb-0 text-xs text-neutral-gray4">
           Context: {contextName}
         </Text>
       )}
       {postedIn && (
-        <Text className="mb-0 mt-1 text-xs text-[#606A6C]">
+        <Text className="mb-0 mt-1 text-xs text-neutral-gray4">
           Posted in: {postedIn}
         </Text>
       )}

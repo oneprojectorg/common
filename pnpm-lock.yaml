@@ -525,9 +525,6 @@ importers:
       dotenv:
         specifier: ^16.4.7
         version: 16.4.7
-      he:
-        specifier: ^1.2.0
-        version: 1.2.0
       immer:
         specifier: ^10.1.1
         version: 10.1.1
@@ -592,9 +589,6 @@ importers:
       '@testing-library/user-event':
         specifier: ^14.6.1
         version: 14.6.1(@testing-library/dom@10.4.0)
-      '@types/he':
-        specifier: ^1.2.3
-        version: 1.2.3
       '@types/react':
         specifier: 19.0.10
         version: 19.0.10
@@ -710,6 +704,9 @@ importers:
 
   packages/core:
     dependencies:
+      he:
+        specifier: ^1.2.0
+        version: 1.2.0
       p-queue:
         specifier: ^8.1.0
         version: 8.1.0
@@ -717,6 +714,9 @@ importers:
       '@op/typescript-config':
         specifier: workspace:*
         version: link:../../configs/typescript-config
+      '@types/he':
+        specifier: ^1.2.3
+        version: 1.2.3
       '@types/node':
         specifier: ^22.13.5
         version: 22.13.5

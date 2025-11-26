@@ -3,11 +3,10 @@
 import { getPublicUrl } from '@/utils';
 import {
   formatCurrency,
-  getTextPreview,
   parseProposalData,
 } from '@/utils/proposalUtils';
 import { ProposalStatus, type proposalEncoder } from '@op/api/encoders';
-import { isNullish, match } from '@op/core';
+import { getTextPreview, isNullish, match } from '@op/core';
 import { Avatar } from '@op/ui/Avatar';
 import { Chip } from '@op/ui/Chip';
 import { Surface } from '@op/ui/Surface';
