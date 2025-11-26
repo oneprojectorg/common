@@ -7,7 +7,7 @@ import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
-import { ActiveDecisions } from '@/components/ActiveDecisions';
+import { ActiveDecisionsNotifications } from '@/components/ActiveDecisionsNotifications';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { NewOrganizations } from '@/components/NewOrganizations';
 import { NewlyJoinedModal } from '@/components/NewlyJoinedModal';
@@ -125,7 +125,7 @@ export const LandingScreen = async () => {
         {user.currentProfile && user.currentProfile.type === 'org' ? (
           <PendingRelationships slug={user.currentProfile.slug} />
         ) : null}
-        <ActiveDecisions />
+        <ActiveDecisionsNotifications />
         <hr />
         <LandingScreenFeeds user={user} />
         <NewlyJoinedModal />
