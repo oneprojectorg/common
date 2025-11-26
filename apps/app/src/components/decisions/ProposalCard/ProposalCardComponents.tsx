@@ -269,9 +269,17 @@ export function ProposalCardStatus({
   return match(status, {
     [ProposalStatus.APPROVED]: (
       <>
-        <span>•</span>
+        <Bullet />
         <span className={cn('text-sm text-green-700', className)}>
           {t('Shortlisted')}
+        </span>
+      </>
+    ),
+    [ProposalStatus.SELECTED]: (
+      <>
+        <Bullet />
+        <span className={cn('text-sm text-green-700', className)}>
+          {t('Funded')}
         </span>
       </>
     ),
