@@ -33,22 +33,12 @@ describe.concurrent('realtime.getToken', () => {
     const { session } = await createIsolatedSession(adminUser.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
-    // Store the original value
-    const originalSecret = process.env.CENTRIFUGO_TOKEN_SECRET;
-
     // Temporarily unset the environment variable
-    vi.stubEnv('CENTRIFUGO_TOKEN_SECRET', undefined);
+    vi.stubEnv('CENTRIFUGO_TOKEN_SECRET', '');
 
-    try {
-      await expect(() => caller.getToken()).rejects.toThrow();
-    } finally {
-      // Restore the original value
-      if (originalSecret) {
-        vi.stubEnv('CENTRIFUGO_TOKEN_SECRET', originalSecret);
-      } else {
-        vi.unstubAllEnvs();
-      }
-    }
+    await expect(() => caller.getToken()).rejects.toThrow(
+      'Missing required environment variable: CENTRIFUGO_TOKEN_SECRET',
+    );
   });
 
   it('should generate a valid JWT token with correct claims', async ({
@@ -63,6 +53,9 @@ describe.concurrent('realtime.getToken', () => {
 
     const { session } = await createIsolatedSession(adminUser.email);
     const caller = createCaller(await createTestContextWithSession(session));
+
+    // Ensure token secret is set
+    vi.stubEnv('CENTRIFUGO_TOKEN_SECRET', 'test-secret-key');
 
     const result = await caller.getToken();
 
@@ -99,12 +92,11 @@ describe.concurrent('realtime.getToken', () => {
     const { session } = await createIsolatedSession(adminUser.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
-    const result = await caller.getToken();
+    // Ensure token secret is set
+    const secret = 'test-secret-key';
+    vi.stubEnv('CENTRIFUGO_TOKEN_SECRET', secret);
 
-    const secret = process.env.CENTRIFUGO_TOKEN_SECRET;
-    if (!secret) {
-      throw new Error('Missing CENTRIFUGO_TOKEN_SECRET');
-    }
+    const result = await caller.getToken();
 
     const verified = jwt.verify(result.token, secret) as jwt.JwtPayload;
 
