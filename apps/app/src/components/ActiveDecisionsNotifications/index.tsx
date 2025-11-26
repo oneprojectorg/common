@@ -1,6 +1,6 @@
 'use client';
 
-import { skipBatch, trpc } from '@op/api/client';
+import { trpc } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';
 import { getTextPreview } from '@op/core';
 import { Button } from '@op/ui/Button';
