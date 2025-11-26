@@ -71,7 +71,7 @@ export function ResultsPage({
             variant="results"
           />
 
-          <Suspense fallback={<Skeleton className="h-64 w-full" />}>
+          <Suspense fallback={<Skeleton className="h-12 w-full" />}>
             <ResultsStats instanceId={instanceId} />
           </Suspense>
 
