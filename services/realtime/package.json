@@ -5,20 +5,30 @@
   "exports": {
     ".": "./src/index.ts",
     "./server": "./src/server/index.ts",
-    "./client": "./src/client/index.ts"
+    "./client": "./src/client/index.ts",
+    "./testing": "./src/testing/index.ts"
   },
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "scripts": {
     "check-types": "tsc --noEmit",
-    "lint": "eslint . --max-warnings 0"
+    "lint": "eslint . --max-warnings 0",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:centrifugo:start": "docker compose -f docker-compose.test.yml up -d",
+    "test:centrifugo:stop": "docker compose -f docker-compose.test.yml down",
+    "test:centrifugo:logs": "docker compose -f docker-compose.test.yml logs -f",
+    "test:centrifugo:check": "tsx src/testing/check-centrifugo.ts"
   },
   "dependencies": {
+    "centrifuge": "^5.2.2",
     "jsonwebtoken": "^9.0.2"
   },
   "devDependencies": {
     "@op/typescript-config": "workspace:*",
     "@types/jsonwebtoken": "^9.0.10",
-    "typescript": "^5.7.2"
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
   }
 }

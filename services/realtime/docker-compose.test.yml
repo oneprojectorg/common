@@ -1,0 +1,32 @@
+version: "3.8"
+
+# Docker Compose configuration for Centrifugo testing
+# Usage:
+#   Start: docker compose -f docker-compose.test.yml up -d
+#   Stop: docker compose -f docker-compose.test.yml down
+#   Logs: docker compose -f docker-compose.test.yml logs -f
+
+services:
+  centrifugo:
+    image: centrifugo/centrifugo:v5
+    container_name: centrifugo-test
+    ports:
+      - "8000:8000" # Client connections (WebSocket/HTTP)
+      - "9000:9000" # Internal API (gRPC)
+    volumes:
+      - ./centrifugo.json:/centrifugo/config.json:ro
+    command: centrifugo -c config.json
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8000/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    environment:
+      - CENTRIFUGO_TOKEN_HMAC_SECRET_KEY=test-centrifugo-secret-key-for-local-dev
+      - CENTRIFUGO_API_KEY=test-api-key
+    restart: unless-stopped
+
+networks:
+  default:
+    name: centrifugo-test-network

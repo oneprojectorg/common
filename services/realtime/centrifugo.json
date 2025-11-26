@@ -1,0 +1,18 @@
+{
+  "token_hmac_secret_key": "test-centrifugo-secret-key-for-local-dev",
+  "api_key": "test-api-key",
+  "admin": true,
+  "admin_password": "admin",
+  "admin_secret": "admin-secret",
+  "allowed_origins": ["*"],
+  "client_insecure": false,
+  "client_anonymous": false,
+  "publish": true,
+  "subscribe_to_publish": true,
+  "presence": true,
+  "presence_stats": true,
+  "history_size": 100,
+  "history_ttl": "300s",
+  "log_level": "debug",
+  "health": true
+}
