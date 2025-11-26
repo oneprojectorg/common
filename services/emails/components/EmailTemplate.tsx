@@ -74,7 +74,7 @@ const EmailTemplate = ({
                 </Row>
               </Section>
 
-              <Container className="mt-6">{children}</Container>
+              <Container className="mt-8">{children}</Container>
             </Container>
             <Container className="mx-auto mb-0 max-w-[600px] px-12 py-8 font-sans font-normal">
               <Text className="mb-0 mt-0 text-xs">

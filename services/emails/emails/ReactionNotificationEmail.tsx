@@ -27,7 +27,7 @@ export const ReactionNotificationEmail = ({
     <EmailTemplate
       previewText={`${reactorName} reacted to your ${contentType}`}
     >
-      <Text className="my-8 text-lg">
+      <Text className="mb-8 text-lg">
         <strong>{reactorName}</strong> reacted with {reactionType} to your{' '}
         {contentType}:
       </Text>
