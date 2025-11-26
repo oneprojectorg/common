@@ -3,7 +3,7 @@
 import { trpc } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';
 import { getTextPreview } from '@op/core';
-import { Button } from '@op/ui/Button';
+import { Button, ButtonLink } from '@op/ui/Button';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import {
   NotificationPanel,
@@ -43,6 +43,7 @@ const ActiveDecisionsNotificationsSuspense = () => {
           const instance = decision.processInstance;
           const isPending = navigatingId === decision.id;
           const description = instance?.description;
+          const instanceUrl = `/profile/${decision.slug}/decisions/${instance?.id}`;
 
           return (
             <NotificationPanelItem key={decision.id}>
@@ -56,19 +57,18 @@ const ActiveDecisionsNotificationsSuspense = () => {
                 }
               />
               <NotificationPanelActions>
-                <Button
+                <ButtonLink
                   size="small"
                   className="w-full sm:w-auto"
+                  href={instanceUrl}
                   onPress={() => {
                     setNavigatingId(decision.id);
-                    router.push(
-                      `/profile/${decision.slug}/decisions/${instance?.id}`,
-                    );
+                    router.push(instanceUrl);
                   }}
                   isDisabled={isPending}
                 >
                   {isPending ? <LoadingSpinner /> : 'Participate'}
-                </Button>
+                </ButtonLink>
               </NotificationPanelActions>
             </NotificationPanelItem>
           );
