@@ -5,9 +5,12 @@ import { ProcessStatus } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { Header2 } from '@op/ui/Header';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
+import { ProfileItem } from '@op/ui/ProfileItem';
 import { Surface } from '@op/ui/Surface';
 import { useRouter } from 'next/navigation';
 import { Suspense, useState } from 'react';
+
+import { getTextPreview } from '@/utils/proposalUtils';
 
 import ErrorBoundary from '../ErrorBoundary';
 import { OrganizationAvatar } from '../OrganizationAvatar';
@@ -41,22 +44,22 @@ const ActiveDecisionsSuspense = () => {
         {decisions.map((decision) => {
           const instance = decision.processInstance;
           const isPending = navigatingId === decision.id;
+          const description = instance?.description;
 
           return (
             <li
               key={decision.id}
               className="flex flex-col justify-between gap-6 border-t p-6 transition-colors sm:flex-row sm:items-center sm:gap-2"
             >
-              <div className="flex items-center gap-3">
-                <OrganizationAvatar profile={decision} />
-                <div className="flex h-full flex-col">
-                  <span className="font-bold">{decision.name}</span>
-                  <span className="text-sm text-neutral-charcoal">
-                    {instance?.proposalCount || 0} Proposals •{' '}
-                    {instance?.participantCount || 0} Participants
-                  </span>
-                </div>
-              </div>
+              <ProfileItem
+                avatar={<OrganizationAvatar profile={decision} />}
+                title={decision.name}
+                description={
+                  description
+                    ? getTextPreview({ content: description })
+                    : undefined
+                }
+              />
               <div className="flex items-center gap-4">
                 <Button
                   size="small"
