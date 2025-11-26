@@ -7,6 +7,7 @@ import posthog from 'posthog-js';
 import React, { Suspense, createContext, useContext } from 'react';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
+import { HomepageSkeleton } from '@/components/skeletons/HomepageSkeleton';
 
 const AccessZones = ['decisions', 'profile', 'admin'] as const;
 
@@ -97,7 +98,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         </UserContext.Provider>
       }
     >
-      <Suspense fallback={null}>
+      <Suspense fallback={<HomepageSkeleton />}>
         <UserProviderSuspense>{children}</UserProviderSuspense>
       </Suspense>
     </ErrorBoundary>
