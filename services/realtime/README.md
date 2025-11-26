@@ -47,9 +47,34 @@ RealtimeManager.initialize({
 // Subscribe to channels
 const manager = RealtimeManager.getInstance();
 
-manager.subscribe('user:123', (message) => {
+const unsubscribe = manager.subscribe('user:123', (message) => {
   console.log('Received:', message);
 });
+
+// Later, when you want to clean up the subscription:
+unsubscribe();
+```
+
+### React Example
+
+```typescript
+import { useEffect } from 'react';
+import { RealtimeManager } from '@op/realtime/client';
+
+function MyComponent() {
+  useEffect(() => {
+    const manager = RealtimeManager.getInstance();
+
+    const unsubscribe = manager.subscribe('user:123', (message) => {
+      console.log('Received:', message);
+    });
+
+    // Cleanup subscription when component unmounts
+    return unsubscribe;
+  }, []);
+
+  return <div>My Component</div>;
+}
 ```
 
 **Note:** The `getToken` function is called automatically by Centrifuge when:

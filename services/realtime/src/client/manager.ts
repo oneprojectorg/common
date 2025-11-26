@@ -81,8 +81,12 @@ export class RealtimeManager {
 
   /**
    * Subscribe to a channel with a message handler
+   * Returns an unsubscribe function to clean up the subscription
    */
-  subscribe(channel: string, handler: (data: RealtimeMessage) => void) {
+  subscribe(
+    channel: string,
+    handler: (data: RealtimeMessage) => void,
+  ): () => void {
     this.ensureConnected();
     this.refCount++;
 
@@ -90,7 +94,16 @@ export class RealtimeManager {
     if (!this.channelListeners.has(channel)) {
       this.channelListeners.set(channel, new Set());
     }
-    this.channelListeners.get(channel)!.add(handler);
+    const listeners = this.channelListeners.get(channel)!;
+
+    // Prevent duplicate handlers
+    if (listeners.has(handler)) {
+      console.warn('[Realtime] Handler already subscribed to channel:', channel);
+      this.refCount--;
+      return () => {}; // Return no-op function
+    }
+
+    listeners.add(handler);
 
     // Create subscription if it doesn't exist
     if (!this.subscriptions.has(channel)) {
@@ -100,9 +113,9 @@ export class RealtimeManager {
         const data = ctx.data as InvalidationMessage;
 
         // Notify all listeners for this channel
-        const listeners = this.channelListeners.get(channel);
-        if (listeners) {
-          listeners.forEach((listener) => listener(data));
+        const channelListeners = this.channelListeners.get(channel);
+        if (channelListeners) {
+          channelListeners.forEach((listener) => listener(data));
         }
       });
 
@@ -110,9 +123,75 @@ export class RealtimeManager {
         console.log('[Realtime] Subscribed to channel:', channel);
       });
 
+      sub.on('unsubscribed', () => {
+        console.log('[Realtime] Unsubscribed from channel:', channel);
+      });
+
       sub.subscribe();
       this.subscriptions.set(channel, sub);
     }
+
+    // Return unsubscribe function
+    return () => {
+      this.unsubscribe(channel, handler);
+    };
+  }
+
+  /**
+   * Unsubscribe a specific handler from a channel
+   */
+  private unsubscribe(
+    channel: string,
+    handler: (data: RealtimeMessage) => void,
+  ): void {
+    const listeners = this.channelListeners.get(channel);
+    if (!listeners) {
+      return;
+    }
+
+    // Remove the handler
+    listeners.delete(handler);
+    this.refCount--;
+
+    // If no more handlers for this channel, unsubscribe from Centrifuge
+    if (listeners.size === 0) {
+      this.channelListeners.delete(channel);
+
+      const sub = this.subscriptions.get(channel);
+      if (sub) {
+        sub.unsubscribe();
+        sub.removeAllListeners();
+        this.subscriptions.delete(channel);
+      }
+    }
+
+    // If no more active subscriptions, disconnect
+    if (this.refCount === 0) {
+      this.disconnect();
+    }
+  }
+
+  /**
+   * Disconnect from the WebSocket server and clean up all subscriptions
+   */
+  private disconnect(): void {
+    if (!this.centrifuge) {
+      return;
+    }
+
+    console.log('[Realtime] Disconnecting...');
+
+    // Clean up all subscriptions
+    this.subscriptions.forEach((sub) => {
+      sub.unsubscribe();
+      sub.removeAllListeners();
+    });
+    this.subscriptions.clear();
+    this.channelListeners.clear();
+
+    // Disconnect and clean up centrifuge instance
+    this.centrifuge.disconnect();
+    this.centrifuge = null;
   }
 
   /**
