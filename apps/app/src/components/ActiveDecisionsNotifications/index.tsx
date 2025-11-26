@@ -3,7 +3,7 @@
 import { trpc } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';
 import { getTextPreview } from '@op/core';
-import { Button, ButtonLink } from '@op/ui/Button';
+import { ButtonLink } from '@op/ui/Button';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import {
   NotificationPanel,
@@ -13,14 +13,12 @@ import {
   NotificationPanelList,
 } from '@op/ui/NotificationPanel';
 import { ProfileItem } from '@op/ui/ProfileItem';
-import { useRouter } from 'next/navigation';
 import { Suspense, useState } from 'react';
 
 import ErrorBoundary from '../ErrorBoundary';
 import { OrganizationAvatar } from '../OrganizationAvatar';
 
 const ActiveDecisionsNotificationsSuspense = () => {
-  const router = useRouter();
   const [navigatingId, setNavigatingId] = useState<string | null>(null);
 
   const [{ items: decisions }] =
@@ -41,9 +39,8 @@ const ActiveDecisionsNotificationsSuspense = () => {
       <NotificationPanelList>
         {decisions.map((decision) => {
           const instance = decision.processInstance;
-          const isPending = navigatingId === decision.id;
           const description = instance?.description;
-          const instanceUrl = `/profile/${decision.slug}/decisions/${instance?.id}`;
+          const isNavigating = navigatingId === decision.id;
 
           return (
             <NotificationPanelItem key={decision.id}>
@@ -60,14 +57,10 @@ const ActiveDecisionsNotificationsSuspense = () => {
                 <ButtonLink
                   size="small"
                   className="w-full sm:w-auto"
-                  href={instanceUrl}
-                  onPress={() => {
-                    setNavigatingId(decision.id);
-                    router.push(instanceUrl);
-                  }}
-                  isDisabled={isPending}
+                  href={`/profile/${decision.slug}/decisions/${instance?.id}`}
+                  onPress={() => setNavigatingId(decision.id)}
                 >
-                  {isPending ? <LoadingSpinner /> : 'Participate'}
+                  {isNavigating ? <LoadingSpinner /> : 'Participate'}
                 </ButtonLink>
               </NotificationPanelActions>
             </NotificationPanelItem>
