@@ -710,6 +710,9 @@ importers:
 
   packages/core:
     dependencies:
+      he:
+        specifier: ^1.2.0
+        version: 1.2.0
       p-queue:
         specifier: ^8.1.0
         version: 8.1.0
@@ -717,6 +720,9 @@ importers:
       '@op/typescript-config':
         specifier: workspace:*
         version: link:../../configs/typescript-config
+      '@types/he':
+        specifier: ^1.2.3
+        version: 1.2.3
       '@types/node':
         specifier: ^22.13.5
         version: 22.13.5

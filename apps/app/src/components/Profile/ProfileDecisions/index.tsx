@@ -1,8 +1,8 @@
 'use client';
 
 import { useUser } from '@/utils/UserProvider';
-import { getTextPreview } from '@/utils/proposalUtils';
 import { trpc } from '@op/api/client';
+import { getTextPreview } from '@op/core';
 import { Button } from '@op/ui/Button';
 import { DialogTrigger } from '@op/ui/Dialog';
 import { Header2, Header3 } from '@op/ui/Header';
