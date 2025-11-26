@@ -17,6 +17,7 @@ export * from './shared';
 // Export EntityType and ProfileRelationshipType for frontend usage
 export {
   EntityType,
+  ProcessStatus,
   ProfileRelationshipType,
   ProposalStatus,
 } from '@op/db/schema';
