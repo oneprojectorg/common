@@ -50,6 +50,7 @@ export const getProfileRouter = router({
       dbFilter
         .extend({
           types: z.array(z.enum(EntityType)).optional(),
+          orderBy: z.enum(['createdAt', 'updatedAt', 'name']).optional(),
         })
         .optional(),
     )

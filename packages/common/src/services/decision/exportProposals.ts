@@ -1,6 +1,7 @@
 import { set } from '@op/cache';
 import { and, db, eq } from '@op/db/client';
 import {
+  ProposalStatus,
   organizationUsers,
   organizations,
   processInstances,
@@ -18,7 +19,7 @@ export interface ExportProposalsInput {
   format: 'csv';
   categoryId?: string;
   submittedByProfileId?: string;
-  status?: 'draft' | 'submitted' | 'under_review' | 'approved' | 'rejected';
+  status?: ProposalStatus;
   dir: 'asc' | 'desc';
   proposalFilter?: 'all' | 'my' | 'shortlisted' | 'my-ballot';
 }

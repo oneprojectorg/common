@@ -9,6 +9,7 @@ export * from './createInstance';
 export * from './updateInstance';
 export * from './listInstances';
 export * from './getInstance';
+export * from './listDecisionProfiles';
 
 // Transition management
 export * from './checkTransitions';

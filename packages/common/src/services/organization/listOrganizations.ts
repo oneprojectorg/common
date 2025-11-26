@@ -1,4 +1,4 @@
-import { and, db, eq, lt, or, sql } from '@op/db/client';
+import { db, sql } from '@op/db/client';
 import { locations, organizations } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
@@ -7,18 +7,8 @@ import {
   UnauthorizedError,
   decodeCursor,
   encodeCursor,
+  getCursorCondition,
 } from '../../utils';
-
-const getOrderByColumn = (orderBy: string) => {
-  switch (orderBy) {
-    case 'updatedAt':
-      return organizations.updatedAt;
-    case 'createdAt':
-      return organizations.createdAt;
-    default:
-      return organizations.updatedAt;
-  }
-};
 
 export const listOrganizations = async ({
   cursor,
@@ -30,7 +20,7 @@ export const listOrganizations = async ({
   user: User;
   cursor?: string | null;
   limit?: number;
-  orderBy?: string;
+  orderBy?: 'createdAt' | 'updatedAt';
   dir?: 'asc' | 'desc';
 }) => {
   if (!user) {
@@ -38,22 +28,20 @@ export const listOrganizations = async ({
   }
 
   try {
-    const cursorData = cursor ? decodeCursor(cursor) : null;
+    const orderByColumn =
+      orderBy === 'createdAt'
+        ? organizations.createdAt
+        : organizations.updatedAt;
 
     // Build cursor condition for unfiltered query
-    const cursorCondition = cursorData
-      ? or(
-          lt(organizations.updatedAt, cursorData.updatedAt),
-          and(
-            eq(organizations.updatedAt, cursorData.updatedAt),
-            lt(organizations.id, cursorData.id),
-          ),
-        )
+    const cursorCondition = cursor
+      ? getCursorCondition({
+          column: orderByColumn,
+          cursor: decodeCursor<{ value: string | Date }>(cursor),
+          direction: dir,
+        })
       : undefined;
 
-    const orderByColumn = getOrderByColumn(orderBy);
-
-    // TODO: assert authorization, setup a common package
     const result = await db.query.organizations.findMany({
       where: cursorCondition,
       with: {
@@ -101,9 +89,14 @@ export const listOrganizations = async ({
     const hasMore = result.length > limit;
     const items = hasMore ? result.slice(0, limit) : result;
     const lastItem = items[items.length - 1];
+
+    const orderByValue =
+      orderBy === 'createdAt' ? lastItem?.createdAt : lastItem?.updatedAt;
+    const cursorValue = orderByValue ? new Date(orderByValue) : null;
+
     const nextCursor =
-      hasMore && lastItem && lastItem.updatedAt
-        ? encodeCursor(new Date(lastItem.updatedAt), lastItem.id)
+      hasMore && lastItem && cursorValue
+        ? encodeCursor<{ value: Date }>({ value: cursorValue })
         : null;
 
     return { items, next: nextCursor, hasMore };

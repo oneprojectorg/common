@@ -35,7 +35,11 @@ export function ResultsPage({
   });
 
   // Organization-specific content
-  const heroContent = match(slug, {
+  const heroContent = match<{
+    title: string;
+    description: string;
+    about?: string;
+  }>(slug, {
     'people-powered': () => ({
       title: t('The results are in.'),
       description: `Thank you to everyone who participated in ${instance.name}`,

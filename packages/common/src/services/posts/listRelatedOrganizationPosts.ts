@@ -1,4 +1,4 @@
-import { and, db, eq, inArray, lt, or } from '@op/db/client';
+import { db, inArray } from '@op/db/client';
 import { postsToOrganizations } from '@op/db/schema';
 import type { User } from '@supabase/supabase-js';
 
@@ -7,7 +7,11 @@ import {
   getItemsWithReactionsAndComments,
   getRelatedOrganizations,
 } from '../';
-import { decodeCursor, encodeCursor } from '../../utils';
+import {
+  decodeCursor,
+  encodeCursor,
+  getGenericCursorCondition,
+} from '../../utils';
 
 export interface ListAllPostsOptions {
   limit?: number;
@@ -25,18 +29,15 @@ export const listAllRelatedOrganizationPosts = async (
 ) => {
   const { limit = 200, cursor } = options;
 
-  // Parse cursor
-  const cursorData = cursor ? decodeCursor(cursor) : null;
-
   // Build cursor condition for pagination
-  const cursorCondition = cursorData
-    ? or(
-        lt(postsToOrganizations.createdAt, cursorData.createdAt),
-        and(
-          eq(postsToOrganizations.createdAt, cursorData.createdAt),
-          lt(postsToOrganizations.postId, cursorData.id),
-        ),
-      )
+  const cursorCondition = cursor
+    ? getGenericCursorCondition({
+        columns: {
+          id: postsToOrganizations.postId,
+          date: postsToOrganizations.createdAt,
+        },
+        cursor: decodeCursor(cursor),
+      })
     : undefined;
 
   // Fetch posts for all organizations with pagination
@@ -83,7 +84,10 @@ export const listAllRelatedOrganizationPosts = async (
   const lastItem = items[items.length - 1];
   const nextCursor =
     hasMore && lastItem && lastItem.createdAt
-      ? encodeCursor(new Date(lastItem.createdAt), lastItem.postId)
+      ? encodeCursor({
+          date: new Date(lastItem.createdAt),
+          id: lastItem.postId,
+        })
       : null;
 
   const itemsWithReactionsAndComments = await getItemsWithReactionsAndComments({

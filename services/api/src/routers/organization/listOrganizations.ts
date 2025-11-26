@@ -32,6 +32,7 @@ export const listOrganizationsRouter = router({
       dbFilter
         .extend({
           terms: z.array(z.string()).nullish(),
+          orderBy: z.enum(['createdAt', 'updatedAt']).optional(),
         })
         .optional(),
     )
