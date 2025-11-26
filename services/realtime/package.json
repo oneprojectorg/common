@@ -1,0 +1,24 @@
+{
+  "name": "@op/realtime",
+  "version": "0.0.0",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts",
+    "./server": "./src/server/index.ts",
+    "./client": "./src/client/index.ts"
+  },
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "lint": "eslint . --max-warnings 0"
+  },
+  "dependencies": {
+    "jsonwebtoken": "^9.0.2"
+  },
+  "devDependencies": {
+    "@op/typescript-config": "workspace:*",
+    "@types/jsonwebtoken": "^9.0.10",
+    "typescript": "^5.7.2"
+  }
+}
