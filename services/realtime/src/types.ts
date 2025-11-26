@@ -1,8 +1,8 @@
 /**
- * Cache invalidation message
+ * Query invalidation message
  */
 export interface InvalidationMessage {
-  type: 'cache-invalidation';
+  type: 'query-invalidation';
   queryKey: readonly unknown[];
 }
 

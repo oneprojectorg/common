@@ -93,7 +93,6 @@ export class RealtimeManager {
     handler: (data: RealtimeMessage) => void,
   ): () => void {
     this.ensureConnected();
-    this.refCount++;
 
     // Add handler to channel listeners
     if (!this.channelListeners.has(channel)) {
@@ -107,10 +106,10 @@ export class RealtimeManager {
         '[Realtime] Handler already subscribed to channel:',
         channel,
       );
-      this.refCount--;
       return () => {}; // Return no-op function
     }
 
+    this.refCount++;
     listeners.add(handler);
 
     // Create subscription if it doesn't exist
