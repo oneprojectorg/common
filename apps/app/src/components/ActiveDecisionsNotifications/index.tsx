@@ -24,15 +24,10 @@ const ActiveDecisionsNotificationsSuspense = () => {
   const [navigatingId, setNavigatingId] = useState<string | null>(null);
 
   const [{ items: decisions }] =
-    trpc.decision.listDecisionProfiles.useSuspenseQuery(
-      {
-        status: ProcessStatus.PUBLISHED,
-        limit: 10,
-      },
-      {
-        ...skipBatch,
-      },
-    );
+    trpc.decision.listDecisionProfiles.useSuspenseQuery({
+      status: ProcessStatus.PUBLISHED,
+      limit: 10,
+    });
 
   const count = decisions.length;
 
