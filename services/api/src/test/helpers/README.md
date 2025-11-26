@@ -9,7 +9,11 @@ It's very early days so it's not an abstract class yet.
 
 ### Testing philosophy
 
-The idea is to have a minaml seed data setup for each test, and have the test data manager handle creation and cleanup of that data.
+- **No seed data**: Tests should not rely on seed data (except for roles). Each test creates its own data.
+- **Isolated**: Tests should be fully isolated from each other and clean up after themselves.
+- **Concurrent**: Tests should be able to run concurrently without interfering with each other.
+
+The `TestOrganizationDataManager` handles creation and cleanup of test data to support these principles.
 
 ### Basic Usage
 

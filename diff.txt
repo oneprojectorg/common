@@ -1,0 +1,27 @@
+diff --git a/.github/workflows/api-tests.yml b/.github/workflows/api-tests.yml
+index dfce4cc..606f7d4 100644
+--- a/.github/workflows/api-tests.yml
++++ b/.github/workflows/api-tests.yml
+@@ -78,4 +78,4 @@ jobs:
+         run: pnpm w:db migrate:test
+ 
+       - name: Run API tests
+-        run: pnpm w:api test listUsers listAll addUsers
++        run: pnpm w:api test
+diff --git a/services/api/src/test/helpers/README.md b/services/api/src/test/helpers/README.md
+index 1cc02e0..ab4f9b6 100644
+--- a/services/api/src/test/helpers/README.md
++++ b/services/api/src/test/helpers/README.md
+@@ -9,7 +9,11 @@ It's very early days so it's not an abstract class yet.
+ 
+ ### Testing philosophy
+ 
+-The idea is to have a minaml seed data setup for each test, and have the test data manager handle creation and cleanup of that data.
++- **No seed data**: Tests should not rely on seed data (except for roles). Each test creates its own data.
++- **Isolated**: Tests should be fully isolated from each other and clean up after themselves.
++- **Concurrent**: Tests should be able to run concurrently without interfering with each other.
++
++The `TestOrganizationDataManager` handles creation and cleanup of test data to support these principles.
+ 
+ ### Basic Usage
+ 
