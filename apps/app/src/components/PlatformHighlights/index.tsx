@@ -13,8 +13,6 @@ import { ReactNode, Suspense, useEffect, useRef, useState } from 'react';
 
 import { Link } from '@/lib/i18n';
 
-const hello = () => {};
-
 export const PlatformHighlights = () => {
   const [stats] = trpc.platform.getStats.useSuspenseQuery();
   const t = useTranslations();
@@ -174,5 +172,3 @@ const OrganizationFacePile = ({ children }: { children?: ReactNode }) => {
     </FacePile>
   );
 };
-
-export default { hello };
