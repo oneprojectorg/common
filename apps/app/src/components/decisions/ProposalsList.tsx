@@ -484,7 +484,7 @@ export const ProposalsList = ({
       processInstanceId: string;
       categoryId?: string;
       submittedByProfileId?: string;
-      status?: 'draft' | 'submitted' | 'under_review' | 'approved' | 'rejected';
+      status?: ProposalStatus;
       dir: 'asc' | 'desc';
       limit: number;
     } = {

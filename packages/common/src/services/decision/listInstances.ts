@@ -1,5 +1,5 @@
 import { and, asc, db, desc, eq, sql } from '@op/db/client';
-import { organizations, processInstances } from '@op/db/schema';
+import { ProcessStatus, organizations, processInstances } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
@@ -9,7 +9,7 @@ import { getOrgAccessUser } from '../access';
 export interface ListInstancesInput {
   ownerProfileId: string;
   processId?: string;
-  status?: 'draft' | 'active' | 'paused' | 'completed' | 'cancelled';
+  status?: ProcessStatus;
   search?: string;
   limit?: number;
   offset?: number;
