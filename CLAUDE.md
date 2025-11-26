@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code (claude.ai/code) and other AI agents when working with code in this repository.
 
 ## Development Commands
 
@@ -81,14 +81,14 @@ Use `pnpm w:<workspace>` shortcuts:
 
 - **ALWAYS** checkout a new branch when making changes if currently on the `dev` branch
 - **Branch naming convention**:
-  - Bug fixes: `bug/descriptive-name` (e.g., `bug/fix-login-validation`)
-  - Features: `feature/descriptive-name` (e.g., `feature/user-dashboard`)
+  - Bug fixes: `fix-login-validation`
+  - Features: `user-dashboard`
+  - **Do not** prefix your branch with your name or initials
 - **NEVER commit, push, or pull** - these actions are always manual
 
 ### Code Quality Standards
 
 - Run type checking with `pnpm w:app lint` after making changes
-- Format code with `pnpm format` after making changes
 - Follow existing code conventions and patterns in the file being edited
 - Test changes thoroughly before completion
 - Using `any` to fix type errors shuold be avoided
