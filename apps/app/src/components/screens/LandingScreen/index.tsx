@@ -1,9 +1,8 @@
-import { createClient } from '@op/api/serverClient';
+import { getUser } from '@/utils/getUser';
 import { Header1, Header3 } from '@op/ui/Header';
 import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
-import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
@@ -185,11 +184,9 @@ const LandingScreenFeeds = ({
 
 /**
  * Async component that fetches user data and renders user-dependent content.
- * Wrapped in Suspense to allow the page shell to render immediately.
  */
 const WelcomeSection = async () => {
-  const client = await createClient();
-  const user = await client.account.getMyAccount();
+  const user = await getUser();
 
   return (
     <div className="flex flex-col gap-2">
@@ -219,30 +216,21 @@ const WelcomeSkeleton = () => {
 /**
  * Async component that fetches user data and renders user-dependent content
  * like PendingRelationships and feeds with the correct permissions.
+ * Uses cached getUser() to avoid duplicate API calls within the same request.
  */
 const UserDependentContent = async () => {
-  try {
-    const client = await createClient();
-    const user = await client.account.getMyAccount();
+  const user = await getUser();
+  const isOrgProfile = user.currentProfile?.type === 'org';
 
-    const isOrgProfile = user.currentProfile?.type === 'org';
-
-    return (
-      <>
-        {isOrgProfile && user.currentProfile ? (
-          <PendingRelationships slug={user.currentProfile.slug} />
-        ) : null}
-        <hr />
-        <LandingScreenFeeds showPostUpdate={isOrgProfile} />
-      </>
-    );
-  } catch (e) {
-    console.error('Failed to load user content:', e);
-    if ((e as any)?.data?.code === 'NOT_FOUND') {
-      redirect('/start');
-    }
-    return null;
-  }
+  return (
+    <>
+      {isOrgProfile && user.currentProfile ? (
+        <PendingRelationships slug={user.currentProfile.slug} />
+      ) : null}
+      <hr />
+      <LandingScreenFeeds showPostUpdate={isOrgProfile} />
+    </>
+  );
 };
 
 const UserDependentContentSkeleton = () => {

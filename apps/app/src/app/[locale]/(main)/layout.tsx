@@ -1,5 +1,5 @@
 import { UserProvider } from '@/utils/UserProvider';
-import { createClient } from '@op/api/serverClient';
+import { getUser } from '@/utils/getUser';
 import { SidebarLayout, SidebarProvider } from '@op/ui/Sidebar';
 import { redirect } from 'next/navigation';
 import Script from 'next/script';
@@ -10,9 +10,12 @@ import { AppLayout } from '@/components/layout/split/AppLayout';
 
 export const dynamic = 'force-dynamic';
 
+/**
+ * Main app layout - checks for organization membership then renders shell.
+ * User data fetch is cached so child components can reuse it without extra requests.
+ */
 const AppRoot = async ({ children }: { children: React.ReactNode }) => {
-  const client = await createClient();
-  const user = await client.account.getMyAccount();
+  const user = await getUser();
 
   if (user?.organizationUsers?.length === 0) {
     redirect('/en/start');
