@@ -37,8 +37,8 @@ export const LandingScreen = () => {
       >
         <PlatformHighlights />
       </Suspense>
-      <Suspense fallback={<UserDependentContentSkeleton />}>
-        <UserDependentContent />
+      <Suspense fallback={<UserContentSkeleton />}>
+        <UserContent />
       </Suspense>
       <NewlyJoinedModal />
     </div>
@@ -213,12 +213,7 @@ const WelcomeSkeleton = () => {
   );
 };
 
-/**
- * Async component that fetches user data and renders user-dependent content
- * like PendingRelationships and feeds with the correct permissions.
- * Uses cached getUser() to avoid duplicate API calls within the same request.
- */
-const UserDependentContent = async () => {
+const UserContent = async () => {
   const user = await getUser();
   const isOrgProfile = user.currentProfile?.type === 'org';
 
@@ -233,7 +228,7 @@ const UserDependentContent = async () => {
   );
 };
 
-const UserDependentContentSkeleton = () => {
+const UserContentSkeleton = () => {
   return (
     <>
       <hr />
