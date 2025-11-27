@@ -19,7 +19,6 @@
     "format:changes": "git diff --name-only --diff-filter=ACM | xargs pnpx prettier --write",
     "format:check": "prettier --check \"**/*.{ts,tsx,md}\"",
     "lint": "turbo lint",
-    "local": "pnpm concurrently \"pnpm w:app dev\" \"pnpm w:api dev\" \"pnpm w:db start\" \"pnpm w:realtime dev\"  ",
     "tmux": "bash scripts/tmux.sh",
     "w:api": "pnpm -C ./services/api",
     "w:app": "pnpm -C ./apps/app",
