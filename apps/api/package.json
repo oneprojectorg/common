@@ -5,9 +5,9 @@
   "license": "SEE LICENSE in /LICENSE",
   "type": "module",
   "scripts": {
-    "build": "next build",
-    "build:prod": "cd ../../services/db &&  pnpm run migrate && cd ../../apps/api && next build",
-    "dev": "next dev -p 3300",
+    "build": "next build --webpack",
+    "build:prod": "cd ../../services/db &&  pnpm run migrate && cd ../../apps/api && next build --webpack",
+    "dev": "next dev -p 3300 --webpack",
     "lint": "pnpm tsc --noEmit",
     "start": "next start"
   },

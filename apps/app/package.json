@@ -5,9 +5,9 @@
   "license": "SEE LICENSE in /LICENSE",
   "type": "module",
   "scripts": {
-    "build": "next build",
+    "build": "next build --webpack",
     "check:i18n": "tsx scripts/check-missing-intl-keys.ts",
-    "dev": "next dev -p 3100",
+    "dev": "next dev -p 3100 --webpack",
     "lint": "pnpm tsc --noEmit",
     "start": "next start -p 3100"
   },
