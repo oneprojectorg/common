@@ -1,22 +1,22 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import WebSocket from "ws";
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import WebSocket from 'ws';
 
-import { Channels } from "../channels";
-import type { RealtimeMessage } from "../schemas";
-import { RealtimeClient } from "../server/client";
-import { generateConnectionToken } from "../server/token";
-import { RealtimeManager } from "./manager";
+import { Channels } from '../channels';
+import type { RealtimeMessage } from '../schemas';
+import { RealtimeClient } from '../server/client';
+import { generateConnectionToken } from '../server/token';
+import { RealtimeManager } from './manager';
 
 // Make WebSocket available globally for Centrifuge
 global.WebSocket = WebSocket as any;
 
-describe.concurrent("RealtimeManager", () => {
+describe('RealtimeManager', () => {
   let realtimeClient: RealtimeClient;
   const TEST_CHANNEL = Channels.global();
-  const WS_URL = "ws://localhost:8000/connection/websocket";
-  const API_URL = process.env.CENTRIFUGO_API_URL!;
+  const WS_URL = 'ws://localhost:8000/connection/websocket';
+  const API_URL = 'http://localhost:8000/api';
   const API_KEY = process.env.CENTRIFUGO_API_KEY!;
-  const TEST_USER_ID = "test-user-123";
+  const TEST_USER_ID = 'test-user-123';
 
   beforeAll(() => {
     // Initialize the server client for publishing messages
@@ -33,7 +33,7 @@ describe.concurrent("RealtimeManager", () => {
     (manager as any).disconnect();
   });
 
-  it("should connect, subscribe to a channel, and receive published messages", async () => {
+  it('should connect, subscribe to a channel, and receive published messages', async () => {
     // Generate a real token using the token generation function
     const getToken = async () => {
       return generateConnectionToken(TEST_USER_ID);
@@ -62,8 +62,8 @@ describe.concurrent("RealtimeManager", () => {
 
     // Publish a test message using the server client
     const testMessage: RealtimeMessage = {
-      type: "query-invalidation",
-      queryKey: ["test", "key"],
+      type: 'query-invalidation',
+      queryKey: ['test', 'key'],
     };
 
     await realtimeClient.publish({
@@ -75,21 +75,21 @@ describe.concurrent("RealtimeManager", () => {
     const receivedMessage = await Promise.race([
       messagePromise,
       new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("Message timeout")), 5000),
+        setTimeout(() => reject(new Error('Message timeout')), 5000),
       ),
     ]);
 
     // Verify the received message
     expect(receivedMessage).toEqual(testMessage);
-    expect(receivedMessage.type).toBe("query-invalidation");
-    expect(receivedMessage.queryKey).toEqual(["test", "key"]);
+    expect(receivedMessage.type).toBe('query-invalidation');
+    expect(receivedMessage.queryKey).toEqual(['test', 'key']);
   });
 
   it.each([
-    { token: "", description: "empty token" },
-    { token: "random-token", description: "invalid token" },
+    { token: '', description: 'empty token' },
+    { token: 'random-token', description: 'invalid token' },
   ])(
-    "should not allow unauthenticated users to connect to channels with $description",
+    'should not allow unauthenticated users to connect to channels with $description',
     async ({ token }) => {
       // Create a new instance to avoid interference with other tests
       // Force reset the singleton by accessing private static property
@@ -135,7 +135,7 @@ describe.concurrent("RealtimeManager", () => {
         setTimeout(() => {
           const centrifugeInstance = (manager as any).centrifuge;
           if (centrifugeInstance) {
-            centrifugeInstance.on("disconnected", (ctx: any) => {
+            centrifugeInstance.on('disconnected', (ctx: any) => {
               disconnectReason = ctx;
             });
           }
@@ -150,8 +150,8 @@ describe.concurrent("RealtimeManager", () => {
 
       // Publish a test message
       const testMessage: RealtimeMessage = {
-        type: "query-invalidation",
-        queryKey: ["test", "unauthenticated"],
+        type: 'query-invalidation',
+        queryKey: ['test', 'unauthenticated'],
       };
 
       await realtimeClient.publish({
