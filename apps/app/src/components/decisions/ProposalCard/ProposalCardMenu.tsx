@@ -6,7 +6,7 @@ import { ProposalStatus } from '@op/api/encoders';
 import { match } from '@op/core';
 import { Button } from '@op/ui/Button';
 import { DialogTrigger } from '@op/ui/Dialog';
-import { Menu, MenuItem } from '@op/ui/Menu';
+import { Menu, MenuItem, MenuSeparator } from '@op/ui/Menu';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { OptionMenu } from '@op/ui/OptionMenu';
 import { toast } from '@op/ui/Toast';
@@ -191,6 +191,7 @@ export function ProposalCardMenu({
                 <LuX className="size-4" />
                 {t('Reject from shortlist')}
               </MenuItem>
+              <MenuSeparator />
               <MenuItem
                 key="hide"
                 onAction={handleHide}

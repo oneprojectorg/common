@@ -1,4 +1,15 @@
-import { and, asc, db, desc, eq, ilike, inArray, ne, sql } from '@op/db/client';
+import {
+  and,
+  asc,
+  db,
+  desc,
+  eq,
+  ilike,
+  inArray,
+  ne,
+  or,
+  sql,
+} from '@op/db/client';
 import {
   ProfileRelationshipType,
   ProposalStatus,
@@ -118,6 +129,9 @@ export const listProposals = async ({
     );
   }
 
+  // Get current user's profile ID early for hidden filter and later for editable checks
+  const currentProfileId = await getCurrentProfileId(input.authUserId);
+
   try {
     const {
       limit = 20,
@@ -160,9 +174,12 @@ export const listProposals = async ({
         : categoryFilter;
     }
 
-    // Filter out hidden proposals unless user can manage proposals (admin)
+    // Filter out hidden proposals unless user can manage proposals (admin) or is the owner
     if (!canManageProposals) {
-      const hiddenFilter = ne(proposals.status, ProposalStatus.HIDDEN);
+      const hiddenFilter = or(
+        ne(proposals.status, ProposalStatus.HIDDEN),
+        eq(proposals.submittedByProfileId, currentProfileId),
+      );
       whereClause = whereClause ? and(whereClause, hiddenFilter) : hiddenFilter;
     }
 
@@ -213,9 +230,6 @@ export const listProposals = async ({
         commentsCount: number;
       }
     >();
-
-    // Get current user's profile ID for both relationship data and editable checks
-    const currentProfileId = await getCurrentProfileId(input.authUserId);
 
     if (proposalIds.length > 0) {
       // Optimized: Get relationship counts, user relationships, and comment counts in parallel

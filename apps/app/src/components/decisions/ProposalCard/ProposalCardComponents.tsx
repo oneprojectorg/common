@@ -297,7 +297,7 @@ export function ProposalCardStatus({
       <>
         <Bullet />
         <span
-          className={cn('text-nowrap text-sm text-neutral-charcoal', className)}
+          className={cn('text-nowrap text-sm text-primary-orange2', className)}
         >
           {t('Hidden')}
         </span>
