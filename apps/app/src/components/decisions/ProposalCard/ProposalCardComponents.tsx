@@ -293,6 +293,16 @@ export function ProposalCardStatus({
         </span>
       </>
     ),
+    [ProposalStatus.HIDDEN]: (
+      <>
+        <Bullet />
+        <span
+          className={cn('text-nowrap text-sm text-neutral-charcoal', className)}
+        >
+          {t('Hidden')}
+        </span>
+      </>
+    ),
     _: null,
   });
 }
