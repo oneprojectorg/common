@@ -11,6 +11,8 @@
   "types": "./src/index.ts",
   "scripts": {
     "check-types": "tsc --noEmit",
+    "dev": "docker run --rm --name centrifugo -p 8000:8000 --env-file .env.test centrifugo/centrifugo:v6 centrifugo",
+    "down": "docker stop centrifugo",
     "lint": "eslint . --max-warnings 0",
     "test": "vitest",
     "test:ui": "vitest --ui",

@@ -33,7 +33,10 @@ await realtime.publish(Channels.user(userId), {
 
 ```typescript
 import { RealtimeManager } from '@op/realtime/client';
-import { trpc } from './trpc'; // Your tRPC client
+
+import { trpc } from './trpc';
+
+// Your tRPC client
 
 // Initialize the manager with configuration (do this once at app startup)
 RealtimeManager.initialize({
@@ -60,6 +63,26 @@ unsubscribe();
 - Initially connecting to the WebSocket server
 - The token is about to expire (tokens are valid for 24 hours)
 
+## Development
+
+### Running Centrifugo Locally
+
+Centrifugo runs as a Docker container for local development and testing. The configuration is managed entirely through environment variables in `.env.test`.
+
+**Start Centrifugo:**
+
+```bash
+pnpm w:realtime dev
+```
+
+This runs Centrifugo on `http://localhost:8000`.
+
+**Stop Centrifugo:**
+
+```bash
+pnpm w:realtime down
+```
+
 ## Environment Variables
 
 **Server:**
@@ -71,3 +94,5 @@ unsubscribe();
 **Client:**
 
 - `NEXT_PUBLIC_CENTRIFUGO_WS_URL` - WebSocket endpoint
+
+The `.env.test` file contains local configuration for Centrifugo (used for both development and testing).
