@@ -9,7 +9,7 @@ import tailwindReactAriaComponents from 'tailwindcss-react-aria-components';
 import defaultTheme from 'tailwindcss/defaultTheme';
 
 // This is the shared tailwind config that is used in packages, workshop, and web apps
-const config: Omit<Config, 'content'> = {
+export const config = {
   darkMode: ['class', 'data-theme'],
   theme: {
     screens: {
@@ -326,6 +326,6 @@ const config: Omit<Config, 'content'> = {
     'bg-orangePurple',
     'bg-yellowOrange',
   ],
-};
+} as const;
 
-export default config;
+export default config as Omit<Config, 'content'>;
