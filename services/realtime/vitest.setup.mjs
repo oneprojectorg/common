@@ -44,7 +44,7 @@ export async function setup() {
       // Container doesn't exist, which is fine
     }
 
-    // Start Centrifugo container
+    // Start Centrifugo container with env-based configuration
     execSync(
       `docker run -d --rm --name ${CONTAINER_NAME} -p ${PORT}:8000 --env-file .env.test centrifugo/centrifugo:v6 centrifugo`,
       { stdio: 'inherit' },

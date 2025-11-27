@@ -10,13 +10,11 @@ import { RealtimeManager } from './manager';
 // Make WebSocket available globally for Centrifuge
 global.WebSocket = WebSocket as any;
 
-describe('RealtimeManager', () => {
+describe.concurrent('RealtimeManager', () => {
   let realtimeClient: RealtimeClient;
-  const TEST_CHANNEL = Channels.global();
   const WS_URL = process.env.CENTRIFUGO_WS_URL!;
   const API_URL = process.env.CENTRIFUGO_API_URL!;
   const API_KEY = process.env.CENTRIFUGO_API_KEY!;
-  const TEST_USER_ID = 'test-user-123';
 
   beforeAll(() => {
     // Initialize the server client for publishing messages
@@ -34,6 +32,9 @@ describe('RealtimeManager', () => {
   });
 
   it('should connect, subscribe to a channel, and receive published messages', async () => {
+    const TEST_USER_ID = 'test-user-connect';
+    const TEST_CHANNEL = Channels.org('test-connect');
+
     // Generate a real token using the token generation function
     const getToken = async () => {
       return generateConnectionToken(TEST_USER_ID);
@@ -90,7 +91,11 @@ describe('RealtimeManager', () => {
     { token: 'random-token', description: 'invalid token' },
   ])(
     'should not allow unauthenticated users to connect to channels with $description',
-    async ({ token }) => {
+    async ({ token, description }) => {
+      const TEST_CHANNEL = Channels.org(
+        `test-unauth-${description.replace(/\s+/g, '-')}`,
+      );
+
       // Create a new instance to avoid interference with other tests
       // Force reset the singleton by accessing private static property
       (RealtimeManager as any).instance = null;
@@ -176,6 +181,9 @@ describe('RealtimeManager', () => {
   );
 
   it('should deliver messages to multiple subscribers on the same channel', async () => {
+    const TEST_USER_ID = 'test-user-multiple';
+    const TEST_CHANNEL = Channels.org('test-multiple-subscribers');
+
     // Reset the singleton
     (RealtimeManager as any).instance = null;
 
