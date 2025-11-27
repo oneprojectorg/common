@@ -1,4 +1,8 @@
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { defineConfig } from 'vitest/config';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   test: {
@@ -27,6 +31,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': './src',
+      // Mock @op/emails to prevent actual email sending in tests
+      '@op/emails': path.resolve(__dirname, './src/test/mocks/emails.ts'),
     },
   },
   define: {

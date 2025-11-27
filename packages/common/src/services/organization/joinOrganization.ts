@@ -40,7 +40,7 @@ export const joinOrganization = async ({
     db.query.organizationUsers.findFirst({
       where: (table, { and, eq }) =>
         and(
-          eq(table.authUserId, user.id),
+          eq(table.authUserId, user.authUserId),
           eq(table.organizationId, organization.id),
         ),
     }),
@@ -48,8 +48,8 @@ export const joinOrganization = async ({
       ? null
       : cache<ReturnType<typeof getAllowListUser>>({
           type: 'allowList',
-          params: [userEmailDomain],
-          fetch: () => getAllowListUser({ email: userEmailDomain }),
+          params: [user.email],
+          fetch: () => getAllowListUser({ email: user.email }),
           options: {
             skipMemCache: true,
             ttl: 30 * 60 * 1000,

@@ -3,6 +3,7 @@ import { beforeAll, beforeEach, vi } from 'vitest';
 
 // Mock server-only modules before any other imports
 vi.mock('server-only', () => ({}));
+
 vi.mock('next/server', () => ({
   NextRequest: class {},
   NextResponse: class {},

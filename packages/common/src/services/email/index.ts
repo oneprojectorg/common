@@ -1,3 +1,10 @@
+import {
+  CommentNotificationEmail,
+  OPBatchSend,
+  OPInvitationEmail,
+  OPNodemailer,
+  OPRelationshipRequestEmail,
+} from '@op/emails';
 import { relationshipMap } from '@op/types';
 
 export interface SendInvitationEmailParams {
@@ -15,10 +22,6 @@ export const sendInvitationEmail = async ({
   inviteUrl = 'https://common.oneproject.org/',
   message,
 }: SendInvitationEmailParams): Promise<void> => {
-  // Use dynamic imports to avoid build issues with workspace dependencies
-  const { OPNodemailer } = await import('@op/emails');
-  const { OPInvitationEmail } = await import('@op/emails');
-
   await OPNodemailer({
     to,
     from: `${organizationName ?? inviterName} via Common`,
@@ -52,10 +55,6 @@ export const sendBatchInvitationEmails = async ({
   if (invitations.length === 0) {
     return { successful: [], failed: [] };
   }
-
-  // Use dynamic imports to avoid build issues with workspace dependencies
-  const { OPBatchSend } = await import('@op/emails');
-  const { OPInvitationEmail } = await import('@op/emails');
 
   const batchEmails = invitations.map(
     ({
@@ -106,9 +105,6 @@ export const sendRelationshipRequestEmail = async ({
   approvalUrl,
   requesterMessage,
 }: SendRelationshipRequestEmailParams): Promise<void> => {
-  // Use dynamic imports to avoid build issues with workspace dependencies
-  const { OPNodemailer } = await import('@op/emails');
-  const { OPRelationshipRequestEmail } = await import('@op/emails');
   const relationshipLabels = relationshipTypes.map(
     (type) => relationshipMap[type]?.noun || type,
   );
@@ -156,10 +152,6 @@ export const sendCommentNotificationEmail = async ({
   contextName?: string;
   postedIn?: string;
 }): Promise<void> => {
-  // Use dynamic imports to avoid build issues with workspace dependencies
-  const { OPNodemailer } = await import('@op/emails');
-  const { CommentNotificationEmail } = await import('@op/emails');
-
   const subject = `${commenterName} commented on your ${contentType}`;
 
   await OPNodemailer({

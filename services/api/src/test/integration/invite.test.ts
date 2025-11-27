@@ -1,209 +1,215 @@
-import {
-  createOrganization,
-  getRoles,
-  inviteUsersToOrganization,
-  joinOrganization,
-} from '@op/common';
+import { inviteUsersToOrganization, joinOrganization } from '@op/common';
 import { db } from '@op/db/client';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { allowList, organizations, users } from '@op/db/schema';
+import { ROLES } from '@op/db/seedData/accessControl';
+import { eq } from 'drizzle-orm';
+import { describe, expect, it } from 'vitest';
 
+import { TestOrganizationDataManager } from '../helpers/TestOrganizationDataManager';
 import {
-  cleanupTestData,
+  createIsolatedSession,
   createTestUser,
-  getCurrentTestSession,
-  signInTestUser,
-  signOutTestUser,
+  supabaseTestAdminClient,
 } from '../supabase-utils';
 
-describe.skip('Invite System Integration Tests', () => {
-  let testInviterEmail: string;
-  let testInviteeEmail: string;
-  let testInviterUser: any;
-  let testOrganization: any;
-  let adminRoleId: string;
+describe.concurrent('Invite System Integration Tests', () => {
+  describe.concurrent('Inviting New Users', () => {
+    it('should successfully invite a new user with role ID', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestOrganizationDataManager(task.id, onTestFinished);
 
-  beforeEach(async () => {
-    // Clean up before each test
-    await cleanupTestData([
-      'organization_user_to_access_roles',
-      'organization_users',
-      'allow_list',
-      'organizations_terms',
-      'organizations_strategies',
-      'organizations_where_we_work',
-      'organizations',
-      'profiles',
-      'links',
-      'locations',
-    ]);
-    await signOutTestUser();
+      // Create an organization with an admin
+      const { organization, adminUser } = await testData.createOrganization({
+        users: { admin: 1 },
+        emailDomain: 'test-invite.com',
+      });
 
-    // Create inviter user and organization
-    testInviterEmail = `inviter-${Date.now()}@example.com`;
-    testInviteeEmail = `invitee-${Date.now()}@example.com`;
+      // Get a session for the admin user
+      const { session } = await createIsolatedSession(adminUser.email);
 
-    await createTestUser(testInviterEmail);
-    await signInTestUser(testInviterEmail);
+      // Email to invite (doesn't exist yet)
+      const inviteeEmail = `${task.id}-invitee@example.com`;
 
-    const session = await getCurrentTestSession();
-    testInviterUser = session?.user;
-
-    // Create a test organization
-    const organizationData = {
-      name: 'Test Invite Organization',
-      website: 'https://test-invite.com',
-      email: 'contact@test-invite.com',
-      orgType: 'nonprofit',
-      bio: 'Organization for testing invite functionality',
-      mission: 'To test the invite system',
-      networkOrganization: false,
-      isReceivingFunds: false,
-      isOfferingFunds: false,
-      acceptingApplications: false,
-    };
-
-    testOrganization = await createOrganization({
-      data: organizationData,
-      user: testInviterUser,
-    });
-
-    // Get the Admin role ID for testing
-    const { roles } = await getRoles();
-    const adminRole = roles.find((role) => role.name === 'Admin');
-    if (!adminRole) {
-      throw new Error('Admin role not found in test database');
-    }
-    adminRoleId = adminRole.id;
-  });
-
-  describe('Inviting New Users', () => {
-    it('should successfully invite a new user with role ID', async () => {
       const result = await inviteUsersToOrganization({
-        emails: [testInviteeEmail],
-        roleId: adminRoleId,
-        organizationId: testOrganization.id,
+        emails: [inviteeEmail],
+        roleId: ROLES.MEMBER.id,
+        organizationId: organization.id,
         personalMessage: 'Welcome to our test organization!',
-        authUserId: testInviterUser.id,
-        authUserEmail: testInviterUser.email,
+        user: session.user,
       });
 
       expect(result.success).toBe(true);
-      expect(result.details?.successful).toContain(testInviteeEmail);
+      expect(result.details?.successful).toContain(inviteeEmail);
       expect(result.details?.failed).toHaveLength(0);
 
       // Verify allowList entry was created with roleId
       const allowListEntry = await db.query.allowList.findFirst({
-        where: (table, { eq }) => eq(table.email, testInviteeEmail),
+        where: (table, { eq }) => eq(table.email, inviteeEmail),
       });
 
       expect(allowListEntry).toBeDefined();
-      expect(allowListEntry?.organizationId).toBe(testOrganization.id);
+      expect(allowListEntry?.organizationId).toBe(organization.id);
       expect(allowListEntry?.metadata).toBeDefined();
 
       const metadata = allowListEntry?.metadata as any;
-      expect(metadata.roleId).toBe(adminRoleId);
+      expect(metadata.roleId).toBe(ROLES.MEMBER.id);
       expect(metadata.inviteType).toBe('existing_organization');
       expect(metadata.personalMessage).toBe(
         'Welcome to our test organization!',
       );
+
+      // Cleanup allowList entry
+      onTestFinished(async () => {
+        if (allowListEntry) {
+          await db.delete(allowList).where(eq(allowList.id, allowListEntry.id));
+        }
+      });
     });
 
-    it('should handle multiple email invites', async () => {
-      const email2 = `invitee2-${Date.now()}@example.com`;
-      const email3 = `invitee3-${Date.now()}@example.com`;
+    it('should handle multiple email invites', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+
+      const { organization, adminUser } = await testData.createOrganization({
+        users: { admin: 1 },
+        emailDomain: 'test-invite.com',
+      });
+
+      const { session } = await createIsolatedSession(adminUser.email);
+
+      const email1 = `${task.id}-invitee1@example.com`;
+      const email2 = `${task.id}-invitee2@example.com`;
+      const email3 = `${task.id}-invitee3@example.com`;
 
       const result = await inviteUsersToOrganization({
-        emails: [testInviteeEmail, email2, email3],
-        roleId: adminRoleId,
-        organizationId: testOrganization.id,
-        authUserId: testInviterUser.id,
-        authUserEmail: testInviterUser.email,
+        emails: [email1, email2, email3],
+        roleId: ROLES.MEMBER.id,
+        organizationId: organization.id,
+        user: session.user,
       });
 
       expect(result.success).toBe(true);
       expect(result.details?.successful).toHaveLength(3);
-      expect(result.details?.successful).toContain(testInviteeEmail);
+      expect(result.details?.successful).toContain(email1);
       expect(result.details?.successful).toContain(email2);
       expect(result.details?.successful).toContain(email3);
 
       // Verify all allowList entries were created
       const allowListEntries = await db.query.allowList.findMany({
-        where: (table, { eq }) => eq(table.organizationId, testOrganization.id),
+        where: (table, { eq }) => eq(table.organizationId, organization.id),
       });
 
-      expect(allowListEntries).toHaveLength(3);
+      // Should have at least 3 entries (could be more if other tests ran)
+      const invitedEmails = [email1, email2, email3];
+      const matchingEntries = allowListEntries.filter((entry) =>
+        invitedEmails.includes(entry.email),
+      );
+      expect(matchingEntries).toHaveLength(3);
 
       // Verify all have the correct roleId
-      allowListEntries.forEach((entry) => {
+      matchingEntries.forEach((entry) => {
         const metadata = entry.metadata as any;
-        expect(metadata.roleId).toBe(adminRoleId);
+        expect(metadata.roleId).toBe(ROLES.MEMBER.id);
+      });
+
+      // Cleanup
+      onTestFinished(async () => {
+        for (const entry of matchingEntries) {
+          await db.delete(allowList).where(eq(allowList.id, entry.id));
+        }
       });
     });
 
-    it('should prevent duplicate invites', async () => {
+    it('should prevent duplicate invites', async ({ task, onTestFinished }) => {
+      const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+
+      const { organization, adminUser } = await testData.createOrganization({
+        users: { admin: 1 },
+        emailDomain: 'test-invite.com',
+      });
+
+      const { session } = await createIsolatedSession(adminUser.email);
+
+      const inviteeEmail = `${task.id}-duplicate@example.com`;
+
       // First invite
       const result1 = await inviteUsersToOrganization({
-        emails: [testInviteeEmail],
-        roleId: adminRoleId,
-        organizationId: testOrganization.id,
-        authUserId: testInviterUser.id,
-        authUserEmail: testInviterUser.email,
+        emails: [inviteeEmail],
+        roleId: ROLES.MEMBER.id,
+        organizationId: organization.id,
+        user: session.user,
       });
 
       expect(result1.success).toBe(true);
 
       // Second invite to same email should skip
       const result2 = await inviteUsersToOrganization({
-        emails: [testInviteeEmail],
-        roleId: adminRoleId,
-        organizationId: testOrganization.id,
-        authUserId: testInviterUser.id,
-        authUserEmail: testInviterUser.email,
+        emails: [inviteeEmail],
+        roleId: ROLES.MEMBER.id,
+        organizationId: organization.id,
+        user: session.user,
       });
 
       expect(result2.success).toBe(true);
 
       // Should only have one allowList entry
       const allowListEntries = await db.query.allowList.findMany({
-        where: (table, { eq }) => eq(table.email, testInviteeEmail),
+        where: (table, { eq }) => eq(table.email, inviteeEmail),
       });
 
       expect(allowListEntries).toHaveLength(1);
+
+      // Cleanup
+      onTestFinished(async () => {
+        for (const entry of allowListEntries) {
+          await db.delete(allowList).where(eq(allowList.id, entry.id));
+        }
+      });
     });
   });
 
-  describe('Inviting Existing Users', () => {
-    let existingUser: any;
+  describe.concurrent('Inviting Existing Users', () => {
+    it('should directly add existing user to organization with correct role', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestOrganizationDataManager(task.id, onTestFinished);
 
-    beforeEach(async () => {
-      // Create an existing user (invitee)
-      await createTestUser(testInviteeEmail);
-      await signInTestUser(testInviteeEmail);
-      const session = await getCurrentTestSession();
-      existingUser = session?.user;
+      // Create org for inviter
+      const { organization, adminUser } = await testData.createOrganization({
+        users: { admin: 1 },
+        emailDomain: 'inviter-org.com',
+      });
 
-      // Sign back in as inviter
-      await signInTestUser(testInviterEmail);
-    });
+      // Create an existing user (in a different org)
+      const { adminUser: existingUser } = await testData.createOrganization({
+        users: { admin: 1 },
+        emailDomain: 'existing-user.com',
+        organizationName: 'Existing User Org',
+      });
 
-    it('should directly add existing user to organization with correct role', async () => {
+      const { session } = await createIsolatedSession(adminUser.email);
+
       const result = await inviteUsersToOrganization({
-        emails: [testInviteeEmail],
-        roleId: adminRoleId,
-        organizationId: testOrganization.id,
-        authUserId: testInviterUser.id,
-        authUserEmail: testInviterUser.email,
+        emails: [existingUser.email],
+        roleId: ROLES.MEMBER.id,
+        organizationId: organization.id,
+        user: session.user,
       });
 
       expect(result.success).toBe(true);
-      expect(result.details?.successful).toContain(testInviteeEmail);
+      expect(result.details?.successful).toContain(existingUser.email);
 
       // Verify user was added to organization
       const orgUser = await db.query.organizationUsers.findFirst({
         where: (table, { and, eq }) =>
           and(
-            eq(table.authUserId, existingUser.id),
-            eq(table.organizationId, testOrganization.id),
+            eq(table.authUserId, existingUser.authUserId),
+            eq(table.organizationId, organization.id),
           ),
         with: {
           roles: {
@@ -215,66 +221,124 @@ describe.skip('Invite System Integration Tests', () => {
       });
 
       expect(orgUser).toBeDefined();
-      expect(orgUser?.email).toBe(testInviteeEmail);
+      expect(orgUser?.email).toBe(existingUser.email);
       expect(orgUser?.roles).toHaveLength(1);
-      expect(orgUser?.roles[0]?.accessRole.id).toBe(adminRoleId);
+      expect(orgUser?.roles[0]?.accessRole.id).toBe(ROLES.MEMBER.id);
 
       // Should NOT create allowList entry for existing users
       const allowListEntry = await db.query.allowList.findFirst({
-        where: (table, { eq }) => eq(table.email, testInviteeEmail),
+        where: (table, { eq }) => eq(table.email, existingUser.email),
       });
 
       expect(allowListEntry).toBeUndefined();
     });
 
-    it('should prevent duplicate organization membership', async () => {
-      // First invite - should add user to org
-      await inviteUsersToOrganization({
-        emails: [testInviteeEmail],
-        roleId: adminRoleId,
-        organizationId: testOrganization.id,
-        authUserId: testInviterUser.id,
-        authUserEmail: testInviterUser.email,
-      });
+    it('should prevent duplicate organization membership', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestOrganizationDataManager(task.id, onTestFinished);
 
-      // Second invite - should fail with appropriate message
+      // Create org with two users
+      const { organization, adminUser, memberUsers } =
+        await testData.createOrganization({
+          users: { admin: 1, member: 1 },
+          emailDomain: 'test-org.com',
+        });
+
+      const memberUser = memberUsers[0];
+      if (!memberUser) {
+        throw new Error('Failed to create member user');
+      }
+
+      const { session } = await createIsolatedSession(adminUser.email);
+
+      // Try to invite user who is already a member
       const result = await inviteUsersToOrganization({
-        emails: [testInviteeEmail],
-        roleId: adminRoleId,
-        organizationId: testOrganization.id,
-        authUserId: testInviterUser.id,
-        authUserEmail: testInviterUser.email,
+        emails: [memberUser.email],
+        roleId: ROLES.ADMIN.id, // Try to upgrade role
+        organizationId: organization.id,
+        user: session.user,
       });
 
       expect(result.details?.failed).toHaveLength(1);
-      expect(result.details?.failed[0]?.email).toBe(testInviteeEmail);
+      expect(result.details?.failed[0]?.email).toBe(memberUser.email);
       expect(result.details?.failed[0]?.reason).toBe(
         'User is already a member of this organization',
       );
     });
   });
 
-  describe('Join Organization Flow', () => {
-    it('should allow invited user to join with correct role from roleId', async () => {
-      // First, invite the user
-      await inviteUsersToOrganization({
-        emails: [testInviteeEmail],
-        roleId: adminRoleId,
-        organizationId: testOrganization.id,
-        personalMessage: 'Join our organization!',
-        authUserId: testInviterUser.id,
-        authUserEmail: testInviterUser.email,
+  describe.concurrent('Join Organization Flow', () => {
+    it('should allow invited user to join with correct role from roleId', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+
+      const { organization, adminUser } = await testData.createOrganization({
+        users: { admin: 1 },
+        emailDomain: 'test-org.com',
       });
 
-      // Create the invitee user and have them join
-      await createTestUser(testInviteeEmail);
-      await signInTestUser(testInviteeEmail);
-      const inviteeSession = await getCurrentTestSession();
-      const inviteeUser = inviteeSession?.user;
+      const { session } = await createIsolatedSession(adminUser.email);
 
+      // Invite a new user
+      const inviteeEmail = `${task.id}-joiner@example.com`;
+      await inviteUsersToOrganization({
+        emails: [inviteeEmail],
+        roleId: ROLES.MEMBER.id,
+        organizationId: organization.id,
+        personalMessage: 'Join our organization!',
+        user: session.user,
+      });
+
+      // Create the invitee user
+      const authUser = await createTestUser(inviteeEmail).then(
+        (res) => res.user,
+      );
+
+      if (!authUser) {
+        throw new Error('Failed to create auth user');
+      }
+
+      // Register cleanup for this auth user
+      onTestFinished(async () => {
+        await supabaseTestAdminClient.auth.admin.deleteUser(authUser.id);
+      });
+
+      // Get the user record
+      const [userRecord] = await db
+        .select()
+        .from(users)
+        .where(eq(users.authUserId, authUser.id));
+
+      if (!userRecord) {
+        throw new Error('User record not found');
+      }
+
+      // Get full organization record
+      const fullOrg = await db.query.organizations.findFirst({
+        where: eq(organizations.id, organization.id),
+      });
+
+      if (!fullOrg) {
+        throw new Error('Organization not found');
+      }
+
+      // User joins organization
       const result = await joinOrganization({
-        user: inviteeUser,
-        organizationId: testOrganization.id,
+        user: {
+          id: userRecord.id,
+          authUserId: authUser.id,
+          email: inviteeEmail,
+          name: null,
+          profileId: userRecord.profileId,
+          currentProfileId: userRecord.currentProfileId,
+          createdAt: userRecord.createdAt,
+          updatedAt: userRecord.updatedAt,
+        },
+        organization: fullOrg,
       });
 
       expect(result).toBeDefined();
@@ -284,8 +348,8 @@ describe.skip('Invite System Integration Tests', () => {
       const orgUser = await db.query.organizationUsers.findFirst({
         where: (table, { and, eq }) =>
           and(
-            eq(table.authUserId, inviteeUser.id),
-            eq(table.organizationId, testOrganization.id),
+            eq(table.authUserId, authUser.id),
+            eq(table.organizationId, organization.id),
           ),
         with: {
           roles: {
@@ -298,177 +362,99 @@ describe.skip('Invite System Integration Tests', () => {
 
       expect(orgUser).toBeDefined();
       expect(orgUser?.roles).toHaveLength(1);
-      expect(orgUser?.roles[0]?.accessRole.id).toBe(adminRoleId);
-      expect(orgUser?.roles[0]?.accessRole.name).toBe('Admin');
-    });
+      expect(orgUser?.roles[0]?.accessRole.id).toBe(ROLES.MEMBER.id);
+      expect(orgUser?.roles[0]?.accessRole.name).toBe('Member');
 
-    it('should update currentProfileId when admin joins organization', async () => {
-      // First, invite the user as admin
-      await inviteUsersToOrganization({
-        emails: [testInviteeEmail],
-        roleId: adminRoleId,
-        organizationId: testOrganization.id,
-        authUserId: testInviterUser.id,
-        authUserEmail: testInviterUser.email,
+      // Cleanup allowList
+      onTestFinished(async () => {
+        await db.delete(allowList).where(eq(allowList.email, inviteeEmail));
       });
-
-      // Create the invitee user and have them join
-      await createTestUser(testInviteeEmail);
-      await signInTestUser(testInviteeEmail);
-      const inviteeSession = await getCurrentTestSession();
-      const inviteeUser = inviteeSession?.user;
-
-      // Get user's initial currentProfileId
-      const initialUser = await db.query.users.findFirst({
-        where: (table, { eq }) => eq(table.authUserId, inviteeUser.id),
-      });
-      const initialCurrentProfileId = initialUser?.currentProfileId;
-
-      await joinOrganization({
-        user: inviteeUser,
-        organizationId: testOrganization.id,
-      });
-
-      // Verify user's currentProfileId was updated to organization's profileId
-      const updatedUser = await db.query.users.findFirst({
-        where: (table, { eq }) => eq(table.authUserId, inviteeUser.id),
-      });
-
-      expect(updatedUser?.currentProfileId).toBe(testOrganization.profileId);
-      expect(updatedUser?.currentProfileId).not.toBe(initialCurrentProfileId);
-    });
-
-    it('should NOT update currentProfileId when non-admin joins organization', async () => {
-      // Get all roles to find a non-admin role
-      const { roles } = await getRoles();
-      const nonAdminRole = roles.find((role) => role.name !== 'Admin');
-
-      if (!nonAdminRole) {
-        console.warn(
-          'Only Admin role available, skipping non-admin currentProfileId test',
-        );
-        return;
-      }
-
-      // First, invite the user as non-admin
-      await inviteUsersToOrganization({
-        emails: [testInviteeEmail],
-        roleId: nonAdminRole.id,
-        organizationId: testOrganization.id,
-        authUserId: testInviterUser.id,
-        authUserEmail: testInviterUser.email,
-      });
-
-      // Create the invitee user and have them join
-      await createTestUser(testInviteeEmail);
-      await signInTestUser(testInviteeEmail);
-      const inviteeSession = await getCurrentTestSession();
-      const inviteeUser = inviteeSession?.user;
-
-      // Get user's initial currentProfileId
-      const initialUser = await db.query.users.findFirst({
-        where: (table, { eq }) => eq(table.authUserId, inviteeUser.id),
-      });
-      const initialCurrentProfileId = initialUser?.currentProfileId;
-
-      await joinOrganization({
-        user: inviteeUser,
-        organizationId: testOrganization.id,
-      });
-
-      // Verify user's currentProfileId was NOT updated
-      const updatedUser = await db.query.users.findFirst({
-        where: (table, { eq }) => eq(table.authUserId, inviteeUser.id),
-      });
-
-      expect(updatedUser?.currentProfileId).toBe(initialCurrentProfileId);
-      expect(updatedUser?.currentProfileId).not.toBe(
-        testOrganization.profileId,
-      );
-    });
-
-    it('should fallback to Admin role for domain-based joins', async () => {
-      // Create user with same domain as organization
-      const domainEmail = `domain-user-${Date.now()}@test-invite.com`; // Same domain as org
-      await createTestUser(domainEmail);
-      await signInTestUser(domainEmail);
-      const domainUserSession = await getCurrentTestSession();
-      const domainUser = domainUserSession?.user;
-
-      const result = await joinOrganization({
-        user: domainUser,
-        organizationId: testOrganization.id,
-      });
-
-      expect(result).toBeDefined();
-
-      // Verify user got Admin role (fallback)
-      const orgUser = await db.query.organizationUsers.findFirst({
-        where: (table, { and, eq }) =>
-          and(
-            eq(table.authUserId, domainUser.id),
-            eq(table.organizationId, testOrganization.id),
-          ),
-        with: {
-          roles: {
-            with: {
-              accessRole: true,
-            },
-          },
-        },
-      });
-
-      expect(orgUser?.roles[0]?.accessRole.name).toBe('Admin');
     });
   });
 
-  describe('Role System Integration', () => {
-    it('should respect different role types in invites', async () => {
-      const { roles } = await getRoles();
+  describe.concurrent('Role System Integration', () => {
+    it('should respect different role types in invites', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestOrganizationDataManager(task.id, onTestFinished);
 
-      // Find a non-Admin role if available
-      const nonAdminRole = roles.find((role) => role.name !== 'Admin');
-      if (!nonAdminRole) {
-        // Skip test if only Admin role exists
-        console.warn('Only Admin role available, skipping multi-role test');
-        return;
-      }
+      const { organization, adminUser } = await testData.createOrganization({
+        users: { admin: 1 },
+        emailDomain: 'test-org.com',
+      });
 
+      const { session } = await createIsolatedSession(adminUser.email);
+
+      // Invite as Admin
+      const inviteeEmail = `${task.id}-admin-invite@example.com`;
       const result = await inviteUsersToOrganization({
-        emails: [testInviteeEmail],
-        roleId: nonAdminRole.id,
-        organizationId: testOrganization.id,
-        authUserId: testInviterUser.id,
-        authUserEmail: testInviterUser.email,
+        emails: [inviteeEmail],
+        roleId: ROLES.ADMIN.id,
+        organizationId: organization.id,
+        user: session.user,
       });
 
       expect(result.success).toBe(true);
 
       // Verify allowList has correct roleId
       const allowListEntry = await db.query.allowList.findFirst({
-        where: (table, { eq }) => eq(table.email, testInviteeEmail),
+        where: (table, { eq }) => eq(table.email, inviteeEmail),
       });
 
       const metadata = allowListEntry?.metadata as any;
-      expect(metadata.roleId).toBe(nonAdminRole.id);
+      expect(metadata.roleId).toBe(ROLES.ADMIN.id);
 
-      // Test join flow
-      await createTestUser(testInviteeEmail);
-      await signInTestUser(testInviteeEmail);
-      const inviteeSession = await getCurrentTestSession();
-      const inviteeUser = inviteeSession?.user;
+      // Create and join as the invitee
+      const authUser = await createTestUser(inviteeEmail).then(
+        (res) => res.user,
+      );
+
+      if (!authUser) {
+        throw new Error('Failed to create auth user');
+      }
+
+      onTestFinished(async () => {
+        await supabaseTestAdminClient.auth.admin.deleteUser(authUser.id);
+      });
+
+      const [userRecord] = await db
+        .select()
+        .from(users)
+        .where(eq(users.authUserId, authUser.id));
+
+      if (!userRecord) {
+        throw new Error('User record not found');
+      }
+
+      const fullOrg = await db.query.organizations.findFirst({
+        where: eq(organizations.id, organization.id),
+      });
+
+      if (!fullOrg) {
+        throw new Error('Organization not found');
+      }
 
       await joinOrganization({
-        user: inviteeUser,
-        organizationId: testOrganization.id,
+        user: {
+          id: userRecord.id,
+          authUserId: authUser.id,
+          email: inviteeEmail,
+          name: null,
+          profileId: userRecord.profileId,
+          currentProfileId: userRecord.currentProfileId,
+          createdAt: userRecord.createdAt,
+          updatedAt: userRecord.updatedAt,
+        },
+        organization: fullOrg,
       });
 
       // Verify correct role was assigned
       const orgUser = await db.query.organizationUsers.findFirst({
         where: (table, { and, eq }) =>
           and(
-            eq(table.authUserId, inviteeUser.id),
-            eq(table.organizationId, testOrganization.id),
+            eq(table.authUserId, authUser.id),
+            eq(table.organizationId, organization.id),
           ),
         with: {
           roles: {
@@ -479,88 +465,118 @@ describe.skip('Invite System Integration Tests', () => {
         },
       });
 
-      expect(orgUser?.roles[0]?.accessRole.id).toBe(nonAdminRole.id);
-      expect(orgUser?.roles[0]?.accessRole.name).toBe(nonAdminRole.name);
+      expect(orgUser?.roles[0]?.accessRole.id).toBe(ROLES.ADMIN.id);
+      expect(orgUser?.roles[0]?.accessRole.name).toBe('Admin');
+
+      // Cleanup allowList
+      onTestFinished(async () => {
+        await db.delete(allowList).where(eq(allowList.email, inviteeEmail));
+      });
     });
   });
 
-  describe('Error Scenarios', () => {
-    it('should handle invalid role ID gracefully', async () => {
-      const invalidRoleId = '00000000-0000-0000-0000-000000000000';
+  describe.concurrent('Error Scenarios', () => {
+    it('should prevent join without proper access', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestOrganizationDataManager(task.id, onTestFinished);
 
-      const result = await inviteUsersToOrganization({
-        emails: [testInviteeEmail],
-        roleId: invalidRoleId,
-        organizationId: testOrganization.id,
-        authUserId: testInviterUser.id,
-        authUserEmail: testInviterUser.email,
+      // Create an organization with a domain
+      const { organization } = await testData.createOrganization({
+        users: { admin: 1 },
+        emailDomain: 'company.com',
       });
 
-      // Should either fail or succeed gracefully - both are acceptable
-      expect(result.success !== undefined).toBe(true);
-      expect(result.details).toBeDefined();
-    });
+      // Set organization domain
+      await db
+        .update(organizations)
+        .set({ domain: 'company.com' })
+        .where(eq(organizations.id, organization.id));
 
-    it('should fail with invalid organization ID', async () => {
-      const invalidOrgId = '00000000-0000-0000-0000-000000000000';
+      // Create user with different domain (not invited)
+      const outsiderEmail = `${task.id}-outsider@different-domain.com`;
+      const authUser = await createTestUser(outsiderEmail).then(
+        (res) => res.user,
+      );
 
-      const result = await inviteUsersToOrganization({
-        emails: [testInviteeEmail],
-        roleId: adminRoleId,
-        organizationId: invalidOrgId,
-        authUserId: testInviterUser.id,
-        authUserEmail: testInviterUser.email,
+      if (!authUser) {
+        throw new Error('Failed to create auth user');
+      }
+
+      onTestFinished(async () => {
+        await supabaseTestAdminClient.auth.admin.deleteUser(authUser.id);
       });
 
-      // Should either fail completely or have failed entries
-      expect(result.success || result.details?.failed.length > 0).toBe(true);
-    });
+      const [userRecord] = await db
+        .select()
+        .from(users)
+        .where(eq(users.authUserId, authUser.id));
 
-    it('should handle invalid email addresses gracefully', async () => {
-      const validEmail = `valid-${Date.now()}@example.com`;
-      const result = await inviteUsersToOrganization({
-        emails: ['invalid-email', 'also-invalid', validEmail],
-        roleId: adminRoleId,
-        organizationId: testOrganization.id,
-        authUserId: testInviterUser.id,
-        authUserEmail: testInviterUser.email,
+      if (!userRecord) {
+        throw new Error('User record not found');
+      }
+
+      const fullOrg = await db.query.organizations.findFirst({
+        where: eq(organizations.id, organization.id),
       });
 
-      // Should succeed for valid email
-      expect(result.details?.successful).toContain(validEmail);
-      // May or may not fail for invalid emails depending on implementation
-      expect(result.details?.failed?.length >= 0).toBe(true);
-    });
-
-    it('should prevent unauthorized users from sending invites', async () => {
-      await signOutTestUser();
-
-      await expect(
-        inviteUsersToOrganization({
-          emails: [testInviteeEmail],
-          roleId: adminRoleId,
-          organizationId: testOrganization.id,
-          authUserId: 'invalid-user-id',
-          authUserEmail: 'invalid@example.com',
-        }),
-      ).rejects.toThrow();
-    });
-
-    it('should prevent join without proper access', async () => {
-      // Create user with different domain
-      const outsiderEmail = `outsider-${Date.now()}@different-domain.com`;
-      await createTestUser(outsiderEmail);
-      await signInTestUser(outsiderEmail);
-      const outsiderSession = await getCurrentTestSession();
-      const outsiderUser = outsiderSession?.user;
+      if (!fullOrg) {
+        throw new Error('Organization not found');
+      }
 
       await expect(
         joinOrganization({
-          user: outsiderUser,
-          organizationId: testOrganization.id,
+          user: {
+            id: userRecord.id,
+            authUserId: authUser.id,
+            email: outsiderEmail,
+            name: null,
+            profileId: userRecord.profileId,
+            currentProfileId: userRecord.currentProfileId,
+            createdAt: userRecord.createdAt,
+            updatedAt: userRecord.updatedAt,
+          },
+          organization: fullOrg,
         }),
       ).rejects.toThrow(
         'Your email does not have access to join this organization',
+      );
+    });
+
+    it('should handle invalid role ID gracefully', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+
+      const { organization, adminUser } = await testData.createOrganization({
+        users: { admin: 1 },
+        emailDomain: 'test-org.com',
+      });
+
+      // Create an existing user in a different org
+      const { adminUser: existingUser } = await testData.createOrganization({
+        users: { admin: 1 },
+        emailDomain: 'other-org.com',
+        organizationName: 'Other Org',
+      });
+
+      const { session } = await createIsolatedSession(adminUser.email);
+
+      const invalidRoleId = '00000000-0000-0000-0000-000000000000';
+
+      const result = await inviteUsersToOrganization({
+        emails: [existingUser.email],
+        roleId: invalidRoleId,
+        organizationId: organization.id,
+        user: session.user,
+      });
+
+      // Should fail because role is invalid when adding existing user
+      expect(result.details?.failed).toHaveLength(1);
+      expect(result.details?.failed[0]?.reason).toBe(
+        'Invalid role specified for organization invite',
       );
     });
   });
