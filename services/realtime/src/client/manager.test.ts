@@ -1,9 +1,10 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import WebSocket from 'ws';
 
+import { Channels } from '../channels';
+import type { RealtimeMessage } from '../schemas';
 import { RealtimeClient } from '../server/client';
 import { generateConnectionToken } from '../server/token';
-import type { RealtimeMessage } from '../types';
 import { RealtimeManager } from './manager';
 
 // Make WebSocket available globally for Centrifuge
@@ -11,9 +12,8 @@ global.WebSocket = WebSocket as any;
 
 describe('RealtimeManager', () => {
   let realtimeClient: RealtimeClient;
-  const TEST_CHANNEL = 'test-channel';
-  const WS_URL =
-    'wss://realtime-production-zsndc.ondigitalocean.app/connection/websocket';
+  const TEST_CHANNEL = Channels.global();
+  const WS_URL = 'ws://localhost:8000/connection/websocket';
   const API_URL = process.env.CENTRIFUGO_API_URL!;
   const API_KEY = process.env.CENTRIFUGO_API_KEY!;
   const TEST_USER_ID = 'test-user-123';
@@ -58,7 +58,7 @@ describe('RealtimeManager', () => {
     });
 
     // Wait for connection to establish
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
     // Publish a test message using the server client
     const testMessage: RealtimeMessage = {

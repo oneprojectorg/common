@@ -1294,6 +1294,9 @@ importers:
       '@vitest/ui':
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
+      dotenv:
+        specifier: ^16.4.7
+        version: 16.4.7
       vitest:
         specifier: ^3.2.4
         version: 3.2.4(@edge-runtime/vm@5.0.0)(@types/debug@4.1.12)(@types/node@22.13.14)(@vitest/ui@3.2.4)(jiti@2.4.2)(jsdom@27.1.0)(sass@1.85.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0)
