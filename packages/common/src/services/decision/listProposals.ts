@@ -1,4 +1,4 @@
-import { and, asc, db, desc, eq, ilike, inArray, sql } from '@op/db/client';
+import { and, asc, db, desc, eq, ilike, inArray, ne, sql } from '@op/db/client';
 import {
   ProfileRelationshipType,
   ProposalStatus,
@@ -158,6 +158,12 @@ export const listProposals = async ({
       whereClause = baseWhereClause
         ? and(baseWhereClause, categoryFilter)
         : categoryFilter;
+    }
+
+    // Filter out hidden proposals unless user can manage proposals (admin)
+    if (!canManageProposals) {
+      const hiddenFilter = ne(proposals.status, ProposalStatus.HIDDEN);
+      whereClause = whereClause ? and(whereClause, hiddenFilter) : hiddenFilter;
     }
 
     // Get proposals with optimized ordering

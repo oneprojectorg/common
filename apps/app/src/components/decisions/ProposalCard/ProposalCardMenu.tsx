@@ -3,6 +3,7 @@
 import { trpc } from '@op/api/client';
 import type { proposalEncoder } from '@op/api/encoders';
 import { ProposalStatus } from '@op/api/encoders';
+import { match } from '@op/core';
 import { Button } from '@op/ui/Button';
 import { DialogTrigger } from '@op/ui/Dialog';
 import { Menu, MenuItem } from '@op/ui/Menu';
@@ -11,7 +12,7 @@ import { OptionMenu } from '@op/ui/OptionMenu';
 import { toast } from '@op/ui/Toast';
 import { Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import { LuCheck, LuX } from 'react-icons/lu';
+import { LuCheck, LuEyeOff, LuX } from 'react-icons/lu';
 import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
@@ -81,10 +82,11 @@ export function ProposalCardMenu({
       });
     },
     onSuccess: (_, variables) => {
-      const statusMessage =
-        variables.status === ProposalStatus.APPROVED
-          ? t('Proposal shortlisted successfully')
-          : t('Proposal rejected successfully');
+      const statusMessage = match(variables.status, {
+        [ProposalStatus.APPROVED]: t('Proposal shortlisted successfully'),
+        [ProposalStatus.HIDDEN]: t('Proposal hidden successfully'),
+        [ProposalStatus.REJECTED]: t('Proposal rejected successfully'),
+      });
 
       toast.success({
         message: statusMessage,
@@ -135,6 +137,13 @@ export function ProposalCardMenu({
     });
   };
 
+  const handleHide = () => {
+    updateStatusMutation.mutate({
+      profileId,
+      status: ProposalStatus.HIDDEN,
+    });
+  };
+
   const handleDeleteConfirm = async () => {
     if (!proposal.id) {
       console.error('No proposal ID provided for delete action');
@@ -181,6 +190,17 @@ export function ProposalCardMenu({
               >
                 <LuX className="size-4" />
                 {t('Reject from shortlist')}
+              </MenuItem>
+              <MenuItem
+                key="hide"
+                onAction={handleHide}
+                className="min-w-48 py-2"
+                isDisabled={
+                  isLoading || proposal.status === ProposalStatus.HIDDEN
+                }
+              >
+                <LuEyeOff className="size-4" />
+                {t('Hide proposal')}
               </MenuItem>
             </>
           )}

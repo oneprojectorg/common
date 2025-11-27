@@ -1,5 +1,10 @@
 import { db, eq } from '@op/db/client';
-import { organizations, proposals, users } from '@op/db/schema';
+import {
+  organizations,
+  proposals,
+  ProposalStatus,
+  users,
+} from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
@@ -12,7 +17,10 @@ export const updateProposalStatus = async ({
   user,
 }: {
   profileId: string;
-  status: 'approved' | 'rejected';
+  status:
+    | ProposalStatus.APPROVED
+    | ProposalStatus.REJECTED
+    | ProposalStatus.HIDDEN;
   user: User;
 }) => {
   if (!user) {
