@@ -13,8 +13,8 @@ global.WebSocket = WebSocket as any;
 describe('RealtimeManager', () => {
   let realtimeClient: RealtimeClient;
   const TEST_CHANNEL = Channels.global();
-  const WS_URL = 'ws://localhost:8000/connection/websocket';
-  const API_URL = 'http://localhost:8000/api';
+  const WS_URL = process.env.CENTRIFUGO_WS_URL!;
+  const API_URL = process.env.CENTRIFUGO_API_URL!;
   const API_KEY = process.env.CENTRIFUGO_API_KEY!;
   const TEST_USER_ID = 'test-user-123';
 
