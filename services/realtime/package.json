@@ -11,7 +11,9 @@
   "types": "./src/index.ts",
   "scripts": {
     "check-types": "tsc --noEmit",
-    "lint": "eslint . --max-warnings 0"
+    "dev": "./start-centrifugo.sh",
+    "down": "docker stop centrifugo",
+    "test": "vitest"
   },
   "dependencies": {
     "centrifuge": "^5.5.2",
@@ -20,6 +22,10 @@
   },
   "devDependencies": {
     "@op/typescript-config": "workspace:*",
-    "@types/jsonwebtoken": "^9.0.10"
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/ws": "^8.18.1",
+    "dotenv": "^16.4.7",
+    "vitest": "^3.2.4",
+    "ws": "^8.18.3"
   }
 }
