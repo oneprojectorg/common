@@ -94,6 +94,10 @@ export class RealtimeManager {
   ): () => void {
     this.ensureConnected();
 
+    if (!this.centrifuge) {
+      throw new Error('Centrifuge instance not initialized');
+    }
+
     // Add handler to channel listeners
     if (!this.channelListeners.has(channel)) {
       this.channelListeners.set(channel, new Set());
@@ -114,7 +118,7 @@ export class RealtimeManager {
 
     // Create subscription if it doesn't exist
     if (!this.subscriptions.has(channel)) {
-      const sub = this.centrifuge!.newSubscription(channel);
+      const sub = this.centrifuge.newSubscription(channel);
 
       sub.on('publication', (ctx: PublicationContext) => {
         const data = ctx.data as InvalidationMessage;
