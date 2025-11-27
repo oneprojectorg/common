@@ -146,7 +146,7 @@ const Sidebar = ({
       data-state={state}
       data-side={side}
       data-slot="sidebar"
-      className="group peer relative hidden min-w-min overflow-hidden bg-white sm:z-50 md:block"
+      className="group peer relative hidden min-w-fit overflow-hidden bg-white sm:block"
     >
       <div
         data-slot="sidebar-gap"
@@ -181,8 +181,7 @@ const SidebarLayout = ({
     <div
       data-slot="sidebar-layout"
       className={cn(
-        'bg-background relative flex size-full flex-1 flex-col',
-        'md:flex-row',
+        'bg-background relative flex size-full flex-1 flex-row',
         className,
       )}
       {...props}
