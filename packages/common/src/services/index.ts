@@ -1,6 +1,5 @@
 export * from './terms';
 export * from './access';
-export * from './comments';
 export * from './email';
 export * from './organization';
 export * from './platform';
