@@ -17,10 +17,7 @@ export const updateProposalStatus = async ({
   user,
 }: {
   profileId: string;
-  status:
-    | ProposalStatus.APPROVED
-    | ProposalStatus.REJECTED
-    | ProposalStatus.HIDDEN;
+  status: ProposalStatus.APPROVED | ProposalStatus.REJECTED;
   user: User;
 }) => {
   if (!user) {

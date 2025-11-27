@@ -114,6 +114,8 @@ export {
 } from './tables/proposals.sql';
 export type { Proposal, ProposalCategory } from './tables/proposals.sql';
 
+export { Visibility, visibilityEnum } from './tables/visibility.sql';
+
 export {
   proposalHistory,
   proposalHistoryRelations,
