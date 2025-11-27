@@ -5,7 +5,11 @@ import {
   formatCurrency,
   parseProposalData,
 } from '@/utils/proposalUtils';
-import { ProposalStatus, type proposalEncoder } from '@op/api/encoders';
+import {
+  ProposalStatus,
+  Visibility,
+  type proposalEncoder,
+} from '@op/api/encoders';
 import { getTextPreview, isNullish, match } from '@op/core';
 import { Avatar } from '@op/ui/Avatar';
 import { Chip } from '@op/ui/Chip';
@@ -264,7 +268,21 @@ export function ProposalCardStatus({
   className?: string;
 }) {
   const t = useTranslations();
-  const { status } = proposal;
+  const { status, visibility } = proposal;
+
+  // Show hidden status first if proposal is hidden
+  if (visibility === Visibility.HIDDEN) {
+    return (
+      <>
+        <Bullet />
+        <span
+          className={cn('text-nowrap text-sm text-primary-orange2', className)}
+        >
+          {t('Hidden')}
+        </span>
+      </>
+    );
+  }
 
   return match(status, {
     [ProposalStatus.APPROVED]: (
@@ -290,16 +308,6 @@ export function ProposalCardStatus({
           className={cn('text-nowrap text-sm text-neutral-charcoal', className)}
         >
           {t('Not shortlisted')}
-        </span>
-      </>
-    ),
-    [ProposalStatus.HIDDEN]: (
-      <>
-        <Bullet />
-        <span
-          className={cn('text-nowrap text-sm text-primary-orange2', className)}
-        >
-          {t('Hidden')}
         </span>
       </>
     ),

@@ -1,18 +1,8 @@
-import {
-  and,
-  asc,
-  db,
-  desc,
-  eq,
-  ilike,
-  inArray,
-  ne,
-  or,
-  sql,
-} from '@op/db/client';
+import { and, asc, db, desc, eq, ilike, inArray, or, sql } from '@op/db/client';
 import {
   ProfileRelationshipType,
   ProposalStatus,
+  Visibility,
   organizations,
   posts,
   postsToProfiles,
@@ -176,11 +166,13 @@ export const listProposals = async ({
 
     // Filter out hidden proposals unless user can manage proposals (admin) or is the owner
     if (!canManageProposals) {
-      const hiddenFilter = or(
-        ne(proposals.status, ProposalStatus.HIDDEN),
+      const visibilityFilter = or(
+        eq(proposals.visibility, Visibility.VISIBLE),
         eq(proposals.submittedByProfileId, currentProfileId),
       );
-      whereClause = whereClause ? and(whereClause, hiddenFilter) : hiddenFilter;
+      whereClause = whereClause
+        ? and(whereClause, visibilityFilter)
+        : visibilityFilter;
     }
 
     // Get proposals with optimized ordering
@@ -348,6 +340,7 @@ export const listProposals = async ({
         id: proposal.id,
         proposalData: proposal.proposalData,
         status: proposal.status,
+        visibility: proposal.visibility,
         createdAt: proposal.createdAt,
         updatedAt: proposal.updatedAt,
         profileId: proposal.profileId,

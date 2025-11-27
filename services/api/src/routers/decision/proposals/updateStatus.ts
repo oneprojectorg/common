@@ -23,17 +23,13 @@ const meta: OpenApiMeta = {
     path: '/decision/proposal/{profileId}/status',
     protect: true,
     tags: ['decision'],
-    summary: 'Update proposal status (approve/reject/hide)',
+    summary: 'Update proposal status (approve/reject)',
   },
 };
 
 const updateProposalStatusInput = z.object({
   profileId: z.uuid(),
-  status: z.enum([
-    ProposalStatus.APPROVED,
-    ProposalStatus.REJECTED,
-    ProposalStatus.HIDDEN,
-  ]),
+  status: z.enum([ProposalStatus.APPROVED, ProposalStatus.REJECTED]),
 });
 
 export const updateProposalStatusRouter = router({

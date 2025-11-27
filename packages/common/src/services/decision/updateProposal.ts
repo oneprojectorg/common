@@ -2,6 +2,7 @@ import { db, eq } from '@op/db/client';
 import {
   DecisionProcess,
   ProcessInstance,
+  Visibility,
   organizations,
   processInstances,
   proposalCategories,
@@ -78,6 +79,7 @@ async function updateProposalCategoryLink(
 export interface UpdateProposalInput {
   proposalData?: ProposalData;
   status?: 'draft' | 'submitted' | 'under_review' | 'approved' | 'rejected';
+  visibility?: Visibility;
 }
 
 export const updateProposal = async ({
@@ -166,6 +168,13 @@ export const updateProposal = async ({
           'Only process owner can approve or reject proposals',
         );
       }
+    }
+
+    // Only admins can change visibility
+    if (data.visibility && !hasPermissions) {
+      throw new UnauthorizedError(
+        'Only admins can change proposal visibility',
+      );
     }
 
     // Validate proposal data against schema if updating proposalData
