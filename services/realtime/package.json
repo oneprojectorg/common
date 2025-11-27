@@ -15,7 +15,8 @@
   },
   "dependencies": {
     "centrifuge": "^5.5.2",
-    "jsonwebtoken": "^9.0.2"
+    "jsonwebtoken": "^9.0.2",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@op/typescript-config": "workspace:*",

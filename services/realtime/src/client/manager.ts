@@ -5,7 +5,7 @@ import {
   type Subscription,
 } from 'centrifuge';
 
-import type { InvalidationMessage, RealtimeMessage } from '../types';
+import { type RealtimeMessage, realtimeMessageSchema } from '../schemas';
 
 export interface RealtimeConfig {
   wsUrl: string;
@@ -25,7 +25,6 @@ export class RealtimeManager {
   >();
   private connectionListeners = new Set<(isConnected: boolean) => void>();
   private config: RealtimeConfig | null = null;
-  private refCount = 0;
 
   private constructor() {
     // Private constructor for singleton
@@ -113,7 +112,6 @@ export class RealtimeManager {
       return () => {}; // Return no-op function
     }
 
-    this.refCount++;
     listeners.add(handler);
 
     // Create subscription if it doesn't exist
@@ -121,7 +119,18 @@ export class RealtimeManager {
       const sub = this.centrifuge.newSubscription(channel);
 
       sub.on('publication', (ctx: PublicationContext) => {
-        const data = ctx.data as InvalidationMessage;
+        // Validate the message with Zod schema
+        const parseResult = realtimeMessageSchema.safeParse(ctx.data);
+
+        if (!parseResult.success) {
+          console.error(
+            '[Realtime] Invalid message format:',
+            parseResult.error,
+          );
+          return;
+        }
+
+        const data = parseResult.data;
 
         // Notify all listeners for this channel
         const channelListeners = this.channelListeners.get(channel);
@@ -162,7 +171,6 @@ export class RealtimeManager {
 
     // Remove the handler
     listeners.delete(handler);
-    this.refCount--;
 
     // If no more handlers for this channel, unsubscribe from Centrifuge
     if (listeners.size === 0) {
@@ -177,7 +185,7 @@ export class RealtimeManager {
     }
 
     // If no more active subscriptions, disconnect
-    if (this.refCount === 0) {
+    if (this.subscriptions.size === 0) {
       this.disconnect();
     }
   }
