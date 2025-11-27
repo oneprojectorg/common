@@ -34,6 +34,8 @@ const config = {
     'pino',
     'pino-worker',
     '@axiomhq/pino',
+    'inngest',
+    'zod',
   ],
   turbopack: {},
   webpack: (cfg) => {
