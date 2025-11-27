@@ -5,6 +5,7 @@ import {
   type Subscription,
 } from 'centrifuge';
 
+import { type ChannelName } from '../channels';
 import { type RealtimeMessage, realtimeMessageSchema } from '../schemas';
 
 export interface RealtimeConfig {
@@ -18,9 +19,9 @@ export interface RealtimeConfig {
 export class RealtimeManager {
   private static instance: RealtimeManager | null = null;
   private centrifuge: Centrifuge | null = null;
-  private subscriptions = new Map<string, Subscription>();
+  private subscriptions = new Map<ChannelName, Subscription>();
   private channelListeners = new Map<
-    string,
+    ChannelName,
     Set<(data: RealtimeMessage) => void>
   >();
   private connectionListeners = new Set<(isConnected: boolean) => void>();
@@ -88,7 +89,7 @@ export class RealtimeManager {
    * Returns an unsubscribe function to clean up the subscription
    */
   subscribe(
-    channel: string,
+    channel: ChannelName,
     handler: (data: RealtimeMessage) => void,
   ): () => void {
     this.ensureConnected();
@@ -161,7 +162,7 @@ export class RealtimeManager {
    * Unsubscribe a specific handler from a channel
    */
   private unsubscribe(
-    channel: string,
+    channel: ChannelName,
     handler: (data: RealtimeMessage) => void,
   ): void {
     const listeners = this.channelListeners.get(channel);

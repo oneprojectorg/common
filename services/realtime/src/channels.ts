@@ -10,3 +10,8 @@ export const Channels = {
 export type GlobalChannel = ReturnType<typeof Channels.global>;
 export type OrgChannel = ReturnType<typeof Channels.org>;
 export type UserChannel = ReturnType<typeof Channels.user>;
+
+/**
+ * Union of all valid channel types
+ */
+export type ChannelName = GlobalChannel | OrgChannel | UserChannel;

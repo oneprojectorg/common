@@ -1,4 +1,4 @@
-import type { RealtimeMessage } from '../types';
+import type { RealtimeMessage } from '../schemas';
 import { RealtimeClient } from './client';
 
 /**

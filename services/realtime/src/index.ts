@@ -1,3 +1,9 @@
 export { Channels } from './channels';
-export type { GlobalChannel, OrgChannel, UserChannel } from './channels';
-export type { RealtimeMessage, InvalidationMessage } from './types';
+export type {
+  ChannelName,
+  GlobalChannel,
+  OrgChannel,
+  UserChannel,
+} from './channels';
+export { RealtimeManager } from './client/manager';
+export type { RealtimeMessage } from './schemas';
