@@ -11,7 +11,7 @@ const corsOptions = {
 
 const { IS_DEVELOPMENT } = OPURLConfig('API');
 
-export function middleware(request: NextRequest, event: NextFetchEvent) {
+export function proxy(request: NextRequest, event: NextFetchEvent) {
   logger.info(...transformMiddlewareRequest(request));
 
   event.waitUntil(logger.flush());
