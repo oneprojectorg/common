@@ -1291,9 +1291,6 @@ importers:
       '@types/ws':
         specifier: ^8.18.1
         version: 8.18.1
-      '@vitest/ui':
-        specifier: ^3.2.4
-        version: 3.2.4(vitest@3.2.4)
       dotenv:
         specifier: ^16.4.7
         version: 16.4.7

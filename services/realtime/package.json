@@ -13,10 +13,7 @@
     "check-types": "tsc --noEmit",
     "dev": "./start-centrifugo.sh",
     "down": "docker stop centrifugo",
-    "lint": "eslint . --max-warnings 0",
-    "test": "vitest",
-    "test:ui": "vitest --ui",
-    "test:watch": "vitest --watch"
+    "test": "vitest"
   },
   "dependencies": {
     "centrifuge": "^5.5.2",
@@ -27,7 +24,6 @@
     "@op/typescript-config": "workspace:*",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/ws": "^8.18.1",
-    "@vitest/ui": "^3.2.4",
     "dotenv": "^16.4.7",
     "vitest": "^3.2.4",
     "ws": "^8.18.3"

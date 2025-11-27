@@ -174,4 +174,83 @@ describe('RealtimeManager', () => {
       expect(disconnectReason.reason).toBeDefined();
     },
   );
+
+  it('should deliver messages to multiple subscribers on the same channel', async () => {
+    // Reset the singleton
+    (RealtimeManager as any).instance = null;
+
+    // Generate a real token
+    const getToken = async () => {
+      return generateConnectionToken(TEST_USER_ID);
+    };
+
+    // Initialize the RealtimeManager
+    RealtimeManager.initialize({
+      wsUrl: WS_URL,
+      getToken,
+    });
+
+    const manager = RealtimeManager.getInstance();
+
+    // Create three separate handlers
+    const receivedMessages: RealtimeMessage[] = [];
+
+    const handler1Promise = new Promise<RealtimeMessage>((resolve) => {
+      const handler = (data: RealtimeMessage) => {
+        receivedMessages.push(data);
+        resolve(data);
+      };
+      manager.subscribe(TEST_CHANNEL, handler);
+    });
+
+    const handler2Promise = new Promise<RealtimeMessage>((resolve) => {
+      const handler = (data: RealtimeMessage) => {
+        receivedMessages.push(data);
+        resolve(data);
+      };
+      manager.subscribe(TEST_CHANNEL, handler);
+    });
+
+    const handler3Promise = new Promise<RealtimeMessage>((resolve) => {
+      const handler = (data: RealtimeMessage) => {
+        receivedMessages.push(data);
+        resolve(data);
+      };
+      manager.subscribe(TEST_CHANNEL, handler);
+    });
+
+    // Wait for connection to establish
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    // Publish a test message
+    const testMessage: RealtimeMessage = {
+      type: 'query-invalidation',
+      queryKey: ['test', 'multiple-subscribers'],
+    };
+
+    await realtimeClient.publish({
+      channel: TEST_CHANNEL,
+      data: testMessage,
+    });
+
+    // Wait for all handlers to receive the message
+    const results = await Promise.race([
+      Promise.all([handler1Promise, handler2Promise, handler3Promise]),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Message timeout')), 5000),
+      ),
+    ]);
+
+    // Verify all three handlers received the same message
+    expect(results).toHaveLength(3);
+    expect(results[0]).toEqual(testMessage);
+    expect(results[1]).toEqual(testMessage);
+    expect(results[2]).toEqual(testMessage);
+    expect(receivedMessages).toHaveLength(3);
+
+    // All received messages should be identical
+    receivedMessages.forEach((msg) => {
+      expect(msg).toEqual(testMessage);
+    });
+  });
 });
