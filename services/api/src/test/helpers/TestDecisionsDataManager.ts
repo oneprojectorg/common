@@ -3,12 +3,14 @@ import { db } from '@op/db/client';
 import {
   DecisionProcess,
   ProcessInstance,
-  ProcessInstanceStatus,
   processInstances,
   profiles,
   profileUsers,
   users,
+  organizationUsers,
+  organizationUserToAccessRoles,
 } from '@op/db/schema';
+import { ROLES } from '@op/db/seedData/accessControl';
 import { User } from '@op/supabase/lib';
 import { randomUUID } from 'crypto';
 import { eq, inArray } from 'drizzle-orm';
@@ -35,6 +37,13 @@ interface DecisionSetupOutput {
   organization: any;
   process: DecisionProcess;
   instances: CreatedInstance[];
+}
+
+interface MemberUserOutput {
+  user: User;
+  email: string;
+  authUserId: string;
+  profileId: string;
 }
 
 /**
@@ -303,6 +312,91 @@ export class TestDecisionsDataManager {
       authUserId,
       email,
     });
+  }
+
+  /**
+   * Creates a member user (non-admin) for an organization with proper setup.
+   * This creates:
+   * - An auth user via Supabase
+   * - Waits for trigger to create user record and profile
+   * - Adds them to the organization with Member role
+   * - Optionally grants access to instance profiles
+   */
+  async createMemberUser({
+    organization,
+    instanceProfileIds = [],
+  }: {
+    organization: { id: string };
+    instanceProfileIds?: string[];
+  }): Promise<MemberUserOutput> {
+    this.ensureCleanupRegistered();
+
+    const email = this.generateTestEmail();
+
+    // Create auth user via Supabase - triggers DB user and profile creation
+    const authUser = await createTestUser(email).then((res) => res.user);
+
+    if (!authUser || !authUser.email) {
+      throw new Error(`Failed to create auth user for ${email}`);
+    }
+
+    this.createdAuthUserIds.push(authUser.id);
+
+    // Get the user record that was created by the trigger
+    const [userRecord] = await db
+      .select()
+      .from(users)
+      .where(eq(users.authUserId, authUser.id));
+
+    if (!userRecord) {
+      throw new Error(`Failed to find user record for ${email}`);
+    }
+
+    // Track the profile ID that was created by the trigger for cleanup
+    if (userRecord.profileId) {
+      this.createdProfileIds.push(userRecord.profileId);
+    }
+
+    // Add user to organization
+    const [orgUser] = await db
+      .insert(organizationUsers)
+      .values({
+        organizationId: organization.id,
+        authUserId: authUser.id,
+        email: authUser.email,
+      })
+      .returning();
+
+    if (!orgUser) {
+      throw new Error(`Failed to create organization user for ${email}`);
+    }
+
+    // Assign Member role to organization user
+    await db.insert(organizationUserToAccessRoles).values({
+      organizationUserId: orgUser.id,
+      accessRoleId: ROLES.MEMBER.id,
+    });
+
+    // Grant access to instance profiles if provided
+    for (const profileId of instanceProfileIds) {
+      await this.grantProfileAccess(profileId, authUser.id, email);
+    }
+
+    const user: User = {
+      id: authUser.id,
+      email: authUser.email,
+      user_metadata: authUser.user_metadata,
+      app_metadata: authUser.app_metadata,
+      aud: authUser.aud,
+      created_at: authUser.created_at,
+    };
+
+    return {
+      user,
+      email,
+      authUserId: authUser.id,
+      profileId: userRecord.profileId!,
+    };
   }
 
   /**
