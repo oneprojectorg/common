@@ -176,6 +176,13 @@
       "when": 1763567205679,
       "tag": "0024_smiling_beast",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1764254184375,
+      "tag": "0025_adorable_whistler",
+      "breakpoints": true
     }
   ]
 }
