@@ -50,7 +50,7 @@ export const joinOrganization = router({
             where: (table, { eq }) => eq(table.id, input.organizationId),
           }),
           db.query.users.findFirst({
-            where: (table, { eq }) => eq(table.id, ctx.user.id),
+            where: (table, { eq }) => eq(table.authUserId, ctx.user.id),
           }),
         ]);
 
