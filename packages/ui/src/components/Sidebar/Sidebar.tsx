@@ -181,7 +181,8 @@ const SidebarLayout = ({
     <div
       data-slot="sidebar-layout"
       className={cn(
-        'bg-background relative flex size-full flex-1 flex-row',
+        'bg-background relative flex size-full flex-1 flex-col',
+        'sm:flex-row',
         className,
       )}
       {...props}
