@@ -37,15 +37,18 @@ dotenv.config({
 
 /** @type {import('next').NextConfig} */
 const config = {
-  serverExternalPackages: [
-    'sharp',
-    'onnxruntime-node',
-    'thread-stream',
-    'pino',
-    'pino-worker',
-    '@axiomhq/pino',
-  ],
-  turbopack: {},
+  experimental: {
+    // reactCompiler: true,
+    serverComponentsExternalPackages: [
+      'sharp',
+      'onnxruntime-node',
+      'thread-stream',
+      'pino',
+      'pino-worker',
+      '@axiomhq/pino',
+    ],
+    instrumentationHook: true,
+  },
 
   webpack: (cfg, { isServer }) => {
     // Grab the existing rule that handles SVG imports
@@ -122,9 +125,7 @@ const getCurrentBranch = () => {
   // Locally, try to get branch from git
   try {
     const { execSync } = require('child_process');
-    return execSync('git rev-parse --abbrev-ref HEAD', {
-      encoding: 'utf8',
-    }).trim();
+    return execSync('git rev-parse --abbrev-ref HEAD', { encoding: 'utf8' }).trim();
   } catch {
     return null;
   }

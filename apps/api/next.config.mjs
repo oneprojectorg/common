@@ -27,15 +27,17 @@ dotenv.config({
 
 /** @type {import('next').NextConfig} */
 const config = {
-  serverExternalPackages: [
-    'sharp',
-    'onnxruntime-node',
-    'thread-stream',
-    'pino',
-    'pino-worker',
-    '@axiomhq/pino',
-  ],
-  turbopack: {},
+  experimental: {
+    serverComponentsExternalPackages: [
+      'sharp',
+      'onnxruntime-node',
+      'thread-stream',
+      'pino',
+      'pino-worker',
+      '@axiomhq/pino',
+    ],
+    instrumentationHook: true,
+  },
   webpack: (cfg) => {
     // Grab the existing rule that handles SVG imports
     const fileLoaderRule = cfg.module.rules.find((rule) =>

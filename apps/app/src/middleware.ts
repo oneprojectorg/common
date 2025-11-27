@@ -8,7 +8,7 @@ import { i18nConfig, routing } from './lib/i18n';
 
 const useUrl = OPURLConfig('APP');
 
-export async function proxy(request: NextRequest, event: NextFetchEvent) {
+export async function middleware(request: NextRequest, event: NextFetchEvent) {
   // Log request
   logger.info(...transformMiddlewareRequest(request));
 
