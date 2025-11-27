@@ -123,47 +123,7 @@ export function ProposalCardMenu({
   });
 
   const updateProposalMutation = trpc.decision.updateProposal.useMutation({
-    onMutate: async (variables) => {
-      if (proposal.processInstance?.id) {
-        await utils.decision.listProposals.cancel({
-          processInstanceId: proposal.processInstance.id,
-        });
-      }
-
-      const previousListData = proposal.processInstance?.id
-        ? utils.decision.listProposals.getData({
-            processInstanceId: proposal.processInstance.id,
-          })
-        : null;
-
-      if (previousListData && proposal.processInstance?.id) {
-        const optimisticListData = {
-          ...previousListData,
-          proposals: previousListData.proposals.map((p) =>
-            p.id === proposal.id
-              ? {
-                  ...p,
-                  visibility: variables.data.visibility ?? p.visibility,
-                }
-              : p,
-          ),
-        };
-        utils.decision.listProposals.setData(
-          { processInstanceId: proposal.processInstance.id },
-          optimisticListData,
-        );
-      }
-
-      return { previousListData };
-    },
-    onError: (error, _variables, context) => {
-      if (context?.previousListData && proposal.processInstance?.id) {
-        utils.decision.listProposals.setData(
-          { processInstanceId: proposal.processInstance.id },
-          context.previousListData,
-        );
-      }
-
+    onError: (error) => {
       toast.error({
         message: error.message || t('Failed to update proposal visibility'),
       });
