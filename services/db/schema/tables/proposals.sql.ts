@@ -27,6 +27,7 @@ export enum ProposalStatus {
   REJECTED = 'rejected',
   DUPLICATE = 'duplicate',
   SELECTED = 'selected',
+  HIDDEN = 'hidden',
 }
 
 export const proposalStatusEnum = pgEnum(
