@@ -5,6 +5,7 @@ import { Surface } from '@op/ui/Surface';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { Suspense } from 'react';
 
+import { ActiveDecisionsNotifications } from '@/components/ActiveDecisionsNotifications';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { NewOrganizations } from '@/components/NewOrganizations';
 import { NewlyJoinedModal } from '@/components/NewlyJoinedModal';
@@ -219,6 +220,7 @@ const UserContent = async () => {
 
   return (
     <>
+      <ActiveDecisionsNotifications />
       {isOrgProfile && user.currentProfile ? (
         <PendingRelationships slug={user.currentProfile.slug} />
       ) : null}

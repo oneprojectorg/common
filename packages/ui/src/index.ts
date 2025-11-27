@@ -35,6 +35,7 @@ export * from './components/ListBox';
 export * from './components/Menu';
 export * from './components/Meter';
 export * from './components/Modal';
+export * from './components/NotificationPanel';
 export * from './components/NumberField';
 export * from './components/Pagination';
 export * from './components/Popover';

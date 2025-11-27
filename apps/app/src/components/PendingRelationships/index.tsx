@@ -3,9 +3,14 @@
 import { skipBatch, trpc } from '@op/api/client';
 import { relationshipMap } from '@op/types/relationships';
 import { Button } from '@op/ui/Button';
-import { Header2 } from '@op/ui/Header';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { Surface } from '@op/ui/Surface';
+import {
+  NotificationPanel,
+  NotificationPanelActions,
+  NotificationPanelHeader,
+  NotificationPanelItem,
+  NotificationPanelList,
+} from '@op/ui/NotificationPanel';
 import { Suspense, useState } from 'react';
 
 import ErrorBoundary from '../ErrorBoundary';
@@ -47,15 +52,14 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
     },
   });
 
-  return count > 0 ? (
-    <Surface className="flex flex-col gap-0 border-b">
-      <Header2 className="flex items-center gap-1 p-6 font-serif text-title-sm text-neutral-black">
-        Relationship Requests{' '}
-        <span className="flex size-4 items-center justify-center rounded-full bg-functional-red font-sans text-xs text-neutral-offWhite">
-          {count}
-        </span>
-      </Header2>
-      <ul className="flex flex-col">
+  if (count === 0) {
+    return null;
+  }
+
+  return (
+    <NotificationPanel>
+      <NotificationPanelHeader title="Relationship Requests" count={count} />
+      <NotificationPanelList>
         {organizations.map((org) => {
           const relationships = org.relationships
             ?.filter((r) => r.pending)
@@ -70,9 +74,9 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
             remove.isPending;
 
           return (
-            <li
+            <NotificationPanelItem
               key={org.id}
-              className={`flex flex-col justify-between gap-6 border-t p-6 transition-colors sm:flex-row sm:items-center sm:gap-2 ${isAccepted ? 'bg-primary-tealWhite' : ''}`}
+              className={isAccepted ? 'bg-primary-tealWhite' : ''}
             >
               <div className="flex items-center gap-3">
                 <OrganizationAvatar profile={org.profile} />
@@ -97,7 +101,7 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
                   ) : null}
                 </div>
               </div>
-              <div className="flex items-center gap-4">
+              <NotificationPanelActions>
                 {!isAccepted ? (
                   <>
                     <Button
@@ -129,13 +133,13 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
                     </Button>
                   </>
                 ) : null}
-              </div>
-            </li>
+              </NotificationPanelActions>
+            </NotificationPanelItem>
           );
         })}
-      </ul>
-    </Surface>
-  ) : null;
+      </NotificationPanelList>
+    </NotificationPanel>
+  );
 };
 
 export const PendingRelationships = (props: { slug: string }) => {

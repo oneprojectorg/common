@@ -36,6 +36,7 @@
     "./Modal": "./src/components/Modal.tsx",
     "./MultiSelectComboBox": "./src/components/MultiSelectComboBox.tsx",
     "./MediaDisplay": "./src/components/MediaDisplay/index.tsx",
+    "./NotificationPanel": "./src/components/NotificationPanel.tsx",
     "./NumberField": "./src/components/NumberField.tsx",
     "./OptionMenu": "./src/components/OptionMenu.tsx",
     "./Pagination": "./src/components/Pagination.tsx",
