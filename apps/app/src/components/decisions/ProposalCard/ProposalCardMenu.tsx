@@ -16,6 +16,7 @@ import { LuCheck, LuEye, LuEyeOff, LuX } from 'react-icons/lu';
 import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
+import { parseProposalData } from '@/utils/proposalUtils';
 
 type Proposal = z.infer<typeof proposalEncoder>;
 
@@ -122,6 +123,9 @@ export function ProposalCardMenu({
     },
   });
 
+  const { title } = parseProposalData(proposal.proposalData);
+  const proposalTitle = title || t('Untitled Proposal');
+
   const updateProposalMutation = trpc.decision.updateProposal.useMutation({
     onError: (error) => {
       toast.error({
@@ -131,8 +135,8 @@ export function ProposalCardMenu({
     onSuccess: (_, variables) => {
       if (variables.data.visibility) {
         const message = match(variables.data.visibility, {
-          [Visibility.HIDDEN]: t('Proposal hidden successfully'),
-          [Visibility.VISIBLE]: t('Proposal unhidden successfully'),
+          [Visibility.HIDDEN]: `${proposalTitle} ${t('is now hidden from active proposals.')}`,
+          [Visibility.VISIBLE]: `${proposalTitle} ${t('is now visible in active proposals.')}`,
         });
         toast.success({ message });
       }
