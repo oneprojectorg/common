@@ -1,3 +1,4 @@
+import type { ChannelName } from '../channels';
 import type { RealtimeMessage } from '../schemas';
 import { RealtimeClient } from './client';
 
@@ -39,7 +40,7 @@ class RealtimeService {
    * Note: Never query the database to determine channels. Channel selection should
    * be based on data you already have in the mutation context (orgId, userId, etc.)
    */
-  async publish(channel: string, message: RealtimeMessage): Promise<void> {
+  async publish(channel: ChannelName, message: RealtimeMessage): Promise<void> {
     const client = this.getClient();
 
     try {

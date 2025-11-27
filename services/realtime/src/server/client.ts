@@ -1,3 +1,5 @@
+import { ChannelName } from '../channels';
+
 /**
  * Realtime backend client for interacting with the real-time messaging service
  */
@@ -18,7 +20,10 @@ export class RealtimeClient {
    * Publish a message to a single channel
    * TODO: type channel with Channels
    */
-  async publish(options: { channel: string; data: unknown }): Promise<void> {
+  async publish(options: {
+    channel: ChannelName;
+    data: unknown;
+  }): Promise<void> {
     const { channel, data } = options;
 
     const response = await fetch(`${this.apiUrl}/publish`, {
