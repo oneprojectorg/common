@@ -6,6 +6,7 @@ import { createContext, use, useCallback, useMemo, useState } from 'react';
 import { Dialog, Modal, ModalOverlay } from 'react-aria-components';
 import { LuAlignJustify } from 'react-icons/lu';
 
+import { config as twConfig } from '../../../tailwind.shared';
 import { cn } from '../../lib/utils';
 import { IconButton, IconButtonProps } from '../IconButton';
 
@@ -57,7 +58,7 @@ const SidebarProvider = ({
     [setOpenProp, open],
   );
 
-  const isMobile = useMediaQuery('(max-width: 640px)');
+  const isMobile = useMediaQuery(`(max-width: ${twConfig.theme.screens.sm})`);
 
   // Helper to toggle the sidebar.
   const toggleSidebar = useCallback(() => {
@@ -145,7 +146,7 @@ const Sidebar = ({
       data-state={state}
       data-side={side}
       data-slot="sidebar"
-      className="group peer relative hidden overflow-hidden bg-white md:block"
+      className="group peer relative hidden min-w-min overflow-hidden bg-white sm:z-50 md:block"
     >
       <div
         data-slot="sidebar-gap"
