@@ -15,7 +15,7 @@
     "typecheck": "tsgo --noEmit"
   },
   "dependencies": {
-    "zod": "^4.1.12"
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@op/typescript-config": "workspace:*",
