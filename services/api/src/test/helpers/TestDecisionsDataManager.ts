@@ -26,6 +26,7 @@ interface CreateDecisionSetupOptions {
 interface CreatedInstance {
   instance: ProcessInstance;
   profileId: string;
+  slug: string;
 }
 
 interface DecisionSetupOutput {
@@ -273,9 +274,19 @@ export class TestDecisionsDataManager {
         .where(eq(processInstances.id, instance.id));
     }
 
+    // Fetch the profile to get the slug
+    const profile = await db.query.profiles.findFirst({
+      where: eq(profiles.id, instance.profileId),
+    });
+
+    if (!profile) {
+      throw new Error(`Profile not found for instance: ${instance.id}`);
+    }
+
     return {
       instance,
       profileId: instance.profileId,
+      slug: profile.slug,
     };
   }
 
