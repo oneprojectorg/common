@@ -82,6 +82,7 @@ describe.concurrent('updateProposal visibility', () => {
       proposalId: proposal.id,
       data: { visibility: Visibility.HIDDEN },
     });
+    expect(result.visibility).toBe(Visibility.HIDDEN);
 
     // Then unhide it
     const result = await caller.decision.updateProposal({
