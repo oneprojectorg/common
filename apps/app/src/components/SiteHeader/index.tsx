@@ -361,7 +361,7 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
   const avatarButton = (
     <Button
       unstyled
-      className={cn('relative', className)}
+      className={cn('relative min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0', className)}
       onPress={() => (isMobile ? setIsDrawerOpen(true) : undefined)}
     >
       <Avatar placeholder={user?.currentProfile?.name}>
@@ -483,7 +483,7 @@ export const SiteHeader = () => {
       <header className="flex h-auto w-full items-center justify-between px-4 py-2 sm:hidden">
         {!isMobileSearchExpanded && (
           <div className="flex items-center gap-3">
-            <SidebarTrigger className="p-1" size="small" />
+            <SidebarTrigger className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 sm:p-1" size="small" />
             <Link href="/" className="flex gap-1">
               <CommonLogo />
             </Link>
@@ -515,7 +515,7 @@ export const SiteHeader = () => {
               <Button
                 unstyled
                 onPress={() => setIsMobileSearchExpanded(true)}
-                className="flex items-center justify-center"
+                className="flex min-h-[44px] min-w-[44px] items-center justify-center"
               >
                 <LuSearch className="size-4 text-neutral-gray4" />
               </Button>
