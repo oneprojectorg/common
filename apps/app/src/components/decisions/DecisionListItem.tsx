@@ -53,19 +53,19 @@ export const DecisionListItem = ({ item }: { item: DecisionProfileItem }) => {
     >
       <div className="flex flex-col gap-2">
         {/* Process name and status chip */}
-        <div className="flex items-start justify-between gap-2 sm:items-center sm:justify-start">
+        <div className="flex items-start justify-between gap-2 sm:items-center sm:justify-start sm:gap-2">
           <span className="font-serif text-xl font-light leading-tight tracking-tight text-neutral-black">
             {processInstance?.name || item.name}
           </span>
           {currentStateName && (
-            <Chip className="shrink-0 bg-primary-teal96White text-[10px] text-primary-tealBlack">
+            <Chip className="h-6 shrink-0 rounded bg-primary-teal96White px-1 text-[10px] text-primary-tealBlack">
               {currentStateName}
             </Chip>
           )}
         </div>
 
         {/* Organization and closing date */}
-        <div className="flex flex-wrap items-center gap-2 text-xs">
+        <div className="flex flex-wrap items-center gap-2 text-xs sm:gap-6">
           {owner && (
             <div className="flex items-center gap-1">
               <Avatar placeholder={owner.name} className="size-4">
@@ -84,7 +84,9 @@ export const DecisionListItem = ({ item }: { item: DecisionProfileItem }) => {
 
           {closingDate && (
             <div className="flex items-center gap-1">
-              <Calendar className="size-4 text-neutral-gray4" />
+              <Calendar
+                className={`size-4 ${isClosingSoon(closingDate) ? 'text-functional-red' : 'text-neutral-charcoal'}`}
+              />
               <span
                 className={
                   isClosingSoon(closingDate)
