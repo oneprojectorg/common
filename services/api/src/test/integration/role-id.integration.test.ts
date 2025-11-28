@@ -6,7 +6,6 @@ import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
 import { TestOrganizationDataManager } from '../helpers/TestOrganizationDataManager';
-import { TestUserDataManager } from '../helpers/TestUserDataManager';
 
 describe.concurrent('Role ID System Integration Tests', () => {
   describe.concurrent('getRoles functionality', () => {
@@ -57,7 +56,6 @@ describe.concurrent('Role ID System Integration Tests', () => {
       onTestFinished,
     }) => {
       const testData = new TestOrganizationDataManager(task.id, onTestFinished);
-      const userManager = new TestUserDataManager(task.id, onTestFinished);
 
       // Create an organization
       const { organization } = await testData.createOrganization({
@@ -65,10 +63,10 @@ describe.concurrent('Role ID System Integration Tests', () => {
         emailDomain: 'example.com',
       });
 
-      // Create a new user that will join via allowList using TestUserDataManager
+      // Create a new user that will join via allowList
       const joiningUserEmail = `joining-user@different-domain.com`;
       const { authUserId, userRecord } =
-        await userManager.createUser(joiningUserEmail);
+        await testData.createUser(joiningUserEmail);
 
       // Add user to allowList with Member role
       const [allowListEntry] = await db
@@ -87,7 +85,7 @@ describe.concurrent('Role ID System Integration Tests', () => {
 
       // Track allowList entry for cleanup
       if (allowListEntry) {
-        userManager.trackAllowListEntry(allowListEntry.id);
+        testData.trackAllowListEntry(allowListEntry.id);
       }
 
       // Get full organization record for joinOrganization
@@ -134,7 +132,6 @@ describe.concurrent('Role ID System Integration Tests', () => {
       onTestFinished,
     }) => {
       const testData = new TestOrganizationDataManager(task.id, onTestFinished);
-      const userManager = new TestUserDataManager(task.id, onTestFinished);
 
       // Create an organization
       const { organization } = await testData.createOrganization({
@@ -142,10 +139,10 @@ describe.concurrent('Role ID System Integration Tests', () => {
         emailDomain: 'example.com',
       });
 
-      // Create a new user using TestUserDataManager
+      // Create a new standalone user
       const joiningUserEmail = `direct-role@different-domain.com`;
       const { authUserId, userRecord } =
-        await userManager.createUser(joiningUserEmail);
+        await testData.createUser(joiningUserEmail);
 
       // Get full organization record
       const fullOrg = await db.query.organizations.findFirst({
@@ -192,7 +189,6 @@ describe.concurrent('Role ID System Integration Tests', () => {
       onTestFinished,
     }) => {
       const testData = new TestOrganizationDataManager(task.id, onTestFinished);
-      const userManager = new TestUserDataManager(task.id, onTestFinished);
 
       // Create an organization
       const { organization } = await testData.createOrganization({
@@ -200,10 +196,10 @@ describe.concurrent('Role ID System Integration Tests', () => {
         emailDomain: 'example.com',
       });
 
-      // Create a new user using TestUserDataManager
+      // Create a new standalone user
       const joiningUserEmail = `fallback@different-domain.com`;
       const { authUserId, userRecord } =
-        await userManager.createUser(joiningUserEmail);
+        await testData.createUser(joiningUserEmail);
 
       // Add user to allowList with invalid roleId
       const [allowListEntry] = await db
@@ -222,7 +218,7 @@ describe.concurrent('Role ID System Integration Tests', () => {
 
       // Track allowList entry for cleanup
       if (allowListEntry) {
-        userManager.trackAllowListEntry(allowListEntry.id);
+        testData.trackAllowListEntry(allowListEntry.id);
       }
 
       // Get full organization record
@@ -326,7 +322,6 @@ describe.concurrent('Role ID System Integration Tests', () => {
       onTestFinished,
     }) => {
       const testData = new TestOrganizationDataManager(task.id, onTestFinished);
-      const userManager = new TestUserDataManager(task.id, onTestFinished);
 
       // Create an organization with a specific domain
       const { organization } = await testData.createOrganization({
@@ -340,9 +335,9 @@ describe.concurrent('Role ID System Integration Tests', () => {
         .set({ domain: 'company.com' })
         .where(eq(organizations.id, organization.id));
 
-      // Create a user with a different domain using TestUserDataManager
+      // Create a user with a different domain
       const outsiderEmail = `outsider@different-domain.com`;
-      const { userRecord } = await userManager.createUser(outsiderEmail);
+      const { userRecord } = await testData.createUser(outsiderEmail);
 
       // Get full organization record
       const fullOrg = await db.query.organizations.findFirst({

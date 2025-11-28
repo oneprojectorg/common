@@ -1,6 +1,8 @@
 import { db } from '@op/db/client';
 import {
+  CommonUser,
   Organization,
+  allowList,
   organizationUserToAccessRoles,
   organizationUsers,
   organizations,
@@ -34,6 +36,12 @@ interface GeneratedUser {
   role: 'Admin' | 'Member';
 }
 
+interface CreatedStandaloneUser {
+  authUserId: string;
+  email: string;
+  userRecord: CommonUser;
+}
+
 interface GenerateTestOrganizationOutput {
   organization: Organization;
   organizationProfile: any;
@@ -49,15 +57,23 @@ interface GenerateTestOrganizationOutput {
  * Provides a pattern for managing test data lifecycle with automatic cleanup.
  * All test data creation methods automatically register cleanup handlers using vitest's onTestFinished.
  *
+ * This manager handles both organization-bound users and standalone users.
+ *
  * @example
  * ```ts
  * it('should do something', async ({ task, onTestFinished }) => {
  *   const testData = new TestOrganizationDataManager(task.id, onTestFinished);
  *
- *   // Automatically registers cleanup
+ *   // Create organization with users
  *   const { organization, adminUser } = await testData.createOrganization({
  *     users: { admin: 1, member: 2 }
  *   });
+ *
+ *   // Create standalone user (not in any organization)
+ *   const outsider = await testData.createUser('outsider@example.com');
+ *
+ *   // Track allowList entries for cleanup
+ *   testData.trackAllowListEntry(allowListEntry.id);
  *
  *   // Test logic here...
  *   // Cleanup happens automatically after test finishes
@@ -72,6 +88,7 @@ export class TestOrganizationDataManager {
   // Track exact IDs created by this test instance for precise cleanup
   private createdProfileIds: string[] = [];
   private createdAuthUserIds: string[] = [];
+  private trackedAllowListIds: string[] = [];
 
   constructor(
     testId: string,
@@ -266,6 +283,73 @@ export class TestOrganizationDataManager {
   }
 
   /**
+   * Creates a standalone test user (not associated with any organization).
+   * Useful for testing scenarios involving users outside of the organization.
+   *
+   * @param email - Email for the user (will be prefixed with testId if not already)
+   * @returns The created user details
+   *
+   * @example
+   * ```ts
+   * const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+   * const outsider = await testData.createUser('outsider@example.com');
+   * // outsider.email will be 'test-id-outsider@example.com'
+   * ```
+   */
+  async createUser(email: string): Promise<CreatedStandaloneUser> {
+    this.ensureCleanupRegistered();
+
+    // Prefix email with testId if not already prefixed
+    const fullEmail = email.includes(this.testId)
+      ? email
+      : `${this.testId}-${email}`;
+
+    const authUser = await createTestUser(fullEmail).then((res) => res.user);
+
+    if (!authUser || !authUser.email) {
+      throw new Error(`Failed to create auth user for ${fullEmail}`);
+    }
+
+    this.createdAuthUserIds.push(authUser.id);
+
+    // Get the user record created by the DB trigger
+    const [userRecord] = await db
+      .select()
+      .from(users)
+      .where(eq(users.authUserId, authUser.id));
+
+    if (!userRecord) {
+      throw new Error(`Failed to find user record for ${fullEmail}`);
+    }
+
+    if (userRecord.profileId) {
+      this.createdProfileIds.push(userRecord.profileId);
+    }
+
+    return {
+      authUserId: authUser.id,
+      email: fullEmail,
+      userRecord,
+    };
+  }
+
+  /**
+   * Tracks an allowList entry ID for cleanup after the test finishes.
+   *
+   * @param entryId - The ID of the allowList entry to track
+   *
+   * @example
+   * ```ts
+   * const [allowListEntry] = await db.insert(allowList).values({...}).returning();
+   * testData.trackAllowListEntry(allowListEntry.id);
+   * ```
+   */
+  trackAllowListEntry(entryId: string): void {
+    this.ensureCleanupRegistered();
+    this.trackedAllowListIds.push(entryId);
+  }
+
+  /**
    * Registers the cleanup handler for this test.
    * This is called automatically by test data creation methods.
    * Ensures cleanup is only registered once per test.
@@ -300,7 +384,14 @@ export class TestOrganizationDataManager {
       throw new Error('Supabase admin test client not initialized');
     }
 
-    // 1. Delete profiles by exact IDs (not pattern matching)
+    // 1. Delete tracked allowList entries first (before profiles cascade)
+    if (this.trackedAllowListIds.length > 0) {
+      await db
+        .delete(allowList)
+        .where(inArray(allowList.id, this.trackedAllowListIds));
+    }
+
+    // 2. Delete profiles by exact IDs (not pattern matching)
     // This will cascade to organizations -> organizationUsers -> organizationUserToAccessRoles
     if (this.createdProfileIds.length > 0) {
       await db
@@ -308,7 +399,7 @@ export class TestOrganizationDataManager {
         .where(inArray(profiles.id, this.createdProfileIds));
     }
 
-    // 2. Delete auth users by exact IDs (not pattern matching)
+    // 3. Delete auth users by exact IDs (not pattern matching)
     // This will cascade to users and organizationUsers tables
     if (this.createdAuthUserIds.length > 0) {
       const deleteResults = await Promise.allSettled(
