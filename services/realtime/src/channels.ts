@@ -1,10 +1,11 @@
 /**
- * Channel name builders - convention: scope[:id]
+ * Channel name builders - convention: trpc:scope[:id]
+ * All channels are prefixed with 'trpc:' to indicate they're for tRPC invalidations
  */
 export const Channels = {
-  global: () => 'global' as const,
-  org: (orgId: string) => `org:${orgId}` as const,
-  user: (userId: string) => `user:${userId}` as const,
+  global: () => 'trpc:global' as const,
+  org: (orgId: string) => `trpc:org:${orgId}` as const,
+  user: (userId: string) => `trpc:user:${userId}` as const,
 } as const;
 
 export type GlobalChannel = ReturnType<typeof Channels.global>;

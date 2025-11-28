@@ -11,9 +11,11 @@ Provides WebSocket-based real-time messaging with channel-based pub/sub architec
 
 ## Channel Strategy
 
-- `global` - For data visible to all users (explore page, global feed)
-- `org:${orgId}` - For organization-scoped data (org feeds, org updates)
-- `user:${userId}` - For user-specific data (notifications, personal updates)
+All channels are prefixed with `trpc:` to indicate they're for tRPC invalidations:
+
+- `trpc:global` - For data visible to all users (explore page, global feed)
+- `trpc:org:${orgId}` - For organization-scoped data (org feeds, org updates)
+- `trpc:user:${userId}` - For user-specific data (notifications, personal updates)
 
 ## Usage
 
@@ -50,7 +52,7 @@ RealtimeManager.initialize({
 // Subscribe to channels
 const manager = RealtimeManager.getInstance();
 
-const unsubscribe = manager.subscribe('user:123', (message) => {
+const unsubscribe = manager.subscribe('trpc:user:123', (message) => {
   console.log('Received:', message);
 });
 
