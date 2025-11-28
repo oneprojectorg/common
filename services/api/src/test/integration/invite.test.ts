@@ -40,10 +40,11 @@ describe.concurrent('Invite System Integration Tests', () => {
       expect(result.details?.successful).toContain(inviteeEmail);
       expect(result.details?.failed).toHaveLength(0);
 
-      // Verify allowList entry was created with roleId
-      const allowListEntry = await db.query.allowList.findFirst({
-        where: (table, { eq }) => eq(table.email, inviteeEmail),
-      });
+      // Verify allowList entry was created with roleId (also tracks for cleanup)
+      const [allowListEntry] = await testData.findAndTrackAllowListEntries(
+        organization.id,
+        [inviteeEmail],
+      );
 
       expect(allowListEntry).toBeDefined();
       expect(allowListEntry?.organizationId).toBe(organization.id);
@@ -55,11 +56,6 @@ describe.concurrent('Invite System Integration Tests', () => {
       expect(metadata.personalMessage).toBe(
         'Welcome to our test organization!',
       );
-
-      // Track allowList entry for cleanup
-      if (allowListEntry) {
-        testData.trackAllowListEntry(allowListEntry.id);
-      }
     });
 
     it('should handle multiple email invites', async ({
@@ -92,15 +88,11 @@ describe.concurrent('Invite System Integration Tests', () => {
       expect(result.details?.successful).toContain(email2);
       expect(result.details?.successful).toContain(email3);
 
-      // Verify all allowList entries were created
-      const allowListEntries = await db.query.allowList.findMany({
-        where: (table, { eq }) => eq(table.organizationId, organization.id),
-      });
-
-      // Should have at least 3 entries (could be more if other tests ran)
+      // Verify all allowList entries were created (also tracks for cleanup)
       const invitedEmails = [email1, email2, email3];
-      const matchingEntries = allowListEntries.filter((entry) =>
-        invitedEmails.includes(entry.email),
+      const matchingEntries = await testData.findAndTrackAllowListEntries(
+        organization.id,
+        invitedEmails,
       );
       expect(matchingEntries).toHaveLength(3);
 
@@ -109,11 +101,6 @@ describe.concurrent('Invite System Integration Tests', () => {
         const metadata = entry.metadata as any;
         expect(metadata.roleId).toBe(ROLES.MEMBER.id);
       });
-
-      // Track allowList entries for cleanup
-      for (const entry of matchingEntries) {
-        testData.trackAllowListEntry(entry.id);
-      }
     });
 
     it('should prevent duplicate invites', async ({ task, onTestFinished }) => {
@@ -148,17 +135,13 @@ describe.concurrent('Invite System Integration Tests', () => {
 
       expect(result2.success).toBe(true);
 
-      // Should only have one allowList entry
-      const allowListEntries = await db.query.allowList.findMany({
-        where: (table, { eq }) => eq(table.email, inviteeEmail),
-      });
+      // Should only have one allowList entry (also tracks for cleanup)
+      const allowListEntries = await testData.findAndTrackAllowListEntries(
+        organization.id,
+        [inviteeEmail],
+      );
 
       expect(allowListEntries).toHaveLength(1);
-
-      // Track allowList entries for cleanup
-      for (const entry of allowListEntries) {
-        testData.trackAllowListEntry(entry.id);
-      }
     });
   });
 
@@ -327,12 +310,9 @@ describe.concurrent('Invite System Integration Tests', () => {
       expect(orgUser?.roles[0]?.accessRole.name).toBe('Member');
 
       // Track allowList for cleanup
-      const allowListEntry = await db.query.allowList.findFirst({
-        where: (table, { eq }) => eq(table.email, inviteeEmail),
-      });
-      if (allowListEntry) {
-        testData.trackAllowListEntry(allowListEntry.id);
-      }
+      await testData.findAndTrackAllowListEntries(organization.id, [
+        inviteeEmail,
+      ]);
     });
   });
 
@@ -361,18 +341,14 @@ describe.concurrent('Invite System Integration Tests', () => {
 
       expect(result.success).toBe(true);
 
-      // Verify allowList has correct roleId
-      const allowListEntry = await db.query.allowList.findFirst({
-        where: (table, { eq }) => eq(table.email, inviteeEmail),
-      });
+      // Verify allowList has correct roleId (also tracks for cleanup)
+      const [allowListEntry] = await testData.findAndTrackAllowListEntries(
+        organization.id,
+        [inviteeEmail],
+      );
 
       const metadata = allowListEntry?.metadata as any;
       expect(metadata.roleId).toBe(ROLES.ADMIN.id);
-
-      // Track allowList entry for cleanup
-      if (allowListEntry) {
-        testData.trackAllowListEntry(allowListEntry.id);
-      }
 
       // Create and join as the invitee
       const { authUserId, userRecord } =

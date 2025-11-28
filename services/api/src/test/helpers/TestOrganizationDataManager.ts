@@ -1,5 +1,6 @@
 import { db } from '@op/db/client';
 import {
+  AllowList,
   CommonUser,
   Organization,
   allowList,
@@ -347,6 +348,87 @@ export class TestOrganizationDataManager {
   trackAllowListEntry(entryId: string): void {
     this.ensureCleanupRegistered();
     this.trackedAllowListIds.push(entryId);
+  }
+
+  /**
+   * Creates an allowList entry and automatically tracks it for cleanup.
+   *
+   * @param params - Parameters for the allowList entry
+   * @returns The created allowList entry
+   *
+   * @example
+   * ```ts
+   * const entry = await testData.createAllowListEntry({
+   *   email: 'invitee@example.com',
+   *   organizationId: organization.id,
+   *   metadata: { roleId: ROLES.MEMBER.id },
+   * });
+   * ```
+   */
+  async createAllowListEntry(params: {
+    email: string;
+    organizationId: string;
+    metadata?: Record<string, unknown>;
+  }): Promise<AllowList> {
+    this.ensureCleanupRegistered();
+
+    const [entry] = await db
+      .insert(allowList)
+      .values({
+        email: params.email,
+        organizationId: params.organizationId,
+        metadata: params.metadata,
+      })
+      .returning();
+
+    if (!entry) {
+      throw new Error('Failed to create allowList entry');
+    }
+
+    this.trackedAllowListIds.push(entry.id);
+    return entry;
+  }
+
+  /**
+   * Finds allowList entries for a given organization and tracks them for cleanup.
+   * Useful after operations that create allowList entries (like inviteUsersToOrganization).
+   *
+   * @param organizationId - The organization ID to find entries for
+   * @param emails - Optional list of specific emails to filter by
+   * @returns The found and tracked allowList entries
+   *
+   * @example
+   * ```ts
+   * // After calling inviteUsersToOrganization
+   * await inviteUsersToOrganization({ emails: [email1, email2], ... });
+   * const entries = await testData.findAndTrackAllowListEntries(organization.id, [email1, email2]);
+   * ```
+   */
+  async findAndTrackAllowListEntries(
+    organizationId: string,
+    emails?: string[],
+  ): Promise<AllowList[]> {
+    this.ensureCleanupRegistered();
+
+    const entries = await db.query.allowList.findMany({
+      where: (table, { eq, and, inArray }) => {
+        if (emails && emails.length > 0) {
+          return and(
+            eq(table.organizationId, organizationId),
+            inArray(table.email, emails),
+          );
+        }
+        return eq(table.organizationId, organizationId);
+      },
+    });
+
+    for (const entry of entries) {
+      if (!this.trackedAllowListIds.includes(entry.id)) {
+        this.trackedAllowListIds.push(entry.id);
+      }
+    }
+
+    return entries;
   }
 
   /**

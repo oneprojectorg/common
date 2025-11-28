@@ -1,6 +1,6 @@
 import { getRoles, joinOrganization } from '@op/common';
 import { db } from '@op/db/client';
-import { allowList, organizations } from '@op/db/schema';
+import { organizations } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
@@ -68,25 +68,17 @@ describe.concurrent('Role ID System Integration Tests', () => {
       const { authUserId, userRecord } =
         await testData.createUser(joiningUserEmail);
 
-      // Add user to allowList with Member role
-      const [allowListEntry] = await db
-        .insert(allowList)
-        .values({
-          email: userRecord.email,
-          organizationId: organization.id,
-          metadata: {
-            roleId: ROLES.MEMBER.id,
-            inviteType: 'existing_organization',
-            invitedBy: authUserId,
-            invitedAt: new Date().toISOString(),
-          },
-        })
-        .returning();
-
-      // Track allowList entry for cleanup
-      if (allowListEntry) {
-        testData.trackAllowListEntry(allowListEntry.id);
-      }
+      // Add user to allowList with Member role (automatically tracked for cleanup)
+      await testData.createAllowListEntry({
+        email: userRecord.email,
+        organizationId: organization.id,
+        metadata: {
+          roleId: ROLES.MEMBER.id,
+          inviteType: 'existing_organization',
+          invitedBy: authUserId,
+          invitedAt: new Date().toISOString(),
+        },
+      });
 
       // Get full organization record for joinOrganization
       const fullOrg = await db.query.organizations.findFirst({
@@ -201,25 +193,17 @@ describe.concurrent('Role ID System Integration Tests', () => {
       const { authUserId, userRecord } =
         await testData.createUser(joiningUserEmail);
 
-      // Add user to allowList with invalid roleId
-      const [allowListEntry] = await db
-        .insert(allowList)
-        .values({
-          email: userRecord.email,
-          organizationId: organization.id,
-          metadata: {
-            roleId: '00000000-0000-0000-0000-000000000000', // Invalid ID
-            inviteType: 'existing_organization',
-            invitedBy: authUserId,
-            invitedAt: new Date().toISOString(),
-          },
-        })
-        .returning();
-
-      // Track allowList entry for cleanup
-      if (allowListEntry) {
-        testData.trackAllowListEntry(allowListEntry.id);
-      }
+      // Add user to allowList with invalid roleId (automatically tracked for cleanup)
+      await testData.createAllowListEntry({
+        email: userRecord.email,
+        organizationId: organization.id,
+        metadata: {
+          roleId: '00000000-0000-0000-0000-000000000000', // Invalid ID
+          inviteType: 'existing_organization',
+          invitedBy: authUserId,
+          invitedAt: new Date().toISOString(),
+        },
+      });
 
       // Get full organization record
       const fullOrg = await db.query.organizations.findFirst({
