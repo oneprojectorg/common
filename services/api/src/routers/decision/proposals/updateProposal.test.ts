@@ -1,4 +1,3 @@
-import { createProposal } from '@op/common';
 import { Visibility } from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
 import { appRouter } from 'src/routers';
@@ -35,14 +34,11 @@ describe('updateProposal visibility', () => {
       throw new Error('No instance created');
     }
 
-    // Create a proposal
-    const proposal = await createProposal({
-      data: {
-        processInstanceId: instance.instance.id,
-        proposalData: { title: 'Test Proposal', description: 'A test' },
-        authUserId: setup.user.id,
-      },
-      authUserId: setup.user.id,
+    // Create a proposal via router
+    const proposal = await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Test Proposal', description: 'A test' },
     });
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
@@ -72,14 +68,11 @@ describe('updateProposal visibility', () => {
       throw new Error('No instance created');
     }
 
-    // Create a proposal
-    const proposal = await createProposal({
-      data: {
-        processInstanceId: instance.instance.id,
-        proposalData: { title: 'Test Proposal', description: 'A test' },
-        authUserId: setup.user.id,
-      },
-      authUserId: setup.user.id,
+    // Create a proposal via router
+    const proposal = await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Test Proposal', description: 'A test' },
     });
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
@@ -115,14 +108,11 @@ describe('updateProposal visibility', () => {
       throw new Error('No instance created');
     }
 
-    // Create a proposal as the admin
-    const proposal = await createProposal({
-      data: {
-        processInstanceId: instance.instance.id,
-        proposalData: { title: 'Test Proposal', description: 'A test' },
-        authUserId: setup.user.id,
-      },
-      authUserId: setup.user.id,
+    // Create a proposal as the admin via router
+    const proposal = await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Test Proposal', description: 'A test' },
     });
 
     // Create a non-admin member user with proper setup
@@ -158,23 +148,17 @@ describe('updateProposal visibility', () => {
       throw new Error('No instance created');
     }
 
-    // Create two proposals
-    const visibleProposal = await createProposal({
-      data: {
-        processInstanceId: instance.instance.id,
-        proposalData: { title: 'Visible Proposal', description: 'A test' },
-        authUserId: setup.user.id,
-      },
-      authUserId: setup.user.id,
+    // Create two proposals via router
+    const visibleProposal = await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Visible Proposal', description: 'A test' },
     });
 
-    const hiddenProposal = await createProposal({
-      data: {
-        processInstanceId: instance.instance.id,
-        proposalData: { title: 'Hidden Proposal', description: 'A test' },
-        authUserId: setup.user.id,
-      },
-      authUserId: setup.user.id,
+    const hiddenProposal = await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Hidden Proposal', description: 'A test' },
     });
 
     const adminCaller = await createAuthenticatedCaller(setup.userEmail);
@@ -224,14 +208,11 @@ describe('updateProposal visibility', () => {
       instanceProfileIds: [instance.profileId],
     });
 
-    // Submitter creates a proposal
-    const proposal = await createProposal({
-      data: {
-        processInstanceId: instance.instance.id,
-        proposalData: { title: 'My Proposal', description: 'A test' },
-        authUserId: submitter.authUserId,
-      },
-      authUserId: submitter.authUserId,
+    // Submitter creates a proposal via router
+    const proposal = await testData.createProposal({
+      callerEmail: submitter.email,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'My Proposal', description: 'A test' },
     });
 
     // Admin hides the proposal
@@ -268,23 +249,17 @@ describe('updateProposal visibility', () => {
       throw new Error('No instance created');
     }
 
-    // Create two proposals
-    await createProposal({
-      data: {
-        processInstanceId: instance.instance.id,
-        proposalData: { title: 'Visible Proposal', description: 'A test' },
-        authUserId: setup.user.id,
-      },
-      authUserId: setup.user.id,
+    // Create two proposals via router
+    await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Visible Proposal', description: 'A test' },
     });
 
-    const hiddenProposal = await createProposal({
-      data: {
-        processInstanceId: instance.instance.id,
-        proposalData: { title: 'Hidden Proposal', description: 'A test' },
-        authUserId: setup.user.id,
-      },
-      authUserId: setup.user.id,
+    const hiddenProposal = await testData.createProposal({
+      callerEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Hidden Proposal', description: 'A test' },
     });
 
     const adminCaller = await createAuthenticatedCaller(setup.userEmail);
