@@ -8,7 +8,7 @@ import withRateLimited from '../../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../../trpcFactory';
 
 const inputSchema = z.object({
-  slug: z.string(),
+  slug: z.string().min(1, "Slug cannot be empty"),
 });
 
 export const getDecisionBySlugRouter = router({
