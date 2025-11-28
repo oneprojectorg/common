@@ -18,21 +18,25 @@ const DecisionsListingPage = async () => {
     });
 
     return (
-      <ListPageLayout>
-        <ListPageLayoutHeader>Decision-making processes</ListPageLayoutHeader>
-        <p className="-mt-2 text-sm text-neutral-charcoal sm:-mt-4">
-          Discover new ways to collectively decide together.
-        </p>
+      <ListPageLayout className="gap-4 pt-12 sm:gap-8 sm:pt-12">
+        <div className="flex flex-col gap-2">
+          <ListPageLayoutHeader>Decision-making processes</ListPageLayoutHeader>
+          <p className="text-sm text-neutral-charcoal">
+            Discover new ways to collectively decide together.
+          </p>
+        </div>
         <AllDecisions initialData={decisions} />
       </ListPageLayout>
     );
   } catch (error) {
     return (
-      <ListPageLayout>
-        <ListPageLayoutHeader>Decision-making processes</ListPageLayoutHeader>
-        <p className="-mt-2 text-sm text-neutral-charcoal sm:-mt-4">
-          Discover new ways to collectively decide together.
-        </p>
+      <ListPageLayout className="gap-4 pt-12 sm:gap-8 sm:pt-12">
+        <div className="flex flex-col gap-2">
+          <ListPageLayoutHeader>Decision-making processes</ListPageLayoutHeader>
+          <p className="text-sm text-neutral-charcoal">
+            Discover new ways to collectively decide together.
+          </p>
+        </div>
         <AllDecisions
           initialData={{ items: [], hasMore: false, next: null }}
         />

@@ -61,7 +61,7 @@ const DecisionsList = ({
   }
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col gap-4 sm:gap-0">
       {allItems.map((item) => (
         <DecisionListItem key={item.id} item={item} />
       ))}
