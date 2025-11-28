@@ -6,3 +6,6 @@ packages:
   - 'services/*'
   - 'backend/*'
   - 'tools/*'
+
+catalog:
+  zod: ^4.1.12
