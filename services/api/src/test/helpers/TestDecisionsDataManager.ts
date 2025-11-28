@@ -239,32 +239,53 @@ export class TestDecisionsDataManager {
     return {
       user,
       userEmail,
-      organization,
+      // Add profileId as a convenience property for tests
+      organization: { ...organization, profileId: orgProfileId },
       process,
       instances,
     };
   }
 
   /**
-   * Creates a process instance for an existing process via router
+   * Creates a process instance for an existing process via router.
+   * Accepts either a caller directly OR a process+user to create the caller internally.
    */
   async createInstanceForProcess({
     caller,
     processId,
+    process,
+    user,
     name,
     budget = 50000,
     status,
   }: {
-    caller: Awaited<ReturnType<typeof this.createAuthenticatedCaller>>;
-    processId: string;
+    caller?: Awaited<ReturnType<typeof this.createAuthenticatedCaller>>;
+    processId?: string;
+    process?: DecisionProcess;
+    user?: User;
     name: string;
     budget?: number;
     status?: ProcessInstanceStatus;
   }): Promise<CreatedInstance> {
     this.ensureCleanupRegistered();
 
-    const instance = await caller.decision.createInstance({
-      processId,
+    // Resolve caller - either use provided caller or create one from user
+    let resolvedCaller = caller;
+    if (!resolvedCaller && user?.email) {
+      resolvedCaller = await this.createAuthenticatedCaller(user.email);
+    }
+    if (!resolvedCaller) {
+      throw new Error('Either caller or user with email must be provided');
+    }
+
+    // Resolve processId - either use provided processId or get from process object
+    const resolvedProcessId = processId ?? process?.id;
+    if (!resolvedProcessId) {
+      throw new Error('Either processId or process must be provided');
+    }
+
+    const instance = await resolvedCaller.decision.createInstance({
+      processId: resolvedProcessId,
       name: this.generateUniqueName(name),
       description: `Test instance ${name}`,
       instanceData: {
