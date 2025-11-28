@@ -1,4 +1,4 @@
-import { getDecisionProfileBySlug } from '@op/common';
+import { getDecisionBySlug } from '@op/common';
 import { z } from 'zod';
 
 import { decisionProfileEncoder } from '../../../encoders/decision';
@@ -11,8 +11,8 @@ const inputSchema = z.object({
   slug: z.string(),
 });
 
-export const getDecisionProfileBySlugRouter = router({
-  getDecisionProfileBySlug: loggedProcedure
+export const getDecisionBySlugRouter = router({
+  getDecisionBySlug: loggedProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 20 }))
     .use(withAuthenticated)
     .use(withAnalytics)
@@ -22,7 +22,7 @@ export const getDecisionProfileBySlugRouter = router({
       const { user } = ctx;
       const { slug } = input;
 
-      const result = await getDecisionProfileBySlug({
+      const result = await getDecisionBySlug({
         slug,
         user,
       });

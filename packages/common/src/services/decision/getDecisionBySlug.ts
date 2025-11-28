@@ -45,7 +45,7 @@ type DecisionProfileItem = NonNullable<
   };
 };
 
-export const getDecisionProfileBySlug = async ({
+export const getDecisionBySlug = async ({
   user,
   slug,
 }: {
