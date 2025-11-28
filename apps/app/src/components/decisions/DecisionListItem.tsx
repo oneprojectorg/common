@@ -1,11 +1,13 @@
+import { getPublicUrl } from '@/utils';
 import { RouterOutput } from '@op/api/client';
 import { Avatar } from '@op/ui/Avatar';
 import { Chip } from '@op/ui/Chip';
+import { Header3 } from '@op/ui/Header';
+import { cn } from '@op/ui/utils';
 import { Calendar } from 'lucide-react';
 import Image from 'next/image';
 
 import { Link } from '@/lib/i18n';
-import { getPublicUrl } from '@/utils';
 
 type DecisionProfileItem =
   RouterOutput['decision']['listDecisionProfiles']['items'][number];
@@ -53,22 +55,25 @@ export const DecisionListItem = ({ item }: { item: DecisionProfileItem }) => {
     >
       <div className="flex flex-col gap-2">
         {/* Process name and status chip */}
-        <div className="flex items-start justify-between gap-2 sm:items-center sm:justify-start sm:gap-2">
-          <span className="font-serif text-xl font-light leading-tight tracking-tight text-neutral-black">
+        <div className="flex items-start justify-between gap-2 sm:items-center sm:justify-start">
+          <Header3 className="font-serif !text-title-base text-neutral-black">
             {processInstance?.name || item.name}
-          </span>
+          </Header3>
           {currentStateName && (
-            <Chip className="h-6 shrink-0 rounded bg-primary-teal96White px-1 text-[10px] text-primary-tealBlack">
+            <Chip className="bg-primary-tealWhite text-primary-tealBlack">
               {currentStateName}
             </Chip>
           )}
         </div>
 
         {/* Organization and closing date */}
-        <div className="flex flex-wrap items-center gap-2 text-xs sm:gap-6">
+        <div className="flex flex-wrap items-center gap-2 py-1 text-xs sm:gap-6">
           {owner && (
             <div className="flex items-center gap-1">
-              <Avatar placeholder={owner.name} className="size-4">
+              <Avatar
+                placeholder={owner.name}
+                className="size-4 border border-neutral-gray1"
+              >
                 {owner.avatarImage?.name ? (
                   <Image
                     src={getPublicUrl(owner.avatarImage.name) ?? ''}
@@ -78,7 +83,7 @@ export const DecisionListItem = ({ item }: { item: DecisionProfileItem }) => {
                   />
                 ) : null}
               </Avatar>
-              <span className="text-neutral-black">{owner.name}</span>
+              <span className="text-sm text-neutral-black">{owner.name}</span>
             </div>
           )}
 
@@ -88,11 +93,12 @@ export const DecisionListItem = ({ item }: { item: DecisionProfileItem }) => {
                 className={`size-4 ${isClosingSoon(closingDate) ? 'text-functional-red' : 'text-neutral-charcoal'}`}
               />
               <span
-                className={
+                className={cn(
                   isClosingSoon(closingDate)
                     ? 'text-functional-red'
-                    : 'text-neutral-charcoal'
-                }
+                    : 'text-neutral-charcoal',
+                  'text-sm',
+                )}
               >
                 Closes {formatDateShort(closingDate)}
               </span>
@@ -101,21 +107,23 @@ export const DecisionListItem = ({ item }: { item: DecisionProfileItem }) => {
         </div>
       </div>
 
-      {/* Stats - inline on mobile, stacked on desktop */}
       <div className="flex items-end gap-4 text-neutral-black sm:items-center sm:gap-12">
-        <div className="flex items-end gap-1 sm:flex-col sm:items-center sm:gap-0">
-          <span className="font-serif text-xl font-light leading-tight tracking-tight">
-            {processInstance?.participantCount ?? 0}
-          </span>
-          <span className="text-xs">Participants</span>
-        </div>
-        <div className="flex items-end gap-1 sm:flex-col sm:items-center sm:gap-0">
-          <span className="font-serif text-xl font-light leading-tight tracking-tight">
-            {processInstance?.proposalCount ?? 0}
-          </span>
-          <span className="text-xs">Proposals</span>
-        </div>
+        <DecisionStat
+          number={processInstance?.participantCount ?? 0}
+          label="Participants"
+        />
+        <DecisionStat
+          number={processInstance?.proposalCount ?? 0}
+          label="Proposals"
+        />
       </div>
     </Link>
   );
 };
+
+const DecisionStat = ({ number, label }: { number: number; label: string }) => (
+  <div className="flex items-end gap-1 sm:flex-col sm:items-center sm:gap-0">
+    <span className="font-serif text-title-base">{number}</span>
+    <span className="text-sm">{label}</span>
+  </div>
+);

@@ -1,6 +1,6 @@
 'use client';
 
-import { trpc, RouterOutput } from '@op/api/client';
+import { RouterOutput, trpc } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';
 import { useInfiniteScroll } from '@op/hooks';
 import { SkeletonLine } from '@op/ui/Skeleton';
@@ -8,6 +8,7 @@ import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { Suspense } from 'react';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
+
 import { DecisionListItem } from '../DecisionListItem';
 
 type DecisionProfileListResponse =
@@ -92,13 +93,13 @@ const AllDecisionsSuspense = ({
           Other processes
         </Tab>
       </TabList>
-      <TabPanel id="active" className="p-0 pt-4">
+      <TabPanel id="active" className="p-0 sm:p-0">
         <DecisionsList
           status={ProcessStatus.PUBLISHED}
           initialData={initialData}
         />
       </TabPanel>
-      <TabPanel id="other" className="p-0 pt-4">
+      <TabPanel id="other" className="p-0">
         <Suspense fallback={<SkeletonLine lines={5} />}>
           <DecisionsList status={ProcessStatus.COMPLETED} />
         </Suspense>
