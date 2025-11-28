@@ -73,8 +73,11 @@ interface GenerateTestOrganizationOutput {
  *   // Create standalone user (not in any organization)
  *   const outsider = await testData.createUser('outsider@example.com');
  *
- *   // Track allowList entries for cleanup
- *   testData.trackAllowListEntry(allowListEntry.id);
+ *   // Create allowList entry (automatically tracked for cleanup)
+ *   const entry = await testData.createAllowListEntry({
+ *     email: 'invitee@example.com',
+ *     organizationId: organization.id,
+ *   });
  *
  *   // Test logic here...
  *   // Cleanup happens automatically after test finishes
@@ -332,22 +335,6 @@ export class TestOrganizationDataManager {
       email: fullEmail,
       userRecord,
     };
-  }
-
-  /**
-   * Tracks an allowList entry ID for cleanup after the test finishes.
-   *
-   * @param entryId - The ID of the allowList entry to track
-   *
-   * @example
-   * ```ts
-   * const [allowListEntry] = await db.insert(allowList).values({...}).returning();
-   * testData.trackAllowListEntry(allowListEntry.id);
-   * ```
-   */
-  trackAllowListEntry(entryId: string): void {
-    this.ensureCleanupRegistered();
-    this.trackedAllowListIds.push(entryId);
   }
 
   /**
