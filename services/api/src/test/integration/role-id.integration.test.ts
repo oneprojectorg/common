@@ -1,15 +1,12 @@
 import { getRoles, joinOrganization } from '@op/common';
 import { db } from '@op/db/client';
-import { allowList, organizations, users } from '@op/db/schema';
+import { allowList, organizations } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
 import { TestOrganizationDataManager } from '../helpers/TestOrganizationDataManager';
-import {
-  createTestUser,
-  supabaseTestAdminClient,
-} from '../supabase-utils';
+import { TestUserDataManager } from '../helpers/TestUserDataManager';
 
 describe.concurrent('Role ID System Integration Tests', () => {
   describe.concurrent('getRoles functionality', () => {
@@ -18,7 +15,7 @@ describe.concurrent('Role ID System Integration Tests', () => {
       onTestFinished,
     }) => {
       // We don't need test data for this test, but we maintain the pattern
-      const _testData = new TestOrganizationDataManager(task.id, onTestFinished);
+      new TestOrganizationDataManager(task.id, onTestFinished);
 
       const result = await getRoles();
 
@@ -43,7 +40,7 @@ describe.concurrent('Role ID System Integration Tests', () => {
       task,
       onTestFinished,
     }) => {
-      const _testData = new TestOrganizationDataManager(task.id, onTestFinished);
+      new TestOrganizationDataManager(task.id, onTestFinished);
 
       const result = await getRoles();
 
@@ -60,6 +57,7 @@ describe.concurrent('Role ID System Integration Tests', () => {
       onTestFinished,
     }) => {
       const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+      const userManager = new TestUserDataManager(task.id, onTestFinished);
 
       // Create an organization
       const { organization } = await testData.createOrganization({
@@ -67,54 +65,30 @@ describe.concurrent('Role ID System Integration Tests', () => {
         emailDomain: 'example.com',
       });
 
-      // Create a new user that will join via allowList
-      const joiningUserEmail = `${task.id}-joining-user@different-domain.com`;
-      const authUser = await createTestUser(joiningUserEmail).then(
-        (res) => res.user,
-      );
-
-      if (!authUser) {
-        throw new Error('Failed to create auth user');
-      }
-
-      // Register cleanup for this auth user
-      onTestFinished(async () => {
-        // The profile cleanup from TestOrganizationDataManager handles most cleanup
-        // But we need to handle this user separately since we created it manually
-        await supabaseTestAdminClient.auth.admin.deleteUser(authUser.id);
-      });
-
-      // Get the user record that was created by the trigger
-      const [userRecord] = await db
-        .select()
-        .from(users)
-        .where(eq(users.authUserId, authUser.id));
-
-      if (!userRecord) {
-        throw new Error('User record not found');
-      }
+      // Create a new user that will join via allowList using TestUserDataManager
+      const joiningUserEmail = `joining-user@different-domain.com`;
+      const { authUserId, userRecord } =
+        await userManager.createUser(joiningUserEmail);
 
       // Add user to allowList with Member role
       const [allowListEntry] = await db
         .insert(allowList)
         .values({
-          email: joiningUserEmail,
+          email: userRecord.email,
           organizationId: organization.id,
           metadata: {
             roleId: ROLES.MEMBER.id,
             inviteType: 'existing_organization',
-            invitedBy: authUser.id,
+            invitedBy: authUserId,
             invitedAt: new Date().toISOString(),
           },
         })
         .returning();
 
-      // Register cleanup for allowList entry
-      onTestFinished(async () => {
-        if (allowListEntry) {
-          await db.delete(allowList).where(eq(allowList.id, allowListEntry.id));
-        }
-      });
+      // Track allowList entry for cleanup
+      if (allowListEntry) {
+        userManager.trackAllowListEntry(allowListEntry.id);
+      }
 
       // Get full organization record for joinOrganization
       const fullOrg = await db.query.organizations.findFirst({
@@ -127,16 +101,7 @@ describe.concurrent('Role ID System Integration Tests', () => {
 
       // User joins organization
       const result = await joinOrganization({
-        user: {
-          id: userRecord.id,
-          authUserId: authUser.id,
-          email: joiningUserEmail,
-          name: null,
-          profileId: userRecord.profileId,
-          currentProfileId: userRecord.currentProfileId,
-          createdAt: userRecord.createdAt,
-          updatedAt: userRecord.updatedAt,
-        },
+        user: userRecord,
         organization: fullOrg,
       });
 
@@ -147,7 +112,7 @@ describe.concurrent('Role ID System Integration Tests', () => {
       const orgUser = await db.query.organizationUsers.findFirst({
         where: (table, { and, eq }) =>
           and(
-            eq(table.authUserId, authUser.id),
+            eq(table.authUserId, authUserId),
             eq(table.organizationId, organization.id),
           ),
         with: {
@@ -169,6 +134,7 @@ describe.concurrent('Role ID System Integration Tests', () => {
       onTestFinished,
     }) => {
       const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+      const userManager = new TestUserDataManager(task.id, onTestFinished);
 
       // Create an organization
       const { organization } = await testData.createOrganization({
@@ -176,30 +142,10 @@ describe.concurrent('Role ID System Integration Tests', () => {
         emailDomain: 'example.com',
       });
 
-      // Create a new user
-      const joiningUserEmail = `${task.id}-direct-role@different-domain.com`;
-      const authUser = await createTestUser(joiningUserEmail).then(
-        (res) => res.user,
-      );
-
-      if (!authUser) {
-        throw new Error('Failed to create auth user');
-      }
-
-      // Register cleanup for this auth user
-      onTestFinished(async () => {
-        await supabaseTestAdminClient.auth.admin.deleteUser(authUser.id);
-      });
-
-      // Get the user record
-      const [userRecord] = await db
-        .select()
-        .from(users)
-        .where(eq(users.authUserId, authUser.id));
-
-      if (!userRecord) {
-        throw new Error('User record not found');
-      }
+      // Create a new user using TestUserDataManager
+      const joiningUserEmail = `direct-role@different-domain.com`;
+      const { authUserId, userRecord } =
+        await userManager.createUser(joiningUserEmail);
 
       // Get full organization record
       const fullOrg = await db.query.organizations.findFirst({
@@ -212,16 +158,7 @@ describe.concurrent('Role ID System Integration Tests', () => {
 
       // User joins organization with explicit roleId (bypasses allowList check)
       const result = await joinOrganization({
-        user: {
-          id: userRecord.id,
-          authUserId: authUser.id,
-          email: joiningUserEmail,
-          name: null,
-          profileId: userRecord.profileId,
-          currentProfileId: userRecord.currentProfileId,
-          createdAt: userRecord.createdAt,
-          updatedAt: userRecord.updatedAt,
-        },
+        user: userRecord,
         organization: fullOrg,
         roleId: ROLES.ADMIN.id,
       });
@@ -233,7 +170,7 @@ describe.concurrent('Role ID System Integration Tests', () => {
       const orgUser = await db.query.organizationUsers.findFirst({
         where: (table, { and, eq }) =>
           and(
-            eq(table.authUserId, authUser.id),
+            eq(table.authUserId, authUserId),
             eq(table.organizationId, organization.id),
           ),
         with: {
@@ -255,6 +192,7 @@ describe.concurrent('Role ID System Integration Tests', () => {
       onTestFinished,
     }) => {
       const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+      const userManager = new TestUserDataManager(task.id, onTestFinished);
 
       // Create an organization
       const { organization } = await testData.createOrganization({
@@ -262,52 +200,30 @@ describe.concurrent('Role ID System Integration Tests', () => {
         emailDomain: 'example.com',
       });
 
-      // Create a new user
-      const joiningUserEmail = `${task.id}-fallback@different-domain.com`;
-      const authUser = await createTestUser(joiningUserEmail).then(
-        (res) => res.user,
-      );
-
-      if (!authUser) {
-        throw new Error('Failed to create auth user');
-      }
-
-      // Register cleanup for this auth user
-      onTestFinished(async () => {
-        await supabaseTestAdminClient.auth.admin.deleteUser(authUser.id);
-      });
-
-      // Get the user record
-      const [userRecord] = await db
-        .select()
-        .from(users)
-        .where(eq(users.authUserId, authUser.id));
-
-      if (!userRecord) {
-        throw new Error('User record not found');
-      }
+      // Create a new user using TestUserDataManager
+      const joiningUserEmail = `fallback@different-domain.com`;
+      const { authUserId, userRecord } =
+        await userManager.createUser(joiningUserEmail);
 
       // Add user to allowList with invalid roleId
       const [allowListEntry] = await db
         .insert(allowList)
         .values({
-          email: joiningUserEmail,
+          email: userRecord.email,
           organizationId: organization.id,
           metadata: {
             roleId: '00000000-0000-0000-0000-000000000000', // Invalid ID
             inviteType: 'existing_organization',
-            invitedBy: authUser.id,
+            invitedBy: authUserId,
             invitedAt: new Date().toISOString(),
           },
         })
         .returning();
 
-      // Register cleanup for allowList entry
-      onTestFinished(async () => {
-        if (allowListEntry) {
-          await db.delete(allowList).where(eq(allowList.id, allowListEntry.id));
-        }
-      });
+      // Track allowList entry for cleanup
+      if (allowListEntry) {
+        userManager.trackAllowListEntry(allowListEntry.id);
+      }
 
       // Get full organization record
       const fullOrg = await db.query.organizations.findFirst({
@@ -320,16 +236,7 @@ describe.concurrent('Role ID System Integration Tests', () => {
 
       // User joins organization
       const result = await joinOrganization({
-        user: {
-          id: userRecord.id,
-          authUserId: authUser.id,
-          email: joiningUserEmail,
-          name: null,
-          profileId: userRecord.profileId,
-          currentProfileId: userRecord.currentProfileId,
-          createdAt: userRecord.createdAt,
-          updatedAt: userRecord.updatedAt,
-        },
+        user: userRecord,
         organization: fullOrg,
       });
 
@@ -339,7 +246,7 @@ describe.concurrent('Role ID System Integration Tests', () => {
       const orgUser = await db.query.organizationUsers.findFirst({
         where: (table, { and, eq }) =>
           and(
-            eq(table.authUserId, authUser.id),
+            eq(table.authUserId, authUserId),
             eq(table.organizationId, organization.id),
           ),
         with: {
@@ -368,11 +275,10 @@ describe.concurrent('Role ID System Integration Tests', () => {
         emailDomain: 'example.com',
       });
 
-      // Get the user record
-      const [userRecord] = await db
-        .select()
-        .from(users)
-        .where(eq(users.authUserId, adminUser.authUserId));
+      // Get the user record from the admin user created by TestOrganizationDataManager
+      const userRecord = await db.query.users.findFirst({
+        where: (table, { eq }) => eq(table.authUserId, adminUser.authUserId),
+      });
 
       if (!userRecord) {
         throw new Error('User record not found');
@@ -389,16 +295,7 @@ describe.concurrent('Role ID System Integration Tests', () => {
 
       // Try to join the organization again
       const result = await joinOrganization({
-        user: {
-          id: userRecord.id,
-          authUserId: adminUser.authUserId,
-          email: adminUser.email,
-          name: null,
-          profileId: userRecord.profileId,
-          currentProfileId: userRecord.currentProfileId,
-          createdAt: userRecord.createdAt,
-          updatedAt: userRecord.updatedAt,
-        },
+        user: userRecord,
         organization: fullOrg,
         roleId: ROLES.MEMBER.id, // Try with a different role
       });
@@ -429,6 +326,7 @@ describe.concurrent('Role ID System Integration Tests', () => {
       onTestFinished,
     }) => {
       const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+      const userManager = new TestUserDataManager(task.id, onTestFinished);
 
       // Create an organization with a specific domain
       const { organization } = await testData.createOrganization({
@@ -442,30 +340,9 @@ describe.concurrent('Role ID System Integration Tests', () => {
         .set({ domain: 'company.com' })
         .where(eq(organizations.id, organization.id));
 
-      // Create a user with a different domain
-      const outsiderEmail = `${task.id}-outsider@different-domain.com`;
-      const authUser = await createTestUser(outsiderEmail).then(
-        (res) => res.user,
-      );
-
-      if (!authUser) {
-        throw new Error('Failed to create auth user');
-      }
-
-      // Register cleanup for this auth user
-      onTestFinished(async () => {
-        await supabaseTestAdminClient.auth.admin.deleteUser(authUser.id);
-      });
-
-      // Get the user record
-      const [userRecord] = await db
-        .select()
-        .from(users)
-        .where(eq(users.authUserId, authUser.id));
-
-      if (!userRecord) {
-        throw new Error('User record not found');
-      }
+      // Create a user with a different domain using TestUserDataManager
+      const outsiderEmail = `outsider@different-domain.com`;
+      const { userRecord } = await userManager.createUser(outsiderEmail);
 
       // Get full organization record
       const fullOrg = await db.query.organizations.findFirst({
@@ -479,19 +356,12 @@ describe.concurrent('Role ID System Integration Tests', () => {
       // Attempt to join should fail
       await expect(
         joinOrganization({
-          user: {
-            id: userRecord.id,
-            authUserId: authUser.id,
-            email: outsiderEmail,
-            name: null,
-            profileId: userRecord.profileId,
-            currentProfileId: userRecord.currentProfileId,
-            createdAt: userRecord.createdAt,
-            updatedAt: userRecord.updatedAt,
-          },
+          user: userRecord,
           organization: fullOrg,
         }),
-      ).rejects.toThrow('Your email does not have access to join this organization');
+      ).rejects.toThrow(
+        'Your email does not have access to join this organization',
+      );
     });
   });
 

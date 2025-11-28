@@ -1,16 +1,13 @@
 import { inviteUsersToOrganization, joinOrganization } from '@op/common';
 import { db } from '@op/db/client';
-import { allowList, organizations, users } from '@op/db/schema';
+import { organizations } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
 import { TestOrganizationDataManager } from '../helpers/TestOrganizationDataManager';
-import {
-  createIsolatedSession,
-  createTestUser,
-  supabaseTestAdminClient,
-} from '../supabase-utils';
+import { TestUserDataManager } from '../helpers/TestUserDataManager';
+import { createIsolatedSession } from '../supabase-utils';
 
 describe.concurrent('Invite System Integration Tests', () => {
   describe.concurrent('Inviting New Users', () => {
@@ -19,6 +16,7 @@ describe.concurrent('Invite System Integration Tests', () => {
       onTestFinished,
     }) => {
       const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+      const userManager = new TestUserDataManager(task.id, onTestFinished);
 
       // Create an organization with an admin
       const { organization, adminUser } = await testData.createOrganization({
@@ -60,12 +58,10 @@ describe.concurrent('Invite System Integration Tests', () => {
         'Welcome to our test organization!',
       );
 
-      // Cleanup allowList entry
-      onTestFinished(async () => {
-        if (allowListEntry) {
-          await db.delete(allowList).where(eq(allowList.id, allowListEntry.id));
-        }
-      });
+      // Track allowList entry for cleanup
+      if (allowListEntry) {
+        userManager.trackAllowListEntry(allowListEntry.id);
+      }
     });
 
     it('should handle multiple email invites', async ({
@@ -73,6 +69,7 @@ describe.concurrent('Invite System Integration Tests', () => {
       onTestFinished,
     }) => {
       const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+      const userManager = new TestUserDataManager(task.id, onTestFinished);
 
       const { organization, adminUser } = await testData.createOrganization({
         users: { admin: 1 },
@@ -116,16 +113,15 @@ describe.concurrent('Invite System Integration Tests', () => {
         expect(metadata.roleId).toBe(ROLES.MEMBER.id);
       });
 
-      // Cleanup
-      onTestFinished(async () => {
-        for (const entry of matchingEntries) {
-          await db.delete(allowList).where(eq(allowList.id, entry.id));
-        }
-      });
+      // Track allowList entries for cleanup
+      for (const entry of matchingEntries) {
+        userManager.trackAllowListEntry(entry.id);
+      }
     });
 
     it('should prevent duplicate invites', async ({ task, onTestFinished }) => {
       const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+      const userManager = new TestUserDataManager(task.id, onTestFinished);
 
       const { organization, adminUser } = await testData.createOrganization({
         users: { admin: 1 },
@@ -163,12 +159,10 @@ describe.concurrent('Invite System Integration Tests', () => {
 
       expect(allowListEntries).toHaveLength(1);
 
-      // Cleanup
-      onTestFinished(async () => {
-        for (const entry of allowListEntries) {
-          await db.delete(allowList).where(eq(allowList.id, entry.id));
-        }
-      });
+      // Track allowList entries for cleanup
+      for (const entry of allowListEntries) {
+        userManager.trackAllowListEntry(entry.id);
+      }
     });
   });
 
@@ -275,6 +269,7 @@ describe.concurrent('Invite System Integration Tests', () => {
       onTestFinished,
     }) => {
       const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+      const userManager = new TestUserDataManager(task.id, onTestFinished);
 
       const { organization, adminUser } = await testData.createOrganization({
         users: { admin: 1 },
@@ -293,29 +288,9 @@ describe.concurrent('Invite System Integration Tests', () => {
         user: session.user,
       });
 
-      // Create the invitee user
-      const authUser = await createTestUser(inviteeEmail).then(
-        (res) => res.user,
-      );
-
-      if (!authUser) {
-        throw new Error('Failed to create auth user');
-      }
-
-      // Register cleanup for this auth user
-      onTestFinished(async () => {
-        await supabaseTestAdminClient.auth.admin.deleteUser(authUser.id);
-      });
-
-      // Get the user record
-      const [userRecord] = await db
-        .select()
-        .from(users)
-        .where(eq(users.authUserId, authUser.id));
-
-      if (!userRecord) {
-        throw new Error('User record not found');
-      }
+      // Create the invitee user using TestUserDataManager
+      const { authUserId, userRecord } =
+        await userManager.createUser(inviteeEmail);
 
       // Get full organization record
       const fullOrg = await db.query.organizations.findFirst({
@@ -328,16 +303,7 @@ describe.concurrent('Invite System Integration Tests', () => {
 
       // User joins organization
       const result = await joinOrganization({
-        user: {
-          id: userRecord.id,
-          authUserId: authUser.id,
-          email: inviteeEmail,
-          name: null,
-          profileId: userRecord.profileId,
-          currentProfileId: userRecord.currentProfileId,
-          createdAt: userRecord.createdAt,
-          updatedAt: userRecord.updatedAt,
-        },
+        user: userRecord,
         organization: fullOrg,
       });
 
@@ -348,7 +314,7 @@ describe.concurrent('Invite System Integration Tests', () => {
       const orgUser = await db.query.organizationUsers.findFirst({
         where: (table, { and, eq }) =>
           and(
-            eq(table.authUserId, authUser.id),
+            eq(table.authUserId, authUserId),
             eq(table.organizationId, organization.id),
           ),
         with: {
@@ -365,10 +331,13 @@ describe.concurrent('Invite System Integration Tests', () => {
       expect(orgUser?.roles[0]?.accessRole.id).toBe(ROLES.MEMBER.id);
       expect(orgUser?.roles[0]?.accessRole.name).toBe('Member');
 
-      // Cleanup allowList
-      onTestFinished(async () => {
-        await db.delete(allowList).where(eq(allowList.email, inviteeEmail));
+      // Track allowList for cleanup
+      const allowListEntry = await db.query.allowList.findFirst({
+        where: (table, { eq }) => eq(table.email, inviteeEmail),
       });
+      if (allowListEntry) {
+        userManager.trackAllowListEntry(allowListEntry.id);
+      }
     });
   });
 
@@ -378,6 +347,7 @@ describe.concurrent('Invite System Integration Tests', () => {
       onTestFinished,
     }) => {
       const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+      const userManager = new TestUserDataManager(task.id, onTestFinished);
 
       const { organization, adminUser } = await testData.createOrganization({
         users: { admin: 1 },
@@ -405,27 +375,14 @@ describe.concurrent('Invite System Integration Tests', () => {
       const metadata = allowListEntry?.metadata as any;
       expect(metadata.roleId).toBe(ROLES.ADMIN.id);
 
-      // Create and join as the invitee
-      const authUser = await createTestUser(inviteeEmail).then(
-        (res) => res.user,
-      );
-
-      if (!authUser) {
-        throw new Error('Failed to create auth user');
+      // Track allowList entry for cleanup
+      if (allowListEntry) {
+        userManager.trackAllowListEntry(allowListEntry.id);
       }
 
-      onTestFinished(async () => {
-        await supabaseTestAdminClient.auth.admin.deleteUser(authUser.id);
-      });
-
-      const [userRecord] = await db
-        .select()
-        .from(users)
-        .where(eq(users.authUserId, authUser.id));
-
-      if (!userRecord) {
-        throw new Error('User record not found');
-      }
+      // Create and join as the invitee using TestUserDataManager
+      const { authUserId, userRecord } =
+        await userManager.createUser(inviteeEmail);
 
       const fullOrg = await db.query.organizations.findFirst({
         where: eq(organizations.id, organization.id),
@@ -436,16 +393,7 @@ describe.concurrent('Invite System Integration Tests', () => {
       }
 
       await joinOrganization({
-        user: {
-          id: userRecord.id,
-          authUserId: authUser.id,
-          email: inviteeEmail,
-          name: null,
-          profileId: userRecord.profileId,
-          currentProfileId: userRecord.currentProfileId,
-          createdAt: userRecord.createdAt,
-          updatedAt: userRecord.updatedAt,
-        },
+        user: userRecord,
         organization: fullOrg,
       });
 
@@ -453,7 +401,7 @@ describe.concurrent('Invite System Integration Tests', () => {
       const orgUser = await db.query.organizationUsers.findFirst({
         where: (table, { and, eq }) =>
           and(
-            eq(table.authUserId, authUser.id),
+            eq(table.authUserId, authUserId),
             eq(table.organizationId, organization.id),
           ),
         with: {
@@ -467,11 +415,6 @@ describe.concurrent('Invite System Integration Tests', () => {
 
       expect(orgUser?.roles[0]?.accessRole.id).toBe(ROLES.ADMIN.id);
       expect(orgUser?.roles[0]?.accessRole.name).toBe('Admin');
-
-      // Cleanup allowList
-      onTestFinished(async () => {
-        await db.delete(allowList).where(eq(allowList.email, inviteeEmail));
-      });
     });
   });
 
@@ -481,6 +424,7 @@ describe.concurrent('Invite System Integration Tests', () => {
       onTestFinished,
     }) => {
       const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+      const userManager = new TestUserDataManager(task.id, onTestFinished);
 
       // Create an organization with a domain
       const { organization } = await testData.createOrganization({
@@ -494,28 +438,9 @@ describe.concurrent('Invite System Integration Tests', () => {
         .set({ domain: 'company.com' })
         .where(eq(organizations.id, organization.id));
 
-      // Create user with different domain (not invited)
-      const outsiderEmail = `${task.id}-outsider@different-domain.com`;
-      const authUser = await createTestUser(outsiderEmail).then(
-        (res) => res.user,
-      );
-
-      if (!authUser) {
-        throw new Error('Failed to create auth user');
-      }
-
-      onTestFinished(async () => {
-        await supabaseTestAdminClient.auth.admin.deleteUser(authUser.id);
-      });
-
-      const [userRecord] = await db
-        .select()
-        .from(users)
-        .where(eq(users.authUserId, authUser.id));
-
-      if (!userRecord) {
-        throw new Error('User record not found');
-      }
+      // Create user with different domain (not invited) using TestUserDataManager
+      const outsiderEmail = `outsider@different-domain.com`;
+      const { userRecord } = await userManager.createUser(outsiderEmail);
 
       const fullOrg = await db.query.organizations.findFirst({
         where: eq(organizations.id, organization.id),
@@ -527,16 +452,7 @@ describe.concurrent('Invite System Integration Tests', () => {
 
       await expect(
         joinOrganization({
-          user: {
-            id: userRecord.id,
-            authUserId: authUser.id,
-            email: outsiderEmail,
-            name: null,
-            profileId: userRecord.profileId,
-            currentProfileId: userRecord.currentProfileId,
-            createdAt: userRecord.createdAt,
-            updatedAt: userRecord.updatedAt,
-          },
+          user: userRecord,
           organization: fullOrg,
         }),
       ).rejects.toThrow(
