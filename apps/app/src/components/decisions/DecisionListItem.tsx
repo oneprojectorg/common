@@ -10,10 +10,10 @@ import { getPublicUrl } from '@/utils';
 type DecisionProfileItem =
   RouterOutput['decision']['listDecisionProfiles']['items'][number];
 
-const formatDate = (dateString: string) => {
+const formatDateShort = (dateString: string) => {
   const date = new Date(dateString);
   return date.toLocaleDateString('en-US', {
-    month: 'long',
+    month: 'short',
     day: 'numeric',
     year: 'numeric',
   });
@@ -32,9 +32,10 @@ export const DecisionListItem = ({ item }: { item: DecisionProfileItem }) => {
   const { processInstance } = item;
 
   // Get current state name from process schema
-  const currentStateName = processInstance?.process?.processSchema?.states?.find(
-    (state) => state.id === processInstance.currentStateId,
-  )?.name;
+  const currentStateName =
+    processInstance?.process?.processSchema?.states?.find(
+      (state) => state.id === processInstance.currentStateId,
+    )?.name;
 
   // Get closing date from phases - find the current phase's end date
   const currentPhase = processInstance?.instanceData?.phases?.find(
@@ -48,23 +49,23 @@ export const DecisionListItem = ({ item }: { item: DecisionProfileItem }) => {
   return (
     <Link
       href={`/decisions/${item.slug}`}
-      className="flex items-center justify-between border-b border-neutral-gray1 p-4 transition-colors hover:bg-neutral-offWhite hover:no-underline"
+      className="flex flex-col gap-4 rounded-lg border border-neutral-gray1 p-4 transition-colors hover:bg-neutral-offWhite hover:no-underline sm:flex-row sm:items-center sm:justify-between sm:rounded-none sm:border-0 sm:border-b"
     >
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-2">
         {/* Process name and status chip */}
-        <div className="flex items-center gap-2">
-          <span className="font-serif text-xl font-light tracking-tight text-neutral-black">
+        <div className="flex items-start justify-between gap-2 sm:items-center sm:justify-start">
+          <span className="font-serif text-xl font-light leading-tight tracking-tight text-neutral-black">
             {processInstance?.name || item.name}
           </span>
           {currentStateName && (
-            <Chip className="bg-primary-teal96White text-[10px] text-primary-tealBlack">
+            <Chip className="shrink-0 bg-primary-teal96White text-[10px] text-primary-tealBlack">
               {currentStateName}
             </Chip>
           )}
         </div>
 
         {/* Organization and closing date */}
-        <div className="flex items-center gap-6 pt-0.5 text-xs">
+        <div className="flex flex-wrap items-center gap-2 text-xs">
           {owner && (
             <div className="flex items-center gap-1">
               <Avatar placeholder={owner.name} className="size-4">
@@ -91,23 +92,23 @@ export const DecisionListItem = ({ item }: { item: DecisionProfileItem }) => {
                     : 'text-neutral-charcoal'
                 }
               >
-                Closes {formatDate(closingDate)}
+                Closes {formatDateShort(closingDate)}
               </span>
             </div>
           )}
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="flex items-center gap-12">
-        <div className="flex flex-col items-center text-neutral-black">
-          <span className="font-serif text-xl font-light tracking-tight">
+      {/* Stats - inline on mobile, stacked on desktop */}
+      <div className="flex items-end gap-4 text-neutral-black sm:items-center sm:gap-12">
+        <div className="flex items-end gap-1 sm:flex-col sm:items-center sm:gap-0">
+          <span className="font-serif text-xl font-light leading-tight tracking-tight">
             {processInstance?.participantCount ?? 0}
           </span>
           <span className="text-xs">Participants</span>
         </div>
-        <div className="flex flex-col items-center text-neutral-black">
-          <span className="font-serif text-xl font-light tracking-tight">
+        <div className="flex items-end gap-1 sm:flex-col sm:items-center sm:gap-0">
+          <span className="font-serif text-xl font-light leading-tight tracking-tight">
             {processInstance?.proposalCount ?? 0}
           </span>
           <span className="text-xs">Proposals</span>
