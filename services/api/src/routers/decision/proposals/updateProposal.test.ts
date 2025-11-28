@@ -17,7 +17,7 @@ async function createAuthenticatedCaller(email: string) {
   return createCaller(await createTestContextWithSession(session));
 }
 
-describe('updateProposal visibility', () => {
+describe.concurrent('updateProposal visibility', () => {
   it('should allow admin to hide a proposal', async ({
     task,
     onTestFinished,
