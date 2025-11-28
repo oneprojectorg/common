@@ -37,7 +37,7 @@ function DecisionHeaderSkeleton() {
 const DecisionPageContent = async ({ slug }: { slug: string }) => {
   const client = await createClient();
 
-  const decisionProfile = await client.decision.getDecisionProfileBySlug({
+  const decisionProfile = await client.decision.getDecisionBySlug({
     slug,
   });
 
