@@ -107,4 +107,10 @@ export const ACCESS_ROLE_PERMISSIONS = [
     accessZoneId: ACCESS_ZONE_IDS.PROFILE,
     permission: PERMISSIONS.READ,
   },
+  // Member gets read+update permissions on decisions zone (to view and submit proposals)
+  {
+    accessRoleId: ACCESS_ROLE_IDS.MEMBER,
+    accessZoneId: ACCESS_ZONE_IDS.DECISIONS,
+    permission: PERMISSIONS.READ | PERMISSIONS.UPDATE,
+  },
 ];

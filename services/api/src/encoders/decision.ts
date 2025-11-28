@@ -1,6 +1,7 @@
 import {
   ProcessStatus,
   ProposalStatus,
+  Visibility,
   decisionProcesses,
   decisions,
   processInstances,
@@ -180,6 +181,7 @@ export const proposalEncoder = createSelectSchema(proposals)
     id: true,
     proposalData: true,
     status: true,
+    visibility: true,
     createdAt: true,
     updatedAt: true,
     profileId: true,
@@ -304,7 +306,10 @@ export const createProposalInputSchema = z.object({
 
 export const updateProposalInputSchema = createProposalInputSchema
   .omit({ processInstanceId: true })
-  .partial();
+  .partial()
+  .extend({
+    visibility: z.enum(Visibility).optional(),
+  });
 
 export const submitDecisionInputSchema = z.object({
   proposalId: z.uuid(),

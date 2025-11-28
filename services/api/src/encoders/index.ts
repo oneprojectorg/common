@@ -19,4 +19,5 @@ export {
   ProcessStatus,
   ProfileRelationshipType,
   ProposalStatus,
+  Visibility,
 } from '@op/db/schema';
