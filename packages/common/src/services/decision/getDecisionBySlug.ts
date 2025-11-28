@@ -8,7 +8,7 @@ import {
 } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
-import { NotFoundError } from '../../utils';
+import { NotFoundError, UnauthorizedError } from '../../utils';
 
 const decisionProfileQueryConfig = {
   with: {
@@ -76,7 +76,15 @@ export const getDecisionBySlug = async ({
       )
       .groupBy(profiles.id)
       .limit(1)
-      .then((rows) => rows[0]),
+      .then((rows) => {
+        if (rows.length === 0) {
+          // If auth failed throw immediately and don't wait for the other results
+          throw new UnauthorizedError(
+            'User does not have access to this process',
+          );
+        }
+        return rows[0];
+      }),
     // Full profile data
     db.query.profiles.findFirst({
       where: and(
