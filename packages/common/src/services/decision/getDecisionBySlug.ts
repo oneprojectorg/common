@@ -103,8 +103,8 @@ export const getDecisionBySlug = async ({
     ...profile,
     processInstance: {
       ...profile.processInstance,
-      proposalCount: Number(authAndStatsResult.proposalCount),
-      participantCount: Number(authAndStatsResult.participantCount),
+      proposalCount: authAndStatsResult.proposalCount,
+      participantCount: authAndStatsResult.participantCount,
     },
   };
 };
