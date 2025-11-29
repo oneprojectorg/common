@@ -78,11 +78,11 @@ describe.concurrent('updateProposal visibility', () => {
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
     // First hide it
-    await caller.decision.updateProposal({
+    const hiddenProposal = await caller.decision.updateProposal({
       proposalId: proposal.id,
       data: { visibility: Visibility.HIDDEN },
     });
-    expect(result.visibility).toBe(Visibility.HIDDEN);
+    expect(hiddenProposal.visibility).toBe(Visibility.HIDDEN);
 
     // Then unhide it
     const result = await caller.decision.updateProposal({
