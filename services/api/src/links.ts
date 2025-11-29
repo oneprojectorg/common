@@ -8,6 +8,8 @@ import {
 import posthog from 'posthog-js';
 import superjson from 'superjson';
 
+import { extractMutationChannels } from './mutationChannelsStore';
+
 // Function to get PostHog distinct_id if available
 function getPostHogDistinctId(): string | null {
   if (typeof window !== 'undefined' && posthog.__loaded) {
@@ -20,6 +22,32 @@ function getPostHogDistinctId(): string | null {
   }
 
   return null;
+}
+
+/**
+ * Custom fetch wrapper that extracts mutation channels from response headers.
+ */
+async function fetchWithMutationChannels(
+  url: URL | RequestInfo,
+  options?: RequestInit,
+): Promise<Response> {
+  const distinctId = getPostHogDistinctId();
+  const headers = new Headers(options?.headers);
+
+  if (distinctId) {
+    headers.set('x-posthog-distinct-id', distinctId);
+  }
+
+  const response = await fetch(url, {
+    ...options,
+    headers,
+    credentials: 'include',
+  });
+
+  // Extract mutation channels from response header
+  extractMutationChannels(response);
+
+  return response;
 }
 
 const envURL = OPURLConfig('API');
@@ -41,20 +69,7 @@ export const links = [
     true: httpLink({
       url: envURL.TRPC_URL,
       transformer: superjson,
-      async fetch(url, options) {
-        const distinctId = getPostHogDistinctId();
-        const headers = new Headers(options?.headers);
-
-        if (distinctId) {
-          headers.set('x-posthog-distinct-id', distinctId);
-        }
-
-        return fetch(url, {
-          ...options,
-          headers,
-          credentials: 'include',
-        });
-      },
+      fetch: fetchWithMutationChannels,
     }),
     false: unstable_httpBatchStreamLink({
       /**
@@ -64,21 +79,7 @@ export const links = [
       url: envURL.TRPC_URL,
       transformer: superjson,
       maxItems: 4,
-
-      async fetch(url, options) {
-        const distinctId = getPostHogDistinctId();
-        const headers = new Headers(options?.headers);
-
-        if (distinctId) {
-          headers.set('x-posthog-distinct-id', distinctId);
-        }
-
-        return fetch(url, {
-          ...options,
-          headers,
-          credentials: 'include',
-        });
-      },
+      fetch: fetchWithMutationChannels,
     }),
   }),
 ];

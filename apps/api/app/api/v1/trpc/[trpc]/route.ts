@@ -1,4 +1,4 @@
-import { appRouter, createContext } from '@op/api';
+import { appRouter, createContext, MUTATION_CHANNELS_HEADER } from '@op/api';
 import { API_TRPC_PTH } from '@op/core';
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import type { NextRequest } from 'next/server';
@@ -38,6 +38,10 @@ const handler = async (req: NextRequest) => {
     'Content-Type, Authorization, trpc-batch-mode',
   );
   response.headers.set('Access-Control-Allow-Credentials', 'true');
+  response.headers.set(
+    'Access-Control-Expose-Headers',
+    MUTATION_CHANNELS_HEADER,
+  );
 
   return response;
 };

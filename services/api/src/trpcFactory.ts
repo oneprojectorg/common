@@ -1,3 +1,4 @@
+import type { ChannelName } from '@op/realtime';
 import { initTRPC } from '@trpc/server';
 import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
 import { customAlphabet } from 'nanoid';
@@ -12,6 +13,8 @@ import {
 import { errorFormatter } from './lib/error';
 import withLogger from './middlewares/withLogger';
 import type { TContext } from './types';
+
+export const MUTATION_CHANNELS_HEADER = 'x-mutation-channels';
 
 export const createContext = async ({
   req,
@@ -41,10 +44,19 @@ export const createContext = async ({
     return _setCookie({ resHeaders, name, value, options });
   };
 
+  const setMutationChannels: TContext['setMutationChannels'] = (
+    channels: ChannelName[],
+  ) => {
+    if (channels.length > 0) {
+      resHeaders.set(MUTATION_CHANNELS_HEADER, channels.join(','));
+    }
+  };
+
   return {
     getCookies,
     getCookie,
     setCookie,
+    setMutationChannels,
     requestId,
     time: Date.now(),
     ip: req.headers.get('X-Forwarded-For') || null,

@@ -6,6 +6,7 @@ import {
 } from '@op/common';
 import { and, count, db, ilike } from '@op/db/client';
 import { users } from '@op/db/schema';
+import { Channels } from '@op/realtime';
 import { TRPCError } from '@trpc/server';
 import crypto from 'crypto';
 import { z } from 'zod';
@@ -36,8 +37,11 @@ export const listAllUsersRouter = router({
         total: z.number(),
       }),
     )
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
       const { limit = 10, cursor, dir = 'desc', query } = input ?? {};
+
+      // Set mutation channels for realtime subscriptions
+      ctx.setMutationChannels([Channels.global()]);
 
       try {
         // Cursor-based pagination using updatedAt timestamp

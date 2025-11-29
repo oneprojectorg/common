@@ -1,4 +1,5 @@
 /* eslint-disable ts/no-empty-object-type */
+import type { ChannelName } from '@op/realtime';
 import type { db } from '@op/db/client';
 import type { tables } from '@op/db/tables';
 import type { Logger } from '@op/logging';
@@ -15,6 +16,11 @@ export interface TContext {
     value: string;
     options?: SerializeOptions;
   }) => void;
+  /**
+   * Sets mutation channels for realtime subscriptions.
+   * The channels will be sent to the client via the x-mutation-channels header.
+   */
+  setMutationChannels: (channels: ChannelName[]) => void;
   requestId: string;
   time: number;
   ip: string | null;

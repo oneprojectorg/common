@@ -13,6 +13,7 @@ import React, { useState } from 'react';
 
 import { links } from './links';
 import type { AppRouter } from './routers';
+import { useMutationChannels } from './useMutationChannels';
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -73,6 +74,7 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
           },
         }}
       >
+        <MutationChannelsSubscriber />
         {children}
       </PersistQueryClientProvider>
     </trpc.Provider>
@@ -86,3 +88,12 @@ export const skipBatch = {
     },
   },
 };
+
+/**
+ * Component that sets up realtime subscriptions based on mutation channel headers.
+ * Must be rendered inside QueryClientProvider.
+ */
+function MutationChannelsSubscriber() {
+  useMutationChannels();
+  return null;
+}
