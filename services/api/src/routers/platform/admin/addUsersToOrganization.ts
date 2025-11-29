@@ -1,7 +1,10 @@
 import { invalidate } from '@op/cache';
 import { CommonError, NotFoundError, joinOrganization } from '@op/common';
 import { db } from '@op/db/client';
+import { Channels } from '@op/realtime';
+import { realtime } from '@op/realtime/server';
 import { TRPCError } from '@trpc/server';
+import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
 import { withAuthenticatedPlatformAdmin } from '../../../middlewares/withAuthenticatedPlatformAdmin';
@@ -38,8 +41,10 @@ export const addUsersToOrganizationRouter = router({
     .use(withAuthenticatedPlatformAdmin)
     .input(inputSchema)
     .output(outputSchema)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       const { organizationId, users: usersToAdd } = input;
+
+      ctx.setMutationChannels([Channels.global()]);
 
       try {
         // Collect all unique IDs from the input
@@ -124,6 +129,13 @@ export const addUsersToOrganizationRouter = router({
             }),
           ),
         ]);
+
+        waitUntil(
+          realtime.publish(Channels.global(), {
+            type: 'query-invalidation',
+            queryKey: [['platform', 'admin', 'listAllUsers']] as const,
+          }),
+        );
 
         return joinResults;
       } catch (error) {

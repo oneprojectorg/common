@@ -92,13 +92,15 @@ const AddUserToOrgModalContent = ({
           ],
         });
 
-        onOpenChange(false);
+        // TODO: testing invalidation
+        // onOpenChange(false);
 
         toast.success({
           message: t('platformAdmin_addUserToOrg_successMessage'),
         });
 
-        utils.platform.admin.listAllUsers.invalidate();
+        // TODO: testing without invalidation
+        // utils.platform.admin.listAllUsers.invalidate();
 
         // Reset form
         setSelectedOrgId('');

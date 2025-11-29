@@ -1,9 +1,14 @@
+import type { ChannelName } from '@op/realtime';
 import { initTRPC } from '@trpc/server';
 import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
 import { customAlphabet } from 'nanoid';
 import superjson from 'superjson';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 
+import {
+  MUTATION_CHANNELS_HEADER,
+  SUBSCRIPTION_CHANNELS_HEADER,
+} from './constants';
 import {
   getCookie as _getCookie,
   getCookies as _getCookies,
@@ -41,10 +46,28 @@ export const createContext = async ({
     return _setCookie({ resHeaders, name, value, options });
   };
 
+  const setMutationChannels: TContext['setMutationChannels'] = (
+    channels: ChannelName[],
+  ) => {
+    if (channels.length > 0) {
+      resHeaders.set(MUTATION_CHANNELS_HEADER, channels.join(','));
+    }
+  };
+
+  const setSubscriptionChannels: TContext['setSubscriptionChannels'] = (
+    channels: ChannelName[],
+  ) => {
+    if (channels.length > 0) {
+      resHeaders.set(SUBSCRIPTION_CHANNELS_HEADER, channels.join(','));
+    }
+  };
+
   return {
     getCookies,
     getCookie,
     setCookie,
+    setMutationChannels,
+    setSubscriptionChannels,
     requestId,
     time: Date.now(),
     ip: req.headers.get('X-Forwarded-For') || null,

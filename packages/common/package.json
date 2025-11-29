@@ -9,6 +9,7 @@
     ".": "./src/index.ts",
     "./validation": "./src/utils/validation.ts",
     "./src/services/access": "./src/services/access/index.ts",
+    "./src/channels/query-channel-store": "./src/channels/query-channel-store.ts",
     "./src/*": "./src/*"
   },
   "main": "src/index.ts",

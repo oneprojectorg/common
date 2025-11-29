@@ -1,6 +1,7 @@
 /* eslint-disable ts/no-empty-object-type */
 import type { db } from '@op/db/client';
 import type { tables } from '@op/db/tables';
+import type { ChannelName } from '@op/realtime';
 import type { User } from '@op/supabase/lib';
 import type { MiddlewareFunction } from '@trpc/server/unstable-core-do-not-import';
 import type { SerializeOptions } from 'cookie';
@@ -14,6 +15,18 @@ export interface TContext {
     value: string;
     options?: SerializeOptions;
   }) => void;
+  /**
+   * Sets mutation channels for realtime subscriptions.
+   * The channels will be sent to the client via the x-mutation-channels header.
+   * Used in mutations to notify which data changed.
+   */
+  setMutationChannels: (channels: ChannelName[]) => void;
+  /**
+   * Sets subscription channels for query invalidation.
+   * The channels will be sent to the client via the x-subscription-channels header.
+   * Used in queries to declare which channels they subscribe to.
+   */
+  setSubscriptionChannels: (channels: ChannelName[]) => void;
   requestId: string;
   time: number;
   ip: string | null;

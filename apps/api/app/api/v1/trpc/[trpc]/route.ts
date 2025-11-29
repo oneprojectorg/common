@@ -5,6 +5,8 @@ import type { NextRequest } from 'next/server';
 
 export const maxDuration = 120;
 
+const EXPOSED_HEADERS = 'x-mutation-channels, x-subscription-channels';
+
 const allowedOrigins = [
   'https://api-dev.oneproject.tech',
   'https://api.oneproject.tech',
@@ -12,6 +14,9 @@ const allowedOrigins = [
   'https://app.oneproject.tech',
   'https://common.oneproject.org',
   'https://api-common.oneproject.org',
+  // Local development
+  'http://localhost:3100',
+  'http://localhost:3300',
 ];
 
 const handler = async (req: NextRequest) => {
@@ -38,6 +43,7 @@ const handler = async (req: NextRequest) => {
     'Content-Type, Authorization, trpc-batch-mode',
   );
   response.headers.set('Access-Control-Allow-Credentials', 'true');
+  response.headers.set('Access-Control-Expose-Headers', EXPOSED_HEADERS);
 
   return response;
 };
@@ -50,6 +56,7 @@ const optionsHandler = async (req: NextRequest) => {
     'Access-Control-Allow-Headers':
       'Content-Type, Authorization, trpc-batch-mode',
     'Access-Control-Allow-Credentials': 'true',
+    'Access-Control-Expose-Headers': EXPOSED_HEADERS,
   };
 
   if (origin && allowedOrigins.includes(origin)) {

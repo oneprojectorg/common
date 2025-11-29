@@ -4,12 +4,12 @@ import {
   loggerLink,
   unstable_httpBatchStreamLink,
 } from '@trpc/client';
-import { cookies, headers } from 'next/headers';
 import { customAlphabet } from 'nanoid';
+import { cookies, headers } from 'next/headers';
 import { cache } from 'react';
 import superjson from 'superjson';
 
-import { appRouter, type AppRouter } from './routers';
+import { type AppRouter, appRouter } from './routers';
 import { createCallerFactory } from './trpcFactory';
 import type { TContext } from './types';
 
@@ -95,6 +95,12 @@ const createServerContext = cache(async (): Promise<TContext> => {
       throw new Error(
         'Cannot set cookies in server-side caller context. Use a route handler with fetchRequestHandler instead.',
       );
+    },
+    setMutationChannels: () => {
+      // No-op for server-side calls - there's no HTTP response to set headers on
+    },
+    setSubscriptionChannels: () => {
+      // No-op for server-side calls - there's no HTTP response to set headers on
     },
     requestId,
     time: Date.now(),

@@ -5,7 +5,7 @@ import { z } from 'zod';
  */
 export const invalidationMessageSchema = z.object({
   type: z.literal('query-invalidation'),
-  queryKey: z.array(z.string()).readonly(),
+  queryKey: z.array(z.array(z.string()).readonly()),
 });
 
 /**

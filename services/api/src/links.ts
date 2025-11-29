@@ -1,15 +1,16 @@
+import { queryChannelStore } from '@op/common/src/channels/query-channel-store';
 import { OPURLConfig } from '@op/core';
 import { logger } from '@op/logging';
-import {
-  httpLink,
-  loggerLink,
-  splitLink,
-  unstable_httpBatchStreamLink,
-} from '@trpc/client';
-import type { TRPCLink } from '@trpc/client';
+import type { ChannelName } from '@op/realtime';
+import { type TRPCLink, httpLink, loggerLink, splitLink } from '@trpc/client';
+import { observable } from '@trpc/server/observable';
 import { readSSROnlySecret } from 'ssr-only-secrets';
 import superjson from 'superjson';
 
+import {
+  MUTATION_CHANNELS_HEADER,
+  SUBSCRIPTION_CHANNELS_HEADER,
+} from './constants';
 import type { AppRouter } from './routers';
 
 const SSR_SECRETS_KEY_VAR = 'SSR_SECRETS_KEY';
@@ -37,8 +38,23 @@ function getPostHogDistinctId(): string | null {
 
 const envURL = OPURLConfig('API');
 
+/** Global reference to queryClient - set via initializeQueryInvalidation */
+let queryClientRef: {
+  invalidateQueries: (opts: { queryKey: unknown[] }) => void;
+} | null = null;
+
 /**
- * Create a fetch function that handles SSR cookies
+ * Initialize query invalidation with a reference to the queryClient.
+ * Must be called once at app startup (in useMutationChannels or similar).
+ */
+export function initializeQueryInvalidation(queryClient: {
+  invalidateQueries: (opts: { queryKey: unknown[] }) => void;
+}): void {
+  queryClientRef = queryClient;
+}
+
+/**
+ * Create a fetch function that handles SSR cookies.
  *
  * During SSR: Decrypts the encrypted cookies and adds them to the request headers
  * In browser: Uses credentials: 'include' to send cookies normally
@@ -72,11 +88,84 @@ function createFetchWithSSRCookies(encryptedCookies?: string) {
       }
     }
 
-    return fetch(url, {
+    const response = await fetch(url, {
       ...options,
       headers,
       credentials: 'include',
     });
+
+    return response;
+  };
+}
+
+/**
+ * Custom link that handles channel-based query invalidation.
+ *
+ * For queries: Registers the query key with subscription channels from x-subscription-channels header
+ * For mutations: Looks up query keys for channels from x-mutation-channels header and invalidates them
+ */
+function createChannelInvalidationLink(): TRPCLink<AppRouter> {
+  return () => {
+    return ({ next, op }) => {
+      return observable((observer) => {
+        // Build the query key from the operation path and input
+        // tRPC query keys are [path, { input, type }] for queries
+        // and [path] for mutations
+        const queryKey =
+          op.type === 'query'
+            ? [op.path.split('.'), { input: op.input, type: op.type }]
+            : [op.path.split('.')];
+
+        const unsubscribe = next(op).subscribe({
+          next(value) {
+            // Process response headers for channel handling
+            // The value.context contains the response from httpLink
+            if (!isServer && value.context?.response) {
+              const response = value.context.response as Response;
+
+              if (op.type === 'query') {
+                // Register query's subscription channels
+                const subscriptionChannelsHeader = response.headers.get(
+                  SUBSCRIPTION_CHANNELS_HEADER,
+                );
+                if (subscriptionChannelsHeader) {
+                  const channels = subscriptionChannelsHeader
+                    .split(',')
+                    .filter(Boolean);
+                  queryChannelStore.registerQueryChannels(queryKey, channels);
+                }
+              } else if (op.type === 'mutation') {
+                // Look up and invalidate queries for mutation channels
+                const mutationChannelsHeader = response.headers.get(
+                  MUTATION_CHANNELS_HEADER,
+                );
+                if (mutationChannelsHeader && queryClientRef) {
+                  const channels = mutationChannelsHeader
+                    .split(',')
+                    .filter(Boolean) as ChannelName[];
+                  const queryKeysToInvalidate =
+                    queryChannelStore.getQueryKeysForChannels(channels);
+
+                  for (const key of queryKeysToInvalidate) {
+                    queryClientRef.invalidateQueries({ queryKey: key });
+                  }
+                }
+              }
+            }
+
+            observer.next(value);
+          },
+          error(err) {
+            observer.error(err);
+          },
+          complete() {
+            observer.complete();
+          },
+        });
+
+        return unsubscribe;
+      });
+    };
   };
 }
 
@@ -92,11 +181,14 @@ export function createLinks(encryptedCookies?: string): TRPCLink<AppRouter>[] {
   return [
     ...(!envURL.IS_PRODUCTION
       ? [
-        loggerLink({
-          colorMode: 'none',
-        }),
-      ]
+          loggerLink({
+            colorMode: 'none',
+          }),
+        ]
       : []),
+    // Channel invalidation link - processes response headers
+    createChannelInvalidationLink(),
+    // HTTP transport link
     splitLink({
       condition(op) {
         // Check if skipBatch is set in the context
@@ -108,14 +200,9 @@ export function createLinks(encryptedCookies?: string): TRPCLink<AppRouter>[] {
         transformer: superjson,
         fetch: fetchFn,
       }),
-      false: unstable_httpBatchStreamLink({
-        /**
-         * If you want to use SSR, you need to use the server's full URL
-         * @link https://trpc.io/docs/ssr
-         */
+      false: httpLink({
         url: envURL.TRPC_URL,
         transformer: superjson,
-        maxItems: 4,
         fetch: fetchFn,
       }),
     }),
@@ -124,3 +211,6 @@ export function createLinks(encryptedCookies?: string): TRPCLink<AppRouter>[] {
 
 // Backwards compatibility - creates links without SSR cookies
 export const links = createLinks();
+
+// Re-export the query channel store for cleanup purposes
+export { queryChannelStore } from '@op/common/src/channels/query-channel-store';
