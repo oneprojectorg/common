@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { platformAdminRouter } from '../../routers/platform/admin';
-import { createCallerFactory } from '../../trpcFactory';
-import { TestOrganizationDataManager } from '../helpers/TestOrganizationDataManager';
+import { platformAdminRouter } from '.';
+import { TestOrganizationDataManager } from '../../../test/helpers/TestOrganizationDataManager';
 import {
   createIsolatedSession,
   createTestContextWithSession,
-} from '../supabase-utils';
+} from '../../../test/supabase-utils';
+import { createCallerFactory } from '../../../trpcFactory';
 
 describe.concurrent('platform.admin.listAllUsers', () => {
   const createCaller = createCallerFactory(platformAdminRouter);

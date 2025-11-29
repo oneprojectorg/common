@@ -3,13 +3,13 @@ import { organizationUserToAccessRoles } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { describe, expect, it } from 'vitest';
 
-import { organizationRouter } from '../../routers/organization';
-import { createCallerFactory } from '../../trpcFactory';
-import { TestOrganizationDataManager } from '../helpers/TestOrganizationDataManager';
+import { organizationRouter } from '.';
+import { TestOrganizationDataManager } from '../../test/helpers/TestOrganizationDataManager';
 import {
   createIsolatedSession,
   createTestContextWithSession,
-} from '../supabase-utils';
+} from '../../test/supabase-utils';
+import { createCallerFactory } from '../../trpcFactory';
 
 describe.concurrent('organization.listUsers', () => {
   const createCaller = createCallerFactory(organizationRouter);
