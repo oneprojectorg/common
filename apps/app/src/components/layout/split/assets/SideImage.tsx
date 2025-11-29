@@ -474,7 +474,7 @@ const sideImages = [
           rx="7.5"
           transform="rotate(2 56.326 104.506)"
           stroke="#D0D3D4"
-          shape-rendering="crispEdges"
+          shapeRendering="crispEdges"
         />
         <rect
           x="56.326"
@@ -516,7 +516,7 @@ const sideImages = [
           rx="7.5"
           transform="rotate(-2 53.3609 172.471)"
           stroke="#D0D3D4"
-          shape-rendering="crispEdges"
+          shapeRendering="crispEdges"
         />
         <rect
           x="53.3609"
@@ -600,9 +600,9 @@ const sideImages = [
           width="418.318"
           height="179.124"
           filterUnits="userSpaceOnUse"
-          color-interpolation-filters="sRGB"
+          colorInterpolationFilters="sRGB"
         >
-          <feFlood flood-opacity="0" result="BackgroundImageFix" />
+          <feFlood floodOpacity="0" result="BackgroundImageFix" />
           <feColorMatrix
             in="SourceAlpha"
             type="matrix"
@@ -646,9 +646,9 @@ const sideImages = [
           width="418.318"
           height="179.124"
           filterUnits="userSpaceOnUse"
-          color-interpolation-filters="sRGB"
+          colorInterpolationFilters="sRGB"
         >
-          <feFlood flood-opacity="0" result="BackgroundImageFix" />
+          <feFlood floodOpacity="0" result="BackgroundImageFix" />
           <feColorMatrix
             in="SourceAlpha"
             type="matrix"
