@@ -5,6 +5,7 @@ import { listInstancesRouter } from './listInstances';
 import { getInstanceRouter } from './getInstance';
 import { getCategoriesRouter } from './getCategories';
 import { listDecisionProfilesRouter } from './listDecisionProfiles';
+import { getDecisionBySlugRouter } from './getDecisionBySlug';
 
 export const instancesRouter = mergeRouters(
   createInstanceRouter,
@@ -12,5 +13,6 @@ export const instancesRouter = mergeRouters(
   listInstancesRouter,
   getInstanceRouter,
   getCategoriesRouter,
-  listDecisionProfilesRouter
+  listDecisionProfilesRouter,
+  getDecisionBySlugRouter,
 );

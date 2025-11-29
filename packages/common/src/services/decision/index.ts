@@ -10,6 +10,7 @@ export * from './updateInstance';
 export * from './listInstances';
 export * from './getInstance';
 export * from './listDecisionProfiles';
+export * from './getDecisionBySlug';
 
 // Transition management
 export * from './checkTransitions';
