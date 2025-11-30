@@ -39,7 +39,14 @@ let loggerProviderInstance: LoggerProvider | null = null;
 export function createPostHogLoggerProvider(
   config: PostHogLogsConfig
 ): LoggerProvider {
-  const { apiKey, region = 'eu', serviceName = 'common', serviceVersion = '1.0.0', environment = process.env.NODE_ENV || 'development', immediateFlush = false } = config;
+  const {
+    apiKey,
+    region = 'eu',
+    serviceName = 'common',
+    serviceVersion = '1.0.0',
+    environment = process.env.NODE_ENV || 'development',
+    immediateFlush = false,
+  } = config;
 
   // PostHog logs endpoint based on region
   const posthogHost =

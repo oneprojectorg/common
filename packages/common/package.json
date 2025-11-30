@@ -9,7 +9,6 @@
   "exports": {
     ".": "./src/index.ts",
     "./validation": "./src/utils/validation.ts",
-    "./logging": "./src/logging/index.ts",
     "./src/services/access": "./src/services/access/index.ts",
     "./src/*": "./src/*"
   },
@@ -22,11 +21,6 @@
     "@op/cache": "workspace:*",
     "@op/emails": "workspace:*",
     "@op/events": "workspace:*",
-    "@opentelemetry/api-logs": "^0.57.2",
-    "@opentelemetry/exporter-logs-otlp-http": "^0.57.2",
-    "@opentelemetry/resources": "^2.0.0",
-    "@opentelemetry/sdk-logs": "^0.57.2",
-    "@opentelemetry/semantic-conventions": "^1.28.0",
     "@vercel/functions": "^2.1.0",
     "access-zones": "0.0.1",
     "ajv": "^8.17.1",

@@ -1,7 +1,10 @@
 import { SeverityNumber, Logger } from '@opentelemetry/api-logs';
 import { getLoggerProvider } from './provider';
 
-export type LogAttributes = Record<string, string | number | boolean | undefined>;
+export type LogAttributes = Record<
+  string,
+  string | number | boolean | undefined
+>;
 
 export type LogContext = {
   /** User ID for user-scoped logs */
@@ -81,28 +84,44 @@ export class PostHogLogger {
   /**
    * Log a trace-level message (most verbose)
    */
-  trace(message: string, attributes?: LogAttributes, context?: LogContext): void {
+  trace(
+    message: string,
+    attributes?: LogAttributes,
+    context?: LogContext
+  ): void {
     this.emit(SeverityNumber.TRACE, 'trace', message, attributes, context);
   }
 
   /**
    * Log a debug-level message
    */
-  debug(message: string, attributes?: LogAttributes, context?: LogContext): void {
+  debug(
+    message: string,
+    attributes?: LogAttributes,
+    context?: LogContext
+  ): void {
     this.emit(SeverityNumber.DEBUG, 'debug', message, attributes, context);
   }
 
   /**
    * Log an info-level message
    */
-  info(message: string, attributes?: LogAttributes, context?: LogContext): void {
+  info(
+    message: string,
+    attributes?: LogAttributes,
+    context?: LogContext
+  ): void {
     this.emit(SeverityNumber.INFO, 'info', message, attributes, context);
   }
 
   /**
    * Log a warning-level message
    */
-  warn(message: string, attributes?: LogAttributes, context?: LogContext): void {
+  warn(
+    message: string,
+    attributes?: LogAttributes,
+    context?: LogContext
+  ): void {
     this.emit(SeverityNumber.WARN, 'warn', message, attributes, context);
   }
 
@@ -169,7 +188,10 @@ let defaultLogger: PostHogLogger | null = null;
  * Gets the default PostHog logger instance.
  * Creates one if it doesn't exist.
  */
-export function getLogger(name?: string, version?: string): PostHogLogger {
+export function getPostHogLogger(
+  name?: string,
+  version?: string
+): PostHogLogger {
   if (!defaultLogger) {
     defaultLogger = new PostHogLogger(name, version);
   }
@@ -179,7 +201,7 @@ export function getLogger(name?: string, version?: string): PostHogLogger {
 /**
  * Creates a new PostHog logger with the given name and optional context.
  */
-export function createLogger(
+export function createPostHogLogger(
   name: string,
   version: string = '1.0.0',
   defaultContext: LogContext = {}

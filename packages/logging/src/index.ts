@@ -6,3 +6,6 @@ export * from './lib/axiom/client';
 export type { Logger } from '@axiomhq/logging';
 export type LogLevel = 'info' | 'error' | 'warn' | 'debug';
 export type LogData = Record<string, any>;
+
+// PostHog logging exports
+export * from './lib/posthog';

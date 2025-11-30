@@ -8,8 +8,8 @@ export {
 
 export {
   PostHogLogger,
-  getLogger,
-  createLogger,
+  getPostHogLogger,
+  createPostHogLogger,
   type LogAttributes,
   type LogContext,
 } from './logger';
