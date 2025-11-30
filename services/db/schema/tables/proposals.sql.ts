@@ -17,6 +17,7 @@ import { processInstances } from './processInstances.sql';
 import { profiles } from './profiles.sql';
 import { proposalAttachments } from './proposalAttachments.sql';
 import { taxonomyTerms } from './taxonomies.sql';
+import { Visibility, visibilityEnum } from './visibility.sql';
 
 export enum ProposalStatus {
   DRAFT = 'draft',
@@ -52,6 +53,9 @@ export const proposalColumns = {
 
   // Proposal status (defaults to DRAFT for new proposals)
   status: proposalStatusEnum('status').default(ProposalStatus.DRAFT),
+
+  // Proposal visibility (defaults to VISIBLE)
+  visibility: visibilityEnum('visibility').default(Visibility.VISIBLE).notNull(),
 
   // Who originally submitted this proposal
   submittedByProfileId: uuid('submitted_by_profile_id')

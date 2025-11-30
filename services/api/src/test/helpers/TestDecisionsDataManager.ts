@@ -1,19 +1,29 @@
-import { createInstance, createOrganization, createProcess } from '@op/common';
 import { db } from '@op/db/client';
 import {
   DecisionProcess,
   ProcessInstance,
-  ProcessInstanceStatus,
   processInstances,
   profiles,
   profileUsers,
   users,
+  organizationUsers,
+  organizationUserToAccessRoles,
 } from '@op/db/schema';
+import { ROLES } from '@op/db/seedData/accessControl';
 import { User } from '@op/supabase/lib';
 import { randomUUID } from 'crypto';
 import { eq, inArray } from 'drizzle-orm';
+import { appRouter } from 'src/routers';
+import { createCallerFactory } from 'src/trpcFactory';
 
-import { createTestUser, supabaseTestAdminClient } from '../supabase-utils';
+import {
+  createIsolatedSession,
+  createTestContextWithSession,
+  createTestUser,
+  supabaseTestAdminClient,
+} from '../supabase-utils';
+
+const createCaller = createCallerFactory(appRouter);
 
 interface CreateDecisionSetupOptions {
   organizationName?: string;
@@ -37,11 +47,20 @@ interface DecisionSetupOutput {
   instances: CreatedInstance[];
 }
 
+interface MemberUserOutput {
+  user: User;
+  email: string;
+  authUserId: string;
+  profileId: string;
+}
+
 /**
  * Test Decisions Data Manager
  *
  * Provides a pattern for managing decision process test data lifecycle with automatic cleanup.
  * All test data creation methods automatically register cleanup handlers using vitest's onTestFinished.
+ *
+ * Uses tRPC callers to test through the router boundary for better integration coverage.
  *
  * @example
  * ```ts
@@ -77,11 +96,21 @@ export class TestDecisionsDataManager {
   }
 
   /**
+   * Creates an authenticated tRPC caller for a user by email
+   */
+  private async createAuthenticatedCaller(email: string) {
+    const { session } = await createIsolatedSession(email);
+    return createCaller(await createTestContextWithSession(session));
+  }
+
+  /**
    * Creates a complete decision process setup including:
    * - A test user
    * - An organization
    * - A decision process
    * - Optional process instances with profile access
+   *
+   * All operations go through the tRPC router boundary.
    *
    * @param opts - Options for setup creation
    * @returns Complete decision setup with user, organization, process, and instances
@@ -133,67 +162,69 @@ export class TestDecisionsDataManager {
       created_at: authUser.created_at,
     };
 
-    // 2. Create organization
-    const organization = await createOrganization({
-      data: {
-        name: this.generateUniqueName(organizationName),
-        website: 'https://test.com',
-        email: 'contact@test.com',
-        orgType: 'nonprofit',
-        bio: 'Organization for testing',
-        mission: 'To test decision profiles',
-        networkOrganization: false,
-        isReceivingFunds: false,
-        isOfferingFunds: false,
-        acceptingApplications: false,
-      },
-      user,
+    // Create authenticated caller for this user
+    const caller = await this.createAuthenticatedCaller(userEmail);
+
+    // 2. Create organization via router
+    const organization = await caller.organization.create({
+      name: this.generateUniqueName(organizationName),
+      website: 'https://test.com',
+      email: 'contact@test.com',
+      orgType: 'nonprofit',
+      bio: 'Organization for testing',
+      mission: 'To test decision profiles',
+      networkOrganization: false,
+      isReceivingFunds: false,
+      isOfferingFunds: false,
+      acceptingApplications: false,
     });
 
-    this.createdProfileIds.push(organization.profileId);
+    // Get profileId from the profile relation (available in the encoder response)
+    const orgProfileId = organization.profile?.id;
+    if (!orgProfileId) {
+      throw new Error('Organization profile ID not found in response');
+    }
+    this.createdProfileIds.push(orgProfileId);
 
-    // 3. Create decision process
-    const process = await createProcess({
-      data: {
-        name: this.generateUniqueName(processName),
-        description: processDescription,
-        processSchema: {
-          name: processName,
-          states: [
-            {
-              id: 'initial',
-              name: 'Initial',
-              type: 'initial',
-            },
-            {
-              id: 'final',
-              name: 'Final',
-              type: 'final',
-            },
-          ],
-          transitions: [
-            {
-              id: 'start',
-              name: 'Start',
-              from: 'initial',
-              to: 'final',
-            },
-          ],
-          initialState: 'initial',
-          decisionDefinition: {},
-          proposalTemplate: {},
-        },
+    // 3. Create decision process via router
+    const process = await caller.decision.createProcess({
+      name: this.generateUniqueName(processName),
+      description: processDescription,
+      ownerProfileId: orgProfileId,
+      processSchema: {
+        name: processName,
+        states: [
+          {
+            id: 'initial',
+            name: 'Initial',
+            type: 'initial',
+          },
+          {
+            id: 'final',
+            name: 'Final',
+            type: 'final',
+          },
+        ],
+        transitions: [
+          {
+            id: 'start',
+            name: 'Start',
+            from: 'initial',
+            to: 'final',
+          },
+        ],
+        initialState: 'initial',
+        decisionDefinition: {},
+        proposalTemplate: {},
       },
-      user,
-      ownerProfileId: organization.profileId,
     });
 
     // 4. Create instances if requested
     const instances: CreatedInstance[] = [];
     for (let i = 0; i < instanceCount; i++) {
       const instance = await this.createInstanceForProcess({
-        process,
-        user,
+        caller,
+        processId: process.id,
         name: `Instance ${i + 1}`,
         budget: 50000 * (i + 1),
       });
@@ -208,65 +239,96 @@ export class TestDecisionsDataManager {
     return {
       user,
       userEmail,
-      organization,
+      // Add profileId as a convenience property for tests
+      organization: { ...organization, profileId: orgProfileId },
       process,
       instances,
     };
   }
 
   /**
-   * Creates a process instance for an existing process
+   * Creates a process instance for an existing process via router.
+   * Accepts either a caller directly OR a process+user to create the caller internally.
    */
   async createInstanceForProcess({
+    caller,
+    processId,
     process,
     user,
     name,
     budget = 50000,
     status,
   }: {
-    process: DecisionProcess;
-    user: User;
+    caller?: Awaited<ReturnType<typeof this.createAuthenticatedCaller>>;
+    processId?: string;
+    process?: DecisionProcess;
+    user?: User;
     name: string;
     budget?: number;
     status?: ProcessInstanceStatus;
   }): Promise<CreatedInstance> {
     this.ensureCleanupRegistered();
 
-    const instance = await createInstance({
-      data: {
-        processId: process.id,
-        name: this.generateUniqueName(name),
-        description: `Test instance ${name}`,
-        instanceData: {
-          budget,
-          hideBudget: false,
-          currentStateId: 'initial',
-          phases: [
-            {
-              stateId: 'initial',
-              plannedStartDate: new Date().toISOString(),
-              plannedEndDate: new Date(
-                Date.now() + 7 * 24 * 60 * 60 * 1000,
-              ).toISOString(),
-            },
-            {
-              stateId: 'final',
-              plannedStartDate: new Date(
-                Date.now() + 7 * 24 * 60 * 60 * 1000,
-              ).toISOString(),
-              plannedEndDate: new Date(
-                Date.now() + 14 * 24 * 60 * 60 * 1000,
-              ).toISOString(),
-            },
-          ],
-        },
+    // Resolve caller - either use provided caller or create one from user
+    let resolvedCaller = caller;
+    if (!resolvedCaller && user?.email) {
+      resolvedCaller = await this.createAuthenticatedCaller(user.email);
+    }
+    if (!resolvedCaller) {
+      throw new Error('Either caller or user with email must be provided');
+    }
+
+    // Resolve processId - either use provided processId or get from process object
+    const resolvedProcessId = processId ?? process?.id;
+    if (!resolvedProcessId) {
+      throw new Error('Either processId or process must be provided');
+    }
+
+    const instance = await resolvedCaller.decision.createInstance({
+      processId: resolvedProcessId,
+      name: this.generateUniqueName(name),
+      description: `Test instance ${name}`,
+      instanceData: {
+        budget,
+        hideBudget: false,
+        currentStateId: 'initial',
+        phases: [
+          {
+            stateId: 'initial',
+            plannedStartDate: new Date().toISOString(),
+            plannedEndDate: new Date(
+              Date.now() + 7 * 24 * 60 * 60 * 1000,
+            ).toISOString(),
+          },
+          {
+            stateId: 'final',
+            plannedStartDate: new Date(
+              Date.now() + 7 * 24 * 60 * 60 * 1000,
+            ).toISOString(),
+            plannedEndDate: new Date(
+              Date.now() + 14 * 24 * 60 * 60 * 1000,
+            ).toISOString(),
+          },
+        ],
       },
-      user,
     });
 
-    this.createdProfileIds.push(instance.profileId);
+    // Query the database for the profileId (not exposed in the API response)
+    const [instanceRecord] = await db
+      .select({ profileId: processInstances.profileId })
+      .from(processInstances)
+      .where(eq(processInstances.id, instance.id));
 
-    // Update status if provided
+    const profileId = instanceRecord?.profileId;
+    if (!profileId) {
+      throw new Error(
+        `Could not find profileId for instance ${instance.id}`,
+      );
+    }
+
+    this.createdProfileIds.push(profileId);
+
+    // Update status if provided (direct DB update since there's no router for this)
     if (status) {
       await db
         .update(processInstances)
@@ -274,9 +336,9 @@ export class TestDecisionsDataManager {
         .where(eq(processInstances.id, instance.id));
     }
 
-    // Fetch the profile to get the slug
+    // Fetch the profile to get the slug (use profileId we queried earlier, not instance.profileId)
     const profile = await db.query.profiles.findFirst({
-      where: eq(profiles.id, instance.profileId),
+      where: eq(profiles.id, profileId),
     });
 
     if (!profile) {
@@ -285,7 +347,7 @@ export class TestDecisionsDataManager {
 
     return {
       instance,
-      profileId: instance.profileId,
+      profileId,
       slug: profile.slug,
     };
   }
@@ -303,6 +365,119 @@ export class TestDecisionsDataManager {
       authUserId,
       email,
     });
+  }
+
+  /**
+   * Creates a member user (non-admin) for an organization with proper setup.
+   * This creates:
+   * - An auth user via Supabase
+   * - Waits for trigger to create user record and profile
+   * - Adds them to the organization with Member role
+   * - Optionally grants access to instance profiles
+   */
+  async createMemberUser({
+    organization,
+    instanceProfileIds = [],
+  }: {
+    organization: { id: string };
+    instanceProfileIds?: string[];
+  }): Promise<MemberUserOutput> {
+    this.ensureCleanupRegistered();
+
+    const email = this.generateTestEmail();
+
+    // Create auth user via Supabase - triggers DB user and profile creation
+    const authUser = await createTestUser(email).then((res) => res.user);
+
+    if (!authUser || !authUser.email) {
+      throw new Error(`Failed to create auth user for ${email}`);
+    }
+
+    this.createdAuthUserIds.push(authUser.id);
+
+    // Get the user record that was created by the trigger
+    const [userRecord] = await db
+      .select()
+      .from(users)
+      .where(eq(users.authUserId, authUser.id));
+
+    if (!userRecord) {
+      throw new Error(`Failed to find user record for ${email}`);
+    }
+
+    // Track the profile ID that was created by the trigger for cleanup
+    if (userRecord.profileId) {
+      this.createdProfileIds.push(userRecord.profileId);
+    }
+
+    // Add user to organization
+    const [orgUser] = await db
+      .insert(organizationUsers)
+      .values({
+        organizationId: organization.id,
+        authUserId: authUser.id,
+        email: authUser.email,
+      })
+      .returning();
+
+    if (!orgUser) {
+      throw new Error(`Failed to create organization user for ${email}`);
+    }
+
+    // Assign Member role to organization user
+    await db.insert(organizationUserToAccessRoles).values({
+      organizationUserId: orgUser.id,
+      accessRoleId: ROLES.MEMBER.id,
+    });
+
+    // Grant access to instance profiles if provided
+    for (const profileId of instanceProfileIds) {
+      await this.grantProfileAccess(profileId, authUser.id, email);
+    }
+
+    const user: User = {
+      id: authUser.id,
+      email: authUser.email,
+      user_metadata: authUser.user_metadata,
+      app_metadata: authUser.app_metadata,
+      aud: authUser.aud,
+      created_at: authUser.created_at,
+    };
+
+    return {
+      user,
+      email,
+      authUserId: authUser.id,
+      profileId: userRecord.profileId!,
+    };
+  }
+
+  /**
+   * Creates a proposal via the tRPC router and tracks its profile for cleanup.
+   */
+  async createProposal({
+    callerEmail,
+    processInstanceId,
+    proposalData,
+  }: {
+    callerEmail: string;
+    processInstanceId: string;
+    proposalData: { title: string; description: string };
+  }) {
+    this.ensureCleanupRegistered();
+
+    const caller = await this.createAuthenticatedCaller(callerEmail);
+    const proposal = await caller.decision.createProposal({
+      processInstanceId,
+      proposalData,
+    });
+
+    // Track the proposal's profile for cleanup
+    if (proposal.profileId) {
+      this.createdProfileIds.push(proposal.profileId);
+    }
+
+    return proposal;
   }
 
   /**
@@ -349,10 +524,12 @@ export class TestDecisionsDataManager {
 
     // 1. Delete profiles by exact IDs
     // This will cascade to organizations, processes, instances, etc.
-    if (this.createdProfileIds.length > 0) {
-      await db
-        .delete(profiles)
-        .where(inArray(profiles.id, this.createdProfileIds));
+    // Filter out any undefined/null values that might have been accidentally added
+    const validProfileIds = this.createdProfileIds.filter(
+      (id): id is string => typeof id === 'string' && id.length > 0,
+    );
+    if (validProfileIds.length > 0) {
+      await db.delete(profiles).where(inArray(profiles.id, validProfileIds));
     }
 
     // 2. Delete auth users by exact IDs

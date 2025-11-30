@@ -5,6 +5,7 @@ import {
   UnauthorizedError,
   updateProposalStatus,
 } from '@op/common';
+import { ProposalStatus } from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
@@ -28,7 +29,7 @@ const meta: OpenApiMeta = {
 
 const updateProposalStatusInput = z.object({
   profileId: z.uuid(),
-  status: z.enum(['approved', 'rejected']),
+  status: z.enum([ProposalStatus.APPROVED, ProposalStatus.REJECTED]),
 });
 
 export const updateProposalStatusRouter = router({

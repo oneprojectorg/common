@@ -1,7 +1,8 @@
-import { and, asc, db, desc, eq, ilike, inArray, sql } from '@op/db/client';
+import { and, asc, db, desc, eq, ilike, inArray, or, sql } from '@op/db/client';
 import {
   ProfileRelationshipType,
   ProposalStatus,
+  Visibility,
   organizations,
   posts,
   postsToProfiles,
@@ -118,6 +119,9 @@ export const listProposals = async ({
     );
   }
 
+  // Get current user's profile ID early for hidden filter and later for editable checks
+  const currentProfileId = await getCurrentProfileId(input.authUserId);
+
   try {
     const {
       limit = 20,
@@ -158,6 +162,17 @@ export const listProposals = async ({
       whereClause = baseWhereClause
         ? and(baseWhereClause, categoryFilter)
         : categoryFilter;
+    }
+
+    // Filter out hidden proposals unless user can manage proposals (admin) or is the owner
+    if (!canManageProposals) {
+      const visibilityFilter = or(
+        eq(proposals.visibility, Visibility.VISIBLE),
+        eq(proposals.submittedByProfileId, currentProfileId),
+      );
+      whereClause = whereClause
+        ? and(whereClause, visibilityFilter)
+        : visibilityFilter;
     }
 
     // Get proposals with optimized ordering
@@ -207,9 +222,6 @@ export const listProposals = async ({
         commentsCount: number;
       }
     >();
-
-    // Get current user's profile ID for both relationship data and editable checks
-    const currentProfileId = await getCurrentProfileId(input.authUserId);
 
     if (proposalIds.length > 0) {
       // Optimized: Get relationship counts, user relationships, and comment counts in parallel
@@ -328,6 +340,7 @@ export const listProposals = async ({
         id: proposal.id,
         proposalData: proposal.proposalData,
         status: proposal.status,
+        visibility: proposal.visibility,
         createdAt: proposal.createdAt,
         updatedAt: proposal.updatedAt,
         profileId: proposal.profileId,

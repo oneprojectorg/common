@@ -2,19 +2,21 @@
 
 import { trpc } from '@op/api/client';
 import type { proposalEncoder } from '@op/api/encoders';
-import { ProposalStatus } from '@op/api/encoders';
+import { ProposalStatus, Visibility } from '@op/api/encoders';
+import { match } from '@op/core';
 import { Button } from '@op/ui/Button';
 import { DialogTrigger } from '@op/ui/Dialog';
-import { Menu, MenuItem } from '@op/ui/Menu';
+import { Menu, MenuItem, MenuSeparator } from '@op/ui/Menu';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { OptionMenu } from '@op/ui/OptionMenu';
 import { toast } from '@op/ui/Toast';
 import { Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import { LuCheck, LuX } from 'react-icons/lu';
+import { LuCheck, LuEye, LuEyeOff, LuX } from 'react-icons/lu';
 import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
+import { parseProposalData } from '@/utils/proposalUtils';
 
 type Proposal = z.infer<typeof proposalEncoder>;
 
@@ -81,10 +83,10 @@ export function ProposalCardMenu({
       });
     },
     onSuccess: (_, variables) => {
-      const statusMessage =
-        variables.status === ProposalStatus.APPROVED
-          ? t('Proposal shortlisted successfully')
-          : t('Proposal rejected successfully');
+      const statusMessage = match(variables.status, {
+        [ProposalStatus.APPROVED]: t('Proposal shortlisted successfully'),
+        [ProposalStatus.REJECTED]: t('Proposal rejected successfully'),
+      });
 
       toast.success({
         message: statusMessage,
@@ -121,6 +123,33 @@ export function ProposalCardMenu({
     },
   });
 
+  const { title } = parseProposalData(proposal.proposalData);
+  const proposalTitle = title || t('Untitled Proposal');
+
+  const updateProposalMutation = trpc.decision.updateProposal.useMutation({
+    onError: (error) => {
+      toast.error({
+        message: error.message || t('Failed to update proposal visibility'),
+      });
+    },
+    onSuccess: (_, variables) => {
+      if (variables.data.visibility) {
+        const message = match(variables.data.visibility, {
+          [Visibility.HIDDEN]: `${proposalTitle} ${t('is now hidden from active proposals.')}`,
+          [Visibility.VISIBLE]: `${proposalTitle} ${t('is now visible in active proposals.')}`,
+        });
+        toast.success({ message });
+      }
+    },
+    onSettled: () => {
+      if (proposal.processInstance?.id) {
+        utils.decision.listProposals.invalidate({
+          processInstanceId: proposal.processInstance.id,
+        });
+      }
+    },
+  });
+
   const handleApprove = () => {
     updateStatusMutation.mutate({
       profileId,
@@ -134,6 +163,19 @@ export function ProposalCardMenu({
       status: ProposalStatus.REJECTED,
     });
   };
+
+  const handleToggleVisibility = () => {
+    const newVisibility =
+      proposal.visibility === Visibility.HIDDEN
+        ? Visibility.VISIBLE
+        : Visibility.HIDDEN;
+    updateProposalMutation.mutate({
+      proposalId: proposal.id,
+      data: { visibility: newVisibility },
+    });
+  };
+
+  const isHidden = proposal.visibility === Visibility.HIDDEN;
 
   const handleDeleteConfirm = async () => {
     if (!proposal.id) {
@@ -152,7 +194,9 @@ export function ProposalCardMenu({
   };
 
   const isLoading =
-    updateStatusMutation.isPending || deleteProposalMutation.isPending;
+    updateStatusMutation.isPending ||
+    deleteProposalMutation.isPending ||
+    updateProposalMutation.isPending;
 
   return (
     <>
@@ -181,6 +225,20 @@ export function ProposalCardMenu({
               >
                 <LuX className="size-4" />
                 {t('Reject from shortlist')}
+              </MenuItem>
+              <MenuSeparator />
+              <MenuItem
+                key="visibility"
+                onAction={handleToggleVisibility}
+                className="min-w-48 py-2"
+                isDisabled={isLoading}
+              >
+                {isHidden ? (
+                  <LuEye className="size-4" />
+                ) : (
+                  <LuEyeOff className="size-4" />
+                )}
+                {isHidden ? t('Unhide proposal') : t('Hide proposal')}
               </MenuItem>
             </>
           )}

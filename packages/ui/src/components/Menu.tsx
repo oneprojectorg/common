@@ -122,7 +122,7 @@ export const MenuSeparator = (props: SeparatorProps) => {
   return (
     <Separator
       {...props}
-      className={cn('my-1 border-b border-neutral-offWhite', props.className)}
+      className={cn('my-1 border-b border-neutral-gray1', props.className)}
     />
   );
 };
