@@ -17,7 +17,7 @@ async function createAuthenticatedCaller(email: string) {
   return createCaller(await createTestContextWithSession(session));
 }
 
-describe('updateProposal visibility', () => {
+describe.concurrent('updateProposal visibility', () => {
   it('should allow admin to hide a proposal', async ({
     task,
     onTestFinished,
@@ -129,7 +129,9 @@ describe('updateProposal visibility', () => {
         proposalId: proposal.id,
         data: { visibility: Visibility.HIDDEN },
       }),
-    ).rejects.toThrow(TRPCError);
+    ).rejects.toMatchObject({
+      code: 'UNAUTHORIZED',
+    });
   });
 
   it('should filter hidden proposals from listProposals for non-admins', async ({

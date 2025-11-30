@@ -336,9 +336,9 @@ export class TestDecisionsDataManager {
         .where(eq(processInstances.id, instance.id));
     }
 
-    // Fetch the profile to get the slug
+    // Fetch the profile to get the slug (use profileId we queried earlier, not instance.profileId)
     const profile = await db.query.profiles.findFirst({
-      where: eq(profiles.id, instance.profileId),
+      where: eq(profiles.id, profileId),
     });
 
     if (!profile) {
@@ -347,7 +347,7 @@ export class TestDecisionsDataManager {
 
     return {
       instance,
-      profileId: instance.profileId,
+      profileId,
       slug: profile.slug,
     };
   }
