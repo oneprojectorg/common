@@ -11,7 +11,7 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 
 import { DecisionListItem } from '../DecisionListItem';
 
-const DecisionsList = ({
+const DecisionsListSuspense = ({
   status,
   initialData,
 }: {
@@ -75,36 +75,6 @@ const DecisionsList = ({
   );
 };
 
-const AllDecisionsSuspense = ({
-  initialData,
-}: {
-  initialData?: DecisionProfileList;
-}) => {
-  return (
-    <Tabs defaultSelectedKey="active">
-      <TabList variant="pill" className="gap-4 border-none">
-        <Tab id="active" variant="pill">
-          Your active processes
-        </Tab>
-        <Tab id="other" variant="pill">
-          Other processes
-        </Tab>
-      </TabList>
-      <TabPanel id="active" className="p-0 sm:p-0">
-        <DecisionsList
-          status={ProcessStatus.PUBLISHED}
-          initialData={initialData}
-        />
-      </TabPanel>
-      <TabPanel id="other" className="p-0">
-        <Suspense fallback={<SkeletonLine lines={5} />}>
-          <DecisionsList status={ProcessStatus.COMPLETED} />
-        </Suspense>
-      </TabPanel>
-    </Tabs>
-  );
-};
-
 export const AllDecisions = ({
   initialData,
 }: {
@@ -112,9 +82,29 @@ export const AllDecisions = ({
 }) => {
   return (
     <ErrorBoundary fallback={<div>Could not load decisions</div>}>
-      <Suspense fallback={<SkeletonLine lines={5} />}>
-        <AllDecisionsSuspense initialData={initialData} />
-      </Suspense>
+      <Tabs defaultSelectedKey="active">
+        <TabList variant="pill" className="gap-4 border-none">
+          <Tab id="active" variant="pill">
+            Your active processes
+          </Tab>
+          <Tab id="other" variant="pill">
+            Other processes
+          </Tab>
+        </TabList>
+        <TabPanel id="active" className="p-0 sm:p-0">
+          <Suspense fallback={<SkeletonLine lines={5} />}>
+            <DecisionsListSuspense
+              status={ProcessStatus.PUBLISHED}
+              initialData={initialData}
+            />
+          </Suspense>
+        </TabPanel>
+        <TabPanel id="other" className="p-0">
+          <Suspense fallback={<SkeletonLine lines={5} />}>
+            <DecisionsListSuspense status={ProcessStatus.COMPLETED} />
+          </Suspense>
+        </TabPanel>
+      </Tabs>
     </ErrorBoundary>
   );
 };
