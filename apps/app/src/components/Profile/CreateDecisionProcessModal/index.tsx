@@ -24,7 +24,7 @@ import { OverlayTriggerStateContext } from 'react-aria-components';
 import ErrorBoundary from '../../ErrorBoundary';
 import { CustomTemplates } from './CustomTemplates';
 import { CustomWidgets } from './CustomWidgets';
-import { loadSchema, type SchemaType } from './schemas/schemaLoader';
+import { type SchemaType, loadSchema } from './schemas/schemaLoader';
 
 type ValidationMode = 'none' | 'static' | 'live';
 
@@ -139,15 +139,24 @@ const useStepValidation = () => {
 
 interface CreateDecisionProcessModalProps {
   schema?: SchemaType;
+  isOpen?: boolean;
+  onOpenChange?: (isOpen: boolean) => void;
 }
 
 export const CreateDecisionProcessModal = ({
-  schema = 'simple'
+  schema = 'simple',
+  isOpen: controlledIsOpen,
+  onOpenChange: controlledOnOpenChange,
 }: CreateDecisionProcessModalProps = {}) => {
+  const [internalIsModalOpen, setInternalIsModalOpen] = useState(false);
+  const isModalOpen = controlledIsOpen ?? internalIsModalOpen;
+  const setIsModalOpen = controlledOnOpenChange ?? setInternalIsModalOpen;
+
   const utils = trpc.useUtils();
 
   // Load the appropriate schema based on the prop
-  const { stepSchemas, schemaDefaults, transformFormDataToProcessSchema } = loadSchema(schema);
+  const { stepSchemas, schemaDefaults, transformFormDataToProcessSchema } =
+    loadSchema(schema);
 
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] =
@@ -550,6 +559,27 @@ export const CreateDecisionProcessModal = ({
     return stepConfig?.schema.title || 'Set up your decision-making process';
   };
 
+  if (isModalOpen !== undefined) {
+    return (
+      <Modal isDismissable isOpen={isModalOpen} onOpenChange={setIsModalOpen}>
+        <div className="flex h-full max-h-[90vh] w-full max-w-lg flex-col">
+          <ModalHeader>{getCurrentStepTitle()}</ModalHeader>
+
+          <ModalBody className="flex-1 overflow-y-auto">
+            {renderStepContent()}
+          </ModalBody>
+
+          <ModalStepper
+            currentStep={currentStep}
+            totalSteps={totalSteps}
+            onNext={handleNext}
+            onPrevious={handlePrevious}
+            onFinish={handleFinish}
+          />
+        </div>
+      </Modal>
+    );
+  }
   return (
     <Modal isDismissable>
       <div className="flex h-full max-h-[90vh] w-full max-w-lg flex-col">
