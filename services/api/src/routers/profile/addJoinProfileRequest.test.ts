@@ -25,9 +25,7 @@ describe.concurrent('profile.addJoinProfileRequest', () => {
       users: { admin: 1 },
     });
     const { organizationProfile: targetProfile } =
-      await testData.createOrganization({
-        users: { admin: 1 },
-      });
+      await testData.createOrganization();
 
     // Clean up join request after test
     onTestFinished(async () => {
@@ -46,12 +44,10 @@ describe.concurrent('profile.addJoinProfileRequest', () => {
     const caller = createCaller(await createTestContextWithSession(session));
 
     // Call the API endpoint
-    const result = await caller.addJoinProfileRequest({
+    await caller.addJoinProfileRequest({
       requestProfileId: requester.profileId,
       targetProfileId: targetProfile.id,
     });
-
-    expect(result).toEqual({ success: true });
 
     // Verify the request was created with pending status
     const [request] = await db
@@ -112,7 +108,7 @@ describe.concurrent('profile.addJoinProfileRequest', () => {
         requestProfileId: requester.profileId,
         targetProfileId: targetProfile.id,
       }),
-    ).rejects.toThrow();
+    ).rejects.toMatchObject({ code: 'CONFLICT' });
   });
 
   it('should prevent self-requests', async ({ task, onTestFinished }) => {
@@ -132,6 +128,60 @@ describe.concurrent('profile.addJoinProfileRequest', () => {
         requestProfileId: adminUser.profileId,
         targetProfileId: adminUser.profileId,
       }),
-    ).rejects.toThrow('Cannot request to join your own profile');
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+  });
+
+  it('should only allow user profiles to request to join organization profiles', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+
+    // Create two organizations
+    const { organizationProfile: orgProfile1, adminUser } =
+      await testData.createOrganization({
+        users: { admin: 1 },
+      });
+    const { organizationProfile: orgProfile2 } =
+      await testData.createOrganization();
+
+    // Create session as the admin user
+    const { session } = await createIsolatedSession(adminUser.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    // Attempting to use an organization profile as the requester should throw
+    await expect(
+      caller.addJoinProfileRequest({
+        requestProfileId: orgProfile1.id,
+        targetProfileId: orgProfile2.id,
+      }),
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+  });
+
+  it('should only allow requests to organization profiles', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+
+    // Create two organizations to get two user profiles
+    const { adminUser: requester } = await testData.createOrganization({
+      users: { admin: 1 },
+    });
+    const { adminUser: targetUser } = await testData.createOrganization({
+      users: { admin: 1 },
+    });
+
+    // Create session as the requester
+    const { session } = await createIsolatedSession(requester.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    // Attempting to request to join a user profile should throw
+    await expect(
+      caller.addJoinProfileRequest({
+        requestProfileId: requester.profileId,
+        targetProfileId: targetUser.profileId,
+      }),
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
   });
 });

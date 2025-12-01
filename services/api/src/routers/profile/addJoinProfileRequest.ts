@@ -7,12 +7,10 @@ import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
 const inputSchema = z.object({
-  requestProfileId: z.string().uuid(),
-  targetProfileId: z.string().uuid(),
-});
-
-const outputSchema = z.object({
-  success: z.boolean(),
+  /** The profile ID of the requester */
+  requestProfileId: z.uuid(),
+  /** The profile ID of the target to join */
+  targetProfileId: z.uuid(),
 });
 
 export const addJoinProfileRequestRouter = router({
@@ -20,15 +18,12 @@ export const addJoinProfileRequestRouter = router({
     .use(withRateLimited({ windowSize: 60, maxRequests: 10 }))
     .use(withAuthenticated)
     .input(inputSchema)
-    .output(outputSchema)
     .mutation(async ({ input }) => {
       try {
         await addJoinProfileRequest({
           requestProfileId: input.requestProfileId,
           targetProfileId: input.targetProfileId,
         });
-
-        return { success: true };
       } catch (error) {
         if (error instanceof Error) {
           // Map common errors to tRPC errors
@@ -41,6 +36,15 @@ export const addJoinProfileRequestRouter = router({
           if (error.message.includes('already exists')) {
             throw new TRPCError({
               code: 'CONFLICT',
+              message: error.message,
+            });
+          }
+          if (
+            error.message.includes('Only user profiles') ||
+            error.message.includes('can only be made to organization')
+          ) {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
               message: error.message,
             });
           }

@@ -1,13 +1,12 @@
 import { db } from '@op/db/client';
-import { joinProfileRequests } from '@op/db/schema';
+import { EntityType, joinProfileRequests, profiles } from '@op/db/schema';
+import { inArray } from 'drizzle-orm';
 
 import { CommonError, ValidationError } from '../../../utils';
 
 /**
  * Creates a new request from one profile to join another profile.
- *
- * @throws {ValidationError} If requestProfileId equals targetProfileId (self-request)
- * @throws {CommonError} If a request already exists between these profiles
+ * Currently only allows user profiles to request to join organization profiles.
  */
 export const addJoinProfileRequest = async ({
   requestProfileId,
@@ -21,20 +20,49 @@ export const addJoinProfileRequest = async ({
     throw new ValidationError('Cannot request to join your own profile');
   }
 
-  // Check if a request already exists
-  const existingRequest = await db.query.joinProfileRequests.findFirst({
-    where: (table, { and, eq }) =>
-      and(
-        eq(table.requestProfileId, requestProfileId),
-        eq(table.targetProfileId, targetProfileId),
-      ),
-  });
+  const [profileRecords, existingRequest] = await Promise.all([
+    db
+      .select({ id: profiles.id, type: profiles.type })
+      .from(profiles)
+      .where(inArray(profiles.id, [requestProfileId, targetProfileId])),
+    db.query.joinProfileRequests.findFirst({
+      where: (table, { and, eq }) =>
+        and(
+          eq(table.requestProfileId, requestProfileId),
+          eq(table.targetProfileId, targetProfileId),
+        ),
+    }),
+  ]);
+
+  const requestProfile = profileRecords.find(
+    ({ id }) => id === requestProfileId,
+  );
+  const targetProfile = profileRecords.find(({ id }) => id === targetProfileId);
+
+  if (!requestProfile || !targetProfile) {
+    throw new ValidationError('One or both profiles do not exist');
+  }
+
+  // For now, only allow user/individual profiles to request to join organization profiles
+  if (
+    requestProfile.type !== EntityType.USER &&
+    requestProfile.type !== EntityType.INDIVIDUAL
+  ) {
+    throw new ValidationError(
+      'Only user profiles can request to join other profiles',
+    );
+  }
+
+  if (targetProfile.type !== EntityType.ORG) {
+    throw new ValidationError(
+      'Join requests can only be made to organization profiles',
+    );
+  }
 
   if (existingRequest) {
     throw new CommonError('A join request already exists for this profile');
   }
 
-  // Create the join request (status defaults to 'pending')
   await db.insert(joinProfileRequests).values({
     requestProfileId,
     targetProfileId,
