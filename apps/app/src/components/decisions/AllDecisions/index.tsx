@@ -1,7 +1,7 @@
 'use client';
 
-import { RouterOutput, trpc } from '@op/api/client';
-import { ProcessStatus } from '@op/api/encoders';
+import { trpc } from '@op/api/client';
+import { DecisionProfileList, ProcessStatus } from '@op/api/encoders';
 import { useInfiniteScroll } from '@op/hooks';
 import { SkeletonLine } from '@op/ui/Skeleton';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
@@ -11,15 +11,12 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 
 import { DecisionListItem } from '../DecisionListItem';
 
-type DecisionProfileListResponse =
-  RouterOutput['decision']['listDecisionProfiles'];
-
 const DecisionsList = ({
   status,
   initialData,
 }: {
   status: ProcessStatus;
-  initialData?: DecisionProfileListResponse;
+  initialData?: DecisionProfileList;
 }) => {
   const {
     data: paginatedData,
@@ -81,7 +78,7 @@ const DecisionsList = ({
 const AllDecisionsSuspense = ({
   initialData,
 }: {
-  initialData?: DecisionProfileListResponse;
+  initialData?: DecisionProfileList;
 }) => {
   return (
     <Tabs defaultSelectedKey="active">
@@ -111,7 +108,7 @@ const AllDecisionsSuspense = ({
 export const AllDecisions = ({
   initialData,
 }: {
-  initialData?: DecisionProfileListResponse;
+  initialData?: DecisionProfileList;
 }) => {
   return (
     <ErrorBoundary fallback={<div>Could not load decisions</div>}>

@@ -400,3 +400,7 @@ export const decisionProfileFilterSchema = z.object({
   search: z.string().optional(),
   status: z.enum(ProcessStatus).optional(),
 });
+
+// Type exports
+export type DecisionProfile = z.infer<typeof decisionProfileEncoder>;
+export type DecisionProfileList = z.infer<typeof decisionProfileListEncoder>;

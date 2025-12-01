@@ -1,5 +1,4 @@
-import { getPublicUrl } from '@/utils';
-import { RouterOutput } from '@op/api/client';
+import { DecisionProfile } from '@op/api/encoders';
 import { Avatar } from '@op/ui/Avatar';
 import { Chip } from '@op/ui/Chip';
 import { Header3 } from '@op/ui/Header';
@@ -8,9 +7,7 @@ import { Calendar } from 'lucide-react';
 import Image from 'next/image';
 
 import { Link } from '@/lib/i18n';
-
-type DecisionProfileItem =
-  RouterOutput['decision']['listDecisionProfiles']['items'][number];
+import { getPublicUrl } from '@/utils';
 
 const formatDateShort = (dateString: string) => {
   const date = new Date(dateString);
@@ -30,7 +27,7 @@ const isClosingSoon = (dateString: string) => {
   return daysUntilClose >= 0 && daysUntilClose <= 7;
 };
 
-export const DecisionListItem = ({ item }: { item: DecisionProfileItem }) => {
+export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
   const { processInstance } = item;
 
   // Get current state name from process schema
