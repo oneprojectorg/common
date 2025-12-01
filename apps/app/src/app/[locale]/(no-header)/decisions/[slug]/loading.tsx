@@ -1,5 +1,5 @@
-import { DecisionHeaderSkeleton } from '@/components/skeletons/DecisionHeaderSkeleton';
+import { DecisionPageSkeleton } from '@/components/skeletons/DecisionSkeleton';
 
 export default function Loading() {
-  return <DecisionHeaderSkeleton />;
+  return <DecisionPageSkeleton />;
 }

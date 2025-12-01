@@ -5,7 +5,7 @@ import { Suspense } from 'react';
 
 import { DecisionHeader } from '@/components/decisions/DecisionHeader';
 import { DecisionStateRouter } from '@/components/decisions/DecisionStateRouter';
-import { DecisionHeaderSkeleton } from '@/components/skeletons/DecisionHeaderSkeleton';
+import { DecisionHeaderSkeleton } from '@/components/skeletons/DecisionSkeleton';
 
 const DecisionPageContent = async ({ slug }: { slug: string }) => {
   const client = await createClient();
