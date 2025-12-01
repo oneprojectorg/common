@@ -25,4 +25,4 @@ export {
   addJoinProfileRequest,
   updateJoinProfileRequestStatus,
   removeJoinProfileRequest,
-} from './profile/joinProfileRequests';
+} from './profile/joinRequests';
