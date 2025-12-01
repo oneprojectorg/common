@@ -3,13 +3,13 @@ import { profiles } from '@op/db/schema';
 import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
-import { organizationRouter } from '../../routers/organization';
-import { createCallerFactory } from '../../trpcFactory';
-import { TestOrganizationDataManager } from '../helpers/TestOrganizationDataManager';
+import { organizationRouter } from '.';
+import { TestOrganizationDataManager } from '../../test/helpers/TestOrganizationDataManager';
 import {
   createIsolatedSession,
   createTestContextWithSession,
-} from '../supabase-utils';
+} from '../../test/supabase-utils';
+import { createCallerFactory } from '../../trpcFactory';
 
 describe.concurrent('Organization Integration Tests', () => {
   const createCaller = createCallerFactory(organizationRouter);
