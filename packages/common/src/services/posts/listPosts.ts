@@ -12,7 +12,7 @@ import {
   UnauthorizedError,
   decodeCursor,
   encodeCursor,
-  getCursorCondition,
+  getGenericCursorCondition,
 } from '../../utils';
 import { getCurrentProfileId } from '../access';
 
@@ -36,11 +36,12 @@ export const listPosts = async ({
   try {
     // Build cursor condition for pagination
     const cursorCondition = cursor
-      ? getCursorCondition({
-          column: postsToOrganizations.createdAt,
-          tieBreakerColumn: postsToOrganizations.postId,
-          cursor: decodeCursor<{ value: string | Date; id: string }>(cursor),
-          direction: 'desc',
+      ? getGenericCursorCondition({
+          columns: {
+            id: postsToOrganizations.postId,
+            date: postsToOrganizations.createdAt,
+          },
+          cursor: decodeCursor(cursor),
         })
       : undefined;
 
@@ -112,8 +113,8 @@ export const listPosts = async ({
     const lastItem = items[items.length - 1];
     const nextCursor =
       hasMore && lastItem && lastItem.createdAt
-        ? encodeCursor<{ value: string | Date; id: string }>({
-            value: lastItem.createdAt,
+        ? encodeCursor({
+            date: new Date(lastItem.createdAt),
             id: lastItem.postId,
           })
         : null;
