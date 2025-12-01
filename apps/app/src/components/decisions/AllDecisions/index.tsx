@@ -48,9 +48,10 @@ const DecisionsListSuspense = ({
     rootMargin: '100px',
   });
 
-  const allItems = paginatedData?.pages.flatMap((page) => page.items) || [];
+  const paginatedItems =
+    paginatedData?.pages.flatMap((page) => page.items) || [];
 
-  if (allItems.length === 0) {
+  if (paginatedItems.length === 0) {
     return (
       <div className="py-8 text-center text-neutral-gray4">
         No processes found
