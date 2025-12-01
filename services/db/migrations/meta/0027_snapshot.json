@@ -1,5 +1,5 @@
 {
-  "id": "95a0c0bd-87fb-48d6-9b24-0d0e3c8fb4f3",
+  "id": "47497830-2ac8-4550-af80-1d8a87755722",
   "prevId": "a4c8b962-3485-41fe-89b5-1715947ca8eb",
   "version": "7",
   "dialect": "postgresql",
@@ -1968,6 +1968,14 @@
           "type": "uuid",
           "primaryKey": false,
           "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "join_profile_request_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
         },
         "created_at": {
           "name": "created_at",

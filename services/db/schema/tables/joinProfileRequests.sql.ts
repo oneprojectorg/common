@@ -1,8 +1,23 @@
 import { relations } from 'drizzle-orm';
-import { index, pgTable, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import { index, pgEnum, pgTable, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 
-import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
+import {
+  autoId,
+  enumToPgEnum,
+  serviceRolePolicies,
+  timestamps,
+} from '../../helpers';
 import { profiles } from './profiles.sql';
+
+export enum JoinProfileRequestStatus {
+  PENDING = 'pending',
+  APPROVED = 'approved',
+}
+
+export const processStatusEnum = pgEnum(
+  'join_profile_request_status',
+  enumToPgEnum(JoinProfileRequestStatus),
+);
 
 // Store requests to join profiles from other profiles
 export const joinProfileRequests = pgTable(
@@ -15,6 +30,9 @@ export const joinProfileRequests = pgTable(
     targetProfileId: uuid('target_profile_id').references(() => profiles.id, {
       onDelete: 'cascade',
     }),
+    status: processStatusEnum('status')
+      .default(JoinProfileRequestStatus.PENDING)
+      .notNull(),
     ...timestamps,
   },
   (table) => [
