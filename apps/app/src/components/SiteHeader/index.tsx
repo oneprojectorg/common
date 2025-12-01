@@ -31,7 +31,6 @@ import { Link, useTranslations } from '@/lib/i18n';
 import { CoCModal } from '../CoCModal';
 import { CommonLogo } from '../CommonLogo';
 import ErrorBoundary from '../ErrorBoundary';
-import { InviteUserModal } from '../InviteUserModal';
 import { LocaleChooser } from '../LocaleChooser';
 import { PrivacyPolicyModal } from '../PrivacyPolicyModal';
 import { UpdateProfileModal } from '../Profile/ProfileDetails/UpdateProfile';
