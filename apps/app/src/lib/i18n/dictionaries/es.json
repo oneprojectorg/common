@@ -389,6 +389,6 @@
   "platformAdmin_addUserToOrg_errorMessage": "Error al agregar usuario a la organización",
   "platformAdmin_addUserToOrg_errorSelectBoth": "Por favor seleccione una organización y un rol",
   "platformAdmin_addUserToOrg_selectOrganization": "Seleccionar Organización",
-  "platformAdmin_addUserToOrg_selectRole": "Seleccionar Rol"
+  "platformAdmin_addUserToOrg_selectRole": "Seleccionar Rol",
   "No more updates.": "No hay más actualizaciones."
 }
