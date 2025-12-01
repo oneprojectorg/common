@@ -27,7 +27,7 @@ export const listAllRelatedOrganizationPosts = async (
   authUserId: string,
   options: ListAllPostsOptions = {},
 ) => {
-  const { limit = 200, cursor } = options;
+  const { limit = 20, cursor } = options;
 
   // Build cursor condition for pagination
   const cursorCondition = cursor
