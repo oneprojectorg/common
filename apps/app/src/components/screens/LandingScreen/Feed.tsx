@@ -80,31 +80,32 @@ const FeedContent = ({ limit = 10 }: { limit?: number }) => {
   return (
     <PostFeed>
       {allPosts.length > 0 ? (
-        allPosts.map((postToOrg) => (
-          <Fragment key={postToOrg.postId}>
-            <PostItem
-              post={postToOrg.post}
-              organization={postToOrg.organization ?? null}
-              user={user}
-              withLinks={true}
-              onReactionClick={handleReactionClick}
-              onCommentClick={handleCommentClick}
-            />
-            <hr className="bg-neutral-gray1" />
-          </Fragment>
-        ))
+        <>
+          {allPosts.map((postToOrg) => (
+            <Fragment key={postToOrg.postId}>
+              <PostItem
+                post={postToOrg.post}
+                organization={postToOrg.organization ?? null}
+                user={user}
+                withLinks={true}
+                onReactionClick={handleReactionClick}
+                onCommentClick={handleCommentClick}
+              />
+              <hr className="bg-neutral-gray1" />
+            </Fragment>
+          ))}
+          {shouldShowTrigger ? (
+            <div ref={ref as React.RefObject<HTMLDivElement>}>
+              {isFetchingNextPage ? <PostFeedSkeleton numPosts={1} /> : null}
+            </div>
+          ) : (
+            <p className="w-full p-4 text-center text-sm text-neutral-500">
+              {t('No more updates.')}
+            </p>
+          )}
+        </>
       ) : (
         <EmptyPostsState />
-      )}
-
-      {shouldShowTrigger ? (
-        <div ref={ref as React.RefObject<HTMLDivElement>}>
-          {isFetchingNextPage ? <PostFeedSkeleton numPosts={1} /> : null}
-        </div>
-      ) : (
-        <p className="w-full p-4 text-center text-sm text-neutral-500">
-          {t('No more updates.')}
-        </p>
       )}
 
       <DiscussionModalContainer
