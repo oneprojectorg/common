@@ -1,45 +1,45 @@
-import { relations } from 'drizzle-orm';
-import { index, pgEnum, pgTable, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import { relations } from "drizzle-orm";
+import { index, pgEnum, pgTable, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
 import {
   autoId,
   enumToPgEnum,
   serviceRolePolicies,
   timestamps,
-} from '../../helpers';
-import { profiles } from './profiles.sql';
+} from "../../helpers";
+import { profiles } from "./profiles.sql";
 
 export enum JoinProfileRequestStatus {
-  PENDING = 'pending',
-  APPROVED = 'approved',
+  PENDING = "pending",
+  APPROVED = "approved",
 }
 
 export const joinProfileRequestsStatusEnum = pgEnum(
-  'join_profile_request_status',
+  "join_profile_request_status",
   enumToPgEnum(JoinProfileRequestStatus),
 );
 
 // Store requests to join profiles from other profiles
 export const joinProfileRequests = pgTable(
-  'joinProfileRequests',
+  "joinProfileRequests",
   {
     id: autoId().primaryKey(),
-    requestProfileId: uuid('request_profile_id').references(() => profiles.id, {
-      onDelete: 'cascade',
+    requestProfileId: uuid("request_profile_id").references(() => profiles.id, {
+      onDelete: "cascade",
     }),
-    targetProfileId: uuid('target_profile_id').references(() => profiles.id, {
-      onDelete: 'cascade',
+    targetProfileId: uuid("target_profile_id").references(() => profiles.id, {
+      onDelete: "cascade",
     }),
-    status: joinProfileRequestsStatusEnum('status')
+    status: joinProfileRequestsStatusEnum("status")
       .default(JoinProfileRequestStatus.PENDING)
       .notNull(),
     ...timestamps,
   },
   (table) => [
     ...serviceRolePolicies,
-    index().on(table.requestProfileId).concurrently(),
-    index().on(table.targetProfileId).concurrently(),
-    uniqueIndex('requestToTarget_idx')
+    index().on(table.requestProfileId),
+    index().on(table.targetProfileId),
+    uniqueIndex("requestToTarget_idx")
       .on(table.requestProfileId, table.targetProfileId)
       .concurrently(),
   ],
