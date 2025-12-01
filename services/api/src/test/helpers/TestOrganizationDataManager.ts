@@ -31,6 +31,7 @@ interface GeneratedUser {
   authUserId: string;
   email: string;
   organizationUserId: string;
+  profileId: string;
   role: 'Admin' | 'Member';
 }
 
@@ -199,10 +200,15 @@ export class TestOrganizationDataManager {
         accessRoleId,
       });
 
+      if (!userRecord.profileId) {
+        throw new Error(`User record for ${email} is missing profileId`);
+      }
+
       return {
         authUserId: authUser.id,
         email: authUser.email!,
         organizationUserId: orgUser.id,
+        profileId: userRecord.profileId,
         role,
       };
     };

@@ -14,7 +14,7 @@ export enum JoinProfileRequestStatus {
   APPROVED = 'approved',
 }
 
-export const processStatusEnum = pgEnum(
+export const joinProfileRequestsStatusEnum = pgEnum(
   'join_profile_request_status',
   enumToPgEnum(JoinProfileRequestStatus),
 );
@@ -30,7 +30,7 @@ export const joinProfileRequests = pgTable(
     targetProfileId: uuid('target_profile_id').references(() => profiles.id, {
       onDelete: 'cascade',
     }),
-    status: processStatusEnum('status')
+    status: joinProfileRequestsStatusEnum('status')
       .default(JoinProfileRequestStatus.PENDING)
       .notNull(),
     ...timestamps,

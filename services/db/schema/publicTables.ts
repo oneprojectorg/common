@@ -1,37 +1,37 @@
 // Public tables are included in migrations
 export { accessRoles, type AccessRole } from './tables/access.sql';
 export {
-  accessZones,
-  accessZonesRelations,
   accessRolePermissionsOnAccessZones,
   accessRolePermissionsOnAccessZonesRelations,
   accessRolesRelations,
+  accessZones,
+  accessZonesRelations,
 } from './tables/accessZones.sql';
+export {
+  individuals,
+  individualsRelations,
+  individualsTerms,
+  individualsTermsRelations,
+} from './tables/individuals.sql';
 export { links, linksRelations, linkTypeEnum } from './tables/links.sql';
 export {
   organizations,
   organizationsRelations,
-  orgTypeEnum,
-  organizationsWhereWeWork,
-  organizationsWhereWeWorkRelations,
   organizationsStrategies, // reconsider these tables as possible graphs and edges
   organizationsStrategiesRelations,
   organizationsTerms,
   organizationsTermsRelations,
+  organizationsWhereWeWork,
+  organizationsWhereWeWorkRelations,
+  orgTypeEnum,
 } from './tables/organizations.sql';
-export {
-  individuals,
-  individualsTerms,
-  individualsRelations,
-  individualsTermsRelations,
-} from './tables/individuals.sql';
 export type { Organization } from './tables/organizations.sql';
 export {
-  type OrganizationUser,
   organizationUsers,
   organizationUsersRelations,
   organizationUserToAccessRoles,
   organizationUserToAccessRolesRelations,
+  type OrganizationUser,
 } from './tables/organizationUsers.sql';
 
 export {
@@ -65,11 +65,26 @@ export { attachments, attachmentsRelations } from './tables/attachments.sql';
 
 export {
   taxonomies,
+  taxonomiesRelations,
   taxonomyTerms,
   taxonomyTermsRelations,
-  taxonomiesRelations,
 } from './tables/taxonomies.sql';
 
+export {
+  allowList,
+  allowListRelations,
+  type AllowList,
+} from './tables/allowList.sql';
+export { EntityType, entityTypeEnum } from './tables/entities.sql';
+export {
+  joinProfileRequests,
+  joinProfileRequestsRelations,
+  joinProfileRequestsStatusEnum,
+  type JoinProfileRequests,
+} from './tables/joinProfileRequests.sql';
+export { locations } from './tables/locations.sql';
+export { profiles, profilesRelations } from './tables/profiles.sql';
+export type { Profile } from './tables/profiles.sql';
 export { projects, projectsRelations } from './tables/projects.sql';
 export {
   organizationRelationships,
@@ -82,20 +97,6 @@ export {
 export { users, usersRelations } from './tables/users.sql';
 export type { CommonUser } from './tables/users.sql';
 export { usersUsedStorage } from './tables/usersUsedStorage.sql';
-export { locations } from './tables/locations.sql';
-export { profiles, profilesRelations } from './tables/profiles.sql';
-export type { Profile } from './tables/profiles.sql';
-export { EntityType, entityTypeEnum } from './tables/entities.sql';
-export {
-  allowList,
-  allowListRelations,
-  type AllowList,
-} from './tables/allowList.sql';
-export {
-  joinProfileRequests,
-  joinProfileRequestsRelations,
-  type JoinProfileRequests,
-} from './tables/joinProfileRequests.sql';
 
 // Decision system tables
 export {
@@ -113,10 +114,10 @@ export {
 export type { ProcessInstance } from './tables/processInstances.sql';
 
 export {
-  proposals,
-  proposalsRelations,
   proposalCategories,
   proposalCategoriesRelations,
+  proposals,
+  proposalsRelations,
   ProposalStatus,
   proposalStatusEnum,
 } from './tables/proposals.sql';

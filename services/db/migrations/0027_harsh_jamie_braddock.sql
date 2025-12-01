@@ -1,3 +1,4 @@
+CREATE TYPE "public"."join_profile_request_status" AS ENUM('pending', 'approved');--> statement-breakpoint
 CREATE TABLE "joinProfileRequests" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"request_profile_id" uuid,

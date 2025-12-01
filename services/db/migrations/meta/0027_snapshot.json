@@ -1,5 +1,5 @@
 {
-  "id": "47497830-2ac8-4550-af80-1d8a87755722",
+  "id": "09d03495-c668-4773-8b79-82a157bcda11",
   "prevId": "a4c8b962-3485-41fe-89b5-1715947ca8eb",
   "version": "7",
   "dialect": "postgresql",
@@ -7055,6 +7055,14 @@
         "individual",
         "proposal",
         "decision"
+      ]
+    },
+    "public.join_profile_request_status": {
+      "name": "join_profile_request_status",
+      "schema": "public",
+      "values": [
+        "pending",
+        "approved"
       ]
     },
     "public.link_type": {
