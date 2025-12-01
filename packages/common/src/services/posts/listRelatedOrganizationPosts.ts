@@ -1,4 +1,4 @@
-import { and, db, eq, inArray, lt, or } from '@op/db/client';
+import { db, inArray } from '@op/db/client';
 import { postsToOrganizations } from '@op/db/schema';
 import type { User } from '@supabase/supabase-js';
 

@@ -65,7 +65,7 @@ export const listRelatedOrganizationPostsRouter = router({
       }),
     )
     .query(async ({ input, ctx }) => {
-      const { limit = 200, cursor } = input ?? {};
+      const { limit = 20, cursor } = input ?? {};
 
       const result = await listAllRelatedOrganizationPosts(ctx.user.id, {
         limit,
