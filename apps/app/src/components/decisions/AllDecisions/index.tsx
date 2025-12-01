@@ -61,7 +61,7 @@ const DecisionsListSuspense = ({
 
   return (
     <div className="flex flex-col gap-4 sm:gap-0">
-      {allItems.map((item) => (
+      {paginatedItems.map((item) => (
         <DecisionListItem key={item.id} item={item} />
       ))}
       {shouldShowTrigger && (
