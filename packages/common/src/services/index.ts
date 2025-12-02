@@ -24,5 +24,4 @@ export {
 export {
   createJoinProfileRequest,
   getJoinProfileRequest,
-  listJoinProfileRequests,
 } from './profile/joinRequests';
