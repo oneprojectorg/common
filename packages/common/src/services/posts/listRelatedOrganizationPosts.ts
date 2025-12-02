@@ -1,5 +1,5 @@
-import { db, inArray } from '@op/db/client';
-import { postsToOrganizations } from '@op/db/schema';
+import { and, db, eq, exists, inArray, isNull } from '@op/db/client';
+import { posts, postsToOrganizations } from '@op/db/schema';
 import type { User } from '@supabase/supabase-js';
 
 import {
@@ -43,10 +43,23 @@ export const listAllRelatedOrganizationPosts = async (
   // Fetch posts for all organizations with pagination
   const [result, profileId] = await Promise.all([
     db.query.postsToOrganizations.findMany({
-      where: cursorCondition,
+      where: (table) => {
+        // Filter to only include top-level posts (no parentPostId)
+        const topLevelPostFilter = exists(
+          db
+            .select({ id: posts.id })
+            .from(posts)
+            .where(
+              and(eq(posts.id, table.postId), isNull(posts.parentPostId))
+            )
+        );
+
+        return cursorCondition
+          ? and(cursorCondition, topLevelPostFilter)
+          : topLevelPostFilter;
+      },
       with: {
         post: {
-          where: (table, { isNull }) => isNull(table.parentPostId), // Only show top-level posts
           with: {
             attachments: {
               with: {
@@ -76,11 +89,8 @@ export const listAllRelatedOrganizationPosts = async (
     getCurrentProfileId(authUserId),
   ]);
 
-  // Filter out any items where post is null (due to parentPostId filtering)
-  const filteredResult = result.filter((item) => item.post !== null);
-
-  const hasMore = filteredResult.length > limit;
-  const items = hasMore ? filteredResult.slice(0, limit) : filteredResult;
+  const hasMore = result.length > limit;
+  const items = hasMore ? result.slice(0, limit) : result;
   const lastItem = items[items.length - 1];
   const nextCursor =
     hasMore && lastItem && lastItem.createdAt
