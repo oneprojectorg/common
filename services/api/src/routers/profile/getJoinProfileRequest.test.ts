@@ -208,17 +208,17 @@ describe.concurrent('profile.getJoinProfileRequest', () => {
     const testData = new TestOrganizationDataManager(task.id, onTestFinished);
 
     // Create three organizations:
-    // - One where the attacker is a member (to get authenticated)
-    // - One whose profile the attacker will try to view
+    // - One for the unauthorized user (to get authenticated)
+    // - One whose profile the unauthorized user will try to view
     // - One that is the target
-    const { adminUser: attacker } = await testData.createOrganization();
-    const { adminUser: victim } = await testData.createOrganization();
+    const { adminUser: unauthorizedUser } = await testData.createOrganization();
+    const { adminUser: otherUser } = await testData.createOrganization();
     const { organizationProfile: targetProfile } =
       await testData.createOrganization();
 
-    // Create a join request from victim to target
+    // Create a join request from otherUser to target
     await db.insert(joinProfileRequests).values({
-      requestProfileId: victim.profileId,
+      requestProfileId: otherUser.profileId,
       targetProfileId: targetProfile.id,
       status: JoinProfileRequestStatus.PENDING,
     });
@@ -228,20 +228,19 @@ describe.concurrent('profile.getJoinProfileRequest', () => {
         .delete(joinProfileRequests)
         .where(
           and(
-            eq(joinProfileRequests.requestProfileId, victim.profileId),
+            eq(joinProfileRequests.requestProfileId, otherUser.profileId),
             eq(joinProfileRequests.targetProfileId, targetProfile.id),
           ),
         );
     });
 
-    // Create session as the attacker
-    const { session } = await createIsolatedSession(attacker.email);
+    const { session } = await createIsolatedSession(unauthorizedUser.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
-    // Attacker tries to view victim's join request
+    // Unauthorized user tries to view another user's join request
     await expect(
       caller.getJoinProfileRequest({
-        requestProfileId: victim.profileId,
+        requestProfileId: otherUser.profileId,
         targetProfileId: targetProfile.id,
       }),
     ).rejects.toMatchObject({ code: 'FORBIDDEN' });
