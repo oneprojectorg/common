@@ -40,7 +40,6 @@ function getPostHogDistinctId(): string | null {
 }
 
 const envURL = OPURLConfig('API');
-const trpcUrl = envURL.TRPC_URL;
 
 /**
  * Create a fetch function that handles SSR cookies
@@ -109,7 +108,7 @@ export function createLinks(encryptedCookies?: string): TRPCLink<AppRouter>[] {
       },
       // Use regular httpLink (no batching) when skipBatch is true
       true: httpLink({
-        url: trpcUrl,
+        url: envURL.TRPC_URL,
         transformer: superjson,
         fetch: fetchFn,
       }),
@@ -118,7 +117,7 @@ export function createLinks(encryptedCookies?: string): TRPCLink<AppRouter>[] {
          * If you want to use SSR, you need to use the server's full URL
          * @link https://trpc.io/docs/ssr
          */
-        url: trpcUrl,
+        url: envURL.TRPC_URL,
         transformer: superjson,
         maxItems: 4,
         fetch: fetchFn,
