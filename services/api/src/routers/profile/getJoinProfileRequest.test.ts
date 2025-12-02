@@ -191,11 +191,59 @@ describe.concurrent('profile.getJoinProfileRequest', () => {
     const { session } = await createIsolatedSession(adminUser.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
+    // This returns FORBIDDEN because the user doesn't own the org profile
+    // (auth check runs before profile type validation)
     await expect(
       caller.getJoinProfileRequest({
         requestProfileId: requesterOrgProfile.id,
         targetProfileId: targetOrgProfile.id,
       }),
-    ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+  });
+
+  it('should prevent a user from viewing a join request for a profile they do not belong to', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+
+    // Create three organizations:
+    // - One where the attacker is a member (to get authenticated)
+    // - One whose profile the attacker will try to view
+    // - One that is the target
+    const { adminUser: attacker } = await testData.createOrganization();
+    const { adminUser: victim } = await testData.createOrganization();
+    const { organizationProfile: targetProfile } =
+      await testData.createOrganization();
+
+    // Create a join request from victim to target
+    await db.insert(joinProfileRequests).values({
+      requestProfileId: victim.profileId,
+      targetProfileId: targetProfile.id,
+      status: JoinProfileRequestStatus.PENDING,
+    });
+
+    onTestFinished(async () => {
+      await db
+        .delete(joinProfileRequests)
+        .where(
+          and(
+            eq(joinProfileRequests.requestProfileId, victim.profileId),
+            eq(joinProfileRequests.targetProfileId, targetProfile.id),
+          ),
+        );
+    });
+
+    // Create session as the attacker
+    const { session } = await createIsolatedSession(attacker.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    // Attacker tries to view victim's join request
+    await expect(
+      caller.getJoinProfileRequest({
+        requestProfileId: victim.profileId,
+        targetProfileId: targetProfile.id,
+      }),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' });
   });
 });
