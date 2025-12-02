@@ -9,9 +9,9 @@ import {
   getQueryKey as getQueryKeyTRPC,
 } from '@trpc/react-query';
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
-import React, { useState } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 
-import { links } from './links';
+import { createLinks } from './links';
 import type { AppRouter } from './routers';
 
 export const queryClient = new QueryClient({
@@ -23,6 +23,14 @@ export const queryClient = new QueryClient({
     },
   },
 });
+
+/**
+ * Context for SSR-only cookies (encrypted, only available during SSR)
+ * This allows tRPC HTTP calls to include cookies during SSR
+ */
+const SSRCookiesContext = createContext<string | undefined>(undefined);
+
+export const useSSRCookies = () => useContext(SSRCookiesContext);
 
 const persister = createSyncStoragePersister({
   storage: typeof window !== 'undefined' ? window.localStorage : undefined,
@@ -41,41 +49,56 @@ export function isTRPCClientError(
   return cause instanceof TRPCClientError;
 }
 
-export function TRPCProvider({ children }: { children: React.ReactNode }) {
+/**
+ * TRPCProvider with SSR cookie support
+ *
+ * ssrCookies: Encrypted cookies from Server Component (using cloakSSROnlySecret).
+ * These are decrypted during SSR to include in tRPC HTTP requests.
+ * On the browser, cookies are sent via credentials: 'include'.
+ */
+export function TRPCProvider({
+  children,
+  ssrCookies,
+}: {
+  children: React.ReactNode;
+  ssrCookies?: string;
+}) {
   const [trpcClient] = useState(() =>
     trpc.createClient({
-      links,
+      links: createLinks(ssrCookies),
     }),
   );
 
   return (
-    // eslint-disable-next-line react/no-context-provider
-    <trpc.Provider client={trpcClient} queryClient={queryClient}>
-      <PersistQueryClientProvider
-        client={queryClient}
-        persistOptions={{
-          persister,
-          dehydrateOptions: {
-            shouldDehydrateQuery: (query) => {
-              const queryIsReadyForPersistance =
-                query.state.status === 'success';
+    <SSRCookiesContext.Provider value={ssrCookies}>
+      {/* eslint-disable-next-line react/no-context-provider */}
+      <trpc.Provider client={trpcClient} queryClient={queryClient}>
+        <PersistQueryClientProvider
+          client={queryClient}
+          persistOptions={{
+            persister,
+            dehydrateOptions: {
+              shouldDehydrateQuery: (query) => {
+                const queryIsReadyForPersistance =
+                  query.state.status === 'success';
 
-              if (queryIsReadyForPersistance) {
-                const { queryKey } = query;
-                const excludeFromPersisting =
-                  queryKey.includes('ogImageThumbnail');
+                if (queryIsReadyForPersistance) {
+                  const { queryKey } = query;
+                  const excludeFromPersisting =
+                    queryKey.includes('ogImageThumbnail');
 
-                return !excludeFromPersisting;
-              }
+                  return !excludeFromPersisting;
+                }
 
-              return queryIsReadyForPersistance;
+                return queryIsReadyForPersistance;
+              },
             },
-          },
-        }}
-      >
-        {children}
-      </PersistQueryClientProvider>
-    </trpc.Provider>
+          }}
+        >
+          {children}
+        </PersistQueryClientProvider>
+      </trpc.Provider>
+    </SSRCookiesContext.Provider>
   );
 }
 

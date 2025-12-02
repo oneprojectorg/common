@@ -1096,6 +1096,9 @@ importers:
       spacetime:
         specifier: ^7.7.0
         version: 7.7.0
+      ssr-only-secrets:
+        specifier: ^0.1.4
+        version: 0.1.4(react@19.2.1)
       superjson:
         specifier: ^2.2.2
         version: 2.2.2
@@ -5232,6 +5235,14 @@ packages:
   '@webgpu/types@0.1.53':
     resolution: {integrity: sha512-x+BLw/opaz9LiVyrMsP75nO1Rg0QfrACUYIbVSfGwY/w0DiWIPYYrpte6us//KZXinxFAOJl0+C17L1Vi2vmDw==}
 
+  '@wry/context@0.7.4':
+    resolution: {integrity: sha512-jmT7Sb4ZQWI5iyu3lobQxICu2nC/vbUhP0vIdd6tHC9PTfenmRmuIFqktc6GH9cgi+ZHnsLWPvfSvc4DrYmKiQ==}
+    engines: {node: '>=8'}
+
+  '@wry/trie@0.4.3':
+    resolution: {integrity: sha512-I6bHwH0fSf6RqQcnnXLJKhkSXG45MFral3GxPaY4uAl0LYDZM+YDVDAiU9bYwjTuysy1S0IeecWtmq1SZA3M1w==}
+    engines: {node: '>=8'}
+
   '@xyflow/react@12.5.2':
     resolution: {integrity: sha512-J5LvWedPVNT+gtSOfP88NgyP+IpR5SvluFJt820K9a5GsG8oCpTzTd0k7k3hWkgqtQWxYyVfwkAAZ0dBeyFtFA==}
     peerDependencies:
@@ -7844,6 +7855,9 @@ packages:
     resolution: {integrity: sha512-ur5UIdyw5Y7yEj9wLzhqXiy6GZ3Mwx0yGI+5sMn2r0N0v3cKJvUmFH5yPP+WXh9e0xfyzyJX95D8l088DNFj7A==}
     hasBin: true
 
+  optimism@0.17.5:
+    resolution: {integrity: sha512-TEcp8ZwK1RczmvMnvktxHSF2tKgMWjJ71xEFGX5ApLh67VsMSTy1ZUlipJw8W+KaqgOmQ+4pqwkeivY89j+4Vw==}
+
   ora@8.2.0:
     resolution: {integrity: sha512-weP+BZ8MVNnlCm8c0Qdc1WSWq4Qn7I+9CJGm7Qali6g44e/PUzbjNqJX5NJ9ljlNMosfJvg1fKEGILklK9cwnw==}
     engines: {node: '>=18'}
@@ -8859,6 +8873,11 @@ packages:
     resolution: {integrity: sha512-2p2KJZTSqQ/I3+HX42EpYOa2l3f8Erv8MWKsy2I9uf4wA7yFIkXRffYdsx86y6z4vHtV8u7g+pPlr8/4ouAxsQ==}
     engines: {node: '>=0.10.0'}
     hasBin: true
+
+  ssr-only-secrets@0.1.4:
+    resolution: {integrity: sha512-T32duOV4y+QUMSYQ8Nw1TDsyxaGDKEIoRFmfuurIXOWqFFnAolvzlDUN0fpRYR+XWntIeefQ9kKgh36w46ef6A==}
+    peerDependencies:
+      react: ^19.0.1
 
   stackback@0.0.2:
     resolution: {integrity: sha512-1XMJE5fQo1jGH6Y/7ebnwPOBEkIEnT4QF32d5R1+VXdXveM0IBMJt8zfaxX1P3QhVwrYe+576+jkANtSS2mBbw==}
@@ -14327,6 +14346,14 @@ snapshots:
 
   '@webgpu/types@0.1.53': {}
 
+  '@wry/context@0.7.4':
+    dependencies:
+      tslib: 2.8.1
+
+  '@wry/trie@0.4.3':
+    dependencies:
+      tslib: 2.8.1
+
   '@xyflow/react@12.5.2(@types/react@19.0.10)(immer@10.1.1)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(use-sync-external-store@1.4.0(react@19.2.1))':
     dependencies:
       '@xyflow/system': 0.0.53
@@ -17203,6 +17230,12 @@ snapshots:
 
   opener@1.5.2: {}
 
+  optimism@0.17.5:
+    dependencies:
+      '@wry/context': 0.7.4
+      '@wry/trie': 0.4.3
+      tslib: 2.8.1
+
   ora@8.2.0:
     dependencies:
       chalk: 5.4.1
@@ -18454,6 +18487,11 @@ snapshots:
       jsbn: 0.1.1
       safer-buffer: 2.1.2
       tweetnacl: 0.14.5
+
+  ssr-only-secrets@0.1.4(react@19.2.1):
+    dependencies:
+      optimism: 0.17.5
+      react: 19.2.1
 
   stackback@0.0.2: {}
 
