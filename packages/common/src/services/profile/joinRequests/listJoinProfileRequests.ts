@@ -1,12 +1,6 @@
 import { db } from '@op/db/client';
-import {
-  JoinProfileRequestStatus,
-  joinProfileRequests,
-  organizations,
-  profiles,
-} from '@op/db/schema';
+import { JoinProfileRequestStatus, joinProfileRequests } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
-import { assertAccess, permission } from 'access-zones';
 import { and, eq } from 'drizzle-orm';
 
 import {
@@ -16,6 +10,7 @@ import {
   getCursorCondition,
 } from '../../../utils';
 import { getOrgAccessUser } from '../../access';
+import { assertTargetProfileAdminAccess } from './assertTargetProfileAdminAccess';
 import { JoinProfileRequestWithProfiles } from './createJoinProfileRequest';
 
 type ListJoinProfileRequestsCursor = {
@@ -63,13 +58,8 @@ export const listJoinProfileRequests = async ({
     cursorCondition,
   );
 
-  const [targetProfile, organization, results] = await Promise.all([
-    db.query.profiles.findFirst({
-      where: eq(profiles.id, targetProfileId),
-    }),
-    db.query.organizations.findFirst({
-      where: eq(organizations.profileId, targetProfileId),
-    }),
+  const [, results] = await Promise.all([
+    assertTargetProfileAdminAccess({ user, targetProfileId }),
     db.query.joinProfileRequests.findMany({
       where: whereClause,
       with: {
@@ -81,32 +71,6 @@ export const listJoinProfileRequests = async ({
       limit: limit + 1,
     }),
   ]);
-
-  // Verify target profile exists
-  if (!targetProfile) {
-    throw new UnauthorizedError('Target profile not found');
-  }
-
-  if (!organization) {
-    throw new UnauthorizedError('Target organization not found');
-  }
-
-  // Authorization: User must be an admin member of the target organization.
-  // NOTE: We're using organizationUsers instead of profileUsers because we're in between
-  // memberships - the profile user membership (new) and the organization user membership (old).
-  // After we migrate to profile users, this code should be changed to use profileUsers.
-  const orgUser = await getOrgAccessUser({
-    user,
-    organizationId: organization.id,
-  });
-
-  if (!orgUser) {
-    throw new UnauthorizedError(
-      'You must be a member of this organization to view join requests',
-    );
-  }
-
-  assertAccess({ profile: permission.ADMIN }, orgUser.roles);
 
   const hasMore = results.length > limit;
   const items = hasMore ? results.slice(0, limit) : results;
