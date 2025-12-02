@@ -42,12 +42,17 @@ describe.concurrent('profile.createJoinProfileRequest', () => {
     const caller = createCaller(await createTestContextWithSession(session));
 
     // Call the API endpoint
-    await caller.createJoinProfileRequest({
+    const result = await caller.createJoinProfileRequest({
       requestProfileId: requester.profileId,
       targetProfileId: targetProfile.id,
     });
 
-    // Verify the request was created with pending status
+    // Verify the returned status and profiles
+    expect(result.status).toBe('pending');
+    expect(result.requestProfile.id).toBe(requester.profileId);
+    expect(result.targetProfile.id).toBe(targetProfile.id);
+
+    // Verify the request was created with pending status in the database
     const [request] = await db
       .select()
       .from(joinProfileRequests)
@@ -187,10 +192,13 @@ describe.concurrent('profile.createJoinProfileRequest', () => {
     await new Promise((resolve) => setTimeout(resolve, 10));
 
     // Create a new request - should reset to pending
-    await caller.createJoinProfileRequest({
+    const result = await caller.createJoinProfileRequest({
       requestProfileId: requester.profileId,
       targetProfileId: targetProfile.id,
     });
+
+    // Verify the returned status
+    expect(result.status).toBe('pending');
 
     // Verify the request was reset to pending with updated timestamp
     const [updatedRequest] = await db
