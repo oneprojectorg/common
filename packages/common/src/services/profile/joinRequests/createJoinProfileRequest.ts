@@ -40,31 +40,44 @@ export const createJoinProfileRequest = async ({
     throw new ValidationError('Cannot request to join your own profile');
   }
 
-  const [requestProfile, targetProfile, existingRequest, requestingUser] =
-    await Promise.all([
-      db.query.profiles.findFirst({
-        where: eq(profiles.id, requestProfileId),
-      }),
-      db.query.profiles.findFirst({
-        where: eq(profiles.id, targetProfileId),
-      }),
-      db.query.joinProfileRequests.findFirst({
-        where: (table, { and, eq }) =>
-          and(
-            eq(table.requestProfileId, requestProfileId),
-            eq(table.targetProfileId, targetProfileId),
-          ),
-      }),
-      // Check if user owns this profile (their individual profile)
-      // NOTE: In the future we might want to allow members of profiles to create requests
-      db.query.users.findFirst({
-        where: (table, { and, eq }) =>
-          and(
-            eq(table.authUserId, user.id),
-            eq(table.profileId, requestProfileId),
-          ),
-      }),
-    ]);
+  const [
+    requestProfile,
+    targetProfile,
+    existingRequest,
+    requestingUser,
+    existingMembership,
+  ] = await Promise.all([
+    db.query.profiles.findFirst({
+      where: eq(profiles.id, requestProfileId),
+    }),
+    db.query.profiles.findFirst({
+      where: eq(profiles.id, targetProfileId),
+    }),
+    db.query.joinProfileRequests.findFirst({
+      where: (table, { and, eq }) =>
+        and(
+          eq(table.requestProfileId, requestProfileId),
+          eq(table.targetProfileId, targetProfileId),
+        ),
+    }),
+    // Check if user owns this profile (their individual profile)
+    // NOTE: In the future we might want to allow members of profiles to create requests
+    db.query.users.findFirst({
+      where: (table, { and, eq }) =>
+        and(
+          eq(table.authUserId, user.id),
+          eq(table.profileId, requestProfileId),
+        ),
+    }),
+    // Check if user is already a member of the target profile
+    db.query.profileUsers.findFirst({
+      where: (table, { and, eq }) =>
+        and(
+          eq(table.authUserId, user.id),
+          eq(table.profileId, targetProfileId),
+        ),
+    }),
+  ]);
 
   if (!requestProfile || !targetProfile) {
     throw new ValidationError('Request or target profile not found');
@@ -88,6 +101,11 @@ export const createJoinProfileRequest = async ({
     throw new UnauthorizedError(
       'You can only create join requests from your own profile',
     );
+  }
+
+  // Check if user is already a member of the target profile
+  if (existingMembership) {
+    throw new ValidationError('You are already a member of this profile');
   }
 
   if (existingRequest) {

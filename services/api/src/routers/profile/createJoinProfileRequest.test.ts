@@ -1,5 +1,9 @@
 import { db } from '@op/db/client';
-import { JoinProfileRequestStatus, joinProfileRequests } from '@op/db/schema';
+import {
+  JoinProfileRequestStatus,
+  joinProfileRequests,
+  profileUsers,
+} from '@op/db/schema';
 import { and, eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
@@ -217,5 +221,48 @@ describe.concurrent('profile.createJoinProfileRequest', () => {
         targetProfileId: targetProfile.id,
       }),
     ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+  });
+
+  it('should prevent existing members from creating join requests', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+
+    // Create two organizations
+    const { adminUser: requester } = await testData.createOrganization();
+    const { organizationProfile: targetProfile } =
+      await testData.createOrganization();
+
+    // Add requester as a member of the target profile
+    const [createdProfileUser] = await db
+      .insert(profileUsers)
+      .values({
+        authUserId: requester.authUserId,
+        profileId: targetProfile.id,
+        email: requester.email,
+      })
+      .returning();
+
+    // Clean up the profile user after test
+    onTestFinished(async () => {
+      if (createdProfileUser) {
+        await db
+          .delete(profileUsers)
+          .where(eq(profileUsers.id, createdProfileUser.id));
+      }
+    });
+
+    // Create session as the requester
+    const { session } = await createIsolatedSession(requester.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    // Attempting to create a join request should fail because user is already a member
+    await expect(
+      caller.createJoinProfileRequest({
+        requestProfileId: requester.profileId,
+        targetProfileId: targetProfile.id,
+      }),
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
   });
 });
