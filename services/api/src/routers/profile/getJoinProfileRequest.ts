@@ -1,4 +1,4 @@
-import { ValidationError } from '@op/common';
+import { UnauthorizedError, ValidationError } from '@op/common';
 import { getJoinProfileRequest } from '@op/common';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
@@ -21,9 +21,10 @@ export const getJoinProfileRequestRouter = router({
     .use(withAuthenticated)
     .input(inputSchema)
     .output(joinProfileRequestEncoder.nullable())
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       try {
         const result = await getJoinProfileRequest({
+          user: ctx.user,
           requestProfileId: input.requestProfileId,
           targetProfileId: input.targetProfileId,
         });
@@ -36,6 +37,12 @@ export const getJoinProfileRequestRouter = router({
         if (error instanceof ValidationError) {
           throw new TRPCError({
             code: 'BAD_REQUEST',
+            message: error.message,
+          });
+        }
+        if (error instanceof UnauthorizedError) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
             message: error.message,
           });
         }
