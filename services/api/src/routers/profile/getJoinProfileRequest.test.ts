@@ -191,8 +191,6 @@ describe.concurrent('profile.getJoinProfileRequest', () => {
     const { session } = await createIsolatedSession(adminUser.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
-    // This returns BAD_REQUEST because profile type validation runs before auth check
-    // (org profiles cannot request to join other org profiles)
     await expect(
       caller.getJoinProfileRequest({
         requestProfileId: requesterOrgProfile.id,
