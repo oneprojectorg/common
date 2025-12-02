@@ -74,8 +74,8 @@ describe.concurrent('profile.getJoinProfileRequest', () => {
 
     expect(result).not.toBeNull();
     expect(result?.status).toBe('pending');
-    expect(result?.requestProfileId).toBe(requester.profileId);
-    expect(result?.targetProfileId).toBe(targetProfile.id);
+    expect(result?.requestProfile.id).toBe(requester.profileId);
+    expect(result?.targetProfile.id).toBe(targetProfile.id);
   });
 
   it('should return the join request with approved status', async ({
@@ -158,7 +158,10 @@ describe.concurrent('profile.getJoinProfileRequest', () => {
     expect(result?.status).toBe('rejected');
   });
 
-  it('should prevent checking self-request', async ({ task, onTestFinished }) => {
+  it('should prevent checking self-request', async ({
+    task,
+    onTestFinished,
+  }) => {
     const testData = new TestOrganizationDataManager(task.id, onTestFinished);
 
     const { adminUser } = await testData.createOrganization();

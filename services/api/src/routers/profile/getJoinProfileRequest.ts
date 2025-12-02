@@ -3,6 +3,7 @@ import { getJoinProfileRequest } from '@op/common';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
+import { joinProfileRequestEncoder } from '../../encoders/joinProfileRequests';
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
@@ -19,12 +20,18 @@ export const getJoinProfileRequestRouter = router({
     .use(withRateLimited({ windowSize: 60, maxRequests: 60 }))
     .use(withAuthenticated)
     .input(inputSchema)
+    .output(joinProfileRequestEncoder.nullable())
     .query(async ({ input }) => {
       try {
-        return await getJoinProfileRequest({
+        const result = await getJoinProfileRequest({
           requestProfileId: input.requestProfileId,
           targetProfileId: input.targetProfileId,
         });
+
+        if (!result) {
+          return null;
+        }
+        return joinProfileRequestEncoder.parse(result);
       } catch (error) {
         if (error instanceof ValidationError) {
           throw new TRPCError({
