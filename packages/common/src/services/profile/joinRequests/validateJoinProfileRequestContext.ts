@@ -97,8 +97,6 @@ export const validateJoinProfileRequestContext = async ({
 
   // Currently, only individual/user profiles can request to join organization profiles.
   // This may change in the future to support other profile type combinations.
-  // NOTE: Profile type validation must come before authorization check
-  // because it's a validation error (invalid input), not an authorization issue.
   const isRequestProfileIndividualOrUser =
     requestProfile.type === EntityType.INDIVIDUAL ||
     requestProfile.type === EntityType.USER;
