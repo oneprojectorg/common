@@ -1,19 +1,24 @@
 'use client';
 
+import { useUser } from '@/utils/UserProvider';
 import { pluralize } from '@/utils/pluralize';
-import { trpc } from '@op/api/client';
+import { RouterInput, trpc } from '@op/api/client';
+import { Button } from '@op/ui/Button';
 import { IconButton } from '@op/ui/IconButton';
 import { Menu, MenuItem, MenuTrigger } from '@op/ui/Menu';
 import { Popover } from '@op/ui/Popover';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
 import { toast } from '@op/ui/Toast';
-import React, { useMemo } from 'react';
+import { Suspense, useMemo } from 'react';
 import { LuEllipsis, LuUsers } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
 import { ProfileAvatar } from '@/components/RelationshipList';
+
+type UpdateJoinRequestStatus =
+  RouterInput['profile']['updateJoinProfileRequest']['status'];
 
 type Member = {
   id: string;
@@ -299,8 +304,250 @@ const MembersListContent = ({
   );
 };
 
+type JoinRequestProfile = {
+  id: string;
+  type: string;
+  slug: string;
+  name: string | null;
+  bio: string | null;
+  email: string | null;
+  avatarImage?: {
+    id: string;
+    name: string | null;
+  } | null;
+};
+
+type JoinRequest = {
+  status: string;
+  requestProfile: JoinRequestProfile;
+  targetProfile: {
+    id: string;
+    type: string;
+    slug: string;
+    name: string | null;
+  };
+};
+
+const usePendingRequestActions = ({
+  request,
+  profileId,
+}: {
+  request: JoinRequest;
+  profileId: string;
+}) => {
+  const utils = trpc.useUtils();
+  const t = useTranslations();
+
+  const updateRequest = trpc.profile.updateJoinProfileRequest.useMutation({
+    onSuccess: (_, variables) => {
+      const message =
+        variables.status === 'approved'
+          ? t('Request accepted successfully')
+          : t('Request rejected successfully');
+
+      toast.success({ message });
+      void utils.profile.listJoinProfileRequests.invalidate({
+        targetProfileId: profileId,
+      });
+      void utils.organization.listUsers.invalidate({ profileId });
+    },
+    onError: (error) => {
+      toast.error({
+        message: error.message || t('Failed to update request'),
+      });
+    },
+  });
+
+  const handleAccept = () => {
+    updateRequest.mutate({
+      requestProfileId: request.requestProfile.id,
+      targetProfileId: profileId,
+      status: 'approved' as UpdateJoinRequestStatus,
+    });
+  };
+
+  const handleReject = () => {
+    if (confirm(t('Are you sure you want to reject this request?'))) {
+      updateRequest.mutate({
+        requestProfileId: request.requestProfile.id,
+        targetProfileId: profileId,
+        status: 'rejected' as UpdateJoinRequestStatus,
+      });
+    }
+  };
+
+  return {
+    handleAccept,
+    handleReject,
+    isLoading: updateRequest.isPending,
+  };
+};
+
+const PendingRequestCard = ({
+  request,
+  profileId,
+}: {
+  request: JoinRequest;
+  profileId: string;
+}) => {
+  const t = useTranslations();
+  const { handleAccept, handleReject, isLoading } = usePendingRequestActions({
+    request,
+    profileId,
+  });
+
+  const profile = request.requestProfile;
+  const displayName = profile.name || profile.email || profile.slug;
+
+  const profileForAvatar = {
+    id: profile.id,
+    name: profile.name || displayName,
+    slug: profile.slug,
+    bio: profile.bio,
+    avatarImage: profile.avatarImage,
+    type: profile.type,
+  };
+
+  return (
+    <div
+      key={profile.id}
+      className="relative flex w-full gap-4 rounded border border-neutral-gray1 p-6"
+    >
+      <div className="flex-shrink-0">
+        <ProfileAvatar profile={profileForAvatar} className="size-20" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2">
+            <Link
+              className="truncate font-semibold text-neutral-black"
+              href={
+                profile.type === 'org'
+                  ? `/org/${profile.slug}`
+                  : `/profile/${profile.slug}`
+              }
+            >
+              {displayName}
+            </Link>
+
+            <TagGroup>
+              <Tag className="text-xs">{t('Pending')}</Tag>
+            </TagGroup>
+
+            {profile.email && (
+              <div className="text-sm text-neutral-charcoal">
+                {profile.email}
+              </div>
+            )}
+          </div>
+
+          {profile.bio && (
+            <div className="line-clamp-3 text-neutral-charcoal">
+              {profile.bio.length > 200
+                ? `${profile.bio.slice(0, 200)}...`
+                : profile.bio}
+            </div>
+          )}
+
+          <div className="mt-2 flex gap-2">
+            <Button
+              color="neutral"
+              size="small"
+              onPress={handleReject}
+              isDisabled={isLoading}
+            >
+              {t('Reject')}
+            </Button>
+            <Button
+              color="primary"
+              size="small"
+              onPress={handleAccept}
+              isDisabled={isLoading}
+            >
+              {t('Approve')}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const PendingRequestsContent = ({
+  requests,
+  profileId,
+}: {
+  requests: JoinRequest[];
+  profileId: string;
+}) => {
+  const t = useTranslations();
+
+  if (requests.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 text-center">
+        <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-neutral-gray1">
+          <LuUsers className="h-6 w-6 text-neutral-gray4" />
+        </div>
+        <div className="mb-2 font-serif text-title-base text-neutral-black">
+          {t('No pending requests')}
+        </div>
+        <p className="max-w-md text-sm text-neutral-charcoal">
+          {t('There are no pending membership requests.')}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 gap-8 pb-6 md:grid-cols-2">
+      {requests.map((request) => (
+        <PendingRequestCard
+          key={request.requestProfile.id}
+          request={request}
+          profileId={profileId}
+        />
+      ))}
+    </div>
+  );
+};
+
+const PendingRequestsTab = ({ profileId }: { profileId: string }) => {
+  const t = useTranslations();
+
+  const { data: pendingRequests } =
+    trpc.profile.listJoinProfileRequests.useQuery({
+      targetProfileId: profileId,
+    });
+
+  const pendingCount = pendingRequests?.items.length ?? 0;
+
+  return (
+    <Tab id="pending" variant="pill">
+      {t('Pending requests')} {pendingCount > 0 && `(${pendingCount})`}
+    </Tab>
+  );
+};
+
+const PendingRequestsTabPanel = ({ profileId }: { profileId: string }) => {
+  const [pendingRequests] =
+    trpc.profile.listJoinProfileRequests.useSuspenseQuery({
+      targetProfileId: profileId,
+    });
+
+  return (
+    <TabPanel id="pending" className="px-4 sm:px-0">
+      <PendingRequestsContent
+        requests={pendingRequests.items}
+        profileId={profileId}
+      />
+    </TabPanel>
+  );
+};
+
 export const MembersList = ({ profileId }: { profileId: string }) => {
   const t = useTranslations();
+  const access = useUser();
+  const isAdmin = access.getPermissionsForProfile(profileId).admin.read;
 
   const [members] = trpc.organization.listUsers.useSuspenseQuery({
     profileId,
@@ -373,6 +620,7 @@ export const MembersList = ({ profileId }: { profileId: string }) => {
               </Tab>
             ) : null,
           )}
+          {isAdmin && <PendingRequestsTab profileId={profileId} />}
         </TabList>
 
         <TabPanel id="all" className="px-4 sm:px-0">
@@ -393,6 +641,18 @@ export const MembersList = ({ profileId }: { profileId: string }) => {
               />
             </TabPanel>
           ) : null,
+        )}
+
+        {isAdmin && (
+          <Suspense
+            fallback={
+              <TabPanel id="pending" className="px-4 sm:px-0">
+                <div className="py-8 text-center">{t('Loading...')}</div>
+              </TabPanel>
+            }
+          >
+            <PendingRequestsTabPanel profileId={profileId} />
+          </Suspense>
         )}
       </Tabs>
     </>
