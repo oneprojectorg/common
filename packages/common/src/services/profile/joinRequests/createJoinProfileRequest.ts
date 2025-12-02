@@ -7,9 +7,15 @@ import {
   joinProfileRequests,
   profiles,
 } from '@op/db/schema';
+import { User } from '@op/supabase/lib';
 import { eq } from 'drizzle-orm';
 
-import { CommonError, ConflictError, ValidationError } from '../../../utils';
+import {
+  CommonError,
+  ConflictError,
+  UnauthorizedError,
+  ValidationError,
+} from '../../../utils';
 
 export type JoinProfileRequestWithProfiles = JoinProfileRequest & {
   requestProfile: Profile;
@@ -21,9 +27,11 @@ export type JoinProfileRequestWithProfiles = JoinProfileRequest & {
  * Returns the join profile request with associated profiles.
  */
 export const createJoinProfileRequest = async ({
+  user,
   requestProfileId,
   targetProfileId,
 }: {
+  user: User;
   requestProfileId: string;
   targetProfileId: string;
 }): Promise<JoinProfileRequestWithProfiles> => {
@@ -32,21 +40,31 @@ export const createJoinProfileRequest = async ({
     throw new ValidationError('Cannot request to join your own profile');
   }
 
-  const [requestProfile, targetProfile, existingRequest] = await Promise.all([
-    db.query.profiles.findFirst({
-      where: eq(profiles.id, requestProfileId),
-    }),
-    db.query.profiles.findFirst({
-      where: eq(profiles.id, targetProfileId),
-    }),
-    db.query.joinProfileRequests.findFirst({
-      where: (table, { and, eq }) =>
-        and(
-          eq(table.requestProfileId, requestProfileId),
-          eq(table.targetProfileId, targetProfileId),
-        ),
-    }),
-  ]);
+  const [requestProfile, targetProfile, existingRequest, requestingUser] =
+    await Promise.all([
+      db.query.profiles.findFirst({
+        where: eq(profiles.id, requestProfileId),
+      }),
+      db.query.profiles.findFirst({
+        where: eq(profiles.id, targetProfileId),
+      }),
+      db.query.joinProfileRequests.findFirst({
+        where: (table, { and, eq }) =>
+          and(
+            eq(table.requestProfileId, requestProfileId),
+            eq(table.targetProfileId, targetProfileId),
+          ),
+      }),
+      // Check if user owns this profile (their individual profile)
+      // NOTE: In the future we might want to allow members of profiles to create requests
+      db.query.users.findFirst({
+        where: (table, { and, eq }) =>
+          and(
+            eq(table.authUserId, user.id),
+            eq(table.profileId, requestProfileId),
+          ),
+      }),
+    ]);
 
   if (!requestProfile || !targetProfile) {
     throw new ValidationError('Request or target profile not found');
@@ -62,6 +80,13 @@ export const createJoinProfileRequest = async ({
   if (!isRequestProfileIndividualOrUser || !isTargetProfileOrg) {
     throw new ValidationError(
       'Only individual or user profiles can request to join organization profiles',
+    );
+  }
+
+  // Authorization: User must own the requesting profile
+  if (!requestingUser) {
+    throw new UnauthorizedError(
+      'You can only create join requests from your own profile',
     );
   }
 
