@@ -15,7 +15,10 @@ const inputSchema = z.object({
   /** The profile ID of the target to join */
   targetProfileId: z.uuid(),
   /** New status for the request */
-  status: z.enum(['approved', 'rejected']),
+  status: z.enum([
+    JoinProfileRequestStatus.APPROVED,
+    JoinProfileRequestStatus.REJECTED,
+  ]),
 });
 
 export const updateJoinProfileRequestRouter = router({
@@ -26,16 +29,11 @@ export const updateJoinProfileRequestRouter = router({
     .output(joinProfileRequestEncoder)
     .mutation(async ({ input, ctx }) => {
       try {
-        const statusEnum =
-          input.status === 'approved'
-            ? JoinProfileRequestStatus.APPROVED
-            : JoinProfileRequestStatus.REJECTED;
-
         const result = await updateJoinProfileRequest({
           user: ctx.user,
           requestProfileId: input.requestProfileId,
           targetProfileId: input.targetProfileId,
-          status: statusEnum,
+          status: input.status,
         });
 
         return joinProfileRequestEncoder.parse(result);
