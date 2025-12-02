@@ -21,8 +21,4 @@ export {
   removeRelationship as removeProfileRelationship,
   getRelationships as getProfileRelationships,
 } from './profile/profileRelationships';
-export {
-  addJoinProfileRequest,
-  updateJoinProfileRequestStatus,
-  removeJoinProfileRequest,
-} from './profile/joinRequests';
+export { addJoinProfileRequest } from './profile/joinRequests';
