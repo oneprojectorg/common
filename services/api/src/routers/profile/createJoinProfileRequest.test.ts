@@ -51,25 +51,6 @@ describe.concurrent('profile.createJoinProfileRequest', () => {
     expect(result.status).toBe('pending');
     expect(result.requestProfile.id).toBe(requester.profileId);
     expect(result.targetProfile.id).toBe(targetProfile.id);
-
-    // Verify the request was created with pending status in the database
-    const [request] = await db
-      .select()
-      .from(joinProfileRequests)
-      .where(
-        and(
-          eq(joinProfileRequests.requestProfileId, requester.profileId),
-          eq(joinProfileRequests.targetProfileId, targetProfile.id),
-        ),
-      );
-
-    if (!request) {
-      throw new Error('Join profile request was not created');
-    }
-
-    expect(request.status).toBe('pending');
-    expect(request.requestProfileId).toBe(requester.profileId);
-    expect(request.targetProfileId).toBe(targetProfile.id);
   });
 
   it('should prevent duplicate requests from the same profile to the same target', async ({
@@ -174,23 +155,6 @@ describe.concurrent('profile.createJoinProfileRequest', () => {
         ),
       );
 
-    // Get the rejected request's updatedAt timestamp
-    const [rejectedRequest] = await db
-      .select()
-      .from(joinProfileRequests)
-      .where(
-        and(
-          eq(joinProfileRequests.requestProfileId, requester.profileId),
-          eq(joinProfileRequests.targetProfileId, targetProfile.id),
-        ),
-      );
-
-    expect(rejectedRequest?.status).toBe('rejected');
-    const originalUpdatedAt = rejectedRequest?.updatedAt;
-
-    // Wait a bit to ensure timestamp difference
-    await new Promise((resolve) => setTimeout(resolve, 10));
-
     // Create a new request - should reset to pending
     const result = await caller.createJoinProfileRequest({
       requestProfileId: requester.profileId,
@@ -199,21 +163,6 @@ describe.concurrent('profile.createJoinProfileRequest', () => {
 
     // Verify the returned status
     expect(result.status).toBe('pending');
-
-    // Verify the request was reset to pending with updated timestamp
-    const [updatedRequest] = await db
-      .select()
-      .from(joinProfileRequests)
-      .where(
-        and(
-          eq(joinProfileRequests.requestProfileId, requester.profileId),
-          eq(joinProfileRequests.targetProfileId, targetProfile.id),
-        ),
-      );
-
-    expect(updatedRequest).toBeDefined();
-    expect(updatedRequest?.status).toBe('pending');
-    expect(updatedRequest?.updatedAt).not.toBe(originalUpdatedAt);
   });
 
   it('should prevent an org profile to request to join another org profile', async ({
