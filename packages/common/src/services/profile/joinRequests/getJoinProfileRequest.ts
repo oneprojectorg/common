@@ -24,23 +24,31 @@ export const getJoinProfileRequest = async ({
     throw new ValidationError('Cannot check join request for same profile');
   }
 
-  const [requestProfile, targetProfile, requestingUser] = await Promise.all([
-    db.query.profiles.findFirst({
-      where: eq(profiles.id, requestProfileId),
-    }),
-    db.query.profiles.findFirst({
-      where: eq(profiles.id, targetProfileId),
-    }),
-    // Check if user owns this profile (their individual profile)
-    // NOTE: In the future we might want to allow members of profiles to get requests
-    db.query.users.findFirst({
-      where: (table, { and, eq }) =>
-        and(
-          eq(table.authUserId, user.id),
-          eq(table.profileId, requestProfileId),
-        ),
-    }),
-  ]);
+  const [requestProfile, targetProfile, existingRequest, requestingUser] =
+    await Promise.all([
+      db.query.profiles.findFirst({
+        where: eq(profiles.id, requestProfileId),
+      }),
+      db.query.profiles.findFirst({
+        where: eq(profiles.id, targetProfileId),
+      }),
+      db.query.joinProfileRequests.findFirst({
+        where: (table, { and, eq }) =>
+          and(
+            eq(table.requestProfileId, requestProfileId),
+            eq(table.targetProfileId, targetProfileId),
+          ),
+      }),
+      // Check if user owns this profile (their individual profile)
+      // NOTE: In the future we might want to allow members of profiles to get requests
+      db.query.users.findFirst({
+        where: (table, { and, eq }) =>
+          and(
+            eq(table.authUserId, user.id),
+            eq(table.profileId, requestProfileId),
+          ),
+      }),
+    ]);
 
   if (!requestProfile || !targetProfile) {
     throw new ValidationError('Request or target profile not found');
@@ -64,14 +72,6 @@ export const getJoinProfileRequest = async ({
       'Only individual or user profiles can request to join organization profiles',
     );
   }
-
-  const existingRequest = await db.query.joinProfileRequests.findFirst({
-    where: (table, { and, eq }) =>
-      and(
-        eq(table.requestProfileId, requestProfileId),
-        eq(table.targetProfileId, targetProfileId),
-      ),
-  });
 
   if (!existingRequest) {
     return null;
