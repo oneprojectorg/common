@@ -90,7 +90,7 @@ export const listJoinProfileRequests = async ({
   // Authorization: User must be an admin member of the target profile OR the organization that owns it
   if (profileUser) {
     // User is a direct member of the profile - check admin permission
-    assertAccess({ profile: permission.ADMIN }, profileUser.roles || []);
+    assertAccess({ profile: permission.ADMIN }, profileUser.roles);
   } else if (organization) {
     // User is not a direct member - check if they're an admin of the organization
     const orgUser = await getOrgAccessUser({
@@ -104,7 +104,7 @@ export const listJoinProfileRequests = async ({
       );
     }
 
-    assertAccess({ profile: permission.ADMIN }, orgUser.roles || []);
+    assertAccess({ profile: permission.ADMIN }, orgUser.roles);
   } else {
     throw new UnauthorizedError(
       'You must be a member of this profile to view join requests',
@@ -124,6 +124,10 @@ export const listJoinProfileRequests = async ({
       : null;
 
   return {
+    // Type assertion needed because Drizzle's relational queries infer relations as
+    // { [x: string]: any } | { [x: string]: any }[] instead of the actual Profile type.
+    // This is a known Drizzle ORM limitation (see github.com/drizzle-team/drizzle-orm/issues/695)
+    // TODO: Re-check if this is still needed after upgrading to Drizzle v1
     items: items as JoinProfileRequestWithProfiles[],
     next: nextCursor,
     hasMore,
