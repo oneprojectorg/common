@@ -129,10 +129,24 @@ export const listRelatedOrganizationPosts = async (
 
   // Fetch posts for all related organizations
   const result = await db.query.postsToOrganizations.findMany({
-    where: () => inArray(postsToOrganizations.organizationId, orgIds),
+    where: (table) => {
+      // Filter to only include top-level posts (no parentPostId)
+      const topLevelPostFilter = exists(
+        db
+          .select({ id: posts.id })
+          .from(posts)
+          .where(
+            and(eq(posts.id, table.postId), isNull(posts.parentPostId))
+          )
+      );
+
+      return and(
+        inArray(postsToOrganizations.organizationId, orgIds),
+        topLevelPostFilter
+      );
+    },
     with: {
       post: {
-        where: (table, { isNull }) => isNull(table.parentPostId), // Only show top-level posts
         with: {
           attachments: {
             with: {
@@ -154,8 +168,5 @@ export const listRelatedOrganizationPosts = async (
     orderBy: (table, { desc }) => desc(table.createdAt),
   });
 
-  // Filter out any items where post is null (due to parentPostId filtering)
-  const filteredResult = result.filter((item) => item.post !== null);
-
-  return filteredResult;
+  return result;
 };
