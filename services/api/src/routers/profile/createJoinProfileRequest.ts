@@ -1,4 +1,5 @@
-import { addJoinProfileRequest } from '@op/common';
+import { ConflictError, ValidationError } from '@op/common';
+import { createJoinProfileRequest } from '@op/common';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
@@ -13,41 +14,29 @@ const inputSchema = z.object({
   targetProfileId: z.uuid(),
 });
 
-export const addJoinProfileRequestRouter = router({
-  addJoinProfileRequest: loggedProcedure
+export const createJoinProfileRequestRouter = router({
+  createJoinProfileRequest: loggedProcedure
     .use(withRateLimited({ windowSize: 60, maxRequests: 10 }))
     .use(withAuthenticated)
     .input(inputSchema)
     .mutation(async ({ input }) => {
       try {
-        await addJoinProfileRequest({
+        await createJoinProfileRequest({
           requestProfileId: input.requestProfileId,
           targetProfileId: input.targetProfileId,
         });
       } catch (error) {
-        if (error instanceof Error) {
-          // Map common errors to tRPC errors
-          if (error.message.includes('Cannot request to join your own')) {
-            throw new TRPCError({
-              code: 'BAD_REQUEST',
-              message: error.message,
-            });
-          }
-          if (error.message.includes('already exists')) {
-            throw new TRPCError({
-              code: 'CONFLICT',
-              message: error.message,
-            });
-          }
-          if (
-            error.message.includes('Only user profiles') ||
-            error.message.includes('can only be made to organization')
-          ) {
-            throw new TRPCError({
-              code: 'BAD_REQUEST',
-              message: error.message,
-            });
-          }
+        if (error instanceof ValidationError) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: error.message,
+          });
+        }
+        if (error instanceof ConflictError) {
+          throw new TRPCError({
+            code: 'CONFLICT',
+            message: error.message,
+          });
         }
 
         throw new TRPCError({
