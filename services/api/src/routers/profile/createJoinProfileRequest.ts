@@ -1,4 +1,4 @@
-import { ConflictError, ValidationError } from '@op/common';
+import { ConflictError, UnauthorizedError, ValidationError } from '@op/common';
 import { createJoinProfileRequest } from '@op/common';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
@@ -21,11 +21,12 @@ export const createJoinProfileRequestRouter = router({
     .use(withAuthenticated)
     .input(inputSchema)
     .output(joinProfileRequestEncoder)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       try {
         const result = await createJoinProfileRequest({
           requestProfileId: input.requestProfileId,
           targetProfileId: input.targetProfileId,
+          user: ctx.user,
         });
         return joinProfileRequestEncoder.parse(result);
       } catch (error) {
@@ -38,6 +39,12 @@ export const createJoinProfileRequestRouter = router({
         if (error instanceof ConflictError) {
           throw new TRPCError({
             code: 'CONFLICT',
+            message: error.message,
+          });
+        }
+        if (error instanceof UnauthorizedError) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
             message: error.message,
           });
         }

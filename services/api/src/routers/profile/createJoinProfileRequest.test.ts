@@ -165,7 +165,7 @@ describe.concurrent('profile.createJoinProfileRequest', () => {
     expect(result.status).toBe('pending');
   });
 
-  it('should prevent an org profile to request to join another org profile', async ({
+  it('should prevent org profiles from creating join requests', async ({
     task,
     onTestFinished,
   }) => {
@@ -177,16 +177,45 @@ describe.concurrent('profile.createJoinProfileRequest', () => {
     const { organizationProfile: targetOrgProfile } =
       await testData.createOrganization();
 
-    // Create session as the admin user
+    // Create session as the admin user (who controls the requesterOrgProfile's org)
     const { session } = await createIsolatedSession(adminUser.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
-    // Attempting to create a request from one org profile to another org profile should throw
+    // Attempting to create a request from an org profile should throw BAD_REQUEST
+    // because only individual/user profiles can make join requests
     await expect(
       caller.createJoinProfileRequest({
         requestProfileId: requesterOrgProfile.id,
         targetProfileId: targetOrgProfile.id,
       }),
     ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+  });
+
+  it('should prevent a user from creating a join request for a profile they do not belong to', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+
+    // Create three organizations:
+    // - One where the attacker is a member (to get authenticated)
+    // - One whose profile the attacker will try to impersonate
+    // - One that is the target
+    const { adminUser: attacker } = await testData.createOrganization();
+    const { adminUser: victim } = await testData.createOrganization();
+    const { organizationProfile: targetProfile } =
+      await testData.createOrganization();
+
+    // Create session as the attacker
+    const { session } = await createIsolatedSession(attacker.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    // Attacker tries to create a join request on behalf of victim's profile
+    await expect(
+      caller.createJoinProfileRequest({
+        requestProfileId: victim.profileId,
+        targetProfileId: targetProfile.id,
+      }),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' });
   });
 });
