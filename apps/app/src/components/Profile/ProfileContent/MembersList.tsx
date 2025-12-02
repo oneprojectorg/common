@@ -3,6 +3,7 @@
 import { useUser } from '@/utils/UserProvider';
 import { pluralize } from '@/utils/pluralize';
 import { RouterInput, trpc } from '@op/api/client';
+import { useRelativeTime } from '@op/hooks';
 import { Button } from '@op/ui/Button';
 import { IconButton } from '@op/ui/IconButton';
 import { Menu, MenuItem, MenuTrigger } from '@op/ui/Menu';
@@ -319,6 +320,7 @@ type JoinRequestProfile = {
 
 type JoinRequest = {
   status: string;
+  createdAt: string | null;
   requestProfile: JoinRequestProfile;
   targetProfile: {
     id: string;
@@ -398,6 +400,10 @@ const PendingRequestCard = ({
 
   const profile = request.requestProfile;
   const displayName = profile.name || profile.email || profile.slug;
+  const createdAt = request.createdAt
+    ? new Date(request.createdAt)
+    : new Date();
+  const relativeCreatedAt = useRelativeTime(createdAt);
 
   const profileForAvatar = {
     id: profile.id,
@@ -430,9 +436,11 @@ const PendingRequestCard = ({
               {displayName}
             </Link>
 
-            <TagGroup>
-              <Tag className="text-xs">{t('Pending')}</Tag>
-            </TagGroup>
+            {request.createdAt && (
+              <div className="text-sm text-neutral-charcoal">
+                {t('Requested')} {relativeCreatedAt}
+              </div>
+            )}
 
             {profile.email && (
               <div className="text-sm text-neutral-charcoal">
