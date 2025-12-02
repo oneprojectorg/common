@@ -1,22 +1,13 @@
 import { db } from '@op/db/client';
-import { EntityType, JoinProfileRequest, profiles } from '@op/db/schema';
+import { EntityType, profiles } from '@op/db/schema';
 import { eq } from 'drizzle-orm';
 
 import { ValidationError } from '../../../utils';
-
-export type JoinProfileRequestResult = Pick<
-  JoinProfileRequest,
-  | 'id'
-  | 'requestProfileId'
-  | 'targetProfileId'
-  | 'status'
-  | 'createdAt'
-  | 'updatedAt'
->;
+import { JoinProfileRequestWithProfiles } from './createJoinProfileRequest';
 
 /**
  * Gets an existing join profile request between two profiles.
- * Returns null if no request exists.
+ * Returns the join profile request with associated profiles, or null if no request exists.
  */
 export const getJoinProfileRequest = async ({
   requestProfileId,
@@ -24,7 +15,7 @@ export const getJoinProfileRequest = async ({
 }: {
   requestProfileId: string;
   targetProfileId: string;
-}): Promise<JoinProfileRequestResult | null> => {
+}): Promise<JoinProfileRequestWithProfiles | null> => {
   // Prevent self-requests
   if (requestProfileId === targetProfileId) {
     throw new ValidationError('Cannot check join request for same profile');
@@ -33,19 +24,21 @@ export const getJoinProfileRequest = async ({
   const [requestProfile, targetProfile] = await Promise.all([
     db.query.profiles.findFirst({
       where: eq(profiles.id, requestProfileId),
-      columns: { type: true },
     }),
     db.query.profiles.findFirst({
       where: eq(profiles.id, targetProfileId),
-      columns: { type: true },
     }),
   ]);
 
+  if (!requestProfile || !targetProfile) {
+    throw new ValidationError('Request or target profile not found');
+  }
+
   // Validate profile types - only individual/user can request to join org
   const isRequestProfileIndividualOrUser =
-    requestProfile?.type === EntityType.INDIVIDUAL ||
-    requestProfile?.type === EntityType.USER;
-  const isTargetProfileOrg = targetProfile?.type === EntityType.ORG;
+    requestProfile.type === EntityType.INDIVIDUAL ||
+    requestProfile.type === EntityType.USER;
+  const isTargetProfileOrg = targetProfile.type === EntityType.ORG;
 
   if (!isRequestProfileIndividualOrUser || !isTargetProfileOrg) {
     throw new ValidationError(
@@ -65,5 +58,9 @@ export const getJoinProfileRequest = async ({
     return null;
   }
 
-  return existingRequest;
+  return {
+    ...existingRequest,
+    requestProfile,
+    targetProfile,
+  };
 };
