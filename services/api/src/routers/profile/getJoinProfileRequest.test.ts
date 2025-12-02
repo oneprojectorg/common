@@ -191,14 +191,14 @@ describe.concurrent('profile.getJoinProfileRequest', () => {
     const { session } = await createIsolatedSession(adminUser.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
-    // This returns FORBIDDEN because the user doesn't own the org profile
-    // (auth check runs before profile type validation)
+    // This returns BAD_REQUEST because profile type validation runs before auth check
+    // (org profiles cannot request to join other org profiles)
     await expect(
       caller.getJoinProfileRequest({
         requestProfileId: requesterOrgProfile.id,
         targetProfileId: targetOrgProfile.id,
       }),
-    ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
   });
 
   it('should prevent a user from viewing a join request for a profile they do not belong to', async ({
