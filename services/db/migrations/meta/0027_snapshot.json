@@ -1,5 +1,5 @@
 {
-  "id": "e3b7b0ba-dde7-4144-a3a2-624ae0492ed2",
+  "id": "a1a203b4-419e-4295-a20c-d1f2cd1c2667",
   "prevId": "a4c8b962-3485-41fe-89b5-1715947ca8eb",
   "version": "7",
   "dialect": "postgresql",
@@ -1961,13 +1961,13 @@
           "name": "request_profile_id",
           "type": "uuid",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "target_profile_id": {
           "name": "target_profile_id",
           "type": "uuid",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "status": {
           "name": "status",
@@ -7062,7 +7062,8 @@
       "schema": "public",
       "values": [
         "pending",
-        "approved"
+        "approved",
+        "rejected"
       ]
     },
     "public.link_type": {

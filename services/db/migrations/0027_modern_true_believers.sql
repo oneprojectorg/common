@@ -1,8 +1,8 @@
-CREATE TYPE "public"."join_profile_request_status" AS ENUM('pending', 'approved');--> statement-breakpoint
+CREATE TYPE "public"."join_profile_request_status" AS ENUM('pending', 'approved', 'rejected');--> statement-breakpoint
 CREATE TABLE "joinProfileRequests" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"request_profile_id" uuid,
-	"target_profile_id" uuid,
+	"request_profile_id" uuid NOT NULL,
+	"target_profile_id" uuid NOT NULL,
 	"status" "join_profile_request_status" DEFAULT 'pending' NOT NULL,
 	"created_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
 	"updated_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),

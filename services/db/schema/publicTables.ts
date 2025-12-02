@@ -77,10 +77,11 @@ export {
 } from './tables/allowList.sql';
 export { EntityType, entityTypeEnum } from './tables/entities.sql';
 export {
+  JoinProfileRequestStatus,
   joinProfileRequests,
   joinProfileRequestsRelations,
   joinProfileRequestsStatusEnum,
-  type JoinProfileRequests,
+  type JoinProfileRequest,
 } from './tables/joinProfileRequests.sql';
 export { locations } from './tables/locations.sql';
 export { profiles, profilesRelations } from './tables/profiles.sql';

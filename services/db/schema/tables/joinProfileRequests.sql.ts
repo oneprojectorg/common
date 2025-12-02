@@ -12,6 +12,7 @@ import { profiles } from './profiles.sql';
 export enum JoinProfileRequestStatus {
   PENDING = 'pending',
   APPROVED = 'approved',
+  REJECTED = 'rejected',
 }
 
 export const joinProfileRequestsStatusEnum = pgEnum(
@@ -24,12 +25,16 @@ export const joinProfileRequests = pgTable(
   'joinProfileRequests',
   {
     id: autoId().primaryKey(),
-    requestProfileId: uuid('request_profile_id').references(() => profiles.id, {
-      onDelete: 'cascade',
-    }),
-    targetProfileId: uuid('target_profile_id').references(() => profiles.id, {
-      onDelete: 'cascade',
-    }),
+    requestProfileId: uuid('request_profile_id')
+      .notNull()
+      .references(() => profiles.id, {
+        onDelete: 'cascade',
+      }),
+    targetProfileId: uuid('target_profile_id')
+      .notNull()
+      .references(() => profiles.id, {
+        onDelete: 'cascade',
+      }),
     status: joinProfileRequestsStatusEnum('status')
       .default(JoinProfileRequestStatus.PENDING)
       .notNull(),
@@ -61,4 +66,4 @@ export const joinProfileRequestsRelations = relations(
   }),
 );
 
-export type JoinProfileRequests = typeof joinProfileRequests.$inferSelect;
+export type JoinProfileRequest = typeof joinProfileRequests.$inferSelect;
