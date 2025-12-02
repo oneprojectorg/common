@@ -1,1 +1,1 @@
-export * from './addJoinProfileRequest';
+export * from './createJoinProfileRequest';

@@ -52,3 +52,12 @@ export class UnauthorizedError extends CommonError {
     super(message ?? defaultMessage);
   }
 }
+
+export class ConflictError extends CommonError {
+  public readonly statusCode: number = 409;
+
+  constructor(message?: string) {
+    const defaultMessage = 'A conflict occurred with the current state.';
+    super(message ?? defaultMessage);
+  }
+}
