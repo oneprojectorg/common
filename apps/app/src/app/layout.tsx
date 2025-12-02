@@ -1,12 +1,11 @@
 import { TRPCProvider } from '@op/api/client';
-import { encryptCookiesForSSR } from '@op/api/ssrCookies';
+import { getSSRCookies } from '@op/api/ssrCookies';
 import { APP_NAME, printNFO } from '@op/core';
 import { WebVitals } from '@op/logging';
 import { Toast } from '@op/ui/Toast';
 import '@op/ui/tailwind-styles';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import type { Metadata, Viewport } from 'next';
-import { cookies } from 'next/headers';
 import { Roboto, Roboto_Mono, Roboto_Serif } from 'next/font/google';
 import Script from 'next/script';
 
@@ -64,29 +63,12 @@ export const viewport: Viewport = {
   userScalable: false,
 };
 
-// const { IS_DEVELOPMENT, IS_PREVIEW } = OPURLConfig('APP');
-
 const RootLayout = async ({ children }: { children: React.ReactNode }) => {
-  // Get cookies and encrypt for SSR tRPC calls
-  const cookieStore = await cookies();
-  const cookieHeader = cookieStore
-    .getAll()
-    .map((c) => `${c.name}=${c.value}`)
-    .join('; ');
-  const ssrCookies = cookieHeader
-    ? await encryptCookiesForSSR(cookieHeader)
-    : undefined;
+  const ssrCookies = await getSSRCookies();
 
   return (
     <html className="h-full">
       <head>
-        {/* {(IS_DEVELOPMENT || IS_PREVIEW) && (
-          <script
-            defer
-            crossOrigin="anonymous"
-            src="//unpkg.com/react-scan/dist/auto.global.js"
-          />
-        )} */}
         <Script id="nfo-script" strategy="beforeInteractive">
           {printNFO()}
         </Script>
