@@ -1,16 +1,7 @@
 import { db } from '@op/db/client';
-import {
-  EntityType,
-  type JoinProfileRequest,
-  JoinProfileRequestStatus,
-  type Profile,
-  joinProfileRequests,
-  organizationUsers,
-  organizations,
-  profiles,
-} from '@op/db/schema';
+import { JoinProfileRequestStatus, joinProfileRequests } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
-import { and, eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 import { CommonError, ConflictError, ValidationError } from '../../../utils';
 import {

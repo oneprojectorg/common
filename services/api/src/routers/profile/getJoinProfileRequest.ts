@@ -1,6 +1,4 @@
-import { UnauthorizedError, ValidationError } from '@op/common';
 import { getJoinProfileRequest } from '@op/common';
-import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import { joinProfileRequestEncoder } from '../../encoders/joinProfileRequests';
