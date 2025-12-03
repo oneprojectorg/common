@@ -51,8 +51,15 @@ describe.concurrent('profile.createJoinProfileRequest', () => {
       targetProfileId: targetProfile.id,
     });
 
-    // Verify the returned status and profiles
+    // Verify the returned fields
+    expect(result.id).toBeDefined();
     expect(result.status).toBe('pending');
+    expect(result.requestProfileId).toBe(requester.profileId);
+    expect(result.targetProfileId).toBe(targetProfile.id);
+    expect(result.createdAt).toBeDefined();
+    expect(result.updatedAt).toBeDefined();
+
+    // Verify the returned profiles
     expect(result.requestProfile.id).toBe(requester.profileId);
     expect(result.targetProfile.id).toBe(targetProfile.id);
   });
@@ -165,8 +172,12 @@ describe.concurrent('profile.createJoinProfileRequest', () => {
       targetProfileId: targetProfile.id,
     });
 
-    // Verify the returned status
+    // Verify the returned fields including updated timestamp
+    expect(result.id).toBeDefined();
     expect(result.status).toBe('pending');
+    expect(result.requestProfileId).toBe(requester.profileId);
+    expect(result.targetProfileId).toBe(targetProfile.id);
+    expect(result.updatedAt).toBeDefined();
   });
 
   it('should prevent org profiles from creating join requests', async ({
