@@ -53,13 +53,17 @@ export const updateJoinProfileRequest = async ({
     where: eq(profiles.id, existingRequest.requestProfileId),
   });
 
+  if (!requestProfile) {
+    throw new ValidationError('Request profile not found');
+  }
+
   // If status is unchanged, return the existing record with profiles
   if (existingRequest.status === status) {
     return {
       ...existingRequest,
-      requestProfile: requestProfile as any,
-      targetProfile: targetProfile as any,
-    } as JoinProfileRequestWithProfiles;
+      requestProfile,
+      targetProfile,
+    };
   }
 
   const [updated] = await db
@@ -73,7 +77,7 @@ export const updateJoinProfileRequest = async ({
   }
 
   // If approved, create profile membership for the requesting user
-  if (status === JoinProfileRequestStatus.APPROVED && requestProfile) {
+  if (status === JoinProfileRequestStatus.APPROVED) {
     // Validate that the request profile is an individual/user profile
     // Only individual/user profiles can join organization profiles
     const isRequestProfileIndividualOrUser =
@@ -146,7 +150,7 @@ export const updateJoinProfileRequest = async ({
 
   return {
     ...updated,
-    requestProfile: requestProfile as any,
-    targetProfile: targetProfile as any,
-  } as JoinProfileRequestWithProfiles;
+    requestProfile,
+    targetProfile,
+  };
 };
