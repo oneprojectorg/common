@@ -1,5 +1,6 @@
 import { UnauthorizedError, ValidationError } from '@op/common';
 import { listJoinProfileRequests } from '@op/common';
+import { JoinProfileRequestStatus } from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
 import { AccessControlException } from 'access-zones';
 import { z } from 'zod';
@@ -13,6 +14,8 @@ import { dbFilter } from '../../utils';
 const inputSchema = dbFilter.extend({
   /** The profile ID of the target to view join requests for */
   targetProfileId: z.uuid(),
+  /** Optional status to filter requests by */
+  status: z.nativeEnum(JoinProfileRequestStatus).optional(),
 });
 
 export const listJoinProfileRequestsRouter = router({
@@ -34,6 +37,7 @@ export const listJoinProfileRequestsRouter = router({
         const { items, next, hasMore } = await listJoinProfileRequests({
           user: ctx.user,
           targetProfileId: input.targetProfileId,
+          status: input.status,
           cursor,
           limit,
           dir,

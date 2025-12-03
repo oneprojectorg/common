@@ -1,5 +1,10 @@
 import { db } from '@op/db/client';
-import { joinProfileRequests, organizations, profiles } from '@op/db/schema';
+import {
+  JoinProfileRequestStatus,
+  joinProfileRequests,
+  organizations,
+  profiles,
+} from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 import { and, eq } from 'drizzle-orm';
@@ -25,12 +30,14 @@ type ListJoinProfileRequestsCursor = {
 export const listJoinProfileRequests = async ({
   user,
   targetProfileId,
+  status,
   cursor,
   limit = 10,
   dir = 'desc',
 }: {
   user: User;
   targetProfileId: string;
+  status?: JoinProfileRequestStatus;
   cursor?: string | null;
   limit?: number;
   dir?: 'asc' | 'desc';
@@ -50,12 +57,11 @@ export const listJoinProfileRequests = async ({
     : undefined;
 
   // Build where clause
-  const whereClause = cursorCondition
-    ? and(
-        eq(joinProfileRequests.targetProfileId, targetProfileId),
-        cursorCondition,
-      )
-    : eq(joinProfileRequests.targetProfileId, targetProfileId);
+  const whereClause = and(
+    eq(joinProfileRequests.targetProfileId, targetProfileId),
+    status ? eq(joinProfileRequests.status, status) : undefined,
+    cursorCondition,
+  );
 
   const [targetProfile, organization, profileUser, results] = await Promise.all(
     [
