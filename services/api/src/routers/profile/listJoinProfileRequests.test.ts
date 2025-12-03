@@ -1,6 +1,6 @@
 import { db } from '@op/db/client';
 import { JoinProfileRequestStatus, joinProfileRequests } from '@op/db/schema';
-import { and, eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
 import { TestOrganizationDataManager } from '../../test/helpers/TestOrganizationDataManager';
@@ -290,5 +290,83 @@ describe.concurrent('profile.listJoinProfileRequests', () => {
       next: null,
     });
     expect(result.items).toHaveLength(3);
+  });
+
+  it('should filter requests by status when provided', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+
+    const { organizationProfile: targetProfile, adminUser: targetAdmin } =
+      await testData.createOrganization();
+
+    const { adminUser: requester1 } = await testData.createOrganization();
+    const { adminUser: requester2 } = await testData.createOrganization();
+    const { adminUser: requester3 } = await testData.createOrganization();
+
+    // Create requests with different statuses
+    await db.insert(joinProfileRequests).values([
+      {
+        requestProfileId: requester1.profileId,
+        targetProfileId: targetProfile.id,
+        status: JoinProfileRequestStatus.PENDING,
+      },
+      {
+        requestProfileId: requester2.profileId,
+        targetProfileId: targetProfile.id,
+        status: JoinProfileRequestStatus.APPROVED,
+      },
+      {
+        requestProfileId: requester3.profileId,
+        targetProfileId: targetProfile.id,
+        status: JoinProfileRequestStatus.REJECTED,
+      },
+    ]);
+
+    onTestFinished(async () => {
+      await db
+        .delete(joinProfileRequests)
+        .where(eq(joinProfileRequests.targetProfileId, targetProfile.id));
+    });
+
+    const { session } = await createIsolatedSession(targetAdmin.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    // Filter by PENDING status
+    const pendingResult = await caller.listJoinProfileRequests({
+      targetProfileId: targetProfile.id,
+      status: JoinProfileRequestStatus.PENDING,
+    });
+
+    expect(pendingResult.items).toHaveLength(1);
+    expect(pendingResult.items[0]).toMatchObject({
+      status: 'pending',
+      requestProfile: expect.objectContaining({ id: requester1.profileId }),
+    });
+
+    // Filter by APPROVED status
+    const approvedResult = await caller.listJoinProfileRequests({
+      targetProfileId: targetProfile.id,
+      status: JoinProfileRequestStatus.APPROVED,
+    });
+
+    expect(approvedResult.items).toHaveLength(1);
+    expect(approvedResult.items[0]).toMatchObject({
+      status: 'approved',
+      requestProfile: expect.objectContaining({ id: requester2.profileId }),
+    });
+
+    // Filter by REJECTED status
+    const rejectedResult = await caller.listJoinProfileRequests({
+      targetProfileId: targetProfile.id,
+      status: JoinProfileRequestStatus.REJECTED,
+    });
+
+    expect(rejectedResult.items).toHaveLength(1);
+    expect(rejectedResult.items[0]).toMatchObject({
+      status: 'rejected',
+      requestProfile: expect.objectContaining({ id: requester3.profileId }),
+    });
   });
 });
