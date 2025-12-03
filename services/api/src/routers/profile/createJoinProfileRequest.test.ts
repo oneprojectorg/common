@@ -213,22 +213,21 @@ describe.concurrent('profile.createJoinProfileRequest', () => {
     const testData = new TestOrganizationDataManager(task.id, onTestFinished);
 
     // Create three organizations:
-    // - One where the attacker is a member (to get authenticated)
-    // - One whose profile the attacker will try to impersonate
+    // - One for the unauthorized user (to get authenticated)
+    // - One whose profile the unauthorized user will try to impersonate
     // - One that is the target
-    const { adminUser: attacker } = await testData.createOrganization();
-    const { adminUser: victim } = await testData.createOrganization();
+    const { adminUser: unauthorizedUser } = await testData.createOrganization();
+    const { adminUser: otherUser } = await testData.createOrganization();
     const { organizationProfile: targetProfile } =
       await testData.createOrganization();
 
-    // Create session as the attacker
-    const { session } = await createIsolatedSession(attacker.email);
+    const { session } = await createIsolatedSession(unauthorizedUser.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
-    // Attacker tries to create a join request on behalf of victim's profile
+    // Unauthorized user tries to create a join request on behalf of another user's profile
     await expect(
       caller.createJoinProfileRequest({
-        requestProfileId: victim.profileId,
+        requestProfileId: otherUser.profileId,
         targetProfileId: targetProfile.id,
       }),
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });

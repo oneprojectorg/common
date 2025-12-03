@@ -1,0 +1,35 @@
+import { getJoinProfileRequest } from '@op/common';
+import { z } from 'zod';
+
+import { joinProfileRequestEncoder } from '../../encoders/joinProfileRequests';
+import withAuthenticated from '../../middlewares/withAuthenticated';
+import withRateLimited from '../../middlewares/withRateLimited';
+import { loggedProcedure, router } from '../../trpcFactory';
+
+const inputSchema = z.object({
+  /** The profile ID of the requester */
+  requestProfileId: z.uuid(),
+  /** The profile ID of the target to join */
+  targetProfileId: z.uuid(),
+});
+
+export const getJoinProfileRequestRouter = router({
+  getJoinProfileRequest: loggedProcedure
+    .use(withRateLimited({ windowSize: 60, maxRequests: 60 }))
+    .use(withAuthenticated)
+    .input(inputSchema)
+    .output(joinProfileRequestEncoder.nullable())
+    .query(async ({ input, ctx }) => {
+      const result = await getJoinProfileRequest({
+        user: ctx.user,
+        requestProfileId: input.requestProfileId,
+        targetProfileId: input.targetProfileId,
+      });
+
+      if (!result) {
+        return null;
+      }
+
+      return joinProfileRequestEncoder.parse(result);
+    }),
+});
