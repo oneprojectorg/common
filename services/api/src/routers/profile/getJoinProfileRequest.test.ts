@@ -174,7 +174,7 @@ describe.concurrent('profile.getJoinProfileRequest', () => {
         requestProfileId: adminUser.profileId,
         targetProfileId: adminUser.profileId,
       }),
-    ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
   });
 
   it('should prevent org profile from checking join request to another org profile', async ({
@@ -196,7 +196,7 @@ describe.concurrent('profile.getJoinProfileRequest', () => {
         requestProfileId: requesterOrgProfile.id,
         targetProfileId: targetOrgProfile.id,
       }),
-    ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
   });
 
   it('should prevent a user from viewing a join request for a profile they do not belong to', async ({
@@ -241,6 +241,6 @@ describe.concurrent('profile.getJoinProfileRequest', () => {
         requestProfileId: otherUser.profileId,
         targetProfileId: targetProfile.id,
       }),
-    ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
 });

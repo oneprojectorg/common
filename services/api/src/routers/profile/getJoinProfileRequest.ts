@@ -22,38 +22,16 @@ export const getJoinProfileRequestRouter = router({
     .input(inputSchema)
     .output(joinProfileRequestEncoder.nullable())
     .query(async ({ input, ctx }) => {
-      try {
-        const result = await getJoinProfileRequest({
-          user: ctx.user,
-          requestProfileId: input.requestProfileId,
-          targetProfileId: input.targetProfileId,
-        });
+      const result = await getJoinProfileRequest({
+        user: ctx.user,
+        requestProfileId: input.requestProfileId,
+        targetProfileId: input.targetProfileId,
+      });
 
-        if (!result) {
-          return null;
-        }
-        return joinProfileRequestEncoder.parse(result);
-      } catch (error) {
-        if (error instanceof ValidationError) {
-          throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: error.message,
-          });
-        }
-        if (error instanceof UnauthorizedError) {
-          throw new TRPCError({
-            code: 'FORBIDDEN',
-            message: error.message,
-          });
-        }
-
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message:
-            error instanceof Error
-              ? error.message
-              : 'Failed to get join request',
-        });
+      if (!result) {
+        return null;
       }
+
+      return joinProfileRequestEncoder.parse(result);
     }),
 });

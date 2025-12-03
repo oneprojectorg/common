@@ -8,7 +8,7 @@ import {
   profiles,
 } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 
 import { UnauthorizedError, ValidationError } from '../../../utils';
 
