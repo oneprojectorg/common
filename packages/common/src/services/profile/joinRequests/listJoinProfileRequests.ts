@@ -15,7 +15,7 @@ import {
   encodeCursor,
   getCursorCondition,
 } from '../../../utils';
-import { getOrgAccessUser, getProfileAccessUser } from '../../access';
+import { getOrgAccessUser } from '../../access';
 import { JoinProfileRequestWithProfiles } from './createJoinProfileRequest';
 
 type ListJoinProfileRequestsCursor = {
@@ -25,7 +25,7 @@ type ListJoinProfileRequestsCursor = {
 
 /**
  * Lists all join profile requests for a target profile.
- * Only admin members of the target profile (or the organization that owns the profile) can view these requests.
+ * Only admin members of the target organization can view these requests.
  */
 export const listJoinProfileRequests = async ({
   user,
@@ -63,59 +63,50 @@ export const listJoinProfileRequests = async ({
     cursorCondition,
   );
 
-  const [targetProfile, organization, profileUser, results] = await Promise.all(
-    [
-      db.query.profiles.findFirst({
-        where: eq(profiles.id, targetProfileId),
-      }),
-      db.query.organizations.findFirst({
-        where: eq(organizations.profileId, targetProfileId),
-      }),
-      getProfileAccessUser({
-        user,
-        profileId: targetProfileId,
-      }),
-      db.query.joinProfileRequests.findMany({
-        where: whereClause,
-        with: {
-          requestProfile: true,
-          targetProfile: true,
-        },
-        orderBy: (table, { asc, desc }) =>
-          dir === 'asc' ? asc(table.createdAt) : desc(table.createdAt),
-        limit: limit + 1,
-      }),
-    ],
-  );
+  const [targetProfile, organization, results] = await Promise.all([
+    db.query.profiles.findFirst({
+      where: eq(profiles.id, targetProfileId),
+    }),
+    db.query.organizations.findFirst({
+      where: eq(organizations.profileId, targetProfileId),
+    }),
+    db.query.joinProfileRequests.findMany({
+      where: whereClause,
+      with: {
+        requestProfile: true,
+        targetProfile: true,
+      },
+      orderBy: (table, { asc, desc }) =>
+        dir === 'asc' ? asc(table.createdAt) : desc(table.createdAt),
+      limit: limit + 1,
+    }),
+  ]);
 
   // Verify target profile exists
   if (!targetProfile) {
     throw new UnauthorizedError('Target profile not found');
   }
 
-  // Authorization: User must be an admin member of the target profile OR the organization that owns it
-  if (profileUser) {
-    // User is a direct member of the profile - check admin permission
-    assertAccess({ profile: permission.ADMIN }, profileUser.roles);
-  } else if (organization) {
-    // User is not a direct member - check if they're an admin of the organization
-    const orgUser = await getOrgAccessUser({
-      user,
-      organizationId: organization.id,
-    });
+  if (!organization) {
+    throw new UnauthorizedError('Target organization not found');
+  }
 
-    if (!orgUser) {
-      throw new UnauthorizedError(
-        'You must be a member of this organization to view join requests',
-      );
-    }
+  // Authorization: User must be an admin member of the target organization.
+  // NOTE: We're using organizationUsers instead of profileUsers because we're in between
+  // memberships - the profile user membership (new) and the organization user membership (old).
+  // After we migrate to profile users, this code should be changed to use profileUsers.
+  const orgUser = await getOrgAccessUser({
+    user,
+    organizationId: organization.id,
+  });
 
-    assertAccess({ profile: permission.ADMIN }, orgUser.roles);
-  } else {
+  if (!orgUser) {
     throw new UnauthorizedError(
-      'You must be a member of this profile to view join requests',
+      'You must be a member of this organization to view join requests',
     );
   }
+
+  assertAccess({ profile: permission.ADMIN }, orgUser.roles);
 
   const hasMore = results.length > limit;
   const items = hasMore ? results.slice(0, limit) : results;
