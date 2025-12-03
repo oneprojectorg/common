@@ -144,7 +144,7 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
         requestId: joinRequest!.id,
         status: JoinProfileRequestStatus.APPROVED,
       }),
-    ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
 
   it('should return BAD_REQUEST when join request does not exist', async ({
@@ -168,7 +168,7 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
         requestId: nonExistentRequestId,
         status: JoinProfileRequestStatus.APPROVED,
       }),
-    ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
   });
 
   it('should be idempotent when updating to the same status', async ({
