@@ -60,7 +60,7 @@
     "node-geonames-client": "^0.0.2",
     "pino": "^9.7.0",
     "posthog-js": "^1.236.4",
-    "react": "^19.0.0",
+    "react": "^19.0.1",
     "redis": "^5.5.5",
     "sanitize-s3-objectkey": "^0.0.1",
     "server-only": "^0.0.1",
