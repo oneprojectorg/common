@@ -22,7 +22,7 @@ export const joinProfileRequestsStatusEnum = pgEnum(
 
 // Store requests to join profiles from other profiles
 export const joinProfileRequests = pgTable(
-  'joinProfileRequests',
+  'profile_requests',
   {
     id: autoId().primaryKey(),
     requestProfileId: uuid('request_profile_id')

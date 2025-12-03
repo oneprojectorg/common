@@ -1,5 +1,5 @@
 {
-  "id": "a1a203b4-419e-4295-a20c-d1f2cd1c2667",
+  "id": "d6df79af-3524-42dd-907a-6f1bd3f2f75f",
   "prevId": "a4c8b962-3485-41fe-89b5-1715947ca8eb",
   "version": "7",
   "dialect": "postgresql",
@@ -1946,8 +1946,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.joinProfileRequests": {
-      "name": "joinProfileRequests",
+    "public.profile_requests": {
+      "name": "profile_requests",
       "schema": "",
       "columns": {
         "id": {
@@ -1999,8 +1999,8 @@
         }
       },
       "indexes": {
-        "joinProfileRequests_request_profile_id_index": {
-          "name": "joinProfileRequests_request_profile_id_index",
+        "profile_requests_request_profile_id_index": {
+          "name": "profile_requests_request_profile_id_index",
           "columns": [
             {
               "expression": "request_profile_id",
@@ -2014,8 +2014,8 @@
           "method": "btree",
           "with": {}
         },
-        "joinProfileRequests_target_profile_id_index": {
-          "name": "joinProfileRequests_target_profile_id_index",
+        "profile_requests_target_profile_id_index": {
+          "name": "profile_requests_target_profile_id_index",
           "columns": [
             {
               "expression": "target_profile_id",
@@ -2052,9 +2052,9 @@
         }
       },
       "foreignKeys": {
-        "joinProfileRequests_request_profile_id_profiles_id_fk": {
-          "name": "joinProfileRequests_request_profile_id_profiles_id_fk",
-          "tableFrom": "joinProfileRequests",
+        "profile_requests_request_profile_id_profiles_id_fk": {
+          "name": "profile_requests_request_profile_id_profiles_id_fk",
+          "tableFrom": "profile_requests",
           "tableTo": "profiles",
           "columnsFrom": [
             "request_profile_id"
@@ -2065,9 +2065,9 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "joinProfileRequests_target_profile_id_profiles_id_fk": {
-          "name": "joinProfileRequests_target_profile_id_profiles_id_fk",
-          "tableFrom": "joinProfileRequests",
+        "profile_requests_target_profile_id_profiles_id_fk": {
+          "name": "profile_requests_target_profile_id_profiles_id_fk",
+          "tableFrom": "profile_requests",
           "tableTo": "profiles",
           "columnsFrom": [
             "target_profile_id"
