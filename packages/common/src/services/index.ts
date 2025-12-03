@@ -21,3 +21,4 @@ export {
   removeRelationship as removeProfileRelationship,
   getRelationships as getProfileRelationships,
 } from './profile/profileRelationships';
+export { createJoinProfileRequest } from './profile/joinRequests';

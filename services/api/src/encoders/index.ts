@@ -1,5 +1,6 @@
 export * from './attachments';
 export * from './decision';
+export * from './joinProfileRequests';
 export * from './links';
 export * from './modules';
 export * from './organizations';
@@ -12,6 +13,7 @@ export * from './relationships';
 export * from './profiles';
 export * from './searchResults';
 export * from './shared';
+export * from './joinProfileRequests';
 
 // Export EntityType and ProfileRelationshipType for frontend usage
 export {

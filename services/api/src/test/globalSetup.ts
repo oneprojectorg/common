@@ -1,5 +1,6 @@
 import {
   authUsers,
+  joinProfileRequests,
   organizations,
   profileUsers,
   profiles,
@@ -80,12 +81,16 @@ export async function teardown() {
   const [profileUsersCountResult] = await db
     .select({ count: count() })
     .from(profileUsers);
+  const [joinProfileRequestsCountResult] = await db
+    .select({ count: count() })
+    .from(joinProfileRequests);
 
   const profileCount = profileCountResult?.count ?? 0;
   const userCount = userCountResult?.count ?? 0;
   const orgCount = orgCountResult?.count ?? 0;
   const authUserCount = authUserCountResult?.count ?? 0;
   const profileUsersCount = profileUsersCountResult?.count ?? 0;
+  const joinProfileRequestsCount = joinProfileRequestsCountResult?.count ?? 0;
 
   if (profileCount !== 0) {
     throw new Error(
@@ -114,6 +119,12 @@ export async function teardown() {
   if (profileUsersCount !== 0) {
     throw new Error(
       `Expected 0 profileUsers but found ${profileUsersCount}. This indicates that some test cleanup failed.`,
+    );
+  }
+
+  if (joinProfileRequestsCount !== 0) {
+    throw new Error(
+      `Expected 0 joinProfileRequests but found ${joinProfileRequestsCount}. This indicates that some test cleanup failed.`,
     );
   }
 

@@ -4,6 +4,7 @@ import { enumToPgEnum } from '../../helpers';
 
 export enum EntityType {
   ORG = 'org',
+  /** @deprecated use 'individual' instead */
   USER = 'user',
   INDIVIDUAL = 'individual',
   PROPOSAL = 'proposal',
