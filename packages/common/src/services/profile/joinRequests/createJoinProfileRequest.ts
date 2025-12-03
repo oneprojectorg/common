@@ -5,10 +5,12 @@ import {
   JoinProfileRequestStatus,
   type Profile,
   joinProfileRequests,
+  organizationUsers,
+  organizations,
   profiles,
 } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 
 import {
   CommonError,
@@ -69,14 +71,25 @@ export const createJoinProfileRequest = async ({
           eq(table.profileId, requestProfileId),
         ),
     }),
-    // Check if user is already a member of the target profile
-    db.query.profileUsers.findFirst({
-      where: (table, { and, eq }) =>
+    // Check if user is already a member of the target organization.
+    // NOTE: We're using organizationUsers instead of profileUsers because we're in between
+    // memberships - the profile user membership (new) and the organization user membership (old).
+    // After we migrate to profile users, this code should be changed to use profileUsers.
+    db
+      .select({ id: organizationUsers.id })
+      .from(organizationUsers)
+      .innerJoin(
+        organizations,
+        eq(organizations.id, organizationUsers.organizationId),
+      )
+      .where(
         and(
-          eq(table.authUserId, user.id),
-          eq(table.profileId, targetProfileId),
+          eq(organizationUsers.authUserId, user.id),
+          eq(organizations.profileId, targetProfileId),
         ),
-    }),
+      )
+      .limit(1)
+      .then((rows) => rows[0]),
   ]);
 
   if (!requestProfile || !targetProfile) {
@@ -90,9 +103,15 @@ export const createJoinProfileRequest = async ({
     requestProfile.type === EntityType.USER;
   const isTargetProfileOrg = targetProfile.type === EntityType.ORG;
 
-  if (!isRequestProfileIndividualOrUser || !isTargetProfileOrg) {
+  if (!isRequestProfileIndividualOrUser) {
     throw new ValidationError(
-      'Only individual or user profiles can request to join organization profiles',
+      'Only individual or user profiles can create join requests',
+    );
+  }
+
+  if (!isTargetProfileOrg) {
+    throw new ValidationError(
+      'Join requests can only be made to organization profiles',
     );
   }
 
@@ -138,6 +157,7 @@ export const createJoinProfileRequest = async ({
     .values({
       requestProfileId,
       targetProfileId,
+      // will default to "pending"
     })
     .returning();
 

@@ -13,6 +13,7 @@ export * from './relationships';
 export * from './profiles';
 export * from './searchResults';
 export * from './shared';
+export * from './joinProfileRequests';
 
 // Export EntityType and ProfileRelationshipType for frontend usage
 export {

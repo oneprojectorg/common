@@ -11,6 +11,4 @@ export const joinProfileRequestEncoder = createSelectSchema(
   targetProfile: baseProfileEncoder,
 });
 
-export type JoinProfileRequestResponse = z.infer<
-  typeof joinProfileRequestEncoder
->;
+export type JoinProfileRequest = z.infer<typeof joinProfileRequestEncoder>;

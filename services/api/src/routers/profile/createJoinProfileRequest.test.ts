@@ -2,7 +2,7 @@ import { db } from '@op/db/client';
 import {
   JoinProfileRequestStatus,
   joinProfileRequests,
-  profileUsers,
+  organizationUsers,
 } from '@op/db/schema';
 import { and, eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
@@ -242,25 +242,28 @@ describe.concurrent('profile.createJoinProfileRequest', () => {
 
     // Create two organizations
     const { adminUser: requester } = await testData.createOrganization();
-    const { organizationProfile: targetProfile } =
+    const { organizationProfile: targetProfile, organization: targetOrg } =
       await testData.createOrganization();
 
-    // Add requester as a member of the target profile
-    const [createdProfileUser] = await db
-      .insert(profileUsers)
+    // Add requester as a member of the target organization.
+    // NOTE: We're using organizationUsers instead of profileUsers because we're in between
+    // memberships - the profile user membership (new) and the organization user membership (old).
+    // After we migrate to profile users, this code should be changed to use profileUsers.
+    const [createdOrgUser] = await db
+      .insert(organizationUsers)
       .values({
         authUserId: requester.authUserId,
-        profileId: targetProfile.id,
+        organizationId: targetOrg.id,
         email: requester.email,
       })
       .returning();
 
-    // Clean up the profile user after test
+    // Clean up the organization user after test
     onTestFinished(async () => {
-      if (createdProfileUser) {
+      if (createdOrgUser) {
         await db
-          .delete(profileUsers)
-          .where(eq(profileUsers.id, createdProfileUser.id));
+          .delete(organizationUsers)
+          .where(eq(organizationUsers.id, createdOrgUser.id));
       }
     });
 
