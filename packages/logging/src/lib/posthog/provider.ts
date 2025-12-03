@@ -55,8 +55,9 @@ export function createPostHogLoggerProvider(
 
   // Create the OTLP exporter for PostHog
   const exporter = new OTLPLogExporter({
-    url: `${logsEndpoint}?token=${apiKey}`,
+    url: logsEndpoint,
     headers: {
+      Authorization: `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
   });
