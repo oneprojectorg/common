@@ -10,10 +10,8 @@ import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
 const inputSchema = z.object({
-  /** The profile ID of the requester */
-  requestProfileId: z.uuid(),
-  /** The profile ID of the target to join */
-  targetProfileId: z.uuid(),
+  /** The ID of the join profile request to update */
+  requestId: z.uuid(),
   /** New status for the request */
   status: z.enum([
     JoinProfileRequestStatus.APPROVED,
@@ -31,8 +29,7 @@ export const updateJoinProfileRequestRouter = router({
       try {
         const result = await updateJoinProfileRequest({
           user: ctx.user,
-          requestProfileId: input.requestProfileId,
-          targetProfileId: input.targetProfileId,
+          requestId: input.requestId,
           status: input.status,
         });
 

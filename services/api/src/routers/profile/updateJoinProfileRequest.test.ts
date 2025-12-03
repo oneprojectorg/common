@@ -29,11 +29,14 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
       await testData.createOrganization();
 
     // Insert a pending join request
-    await db.insert(joinProfileRequests).values({
-      requestProfileId: requester.profileId,
-      targetProfileId: targetProfile.id,
-      status: JoinProfileRequestStatus.PENDING,
-    });
+    const [joinRequest] = await db
+      .insert(joinProfileRequests)
+      .values({
+        requestProfileId: requester.profileId,
+        targetProfileId: targetProfile.id,
+        status: JoinProfileRequestStatus.PENDING,
+      })
+      .returning();
 
     // Clean up
     onTestFinished(async () => {
@@ -51,12 +54,11 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
     const caller = createCaller(await createTestContextWithSession(session));
 
     const result = await caller.updateJoinProfileRequest({
-      requestProfileId: requester.profileId,
-      targetProfileId: targetProfile.id,
-      status: 'approved',
+      requestId: joinRequest!.id,
+      status: JoinProfileRequestStatus.APPROVED,
     });
 
-    expect(result.status).toBe('approved');
+    expect(result.status).toBe(JoinProfileRequestStatus.APPROVED);
     expect(result.targetProfile.id).toBe(targetProfile.id);
   });
 
@@ -71,11 +73,14 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
       await testData.createOrganization();
 
     // Insert a pending join request
-    await db.insert(joinProfileRequests).values({
-      requestProfileId: requester.profileId,
-      targetProfileId: targetProfile.id,
-      status: JoinProfileRequestStatus.PENDING,
-    });
+    const [joinRequest] = await db
+      .insert(joinProfileRequests)
+      .values({
+        requestProfileId: requester.profileId,
+        targetProfileId: targetProfile.id,
+        status: JoinProfileRequestStatus.PENDING,
+      })
+      .returning();
 
     onTestFinished(async () => {
       await db
@@ -92,12 +97,11 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
     const caller = createCaller(await createTestContextWithSession(session));
 
     const result = await caller.updateJoinProfileRequest({
-      requestProfileId: requester.profileId,
-      targetProfileId: targetProfile.id,
-      status: 'rejected',
+      requestId: joinRequest!.id,
+      status: JoinProfileRequestStatus.REJECTED,
     });
 
-    expect(result.status).toBe('rejected');
+    expect(result.status).toBe(JoinProfileRequestStatus.REJECTED);
   });
 
   it('should prevent a non-member from updating the request', async ({
@@ -112,11 +116,14 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
       await testData.createOrganization();
 
     // Create a request from requester to target
-    await db.insert(joinProfileRequests).values({
-      requestProfileId: requester.profileId,
-      targetProfileId: targetProfile.id,
-      status: JoinProfileRequestStatus.PENDING,
-    });
+    const [joinRequest] = await db
+      .insert(joinProfileRequests)
+      .values({
+        requestProfileId: requester.profileId,
+        targetProfileId: targetProfile.id,
+        status: JoinProfileRequestStatus.PENDING,
+      })
+      .returning();
 
     onTestFinished(async () => {
       await db
@@ -134,9 +141,8 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
 
     await expect(
       caller.updateJoinProfileRequest({
-        requestProfileId: requester.profileId,
-        targetProfileId: targetProfile.id,
-        status: 'approved',
+        requestId: joinRequest!.id,
+        status: JoinProfileRequestStatus.APPROVED,
       }),
     ).rejects.toMatchObject({ code: 'FORBIDDEN' });
   });
@@ -147,30 +153,20 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
   }) => {
     const testData = new TestOrganizationDataManager(task.id, onTestFinished);
 
-    const { adminUser: targetAdmin, organizationProfile: targetProfile } =
-      await testData.createOrganization();
-    const { adminUser: requester } = await testData.createOrganization();
+    await testData.createOrganization();
 
-    // Ensure there's no join request in DB for this pair
-    onTestFinished(async () => {
-      await db
-        .delete(joinProfileRequests)
-        .where(
-          and(
-            eq(joinProfileRequests.requestProfileId, requester.profileId),
-            eq(joinProfileRequests.targetProfileId, targetProfile.id),
-          ),
-        );
-    });
-
-    const { session } = await createIsolatedSession(targetAdmin.email);
+    const { session } = await createIsolatedSession(
+      (await testData.createOrganization()).adminUser.email,
+    );
     const caller = createCaller(await createTestContextWithSession(session));
+
+    // Use a random UUID that doesn't exist
+    const nonExistentRequestId = '00000000-0000-0000-0000-000000000000';
 
     await expect(
       caller.updateJoinProfileRequest({
-        requestProfileId: requester.profileId,
-        targetProfileId: targetProfile.id,
-        status: 'approved',
+        requestId: nonExistentRequestId,
+        status: JoinProfileRequestStatus.APPROVED,
       }),
     ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
   });
@@ -186,11 +182,14 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
       await testData.createOrganization();
 
     // Insert an approved join request
-    await db.insert(joinProfileRequests).values({
-      requestProfileId: requester.profileId,
-      targetProfileId: targetProfile.id,
-      status: JoinProfileRequestStatus.APPROVED,
-    });
+    const [joinRequest] = await db
+      .insert(joinProfileRequests)
+      .values({
+        requestProfileId: requester.profileId,
+        targetProfileId: targetProfile.id,
+        status: JoinProfileRequestStatus.APPROVED,
+      })
+      .returning();
 
     onTestFinished(async () => {
       await db
@@ -207,12 +206,11 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
     const caller = createCaller(await createTestContextWithSession(session));
 
     const result = await caller.updateJoinProfileRequest({
-      requestProfileId: requester.profileId,
-      targetProfileId: targetProfile.id,
-      status: 'approved',
+      requestId: joinRequest!.id,
+      status: JoinProfileRequestStatus.APPROVED,
     });
 
-    expect(result.status).toBe('approved');
+    expect(result.status).toBe(JoinProfileRequestStatus.APPROVED);
   });
 
   it('should create profile membership when request is approved', async ({
@@ -226,11 +224,14 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
       await testData.createOrganization();
 
     // Insert a pending join request
-    await db.insert(joinProfileRequests).values({
-      requestProfileId: requester.profileId,
-      targetProfileId: targetProfile.id,
-      status: JoinProfileRequestStatus.PENDING,
-    });
+    const [joinRequest] = await db
+      .insert(joinProfileRequests)
+      .values({
+        requestProfileId: requester.profileId,
+        targetProfileId: targetProfile.id,
+        status: JoinProfileRequestStatus.PENDING,
+      })
+      .returning();
 
     // Clean up join request and any created profile membership
     onTestFinished(async () => {
@@ -256,12 +257,11 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
     const caller = createCaller(await createTestContextWithSession(session));
 
     const result = await caller.updateJoinProfileRequest({
-      requestProfileId: requester.profileId,
-      targetProfileId: targetProfile.id,
-      status: 'approved',
+      requestId: joinRequest!.id,
+      status: JoinProfileRequestStatus.APPROVED,
     });
 
-    expect(result.status).toBe('approved');
+    expect(result.status).toBe(JoinProfileRequestStatus.APPROVED);
 
     // Verify that the profile membership was created
     const membership = await db.query.profileUsers.findFirst({
@@ -288,11 +288,14 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
       await testData.createOrganization();
 
     // Insert a pending join request
-    await db.insert(joinProfileRequests).values({
-      requestProfileId: requester.profileId,
-      targetProfileId: targetProfile.id,
-      status: JoinProfileRequestStatus.PENDING,
-    });
+    const [joinRequest] = await db
+      .insert(joinProfileRequests)
+      .values({
+        requestProfileId: requester.profileId,
+        targetProfileId: targetProfile.id,
+        status: JoinProfileRequestStatus.PENDING,
+      })
+      .returning();
 
     // Clean up
     onTestFinished(async () => {
@@ -318,9 +321,8 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
     const caller = createCaller(await createTestContextWithSession(session));
 
     await caller.updateJoinProfileRequest({
-      requestProfileId: requester.profileId,
-      targetProfileId: targetProfile.id,
-      status: 'approved',
+      requestId: joinRequest!.id,
+      status: JoinProfileRequestStatus.APPROVED,
     });
 
     // Verify the membership was created with the Member role
@@ -358,11 +360,14 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
       await testData.createOrganization();
 
     // Insert a pending join request
-    await db.insert(joinProfileRequests).values({
-      requestProfileId: requester.profileId,
-      targetProfileId: targetProfile.id,
-      status: JoinProfileRequestStatus.PENDING,
-    });
+    const [joinRequest] = await db
+      .insert(joinProfileRequests)
+      .values({
+        requestProfileId: requester.profileId,
+        targetProfileId: targetProfile.id,
+        status: JoinProfileRequestStatus.PENDING,
+      })
+      .returning();
 
     onTestFinished(async () => {
       await db
@@ -379,12 +384,11 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
     const caller = createCaller(await createTestContextWithSession(session));
 
     const result = await caller.updateJoinProfileRequest({
-      requestProfileId: requester.profileId,
-      targetProfileId: targetProfile.id,
-      status: 'rejected',
+      requestId: joinRequest!.id,
+      status: JoinProfileRequestStatus.REJECTED,
     });
 
-    expect(result.status).toBe('rejected');
+    expect(result.status).toBe(JoinProfileRequestStatus.REJECTED);
 
     // Verify that no profile membership was created
     const membership = await db.query.profileUsers.findFirst({
@@ -420,11 +424,14 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
       .returning();
 
     // Insert a pending join request
-    await db.insert(joinProfileRequests).values({
-      requestProfileId: requester.profileId,
-      targetProfileId: targetProfile.id,
-      status: JoinProfileRequestStatus.PENDING,
-    });
+    const [joinRequest] = await db
+      .insert(joinProfileRequests)
+      .values({
+        requestProfileId: requester.profileId,
+        targetProfileId: targetProfile.id,
+        status: JoinProfileRequestStatus.PENDING,
+      })
+      .returning();
 
     onTestFinished(async () => {
       await db
@@ -449,12 +456,11 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
     const caller = createCaller(await createTestContextWithSession(session));
 
     const result = await caller.updateJoinProfileRequest({
-      requestProfileId: requester.profileId,
-      targetProfileId: targetProfile.id,
-      status: 'approved',
+      requestId: joinRequest!.id,
+      status: JoinProfileRequestStatus.APPROVED,
     });
 
-    expect(result.status).toBe('approved');
+    expect(result.status).toBe(JoinProfileRequestStatus.APPROVED);
 
     // Verify there's still only one membership (the existing one)
     const memberships = await db.query.profileUsers.findMany({
