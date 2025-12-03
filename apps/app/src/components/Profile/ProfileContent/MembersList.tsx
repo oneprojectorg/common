@@ -2,7 +2,7 @@
 
 import { useUser } from '@/utils/UserProvider';
 import { pluralize } from '@/utils/pluralize';
-import { RouterInput, trpc } from '@op/api/client';
+import { RouterOutput, trpc } from '@op/api/client';
 import { JoinProfileRequestStatus } from '@op/api/encoders';
 import { useRelativeTime } from '@op/hooks';
 import { Button } from '@op/ui/Button';
@@ -18,9 +18,6 @@ import { LuEllipsis, LuUsers } from 'react-icons/lu';
 import { Link, useTranslations } from '@/lib/i18n';
 
 import { ProfileAvatar } from '@/components/RelationshipList';
-
-type UpdateJoinRequestStatus =
-  RouterInput['profile']['updateJoinProfileRequest']['status'];
 
 type Member = {
   id: string;
@@ -306,30 +303,8 @@ const MembersListContent = ({
   );
 };
 
-type JoinRequestProfile = {
-  id: string;
-  type: string;
-  slug: string;
-  name: string | null;
-  bio: string | null;
-  email: string | null;
-  avatarImage?: {
-    id: string;
-    name: string | null;
-  } | null;
-};
-
-type JoinRequest = {
-  status: string;
-  createdAt: string | null;
-  requestProfile: JoinRequestProfile;
-  targetProfile: {
-    id: string;
-    type: string;
-    slug: string;
-    name: string | null;
-  };
-};
+type JoinRequest =
+  RouterOutput['profile']['listJoinProfileRequests']['items'][number];
 
 const usePendingRequestActions = ({
   request,
@@ -363,18 +338,16 @@ const usePendingRequestActions = ({
 
   const handleAccept = () => {
     updateRequest.mutate({
-      requestProfileId: request.requestProfile.id,
-      targetProfileId: profileId,
-      status: 'approved' as UpdateJoinRequestStatus,
+      requestId: request.id,
+      status: JoinProfileRequestStatus.APPROVED,
     });
   };
 
   const handleReject = () => {
     if (confirm(t('Are you sure you want to reject this request?'))) {
       updateRequest.mutate({
-        requestProfileId: request.requestProfile.id,
-        targetProfileId: profileId,
-        status: 'rejected' as UpdateJoinRequestStatus,
+        requestId: request.id,
+        status: JoinProfileRequestStatus.REJECTED,
       });
     }
   };
