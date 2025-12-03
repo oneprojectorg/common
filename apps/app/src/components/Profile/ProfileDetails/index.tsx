@@ -13,6 +13,7 @@ import { ProfileSummary } from '../ProfileSummary';
 import { AddRelationshipModal } from './AddRelationshipModal';
 import { FollowButton } from './FollowButton';
 import { InviteToOrganizationButton } from './InviteToOrganizationButton';
+import { RequestMembershipButton } from './RequestMembershipButton';
 import { UpdateOrganizationModal } from './UpdateOrganizationModal';
 import { UpdateUserProfileModal } from './UpdateProfile';
 
@@ -62,7 +63,10 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
     <div className="flex flex-wrap gap-3 sm:h-fit sm:max-w-fit sm:justify-end sm:gap-4 sm:py-2">
       {!isViewingOwnProfile ? (
         shouldShowFollowButton ? (
-          <FollowButton profile={profile} />
+          <>
+            <FollowButton profile={profile} />
+            <RequestMembershipButton profile={profile} />
+          </>
         ) : (
           <AddRelationshipModal profile={profile} />
         )
