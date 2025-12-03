@@ -2,7 +2,8 @@ import { db } from '@op/db/client';
 import {
   JoinProfileRequestStatus,
   joinProfileRequests,
-  profileUsers,
+  organizationUsers,
+  organizations,
 } from '@op/db/schema';
 import { and, eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
@@ -233,7 +234,12 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
       })
       .returning();
 
-    // Clean up join request and any created profile membership
+    // Get the organization for the target profile
+    const targetOrg = await db.query.organizations.findFirst({
+      where: eq(organizations.profileId, targetProfile.id),
+    });
+
+    // Clean up join request and any created organization membership
     onTestFinished(async () => {
       await db
         .delete(joinProfileRequests)
@@ -243,14 +249,16 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
             eq(joinProfileRequests.targetProfileId, targetProfile.id),
           ),
         );
-      await db
-        .delete(profileUsers)
-        .where(
-          and(
-            eq(profileUsers.authUserId, requester.authUserId),
-            eq(profileUsers.profileId, targetProfile.id),
-          ),
-        );
+      if (targetOrg) {
+        await db
+          .delete(organizationUsers)
+          .where(
+            and(
+              eq(organizationUsers.authUserId, requester.authUserId),
+              eq(organizationUsers.organizationId, targetOrg.id),
+            ),
+          );
+      }
     });
 
     const { session } = await createIsolatedSession(targetAdmin.email);
@@ -263,21 +271,21 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
 
     expect(result.status).toBe(JoinProfileRequestStatus.APPROVED);
 
-    // Verify that the profile membership was created
-    const membership = await db.query.profileUsers.findFirst({
+    // Verify that the organization membership was created
+    const membership = await db.query.organizationUsers.findFirst({
       where: (table, { and, eq }) =>
         and(
           eq(table.authUserId, requester.authUserId),
-          eq(table.profileId, targetProfile.id),
+          eq(table.organizationId, targetOrg!.id),
         ),
     });
 
     expect(membership).toBeDefined();
     expect(membership?.authUserId).toBe(requester.authUserId);
-    expect(membership?.profileId).toBe(targetProfile.id);
+    expect(membership?.organizationId).toBe(targetOrg!.id);
   });
 
-  it('should assign Member role when creating profile membership on approval', async ({
+  it('should assign Member role when creating organization membership on approval', async ({
     task,
     onTestFinished,
   }) => {
@@ -286,6 +294,11 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
     const { adminUser: requester } = await testData.createOrganization();
     const { adminUser: targetAdmin, organizationProfile: targetProfile } =
       await testData.createOrganization();
+
+    // Get the organization for the target profile
+    const targetOrg = await db.query.organizations.findFirst({
+      where: eq(organizations.profileId, targetProfile.id),
+    });
 
     // Insert a pending join request
     const [joinRequest] = await db
@@ -307,14 +320,16 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
             eq(joinProfileRequests.targetProfileId, targetProfile.id),
           ),
         );
-      await db
-        .delete(profileUsers)
-        .where(
-          and(
-            eq(profileUsers.authUserId, requester.authUserId),
-            eq(profileUsers.profileId, targetProfile.id),
-          ),
-        );
+      if (targetOrg) {
+        await db
+          .delete(organizationUsers)
+          .where(
+            and(
+              eq(organizationUsers.authUserId, requester.authUserId),
+              eq(organizationUsers.organizationId, targetOrg.id),
+            ),
+          );
+      }
     });
 
     const { session } = await createIsolatedSession(targetAdmin.email);
@@ -326,11 +341,11 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
     });
 
     // Verify the membership was created with the Member role
-    const membership = await db.query.profileUsers.findFirst({
+    const membership = await db.query.organizationUsers.findFirst({
       where: (table, { and, eq }) =>
         and(
           eq(table.authUserId, requester.authUserId),
-          eq(table.profileId, targetProfile.id),
+          eq(table.organizationId, targetOrg!.id),
         ),
       with: {
         roles: {
@@ -349,7 +364,7 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
     expect(membership?.roles[0]?.accessRole?.name).toBe('Member');
   });
 
-  it('should not create profile membership when request is rejected', async ({
+  it('should not create organization membership when request is rejected', async ({
     task,
     onTestFinished,
   }) => {
@@ -358,6 +373,11 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
     const { adminUser: requester } = await testData.createOrganization();
     const { adminUser: targetAdmin, organizationProfile: targetProfile } =
       await testData.createOrganization();
+
+    // Get the organization for the target profile
+    const targetOrg = await db.query.organizations.findFirst({
+      where: eq(organizations.profileId, targetProfile.id),
+    });
 
     // Insert a pending join request
     const [joinRequest] = await db
@@ -390,12 +410,12 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
 
     expect(result.status).toBe(JoinProfileRequestStatus.REJECTED);
 
-    // Verify that no profile membership was created
-    const membership = await db.query.profileUsers.findFirst({
+    // Verify that no organization membership was created
+    const membership = await db.query.organizationUsers.findFirst({
       where: (table, { and, eq }) =>
         and(
           eq(table.authUserId, requester.authUserId),
-          eq(table.profileId, targetProfile.id),
+          eq(table.organizationId, targetOrg!.id),
         ),
     });
 
@@ -412,12 +432,17 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
     const { adminUser: targetAdmin, organizationProfile: targetProfile } =
       await testData.createOrganization();
 
-    // First, create an existing membership for the requester in the target profile
+    // Get the organization for the target profile
+    const targetOrg = await db.query.organizations.findFirst({
+      where: eq(organizations.profileId, targetProfile.id),
+    });
+
+    // First, create an existing membership for the requester in the target organization
     const [existingMembership] = await db
-      .insert(profileUsers)
+      .insert(organizationUsers)
       .values({
         authUserId: requester.authUserId,
-        profileId: targetProfile.id,
+        organizationId: targetOrg!.id,
         email: requester.email,
         name: 'Existing Member',
       })
@@ -443,11 +468,11 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
           ),
         );
       await db
-        .delete(profileUsers)
+        .delete(organizationUsers)
         .where(
           and(
-            eq(profileUsers.authUserId, requester.authUserId),
-            eq(profileUsers.profileId, targetProfile.id),
+            eq(organizationUsers.authUserId, requester.authUserId),
+            eq(organizationUsers.organizationId, targetOrg!.id),
           ),
         );
     });
@@ -463,11 +488,11 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
     expect(result.status).toBe(JoinProfileRequestStatus.APPROVED);
 
     // Verify there's still only one membership (the existing one)
-    const memberships = await db.query.profileUsers.findMany({
+    const memberships = await db.query.organizationUsers.findMany({
       where: (table, { and, eq }) =>
         and(
           eq(table.authUserId, requester.authUserId),
-          eq(table.profileId, targetProfile.id),
+          eq(table.organizationId, targetOrg!.id),
         ),
     });
 

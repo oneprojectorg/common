@@ -3,8 +3,8 @@ import {
   EntityType,
   JoinProfileRequestStatus,
   joinProfileRequests,
-  profileUserToAccessRoles,
-  profileUsers,
+  organizationUserToAccessRoles,
+  organizationUsers,
   profiles,
 } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
@@ -38,10 +38,15 @@ export const updateJoinProfileRequest = async ({
   }
 
   // Check authorization - user must be admin of target profile
-  const { targetProfile } = await assertTargetProfileAdminAccess({
+  const { targetProfile, organization } = await assertTargetProfileAdminAccess({
     user,
     targetProfileId: existingRequest.targetProfileId,
   });
+
+  // assertTargetProfileAdminAccess throws if organization is not found
+  if (!organization) {
+    throw new ValidationError('Target organization not found');
+  }
 
   // Fetch the request profile
   const requestProfile = await db.query.profiles.findFirst({
@@ -88,12 +93,15 @@ export const updateJoinProfileRequest = async ({
     });
 
     if (requestingUser) {
-      // Check if user is already a member of the target profile
-      const existingMembership = await db.query.profileUsers.findFirst({
+      // Check if user is already a member of the target organization.
+      // NOTE: We're using organizationUsers instead of profileUsers because we're in between
+      // memberships - the profile user membership (new) and the organization user membership (old).
+      // After we migrate to profile users, this code should be changed to use profileUsers.
+      const existingMembership = await db.query.organizationUsers.findFirst({
         where: (table, { and, eq }) =>
           and(
             eq(table.authUserId, requestingUser.authUserId),
-            eq(table.profileId, existingRequest.targetProfileId),
+            eq(table.organizationId, organization.id),
           ),
       });
 
@@ -111,23 +119,23 @@ export const updateJoinProfileRequest = async ({
         }
 
         await db.transaction(async (tx) => {
-          // Create the profile membership
-          const [newProfileUser] = await tx
-            .insert(profileUsers)
+          // Create the organization membership
+          const [newOrgUser] = await tx
+            .insert(organizationUsers)
             .values({
               authUserId: requestingUser.authUserId,
-              profileId: existingRequest.targetProfileId,
+              organizationId: organization.id,
               email: requestingUser.email,
               name: requestingUser.name,
             })
             .returning();
 
-          // Assign the Member role to the new profile user
+          // Assign the Member role to the new organization user
           // NOTE: We start with Member role, but this can be configured in the future
           // to allow specifying a different role during the approval process
-          if (newProfileUser) {
-            await tx.insert(profileUserToAccessRoles).values({
-              profileUserId: newProfileUser.id,
+          if (newOrgUser) {
+            await tx.insert(organizationUserToAccessRoles).values({
+              organizationUserId: newOrgUser.id,
               accessRoleId: memberRole.id,
             });
           }
