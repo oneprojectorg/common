@@ -68,7 +68,7 @@ export const updateJoinProfileRequest = async ({
 
   const [updated] = await db
     .update(joinProfileRequests)
-    .set({ status, updatedAt: new Date().toISOString() })
+    .set({ status })
     .where(eq(joinProfileRequests.id, requestId))
     .returning();
 
