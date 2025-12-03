@@ -1,4 +1,4 @@
-import { SeverityNumber, Logger } from '@opentelemetry/api-logs';
+import { SeverityNumber, Logger as OTelLoggerBase } from '@opentelemetry/api-logs';
 import { getLoggerProvider } from './provider';
 
 export type LogAttributes = Record<
@@ -18,11 +18,11 @@ export type LogContext = {
 };
 
 /**
- * PostHog Logger instance that wraps OpenTelemetry logging
+ * OTel Logger instance that wraps OpenTelemetry logging
  * with convenient methods for different severity levels.
  */
-export class PostHogLogger {
-  private logger: Logger | null = null;
+export class OTelLogger {
+  private logger: OTelLoggerBase | null = null;
   private defaultContext: LogContext;
 
   constructor(
@@ -33,7 +33,7 @@ export class PostHogLogger {
     this.defaultContext = defaultContext;
   }
 
-  private getLogger(): Logger | null {
+  private getOTelLogger(): OTelLoggerBase | null {
     if (!this.logger) {
       const provider = getLoggerProvider();
       if (provider) {
@@ -50,8 +50,8 @@ export class PostHogLogger {
     attributes?: LogAttributes,
     context?: LogContext
   ): void {
-    const logger = this.getLogger();
-    if (!logger) {
+    const otelLogger = this.getOTelLogger();
+    if (!otelLogger) {
       // Fallback to console if logger not initialized
       const consoleMethod =
         severityNumber >= SeverityNumber.ERROR
@@ -69,7 +69,7 @@ export class PostHogLogger {
       return;
     }
 
-    logger.emit({
+    otelLogger.emit({
       severityNumber,
       severityText,
       body: message,
@@ -173,8 +173,8 @@ export class PostHogLogger {
    * Creates a child logger with additional default context.
    * Useful for adding request-specific or user-specific context.
    */
-  child(additionalContext: LogContext): PostHogLogger {
-    return new PostHogLogger(this.name, this.version, {
+  child(additionalContext: LogContext): OTelLogger {
+    return new OTelLogger(this.name, this.version, {
       ...this.defaultContext,
       ...additionalContext,
     });
@@ -182,29 +182,26 @@ export class PostHogLogger {
 }
 
 // Default logger instance
-let defaultLogger: PostHogLogger | null = null;
+let defaultLogger: OTelLogger | null = null;
 
 /**
- * Gets the default PostHog logger instance.
+ * Gets the default logger instance.
  * Creates one if it doesn't exist.
  */
-export function getPostHogLogger(
-  name?: string,
-  version?: string
-): PostHogLogger {
+export function getLogger(name?: string, version?: string): OTelLogger {
   if (!defaultLogger) {
-    defaultLogger = new PostHogLogger(name, version);
+    defaultLogger = new OTelLogger(name, version);
   }
   return defaultLogger;
 }
 
 /**
- * Creates a new PostHog logger with the given name and optional context.
+ * Creates a new logger with the given name and optional context.
  */
-export function createPostHogLogger(
+export function createLogger(
   name: string,
   version: string = '1.0.0',
   defaultContext: LogContext = {}
-): PostHogLogger {
-  return new PostHogLogger(name, version, defaultContext);
+): OTelLogger {
+  return new OTelLogger(name, version, defaultContext);
 }

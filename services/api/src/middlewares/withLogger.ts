@@ -1,19 +1,19 @@
 // import type { User } from '@op/supabase/lib';
 import {
   logger as opLogger,
-  initPostHogLogs,
-  getPostHogLogger,
-  type PostHogLogger,
+  initLogs,
+  getLogger,
+  type OTelLogger,
 } from '@op/logging';
 import spacetime from 'spacetime';
 
 import type { MiddlewareBuilderBase, TContextWithLogger } from '../types';
 
-// Lazily initialize PostHog OTel logger
-let posthogLogger: PostHogLogger | null = null;
-function getOTelLogger(): PostHogLogger | null {
-  if (posthogLogger) {
-    return posthogLogger;
+// Lazily initialize OTel logger
+let otelLogger: OTelLogger | null = null;
+function getOTelLogger(): OTelLogger | null {
+  if (otelLogger) {
+    return otelLogger;
   }
 
   const apiKey = process.env.NEXT_PUBLIC_POSTHOG_KEY;
@@ -22,7 +22,7 @@ function getOTelLogger(): PostHogLogger | null {
     return null;
   }
 
-  initPostHogLogs({
+  initLogs({
     apiKey,
     region: 'eu',
     serviceName: 'api',
@@ -31,17 +31,17 @@ function getOTelLogger(): PostHogLogger | null {
     immediateFlush: true, // Send logs immediately for debugging
   });
 
-  posthogLogger = getPostHogLogger('api', '1.0.0');
+  otelLogger = getLogger('api', '1.0.0');
 
   // Send a test log on initialization
   console.log('PostHog logging initialized for API service (endpoint: eu.i.posthog.com)');
-  posthogLogger.info('PostHog logging initialized', {
+  otelLogger.info('PostHog logging initialized', {
     'service.name': 'api',
     'service.version': '1.0.0',
     environment: process.env.NODE_ENV || 'development',
   });
 
-  return posthogLogger;
+  return otelLogger;
 }
 
 const withLogger: MiddlewareBuilderBase<TContextWithLogger> = async ({

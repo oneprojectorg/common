@@ -1,15 +1,15 @@
 export {
-  createPostHogLoggerProvider,
-  initPostHogLogs,
+  createLoggerProvider,
+  initLogs,
   getLoggerProvider,
-  shutdownPostHogLogs,
-  type PostHogLogsConfig,
+  shutdownLogs,
+  type LogsConfig,
 } from './provider';
 
 export {
-  PostHogLogger,
-  getPostHogLogger,
-  createPostHogLogger,
+  OTelLogger,
+  getLogger,
+  createLogger,
   type LogAttributes,
   type LogContext,
 } from './logger';

@@ -11,7 +11,7 @@ const ATTR_SERVICE_NAME = 'service.name';
 const ATTR_SERVICE_VERSION = 'service.version';
 const ATTR_DEPLOYMENT_ENVIRONMENT = 'deployment.environment';
 
-export type PostHogLogsConfig = {
+export type LogsConfig = {
   /** PostHog project API key (same as used for events) */
   apiKey: string;
   /** PostHog host region. Defaults to 'eu' */
@@ -36,9 +36,7 @@ let loggerProviderInstance: LoggerProvider | null = null;
  *
  * @see https://posthog.com/docs/logs
  */
-export function createPostHogLoggerProvider(
-  config: PostHogLogsConfig
-): LoggerProvider {
+export function createLoggerProvider(config: LogsConfig): LoggerProvider {
   const {
     apiKey,
     region = 'eu',
@@ -90,15 +88,15 @@ export function createPostHogLoggerProvider(
 }
 
 /**
- * Initializes the global PostHog logger provider.
+ * Initializes the global logger provider.
  * This should be called once at application startup.
  */
-export function initPostHogLogs(config: PostHogLogsConfig): LoggerProvider {
+export function initLogs(config: LogsConfig): LoggerProvider {
   if (loggerProviderInstance) {
     return loggerProviderInstance;
   }
 
-  loggerProviderInstance = createPostHogLoggerProvider(config);
+  loggerProviderInstance = createLoggerProvider(config);
   return loggerProviderInstance;
 }
 
@@ -114,7 +112,7 @@ export function getLoggerProvider(): LoggerProvider | null {
  * Shuts down the logger provider and flushes any pending logs.
  * Should be called when the application is shutting down.
  */
-export async function shutdownPostHogLogs(): Promise<void> {
+export async function shutdownLogs(): Promise<void> {
   if (loggerProviderInstance) {
     await loggerProviderInstance.shutdown();
     loggerProviderInstance = null;
