@@ -102,7 +102,7 @@ describe.concurrent('profile.createJoinProfileRequest', () => {
         requestProfileId: requester.profileId,
         targetProfileId: targetProfile.id,
       }),
-    ).rejects.toMatchObject({ code: 'CONFLICT' });
+    ).rejects.toMatchObject({ cause: { name: 'ConflictError' } });
   });
 
   it('should prevent self-requests', async ({ task, onTestFinished }) => {
@@ -120,7 +120,7 @@ describe.concurrent('profile.createJoinProfileRequest', () => {
         requestProfileId: adminUser.profileId,
         targetProfileId: adminUser.profileId,
       }),
-    ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
   });
 
   it('should reset rejected request to pending status with updated dates', async ({
@@ -196,14 +196,14 @@ describe.concurrent('profile.createJoinProfileRequest', () => {
     const { session } = await createIsolatedSession(adminUser.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
-    // Attempting to create a request from an org profile should throw BAD_REQUEST
+    // Attempting to create a request from an org profile should throw ValidationError
     // because only individual/user profiles can make join requests
     await expect(
       caller.createJoinProfileRequest({
         requestProfileId: requesterOrgProfile.id,
         targetProfileId: targetOrgProfile.id,
       }),
-    ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
   });
 
   it('should prevent a user from creating a join request for a profile they do not belong to', async ({
@@ -231,7 +231,7 @@ describe.concurrent('profile.createJoinProfileRequest', () => {
         requestProfileId: victim.profileId,
         targetProfileId: targetProfile.id,
       }),
-    ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
 
   it('should prevent existing members from creating join requests', async ({
@@ -277,6 +277,6 @@ describe.concurrent('profile.createJoinProfileRequest', () => {
         requestProfileId: requester.profileId,
         targetProfileId: targetProfile.id,
       }),
-    ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
   });
 });

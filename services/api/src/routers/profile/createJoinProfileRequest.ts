@@ -1,6 +1,4 @@
-import { ConflictError, UnauthorizedError, ValidationError } from '@op/common';
 import { createJoinProfileRequest } from '@op/common';
-import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import { joinProfileRequestEncoder } from '../../encoders/joinProfileRequests';
@@ -22,40 +20,11 @@ export const createJoinProfileRequestRouter = router({
     .input(inputSchema)
     .output(joinProfileRequestEncoder)
     .mutation(async ({ input, ctx }) => {
-      try {
-        const result = await createJoinProfileRequest({
-          requestProfileId: input.requestProfileId,
-          targetProfileId: input.targetProfileId,
-          user: ctx.user,
-        });
-        return joinProfileRequestEncoder.parse(result);
-      } catch (error) {
-        if (error instanceof ValidationError) {
-          throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: error.message,
-          });
-        }
-        if (error instanceof ConflictError) {
-          throw new TRPCError({
-            code: 'CONFLICT',
-            message: error.message,
-          });
-        }
-        if (error instanceof UnauthorizedError) {
-          throw new TRPCError({
-            code: 'FORBIDDEN',
-            message: error.message,
-          });
-        }
-
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message:
-            error instanceof Error
-              ? error.message
-              : 'Failed to create join request',
-        });
-      }
+      const result = await createJoinProfileRequest({
+        requestProfileId: input.requestProfileId,
+        targetProfileId: input.targetProfileId,
+        user: ctx.user,
+      });
+      return joinProfileRequestEncoder.parse(result);
     }),
 });
