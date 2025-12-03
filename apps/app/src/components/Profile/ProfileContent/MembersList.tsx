@@ -3,6 +3,7 @@
 import { useUser } from '@/utils/UserProvider';
 import { pluralize } from '@/utils/pluralize';
 import { RouterInput, trpc } from '@op/api/client';
+import { JoinProfileRequestStatus } from '@op/api/encoders';
 import { useRelativeTime } from '@op/hooks';
 import { Button } from '@op/ui/Button';
 import { IconButton } from '@op/ui/IconButton';
@@ -525,6 +526,7 @@ const PendingRequestsTab = ({ profileId }: { profileId: string }) => {
   const { data: pendingRequests } =
     trpc.profile.listJoinProfileRequests.useQuery({
       targetProfileId: profileId,
+      status: JoinProfileRequestStatus.PENDING,
     });
 
   const pendingCount = pendingRequests?.items.length ?? 0;
@@ -540,6 +542,7 @@ const PendingRequestsTabPanel = ({ profileId }: { profileId: string }) => {
   const [pendingRequests] =
     trpc.profile.listJoinProfileRequests.useSuspenseQuery({
       targetProfileId: profileId,
+      status: JoinProfileRequestStatus.PENDING,
     });
 
   return (
