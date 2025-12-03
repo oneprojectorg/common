@@ -197,7 +197,7 @@ describe.concurrent('profile.listJoinProfileRequests', () => {
       caller.listJoinProfileRequests({
         targetProfileId: targetProfile.id,
       }),
-    ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+    ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });
   });
 
   it('should deny access to users who are not members of the profile', async ({
@@ -220,7 +220,7 @@ describe.concurrent('profile.listJoinProfileRequests', () => {
       caller.listJoinProfileRequests({
         targetProfileId: targetProfile.id,
       }),
-    ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
 
   it('should include requests with different statuses', async ({
