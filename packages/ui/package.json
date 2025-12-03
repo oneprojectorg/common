@@ -114,7 +114,7 @@
     "tailwind-variants": "0.3.0",
     "tailwindcss-animate": "1.0.7",
     "tailwindcss-react-aria-components": "^1.2.0",
-    "zod": "^4.1.12"
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@iconify/json": "2.2.311",
