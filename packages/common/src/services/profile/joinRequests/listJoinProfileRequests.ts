@@ -1,9 +1,5 @@
 import { db } from '@op/db/client';
-  JoinProfileRequestStatus,
-  joinProfileRequests,
-  organizations,
-  profiles,
-} from '@op/db/schema';
+import { JoinProfileRequestStatus, joinProfileRequests } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 import { and, eq } from 'drizzle-orm';
 
