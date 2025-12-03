@@ -10,7 +10,7 @@ import { assertAccess, permission } from 'access-zones';
 import { eq } from 'drizzle-orm';
 
 import { UnauthorizedError, ValidationError } from '../../../utils';
-import { getOrgAccessUser, getProfileAccessUser } from '../../access';
+import { getOrgAccessUser } from '../../access';
 
 export type TargetProfileAdminContext = {
   targetProfile: Profile;

@@ -3,13 +3,7 @@ import { JoinProfileRequestStatus, joinProfileRequests } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 import { and, eq } from 'drizzle-orm';
 
-import {
-  UnauthorizedError,
-  decodeCursor,
-  encodeCursor,
-  getCursorCondition,
-} from '../../../utils';
-import { getOrgAccessUser } from '../../access';
+import { decodeCursor, encodeCursor, getCursorCondition } from '../../../utils';
 import { assertTargetProfileAdminAccess } from './assertTargetProfileAdminAccess';
 import { JoinProfileRequestWithProfiles } from './createJoinProfileRequest';
 
