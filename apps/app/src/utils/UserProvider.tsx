@@ -39,11 +39,16 @@ const UserContext = createContext<UserContextValue | undefined>(undefined);
 
 export const UserProviderSuspense = ({
   children,
+  initialUser,
 }: {
   children: React.ReactNode;
+  initialUser?: OrganizationUser;
 }) => {
   const router = useRouter();
-  const [user] = trpc.account.getMyAccount.useSuspenseQuery();
+  // Use initialUser as initialData to avoid SSR fetch, then revalidate on client
+  const [user] = trpc.account.getMyAccount.useSuspenseQuery(undefined, {
+    initialData: initialUser,
+  });
 
   if (user.organizationUsers?.length === 0) {
     router.push('/start');
@@ -83,7 +88,13 @@ export const UserProviderSuspense = ({
   );
 };
 
-export const UserProvider = ({ children }: { children: React.ReactNode }) => {
+export const UserProvider = ({
+  children,
+  initialUser,
+}: {
+  children: React.ReactNode;
+  initialUser?: OrganizationUser;
+}) => {
   return (
     <ErrorBoundary
       fallback={
@@ -98,7 +109,9 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
       }
     >
       <Suspense fallback={null}>
-        <UserProviderSuspense>{children}</UserProviderSuspense>
+        <UserProviderSuspense initialUser={initialUser}>
+          {children}
+        </UserProviderSuspense>
       </Suspense>
     </ErrorBoundary>
   );

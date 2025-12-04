@@ -11,7 +11,7 @@ const Layout = async ({ children }: { children: React.ReactNode }) => {
     redirect('/en/start');
   }
 
-  return <UserProvider>{children}</UserProvider>;
+  return <UserProvider initialUser={user}>{children}</UserProvider>;
 };
 
 export default Layout;

@@ -1,4 +1,5 @@
 import { TRPCProvider } from '@op/api/client';
+import { getSSRCookies } from '@op/api/ssrCookies';
 import { APP_NAME, printNFO } from '@op/core';
 import { WebVitals } from '@op/logging';
 import { Toast } from '@op/ui/Toast';
@@ -62,25 +63,18 @@ export const viewport: Viewport = {
   userScalable: false,
 };
 
-// const { IS_DEVELOPMENT, IS_PREVIEW } = OPURLConfig('APP');
-
 const RootLayout = async ({ children }: { children: React.ReactNode }) => {
+  const ssrCookies = await getSSRCookies();
+
   return (
     <html className="h-full">
       <head>
-        {/* {(IS_DEVELOPMENT || IS_PREVIEW) && (
-          <script
-            defer
-            crossOrigin="anonymous"
-            src="//unpkg.com/react-scan/dist/auto.global.js"
-          />
-        )} */}
         <Script id="nfo-script" strategy="beforeInteractive">
           {printNFO()}
         </Script>
       </head>
       <WebVitals />
-      <TRPCProvider>
+      <TRPCProvider ssrCookies={ssrCookies}>
         <body
           className={`${roboto.variable} ${robotoMono.variable} ${robotoSerif.variable} h-full overflow-x-hidden text-base text-neutral-black antialiased`}
         >

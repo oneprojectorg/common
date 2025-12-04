@@ -8,6 +8,7 @@
     ".": "./index.ts",
     "./client": "./src/TRPCProvider.tsx",
     "./serverClient": "./src/serverClient.ts",
+    "./ssrCookies": "./src/ssrCookies.ts",
     "./encoders": "./src/encoders/index.ts"
   },
   "scripts": {
@@ -65,6 +66,7 @@
     "sanitize-s3-objectkey": "^0.0.1",
     "server-only": "^0.0.1",
     "spacetime": "^7.7.0",
+    "ssr-only-secrets": "^0.1.4",
     "superjson": "^2.2.2",
     "trpc-to-openapi": "^3.1.0",
     "zod": "^4.1.12"
