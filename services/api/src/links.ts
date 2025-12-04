@@ -10,8 +10,8 @@ import { readSSROnlySecret } from 'ssr-only-secrets';
 import superjson from 'superjson';
 
 import type { AppRouter } from './routers';
-import { SSR_SECRETS_KEY_VAR } from './ssrCookies';
 
+const SSR_SECRETS_KEY_VAR = 'SSR_SECRETS_KEY';
 const isServer = typeof window === 'undefined';
 
 // Function to get PostHog distinct_id if available

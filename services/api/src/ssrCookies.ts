@@ -2,20 +2,7 @@ import { cookies } from 'next/headers';
 import 'server-only';
 import { cloakSSROnlySecret } from 'ssr-only-secrets';
 
-/**
- * Environment variable name for the SSR secrets encryption key.
- * Generate a key by running this in your browser console:
- *
- * crypto.subtle
- *   .generateKey({ name: "AES-CBC", length: 256 }, true, ["encrypt", "decrypt"])
- *   .then((key) => crypto.subtle.exportKey("jwk", key))
- *   .then(JSON.stringify)
- *   .then(console.log);
- *
- * Then add it to your .env.local:
- * SSR_SECRETS_KEY={"alg":"A256CBC","ext":true,"k":"...","key_ops":["encrypt","decrypt"],"kty":"oct"}
- */
-export const SSR_SECRETS_KEY_VAR = 'SSR_SECRETS_KEY';
+const SSR_SECRETS_KEY_VAR = 'SSR_SECRETS_KEY';
 
 /**
  * Get encrypted cookies for SSR tRPC calls.
