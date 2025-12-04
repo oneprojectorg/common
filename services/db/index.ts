@@ -22,7 +22,7 @@ export const db = drizzle({
   connection: {
     url: process.env.DATABASE_URL,
     max: process.env.DB_MIGRATING || process.env.DB_SEEDING ? 1 : undefined,
-    onnotice: process.env.DB_SEEDING ? () => {} : undefined,
+    onnotice: process.env.NODE_ENV === 'production' ? () => {} : undefined,
     prepare: false,
   },
   casing: config.casing,
