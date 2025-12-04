@@ -50,7 +50,7 @@ export const CreateOrganizationModal = ({
         <ModalHeader>{t('Create Organization')}</ModalHeader>
         <CreateOrganizationForm
           ref={formRef}
-          onSuccess={() => setIsOpen(false)}
+          onSuccess={() => controlledSetIsOpen?.(false)}
           className="p-6"
         />
       </Modal>
