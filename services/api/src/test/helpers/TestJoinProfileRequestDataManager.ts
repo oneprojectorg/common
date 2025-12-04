@@ -3,7 +3,6 @@ import {
   JoinProfileRequest,
   JoinProfileRequestStatus,
   joinProfileRequests,
-  organizationUsers,
 } from '@op/db/schema';
 import { inArray } from 'drizzle-orm';
 
@@ -44,19 +43,16 @@ interface CreateJoinRequestOutput {
  * ```
  */
 export class TestJoinProfileRequestDataManager {
-  private testId: string;
   private cleanupRegistered = false;
   private onTestFinishedCallback: (fn: () => void | Promise<void>) => void;
 
   // Track exact IDs created by this test instance for precise cleanup
   private createdJoinRequestIds: string[] = [];
-  private createdOrganizationUserIds: string[] = [];
 
   constructor(
-    testId: string,
+    _testId: string,
     onTestFinished: (fn: () => void | Promise<void>) => void,
   ) {
-    this.testId = testId;
     this.onTestFinishedCallback = onTestFinished;
   }
 
@@ -145,41 +141,6 @@ export class TestJoinProfileRequestDataManager {
   }
 
   /**
-   * Creates an organization user membership.
-   * Useful for testing scenarios where a user is already a member.
-   * Automatically registers cleanup.
-   *
-   * @param opts - Options for organization user creation
-   * @returns The created organization user record
-   */
-  async createOrganizationUserMembership(opts: {
-    authUserId: string;
-    organizationId: string;
-    email: string;
-    name?: string;
-  }): Promise<typeof organizationUsers.$inferSelect> {
-    this.ensureCleanupRegistered();
-
-    const [orgUser] = await db
-      .insert(organizationUsers)
-      .values({
-        authUserId: opts.authUserId,
-        organizationId: opts.organizationId,
-        email: opts.email,
-        name: opts.name,
-      })
-      .returning();
-
-    if (!orgUser) {
-      throw new Error('Failed to create organization user');
-    }
-
-    this.createdOrganizationUserIds.push(orgUser.id);
-
-    return orgUser;
-  }
-
-  /**
    * Tracks a join request ID for cleanup.
    * Use this when the join request was created by the API rather than by this manager.
    *
@@ -200,17 +161,6 @@ export class TestJoinProfileRequestDataManager {
   }
 
   /**
-   * Tracks an organization user ID for cleanup.
-   * Use this when the organization user was created externally.
-   *
-   * @param organizationUserId - The ID of the organization user to track
-   */
-  trackOrganizationUser(organizationUserId: string): void {
-    this.ensureCleanupRegistered();
-    this.createdOrganizationUserIds.push(organizationUserId);
-  }
-
-  /**
    * Registers the cleanup handler for this test.
    * This is called automatically by test data creation methods.
    * Ensures cleanup is only registered once per test.
@@ -228,24 +178,16 @@ export class TestJoinProfileRequestDataManager {
   }
 
   /**
-   * Cleans up test data by deleting join requests and organization users created for this test.
+   * Cleans up test data by deleting join requests created for this test.
    * Uses exact IDs tracked during creation to avoid race conditions with concurrent tests.
    *
    * This method is automatically called via onTestFinished when using test data creation methods.
    */
   async cleanup(): Promise<void> {
-    // 1. Delete join requests by exact IDs
     if (this.createdJoinRequestIds.length > 0) {
       await db
         .delete(joinProfileRequests)
         .where(inArray(joinProfileRequests.id, this.createdJoinRequestIds));
-    }
-
-    // 2. Delete organization users by exact IDs
-    if (this.createdOrganizationUserIds.length > 0) {
-      await db
-        .delete(organizationUsers)
-        .where(inArray(organizationUsers.id, this.createdOrganizationUserIds));
     }
   }
 }

@@ -220,18 +220,14 @@ describe.concurrent('profile.createJoinProfileRequest', () => {
     onTestFinished,
   }) => {
     const testData = new TestOrganizationDataManager(task.id, onTestFinished);
-    const joinRequestData = new TestJoinProfileRequestDataManager(
-      task.id,
-      onTestFinished,
-    );
 
     // Create two organizations
     const { adminUser: requester } = await testData.createOrganization();
     const { organizationProfile: targetProfile, organization: targetOrg } =
       await testData.createOrganization();
 
-    // Add requester as a member of the target organization using the manager
-    await joinRequestData.createOrganizationUserMembership({
+    // Add requester as a member of the target organization
+    await testData.addUserToOrganization({
       authUserId: requester.authUserId,
       organizationId: targetOrg.id,
       email: requester.email,

@@ -73,6 +73,7 @@ export class TestOrganizationDataManager {
   // Track exact IDs created by this test instance for precise cleanup
   private createdProfileIds: string[] = [];
   private createdAuthUserIds: string[] = [];
+  private createdOrganizationUserIds: string[] = [];
 
   constructor(
     testId: string,
@@ -272,6 +273,62 @@ export class TestOrganizationDataManager {
   }
 
   /**
+   * Adds an existing user to an organization as a member.
+   * Useful for testing scenarios where a user needs to be a member of multiple organizations.
+   * Automatically registers cleanup using onTestFinished.
+   *
+   * @param opts - Options for adding user to organization
+   * @returns The created organization user record
+   *
+   * @example
+   * ```ts
+   * const { adminUser: userA } = await testData.createOrganization();
+   * const { organization: orgB } = await testData.createOrganization();
+   *
+   * // Add userA as a member of orgB
+   * await testData.addUserToOrganization({
+   *   authUserId: userA.authUserId,
+   *   organizationId: orgB.id,
+   *   email: userA.email,
+   * });
+   * ```
+   */
+  async addUserToOrganization(opts: {
+    authUserId: string;
+    organizationId: string;
+    email: string;
+    role?: 'Admin' | 'Member';
+  }): Promise<typeof organizationUsers.$inferSelect> {
+    this.ensureCleanupRegistered();
+
+    const { authUserId, organizationId, email, role = 'Member' } = opts;
+
+    const [orgUser] = await db
+      .insert(organizationUsers)
+      .values({
+        authUserId,
+        organizationId,
+        email,
+      })
+      .returning();
+
+    if (!orgUser) {
+      throw new Error('Failed to add user to organization');
+    }
+
+    // Assign role to organization user
+    const accessRoleId = role === 'Admin' ? ROLES.ADMIN.id : ROLES.MEMBER.id;
+    await db.insert(organizationUserToAccessRoles).values({
+      organizationUserId: orgUser.id,
+      accessRoleId,
+    });
+
+    this.createdOrganizationUserIds.push(orgUser.id);
+
+    return orgUser;
+  }
+
+  /**
    * Registers the cleanup handler for this test.
    * This is called automatically by test data creation methods.
    * Ensures cleanup is only registered once per test.
@@ -292,7 +349,7 @@ export class TestOrganizationDataManager {
   }
 
   /**
-   * Cleans up test data by deleting profiles and auth users created for this test.
+   * Cleans up test data by deleting profiles, auth users, and organization users created for this test.
    * Uses exact IDs tracked during creation to avoid race conditions with concurrent tests.
    * Relies on database cascade deletes to automatically clean up related records:
    * - Deleting profiles cascades to organizations, which cascades to organizationUsers and roles
@@ -306,7 +363,15 @@ export class TestOrganizationDataManager {
       throw new Error('Supabase admin test client not initialized');
     }
 
-    // 1. Delete profiles by exact IDs (not pattern matching)
+    // 1. Delete organization users added via addUserToOrganization
+    // These need explicit cleanup as they may belong to organizations managed by other test instances
+    if (this.createdOrganizationUserIds.length > 0) {
+      await db
+        .delete(organizationUsers)
+        .where(inArray(organizationUsers.id, this.createdOrganizationUserIds));
+    }
+
+    // 2. Delete profiles by exact IDs (not pattern matching)
     // This will cascade to organizations -> organizationUsers -> organizationUserToAccessRoles
     if (this.createdProfileIds.length > 0) {
       await db
@@ -314,7 +379,7 @@ export class TestOrganizationDataManager {
         .where(inArray(profiles.id, this.createdProfileIds));
     }
 
-    // 2. Delete auth users by exact IDs (not pattern matching)
+    // 3. Delete auth users by exact IDs (not pattern matching)
     // This will cascade to users and organizationUsers tables
     if (this.createdAuthUserIds.length > 0) {
       const deleteResults = await Promise.allSettled(

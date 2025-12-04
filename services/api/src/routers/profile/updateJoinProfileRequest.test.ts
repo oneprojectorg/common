@@ -217,11 +217,6 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
     expect(membership).toBeDefined();
     expect(membership?.authUserId).toBe(requester.authUserId);
     expect(membership?.organizationId).toBe(targetOrg!.id);
-
-    // Track the created org user for cleanup
-    if (membership) {
-      joinRequestData.trackOrganizationUser(membership.id);
-    }
   });
 
   it('should assign Member role when creating organization membership on approval', async ({
@@ -273,11 +268,6 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
         },
       },
     });
-
-    // Track the created org user for cleanup
-    if (membership) {
-      joinRequestData.trackOrganizationUser(membership.id);
-    }
 
     // TODO: We should find a better way to reference the Member role
     // rather than querying by name. Consider using a constant ID or
@@ -355,13 +345,11 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
     });
 
     // First, create an existing membership for the requester in the target organization
-    const existingMembership =
-      await joinRequestData.createOrganizationUserMembership({
-        authUserId: requester.authUserId,
-        organizationId: targetOrg!.id,
-        email: requester.email,
-        name: 'Existing Member',
-      });
+    const existingMembership = await testData.addUserToOrganization({
+      authUserId: requester.authUserId,
+      organizationId: targetOrg!.id,
+      email: requester.email,
+    });
 
     // Insert a pending join request using the manager
     const { joinRequest } = await joinRequestData.createJoinRequest({
