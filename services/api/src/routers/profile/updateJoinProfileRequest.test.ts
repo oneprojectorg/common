@@ -1,13 +1,9 @@
 import { db } from '@op/db/client';
-import {
-  JoinProfileRequestStatus,
-  joinProfileRequests,
-  organizationUsers,
-  organizations,
-} from '@op/db/schema';
-import { and, eq } from 'drizzle-orm';
+import { JoinProfileRequestStatus, organizations } from '@op/db/schema';
+import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
+import { TestJoinProfileRequestDataManager } from '../../test/helpers/TestJoinProfileRequestDataManager';
 import { TestOrganizationDataManager } from '../../test/helpers/TestOrganizationDataManager';
 import {
   createIsolatedSession,
@@ -24,38 +20,27 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
     onTestFinished,
   }) => {
     const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+    const joinRequestData = new TestJoinProfileRequestDataManager(
+      task.id,
+      onTestFinished,
+    );
 
     const { adminUser: requester } = await testData.createOrganization();
     const { adminUser: targetAdmin, organizationProfile: targetProfile } =
       await testData.createOrganization();
 
-    // Insert a pending join request
-    const [joinRequest] = await db
-      .insert(joinProfileRequests)
-      .values({
-        requestProfileId: requester.profileId,
-        targetProfileId: targetProfile.id,
-        status: JoinProfileRequestStatus.PENDING,
-      })
-      .returning();
-
-    // Clean up
-    onTestFinished(async () => {
-      await db
-        .delete(joinProfileRequests)
-        .where(
-          and(
-            eq(joinProfileRequests.requestProfileId, requester.profileId),
-            eq(joinProfileRequests.targetProfileId, targetProfile.id),
-          ),
-        );
+    // Insert a pending join request using the manager
+    const { joinRequest } = await joinRequestData.createJoinRequest({
+      requestProfileId: requester.profileId,
+      targetProfileId: targetProfile.id,
+      status: JoinProfileRequestStatus.PENDING,
     });
 
     const { session } = await createIsolatedSession(targetAdmin.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
     const result = await caller.updateJoinProfileRequest({
-      requestId: joinRequest!.id,
+      requestId: joinRequest.id,
       status: JoinProfileRequestStatus.APPROVED,
     });
 
@@ -68,37 +53,27 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
     onTestFinished,
   }) => {
     const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+    const joinRequestData = new TestJoinProfileRequestDataManager(
+      task.id,
+      onTestFinished,
+    );
 
     const { adminUser: requester } = await testData.createOrganization();
     const { adminUser: targetAdmin, organizationProfile: targetProfile } =
       await testData.createOrganization();
 
-    // Insert a pending join request
-    const [joinRequest] = await db
-      .insert(joinProfileRequests)
-      .values({
-        requestProfileId: requester.profileId,
-        targetProfileId: targetProfile.id,
-        status: JoinProfileRequestStatus.PENDING,
-      })
-      .returning();
-
-    onTestFinished(async () => {
-      await db
-        .delete(joinProfileRequests)
-        .where(
-          and(
-            eq(joinProfileRequests.requestProfileId, requester.profileId),
-            eq(joinProfileRequests.targetProfileId, targetProfile.id),
-          ),
-        );
+    // Insert a pending join request using the manager
+    const { joinRequest } = await joinRequestData.createJoinRequest({
+      requestProfileId: requester.profileId,
+      targetProfileId: targetProfile.id,
+      status: JoinProfileRequestStatus.PENDING,
     });
 
     const { session } = await createIsolatedSession(targetAdmin.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
     const result = await caller.updateJoinProfileRequest({
-      requestId: joinRequest!.id,
+      requestId: joinRequest.id,
       status: JoinProfileRequestStatus.REJECTED,
     });
 
@@ -110,31 +85,21 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
     onTestFinished,
   }) => {
     const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+    const joinRequestData = new TestJoinProfileRequestDataManager(
+      task.id,
+      onTestFinished,
+    );
 
     const { adminUser: unauthorizedUser } = await testData.createOrganization();
     const { adminUser: requester } = await testData.createOrganization();
     const { organizationProfile: targetProfile } =
       await testData.createOrganization();
 
-    // Create a request from requester to target
-    const [joinRequest] = await db
-      .insert(joinProfileRequests)
-      .values({
-        requestProfileId: requester.profileId,
-        targetProfileId: targetProfile.id,
-        status: JoinProfileRequestStatus.PENDING,
-      })
-      .returning();
-
-    onTestFinished(async () => {
-      await db
-        .delete(joinProfileRequests)
-        .where(
-          and(
-            eq(joinProfileRequests.requestProfileId, requester.profileId),
-            eq(joinProfileRequests.targetProfileId, targetProfile.id),
-          ),
-        );
+    // Create a request from requester to target using the manager
+    const { joinRequest } = await joinRequestData.createJoinRequest({
+      requestProfileId: requester.profileId,
+      targetProfileId: targetProfile.id,
+      status: JoinProfileRequestStatus.PENDING,
     });
 
     const { session } = await createIsolatedSession(unauthorizedUser.email);
@@ -142,7 +107,7 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
 
     await expect(
       caller.updateJoinProfileRequest({
-        requestId: joinRequest!.id,
+        requestId: joinRequest.id,
         status: JoinProfileRequestStatus.APPROVED,
       }),
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
@@ -177,37 +142,27 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
     onTestFinished,
   }) => {
     const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+    const joinRequestData = new TestJoinProfileRequestDataManager(
+      task.id,
+      onTestFinished,
+    );
 
     const { adminUser: requester } = await testData.createOrganization();
     const { adminUser: targetAdmin, organizationProfile: targetProfile } =
       await testData.createOrganization();
 
-    // Insert an approved join request
-    const [joinRequest] = await db
-      .insert(joinProfileRequests)
-      .values({
-        requestProfileId: requester.profileId,
-        targetProfileId: targetProfile.id,
-        status: JoinProfileRequestStatus.APPROVED,
-      })
-      .returning();
-
-    onTestFinished(async () => {
-      await db
-        .delete(joinProfileRequests)
-        .where(
-          and(
-            eq(joinProfileRequests.requestProfileId, requester.profileId),
-            eq(joinProfileRequests.targetProfileId, targetProfile.id),
-          ),
-        );
+    // Insert an approved join request using the manager
+    const { joinRequest } = await joinRequestData.createJoinRequest({
+      requestProfileId: requester.profileId,
+      targetProfileId: targetProfile.id,
+      status: JoinProfileRequestStatus.APPROVED,
     });
 
     const { session } = await createIsolatedSession(targetAdmin.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
     const result = await caller.updateJoinProfileRequest({
-      requestId: joinRequest!.id,
+      requestId: joinRequest.id,
       status: JoinProfileRequestStatus.APPROVED,
     });
 
@@ -219,53 +174,32 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
     onTestFinished,
   }) => {
     const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+    const joinRequestData = new TestJoinProfileRequestDataManager(
+      task.id,
+      onTestFinished,
+    );
 
     const { adminUser: requester } = await testData.createOrganization();
     const { adminUser: targetAdmin, organizationProfile: targetProfile } =
       await testData.createOrganization();
 
-    // Insert a pending join request
-    const [joinRequest] = await db
-      .insert(joinProfileRequests)
-      .values({
-        requestProfileId: requester.profileId,
-        targetProfileId: targetProfile.id,
-        status: JoinProfileRequestStatus.PENDING,
-      })
-      .returning();
+    // Insert a pending join request using the manager
+    const { joinRequest } = await joinRequestData.createJoinRequest({
+      requestProfileId: requester.profileId,
+      targetProfileId: targetProfile.id,
+      status: JoinProfileRequestStatus.PENDING,
+    });
 
     // Get the organization for the target profile
     const targetOrg = await db.query.organizations.findFirst({
       where: eq(organizations.profileId, targetProfile.id),
     });
 
-    // Clean up join request and any created organization membership
-    onTestFinished(async () => {
-      await db
-        .delete(joinProfileRequests)
-        .where(
-          and(
-            eq(joinProfileRequests.requestProfileId, requester.profileId),
-            eq(joinProfileRequests.targetProfileId, targetProfile.id),
-          ),
-        );
-      if (targetOrg) {
-        await db
-          .delete(organizationUsers)
-          .where(
-            and(
-              eq(organizationUsers.authUserId, requester.authUserId),
-              eq(organizationUsers.organizationId, targetOrg.id),
-            ),
-          );
-      }
-    });
-
     const { session } = await createIsolatedSession(targetAdmin.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
     const result = await caller.updateJoinProfileRequest({
-      requestId: joinRequest!.id,
+      requestId: joinRequest.id,
       status: JoinProfileRequestStatus.APPROVED,
     });
 
@@ -283,6 +217,11 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
     expect(membership).toBeDefined();
     expect(membership?.authUserId).toBe(requester.authUserId);
     expect(membership?.organizationId).toBe(targetOrg!.id);
+
+    // Track the created org user for cleanup
+    if (membership) {
+      joinRequestData.trackOrganizationUser(membership.id);
+    }
   });
 
   it('should assign Member role when creating organization membership on approval', async ({
@@ -290,6 +229,10 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
     onTestFinished,
   }) => {
     const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+    const joinRequestData = new TestJoinProfileRequestDataManager(
+      task.id,
+      onTestFinished,
+    );
 
     const { adminUser: requester } = await testData.createOrganization();
     const { adminUser: targetAdmin, organizationProfile: targetProfile } =
@@ -300,43 +243,18 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
       where: eq(organizations.profileId, targetProfile.id),
     });
 
-    // Insert a pending join request
-    const [joinRequest] = await db
-      .insert(joinProfileRequests)
-      .values({
-        requestProfileId: requester.profileId,
-        targetProfileId: targetProfile.id,
-        status: JoinProfileRequestStatus.PENDING,
-      })
-      .returning();
-
-    // Clean up
-    onTestFinished(async () => {
-      await db
-        .delete(joinProfileRequests)
-        .where(
-          and(
-            eq(joinProfileRequests.requestProfileId, requester.profileId),
-            eq(joinProfileRequests.targetProfileId, targetProfile.id),
-          ),
-        );
-      if (targetOrg) {
-        await db
-          .delete(organizationUsers)
-          .where(
-            and(
-              eq(organizationUsers.authUserId, requester.authUserId),
-              eq(organizationUsers.organizationId, targetOrg.id),
-            ),
-          );
-      }
+    // Insert a pending join request using the manager
+    const { joinRequest } = await joinRequestData.createJoinRequest({
+      requestProfileId: requester.profileId,
+      targetProfileId: targetProfile.id,
+      status: JoinProfileRequestStatus.PENDING,
     });
 
     const { session } = await createIsolatedSession(targetAdmin.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
     await caller.updateJoinProfileRequest({
-      requestId: joinRequest!.id,
+      requestId: joinRequest.id,
       status: JoinProfileRequestStatus.APPROVED,
     });
 
@@ -356,6 +274,11 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
       },
     });
 
+    // Track the created org user for cleanup
+    if (membership) {
+      joinRequestData.trackOrganizationUser(membership.id);
+    }
+
     // TODO: We should find a better way to reference the Member role
     // rather than querying by name. Consider using a constant ID or
     // a more robust role resolution mechanism.
@@ -369,6 +292,10 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
     onTestFinished,
   }) => {
     const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+    const joinRequestData = new TestJoinProfileRequestDataManager(
+      task.id,
+      onTestFinished,
+    );
 
     const { adminUser: requester } = await testData.createOrganization();
     const { adminUser: targetAdmin, organizationProfile: targetProfile } =
@@ -379,32 +306,18 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
       where: eq(organizations.profileId, targetProfile.id),
     });
 
-    // Insert a pending join request
-    const [joinRequest] = await db
-      .insert(joinProfileRequests)
-      .values({
-        requestProfileId: requester.profileId,
-        targetProfileId: targetProfile.id,
-        status: JoinProfileRequestStatus.PENDING,
-      })
-      .returning();
-
-    onTestFinished(async () => {
-      await db
-        .delete(joinProfileRequests)
-        .where(
-          and(
-            eq(joinProfileRequests.requestProfileId, requester.profileId),
-            eq(joinProfileRequests.targetProfileId, targetProfile.id),
-          ),
-        );
+    // Insert a pending join request using the manager
+    const { joinRequest } = await joinRequestData.createJoinRequest({
+      requestProfileId: requester.profileId,
+      targetProfileId: targetProfile.id,
+      status: JoinProfileRequestStatus.PENDING,
     });
 
     const { session } = await createIsolatedSession(targetAdmin.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
     const result = await caller.updateJoinProfileRequest({
-      requestId: joinRequest!.id,
+      requestId: joinRequest.id,
       status: JoinProfileRequestStatus.REJECTED,
     });
 
@@ -427,6 +340,10 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
     onTestFinished,
   }) => {
     const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+    const joinRequestData = new TestJoinProfileRequestDataManager(
+      task.id,
+      onTestFinished,
+    );
 
     const { adminUser: requester } = await testData.createOrganization();
     const { adminUser: targetAdmin, organizationProfile: targetProfile } =
@@ -438,50 +355,26 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
     });
 
     // First, create an existing membership for the requester in the target organization
-    const [existingMembership] = await db
-      .insert(organizationUsers)
-      .values({
+    const existingMembership =
+      await joinRequestData.createOrganizationUserMembership({
         authUserId: requester.authUserId,
         organizationId: targetOrg!.id,
         email: requester.email,
         name: 'Existing Member',
-      })
-      .returning();
+      });
 
-    // Insert a pending join request
-    const [joinRequest] = await db
-      .insert(joinProfileRequests)
-      .values({
-        requestProfileId: requester.profileId,
-        targetProfileId: targetProfile.id,
-        status: JoinProfileRequestStatus.PENDING,
-      })
-      .returning();
-
-    onTestFinished(async () => {
-      await db
-        .delete(joinProfileRequests)
-        .where(
-          and(
-            eq(joinProfileRequests.requestProfileId, requester.profileId),
-            eq(joinProfileRequests.targetProfileId, targetProfile.id),
-          ),
-        );
-      await db
-        .delete(organizationUsers)
-        .where(
-          and(
-            eq(organizationUsers.authUserId, requester.authUserId),
-            eq(organizationUsers.organizationId, targetOrg!.id),
-          ),
-        );
+    // Insert a pending join request using the manager
+    const { joinRequest } = await joinRequestData.createJoinRequest({
+      requestProfileId: requester.profileId,
+      targetProfileId: targetProfile.id,
+      status: JoinProfileRequestStatus.PENDING,
     });
 
     const { session } = await createIsolatedSession(targetAdmin.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
     const result = await caller.updateJoinProfileRequest({
-      requestId: joinRequest!.id,
+      requestId: joinRequest.id,
       status: JoinProfileRequestStatus.APPROVED,
     });
 
@@ -497,6 +390,6 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
     });
 
     expect(memberships).toHaveLength(1);
-    expect(memberships[0]?.id).toBe(existingMembership?.id);
+    expect(memberships[0]?.id).toBe(existingMembership.id);
   });
 });
