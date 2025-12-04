@@ -6,16 +6,6 @@ import {
 } from '@op/db/schema';
 import { inArray } from 'drizzle-orm';
 
-interface CreateJoinRequestInput {
-  requestProfileId: string;
-  targetProfileId: string;
-  status?: JoinProfileRequestStatus;
-}
-
-interface CreateJoinRequestOutput {
-  joinRequest: JoinProfileRequest;
-}
-
 /**
  * Test Join Profile Request Data Manager
  *
@@ -50,6 +40,7 @@ export class TestJoinProfileRequestDataManager {
   private createdJoinRequestIds: string[] = [];
 
   constructor(
+    /* not needed in this implementation, but kept for consistency */
     _testId: string,
     onTestFinished: (fn: () => void | Promise<void>) => void,
   ) {
@@ -59,22 +50,14 @@ export class TestJoinProfileRequestDataManager {
   /**
    * Creates a join profile request between two profiles.
    * Automatically registers cleanup using onTestFinished.
-   *
-   * @param opts - Options for join request creation
-   * @returns The created join request
-   *
-   * @example
-   * ```ts
-   * const { joinRequest } = await joinRequestManager.createJoinRequest({
-   *   requestProfileId: requester.profileId,
-   *   targetProfileId: targetProfile.id,
-   *   status: JoinProfileRequestStatus.PENDING,
-   * });
-   * ```
    */
-  async createJoinRequest(
-    opts: CreateJoinRequestInput,
-  ): Promise<CreateJoinRequestOutput> {
+  async createJoinRequest(opts: {
+    requestProfileId: string;
+    targetProfileId: string;
+    status?: JoinProfileRequestStatus;
+  }): Promise<{
+    joinRequest: JoinProfileRequest;
+  }> {
     this.ensureCleanupRegistered();
 
     const { requestProfileId, targetProfileId, status } = opts;
@@ -95,49 +78,6 @@ export class TestJoinProfileRequestDataManager {
     this.createdJoinRequestIds.push(joinRequest.id);
 
     return { joinRequest };
-  }
-
-  /**
-   * Creates multiple join profile requests for a single target profile.
-   * Useful for testing list operations.
-   *
-   * @param opts - Options for bulk creation
-   * @returns Array of created join requests
-   *
-   * @example
-   * ```ts
-   * const requests = await joinRequestManager.createJoinRequestsForTarget({
-   *   targetProfileId: targetProfile.id,
-   *   requesters: [
-   *     { profileId: requester1.profileId, status: JoinProfileRequestStatus.PENDING },
-   *     { profileId: requester2.profileId, status: JoinProfileRequestStatus.APPROVED },
-   *   ],
-   * });
-   * ```
-   */
-  async createJoinRequestsForTarget(opts: {
-    targetProfileId: string;
-    requesters: Array<{
-      profileId: string;
-      status?: JoinProfileRequestStatus;
-    }>;
-  }): Promise<JoinProfileRequest[]> {
-    this.ensureCleanupRegistered();
-
-    const { targetProfileId, requesters } = opts;
-
-    const results: JoinProfileRequest[] = [];
-
-    for (const requester of requesters) {
-      const { joinRequest } = await this.createJoinRequest({
-        requestProfileId: requester.profileId,
-        targetProfileId,
-        status: requester.status,
-      });
-      results.push(joinRequest);
-    }
-
-    return results;
   }
 
   /**

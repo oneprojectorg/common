@@ -55,13 +55,14 @@ describe.concurrent('profile.listJoinProfileRequests', () => {
     const { adminUser: requester2 } = await testData.createOrganization();
 
     // Create join requests using the manager
-    await joinRequestData.createJoinRequestsForTarget({
-      targetProfileId: targetProfile.id,
-      requesters: [
-        { profileId: requester1.profileId },
-        { profileId: requester2.profileId },
-      ],
-    });
+    await Promise.all(
+      [requester1, requester2].map((requester) =>
+        joinRequestData.createJoinRequest({
+          requestProfileId: requester.profileId,
+          targetProfileId: targetProfile.id,
+        }),
+      ),
+    );
 
     const { session } = await createIsolatedSession(targetAdmin.email);
     const caller = createCaller(await createTestContextWithSession(session));
@@ -226,14 +227,23 @@ describe.concurrent('profile.listJoinProfileRequests', () => {
     const { adminUser: requester3 } = await testData.createOrganization();
 
     // Create requests with different statuses using the manager
-    await joinRequestData.createJoinRequestsForTarget({
-      targetProfileId: targetProfile.id,
-      requesters: [
-        { profileId: requester1.profileId, status: JoinProfileRequestStatus.PENDING },
-        { profileId: requester2.profileId, status: JoinProfileRequestStatus.APPROVED },
-        { profileId: requester3.profileId, status: JoinProfileRequestStatus.REJECTED },
-      ],
-    });
+    await Promise.all([
+      joinRequestData.createJoinRequest({
+        requestProfileId: requester1.profileId,
+        targetProfileId: targetProfile.id,
+        status: JoinProfileRequestStatus.PENDING,
+      }),
+      joinRequestData.createJoinRequest({
+        requestProfileId: requester2.profileId,
+        targetProfileId: targetProfile.id,
+        status: JoinProfileRequestStatus.APPROVED,
+      }),
+      joinRequestData.createJoinRequest({
+        requestProfileId: requester3.profileId,
+        targetProfileId: targetProfile.id,
+        status: JoinProfileRequestStatus.REJECTED,
+      }),
+    ]);
 
     const { session } = await createIsolatedSession(targetAdmin.email);
     const caller = createCaller(await createTestContextWithSession(session));
@@ -284,14 +294,23 @@ describe.concurrent('profile.listJoinProfileRequests', () => {
     const { adminUser: requester3 } = await testData.createOrganization();
 
     // Create requests with different statuses using the manager
-    await joinRequestData.createJoinRequestsForTarget({
-      targetProfileId: targetProfile.id,
-      requesters: [
-        { profileId: requester1.profileId, status: JoinProfileRequestStatus.PENDING },
-        { profileId: requester2.profileId, status: JoinProfileRequestStatus.APPROVED },
-        { profileId: requester3.profileId, status: JoinProfileRequestStatus.REJECTED },
-      ],
-    });
+    await Promise.all([
+      joinRequestData.createJoinRequest({
+        requestProfileId: requester1.profileId,
+        targetProfileId: targetProfile.id,
+        status: JoinProfileRequestStatus.PENDING,
+      }),
+      joinRequestData.createJoinRequest({
+        requestProfileId: requester2.profileId,
+        targetProfileId: targetProfile.id,
+        status: JoinProfileRequestStatus.APPROVED,
+      }),
+      joinRequestData.createJoinRequest({
+        requestProfileId: requester3.profileId,
+        targetProfileId: targetProfile.id,
+        status: JoinProfileRequestStatus.REJECTED,
+      }),
+    ]);
 
     const { session } = await createIsolatedSession(targetAdmin.email);
     const caller = createCaller(await createTestContextWithSession(session));
