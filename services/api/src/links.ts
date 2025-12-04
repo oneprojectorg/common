@@ -10,12 +10,7 @@ import { readSSROnlySecret } from 'ssr-only-secrets';
 import superjson from 'superjson';
 
 import type { AppRouter } from './routers';
-
-/**
- * Environment variable name for the SSR secrets encryption key.
- * Must match the one used in ssrCookies.ts
- */
-const SSR_SECRETS_KEY_VAR = 'SSR_SECRETS_KEY';
+import { SSR_SECRETS_KEY_VAR } from './ssrCookies';
 
 const isServer = typeof window === 'undefined';
 
@@ -96,10 +91,10 @@ export function createLinks(encryptedCookies?: string): TRPCLink<AppRouter>[] {
   return [
     ...(!envURL.IS_PRODUCTION
       ? [
-          loggerLink({
-            colorMode: 'none',
-          }),
-        ]
+        loggerLink({
+          colorMode: 'none',
+        }),
+      ]
       : []),
     splitLink({
       condition(op) {

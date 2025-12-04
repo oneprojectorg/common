@@ -1,6 +1,6 @@
-import { cloakSSROnlySecret } from 'ssr-only-secrets';
 import { cookies } from 'next/headers';
 import 'server-only';
+import { cloakSSROnlySecret } from 'ssr-only-secrets';
 
 /**
  * Environment variable name for the SSR secrets encryption key.
@@ -15,7 +15,7 @@ import 'server-only';
  * Then add it to your .env.local:
  * SSR_SECRETS_KEY={"alg":"A256CBC","ext":true,"k":"...","key_ops":["encrypt","decrypt"],"kty":"oct"}
  */
-const SSR_SECRETS_KEY_VAR = 'SSR_SECRETS_KEY';
+export const SSR_SECRETS_KEY_VAR = 'SSR_SECRETS_KEY';
 
 /**
  * Get encrypted cookies for SSR tRPC calls.

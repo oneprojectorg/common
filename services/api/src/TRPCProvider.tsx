@@ -9,7 +9,7 @@ import {
   getQueryKey as getQueryKeyTRPC,
 } from '@trpc/react-query';
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useState } from 'react';
 
 import { createLinks } from './links';
 import type { AppRouter } from './routers';
@@ -29,8 +29,6 @@ export const queryClient = new QueryClient({
  * This allows tRPC HTTP calls to include cookies during SSR
  */
 const SSRCookiesContext = createContext<string | undefined>(undefined);
-
-export const useSSRCookies = () => useContext(SSRCookiesContext);
 
 const persister = createSyncStoragePersister({
   storage: typeof window !== 'undefined' ? window.localStorage : undefined,
