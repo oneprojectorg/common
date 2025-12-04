@@ -5,59 +5,40 @@ export type LoggerConfig = {
   name?: string;
   /** Minimum log level. Defaults to 'info' in production, 'debug' otherwise */
   level?: pino.Level;
-  /** Enable pretty printing for development. Defaults to true in non-production */
-  pretty?: boolean;
 };
 
 // Cache logger instances by name
 const loggerInstances = new Map<string, pino.Logger>();
 
+const isDev = process.env.NODE_ENV !== 'production';
+
 /**
  * Creates a logger configured to send logs to PostHog via OpenTelemetry.
  *
- * In development, logs are pretty-printed to console.
+ * In development, logs are written to stdout as JSON.
  * In production, logs are sent to PostHog via the OTel transport.
  *
  * IMPORTANT: Call initLogs() before using this logger to ensure
  * the OTel provider is registered globally.
  */
 export function createLogger(config: LoggerConfig = {}): pino.Logger {
-  const isDev = process.env.NODE_ENV !== 'production';
-  const {
-    name = 'app',
-    level = isDev ? 'debug' : 'info',
-    pretty = isDev,
-  } = config;
+  const { name = 'app', level = isDev ? 'debug' : 'info' } = config;
 
-  const targets: pino.TransportTargetOptions[] = [];
-
-  // Add OTel transport for PostHog (always, so logs go to PostHog)
-  targets.push({
-    target: 'pino-opentelemetry-transport',
-    options: {
-      // The transport will use the global OTel LoggerProvider
-    },
-    level,
-  });
-
-  // Add pretty printing for development
-  if (pretty) {
-    targets.push({
-      target: 'pino-pretty',
-      options: {
-        colorize: true,
-        translateTime: 'HH:MM:ss',
-        ignore: 'pid,hostname',
-      },
-      level,
-    });
+  // In development, use simple stdout logging to avoid worker thread
+  // issues with Next.js hot reloading
+  if (isDev) {
+    return pino({ name, level });
   }
 
+  // In production, use OTel transport for PostHog
   return pino({
     name,
     level,
     transport: {
-      targets,
+      target: 'pino-opentelemetry-transport',
+      options: {
+        // The transport will use the global OTel LoggerProvider
+      },
     },
   });
 }
