@@ -9,6 +9,7 @@ import React from 'react';
 import { LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
+
 import { parseEmails, shouldParseEmails } from './emailUtils';
 
 interface InviteToExistingOrganizationProps {
@@ -68,7 +69,6 @@ export const InviteToExistingOrganization = ({
     return emailRegex.test(email.trim());
   };
 
-
   const removeEmailBadge = (emailToRemove: string) => {
     setEmailBadges(emailBadges.filter((email) => email !== emailToRemove));
   };
@@ -104,7 +104,10 @@ export const InviteToExistingOrganization = ({
         // Show error for invalid emails if any
         if (invalidEmails.length > 0) {
           toast.error({
-            title: invalidEmails.length === 1 ? t('Invalid email') : t('Invalid emails'),
+            title:
+              invalidEmails.length === 1
+                ? t('Invalid email')
+                : t('Invalid emails'),
             message: `"${invalidEmails.join('", "')}" ${invalidEmails.length === 1 ? t('is not a valid email address') : t('are not valid email addresses')}`,
           });
         }
@@ -112,7 +115,10 @@ export const InviteToExistingOrganization = ({
         // Show info for duplicate emails if any
         if (duplicateEmails.length > 0) {
           toast.error({
-            title: duplicateEmails.length === 1 ? t('Duplicate email') : t('Duplicate emails'),
+            title:
+              duplicateEmails.length === 1
+                ? t('Duplicate email')
+                : t('Duplicate emails'),
             message: `"${duplicateEmails.join('", "')}" ${duplicateEmails.length === 1 ? t('has already been added') : t('have already been added')}`,
           });
         }
@@ -128,7 +134,7 @@ export const InviteToExistingOrganization = ({
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium">{t('Send to')}</label>
           <div className="flex min-h-[80px] flex-wrap gap-2 rounded-md border border-gray-300 p-2">
-            <TagGroup>
+            <TagGroup aria-label="Selected emails">
               {emailBadges.map((email, index) => (
                 <Tag className="sm:rounded-sm" key={index}>
                   {email}
@@ -139,6 +145,7 @@ export const InviteToExistingOrganization = ({
               ))}
             </TagGroup>
             <textarea
+              aria-label="Add emails"
               value={emails}
               onChange={(e) => setEmails(e.target.value)}
               onKeyDown={handleKeyDown}
