@@ -102,7 +102,7 @@ export const cache = async <T = any>({
     }
   }
 
-  if (skipMemCache) {
+  if (skipMemCache && process.env.NODE_ENV === 'production') {
     console.log('skipping memcache');
   }
 
