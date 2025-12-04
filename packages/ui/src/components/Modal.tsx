@@ -2,6 +2,7 @@
 
 import { ReactNode, createContext, memo, useCallback, useContext } from 'react';
 import {
+  Dialog,
   ModalOverlay,
   OverlayTriggerStateContext,
   Modal as RACModal,
@@ -87,14 +88,14 @@ export const ModalBody = ({
   children: ReactNode;
 }) => {
   return (
-    <div
+    <Dialog
       className={cn(
         'flex w-full flex-col gap-2 p-6 text-left focus-visible:outline-0',
         className,
       )}
     >
       {children}
-    </div>
+    </Dialog>
   );
 };
 
