@@ -1,47 +1,43 @@
 // import type { User } from '@op/supabase/lib';
 import {
-  logger as opLogger,
-  initLogs,
-  getLogger,
   type OTelLogger,
+  getLogger,
+  initLogs,
+  logger as opLogger,
 } from '@op/logging';
 import spacetime from 'spacetime';
 
 import type { MiddlewareBuilderBase, TContextWithLogger } from '../types';
 
-// Lazily initialize OTel logger
-let otelLogger: OTelLogger | null = null;
-function getOTelLogger(): OTelLogger | null {
-  if (otelLogger) {
-    return otelLogger;
-  }
+// Track logging initialization state
+let logsInitialized: 'pending' | 'success' | 'disabled' = 'pending';
 
-  const apiKey = process.env.NEXT_PUBLIC_POSTHOG_KEY;
-  if (!apiKey) {
-    console.warn('PostHog logging disabled: NEXT_PUBLIC_POSTHOG_KEY not set');
+function getOTelLogger(): OTelLogger | null {
+  if (logsInitialized === 'disabled') {
     return null;
   }
 
-  initLogs({
-    apiKey,
-    region: 'eu',
-    serviceName: 'api',
-    serviceVersion: '1.0.0',
-    environment: process.env.NODE_ENV || 'development',
-    immediateFlush: true, // Send logs immediately for debugging
-  });
+  if (logsInitialized === 'pending') {
+    const apiKey = process.env.NEXT_PUBLIC_POSTHOG_KEY;
+    if (!apiKey) {
+      console.warn('PostHog logging disabled: NEXT_PUBLIC_POSTHOG_KEY not set');
+      logsInitialized = 'disabled';
+      return null;
+    }
 
-  otelLogger = getLogger('api', '1.0.0');
+    initLogs({
+      apiKey,
+      region: 'eu',
+      serviceName: 'api',
+      serviceVersion: '1.0.0',
+      environment: process.env.NODE_ENV || 'development',
+      immediateFlush: true, // Send logs immediately for debugging
+    });
 
-  // Send a test log on initialization
-  console.log('PostHog logging initialized for API service (endpoint: eu.i.posthog.com)');
-  otelLogger.info('PostHog logging initialized', {
-    'service.name': 'api',
-    'service.version': '1.0.0',
-    environment: process.env.NODE_ENV || 'development',
-  });
+    logsInitialized = 'success';
+  }
 
-  return otelLogger;
+  return getLogger('api');
 }
 
 const withLogger: MiddlewareBuilderBase<TContextWithLogger> = async ({
@@ -135,7 +131,7 @@ const withLogger: MiddlewareBuilderBase<TContextWithLogger> = async ({
         'error.code': result.error.code,
         'error.name': result.error.name,
         'client.ip': ctx.ip || 'unknown',
-      }
+      },
     );
   } else {
     console.log(

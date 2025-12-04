@@ -183,16 +183,26 @@ export class OTelLogger {
 
 // Default logger instance
 let defaultLogger: OTelLogger | null = null;
+const namedLoggers = new Map<string, OTelLogger>();
 
 /**
- * Gets the default logger instance.
- * Creates one if it doesn't exist.
+ * Gets a logger instance.
+ * If namespace is provided, returns a child logger with that namespace in context.
+ * All loggers share the same underlying OTel logger.
  */
-export function getLogger(name?: string, version?: string): OTelLogger {
+export function getLogger(namespace?: string): OTelLogger {
   if (!defaultLogger) {
-    defaultLogger = new OTelLogger(name, version);
+    defaultLogger = new OTelLogger();
   }
-  return defaultLogger;
+
+  if (!namespace) {
+    return defaultLogger;
+  }
+
+  if (!namedLoggers.has(namespace)) {
+    namedLoggers.set(namespace, defaultLogger.child({ namespace }));
+  }
+  return namedLoggers.get(namespace)!;
 }
 
 /**
