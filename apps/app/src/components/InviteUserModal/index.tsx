@@ -245,7 +245,7 @@ export const InviteUserModal = ({
                   ) : null}
                 </TabList>
 
-                <TabPanel id="existing">
+                <TabPanel id="existing" className="sm:p-0">
                   <Suspense
                     fallback={
                       <div className="animate-pulse">
@@ -268,7 +268,7 @@ export const InviteUserModal = ({
                 </TabPanel>
 
                 {inviteUserEnabled ? (
-                  <TabPanel id="new">
+                  <TabPanel id="new" className="sm:p-0">
                     <InviteNewOrganization
                       emails={emails}
                       setEmails={setEmails}
