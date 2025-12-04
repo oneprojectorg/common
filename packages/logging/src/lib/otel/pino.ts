@@ -1,4 +1,6 @@
+import { SeverityNumber } from '@opentelemetry/api-logs';
 import pino from 'pino';
+import { getLoggerProvider } from './provider';
 
 export type LoggerConfig = {
   /** Logger name/namespace */
@@ -15,19 +17,63 @@ const loggerInstances = new Map<string, pino.Logger>();
 
 const isDev = process.env.NODE_ENV !== 'production';
 
+// Map pino levels to OTel severity
+const levelToSeverity: Record<number, SeverityNumber> = {
+  10: SeverityNumber.TRACE,
+  20: SeverityNumber.DEBUG,
+  30: SeverityNumber.INFO,
+  40: SeverityNumber.WARN,
+  50: SeverityNumber.ERROR,
+  60: SeverityNumber.FATAL,
+};
+
+const levelToName: Record<number, string> = {
+  10: 'trace',
+  20: 'debug',
+  30: 'info',
+  40: 'warn',
+  50: 'error',
+  60: 'fatal',
+};
+
 /**
- * Creates a pino logger.
+ * Custom pino destination that sends logs to OTel.
+ */
+function createOTelDestination(loggerName: string): pino.DestinationStream {
+  return {
+    write(msg: string): void {
+      try {
+        const log = JSON.parse(msg);
+        const provider = getLoggerProvider();
+
+        if (provider) {
+          const otelLogger = provider.getLogger(loggerName);
+          const { level, time, msg: message, name, pid, hostname, ...attributes } = log;
+
+          otelLogger.emit({
+            severityNumber: levelToSeverity[level] ?? SeverityNumber.INFO,
+            severityText: levelToName[level] ?? 'info',
+            body: message || '',
+            attributes,
+          });
+        }
+      } catch {
+        // Ignore parse errors
+      }
+    },
+  };
+}
+
+/**
+ * Creates a pino logger that sends logs to PostHog via OpenTelemetry.
  *
- * When initLogs() has been called, the @opentelemetry/instrumentation-pino
- * automatically sends all pino logs to PostHog via OpenTelemetry.
- *
- * IMPORTANT: Call initLogs() BEFORE creating loggers to ensure
- * the instrumentation is enabled.
+ * IMPORTANT: Call initLogs() before creating loggers to ensure
+ * the OTel provider is initialized.
  */
 export function createLogger(config: LoggerConfig = {}): pino.Logger {
   const { name = 'app', level = isDev ? 'debug' : 'info' } = config;
 
-  return pino({ name, level });
+  return pino({ name, level }, createOTelDestination(name));
 }
 
 /**

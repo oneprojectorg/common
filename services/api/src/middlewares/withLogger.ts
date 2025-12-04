@@ -1,10 +1,6 @@
 // import type { User } from '@op/supabase/lib';
-import {
-  initLogs,
-  getLogger,
-  patchConsole,
-  logger as opLogger,
-} from '@op/logging';
+import { logger as opLogger } from '@op/logging';
+import { initLogs, getLogger, patchConsole } from '@op/logging/otel';
 import spacetime from 'spacetime';
 
 import type { MiddlewareBuilderBase, TContextWithLogger } from '../types';

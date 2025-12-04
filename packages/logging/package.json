@@ -6,7 +6,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./posthog": "./src/lib/posthog/index.ts"
+    "./otel": "./src/lib/otel/index.ts"
   },
   "main": "src/index.ts",
   "scripts": {
@@ -22,7 +22,6 @@
     "@axiomhq/react": "^0.1.3",
     "@opentelemetry/api-logs": "^0.57.2",
     "@opentelemetry/exporter-logs-otlp-http": "^0.57.2",
-    "@opentelemetry/instrumentation-pino": "^0.55.0",
     "@opentelemetry/resources": "^2.0.0",
     "@opentelemetry/sdk-logs": "^0.57.2",
     "pino": "^9.7.0"

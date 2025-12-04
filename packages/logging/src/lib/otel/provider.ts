@@ -6,7 +6,6 @@ import {
 } from '@opentelemetry/sdk-logs';
 import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
 import { resourceFromAttributes } from '@opentelemetry/resources';
-import { PinoInstrumentation } from '@opentelemetry/instrumentation-pino';
 
 // Resource attribute keys (using standard OpenTelemetry semantic conventions)
 const ATTR_SERVICE_NAME = 'service.name';
@@ -89,13 +88,9 @@ export function createLoggerProvider(config: LogsConfig): LoggerProvider {
   return provider;
 }
 
-// Pino instrumentation instance
-let pinoInstrumentation: PinoInstrumentation | null = null;
-
 /**
- * Initializes the global logger provider and pino instrumentation.
+ * Initializes the global logger provider.
  * This should be called once at application startup, BEFORE creating pino loggers.
- * Registers the provider globally with OpenTelemetry so pino logs are sent automatically.
  */
 export function initLogs(config: LogsConfig): LoggerProvider {
   if (loggerProviderInstance) {
@@ -104,17 +99,8 @@ export function initLogs(config: LogsConfig): LoggerProvider {
 
   loggerProviderInstance = createLoggerProvider(config);
 
-  // Register globally so instrumentation can access it
+  // Register globally
   logs.setGlobalLoggerProvider(loggerProviderInstance);
-
-  // Enable pino instrumentation to auto-send logs to OTel
-  if (!pinoInstrumentation) {
-    pinoInstrumentation = new PinoInstrumentation({
-      disableLogSending: false,
-      disableLogCorrelation: false,
-    });
-    pinoInstrumentation.enable();
-  }
 
   return loggerProviderInstance;
 }
