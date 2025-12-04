@@ -1,3 +1,4 @@
+import { logs } from '@opentelemetry/api-logs';
 import {
   LoggerProvider,
   BatchLogRecordProcessor,
@@ -90,6 +91,7 @@ export function createLoggerProvider(config: LogsConfig): LoggerProvider {
 /**
  * Initializes the global logger provider.
  * This should be called once at application startup.
+ * Registers the provider globally with OpenTelemetry so pino-opentelemetry-transport can use it.
  */
 export function initLogs(config: LogsConfig): LoggerProvider {
   if (loggerProviderInstance) {
@@ -97,6 +99,10 @@ export function initLogs(config: LogsConfig): LoggerProvider {
   }
 
   loggerProviderInstance = createLoggerProvider(config);
+
+  // Register globally so pino-opentelemetry-transport can access it
+  logs.setGlobalLoggerProvider(loggerProviderInstance);
+
   return loggerProviderInstance;
 }
 

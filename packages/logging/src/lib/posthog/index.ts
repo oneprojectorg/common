@@ -7,9 +7,7 @@ export {
 } from './provider';
 
 export {
-  OTelLogger,
-  getLogger,
   createLogger,
-  type LogAttributes,
-  type LogContext,
-} from './logger';
+  getLogger,
+  type LoggerConfig,
+} from './pino';
