@@ -1,6 +1,7 @@
 'use client';
 
 import { useUser } from '@/utils/UserProvider';
+import { EntityType } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { Menu, MenuItem, MenuSeparator, MenuTrigger } from '@op/ui/Menu';
 import { Popover } from '@op/ui/Popover';
@@ -15,7 +16,7 @@ export const CreateMenu = () => {
   const [isCreateProcessModalOpen, setIsCreateProcessModalOpen] =
     useState(false);
   const { user } = useUser();
-  const isOrg = user?.currentOrganization;
+  const isOrg = user?.currentProfile?.type === EntityType.ORG;
   return (
     <>
       <MenuTrigger>
@@ -28,14 +29,14 @@ export const CreateMenu = () => {
             <MenuItem id="create-org">
               <LuUsers className="size-4" /> Organization
             </MenuItem>
-            <MenuItem
-              id="create-decision"
-              onAction={() => setIsCreateProcessModalOpen(true)}
-            >
-              <LuMessageCircle className="size-4" /> Decision-making process
-            </MenuItem>
             {isOrg ? (
               <>
+                <MenuItem
+                  id="create-decision"
+                  onAction={() => setIsCreateProcessModalOpen(true)}
+                >
+                  <LuMessageCircle className="size-4" /> Decision-making process
+                </MenuItem>
                 <MenuSeparator />
                 <MenuItem
                   id="invite-member"
@@ -48,16 +49,18 @@ export const CreateMenu = () => {
           </Menu>
         </Popover>
       </MenuTrigger>
-      <CreateDecisionProcessModal
-        isOpen={isCreateProcessModalOpen}
-        onOpenChange={setIsCreateProcessModalOpen}
-      />
-      {isOrg ? (
+      {isOrg && (
+        <CreateDecisionProcessModal
+          isOpen={isCreateProcessModalOpen}
+          onOpenChange={setIsCreateProcessModalOpen}
+        />
+      )}
+      {isOrg && (
         <InviteUserModal
           isOpen={isInviteModalOpen}
           onOpenChange={setIsInviteModalOpen}
         />
-      ) : null}
+      )}
     </>
   );
 };
