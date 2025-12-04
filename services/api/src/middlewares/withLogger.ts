@@ -1,44 +1,29 @@
 // import type { User } from '@op/supabase/lib';
 import {
-  type OTelLogger,
-  getLogger,
   initLogs,
+  getLogger,
   logger as opLogger,
 } from '@op/logging';
 import spacetime from 'spacetime';
 
 import type { MiddlewareBuilderBase, TContextWithLogger } from '../types';
 
-// Track logging initialization state
-let logsInitialized: 'pending' | 'success' | 'disabled' = 'pending';
-
-function getOTelLogger(): OTelLogger | null {
-  if (logsInitialized === 'disabled') {
-    return null;
-  }
-
-  if (logsInitialized === 'pending') {
-    const apiKey = process.env.NEXT_PUBLIC_POSTHOG_KEY;
-    if (!apiKey) {
-      console.warn('PostHog logging disabled: NEXT_PUBLIC_POSTHOG_KEY not set');
-      logsInitialized = 'disabled';
-      return null;
-    }
-
-    initLogs({
-      apiKey,
-      region: 'eu',
-      serviceName: 'api',
-      serviceVersion: '1.0.0',
-      environment: process.env.NODE_ENV || 'development',
-      immediateFlush: true, // Send logs immediately for debugging
-    });
-
-    logsInitialized = 'success';
-  }
-
-  return getLogger('api');
+// Initialize PostHog logging at module load
+const apiKey = process.env.NEXT_PUBLIC_POSTHOG_KEY;
+if (apiKey) {
+  initLogs({
+    apiKey,
+    region: 'eu',
+    serviceName: 'api',
+    serviceVersion: '1.0.0',
+    environment: process.env.NODE_ENV || 'development',
+    immediateFlush: true, // Send logs immediately for debugging
+  });
+} else {
+  console.warn('PostHog logging disabled: NEXT_PUBLIC_POSTHOG_KEY not set');
 }
+
+const apiLogger = getLogger('api');
 
 const withLogger: MiddlewareBuilderBase<TContextWithLogger> = async ({
   ctx,
@@ -89,21 +74,20 @@ const withLogger: MiddlewareBuilderBase<TContextWithLogger> = async ({
   const duration = end - start;
   const logHeadline = `[${spacetime(ctx.time).format('nice')}] - ${duration}ms`;
 
-  // Log result
-  const phLogger = getOTelLogger();
-
   if (result.ok) {
     console.log(`✔ OK:\t${ctx.requestId}\n\t${logHeadline}\n\tIP: ${ctx.ip}`);
 
-    // Log successful request to PostHog
-    phLogger?.info('API request completed', {
-      'request.id': ctx.requestId,
-      'request.path': path,
-      'request.type': type,
-      'request.duration_ms': duration,
-      'request.status': 'ok',
-      'client.ip': ctx.ip || 'unknown',
-    });
+    apiLogger.info(
+      {
+        'request.id': ctx.requestId,
+        'request.path': path,
+        'request.type': type,
+        'request.duration_ms': duration,
+        'request.status': 'ok',
+        'client.ip': ctx.ip || 'unknown',
+      },
+      'API request completed',
+    );
   } else if (result.error) {
     opLogger.error('Request failed', {
       requestId: ctx.requestId,
@@ -118,11 +102,9 @@ const withLogger: MiddlewareBuilderBase<TContextWithLogger> = async ({
       error: result.error,
     });
 
-    // Log error to PostHog
-    phLogger?.error(
-      'API request failed',
-      result.error instanceof Error ? result.error : undefined,
+    apiLogger.error(
       {
+        err: result.error instanceof Error ? result.error : undefined,
         'request.id': ctx.requestId,
         'request.path': path,
         'request.type': type,
@@ -132,6 +114,7 @@ const withLogger: MiddlewareBuilderBase<TContextWithLogger> = async ({
         'error.name': result.error.name,
         'client.ip': ctx.ip || 'unknown',
       },
+      'API request failed',
     );
   } else {
     console.log(
@@ -148,15 +131,17 @@ const withLogger: MiddlewareBuilderBase<TContextWithLogger> = async ({
       timestamp: end,
     });
 
-    // Log unhandled error to PostHog
-    phLogger?.error('API unhandled error', undefined, {
-      'request.id': ctx.requestId,
-      'request.path': path,
-      'request.type': type,
-      'request.duration_ms': duration,
-      'request.status': 'unhandled_error',
-      'client.ip': ctx.ip || 'unknown',
-    });
+    apiLogger.error(
+      {
+        'request.id': ctx.requestId,
+        'request.path': path,
+        'request.type': type,
+        'request.duration_ms': duration,
+        'request.status': 'unhandled_error',
+        'client.ip': ctx.ip || 'unknown',
+      },
+      'API unhandled error',
+    );
   }
 
   return result;
