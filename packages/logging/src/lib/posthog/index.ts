@@ -9,5 +9,8 @@ export {
 export {
   createLogger,
   getLogger,
+  patchConsole,
+  unpatchConsole,
+  type Logger,
   type LoggerConfig,
 } from './pino';

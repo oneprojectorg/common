@@ -2,6 +2,7 @@
 import {
   initLogs,
   getLogger,
+  patchConsole,
   logger as opLogger,
 } from '@op/logging';
 import spacetime from 'spacetime';
@@ -19,6 +20,9 @@ if (apiKey) {
     environment: process.env.NODE_ENV || 'development',
     immediateFlush: true, // Send logs immediately for debugging
   });
+
+  // Patch console methods to also send to PostHog
+  patchConsole('api:console');
 } else {
   console.warn('PostHog logging disabled: NEXT_PUBLIC_POSTHOG_KEY not set');
 }
@@ -104,7 +108,6 @@ const withLogger: MiddlewareBuilderBase<TContextWithLogger> = async ({
 
     apiLogger.error(
       {
-        err: result.error instanceof Error ? result.error : undefined,
         'request.id': ctx.requestId,
         'request.path': path,
         'request.type': type,
@@ -112,6 +115,8 @@ const withLogger: MiddlewareBuilderBase<TContextWithLogger> = async ({
         'request.status': 'error',
         'error.code': result.error.code,
         'error.name': result.error.name,
+        'error.message': result.error.message,
+        'error.stack': result.error instanceof Error ? result.error.stack : undefined,
         'client.ip': ctx.ip || 'unknown',
       },
       'API request failed',
