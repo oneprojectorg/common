@@ -17,6 +17,8 @@ import { LuLink } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { sendOnboardingAnalytics } from '@/components/Onboarding/utils';
+
 import { GeoNamesMultiSelect } from '../../GeoNamesMultiSelect';
 import { type ImageData } from '../../Onboarding/shared/OrganizationFormFields';
 import { TermsMultiSelect } from '../../TermsMultiSelect';
@@ -35,6 +37,7 @@ export const CreateOrganizationForm = forwardRef<
 >(({ onSuccess, className }, ref) => {
   const t = useTranslations();
   const router = useRouter();
+  const trpcUtil = trpc.useUtils();
 
   // Initialize form data from profile and terms
   const initialData = {};
@@ -47,7 +50,7 @@ export const CreateOrganizationForm = forwardRef<
   const [bannerImage, setBannerImage] = useState<ImageData | undefined>();
   const isOnline = useConnectionStatus();
 
-  const submitUpdate = async (formData: any) => {
+  const submitCreate = async (formData: any) => {
     if (!isOnline) {
       toast.error({
         title: 'No connection',
@@ -69,15 +72,20 @@ export const CreateOrganizationForm = forwardRef<
     };
 
     try {
-      await createOrganization.mutateAsync(createData);
+      createOrganization.mutateAsync(createData).then(() => {
+        onSuccess();
+        sendOnboardingAnalytics(formData);
+        // invalidate account so we refetch organization users again
+        trpcUtil.account.getMyAccount.invalidate();
+        trpcUtil.account.getMyAccount.reset();
+        trpcUtil.account.getMyAccount.refetch().then(() => {
+          router.push(`/?new=1`);
+        });
+      });
+    } catch (err) {
+      console.error('ERROR', err);
 
-      router.refresh();
-
-      onSuccess();
-    } catch (error) {
-      console.error('Failed to update organization:', error);
-
-      const errorInfo = analyzeError(error);
+      const errorInfo = analyzeError(err);
 
       if (errorInfo.isConnectionError) {
         toast.error({
@@ -86,7 +94,7 @@ export const CreateOrganizationForm = forwardRef<
         });
       } else {
         toast.error({
-          title: 'Update failed',
+          title: "That didn't work",
           message: errorInfo.message,
         });
       }
@@ -96,7 +104,7 @@ export const CreateOrganizationForm = forwardRef<
   const form = useAppForm({
     defaultValues: initialData,
     onSubmit: async ({ value }) => {
-      await submitUpdate(value);
+      await submitCreate(value);
     },
   });
 
