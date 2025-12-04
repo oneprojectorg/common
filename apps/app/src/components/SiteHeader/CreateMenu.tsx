@@ -10,9 +10,12 @@ import { LuMessageCircle, LuPlus, LuUserPlus, LuUsers } from 'react-icons/lu';
 
 import { InviteUserModal } from '../InviteUserModal';
 import { CreateDecisionProcessModal } from '../Profile/CreateDecisionProcessModal';
+import { CreateOrganizationModal } from '../Profile/ProfileDetails/CreateOrganizationModal';
 
 export const CreateMenu = () => {
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [isCreateOrganizationModalOpen, setIsCreateOrganizationModalOpen] =
+    useState(false);
   const [isCreateProcessModalOpen, setIsCreateProcessModalOpen] =
     useState(false);
   const { user } = useUser();
@@ -26,7 +29,10 @@ export const CreateMenu = () => {
         </Button>
         <Popover>
           <Menu>
-            <MenuItem id="create-org">
+            <MenuItem
+              id="create-org"
+              onAction={() => setIsCreateOrganizationModalOpen(true)}
+            >
               <LuUsers className="size-4" /> Organization
             </MenuItem>
             {isOrg ? (
@@ -49,6 +55,10 @@ export const CreateMenu = () => {
           </Menu>
         </Popover>
       </MenuTrigger>
+      <CreateOrganizationModal
+        isOpen={isCreateOrganizationModalOpen}
+        onOpenChange={setIsCreateOrganizationModalOpen}
+      />
       {isOrg && (
         <CreateDecisionProcessModal
           isOpen={isCreateProcessModalOpen}
