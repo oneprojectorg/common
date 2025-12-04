@@ -200,6 +200,7 @@ export const CreateDecisionProcessModal = ({
       if (overlayTriggerState?.close) {
         overlayTriggerState.close();
       } else {
+        setIsModalOpen?.(false);
         onClose?.();
       }
     },
