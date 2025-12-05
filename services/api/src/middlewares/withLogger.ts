@@ -6,18 +6,15 @@ import spacetime from 'spacetime';
 import type { MiddlewareBuilderBase, TContextWithLogger } from '../types';
 
 // Initialize OTel logging at module load
-const apiKey = process.env.NEXT_PUBLIC_POSTHOG_KEY;
-if (apiKey) {
+// Requires OTEL_EXPORTER_OTLP_LOGS_ENDPOINT env var to be set
+if (process.env.OTEL_EXPORTER_OTLP_LOGS_ENDPOINT) {
   initLogs({
-    apiKey,
-    region: 'eu',
     serviceName: 'api',
     serviceVersion: '1.0.0',
-    environment: process.env.NODE_ENV || 'development',
-    immediateFlush: true, // Send logs immediately for debugging
+    immediateFlush: process.env.NODE_ENV !== 'production',
   });
 } else {
-  console.warn('OTel logging disabled: NEXT_PUBLIC_POSTHOG_KEY not set');
+  console.warn('OTel logging disabled: OTEL_EXPORTER_OTLP_LOGS_ENDPOINT not set');
 }
 
 const apiLogger = getLogger('api');

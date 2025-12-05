@@ -13,10 +13,10 @@ const ATTR_SERVICE_VERSION = 'service.version';
 const ATTR_DEPLOYMENT_ENVIRONMENT = 'deployment.environment';
 
 export type LogsConfig = {
-  /** PostHog project API key (same as used for events) */
-  apiKey: string;
-  /** PostHog host region. Defaults to 'eu' */
-  region?: 'eu' | 'us';
+  /** OTLP endpoint URL for logs. Falls back to OTEL_EXPORTER_OTLP_LOGS_ENDPOINT env var */
+  endpoint?: string;
+  /** API key/token for authentication. Falls back to OTEL_EXPORTER_OTLP_HEADERS env var */
+  apiKey?: string;
   /** Service name for log identification */
   serviceName?: string;
   /** Service version */
@@ -30,35 +30,31 @@ export type LogsConfig = {
 let loggerProviderInstance: LoggerProvider | null = null;
 
 /**
- * Creates and configures a LoggerProvider for PostHog logs using OpenTelemetry.
- *
- * PostHog logs uses the standard OTLP protocol, so we use OpenTelemetry's
- * standard OTLP HTTP exporter to send logs.
- *
- * @see https://posthog.com/docs/logs
+ * Creates and configures a LoggerProvider using OpenTelemetry OTLP protocol.
  */
 export function createLoggerProvider(config: LogsConfig): LoggerProvider {
   const {
-    apiKey,
-    region = 'eu',
-    serviceName = 'common',
-    serviceVersion = '1.0.0',
+    endpoint = process.env.OTEL_EXPORTER_OTLP_LOGS_ENDPOINT,
+    apiKey = process.env.OTEL_EXPORTER_OTLP_API_KEY,
+    serviceName = process.env.OTEL_SERVICE_NAME || 'app',
+    serviceVersion = process.env.OTEL_SERVICE_VERSION || '1.0.0',
     environment = process.env.NODE_ENV || 'development',
     immediateFlush = false,
   } = config;
 
-  // PostHog logs endpoint based on region
-  const posthogHost =
-    region === 'eu' ? 'eu.i.posthog.com' : 'us.i.posthog.com';
-  const logsEndpoint = `https://${posthogHost}/i/v1/logs`;
+  if (!endpoint) {
+    throw new Error('OTel logs endpoint is required. Set OTEL_EXPORTER_OTLP_LOGS_ENDPOINT or pass endpoint in config.');
+  }
 
-  // Create the OTLP exporter for PostHog
+  // Create the OTLP exporter
   const exporter = new OTLPLogExporter({
-    url: logsEndpoint,
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
+    url: endpoint,
+    headers: apiKey
+      ? {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        }
+      : { 'Content-Type': 'application/json' },
   });
 
   // Create resource with service information
