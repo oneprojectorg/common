@@ -1,8 +1,12 @@
-export { transformMiddlewareRequest } from '@axiomhq/nextjs';
-export { logger, withAxiom } from './lib/axiom/server';
-export * from './lib/axiom/client';
+// Server-side logger
+export { logger, Logger } from './lib/logger';
+export type { LogLevel, LogData } from './lib/logger';
 
-// Export types for better TypeScript support
-export type { Logger } from '@axiomhq/logging';
-export type LogLevel = 'info' | 'error' | 'warn' | 'debug';
-export type LogData = Record<string, any>;
+// Client-side exports
+export { clientLogger, useLogger, WebVitals } from './lib/client-logger';
+
+// Middleware utilities
+export { transformMiddlewareRequest, withLogging } from './lib/middleware';
+
+// Alias for backwards compatibility
+export { withLogging as withAxiom } from './lib/middleware';

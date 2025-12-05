@@ -1,7 +1,6 @@
 /* eslint-disable ts/no-empty-object-type */
 import type { db } from '@op/db/client';
 import type { tables } from '@op/db/tables';
-import type { Logger } from '@op/logging';
 import type { User } from '@op/supabase/lib';
 import type { MiddlewareFunction } from '@trpc/server/unstable-core-do-not-import';
 import type { SerializeOptions } from 'cookie';
@@ -40,8 +39,15 @@ export interface TContextWithDB {
   };
 }
 
+/** Logger interface for tRPC context */
+interface ContextLogger {
+  info: (message: string, data?: Record<string, unknown>) => void;
+  error: (message: string, data?: Record<string, unknown>) => void;
+  warn: (message: string, data?: Record<string, unknown>) => void;
+}
+
 export interface TContextWithLogger {
-  logger: Logger;
+  logger: ContextLogger;
 }
 
 export type MiddlewareBuilderBase<TContextAfter = {}> = MiddlewareFunction<

@@ -34,7 +34,6 @@ const config = {
       'thread-stream',
       'pino',
       'pino-worker',
-      '@axiomhq/pino',
     ],
     instrumentationHook: true,
   },
