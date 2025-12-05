@@ -92,13 +92,11 @@ export const ProfileTabsRenderer = ({
       <FollowersTabPanel>
         <ProfileFollowers profileId={profile.id} />
       </FollowersTabPanel>
+      <MembersTabPanel profileId={profile.id} />
       {decisionsEnabled && (
-        <>
-          <DecisionsTabPanel>
-            <ProfileDecisionsSuspense profileId={profile.id} schema={schema} />
-          </DecisionsTabPanel>
-          <MembersTabPanel profileId={profile.id} />
-        </>
+        <DecisionsTabPanel>
+          <ProfileDecisionsSuspense profileId={profile.id} schema={schema} />
+        </DecisionsTabPanel>
       )}
     </ProfileTabs>
   );
