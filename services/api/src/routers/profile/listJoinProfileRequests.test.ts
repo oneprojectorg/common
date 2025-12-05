@@ -1,8 +1,7 @@
-import { db } from '@op/db/client';
-import { JoinProfileRequestStatus, joinProfileRequests } from '@op/db/schema';
-import { eq } from 'drizzle-orm';
+import { JoinProfileRequestStatus } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
+import { TestJoinProfileRequestDataManager } from '../../test/helpers/TestJoinProfileRequestDataManager';
 import { TestOrganizationDataManager } from '../../test/helpers/TestOrganizationDataManager';
 import {
   createIsolatedSession,
@@ -42,6 +41,10 @@ describe.concurrent('profile.listJoinProfileRequests', () => {
     onTestFinished,
   }) => {
     const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+    const joinRequestData = new TestJoinProfileRequestDataManager(
+      task.id,
+      onTestFinished,
+    );
 
     // Create target org (admin will view requests)
     const { organizationProfile: targetProfile, adminUser: targetAdmin } =
@@ -51,26 +54,15 @@ describe.concurrent('profile.listJoinProfileRequests', () => {
     const { adminUser: requester1 } = await testData.createOrganization();
     const { adminUser: requester2 } = await testData.createOrganization();
 
-    // Create join requests directly in the database
-    await db.insert(joinProfileRequests).values([
-      {
-        requestProfileId: requester1.profileId,
-        targetProfileId: targetProfile.id,
-        status: JoinProfileRequestStatus.PENDING,
-      },
-      {
-        requestProfileId: requester2.profileId,
-        targetProfileId: targetProfile.id,
-        status: JoinProfileRequestStatus.PENDING,
-      },
-    ]);
-
-    // Clean up join requests after test
-    onTestFinished(async () => {
-      await db
-        .delete(joinProfileRequests)
-        .where(eq(joinProfileRequests.targetProfileId, targetProfile.id));
-    });
+    // Create join requests using the manager
+    await Promise.all(
+      [requester1, requester2].map((requester) =>
+        joinRequestData.createJoinRequest({
+          requestProfileId: requester.profileId,
+          targetProfileId: targetProfile.id,
+        }),
+      ),
+    );
 
     const { session } = await createIsolatedSession(targetAdmin.email);
     const caller = createCaller(await createTestContextWithSession(session));
@@ -103,6 +95,10 @@ describe.concurrent('profile.listJoinProfileRequests', () => {
     onTestFinished,
   }) => {
     const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+    const joinRequestData = new TestJoinProfileRequestDataManager(
+      task.id,
+      onTestFinished,
+    );
 
     const { organizationProfile: targetProfile, adminUser: targetAdmin } =
       await testData.createOrganization();
@@ -113,29 +109,19 @@ describe.concurrent('profile.listJoinProfileRequests', () => {
     const { adminUser: requester3 } = await testData.createOrganization();
 
     // Insert with small time delays to ensure deterministic ordering
-    await db.insert(joinProfileRequests).values({
+    await joinRequestData.createJoinRequest({
       requestProfileId: requester1.profileId,
       targetProfileId: targetProfile.id,
-      status: JoinProfileRequestStatus.PENDING,
     });
 
-    await db.insert(joinProfileRequests).values({
+    await joinRequestData.createJoinRequest({
       requestProfileId: requester2.profileId,
       targetProfileId: targetProfile.id,
-      status: JoinProfileRequestStatus.PENDING,
     });
 
-    await db.insert(joinProfileRequests).values({
+    await joinRequestData.createJoinRequest({
       requestProfileId: requester3.profileId,
       targetProfileId: targetProfile.id,
-      status: JoinProfileRequestStatus.PENDING,
-    });
-
-    // Clean up join requests after test
-    onTestFinished(async () => {
-      await db
-        .delete(joinProfileRequests)
-        .where(eq(joinProfileRequests.targetProfileId, targetProfile.id));
     });
 
     const { session } = await createIsolatedSession(targetAdmin.email);
@@ -228,6 +214,10 @@ describe.concurrent('profile.listJoinProfileRequests', () => {
     onTestFinished,
   }) => {
     const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+    const joinRequestData = new TestJoinProfileRequestDataManager(
+      task.id,
+      onTestFinished,
+    );
 
     const { organizationProfile: targetProfile, adminUser: targetAdmin } =
       await testData.createOrganization();
@@ -236,30 +226,24 @@ describe.concurrent('profile.listJoinProfileRequests', () => {
     const { adminUser: requester2 } = await testData.createOrganization();
     const { adminUser: requester3 } = await testData.createOrganization();
 
-    // Create requests with different statuses
-    await db.insert(joinProfileRequests).values([
-      {
+    // Create requests with different statuses using the manager
+    await Promise.all([
+      joinRequestData.createJoinRequest({
         requestProfileId: requester1.profileId,
         targetProfileId: targetProfile.id,
         status: JoinProfileRequestStatus.PENDING,
-      },
-      {
+      }),
+      joinRequestData.createJoinRequest({
         requestProfileId: requester2.profileId,
         targetProfileId: targetProfile.id,
         status: JoinProfileRequestStatus.APPROVED,
-      },
-      {
+      }),
+      joinRequestData.createJoinRequest({
         requestProfileId: requester3.profileId,
         targetProfileId: targetProfile.id,
         status: JoinProfileRequestStatus.REJECTED,
-      },
+      }),
     ]);
-
-    onTestFinished(async () => {
-      await db
-        .delete(joinProfileRequests)
-        .where(eq(joinProfileRequests.targetProfileId, targetProfile.id));
-    });
 
     const { session } = await createIsolatedSession(targetAdmin.email);
     const caller = createCaller(await createTestContextWithSession(session));
@@ -297,6 +281,10 @@ describe.concurrent('profile.listJoinProfileRequests', () => {
     onTestFinished,
   }) => {
     const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+    const joinRequestData = new TestJoinProfileRequestDataManager(
+      task.id,
+      onTestFinished,
+    );
 
     const { organizationProfile: targetProfile, adminUser: targetAdmin } =
       await testData.createOrganization();
@@ -305,30 +293,24 @@ describe.concurrent('profile.listJoinProfileRequests', () => {
     const { adminUser: requester2 } = await testData.createOrganization();
     const { adminUser: requester3 } = await testData.createOrganization();
 
-    // Create requests with different statuses
-    await db.insert(joinProfileRequests).values([
-      {
+    // Create requests with different statuses using the manager
+    await Promise.all([
+      joinRequestData.createJoinRequest({
         requestProfileId: requester1.profileId,
         targetProfileId: targetProfile.id,
         status: JoinProfileRequestStatus.PENDING,
-      },
-      {
+      }),
+      joinRequestData.createJoinRequest({
         requestProfileId: requester2.profileId,
         targetProfileId: targetProfile.id,
         status: JoinProfileRequestStatus.APPROVED,
-      },
-      {
+      }),
+      joinRequestData.createJoinRequest({
         requestProfileId: requester3.profileId,
         targetProfileId: targetProfile.id,
         status: JoinProfileRequestStatus.REJECTED,
-      },
+      }),
     ]);
-
-    onTestFinished(async () => {
-      await db
-        .delete(joinProfileRequests)
-        .where(eq(joinProfileRequests.targetProfileId, targetProfile.id));
-    });
 
     const { session } = await createIsolatedSession(targetAdmin.email);
     const caller = createCaller(await createTestContextWithSession(session));
