@@ -1,14 +1,3 @@
-export {
-  createLoggerProvider,
-  initLogs,
-  getLoggerProvider,
-  shutdownLogs,
-  type LogsConfig,
-} from './provider';
+export { initLogs, shutdownLogs, type LogsConfig } from './provider';
 
-export {
-  createLogger,
-  getLogger,
-  type Logger,
-  type LoggerConfig,
-} from './pino';
+export { getLogger, type Logger } from './pino';

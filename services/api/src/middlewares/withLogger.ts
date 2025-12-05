@@ -1,23 +1,10 @@
-// import type { User } from '@op/supabase/lib';
 import { logger as opLogger } from '@op/logging';
-import { initLogs, getLogger } from '@op/logging/otel';
+import { getLogger } from '@op/logging/otel';
 import spacetime from 'spacetime';
 
 import type { MiddlewareBuilderBase, TContextWithLogger } from '../types';
 
-// Initialize OTel logging at module load
-// Requires OTEL_EXPORTER_OTLP_LOGS_ENDPOINT env var to be set
-if (process.env.OTEL_EXPORTER_OTLP_LOGS_ENDPOINT) {
-  initLogs({
-    serviceName: 'api',
-    serviceVersion: '1.0.0',
-    immediateFlush: process.env.NODE_ENV !== 'production',
-  });
-} else {
-  console.warn('OTel logging disabled: OTEL_EXPORTER_OTLP_LOGS_ENDPOINT not set');
-}
-
-const apiLogger = getLogger('api');
+const log = getLogger('api');
 
 const withLogger: MiddlewareBuilderBase<TContextWithLogger> = async ({
   ctx,
@@ -71,7 +58,7 @@ const withLogger: MiddlewareBuilderBase<TContextWithLogger> = async ({
   if (result.ok) {
     console.log(`✔ OK:\t${ctx.requestId}\n\t${logHeadline}\n\tIP: ${ctx.ip}`);
 
-    apiLogger.info(
+    log.info(
       {
         'request.id': ctx.requestId,
         'request.path': path,
@@ -96,7 +83,7 @@ const withLogger: MiddlewareBuilderBase<TContextWithLogger> = async ({
       error: result.error,
     });
 
-    apiLogger.error(
+    log.error(
       {
         'request.id': ctx.requestId,
         'request.path': path,
@@ -106,7 +93,8 @@ const withLogger: MiddlewareBuilderBase<TContextWithLogger> = async ({
         'error.code': result.error.code,
         'error.name': result.error.name,
         'error.message': result.error.message,
-        'error.stack': result.error instanceof Error ? result.error.stack : undefined,
+        'error.stack':
+          result.error instanceof Error ? result.error.stack : undefined,
         'client.ip': ctx.ip || 'unknown',
       },
       'API request failed',
@@ -126,7 +114,7 @@ const withLogger: MiddlewareBuilderBase<TContextWithLogger> = async ({
       timestamp: end,
     });
 
-    apiLogger.error(
+    log.error(
       {
         'request.id': ctx.requestId,
         'request.path': path,
