@@ -27,6 +27,8 @@
     "@op/ui": "workspace:*",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/api-logs": "^0.201.1",
+    "@opentelemetry/exporter-logs-otlp-http": "^0.208.0",
+    "@opentelemetry/sdk-logs": "^0.208.0",
     "@posthog/cli": "^0.4.8",
     "@posthog/nextjs-config": "^1.0.0",
     "@rjsf/core": "^5.24.12",
