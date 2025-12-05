@@ -79,8 +79,6 @@ export const listUsersRouter = router({
 
         return users.map((user) => organizationUserEncoder.parse(user));
       } catch (error: unknown) {
-        console.error('Error listing organization users:', error);
-
         if (error instanceof Error) {
           if (
             error.message.includes('not a member') ||

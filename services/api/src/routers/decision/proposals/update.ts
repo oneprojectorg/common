@@ -53,12 +53,6 @@ export const updateProposalRouter = router({
           user,
         });
 
-        console.log('Proposal updated', {
-          userId: user.id,
-          proposalId,
-          updates: Object.keys(input.data),
-        });
-
         await invalidate({
           type: 'profile',
           params: [proposal.profileId],
