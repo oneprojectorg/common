@@ -1,11 +1,11 @@
 // import type { User } from '@op/supabase/lib';
 import { logger as opLogger } from '@op/logging';
-import { initLogs, getLogger, patchConsole } from '@op/logging/otel';
+import { initLogs, getLogger } from '@op/logging/otel';
 import spacetime from 'spacetime';
 
 import type { MiddlewareBuilderBase, TContextWithLogger } from '../types';
 
-// Initialize PostHog logging at module load
+// Initialize OTel logging at module load
 const apiKey = process.env.NEXT_PUBLIC_POSTHOG_KEY;
 if (apiKey) {
   initLogs({
@@ -16,11 +16,8 @@ if (apiKey) {
     environment: process.env.NODE_ENV || 'development',
     immediateFlush: true, // Send logs immediately for debugging
   });
-
-  // Patch console methods to also send to PostHog
-  patchConsole('api:console');
 } else {
-  console.warn('PostHog logging disabled: NEXT_PUBLIC_POSTHOG_KEY not set');
+  console.warn('OTel logging disabled: NEXT_PUBLIC_POSTHOG_KEY not set');
 }
 
 const apiLogger = getLogger('api');
