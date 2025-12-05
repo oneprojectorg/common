@@ -13,7 +13,7 @@ import { register } from '../../instrumentation';
 import { IconProvider } from '../components/IconProvider';
 import { PostHogProvider } from '../components/PostHogProvider';
 
-// Register Axiom logging
+// Register OpenTelemetry
 register();
 
 const roboto = Roboto({
