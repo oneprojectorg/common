@@ -62,11 +62,12 @@ export async function teardown() {
   const client = postgres(databaseUrl);
   const db = drizzle(client);
 
-  // Tables to skip in cleanup verification (e.g., seeded reference data)
+  // Tables to skip: seeded RBAC data (access_*) and shared location references
   const tablesToSkip = new Set([
     'access_roles',
     'access_role_permissions_on_access_zones',
     'access_zones',
+    'locations',
   ]);
 
   // Get all table objects from schema (filter for actual PgTable instances)

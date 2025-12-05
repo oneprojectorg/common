@@ -1,6 +1,6 @@
 import { db } from '@op/db/client';
-import { locations, organizationsWhereWeWork, profiles } from '@op/db/schema';
-import { eq, inArray } from 'drizzle-orm';
+import { profiles } from '@op/db/schema';
+import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
 import { organizationRouter } from '.';
@@ -128,28 +128,9 @@ describe.concurrent('Organization Integration Tests', () => {
       expect(location.countryCode).toBe('US');
 
       // Register cleanup for the created organization (not tracked by TestOrganizationDataManager)
-      // Note: locations are a shared table and don't cascade delete when org is deleted
       onTestFinished(async () => {
-        if (result.id) {
-          // First, get location IDs linked to this organization before deleting
-          const linkedLocations = await db
-            .select({ locationId: organizationsWhereWeWork.locationId })
-            .from(organizationsWhereWeWork)
-            .where(eq(organizationsWhereWeWork.organizationId, result.id));
-
-          const locationIds = linkedLocations.map((l) => l.locationId);
-
-          // Delete the profile (cascades to organization and organizationsWhereWeWork)
-          if (result.profile?.id) {
-            await db.delete(profiles).where(eq(profiles.id, result.profile.id));
-          }
-
-          // Clean up orphaned locations
-          if (locationIds.length > 0) {
-            await db
-              .delete(locations)
-              .where(inArray(locations.id, locationIds));
-          }
+        if (result.profile?.id) {
+          await db.delete(profiles).where(eq(profiles.id, result.profile.id));
         }
       });
     });
