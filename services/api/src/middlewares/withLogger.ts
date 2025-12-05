@@ -53,9 +53,13 @@ const withLogger: MiddlewareBuilderBase<TContextWithLogger> = async ({
   const duration = end - start;
   const logHeadline = `[${spacetime(ctx.time).format('nice')}] - ${duration}ms`;
 
-  // Log result
+  // Log result (skip success logs in test environment)
   if (result.ok) {
-    console.log(`✔ OK:\t${ctx.requestId}\n\t${logHeadline}\n\tIP: ${ctx.ip}`);
+    if (process.env.NODE_ENV !== 'test') {
+      console.log(
+        `✔ OK:\t${ctx.requestId}\n\t${logHeadline}\n\tIP: ${ctx.ip}`,
+      );
+    }
   } else if (result.error) {
     opLogger.error('Request failed', {
       requestId: ctx.requestId,
