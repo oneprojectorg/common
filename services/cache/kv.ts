@@ -61,8 +61,9 @@ const getCacheKey = (
 
   // this matches the ability to disregard full paths so pages can be moved without a 404
   const slug = fullSlug?.split('/').slice(-1)[0] ?? '';
-  return `${apiVersion}/${appKey}/${key}/${slug}${otherParams?.length ? `:${otherParams.join(':')}` : ''
-    }`;
+  return `${apiVersion}/${appKey}/${key}/${slug}${
+    otherParams?.length ? `:${otherParams.join(':')}` : ''
+  }`;
 };
 
 const memCache = new Map();
@@ -100,10 +101,6 @@ export const cache = async <T = any>({
       log.info('CACHE: memory');
       return cachedVal.data;
     }
-  }
-
-  if (skipMemCache && process.env.NODE_ENV === 'production') {
-    console.log('skipping memcache');
   }
 
   // fall back to Redis cache
