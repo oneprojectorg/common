@@ -58,9 +58,27 @@ jobs:
           version: latest
 
       - name: Cache Supabase Docker images
-        uses: ScribeMD/docker-cache@0.5.0
+        id: docker-cache
+        uses: actions/cache@v4
         with:
-          key: docker-${{ runner.os }}-supabase-${{ hashFiles('supabase/supabase-ci.toml') }}
+          path: /tmp/supabase-docker-cache
+          key: docker-${{ runner.os }}-supabase-${{ hashFiles('supabase-ci.toml') }}
+          restore-keys: |
+            docker-${{ runner.os }}-supabase-
+
+      - name: Load cached Docker images
+        if: steps.docker-cache.outputs.cache-hit == 'true'
+        run: |
+          if [ -d /tmp/supabase-docker-cache ] && [ "$(ls -A /tmp/supabase-docker-cache)" ]; then
+            echo "Loading cached Docker images..."
+            for img in /tmp/supabase-docker-cache/*.tar; do
+              if [ -f "$img" ]; then
+                docker load -i "$img" || true
+              fi
+            done
+          else
+            echo "No cached images found"
+          fi
 
       - name: Use CI config
         run: cp supabase/supabase-ci.toml supabase/config.toml
@@ -79,3 +97,16 @@ jobs:
 
       - name: Run API tests
         run: pnpm w:api test
+
+      - name: Save Docker images to cache
+        if: steps.docker-cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p /tmp/supabase-docker-cache
+          # Save Supabase-related images
+          for img in $(docker images --format '{{.Repository}}:{{.Tag}}' | grep -E '(supabase|postgres|postgrest|gotrue|realtime|storage|kong|imgproxy)' | head -20); do
+            safe_name=$(echo "$img" | tr '/:' '_')
+            echo "Saving $img..."
+            docker save "$img" -o "/tmp/supabase-docker-cache/${safe_name}.tar" || true
+          done
+          echo "Cached images:"
+          ls -lh /tmp/supabase-docker-cache/ || true
