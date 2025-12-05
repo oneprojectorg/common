@@ -57,11 +57,6 @@ jobs:
         with:
           version: latest
 
-      - name: Cache Supabase Docker images
-        uses: ScribeMD/docker-cache@0.5.0
-        with:
-          key: docker-${{ runner.os }}-supabase-${{ hashFiles('supabase/supabase-ci.toml') }}
-
       - name: Use CI config
         run: cp supabase/supabase-ci.toml supabase/config.toml
 
