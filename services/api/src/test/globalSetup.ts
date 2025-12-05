@@ -1,12 +1,6 @@
-import {
-  authUsers,
-  joinProfileRequests,
-  organizations,
-  profileUsers,
-  profiles,
-  users,
-} from '@op/db/schema';
-import { count } from 'drizzle-orm';
+import * as schema from '@op/db/schema';
+import { count, getTableName } from 'drizzle-orm';
+import { PgTable } from 'drizzle-orm/pg-core';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 
@@ -68,63 +62,34 @@ export async function teardown() {
   const client = postgres(databaseUrl);
   const db = drizzle(client);
 
-  const [profileCountResult] = await db
-    .select({ count: count() })
-    .from(profiles);
-  const [userCountResult] = await db.select({ count: count() }).from(users);
-  const [orgCountResult] = await db
-    .select({ count: count() })
-    .from(organizations);
-  const [authUserCountResult] = await db
-    .select({ count: count() })
-    .from(authUsers);
-  const [profileUsersCountResult] = await db
-    .select({ count: count() })
-    .from(profileUsers);
-  const [joinProfileRequestsCountResult] = await db
-    .select({ count: count() })
-    .from(joinProfileRequests);
+  // Tables to skip in cleanup verification (e.g., seeded reference data)
+  const tablesToSkip = new Set([
+    'access_roles',
+    'access_role_permissions_on_access_zones',
+    'access_zones',
+  ]);
 
-  const profileCount = profileCountResult?.count ?? 0;
-  const userCount = userCountResult?.count ?? 0;
-  const orgCount = orgCountResult?.count ?? 0;
-  const authUserCount = authUserCountResult?.count ?? 0;
-  const profileUsersCount = profileUsersCountResult?.count ?? 0;
-  const joinProfileRequestsCount = joinProfileRequestsCountResult?.count ?? 0;
+  // Get all table objects from schema (filter for actual PgTable instances)
+  const tables = Object.entries(schema).filter(
+    (entry): entry is [string, PgTable] =>
+      entry[1] instanceof PgTable && !tablesToSkip.has(getTableName(entry[1])),
+  );
 
-  if (profileCount !== 0) {
-    throw new Error(
-      `Expected 0 profiles but found ${profileCount}. This indicates that some test cleanup failed.`,
-    );
+  const errors: string[] = [];
+
+  for (const [, table] of tables) {
+    const tableName = getTableName(table);
+    const [result] = await db.select({ count: count() }).from(table);
+    const tableCount = result?.count ?? 0;
+
+    if (tableCount !== 0) {
+      errors.push(`Expected 0 rows in "${tableName}" but found ${tableCount}`);
+    }
   }
 
-  if (userCount !== 0) {
+  if (errors.length > 0) {
     throw new Error(
-      `Expected 0 users but found ${userCount}. This indicates that some test cleanup failed.`,
-    );
-  }
-
-  if (orgCount !== 0) {
-    throw new Error(
-      `Expected 0 organizations but found ${orgCount}. This indicates that some test cleanup failed.`,
-    );
-  }
-
-  if (authUserCount !== 0) {
-    throw new Error(
-      `Expected 0 auth.users but found ${authUserCount}. This indicates that some test cleanup failed.`,
-    );
-  }
-
-  if (profileUsersCount !== 0) {
-    throw new Error(
-      `Expected 0 profileUsers but found ${profileUsersCount}. This indicates that some test cleanup failed.`,
-    );
-  }
-
-  if (joinProfileRequestsCount !== 0) {
-    throw new Error(
-      `Expected 0 joinProfileRequests but found ${joinProfileRequestsCount}. This indicates that some test cleanup failed.`,
+      `Test cleanup failed. This indicates that some test cleanup failed:\n${errors.join('\n')}`,
     );
   }
 
