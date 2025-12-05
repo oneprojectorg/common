@@ -26,10 +26,3 @@ export function transformMiddlewareRequest(
     },
   ];
 }
-
-/**
- * Wrapper for route handlers - simple pass-through since OTel handles tracing.
- */
-export function withLogging<T>(handler: T): T {
-  return handler;
-}
