@@ -42,15 +42,14 @@ export const getOrganizationRouter = router({
     .meta(meta)
     .input(inputSchema)
     .output(organizationsWithProfileEncoder)
-    .query(async ({ ctx, input }) => {
+    .query(async ({ input }) => {
       const { slug } = input;
-      const { user } = ctx;
 
       try {
         const result = await cache({
           type: 'organization',
           params: [slug],
-          fetch: () => getOrganization({ slug, user }),
+          fetch: () => getOrganization({ slug }),
         });
 
         if (!result) {
@@ -73,7 +72,6 @@ export const getOrganizationRouter = router({
 
         return organizationsWithProfileEncoder.parse(transformedResult);
       } catch (error: unknown) {
-        console.log(error);
         if (error instanceof UnauthorizedError) {
           throw new TRPCError({
             message: 'You do not have acess to this organization',

@@ -41,20 +41,15 @@ const getTermsFromDb = async ({
     ) as SQL<unknown>;
   }
 
-  try {
-    const results = await db
-      .select()
-      .from(taxonomyTerms)
-      .innerJoin(taxonomies, () => eq(taxonomyTerms.taxonomyId, taxonomies.id))
-      .where(whereClause);
+  const results = await db
+    .select()
+    .from(taxonomyTerms)
+    .innerJoin(taxonomies, () => eq(taxonomyTerms.taxonomyId, taxonomies.id))
+    .where(whereClause);
 
-    const terms = results.map((row) => row.taxonomyTerms);
+  const terms = results.map((row) => row.taxonomyTerms);
 
-    return terms;
-  } catch (e) {
-    console.error(e);
-    throw e;
-  }
+  return terms;
 };
 
 const nameHandlers: Record<

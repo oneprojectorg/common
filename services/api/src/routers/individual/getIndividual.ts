@@ -34,14 +34,12 @@ export const getIndividualRouter = router({
     .meta(meta)
     .input(z.object({ id: z.string(), termUri: z.string().optional() }))
     .output(individualsTermsEncoder)
-    .query(async ({ ctx, input }) => {
+    .query(async ({ input }) => {
       const { id } = input;
-      const { user } = ctx;
 
       try {
         const result = await getIndividualTerms({
           individualId: id,
-          user,
         });
 
         if (!result) {
@@ -75,14 +73,12 @@ export const getIndividualRouter = router({
     // Router
     .input(z.object({ profileId: z.string(), termUri: z.string().optional() }))
     .output(individualsTermsEncoder)
-    .query(async ({ ctx, input }) => {
+    .query(async ({ input }) => {
       const { profileId } = input;
-      const { user } = ctx;
 
       try {
         const result = await getIndividualTermsByProfile({
           profileId,
-          user,
         });
 
         return individualsTermsEncoder.parse(result);

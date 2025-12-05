@@ -5,22 +5,12 @@ import {
   taxonomies,
   taxonomyTerms,
 } from '@op/db/schema';
-import { User } from '@op/supabase/lib';
-
-import { UnauthorizedError } from '../../utils';
 
 export const getIndividualTermsByProfile = async ({
   profileId,
-  user,
 }: {
-  user: User;
-  termUri?: string;
   profileId: string;
 }) => {
-  if (!user) {
-    throw new UnauthorizedError();
-  }
-
   try {
     const indTerms = await db
       .select({
