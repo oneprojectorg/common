@@ -1,6 +1,6 @@
 import { db } from '@op/db/client';
-import { profiles } from '@op/db/schema';
-import { eq } from 'drizzle-orm';
+import { locations, profiles } from '@op/db/schema';
+import { eq, inArray } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
 import { organizationRouter } from '.';
@@ -127,10 +127,17 @@ describe.concurrent('Organization Integration Tests', () => {
       expect(location.name).toBe('San Francisco, CA');
       expect(location.countryCode).toBe('US');
 
-      // Register cleanup for the created organization (not tracked by TestOrganizationDataManager)
+      // Register cleanup for the created organization and locations (not tracked by TestOrganizationDataManager)
+      const locationIds = orgFromDb.whereWeWork
+        .map((loc) => loc.id)
+        .filter((id): id is string => id !== undefined);
       onTestFinished(async () => {
         if (result.profile?.id) {
           await db.delete(profiles).where(eq(profiles.id, result.profile.id));
+        }
+        // Clean up locations (shared table, not cascade deleted)
+        if (locationIds.length > 0) {
+          await db.delete(locations).where(inArray(locations.id, locationIds));
         }
       });
     });
