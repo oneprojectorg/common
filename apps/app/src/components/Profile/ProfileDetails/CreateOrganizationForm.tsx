@@ -17,6 +17,7 @@ import { LuLink } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { organizationFormValidator } from '@/components/Onboarding/shared/organizationValidation';
 import { sendOnboardingAnalytics } from '@/components/Onboarding/utils';
 
 import { GeoNamesMultiSelect } from '../../GeoNamesMultiSelect';
@@ -27,22 +28,43 @@ import { getFieldErrorMessage, useAppForm } from '../../form/utils';
 import { ToggleRow } from '../../layout/split/form/ToggleRow';
 
 interface CreateOrganizationFormProps {
+  onSubmit: (orgName?: string) => void;
   onSuccess: () => void;
+  onError: () => void;
   className?: string;
 }
 
 export const CreateOrganizationForm = forwardRef<
   HTMLFormElement,
   CreateOrganizationFormProps
->(({ onSuccess, className }, ref) => {
+>(({ onSubmit, onSuccess, onError, className }, ref) => {
   const t = useTranslations();
   const router = useRouter();
   const trpcUtil = trpc.useUtils();
 
-  // Initialize form data from profile and terms
+  // Initialize form data
   const initialData = {};
 
-  const createOrganization = trpc.organization.create.useMutation();
+  const createOrganization = trpc.organization.create.useMutation({
+    onMutate: (data) => {
+      // Show "Setting up your org" modal
+      onSubmit(data?.name);
+    },
+    onSuccess: async () => {
+      // Invalidate account so we refetch organization users again
+      trpcUtil.account.getMyAccount.invalidate();
+      trpcUtil.account.getMyAccount.reset();
+      await trpcUtil.account.getMyAccount.refetch();
+      // Close "Setting up your org" modal
+      router.push(`/?new=1`);
+      onSuccess();
+    },
+    onError: () => {
+      // Close success modal and re-open create modal
+      onError();
+    },
+  });
+
   const uploadAvatarImage = trpc.organization.uploadAvatarImage.useMutation();
   const uploadImage = trpc.organization.uploadAvatarImage.useMutation();
 
@@ -72,19 +94,11 @@ export const CreateOrganizationForm = forwardRef<
     };
 
     try {
-      createOrganization.mutateAsync(createData).then(() => {
-        onSuccess();
-        sendOnboardingAnalytics(formData);
-        // invalidate account so we refetch organization users again
-        trpcUtil.account.getMyAccount.invalidate();
-        trpcUtil.account.getMyAccount.reset();
-        trpcUtil.account.getMyAccount.refetch().then(() => {
-          router.push(`/?new=1`);
-        });
-      });
+      await createOrganization.mutateAsync(createData);
+      sendOnboardingAnalytics(formData);
     } catch (err) {
       console.error('ERROR', err);
-
+      onError();
       const errorInfo = analyzeError(err);
 
       if (errorInfo.isConnectionError) {
@@ -105,6 +119,9 @@ export const CreateOrganizationForm = forwardRef<
     defaultValues: initialData,
     onSubmit: async ({ value }) => {
       await submitCreate(value);
+    },
+    validators: {
+      onSubmit: organizationFormValidator,
     },
   });
 
@@ -555,7 +572,7 @@ export const CreateOrganizationForm = forwardRef<
             {form.state.isSubmitting || createOrganization.isPending ? (
               <LoadingSpinner />
             ) : (
-              t('Save')
+              t('Create')
             )}
           </form.SubmitButton>
         </div>
