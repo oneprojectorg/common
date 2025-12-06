@@ -3,6 +3,7 @@
 import { ReactNode, createContext, memo, useCallback, useContext } from 'react';
 import {
   Dialog,
+  Heading,
   ModalOverlay,
   OverlayTriggerStateContext,
   Modal as RACModal,
@@ -14,7 +15,6 @@ import { tv } from 'tailwind-variants';
 import { cn } from '../lib/utils';
 import { Button } from './Button';
 import { Confetti } from './Confetti';
-import { Header1 } from './Header';
 
 const overlayStyles = tv({
   base: 'fixed left-0 top-0 z-[99999] flex h-[--visual-viewport-height] w-full items-center justify-center bg-neutral-black/15 p-4 text-center backdrop-blur-sm entering:duration-300 entering:ease-out entering:animate-in entering:fade-in exiting:duration-300 exiting:ease-in exiting:animate-out exiting:fade-out',
@@ -67,14 +67,15 @@ export const ModalHeader = ({
             <LuX className="h-6 w-6" aria-hidden="true" />
           </button>
         )}
-        <Header1
+        <Heading
+          slot="title"
           className={cn(
             'w-full text-center font-serif sm:text-title-sm',
             className,
           )}
         >
           {children}
-        </Header1>
+        </Heading>
       </div>
     </div>
   );
@@ -88,14 +89,14 @@ export const ModalBody = ({
   children: ReactNode;
 }) => {
   return (
-    <Dialog
+    <div
       className={cn(
         'flex w-full flex-col gap-2 p-6 text-left focus-visible:outline-0',
         className,
       )}
     >
       {children}
-    </Dialog>
+    </div>
   );
 };
 
@@ -195,6 +196,7 @@ export const ModalInContext = ({
   wrapperClassName?: string;
   overlayClassName?: string;
   confetti?: boolean;
+  children: ReactNode;
 }) => {
   const contextValue = {
     isDismissable,
@@ -213,7 +215,9 @@ export const ModalInContext = ({
       >
         {confetti && <Confetti />}
         <div className={wrapperClassName}>
-          <RACModal className={modalStyles({ className })}>{children}</RACModal>
+          <RACModal>
+            <Dialog className={modalStyles({ className })}>{children}</Dialog>
+          </RACModal>
         </div>
       </ModalOverlay>
     </ModalContext.Provider>
@@ -226,6 +230,7 @@ export const Modal = (
     wrapperClassName?: string;
     overlayClassName?: string;
     confetti?: boolean;
+    children: ReactNode;
   },
 ) => {
   return <ModalInContext {...props} />;
