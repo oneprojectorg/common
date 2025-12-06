@@ -3,12 +3,13 @@
 import { Button } from '@op/ui/Button';
 import { Modal, ModalHeader } from '@op/ui/Modal';
 import { DialogTrigger } from '@op/ui/RAC';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { LuPencil } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { CreateOrganizationForm } from './CreateOrganizationForm';
+import { CreateOrganizationSuccessModal } from './CreateOrganizationSuccessModal';
 
 interface CreateOrganizationModalProps {
   isOpen?: boolean;
@@ -17,64 +18,63 @@ interface CreateOrganizationModalProps {
 
 export const CreateOrganizationModal = ({
   isOpen: controlledIsOpen,
-  onOpenChange: controlledSetIsOpen,
+  onOpenChange: controlledOnOpenChange,
 }: CreateOrganizationModalProps) => {
   const t = useTranslations();
-  const [isOpen, setIsOpen] = useState(false);
+  const [isInternalFormOpen, setIsInternalFormOpen] = useState(false);
+  const [isSuccessOpen, setIsSuccessOpen] = useState(false);
+  const [orgName, setOrgName] = useState<string | undefined>();
   const formRef = useRef<HTMLFormElement>(null);
 
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && isOpen) {
-        event.preventDefault();
-        setIsOpen(false);
-      }
-    };
+  const isModalOpen = controlledIsOpen ?? isInternalFormOpen;
+  const setIsModalOpen = controlledOnOpenChange ?? setIsInternalFormOpen;
 
-    if (isOpen) {
-      document.addEventListener('keydown', handleKeyDown);
-    }
+  const onSubmit = (name?: string) => {
+    setOrgName(name);
+    setIsModalOpen(false);
+    setIsSuccessOpen(true);
+  };
 
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [isOpen]);
+  const onSuccess = () => {
+    setIsSuccessOpen(false);
+  };
 
-  if (isOpen !== undefined) {
-    return (
-      <Modal
-        isOpen={controlledIsOpen}
-        onOpenChange={controlledSetIsOpen}
-        isDismissable
-      >
+  const onError = () => {
+    setIsSuccessOpen(false);
+    setIsModalOpen(true);
+  };
+
+  return (
+    <>
+      <Modal isOpen={isModalOpen} onOpenChange={setIsModalOpen} isDismissable>
         <ModalHeader>{t('Create Organization')}</ModalHeader>
         <CreateOrganizationForm
           ref={formRef}
-          onSuccess={() => controlledSetIsOpen?.(false)}
+          onSubmit={onSubmit}
+          onSuccess={onSuccess}
+          onError={onError}
           className="p-6"
         />
       </Modal>
-    );
-  }
+      <CreateOrganizationSuccessModal
+        isOpen={isSuccessOpen}
+        organizationName={orgName}
+      />
+    </>
+  );
+};
 
+export const CreateOrganizationModalTrigger = () => {
+  const t = useTranslations();
   return (
-    <DialogTrigger>
-      <Button
-        onPress={() => setIsOpen(true)}
-        color="primary"
-        className="min-w-full sm:min-w-fit"
-      >
-        <LuPencil className="size-4" />
-        {t('Edit Profile')}
-      </Button>
-      <Modal isOpen={isOpen} onOpenChange={setIsOpen} isDismissable>
-        <ModalHeader>{t('Edit Profile')}</ModalHeader>
-        <CreateOrganizationForm
-          ref={formRef}
-          onSuccess={() => setIsOpen(false)}
-          className="p-6"
-        />
-      </Modal>
-    </DialogTrigger>
+    <>
+      <DialogTrigger>
+        <Button color="primary" className="min-w-full sm:min-w-fit">
+          <LuPencil className="size-4" />
+          {t('Edit Profile')}
+        </Button>
+        <CreateOrganizationModal />
+      </DialogTrigger>
+    </>
   );
 };
