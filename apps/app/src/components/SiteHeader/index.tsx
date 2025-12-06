@@ -31,13 +31,13 @@ import { Link, useTranslations } from '@/lib/i18n';
 import { CoCModal } from '../CoCModal';
 import { CommonLogo } from '../CommonLogo';
 import ErrorBoundary from '../ErrorBoundary';
-import { InviteUserModal } from '../InviteUserModal';
 import { LocaleChooser } from '../LocaleChooser';
 import { PrivacyPolicyModal } from '../PrivacyPolicyModal';
 import { UpdateProfileModal } from '../Profile/ProfileDetails/UpdateProfile';
 import { ProfileSwitchingModal } from '../ProfileSwitchingModal';
 import { SearchInput } from '../SearchInput';
 import { ToSModal } from '../ToSModal';
+import { CreateMenu } from './CreateMenu';
 
 const useMediaQuery = (query: string) => {
   const [matches, setMatches] = useState(false);
@@ -460,13 +460,13 @@ export const SiteHeader = () => {
         </span>
         <div className="flex items-center gap-3">
           <ClientOnly>
-            <InviteUserModal />
-            <LocaleChooser />
             <ErrorBoundary
               fallback={
                 <div className="size-8 rounded-full border bg-white shadow" />
               }
             >
+              <CreateMenu />
+              <LocaleChooser />
               <Suspense
                 fallback={
                   <Skeleton className="size-8 rounded-full border bg-white shadow" />
@@ -522,7 +522,7 @@ export const SiteHeader = () => {
 
               <div className="flex items-center gap-3">
                 <ClientOnly>
-                  <InviteUserModal />
+                  <CreateMenu />
                   <LocaleChooser />
                   <ErrorBoundary
                     fallback={
