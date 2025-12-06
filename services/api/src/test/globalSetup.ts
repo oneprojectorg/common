@@ -1,5 +1,10 @@
 import * as schema from '@op/db/schema';
-import { count, getTableName } from 'drizzle-orm';
+import {
+  ACCESS_ROLES,
+  ACCESS_ROLE_PERMISSIONS,
+  ACCESS_ZONES,
+} from '@op/db/seedData/accessControl';
+import { count, getTableName, inArray } from 'drizzle-orm';
 import { PgTable } from 'drizzle-orm/pg-core';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
@@ -47,8 +52,7 @@ export async function setup() {
 
 /**
  * Global teardown for Vitest - runs once after all test files complete
- * Verifies that all test data has been properly cleaned.
- * Add more tables as needed.
+ * Verifies that all test data has been properly cleaned, then removes seeded data.
  */
 export async function teardown() {
   const databaseUrl = process.env.DATABASE_URL || process.env.TEST_DATABASE_URL;
@@ -60,24 +64,24 @@ export async function teardown() {
   }
 
   const client = postgres(databaseUrl);
-  const db = drizzle(client);
+  const db = drizzle(client, { schema, casing: 'snake_case' });
 
-  // Tables to skip: seeded RBAC data (access_*) and shared location references
-  const tablesToSkip = new Set([
+  // Seeded tables that will be "deseeded" - only the exact seeded rows should exist
+  const seededTables = new Set([
     'access_roles',
     'access_role_permissions_on_access_zones',
     'access_zones',
-    'locations',
   ]);
 
   // Get all table objects from schema (filter for actual PgTable instances)
   const tables = Object.entries(schema).filter(
     (entry): entry is [string, PgTable] =>
-      entry[1] instanceof PgTable && !tablesToSkip.has(getTableName(entry[1])),
+      entry[1] instanceof PgTable && !seededTables.has(getTableName(entry[1])),
   );
 
   const errors: string[] = [];
 
+  // Check non-seeded tables are empty
   for (const [, table] of tables) {
     const tableName = getTableName(table);
     const [result] = await db.select({ count: count() }).from(table);
@@ -88,11 +92,60 @@ export async function teardown() {
     }
   }
 
+  // Verify seeded tables only contain expected seed data
+  const accessZoneIds = ACCESS_ZONES.map((z) => z.id);
+  const accessRoleIds = ACCESS_ROLES.map((r) => r.id);
+  const expectedPermissionCount = ACCESS_ROLE_PERMISSIONS.length;
+
+  const [zonesResult] = await db
+    .select({ count: count() })
+    .from(schema.accessZones);
+  const [rolesResult] = await db
+    .select({ count: count() })
+    .from(schema.accessRoles);
+  const [permissionsResult] = await db
+    .select({ count: count() })
+    .from(schema.accessRolePermissionsOnAccessZones);
+
+  if (zonesResult?.count !== accessZoneIds.length) {
+    errors.push(
+      `Expected ${accessZoneIds.length} rows in "access_zones" but found ${zonesResult?.count}`,
+    );
+  }
+  if (rolesResult?.count !== accessRoleIds.length) {
+    errors.push(
+      `Expected ${accessRoleIds.length} rows in "access_roles" but found ${rolesResult?.count}`,
+    );
+  }
+  if (permissionsResult?.count !== expectedPermissionCount) {
+    errors.push(
+      `Expected ${expectedPermissionCount} rows in "access_role_permissions_on_access_zones" but found ${permissionsResult?.count}`,
+    );
+  }
+
   if (errors.length > 0) {
     throw new Error(
       `Test cleanup failed. This indicates that some test cleanup failed:\n${errors.join('\n')}`,
     );
   }
+
+  // Deseed: remove the seeded access control data (order matters due to FK constraints)
+  console.log('🧹 Deseeding access control tables...');
+  await db
+    .delete(schema.accessRolePermissionsOnAccessZones)
+    .where(
+      inArray(
+        schema.accessRolePermissionsOnAccessZones.accessRoleId,
+        accessRoleIds,
+      ),
+    );
+  await db
+    .delete(schema.accessRoles)
+    .where(inArray(schema.accessRoles.id, accessRoleIds));
+  await db
+    .delete(schema.accessZones)
+    .where(inArray(schema.accessZones.id, accessZoneIds));
+  console.log('✅ Deseeding completed');
 
   await client.end();
 }
