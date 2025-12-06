@@ -29,7 +29,6 @@ import { ToggleRow } from '../../layout/split/form/ToggleRow';
 
 interface CreateOrganizationFormProps {
   onSubmit: (orgName?: string) => void;
-  onSuccess: () => void;
   onError: () => void;
   className?: string;
 }
@@ -37,7 +36,7 @@ interface CreateOrganizationFormProps {
 export const CreateOrganizationForm = forwardRef<
   HTMLFormElement,
   CreateOrganizationFormProps
->(({ onSubmit, onSuccess, onError, className }, ref) => {
+>(({ onSubmit, onError, className }, ref) => {
   const t = useTranslations();
   const router = useRouter();
   const trpcUtil = trpc.useUtils();
@@ -51,13 +50,8 @@ export const CreateOrganizationForm = forwardRef<
       onSubmit(data?.name);
     },
     onSuccess: async () => {
-      // Invalidate account so we refetch organization users again
-      trpcUtil.account.getMyAccount.invalidate();
-      trpcUtil.account.getMyAccount.reset();
       await trpcUtil.account.getMyAccount.refetch();
-      // Close "Setting up your org" modal
       router.push(`/?new=1`);
-      onSuccess();
     },
     onError: () => {
       // Close success modal and re-open create modal

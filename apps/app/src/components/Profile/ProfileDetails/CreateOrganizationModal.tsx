@@ -3,7 +3,8 @@
 import { Button } from '@op/ui/Button';
 import { Modal, ModalHeader } from '@op/ui/Modal';
 import { DialogTrigger } from '@op/ui/RAC';
-import { useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
 import { LuPencil } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -26,6 +27,9 @@ export const CreateOrganizationModal = ({
   const [orgName, setOrgName] = useState<string | undefined>();
   const formRef = useRef<HTMLFormElement>(null);
 
+  const searchParams = useSearchParams();
+  const isNew = searchParams.get('new');
+
   const isModalOpen = controlledIsOpen ?? isInternalFormOpen;
   const setIsModalOpen = controlledOnOpenChange ?? setIsInternalFormOpen;
 
@@ -44,6 +48,12 @@ export const CreateOrganizationModal = ({
     setIsModalOpen(true);
   };
 
+  useEffect(() => {
+    if (!!isNew) {
+      onSuccess();
+    }
+  }, [isNew]);
+
   return (
     <>
       <Modal isOpen={isModalOpen} onOpenChange={setIsModalOpen} isDismissable>
@@ -51,7 +61,6 @@ export const CreateOrganizationModal = ({
         <CreateOrganizationForm
           ref={formRef}
           onSubmit={onSubmit}
-          onSuccess={onSuccess}
           onError={onError}
           className="p-6"
         />
