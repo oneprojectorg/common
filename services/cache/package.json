@@ -5,7 +5,7 @@
   "license": "SEE LICENSE in /LICENSE",
   "type": "module",
   "scripts": {
-    "lint": "pnpm tsc --noEmit"
+    "typecheck": "pnpm tsc --noEmit"
   },
   "dependencies": {
     "@op/core": "workspace:*",

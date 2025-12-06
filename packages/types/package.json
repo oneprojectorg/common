@@ -11,14 +11,14 @@
   "types": "./src/index.ts",
   "scripts": {
     "disable-build": "tsc",
-    "lint": "pnpm tsc --noEmit"
+    "typecheck": "pnpm tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@op/typescript-config": "workspace:*",
     "@types/node": "^22.13.5",
     "typescript": "5.7.3"
-  },
-  "dependencies": {
-    "zod": "^4.1.12"
   }
 }

@@ -13,7 +13,6 @@
   "scripts": {
     "drop-migration": "pnpm drizzle-kit drop",
     "generate": "pnpm drizzle-kit generate",
-    "lint": "pnpm tsc --noEmit",
     "migrate": "cross-env DB_MIGRATING=true tsx ./migrate.ts",
     "migrate:test": "cross-env DB_MIGRATING=true DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:55322/postgres tsx ./migrate.ts",
     "push": "pnpm drizzle-kit push",
@@ -22,7 +21,9 @@
     "seed:test": "cross-env DB_SEEDING=true DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:55322/postgres tsx ./seed-test.ts",
     "start": "pnpx supabase start",
     "status": "pnpx supabase status",
-    "stop": "pnpx supabase stop"
+    "stop": "pnpx supabase stop",
+    "studio": "pnpm drizzle-kit studio",
+    "typecheck": "pnpm tsc --noEmit"
   },
   "dependencies": {
     "@op/core": "workspace:*",

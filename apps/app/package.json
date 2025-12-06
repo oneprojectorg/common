@@ -8,8 +8,8 @@
     "build": "next build",
     "check:i18n": "tsx scripts/check-missing-intl-keys.ts",
     "dev": "next dev -p 3100",
-    "lint": "pnpm tsc --noEmit",
-    "start": "next start -p 3100"
+    "start": "next start -p 3100",
+    "typecheck": "pnpm tsc --noEmit"
   },
   "dependencies": {
     "@axiomhq/js": "^1.3.1",

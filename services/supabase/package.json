@@ -11,7 +11,7 @@
     "./types": "./src/types.ts"
   },
   "scripts": {
-    "lint": "pnpm tsc --noEmit",
+    "typecheck": "pnpm tsc --noEmit",
     "typegen": "pnpx supabase gen types --workdir=\"../..\" --lang=typescript --local --schema public > ./src/types.ts && pnpm eslint --fix ./src/types.ts"
   },
   "dependencies": {

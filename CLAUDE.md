@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) and other AI agents 
 ### Build and Quality Checks
 
 - **Build all**: `pnpm build` (uses Turbo for optimized builds)
-- **Type checking**: `pnpm w:app lint` (for main app typechecking as well as API checking)
+- **Type checking**: `pnpm typecheck` (runs type checking across all workspaces via Turbo) or `pnpm w:app typecheck` (for main app only)
 - Never run database migrations
 - NEVER run `pnpm format`
 - Almost always prefer suspense queries over a query with useEffect
@@ -88,7 +88,7 @@ Use `pnpm w:<workspace>` shortcuts:
 
 ### Code Quality Standards
 
-- Run type checking with `pnpm w:app lint` after making changes
+- Run type checking with `pnpm typecheck` or `pnpm w:app typecheck` after making changes
 - Follow existing code conventions and patterns in the file being edited
 - Test changes thoroughly before completion
 - Using `any` to fix type errors shuold be avoided
