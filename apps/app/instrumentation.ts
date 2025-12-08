@@ -1,27 +1,48 @@
 import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
 import { BatchLogRecordProcessor } from '@opentelemetry/sdk-logs';
-import { registerOTel } from '@vercel/otel';
+import { OTLPHttpJsonTraceExporter, registerOTel } from '@vercel/otel';
 
 export function register() {
-  const otlpEndpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
-  const apiKey = process.env.NEXT_PUBLIC_POSTHOG_KEY;
+  const otelEndpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
+  const headers = parseHeaders(process.env.OTEL_EXPORTER_OTLP_HEADERS);
 
-  // Only configure log export if endpoint is set
-  const logRecordProcessor = otlpEndpoint
+  // Configure log export
+  const logRecordProcessor = otelEndpoint
     ? new BatchLogRecordProcessor(
         new OTLPLogExporter({
-          url: `${otlpEndpoint}/v1/logs`,
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
-          },
+          url: `${otelEndpoint}/v1/logs`,
+          headers,
         }),
       )
     : undefined;
 
+  // Configure trace exporter
+  const traceExporter = otelEndpoint
+    ? new OTLPHttpJsonTraceExporter({
+        url: `${otelEndpoint}/v1/traces`,
+        headers,
+      })
+    : undefined;
+
   registerOTel({
-    serviceName: 'nextjs-app',
+    serviceName: process.env.OTEL_SERVICE_NAME || 'common',
     logRecordProcessor,
-    // Disable trace export - only using logs for now
-    spanProcessors: [],
+    traceExporter,
   });
 }
+
+const parseHeaders = (
+  headersStr: string | undefined,
+): Record<string, string> | undefined => {
+  if (!headersStr) {
+    return undefined;
+  }
+  const headers: Record<string, string> = {};
+  for (const pair of headersStr.split(',')) {
+    const [key, value] = pair.split('=');
+    if (key && value) {
+      headers[key.trim()] = value.trim();
+    }
+  }
+  return Object.keys(headers).length > 0 ? headers : undefined;
+};

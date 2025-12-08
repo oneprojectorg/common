@@ -1,3 +1,4 @@
+import { context, trace } from '@opentelemetry/api';
 import type { AnyValue } from '@opentelemetry/api-logs';
 import { logs, SeverityNumber } from '@opentelemetry/api-logs';
 
@@ -45,22 +46,41 @@ export class Logger {
   }> = [];
 
   private log(level: LogLevel, message: string, data?: LogData) {
+    // Get trace context
+    const span = trace.getSpan(context.active());
+    const spanContext = span?.spanContext();
+    const traceId = spanContext?.traceId;
+    const spanId = spanContext?.spanId;
+
+    // Merge trace context into data
+    const enrichedData: LogData = {
+      ...data,
+      ...(traceId && { traceId }),
+      ...(spanId && { spanId }),
+    };
+
     // Always log to console in development
     if (process.env.NODE_ENV === 'development') {
       const consoleMethod = level === 'debug' ? 'log' : level;
-      console[consoleMethod](`[${level.toUpperCase()}]`, message, data ?? '');
+      console[consoleMethod](
+        `[${level.toUpperCase()}]`,
+        message,
+        enrichedData,
+      );
     }
 
-    // Emit to OpenTelemetry
+    // Emit to OpenTelemetry with trace context
+    const activeContext = context.active();
     this.otelLogger.emit({
+      context: activeContext,
       severityNumber: severityMap[level],
       severityText: level.toUpperCase(),
       body: message,
-      attributes: toAnyValueMap(data),
+      attributes: toAnyValueMap(enrichedData),
     });
 
     // Store for flushing
-    this.pendingLogs.push({ level, message, data });
+    this.pendingLogs.push({ level, message, data: enrichedData });
   }
 
   debug(message: string, data?: LogData) {
