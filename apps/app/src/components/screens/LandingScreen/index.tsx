@@ -7,6 +7,7 @@ import { Suspense } from 'react';
 
 import { ActiveDecisionsNotifications } from '@/components/ActiveDecisionsNotifications';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import { JoinProfileRequestsNotifications } from '@/components/JoinProfileRequestsNotifications';
 import { NewOrganizations } from '@/components/NewOrganizations';
 import { NewlyJoinedModal } from '@/components/NewlyJoinedModal';
 import { OrganizationListSkeleton } from '@/components/OrganizationList';
@@ -221,6 +222,11 @@ const UserContent = async () => {
   return (
     <>
       <ActiveDecisionsNotifications />
+      {isOrgProfile && user.currentProfile ? (
+        <JoinProfileRequestsNotifications
+          targetProfileId={user.currentProfile.id}
+        />
+      ) : null}
       {isOrgProfile && user.currentProfile ? (
         <PendingRelationships slug={user.currentProfile.slug} />
       ) : null}

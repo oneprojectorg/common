@@ -391,5 +391,12 @@
   "platformAdmin_addUserToOrg_errorSelectBoth": "Please select both an organization and a role",
   "platformAdmin_addUserToOrg_selectOrganization": "Select Organization",
   "platformAdmin_addUserToOrg_selectRole": "Select Role",
-  "No more updates.": "No more updates."
+  "No more updates.": "No more updates.",
+  "joinProfileRequests_title": "Membership Requests",
+  "joinProfileRequests_requestDescription": "{name} wants to list your organization on their profile",
+  "joinProfileRequests_requestAccepted": "Membership request accepted",
+  "joinProfileRequests_requestDeclined": "Membership request declined",
+  "joinProfileRequests_updateError": "Membership request could not be updated",
+  "Decline": "Decline",
+  "Accept": "Accept"
 }

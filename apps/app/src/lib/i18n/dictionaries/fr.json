@@ -391,5 +391,12 @@
   "platformAdmin_addUserToOrg_errorSelectBoth": "Veuillez sélectionner une organisation et un rôle",
   "platformAdmin_addUserToOrg_selectOrganization": "Sélectionner une organisation",
   "platformAdmin_addUserToOrg_selectRole": "Sélectionner un rôle",
-  "No more updates.": "Plus de mises à jour."
+  "No more updates.": "Plus de mises à jour.",
+  "joinProfileRequests_title": "Demandes d'adhésion",
+  "joinProfileRequests_requestDescription": "{name} souhaite afficher votre organisation sur son profil",
+  "joinProfileRequests_requestAccepted": "Demande d'adhésion acceptée",
+  "joinProfileRequests_requestDeclined": "Demande d'adhésion refusée",
+  "joinProfileRequests_updateError": "La demande d'adhésion n'a pas pu être mise à jour",
+  "Decline": "Refuser",
+  "Accept": "Accepter"
 }
