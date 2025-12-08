@@ -7,14 +7,16 @@ export function register() {
   const headers = parseHeaders(process.env.OTEL_EXPORTER_OTLP_HEADERS);
 
   // Configure log export
-  const logRecordProcessor = otelEndpoint
-    ? new BatchLogRecordProcessor(
-        new OTLPLogExporter({
-          url: `${otelEndpoint}/v1/logs`,
-          headers,
-        }),
-      )
-    : undefined;
+  const logRecordProcessor =
+    // Logging doesn't currently work on edge with OTel
+    process.env.NEXT_RUNTIME !== 'edge' && otelEndpoint
+      ? new BatchLogRecordProcessor(
+          new OTLPLogExporter({
+            url: `${otelEndpoint}/v1/logs`,
+            headers,
+          }),
+        )
+      : undefined;
 
   // Configure trace exporter
   const traceExporter = otelEndpoint

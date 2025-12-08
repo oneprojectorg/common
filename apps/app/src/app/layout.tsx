@@ -9,12 +9,8 @@ import type { Metadata, Viewport } from 'next';
 import { Roboto, Roboto_Mono, Roboto_Serif } from 'next/font/google';
 import Script from 'next/script';
 
-import { register } from '../../instrumentation';
 import { IconProvider } from '../components/IconProvider';
 import { PostHogProvider } from '../components/PostHogProvider';
-
-// Register OpenTelemetry
-register();
 
 const roboto = Roboto({
   subsets: ['latin'],
