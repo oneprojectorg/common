@@ -4,8 +4,8 @@ import { Button } from '@op/ui/Button';
 import { Modal, ModalHeader } from '@op/ui/Modal';
 import { DialogTrigger } from '@op/ui/RAC';
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
-import { LuPencil } from 'react-icons/lu';
+import { useEffect, useState } from 'react';
+import { LuPlus } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -25,7 +25,6 @@ export const CreateOrganizationModal = ({
   const [isInternalFormOpen, setIsInternalFormOpen] = useState(false);
   const [isSuccessOpen, setIsSuccessOpen] = useState(false);
   const [orgName, setOrgName] = useState<string | undefined>();
-  const formRef = useRef<HTMLFormElement>(null);
 
   const searchParams = useSearchParams();
   const isNew = searchParams.get('new');
@@ -49,17 +48,16 @@ export const CreateOrganizationModal = ({
   };
 
   useEffect(() => {
-    if (!!isNew) {
+    if (isNew) {
       onSuccess();
     }
-  }, [isNew]);
+  }, [isNew, onSuccess]);
 
   return (
     <>
       <Modal isOpen={isModalOpen} onOpenChange={setIsModalOpen} isDismissable>
         <ModalHeader>{t('Create Organization')}</ModalHeader>
         <CreateOrganizationForm
-          ref={formRef}
           onSubmit={onSubmit}
           onError={onError}
           className="p-6"
@@ -79,8 +77,8 @@ export const CreateOrganizationModalTrigger = () => {
     <>
       <DialogTrigger>
         <Button color="primary" className="min-w-full sm:min-w-fit">
-          <LuPencil className="size-4" />
-          {t('Edit Profile')}
+          <LuPlus className="size-4" />
+          {t('Create Organization')}
         </Button>
         <CreateOrganizationModal />
       </DialogTrigger>

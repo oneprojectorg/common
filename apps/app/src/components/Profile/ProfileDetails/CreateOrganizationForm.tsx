@@ -60,7 +60,7 @@ export const CreateOrganizationForm = forwardRef<
   });
 
   const uploadAvatarImage = trpc.organization.uploadAvatarImage.useMutation();
-  const uploadImage = trpc.organization.uploadAvatarImage.useMutation();
+  const uploadBannerImage = trpc.organization.uploadAvatarImage.useMutation();
 
   const [profileImage, setProfileImage] = useState<ImageData | undefined>();
   const [bannerImage, setBannerImage] = useState<ImageData | undefined>();
@@ -187,10 +187,10 @@ export const CreateOrganizationForm = forwardRef<
           <BannerUploader
             value={bannerImage?.url ?? undefined}
             onChange={(file: File) =>
-              handleImageUpload(file, setBannerImage, uploadImage)
+              handleImageUpload(file, setBannerImage, uploadBannerImage)
             }
-            uploading={uploadImage.isPending}
-            error={uploadImage.error?.message || undefined}
+            uploading={uploadBannerImage.isPending}
+            error={uploadBannerImage.error?.message || undefined}
           />
           <AvatarUploader
             className="absolute bottom-0 left-4 aspect-square size-20 sm:size-28"
