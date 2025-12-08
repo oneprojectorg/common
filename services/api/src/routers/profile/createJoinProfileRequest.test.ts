@@ -1,12 +1,9 @@
 import { db } from '@op/db/client';
-import {
-  JoinProfileRequestStatus,
-  joinProfileRequests,
-  organizationUsers,
-} from '@op/db/schema';
+import { JoinProfileRequestStatus, joinProfileRequests } from '@op/db/schema';
 import { and, eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
+import { TestJoinProfileRequestDataManager } from '../../test/helpers/TestJoinProfileRequestDataManager';
 import { TestOrganizationDataManager } from '../../test/helpers/TestOrganizationDataManager';
 import {
   createIsolatedSession,
@@ -23,23 +20,15 @@ describe.concurrent('profile.createJoinProfileRequest', () => {
     onTestFinished,
   }) => {
     const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+    const joinRequestData = new TestJoinProfileRequestDataManager(
+      task.id,
+      onTestFinished,
+    );
 
     // Create two organizations to get two different profiles
     const { adminUser: requester } = await testData.createOrganization();
     const { organizationProfile: targetProfile } =
       await testData.createOrganization();
-
-    // Clean up join request after test
-    onTestFinished(async () => {
-      await db
-        .delete(joinProfileRequests)
-        .where(
-          and(
-            eq(joinProfileRequests.requestProfileId, requester.profileId),
-            eq(joinProfileRequests.targetProfileId, targetProfile.id),
-          ),
-        );
-    });
 
     // Create session as the requester
     const { session } = await createIsolatedSession(requester.email);
@@ -50,6 +39,9 @@ describe.concurrent('profile.createJoinProfileRequest', () => {
       requestProfileId: requester.profileId,
       targetProfileId: targetProfile.id,
     });
+
+    // Track the created join request for cleanup
+    joinRequestData.trackJoinRequest(result.id);
 
     // Verify the returned fields
     expect(result.id).toBeDefined();
@@ -69,32 +61,27 @@ describe.concurrent('profile.createJoinProfileRequest', () => {
     onTestFinished,
   }) => {
     const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+    const joinRequestData = new TestJoinProfileRequestDataManager(
+      task.id,
+      onTestFinished,
+    );
 
     const { adminUser: requester } = await testData.createOrganization();
     const { organizationProfile: targetProfile } =
       await testData.createOrganization();
-
-    // Clean up join request after test
-    onTestFinished(async () => {
-      await db
-        .delete(joinProfileRequests)
-        .where(
-          and(
-            eq(joinProfileRequests.requestProfileId, requester.profileId),
-            eq(joinProfileRequests.targetProfileId, targetProfile.id),
-          ),
-        );
-    });
 
     // Create session as the requester
     const { session } = await createIsolatedSession(requester.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
     // Create first request
-    await caller.createJoinProfileRequest({
+    const result = await caller.createJoinProfileRequest({
       requestProfileId: requester.profileId,
       targetProfileId: targetProfile.id,
     });
+
+    // Track the created join request for cleanup
+    joinRequestData.trackJoinRequest(result.id);
 
     // Attempt to create duplicate request should throw
     await expect(
@@ -128,32 +115,27 @@ describe.concurrent('profile.createJoinProfileRequest', () => {
     onTestFinished,
   }) => {
     const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+    const joinRequestData = new TestJoinProfileRequestDataManager(
+      task.id,
+      onTestFinished,
+    );
 
     const { adminUser: requester } = await testData.createOrganization();
     const { organizationProfile: targetProfile } =
       await testData.createOrganization();
-
-    // Clean up join request after test
-    onTestFinished(async () => {
-      await db
-        .delete(joinProfileRequests)
-        .where(
-          and(
-            eq(joinProfileRequests.requestProfileId, requester.profileId),
-            eq(joinProfileRequests.targetProfileId, targetProfile.id),
-          ),
-        );
-    });
 
     // Create session as the requester
     const { session } = await createIsolatedSession(requester.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
     // Create initial request
-    await caller.createJoinProfileRequest({
+    const initialResult = await caller.createJoinProfileRequest({
       requestProfileId: requester.profileId,
       targetProfileId: targetProfile.id,
     });
+
+    // Track the created join request for cleanup
+    joinRequestData.trackJoinRequest(initialResult.id);
 
     // Manually set the request to rejected status
     await db
@@ -244,26 +226,11 @@ describe.concurrent('profile.createJoinProfileRequest', () => {
     const { organizationProfile: targetProfile, organization: targetOrg } =
       await testData.createOrganization();
 
-    // Add requester as a member of the target organization.
-    // NOTE: We're using organizationUsers instead of profileUsers because we're in between
-    // memberships - the profile user membership (new) and the organization user membership (old).
-    // After we migrate to profile users, this code should be changed to use profileUsers.
-    const [createdOrgUser] = await db
-      .insert(organizationUsers)
-      .values({
-        authUserId: requester.authUserId,
-        organizationId: targetOrg.id,
-        email: requester.email,
-      })
-      .returning();
-
-    // Clean up the organization user after test
-    onTestFinished(async () => {
-      if (createdOrgUser) {
-        await db
-          .delete(organizationUsers)
-          .where(eq(organizationUsers.id, createdOrgUser.id));
-      }
+    // Add requester as a member of the target organization
+    await testData.addUserToOrganization({
+      authUserId: requester.authUserId,
+      organizationId: targetOrg.id,
+      email: requester.email,
     });
 
     // Create session as the requester
