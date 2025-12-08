@@ -393,7 +393,7 @@
   "platformAdmin_addUserToOrg_selectRole": "Sélectionner un rôle",
   "No more updates.": "Plus de mises à jour.",
   "joinProfileRequests_title": "Demandes d'adhésion",
-  "joinProfileRequests_requestDescription": "{name} souhaite afficher votre organisation sur son profil",
+  "joinProfileRequests_requestDescription": "{name} souhaite rejoindre votre organisation",
   "joinProfileRequests_requestAccepted": "Demande d'adhésion acceptée",
   "joinProfileRequests_requestDeclined": "Demande d'adhésion refusée",
   "joinProfileRequests_updateError": "La demande d'adhésion n'a pas pu être mise à jour",

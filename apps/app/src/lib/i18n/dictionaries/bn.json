@@ -393,7 +393,7 @@
   "Remove User": "ব্যবহারকারী সরান",
   "Search users by email": "ইমেইল দিয়ে ব্যবহারকারী অনুসন্ধান করুন",
   "joinProfileRequests_title": "সদস্যতার অনুরোধ",
-  "joinProfileRequests_requestDescription": "{name} তাদের প্রোফাইলে আপনার সংস্থা তালিকাভুক্ত করতে চায়",
+  "joinProfileRequests_requestDescription": "{name} আপনার সংস্থায় যোগ দিতে চায়",
   "joinProfileRequests_requestAccepted": "সদস্যতার অনুরোধ গৃহীত",
   "joinProfileRequests_requestDeclined": "সদস্যতার অনুরোধ প্রত্যাখ্যান",
   "joinProfileRequests_updateError": "সদস্যতার অনুরোধ আপডেট করা যায়নি",

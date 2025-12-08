@@ -392,7 +392,7 @@
   "platformAdmin_addUserToOrg_selectRole": "Seleccionar Rol",
   "No more updates.": "No hay más actualizaciones.",
   "joinProfileRequests_title": "Solicitudes de membresía",
-  "joinProfileRequests_requestDescription": "{name} quiere listar tu organización en su perfil",
+  "joinProfileRequests_requestDescription": "{name} quiere unirse a tu organización",
   "joinProfileRequests_requestAccepted": "Solicitud de membresía aceptada",
   "joinProfileRequests_requestDeclined": "Solicitud de membresía rechazada",
   "joinProfileRequests_updateError": "No se pudo actualizar la solicitud de membresía",
