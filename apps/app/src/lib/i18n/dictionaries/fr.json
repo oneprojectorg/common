@@ -397,6 +397,7 @@
   "joinProfileRequests_requestAccepted": "Demande d'adhésion acceptée",
   "joinProfileRequests_requestDeclined": "Demande d'adhésion refusée",
   "joinProfileRequests_updateError": "La demande d'adhésion n'a pas pu être mise à jour",
+  "joinProfileRequests_loadError": "Impossible de charger les demandes d'adhésion",
   "Decline": "Refuser",
   "Accept": "Accepter"
 }

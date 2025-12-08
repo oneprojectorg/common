@@ -397,6 +397,7 @@
   "joinProfileRequests_requestAccepted": "Membership request accepted",
   "joinProfileRequests_requestDeclined": "Membership request declined",
   "joinProfileRequests_updateError": "Membership request could not be updated",
+  "joinProfileRequests_loadError": "Unable to load membership requests",
   "Decline": "Decline",
   "Accept": "Accept"
 }

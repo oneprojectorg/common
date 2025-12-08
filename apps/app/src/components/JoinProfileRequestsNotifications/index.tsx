@@ -30,7 +30,7 @@ export const JoinProfileRequestsNotifications = ({
   targetProfileId: string;
 }) => {
   return (
-    <ErrorBoundary fallback={null}>
+    <ErrorBoundary fallback={<JoinProfileRequestsNotificationsError />}>
       <Suspense fallback={null}>
         <JoinProfileRequestsNotificationsWithData
           targetProfileId={targetProfileId}
@@ -150,6 +150,30 @@ const JoinProfileRequestsNotificationsWithData = ({
             </NotificationPanelItem>
           );
         })}
+      </NotificationPanelList>
+    </NotificationPanel>
+  );
+};
+
+/**
+ * Error fallback for JoinProfileRequestsNotifications.
+ * Displays a minimal error state within the notification panel.
+ */
+const JoinProfileRequestsNotificationsError = () => {
+  const t = useTranslations();
+
+  return (
+    <NotificationPanel>
+      <NotificationPanelHeader
+        title={t('joinProfileRequests_title')}
+        count={0}
+      />
+      <NotificationPanelList>
+        <NotificationPanelItem>
+          <p className="text-secondary text-sm">
+            {t('joinProfileRequests_loadError')}
+          </p>
+        </NotificationPanelItem>
       </NotificationPanelList>
     </NotificationPanel>
   );

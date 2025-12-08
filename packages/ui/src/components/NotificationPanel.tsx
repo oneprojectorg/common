@@ -57,7 +57,5 @@ export const NotificationPanelActions = ({
 };
 
 export const NotificationPanel = ({ children }: { children: ReactNode }) => {
-  return (
-    <Surface className="flex flex-col gap-0 border-b">{children}</Surface>
-  );
+  return <Surface className="flex flex-col gap-0 border-b">{children}</Surface>;
 };

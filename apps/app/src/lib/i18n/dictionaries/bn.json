@@ -397,6 +397,7 @@
   "joinProfileRequests_requestAccepted": "সদস্যতার অনুরোধ গৃহীত",
   "joinProfileRequests_requestDeclined": "সদস্যতার অনুরোধ প্রত্যাখ্যান",
   "joinProfileRequests_updateError": "সদস্যতার অনুরোধ আপডেট করা যায়নি",
+  "joinProfileRequests_loadError": "সদস্যতার অনুরোধ লোড করা যায়নি",
   "Decline": "প্রত্যাখ্যান",
   "Accept": "গ্রহণ করুন"
 }

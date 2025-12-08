@@ -1,4 +1,5 @@
 import { getUser } from '@/utils/getUser';
+import { Organization } from '@op/api/encoders';
 import { Header1, Header3 } from '@op/ui/Header';
 import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
@@ -217,21 +218,33 @@ const WelcomeSkeleton = () => {
 
 const UserContent = async () => {
   const user = await getUser();
-  const isOrgProfile = user.currentProfile?.type === 'org';
 
   return (
     <>
       <ActiveDecisionsNotifications />
-      {isOrgProfile && user.currentProfile ? (
-        <JoinProfileRequestsNotifications
-          targetProfileId={user.currentProfile.id}
-        />
+      {user.currentProfile?.type === 'org' ? (
+        <OrgNotifications currentProfile={user.currentProfile} />
       ) : null}
-      {isOrgProfile && user.currentProfile ? (
-        <PendingRelationships slug={user.currentProfile.slug} />
-      ) : null}
-      <hr />
-      <LandingScreenFeeds showPostUpdate={isOrgProfile} />
+      <LandingScreenFeeds
+        showPostUpdate={user.currentProfile?.type === 'org'}
+      />
+    </>
+  );
+};
+
+/**
+ * Organization-specific notifications component.
+ * Renders join profile requests and pending relationships for org profiles.
+ */
+export const OrgNotifications = async (props: {
+  currentProfile: Organization['profile'];
+}) => {
+  const { currentProfile } = props;
+
+  return (
+    <>
+      <JoinProfileRequestsNotifications targetProfileId={currentProfile.id} />
+      <PendingRelationships slug={currentProfile.slug} />
     </>
   );
 };
