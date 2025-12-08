@@ -51,7 +51,6 @@ export const searchProfilesRouter = router({
           searchProfiles({
             query: q,
             limit,
-            user: ctx.user,
             types,
           }),
       });

@@ -6,20 +6,17 @@ import {
   profiles,
   users,
 } from '@op/db/schema';
-import { User } from '@op/supabase/lib';
 
 export const searchProfiles = async ({
-  user,
   query = '',
   limit = 10,
   types,
 }: {
-  user: User;
   query?: string;
   limit?: number;
   types?: EntityType[];
 }) => {
-  if (!user || !types) {
+  if (!types) {
     return [];
   }
   // TODO: assert authorization
