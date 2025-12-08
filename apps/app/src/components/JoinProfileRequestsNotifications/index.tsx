@@ -20,7 +20,27 @@ import { useTranslations } from '@/lib/i18n';
 import ErrorBoundary from '../ErrorBoundary';
 import { OrganizationAvatar } from '../OrganizationAvatar';
 
-const JoinProfileRequestsNotificationsSuspense = ({
+/**
+ * Displays pending join profile requests as a notification panel,
+ * allowing users to accept or decline requests from other profiles.
+ */
+export const JoinProfileRequestsNotifications = ({
+  targetProfileId,
+}: {
+  targetProfileId: string;
+}) => {
+  return (
+    <ErrorBoundary fallback={null}>
+      <Suspense fallback={null}>
+        <JoinProfileRequestsNotificationsWithData
+          targetProfileId={targetProfileId}
+        />
+      </Suspense>
+    </ErrorBoundary>
+  );
+};
+
+const JoinProfileRequestsNotificationsWithData = ({
   targetProfileId,
 }: {
   targetProfileId: string;
@@ -32,7 +52,7 @@ const JoinProfileRequestsNotificationsSuspense = ({
     trpc.profile.listJoinProfileRequests.useSuspenseQuery({
       targetProfileId,
       status: JoinProfileRequestStatus.PENDING,
-      limit: 10,
+      limit: 20,
     });
 
   const updateRequestMutation =
@@ -72,6 +92,7 @@ const JoinProfileRequestsNotificationsSuspense = ({
     <NotificationPanel>
       <NotificationPanelHeader
         title={t('joinProfileRequests_title')}
+        // TODO: count is not actually correct - will be addressed separately
         count={count}
       />
       <NotificationPanelList>
@@ -131,21 +152,5 @@ const JoinProfileRequestsNotificationsSuspense = ({
         })}
       </NotificationPanelList>
     </NotificationPanel>
-  );
-};
-
-export const JoinProfileRequestsNotifications = ({
-  targetProfileId,
-}: {
-  targetProfileId: string;
-}) => {
-  return (
-    <ErrorBoundary fallback={null}>
-      <Suspense fallback={null}>
-        <JoinProfileRequestsNotificationsSuspense
-          targetProfileId={targetProfileId}
-        />
-      </Suspense>
-    </ErrorBoundary>
   );
 };
