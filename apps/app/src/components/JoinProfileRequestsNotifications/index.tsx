@@ -99,13 +99,17 @@ const JoinProfileRequestsNotificationsWithData = ({
         {requests.map((request) => {
           const requestProfile = request.requestProfile;
 
+          const isPendingForRequest =
+            updateRequestMutation.isPending &&
+            updateRequestMutation.variables?.requestId === request.id;
+
           const isLoadingReject =
-            updateRequestMutation.variables?.requestId === request.id &&
+            isPendingForRequest &&
             updateRequestMutation.variables?.status ===
               JoinProfileRequestStatus.REJECTED;
 
           const isLoadingApprove =
-            updateRequestMutation.variables?.requestId === request.id &&
+            isPendingForRequest &&
             updateRequestMutation.variables?.status ===
               JoinProfileRequestStatus.APPROVED;
 
@@ -129,7 +133,7 @@ const JoinProfileRequestsNotificationsWithData = ({
                       JoinProfileRequestStatus.REJECTED,
                     )
                   }
-                  isDisabled={isLoadingReject}
+                  isDisabled={isPendingForRequest}
                 >
                   {isLoadingReject ? <LoadingSpinner /> : t('Decline')}
                 </Button>
@@ -142,7 +146,7 @@ const JoinProfileRequestsNotificationsWithData = ({
                       JoinProfileRequestStatus.APPROVED,
                     )
                   }
-                  isDisabled={isLoadingApprove}
+                  isDisabled={isPendingForRequest}
                 >
                   {isLoadingApprove ? <LoadingSpinner /> : t('Accept')}
                 </Button>

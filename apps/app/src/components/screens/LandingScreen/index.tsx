@@ -225,6 +225,7 @@ const UserContent = async () => {
       {user.currentProfile?.type === 'org' ? (
         <OrgNotifications currentProfile={user.currentProfile} />
       ) : null}
+      <hr />
       <LandingScreenFeeds
         showPostUpdate={user.currentProfile?.type === 'org'}
       />
