@@ -24,23 +24,19 @@ import { OrganizationAvatar } from '../OrganizationAvatar';
  * Displays pending join profile requests as a notification panel,
  * allowing users to accept or decline requests from other profiles.
  */
-export const JoinProfileRequestsNotifications = ({
-  targetProfileId,
-}: {
+export const JoinProfileRequestsNotifications = (props: {
   targetProfileId: string;
 }) => {
   return (
     <ErrorBoundary fallback={<JoinProfileRequestsNotificationsError />}>
       <Suspense fallback={null}>
-        <JoinProfileRequestsNotificationsWithData
-          targetProfileId={targetProfileId}
-        />
+        <JoinProfileRequestsNotificationsSuspense {...props} />
       </Suspense>
     </ErrorBoundary>
   );
 };
 
-const JoinProfileRequestsNotificationsWithData = ({
+const JoinProfileRequestsNotificationsSuspense = ({
   targetProfileId,
 }: {
   targetProfileId: string;
@@ -61,14 +57,14 @@ const JoinProfileRequestsNotificationsWithData = ({
         toast.success({
           title:
             variables.status === JoinProfileRequestStatus.APPROVED
-              ? t('joinProfileRequests_requestAccepted')
-              : t('joinProfileRequests_requestDeclined'),
+              ? t('Request accepted')
+              : t('Request declined'),
         });
         utils.profile.listJoinProfileRequests.invalidate();
       },
       onError: () => {
         toast.error({
-          title: t('joinProfileRequests_updateError'),
+          title: t('Failed to update request'),
         });
       },
     });
@@ -91,7 +87,7 @@ const JoinProfileRequestsNotificationsWithData = ({
   return (
     <NotificationPanel>
       <NotificationPanelHeader
-        title={t('joinProfileRequests_title')}
+        title={t('Join requests')}
         // TODO: count is not actually correct - will be addressed separately
         count={count}
       />
@@ -118,7 +114,7 @@ const JoinProfileRequestsNotificationsWithData = ({
               <ProfileItem
                 avatar={<OrganizationAvatar profile={requestProfile} />}
                 title={requestProfile.name}
-                description={t('joinProfileRequests_requestDescription', {
+                description={t('{name} wants to join your organization', {
                   name: requestProfile.name,
                 })}
               />
@@ -168,14 +164,11 @@ const JoinProfileRequestsNotificationsError = () => {
 
   return (
     <NotificationPanel>
-      <NotificationPanelHeader
-        title={t('joinProfileRequests_title')}
-        count={0}
-      />
+      <NotificationPanelHeader title={t('Join requests')} count={0} />
       <NotificationPanelList>
         <NotificationPanelItem>
           <p className="text-secondary text-sm">
-            {t('joinProfileRequests_loadError')}
+            {t('Failed to load join requests')}
           </p>
         </NotificationPanelItem>
       </NotificationPanelList>

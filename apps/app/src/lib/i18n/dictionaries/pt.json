@@ -392,12 +392,12 @@
   "platformAdmin_addUserToOrg_selectOrganization": "Selecionar Organização",
   "platformAdmin_addUserToOrg_selectRole": "Selecionar Função",
   "No more updates.": "Não há mais atualizações.",
-  "joinProfileRequests_title": "Solicitações de associação",
-  "joinProfileRequests_requestDescription": "{name} quer entrar na sua organização",
-  "joinProfileRequests_requestAccepted": "Solicitação de associação aceita",
-  "joinProfileRequests_requestDeclined": "Solicitação de associação recusada",
-  "joinProfileRequests_updateError": "Não foi possível atualizar a solicitação de associação",
-  "joinProfileRequests_loadError": "Não foi possível carregar as solicitações de associação",
+  "Join requests": "Solicitações de associação",
+  "{name} wants to join your organization": "{name} quer entrar na sua organização",
+  "Request accepted": "Solicitação de associação aceita",
+  "Request declined": "Solicitação de associação recusada",
+  "Failed to update request": "Não foi possível atualizar a solicitação de associação",
+  "Failed to load join requests": "Não foi possível carregar as solicitações de associação",
   "Decline": "Recusar",
   "Accept": "Aceitar"
 }

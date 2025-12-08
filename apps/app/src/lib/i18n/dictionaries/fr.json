@@ -392,12 +392,12 @@
   "platformAdmin_addUserToOrg_selectOrganization": "Sélectionner une organisation",
   "platformAdmin_addUserToOrg_selectRole": "Sélectionner un rôle",
   "No more updates.": "Plus de mises à jour.",
-  "joinProfileRequests_title": "Demandes d'adhésion",
-  "joinProfileRequests_requestDescription": "{name} souhaite rejoindre votre organisation",
-  "joinProfileRequests_requestAccepted": "Demande d'adhésion acceptée",
-  "joinProfileRequests_requestDeclined": "Demande d'adhésion refusée",
-  "joinProfileRequests_updateError": "La demande d'adhésion n'a pas pu être mise à jour",
-  "joinProfileRequests_loadError": "Impossible de charger les demandes d'adhésion",
+  "Join requests": "Demandes d'adhésion",
+  "{name} wants to join your organization": "{name} souhaite rejoindre votre organisation",
+  "Request accepted": "Demande d'adhésion acceptée",
+  "Request declined": "Demande d'adhésion refusée",
+  "Failed to update request": "La demande d'adhésion n'a pas pu être mise à jour",
+  "Failed to load join requests": "Impossible de charger les demandes d'adhésion",
   "Decline": "Refuser",
   "Accept": "Accepter"
 }
