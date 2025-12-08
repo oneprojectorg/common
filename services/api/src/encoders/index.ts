@@ -18,6 +18,7 @@ export * from './joinProfileRequests';
 // Export EntityType and ProfileRelationshipType for frontend usage
 export {
   EntityType,
+  JoinProfileRequestStatus,
   ProcessStatus,
   ProfileRelationshipType,
   ProposalStatus,

@@ -391,5 +391,13 @@
   "platformAdmin_addUserToOrg_errorSelectBoth": "Veuillez sélectionner une organisation et un rôle",
   "platformAdmin_addUserToOrg_selectOrganization": "Sélectionner une organisation",
   "platformAdmin_addUserToOrg_selectRole": "Sélectionner un rôle",
-  "No more updates.": "Plus de mises à jour."
+  "No more updates.": "Plus de mises à jour.",
+  "Join requests": "Demandes d'adhésion",
+  "{name} wants to join your organization": "{name} souhaite rejoindre votre organisation",
+  "Request accepted": "Demande d'adhésion acceptée",
+  "Request declined": "Demande d'adhésion refusée",
+  "Failed to update request": "La demande d'adhésion n'a pas pu être mise à jour",
+  "Failed to load join requests": "Impossible de charger les demandes d'adhésion",
+  "Decline": "Refuser",
+  "Accept": "Accepter"
 }

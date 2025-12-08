@@ -391,5 +391,13 @@
   "View analytics": "বিশ্লেষণ দেখুন",
   "Edit profile": "প্রোফাইল সম্পাদনা করুন",
   "Remove User": "ব্যবহারকারী সরান",
-  "Search users by email": "ইমেইল দিয়ে ব্যবহারকারী অনুসন্ধান করুন"
+  "Search users by email": "ইমেইল দিয়ে ব্যবহারকারী অনুসন্ধান করুন",
+  "Join requests": "সদস্যতার অনুরোধ",
+  "{name} wants to join your organization": "{name} আপনার সংস্থায় যোগ দিতে চায়",
+  "Request accepted": "সদস্যতার অনুরোধ গৃহীত",
+  "Request declined": "সদস্যতার অনুরোধ প্রত্যাখ্যান",
+  "Failed to update request": "সদস্যতার অনুরোধ আপডেট করা যায়নি",
+  "Failed to load join requests": "সদস্যতার অনুরোধ লোড করা যায়নি",
+  "Decline": "প্রত্যাখ্যান",
+  "Accept": "গ্রহণ করুন"
 }

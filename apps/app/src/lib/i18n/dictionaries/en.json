@@ -391,5 +391,13 @@
   "platformAdmin_addUserToOrg_errorSelectBoth": "Please select both an organization and a role",
   "platformAdmin_addUserToOrg_selectOrganization": "Select Organization",
   "platformAdmin_addUserToOrg_selectRole": "Select Role",
-  "No more updates.": "No more updates."
+  "No more updates.": "No more updates.",
+  "Join requests": "Membership Requests",
+  "{name} wants to join your organization": "{name} wants to join your organization",
+  "Request accepted": "Membership request accepted",
+  "Request declined": "Membership request declined",
+  "Failed to update request": "Membership request could not be updated",
+  "Failed to load join requests": "Unable to load membership requests",
+  "Decline": "Decline",
+  "Accept": "Accept"
 }

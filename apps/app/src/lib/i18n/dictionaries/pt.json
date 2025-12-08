@@ -391,5 +391,13 @@
   "platformAdmin_addUserToOrg_errorSelectBoth": "Por favor, selecione uma organização e uma função",
   "platformAdmin_addUserToOrg_selectOrganization": "Selecionar Organização",
   "platformAdmin_addUserToOrg_selectRole": "Selecionar Função",
-  "No more updates.": "Não há mais atualizações."
+  "No more updates.": "Não há mais atualizações.",
+  "Join requests": "Solicitações de associação",
+  "{name} wants to join your organization": "{name} quer entrar na sua organização",
+  "Request accepted": "Solicitação de associação aceita",
+  "Request declined": "Solicitação de associação recusada",
+  "Failed to update request": "Não foi possível atualizar a solicitação de associação",
+  "Failed to load join requests": "Não foi possível carregar as solicitações de associação",
+  "Decline": "Recusar",
+  "Accept": "Aceitar"
 }
