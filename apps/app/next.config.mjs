@@ -39,13 +39,7 @@ dotenv.config({
 const config = {
   experimental: {
     // reactCompiler: true,
-    serverComponentsExternalPackages: [
-      'sharp',
-      'onnxruntime-node',
-      'thread-stream',
-      'pino',
-      'pino-worker',
-    ],
+    serverComponentsExternalPackages: ['sharp', 'onnxruntime-node'],
     instrumentationHook: true,
   },
 
