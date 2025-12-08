@@ -52,6 +52,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
         gcTime: 30_000,
         // make sure we don't remove results while continuing to type
         placeholderData: (prev) => prev,
+        enabled: debouncedQuery.length > 1,
       },
     );
 
