@@ -11,7 +11,7 @@
   "types": "./src/config.ts",
   "scripts": {
     "disable-build": "tsc",
-    "lint": "pnpm tsc --noEmit"
+    "typecheck": "pnpm tsc --noEmit"
   },
   "dependencies": {
     "he": "^1.2.0",

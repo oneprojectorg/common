@@ -10,7 +10,7 @@
     "./utils": "./src/utils/index.ts"
   },
   "scripts": {
-    "lint": "pnpm tsc --noEmit"
+    "typecheck": "pnpm tsc --noEmit"
   },
   "dependencies": {
     "@op/api": "workspace:*",

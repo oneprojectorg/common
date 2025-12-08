@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "inngest-cli dev",
-    "lint": "pnpm tsc --noEmit"
+    "typecheck": "pnpm tsc --noEmit"
   },
   "dependencies": {
     "@op/cache": "workspace:*",

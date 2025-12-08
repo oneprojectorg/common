@@ -12,7 +12,6 @@
     "./encoders": "./src/encoders/index.ts"
   },
   "scripts": {
-    "lint": "pnpm tsc --noEmit",
     "test": "vitest",
     "test:check-supabase": "tsx src/test/check-supabase.ts",
     "test:coverage": "vitest --coverage",
@@ -26,7 +25,8 @@
     "test:supabase:status": "tsx src/test/supabase-test.ts status",
     "test:supabase:stop": "tsx src/test/supabase-test.ts stop",
     "test:ui": "vitest --ui",
-    "test:watch": "vitest --watch"
+    "test:watch": "vitest --watch",
+    "typecheck": "pnpm tsc --noEmit"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^1.2.1",

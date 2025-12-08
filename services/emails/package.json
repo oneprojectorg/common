@@ -12,8 +12,8 @@
   "scripts": {
     "disable-build": "email build",
     "export": "email export",
-    "lint": "pnpm tsc --noEmit",
-    "start": "email start"
+    "start": "email start",
+    "typecheck": "pnpm tsc --noEmit"
   },
   "dependencies": {
     "@op/core": "workspace:*",

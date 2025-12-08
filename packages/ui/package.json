@@ -68,7 +68,7 @@
   "scripts": {
     "build": "storybook build",
     "dev": "storybook dev -p 3600 --no-open",
-    "lint": "pnpm tsc --noEmit"
+    "typecheck": "pnpm tsc --noEmit"
   },
   "dependencies": {
     "@internationalized/date": "^3.8.2",
