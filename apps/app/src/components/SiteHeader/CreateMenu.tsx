@@ -2,6 +2,7 @@
 
 import { useUser } from '@/utils/UserProvider';
 import { EntityType } from '@op/api/encoders';
+import { useMediaQuery } from '@op/hooks';
 import { Button } from '@op/ui/Button';
 import { Menu, MenuItem, MenuSeparator, MenuTrigger } from '@op/ui/Menu';
 import { Popover } from '@op/ui/Popover';
@@ -20,10 +21,15 @@ export const CreateMenu = () => {
     useState(false);
   const { user } = useUser();
   const isOrg = user?.currentProfile?.type === EntityType.ORG;
+  const isMobile = useMediaQuery(`(max-width: 640px)`);
+
   return (
     <>
       <MenuTrigger>
-        <Button className="h-8 rounded-sm px-2 sm:px-3">
+        <Button
+          className="h-8 rounded-sm px-2 sm:px-3"
+          color={isMobile ? 'secondary' : 'primary'}
+        >
           <LuPlus className="size-4" />
           <span className="hidden sm:block">Create</span>
         </Button>
