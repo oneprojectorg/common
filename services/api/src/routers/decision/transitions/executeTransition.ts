@@ -40,7 +40,7 @@ export const executeTransitionRouter = router({
 
         return result;
       } catch (error: unknown) {
-        console.error('Failed to execute transition', {
+        logger.error('Failed to execute transition', {
           userId: user.id,
           instanceId: input.instanceId,
           toStateId: input.toStateId,

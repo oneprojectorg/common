@@ -61,7 +61,7 @@ export const updateInstanceRouter = router({
 
         return processInstanceEncoder.parse(instance);
       } catch (error: unknown) {
-        console.error('Failed to update process instance', {
+        logger.error('Failed to update process instance', {
           userId: user.id,
           instanceId: input.instanceId,
           error,

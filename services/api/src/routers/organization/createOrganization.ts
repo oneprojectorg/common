@@ -51,7 +51,7 @@ export const createOrganizationRouter = router({
 
         return organizationsEncoder.parse(org);
       } catch (error: unknown) {
-        console.error('Failed to create organization', {
+        logger.error('Failed to create organization', {
           userId: user.id,
           organizationName: input.name,
           error,

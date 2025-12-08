@@ -6,6 +6,7 @@ import {
 } from '@op/common';
 import { db, eq } from '@op/db/client';
 import { ProfileRelationshipType, proposals } from '@op/db/schema';
+import { logger } from '@op/logging';
 import { TRPCError } from '@trpc/server';
 import { waitUntil } from '@vercel/functions';
 import type { OpenApiMeta } from 'trpc-to-openapi';
@@ -161,7 +162,7 @@ export const profileRelationshipRouter = router({
           throw error;
         }
 
-        console.error('Error adding relationship:', error);
+        logger.error('Error adding relationship', { error, targetProfileId });
         throw new TRPCError({
           message: 'Failed to add relationship',
           code: 'INTERNAL_SERVER_ERROR',
@@ -187,7 +188,7 @@ export const profileRelationshipRouter = router({
         });
         return { success: true };
       } catch (error) {
-        console.error('Error removing relationship:', error);
+        logger.error('Error removing relationship', { error, targetProfileId });
         throw new TRPCError({
           message: 'Failed to remove relationship',
           code: 'INTERNAL_SERVER_ERROR',
@@ -276,7 +277,7 @@ export const profileRelationshipRouter = router({
 
         return groupedResults;
       } catch (error) {
-        console.error('Error getting profile relationships:', error);
+        logger.error('Error getting profile relationships', { error, targetProfileId, sourceProfileId });
         throw new TRPCError({
           message: 'Failed to get profile relationships',
           code: 'INTERNAL_SERVER_ERROR',

@@ -1,4 +1,5 @@
 import { cache } from '@op/cache';
+import { logger } from '@op/logging';
 import { z } from 'zod';
 
 import withAnalytics from '../../middlewares/withAnalytics';
@@ -85,7 +86,7 @@ const getGeonames = async ({ q }: { q: string }) => {
 
     return geonames;
   } catch (e) {
-    console.error('Maps API error:', e);
+    logger.error('Maps API error', { error: e });
     return [];
   }
 };

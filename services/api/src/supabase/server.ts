@@ -1,6 +1,7 @@
 // This file is server-only to prevent the database from being imported in client components
 // and to prevent the database URL from being exposed to the client.
 import { OPURLConfig, cookieOptionsDomain } from '@op/core';
+import { logger } from '@op/logging';
 import { createServerClient } from '@op/supabase/lib';
 import type { CookieOptions } from '@op/supabase/lib';
 import type { Database } from '@op/supabase/types';
@@ -40,7 +41,7 @@ export const createSBAdminClient = (ctx: TContext) => {
               ctx.setCookie({ name, value, options });
             });
           } catch (error) {
-            console.error(error);
+            logger.error('Failed to set Supabase cookies', { error });
             // The `set` method was called from a Server Component.
             // This can be ignored if you have middleware refreshing
             // user sessions.
