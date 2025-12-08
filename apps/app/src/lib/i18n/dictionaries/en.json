@@ -399,5 +399,8 @@
   "Failed to update request": "Membership request could not be updated",
   "Failed to load join requests": "Unable to load membership requests",
   "Decline": "Decline",
-  "Accept": "Accept"
+  "Accept": "Accept",
+  "Create": "Create",
+  "Decision-making process": "Decision-making process",
+  "Invite member": "Invite member"
 }

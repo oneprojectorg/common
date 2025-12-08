@@ -399,5 +399,8 @@
   "Failed to update request": "Não foi possível atualizar a solicitação de associação",
   "Failed to load join requests": "Não foi possível carregar as solicitações de associação",
   "Decline": "Recusar",
-  "Accept": "Aceitar"
+  "Accept": "Aceitar",
+  "Create": "Criar",
+  "Decision-making process": "Processo de tomada de decisão",
+  "Invite member": "Convidar membro"
 }

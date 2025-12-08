@@ -9,11 +9,14 @@ import { Popover } from '@op/ui/Popover';
 import { useState } from 'react';
 import { LuMessageCircle, LuPlus, LuUserPlus, LuUsers } from 'react-icons/lu';
 
+import { useTranslations } from '@/lib/i18n';
+
 import { InviteUserModal } from '../InviteUserModal';
 import { CreateDecisionProcessModal } from '../Profile/CreateDecisionProcessModal';
 import { CreateOrganizationModal } from '../Profile/ProfileDetails/CreateOrganizationModal';
 
 export const CreateMenu = () => {
+  const t = useTranslations();
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [isCreateOrganizationModalOpen, setIsCreateOrganizationModalOpen] =
     useState(false);
@@ -31,7 +34,7 @@ export const CreateMenu = () => {
           color={isMobile ? 'secondary' : 'primary'}
         >
           <LuPlus className="size-4" />
-          <span className="hidden sm:block">Create</span>
+          <span className="hidden sm:block">{t('Create')}</span>
         </Button>
         <Popover>
           <Menu>
@@ -39,7 +42,7 @@ export const CreateMenu = () => {
               id="create-org"
               onAction={() => setIsCreateOrganizationModalOpen(true)}
             >
-              <LuUsers className="size-4" /> Organization
+              <LuUsers className="size-4" /> {t('Organization')}
             </MenuItem>
             {isOrg ? (
               <>
@@ -47,14 +50,15 @@ export const CreateMenu = () => {
                   id="create-decision"
                   onAction={() => setIsCreateProcessModalOpen(true)}
                 >
-                  <LuMessageCircle className="size-4" /> Decision-making process
+                  <LuMessageCircle className="size-4" />{' '}
+                  {t('Decision-making process')}
                 </MenuItem>
                 <MenuSeparator />
                 <MenuItem
                   id="invite-member"
                   onAction={() => setIsInviteModalOpen(true)}
                 >
-                  <LuUserPlus className="size-4" /> Invite member
+                  <LuUserPlus className="size-4" /> {t('Invite member')}
                 </MenuItem>
               </>
             ) : null}
