@@ -29,7 +29,7 @@ export const checkTransitionsRouter = router({
 
         return result;
       } catch (error: unknown) {
-        console.error('Failed to check transitions', {
+        logger.error('Failed to check transitions', {
           userId: user.id,
           instanceId: input.instanceId,
           error,

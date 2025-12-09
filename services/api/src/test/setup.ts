@@ -12,22 +12,15 @@ vi.mock('next/server', () => ({
     delete: vi.fn(),
   }),
 }));
-vi.mock('@axiomhq/nextjs', () => ({
-  withAxiom: (fn: any) => fn,
-  Logger: vi.fn(() => ({
-    info: vi.fn(),
-    error: vi.fn(),
-    debug: vi.fn(),
-    warn: vi.fn(),
-  })),
-}));
 vi.mock('@op/logging', () => ({
   logger: {
     info: vi.fn(),
     error: vi.fn(),
     debug: vi.fn(),
     warn: vi.fn(),
+    flush: vi.fn().mockResolvedValue(undefined),
   },
+  transformMiddlewareRequest: vi.fn(() => ['test request', {}]),
 }));
 
 // Test environment configuration for isolated test Supabase instance

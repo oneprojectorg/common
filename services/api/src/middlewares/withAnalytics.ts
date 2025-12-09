@@ -1,4 +1,5 @@
 import { identifyUser } from '@op/analytics';
+import { logger } from '@op/logging';
 import type { User } from '@op/supabase/lib';
 
 import type { MiddlewareBuilderBase, TContextWithAnalytics } from '../types';
@@ -38,7 +39,7 @@ const withAnalytics: MiddlewareBuilderBase<TContextWithAnalytics> = async ({
         // For other users, we don't identify them in the backend (they get anonymous IDs on frontend)
       } catch (error) {
         // Don't fail the request if PostHog identification fails
-        console.error('PostHog identification failed:', error);
+        logger.error('PostHog identification failed', { error });
       }
     }
   }

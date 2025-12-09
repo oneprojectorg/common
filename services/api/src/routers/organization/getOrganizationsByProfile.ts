@@ -1,4 +1,5 @@
 import { getOrganizationsByProfile } from '@op/common';
+import { logger } from '@op/logging';
 import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
@@ -38,7 +39,7 @@ export const getOrganizationsByProfileRouter = router({
           organizationsWithProfileEncoder.parse(org),
         );
       } catch (error) {
-        console.error('Error getting organizations by profile:', error);
+        logger.error('Error getting organizations by profile', { error, profileId });
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to get organizations by profile',

@@ -1,4 +1,5 @@
 import { updateOrganizationUser } from '@op/common';
+import { logger } from '@op/logging';
 import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
@@ -72,7 +73,7 @@ export const updateOrganizationUserRouter = router({
 
         return outputSchema.parse(updatedUser);
       } catch (error: unknown) {
-        console.error('Error updating organization user:', error);
+        logger.error('Error updating organization user', { error });
 
         if (error instanceof Error) {
           if (error.name === 'UnauthorizedError') {

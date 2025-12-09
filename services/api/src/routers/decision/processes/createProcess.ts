@@ -44,7 +44,7 @@ export const createProcessRouter = router({
 
         return decisionProcessEncoder.parse(process);
       } catch (error: unknown) {
-        console.error('Failed to create decision process', {
+        logger.error('Failed to create decision process', {
           userId: user.id,
           processName: input.name,
           error,

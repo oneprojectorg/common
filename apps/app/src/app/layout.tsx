@@ -1,7 +1,6 @@
 import { TRPCProvider } from '@op/api/client';
 import { getSSRCookies } from '@op/api/ssrCookies';
 import { APP_NAME, printNFO } from '@op/core';
-import { WebVitals } from '@op/logging';
 import { Toast } from '@op/ui/Toast';
 import '@op/ui/tailwind-styles';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
@@ -9,12 +8,8 @@ import type { Metadata, Viewport } from 'next';
 import { Roboto, Roboto_Mono, Roboto_Serif } from 'next/font/google';
 import Script from 'next/script';
 
-import { register } from '../../instrumentation';
 import { IconProvider } from '../components/IconProvider';
 import { PostHogProvider } from '../components/PostHogProvider';
-
-// Register Axiom logging
-register();
 
 const roboto = Roboto({
   subsets: ['latin'],
@@ -73,7 +68,6 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
           {printNFO()}
         </Script>
       </head>
-      <WebVitals />
       <TRPCProvider ssrCookies={ssrCookies}>
         <body
           className={`${roboto.variable} ${robotoMono.variable} ${robotoSerif.variable} h-full overflow-x-hidden text-base text-neutral-black antialiased`}

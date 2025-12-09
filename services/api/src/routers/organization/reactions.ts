@@ -5,6 +5,7 @@ import {
   removeReaction,
   toggleReaction,
 } from '@op/common';
+import { logger } from '@op/logging';
 import { VALID_REACTION_TYPES } from '@op/types';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
@@ -80,7 +81,7 @@ export const reactionsRouter = router({
         const profileId = await getCurrentProfileId(user.id);
         return await toggleReaction({ postId, profileId, reactionType });
       } catch (e) {
-        console.error(e);
+        logger.error('Failed to toggle reaction', { error: e, postId });
         throw new CommonError('Failed to toggle reaction');
       }
     }),

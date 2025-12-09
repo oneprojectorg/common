@@ -45,7 +45,7 @@ export const createInstanceRouter = router({
 
         return processInstanceEncoder.parse(instance);
       } catch (error: unknown) {
-        console.error('Failed to create process instance', {
+        logger.error('Failed to create process instance', {
           userId: user.id,
           instanceName: input.name,
           error,

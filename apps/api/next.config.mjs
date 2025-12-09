@@ -28,14 +28,7 @@ dotenv.config({
 /** @type {import('next').NextConfig} */
 const config = {
   experimental: {
-    serverComponentsExternalPackages: [
-      'sharp',
-      'onnxruntime-node',
-      'thread-stream',
-      'pino',
-      'pino-worker',
-      '@axiomhq/pino',
-    ],
+    serverComponentsExternalPackages: ['sharp', 'onnxruntime-node'],
     instrumentationHook: true,
   },
   webpack: (cfg) => {
