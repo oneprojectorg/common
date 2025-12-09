@@ -1,8 +1,12 @@
+import { diag } from '@opentelemetry/api';
 import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
 import { BatchLogRecordProcessor } from '@opentelemetry/sdk-logs';
 import { OTLPHttpJsonTraceExporter, registerOTel } from '@vercel/otel';
 
 export function register() {
+  // Disable OTEL diagnostic logging entirely (suppresses "items to be sent" debug messages)
+  diag.disable();
+
   const otelEndpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
   const headers = parseHeaders(process.env.OTEL_EXPORTER_OTLP_HEADERS);
 
