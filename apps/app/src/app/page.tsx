@@ -4,6 +4,8 @@ import { trpc } from '@op/api/client';
 import { useAuthUser } from '@op/hooks';
 import { useRouter } from 'next/navigation';
 
+import ComingSoonPage from '@/components/screens/ComingSoon/ComingSoonPage';
+
 const MainPage = () => {
   const router = useRouter();
   const authUser = useAuthUser();
@@ -11,9 +13,7 @@ const MainPage = () => {
 
   if (authUser?.data && !isPending) {
     if (authUser.data.user == null) {
-      router.push('/coming-soon');
-
-      return;
+      return <ComingSoonPage />;
     }
 
     if (account?.organizationUsers?.length) {

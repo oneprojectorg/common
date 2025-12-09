@@ -20,7 +20,7 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
       !pathname.startsWith(`/${locale}/`) && pathname !== `/${locale}`,
   );
 
-  if (pathname.startsWith(`/coming-soon`)) {
+  if (pathname === `/`) {
     return;
   }
 
@@ -112,7 +112,7 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
     // no user, potentially respond by redirecting the user to the login page
     const url = request.nextUrl.clone();
 
-    url.pathname = '/coming-soon';
+    url.pathname = '/';
 
     return NextResponse.redirect(url);
   }

@@ -65,6 +65,12 @@ const ComingSoonPage = () => {
               Join waitlist
             </Button>
           </Form>
+          <p className="sm:text-lg">
+            Already have an account?{' '}
+            <a href="/login" className="underline">
+              Sign in
+            </a>
+          </p>
         </motion.div>
       </div>
     </div>
