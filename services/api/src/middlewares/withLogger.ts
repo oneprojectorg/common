@@ -12,6 +12,15 @@ const withLogger: MiddlewareBuilderBase<TContextWithLogger> = async ({
 }) => {
   const start = Date.now();
   const logger = {
+    debug: (message: string, data?: Record<string, unknown>) => {
+      opLogger.debug(message, {
+        requestId: ctx.requestId,
+        path,
+        type,
+        ip: ctx.ip,
+        ...data,
+      });
+    },
     info: (message: string, data?: Record<string, unknown>) => {
       opLogger.info(message, {
         requestId: ctx.requestId,
@@ -21,8 +30,8 @@ const withLogger: MiddlewareBuilderBase<TContextWithLogger> = async ({
         ...data,
       });
     },
-    error: (message: string, data?: Record<string, unknown>) => {
-      opLogger.error(message, {
+    warn: (message: string, data?: Record<string, unknown>) => {
+      opLogger.warn(message, {
         requestId: ctx.requestId,
         path,
         type,
@@ -30,8 +39,8 @@ const withLogger: MiddlewareBuilderBase<TContextWithLogger> = async ({
         ...data,
       });
     },
-    warn: (message: string, data?: Record<string, unknown>) => {
-      opLogger.warn(message, {
+    error: (message: string, data?: Record<string, unknown>) => {
+      opLogger.error(message, {
         requestId: ctx.requestId,
         path,
         type,
