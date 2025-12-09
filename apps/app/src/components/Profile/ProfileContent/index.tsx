@@ -395,6 +395,7 @@ export const ProfileTabsMobile = ({
   // Determine valid tabs and default tab based on profile type
   const validTabs = [
     'home',
+    'updates',
     'about',
     'organizations',
     'following',
@@ -415,6 +416,7 @@ export const ProfileTabsMobile = ({
         {!isIndividual && <Tab id="home">{t('Home')}</Tab>}
         {!isIndividual ? (
           <>
+            <Tab id="updates">{t('Updates')}</Tab>
             <FollowersTab />
             <MembersTab profileId={profile.profile.id} />
             {decisionsEnabled && (
@@ -430,27 +432,38 @@ export const ProfileTabsMobile = ({
         )}
       </TabList>
       {!isIndividual && (
-        <TabPanel id="home" className="px-0">
-          {/*<Suspense fallback={<Skeleton className="w-full" />}>
-            <PostUpdate
-              organization={profile}
-              label={t('Post')}
-              className="border-b px-4 py-6"
-            />
-          </Suspense>*/}
-          <Suspense>
-            <ProfileDecisions profileId={profile.profile.id} />
-          </Suspense>
-          <ProfileAbout profile={profile} className="px-4 py-2" />
-          <Suspense fallback={<Skeleton className="min-h-20 w-full" />}>
-            <div>
-              <Header2 className="px-4 py-2 font-serif text-title-sm leading-normal">
-                {t('Posts')}
-              </Header2>
-              <ProfileFeed profile={profile} className="px-4 py-2 sm:py-6" />
-            </div>
-          </Suspense>
-        </TabPanel>
+        <>
+          <TabPanel id="home" className="px-0">
+            <Suspense>
+              <ProfileDecisions profileId={profile.profile.id} />
+            </Suspense>
+            <ProfileAbout profile={profile} className="px-4 py-2" />
+            <Suspense fallback={<Skeleton className="min-h-20 w-full" />}>
+              <div>
+                <Header2 className="px-4 py-2 font-serif text-title-sm leading-normal">
+                  {t('Posts')}
+                </Header2>
+                <ProfileFeed
+                  variant="cards"
+                  profile={profile}
+                  className="px-4 py-2 sm:py-6"
+                />
+              </div>
+            </Suspense>
+          </TabPanel>
+          <TabPanel id="updates">
+            <Suspense fallback={<Skeleton className="w-full" />}>
+              <PostUpdate
+                organization={profile}
+                label={t('Post')}
+                className="border-b px-4 pb-6 pt-2"
+              />
+            </Suspense>
+            <Suspense fallback={<Skeleton className="min-h-20 w-full" />}>
+              <ProfileFeed profile={profile} className="p-4 sm:py-6" />
+            </Suspense>
+          </TabPanel>
+        </>
       )}
 
       {isIndividual && (

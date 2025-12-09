@@ -3,10 +3,10 @@
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
-import { useInfiniteScroll, useMediaQuery } from '@op/hooks';
+import { useInfiniteScroll } from '@op/hooks';
 import { HorizontalList, HorizontalListItem } from '@op/ui/HorizontalList';
 import { SkeletonLine } from '@op/ui/Skeleton';
-import twConfig from '@op/ui/tailwind-config';
+import { cn } from '@op/ui/utils';
 import { Fragment, useCallback } from 'react';
 
 import {
@@ -21,10 +21,12 @@ export const ProfileFeed = ({
   profile,
   className,
   limit = 20,
+  variant,
 }: {
   profile: Organization;
   className?: string;
   limit?: number;
+  variant?: string;
 }) => {
   const { user } = useUser();
   const {
@@ -74,10 +76,13 @@ export const ProfileFeed = ({
     enabled: enableInfiniteScroll,
   });
 
-  const isMobile = useMediaQuery(`(max-width: ${twConfig.theme.screens.sm})`);
-
-  return isMobile ? (
-    <HorizontalList className="w-full scroll-px-4 items-start">
+  return variant === 'cards' ? (
+    <HorizontalList
+      className={cn(
+        'w-full scroll-px-4 items-start',
+        allPosts.length === 0 && 'overflow-x-hidden',
+      )}
+    >
       {allPosts.length > 0 ? (
         allPosts.map((postToOrg) => (
           <HorizontalListItem
@@ -95,7 +100,9 @@ export const ProfileFeed = ({
           </HorizontalListItem>
         ))
       ) : (
-        <EmptyPostsState />
+        <HorizontalListItem className="w-11/12 max-w-96 shrink-0 snap-start rounded border p-3 first:ml-4 last:mr-4">
+          <EmptyPostsState />
+        </HorizontalListItem>
       )}
       {shouldShowTrigger && (
         <HorizontalListItem>
