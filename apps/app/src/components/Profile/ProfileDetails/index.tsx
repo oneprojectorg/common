@@ -13,6 +13,7 @@ import { ProfileSummary } from '../ProfileSummary';
 import { AddRelationshipModal } from './AddRelationshipModal';
 import { FollowButton } from './FollowButton';
 import { InviteToOrganizationButton } from './InviteToOrganizationButton';
+import { RequestMembershipButton } from './RequestMembershipButton';
 import { UpdateOrganizationModal } from './UpdateOrganizationModal';
 import { UpdateUserProfileModal } from './UpdateProfile';
 
@@ -47,6 +48,16 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
     profile.profile.type === EntityType.INDIVIDUAL &&
     !isViewingOwnProfile;
 
+  // Check if user is already a member of this organization
+  const isAlreadyMember = user?.organizationUsers?.some(
+    (orgUser) => orgUser.organization?.profile?.id === profile.profile.id,
+  );
+  const shouldShowRequestMembershipButton =
+    isCurrentUserIndividual &&
+    isOrganizationProfile &&
+    !isAlreadyMember &&
+    !isViewingOwnProfile;
+
   if (!isViewingOwnProfile && profile.profile.type === EntityType.INDIVIDUAL) {
     if (shouldShowInviteButton) {
       return (
@@ -60,16 +71,22 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
 
   return (
     <div className="flex flex-wrap gap-3 sm:h-fit sm:max-w-fit sm:justify-end sm:gap-4 sm:py-2">
-      {!isViewingOwnProfile ? (
-        shouldShowFollowButton ? (
-          <FollowButton profile={profile} />
+      {isViewingOwnProfile ? (
+        isOrganizationProfile ? (
+          <UpdateOrganizationModal organization={profile} />
         ) : (
-          <AddRelationshipModal profile={profile} />
+          <UpdateUserProfileModal profile={profile.profile} />
         )
-      ) : isOrganizationProfile ? (
-        <UpdateOrganizationModal organization={profile} />
       ) : (
-        <UpdateUserProfileModal profile={profile.profile} />
+        <>
+          {shouldShowFollowButton && <FollowButton profile={profile} />}
+          {shouldShowRequestMembershipButton && (
+            <RequestMembershipButton profile={profile} />
+          )}
+          {!shouldShowFollowButton && !shouldShowRequestMembershipButton && (
+            <AddRelationshipModal profile={profile} />
+          )}
+        </>
       )}
       {isReceivingFunds
         ? receivingFundingLinks.map((link) => {
