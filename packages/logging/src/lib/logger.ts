@@ -39,11 +39,6 @@ function toAnyValueMap(
 
 export class Logger {
   private otelLogger = logs.getLogger('app');
-  private pendingLogs: Array<{
-    level: LogLevel;
-    message: string;
-    data?: LogData;
-  }> = [];
 
   private log(level: LogLevel, message: string, data?: LogData) {
     // Get trace context
@@ -78,9 +73,6 @@ export class Logger {
       body: message,
       attributes: toAnyValueMap(enrichedData),
     });
-
-    // Store for flushing
-    this.pendingLogs.push({ level, message, data: enrichedData });
   }
 
   debug(message: string, data?: LogData) {
@@ -100,9 +92,10 @@ export class Logger {
   }
 
   async flush(): Promise<void> {
-    // Clear pending logs - actual flushing is handled by OTel exporters
-    this.pendingLogs = [];
-    return Promise.resolve();
+    const provider = logs.getLoggerProvider();
+    if ('forceFlush' in provider && typeof provider.forceFlush === 'function') {
+      await provider.forceFlush();
+    }
   }
 }
 
