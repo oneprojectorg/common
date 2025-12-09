@@ -232,10 +232,7 @@
   "Duplicate emails": "E-mails duplicados",
   "has already been added": "já foi adicionado",
   "have already been added": "já foram adicionados",
-  "invalidEmailsToast": {
-    "title": "{count, plural, =1 {E-mail inválido} other {E-mails inválidos}}",
-    "message": "{count, plural, =1 {não é um endereço de e-mail válido} other {não são endereços de e-mail válidos}}"
-  },
+  "Invalid emails": "E-mails inválidos",
   "are not valid email addresses": "não são endereços de e-mail válidos",
   "About the process": "Sobre o processo",
   "Delete Proposal": "Excluir proposta",

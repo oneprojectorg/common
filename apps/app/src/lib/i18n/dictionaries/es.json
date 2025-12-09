@@ -231,10 +231,7 @@
   "Duplicate emails": "Correos duplicados",
   "has already been added": "ya ha sido agregado",
   "have already been added": "ya han sido agregados",
-  "invalidEmailsToast": {
-    "title": "{count, plural, =1 {Correo inválido} other {Correos inválidos}}",
-    "message": "{count, plural, =1 {no es una dirección de correo válida} other {no son direcciones de correo válidas}}"
-  },
+  "Invalid emails": "Correos inválidos",
   "are not valid email addresses": "no son direcciones de correo válidas",
   "About the process": "Acerca del proceso",
   "Delete Proposal": "Eliminar propuesta",

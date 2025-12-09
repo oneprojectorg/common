@@ -224,10 +224,7 @@
   "Duplicate emails": "ডুপ্লিকেট ইমেইল",
   "has already been added": "ইতিমধ্যে যোগ করা হয়েছে",
   "have already been added": "ইতিমধ্যে যোগ করা হয়েছে",
-  "invalidEmailsToast": {
-    "title": "{count, plural, =1 {অবৈধ ইমেইল} other {অবৈধ ইমেইল}}",
-    "message": "{count, plural, =1 {একটি বৈধ ইমেইল ঠিকানা নয়} other {বৈধ ইমেইল ঠিকানা নয়}}"
-  },
+  "Invalid emails": "অবৈধ ইমেইল",
   "are not valid email addresses": "বৈধ ইমেইল ঠিকানা নয়",
   "About the process": "এই প্রক্রিয়া সম্পর্কে",
   "Delete Proposal": "প্রস্তাব মুছুন",
