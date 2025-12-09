@@ -7,7 +7,6 @@ import { useInfiniteScroll, useMediaQuery } from '@op/hooks';
 import { HorizontalList, HorizontalListItem } from '@op/ui/HorizontalList';
 import { SkeletonLine } from '@op/ui/Skeleton';
 import twConfig from '@op/ui/tailwind-config';
-import { cn } from '@op/ui/utils';
 import { Fragment, useCallback } from 'react';
 
 import {
