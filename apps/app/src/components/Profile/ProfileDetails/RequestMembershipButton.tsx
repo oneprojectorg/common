@@ -3,11 +3,13 @@
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
-import { Button } from '@op/ui/Button';
+import { Button, ButtonTooltip } from '@op/ui/Button';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { toast } from '@op/ui/Toast';
 import { Suspense, useTransition } from 'react';
 import { LuClock, LuUserPlus } from 'react-icons/lu';
+
+import { useTranslations } from '@/lib/i18n';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
 
@@ -16,6 +18,7 @@ const RequestMembershipButtonSuspense = ({
 }: {
   profile: Organization;
 }) => {
+  const t = useTranslations();
   const { user } = useUser();
   const utils = trpc.useUtils();
   const [isPending, startTransition] = useTransition();
@@ -42,7 +45,7 @@ const RequestMembershipButtonSuspense = ({
   const handleRequestMembership = () => {
     if (!currentProfileId) {
       toast.error({
-        message: 'You must be logged in to request membership',
+        message: t('You must be logged in to request membership'),
       });
       return;
     }
@@ -55,7 +58,9 @@ const RequestMembershipButtonSuspense = ({
         });
 
         toast.success({
-          message: `Membership request sent to ${profile.profile.name}`,
+          message: t('Membership request sent to {name}', {
+            name: profile.profile.name,
+          }),
         });
 
         await utils.profile.getJoinProfileRequest.invalidate({
@@ -64,7 +69,7 @@ const RequestMembershipButtonSuspense = ({
         });
       } catch (error) {
         toast.error({
-          message: 'Failed to send membership request',
+          message: t('Failed to send membership request'),
         });
       }
     });
@@ -77,29 +82,39 @@ const RequestMembershipButtonSuspense = ({
 
   if (hasPendingRequest) {
     return (
-      <Button color="secondary" isDisabled className="min-w-full sm:min-w-fit">
+      <ButtonTooltip
+        color="secondary"
+        isDisabled
+        className="min-w-full sm:min-w-fit"
+        tooltipProps={{
+          children: t('Your membership request is pending approval'),
+        }}
+      >
         <LuClock className="size-4" />
-        Requested
-      </Button>
+        {t('Requested')}
+      </ButtonTooltip>
     );
   }
 
   return (
-    <Button
+    <ButtonTooltip
       color="secondary"
       onPress={handleRequestMembership}
       isPending={isPending}
       className="min-w-full sm:min-w-fit"
+      tooltipProps={{
+        children: t('Request to join this organization as a member'),
+      }}
     >
       {isPending ? (
         <LoadingSpinner />
       ) : (
         <>
           <LuUserPlus className="size-4" />
-          Request Membership
+          {t('Request')}
         </>
       )}
-    </Button>
+    </ButtonTooltip>
   );
 };
 
