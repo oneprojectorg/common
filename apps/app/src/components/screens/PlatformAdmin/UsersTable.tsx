@@ -10,7 +10,13 @@ import { SearchField } from '@op/ui/SearchField';
 import { Skeleton } from '@op/ui/Skeleton';
 import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
-import { Suspense, useCallback, useEffect, useState } from 'react';
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useState,
+  useTransition,
+} from 'react';
 import { LuDownload } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -57,32 +63,30 @@ export const UsersTable = () => {
   const utils = trpc.useUtils();
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery] = useDebounce(searchQuery, 200);
-  const [isExporting, setIsExporting] = useState(false);
+  const [isExporting, startExportTransition] = useTransition();
 
-  const handleExportAllUsers = useCallback(async () => {
-    setIsExporting(true);
-    try {
-      // Fetch all users without limit
-      const result = await utils.platform.admin.listAllUsers.fetch({});
+  const handleExportAllUsers = useCallback(() => {
+    startExportTransition(async () => {
+      try {
+        // Fetch all users without limit
+        const result = await utils.platform.admin.listAllUsers.fetch({});
 
-      if (result.items.length === 0) {
+        if (result.items.length === 0) {
+          return;
+        }
+
+        const allUsers = result.items.map((user) => ({
+          name: user.profile?.name ?? user.name,
+          email: user.email,
+        }));
+
+        exportUsersToCSV(allUsers);
+        toast.success({ message: t('platformAdmin_exportSuccess') });
+      } catch (error) {
+        console.error('Export failed:', error);
         toast.error({ message: t('platformAdmin_exportError') });
-        return;
       }
-
-      const allUsers = result.items.map((user) => ({
-        name: user.profile?.name ?? user.name,
-        email: user.email,
-      }));
-
-      exportUsersToCSV(allUsers);
-      toast.success({ message: t('platformAdmin_exportSuccess') });
-    } catch (error) {
-      console.error('Export failed:', error);
-      toast.error({ message: t('platformAdmin_exportError') });
-    } finally {
-      setIsExporting(false);
-    }
+    });
   }, [utils, t]);
 
   return (

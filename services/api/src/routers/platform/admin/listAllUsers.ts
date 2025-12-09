@@ -38,8 +38,8 @@ export const listAllUsersRouter = router({
     .query(async ({ input }) => {
       const { cursor, dir = 'desc', query, limit } = input ?? {};
 
-      // Cursor-based pagination using updatedAt timestamp
-      // Combines updatedAt with id as tiebreaker for users created at the same time
+      // Cursor-based pagination using createdAt timestamp
+      // Combines createdAt with id as tiebreaker for users created at the same time
       const cursorCondition = cursor
         ? getGenericCursorCondition({
             columns: {
