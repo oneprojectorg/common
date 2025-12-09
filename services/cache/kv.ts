@@ -1,5 +1,5 @@
 import { OPURLConfig } from '@op/core';
-import { logger as log } from '@op/logging';
+import { log } from '@op/logging';
 import { waitUntil } from '@vercel/functions';
 import { createClient } from 'redis';
 

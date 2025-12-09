@@ -9,32 +9,22 @@ This package provides a simple, service-agnostic logging interface built on Open
 ## Usage
 
 ```typescript
-import { logger } from '@op/logging';
+import { log } from '@op/logging';
 
 // Server-side logging
-logger.info('User logged in', { userId: '123' });
-logger.error('Failed to process request', { error: err.message });
-logger.warn('Rate limit approaching', { remaining: 5 });
-logger.debug('Processing item', { itemId: 'abc' });
-```
-
-## Client-side
-
-```typescript
-import { useLogger, WebVitals } from '@op/logging';
-
-// In a component
-const logger = useLogger();
-logger.info('Button clicked', { buttonId: 'submit' });
+log.info('User logged in', { userId: '123' });
+log.error('Failed to process request', { error: err.message });
+log.warn('Rate limit approaching', { remaining: 5 });
+log.debug('Processing item', { itemId: 'abc' });
 ```
 
 ## Middleware
 
 ```typescript
-import { logger, transformMiddlewareRequest } from '@op/logging';
+import { log, transformMiddlewareRequest } from '@op/logging';
 
 export function middleware(request: NextRequest) {
-  logger.info(...transformMiddlewareRequest(request));
+  log.info(...transformMiddlewareRequest(request));
   // ...
 }
 ```

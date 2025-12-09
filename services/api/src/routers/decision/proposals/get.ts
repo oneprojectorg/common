@@ -5,7 +5,7 @@ import {
   getPermissionsOnProposal,
   getProposal,
 } from '@op/common';
-import { logger } from '@op/logging';
+import { log } from '@op/logging';
 import { TRPCError } from '@trpc/server';
 import { waitUntil } from '@vercel/functions';
 import type { OpenApiMeta } from 'trpc-to-openapi';
@@ -70,7 +70,7 @@ export const getProposalRouter = router({
             proposal,
           });
         } catch (error) {
-          logger.error('Error getting permissions on proposal', { error, profileId });
+          log.error('Error getting permissions on proposal', { error, profileId });
         }
 
         // Track proposal viewed event

@@ -1,5 +1,5 @@
 // Server-side logger
-export { logger, Logger } from './lib/logger';
+export { log, Logger } from './lib/logger';
 export type { LogLevel, LogData } from './lib/logger';
 
 // Middleware utilities

@@ -1,5 +1,5 @@
 import { OPURLConfig, urlMatcher } from '@op/core';
-import { logger, transformMiddlewareRequest } from '@op/logging';
+import { log, transformMiddlewareRequest } from '@op/logging';
 import { NextResponse } from 'next/server';
 import type { NextFetchEvent, NextRequest } from 'next/server';
 
@@ -12,9 +12,9 @@ const corsOptions = {
 const { IS_DEVELOPMENT } = OPURLConfig('API');
 
 export function middleware(request: NextRequest, event: NextFetchEvent) {
-  logger.info(...transformMiddlewareRequest(request));
+  log.info(...transformMiddlewareRequest(request));
 
-  event.waitUntil(logger.flush());
+  event.waitUntil(log.flush());
   // Check the origin from the request
   const origin = request.headers.get('origin') ?? '';
   const isAllowedOrigin = IS_DEVELOPMENT

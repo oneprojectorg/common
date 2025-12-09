@@ -1,5 +1,5 @@
 import { switchUserOrganization } from '@op/common';
-import { logger } from '@op/logging';
+import { log } from '@op/logging';
 import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
@@ -41,7 +41,7 @@ export const switchOrganization = router({
         });
         return userEncoder.parse(result);
       } catch (error) {
-        logger.error('Error switching organization', { error, organizationId: input.organizationId });
+        log.error('Error switching organization', { error, organizationId: input.organizationId });
 
         if (error instanceof Error) {
           if (error.message === 'Organization not found') {

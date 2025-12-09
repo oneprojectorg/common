@@ -1,5 +1,5 @@
 import { zodUrl } from '@op/common/validation';
-import { logger } from '@op/logging';
+import { log } from '@op/logging';
 import { TRPCError } from '@trpc/server';
 import { ZodError } from 'zod';
 import { z } from 'zod';
@@ -9,7 +9,7 @@ import { z } from 'zod';
  * Converts common errors into appropriate TRPC or Zod errors
  */
 export function handleUpdateUserProfileError(error: unknown): never {
-  logger.error('Error updating user profile', { error });
+  log.error('Error updating user profile', { error });
 
   // If it's already a TRPC error, re-throw it
   if (error instanceof TRPCError) {

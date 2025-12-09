@@ -1,5 +1,5 @@
 import { OPURLConfig, cookieOptionsDomain } from '@op/core';
-import { logger, transformMiddlewareRequest } from '@op/logging';
+import { log, transformMiddlewareRequest } from '@op/logging';
 import { createServerClient } from '@op/supabase/lib';
 import createMiddleware from 'next-intl/middleware';
 import { NextFetchEvent, NextRequest, NextResponse } from 'next/server';
@@ -10,9 +10,9 @@ const useUrl = OPURLConfig('APP');
 
 export async function middleware(request: NextRequest, event: NextFetchEvent) {
   // Log request
-  logger.info(...transformMiddlewareRequest(request));
+  log.info(...transformMiddlewareRequest(request));
 
-  event.waitUntil(logger.flush());
+  event.waitUntil(log.flush());
   // i18n ROUTING
   const pathname = request.nextUrl.pathname;
   const pathnameIsMissingLocale = i18nConfig.locales.every(
