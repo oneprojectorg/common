@@ -9,6 +9,7 @@ import React from 'react';
 import { LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
+
 import { parseEmails, shouldParseEmails } from './emailUtils';
 
 interface InviteToExistingOrganizationProps {
@@ -67,7 +68,6 @@ export const InviteToExistingOrganization = ({
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email.trim());
   };
-
 
   const removeEmailBadge = (emailToRemove: string) => {
     setEmailBadges(emailBadges.filter((email) => email !== emailToRemove));
@@ -128,7 +128,7 @@ export const InviteToExistingOrganization = ({
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium">{t('Send to')}</label>
           <div className="flex min-h-[80px] flex-wrap gap-2 rounded-md border border-gray-300 p-2">
-            <TagGroup>
+            <TagGroup aria-label={t('Selected emails')}>
               {emailBadges.map((email, index) => (
                 <Tag className="sm:rounded-sm" key={index}>
                   {email}
@@ -139,6 +139,7 @@ export const InviteToExistingOrganization = ({
               ))}
             </TagGroup>
             <textarea
+              aria-label={t('Add emails')}
               value={emails}
               onChange={(e) => setEmails(e.target.value)}
               onKeyDown={handleKeyDown}

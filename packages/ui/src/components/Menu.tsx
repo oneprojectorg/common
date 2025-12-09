@@ -30,7 +30,7 @@ export const Menu = <T extends object>(props: MenuProps<T>) => {
     <AriaMenu
       {...props}
       className={cn(
-        'max-h-[inherit] overflow-auto border bg-white p-1 py-1.5 text-neutral-charcoal outline outline-0 [clip-path:inset(0_0_0_0_round_.75rem)]',
+        'max-h-[inherit] overflow-auto rounded-sm border bg-white p-2 text-neutral-charcoal shadow-light outline outline-0',
         props.className,
       )}
     />
@@ -38,7 +38,7 @@ export const Menu = <T extends object>(props: MenuProps<T>) => {
 };
 
 export const menuItemStyles = tv({
-  base: 'group flex cursor-pointer select-none items-center gap-4 rounded px-4 py-2 py-4 pl-3 pr-1.5 text-neutral-charcoal outline outline-0 -outline-offset-1 forced-color-adjust-none',
+  base: 'group flex cursor-pointer select-none items-center gap-4 rounded-sm px-4 py-2 text-neutral-charcoal outline outline-0 -outline-offset-1 forced-color-adjust-none',
   variants: {
     unstyled: {
       true: 'group flex cursor-pointer select-none items-center px-0 py-0 pb-0 pl-0 pr-0 pt-0 text-neutral-charcoal outline outline-0 -outline-offset-1 forced-color-adjust-none',

@@ -399,5 +399,10 @@
   "Failed to update request": "সদস্যতার অনুরোধ আপডেট করা যায়নি",
   "Failed to load join requests": "সদস্যতার অনুরোধ লোড করা যায়নি",
   "Decline": "প্রত্যাখ্যান",
-  "Accept": "গ্রহণ করুন"
+  "Accept": "গ্রহণ করুন",
+  "Create": "তৈরি করুন",
+  "Decision-making process": "সিদ্ধান্ত গ্রহণ প্রক্রিয়া",
+  "Invite member": "সদস্য আমন্ত্রণ করুন",
+  "Selected emails": "নির্বাচিত ইমেইল",
+  "Add emails": "ইমেইল যোগ করুন"
 }

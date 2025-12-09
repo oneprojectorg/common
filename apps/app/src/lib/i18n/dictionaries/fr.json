@@ -399,5 +399,10 @@
   "Failed to update request": "La demande d'adhésion n'a pas pu être mise à jour",
   "Failed to load join requests": "Impossible de charger les demandes d'adhésion",
   "Decline": "Refuser",
-  "Accept": "Accepter"
+  "Accept": "Accepter",
+  "Create": "Créer",
+  "Decision-making process": "Processus de prise de décision",
+  "Invite member": "Inviter un membre",
+  "Selected emails": "Courriels sélectionnés",
+  "Add emails": "Ajouter des courriels"
 }

@@ -69,7 +69,7 @@ export const TabList = <T extends object>(
 };
 
 const tabProps = tv({
-  base: 'flex h-8 cursor-default items-center text-nowrap px-2 py-3 text-base font-normal text-neutral-gray4 outline-none transition forced-color-adjust-none focus-visible:outline sm:h-auto sm:bg-transparent',
+  base: 'flex h-8 cursor-default items-center text-nowrap px-2 py-3 text-base font-normal text-neutral-gray4 outline-none transition forced-color-adjust-none focus-visible:bg-neutral-offWhite sm:h-auto sm:bg-transparent',
   variants: {
     variant: {
       default: '',

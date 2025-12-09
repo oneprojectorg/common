@@ -20,18 +20,22 @@ import { InviteNewOrganization } from './InviteNewOrganization';
 import { InviteToExistingOrganization } from './InviteToExistingOrganization';
 import { parseEmails } from './emailUtils';
 
-interface InviteUserModalProps {
+export const InviteUserModal = ({
+  children,
+  isOpen: controlledIsOpen,
+  onOpenChange: controlledOnOpenChange,
+}: {
   children?: React.ReactNode;
-}
-
-export const InviteUserModal = ({ children }: InviteUserModalProps) => {
+  isOpen?: boolean;
+  onOpenChange?: (isOpen: boolean) => void;
+}) => {
   const [emails, setEmails] = useState('');
   const [emailBadges, setEmailBadges] = useState<string[]>([]);
   const [selectedRole, setSelectedRole] = useState('');
   const [selectedRoleId, setSelectedRoleId] = useState('');
   const [selectedOrganization, setSelectedOrganization] = useState('');
   const [personalMessage, setPersonalMessage] = useState('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [internalIsModalOpen, setInternalIsModalOpen] = useState(false);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [lastInvitedEmail, setLastInvitedEmail] = useState('');
   const [invitedCount, setInvitedCount] = useState(0);
@@ -39,6 +43,9 @@ export const InviteUserModal = ({ children }: InviteUserModalProps) => {
   const t = useTranslations();
   const { user } = useUser();
   const isOnline = useConnectionStatus();
+
+  const isModalOpen = controlledIsOpen ?? internalIsModalOpen;
+  const setIsModalOpen = controlledOnOpenChange ?? setInternalIsModalOpen;
 
   const inviteUserEnabled =
     useFeatureFlagEnabled('invite_admin_user') ||
@@ -220,7 +227,7 @@ export const InviteUserModal = ({ children }: InviteUserModalProps) => {
   return (
     <>
       <DialogTrigger isOpen={isModalOpen} onOpenChange={setIsModalOpen}>
-        {triggerButton}
+        {controlledIsOpen === undefined ? triggerButton : null}
         <Modal isDismissable isOpen={isModalOpen} onOpenChange={setIsModalOpen}>
           <ModalHeader>{t('Invite others to Common')}</ModalHeader>
           <ErrorBoundary>
@@ -236,7 +243,7 @@ export const InviteUserModal = ({ children }: InviteUserModalProps) => {
                   ) : null}
                 </TabList>
 
-                <TabPanel id="existing">
+                <TabPanel id="existing" className="sm:p-0">
                   <Suspense
                     fallback={
                       <div className="animate-pulse">
@@ -259,7 +266,7 @@ export const InviteUserModal = ({ children }: InviteUserModalProps) => {
                 </TabPanel>
 
                 {inviteUserEnabled ? (
-                  <TabPanel id="new">
+                  <TabPanel id="new" className="sm:p-0">
                     <InviteNewOrganization
                       emails={emails}
                       setEmails={setEmails}
