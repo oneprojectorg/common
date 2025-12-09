@@ -24,6 +24,7 @@ import {
   LuCircleHelp,
   LuLogOut,
   LuSearch,
+  LuTrash2,
 } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
@@ -32,6 +33,7 @@ import { CoCModal } from '../CoCModal';
 import { CommonLogo } from '../CommonLogo';
 import ErrorBoundary from '../ErrorBoundary';
 import { LocaleChooser } from '../LocaleChooser';
+import { OrgDeletionModal } from '../OrgDeletionModal';
 import { PrivacyPolicyModal } from '../PrivacyPolicyModal';
 import { UpdateProfileModal } from '../Profile/ProfileDetails/UpdateProfile';
 import { ProfileSwitchingModal } from '../ProfileSwitchingModal';
@@ -108,7 +110,7 @@ const ProfileMenuItem = ({
         });
       }}
     >
-      <Avatar placeholder={profile.name}>
+      <Avatar placeholder={profile.name} className="flex-shrink-0">
         {profile.avatarImage?.name ? (
           <Image
             src={getPublicUrl(profile.avatarImage.name) ?? ''}
@@ -127,9 +129,11 @@ const AvatarMenuContent = ({
   onClose,
   onProfileSwitch,
   setIsProfileOpen,
+  setIsOrgDeletionOpen,
 }: {
   onClose?: () => void;
   setIsProfileOpen: (isOpen: boolean) => void;
+  setIsOrgDeletionOpen: (isOpen: boolean) => void;
   onProfileSwitch?: (profile: {
     name: string;
     avatarImage?: { name: string } | null;
@@ -220,7 +224,7 @@ const AvatarMenuContent = ({
           onClose={onClose}
           onProfileSwitch={onProfileSwitch}
         >
-          <div className="flex max-w-52 flex-col">
+          <div className="flex flex-col overflow-hidden">
             <div className="flex items-center gap-1">
               <span className="truncate overflow-hidden">{profile.name} </span>
               {user.currentProfile?.id === profile.id ? (
@@ -242,7 +246,7 @@ const AvatarMenuContent = ({
           onClose={onClose}
           onProfileSwitch={onProfileSwitch}
         >
-          <div className="flex max-w-52 flex-col">
+          <div className="flex flex-col overflow-hidden">
             <div className="relative flex items-center gap-1">
               <span className="truncate overflow-hidden">{profile.name} </span>
               {user.currentProfile?.id === profile.id ? (
@@ -282,6 +286,17 @@ const AvatarMenuContent = ({
       >
         <LuLogOut className="size-8 rounded-full bg-neutral-offWhite p-2" />{' '}
         {t('Log out')}
+      </MenuItem>
+      <MenuItem
+        id="delete-account"
+        className="px-0 py-2 text-functional-red hover:bg-neutral-offWhite focus:bg-neutral-offWhite"
+        onAction={() => {
+          setIsOrgDeletionOpen(true);
+          onClose?.();
+        }}
+      >
+        <LuTrash2 className="size-8 rounded-full bg-neutral-offWhite p-2" />{' '}
+        {t('Delete account')}
       </MenuItem>
 
       <MenuItemSimple
@@ -327,6 +342,7 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
   const isMobile = useMediaQuery('(max-width: 640px)');
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isOrgDeletionOpen, setIsOrgDeletionOpen] = useState(false);
   const [isSwitchingProfile, setIsSwitchingProfile] = useState(false);
   const [switchingToProfile, setSwitchingToProfile] = useState<{
     name: string;
@@ -394,6 +410,7 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
             <Menu className="flex min-w-full flex-col border-t-0 p-4 pb-8">
               <AvatarMenuContent
                 setIsProfileOpen={setIsProfileOpen}
+                setIsOrgDeletionOpen={setIsOrgDeletionOpen}
                 onClose={() => setIsDrawerOpen(false)}
                 onProfileSwitch={handleProfileSwitch}
               />
@@ -410,6 +427,10 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
           profileName={switchingToProfile?.name}
           onOpenChange={setIsSwitchingProfile}
         />
+        <OrgDeletionModal
+          isOpen={isOrgDeletionOpen}
+          onOpenChange={setIsOrgDeletionOpen}
+        />
       </>
     );
   }
@@ -422,6 +443,7 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
           <Menu className="flex min-w-72 flex-col p-4 pb-6">
             <AvatarMenuContent
               setIsProfileOpen={setIsProfileOpen}
+              setIsOrgDeletionOpen={setIsOrgDeletionOpen}
               onClose={() => setIsProfileOpen(false)}
               onProfileSwitch={handleProfileSwitch}
             />
@@ -434,6 +456,10 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
         avatarImage={switchingToProfile?.avatarImage}
         profileName={switchingToProfile?.name}
         onOpenChange={setIsSwitchingProfile}
+      />
+      <OrgDeletionModal
+        isOpen={isOrgDeletionOpen}
+        onOpenChange={setIsOrgDeletionOpen}
       />
     </>
   );
