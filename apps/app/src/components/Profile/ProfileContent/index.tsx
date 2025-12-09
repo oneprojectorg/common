@@ -1,16 +1,18 @@
 'use client';
 
 import { useUser } from '@/utils/UserProvider';
-import { formatToUrl } from '@op/common/validation';
 import { checkModuleEnabled } from '@/utils/modules';
 import { trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
+import { formatToUrl } from '@op/common/validation';
+import { useMediaQuery } from '@op/hooks';
 import { Button } from '@op/ui/Button';
-import { Header3 } from '@op/ui/Header';
+import { Header2, Header3 } from '@op/ui/Header';
 import { Skeleton } from '@op/ui/Skeleton';
 import { Tab, TabList, TabPanel } from '@op/ui/Tabs';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
 import { toast } from '@op/ui/Toast';
+import twConfig from '@op/ui/tailwind-config';
 import { cn } from '@op/ui/utils';
 import { ReactNode, Suspense } from 'react';
 import { LuCopy, LuGlobe, LuMail } from 'react-icons/lu';
@@ -21,6 +23,7 @@ import { ContactLink } from '@/components/ContactLink';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { PostFeedSkeleton } from '@/components/PostFeed';
 import { PostUpdate } from '@/components/PostUpdate';
+import { ProfileFeaturedDecision } from '@/components/decisions/DecisionListItem';
 
 import { ProfileFeed } from '../ProfileFeed';
 import {
@@ -115,132 +118,166 @@ const ProfileAbout = ({
   const t = useTranslations();
 
   return (
-    <div className={cn('flex flex-col gap-8', className)}>
-      {email || website ? (
-        <section className="flex flex-col gap-2">
-          <Header3>{t('Contact')}</Header3>
-          <div className="flex flex-col text-teal">
-            {website ? (
-              <ContactLink>
-                <LuGlobe />
-                <Link
-                  href={formatToUrl(website)}
-                  target="_blank"
-                  className="max-w-full overflow-hidden overflow-ellipsis text-nowrap"
-                >
-                  {website}
-                </Link>
-              </ContactLink>
-            ) : null}
-            {email ? (
-              <ContactLink
-                button={
-                  <Button
-                    color="secondary"
-                    size="small"
-                    onPress={() => {
-                      navigator.clipboard.writeText(email);
-                      toast.success({
-                        message: t(
-                          'This email address has been copied to your clipboard.',
-                        ),
-                        dismissable: false,
-                      });
-                    }}
+    <div className={cn('flex flex-col gap-2 sm:gap-6', className)}>
+      <Header2 className="font-serif text-title-sm leading-normal">
+        {t('About')}
+      </Header2>
+      <div className="flex flex-col gap-4 rounded border p-4 sm:rounded-none sm:border-none sm:p-0">
+        {email || website ? (
+          <section className="flex flex-col gap-2">
+            <Header3>{t('Contact')}</Header3>
+            <div className="flex flex-col text-teal">
+              {website ? (
+                <ContactLink>
+                  <LuGlobe />
+                  <Link
+                    href={formatToUrl(website)}
+                    target="_blank"
+                    className="max-w-full overflow-hidden overflow-ellipsis text-nowrap"
                   >
-                    <LuCopy /> {t('Copy')}
-                  </Button>
-                }
-              >
-                <LuMail className="min-w-4" />
-                <Link
-                  href={`mailto:${email}`}
-                  className="max-w-full overflow-hidden overflow-ellipsis text-nowrap"
+                    {website}
+                  </Link>
+                </ContactLink>
+              ) : null}
+              {email ? (
+                <ContactLink
+                  button={
+                    <Button
+                      color="secondary"
+                      size="small"
+                      onPress={() => {
+                        navigator.clipboard.writeText(email);
+                        toast.success({
+                          message: t(
+                            'This email address has been copied to your clipboard.',
+                          ),
+                          dismissable: false,
+                        });
+                      }}
+                    >
+                      <LuCopy /> {t('Copy')}
+                    </Button>
+                  }
                 >
-                  {email}
-                </Link>
-              </ContactLink>
-            ) : null}
-          </div>
-        </section>
-      ) : null}
+                  <LuMail className="min-w-4" />
+                  <Link
+                    href={`mailto:${email}`}
+                    className="max-w-full overflow-hidden overflow-ellipsis text-nowrap"
+                  >
+                    {email}
+                  </Link>
+                </ContactLink>
+              ) : null}
+            </div>
+          </section>
+        ) : null}
 
-      {orgType ? (
-        <section className="flex flex-col gap-2 text-neutral-charcoal">
-          <Header3>{t('Organizational Status')}</Header3>
-          <TagGroup>
-            <Tag className="capitalize">{orgType}</Tag>
-          </TagGroup>
-        </section>
-      ) : null}
+        {orgType ? (
+          <section className="flex flex-col gap-2 text-neutral-charcoal">
+            <Header3>{t('Organizational Status')}</Header3>
+            <TagGroup>
+              <Tag className="capitalize">{orgType}</Tag>
+            </TagGroup>
+          </section>
+        ) : null}
 
-      {mission ? (
-        <section className="flex flex-col gap-2 text-neutral-charcoal">
-          <Header3>{t('Mission Statement')}</Header3>
-          <p>{mission}</p>
-        </section>
-      ) : null}
+        {mission ? (
+          <section className="flex flex-col gap-2 text-neutral-charcoal">
+            <Header3>{t('Mission Statement')}</Header3>
+            <p>{mission}</p>
+          </section>
+        ) : null}
 
-      {strategies?.length > 0 ? (
-        <section className="flex flex-col gap-2 text-neutral-charcoal">
-          <Header3>{t('Strategies')}</Header3>
-          <TagGroup>
-            {strategies.map((strategy) =>
-              strategy ? (
-                <Tag key={strategy.id}>
-                  {/* @ts-ignore - odd TS bug that only shows in CI */}
-                  {strategy.label}
-                </Tag>
-              ) : null,
+        {strategies?.length > 0 ? (
+          <section className="flex flex-col gap-2 text-neutral-charcoal">
+            <Header3>{t('Strategies')}</Header3>
+            <TagGroup>
+              {strategies.map((strategy) =>
+                strategy ? (
+                  <Tag key={strategy.id}>
+                    {/* @ts-ignore - odd TS bug that only shows in CI */}
+                    {strategy.label}
+                  </Tag>
+                ) : null,
+              )}
+            </TagGroup>
+          </section>
+        ) : null}
+
+        <ErrorBoundary fallback={null}>
+          <Suspense
+            fallback={
+              <section className="flex flex-col gap-2 text-neutral-charcoal">
+                <Header3>{t('Focus Areas')}</Header3>
+                <div className="flex flex-wrap gap-2">
+                  <Skeleton className="h-6 w-16" />
+                  <Skeleton className="h-6 w-20" />
+                  <Skeleton className="h-6 w-14" />
+                </div>
+              </section>
+            }
+          >
+            {orgType ? (
+              <OrganizationFocusAreas profileId={profile.id} />
+            ) : (
+              <IndividualFocusAreas profileId={profile.id} />
             )}
-          </TagGroup>
-        </section>
-      ) : null}
+          </Suspense>
+        </ErrorBoundary>
 
-      <ErrorBoundary fallback={null}>
-        <Suspense
-          fallback={
-            <section className="flex flex-col gap-2 text-neutral-charcoal">
-              <Header3>{t('Focus Areas')}</Header3>
-              <div className="flex flex-wrap gap-2">
-                <Skeleton className="h-6 w-16" />
-                <Skeleton className="h-6 w-20" />
-                <Skeleton className="h-6 w-14" />
-              </div>
-            </section>
-          }
-        >
-          {orgType ? (
-            <OrganizationFocusAreas profileId={profile.id} />
-          ) : (
-            <IndividualFocusAreas profileId={profile.id} />
-          )}
-        </Suspense>
-      </ErrorBoundary>
+        <ErrorBoundary fallback={null}>
+          <Suspense
+            fallback={
+              <section className="flex flex-col gap-2 text-neutral-charcoal">
+                <Header3>{t('Communities We Serve')}</Header3>
+                <div className="flex flex-wrap gap-2">
+                  <Skeleton className="h-6 w-18" />
+                  <Skeleton className="h-6 w-24" />
+                  <Skeleton className="h-6 w-16" />
+                </div>
+              </section>
+            }
+          >
+            <CommunitiesServed profileId={profile.id} />
+          </Suspense>
+        </ErrorBoundary>
+      </div>
+    </div>
+  );
+};
 
-      <ErrorBoundary fallback={null}>
-        <Suspense
-          fallback={
-            <section className="flex flex-col gap-2 text-neutral-charcoal">
-              <Header3>{t('Communities We Serve')}</Header3>
-              <div className="flex flex-wrap gap-2">
-                <Skeleton className="h-6 w-18" />
-                <Skeleton className="h-6 w-24" />
-                <Skeleton className="h-6 w-16" />
-              </div>
-            </section>
-          }
-        >
-          <CommunitiesServed profileId={profile.id} />
-        </Suspense>
-      </ErrorBoundary>
+const ProfileDecisions = ({ profileId }: { profileId: string }) => {
+  const t = useTranslations();
+  const isMobile = useMediaQuery(`(max-width: ${twConfig.theme.screens.sm})`);
+
+  const [data] = trpc.decision.listDecisionProfiles.useSuspenseQuery({
+    limit: 3,
+  });
+
+  const orgDecisionProfiles = data.items?.filter(
+    (profile) => profile.processInstance?.owner?.id === profileId,
+  );
+
+  if (!orgDecisionProfiles[0]) {
+    return null;
+  }
+
+  return (
+    <div className="flex flex-col gap-2 px-4 pb-2 pt-0 sm:gap-4 sm:border-b sm:px-6 sm:pb-0 sm:pt-4">
+      <Header2 className="font-serif text-title-sm leading-normal">
+        {t('Decisions')}
+      </Header2>
+      <ProfileFeaturedDecision
+        item={orgDecisionProfiles[0]}
+        className={cn(isMobile && 'rounded border p-4')}
+      />
     </div>
   );
 };
 
 export const ProfileGridWrapper = ({ children }: { children: ReactNode }) => {
   return (
-    <div className="hidden h-full flex-grow grid-cols-15 sm:grid">
+    <div className="border-3 hidden h-full flex-grow grid-cols-15 border-red-500 sm:grid">
       {children}
     </div>
   );
@@ -283,8 +320,13 @@ export const OrganizationProfileGrid = ({
           <ProfileFeed profile={profile} />
         </Suspense>
       </div>
-      <div className="col-span-6 h-full border-l px-4 py-6">
-        <ProfileAbout profile={profile} />
+      <div className="col-span-6 h-full border-l">
+        <Suspense>
+          <ProfileDecisions profileId={profile.profile.id} />
+        </Suspense>
+        <div className="flex flex-col gap-4 px-6 py-4">
+          <ProfileAbout profile={profile} />
+        </div>
       </div>
     </ProfileGridWrapper>
   );
@@ -352,7 +394,7 @@ export const ProfileTabsMobile = ({
 
   // Determine valid tabs and default tab based on profile type
   const validTabs = [
-    'updates',
+    'home',
     'about',
     'organizations',
     'following',
@@ -360,7 +402,7 @@ export const ProfileTabsMobile = ({
     'decisions',
     'members',
   ];
-  const defaultTab = isIndividual ? 'about' : 'updates';
+  const defaultTab = isIndividual ? 'about' : 'home';
 
   return (
     <ProfileTabsWithQuery
@@ -370,8 +412,7 @@ export const ProfileTabsMobile = ({
       validTabs={validTabs}
     >
       <TabList className="overflow-x-auto px-4">
-        {!isIndividual && <Tab id="updates">{t('Updates')}</Tab>}
-        <Tab id="about">{t('About')}</Tab>
+        {!isIndividual && <Tab id="home">{t('Home')}</Tab>}
         {!isIndividual ? (
           <>
             <FollowersTab />
@@ -382,30 +423,41 @@ export const ProfileTabsMobile = ({
           </>
         ) : (
           <>
+            <Tab id="about">{t('About')}</Tab>
             <Tab id="organizations">{t('Organizations')}</Tab>
             <Tab id="following">{t('Following')}</Tab>
           </>
         )}
       </TabList>
       {!isIndividual && (
-        <TabPanel id="updates" className="px-0">
-          <Suspense fallback={<Skeleton className="w-full" />}>
+        <TabPanel id="home" className="px-0">
+          {/*<Suspense fallback={<Skeleton className="w-full" />}>
             <PostUpdate
               organization={profile}
               label={t('Post')}
               className="border-b px-4 py-6"
             />
+          </Suspense>*/}
+          <Suspense>
+            <ProfileDecisions profileId={profile.profile.id} />
           </Suspense>
+          <ProfileAbout profile={profile} className="px-4 py-2" />
           <Suspense fallback={<Skeleton className="min-h-20 w-full" />}>
-            <ProfileFeed profile={profile} className="px-4 py-2 sm:py-6" />
+            <div>
+              <Header2 className="px-4 py-2 font-serif text-title-sm leading-normal">
+                {t('Posts')}
+              </Header2>
+              <ProfileFeed profile={profile} className="px-4 py-2 sm:py-6" />
+            </div>
           </Suspense>
         </TabPanel>
       )}
-      <TabPanel id="about">
-        <ProfileAbout profile={profile} className="px-4 py-2" />
-      </TabPanel>
+
       {isIndividual && (
         <>
+          <TabPanel id="about">
+            <ProfileAbout profile={profile} className="px-4 py-2" />
+          </TabPanel>
           <TabPanel id="organizations" className="px-4 py-2">
             <div className="flex flex-col gap-4">{children}</div>
           </TabPanel>
