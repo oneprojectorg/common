@@ -10,7 +10,7 @@ export function HorizontalList({
   return (
     <ul
       className={cn(
-        'grid max-w-full snap-x snap-mandatory auto-cols-auto grid-flow-col gap-x-2 overflow-x-scroll scrollbar-none',
+        'relative flex max-w-full snap-x snap-mandatory gap-x-2 overflow-x-scroll scrollbar-none',
         className,
       )}
     >
@@ -26,5 +26,9 @@ export function HorizontalListItem({
   children: React.ReactNode;
   className?: string;
 }) {
-  return <li className={cn('snap-start', className)}>{children}</li>;
+  return (
+    <li className={cn('relative shrink-0 snap-start', className)}>
+      {children}
+    </li>
+  );
 }
