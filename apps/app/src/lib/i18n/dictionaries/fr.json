@@ -374,7 +374,7 @@
   "platformAdmin_columnEmail": "Courriel",
   "platformAdmin_columnRole": "Rôle",
   "platformAdmin_columnOrganization": "Organisation",
-  "platformAdmin_columnLastUpdated": "Dernière mise à jour",
+  "platformAdmin_columnCreated": "Créé",
   "platformAdmin_columnLastSignIn": "Dernière connexion",
   "platformAdmin_columnActions": "Actions",
   "platformAdmin_actionViewAnalytics": "Voir les analyses",

@@ -366,7 +366,7 @@
   "platformAdmin_columnEmail": "ইমেইল",
   "platformAdmin_columnRole": "ভূমিকা",
   "platformAdmin_columnOrganization": "সংস্থা",
-  "platformAdmin_columnLastUpdated": "শেষ আপডেট",
+  "platformAdmin_columnCreated": "তৈরি",
   "platformAdmin_columnLastSignIn": "শেষ সাইন ইন",
   "platformAdmin_columnActions": "কর্ম",
   "platformAdmin_actionViewAnalytics": "বিশ্লেষণ দেখুন",

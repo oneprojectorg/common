@@ -374,7 +374,7 @@
   "platformAdmin_columnEmail": "E-mail",
   "platformAdmin_columnRole": "Função",
   "platformAdmin_columnOrganization": "Organização",
-  "platformAdmin_columnLastUpdated": "Última atualização",
+  "platformAdmin_columnCreated": "Criado",
   "platformAdmin_columnLastSignIn": "Último login",
   "platformAdmin_columnActions": "Ações",
   "platformAdmin_actionViewAnalytics": "Ver análises",
