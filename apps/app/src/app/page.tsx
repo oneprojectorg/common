@@ -11,7 +11,7 @@ const MainPage = () => {
 
   if (authUser?.data && !isPending) {
     if (authUser.data.user == null) {
-      router.push('/login');
+      router.push('/coming-soon');
 
       return;
     }

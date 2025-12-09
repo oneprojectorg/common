@@ -20,6 +20,10 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
       !pathname.startsWith(`/${locale}/`) && pathname !== `/${locale}`,
   );
 
+  if (pathname.startsWith(`/coming-soon`)) {
+    return;
+  }
+
   // Set locale cookie if URL contains a locale (for preference learning)
   let localeResponse: NextResponse | null = null;
   if (!pathnameIsMissingLocale && !pathname.startsWith('/api')) {
@@ -108,7 +112,7 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
     // no user, potentially respond by redirecting the user to the login page
     const url = request.nextUrl.clone();
 
-    url.pathname = '/login';
+    url.pathname = '/coming-soon';
 
     return NextResponse.redirect(url);
   }

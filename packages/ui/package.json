@@ -46,6 +46,7 @@
     "./RAS": "./src/RAS.ts",
     "./SearchField": "./src/components/SearchField.tsx",
     "./Select": "./src/components/Select.tsx",
+    "./ShaderBackground": "./src/components/ShaderBackground/index.ts",
     "./Sidebar": "./src/components/Sidebar/index.ts",
     "./Skeleton": "./src/components/Skeleton.tsx",
     "./SocialLinks": "./src/components/SocialLinks.tsx",
