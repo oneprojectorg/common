@@ -1,6 +1,6 @@
 import { context, trace } from '@opentelemetry/api';
 import type { AnyValue } from '@opentelemetry/api-logs';
-import { logs, SeverityNumber } from '@opentelemetry/api-logs';
+import { SeverityNumber, logs } from '@opentelemetry/api-logs';
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 export type LogData = Record<string, unknown>;
@@ -30,8 +30,12 @@ function toAnyValueMap(
     ) {
       result[key] = value as AnyValue;
     } else {
-      // Convert complex types to string
-      result[key] = JSON.stringify(value);
+      try {
+        // Convert complex types to string
+        result[key] = JSON.stringify(value);
+      } catch (e) {
+        result[key] = '(Could not deserialize value)';
+      }
     }
   }
   return result;
@@ -57,11 +61,7 @@ export class Logger {
     // Always log to console in development
     if (process.env.NODE_ENV === 'development') {
       const consoleMethod = level === 'debug' ? 'log' : level;
-      console[consoleMethod](
-        `[${level.toUpperCase()}]`,
-        message,
-        enrichedData,
-      );
+      console[consoleMethod](`[${level.toUpperCase()}]`, message, enrichedData);
     }
 
     // Emit to OpenTelemetry with trace context
