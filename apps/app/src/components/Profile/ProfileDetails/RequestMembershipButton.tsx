@@ -2,7 +2,7 @@
 
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import type { Organization } from '@op/api/encoders';
+import { JoinProfileRequestStatus, type Organization } from '@op/api/encoders';
 import { ButtonTooltip } from '@op/ui/Button';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Skeleton } from '@op/ui/Skeleton';
@@ -14,6 +14,9 @@ import { useTranslations } from '@/lib/i18n';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
 
+/**
+ * Button to request membership to an organization.
+ */
 export const RequestMembershipButton = ({
   profile,
 }: {
@@ -54,7 +57,8 @@ const RequestMembershipButtonSuspense = ({
 
   const createJoinRequest = trpc.profile.createJoinProfileRequest.useMutation();
 
-  const hasPendingRequest = existingRequest?.status === 'pending';
+  const hasPendingRequest =
+    existingRequest?.status === JoinProfileRequestStatus.PENDING;
 
   const handleRequestMembership = () => {
     if (!currentProfileId) {
