@@ -76,8 +76,8 @@ const RequestMembershipButtonSuspense = ({
         });
 
         toast.success({
-          message: t('Membership request sent to {name}', {
-            name: profile.profile.name,
+          message: t('Your membership request has been sent to {orgName}', {
+            orgName: profile.profile.name,
           }),
         });
 

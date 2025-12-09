@@ -410,6 +410,6 @@
   "Request to join this organization as a member": "Request to join this organization as a member",
   "Your membership request is pending approval": "Your membership request is pending approval",
   "You must be logged in to request membership": "You must be logged in to request membership",
-  "Membership request sent to {name}": "Membership request sent to {name}",
+  "Your membership request has been sent to {orgName}": "Your membership request has been sent to {orgName}.",
   "Failed to send membership request": "Failed to send membership request"
 }

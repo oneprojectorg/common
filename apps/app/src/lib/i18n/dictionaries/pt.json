@@ -410,6 +410,6 @@
   "Request to join this organization as a member": "Solicitar entrada nesta organização como membro",
   "Your membership request is pending approval": "Sua solicitação de adesão está pendente de aprovação",
   "You must be logged in to request membership": "Você precisa estar logado para solicitar adesão",
-  "Membership request sent to {name}": "Solicitação de adesão enviada para {name}",
+  "Your membership request has been sent to {orgName}": "Sua solicitação de adesão foi enviada para {orgName}.",
   "Failed to send membership request": "Falha ao enviar solicitação de adesão"
 }

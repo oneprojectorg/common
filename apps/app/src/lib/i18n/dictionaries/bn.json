@@ -410,6 +410,6 @@
   "Request to join this organization as a member": "সদস্য হিসেবে এই সংস্থায় যোগদানের অনুরোধ করুন",
   "Your membership request is pending approval": "আপনার সদস্যপদ অনুরোধ অনুমোদনের অপেক্ষায় রয়েছে",
   "You must be logged in to request membership": "সদস্যপদ অনুরোধ করতে আপনাকে লগইন করতে হবে",
-  "Membership request sent to {name}": "{name}-কে সদস্যপদ অনুরোধ পাঠানো হয়েছে",
+  "Your membership request has been sent to {orgName}": "আপনার সদস্যপদ অনুরোধ {orgName}-এ পাঠানো হয়েছে।",
   "Failed to send membership request": "সদস্যপদ অনুরোধ পাঠাতে ব্যর্থ"
 }

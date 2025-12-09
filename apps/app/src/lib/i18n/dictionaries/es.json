@@ -409,6 +409,6 @@
   "Request to join this organization as a member": "Solicitar unirse a esta organización como miembro",
   "Your membership request is pending approval": "Tu solicitud de membresía está pendiente de aprobación",
   "You must be logged in to request membership": "Debes iniciar sesión para solicitar membresía",
-  "Membership request sent to {name}": "Solicitud de membresía enviada a {name}",
+  "Your membership request has been sent to {orgName}": "Tu solicitud de membresía ha sido enviada a {orgName}.",
   "Failed to send membership request": "No se pudo enviar la solicitud de membresía"
 }
