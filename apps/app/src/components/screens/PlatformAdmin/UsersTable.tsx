@@ -62,32 +62,18 @@ export const UsersTable = () => {
   const handleExportAllUsers = useCallback(async () => {
     setIsExporting(true);
     try {
-      const allUsers: Array<{ name: string | null; email: string }> = [];
-      let cursor: string | null | undefined = undefined;
-      let hasMore = true;
+      // Fetch all users without limit
+      const result = await utils.platform.admin.listAllUsers.fetch({});
 
-      // Fetch all pages
-      while (hasMore) {
-        const result = await utils.platform.admin.listAllUsers.fetch({
-          limit: 100,
-          cursor,
-        });
-
-        allUsers.push(
-          ...result.items.map((user) => ({
-            name: user.profile?.name ?? user.name,
-            email: user.email,
-          })),
-        );
-
-        hasMore = result.hasMore;
-        cursor = result.next;
-      }
-
-      if (allUsers.length === 0) {
+      if (result.items.length === 0) {
         toast.error({ message: t('platformAdmin_exportError') });
         return;
       }
+
+      const allUsers = result.items.map((user) => ({
+        name: user.profile?.name ?? user.name,
+        email: user.email,
+      }));
 
       exportUsersToCSV(allUsers);
       toast.success({ message: t('platformAdmin_exportSuccess') });
