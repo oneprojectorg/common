@@ -97,6 +97,20 @@ Use `pnpm w:<workspace>` shortcuts:
 
 - If statements should never be all on one line, rather you should always use K&R style for if statements
 
+### Internationalization (i18n)
+
+- **Translation files location**: `apps/app/src/lib/i18n/dictionaries/`
+- **Supported languages**: All `.json` files in the dictionaries folder (e.g., `en.json`, `es.json`, `pt.json`, etc.)
+- **Use `useTranslations` hook**: `const t = useTranslations()` then `t('Key string')`
+
+**CRITICAL: When adding or modifying user-facing strings:**
+
+1. **ALWAYS** wrap strings with `t('...')` - never hardcode user-facing text
+2. **ALWAYS** add the translation key to ALL language files in the dictionaries folder, not just `en.json`
+3. **BEFORE completing any task** that touches UI text, verify the translation key exists in every language file
+4. **For dynamic values**, use interpolation: `t('Hello {name}', { name: userName })`
+5. **When modifying existing translation keys**, update ALL language files
+
 ## Important Notes
 
 - Node.js 18+ required, use `corepack enable` for pnpm version management
