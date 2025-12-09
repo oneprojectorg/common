@@ -1,3 +1,4 @@
+import { getPublicUrl } from '@/utils';
 import { DecisionProfile } from '@op/api/encoders';
 import { Avatar } from '@op/ui/Avatar';
 import { Chip } from '@op/ui/Chip';
@@ -7,7 +8,6 @@ import { Calendar } from 'lucide-react';
 import Image from 'next/image';
 
 import { Link } from '@/lib/i18n';
-import { getPublicUrl } from '@/utils';
 
 const formatDateShort = (dateString: string) => {
   const date = new Date(dateString);
@@ -52,16 +52,10 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
     >
       <div className="flex flex-col gap-2">
         {/* Process name and status chip */}
-        <div className="flex items-start justify-between gap-2 sm:items-center sm:justify-start">
-          <Header3 className="font-serif !text-title-base text-neutral-black">
-            {processInstance?.name || item.name}
-          </Header3>
-          {currentStateName && (
-            <Chip className="bg-primary-tealWhite text-primary-tealBlack">
-              {currentStateName}
-            </Chip>
-          )}
-        </div>
+        <ProcessHeader
+          name={processInstance?.name || item.name}
+          currentState={currentStateName}
+        />
 
         {/* Organization and closing date */}
         <div className="flex flex-wrap items-center gap-2 py-1 text-xs sm:gap-6">
@@ -84,23 +78,7 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
             </div>
           )}
 
-          {closingDate && (
-            <div className="flex items-center gap-1">
-              <Calendar
-                className={`size-4 ${isClosingSoon(closingDate) ? 'text-functional-red' : 'text-neutral-charcoal'}`}
-              />
-              <span
-                className={cn(
-                  isClosingSoon(closingDate)
-                    ? 'text-functional-red'
-                    : 'text-neutral-charcoal',
-                  'text-sm',
-                )}
-              >
-                Closes {formatDateShort(closingDate)}
-              </span>
-            </div>
-          )}
+          {closingDate && <ClosingDate closingDate={closingDate} />}
         </div>
       </div>
 
@@ -118,9 +96,98 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
   );
 };
 
+export const ProfileFeaturedDecision = ({
+  item,
+  className,
+}: {
+  item: DecisionProfile;
+  className?: string;
+}) => {
+  const { processInstance } = item;
+
+  // Get current state name from process schema
+  const currentStateName =
+    processInstance?.process?.processSchema?.states?.find(
+      (state) => state.id === processInstance.currentStateId,
+    )?.name;
+
+  // Get closing date from phases - find the current phase's end date
+  const currentPhase = processInstance?.instanceData?.phases?.find(
+    (phase) => phase.stateId === processInstance.currentStateId,
+  );
+  const closingDate = currentPhase?.plannedEndDate;
+
+  return (
+    <Link
+      href={`/decisions/${item.slug}`}
+      className={cn('flex flex-col gap-4 pb-4 hover:no-underline', className)}
+    >
+      <div className="flex flex-col gap-2">
+        {/* Process name and status chip */}
+        <ProcessHeader
+          name={processInstance?.name || item.name}
+          currentState={currentStateName}
+        />
+
+        {/* Organization and closing date */}
+        <div className="flex flex-col flex-wrap gap-2 py-1 text-xs sm:flex-row sm:items-center sm:justify-between">
+          {closingDate && <ClosingDate closingDate={closingDate} />}
+          <div className="flex items-end gap-4 text-neutral-black">
+            <DecisionStat
+              number={processInstance?.participantCount ?? 0}
+              label="Participants"
+            />
+            <DecisionStat
+              number={processInstance?.participantCount ?? 0}
+              label="Proposals"
+            />
+          </div>
+        </div>
+      </div>
+    </Link>
+  );
+};
+
 const DecisionStat = ({ number, label }: { number: number; label: string }) => (
-  <div className="flex items-end gap-1 sm:flex-col sm:items-center sm:gap-0">
+  <div className="flex items-end gap-1">
     <span className="font-serif text-title-base">{number}</span>
     <span className="text-sm">{label}</span>
+  </div>
+);
+
+const ClosingDate = ({ closingDate }: { closingDate: string }) => (
+  <div className="flex items-center gap-1">
+    <Calendar
+      className={`size-4 ${isClosingSoon(closingDate) ? 'text-functional-red' : 'text-neutral-charcoal'}`}
+    />
+    <span
+      className={cn(
+        isClosingSoon(closingDate)
+          ? 'text-functional-red'
+          : 'text-neutral-charcoal',
+        'text-sm',
+      )}
+    >
+      Closes {formatDateShort(closingDate)}
+    </span>
+  </div>
+);
+
+const ProcessHeader = ({
+  name,
+  currentState,
+}: {
+  name: string;
+  currentState?: string;
+}) => (
+  <div className="flex items-start justify-between gap-2 sm:items-center sm:justify-start">
+    <Header3 className="font-serif !text-title-base text-neutral-black">
+      {name}
+    </Header3>
+    {currentState && (
+      <Chip className="bg-primary-tealWhite text-primary-tealBlack">
+        {currentState}
+      </Chip>
+    )}
   </div>
 );
