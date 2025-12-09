@@ -3,8 +3,9 @@
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
-import { Button, ButtonTooltip } from '@op/ui/Button';
+import { ButtonTooltip } from '@op/ui/Button';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
+import { Skeleton } from '@op/ui/Skeleton';
 import { toast } from '@op/ui/Toast';
 import { Suspense, useTransition } from 'react';
 import { LuClock, LuUserPlus } from 'react-icons/lu';
@@ -12,6 +13,24 @@ import { LuClock, LuUserPlus } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
+
+export const RequestMembershipButton = ({
+  profile,
+}: {
+  profile: Organization;
+}) => {
+  return (
+    <ErrorBoundary fallback={null}>
+      <Suspense
+        fallback={
+          <Skeleton className="h-9 w-[106px] min-w-full rounded-lg sm:min-w-fit" />
+        }
+      >
+        <RequestMembershipButtonSuspense profile={profile} />
+      </Suspense>
+    </ErrorBoundary>
+  );
+};
 
 const RequestMembershipButtonSuspense = ({
   profile,
@@ -24,11 +43,6 @@ const RequestMembershipButtonSuspense = ({
   const [isPending, startTransition] = useTransition();
 
   const currentProfileId = user?.currentProfile?.id;
-
-  // Check if user is already a member of this organization
-  const isAlreadyMember = user?.organizationUsers?.some(
-    (orgUser) => orgUser.organization?.profile?.id === profile.profile.id,
-  );
 
   // Check if there's already a pending join request
   const [existingRequest] = trpc.profile.getJoinProfileRequest.useSuspenseQuery(
@@ -75,11 +89,6 @@ const RequestMembershipButtonSuspense = ({
     });
   };
 
-  // Don't show the button if user is already a member
-  if (isAlreadyMember) {
-    return null;
-  }
-
   if (hasPendingRequest) {
     return (
       <ButtonTooltip
@@ -106,38 +115,8 @@ const RequestMembershipButtonSuspense = ({
         children: t('Request to join this organization as a member'),
       }}
     >
-      {isPending ? (
-        <LoadingSpinner />
-      ) : (
-        <>
-          <LuUserPlus className="size-4" />
-          {t('Request')}
-        </>
-      )}
+      {isPending ? <LoadingSpinner /> : <LuUserPlus className="size-4" />}
+      {t('Request')}
     </ButtonTooltip>
-  );
-};
-
-export const RequestMembershipButton = ({
-  profile,
-}: {
-  profile: Organization;
-}) => {
-  return (
-    <ErrorBoundary>
-      <Suspense
-        fallback={
-          <Button
-            color="secondary"
-            isDisabled
-            className="min-w-full sm:min-w-fit"
-          >
-            <LoadingSpinner />
-          </Button>
-        }
-      >
-        <RequestMembershipButtonSuspense profile={profile} />
-      </Suspense>
-    </ErrorBoundary>
   );
 };
