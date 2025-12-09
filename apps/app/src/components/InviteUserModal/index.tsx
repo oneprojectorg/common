@@ -20,17 +20,15 @@ import { InviteNewOrganization } from './InviteNewOrganization';
 import { InviteToExistingOrganization } from './InviteToExistingOrganization';
 import { parseEmails } from './emailUtils';
 
-interface InviteUserModalProps {
-  children?: React.ReactNode;
-  isOpen?: boolean;
-  onOpenChange?: (isOpen: boolean) => void;
-}
-
 export const InviteUserModal = ({
   children,
   isOpen: controlledIsOpen,
   onOpenChange: controlledOnOpenChange,
-}: InviteUserModalProps) => {
+}: {
+  children?: React.ReactNode;
+  isOpen?: boolean;
+  onOpenChange?: (isOpen: boolean) => void;
+}) => {
   const [emails, setEmails] = useState('');
   const [emailBadges, setEmailBadges] = useState<string[]>([]);
   const [selectedRole, setSelectedRole] = useState('');

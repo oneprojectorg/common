@@ -460,13 +460,13 @@ export const SiteHeader = () => {
         </span>
         <div className="flex items-center gap-3">
           <ClientOnly>
+            <CreateMenu />
+            <LocaleChooser />
             <ErrorBoundary
               fallback={
                 <div className="size-8 rounded-full border bg-white shadow" />
               }
             >
-              <CreateMenu />
-              <LocaleChooser />
               <Suspense
                 fallback={
                   <Skeleton className="size-8 rounded-full border bg-white shadow" />

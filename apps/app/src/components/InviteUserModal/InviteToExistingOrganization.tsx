@@ -134,7 +134,7 @@ export const InviteToExistingOrganization = ({
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium">{t('Send to')}</label>
           <div className="flex min-h-[80px] flex-wrap gap-2 rounded-md border border-gray-300 p-2">
-            <TagGroup aria-label="Selected emails">
+            <TagGroup aria-label={t('Selected emails')}>
               {emailBadges.map((email, index) => (
                 <Tag className="sm:rounded-sm" key={index}>
                   {email}
@@ -145,7 +145,7 @@ export const InviteToExistingOrganization = ({
               ))}
             </TagGroup>
             <textarea
-              aria-label="Add emails"
+              aria-label={t('Add emails')}
               value={emails}
               onChange={(e) => setEmails(e.target.value)}
               onKeyDown={handleKeyDown}

@@ -232,7 +232,10 @@
   "Duplicate emails": "E-mails duplicados",
   "has already been added": "já foi adicionado",
   "have already been added": "já foram adicionados",
-  "Invalid emails": "E-mails inválidos",
+  "invalidEmailsToast": {
+    "title": "{count, plural, =1 {E-mail inválido} other {E-mails inválidos}}",
+    "message": "{count, plural, =1 {não é um endereço de e-mail válido} other {não são endereços de e-mail válidos}}"
+  },
   "are not valid email addresses": "não são endereços de e-mail válidos",
   "About the process": "Sobre o processo",
   "Delete Proposal": "Excluir proposta",
@@ -402,5 +405,7 @@
   "Accept": "Aceitar",
   "Create": "Criar",
   "Decision-making process": "Processo de tomada de decisão",
-  "Invite member": "Convidar membro"
+  "Invite member": "Convidar membro",
+  "Selected emails": "E-mails selecionados",
+  "Add emails": "Adicionar e-mails"
 }

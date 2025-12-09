@@ -12,15 +12,13 @@ import { useTranslations } from '@/lib/i18n';
 import { CreateOrganizationForm } from './CreateOrganizationForm';
 import { CreateOrganizationSuccessModal } from './CreateOrganizationSuccessModal';
 
-interface CreateOrganizationModalProps {
-  isOpen?: boolean;
-  onOpenChange?: (isOpen: boolean) => void;
-}
-
 export const CreateOrganizationModal = ({
   isOpen: controlledIsOpen,
   onOpenChange: controlledOnOpenChange,
-}: CreateOrganizationModalProps) => {
+}: {
+  isOpen?: boolean;
+  onOpenChange?: (isOpen: boolean) => void;
+}) => {
   const t = useTranslations();
   const [isInternalFormOpen, setIsInternalFormOpen] = useState(false);
   const [isSuccessOpen, setIsSuccessOpen] = useState(false);

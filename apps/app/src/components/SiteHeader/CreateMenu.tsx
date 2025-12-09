@@ -6,6 +6,7 @@ import { useMediaQuery } from '@op/hooks';
 import { Button } from '@op/ui/Button';
 import { Menu, MenuItem, MenuSeparator, MenuTrigger } from '@op/ui/Menu';
 import { Popover } from '@op/ui/Popover';
+import twConfig from '@op/ui/tailwind-config';
 import { useState } from 'react';
 import { LuMessageCircle, LuPlus, LuUserPlus, LuUsers } from 'react-icons/lu';
 
@@ -24,7 +25,7 @@ export const CreateMenu = () => {
     useState(false);
   const { user } = useUser();
   const isOrg = user?.currentProfile?.type === EntityType.ORG;
-  const isMobile = useMediaQuery(`(max-width: 640px)`);
+  const isMobile = useMediaQuery(`(max-width: ${twConfig.theme.screens.sm})`);
 
   return (
     <>
@@ -70,16 +71,16 @@ export const CreateMenu = () => {
         onOpenChange={setIsCreateOrganizationModalOpen}
       />
       {isOrg && (
-        <CreateDecisionProcessModal
-          isOpen={isCreateProcessModalOpen}
-          onOpenChange={setIsCreateProcessModalOpen}
-        />
-      )}
-      {isOrg && (
-        <InviteUserModal
-          isOpen={isInviteModalOpen}
-          onOpenChange={setIsInviteModalOpen}
-        />
+        <>
+          <CreateDecisionProcessModal
+            isOpen={isCreateProcessModalOpen}
+            onOpenChange={setIsCreateProcessModalOpen}
+          />
+          <InviteUserModal
+            isOpen={isInviteModalOpen}
+            onOpenChange={setIsInviteModalOpen}
+          />
+        </>
       )}
     </>
   );

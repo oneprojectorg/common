@@ -148,10 +148,6 @@ export const CreateDecisionProcessModal = ({
   isOpen: controlledIsOpen,
   onOpenChange: controlledOnOpenChange,
 }: CreateDecisionProcessModalProps = {}) => {
-  const [internalIsModalOpen, setInternalIsModalOpen] = useState(false);
-  const isModalOpen = controlledIsOpen ?? internalIsModalOpen;
-  const setIsModalOpen = controlledOnOpenChange ?? setInternalIsModalOpen;
-
   const utils = trpc.useUtils();
 
   // Load the appropriate schema based on the prop
@@ -200,7 +196,6 @@ export const CreateDecisionProcessModal = ({
       if (overlayTriggerState?.close) {
         overlayTriggerState.close();
       } else {
-        setIsModalOpen?.(false);
         onClose?.();
       }
     },
@@ -560,29 +555,13 @@ export const CreateDecisionProcessModal = ({
     return stepConfig?.schema.title || 'Set up your decision-making process';
   };
 
-  if (isModalOpen !== undefined) {
-    return (
-      <Modal isDismissable isOpen={isModalOpen} onOpenChange={setIsModalOpen}>
-        <div className="flex h-full max-h-[90vh] w-full max-w-lg flex-col">
-          <ModalHeader>{getCurrentStepTitle()}</ModalHeader>
+  const isControlled = controlledIsOpen !== undefined;
+  const modalProps = isControlled
+    ? { isOpen: controlledIsOpen, onOpenChange: controlledOnOpenChange }
+    : {};
 
-          <ModalBody className="flex-1 overflow-y-auto">
-            {renderStepContent()}
-          </ModalBody>
-
-          <ModalStepper
-            currentStep={currentStep}
-            totalSteps={totalSteps}
-            onNext={handleNext}
-            onPrevious={handlePrevious}
-            onFinish={handleFinish}
-          />
-        </div>
-      </Modal>
-    );
-  }
   return (
-    <Modal isDismissable>
+    <Modal isDismissable {...modalProps}>
       <div className="flex h-full max-h-[90vh] w-full max-w-lg flex-col">
         <ModalHeader>{getCurrentStepTitle()}</ModalHeader>
 
