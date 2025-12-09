@@ -3,8 +3,11 @@
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
-import { useInfiniteScroll } from '@op/hooks';
+import { useInfiniteScroll, useMediaQuery } from '@op/hooks';
+import { HorizontalList, HorizontalListItem } from '@op/ui/HorizontalList';
 import { SkeletonLine } from '@op/ui/Skeleton';
+import twConfig from '@op/ui/tailwind-config';
+import { cn } from '@op/ui/utils';
 import { Fragment, useCallback } from 'react';
 
 import {
@@ -72,44 +75,81 @@ export const ProfileFeed = ({
     enabled: enableInfiniteScroll,
   });
 
-  return (
-    <div className={className}>
-      <PostFeed>
-        {allPosts.length > 0 ? (
-          allPosts.map((postToOrg) => (
-            <Fragment key={postToOrg.postId}>
-              <PostItem
-                post={postToOrg.post}
-                organization={postToOrg.organization ?? null}
-                user={user}
-                withLinks={false}
-                onReactionClick={handleReactionClick}
-                onCommentClick={handleCommentClick}
-              />
-              <hr className="bg-neutral-gray1" />
-            </Fragment>
-          ))
-        ) : (
-          <EmptyPostsState />
-        )}
+  const isMobile = useMediaQuery(`(max-width: ${twConfig.theme.screens.sm})`);
 
-        <DiscussionModalContainer
-          discussionModal={discussionModal}
-          onClose={handleModalClose}
-        />
-      </PostFeed>
-      {shouldShowTrigger && (
-        <div
-          ref={ref as React.RefObject<HTMLDivElement>}
-          className="flex justify-center py-4"
-        >
-          {isFetchingNextPage ? (
-            <div className="text-sm text-neutral-gray4">
-              <SkeletonLine lines={2} />
-            </div>
-          ) : null}
-        </div>
+  return isMobile ? (
+    <HorizontalList className="w-full scroll-px-4 items-start">
+      {allPosts.length > 0 ? (
+        allPosts.map((postToOrg) => (
+          <HorizontalListItem
+            key={postToOrg.postId}
+            className="w-11/12 max-w-96 shrink-0 snap-start rounded border p-3 first:ml-4 last:mr-4"
+          >
+            <PostItem
+              post={postToOrg.post}
+              organization={postToOrg.organization ?? null}
+              user={user}
+              withLinks={false}
+              onReactionClick={handleReactionClick}
+              onCommentClick={handleCommentClick}
+            />
+          </HorizontalListItem>
+        ))
+      ) : (
+        <EmptyPostsState />
       )}
-    </div>
+      {shouldShowTrigger && (
+        <HorizontalListItem>
+          <div ref={ref as React.RefObject<HTMLDivElement>}>
+            {isFetchingNextPage ? (
+              <div className="text-sm text-neutral-gray4">
+                <SkeletonLine lines={2} />
+              </div>
+            ) : null}
+          </div>
+        </HorizontalListItem>
+      )}
+    </HorizontalList>
+  ) : (
+    <>
+      <div className={className}>
+        <PostFeed>
+          {allPosts.length > 0 ? (
+            allPosts.map((postToOrg) => (
+              <Fragment key={postToOrg.postId}>
+                <PostItem
+                  post={postToOrg.post}
+                  organization={postToOrg.organization ?? null}
+                  user={user}
+                  withLinks={false}
+                  onReactionClick={handleReactionClick}
+                  onCommentClick={handleCommentClick}
+                />
+                <hr className="bg-neutral-gray1" />
+              </Fragment>
+            ))
+          ) : (
+            <EmptyPostsState />
+          )}
+
+          <DiscussionModalContainer
+            discussionModal={discussionModal}
+            onClose={handleModalClose}
+          />
+        </PostFeed>
+        {shouldShowTrigger && (
+          <div
+            ref={ref as React.RefObject<HTMLDivElement>}
+            className="flex justify-center py-4"
+          >
+            {isFetchingNextPage ? (
+              <div className="text-sm text-neutral-gray4">
+                <SkeletonLine lines={2} />
+              </div>
+            ) : null}
+          </div>
+        )}
+      </div>
+    </>
   );
 };
