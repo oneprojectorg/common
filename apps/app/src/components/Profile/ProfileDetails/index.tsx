@@ -53,7 +53,10 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
     (orgUser) => orgUser.organization?.profile?.id === profile.profile.id,
   );
   const shouldShowRequestMembershipButton =
-    isCurrentUserIndividual && isOrganizationProfile && !isAlreadyMember;
+    isCurrentUserIndividual &&
+    isOrganizationProfile &&
+    !isAlreadyMember &&
+    !isViewingOwnProfile;
 
   if (!isViewingOwnProfile && profile.profile.type === EntityType.INDIVIDUAL) {
     if (shouldShowInviteButton) {
