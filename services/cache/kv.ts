@@ -1,5 +1,5 @@
 import { OPURLConfig } from '@op/core';
-import { logger } from '@op/logging';
+import { cacheMetrics, logger } from '@op/logging';
 import { waitUntil } from '@vercel/functions';
 import { createClient } from 'redis';
 
@@ -98,7 +98,7 @@ export const cache = async <T = any>({
 
     const memCacheExpire = ttl ? ttl : MEMCACHE_EXPIRE;
     if (Date.now() - cachedVal.createdAt < memCacheExpire) {
-      logger.info('CACHE: memory');
+      cacheMetrics.recordHit('memory', type);
       return cachedVal.data;
     }
   }
@@ -113,14 +113,14 @@ export const cache = async <T = any>({
   const data = (await Promise.race([get(cacheKey), timeout])) as T;
 
   if (data) {
-    logger.info('CACHE: KV');
+    cacheMetrics.recordHit('kv', type);
     memCache.set(cacheKey, { createdAt: Date.now(), data });
     return data as T;
   }
 
   // finally retrieve the data from the DB
   const newData = await fetch();
-  logger.info('CACHE: no-cache');
+  cacheMetrics.recordHit('no-cache', type);
   if (newData) {
     memCache.set(cacheKey, { createdAt: Date.now(), data: newData });
     // don't cache if we couldn't find the record (?)
@@ -192,6 +192,7 @@ export const get = async (key: string) => {
     return null;
   } catch (e) {
     logger.error('CACHE: error getting from Redis', { error: e });
+    cacheMetrics.recordError('get');
 
     return null;
   }
@@ -213,5 +214,6 @@ export const set = async (key: string, data: any, ttl?: number) => {
     }
   } catch (e) {
     logger.error('CACHE: error setting to Redis', { error: e });
+    cacheMetrics.recordError('set');
   }
 };
