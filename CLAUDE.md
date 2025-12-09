@@ -102,6 +102,7 @@ Use `pnpm w:<workspace>` shortcuts:
 - **Translation files location**: `apps/app/src/lib/i18n/dictionaries/`
 - **Supported languages**: All `.json` files in the dictionaries folder (e.g., `en.json`, `es.json`, `pt.json`, etc.)
 - **Use `useTranslations` hook**: `const t = useTranslations()` then `t('Key string')`
+- **Use `TranslatedText` component** for server components
 
 **CRITICAL: When adding or modifying user-facing strings:**
 
