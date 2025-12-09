@@ -5,7 +5,6 @@ import { Profile } from '@op/api/encoders';
 import { match } from '@op/core';
 import { Button } from '@op/ui/Button';
 import { Checkbox, CheckboxGroup } from '@op/ui/Checkbox';
-import { Form } from '@op/ui/Form';
 import { Modal, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { useEffect, useState } from 'react';
 
@@ -72,6 +71,9 @@ export const OrgDeletionModal = ({
             <ul className="flex flex-col gap-3 rounded bg-neutral-offWhite p-4">
               {profilesToDelete.map((profileId) => {
                 const profile = userProfiles.find((p) => p.id === profileId);
+                if (!profile) {
+                  return null;
+                }
                 const profileType = match(profile.type, {
                   org: t('Organization'),
                   individual: t('Individual'),
@@ -135,7 +137,7 @@ const SelectProfilesToDelete = ({
 }: {
   allProfiles: Profile[];
   selectedProfiles: string[];
-  setSelectedProfiles: () => void;
+  setSelectedProfiles: (profiles: string[]) => void;
 }) => {
   const t = useTranslations();
   return (
