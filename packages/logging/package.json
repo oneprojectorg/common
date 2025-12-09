@@ -19,7 +19,7 @@
     "@opentelemetry/api-logs": "^0.201.1"
   },
   "peerDependencies": {
-    "next": ">=14"
+    "next": ">=15"
   },
   "devDependencies": {
     "@op/typescript-config": "workspace:*",
