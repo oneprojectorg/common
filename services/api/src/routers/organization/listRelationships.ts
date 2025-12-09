@@ -5,7 +5,7 @@ import {
   getRelatedOrganizations,
 } from '@op/common';
 import { getCurrentOrgId } from '@op/common/src/services/access';
-import { log } from '@op/logging';
+import { logger } from '@op/logging';
 import { TRPCError } from '@trpc/server';
 // import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
@@ -145,7 +145,7 @@ export const listRelationshipsRouter = router({
 
         return { organizations, count };
       } catch (error: unknown) {
-        log.error('Error listing relationships', { error, organizationId });
+        logger.error('Error listing relationships', { error, organizationId });
         if (error instanceof UnauthorizedError) {
           throw new TRPCError({
             message: error.message,

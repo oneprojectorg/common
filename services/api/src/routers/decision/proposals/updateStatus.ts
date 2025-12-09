@@ -6,7 +6,7 @@ import {
   updateProposalStatus,
 } from '@op/common';
 import { ProposalStatus } from '@op/db/schema';
-import { log } from '@op/logging';
+import { logger } from '@op/logging';
 import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
@@ -59,7 +59,7 @@ export const updateProposalStatusRouter = router({
 
         return proposalEncoder.parse(proposal);
       } catch (error: unknown) {
-        log.error('Failed to update proposal status', {
+        logger.error('Failed to update proposal status', {
           userId: user.id,
           profileId,
           status,

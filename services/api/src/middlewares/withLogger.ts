@@ -1,5 +1,5 @@
 // import type { User } from '@op/supabase/lib';
-import { log as opLogger } from '@op/logging';
+import { logger as opLogger } from '@op/logging';
 import spacetime from 'spacetime';
 
 import type { MiddlewareBuilderBase, TContextWithLogger } from '../types';

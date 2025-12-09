@@ -9,22 +9,22 @@ This package provides a simple, service-agnostic logging interface built on Open
 ## Usage
 
 ```typescript
-import { log } from '@op/logging';
+import { logger } from '@op/logging';
 
 // Server-side logging
-log.info('User logged in', { userId: '123' });
-log.error('Failed to process request', { error: err.message });
-log.warn('Rate limit approaching', { remaining: 5 });
-log.debug('Processing item', { itemId: 'abc' });
+logger.info('User logged in', { userId: '123' });
+logger.error('Failed to process request', { error: err.message });
+logger.warn('Rate limit approaching', { remaining: 5 });
+logger.debug('Processing item', { itemId: 'abc' });
 ```
 
 ## Middleware
 
 ```typescript
-import { log, transformMiddlewareRequest } from '@op/logging';
+import { logger, transformMiddlewareRequest } from '@op/logging';
 
 export function middleware(request: NextRequest) {
-  log.info(...transformMiddlewareRequest(request));
+  logger.info(...transformMiddlewareRequest(request));
   // ...
 }
 ```

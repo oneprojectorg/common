@@ -5,7 +5,7 @@ import {
   updateUserCurrentProfile,
 } from '@op/common';
 import type { Profile } from '@op/db/schema';
-import { log } from '@op/logging';
+import { logger } from '@op/logging';
 import { TRPCError } from '@trpc/server';
 import { assertAccess, permission } from 'access-zones';
 import type { OpenApiMeta } from 'trpc-to-openapi';
@@ -93,7 +93,7 @@ export const switchProfile = router({
           orgId: org?.organization?.id,
         });
       } catch (error) {
-        log.error('Error switching profile', { error, profileId: input.profileId });
+        logger.error('Error switching profile', { error, profileId: input.profileId });
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to update current profile',

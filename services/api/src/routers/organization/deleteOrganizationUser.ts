@@ -1,5 +1,5 @@
 import { deleteOrganizationUser } from '@op/common';
-import { log } from '@op/logging';
+import { logger } from '@op/logging';
 import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
@@ -59,7 +59,7 @@ export const deleteOrganizationUserRouter = router({
 
         return outputSchema.parse(deletedUser);
       } catch (error: unknown) {
-        log.error('Error deleting organization user', { error, organizationUserId });
+        logger.error('Error deleting organization user', { error, organizationUserId });
 
         if (error instanceof Error) {
           if (error.name === 'UnauthorizedError') {

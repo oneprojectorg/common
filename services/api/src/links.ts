@@ -1,5 +1,5 @@
 import { OPURLConfig } from '@op/core';
-import { log } from '@op/logging';
+import { logger } from '@op/logging';
 import {
   httpLink,
   loggerLink,
@@ -68,7 +68,7 @@ function createFetchWithSSRCookies(encryptedCookies?: string) {
           headers.set('cookie', cookies);
         }
       } catch (error) {
-        log.error('Failed to decrypt SSR cookies', { error });
+        logger.error('Failed to decrypt SSR cookies', { error });
       }
     }
 
