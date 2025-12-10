@@ -40,7 +40,7 @@ export const UserProviderSuspense = ({
   initialUser,
 }: {
   children: React.ReactNode;
-  initialUser?: OrganizationUser;
+  initialUser: OrganizationUser;
 }) => {
   const router = useRouter();
   // Use initialUser as initialData to avoid SSR fetch, then revalidate on client
@@ -91,7 +91,7 @@ export const UserProvider = ({
   initialUser,
 }: {
   children: React.ReactNode;
-  initialUser?: OrganizationUser;
+  initialUser: OrganizationUser;
 }) => {
   return (
     <Suspense fallback={null}>
