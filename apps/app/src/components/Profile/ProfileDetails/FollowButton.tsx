@@ -16,11 +16,11 @@ const FollowButtonSuspense = ({ profile }: { profile: Organization }) => {
   const utils = trpc.useUtils();
   const [isPending, startTransition] = useTransition();
 
-  const currentProfileId = user?.currentProfile?.id;
+  const currentProfileId = user.currentProfile?.id;
 
   // Check if we're currently following this profile
   const [relationships] = trpc.profile.getRelationships.useSuspenseQuery({
-    sourceProfileId: currentProfileId ?? undefined,
+    sourceProfileId: currentProfileId,
     targetProfileId: profile.profile.id,
     types: [ProfileRelationshipType.FOLLOWING],
   });
@@ -59,7 +59,7 @@ const FollowButtonSuspense = ({ profile }: { profile: Organization }) => {
         await Promise.all([
           // Invalidate the query that checks if we're following this profile
           utils.profile.getRelationships.invalidate({
-            sourceProfileId: currentProfileId ?? undefined,
+            sourceProfileId: currentProfileId,
             targetProfileId: profile.profile.id,
             types: [ProfileRelationshipType.FOLLOWING],
           }),

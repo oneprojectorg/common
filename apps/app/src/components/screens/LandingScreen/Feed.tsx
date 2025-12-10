@@ -28,7 +28,7 @@ export const Feed = () => {
 
 /** Feed content component with live data */
 const FeedContent = ({ limit = 10 }: { limit?: number }) => {
-  const { user } = useUser() ?? {};
+  const { user } = useUser();
   const t = useTranslations();
 
   const {
