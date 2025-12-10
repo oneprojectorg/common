@@ -12,9 +12,7 @@ export const verifyAuthentication = (data: UserResponse, adminOnly = false) => {
   }
 
   if (data.error) {
-    throw new UnauthorizedError(
-      `Supabase authentication error: ${data.error.message}`,
-    );
+    throw new UnauthorizedError(`Authentication error: ${data.error.message}`);
   }
 
   if (data.data.user.is_anonymous) {
