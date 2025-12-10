@@ -1,6 +1,8 @@
 import { diag } from '@opentelemetry/api';
 import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
+import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http';
 import { BatchLogRecordProcessor } from '@opentelemetry/sdk-logs';
+import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
 import { OTLPHttpJsonTraceExporter, registerOTel } from '@vercel/otel';
 
 export function register() {
@@ -11,15 +13,17 @@ export function register() {
   const headers = parseHeaders(process.env.OTEL_EXPORTER_OTLP_HEADERS);
 
   // Configure log export
-  const logRecordProcessor =
+  const logRecordProcessors =
     // Logging doesn't currently work on edge with OTel
     process.env.NEXT_RUNTIME !== 'edge' && otelEndpoint
-      ? new BatchLogRecordProcessor(
-          new OTLPLogExporter({
-            url: `${otelEndpoint}/v1/logs`,
-            headers,
-          }),
-        )
+      ? [
+          new BatchLogRecordProcessor(
+            new OTLPLogExporter({
+              url: `${otelEndpoint}/v1/logs`,
+              headers,
+            }),
+          ),
+        ]
       : undefined;
 
   // Configure trace exporter
@@ -30,10 +34,25 @@ export function register() {
       })
     : undefined;
 
+  // Configure metrics exporter
+  const metricReaders = otelEndpoint
+    ? [
+        new PeriodicExportingMetricReader({
+          exporter: new OTLPMetricExporter({
+            url: `${otelEndpoint}/v1/metrics`,
+            headers,
+          }),
+          // Logs are also flushed on exit
+          exportIntervalMillis: 5000,
+        }),
+      ]
+    : undefined;
+
   registerOTel({
     serviceName: process.env.OTEL_SERVICE_NAME || 'common',
-    logRecordProcessor,
+    logRecordProcessors,
     traceExporter,
+    metricReaders,
   });
 }
 

@@ -173,6 +173,7 @@
       "tsx": "$tsx",
       "turbo": "$turbo",
       "typescript": "$typescript",
+      "@opentelemetry/sdk-metrics": "^2.2.0",
       "undici": "5.27.1",
       "unplugin-icons": "$unplugin-icons",
       "use-error-boundary": "$use-error-boundary",
