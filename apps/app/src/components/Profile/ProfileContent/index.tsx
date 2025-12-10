@@ -248,7 +248,6 @@ const ProfileAbout = ({
 
 const ProfileDecisions = ({ profileId }: { profileId: string }) => {
   const t = useTranslations();
-  const isMobile = useMediaQuery(`(max-width: ${twConfig.theme.screens.sm})`);
 
   const [data] = trpc.decision.listDecisionProfiles.useSuspenseQuery({
     limit: 3,
@@ -269,7 +268,7 @@ const ProfileDecisions = ({ profileId }: { profileId: string }) => {
       </Header2>
       <ProfileFeaturedDecision
         item={orgDecisionProfiles[0]}
-        className={cn(isMobile && 'rounded border p-4')}
+        className="rounded border p-4 sm:rounded-none sm:border-none sm:p-0 sm:pb-4"
       />
     </div>
   );
@@ -277,7 +276,7 @@ const ProfileDecisions = ({ profileId }: { profileId: string }) => {
 
 export const ProfileGridWrapper = ({ children }: { children: ReactNode }) => {
   return (
-    <div className="border-3 hidden h-full flex-grow grid-cols-15 border-red-500 sm:grid">
+    <div className="hidden h-full flex-grow grid-cols-15 sm:grid">
       {children}
     </div>
   );
@@ -321,7 +320,7 @@ export const OrganizationProfileGrid = ({
         </Suspense>
       </div>
       <div className="col-span-6 h-full border-l">
-        <Suspense>
+        <Suspense fallback={null}>
           <ProfileDecisions profileId={profile.profile.id} />
         </Suspense>
         <div className="flex flex-col gap-4 px-6 py-4">
@@ -434,7 +433,7 @@ export const ProfileTabsMobile = ({
       {!isIndividual && (
         <>
           <TabPanel id="home" className="px-0">
-            <Suspense>
+            <Suspense fallback={null}>
               <ProfileDecisions profileId={profile.profile.id} />
             </Suspense>
             <ProfileAbout profile={profile} className="px-4 py-2" />

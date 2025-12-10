@@ -117,45 +117,43 @@ export const ProfileFeed = ({
       )}
     </HorizontalList>
   ) : (
-    <>
-      <div className={className}>
-        <PostFeed>
-          {allPosts.length > 0 ? (
-            allPosts.map((postToOrg) => (
-              <Fragment key={postToOrg.postId}>
-                <PostItem
-                  post={postToOrg.post}
-                  organization={postToOrg.organization ?? null}
-                  user={user}
-                  withLinks={false}
-                  onReactionClick={handleReactionClick}
-                  onCommentClick={handleCommentClick}
-                />
-                <hr className="bg-neutral-gray1" />
-              </Fragment>
-            ))
-          ) : (
-            <EmptyPostsState />
-          )}
-
-          <DiscussionModalContainer
-            discussionModal={discussionModal}
-            onClose={handleModalClose}
-          />
-        </PostFeed>
-        {shouldShowTrigger && (
-          <div
-            ref={ref as React.RefObject<HTMLDivElement>}
-            className="flex justify-center py-4"
-          >
-            {isFetchingNextPage ? (
-              <div className="text-sm text-neutral-gray4">
-                <SkeletonLine lines={2} />
-              </div>
-            ) : null}
-          </div>
+    <div className={className}>
+      <PostFeed>
+        {allPosts.length > 0 ? (
+          allPosts.map((postToOrg) => (
+            <Fragment key={postToOrg.postId}>
+              <PostItem
+                post={postToOrg.post}
+                organization={postToOrg.organization ?? null}
+                user={user}
+                withLinks={false}
+                onReactionClick={handleReactionClick}
+                onCommentClick={handleCommentClick}
+              />
+              <hr className="bg-neutral-gray1" />
+            </Fragment>
+          ))
+        ) : (
+          <EmptyPostsState />
         )}
-      </div>
-    </>
+
+        <DiscussionModalContainer
+          discussionModal={discussionModal}
+          onClose={handleModalClose}
+        />
+      </PostFeed>
+      {shouldShowTrigger && (
+        <div
+          ref={ref as React.RefObject<HTMLDivElement>}
+          className="flex justify-center py-4"
+        >
+          {isFetchingNextPage ? (
+            <div className="text-sm text-neutral-gray4">
+              <SkeletonLine lines={2} />
+            </div>
+          ) : null}
+        </div>
+      )}
+    </div>
   );
 };

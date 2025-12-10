@@ -7,7 +7,7 @@ import { cn } from '@op/ui/utils';
 import { Calendar } from 'lucide-react';
 import Image from 'next/image';
 
-import { Link } from '@/lib/i18n';
+import { Link, useTranslations } from '@/lib/i18n';
 
 const formatDateShort = (dateString: string) => {
   const date = new Date(dateString);
@@ -28,6 +28,7 @@ const isClosingSoon = (dateString: string) => {
 };
 
 export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
+  const t = useTranslations();
   const { processInstance } = item;
 
   // Get current state name from process schema
@@ -85,11 +86,11 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
       <div className="flex items-end gap-4 text-neutral-black sm:items-center sm:gap-12">
         <DecisionStat
           number={processInstance?.participantCount ?? 0}
-          label="Participants"
+          label={t('Participants')}
         />
         <DecisionStat
           number={processInstance?.proposalCount ?? 0}
-          label="Proposals"
+          label={t('Proposals')}
         />
       </div>
     </Link>
@@ -103,6 +104,7 @@ export const ProfileFeaturedDecision = ({
   item: DecisionProfile;
   className?: string;
 }) => {
+  const t = useTranslations();
   const { processInstance } = item;
 
   // Get current state name from process schema
@@ -135,11 +137,11 @@ export const ProfileFeaturedDecision = ({
           <div className="flex items-end gap-4 text-neutral-black">
             <DecisionStat
               number={processInstance?.participantCount ?? 0}
-              label="Participants"
+              label={t('Participants')}
             />
             <DecisionStat
-              number={processInstance?.participantCount ?? 0}
-              label="Proposals"
+              number={processInstance?.proposalCount ?? 0}
+              label={t('Proposals')}
             />
           </div>
         </div>
@@ -155,23 +157,26 @@ const DecisionStat = ({ number, label }: { number: number; label: string }) => (
   </div>
 );
 
-const ClosingDate = ({ closingDate }: { closingDate: string }) => (
-  <div className="flex items-center gap-1">
-    <Calendar
-      className={`size-4 ${isClosingSoon(closingDate) ? 'text-functional-red' : 'text-neutral-charcoal'}`}
-    />
-    <span
-      className={cn(
-        isClosingSoon(closingDate)
-          ? 'text-functional-red'
-          : 'text-neutral-charcoal',
-        'text-sm',
-      )}
-    >
-      Closes {formatDateShort(closingDate)}
-    </span>
-  </div>
-);
+const ClosingDate = ({ closingDate }: { closingDate: string }) => {
+  const t = useTranslations();
+  return (
+    <div className="flex items-center gap-1">
+      <Calendar
+        className={`size-4 ${isClosingSoon(closingDate) ? 'text-functional-red' : 'text-neutral-charcoal'}`}
+      />
+      <span
+        className={cn(
+          isClosingSoon(closingDate)
+            ? 'text-functional-red'
+            : 'text-neutral-charcoal',
+          'text-sm',
+        )}
+      >
+        {t('Closes')} {formatDateShort(closingDate)}
+      </span>
+    </div>
+  );
+};
 
 const ProcessHeader = ({
   name,
