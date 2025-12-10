@@ -15,13 +15,13 @@ export const withAuthenticatedPlatformAdmin: MiddlewareBuilderBase<
 
   const user = verifyAuthentication(data);
 
-  if (!('email' in user) || !user.email) {
-    throw new UnauthorizedError(
-      'User email is required for platform admin check',
-    );
+  const userEmail = user.email;
+
+  if (!userEmail) {
+    throw new UnauthorizedError('User email is required for authentication');
   }
 
-  const isAdmin = isUserEmailPlatformAdmin(user.email);
+  const isAdmin = isUserEmailPlatformAdmin(userEmail);
 
   if (!isAdmin) {
     throw new UnauthorizedError('Platform admin access required');
