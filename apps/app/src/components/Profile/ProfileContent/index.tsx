@@ -117,9 +117,11 @@ const ProfileAbout = ({
 
   return (
     <div className={cn('flex flex-col gap-2 sm:gap-6', className)}>
-      <Header2 className="font-serif text-title-sm leading-normal">
-        {t('About')}
-      </Header2>
+      {orgType ? (
+        <Header2 className="font-serif text-title-sm leading-normal">
+          {t('About')}
+        </Header2>
+      ) : null}
       <div className="flex flex-col gap-4 rounded border p-4 sm:rounded-none sm:border-none sm:p-0">
         {email || website ? (
           <section className="flex flex-col gap-2">
