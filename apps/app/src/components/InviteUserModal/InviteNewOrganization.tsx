@@ -109,7 +109,7 @@ export const InviteNewOrganization = ({
               onKeyDown={handleKeyDown}
               placeholder={
                 emailBadges.length === 0
-                  ? `name1@${user?.currentOrganization?.domain || 'solidarityseeds.org'}, name2@${user?.currentOrganization?.domain || 'solidarityseeds.org'}, ...`
+                  ? `name1@${user.currentOrganization?.domain || 'solidarityseeds.org'}, name2@${user.currentOrganization?.domain || 'solidarityseeds.org'}, ...`
                   : t('Type emails followed by a comma or line break...')
               }
               className="min-w-[200px] flex-1 resize-none border-none pt-1 outline-none"

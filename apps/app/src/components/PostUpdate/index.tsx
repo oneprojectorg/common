@@ -163,8 +163,8 @@ const PostUpdateWithUser = ({
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           deletedAt: null,
-          profile: user?.currentProfile || null,
-          profileId: user?.currentProfileId || null,
+          profile: user.currentProfile || null,
+          profileId: user.currentProfileId || null,
           parentPostId: variables.parentPostId,
           attachments: [],
           reactionCounts: {},
@@ -206,8 +206,8 @@ const PostUpdateWithUser = ({
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           deletedAt: null,
-          profile: user?.currentProfile || null,
-          profileId: user?.currentProfileId || null,
+          profile: user.currentProfile || null,
+          profileId: user.currentProfileId || null,
           parentPostId: null,
           attachments: [],
           reactionCounts: {},
@@ -299,7 +299,7 @@ const PostUpdateWithUser = ({
         // Enhance server data with user profile if not present
         const enhancedData = {
           ...data,
-          profile: data.profile || user?.currentProfile || null,
+          profile: data.profile || user.currentProfile || null,
         };
 
         // For comments (posts with parentPostId)
@@ -589,7 +589,7 @@ const PostUpdateWithUser = ({
     }
   }, []);
 
-  if (!user?.currentProfile) {
+  if (!user.currentProfile) {
     return null;
   }
 
@@ -601,7 +601,7 @@ const PostUpdateWithUser = ({
             profile={organization.profile}
             className="size-8 bg-white"
           />
-        ) : user?.currentProfile ? (
+        ) : user.currentProfile ? (
           <OrganizationAvatar
             profile={user.currentProfile}
             className="size-8 bg-white"
@@ -769,7 +769,7 @@ export const PostUpdate = ({
   processInstanceId?: string;
 }) => {
   const { user } = useUser();
-  const currentProfileId = user?.currentProfileId;
+  const currentProfileId = user.currentProfileId;
 
   // For profile-based associations (like proposals), we don't need an organization
   if (profileId) {
@@ -805,7 +805,7 @@ export const PostUpdate = ({
     return null;
   }
 
-  const org = organization ?? user?.currentOrganization;
+  const org = organization ?? user.currentOrganization;
 
   return (
     <PostUpdateWithUser

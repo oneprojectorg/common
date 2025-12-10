@@ -137,7 +137,7 @@ export const AddRelationshipModalSuspense = ({
           label={
             <>
               {`${relationships.length} relationship${relationships.length === 1 ? '' : 's'}`}{' '}
-              {user?.currentProfile ? (
+              {user.currentProfile ? (
                 <>
                   with
                   <OrganizationAvatar

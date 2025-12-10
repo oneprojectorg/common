@@ -25,7 +25,7 @@ export const UpdateOrganizationModal = ({
   const formRef = useRef<HTMLFormElement>(null);
 
   // Only show edit button if user belongs to this organization
-  const canEdit = user?.currentProfile?.id === organization.profile.id;
+  const canEdit = user.currentProfile?.id === organization.profile.id;
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {

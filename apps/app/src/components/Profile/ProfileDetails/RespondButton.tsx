@@ -15,7 +15,7 @@ const RespondButtonSuspense = ({ profile }: { profile: Organization }) => {
   const { user } = useUser();
   const utils = trpc.useUtils();
 
-  if (!user?.currentOrganization?.id) {
+  if (!user.currentOrganization?.id) {
     return null;
   }
 
@@ -67,7 +67,7 @@ const RespondButtonSuspense = ({ profile }: { profile: Organization }) => {
   });
 
   const handleApprove = () => {
-    if (!user?.currentOrganization?.id) return;
+    if (!user.currentOrganization?.id) return;
 
     approve.mutate({
       sourceOrganizationId: profile.id,
@@ -76,7 +76,7 @@ const RespondButtonSuspense = ({ profile }: { profile: Organization }) => {
   };
 
   const handleDecline = () => {
-    if (!user?.currentOrganization?.id || !pendingFromProfile?.relationships)
+    if (!user.currentOrganization?.id || !pendingFromProfile?.relationships)
       return;
 
     decline.mutate({

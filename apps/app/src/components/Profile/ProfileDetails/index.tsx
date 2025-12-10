@@ -31,25 +31,25 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
 
   const isOrganizationProfile = profile.profile?.type === EntityType.ORG;
   const isViewingOwnProfile =
-    user?.currentProfile?.id ===
+    user.currentProfile?.id ===
     (isOrganizationProfile ? profile.profile.id : profile.id);
 
   // Check if current user is Individual viewing an Organization
   const isCurrentUserIndividual =
-    user?.currentProfile?.type === EntityType.INDIVIDUAL;
+    user.currentProfile?.type === EntityType.INDIVIDUAL;
   const shouldShowFollowButton =
     isCurrentUserIndividual && isOrganizationProfile && !isViewingOwnProfile;
 
   // Check if current user is Organization viewing an Individual
   const isCurrentUserOrganization =
-    user?.currentProfile?.type === EntityType.ORG;
+    user.currentProfile?.type === EntityType.ORG;
   const shouldShowInviteButton =
     isCurrentUserOrganization &&
     profile.profile.type === EntityType.INDIVIDUAL &&
     !isViewingOwnProfile;
 
   // Check if user is already a member of this organization
-  const isAlreadyMember = user?.organizationUsers?.some(
+  const isAlreadyMember = user.organizationUsers?.some(
     (orgUser) => orgUser.organization?.profile?.id === profile.profile.id,
   );
   const shouldShowRequestMembershipButton =

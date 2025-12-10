@@ -40,7 +40,7 @@ const DecisionProcessList = ({
 
   const permission = access.getPermissionsForProfile(profileId);
   const decisionPermission = permission.decisions;
-  const isOwnProfile = user?.currentProfile?.id === profileId;
+  const isOwnProfile = user.currentProfile?.id === profileId;
   const isProcessAdmin = decisionPermission.create && isOwnProfile;
 
   if (!data.instances || data.instances.length === 0) {

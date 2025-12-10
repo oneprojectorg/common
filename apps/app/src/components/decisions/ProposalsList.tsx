@@ -436,7 +436,7 @@ export const ProposalsList = ({
   );
 
   // Get current user's profile ID for "My Proposals" filter
-  const currentProfileId = user?.currentProfile?.id;
+  const currentProfileId = user.currentProfile?.id;
   const [[categoriesData, voteStatus]] = trpc.useSuspenseQueries((t) => [
     t.decision.getCategories({
       processInstanceId: instanceId,

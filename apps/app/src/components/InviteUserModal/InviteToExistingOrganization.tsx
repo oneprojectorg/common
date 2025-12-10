@@ -55,12 +55,12 @@ export const InviteToExistingOrganization = ({
 
   // Ensure first organization is selected if no selection exists
   React.useEffect(() => {
-    if (!selectedOrganization && user?.currentOrganization?.id) {
+    if (!selectedOrganization && user.currentOrganization?.id) {
       setSelectedOrganization(user.currentOrganization.id);
     }
   }, [
     selectedOrganization,
-    user?.currentOrganization?.id,
+    user.currentOrganization?.id,
     setSelectedOrganization,
   ]);
 
@@ -145,7 +145,7 @@ export const InviteToExistingOrganization = ({
               onKeyDown={handleKeyDown}
               placeholder={
                 emailBadges.length === 0
-                  ? `name1@${user?.currentOrganization?.domain || 'example.org'}, name2@${user?.currentOrganization?.domain || 'example.org'}, ...`
+                  ? `name1@${user.currentOrganization?.domain || 'example.org'}, name2@${user.currentOrganization?.domain || 'example.org'}, ...`
                   : t('Type emails followed by a comma or line break...')
               }
               className="min-w-[200px] flex-1 resize-none border-none pt-1 outline-none"
@@ -159,7 +159,7 @@ export const InviteToExistingOrganization = ({
           selectedKey={selectedOrganization}
           onSelectionChange={(key) => setSelectedOrganization(key as string)}
         >
-          {user?.currentOrganization && (
+          {user.currentOrganization && (
             <SelectItem id={user.currentOrganization.id}>
               {user.currentProfile?.name}
             </SelectItem>

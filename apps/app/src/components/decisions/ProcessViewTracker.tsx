@@ -15,7 +15,7 @@ export function ProcessViewTracker({
   const posthog = usePostHog();
 
   useEffect(() => {
-    if (!user || !posthog) return;
+    if (!posthog) return;
 
     // Track process viewed event
     posthog.capture('process_viewed', {
