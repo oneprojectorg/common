@@ -152,7 +152,15 @@ export const genericEmail = 'support@oneproject.org';
 
 export const adminEmails = ['scott@oneproject.org'];
 
-export const platformAdminEmailDomain = 'oneproject.org';
+// NOTE: This allowlist will eventually be moved to the database
+export const platformAdminEmails = new Set([
+  'casimiro@oneproject.org',
+  'nour@oneproject.org',
+  'raphael@oneproject.org',
+  'scott@oneproject.org',
+  'zaana@oneproject.org',
+  'valentino@oneproject.org',
+]);
 
 export const commonColors = colors.neutral;
 

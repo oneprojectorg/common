@@ -1,7 +1,7 @@
+import { CommonError } from '@op/common';
 import { zodUrl } from '@op/common/validation';
 import { logger } from '@op/logging';
 import { TRPCError } from '@trpc/server';
-import { ZodError } from 'zod';
 import { z } from 'zod';
 
 /**
@@ -11,33 +11,14 @@ import { z } from 'zod';
 export function handleUpdateUserProfileError(error: unknown): never {
   logger.error('Error updating user profile', { error });
 
-  // If it's already a TRPC error, re-throw it
-  if (error instanceof TRPCError) {
+  // Re-throw UnauthorizedError as-is (will be caught by error handler)
+  if (error instanceof CommonError) {
     throw error;
   }
 
-  if (error instanceof Error) {
-    // Handle duplicate username error
-    if (error.message.includes('duplicate')) {
-      throw new ZodError([
-        {
-          code: 'custom',
-          message: 'Username already in use',
-          path: ['username'],
-        },
-      ]);
-    }
-
-    // Handle authorization errors
-    if (
-      error.message.includes('Platform admin') ||
-      error.message.includes('Unauthorized')
-    ) {
-      throw new TRPCError({
-        message: 'Platform admin access required',
-        code: 'UNAUTHORIZED',
-      });
-    }
+  // If it's already a TRPC error, re-throw it
+  if (error instanceof TRPCError) {
+    throw error;
   }
 
   // Default error response

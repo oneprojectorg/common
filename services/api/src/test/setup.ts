@@ -37,11 +37,23 @@ export let supabaseTestClient: SupabaseClient;
 // Export admin client for test setup/teardown (bypasses RLS)
 export let supabaseTestAdminClient: SupabaseClient;
 
-// Mock @op/core to return test environment values
+/**
+ * Mock platformAdminEmails that treats all @oneproject.org emails as platform admins.
+ * Helps with testing platform admin functionality without hardcoding specific emails.
+ */
+const mockPlatformAdminEmails = {
+  has(email: string): boolean {
+    return email.toLowerCase().endsWith('@oneproject.org');
+  },
+};
+
+// Mock @op/core to return test environment values and use mock platformAdminEmails
 vi.mock('@op/core', async () => {
   const actual = await vi.importActual('@op/core');
   return {
     ...actual,
+    // Use mock that treats @oneproject.org as platform admin domain
+    platformAdminEmails: mockPlatformAdminEmails,
     // Mock the URL config to use test environment
     OPURLConfig: vi.fn(() => ({
       IS_PRODUCTION: false,

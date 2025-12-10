@@ -52,11 +52,6 @@ export const getMyAccount = router({
         },
       });
 
-      // const user = await getUserByAuthId({
-      // authUserId: id,
-      // includePermissions: true,
-      // });
-
       if (!user) {
         if (!email) {
           throw new NotFoundError('Could not find user');

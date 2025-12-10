@@ -54,7 +54,9 @@ describe.concurrent('platform.admin.addUsersToOrganization', () => {
           ],
         }),
       ).rejects.toMatchObject({
-        code: 'UNAUTHORIZED',
+        cause: {
+          name: 'UnauthorizedError',
+        },
       });
     });
 
