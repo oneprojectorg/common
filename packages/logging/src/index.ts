@@ -4,6 +4,7 @@ export type { LogLevel, LogData } from './lib/logger';
 
 // OpenTelemetry metrics
 export { metrics } from '@opentelemetry/api';
+export type { Counter } from '@opentelemetry/api';
 
 // Middleware utilities
 export { transformMiddlewareRequest } from './lib/middleware';

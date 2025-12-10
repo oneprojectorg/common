@@ -1,4 +1,4 @@
-import type { Counter } from '@opentelemetry/api';
+import type { Counter } from '@op/logging';
 
 import { metrics } from '@op/logging';
 
