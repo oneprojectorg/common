@@ -1,4 +1,4 @@
-import { UnauthorizedError, isUserPlatformAdmin } from '@op/common';
+import { UnauthorizedError, isUserEmailPlatformAdmin } from '@op/common';
 
 import { createSBAdminClient } from '../supabase/server';
 import type { MiddlewareBuilderBase, TContextWithUser } from '../types';
@@ -14,7 +14,14 @@ export const withAuthenticatedPlatformAdmin: MiddlewareBuilderBase<
   const data = await supabase.auth.getUser();
 
   const user = verifyAuthentication(data);
-  const isAdmin = isUserPlatformAdmin(user);
+
+  if (!('email' in user) || !user.email) {
+    throw new UnauthorizedError(
+      'User email is required for platform admin check',
+    );
+  }
+
+  const isAdmin = isUserEmailPlatformAdmin(user.email);
 
   if (!isAdmin) {
     throw new UnauthorizedError('Platform admin access required');

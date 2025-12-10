@@ -16,7 +16,9 @@ describe('realtime.getToken', () => {
     const caller = createCaller(await createTestContextWithSession(null));
 
     await expect(() => caller.getToken()).rejects.toMatchObject({
-      code: 'UNAUTHORIZED',
+      cause: {
+        name: 'UnauthorizedError',
+      },
     });
   });
 

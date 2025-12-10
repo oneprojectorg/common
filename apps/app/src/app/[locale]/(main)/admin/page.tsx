@@ -1,5 +1,5 @@
 import { createClient } from '@op/api/serverClient';
-import { isUserPlatformAdmin } from '@op/common';
+import { isUserEmailPlatformAdmin } from '@op/common';
 import { notFound } from 'next/navigation';
 
 import { PlatformStats, UsersTable } from '@/components/screens/PlatformAdmin';
@@ -14,7 +14,7 @@ export default async function AdminPage() {
   const user = await client.account.getMyAccount();
 
   // Verify user is a platform admin
-  if (!isUserPlatformAdmin(user)) {
+  if (!isUserEmailPlatformAdmin(user.email)) {
     notFound();
   }
 

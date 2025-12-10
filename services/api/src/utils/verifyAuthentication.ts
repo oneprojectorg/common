@@ -1,6 +1,6 @@
+import { UnauthorizedError } from '@op/common';
 import { adminEmails } from '@op/core';
 import type { UserResponse } from '@op/supabase/lib';
-import { TRPCError } from '@trpc/server';
 
 /**
  * Verifies user authentication from Supabase response.
@@ -8,39 +8,27 @@ import { TRPCError } from '@trpc/server';
  */
 export const verifyAuthentication = (data: UserResponse, adminOnly = false) => {
   if (!data) {
-    throw new TRPCError({
-      message: `Failed to authenticate user`,
-      code: 'UNAUTHORIZED',
-    });
+    throw new UnauthorizedError('Failed to authenticate user');
   }
 
   if (data.error) {
-    throw new TRPCError({
-      message: `Failed to authenticate user: ${data.error.message}`,
-      cause: data.error.cause,
-      code: 'UNAUTHORIZED',
-    });
+    throw new UnauthorizedError(
+      `Supabase authentication error: ${data.error.message}`,
+    );
   }
 
   if (data.data.user.is_anonymous) {
-    throw new TRPCError({
-      message: `Anonymous users are not allowed to access this resource`,
-      code: 'UNAUTHORIZED',
-    });
+    throw new UnauthorizedError(
+      'Anonymous users are not allowed to access this resource',
+    );
   }
 
   if (data.data.user.confirmed_at === null) {
-    throw new TRPCError({
-      message: `User has not confirmed their email address`,
-      code: 'UNAUTHORIZED',
-    });
+    throw new UnauthorizedError('User has not confirmed their email address');
   }
 
   if (adminOnly && !adminEmails.includes(data.data.user.email || '')) {
-    throw new TRPCError({
-      message: `User is not an admin`,
-      code: 'UNAUTHORIZED',
-    });
+    throw new UnauthorizedError('User is not an admin');
   }
 
   return data.data.user;
