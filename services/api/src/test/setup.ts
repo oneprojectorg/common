@@ -39,29 +39,12 @@ export let supabaseTestAdminClient: SupabaseClient;
 
 /**
  * Mock platformAdminEmails that treats all @oneproject.org emails as platform admins.
- * This mimics the old domain-based check behavior for tests, allowing test users
- * created with the default emailDomain to have platform admin access.
+ * Helps with testing platform admin functionality without hardcoding specific emails.
  */
 const mockPlatformAdminEmails = {
   has(email: string): boolean {
     return email.toLowerCase().endsWith('@oneproject.org');
   },
-  // Implement other Set methods as no-ops in case they're called
-  add() {
-    return this;
-  },
-  delete() {
-    return false;
-  },
-  clear() {},
-  get size() {
-    return 0;
-  },
-  [Symbol.iterator]: function* () {},
-  forEach() {},
-  entries: function* () {},
-  keys: function* () {},
-  values: function* () {},
 };
 
 // Mock @op/core to return test environment values and use mock platformAdminEmails
