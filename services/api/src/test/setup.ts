@@ -20,6 +20,13 @@ vi.mock('@op/logging', () => ({
     warn: vi.fn(),
     flush: vi.fn().mockResolvedValue(undefined),
   },
+  metrics: {
+    getMeter: vi.fn(() => ({
+      createCounter: vi.fn(() => ({
+        add: vi.fn(),
+      })),
+    })),
+  },
   transformMiddlewareRequest: vi.fn(() => ['test request', {}]),
 }));
 

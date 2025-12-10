@@ -1,4 +1,4 @@
-import { metrics } from '@opentelemetry/api';
+import { metrics } from '@op/logging';
 
 export type CacheSource = 'memory' | 'kv' | 'no-cache';
 

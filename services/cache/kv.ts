@@ -1,5 +1,7 @@
 import { OPURLConfig } from '@op/core';
-import { cacheMetrics, logger } from '@op/logging';
+import { logger } from '@op/logging';
+
+import { cacheMetrics } from './metrics';
 import { waitUntil } from '@vercel/functions';
 import { createClient } from 'redis';
 
