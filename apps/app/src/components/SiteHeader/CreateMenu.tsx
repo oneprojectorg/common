@@ -24,7 +24,7 @@ export const CreateMenu = () => {
   const [isCreateProcessModalOpen, setIsCreateProcessModalOpen] =
     useState(false);
   const { user } = useUser();
-  const isOrg = user?.currentProfile?.type === EntityType.ORG;
+  const isOrg = user.currentProfile?.type === EntityType.ORG;
   const isMobile = useMediaQuery(`(max-width: ${twConfig.theme.screens.sm})`);
 
   return (

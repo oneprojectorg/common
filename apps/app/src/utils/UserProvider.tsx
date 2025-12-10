@@ -6,8 +6,6 @@ import { useRouter } from 'next/navigation';
 import posthog from 'posthog-js';
 import React, { Suspense, createContext, useContext } from 'react';
 
-import ErrorBoundary from '@/components/ErrorBoundary';
-
 const AccessZones = ['decisions', 'profile', 'admin'] as const;
 
 type CommonZonePermissions = Record<(typeof AccessZones)[number], Permission>;
@@ -31,7 +29,7 @@ const defaultPermissions = AccessZones.reduce<CommonZonePermissions>(
 export type OrganizationUser = RouterOutput['account']['getMyAccount'];
 
 interface UserContextValue {
-  user: OrganizationUser | undefined;
+  user: OrganizationUser;
   getPermissionsForProfile: (profileId: string) => CommonZonePermissions;
 }
 
@@ -42,7 +40,7 @@ export const UserProviderSuspense = ({
   initialUser,
 }: {
   children: React.ReactNode;
-  initialUser?: OrganizationUser;
+  initialUser: OrganizationUser;
 }) => {
   const router = useRouter();
   // Use initialUser as initialData to avoid SSR fetch, then revalidate on client
@@ -66,7 +64,7 @@ export const UserProviderSuspense = ({
   const getPermissionsForProfile = (
     profileId: string,
   ): CommonZonePermissions => {
-    if (!user?.organizationUsers) {
+    if (!user.organizationUsers) {
       return defaultPermissions;
     }
 
@@ -93,27 +91,14 @@ export const UserProvider = ({
   initialUser,
 }: {
   children: React.ReactNode;
-  initialUser?: OrganizationUser;
+  initialUser: OrganizationUser;
 }) => {
   return (
-    <ErrorBoundary
-      fallback={
-        <UserContext.Provider
-          value={{
-            user: undefined,
-            getPermissionsForProfile: () => defaultPermissions,
-          }}
-        >
-          {children}
-        </UserContext.Provider>
-      }
-    >
-      <Suspense fallback={null}>
-        <UserProviderSuspense initialUser={initialUser}>
-          {children}
-        </UserProviderSuspense>
-      </Suspense>
-    </ErrorBoundary>
+    <Suspense fallback={null}>
+      <UserProviderSuspense initialUser={initialUser}>
+        {children}
+      </UserProviderSuspense>
+    </Suspense>
   );
 };
 

@@ -49,16 +49,16 @@ export const InviteUserModal = ({
 
   const inviteUserEnabled =
     useFeatureFlagEnabled('invite_admin_user') ||
-    user?.currentOrganization?.networkOrganization;
+    user.currentOrganization?.networkOrganization;
 
-  const isOrg = user?.currentOrganization;
+  const isOrg = user.currentOrganization;
 
   // Initialize selected organization when user data is available
   useEffect(() => {
-    if (user?.currentOrganization?.id && !selectedOrganization) {
+    if (user.currentOrganization?.id && !selectedOrganization) {
       setSelectedOrganization(user.currentOrganization.id);
     }
-  }, [user?.currentOrganization?.id, selectedOrganization]);
+  }, [user.currentOrganization?.id, selectedOrganization]);
 
   const isValidEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -307,7 +307,7 @@ export const InviteUserModal = ({
         invitedCount={invitedCount}
         organizationName={
           activeTab === 'existing'
-            ? user?.currentProfile?.name || 'Common'
+            ? user.currentProfile?.name || 'Common'
             : 'Common'
         }
       />

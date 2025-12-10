@@ -85,9 +85,9 @@ const ProfileMenuItem = ({
     <MenuItem
       key={profile.id}
       className="min-h-[60px] w-72"
-      selected={user?.currentProfile?.id === profile.id}
+      selected={user.currentProfile?.id === profile.id}
       onAction={() => {
-        if (user?.currentProfile?.id === profile.id) {
+        if (user.currentProfile?.id === profile.id) {
           const profilePath =
             profile.type === EntityType.INDIVIDUAL
               ? `/profile/${profile.slug}`
@@ -167,7 +167,7 @@ const AvatarMenuContent = ({
       },
     ) ?? {};
 
-  const avatarUrl = user?.profile?.avatarImage?.name || user?.avatarImage?.name;
+  const avatarUrl = user.profile?.avatarImage?.name || user.avatarImage?.name;
 
   return (
     <>
@@ -175,19 +175,19 @@ const AvatarMenuContent = ({
         isDisabled
         className="flex cursor-default items-center gap-2 p-0 px-0 pb-4 text-neutral-charcoal hover:bg-transparent"
       >
-        <Avatar className="size-6" placeholder={user?.name ?? ''}>
+        <Avatar className="size-6" placeholder={user.name ?? ''}>
           {avatarUrl ? (
             <Image
               src={getPublicUrl(avatarUrl) ?? ''}
               fill
               className="object-cover"
-              alt={user?.name ?? 'User avatar'}
+              alt={user.name ?? 'User avatar'}
             />
           ) : null}
         </Avatar>
         <div className="flex flex-col">
           <span className="sm:text-sm">
-            {t('Logged in as')} {user?.profile?.name ?? user?.name} (
+            {t('Logged in as')} {user.profile?.name ?? user.name} (
             <Button
               onPress={() => setIsProfileOpen(true)}
               unstyled
@@ -200,14 +200,14 @@ const AvatarMenuContent = ({
             )
           </span>
           <span className="max-w-72 text-sm text-neutral-gray4 sm:text-xs">
-            {user?.currentOrganization ? (
+            {user.currentOrganization ? (
               <>
                 {t('Admin for')}{' '}
-                {user?.currentProfile?.name ??
-                  user?.currentOrganization?.profile.name}
+                {user.currentProfile?.name ??
+                  user.currentOrganization?.profile.name}
               </>
             ) : (
-              (user?.currentProfile?.bio ?? '')
+              (user.currentProfile?.bio ?? '')
             )}
           </span>
         </div>
@@ -223,7 +223,7 @@ const AvatarMenuContent = ({
           <div className="flex max-w-52 flex-col">
             <div className="flex items-center gap-1">
               <span className="overflow-hidden truncate">{profile.name} </span>
-              {user?.currentProfile?.id === profile.id ? (
+              {user.currentProfile?.id === profile.id ? (
                 <Chip>Active</Chip>
               ) : null}
             </div>
@@ -245,7 +245,7 @@ const AvatarMenuContent = ({
           <div className="flex max-w-52 flex-col">
             <div className="relative flex items-center gap-1">
               <span className="overflow-hidden truncate">{profile.name} </span>
-              {user?.currentProfile?.id === profile.id ? (
+              {user.currentProfile?.id === profile.id ? (
                 <Chip>Active</Chip>
               ) : null}
             </div>
@@ -333,7 +333,7 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
     avatarImage?: { name: string } | null;
   } | null>(null);
   const previousProfileId = useRef<string | undefined>(
-    user?.currentProfile?.id,
+    user.currentProfile?.id,
   );
 
   const handleProfileSwitch = (profile: {
@@ -348,15 +348,15 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
   useEffect(() => {
     if (
       isSwitchingProfile &&
-      user?.currentProfile?.id &&
+      user.currentProfile?.id &&
       previousProfileId.current &&
       user.currentProfile.id !== previousProfileId.current
     ) {
       setIsSwitchingProfile(false);
       setSwitchingToProfile(null);
     }
-    previousProfileId.current = user?.currentProfile?.id;
-  }, [user?.currentProfile?.id, isSwitchingProfile]);
+    previousProfileId.current = user.currentProfile?.id;
+  }, [user.currentProfile?.id, isSwitchingProfile]);
 
   const avatarButton = (
     <Button
@@ -364,10 +364,10 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
       className={cn('relative', className)}
       onPress={() => (isMobile ? setIsDrawerOpen(true) : undefined)}
     >
-      <Avatar placeholder={user?.currentProfile?.name}>
-        {user?.currentProfile?.avatarImage?.name ? (
+      <Avatar placeholder={user.currentProfile?.name}>
+        {user.currentProfile?.avatarImage?.name ? (
           <Image
-            src={getPublicUrl(user?.currentProfile?.avatarImage.name) ?? ''}
+            src={getPublicUrl(user.currentProfile?.avatarImage.name) ?? ''}
             alt="User avatar"
             fill
             className="object-cover"

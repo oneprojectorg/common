@@ -25,7 +25,7 @@ export const UpdateUserProfileModal = ({
   const [isOpen, setIsOpen] = useState(false);
 
   // Only show edit button if this is the user's own profile
-  const canEdit = user?.currentProfile?.id === profile.id;
+  const canEdit = user.currentProfile?.id === profile.id;
 
   if (!canEdit) {
     return null;
@@ -44,7 +44,7 @@ export const UpdateUserProfileModal = ({
       <Modal isOpen={isOpen} onOpenChange={setIsOpen} isDismissable>
         <ModalHeader>{t('Edit Profile')}</ModalHeader>
 
-        {user?.currentProfile && (
+        {user.currentProfile && (
           <UpdateProfileForm
             ref={formRef}
             profile={profile}

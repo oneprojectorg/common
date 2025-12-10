@@ -238,7 +238,7 @@ export function ProposalView({
                 <Surface className="border-0 p-0 sm:border sm:p-4">
                   <PostUpdate
                     profileId={currentProposal.profileId || undefined}
-                    placeholder={`${t('Comment')}${user?.currentProfile?.name ? ` as ${user?.currentProfile?.name}` : ''}...`}
+                    placeholder={`${t('Comment')}${user.currentProfile?.name ? ` as ${user.currentProfile?.name}` : ''}...`}
                     label={t('Comment')}
                     onSuccess={scrollToComments}
                     proposalId={currentProposal.id}

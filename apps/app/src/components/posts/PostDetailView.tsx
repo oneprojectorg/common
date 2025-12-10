@@ -57,7 +57,7 @@ export function PostDetail({ postId, slug }: { postId: string; slug: string }) {
             <Surface className="border-0 px-0 py-4">
               <PostUpdate
                 parentPostId={post.id}
-                placeholder={`${t('Comment')}${user?.currentProfile?.name ? ` ${t('as')} ${user?.currentProfile?.name}` : ''}...`}
+                placeholder={`${t('Comment')}${user.currentProfile?.name ? ` ${t('as')} ${user.currentProfile?.name}` : ''}...`}
                 label={t('Comment')}
               />
             </Surface>

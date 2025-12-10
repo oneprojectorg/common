@@ -45,7 +45,7 @@ const RequestMembershipButtonSuspense = ({
   const utils = trpc.useUtils();
   const [isPending, startTransition] = useTransition();
 
-  const currentProfileId = user?.currentProfile?.id;
+  const currentProfileId = user.currentProfile?.id;
 
   // Check if there's already a pending join request
   const [existingRequest] = trpc.profile.getJoinProfileRequest.useSuspenseQuery(

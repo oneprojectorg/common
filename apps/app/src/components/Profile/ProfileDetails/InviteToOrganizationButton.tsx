@@ -23,10 +23,12 @@ export const InviteToOrganizationButton = ({
 
   const [[rolesData, membershipData]] = trpc.useSuspenseQueries((t) => [
     t.organization.getRoles(),
-    t.organization.checkMembership({
-      email: profile.profile.email!,
-      organizationId: user?.currentOrganization?.id!,
-    }),
+    user.currentOrganization
+      ? t.organization.checkMembership({
+          email: profile.profile.email!,
+          organizationId: user.currentOrganization?.id,
+        })
+      : {},
   ]);
 
   const [isMember, setIsMember] = useState(membershipData.isMember);
@@ -50,13 +52,13 @@ export const InviteToOrganizationButton = ({
         setIsMember(true);
         toast.success({
           title: 'Member added',
-          message: `${profile.profile.name || profile.profile.email} is now a member of ${user?.currentProfile?.name}`,
+          message: `${profile.profile.name || profile.profile.email} is now a member of ${user.currentProfile?.name}`,
         });
       } else if (isMemberFailed) {
         setIsMember(true);
         toast.success({
           title: ' a member',
-          message: `${profile.profile.name || profile.profile.email} is already a member of ${user?.currentProfile?.name}`,
+          message: `${profile.profile.name || profile.profile.email} is already a member of ${user.currentProfile?.name}`,
         });
       } else {
         // Handle other failure cases
@@ -93,7 +95,7 @@ export const InviteToOrganizationButton = ({
       return;
     }
 
-    if (!user?.currentOrganization?.id) {
+    if (!user.currentOrganization?.id) {
       toast.error({
         title: 'No organization',
         message: 'You must be part of an organization to send invites.',
@@ -127,7 +129,7 @@ export const InviteToOrganizationButton = ({
     );
   }
 
-  return user?.currentProfile ? (
+  return user.currentProfile ? (
     <Button
       color="secondary"
       onPress={handleInvite}

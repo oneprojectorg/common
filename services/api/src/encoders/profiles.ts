@@ -9,7 +9,6 @@ import { storageItemEncoder } from './storageItem';
 // Base profile encoder without organization reference
 export const baseProfileEncoder = createSelectSchema(profiles)
   .pick({
-    id: true,
     type: true,
     slug: true,
     name: true,
@@ -21,6 +20,7 @@ export const baseProfileEncoder = createSelectSchema(profiles)
     website: true,
   })
   .extend({
+    id: z.uuid(),
     headerImage: storageItemEncoder.nullish(),
     avatarImage: storageItemEncoder.nullish(),
     individual: individualsEncoder.pick({ pronouns: true }).nullish(),
