@@ -156,6 +156,7 @@ export const adminEmails = ['scott@oneproject.org'];
 export const platformAdminEmails = new Set([
   'casimiro@oneproject.org',
   'nour@oneproject.org',
+  'raphael@oneproject.org',
   'scott@oneproject.org',
   'zaana@oneproject.org',
   'valentino@oneproject.org',
