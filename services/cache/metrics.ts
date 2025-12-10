@@ -1,8 +1,8 @@
 import type { Counter } from '@op/logging';
-
 import { metrics } from '@op/logging';
 
 export type CacheHitSource = 'memory' | 'kv';
+type SourceType = 'redis';
 
 let cacheHitCounter: Counter | null = null;
 let cacheMissCounter: Counter | null = null;
@@ -42,10 +42,19 @@ function getErrorCounter() {
 }
 
 export const cacheMetrics = {
-  recordHit(source: CacheHitSource, type?: string) {
+  recordHit({
+    type,
+    source,
+    keyType,
+  }: {
+    type: CacheHitSource;
+    source?: SourceType;
+    keyType?: string;
+  }) {
     getHitCounter().add(1, {
-      source,
-      ...(type && { type }),
+      type,
+      ...(source && { source }),
+      ...(keyType && { keyType }),
     });
   },
 

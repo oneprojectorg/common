@@ -1,9 +1,9 @@
 import { OPURLConfig } from '@op/core';
 import { logger } from '@op/logging';
-
-import { cacheMetrics } from './metrics';
 import { waitUntil } from '@vercel/functions';
 import { createClient } from 'redis';
+
+import { cacheMetrics } from './metrics';
 
 const REDIS_URL = process.env.REDIS_URL;
 
@@ -68,6 +68,7 @@ const getCacheKey = (
   }`;
 };
 
+// TODO: replace with something like an LRU cache
 const memCache = new Map();
 const MEMCACHE_EXPIRE = 2 * 60 * 1000;
 
@@ -100,7 +101,7 @@ export const cache = async <T = any>({
 
     const memCacheExpire = ttl ? ttl : MEMCACHE_EXPIRE;
     if (Date.now() - cachedVal.createdAt < memCacheExpire) {
-      cacheMetrics.recordHit('memory', type);
+      cacheMetrics.recordHit({ type: 'memory', keyType: type });
       return cachedVal.data;
     }
   }
@@ -115,7 +116,7 @@ export const cache = async <T = any>({
   const data = (await Promise.race([get(cacheKey), timeout])) as T;
 
   if (data) {
-    cacheMetrics.recordHit('kv', type);
+    cacheMetrics.recordHit({ type: 'kv', source: 'redis', keyType: type });
     memCache.set(cacheKey, { createdAt: Date.now(), data });
     return data as T;
   }
