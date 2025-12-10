@@ -4,7 +4,7 @@ import type { UserResponse } from '@op/supabase/lib';
 
 /**
  * Verifies user authentication from Supabase response.
- * Throws TRPCError if authentication fails.
+ * Throws a Common error if authentication fails.
  */
 export const verifyAuthentication = (data: UserResponse, adminOnly = false) => {
   if (!data) {
