@@ -2,7 +2,7 @@
 
 import { posthogUIHost } from '@op/core';
 import { Button } from '@op/ui/Button';
-import { LuArrowUpRight, LuPlus } from 'react-icons/lu';
+import { LuArrowUpRight } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -17,23 +17,17 @@ export const PlatformAdminHeader = () => {
           {t('platformAdmin_title')}
         </h1>
       </div>
-      <div className="flex gap-3">
-        <Button
-          onPress={() => {
-            window.open(posthogUIHost, '_blank');
-          }}
-          color="secondary"
-          size="small"
-          className="gap-2"
-        >
-          <LuArrowUpRight className="size-4" />
-          {t('platformAdmin_viewAllAnalytics')}
-        </Button>
-        <Button variant="primary" size="small" className="gap-2">
-          <LuPlus className="size-4" />
-          {t('platformAdmin_addUser')}
-        </Button>
-      </div>
+      <Button
+        onPress={() => {
+          window.open(posthogUIHost, '_blank');
+        }}
+        color="secondary"
+        size="small"
+        className="gap-2"
+      >
+        <LuArrowUpRight className="size-4" />
+        {t('platformAdmin_viewAllAnalytics')}
+      </Button>
     </div>
   );
 };
