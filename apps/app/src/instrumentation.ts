@@ -35,7 +35,6 @@ export function register() {
     : undefined;
 
   // Configure metrics exporter
-  // Use a short export interval for serverless environments
   const metricReaders = otelEndpoint
     ? [
         new PeriodicExportingMetricReader({
@@ -43,7 +42,8 @@ export function register() {
             url: `${otelEndpoint}/v1/metrics`,
             headers,
           }),
-          exportIntervalMillis: 10000, // 10 seconds
+          // Logs are also flushed on exit
+          exportIntervalMillis: 5000,
         }),
       ]
     : undefined;
