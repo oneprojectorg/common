@@ -11,18 +11,21 @@ const ComingSoonPage = () => {
     delay: 1,
   };
   return (
-    <div className="absolute inset-0 size-full overflow-x-hidden bg-[#FF613D]">
+    <div className="fixed inset-0 overflow-x-hidden bg-[black]">
       <div className="pointer-events-none absolute inset-0 z-0">
         <motion.div
-          className="absolute inset-0 z-10 size-full"
+          className="fixed inset-0 z-10 size-full"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={backgroundTransition}
         >
           <SoftBlobs />
         </motion.div>
+        {/* Fade top and bottom edges on mobile */}
+        <div className="absolute top-0 z-20 h-20 w-full bg-gradient-to-b from-[black] via-[rgba(0,0,0,0.35)] via-40% sm:hidden" />
+        <div className="absolute bottom-0 z-20 h-20 w-full bg-gradient-to-t from-[black] via-[rgba(0,0,0,0.35)] via-40% sm:hidden" />
       </div>
-      <div className="absolute inset-0 z-20 flex flex-col justify-between p-4 text-white sm:p-8 md:p-12 xl:p-20">
+      <div className="absolute inset-0 z-20 flex flex-col justify-between p-4 py-16 text-white sm:p-8 md:p-12 xl:p-20">
         <motion.h1 className="font-serif text-3xl font-light leading-[1.1] sm:text-6xl sm:leading-[1.25]">
           <em>Common.</em>{' '}
           <motion.span
