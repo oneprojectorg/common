@@ -119,28 +119,49 @@ void main() {
     float opacity1 = 0.5 + 0.5 * cos(uTime * fadeSpeed);
     float opacity2 = 0.5 - 0.5 * cos(uTime * fadeSpeed);
 
-    // Scale variation over time
-    float scale1 = 1.5 + 0.5 * sin(uTime * uSpeed * 0.5);
-    float scale2 = 1.5 + 0.5 * cos(uTime * uSpeed * 0.5);
+    // Scale variation over time - separate X and Y for stretching
+    vec2 scale1 = vec2(
+        3.0 + 1.0 * sin(uTime * uSpeed * 0.3),
+        3.0 + 1.0 * cos(uTime * uSpeed * 0.7)
+    );
+    vec2 scale2 = vec2(
+        3.0 + 1.0 * cos(uTime * uSpeed * 0.6),
+        3.0 + 1.0 * sin(uTime * uSpeed * 0.35)
+    );
 
-    // Blob 1 - linear falloff with scale and opacity
+    // Orbital movement - blobs orbit around viewport center, opposite each other
+    float angle = uTime * uSpeed * 0.2;
+    float orbitX = 0.25;
+    float orbitY = 0.2;
+
+    // Wavy modulation on top of orbit
+    float waveAmp = .1;
+    float waveFreq = .5;
+    float wave1X = waveAmp * sin(angle * waveFreq);
+    float wave1Y = waveAmp * cos(angle * waveFreq * 0.7);
+
+    // Blob 1
     vec2 blob1Pos = vec2(
-        (0.3 + 0.2 * sin(uTime * uSpeed * 0.5)) * uAspect,
-        0.3 + 0.25 * cos(uTime * uSpeed * 0.4)
+        (0.5 + orbitX * cos(angle) + wave1X) * uAspect,
+        0.5 + orbitY * sin(angle) + wave1Y
     );
-    float dist1 = distance(uvCorrected, blob1Pos);
-    float blob1 = max(0.0, .95 - dist1 / (uSoftness * scale1)) * opacity1;
+    vec2 diff1 = (uvCorrected - blob1Pos) / (uSoftness * scale1);
+    float dist1 = length(diff1);
+    float linear1 = clamp(1.0 - dist1, 0.1, 1.0);
+    float blob1 = pow(linear1, 2.0) * opacity1;
 
-    // Blob 2 - different phase with scale and opacity
+    // Blob 2 - opposite side of orbit (π offset) with opposite wave
     vec2 blob2Pos = vec2(
-        (0.7 + 0.2 * cos(uTime * uSpeed * 0.3)) * uAspect,
-        0.6 + 0.2 * sin(uTime * uSpeed * 0.6)
+        (0.5 - orbitX * cos(angle) - wave1X) * uAspect,
+        0.5 - orbitY * sin(angle) - wave1Y
     );
-    float dist2 = distance(uvCorrected, blob2Pos);
-    float blob2 = max(0.0, .95 - dist2 / (uSoftness * scale2)) * opacity2;
+    vec2 diff2 = (uvCorrected - blob2Pos) / (uSoftness * scale2);
+    float dist2 = length(diff2);
+    float linear2 = clamp(1.0 - dist2, 0.1, 1.0);
+    float blob2 = pow(linear2, 2.0) * opacity2;
 
     // Combine - blobs add together softly
-    float blobMask = clamp(blob1 + blob2, 0.0, 1.0);
+    float blobMask = clamp(blob1 + blob2, 0.1, 1.0);
     vec3 animatedColor = mix(uBackgroundColor, uBlobColor, blobMask);
 
     // Fade in from solid blobColor over ~3 seconds
@@ -210,7 +231,7 @@ export interface SoftBlobsProps {
 
 const SoftBlobs: React.FC<SoftBlobsProps> = ({
   speed = 1,
-  softness = 0.8,
+  softness = 0.75,
   blobColor = '#6200C3',
   backgroundColor = '#FF613D',
   noiseIntensity = 1,
@@ -234,7 +255,20 @@ const SoftBlobs: React.FC<SoftBlobsProps> = ({
 
   return (
     <>
-      <Canvas dpr={[1, 1.5]} frameloop="always">
+      <Canvas
+        dpr={[1, 1.5]}
+        frameloop="always"
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: '100vw',
+          height: '100vh',
+          minHeight: '-webkit-fill-available',
+        }}
+      >
         <Suspense fallback={null}>
           <SoftBlobsPlane ref={meshRef} uniforms={uniforms} />
         </Suspense>
