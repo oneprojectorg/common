@@ -1,5 +1,6 @@
 'use client';
 
+import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { Organization, ProfileRelationshipType } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
@@ -11,11 +12,15 @@ import { LuCheck, LuPlus } from 'react-icons/lu';
 import ErrorBoundary from '@/components/ErrorBoundary';
 
 const FollowButtonSuspense = ({ profile }: { profile: Organization }) => {
+  const { user } = useUser();
   const utils = trpc.useUtils();
   const [isPending, startTransition] = useTransition();
 
+  const currentProfileId = user?.currentProfile?.id;
+
   // Check if we're currently following this profile
   const [relationships] = trpc.profile.getRelationships.useSuspenseQuery({
+    sourceProfileId: currentProfileId ?? undefined,
     targetProfileId: profile.profile.id,
     types: [ProfileRelationshipType.FOLLOWING],
   });
@@ -54,6 +59,7 @@ const FollowButtonSuspense = ({ profile }: { profile: Organization }) => {
         await Promise.all([
           // Invalidate the query that checks if we're following this profile
           utils.profile.getRelationships.invalidate({
+            sourceProfileId: currentProfileId ?? undefined,
             targetProfileId: profile.profile.id,
             types: [ProfileRelationshipType.FOLLOWING],
           }),
