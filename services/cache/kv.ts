@@ -122,7 +122,7 @@ export const cache = async <T = any>({
 
   // finally retrieve the data from the DB
   const newData = await fetch();
-  cacheMetrics.recordHit('no-cache', type);
+  cacheMetrics.recordMiss(type);
   if (newData) {
     memCache.set(cacheKey, { createdAt: Date.now(), data: newData });
     // don't cache if we couldn't find the record (?)

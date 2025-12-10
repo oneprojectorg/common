@@ -2,9 +2,10 @@ import type { Counter } from '@op/logging';
 
 import { metrics } from '@op/logging';
 
-export type CacheSource = 'memory' | 'kv' | 'no-cache';
+export type CacheHitSource = 'memory' | 'kv';
 
 let cacheHitCounter: Counter | null = null;
+let cacheMissCounter: Counter | null = null;
 let cacheErrorCounter: Counter | null = null;
 
 function getHitCounter() {
@@ -16,6 +17,17 @@ function getHitCounter() {
     });
   }
   return cacheHitCounter;
+}
+
+function getMissCounter() {
+  if (!cacheMissCounter) {
+    const meter = metrics.getMeter('cache');
+    cacheMissCounter = meter.createCounter('cache.misses', {
+      description: 'Number of cache misses',
+      unit: '1',
+    });
+  }
+  return cacheMissCounter;
 }
 
 function getErrorCounter() {
@@ -30,9 +42,15 @@ function getErrorCounter() {
 }
 
 export const cacheMetrics = {
-  recordHit(source: CacheSource, type?: string) {
+  recordHit(source: CacheHitSource, type?: string) {
     getHitCounter().add(1, {
       source,
+      ...(type && { type }),
+    });
+  },
+
+  recordMiss(type?: string) {
+    getMissCounter().add(1, {
       ...(type && { type }),
     });
   },
