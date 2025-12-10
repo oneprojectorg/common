@@ -49,7 +49,7 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
   return (
     <Link
       href={`/decisions/${item.slug}`}
-      className="flex flex-col gap-4 rounded-lg border border-neutral-gray1 p-4 hover:no-underline sm:flex-row sm:items-center sm:justify-between sm:rounded-none sm:border-0 sm:border-b"
+      className="flex flex-col gap-4 rounded-lg border border-neutral-gray1 p-4 hover:bg-primary-tealWhite hover:no-underline sm:flex-row sm:items-center sm:justify-between sm:rounded-none sm:border-0 sm:border-b"
     >
       <div className="flex flex-col gap-2">
         {/* Process name and status chip */}
@@ -138,10 +138,12 @@ export const ProfileFeaturedDecision = ({
             <DecisionStat
               number={processInstance?.participantCount ?? 0}
               label={t('Participants')}
+              className="sm:flex-row sm:items-end sm:gap-1"
             />
             <DecisionStat
               number={processInstance?.proposalCount ?? 0}
               label={t('Proposals')}
+              className="sm:flex-row sm:items-end sm:gap-1"
             />
           </div>
         </div>
@@ -150,8 +152,21 @@ export const ProfileFeaturedDecision = ({
   );
 };
 
-const DecisionStat = ({ number, label }: { number: number; label: string }) => (
-  <div className="flex items-end gap-1">
+const DecisionStat = ({
+  number,
+  label,
+  className,
+}: {
+  number: number;
+  label: string;
+  className?: string;
+}) => (
+  <div
+    className={cn(
+      'flex items-end gap-1 sm:flex-col sm:items-center sm:gap-0',
+      className,
+    )}
+  >
     <span className="font-serif text-title-base">{number}</span>
     <span className="text-sm">{label}</span>
   </div>
