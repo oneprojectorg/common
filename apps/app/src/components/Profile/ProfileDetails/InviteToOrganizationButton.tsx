@@ -23,10 +23,12 @@ export const InviteToOrganizationButton = ({
 
   const [[rolesData, membershipData]] = trpc.useSuspenseQueries((t) => [
     t.organization.getRoles(),
-    t.organization.checkMembership({
-      email: profile.profile.email!,
-      organizationId: user.currentOrganization?.id!,
-    }),
+    user.currentOrganization
+      ? t.organization.checkMembership({
+          email: profile.profile.email!,
+          organizationId: user.currentOrganization?.id,
+        })
+      : {},
   ]);
 
   const [isMember, setIsMember] = useState(membershipData.isMember);
