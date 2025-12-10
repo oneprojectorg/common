@@ -154,8 +154,11 @@ export const adminEmails = ['scott@oneproject.org'];
 
 // NOTE: This allowlist will eventually be moved to the database
 export const platformAdminEmails = new Set([
-  'valentino@oneproject.org',
+  'casimiro@oneproject.org',
+  'nour@oneproject.org',
   'scott@oneproject.org',
+  'zaana@oneproject.org',
+  'valentino@oneproject.org',
 ]);
 
 export const commonColors = colors.neutral;
