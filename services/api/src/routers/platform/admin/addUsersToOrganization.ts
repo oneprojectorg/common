@@ -4,7 +4,7 @@ import { db } from '@op/db/client';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
-import { withAuthenticatedPlatformAdmin } from '../../../middlewares/withAuthenticated';
+import { withAuthenticatedPlatformAdmin } from '../../../middlewares/withAuthenticatedPlatformAdmin';
 import withRateLimited from '../../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../../trpcFactory';
 

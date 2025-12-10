@@ -1,3 +1,4 @@
+import { UnauthorizedError } from '@op/common';
 import { zodUrl } from '@op/common/validation';
 import { logger } from '@op/logging';
 import { TRPCError } from '@trpc/server';
@@ -13,6 +14,11 @@ export function handleUpdateUserProfileError(error: unknown): never {
 
   // If it's already a TRPC error, re-throw it
   if (error instanceof TRPCError) {
+    throw error;
+  }
+
+  // Re-throw UnauthorizedError as-is (will be caught by error handler)
+  if (error instanceof UnauthorizedError) {
     throw error;
   }
 
@@ -33,10 +39,7 @@ export function handleUpdateUserProfileError(error: unknown): never {
       error.message.includes('Platform admin') ||
       error.message.includes('Unauthorized')
     ) {
-      throw new TRPCError({
-        message: 'Platform admin access required',
-        code: 'UNAUTHORIZED',
-      });
+      throw new UnauthorizedError('Platform admin access required');
     }
   }
 

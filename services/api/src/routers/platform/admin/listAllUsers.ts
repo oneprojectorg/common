@@ -11,7 +11,7 @@ import crypto from 'crypto';
 import { z } from 'zod';
 
 import { userEncoder } from '../../../encoders/';
-import { withAuthenticatedPlatformAdmin } from '../../../middlewares/withAuthenticated';
+import { withAuthenticatedPlatformAdmin } from '../../../middlewares/withAuthenticatedPlatformAdmin';
 import withRateLimited from '../../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../../trpcFactory';
 import { dbFilter } from '../../../utils';

@@ -1,5 +1,5 @@
 import { createClient } from '@op/api/serverClient';
-import { platformAdminEmailDomain } from '@op/core';
+import { isUserPlatformAdmin } from '@op/common';
 import { notFound } from 'next/navigation';
 
 import { PlatformStats, UsersTable } from '@/components/screens/PlatformAdmin';
@@ -12,10 +12,9 @@ export const dynamic = 'force-dynamic';
 export default async function AdminPage() {
   const client = await createClient();
   const user = await client.account.getMyAccount();
-  const userEmailDomain = user.email.split('@')[1];
 
-  // Verify user has super admin email domain
-  if (userEmailDomain !== platformAdminEmailDomain) {
+  // Verify user is a platform admin
+  if (!isUserPlatformAdmin(user)) {
     notFound();
   }
 
