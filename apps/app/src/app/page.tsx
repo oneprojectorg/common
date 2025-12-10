@@ -12,17 +12,15 @@ const MainPage = () => {
   const { data: account, isPending } = trpc.account.getMyAccount.useQuery();
 
   if (authUser?.data && !isPending) {
-    if (authUser.data.user == null) {
+    if (authUser.data.user === null) {
       return <ComingSoonPage />;
     }
 
-    if (account?.organizationUsers?.length) {
-      router.push('/');
+    if (account?.organizationUsers?.length === 0) {
+      router.push('/start');
 
       return;
     }
-
-    router.push('/start');
   }
 
   return null;

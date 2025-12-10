@@ -20,10 +20,6 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
       !pathname.startsWith(`/${locale}/`) && pathname !== `/${locale}`,
   );
 
-  if (pathname === `/`) {
-    return;
-  }
-
   // Set locale cookie if URL contains a locale (for preference learning)
   let localeResponse: NextResponse | null = null;
   if (!pathnameIsMissingLocale && !pathname.startsWith('/api')) {
@@ -52,15 +48,6 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
         });
       }
     }
-  }
-
-  // only reroute if locale is missing. Otherwise we want to use the domain routing
-  if (pathnameIsMissingLocale && !pathname.startsWith('/api')) {
-    const handleI18nRouting = createMiddleware(routing);
-
-    const response = handleI18nRouting(request);
-
-    return response;
   }
 
   let supabaseResponse =
@@ -108,8 +95,21 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user && !request.nextUrl.pathname.startsWith('/login')) {
-    // no user, potentially respond by redirecting the user to the login page
+  // only reroute if logged in and locale is missing. Otherwise we want to use the domain routing
+  if (user && pathnameIsMissingLocale && !pathname.startsWith('/api')) {
+    const handleI18nRouting = createMiddleware(routing);
+
+    const response = handleI18nRouting(request);
+
+    return response;
+  }
+
+  if (
+    !user &&
+    !request.nextUrl.pathname.startsWith('/login') &&
+    !(request.nextUrl.pathname === '/')
+  ) {
+    // no user, respond by redirecting the user to the waitlist page
     const url = request.nextUrl.clone();
 
     url.pathname = '/';
