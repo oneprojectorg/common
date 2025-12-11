@@ -258,10 +258,7 @@ const useOptimisticReaction = (
   post: Post,
   onReactionClick: (postId: string, emoji: string) => void,
 ) => {
-  const [localReaction, setLocalReaction] = useState<{
-    userReaction: string | null;
-    reactionCounts: Record<string, number>;
-  }>({
+  const [localReaction, setLocalReaction] = useState({
     userReaction: post.userReaction ?? null,
     reactionCounts: post.reactionCounts ?? {},
   });
