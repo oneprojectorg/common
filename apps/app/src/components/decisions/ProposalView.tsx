@@ -81,11 +81,7 @@ export function ProposalView({
 
   const comments = commentsData || [];
 
-  // Post feed actions for comments with profile-specific optimistic updates
-  const { handleReactionClick } = usePostFeedActions({
-    user,
-    profileId: currentProposal.profileId || undefined, // Add profileId for optimistic updates
-  });
+  const { handleReactionClick } = usePostFeedActions();
 
   // Function to scroll to show comments after adding a new one
   const scrollToComments = useCallback(() => {
