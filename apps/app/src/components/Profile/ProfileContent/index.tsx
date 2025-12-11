@@ -12,7 +12,7 @@ import { Tab, TabList, TabPanel } from '@op/ui/Tabs';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
 import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
-import { ReactNode, Suspense } from 'react';
+import { Fragment, ReactNode, Suspense } from 'react';
 import { LuCopy, LuGlobe, LuMail } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
@@ -269,13 +269,13 @@ const ProfileDecisions = ({ profileId }: { profileId: string }) => {
         {t('Decisions')}
       </Header2>
       {data.items.map((item, index) => (
-        <>
+        <Fragment key={item.id}>
           <ProfileDecisionListItem
             item={item}
             className="rounded border p-4 transition-colors sm:rounded-none sm:border-none sm:px-6 sm:hover:bg-primary-tealWhite"
           />
           {index < data.items.length - 1 && <hr />}
-        </>
+        </Fragment>
       ))}
     </div>
   );
