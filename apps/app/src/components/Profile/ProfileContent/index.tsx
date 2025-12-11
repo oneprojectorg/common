@@ -3,7 +3,7 @@
 import { useUser } from '@/utils/UserProvider';
 import { checkModuleEnabled } from '@/utils/modules';
 import { trpc } from '@op/api/client';
-import type { Organization } from '@op/api/encoders';
+import { type Organization, ProcessStatus } from '@op/api/encoders';
 import { formatToUrl } from '@op/common/validation';
 import { Button } from '@op/ui/Button';
 import { Header2, Header3 } from '@op/ui/Header';
@@ -21,9 +21,13 @@ import { ContactLink } from '@/components/ContactLink';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { PostFeedSkeleton } from '@/components/PostFeed';
 import { PostUpdate } from '@/components/PostUpdate';
-import { ProfileFeaturedDecision } from '@/components/decisions/DecisionListItem';
+import { ProfileDecisionListItem } from '@/components/decisions/DecisionListItem';
 
-import { ProfileFeed } from '../ProfileFeed';
+import {
+  ProfileFeedCards,
+  ProfileFeedList,
+  ProfileFeedProvider,
+} from '../ProfileFeed';
 import {
   DecisionsTab,
   DecisionsTabPanel,
@@ -251,25 +255,28 @@ const ProfileDecisions = ({ profileId }: { profileId: string }) => {
 
   const [data] = trpc.decision.listDecisionProfiles.useSuspenseQuery({
     limit: 3,
+    ownerProfileId: profileId,
+    status: ProcessStatus.PUBLISHED,
   });
 
-  const orgDecisionProfiles = data.items?.filter(
-    (profile) => profile.processInstance?.owner?.id === profileId,
-  );
-
-  if (!orgDecisionProfiles[0]) {
+  if (!data.items[0]) {
     return null;
   }
 
   return (
-    <div className="flex flex-col gap-2 px-4 pb-2 pt-0 sm:gap-4 sm:border-b sm:px-6 sm:pb-0 sm:pt-4">
-      <Header2 className="font-serif text-title-sm leading-normal">
+    <div className="flex flex-col gap-2 px-4 pb-2 pt-0 sm:gap-0 sm:border-b sm:p-0 sm:pt-4">
+      <Header2 className="px-6 font-serif text-title-sm leading-normal">
         {t('Decisions')}
       </Header2>
-      <ProfileFeaturedDecision
-        item={orgDecisionProfiles[0]}
-        className="rounded border p-4 sm:rounded-none sm:border-none sm:p-0 sm:pb-4"
-      />
+      {data.items.map((item, index) => (
+        <>
+          <ProfileDecisionListItem
+            item={item}
+            className="rounded border p-4 transition-colors sm:rounded-none sm:border-none sm:px-6 sm:hover:bg-primary-tealWhite"
+          />
+          {index < data.items.length - 1 && <hr />}
+        </>
+      ))}
     </div>
   );
 };
@@ -316,7 +323,9 @@ export const OrganizationProfileGrid = ({
           <div></div>
         )}
         <Suspense fallback={<PostFeedSkeleton className="px-4" numPosts={3} />}>
-          <ProfileFeed profile={profile} />
+          <ProfileFeedProvider profile={profile}>
+            {(props) => <ProfileFeedList {...props} />}
+          </ProfileFeedProvider>
         </Suspense>
       </div>
       <div className="col-span-6 h-full border-l">
@@ -442,11 +451,9 @@ export const ProfileTabsMobile = ({
                 <Header2 className="px-4 py-2 font-serif text-title-sm leading-normal">
                   {t('Posts')}
                 </Header2>
-                <ProfileFeed
-                  variant="cards"
-                  profile={profile}
-                  className="px-4 py-2 sm:py-6"
-                />
+                <ProfileFeedProvider profile={profile}>
+                  {(props) => <ProfileFeedCards {...props} />}
+                </ProfileFeedProvider>
               </div>
             </Suspense>
           </TabPanel>
@@ -459,7 +466,11 @@ export const ProfileTabsMobile = ({
               />
             </Suspense>
             <Suspense fallback={<Skeleton className="min-h-20 w-full" />}>
-              <ProfileFeed profile={profile} className="p-4 sm:py-6" />
+              <ProfileFeedProvider profile={profile}>
+                {(props) => (
+                  <ProfileFeedList {...props} className="p-4 sm:py-6" />
+                )}
+              </ProfileFeedProvider>
             </Suspense>
           </TabPanel>
         </>

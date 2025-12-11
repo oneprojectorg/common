@@ -1,13 +1,14 @@
 'use client';
 
+import type { OrganizationUser } from '@/utils/UserProvider';
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import type { Organization } from '@op/api/encoders';
+import type { Organization, Post, PostToOrganization } from '@op/api/encoders';
 import { useInfiniteScroll } from '@op/hooks';
 import { HorizontalList, HorizontalListItem } from '@op/ui/HorizontalList';
 import { SkeletonLine } from '@op/ui/Skeleton';
 import { cn } from '@op/ui/utils';
-import { Fragment, useCallback } from 'react';
+import { Fragment, type RefObject, useCallback } from 'react';
 
 import {
   DiscussionModalContainer,
@@ -17,16 +18,33 @@ import {
   usePostFeedActions,
 } from '@/components/PostFeed';
 
-export const ProfileFeed = ({
+type DiscussionModalState = {
+  isOpen: boolean;
+  post?: Post | null;
+  organization?: Organization | null;
+};
+
+export type ProfileFeedRenderProps = {
+  posts: PostToOrganization[];
+  isEmpty: boolean;
+  user: OrganizationUser;
+  infiniteScrollRef: RefObject<HTMLElement | null>;
+  shouldShowTrigger: boolean;
+  isFetchingNextPage: boolean;
+  handleReactionClick: (postId: string, emoji: string) => void;
+  handleCommentClick: (post: Post, organization: Organization | null) => void;
+  discussionModal: DiscussionModalState;
+  handleModalClose: () => void;
+};
+
+export const ProfileFeedProvider = ({
   profile,
-  className,
   limit = 20,
-  variant,
+  children,
 }: {
   profile: Organization;
-  className?: string;
   limit?: number;
-  variant?: string;
+  children: (props: ProfileFeedRenderProps) => React.ReactNode;
 }) => {
   const { user } = useUser();
   const {
@@ -57,12 +75,10 @@ export const ProfileFeed = ({
     handleModalClose,
   } = usePostFeedActions();
 
-  // Prevent infinite loops. Make sure this is a stable function
   const stableFetchNextPage = useCallback(() => {
     fetchNextPage();
   }, [fetchNextPage]);
 
-  // Only enable infinite scroll if we have enough content and multiple pages
   const hasMultiplePages =
     paginatedData?.pages && paginatedData.pages.length > 1;
   const hasEnoughContent = allPosts.length >= limit;
@@ -76,59 +92,107 @@ export const ProfileFeed = ({
     enabled: enableInfiniteScroll,
   });
 
-  return variant === 'cards' ? (
-    <HorizontalList
-      className={cn(
-        'w-full scroll-px-4 items-start',
-        allPosts.length === 0 && 'overflow-x-hidden',
-      )}
-    >
-      {allPosts.length > 0 ? (
-        allPosts.map((postToOrg) => (
-          <HorizontalListItem
-            key={postToOrg.postId}
-            className="w-11/12 max-w-96 shrink-0 snap-start rounded border p-3 first:ml-4 last:mr-4"
-          >
-            <PostItem
-              post={postToOrg.post}
-              organization={postToOrg.organization ?? null}
-              user={user}
-              withLinks={false}
-              onReactionClick={handleReactionClick}
-              onCommentClick={handleCommentClick}
-            />
+  return children({
+    posts: allPosts,
+    isEmpty: allPosts.length === 0,
+    user,
+    infiniteScrollRef: ref,
+    shouldShowTrigger,
+    isFetchingNextPage,
+    handleReactionClick,
+    handleCommentClick,
+    discussionModal,
+    handleModalClose,
+  });
+};
+
+export const ProfileFeedCards = ({
+  posts,
+  user,
+  infiniteScrollRef,
+  shouldShowTrigger,
+  isFetchingNextPage,
+  handleReactionClick: onReactionClick,
+  handleCommentClick: onCommentClick,
+  discussionModal,
+  handleModalClose: onModalClose,
+  className,
+}: ProfileFeedRenderProps & { className?: string }) => {
+  return (
+    <>
+      <HorizontalList
+        className={cn(
+          'w-full scroll-px-4 items-start',
+          posts.length === 0 && 'overflow-x-hidden',
+          className,
+        )}
+      >
+        {posts.length > 0 ? (
+          posts.map((postToOrg) => (
+            <HorizontalListItem
+              key={postToOrg.postId}
+              className="w-11/12 max-w-96 shrink-0 snap-start rounded border p-3 first:ml-4 last:mr-4"
+            >
+              <PostItem
+                post={postToOrg.post}
+                organization={postToOrg.organization ?? null}
+                user={user}
+                withLinks={false}
+                onReactionClick={onReactionClick}
+                onCommentClick={onCommentClick}
+              />
+            </HorizontalListItem>
+          ))
+        ) : (
+          <HorizontalListItem className="w-11/12 max-w-96 shrink-0 snap-start rounded border p-3 first:ml-4 last:mr-4">
+            <EmptyPostsState />
           </HorizontalListItem>
-        ))
-      ) : (
-        <HorizontalListItem className="w-11/12 max-w-96 shrink-0 snap-start rounded border p-3 first:ml-4 last:mr-4">
-          <EmptyPostsState />
-        </HorizontalListItem>
-      )}
-      {shouldShowTrigger && (
-        <HorizontalListItem>
-          <div ref={ref as React.RefObject<HTMLDivElement>}>
-            {isFetchingNextPage ? (
-              <div className="text-sm text-neutral-gray4">
-                <SkeletonLine lines={2} />
-              </div>
-            ) : null}
-          </div>
-        </HorizontalListItem>
-      )}
-    </HorizontalList>
-  ) : (
+        )}
+        {shouldShowTrigger && (
+          <HorizontalListItem>
+            <div ref={infiniteScrollRef as React.RefObject<HTMLDivElement>}>
+              {isFetchingNextPage ? (
+                <div className="text-sm text-neutral-gray4">
+                  <SkeletonLine lines={2} />
+                </div>
+              ) : null}
+            </div>
+          </HorizontalListItem>
+        )}
+      </HorizontalList>
+      <DiscussionModalContainer
+        discussionModal={discussionModal}
+        onClose={onModalClose}
+      />
+    </>
+  );
+};
+
+export const ProfileFeedList = ({
+  posts,
+  user,
+  infiniteScrollRef,
+  shouldShowTrigger,
+  isFetchingNextPage,
+  handleReactionClick: onReactionClick,
+  handleCommentClick: onCommentClick,
+  discussionModal,
+  handleModalClose: onModalClose,
+  className,
+}: ProfileFeedRenderProps & { className?: string }) => {
+  return (
     <div className={className}>
       <PostFeed>
-        {allPosts.length > 0 ? (
-          allPosts.map((postToOrg) => (
+        {posts.length > 0 ? (
+          posts.map((postToOrg) => (
             <Fragment key={postToOrg.postId}>
               <PostItem
                 post={postToOrg.post}
                 organization={postToOrg.organization ?? null}
                 user={user}
                 withLinks={false}
-                onReactionClick={handleReactionClick}
-                onCommentClick={handleCommentClick}
+                onReactionClick={onReactionClick}
+                onCommentClick={onCommentClick}
               />
               <hr className="bg-neutral-gray1" />
             </Fragment>
@@ -139,12 +203,12 @@ export const ProfileFeed = ({
 
         <DiscussionModalContainer
           discussionModal={discussionModal}
-          onClose={handleModalClose}
+          onClose={onModalClose}
         />
       </PostFeed>
       {shouldShowTrigger && (
         <div
-          ref={ref as React.RefObject<HTMLDivElement>}
+          ref={infiniteScrollRef as React.RefObject<HTMLDivElement>}
           className="flex justify-center py-4"
         >
           {isFetchingNextPage ? (

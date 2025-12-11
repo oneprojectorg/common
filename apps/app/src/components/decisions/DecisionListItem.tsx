@@ -4,10 +4,12 @@ import { Avatar } from '@op/ui/Avatar';
 import { Chip } from '@op/ui/Chip';
 import { Header3 } from '@op/ui/Header';
 import { cn } from '@op/ui/utils';
-import { Calendar } from 'lucide-react';
 import Image from 'next/image';
+import { LuCalendar } from 'react-icons/lu';
 
-import { Link, useTranslations } from '@/lib/i18n';
+import { Link } from '@/lib/i18n';
+
+import { TranslatedText } from '../TranslatedText';
 
 const formatDateShort = (dateString: string) => {
   const date = new Date(dateString);
@@ -28,7 +30,6 @@ const isClosingSoon = (dateString: string) => {
 };
 
 export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
-  const t = useTranslations();
   const { processInstance } = item;
 
   // Get current state name from process schema
@@ -53,7 +54,7 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
     >
       <div className="flex flex-col gap-2">
         {/* Process name and status chip */}
-        <ProcessHeader
+        <DecisionProcessHeader
           name={processInstance?.name || item.name}
           currentState={currentStateName}
         />
@@ -79,32 +80,31 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
             </div>
           )}
 
-          {closingDate && <ClosingDate closingDate={closingDate} />}
+          {closingDate && <DecisionClosingDate closingDate={closingDate} />}
         </div>
       </div>
 
       <div className="flex items-end gap-4 text-neutral-black sm:items-center sm:gap-12">
         <DecisionStat
           number={processInstance?.participantCount ?? 0}
-          label={t('Participants')}
+          label="Participants"
         />
         <DecisionStat
           number={processInstance?.proposalCount ?? 0}
-          label={t('Proposals')}
+          label="Proposals"
         />
       </div>
     </Link>
   );
 };
 
-export const ProfileFeaturedDecision = ({
+export const ProfileDecisionListItem = ({
   item,
   className,
 }: {
   item: DecisionProfile;
   className?: string;
 }) => {
-  const t = useTranslations();
   const { processInstance } = item;
 
   // Get current state name from process schema
@@ -126,23 +126,23 @@ export const ProfileFeaturedDecision = ({
     >
       <div className="flex flex-col gap-2">
         {/* Process name and status chip */}
-        <ProcessHeader
+        <DecisionProcessHeader
           name={processInstance?.name || item.name}
           currentState={currentStateName}
         />
 
         {/* Organization and closing date */}
         <div className="flex flex-col flex-wrap gap-2 py-1 text-xs sm:flex-row sm:items-center sm:justify-between">
-          {closingDate && <ClosingDate closingDate={closingDate} />}
+          {closingDate && <DecisionClosingDate closingDate={closingDate} />}
           <div className="flex items-end gap-4 text-neutral-black">
             <DecisionStat
               number={processInstance?.participantCount ?? 0}
-              label={t('Participants')}
+              label="Participants"
               className="sm:flex-row sm:items-end sm:gap-1"
             />
             <DecisionStat
               number={processInstance?.proposalCount ?? 0}
-              label={t('Proposals')}
+              label="Proposals"
               className="sm:flex-row sm:items-end sm:gap-1"
             />
           </div>
@@ -168,15 +168,16 @@ const DecisionStat = ({
     )}
   >
     <span className="font-serif text-title-base">{number}</span>
-    <span className="text-sm">{label}</span>
+    <span className="text-sm">
+      <TranslatedText text={label} />
+    </span>
   </div>
 );
 
-const ClosingDate = ({ closingDate }: { closingDate: string }) => {
-  const t = useTranslations();
+const DecisionClosingDate = ({ closingDate }: { closingDate: string }) => {
   return (
     <div className="flex items-center gap-1">
-      <Calendar
+      <LuCalendar
         className={`size-4 ${isClosingSoon(closingDate) ? 'text-functional-red' : 'text-neutral-charcoal'}`}
       />
       <span
@@ -187,13 +188,13 @@ const ClosingDate = ({ closingDate }: { closingDate: string }) => {
           'text-sm',
         )}
       >
-        {t('Closes')} {formatDateShort(closingDate)}
+        <TranslatedText text="Closes" /> {formatDateShort(closingDate)}
       </span>
     </div>
   );
 };
 
-const ProcessHeader = ({
+const DecisionProcessHeader = ({
   name,
   currentState,
 }: {
@@ -204,10 +205,10 @@ const ProcessHeader = ({
     <Header3 className="font-serif !text-title-base text-neutral-black">
       {name}
     </Header3>
-    {currentState && (
+    {currentState ? (
       <Chip className="bg-primary-tealWhite text-primary-tealBlack">
         {currentState}
       </Chip>
-    )}
+    ) : null}
   </div>
 );
