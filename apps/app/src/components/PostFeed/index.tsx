@@ -249,11 +249,6 @@ export const EmptyPostsState = () => {
   );
 };
 
-type ReactionState = {
-  userReaction: string | null;
-  reactionCounts: Record<string, number>;
-};
-
 /**
  * Hook for optimistic reaction updates with server sync.
  * Returns displayPost with optimistic reaction data and a handleReactionClick function.
@@ -263,7 +258,10 @@ const useOptimisticReaction = (
   post: Post,
   onReactionClick: (postId: string, emoji: string) => void,
 ) => {
-  const [localReaction, setLocalReaction] = useState<ReactionState>({
+  const [localReaction, setLocalReaction] = useState<{
+    userReaction: string | null;
+    reactionCounts: Record<string, number>;
+  }>({
     userReaction: post.userReaction ?? null,
     reactionCounts: post.reactionCounts ?? {},
   });
