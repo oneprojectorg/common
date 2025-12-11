@@ -129,7 +129,7 @@ describe.concurrent('platform.admin.listAllUsers', () => {
     expect(result.items.length).toBeLessThanOrEqual(3);
   });
 
-  it('should sort users by updatedAt ascending', async ({
+  it('should sort users by createdAt ascending', async ({
     task,
     onTestFinished,
   }) => {
@@ -146,9 +146,9 @@ describe.concurrent('platform.admin.listAllUsers', () => {
     for (let i = 0; i < result.items.length - 1; i++) {
       const current = result.items[i];
       const next = result.items[i + 1];
-      if (current?.updatedAt && next?.updatedAt) {
-        expect(new Date(current.updatedAt).getTime()).toBeLessThanOrEqual(
-          new Date(next.updatedAt).getTime(),
+      if (current?.createdAt && next?.createdAt) {
+        expect(new Date(current.createdAt).getTime()).toBeLessThanOrEqual(
+          new Date(next.createdAt).getTime(),
         );
       }
     }

@@ -3,11 +3,21 @@
 import type { RouterInput } from '@op/api/client';
 import { trpc } from '@op/api/client';
 import { useCursorPagination, useDebounce } from '@op/hooks';
+import { Menu, MenuItem } from '@op/ui/Menu';
+import { OptionMenu } from '@op/ui/OptionMenu';
 import { Pagination } from '@op/ui/Pagination';
 import { SearchField } from '@op/ui/SearchField';
 import { Skeleton } from '@op/ui/Skeleton';
+import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
-import { Suspense, useEffect, useState } from 'react';
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useState,
+  useTransition,
+} from 'react';
+import { LuDownload } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -20,11 +30,64 @@ const USERS_TABLE_GRID =
 // Infer input type for listAllUsers query
 type ListAllUsersInput = RouterInput['platform']['admin']['listAllUsers'];
 
+/**
+ * Exports user data to CSV and triggers download
+ */
+const exportUsersToCSV = (
+  users: Array<{ name: string | null; email: string }>,
+) => {
+  const header = 'name,email\n';
+  const rows = users
+    .map((user) => {
+      const name = user.name?.replace(/"/g, '""') ?? '';
+      const email = user.email.replace(/"/g, '""');
+      return `"${name}","${email}"`;
+    })
+    .join('\n');
+
+  const csvContent = header + rows;
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `users-export-${new Date().toISOString().split('T')[0]}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
+
 /** Main users table component with suspense boundary */
 export const UsersTable = () => {
   const t = useTranslations();
+  const utils = trpc.useUtils();
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery] = useDebounce(searchQuery, 200);
+  const [isExporting, startExportTransition] = useTransition();
+
+  const handleExportAllUsers = useCallback(() => {
+    startExportTransition(async () => {
+      try {
+        // Fetch all users without limit
+        const result = await utils.platform.admin.listAllUsers.fetch({});
+
+        if (result.items.length === 0) {
+          return;
+        }
+
+        const allUsers = result.items.map((user) => ({
+          name: user.profile?.name ?? user.name,
+          email: user.email,
+        }));
+
+        exportUsersToCSV(allUsers);
+        toast.success({ message: t('platformAdmin_exportSuccess') });
+      } catch (error) {
+        console.error('Export failed:', error);
+        toast.error({ message: t('platformAdmin_exportError') });
+      }
+    });
+  }, [utils, t]);
 
   return (
     <div className="mt-8">
@@ -32,13 +95,26 @@ export const UsersTable = () => {
         <h2 className="text-md font-serif text-neutral-black">
           {t('platformAdmin_allUsers')}
         </h2>
-        <div className="w-64">
-          <SearchField
-            aria-label={t('platformAdmin_searchUsersPlaceholder')}
-            placeholder={t('platformAdmin_searchUsersPlaceholder')}
-            value={searchQuery}
-            onChange={setSearchQuery}
-          />
+        <div className="flex items-center gap-2">
+          <div className="w-64">
+            <SearchField
+              aria-label={t('platformAdmin_searchUsersPlaceholder')}
+              placeholder={t('platformAdmin_searchUsersPlaceholder')}
+              value={searchQuery}
+              onChange={setSearchQuery}
+            />
+          </div>
+          <OptionMenu variant="outline" size="medium" className="mr-1">
+            <Menu>
+              <MenuItem
+                onAction={handleExportAllUsers}
+                isDisabled={isExporting}
+              >
+                <LuDownload className="size-4" />
+                {t('platformAdmin_exportAllUsers')}
+              </MenuItem>
+            </Menu>
+          </OptionMenu>
         </div>
       </div>
       <div className="overflow-x-auto">
@@ -62,7 +138,7 @@ const UsersTableHeader = () => {
     t('platformAdmin_columnEmail'),
     t('platformAdmin_columnRole'),
     t('platformAdmin_columnOrganization'),
-    t('platformAdmin_columnLastUpdated'),
+    t('platformAdmin_columnCreated'),
     t('platformAdmin_columnLastSignIn'),
     t('platformAdmin_columnActions'),
   ];
