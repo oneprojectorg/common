@@ -3,17 +3,12 @@
 import { getPublicUrl } from '@/utils';
 import { OrganizationUser } from '@/utils/UserProvider';
 import { detectLinks, linkifyText } from '@/utils/linkDetection';
-import {
-  type PostFeedUser,
-  createOptimisticUpdater,
-} from '@/utils/optimisticUpdates';
-import { createCommentsQueryKey } from '@/utils/queryKeys';
+import { type PostFeedUser } from '@/utils/optimisticUpdates';
 import { trpc } from '@op/api/client';
 import type {
   Organization,
   Post,
   PostAttachment,
-  PostToOrganization,
 } from '@op/api/encoders';
 import { useRelativeTime } from '@op/hooks';
 import { REACTION_OPTIONS } from '@op/types';
@@ -255,6 +250,44 @@ export const EmptyPostsState = () => {
   );
 };
 
+type ReactionState = {
+  userReaction: string | null;
+  reactionCounts: Record<string, number>;
+};
+
+const computeOptimisticReaction = (
+  currentState: ReactionState,
+  reactionType: string,
+): ReactionState => {
+  const { userReaction, reactionCounts } = currentState;
+  const newCounts = { ...reactionCounts };
+
+  if (userReaction === reactionType) {
+    // Removing the reaction
+    const newCount = Math.max(0, (newCounts[reactionType] || 1) - 1);
+    if (newCount === 0) {
+      delete newCounts[reactionType];
+    } else {
+      newCounts[reactionType] = newCount;
+    }
+    return { userReaction: null, reactionCounts: newCounts };
+  } else {
+    // Adding or replacing reaction
+    if (userReaction) {
+      // Remove previous reaction count
+      const prevCount = Math.max(0, (newCounts[userReaction] || 1) - 1);
+      if (prevCount === 0) {
+        delete newCounts[userReaction];
+      } else {
+        newCounts[userReaction] = prevCount;
+      }
+    }
+    // Add new reaction count
+    newCounts[reactionType] = (newCounts[reactionType] || 0) + 1;
+    return { userReaction: reactionType, reactionCounts: newCounts };
+  }
+};
+
 export const PostItem = ({
   post,
   organization,
@@ -273,6 +306,35 @@ export const PostItem = ({
   className?: string;
 }) => {
   const { urls } = useMemo(() => detectLinks(post?.content), [post?.content]);
+
+  // Local state for optimistic updates - initialized from props
+  const [localReaction, setLocalReaction] = useState<ReactionState>({
+    userReaction: post.userReaction ?? null,
+    reactionCounts: post.reactionCounts ?? {},
+  });
+
+  const handleReactionClick = (postId: string, emoji: string) => {
+    const reactionOption = REACTION_OPTIONS.find(
+      (option) => option.emoji === emoji,
+    );
+    const reactionType = reactionOption?.key;
+    if (reactionType) {
+      setLocalReaction((current) =>
+        computeOptimisticReaction(current, reactionType),
+      );
+    }
+    onReactionClick(postId, emoji);
+  };
+
+  // Create a post object with local reaction data
+  const displayPost = useMemo(
+    () => ({
+      ...post,
+      userReaction: localReaction.userReaction,
+      reactionCounts: localReaction.reactionCounts,
+    }),
+    [post, localReaction],
+  );
 
   // For comments (posts without organization), show the post author
   // TODO: this is too complex. We need to refactor this
@@ -310,7 +372,10 @@ export const PostItem = ({
           <PostAttachments attachments={post.attachments} />
           <PostUrls urls={urls} />
           <div className="flex items-center justify-between gap-2">
-            <PostReactions post={post} onReactionClick={onReactionClick} />
+            <PostReactions
+              post={displayPost}
+              onReactionClick={handleReactionClick}
+            />
             {onCommentClick ? (
               <PostCommentButton
                 post={post}
@@ -343,6 +408,35 @@ export const PostItemOnDetailPage = ({
 }) => {
   const { urls } = useMemo(() => detectLinks(post?.content), [post?.content]);
 
+  // Local state for optimistic updates - initialized from props
+  const [localReaction, setLocalReaction] = useState<ReactionState>({
+    userReaction: post.userReaction ?? null,
+    reactionCounts: post.reactionCounts ?? {},
+  });
+
+  const handleReactionClick = (postId: string, emoji: string) => {
+    const reactionOption = REACTION_OPTIONS.find(
+      (option) => option.emoji === emoji,
+    );
+    const reactionType = reactionOption?.key;
+    if (reactionType) {
+      setLocalReaction((current) =>
+        computeOptimisticReaction(current, reactionType),
+      );
+    }
+    onReactionClick(postId, emoji);
+  };
+
+  // Create a post object with local reaction data
+  const displayPost = useMemo(
+    () => ({
+      ...post,
+      userReaction: localReaction.userReaction,
+      reactionCounts: localReaction.reactionCounts,
+    }),
+    [post, localReaction],
+  );
+
   // For comments (posts without organization), show the post author
   // TODO: this is too complex. We need to refactor this
   const displayName =
@@ -379,7 +473,10 @@ export const PostItemOnDetailPage = ({
           <PostAttachments attachments={post.attachments} />
           <PostUrls urls={urls} />
           <div className="flex items-center justify-between gap-2">
-            <PostReactions post={post} onReactionClick={onReactionClick} />
+            <PostReactions
+              post={displayPost}
+              onReactionClick={handleReactionClick}
+            />
             <CommentButton count={commentCount} isDisabled />
           </div>
         </FeedContent>
@@ -414,11 +511,7 @@ export const DiscussionModalContainer = ({
 };
 
 export const usePostFeedActions = ({
-  slug,
-  limit = 20,
-  parentPostId,
-  profileId,
-  user,
+  user: _user,
 }: {
   slug?: string;
   limit?: number;
@@ -426,7 +519,7 @@ export const usePostFeedActions = ({
   profileId?: string;
   user?: PostFeedUser;
 } = {}) => {
-  const utils = trpc.useUtils();
+  void _user; // Keep for API compatibility
   const [discussionModal, setDiscussionModal] = useState<{
     isOpen: boolean;
     post?: Post | null;
@@ -438,191 +531,8 @@ export const usePostFeedActions = ({
   });
 
   const toggleReaction = trpc.organization.toggleReaction.useMutation({
-    onMutate: async ({ postId, reactionType }) => {
-      // Cancel any outgoing refetches
-      if (slug) {
-        await utils.organization.listPosts.cancel({ slug, limit });
-      }
-      await utils.organization.listAllPosts.cancel({});
-
-      // Cancel comments cache if we're in a modal context
-      if (parentPostId) {
-        const commentsQueryKey = createCommentsQueryKey(
-          parentPostId,
-          profileId,
-        );
-        await utils.posts.getPosts.cancel(commentsQueryKey);
-      }
-
-      // Cancel profile posts cache if we're working with profile posts
-      let previousProfilePosts;
-      if (profileId) {
-        const profileQueryKey = {
-          profileId,
-          parentPostId: null,
-          limit: 50,
-          offset: 0,
-          includeChildren: false,
-        };
-        await utils.posts.getPosts.cancel(profileQueryKey);
-        previousProfilePosts = utils.posts.getPosts.getData(profileQueryKey);
-      }
-
-      // Snapshot the previous values
-      const previousListPosts = slug
-        ? utils.organization.listPosts.getInfiniteData({ slug, limit })
-        : undefined;
-      const previousListAllPosts = utils.organization.listAllPosts.getData({});
-      const previousComments = parentPostId
-        ? utils.posts.getPosts.getData(
-            createCommentsQueryKey(parentPostId, profileId),
-          )
-        : undefined;
-
-      // Use optimistic updater service for cleaner code
-      const optimisticUpdater = createOptimisticUpdater(user);
-      const updatePostReactions = (item: PostToOrganization) =>
-        optimisticUpdater.updatePostReactions(item, postId, reactionType);
-
-      // Optimistically update listPosts cache (if slug is provided)
-      if (slug) {
-        utils.organization.listPosts.setInfiniteData({ slug, limit }, (old) => {
-          if (!old) {
-            return old;
-          }
-
-          return {
-            ...old,
-            pages: old.pages.map((page) => ({
-              ...page,
-              items: page.items.map(updatePostReactions),
-            })),
-          };
-        });
-      }
-
-      // Optimistically update listAllPosts cache
-      utils.organization.listAllPosts.setData({}, (old) => {
-        if (!old) {
-          return old;
-        }
-
-        return {
-          ...old,
-          items: old.items.map(updatePostReactions),
-        };
-      });
-
-      // Optimistically update profile posts cache (for proposal comments)
-      if (profileId) {
-        const profileQueryKey = {
-          profileId,
-          parentPostId: null,
-          limit: 50,
-          offset: 0,
-          includeChildren: false,
-        };
-        utils.posts.getPosts.setData(profileQueryKey, (old) => {
-          if (!old) {
-            return old;
-          }
-
-          // Transform posts to PostToOrganization format and apply updates
-          return old.map((post) => {
-            const postToOrg: PostToOrganization = {
-              createdAt: post.createdAt,
-              updatedAt: post.updatedAt,
-              deletedAt: null,
-              postId: post.id,
-              organizationId: '',
-              post: post,
-              organization: null,
-            };
-
-            const updated = updatePostReactions(postToOrg);
-            return updated.post;
-          });
-        });
-      }
-
-      // Optimistically update comments cache if we're in a modal context
-      if (parentPostId) {
-        const commentsQueryKey = createCommentsQueryKey(
-          parentPostId,
-          profileId,
-        );
-        utils.posts.getPosts.setData(commentsQueryKey, (old) => {
-          if (!old) {
-            return old;
-          }
-
-          // Transform comments to PostToOrganization format and apply updates
-          return old.map((comment) => {
-            const postToOrg: PostToOrganization = {
-              createdAt: comment.createdAt,
-              updatedAt: comment.updatedAt,
-              deletedAt: null,
-              postId: comment.id,
-              organizationId: '',
-              post: comment,
-              organization: null,
-            };
-
-            const updated = updatePostReactions(postToOrg);
-            return updated.post;
-          });
-        });
-      }
-
-      return {
-        previousListPosts,
-        previousListAllPosts,
-        previousComments,
-        previousProfilePosts,
-      };
-    },
-    onError: (err, _variables, context) => {
-      // Rollback on error
-      if (context?.previousListPosts && slug) {
-        utils.organization.listPosts.setInfiniteData(
-          { slug, limit },
-          context.previousListPosts,
-        );
-      }
-      if (context?.previousListAllPosts) {
-        utils.organization.listAllPosts.setData(
-          {},
-          context.previousListAllPosts,
-        );
-      }
-      if (context?.previousComments && parentPostId) {
-        const commentsQueryKey = createCommentsQueryKey(
-          parentPostId,
-          profileId,
-        );
-        utils.posts.getPosts.setData(
-          commentsQueryKey,
-          context.previousComments,
-        );
-      }
-      if (context?.previousProfilePosts && profileId) {
-        const profileQueryKey = {
-          profileId,
-          parentPostId: null,
-          limit: 50,
-          offset: 0,
-          includeChildren: false,
-        };
-        utils.posts.getPosts.setData(
-          profileQueryKey,
-          context.previousProfilePosts,
-        );
-      }
+    onError: (err) => {
       toast.error({ message: err.message || 'Failed to update reaction' });
-    },
-    onSuccess: () => {
-      // Skip invalidation to preserve optimistic updates
-      // The optimistic update should be accurate enough
     },
   });
 
