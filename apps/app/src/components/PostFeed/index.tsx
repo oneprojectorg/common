@@ -145,19 +145,19 @@ const PostReactions = ({
 
   const reactions = post.reactionCounts
     ? Object.entries(post.reactionCounts).map(([reactionType, count]) => {
-        const reactionOption = REACTION_OPTIONS.find(
-          (option) => option.key === reactionType,
-        );
-        const emoji = reactionOption?.emoji || reactionType;
-        const users = post.reactionUsers?.[reactionType] || [];
+      const reactionOption = REACTION_OPTIONS.find(
+        (option) => option.key === reactionType,
+      );
+      const emoji = reactionOption?.emoji || reactionType;
+      const users = post.reactionUsers?.[reactionType] || [];
 
-        return {
-          emoji,
-          count: count as number,
-          isActive: post.userReaction === reactionType,
-          users,
-        };
-      })
+      return {
+        emoji,
+        count: count as number,
+        isActive: post.userReaction === reactionType,
+        users,
+      };
+    })
     : [];
 
   return (
@@ -307,11 +307,23 @@ export const PostItem = ({
 }) => {
   const { urls } = useMemo(() => detectLinks(post?.content), [post?.content]);
 
-  // Local state for optimistic updates - initialized from props
+  // Local state for optimistic updates
   const [localReaction, setLocalReaction] = useState<ReactionState>({
     userReaction: post.userReaction ?? null,
     reactionCounts: post.reactionCounts ?? {},
   });
+
+  // TODO: stopgap until we have the server channels in place for updates
+  // Sync local state when server data changes (after refetch)
+  const serverReactionKey = `${post.userReaction}-${JSON.stringify(post.reactionCounts)}`;
+  const [lastServerKey, setLastServerKey] = useState(serverReactionKey);
+  if (serverReactionKey !== lastServerKey) {
+    setLastServerKey(serverReactionKey);
+    setLocalReaction({
+      userReaction: post.userReaction ?? null,
+      reactionCounts: post.reactionCounts ?? {},
+    });
+  }
 
   const handleReactionClick = (postId: string, emoji: string) => {
     const reactionOption = REACTION_OPTIONS.find(
@@ -408,11 +420,22 @@ export const PostItemOnDetailPage = ({
 }) => {
   const { urls } = useMemo(() => detectLinks(post?.content), [post?.content]);
 
-  // Local state for optimistic updates - initialized from props
+  // Local state for optimistic updates
   const [localReaction, setLocalReaction] = useState<ReactionState>({
     userReaction: post.userReaction ?? null,
     reactionCounts: post.reactionCounts ?? {},
   });
+
+  // Sync local state when server data changes (after refetch)
+  const serverReactionKey = `${post.userReaction}-${JSON.stringify(post.reactionCounts)}`;
+  const [lastServerKey, setLastServerKey] = useState(serverReactionKey);
+  if (serverReactionKey !== lastServerKey) {
+    setLastServerKey(serverReactionKey);
+    setLocalReaction({
+      userReaction: post.userReaction ?? null,
+      reactionCounts: post.reactionCounts ?? {},
+    });
+  }
 
   const handleReactionClick = (postId: string, emoji: string) => {
     const reactionOption = REACTION_OPTIONS.find(
@@ -532,7 +555,7 @@ export const usePostFeedActions = ({
 
   const utils = trpc.useUtils();
   const toggleReaction = trpc.organization.toggleReaction.useMutation({
-    onSuccess: () => {
+    onSettled: () => {
       void utils.organization.listPosts.invalidate();
       void utils.organization.listAllPosts.invalidate();
       void utils.posts.getPosts.invalidate();
