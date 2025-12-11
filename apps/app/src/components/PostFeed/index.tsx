@@ -21,7 +21,7 @@ import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
 import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';
-import { ReactNode, memo, useMemo, useState } from 'react';
+import { ReactNode, memo, useCallback, useMemo, useState } from 'react';
 import { LuLeaf } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
@@ -255,16 +255,22 @@ type ReactionState = {
 };
 
 /**
- * Hook for optimistic reaction updates with server sync
+ * Hook for optimistic reaction updates with server sync.
+ * Returns displayPost with optimistic reaction data and a handleReactionClick function.
  * TODO: stopgap until we have server channels in place for updates
  */
-const useOptimisticReaction = (post: Post) => {
+const useOptimisticReaction = (
+  post: Post,
+  onReactionClick: (postId: string, emoji: string) => void,
+) => {
   const [localReaction, setLocalReaction] = useState<ReactionState>({
     userReaction: post.userReaction ?? null,
     reactionCounts: post.reactionCounts ?? {},
   });
 
-  // Sync local state when server data changes (after refetch)
+  // Sync pattern: setState during render is intentional to avoid extra render cycle.
+  // This syncs local state when server data changes (after refetch).
+  // See: https://react.dev/reference/react/useState#storing-information-from-previous-renders
   const serverReactionKey = `${post.userReaction}-${JSON.stringify(post.reactionCounts)}`;
   const [lastServerKey, setLastServerKey] = useState(serverReactionKey);
   if (serverReactionKey !== lastServerKey) {
@@ -275,7 +281,7 @@ const useOptimisticReaction = (post: Post) => {
     });
   }
 
-  const updateReaction = (reactionType: string) => {
+  const updateReaction = useCallback((reactionType: string) => {
     setLocalReaction((current) => {
       const newCounts = { ...current.reactionCounts };
 
@@ -307,9 +313,31 @@ const useOptimisticReaction = (post: Post) => {
         return { userReaction: reactionType, reactionCounts: newCounts };
       }
     });
-  };
+  }, []);
 
-  return { localReaction, updateReaction };
+  const handleReactionClick = useCallback(
+    (postId: string, emoji: string) => {
+      const reactionOption = REACTION_OPTIONS.find(
+        (option) => option.emoji === emoji,
+      );
+      if (reactionOption?.key) {
+        updateReaction(reactionOption.key);
+      }
+      onReactionClick(postId, emoji);
+    },
+    [onReactionClick, updateReaction],
+  );
+
+  const displayPost = useMemo(
+    () => ({
+      ...post,
+      userReaction: localReaction.userReaction,
+      reactionCounts: localReaction.reactionCounts,
+    }),
+    [post, localReaction],
+  );
+
+  return { displayPost, handleReactionClick };
 };
 
 export const PostItem = ({
@@ -330,25 +358,9 @@ export const PostItem = ({
   className?: string;
 }) => {
   const { urls } = useMemo(() => detectLinks(post?.content), [post?.content]);
-  const { localReaction, updateReaction } = useOptimisticReaction(post);
-
-  const handleReactionClick = (postId: string, emoji: string) => {
-    const reactionOption = REACTION_OPTIONS.find(
-      (option) => option.emoji === emoji,
-    );
-    if (reactionOption?.key) {
-      updateReaction(reactionOption.key);
-    }
-    onReactionClick(postId, emoji);
-  };
-
-  const displayPost = useMemo(
-    () => ({
-      ...post,
-      userReaction: localReaction.userReaction,
-      reactionCounts: localReaction.reactionCounts,
-    }),
-    [post, localReaction],
+  const { displayPost, handleReactionClick } = useOptimisticReaction(
+    post,
+    onReactionClick,
   );
 
   // For comments (posts without organization), show the post author
@@ -422,26 +434,9 @@ export const PostItemOnDetailPage = ({
   className?: string;
 }) => {
   const { urls } = useMemo(() => detectLinks(post?.content), [post?.content]);
-  const { localReaction, updateReaction } = useOptimisticReaction(post);
-
-  const handleReactionClick = (postId: string, emoji: string) => {
-    const reactionOption = REACTION_OPTIONS.find(
-      (option) => option.emoji === emoji,
-    );
-    if (reactionOption?.key) {
-      updateReaction(reactionOption.key);
-    }
-    onReactionClick(postId, emoji);
-  };
-
-  // Create a post object with local reaction data
-  const displayPost = useMemo(
-    () => ({
-      ...post,
-      userReaction: localReaction.userReaction,
-      reactionCounts: localReaction.reactionCounts,
-    }),
-    [post, localReaction],
+  const { displayPost, handleReactionClick } = useOptimisticReaction(
+    post,
+    onReactionClick,
   );
 
   // For comments (posts without organization), show the post author
@@ -537,6 +532,10 @@ export const usePostFeedActions = () => {
     },
     onError: (err) => {
       toast.error({ message: err.message || 'Failed to update reaction' });
+      // Refetch to restore correct state after optimistic update rollback
+      void utils.organization.listPosts.refetch();
+      void utils.organization.listAllPosts.refetch();
+      void utils.posts.getPosts.refetch();
     },
   });
 
