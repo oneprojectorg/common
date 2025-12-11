@@ -65,7 +65,7 @@ const FeedContent = ({ limit = 10 }: { limit?: number }) => {
     handleReactionClick,
     handleCommentClick,
     handleModalClose,
-  } = usePostFeedActions({ user });
+  } = usePostFeedActions();
 
   if (!paginatedData || !user) {
     return <PostFeedSkeleton numPosts={4} />;

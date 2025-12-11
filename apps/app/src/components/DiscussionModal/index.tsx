@@ -29,11 +29,7 @@ export function DiscussionModal({
   const t = useTranslations();
   const commentsContainerRef = useRef<HTMLDivElement>(null);
 
-  const { handleReactionClick, handleCommentClick } = usePostFeedActions({
-    slug: organization?.profile?.slug,
-    parentPostId: post.id,
-    user,
-  });
+  const { handleReactionClick, handleCommentClick } = usePostFeedActions();
 
   // Get comments for the post using getPosts without profileId (works for all post types)
   const { data: commentsData, isLoading } = trpc.posts.getPosts.useQuery(

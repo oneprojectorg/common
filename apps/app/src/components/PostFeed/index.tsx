@@ -3,7 +3,6 @@
 import { getPublicUrl } from '@/utils';
 import { OrganizationUser } from '@/utils/UserProvider';
 import { detectLinks, linkifyText } from '@/utils/linkDetection';
-import { type PostFeedUser } from '@/utils/optimisticUpdates';
 import { trpc } from '@op/api/client';
 import type {
   Organization,
@@ -255,37 +254,62 @@ type ReactionState = {
   reactionCounts: Record<string, number>;
 };
 
-const computeOptimisticReaction = (
-  currentState: ReactionState,
-  reactionType: string,
-): ReactionState => {
-  const { userReaction, reactionCounts } = currentState;
-  const newCounts = { ...reactionCounts };
+/**
+ * Hook for optimistic reaction updates with server sync
+ * TODO: stopgap until we have server channels in place for updates
+ */
+const useOptimisticReaction = (post: Post) => {
+  const [localReaction, setLocalReaction] = useState<ReactionState>({
+    userReaction: post.userReaction ?? null,
+    reactionCounts: post.reactionCounts ?? {},
+  });
 
-  if (userReaction === reactionType) {
-    // Removing the reaction
-    const newCount = Math.max(0, (newCounts[reactionType] || 1) - 1);
-    if (newCount === 0) {
-      delete newCounts[reactionType];
-    } else {
-      newCounts[reactionType] = newCount;
-    }
-    return { userReaction: null, reactionCounts: newCounts };
-  } else {
-    // Adding or replacing reaction
-    if (userReaction) {
-      // Remove previous reaction count
-      const prevCount = Math.max(0, (newCounts[userReaction] || 1) - 1);
-      if (prevCount === 0) {
-        delete newCounts[userReaction];
-      } else {
-        newCounts[userReaction] = prevCount;
-      }
-    }
-    // Add new reaction count
-    newCounts[reactionType] = (newCounts[reactionType] || 0) + 1;
-    return { userReaction: reactionType, reactionCounts: newCounts };
+  // Sync local state when server data changes (after refetch)
+  const serverReactionKey = `${post.userReaction}-${JSON.stringify(post.reactionCounts)}`;
+  const [lastServerKey, setLastServerKey] = useState(serverReactionKey);
+  if (serverReactionKey !== lastServerKey) {
+    setLastServerKey(serverReactionKey);
+    setLocalReaction({
+      userReaction: post.userReaction ?? null,
+      reactionCounts: post.reactionCounts ?? {},
+    });
   }
+
+  const updateReaction = (reactionType: string) => {
+    setLocalReaction((current) => {
+      const newCounts = { ...current.reactionCounts };
+
+      if (current.userReaction === reactionType) {
+        // Removing the reaction
+        const newCount = Math.max(0, (newCounts[reactionType] || 1) - 1);
+        if (newCount === 0) {
+          delete newCounts[reactionType];
+        } else {
+          newCounts[reactionType] = newCount;
+        }
+        return { userReaction: null, reactionCounts: newCounts };
+      } else {
+        // Adding or replacing reaction
+        if (current.userReaction) {
+          // Remove previous reaction count
+          const prevCount = Math.max(
+            0,
+            (newCounts[current.userReaction] || 1) - 1,
+          );
+          if (prevCount === 0) {
+            delete newCounts[current.userReaction];
+          } else {
+            newCounts[current.userReaction] = prevCount;
+          }
+        }
+        // Add new reaction count
+        newCounts[reactionType] = (newCounts[reactionType] || 0) + 1;
+        return { userReaction: reactionType, reactionCounts: newCounts };
+      }
+    });
+  };
+
+  return { localReaction, updateReaction };
 };
 
 export const PostItem = ({
@@ -306,39 +330,18 @@ export const PostItem = ({
   className?: string;
 }) => {
   const { urls } = useMemo(() => detectLinks(post?.content), [post?.content]);
-
-  // Local state for optimistic updates
-  const [localReaction, setLocalReaction] = useState<ReactionState>({
-    userReaction: post.userReaction ?? null,
-    reactionCounts: post.reactionCounts ?? {},
-  });
-
-  // TODO: stopgap until we have the server channels in place for updates
-  // Sync local state when server data changes (after refetch)
-  const serverReactionKey = `${post.userReaction}-${JSON.stringify(post.reactionCounts)}`;
-  const [lastServerKey, setLastServerKey] = useState(serverReactionKey);
-  if (serverReactionKey !== lastServerKey) {
-    setLastServerKey(serverReactionKey);
-    setLocalReaction({
-      userReaction: post.userReaction ?? null,
-      reactionCounts: post.reactionCounts ?? {},
-    });
-  }
+  const { localReaction, updateReaction } = useOptimisticReaction(post);
 
   const handleReactionClick = (postId: string, emoji: string) => {
     const reactionOption = REACTION_OPTIONS.find(
       (option) => option.emoji === emoji,
     );
-    const reactionType = reactionOption?.key;
-    if (reactionType) {
-      setLocalReaction((current) =>
-        computeOptimisticReaction(current, reactionType),
-      );
+    if (reactionOption?.key) {
+      updateReaction(reactionOption.key);
     }
     onReactionClick(postId, emoji);
   };
 
-  // Create a post object with local reaction data
   const displayPost = useMemo(
     () => ({
       ...post,
@@ -419,33 +422,14 @@ export const PostItemOnDetailPage = ({
   className?: string;
 }) => {
   const { urls } = useMemo(() => detectLinks(post?.content), [post?.content]);
-
-  // Local state for optimistic updates
-  const [localReaction, setLocalReaction] = useState<ReactionState>({
-    userReaction: post.userReaction ?? null,
-    reactionCounts: post.reactionCounts ?? {},
-  });
-
-  // Sync local state when server data changes (after refetch)
-  const serverReactionKey = `${post.userReaction}-${JSON.stringify(post.reactionCounts)}`;
-  const [lastServerKey, setLastServerKey] = useState(serverReactionKey);
-  if (serverReactionKey !== lastServerKey) {
-    setLastServerKey(serverReactionKey);
-    setLocalReaction({
-      userReaction: post.userReaction ?? null,
-      reactionCounts: post.reactionCounts ?? {},
-    });
-  }
+  const { localReaction, updateReaction } = useOptimisticReaction(post);
 
   const handleReactionClick = (postId: string, emoji: string) => {
     const reactionOption = REACTION_OPTIONS.find(
       (option) => option.emoji === emoji,
     );
-    const reactionType = reactionOption?.key;
-    if (reactionType) {
-      setLocalReaction((current) =>
-        computeOptimisticReaction(current, reactionType),
-      );
+    if (reactionOption?.key) {
+      updateReaction(reactionOption.key);
     }
     onReactionClick(postId, emoji);
   };
@@ -533,16 +517,7 @@ export const DiscussionModalContainer = ({
   );
 };
 
-export const usePostFeedActions = ({
-  user: _user,
-}: {
-  slug?: string;
-  limit?: number;
-  parentPostId?: string;
-  profileId?: string;
-  user?: PostFeedUser;
-} = {}) => {
-  void _user; // Keep for API compatibility
+export const usePostFeedActions = () => {
   const [discussionModal, setDiscussionModal] = useState<{
     isOpen: boolean;
     post?: Post | null;
