@@ -72,6 +72,7 @@ export const listDecisionProfiles = async ({
   orderBy = 'updatedAt',
   dir = 'desc',
   cursor,
+  ownerProfileId,
 }: {
   user: User;
   search?: string;
@@ -80,6 +81,7 @@ export const listDecisionProfiles = async ({
   orderBy?: 'createdAt' | 'updatedAt' | 'name';
   dir?: 'asc' | 'desc';
   cursor?: string | null;
+  ownerProfileId?: string | null;
 }): Promise<ListDecisionProfilesResult> => {
   // Get the column to order by
   const orderByColumn =
@@ -108,6 +110,17 @@ export const listDecisionProfiles = async ({
           .select({ profileId: processInstances.profileId })
           .from(processInstances)
           .where(eq(processInstances.status, status)),
+      )
+    : undefined;
+
+  // Filter by owner
+  const ownerCondition = ownerProfileId
+    ? inArray(
+        profiles.id,
+        db
+          .select({ profileId: processInstances.profileId })
+          .from(processInstances)
+          .where(eq(processInstances.ownerProfileId, ownerProfileId)),
       )
     : undefined;
 
@@ -141,6 +154,7 @@ export const listDecisionProfiles = async ({
     searchCondition,
     authorizationCondition,
     hasProcessInstanceCondition,
+    ownerCondition,
   ].filter(Boolean);
 
   const whereClause =
