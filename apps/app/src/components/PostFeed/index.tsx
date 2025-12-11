@@ -527,10 +527,6 @@ export const usePostFeedActions = () => {
     },
     onError: (err) => {
       toast.error({ message: err.message || 'Failed to update reaction' });
-      // Refetch to restore correct state after optimistic update rollback
-      void utils.organization.listPosts.refetch();
-      void utils.organization.listAllPosts.refetch();
-      void utils.posts.getPosts.refetch();
     },
   });
 
