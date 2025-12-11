@@ -530,7 +530,13 @@ export const usePostFeedActions = ({
     organization: null,
   });
 
+  const utils = trpc.useUtils();
   const toggleReaction = trpc.organization.toggleReaction.useMutation({
+    onSuccess: () => {
+      void utils.organization.listPosts.invalidate();
+      void utils.organization.listAllPosts.invalidate();
+      void utils.posts.getPosts.invalidate();
+    },
     onError: (err) => {
       toast.error({ message: err.message || 'Failed to update reaction' });
     },
