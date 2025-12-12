@@ -100,7 +100,7 @@ export const AllDecisions = ({
             />
           </Suspense>
         </TabPanel>
-        <TabPanel id="other" className="p-0">
+        <TabPanel id="other" className="p-0 sm:p-0">
           <Suspense fallback={<SkeletonLine lines={5} />}>
             <DecisionsListSuspense status={ProcessStatus.COMPLETED} />
           </Suspense>

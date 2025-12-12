@@ -399,6 +399,7 @@ export const decisionProfileFilterSchema = z.object({
   dir: z.enum(['asc', 'desc']).prefault('desc'),
   search: z.string().optional(),
   status: z.enum(ProcessStatus).optional(),
+  ownerProfileId: z.uuid().optional(),
 });
 
 // Type exports
