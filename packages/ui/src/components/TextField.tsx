@@ -28,6 +28,7 @@ export interface TextFieldProps extends AriaTextFieldProps {
   fieldClassName?: string;
   descriptionClassName?: string;
   labelClassName?: string;
+  errorClassName?: string;
   useTextArea?: boolean;
 }
 
@@ -41,6 +42,7 @@ export const TextField = ({
   fieldClassName,
   descriptionClassName,
   labelClassName,
+  errorClassName,
   useTextArea,
   children,
   isRequired, // we pull this out as it conflicts with other form validation libraries
@@ -97,7 +99,7 @@ export const TextField = ({
           {description}
         </Description>
       )}
-      <FieldError>{errorMessage}</FieldError>
+      <FieldError className={errorClassName}>{errorMessage}</FieldError>
     </AriaTextField>
   );
 };
