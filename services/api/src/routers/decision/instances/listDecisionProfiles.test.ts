@@ -1,5 +1,3 @@
-import { db, eq } from '@op/db/client';
-import { processInstances } from '@op/db/schema';
 import { appRouter } from 'src/routers';
 import { createCallerFactory } from 'src/trpcFactory';
 import { describe, expect, it } from 'vitest';
@@ -63,12 +61,13 @@ describe('List Decision Profiles Integration Tests', () => {
         grantAccess: true,
       });
 
-      // Create another instance and update to published
+      // Create another published instance
       const publishedInstance = await testData.createInstanceForProcess({
         process: setup.process,
         user: setup.user,
         name: 'Published Process',
         budget: 100000,
+        status: 'published',
       });
 
       await testData.grantProfileAccess(
@@ -76,12 +75,6 @@ describe('List Decision Profiles Integration Tests', () => {
         setup.user.id,
         setup.userEmail,
       );
-
-      // No publish flow yet in the backend so we need to update the DB for now
-      await db
-        .update(processInstances)
-        .set({ status: 'published' })
-        .where(eq(processInstances.id, publishedInstance.instance.id));
 
       const caller = await createAuthenticatedCaller(setup.userEmail);
 
@@ -92,6 +85,128 @@ describe('List Decision Profiles Integration Tests', () => {
 
       expect(result.items).toHaveLength(1);
       expect(result.items[0]?.processInstance.status).toBe('published');
+    });
+
+    it('should filter by owner', async ({ task, onTestFinished }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+      // Create Org A
+      const setup = await testData.createDecisionSetup({
+        instanceCount: 2,
+        grantAccess: true,
+      });
+
+      // Create Org B
+      const otherSetup = await testData.createDecisionSetup({
+        instanceCount: 0,
+      });
+
+      // Create 3 instances owned by Org B
+      for (let i = 0; i < 3; i++) {
+        const instance = await testData.createInstanceForProcess({
+          process: otherSetup.process,
+          user: otherSetup.user,
+          name: `Other Org Instance ${i + 1}`,
+          budget: 50000,
+        });
+        // Grant access to User A (from first setup)
+        await testData.grantProfileAccess(
+          instance.profileId,
+          setup.user.id,
+          setup.userEmail,
+        );
+      }
+
+      const caller = await createAuthenticatedCaller(setup.userEmail);
+
+      const result = await caller.decision.listDecisionProfiles({
+        limit: 10,
+        ownerProfileId: setup.organization.profileId,
+      });
+
+      expect(result.items).toHaveLength(2);
+      result.items.forEach((item) => {
+        expect(item.processInstance.owner?.id).toBe(
+          setup.organization.profileId,
+        );
+      });
+
+      // Also verify filtering by Org B works
+      const otherResult = await caller.decision.listDecisionProfiles({
+        limit: 10,
+        ownerProfileId: otherSetup.organization.profileId,
+      });
+
+      expect(otherResult.items).toHaveLength(3);
+      otherResult.items.forEach((item) => {
+        expect(item.processInstance.owner?.id).toBe(
+          otherSetup.organization.profileId,
+        );
+      });
+    });
+
+    it('should filter by both owner and status', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+      // Set up Org A
+      const setup = await testData.createDecisionSetup({
+        instanceCount: 2,
+        grantAccess: true,
+      });
+
+      // Publish one of the decisions in Org A
+      const publishedInstance = await testData.createInstanceForProcess({
+        process: setup.process,
+        user: setup.user,
+        name: 'Published Process A',
+        budget: 100000,
+        status: 'published',
+      });
+
+      await testData.grantProfileAccess(
+        publishedInstance.profileId,
+        setup.user.id,
+        setup.userEmail,
+      );
+
+      // Set up Org B
+      const otherSetup = await testData.createDecisionSetup({
+        instanceCount: 2,
+        grantAccess: true,
+      });
+
+      // Publish one of the decisions in Org B
+      const otherPublishedInstance = await testData.createInstanceForProcess({
+        process: otherSetup.process,
+        user: otherSetup.user,
+        name: 'Published Process B',
+        budget: 100000,
+        status: 'published',
+      });
+
+      // Grant access to User A (from first setup)
+      await testData.grantProfileAccess(
+        otherPublishedInstance.profileId,
+        setup.user.id,
+        setup.userEmail,
+      );
+
+      const caller = await createAuthenticatedCaller(setup.userEmail);
+
+      const result = await caller.decision.listDecisionProfiles({
+        limit: 10,
+        ownerProfileId: setup.organization.profileId,
+        status: 'published',
+      });
+
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0]?.processInstance.status).toBe('published');
+      expect(result.items[0]?.processInstance.owner?.id).toBe(
+        setup.organization.profileId,
+      );
     });
 
     it('should respect limit parameter and pagination', async ({
