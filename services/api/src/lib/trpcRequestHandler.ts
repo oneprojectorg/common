@@ -28,16 +28,13 @@ interface TRPCRequestHandlerOptions<TRouter extends AnyTRPCRouter> {
  * Wrapper around fetchRequestHandler that handles channel accumulation.
  *
  * Each procedure can declare subscription/mutation channels via middleware.
- * This wrapper:
+ * This wrapper uses tRPC's `responseMeta` to inject channel headers directly,
+ * avoiding the need to clone the response after the fact.
  *
- * 1. Creates a ChannelAccumulator shared across all procedures in the request
- * 2. Passes the accumulator to createContext
- * 3. After all procedures complete, merges accumulated channels into response headers
- *
- * This works for both single and batched requests - channels are always accumulated
+ * Works for both single and batched requests - channels are accumulated
  * and merged into a single set of response headers.
  */
-export async function handleTRPCRequest<TRouter extends AnyTRPCRouter>({
+export function handleTRPCRequest<TRouter extends AnyTRPCRouter>({
   endpoint,
   req,
   router,
@@ -46,7 +43,7 @@ export async function handleTRPCRequest<TRouter extends AnyTRPCRouter>({
 }: TRPCRequestHandlerOptions<TRouter>): Promise<Response> {
   const channelAccumulator = new ChannelAccumulator();
 
-  const response = await fetchRequestHandler({
+  return fetchRequestHandler({
     endpoint,
     req,
     router,
@@ -56,27 +53,19 @@ export async function handleTRPCRequest<TRouter extends AnyTRPCRouter>({
         channelAccumulator,
       }),
     onError,
+    responseMeta() {
+      const channelHeaders = channelAccumulator.getHeaders(
+        SUBSCRIPTION_CHANNELS_HEADER,
+        MUTATION_CHANNELS_HEADER,
+      );
+
+      if (Object.keys(channelHeaders).length > 0) {
+        return {
+          headers: new Headers(Object.entries(channelHeaders)),
+        };
+      }
+
+      return {};
+    },
   });
-
-  // Merge accumulated channels into response headers
-  const channelHeaders = channelAccumulator.getHeaders(
-    SUBSCRIPTION_CHANNELS_HEADER,
-    MUTATION_CHANNELS_HEADER,
-  );
-
-  if (Object.keys(channelHeaders).length > 0) {
-    // Clone response to modify headers (Response headers are immutable)
-    const newHeaders = new Headers(response.headers);
-    for (const [key, value] of Object.entries(channelHeaders)) {
-      newHeaders.set(key, value);
-    }
-
-    return new Response(response.body, {
-      status: response.status,
-      statusText: response.statusText,
-      headers: newHeaders,
-    });
-  }
-
-  return response;
 }
