@@ -1,6 +1,7 @@
 'use client';
 
-import { Button } from '@op/ui/Button';
+import { LoadingSpinner } from '@op/ui/LoadingSpinner';
+import { toast } from '@op/ui/Toast';
 import { useState } from 'react';
 import { z } from 'zod';
 
@@ -51,6 +52,11 @@ const WaitlistSignupForm = ({ onSuccess }: { onSuccess: () => void }) => {
           onSuccess();
         } else {
           console.error(await res.json());
+          toast.error({
+            title: 'Something went wrong',
+            message: 'We were not able to sign you up. Please try again.',
+          });
+          return;
         }
       },
       onSubmit: validator,
@@ -86,12 +92,17 @@ const WaitlistSignupForm = ({ onSuccess }: { onSuccess: () => void }) => {
           />
         )}
       />
-      <Button
-        type="submit"
-        className="w-full md:h-16 md:w-auto md:rounded-xl md:p-7 md:text-xl"
-      >
-        Join waitlist
-      </Button>
+
+      <form.Subscribe selector={(formState) => [formState.isSubmitting]}>
+        {([isSubmitting]) => (
+          <form.SubmitButton
+            isDisabled={isSubmitting}
+            className="w-full md:h-16 md:w-auto md:rounded-xl md:p-7 md:text-xl"
+          >
+            {isSubmitting ? <LoadingSpinner /> : 'Join waitlist'}
+          </form.SubmitButton>
+        )}
+      </form.Subscribe>
     </form>
   );
 };

@@ -26,17 +26,19 @@ export async function POST(req: NextRequest) {
     .digest('hex');
 
   try {
-    const response = await mailchimpClient.lists.setListMember(
+    // Subscribe user to Mailchimp
+    const subscribeUserResponse = await mailchimpClient.lists.setListMember(
       process.env.MAILCHIMP_AUDIENCE_ID,
       subscriberHash,
       {
         email_address: email,
         status: 'subscribed',
-        tags: ['waitlist'],
+        tags: ['Common Waitlist'], // Ensures this lands in the right segment in Mailchimp
       },
     );
 
-    if (response.status >= 400) {
+    if (subscribeUserResponse.status >= 400) {
+      console.error(subscribeUserResponse);
       return Response.json(
         {
           error: `There was an error subscribing to the newsletter.`,
@@ -45,8 +47,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    return Response.json({ error: '' }, { status: 201 });
+    return Response.json({ success: true }, { status: 201 });
   } catch (error) {
+    console.error(error);
     return Response.json(
       { error: (error as Error).message || (error as Error).toString() },
       { status: 500 },

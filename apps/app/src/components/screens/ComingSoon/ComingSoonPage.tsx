@@ -21,6 +21,7 @@ const ComingSoonPage = () => {
           <SoftBlobs />
         </motion.div>
         {/* Fade top and bottom edges on mobile */}
+        {/* uses -[black] because -black is renamed in our color system */}
         <div className="absolute top-0 z-20 h-20 w-full bg-gradient-to-b from-[black] via-[rgba(0,0,0,0.35)] via-40% sm:hidden" />
         <div className="absolute bottom-0 z-20 h-20 w-full bg-gradient-to-t from-[black] via-[rgba(0,0,0,0.35)] via-40% sm:hidden" />
       </div>
