@@ -1,4 +1,4 @@
-import { queryChannelStore } from '@op/common/src/channels/query-channel-store';
+import { QueryChannelStore } from '@op/common/src/channels/query-channel-store';
 import { OPURLConfig } from '@op/core';
 import { logger } from '@op/logging';
 import type { ChannelName } from '@op/realtime';
@@ -42,6 +42,9 @@ const envURL = OPURLConfig('API');
 let queryClientRef: {
   invalidateQueries: (opts: { queryKey: unknown[] }) => void;
 } | null = null;
+
+/** Global query channel store instance */
+export const queryChannelStore = new QueryChannelStore();
 
 /**
  * Initialize query invalidation with a reference to the queryClient.
@@ -131,8 +134,8 @@ function createChannelInvalidationLink(): TRPCLink<AppRouter> {
                 if (subscriptionChannelsHeader) {
                   const channels = subscriptionChannelsHeader
                     .split(',')
-                    .filter(Boolean);
-                  queryChannelStore.registerQueryChannels(queryKey, channels);
+                    .filter(Boolean) as ChannelName[];
+                  queryChannelStore.addQueryKeyForChannels(queryKey, channels);
                 }
               } else if (op.type === 'mutation') {
                 // Look up and invalidate queries for mutation channels
@@ -211,6 +214,3 @@ export function createLinks(encryptedCookies?: string): TRPCLink<AppRouter>[] {
 
 // Backwards compatibility - creates links without SSR cookies
 export const links = createLinks();
-
-// Re-export the query channel store for cleanup purposes
-export { queryChannelStore } from '@op/common/src/channels/query-channel-store';
