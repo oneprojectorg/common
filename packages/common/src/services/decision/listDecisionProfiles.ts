@@ -102,27 +102,25 @@ export const listDecisionProfiles = async ({
 
   const typeCondition = eq(profiles.type, EntityType.DECISION);
 
-  // Filter profiles by process instance status using a subquery
-  const statusCondition = status
-    ? inArray(
-        profiles.id,
-        db
-          .select({ profileId: processInstances.profileId })
-          .from(processInstances)
-          .where(eq(processInstances.status, status)),
-      )
-    : undefined;
+  // Build process instance filter conditions
+  const processInstanceFilters = [
+    status ? eq(processInstances.status, status) : undefined,
+    ownerProfileId
+      ? eq(processInstances.ownerProfileId, ownerProfileId)
+      : undefined,
+  ].filter(Boolean);
 
-  // Filter by owner
-  const ownerCondition = ownerProfileId
-    ? inArray(
-        profiles.id,
-        db
-          .select({ profileId: processInstances.profileId })
-          .from(processInstances)
-          .where(eq(processInstances.ownerProfileId, ownerProfileId)),
-      )
-    : undefined;
+  const processInstanceCondition = inArray(
+    profiles.id,
+    db
+      .select({ profileId: processInstances.profileId })
+      .from(processInstances)
+      .where(
+        processInstanceFilters.length > 0
+          ? and(...processInstanceFilters)
+          : undefined, // This will still work correctly
+      ),
+  );
 
   // Build search condition if provided (search on profile name/bio)
   const searchCondition = search
@@ -139,22 +137,14 @@ export const listDecisionProfiles = async ({
       .where(eq(profileUsers.authUserId, user.id)),
   );
 
-  // Filter to only profiles that have a processInstance (decision profiles must have one)
-  const hasProcessInstanceCondition = inArray(
-    profiles.id,
-    db.select({ profileId: processInstances.profileId }).from(processInstances),
-  );
-
   const orderFn = dir === 'asc' ? asc : desc;
 
   const whereConditions = [
     cursorCondition,
-    statusCondition,
+    processInstanceCondition,
     typeCondition,
     searchCondition,
     authorizationCondition,
-    hasProcessInstanceCondition,
-    ownerCondition,
   ].filter(Boolean);
 
   const whereClause =
