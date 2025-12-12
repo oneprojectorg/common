@@ -1,39 +1,68 @@
 import type { ChannelName } from './channels';
 
+type InvalidationEvent = {
+  channels: ChannelName[];
+  queryKeys: unknown[][];
+};
+
+type Listener = (event: InvalidationEvent) => void;
+
 /**
- * Maps channels to query keys for cache invalidation.
+ * Registry + pub/sub for channel-based query invalidation.
  *
- * - Query returns x-subscription-channels -> register(queryKey, channels)
- * - Mutation returns x-mutation-channels -> getQueryKeys(channels) -> invalidate
+ * - Store: maps channels -> query keys
+ * - Pub/Sub: emits invalidation events with resolved keys
+ *
+ * Subscribers receive fully resolved events - no store internals exposed.
  */
+class QueryChannelRegistry {
+  private channelMap = new Map<ChannelName, Set<string>>();
+  private listeners = new Set<Listener>();
 
-/**
- * Store that maps channels to query keys for cache invalidation.
- */
-export class QueryChannelStore {
-  /** channel -> Set of JSON-serialized query keys */
-  private store = new Map<ChannelName, Set<string>>();
-
-  /** Register a query key to be invalidated when these channels are mutated */
-  addQueryKeyForChannels(queryKey: unknown[], channels: ChannelName[]) {
+  /** Register query key for channels */
+  register(queryKey: unknown[], channels: ChannelName[]): void {
     const key = JSON.stringify(queryKey);
     for (const channel of channels) {
-      let channelKeys = this.store.get(channel);
-      if (!channelKeys) {
-        channelKeys = new Set();
-        this.store.set(channel, channelKeys);
+      let keys = this.channelMap.get(channel);
+      if (!keys) {
+        keys = new Set();
+        this.channelMap.set(channel, keys);
       }
-      channelKeys.add(key);
+      keys.add(key);
     }
   }
 
-  /** Get all query keys that should be invalidated for the given channels */
-  getQueryKeysForChannels(channels: ChannelName[]): unknown[][] {
+  /** Unregister query key from all channels */
+  unregister(queryKey: unknown[]): void {
+    const key = JSON.stringify(queryKey);
+    for (const keys of this.channelMap.values()) {
+      keys.delete(key);
+    }
+  }
+
+  /** Emit mutation - resolves keys internally, subscribers get clean event */
+  emit(channels: ChannelName[]): void {
+    const queryKeys = this.resolveKeys(channels);
+    if (queryKeys.length === 0) return;
+
+    const event: InvalidationEvent = { channels, queryKeys };
+    for (const listener of this.listeners) {
+      listener(event);
+    }
+  }
+
+  /** Subscribe to invalidation events */
+  subscribe(listener: Listener): () => void {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
+  }
+
+  private resolveKeys(channels: ChannelName[]): unknown[][] {
     const seen = new Set<string>();
     const result: unknown[][] = [];
 
     for (const channel of channels) {
-      const keys = this.store.get(channel);
+      const keys = this.channelMap.get(channel);
       if (keys) {
         for (const key of keys) {
           if (!seen.has(key)) {
@@ -43,7 +72,10 @@ export class QueryChannelStore {
         }
       }
     }
-
     return result;
   }
 }
+
+export const queryChannelRegistry = new QueryChannelRegistry();
+
+export type { InvalidationEvent, Listener as InvalidationListener };

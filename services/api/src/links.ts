@@ -1,4 +1,4 @@
-import { QueryChannelStore } from '@op/common/channels';
+import { queryChannelRegistry } from '@op/common/channels';
 import { OPURLConfig } from '@op/core';
 import { logger } from '@op/logging';
 import type { ChannelName } from '@op/realtime';
@@ -38,23 +38,7 @@ function getPostHogDistinctId(): string | null {
 
 const envURL = OPURLConfig('API');
 
-/** Global reference to queryClient - set via initializeQueryInvalidation */
-let queryClientRef: {
-  invalidateQueries: (opts: { queryKey: unknown[] }) => void;
-} | null = null;
-
-/** Global query channel store instance */
-export const queryChannelStore = new QueryChannelStore();
-
-/**
- * Initialize query invalidation with a reference to the queryClient.
- * Must be called once at app startup (in useMutationChannels or similar).
- */
-export function initializeQueryInvalidation(queryClient: {
-  invalidateQueries: (opts: { queryKey: unknown[] }) => void;
-}): void {
-  queryClientRef = queryClient;
-}
+export { queryChannelRegistry };
 
 /**
  * Create a fetch function that handles SSR cookies.
@@ -135,23 +119,18 @@ function createChannelInvalidationLink(): TRPCLink<AppRouter> {
                   const channels = subscriptionChannelsHeader
                     .split(',')
                     .filter(Boolean) as ChannelName[];
-                  queryChannelStore.addQueryKeyForChannels(queryKey, channels);
+                  queryChannelRegistry.register(queryKey, channels);
                 }
               } else if (op.type === 'mutation') {
                 // Look up and invalidate queries for mutation channels
                 const mutationChannelsHeader = response.headers.get(
                   MUTATION_CHANNELS_HEADER,
                 );
-                if (mutationChannelsHeader && queryClientRef) {
+                if (mutationChannelsHeader) {
                   const channels = mutationChannelsHeader
                     .split(',')
                     .filter(Boolean) as ChannelName[];
-                  const queryKeysToInvalidate =
-                    queryChannelStore.getQueryKeysForChannels(channels);
-
-                  for (const key of queryKeysToInvalidate) {
-                    queryClientRef.invalidateQueries({ queryKey: key });
-                  }
+                  queryChannelRegistry.emit(channels);
                 }
               }
             }

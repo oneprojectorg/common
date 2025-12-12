@@ -1,22 +1,26 @@
 'use client';
 
+import { queryChannelRegistry } from '@op/common/channels';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 
-import { initializeQueryInvalidation } from './links';
-
 /**
- * Hook that initializes channel-based query invalidation.
+ * Hook that subscribes to channel mutation events and invalidates queries.
  *
- * Initializes the query channel store with a reference to queryClient
- * for immediate (header-based) invalidation on the current client.
+ * Listens to the queryChannelRegistry for invalidation events and invalidates
+ * the resolved query keys. The registry handles all the channel -> queryKey
+ * resolution internally.
  *
  * Should be used once at the root level of your app.
  */
-export function useMutationChannels() {
+export function useMutationChannels(): void {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    initializeQueryInvalidation(queryClient);
+    return queryChannelRegistry.subscribe((event) => {
+      for (const queryKey of event.queryKeys) {
+        queryClient.invalidateQueries({ queryKey });
+      }
+    });
   }, [queryClient]);
 }
