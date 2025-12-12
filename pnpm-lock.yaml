@@ -664,6 +664,9 @@ importers:
       csv-stringify:
         specifier: ^6.6.0
         version: 6.6.0
+      mitt:
+        specifier: ^3.0.1
+        version: 3.0.1
       next:
         specifier: ^15.0.5
         version: 15.5.7(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-e1e972c-20250221)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.85.1)
@@ -679,9 +682,6 @@ importers:
       zod:
         specifier: ^4.1.11
         version: 4.1.12
-      zustand:
-        specifier: ^5.0.3
-        version: 5.0.3(@types/react@19.0.10)(immer@10.1.1)(react@19.2.1)(use-sync-external-store@1.4.0(react@19.2.1))
     devDependencies:
       '@op/core':
         specifier: workspace:*
@@ -698,9 +698,6 @@ importers:
       '@op/typescript-config':
         specifier: workspace:*
         version: link:../../configs/typescript-config
-      '@tanstack/react-query':
-        specifier: 5.66.11
-        version: 5.66.11(react@19.2.1)
       '@types/json-schema':
         specifier: ^7.0.15
         version: 7.0.15
@@ -7505,6 +7502,9 @@ packages:
   minizlib@3.0.1:
     resolution: {integrity: sha512-umcy022ILvb5/3Djuu8LWeqUa8D68JaBzlttKeMWen48SjabqS3iY5w/vzeMzMUNhLDifyhbOwKDSznB1vvrwg==}
     engines: {node: '>= 18'}
+
+  mitt@3.0.1:
+    resolution: {integrity: sha512-vKivATfr97l2/QBCYAkXYDbrIWPM2IIKEl7YPhjCvKlG3kE2gm+uBo6nEXK3M5/Ffh/FLpKExzOQ3JJoJGFKBw==}
 
   mkdirp@1.0.4:
     resolution: {integrity: sha512-vVqVZQyf3WLx2Shd0qJ9xuvqgAyKPLAiqITEtqW0oIUjzo3PePDd6fW9iFz30ef7Ysp/oiWqbhszeGWW2T6Gzw==}
@@ -16707,6 +16707,8 @@ snapshots:
     dependencies:
       minipass: 7.1.2
       rimraf: 5.0.10
+
+  mitt@3.0.1: {}
 
   mkdirp@1.0.4: {}
 

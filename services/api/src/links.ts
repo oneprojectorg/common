@@ -119,7 +119,7 @@ function createChannelInvalidationLink(): TRPCLink<AppRouter> {
                   const channels = subscriptionChannelsHeader
                     .split(',')
                     .filter(Boolean) as ChannelName[];
-                  queryChannelRegistry.register(queryKey, channels);
+                  queryChannelRegistry.registerSubscription(queryKey, channels);
                 }
               } else if (op.type === 'mutation') {
                 // Look up and invalidate queries for mutation channels
@@ -130,7 +130,7 @@ function createChannelInvalidationLink(): TRPCLink<AppRouter> {
                   const channels = mutationChannelsHeader
                     .split(',')
                     .filter(Boolean) as ChannelName[];
-                  queryChannelRegistry.emit(channels);
+                  queryChannelRegistry.registerMutation(channels);
                 }
               }
             }

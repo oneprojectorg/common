@@ -1,68 +1,43 @@
+import mitt from 'mitt';
+
 import type { ChannelName } from './channels';
 
-type InvalidationEvent = {
+type SubscriptionAddedEvent = {
+  queryKey: unknown[];
   channels: ChannelName[];
-  queryKeys: unknown[][];
 };
 
-type Listener = (event: InvalidationEvent) => void;
+type MutationAddedEvent = {
+  channels: ChannelName[];
+};
+
+type RegistryEvents = {
+  'subscription:added': SubscriptionAddedEvent;
+  'mutation:added': MutationAddedEvent;
+};
 
 /**
- * Registry + pub/sub for channel-based query invalidation.
+ * Registry for channel-based query tracking.
  *
- * - Store: maps channels -> query keys
- * - Pub/Sub: emits invalidation events with resolved keys
+ * - Tracks channel subscriptions (query → channels mapping)
+ * - Tracks channel mutations
+ * - Emits events via mitt when subscriptions/mutations are registered
  *
- * Subscribers receive fully resolved events - no store internals exposed.
+ * Invalidation is handled by consumers subscribing to events.
  */
 class QueryChannelRegistry {
-  private channelMap = new Map<ChannelName, Set<string>>();
-  private listeners = new Set<Listener>();
+  private channelToQueryKeys = new Map<ChannelName, Set<string>>();
+  private emitter = mitt<RegistryEvents>();
 
-  /** Register query key for channels */
-  register(queryKey: unknown[], channels: ChannelName[]): void {
-    const key = JSON.stringify(queryKey);
-    for (const channel of channels) {
-      let keys = this.channelMap.get(channel);
-      if (!keys) {
-        keys = new Set();
-        this.channelMap.set(channel, keys);
-      }
-      keys.add(key);
-    }
-  }
-
-  /** Unregister query key from all channels */
-  unregister(queryKey: unknown[]): void {
-    const key = JSON.stringify(queryKey);
-    for (const keys of this.channelMap.values()) {
-      keys.delete(key);
-    }
-  }
-
-  /** Emit mutation - resolves keys internally, subscribers get clean event */
-  emit(channels: ChannelName[]): void {
-    const queryKeys = this.resolveKeys(channels);
-    if (queryKeys.length === 0) return;
-
-    const event: InvalidationEvent = { channels, queryKeys };
-    for (const listener of this.listeners) {
-      listener(event);
-    }
-  }
-
-  /** Subscribe to invalidation events */
-  subscribe(listener: Listener): () => void {
-    this.listeners.add(listener);
-    return () => this.listeners.delete(listener);
-  }
-
-  private resolveKeys(channels: ChannelName[]): unknown[][] {
+  /**
+   * Get all query keys registered to a set of channels.
+   */
+  getQueryKeysForChannels(channels: ChannelName[]): unknown[][] {
     const seen = new Set<string>();
     const result: unknown[][] = [];
 
     for (const channel of channels) {
-      const keys = this.channelMap.get(channel);
+      const keys = this.channelToQueryKeys.get(channel);
       if (keys) {
         for (const key of keys) {
           if (!seen.has(key)) {
@@ -74,8 +49,44 @@ class QueryChannelRegistry {
     }
     return result;
   }
+
+  /**
+   * Register a query's subscription to channels.
+   * Emits 'subscription:added' event.
+   */
+  registerSubscription(queryKey: unknown[], channels: ChannelName[]): void {
+    const key = JSON.stringify(queryKey);
+    for (const channel of channels) {
+      let keys = this.channelToQueryKeys.get(channel);
+      if (!keys) {
+        keys = new Set();
+        this.channelToQueryKeys.set(channel, keys);
+      }
+      keys.add(key);
+    }
+    this.emitter.emit('subscription:added', { queryKey, channels });
+  }
+
+  /**
+   * Register a mutation for channels.
+   * Emits 'mutation:added' event.
+   */
+  registerMutation(channels: ChannelName[]): void {
+    this.emitter.emit('mutation:added', { channels });
+  }
+
+  /**
+   * Subscribe to registry events (subscription:added, mutation:added).
+   */
+  on<K extends keyof RegistryEvents>(
+    event: K,
+    handler: (payload: RegistryEvents[K]) => void,
+  ): () => void {
+    this.emitter.on(event, handler);
+    return () => this.emitter.off(event, handler);
+  }
 }
 
 export const queryChannelRegistry = new QueryChannelRegistry();
 
-export type { InvalidationEvent, Listener as InvalidationListener };
+export type { MutationAddedEvent, RegistryEvents, SubscriptionAddedEvent };
