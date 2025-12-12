@@ -6,6 +6,7 @@ import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import { withAuthenticatedPlatformAdmin } from '../../../middlewares/withAuthenticatedPlatformAdmin';
+import withMutationChannels from '../../../middlewares/withMutationChannels';
 import withRateLimited from '../../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../../trpcFactory';
 
@@ -37,12 +38,11 @@ export const addUsersToOrganizationRouter = router({
   addUsersToOrganization: loggedProcedure
     .use(withRateLimited({ windowSize: 60, maxRequests: 20 }))
     .use(withAuthenticatedPlatformAdmin)
+    .use(withMutationChannels([Channels.global()]))
     .input(inputSchema)
     .output(outputSchema)
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async ({ input }) => {
       const { organizationId, users: usersToAdd } = input;
-
-      ctx.setMutationChannels([Channels.global()]);
 
       try {
         // Collect all unique IDs from the input

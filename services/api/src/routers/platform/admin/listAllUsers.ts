@@ -7,13 +7,13 @@ import {
 import { and, count, db, ilike } from '@op/db/client';
 import { users } from '@op/db/schema';
 import { Channels } from '@op/realtime';
-import { TRPCError } from '@trpc/server';
-import crypto from 'crypto';
+import crypto from 'node:crypto';
 import { z } from 'zod';
 
 import { userEncoder } from '../../../encoders/';
 import { withAuthenticatedPlatformAdmin } from '../../../middlewares/withAuthenticatedPlatformAdmin';
 import withRateLimited from '../../../middlewares/withRateLimited';
+import withSubscriptionChannels from '../../../middlewares/withSubscriptionChannels';
 import { loggedProcedure, router } from '../../../trpcFactory';
 import { dbFilter } from '../../../utils';
 
@@ -21,6 +21,7 @@ export const listAllUsersRouter = router({
   listAllUsers: loggedProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticatedPlatformAdmin)
+    .use(withSubscriptionChannels([Channels.global()]))
     .input(
       dbFilter
         .extend({
@@ -37,11 +38,8 @@ export const listAllUsersRouter = router({
         total: z.number(),
       }),
     )
-    .query(async ({ ctx, input }) => {
+    .query(async ({ input }) => {
       const { cursor, dir = 'desc', query, limit } = input ?? {};
-
-      // Set mutation channels for realtime subscriptions
-      ctx.setSubscriptionChannels([Channels.global()]);
 
       // Cursor-based pagination using createdAt timestamp
       // Combines createdAt with id as tiebreaker for users created at the same time
