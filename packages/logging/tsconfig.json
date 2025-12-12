@@ -1,11 +1,12 @@
 {
   "extends": "@op/typescript-config/base.json",
   "compilerOptions": {
+    "outDir": "dist",
     "baseUrl": "./src",
     "paths": {
       "@/*": ["./*"]
     }
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "dist"]
 }
