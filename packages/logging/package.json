@@ -9,17 +9,12 @@
   },
   "main": "src/index.ts",
   "scripts": {
-    "build": "tsc",
-    "clean": "rm -rf dist",
-    "dev": "tsc --watch",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@opentelemetry/api": "^1.9.0",
-    "@opentelemetry/api-logs": "^0.208.0"
-  },
-  "peerDependencies": {
-    "next": ">=15"
+    "@opentelemetry/api-logs": "^0.208.0",
+    "next": "catalog:"
   },
   "devDependencies": {
     "@op/typescript-config": "workspace:*",
