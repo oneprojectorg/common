@@ -1,7 +1,7 @@
 'use client';
 
 import type { RouterInput } from '@op/api/client';
-import { getQueryKey, trpc } from '@op/api/client';
+import { trpc } from '@op/api/client';
 import { useCursorPagination, useDebounce } from '@op/hooks';
 import { Menu, MenuItem } from '@op/ui/Menu';
 import { OptionMenu } from '@op/ui/OptionMenu';
@@ -189,8 +189,6 @@ const UsersTableContent = ({ searchQuery }: { searchQuery: string }) => {
     query: searchQuery || undefined,
   };
 
-  const queryKey = getQueryKey(trpc.platform.admin.listAllUsers);
-  console.log('Fetching users with query key:', queryKey);
   const [data] = trpc.platform.admin.listAllUsers.useSuspenseQuery(queryInput);
 
   const { items: users, next, hasMore, total } = data;

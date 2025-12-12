@@ -1,3 +1,4 @@
+// TODO: just use packages/realtime or packages/common/realtime
 export {
   Channels,
   type ChannelName,

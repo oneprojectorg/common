@@ -1,4 +1,4 @@
-import { QueryChannelStore } from '@op/common/src/channels/query-channel-store';
+import { QueryChannelStore } from '@op/common/channels';
 import { OPURLConfig } from '@op/core';
 import { logger } from '@op/logging';
 import type { ChannelName } from '@op/realtime';

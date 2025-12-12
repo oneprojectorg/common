@@ -1,3 +1,4 @@
+export * from './channels';
 export * from './services';
 export * from './utils';
 export * from './types/schema';

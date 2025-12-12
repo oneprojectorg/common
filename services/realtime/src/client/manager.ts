@@ -14,14 +14,7 @@ export interface RealtimeConfig {
 }
 
 /**
- * Handler for query invalidation messages received from mutation channels.
- * Called when a mutation triggers a cache invalidation.
- */
-export type MutationHandler = (queryKey: readonly string[]) => void;
-
-/**
- * Singleton realtime manager for WebSocket connections and channel subscriptions.
- * Handles both general pub/sub and tRPC mutation channel subscriptions.
+ * Singleton realtime manager for WebSocket connections and channel subscriptions
  */
 export class RealtimeManager {
   private static instance: RealtimeManager | null = null;
@@ -33,11 +26,6 @@ export class RealtimeManager {
   >();
   private connectionListeners = new Set<(isConnected: boolean) => void>();
   private config: RealtimeConfig | null = null;
-
-  // Mutation channel state (subscribe-later pattern)
-  private pendingMutationChannels = new Set<ChannelName>();
-  private activeMutationChannels = new Set<ChannelName>();
-  private mutationHandler: MutationHandler | null = null;
 
   private constructor() {
     // Private constructor for singleton
@@ -54,11 +42,9 @@ export class RealtimeManager {
    * Initialize the RealtimeManager with configuration
    * Must be called before using subscribe()
    */
-  static initialize(config: RealtimeConfig): RealtimeManager {
+  static initialize(config: RealtimeConfig): void {
     const instance = RealtimeManager.getInstance();
     instance.config = config;
-
-    return instance;
   }
 
   private ensureConnected() {
@@ -241,101 +227,5 @@ export class RealtimeManager {
 
   removeConnectionListener(listener: (isConnected: boolean) => void) {
     this.connectionListeners.delete(listener);
-  }
-
-  // ─────────────────────────────────────────────────────────────────────────────
-  // Mutation Channels (Subscribe-Later Pattern)
-  // ─────────────────────────────────────────────────────────────────────────────
-
-  /**
-   * Add mutation channels from tRPC response headers.
-   * Called from non-React code (tRPC fetch callback).
-   *
-   * If a mutation handler is registered, subscribes immediately.
-   * Otherwise, queues the channels until a handler is registered.
-   */
-  addMutationChannels(channels: ChannelName[]): void {
-    for (const channel of channels) {
-      // Skip if already active
-      if (this.activeMutationChannels.has(channel)) {
-        continue;
-      }
-
-      if (this.mutationHandler) {
-        this.subscribeMutationChannel(channel);
-      } else {
-        this.pendingMutationChannels.add(channel);
-      }
-    }
-  }
-
-  /**
-   * Register a handler for mutation channel invalidations.
-   * Called from React hook (has access to queryClient).
-   *
-   * Flushes any pending channels that were queued before the handler was ready.
-   * Returns an unsubscribe function to clean up.
-   */
-  registerMutationHandler(handler: MutationHandler): () => void {
-    this.mutationHandler = handler;
-    this.flushPendingMutationChannels();
-
-    return () => {
-      this.mutationHandler = null;
-      // Unsubscribe from all mutation channels
-      for (const channel of this.activeMutationChannels) {
-        this.unsubscribeMutationChannel(channel);
-      }
-      this.activeMutationChannels.clear();
-    };
-  }
-
-  /**
-   * Subscribe to a mutation channel and handle query invalidation messages.
-   */
-  private subscribeMutationChannel(channel: ChannelName): void {
-    if (this.activeMutationChannels.has(channel)) {
-      return;
-    }
-
-    const messageHandler = (message: RealtimeMessage) => {
-      if (message.type === 'query-invalidation' && this.mutationHandler) {
-        this.mutationHandler(message.queryKey);
-      }
-    };
-
-    try {
-      this.subscribe(channel, messageHandler);
-      // we should be managing this from Centrifuge state (perhaps not needed at all to be managed separately). Check Centrifuge sdk.
-      this.activeMutationChannels.add(channel);
-      this.pendingMutationChannels.delete(channel);
-    } catch (error) {
-      // RealtimeManager not initialized yet - keep in pending
-      console.warn('[Realtime] Cannot subscribe to mutation channel:', error);
-    }
-  }
-
-  /**
-   * Unsubscribe from a mutation channel.
-   */
-  private unsubscribeMutationChannel(channel: ChannelName): void {
-    // The subscribe() method returns an unsubscribe function, but for mutation channels
-    // we track them differently. We need to remove listeners for this channel.
-    const listeners = this.channelListeners.get(channel);
-    if (listeners) {
-      // Clear all listeners for this channel (mutation channels have one listener each)
-      for (const listener of listeners) {
-        this.unsubscribe(channel, listener);
-      }
-    }
-  }
-
-  /**
-   * Flush pending mutation channels by subscribing to them.
-   */
-  private flushPendingMutationChannels(): void {
-    for (const channel of this.pendingMutationChannels) {
-      this.subscribeMutationChannel(channel);
-    }
   }
 }
