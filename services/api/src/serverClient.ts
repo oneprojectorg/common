@@ -96,14 +96,10 @@ const createServerContext = cache(async (): Promise<TContext> => {
         'Cannot set cookies in server-side caller context. Use a route handler with fetchRequestHandler instead.',
       );
     },
-    setMutationChannels: () => {
+    setChannels: () => {
       // No-op for server-side calls - there's no HTTP response to set headers on
     },
-    setSubscriptionChannels: () => {
-      // No-op for server-side calls - there's no HTTP response to set headers on
-    },
-    getMutationChannels: () => [],
-    getSubscriptionChannels: () => [],
+    getChannels: () => [],
     requestId,
     time: Date.now(),
     ip: headersList.get('x-forwarded-for') || null,

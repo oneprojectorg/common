@@ -27,8 +27,8 @@ const handler = async (req: Request) => {
       }
 
       const headers: Record<string, string> = {};
-      const mutationChannels = ctx.getMutationChannels();
-      const subscriptionChannels = ctx.getSubscriptionChannels();
+      const mutationChannels = ctx.getChannels('mutation');
+      const subscriptionChannels = ctx.getChannels('subscription');
 
       if (subscriptionChannels.length > 0) {
         headers[SUBSCRIPTION_CHANNELS_HEADER] = subscriptionChannels.join(',');

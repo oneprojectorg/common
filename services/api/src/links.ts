@@ -191,7 +191,7 @@ export function createLinks(encryptedCookies?: string): TRPCLink<AppRouter>[] {
       false: httpBatchLink({
         url: envURL.TRPC_URL,
         transformer: superjson,
-        maxItems: 4,
+        maxItems: 2,
         fetch: fetchFn,
       }),
     }),

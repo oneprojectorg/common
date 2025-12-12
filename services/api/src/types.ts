@@ -15,28 +15,13 @@ export interface TContext {
     value: string;
     options?: SerializeOptions;
   }) => void;
-  /**
-   * Sets mutation channels for realtime subscriptions.
-   * The channels will be sent to the client via the x-mutation-channels header.
-   * Used in mutations to notify which data changed.
-   */
-  setMutationChannels: (channels: ChannelName[]) => void;
-  /**
-   * Sets subscription channels for query invalidation.
-   * The channels will be sent to the client via the x-subscription-channels header.
-   * Used in queries to declare which channels they subscribe to.
-   */
-  setSubscriptionChannels: (channels: ChannelName[]) => void;
-  /**
-   * Gets all accumulated mutation channels across batched procedures.
-   * Used in responseMeta to build response headers.
-   */
-  getMutationChannels: () => ChannelName[];
-  /**
-   * Gets all accumulated subscription channels across batched procedures.
-   * Used in responseMeta to build response headers.
-   */
-  getSubscriptionChannels: () => ChannelName[];
+  /** Sets channels for realtime operations. */
+  setChannels: (
+    type: 'mutation' | 'subscription',
+    channels: ChannelName[],
+  ) => void;
+  /** Gets all accumulated channels across batched procedures. */
+  getChannels: (type: 'mutation' | 'subscription') => ChannelName[];
   requestId: string;
   time: number;
   ip: string | null;

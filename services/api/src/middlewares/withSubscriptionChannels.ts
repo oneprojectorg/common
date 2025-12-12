@@ -14,7 +14,7 @@ const withSubscriptionChannels = (channels: ChannelName[]) => {
     ctx,
     next,
   }) => {
-    ctx.setSubscriptionChannels(channels);
+    ctx.setChannels('subscription', channels);
     return next({ ctx });
   };
 

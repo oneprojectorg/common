@@ -14,7 +14,7 @@ const withMutationChannels = (channels: ChannelName[]) => {
     ctx,
     next,
   }) => {
-    ctx.setMutationChannels(channels);
+    ctx.setChannels('mutation', channels);
     return next({ ctx });
   };
 

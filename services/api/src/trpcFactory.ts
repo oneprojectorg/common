@@ -37,18 +37,15 @@ export const createContext = async ({
     getCookie: (name) => _getCookie(req, name),
     setCookie: ({ name, value, options }) =>
       _setCookie({ resHeaders, name, value, options }),
-    setMutationChannels: (channels) => {
-      for (const ch of channels) {
-        mutationChannels.add(ch);
+    setChannels: (type, channels) => {
+      const target =
+        type === 'mutation' ? mutationChannels : subscriptionChannels;
+      for (const channel of channels) {
+        target.add(channel);
       }
     },
-    setSubscriptionChannels: (channels) => {
-      for (const ch of channels) {
-        subscriptionChannels.add(ch);
-      }
-    },
-    getMutationChannels: () => Array.from(mutationChannels),
-    getSubscriptionChannels: () => Array.from(subscriptionChannels),
+    getChannels: (type) =>
+      Array.from(type === 'mutation' ? mutationChannels : subscriptionChannels),
     requestId,
     time: Date.now(),
     ip: req.headers.get('X-Forwarded-For') || null,
