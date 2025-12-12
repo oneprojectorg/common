@@ -15,6 +15,7 @@
   "dependencies": {
     "@formity/react": "^1.0.0",
     "@internationalized/date": "^3.8.2",
+    "@mailchimp/mailchimp_marketing": "^3.0.80",
     "@next/bundle-analyzer": "^15.3.0",
     "@op/analytics": "workspace:^",
     "@op/api": "workspace:*",
