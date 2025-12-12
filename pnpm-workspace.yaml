@@ -6,3 +6,5 @@ packages:
   - 'services/*'
   - 'backend/*'
   - 'tools/*'
+catalog:
+  next: 15.3.8
