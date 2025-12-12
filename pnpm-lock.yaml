@@ -4,6 +4,12 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+catalogs:
+  default:
+    next:
+      specifier: 15.3.8
+      version: 15.3.8
+
 overrides:
   '@iconify/json': 2.2.311
   '@react-three/drei': ^10.0.4
@@ -210,7 +216,7 @@ importers:
         specifier: 5.1.2
         version: 5.1.2
       next:
-        specifier: 15.3.8
+        specifier: 'catalog:'
         version: 15.3.8(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-e1e972c-20250221)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.85.1)
       open:
         specifier: ^10.1.0
@@ -339,7 +345,7 @@ importers:
         specifier: ^16.4.7
         version: 16.4.7
       next:
-        specifier: 15.3.8
+        specifier: 'catalog:'
         version: 15.3.8(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-e1e972c-20250221)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.85.1)
       react:
         specifier: ^19.0.1
@@ -529,7 +535,7 @@ importers:
         specifier: ^10.1.1
         version: 10.1.1
       next:
-        specifier: 15.3.8
+        specifier: 'catalog:'
         version: 15.3.8(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-e1e972c-20250221)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.85.1)
       next-intl:
         specifier: ^4.1.0
@@ -665,7 +671,7 @@ importers:
         specifier: ^6.6.0
         version: 6.6.0
       next:
-        specifier: 15.3.8
+        specifier: 'catalog:'
         version: 15.3.8(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-e1e972c-20250221)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.85.1)
       p-map:
         specifier: ^7.0.3
@@ -1304,7 +1310,7 @@ importers:
         specifier: ^1.0.2
         version: 1.0.2
       next:
-        specifier: 15.3.8
+        specifier: 'catalog:'
         version: 15.3.8(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-e1e972c-20250221)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.85.1)
     devDependencies:
       '@op/typescript-config':
@@ -17667,7 +17673,7 @@ snapshots:
       glob: 11.0.3
       log-symbols: 7.0.1
       mime-types: 3.0.1
-      next: 15.3.8(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-e1e972c-20250221)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.85.1)
+      next: 15.5.7(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.85.1)
       normalize-path: 3.0.0
       ora: 8.2.0
       socket.io: 4.8.1

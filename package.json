@@ -75,7 +75,7 @@
     "lucide-react": "^0.476.0",
     "motion": "12.4.7",
     "nanoid": "5.1.2",
-    "next": "15.3.8",
+    "next": "catalog:",
     "open": "^10.1.0",
     "postcss": "^8.5.3",
     "postgres": "^3.4.5",
@@ -116,6 +116,7 @@
   "pnpm": {
     "overrides": {
       "@iconify/json": "$@iconify/json",
+      "@opentelemetry/sdk-metrics": "^2.2.0",
       "@react-three/drei": "$@react-three/drei",
       "@react-three/fiber": "$@react-three/fiber",
       "@supabase/ssr": "$@supabase/ssr",
@@ -173,7 +174,6 @@
       "tsx": "$tsx",
       "turbo": "$turbo",
       "typescript": "$typescript",
-      "@opentelemetry/sdk-metrics": "^2.2.0",
       "undici": "5.27.1",
       "unplugin-icons": "$unplugin-icons",
       "use-error-boundary": "$use-error-boundary",
