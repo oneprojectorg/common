@@ -18,6 +18,9 @@ export async function POST(req: NextRequest) {
   }
 
   // Generate hash from email to check if exists in Mailchimp
+  // If it exists, we'll update the user using `setListMember`
+  // That way, this endpoint doesn't fail if a user signs up twice
+
   const subscriberHash = createHash('md5')
     .update(email.toLowerCase())
     .digest('hex');

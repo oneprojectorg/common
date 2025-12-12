@@ -1,7 +1,7 @@
 import { SoftBlobs } from '@op/ui/ShaderBackground';
 import * as motion from 'motion/react-client';
 
-import { WaitlistSignupForm } from './WaitlistSignupForm';
+import { WaitlistSignup } from './WaitlistSignup';
 
 const ComingSoonPage = () => {
   const backgroundTransition = {
@@ -47,7 +47,7 @@ const ComingSoonPage = () => {
           animate={{ opacity: 1 }}
           transition={{ duration: 1, delay: 3 }}
         >
-          <WaitlistSignupForm />
+          <WaitlistSignup />
           <p className="sm:text-lg">
             Already have an account?{' '}
             <a href="/login" className="underline">
