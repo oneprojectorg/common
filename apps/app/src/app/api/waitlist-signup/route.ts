@@ -1,4 +1,5 @@
 import type { NextRequest } from 'next/server';
+import { createHash } from 'node:crypto';
 
 const mailchimpClient = require('@mailchimp/mailchimp_marketing');
 
@@ -16,9 +17,15 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: 'Email is required' }, { status: 400 });
   }
 
+  // Generate hash from email to check if exists in Mailchimp
+  const subscriberHash = createHash('md5')
+    .update(email.toLowerCase())
+    .digest('hex');
+
   try {
-    const response = await mailchimpClient.lists.addListMember(
+    const response = await mailchimpClient.lists.setListMember(
       process.env.MAILCHIMP_AUDIENCE_ID,
+      subscriberHash,
       {
         email_address: email,
         status: 'subscribed',
