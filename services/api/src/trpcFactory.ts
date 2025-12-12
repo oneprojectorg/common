@@ -5,10 +5,7 @@ import { customAlphabet } from 'nanoid';
 import superjson from 'superjson';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 
-import {
-  MUTATION_CHANNELS_HEADER,
-  SUBSCRIPTION_CHANNELS_HEADER,
-} from './constants';
+import type { ChannelAccumulator } from './lib/channelAccumulator';
 import {
   getCookie as _getCookie,
   getCookies as _getCookies,
@@ -18,10 +15,23 @@ import { errorFormatter } from './lib/error';
 import withLogger from './middlewares/withLogger';
 import type { TContext } from './types';
 
+/**
+ * Extended context options that includes the channel accumulator.
+ * The accumulator collects channels from all procedures and merges them into response headers.
+ */
+export interface CreateContextOptions extends FetchCreateContextFnOptions {
+  /**
+   * Channel accumulator for collecting channels across procedures.
+   * Channels are accumulated and merged into headers after all procedures complete.
+   */
+  channelAccumulator: ChannelAccumulator;
+}
+
 export const createContext = async ({
   req,
   resHeaders,
-}: FetchCreateContextFnOptions): Promise<TContext> => {
+  channelAccumulator,
+}: CreateContextOptions): Promise<TContext> => {
   const nanoid = customAlphabet('0123456789abcdefghijklmnopqrstuvwxyz', 24);
 
   // seperate in 4-8-8-4 xxxx-xxxxxxxx-xxxxxxxx-xxxx
@@ -49,17 +59,19 @@ export const createContext = async ({
   const setMutationChannels: TContext['setMutationChannels'] = (
     channels: ChannelName[],
   ) => {
-    if (channels.length > 0) {
-      resHeaders.set(MUTATION_CHANNELS_HEADER, channels.join(','));
+    if (channels.length === 0) {
+      return;
     }
+    channelAccumulator.addMutationChannels(channels);
   };
 
   const setSubscriptionChannels: TContext['setSubscriptionChannels'] = (
     channels: ChannelName[],
   ) => {
-    if (channels.length > 0) {
-      resHeaders.set(SUBSCRIPTION_CHANNELS_HEADER, channels.join(','));
+    if (channels.length === 0) {
+      return;
     }
+    channelAccumulator.addSubscriptionChannels(channels);
   };
 
   return {

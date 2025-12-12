@@ -1,7 +1,6 @@
-import { appRouter, createContext } from '@op/api';
+import { appRouter, createContext, handleTRPCRequest } from '@op/api';
 import { API_OPENAPI_PATH } from '@op/core';
 import { createSBServerClient } from '@op/supabase/server';
-import { createOpenApiFetchHandler } from 'trpc-to-openapi';
 
 import { verifyAdminOnly } from '../../../route';
 
@@ -11,8 +10,9 @@ const handler = async (req: Request) => {
 
   verifyAdminOnly(data);
 
-  // Handle incoming OpenAPI requests
-  return createOpenApiFetchHandler({
+  // Handle incoming OpenAPI requests using the same handler as tRPC
+  // This ensures consistent channel accumulation behavior
+  return handleTRPCRequest({
     endpoint: `/${API_OPENAPI_PATH}`,
     router: appRouter,
     createContext,

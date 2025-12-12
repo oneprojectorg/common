@@ -5,6 +5,7 @@ import type { AppRouter } from './src/routers';
 
 export * from './src/routers';
 export * from './src/trpcFactory';
+export { handleTRPCRequest } from './src/lib/trpcRequestHandler';
 
 export type RouterInput = inferRouterInputs<AppRouter>;
 export type RouterOutput = inferRouterOutputs<AppRouter>;

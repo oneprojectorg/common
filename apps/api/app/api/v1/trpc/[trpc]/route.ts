@@ -1,6 +1,5 @@
-import { appRouter, createContext } from '@op/api';
+import { appRouter, createContext, handleTRPCRequest } from '@op/api';
 import { API_TRPC_PTH } from '@op/core';
-import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import type { NextRequest } from 'next/server';
 
 export const maxDuration = 120;
@@ -20,7 +19,10 @@ const allowedOrigins = [
 ];
 
 const handler = async (req: NextRequest) => {
-  const response = await fetchRequestHandler({
+  // Use handleTRPCRequest which supports channel accumulation for batched requests.
+  // This ensures that when multiple procedures are batched together, their channels
+  // are combined into a single set of response headers.
+  const response = await handleTRPCRequest({
     endpoint: `/${API_TRPC_PTH}`,
     req,
     router: appRouter,

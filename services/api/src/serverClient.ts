@@ -1,8 +1,8 @@
 import { OPURLConfig } from '@op/core';
 import {
   createTRPCProxyClient,
+  httpBatchStreamLink,
   loggerLink,
-  unstable_httpBatchStreamLink,
 } from '@trpc/client';
 import { customAlphabet } from 'nanoid';
 import { cookies, headers } from 'next/headers';
@@ -32,7 +32,7 @@ export const createTRPCVanillaClient = (headers?: Record<string, string>) => {
             }),
           ]
         : []),
-      unstable_httpBatchStreamLink({
+      httpBatchStreamLink({
         url: envURL.TRPC_URL,
         transformer: superjson,
         headers,
