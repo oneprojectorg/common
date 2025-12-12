@@ -51,7 +51,10 @@ const ComingSoonPage = () => {
           <WaitlistSignup />
           <p className="sm:text-lg">
             Already have an account?{' '}
-            <a href="/login" className="underline">
+            <a
+              href="/login"
+              className="underline transition-opacity hover:opacity-80"
+            >
               Sign in
             </a>
           </p>

@@ -97,7 +97,7 @@ const WaitlistSignupForm = ({ onSuccess }: { onSuccess: () => void }) => {
         {([isSubmitting]) => (
           <form.SubmitButton
             isDisabled={isSubmitting}
-            className="w-full md:h-16 md:w-auto md:rounded-xl md:p-7 md:text-xl"
+            className="w-full md:h-16 md:w-44 md:rounded-xl md:p-7 md:text-xl"
           >
             {isSubmitting ? <LoadingSpinner /> : 'Join waitlist'}
           </form.SubmitButton>
