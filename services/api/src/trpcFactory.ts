@@ -5,7 +5,6 @@ import { customAlphabet } from 'nanoid';
 import superjson from 'superjson';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 
-import type { ChannelAccumulator } from './lib/channelAccumulator';
 import {
   getCookie as _getCookie,
   getCookies as _getCookies,
@@ -15,23 +14,12 @@ import { errorFormatter } from './lib/error';
 import withLogger from './middlewares/withLogger';
 import type { TContext } from './types';
 
-/**
- * Extended context options that includes the channel accumulator.
- * The accumulator collects channels from all procedures and merges them into response headers.
- */
-export interface CreateContextOptions extends FetchCreateContextFnOptions {
-  /**
-   * Channel accumulator for collecting channels across procedures.
-   * Channels are accumulated and merged into headers after all procedures complete.
-   */
-  channelAccumulator: ChannelAccumulator;
-}
-
 export const createContext = async ({
   req,
   resHeaders,
-  channelAccumulator,
-}: CreateContextOptions): Promise<TContext> => {
+}: FetchCreateContextFnOptions): Promise<TContext> => {
+  const mutationChannels = new Set<ChannelName>();
+  const subscriptionChannels = new Set<ChannelName>();
   const nanoid = customAlphabet('0123456789abcdefghijklmnopqrstuvwxyz', 24);
 
   // seperate in 4-8-8-4 xxxx-xxxxxxxx-xxxxxxxx-xxxx
@@ -44,42 +32,23 @@ export const createContext = async ({
 
   resHeaders.set('x-request-id', requestId);
 
-  const getCookies: TContext['getCookies'] = () => {
-    return _getCookies(req);
-  };
-
-  const getCookie: TContext['getCookie'] = (name) => {
-    return _getCookie(req, name);
-  };
-
-  const setCookie: TContext['setCookie'] = ({ name, value, options }) => {
-    return _setCookie({ resHeaders, name, value, options });
-  };
-
-  const setMutationChannels: TContext['setMutationChannels'] = (
-    channels: ChannelName[],
-  ) => {
-    if (channels.length === 0) {
-      return;
-    }
-    channelAccumulator.addMutationChannels(channels);
-  };
-
-  const setSubscriptionChannels: TContext['setSubscriptionChannels'] = (
-    channels: ChannelName[],
-  ) => {
-    if (channels.length === 0) {
-      return;
-    }
-    channelAccumulator.addSubscriptionChannels(channels);
-  };
-
   return {
-    getCookies,
-    getCookie,
-    setCookie,
-    setMutationChannels,
-    setSubscriptionChannels,
+    getCookies: () => _getCookies(req),
+    getCookie: (name) => _getCookie(req, name),
+    setCookie: ({ name, value, options }) =>
+      _setCookie({ resHeaders, name, value, options }),
+    setMutationChannels: (channels) => {
+      for (const ch of channels) {
+        mutationChannels.add(ch);
+      }
+    },
+    setSubscriptionChannels: (channels) => {
+      for (const ch of channels) {
+        subscriptionChannels.add(ch);
+      }
+    },
+    getMutationChannels: () => Array.from(mutationChannels),
+    getSubscriptionChannels: () => Array.from(subscriptionChannels),
     requestId,
     time: Date.now(),
     ip: req.headers.get('X-Forwarded-For') || null,

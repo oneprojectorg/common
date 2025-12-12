@@ -5,7 +5,10 @@ import type { AppRouter } from './src/routers';
 
 export * from './src/routers';
 export * from './src/trpcFactory';
-export { handleTRPCRequest } from './src/lib/trpcRequestHandler';
+export {
+  MUTATION_CHANNELS_HEADER,
+  SUBSCRIPTION_CHANNELS_HEADER,
+} from './src/constants';
 
 export type RouterInput = inferRouterInputs<AppRouter>;
 export type RouterOutput = inferRouterOutputs<AppRouter>;

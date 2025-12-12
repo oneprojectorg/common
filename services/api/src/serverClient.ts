@@ -102,6 +102,8 @@ const createServerContext = cache(async (): Promise<TContext> => {
     setSubscriptionChannels: () => {
       // No-op for server-side calls - there's no HTTP response to set headers on
     },
+    getMutationChannels: () => [],
+    getSubscriptionChannels: () => [],
     requestId,
     time: Date.now(),
     ip: headersList.get('x-forwarded-for') || null,

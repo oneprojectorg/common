@@ -1,5 +1,11 @@
-import { appRouter, createContext, handleTRPCRequest } from '@op/api';
+import {
+  MUTATION_CHANNELS_HEADER,
+  SUBSCRIPTION_CHANNELS_HEADER,
+  appRouter,
+  createContext,
+} from '@op/api';
 import { API_TRPC_PTH } from '@op/core';
+import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import type { NextRequest } from 'next/server';
 
 export const maxDuration = 120;
@@ -19,16 +25,37 @@ const allowedOrigins = [
 ];
 
 const handler = async (req: NextRequest) => {
-  // Use handleTRPCRequest which supports channel accumulation for batched requests.
-  // This ensures that when multiple procedures are batched together, their channels
-  // are combined into a single set of response headers.
-  const response = await handleTRPCRequest({
+  const response = await fetchRequestHandler({
     endpoint: `/${API_TRPC_PTH}`,
     req,
     router: appRouter,
     createContext,
     onError({ error, path }) {
       console.error(`tRPC Error on ${path}:`, error);
+    },
+    responseMeta({ ctx }) {
+      if (!ctx) {
+        return {};
+      }
+
+      const headers: Record<string, string> = {};
+      const mutationChannels = ctx.getMutationChannels();
+      const subscriptionChannels = ctx.getSubscriptionChannels();
+
+      if (subscriptionChannels.length > 0) {
+        headers[SUBSCRIPTION_CHANNELS_HEADER] = subscriptionChannels.join(',');
+      }
+      if (mutationChannels.length > 0) {
+        headers[MUTATION_CHANNELS_HEADER] = mutationChannels.join(',');
+      }
+
+      if (Object.keys(headers).length > 0) {
+        return {
+          headers: new Headers(Object.entries(headers)),
+        };
+      }
+
+      return {};
     },
   });
 

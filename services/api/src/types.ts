@@ -27,6 +27,16 @@ export interface TContext {
    * Used in queries to declare which channels they subscribe to.
    */
   setSubscriptionChannels: (channels: ChannelName[]) => void;
+  /**
+   * Gets all accumulated mutation channels across batched procedures.
+   * Used in responseMeta to build response headers.
+   */
+  getMutationChannels: () => ChannelName[];
+  /**
+   * Gets all accumulated subscription channels across batched procedures.
+   * Used in responseMeta to build response headers.
+   */
+  getSubscriptionChannels: () => ChannelName[];
   requestId: string;
   time: number;
   ip: string | null;
