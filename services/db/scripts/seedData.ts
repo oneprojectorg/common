@@ -1,4 +1,4 @@
-const taxonomies = [
+export const taxonomies = [
   {
     id: 'd81c255a-7e12-436a-bb52-a52eb592b770',
     name: 'candid',
@@ -37,7 +37,7 @@ const taxonomies = [
   },
 ];
 
-const terms = [
+export const terms = [
   {
     id: '55b1af6b-4594-4cd0-8437-490a5c536713',
     taxonomy_id: 'd81c255a-7e12-436a-bb52-a52eb592b770',

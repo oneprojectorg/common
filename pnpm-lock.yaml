@@ -787,13 +787,13 @@ importers:
       '@opentelemetry/api-logs':
         specifier: ^0.208.0
         version: 0.208.0
-      next:
-        specifier: 'catalog:'
-        version: 15.3.8(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-e1e972c-20250221)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.85.1)
     devDependencies:
       '@op/typescript-config':
         specifier: workspace:*
         version: link:../../configs/typescript-config
+      next:
+        specifier: 'catalog:'
+        version: 15.3.8(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-e1e972c-20250221)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.85.1)
       typescript:
         specifier: 5.7.3
         version: 5.7.3

@@ -1,6 +1,6 @@
 import { pgTable, primaryKey, uuid } from 'drizzle-orm/pg-core';
-import { serviceRolePolicies } from 'helpers';
 
+import { serviceRolePolicies } from '../../helpers';
 import { locations } from './locations.sql';
 import { organizations } from './organizations.sql';
 
