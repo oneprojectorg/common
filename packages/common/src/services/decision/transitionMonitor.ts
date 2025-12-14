@@ -7,6 +7,7 @@ import {
 import pMap from 'p-map';
 
 import { CommonError } from '../../utils';
+import { assertProcessInstance } from '../assert';
 // import { processResults } from './processResults';
 import type { ProcessSchema, StateDefinition } from './types';
 
@@ -117,15 +118,9 @@ async function processTransition(transitionId: string): Promise<void> {
   }
 
   // Get the process instance to check if we're transitioning to a final state
-  const processInstance = await db.query.processInstances.findFirst({
-    where: eq(processInstances.id, transition.processInstanceId),
+  const processInstance = await assertProcessInstance({
+    id: transition.processInstanceId,
   });
-
-  if (!processInstance) {
-    throw new CommonError(
-      `Process instance not found: ${transition.processInstanceId}`,
-    );
-  }
 
   // Get the process schema to check the state type
   const process = await db.query.decisionProcesses.findFirst({

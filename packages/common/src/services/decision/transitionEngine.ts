@@ -13,7 +13,7 @@ import {
   UnauthorizedError,
   ValidationError,
 } from '../../utils';
-import { assertUser } from '../assert';
+import { assertProcessInstanceWithProcess, assertUser } from '../assert';
 import type {
   InstanceData,
   ProcessSchema,
@@ -59,22 +59,11 @@ export class TransitionEngine {
 
     try {
       // Get the process instance with related data
-      const instance = await db.query.processInstances.findFirst({
-        where: eq(processInstances.id, instanceId),
-        with: {
-          process: true,
-        },
+      const instance = await assertProcessInstanceWithProcess({
+        id: instanceId,
       });
 
-      if (!instance) {
-        throw new NotFoundError('Process instance not found');
-      }
-
-      if (!instance.process) {
-        throw new NotFoundError('Process definition not found');
-      }
-
-      const process = instance.process as any;
+      const process = instance.process;
       const processSchema = process.processSchema as ProcessSchema;
       const instanceData = instance.instanceData as InstanceData;
       console.log(
@@ -177,22 +166,11 @@ export class TransitionEngine {
       }
 
       // Get the instance again for updating
-      const instance = await db.query.processInstances.findFirst({
-        where: eq(processInstances.id, data.instanceId),
-        with: {
-          process: true,
-        },
+      const instance = await assertProcessInstanceWithProcess({
+        id: data.instanceId,
       });
 
-      if (!instance) {
-        throw new NotFoundError('Process instance not found');
-      }
-
-      if (!instance.process) {
-        throw new NotFoundError('Process definition not found');
-      }
-
-      const process = instance.process as any;
+      const process = instance.process;
       const processSchema = process.processSchema as ProcessSchema;
       const instanceData = instance.instanceData as InstanceData;
       const currentStateId =

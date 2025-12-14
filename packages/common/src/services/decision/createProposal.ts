@@ -1,7 +1,6 @@
 import { db, eq } from '@op/db/client';
 import {
   EntityType,
-  processInstances,
   profiles,
   proposalAttachments,
   proposalCategories,
@@ -17,7 +16,10 @@ import {
   ValidationError,
 } from '../../utils';
 import { getCurrentProfileId, getOrgAccessUser } from '../access';
-import { assertOrganization } from '../assert';
+import {
+  assertOrganization,
+  assertProcessInstanceWithProcess,
+} from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
 import { processProposalContent } from './proposalContentProcessor';
 import { schemaValidator } from './schemaValidator';
@@ -43,21 +45,9 @@ export const createProposal = async ({
 
   try {
     // Verify the process instance exists and get the process schema
-    const instance = await db.query.processInstances.findFirst({
-      where: eq(processInstances.id, data.processInstanceId),
-      with: {
-        process: true,
-      },
+    const instance = await assertProcessInstanceWithProcess({
+      id: data.processInstanceId,
     });
-
-    if (!instance) {
-      throw new NotFoundError('Process instance not found');
-    }
-
-    // Check if the current state allows proposals
-    if (!instance.process) {
-      throw new NotFoundError('Process definition not found');
-    }
 
     const org = await assertOrganization({
       profileId: instance.ownerProfileId,

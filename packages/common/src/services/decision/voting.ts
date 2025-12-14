@@ -4,21 +4,18 @@ import {
   type VoteData,
   decisionsVoteProposals,
   decisionsVoteSubmissions,
-  processInstances,
   proposals,
 } from '@op/db/schema';
 import { assertAccess, permission } from 'access-zones';
 
 import { processDecisionProcessSchema } from '../../lib/schema-registry';
 import { validateVoteSelection } from '../../lib/schema-validators';
-import {
-  CommonError,
-  NotFoundError,
-  UnauthorizedError,
-  ValidationError,
-} from '../../utils';
+import { CommonError, UnauthorizedError, ValidationError } from '../../utils';
 import { getIndividualProfileId, getOrgAccessUser } from '../access';
-import { assertOrganization } from '../assert';
+import {
+  assertOrganization,
+  assertProcessInstanceWithProcess,
+} from '../assert';
 
 export type CustomData = Record<string, unknown>;
 
@@ -110,16 +107,9 @@ export const submitVote = async ({
     const profileId = await getIndividualProfileId(authUserId);
 
     // Get process instance and schema
-    const processInstance = await db.query.processInstances.findFirst({
-      where: eq(processInstances.id, data.processInstanceId),
-      with: {
-        process: true,
-      },
+    const processInstance = await assertProcessInstanceWithProcess({
+      id: data.processInstanceId,
     });
-
-    if (!processInstance) {
-      throw new NotFoundError('Process instance not found');
-    }
 
     // Get organization from owner profile
     const org = await assertOrganization({
@@ -308,16 +298,9 @@ export const getVotingStatus = async ({
     const profileId = await getIndividualProfileId(authUserId);
 
     // Get process instance and schema
-    const processInstance = await db.query.processInstances.findFirst({
-      where: eq(processInstances.id, data.processInstanceId),
-      with: {
-        process: true,
-      },
+    const processInstance = await assertProcessInstanceWithProcess({
+      id: data.processInstanceId,
     });
-
-    if (!processInstance) {
-      throw new NotFoundError('Process instance not found');
-    }
 
     // Get organization from owner profile
     const org = await assertOrganization({
@@ -440,16 +423,9 @@ export const validateVoteSelectionService = async ({
 
   try {
     // Get process instance and schema
-    const processInstance = await db.query.processInstances.findFirst({
-      where: eq(processInstances.id, data.processInstanceId),
-      with: {
-        process: true,
-      },
+    const processInstance = await assertProcessInstanceWithProcess({
+      id: data.processInstanceId,
     });
-
-    if (!processInstance) {
-      throw new NotFoundError('Process instance not found');
-    }
 
     // Get organization from owner profile
     const org = await assertOrganization({

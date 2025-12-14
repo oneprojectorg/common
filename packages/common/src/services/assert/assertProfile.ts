@@ -11,6 +11,7 @@ type AssertProfileParams =
  * Fetches a profile and throws if not found.
  *
  * @throws NotFoundError if profile is not found
+ * TODO: split in assertProfile and assertProfileBySlug
  */
 export async function assertProfile(
   params: AssertProfileParams,
@@ -18,8 +19,7 @@ export async function assertProfile(
   const { id, slug } = params;
 
   const profile = await db.query.profiles.findFirst({
-    where: (table, { eq }) =>
-      id ? eq(table.id, id) : eq(table.slug, slug!),
+    where: (table, { eq }) => (id ? eq(table.id, id) : eq(table.slug, slug!)),
   });
 
   if (!profile) {

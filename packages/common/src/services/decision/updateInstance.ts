@@ -11,6 +11,7 @@ import { z } from 'zod';
 
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { getCurrentProfileId } from '../access';
+import { assertProcessInstance } from '../assert';
 import type { InstanceData } from './types';
 import { updateTransitionsForProcess } from './updateTransitionsForProcess';
 
@@ -130,21 +131,11 @@ export const updateInstance = async ({
       throw new UnauthorizedError('User must have an active profile');
     }
 
-    // Verify the instance exists and user has permission
-    const existingInstance = await db.query.processInstances.findFirst({
-      where: eq(processInstances.id, data.instanceId),
+    // Verify the instance exists and user has permission (owner check)
+    const existingInstance = await assertProcessInstance({
+      id: data.instanceId,
+      ownerProfileId: currentProfileId,
     });
-
-    if (!existingInstance) {
-      throw new NotFoundError('Process instance not found');
-    }
-
-    // TODO: Only owners can edit at the moment. You an broaden this to admins with assertAccess
-    if (existingInstance.ownerProfileId !== currentProfileId) {
-      throw new UnauthorizedError(
-        'You do not have permission to update this process instance',
-      );
-    }
 
     const updateData = updateDataSchema.parse(data);
 
