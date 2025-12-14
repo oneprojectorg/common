@@ -6,7 +6,9 @@ import { NotFoundError } from '../../utils';
 /**
  * Fetches a user by ID and throws if not found.
  *
- * @throws NotFoundError if user is not found
+ * @param id - The user ID to look up
+ * @param error - Custom error to throw if not found (defaults to NotFoundError)
+ * @throws The provided error or NotFoundError if user is not found
  */
 export async function assertUser(
   id: string,
@@ -26,7 +28,9 @@ export async function assertUser(
 /**
  * Fetches a user by auth user ID and throws if not found.
  *
- * @throws NotFoundError if user is not found
+ * @param authUserId - The auth user ID to look up
+ * @param error - Custom error to throw if not found (defaults to NotFoundError)
+ * @throws The provided error or NotFoundError if user is not found
  */
 export async function assertUserByAuthId(
   authUserId: string,

@@ -6,7 +6,9 @@ import { NotFoundError } from '../../utils';
 /**
  * Fetches a profile by ID and throws if not found.
  *
- * @throws NotFoundError if profile is not found
+ * @param id - The profile ID to look up
+ * @param error - Custom error to throw if not found (defaults to NotFoundError)
+ * @throws The provided error or NotFoundError if profile is not found
  */
 export async function assertProfile(
   id: string,
@@ -26,7 +28,9 @@ export async function assertProfile(
 /**
  * Fetches a profile by slug and throws if not found.
  *
- * @throws NotFoundError if profile is not found
+ * @param slug - The profile slug to look up
+ * @param error - Custom error to throw if not found (defaults to NotFoundError)
+ * @throws The provided error or NotFoundError if profile is not found
  */
 export async function assertProfileBySlug(
   slug: string,

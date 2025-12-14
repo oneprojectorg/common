@@ -6,7 +6,9 @@ import { NotFoundError } from '../../utils';
 /**
  * Fetches an organization by ID and throws if not found.
  *
- * @throws NotFoundError if organization is not found
+ * @param id - The organization ID to look up
+ * @param error - Custom error to throw if not found (defaults to NotFoundError)
+ * @throws The provided error or NotFoundError if organization is not found
  */
 export async function assertOrganization(
   id: string,
@@ -26,7 +28,9 @@ export async function assertOrganization(
 /**
  * Fetches an organization by profile ID and throws if not found.
  *
- * @throws NotFoundError if organization is not found
+ * @param profileId - The profile ID to look up the organization by
+ * @param error - Custom error to throw if not found (defaults to NotFoundError)
+ * @throws The provided error or NotFoundError if organization is not found
  */
 export async function assertOrganizationByProfileId(
   profileId: string,
