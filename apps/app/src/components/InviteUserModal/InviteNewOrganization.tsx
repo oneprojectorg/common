@@ -6,6 +6,7 @@ import { toast } from '@op/ui/Toast';
 import { LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
+
 import { parseEmails, shouldParseEmails } from './emailUtils';
 
 interface InviteNewOrganizationProps {
@@ -32,7 +33,6 @@ export const InviteNewOrganization = ({
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email.trim());
   };
-
 
   const removeEmailBadge = (emailToRemove: string) => {
     setEmailBadges(emailBadges.filter((email) => email !== emailToRemove));
@@ -69,7 +69,10 @@ export const InviteNewOrganization = ({
         // Show error for invalid emails if any
         if (invalidEmails.length > 0) {
           toast.error({
-            title: invalidEmails.length === 1 ? t('Invalid email') : t('Invalid emails'),
+            title:
+              invalidEmails.length === 1
+                ? t('Invalid email')
+                : t('Invalid emails'),
             message: `"${invalidEmails.join('", "')}" ${invalidEmails.length === 1 ? t('is not a valid email address') : t('are not valid email addresses')}`,
           });
         }
@@ -77,7 +80,10 @@ export const InviteNewOrganization = ({
         // Show info for duplicate emails if any
         if (duplicateEmails.length > 0) {
           toast.error({
-            title: duplicateEmails.length === 1 ? t('Duplicate email') : t('Duplicate emails'),
+            title:
+              duplicateEmails.length === 1
+                ? t('Duplicate email')
+                : t('Duplicate emails'),
             message: `"${duplicateEmails.join('", "')}" ${duplicateEmails.length === 1 ? t('has already been added') : t('have already been added')}`,
           });
         }

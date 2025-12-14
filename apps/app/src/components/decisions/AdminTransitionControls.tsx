@@ -1,9 +1,9 @@
 'use client';
 
-import { Button } from '@op/ui/Button';
 import { trpc } from '@op/api/client';
-import { useState } from 'react';
+import { Button } from '@op/ui/Button';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 interface Phase {
   id: string;
@@ -24,35 +24,39 @@ export function AdminTransitionControls({
 }: AdminTransitionControlsProps) {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const router = useRouter();
-  const executeTransitionMutation = trpc.decision.executeTransition.useMutation();
+  const executeTransitionMutation =
+    trpc.decision.executeTransition.useMutation();
 
   // Use the API to check available transitions instead of static filtering
-  const { data: transitionCheck, isLoading: isCheckingTransitions } = trpc.decision.checkTransitions.useQuery({
-    instanceId,
-  });
+  const { data: transitionCheck, isLoading: isCheckingTransitions } =
+    trpc.decision.checkTransitions.useQuery({
+      instanceId,
+    });
 
   const currentPhase = phases.find((phase) => phase.id === currentStateId);
 
-  const handleTransition = async (toStateId: string, transitionName: string) => {
+  const handleTransition = async (
+    toStateId: string,
+    transitionName: string,
+  ) => {
     if (isTransitioning) return;
 
     const confirmTransition = window.confirm(
-      `Are you sure you want to execute the transition "${transitionName}"?`
+      `Are you sure you want to execute the transition "${transitionName}"?`,
     );
-    
+
     if (!confirmTransition) return;
 
     setIsTransitioning(true);
-    
+
     try {
       await executeTransitionMutation.mutateAsync({
         instanceId,
         toStateId,
       });
-      
+
       alert(`Transition "${transitionName}" executed successfully!`);
       router.refresh(); // Refresh the page to show updated state
-      
     } catch (error) {
       console.error('Failed to execute transition:', error);
       alert('Failed to execute transition. Please try again.');
@@ -81,14 +85,15 @@ export function AdminTransitionControls({
         </h3>
         {isCheckingTransitions ? (
           <p className="mt-2 text-gray-500">Checking transitions...</p>
-        ) : !transitionCheck?.canTransition || transitionCheck.availableTransitions.length === 0 ? (
+        ) : !transitionCheck?.canTransition ||
+          transitionCheck.availableTransitions.length === 0 ? (
           <p className="mt-2 text-gray-500">
             No transitions available from the current state.
           </p>
         ) : (
           <div className="mt-4 space-y-3">
             {transitionCheck.availableTransitions
-              .filter(transition => transition.canExecute)
+              .filter((transition) => transition.canExecute)
               .map((transition) => {
                 const targetPhase = phases.find(
                   (phase) => phase.id === transition.toStateId,
@@ -104,13 +109,19 @@ export function AdminTransitionControls({
                         {transition.transitionName}
                       </p>
                       <p className="text-sm text-gray-600">
-                        Transition to: {targetPhase?.name || transition.toStateId}
+                        Transition to:{' '}
+                        {targetPhase?.name || transition.toStateId}
                       </p>
                     </div>
                     <Button
                       variant="primary"
                       size="small"
-                      onPress={() => handleTransition(transition.toStateId, transition.transitionName)}
+                      onPress={() =>
+                        handleTransition(
+                          transition.toStateId,
+                          transition.transitionName,
+                        )
+                      }
                       isDisabled={isTransitioning}
                     >
                       {isTransitioning ? 'Executing...' : 'Execute'}

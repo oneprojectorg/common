@@ -46,7 +46,7 @@ export const RadioGroup = (props: RadioGroupProps) => {
 
 const styles = tv({
   // extend: focusRing,
-  base: 'bg-neutral-white size-4 aspect-square rounded-full border border-neutral-gray3 transition-all flex-shrink-0',
+  base: 'bg-neutral-white aspect-square size-4 flex-shrink-0 rounded-full border border-neutral-gray3 transition-all',
   variants: {
     isSelected: {
       false: 'border group-pressed:border',
@@ -65,7 +65,10 @@ export interface CustomRadioProps extends RadioProps {
   labelPosition?: 'right' | 'bottom';
 }
 
-export const Radio = ({ labelPosition = 'right', ...props }: CustomRadioProps) => {
+export const Radio = ({
+  labelPosition = 'right',
+  ...props
+}: CustomRadioProps) => {
   const isBottomLabel = labelPosition === 'bottom';
 
   return (

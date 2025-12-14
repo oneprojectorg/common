@@ -1,6 +1,10 @@
 import { Node, mergeAttributes, nodeInputRule } from '@tiptap/core';
-import { NodeViewWrapper, ReactNodeViewRenderer, ReactNodeViewProps } from '@tiptap/react';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
+import {
+  NodeViewWrapper,
+  ReactNodeViewProps,
+  ReactNodeViewRenderer,
+} from '@tiptap/react';
 import React from 'react';
 
 import { LinkPreview } from '../LinkPreview';
@@ -48,8 +52,8 @@ export const IframelyExtension = Node.create<IframelyOptions>({
     return {
       src: {
         default: null,
-        parseHTML: element => element.getAttribute('data-src'),
-        renderHTML: attributes => {
+        parseHTML: (element) => element.getAttribute('data-src'),
+        renderHTML: (attributes) => {
           if (!attributes.src) {
             return {};
           }
@@ -90,12 +94,12 @@ export const IframelyExtension = Node.create<IframelyOptions>({
     return {
       setIframely:
         (options: { src: string }) =>
-          ({ commands }) => {
-            return commands.insertContent({
-              type: this.name,
-              attrs: options,
-            });
-          },
+        ({ commands }) => {
+          return commands.insertContent({
+            type: this.name,
+            attrs: options,
+          });
+        },
     };
   },
 

@@ -1,4 +1,3 @@
-import { trackFundingToggle } from '../../utils/analytics';
 import { invalidate } from '@op/cache';
 import { UnauthorizedError, updateOrganization } from '@op/common';
 import { TRPCError } from '@trpc/server';
@@ -10,6 +9,7 @@ import withAnalytics from '../../middlewares/withAnalytics';
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
+import { trackFundingToggle } from '../../utils/analytics';
 import { updateOrganizationInputSchema } from './validators';
 
 const meta: OpenApiMeta = {

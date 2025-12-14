@@ -1,8 +1,9 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { createProcess } from '../createProcess';
-import { UnauthorizedError, CommonError } from '../../../utils';
-import type { ProcessSchema } from '../types';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { mockDb } from '../../../test/setup';
+import { CommonError, UnauthorizedError } from '../../../utils';
+import { createProcess } from '../createProcess';
+import type { ProcessSchema } from '../types';
 
 // Mock user object
 const mockUser = {
@@ -121,7 +122,7 @@ describe('createProcess', () => {
           processSchema: mockProcessSchema,
         },
         user: null as any,
-      })
+      }),
     ).rejects.toThrow(UnauthorizedError);
   });
 
@@ -136,7 +137,7 @@ describe('createProcess', () => {
           processSchema: mockProcessSchema,
         },
         user: mockUser,
-      })
+      }),
     ).rejects.toThrow(UnauthorizedError);
   });
 
@@ -150,7 +151,7 @@ describe('createProcess', () => {
           processSchema: mockProcessSchema,
         },
         user: mockUser,
-      })
+      }),
     ).rejects.toThrow(UnauthorizedError);
   });
 
@@ -169,13 +170,13 @@ describe('createProcess', () => {
           processSchema: mockProcessSchema,
         },
         user: mockUser,
-      })
+      }),
     ).rejects.toThrow(CommonError);
   });
 
   it('should handle database errors gracefully', async () => {
     mockDb.query.users.findFirst.mockRejectedValueOnce(
-      new Error('Database connection failed')
+      new Error('Database connection failed'),
     );
 
     await expect(
@@ -185,7 +186,7 @@ describe('createProcess', () => {
           processSchema: mockProcessSchema,
         },
         user: mockUser,
-      })
+      }),
     ).rejects.toThrow(CommonError);
   });
 
@@ -199,7 +200,7 @@ describe('createProcess', () => {
           processSchema: mockProcessSchema,
         },
         user: mockUser,
-      })
+      }),
     ).rejects.toThrow(); // This would be caught by zod validation in practice
   });
 });

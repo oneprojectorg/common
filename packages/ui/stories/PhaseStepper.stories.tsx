@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
+
 import { PhaseStepper } from '../src/components/PhaseStepper';
 
 const meta: Meta<typeof PhaseStepper> = {
@@ -48,7 +49,8 @@ export const Default: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Shows completed steps with green checkmarks, current step highlighted, and upcoming steps in gray',
+        story:
+          'Shows completed steps with green checkmarks, current step highlighted, and upcoming steps in gray',
       },
     },
   },
@@ -161,7 +163,8 @@ export const FirstPhase: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Shows the first phase as current with all others upcoming (gray)',
+        story:
+          'Shows the first phase as current with all others upcoming (gray)',
       },
     },
   },
@@ -191,7 +194,8 @@ export const LastPhase: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Shows completed steps with green checkmarks and the final step as current',
+        story:
+          'Shows completed steps with green checkmarks and the final step as current',
       },
     },
   },
@@ -231,7 +235,8 @@ export const AllStates: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Shows all three states: completed (green with checkmarks), current (black), and upcoming (gray)',
+        story:
+          'Shows all three states: completed (green with checkmarks), current (black), and upcoming (gray)',
       },
     },
   },
@@ -281,7 +286,8 @@ export const UnsortedPhases: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Phases are automatically sorted by sortOrder, regardless of array order',
+        story:
+          'Phases are automatically sorted by sortOrder, regardless of array order',
       },
     },
   },

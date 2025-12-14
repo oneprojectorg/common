@@ -55,7 +55,9 @@ export const proposalColumns = {
   status: proposalStatusEnum('status').default(ProposalStatus.DRAFT),
 
   // Proposal visibility (defaults to VISIBLE)
-  visibility: visibilityEnum('visibility').default(Visibility.VISIBLE).notNull(),
+  visibility: visibilityEnum('visibility')
+    .default(Visibility.VISIBLE)
+    .notNull(),
 
   // Who originally submitted this proposal
   submittedByProfileId: uuid('submitted_by_profile_id')

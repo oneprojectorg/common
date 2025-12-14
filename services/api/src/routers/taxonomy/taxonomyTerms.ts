@@ -2,8 +2,8 @@ import { getTerms } from '@op/common';
 import { z } from 'zod';
 
 import { taxonomyTermsWithChildrenEncoder } from '../../encoders/taxonomyTerms';
-import withAuthenticated from '../../middlewares/withAuthenticated';
 import withAnalytics from '../../middlewares/withAnalytics';
+import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 

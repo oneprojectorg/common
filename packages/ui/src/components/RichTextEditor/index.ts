@@ -1,7 +1,4 @@
-export {
-  RichTextEditor,
-  type RichTextEditorRef,
-} from './RichTextEditor';
+export { RichTextEditor, type RichTextEditorRef } from './RichTextEditor';
 export { RichTextViewer } from './RichTextViewer';
 export { RichTextEditorSkeleton } from './RichTextEditorSkeleton';
 export { StyledRichTextContent } from './StyledRichTextContent';

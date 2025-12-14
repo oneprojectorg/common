@@ -2,12 +2,8 @@ import type { Proposal } from '@op/db/schema';
 
 import { CommonError } from '../../../utils';
 import { getBlockExecutor } from './blockExecutors';
-import type {
-  BranchBlock,
-  ExecutionContext,
-  SelectionPipeline,
-} from './types';
 import { evaluateExpression } from './expressionEvaluator';
+import type { BranchBlock, ExecutionContext, SelectionPipeline } from './types';
 
 /**
  * Execute a selection pipeline
@@ -54,7 +50,8 @@ export async function executePipeline(
 
       // Store output
       const outputName = block.output || `block_${block.id}_output`;
-      context.outputs[outputName] = result.output !== undefined ? result.output : result.proposals;
+      context.outputs[outputName] =
+        result.output !== undefined ? result.output : result.proposals;
       previousOutput = outputName;
 
       // Merge variables
@@ -85,7 +82,8 @@ export async function executePipeline(
     return currentProposals;
   } catch (error) {
     console.error('Error executing pipeline:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error';
     throw new CommonError(`Pipeline execution failed: ${errorMessage}`);
   }
 }

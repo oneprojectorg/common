@@ -10,7 +10,8 @@ import { z } from 'zod';
 
 // Storage encoder for search results that accepts raw database format from LEFT JOIN
 // Uses createSelectSchema to handle all objectsInStorage fields and make them nullable
-const searchStorageObjectEncoder = createSelectSchema(objectsInStorage).nullable();
+const searchStorageObjectEncoder =
+  createSelectSchema(objectsInStorage).nullable();
 
 // Search-specific organization encoder (nullable fields from left join)
 // Include whereWeWork array which is used by ProfileSummaryList

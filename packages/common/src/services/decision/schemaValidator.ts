@@ -56,7 +56,10 @@ export class SchemaValidator {
         const missingProperty = error.params?.missingProperty;
         if (missingProperty) {
           const fieldPath = error.instancePath
-            ? `${error.instancePath.substring(1)}.${missingProperty}`.replace(/^\./, '')
+            ? `${error.instancePath.substring(1)}.${missingProperty}`.replace(
+                /^\./,
+                '',
+              )
             : missingProperty;
           requiredErrors.add(fieldPath);
           const friendlyName = this.getFieldDisplayName(missingProperty);
@@ -118,10 +121,7 @@ export class SchemaValidator {
     }
 
     // Convert from JSON pointer format (/field/subfield) to dot notation
-    return instancePath
-      .split('/')
-      .filter(Boolean)
-      .join('.');
+    return instancePath.split('/').filter(Boolean).join('.');
   }
 
   /**

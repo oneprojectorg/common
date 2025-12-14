@@ -2,7 +2,9 @@
  * Parse emails from input string, supporting both comma and line break separators
  * Returns both the emails and info about which separator was primarily used
  */
-export const parseEmails = (input: string): { emails: string[]; hasLineBreaks: boolean } => {
+export const parseEmails = (
+  input: string,
+): { emails: string[]; hasLineBreaks: boolean } => {
   if (!input.trim()) return { emails: [], hasLineBreaks: false };
 
   const hasLineBreaks = /[\n\r]/.test(input);

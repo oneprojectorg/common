@@ -5,12 +5,13 @@ import { trpc } from '@op/api/client';
 import { EntityType, ProfileRelationshipType } from '@op/api/encoders';
 import React, { Suspense, useMemo } from 'react';
 
+import { useTranslations } from '@/lib/i18n';
+
 import ErrorBoundary from '@/components/ErrorBoundary';
 import {
   RelationshipList,
   type RelationshipListItem,
 } from '@/components/RelationshipList';
-import { useTranslations } from '@/lib/i18n';
 
 import { ProfileRelationshipsSkeleton } from '../ProfileRelationships/Skeleton';
 
@@ -20,7 +21,7 @@ export const ProfileFollowingSuspense = ({
   profileId: string;
 }) => {
   const t = useTranslations();
-  
+
   const [relationships] = trpc.profile.getRelationships.useSuspenseQuery({
     sourceProfileId: profileId,
     types: [ProfileRelationshipType.FOLLOWING],

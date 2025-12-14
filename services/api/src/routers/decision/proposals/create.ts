@@ -1,4 +1,3 @@
-import { trackProposalSubmitted } from '../../../utils/analytics';
 import {
   NotFoundError,
   UnauthorizedError,
@@ -17,6 +16,7 @@ import withAnalytics from '../../../middlewares/withAnalytics';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
 import withRateLimited from '../../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../../trpcFactory';
+import { trackProposalSubmitted } from '../../../utils/analytics';
 
 const meta: OpenApiMeta = {
   openapi: {

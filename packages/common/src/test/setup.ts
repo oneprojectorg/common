@@ -57,19 +57,21 @@ export const mockDb = {
   }),
   $count: vi.fn().mockResolvedValue(0),
   execute: vi.fn().mockResolvedValue([]), // Add execute method for raw SQL queries
-  transaction: vi.fn().mockImplementation((callback) => callback({
-    update: vi.fn().mockReturnValue({
-      set: vi.fn().mockReturnValue({
+  transaction: vi.fn().mockImplementation((callback) =>
+    callback({
+      update: vi.fn().mockReturnValue({
+        set: vi.fn().mockReturnValue({
+          where: vi.fn(),
+        }),
+      }),
+      insert: vi.fn().mockReturnValue({
+        values: vi.fn(),
+      }),
+      delete: vi.fn().mockReturnValue({
         where: vi.fn(),
       }),
     }),
-    insert: vi.fn().mockReturnValue({
-      values: vi.fn(),
-    }),
-    delete: vi.fn().mockReturnValue({
-      where: vi.fn(),
-    }),
-  })),
+  ),
 };
 
 export const mockEq = vi.fn();

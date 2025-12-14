@@ -12,6 +12,7 @@
     "./encoders": "./src/encoders/index.ts"
   },
   "scripts": {
+    "format:check": "prettier --check \"**/*.{ts,tsx}\"",
     "test": "vitest",
     "test:check-supabase": "tsx src/test/check-supabase.ts",
     "test:coverage": "vitest --coverage",

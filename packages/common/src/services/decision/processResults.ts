@@ -1,4 +1,4 @@
-import { db, eq, inArray, count } from '@op/db/client';
+import { count, db, eq, inArray } from '@op/db/client';
 import {
   ProposalStatus,
   decisionProcessResultSelections,

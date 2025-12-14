@@ -13,6 +13,7 @@
   "types": "./src/index.ts",
   "scripts": {
     "disable-build": "tsc",
+    "format:check": "prettier --check \"**/*.{ts,tsx}\"",
     "typecheck": "tsgo --noEmit"
   },
   "dependencies": {

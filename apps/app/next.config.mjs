@@ -118,7 +118,9 @@ const getCurrentBranch = () => {
   // Locally, try to get branch from git
   try {
     const { execSync } = require('child_process');
-    return execSync('git rev-parse --abbrev-ref HEAD', { encoding: 'utf8' }).trim();
+    return execSync('git rev-parse --abbrev-ref HEAD', {
+      encoding: 'utf8',
+    }).trim();
   } catch {
     return null;
   }

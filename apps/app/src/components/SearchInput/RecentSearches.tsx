@@ -1,5 +1,5 @@
-import { LuClock } from 'react-icons/lu';
 import { useTranslations } from 'next-intl';
+import { LuClock } from 'react-icons/lu';
 
 import { Link } from '@/lib/i18n';
 

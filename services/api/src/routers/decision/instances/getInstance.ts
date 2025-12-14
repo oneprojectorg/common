@@ -1,8 +1,7 @@
-import { trackProcessViewed } from '../../../utils/analytics';
 import { NotFoundError, UnauthorizedError, getInstance } from '@op/common';
 import { TRPCError } from '@trpc/server';
-import type { OpenApiMeta } from 'trpc-to-openapi';
 import { waitUntil } from '@vercel/functions';
+import type { OpenApiMeta } from 'trpc-to-openapi';
 
 import {
   getInstanceInputSchema,
@@ -12,6 +11,7 @@ import withAnalytics from '../../../middlewares/withAnalytics';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
 import withRateLimited from '../../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../../trpcFactory';
+import { trackProcessViewed } from '../../../utils/analytics';
 
 const meta: OpenApiMeta = {
   openapi: {
@@ -43,9 +43,7 @@ export const getInstanceRouter = router({
         });
 
         // Track process viewed event
-        waitUntil(
-          trackProcessViewed(ctx, input.instanceId)
-        );
+        waitUntil(trackProcessViewed(ctx, input.instanceId));
 
         return processInstanceEncoder.parse({
           ...instance,

@@ -1,5 +1,6 @@
 'use client';
 
+import { parseProposalData } from '@/utils/proposalUtils';
 import { trpc } from '@op/api/client';
 import type { proposalEncoder } from '@op/api/encoders';
 import { ProposalStatus, Visibility } from '@op/api/encoders';
@@ -16,7 +17,6 @@ import { LuCheck, LuEye, LuEyeOff, LuX } from 'react-icons/lu';
 import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
-import { parseProposalData } from '@/utils/proposalUtils';
 
 type Proposal = z.infer<typeof proposalEncoder>;
 

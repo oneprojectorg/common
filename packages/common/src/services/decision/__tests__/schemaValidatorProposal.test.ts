@@ -1,8 +1,8 @@
-import { describe, expect, it } from 'vitest';
 import type { JSONSchema7 } from 'json-schema';
+import { describe, expect, it } from 'vitest';
 
-import { schemaValidator } from '../schemaValidator';
 import { ValidationError } from '../../../utils';
+import { schemaValidator } from '../schemaValidator';
 
 describe('SchemaValidator - Proposal Validation', () => {
   const proposalSchema: JSONSchema7 = {
@@ -51,7 +51,9 @@ describe('SchemaValidator - Proposal Validation', () => {
     } catch (error) {
       expect(error).toBeInstanceOf(ValidationError);
       const validationError = error as ValidationError;
-      expect(validationError.message).toContain('budget: Budget cannot exceed 5000');
+      expect(validationError.message).toContain(
+        'budget: Budget cannot exceed 5000',
+      );
       expect(validationError.fieldErrors).toEqual({
         budget: 'Budget cannot exceed 5000',
       });

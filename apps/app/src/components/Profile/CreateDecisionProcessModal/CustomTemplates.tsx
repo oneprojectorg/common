@@ -14,7 +14,7 @@ export const FieldTemplate = (props: FieldTemplateProps) => {
 
 export const ObjectFieldTemplate = (props: ObjectFieldTemplateProps) => {
   const { properties, title, description, idSchema } = props;
-  
+
   // Check if this is the root schema - if so, skip rendering title and description
   // as the modal wrapper already handles them
   const isRootSchema = idSchema?.$id === 'root';
@@ -35,7 +35,6 @@ export const ObjectFieldTemplate = (props: ObjectFieldTemplateProps) => {
         prop.name.includes('Close') ||
         prop.name === 'resultsDate'),
   );
-  
 
   if (isPhaseGroup && properties.length > 0) {
     return (

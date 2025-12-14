@@ -13,7 +13,7 @@ export interface CreatePostOnProfileInput {
 
 export const createPostOnProfile = async (input: CreatePostOnProfileInput) => {
   const { authUserId } = input;
-  
+
   const authorProfileId = await getCurrentProfileId(authUserId);
 
   try {

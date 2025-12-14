@@ -1,4 +1,3 @@
-import { trackImageUpload } from '../../utils/analytics';
 import { CommonError } from '@op/common';
 import { eq } from '@op/db/client';
 import { profiles, users } from '@op/db/schema';
@@ -15,6 +14,7 @@ import withDB from '../../middlewares/withDB';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 import { MAX_FILE_SIZE, sanitizeS3Filename } from '../../utils';
+import { trackImageUpload } from '../../utils/analytics';
 
 const ALLOWED_MIME_TYPES = [
   'image/png',

@@ -62,7 +62,7 @@ export const getProfilePosts = async (input: GetProfilePostsInput) => {
     // Filter out any items where post is null (due to parentPostId filtering)
     const filteredResult = profilePosts.filter((item) => item.post !== null);
 
-    return filteredResult.map(item => item.post);
+    return filteredResult.map((item) => item.post);
   } catch (error) {
     console.error('Error fetching profile posts:', error);
     throw error;

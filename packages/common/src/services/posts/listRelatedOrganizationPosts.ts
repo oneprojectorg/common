@@ -49,9 +49,7 @@ export const listAllRelatedOrganizationPosts = async (
           db
             .select({ id: posts.id })
             .from(posts)
-            .where(
-              and(eq(posts.id, table.postId), isNull(posts.parentPostId))
-            )
+            .where(and(eq(posts.id, table.postId), isNull(posts.parentPostId))),
         );
 
         return cursorCondition
@@ -135,14 +133,12 @@ export const listRelatedOrganizationPosts = async (
         db
           .select({ id: posts.id })
           .from(posts)
-          .where(
-            and(eq(posts.id, table.postId), isNull(posts.parentPostId))
-          )
+          .where(and(eq(posts.id, table.postId), isNull(posts.parentPostId))),
       );
 
       return and(
         inArray(postsToOrganizations.organizationId, orgIds),
-        topLevelPostFilter
+        topLevelPostFilter,
       );
     },
     with: {

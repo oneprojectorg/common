@@ -15,14 +15,14 @@ export interface ImageAttachment {
  */
 export function extractImageUrlsFromContent(htmlContent: string): string[] {
   const imageUrls: string[] = [];
-  
+
   // Create a temporary DOM parser to extract img src attributes
   if (typeof window !== 'undefined') {
     const parser = new DOMParser();
     const doc = parser.parseFromString(htmlContent, 'text/html');
     const images = doc.querySelectorAll('img');
-    
-    images.forEach(img => {
+
+    images.forEach((img) => {
       const src = img.getAttribute('src');
       if (src) {
         imageUrls.push(src);
@@ -38,7 +38,7 @@ export function extractImageUrlsFromContent(htmlContent: string): string[] {
       }
     }
   }
-  
+
   return imageUrls;
 }
 
@@ -47,9 +47,11 @@ export function extractImageUrlsFromContent(htmlContent: string): string[] {
  */
 export function isTemporarySupabaseUrl(url: string): boolean {
   // Check for Supabase storage URLs with signed tokens
-  return url.includes('supabase') && 
-         url.includes('/storage/') && 
-         (url.includes('token=') || url.includes('X-Amz-'));
+  return (
+    url.includes('supabase') &&
+    url.includes('/storage/') &&
+    (url.includes('token=') || url.includes('X-Amz-'))
+  );
 }
 
 /**
@@ -57,16 +59,16 @@ export function isTemporarySupabaseUrl(url: string): boolean {
  * This allows us to replace them with permanent URLs later
  */
 export function replaceImageUrlsWithPlaceholders(
-  htmlContent: string, 
-  imageUrls: string[]
+  htmlContent: string,
+  imageUrls: string[],
 ): string {
   let processedContent = htmlContent;
-  
+
   imageUrls.forEach((url, index) => {
     const placeholder = `[IMAGE_ATTACHMENT_${index}]`;
     processedContent = processedContent.replace(url, placeholder);
   });
-  
+
   return processedContent;
 }
 
@@ -75,15 +77,15 @@ export function replaceImageUrlsWithPlaceholders(
  */
 export function replacePlaceholdersWithUrls(
   htmlContent: string,
-  attachmentUrls: string[]
+  attachmentUrls: string[],
 ): string {
   let processedContent = htmlContent;
-  
+
   attachmentUrls.forEach((url, index) => {
     const placeholder = `[IMAGE_ATTACHMENT_${index}]`;
     processedContent = processedContent.replace(placeholder, url);
   });
-  
+
   return processedContent;
 }
 
@@ -93,16 +95,16 @@ export function replacePlaceholdersWithUrls(
  */
 export function extractAttachmentIdsFromUrls(
   imageUrls: string[],
-  uploadedAttachments: ImageAttachment[]
+  uploadedAttachments: ImageAttachment[],
 ): string[] {
   const attachmentIds: string[] = [];
-  
-  imageUrls.forEach(url => {
-    const attachment = uploadedAttachments.find(att => att.url === url);
+
+  imageUrls.forEach((url) => {
+    const attachment = uploadedAttachments.find((att) => att.url === url);
     if (attachment) {
       attachmentIds.push(attachment.id);
     }
   });
-  
+
   return attachmentIds;
 }

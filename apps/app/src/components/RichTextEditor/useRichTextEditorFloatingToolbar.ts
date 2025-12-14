@@ -51,20 +51,20 @@ export function useRichTextEditorFloatingToolbar({
 
     // Calculate the center of the selection for horizontal positioning
     const selectionCenterX = rect.left + scrollLeft + rect.width / 2;
-    
+
     // Estimate toolbar width (it uses min-width: max-content, but we can estimate ~400px for calculations)
     const estimatedToolbarWidth = 400;
     const toolbarHalfWidth = estimatedToolbarWidth / 2;
-    
+
     // Ensure the toolbar doesn't go outside the viewport bounds
     const viewportWidth = window.innerWidth;
     let leftPosition = selectionCenterX - toolbarHalfWidth;
-    
+
     // Adjust if toolbar would overflow on the left
     if (leftPosition < 10) {
       leftPosition = 10;
     }
-    // Adjust if toolbar would overflow on the right  
+    // Adjust if toolbar would overflow on the right
     else if (leftPosition + estimatedToolbarWidth > viewportWidth - 10) {
       leftPosition = viewportWidth - estimatedToolbarWidth - 10;
     }

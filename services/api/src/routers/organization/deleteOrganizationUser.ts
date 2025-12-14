@@ -59,7 +59,10 @@ export const deleteOrganizationUserRouter = router({
 
         return outputSchema.parse(deletedUser);
       } catch (error: unknown) {
-        logger.error('Error deleting organization user', { error, organizationUserId });
+        logger.error('Error deleting organization user', {
+          error,
+          organizationUserId,
+        });
 
         if (error instanceof Error) {
           if (error.name === 'UnauthorizedError') {

@@ -32,14 +32,20 @@ export async function updateTransitionsForProcess({
     const phases = instanceData.phases;
 
     if (!phases || phases.length === 0) {
-      throw new CommonError('Process instance must have at least one phase configured');
+      throw new CommonError(
+        'Process instance must have at least one phase configured',
+      );
     }
 
     // Get existing transitions
-    const existingTransitions = await db.query.decisionProcessTransitions.findMany({
-      where: eq(decisionProcessTransitions.processInstanceId, processInstance.id),
-      orderBy: (transitions, { asc }) => [asc(transitions.scheduledDate)],
-    });
+    const existingTransitions =
+      await db.query.decisionProcessTransitions.findMany({
+        where: eq(
+          decisionProcessTransitions.processInstanceId,
+          processInstance.id,
+        ),
+        orderBy: (transitions, { asc }) => [asc(transitions.scheduledDate)],
+      });
 
     const result: UpdateTransitionsResult = {
       updated: 0,
@@ -48,26 +54,28 @@ export async function updateTransitionsForProcess({
     };
 
     // Build a map of expected transitions from the current phases
-    const expectedTransitions = phases.map((phase: PhaseConfiguration, index: number) => {
-      const fromStateId = index > 0 ? phases[index - 1]?.stateId : null;
-      const toStateId = phase.stateId;
-      // For phases like 'results' that only have a start date (no end), use the start date
-      const scheduledEnd = phase.plannedEndDate || phase.actualEndDate;
-      const scheduledStart = phase.plannedStartDate || phase.actualStartDate;
-      const scheduledDate = scheduledEnd || scheduledStart;
+    const expectedTransitions = phases.map(
+      (phase: PhaseConfiguration, index: number) => {
+        const fromStateId = index > 0 ? phases[index - 1]?.stateId : null;
+        const toStateId = phase.stateId;
+        // For phases like 'results' that only have a start date (no end), use the start date
+        const scheduledEnd = phase.plannedEndDate || phase.actualEndDate;
+        const scheduledStart = phase.plannedStartDate || phase.actualStartDate;
+        const scheduledDate = scheduledEnd || scheduledStart;
 
-      if (!scheduledDate) {
-        throw new CommonError(
-          `Phase ${index + 1} (${toStateId}) must have either a scheduled end date or start date`,
-        );
-      }
+        if (!scheduledDate) {
+          throw new CommonError(
+            `Phase ${index + 1} (${toStateId}) must have either a scheduled end date or start date`,
+          );
+        }
 
-      return {
-        fromStateId,
-        toStateId,
-        scheduledDate: new Date(scheduledDate).toISOString(),
-      };
-    });
+        return {
+          fromStateId,
+          toStateId,
+          scheduledDate: new Date(scheduledDate).toISOString(),
+        };
+      },
+    );
 
     // Process each expected transition in parallel
     const updateResults = await pMap(
@@ -118,7 +126,9 @@ export async function updateTransitionsForProcess({
 
     // Delete transitions that are no longer in the phases list
     // But only delete uncompleted transitions
-    const expectedStateIds = new Set(expectedTransitions.map((t) => t.toStateId));
+    const expectedStateIds = new Set(
+      expectedTransitions.map((t) => t.toStateId),
+    );
     const transitionsToDelete = existingTransitions.filter(
       (t) => !expectedStateIds.has(t.toStateId) && !t.completedAt,
     );
@@ -141,7 +151,8 @@ export async function updateTransitionsForProcess({
       throw error;
     }
     console.error('Error updating transitions for process:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error';
     throw new CommonError(
       `Failed to update process transitions: ${errorMessage}`,
     );

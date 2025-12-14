@@ -12,6 +12,7 @@
   "scripts": {
     "disable-build": "email build",
     "export": "email export",
+    "format:check": "prettier --check \"**/*.{ts,tsx}\"",
     "start": "email start",
     "typecheck": "tsgo --noEmit"
   },

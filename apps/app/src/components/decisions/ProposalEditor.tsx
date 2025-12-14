@@ -11,6 +11,7 @@ import { trpc } from '@op/api/client';
 import type { proposalEncoder } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { NumberField } from '@op/ui/NumberField';
+import { RichTextEditor, type RichTextEditorRef } from '@op/ui/RichTextEditor';
 import { Select, SelectItem } from '@op/ui/Select';
 import { TextField } from '@op/ui/TextField';
 import { toast } from '@op/ui/Toast';
@@ -21,12 +22,8 @@ import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 
-import {
-  RichTextEditor,
-  type RichTextEditorRef,
-} from '@op/ui/RichTextEditor';
-import { getEditorExtensions } from '../RichTextEditor/editorConfig';
 import { RichTextEditorToolbar } from '../RichTextEditor';
+import { getEditorExtensions } from '../RichTextEditor/editorConfig';
 import { ProposalInfoModal } from './ProposalInfoModal';
 import { ProposalEditorLayout } from './layout';
 

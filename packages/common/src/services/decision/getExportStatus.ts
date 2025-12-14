@@ -1,8 +1,8 @@
 import { get, set } from '@op/cache';
 import { db, eq } from '@op/db/client';
 import { organizations, processInstances } from '@op/db/schema';
-import { createSBServerClient } from '@op/supabase/server';
 import { User } from '@op/supabase/lib';
+import { createSBServerClient } from '@op/supabase/server';
 import { assertAccess, permission } from 'access-zones';
 
 import { UnauthorizedError } from '../../utils';

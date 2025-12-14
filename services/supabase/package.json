@@ -11,6 +11,7 @@
     "./types": "./src/types.ts"
   },
   "scripts": {
+    "format:check": "prettier --check \"**/*.{ts,tsx}\"",
     "typecheck": "tsgo --noEmit",
     "typegen": "pnpx supabase gen types --workdir=\"../..\" --lang=typescript --local --schema public > ./src/types.ts && pnpm eslint --fix ./src/types.ts"
   },

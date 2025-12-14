@@ -1,7 +1,8 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { listProposals } from '../listProposals';
-import { UnauthorizedError } from '../../../utils';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { mockDb } from '../../../test/setup';
+import { UnauthorizedError } from '../../../utils';
+import { listProposals } from '../listProposals';
 
 // Mock the access-zones module
 vi.mock('access-zones', () => ({
@@ -145,17 +146,17 @@ describe('listProposals', () => {
       getOrgAccessUser: vi.fn().mockResolvedValue(mockOrgUser),
       getCurrentProfileId: vi.fn().mockResolvedValue('profile-id-123'),
     }));
-    
+
     // Mock count query
     mockDb.select.mockReturnValue({
       from: vi.fn().mockReturnValue({
         where: vi.fn().mockResolvedValue([{ count: mockProposals.length }]),
       }),
     });
-    
+
     // Mock proposals query
     mockDb.query.proposals.findMany.mockResolvedValue(mockProposals);
-    
+
     // Mock the new CTE-based relationship query
     mockDb.execute.mockResolvedValue([
       {
@@ -214,7 +215,7 @@ describe('listProposals', () => {
     expect(mockDb.query.proposals.findMany).toHaveBeenCalled();
     expect(mockCheckPermission).toHaveBeenCalledWith(
       { decisions: 'admin' },
-      mockOrgUser.roles
+      mockOrgUser.roles,
     );
   });
 
@@ -223,7 +224,7 @@ describe('listProposals', () => {
       listProposals({
         input: {},
         user: null as any,
-      })
+      }),
     ).rejects.toThrow(UnauthorizedError);
   });
 
@@ -235,7 +236,7 @@ describe('listProposals', () => {
       listProposals({
         input: {},
         user: mockUser,
-      })
+      }),
     ).rejects.toThrow(UnauthorizedError);
   });
 
@@ -346,7 +347,7 @@ describe('listProposals', () => {
       expect.objectContaining({
         limit: 1,
         offset: 1,
-      })
+      }),
     );
   });
 
@@ -372,7 +373,7 @@ describe('listProposals', () => {
       expect(mockDb.query.proposals.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           orderBy: expect.any(Function),
-        })
+        }),
       );
 
       vi.clearAllMocks();
@@ -435,12 +436,16 @@ describe('listProposals', () => {
   });
 
   it('should calculate decision counts correctly', async () => {
-    const proposalsWithDifferentCounts = mockProposals.map((proposal, index) => ({
-      ...proposal,
-    }));
+    const proposalsWithDifferentCounts = mockProposals.map(
+      (proposal, index) => ({
+        ...proposal,
+      }),
+    );
 
-    mockDb.query.proposals.findMany.mockResolvedValueOnce(proposalsWithDifferentCounts);
-    
+    mockDb.query.proposals.findMany.mockResolvedValueOnce(
+      proposalsWithDifferentCounts,
+    );
+
     // Mock different decision counts for each proposal
     let callCount = 0;
     mockDb.select.mockImplementation(() => ({
@@ -471,14 +476,14 @@ describe('listProposals', () => {
 
   it('should handle database errors gracefully', async () => {
     mockDb.query.users.findFirst.mockRejectedValueOnce(
-      new Error('Database connection failed')
+      new Error('Database connection failed'),
     );
 
     await expect(
       listProposals({
         input: {},
         user: mockUser,
-      })
+      }),
     ).rejects.toThrow(UnauthorizedError);
   });
 
@@ -531,7 +536,7 @@ describe('listProposals', () => {
 
     expect(mockCheckPermission).toHaveBeenCalledWith(
       { decisions: 'admin' },
-      mockOrgUser.roles
+      mockOrgUser.roles,
     );
   });
 
@@ -548,7 +553,7 @@ describe('listProposals', () => {
     });
 
     // Only owned proposal should be editable
-    expect(result.proposals[0].isEditable).toBe(true);  // Owned by user (profile-id-123)
+    expect(result.proposals[0].isEditable).toBe(true); // Owned by user (profile-id-123)
     expect(result.proposals[1].isEditable).toBe(false); // Not owned (profile-id-456)
   });
 });

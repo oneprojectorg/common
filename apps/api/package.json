@@ -8,6 +8,7 @@
     "build": "next build",
     "build:prod": "cd ../../services/db &&  pnpm run migrate && cd ../../apps/api && next build",
     "dev": "next dev -p 3300",
+    "format:check": "prettier --check \"**/*.{ts,tsx}\"",
     "start": "next start",
     "typecheck": "tsgo --noEmit"
   },

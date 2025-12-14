@@ -1,15 +1,12 @@
 import type { Proposal } from '@op/db/schema';
 
+import { evaluateExpression, setValueByPath } from '../expressionEvaluator';
 import type {
   BlockExecutionResult,
   BlockExecutor,
   ExecutionContext,
   TransformBlock as TransformBlockType,
 } from '../types';
-import {
-  evaluateExpression,
-  setValueByPath,
-} from '../expressionEvaluator';
 
 export class TransformBlock implements BlockExecutor<TransformBlockType> {
   execute(

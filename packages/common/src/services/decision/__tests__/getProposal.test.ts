@@ -1,7 +1,8 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { getProposal } from '../getProposal';
-import { UnauthorizedError, NotFoundError } from '../../../utils';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { mockDb } from '../../../test/setup';
+import { NotFoundError, UnauthorizedError } from '../../../utils';
+import { getProposal } from '../getProposal';
 
 const mockUser = {
   id: 'auth-user-id',
@@ -70,7 +71,9 @@ describe('getProposal', () => {
   });
 
   it('should fetch proposal successfully with all relations', async () => {
-    mockDb.query.proposals.findFirst.mockResolvedValueOnce(mockFullProposal as any);
+    mockDb.query.proposals.findFirst.mockResolvedValueOnce(
+      mockFullProposal as any,
+    );
 
     const result = await getProposal({
       proposalId: 'proposal-id-123',
@@ -94,7 +97,7 @@ describe('getProposal', () => {
             },
           },
         },
-      })
+      }),
     );
   });
 
@@ -103,7 +106,7 @@ describe('getProposal', () => {
       getProposal({
         proposalId: 'proposal-id-123',
         user: null as any,
-      })
+      }),
     ).rejects.toThrow(UnauthorizedError);
 
     expect(mockDb.query.proposals.findFirst).not.toHaveBeenCalled();
@@ -116,7 +119,7 @@ describe('getProposal', () => {
       getProposal({
         proposalId: 'nonexistent-proposal',
         user: mockUser,
-      })
+      }),
     ).rejects.toThrow(NotFoundError);
 
     expect(mockDb.query.proposals.findFirst).toHaveBeenCalled();
@@ -128,7 +131,9 @@ describe('getProposal', () => {
       decisions: [],
     };
 
-    mockDb.query.proposals.findFirst.mockResolvedValueOnce(proposalWithoutDecisions as any);
+    mockDb.query.proposals.findFirst.mockResolvedValueOnce(
+      proposalWithoutDecisions as any,
+    );
 
     const result = await getProposal({
       proposalId: 'proposal-id-123',
@@ -167,7 +172,9 @@ describe('getProposal', () => {
       decisions: [],
     };
 
-    mockDb.query.proposals.findFirst.mockResolvedValueOnce(minimalProposal as any);
+    mockDb.query.proposals.findFirst.mockResolvedValueOnce(
+      minimalProposal as any,
+    );
 
     const result = await getProposal({
       proposalId: 'proposal-id-123',
@@ -179,19 +186,25 @@ describe('getProposal', () => {
 
   it('should handle database errors gracefully', async () => {
     mockDb.query.proposals.findFirst.mockRejectedValueOnce(
-      new Error('Database connection failed')
+      new Error('Database connection failed'),
     );
 
     await expect(
       getProposal({
         proposalId: 'proposal-id-123',
         user: mockUser,
-      })
+      }),
     ).rejects.toThrow(NotFoundError);
   });
 
   it('should work with different proposal statuses', async () => {
-    const statuses = ['draft', 'submitted', 'under_review', 'approved', 'rejected'];
+    const statuses = [
+      'draft',
+      'submitted',
+      'under_review',
+      'approved',
+      'rejected',
+    ];
 
     for (const status of statuses) {
       const proposalWithStatus = {
@@ -199,7 +212,9 @@ describe('getProposal', () => {
         status,
       };
 
-      mockDb.query.proposals.findFirst.mockResolvedValueOnce(proposalWithStatus as any);
+      mockDb.query.proposals.findFirst.mockResolvedValueOnce(
+        proposalWithStatus as any,
+      );
 
       const result = await getProposal({
         proposalId: `proposal-${status}`,
@@ -238,7 +253,9 @@ describe('getProposal', () => {
       },
     };
 
-    mockDb.query.proposals.findFirst.mockResolvedValueOnce(proposalWithComplexData as any);
+    mockDb.query.proposals.findFirst.mockResolvedValueOnce(
+      proposalWithComplexData as any,
+    );
 
     const result = await getProposal({
       proposalId: 'proposal-id-123',
@@ -256,7 +273,10 @@ describe('getProposal', () => {
       decisions: [
         {
           id: 'decision-id-1',
-          decisionData: { decision: 'needs_revision', comment: 'Please revise section 2' },
+          decisionData: {
+            decision: 'needs_revision',
+            comment: 'Please revise section 2',
+          },
           decidedBy: {
             id: 'reviewer-profile-id',
             name: 'Jane Reviewer',
@@ -265,7 +285,10 @@ describe('getProposal', () => {
         },
         {
           id: 'decision-id-2',
-          decisionData: { decision: 'approve', comment: 'Looks good after revision' },
+          decisionData: {
+            decision: 'approve',
+            comment: 'Looks good after revision',
+          },
           decidedBy: {
             id: 'reviewer-profile-id',
             name: 'Jane Reviewer',
@@ -275,7 +298,9 @@ describe('getProposal', () => {
       ],
     };
 
-    mockDb.query.proposals.findFirst.mockResolvedValueOnce(proposalWithMultipleDecisions as any);
+    mockDb.query.proposals.findFirst.mockResolvedValueOnce(
+      proposalWithMultipleDecisions as any,
+    );
 
     const result = await getProposal({
       proposalId: 'proposal-id-123',

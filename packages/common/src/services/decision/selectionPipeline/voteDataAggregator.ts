@@ -1,7 +1,7 @@
 import { db, eq, inArray } from '@op/db/client';
 import {
-  decisionsVoteSubmissions,
   ProfileRelationshipType,
+  decisionsVoteSubmissions,
   profileRelationships,
   proposals,
 } from '@op/db/schema';
@@ -105,7 +105,10 @@ export async function aggregateVoteData(
 
         if (voteData?.approved === true || voteData?.vote === 'approve') {
           approvalCount++;
-        } else if (voteData?.approved === false || voteData?.vote === 'reject') {
+        } else if (
+          voteData?.approved === false ||
+          voteData?.vote === 'reject'
+        ) {
           rejectionCount++;
         } else if (voteData?.vote === 'abstain') {
           abstainCount++;

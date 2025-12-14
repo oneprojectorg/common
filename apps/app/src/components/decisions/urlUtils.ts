@@ -5,7 +5,8 @@
 /**
  * URL regex pattern that matches http/https URLs
  */
-const URL_REGEX = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/gi;
+const URL_REGEX =
+  /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/gi;
 
 /**
  * Common domains that work well with Iframely embeds
@@ -93,12 +94,12 @@ export function isEmbeddableUrl(url: string): boolean {
     const path = urlObj.pathname.toLowerCase();
 
     // Check if it's a non-embeddable domain
-    if (NON_EMBEDDABLE_DOMAINS.some(domain => hostname.includes(domain))) {
+    if (NON_EMBEDDABLE_DOMAINS.some((domain) => hostname.includes(domain))) {
       return false;
     }
 
     // Check if it's a known embeddable domain
-    if (EMBEDDABLE_DOMAINS.some(domain => hostname.includes(domain))) {
+    if (EMBEDDABLE_DOMAINS.some((domain) => hostname.includes(domain))) {
       return true;
     }
 
@@ -120,7 +121,7 @@ export function isEmbeddableUrl(url: string): boolean {
 export function isOnlyUrl(text: string): boolean {
   const trimmed = text.trim();
   const urls = extractUrls(trimmed);
-  
+
   // Check if the trimmed text is exactly one URL
   return urls.length === 1 && urls[0] === trimmed;
 }
@@ -134,14 +135,14 @@ export function shouldAutoEmbed(text: string): string | null {
   }
 
   const trimmed = text.trim();
-  
+
   // Check if it's only a URL
   if (!isOnlyUrl(trimmed)) {
     return null;
   }
 
   const url = trimmed;
-  
+
   // Check if it's embeddable
   if (isEmbeddableUrl(url)) {
     return url;

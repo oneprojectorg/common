@@ -1,6 +1,13 @@
-import { beforeEach, describe, expect, it } from 'vitest';
 import { db, eq } from '@op/db/client';
-import { decisionProcesses, taxonomies, taxonomyTerms, users, profiles } from '@op/db/schema';
+import {
+  decisionProcesses,
+  profiles,
+  taxonomies,
+  taxonomyTerms,
+  users,
+} from '@op/db/schema';
+import { beforeEach, describe, expect, it } from 'vitest';
+
 import { createProcess } from '../createProcess';
 
 describe('createProcess with categories', () => {
@@ -84,7 +91,9 @@ describe('createProcess with categories', () => {
 
     expect(proposalTaxonomy).toBeDefined();
     expect(proposalTaxonomy!.name).toBe('proposal');
-    expect(proposalTaxonomy!.description).toBe('Categories for organizing proposals in decision-making processes');
+    expect(proposalTaxonomy!.description).toBe(
+      'Categories for organizing proposals in decision-making processes',
+    );
 
     // Check that taxonomy terms were created for each category
     const terms = await db.query.taxonomyTerms.findMany({
@@ -93,22 +102,31 @@ describe('createProcess with categories', () => {
 
     expect(terms).toHaveLength(3);
 
-    const termsByUri = terms.reduce((acc, term) => {
-      acc[term.termUri] = term;
-      return acc;
-    }, {} as Record<string, typeof terms[0]>);
+    const termsByUri = terms.reduce(
+      (acc, term) => {
+        acc[term.termUri] = term;
+        return acc;
+      },
+      {} as Record<string, (typeof terms)[0]>,
+    );
 
     expect(termsByUri['infrastructure']).toBeDefined();
     expect(termsByUri['infrastructure'].label).toBe('Infrastructure');
-    expect(termsByUri['infrastructure'].definition).toBe('Category for Infrastructure proposals');
+    expect(termsByUri['infrastructure'].definition).toBe(
+      'Category for Infrastructure proposals',
+    );
 
     expect(termsByUri['community-events']).toBeDefined();
     expect(termsByUri['community-events'].label).toBe('Community Events');
-    expect(termsByUri['community-events'].definition).toBe('Category for Community Events proposals');
+    expect(termsByUri['community-events'].definition).toBe(
+      'Category for Community Events proposals',
+    );
 
     expect(termsByUri['education']).toBeDefined();
     expect(termsByUri['education'].label).toBe('Education');
-    expect(termsByUri['education'].definition).toBe('Category for Education proposals');
+    expect(termsByUri['education'].definition).toBe(
+      'Category for Education proposals',
+    );
   });
 
   it('should handle duplicate categories gracefully', async () => {

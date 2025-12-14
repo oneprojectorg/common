@@ -12,6 +12,7 @@
   },
   "scripts": {
     "drop-migration": "pnpm drizzle-kit drop",
+    "format:check": "prettier --check \"**/*.{ts,tsx}\"",
     "generate": "pnpm drizzle-kit generate",
     "migrate": "cross-env DB_MIGRATING=true tsx ./migrate.ts",
     "migrate:test": "cross-env DB_MIGRATING=true DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:55322/postgres tsx ./migrate.ts",

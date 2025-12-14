@@ -59,10 +59,8 @@ export function useRelationshipMutations({
   };
 
   // Get user's likes and follows
-  const {
-    data: userRelationships,
-    isLoading: isLoadingRelationships,
-  } = trpc.profile.getRelationships.useQuery(relationshipQueryKey);
+  const { data: userRelationships, isLoading: isLoadingRelationships } =
+    trpc.profile.getRelationships.useQuery(relationshipQueryKey);
 
   // Check if current user has liked/followed this profile
   const isLiked = Boolean(
@@ -295,7 +293,12 @@ export function useRelationshipMutations({
       // Error handling and user notification is done in mutation's onError
       // Just catch to prevent unhandled promise rejection
     }
-  }, [targetProfileId, isLiked, addRelationshipMutation, removeRelationshipMutation]);
+  }, [
+    targetProfileId,
+    isLiked,
+    addRelationshipMutation,
+    removeRelationshipMutation,
+  ]);
 
   // Handler for follow/unfollow
   const handleFollow = useCallback(async () => {
@@ -323,7 +326,12 @@ export function useRelationshipMutations({
       // Error handling and user notification is done in mutation's onError
       // Just catch to prevent unhandled promise rejection
     }
-  }, [targetProfileId, isFollowed, addRelationshipMutation, removeRelationshipMutation]);
+  }, [
+    targetProfileId,
+    isFollowed,
+    addRelationshipMutation,
+    removeRelationshipMutation,
+  ]);
 
   return {
     // State

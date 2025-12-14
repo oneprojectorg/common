@@ -172,9 +172,7 @@ export const updateProposal = async ({
 
     // Only admins can change visibility
     if (data.visibility && !hasPermissions) {
-      throw new UnauthorizedError(
-        'Only admins can change proposal visibility',
-      );
+      throw new UnauthorizedError('Only admins can change proposal visibility');
     }
 
     // Validate proposal data against schema if updating proposalData

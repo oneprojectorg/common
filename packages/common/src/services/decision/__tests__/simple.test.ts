@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import type { ProcessSchema } from '../types';
 
 describe('Decision Services Setup', () => {
@@ -23,7 +24,7 @@ describe('Decision Services Setup', () => {
     // Test that our services can be imported
     const { createProcess } = await import('../createProcess');
     const { TransitionEngine } = await import('../transitionEngine');
-    
+
     expect(typeof createProcess).toBe('function');
     expect(typeof TransitionEngine.checkAvailableTransitions).toBe('function');
   });

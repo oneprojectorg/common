@@ -1,12 +1,12 @@
 import type { Proposal } from '@op/db/schema';
 
+import { evaluateExpression } from '../expressionEvaluator';
 import type {
   BlockExecutionResult,
   BlockExecutor,
   ExecutionContext,
   GroupBlock as GroupBlockType,
 } from '../types';
-import { evaluateExpression } from '../expressionEvaluator';
 
 interface Group {
   key: any;
@@ -15,7 +15,10 @@ interface Group {
 }
 
 export class GroupBlock implements BlockExecutor<GroupBlockType> {
-  execute(block: GroupBlockType, context: ExecutionContext): BlockExecutionResult {
+  execute(
+    block: GroupBlockType,
+    context: ExecutionContext,
+  ): BlockExecutionResult {
     // Group proposals by the specified field
     const groupMap = new Map<string, Proposal[]>();
 

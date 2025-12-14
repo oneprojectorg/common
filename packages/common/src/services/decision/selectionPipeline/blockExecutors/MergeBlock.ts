@@ -8,7 +8,10 @@ import type {
 } from '../types';
 
 export class MergeBlock implements BlockExecutor<MergeBlockType> {
-  execute(block: MergeBlockType, context: ExecutionContext): BlockExecutionResult {
+  execute(
+    block: MergeBlockType,
+    context: ExecutionContext,
+  ): BlockExecutionResult {
     const inputArrays: Proposal[][] = block.inputs.map((inputName) => {
       const value = context.outputs[inputName];
       return Array.isArray(value) ? value : [];

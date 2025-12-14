@@ -1,7 +1,6 @@
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
-import { useTranslations } from '@/lib/i18n';
 import {
   RELATIONSHIP_OPTIONS,
   RelationshipType,
@@ -13,6 +12,8 @@ import { ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Dialog } from '@op/ui/RAC';
 import { toast } from '@op/ui/Toast';
 import { FormEvent, useState, useTransition } from 'react';
+
+import { useTranslations } from '@/lib/i18n';
 
 import { FundingRole, FundingRoleModal } from './FundingRoleModal';
 

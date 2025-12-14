@@ -3,8 +3,8 @@ import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 
 import {
-  updateInstanceInputSchema,
   processInstanceEncoder,
+  updateInstanceInputSchema,
 } from '../../../encoders/decision';
 import withAnalytics from '../../../middlewares/withAnalytics';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
@@ -69,7 +69,8 @@ export const updateInstanceRouter = router({
 
         if (error instanceof UnauthorizedError) {
           throw new TRPCError({
-            message: 'You do not have permission to update this process instance',
+            message:
+              'You do not have permission to update this process instance',
             code: 'UNAUTHORIZED',
           });
         }

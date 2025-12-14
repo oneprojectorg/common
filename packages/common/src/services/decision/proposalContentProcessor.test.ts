@@ -1,6 +1,10 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { db } from '@op/db/client';
-import { processProposalContent, getProposalAttachmentUrls } from './proposalContentProcessor';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import {
+  getProposalAttachmentUrls,
+  processProposalContent,
+} from './proposalContentProcessor';
 
 // Mock database
 vi.mock('@op/db/client', () => ({
@@ -29,7 +33,8 @@ describe('proposalContentProcessor with public URLs', () => {
   const mockProposal = {
     id: 'test-proposal-id',
     proposalData: {
-      content: '<p>Test content with <img src="https://temp.supabase.co/storage/v1/object/sign/assets/profile/test-storage-id?token=abc123" alt="test" /></p>',
+      content:
+        '<p>Test content with <img src="https://temp.supabase.co/storage/v1/object/sign/assets/profile/test-storage-id?token=abc123" alt="test" /></p>',
     },
   };
 
@@ -56,7 +61,9 @@ describe('proposalContentProcessor with public URLs', () => {
 
     // Mock database queries
     (db.query.proposals.findFirst as any).mockResolvedValue(mockProposal);
-    (db.query.proposalAttachments.findMany as any).mockResolvedValue(mockProposalAttachmentJoins);
+    (db.query.proposalAttachments.findMany as any).mockResolvedValue(
+      mockProposalAttachmentJoins,
+    );
 
     // Mock database update
     (db.update as any).mockReturnValue({
@@ -68,17 +75,22 @@ describe('proposalContentProcessor with public URLs', () => {
 
   describe('processProposalContent', () => {
     it('should replace temporary URLs with permanent public URLs', async () => {
-      await processProposalContent({ conn: db, proposalId: 'test-proposal-id' });
+      await processProposalContent({
+        conn: db,
+        proposalId: 'test-proposal-id',
+      });
 
       // Verify proposal content was updated
       expect(db.update).toHaveBeenCalled();
-      
+
       const updateCall = (db.update as any).mock.calls[0];
       const setCall = updateCall.return.set.mock.calls[0];
       const updateData = setCall[0];
-      
+
       // Verify the content was updated with public URL
-      expect(updateData.proposalData.content).toContain('/assets/profile/test-storage-id');
+      expect(updateData.proposalData.content).toContain(
+        '/assets/profile/test-storage-id',
+      );
       expect(updateData.proposalData.content).not.toContain('temp.supabase.co');
       expect(updateData.proposalData.content).not.toContain('token=abc123');
     });
@@ -107,20 +119,31 @@ describe('proposalContentProcessor with public URLs', () => {
         },
       ];
 
-      (db.query.proposals.findFirst as any).mockResolvedValue(mockProposalMultiImages);
-      (db.query.proposalAttachments.findMany as any).mockResolvedValue(mockAttachments);
+      (db.query.proposals.findFirst as any).mockResolvedValue(
+        mockProposalMultiImages,
+      );
+      (db.query.proposalAttachments.findMany as any).mockResolvedValue(
+        mockAttachments,
+      );
 
-      await processProposalContent({ conn: db, proposalId: 'test-proposal-id' });
+      await processProposalContent({
+        conn: db,
+        proposalId: 'test-proposal-id',
+      });
 
       expect(db.update).toHaveBeenCalled();
-      
+
       const updateCall = (db.update as any).mock.calls[0];
       const setCall = updateCall.return.set.mock.calls[0];
       const updateData = setCall[0];
-      
+
       // Verify both images were replaced with public URLs
-      expect(updateData.proposalData.content).toContain('/assets/profile/image1');
-      expect(updateData.proposalData.content).toContain('/assets/profile/image2');
+      expect(updateData.proposalData.content).toContain(
+        '/assets/profile/image1',
+      );
+      expect(updateData.proposalData.content).toContain(
+        '/assets/profile/image2',
+      );
       expect(updateData.proposalData.content).not.toContain('temp.supabase.co');
     });
 
@@ -132,9 +155,14 @@ describe('proposalContentProcessor with public URLs', () => {
         },
       };
 
-      (db.query.proposals.findFirst as any).mockResolvedValue(mockProposalNoImages);
+      (db.query.proposals.findFirst as any).mockResolvedValue(
+        mockProposalNoImages,
+      );
 
-      await processProposalContent({ conn: db, proposalId: 'test-proposal-id' });
+      await processProposalContent({
+        conn: db,
+        proposalId: 'test-proposal-id',
+      });
 
       // Should return early and not attempt any updates
       expect(db.update).not.toHaveBeenCalled();
@@ -143,7 +171,10 @@ describe('proposalContentProcessor with public URLs', () => {
     it('should handle proposals without attachments', async () => {
       (db.query.proposalAttachments.findMany as any).mockResolvedValue([]);
 
-      await processProposalContent({ conn: db, proposalId: 'test-proposal-id' });
+      await processProposalContent({
+        conn: db,
+        proposalId: 'test-proposal-id',
+      });
 
       // Should return early and not attempt any updates
       expect(db.update).not.toHaveBeenCalled();
@@ -153,8 +184,13 @@ describe('proposalContentProcessor with public URLs', () => {
       (db.query.proposals.findFirst as any).mockResolvedValue(null);
 
       // Should not throw
-      await expect(processProposalContent({ conn: db, proposalId: 'nonexistent-proposal-id' })).resolves.toBeUndefined();
-      
+      await expect(
+        processProposalContent({
+          conn: db,
+          proposalId: 'nonexistent-proposal-id',
+        }),
+      ).resolves.toBeUndefined();
+
       expect(db.update).not.toHaveBeenCalled();
     });
 
@@ -166,9 +202,14 @@ describe('proposalContentProcessor with public URLs', () => {
         },
       ];
 
-      (db.query.proposalAttachments.findMany as any).mockResolvedValue(mockAttachmentsWithNull);
+      (db.query.proposalAttachments.findMany as any).mockResolvedValue(
+        mockAttachmentsWithNull,
+      );
 
-      await processProposalContent({ conn: db, proposalId: 'test-proposal-id' });
+      await processProposalContent({
+        conn: db,
+        proposalId: 'test-proposal-id',
+      });
 
       // Should not crash and should not update content
       expect(db.update).not.toHaveBeenCalled();
@@ -196,15 +237,25 @@ describe('proposalContentProcessor with public URLs', () => {
       const mockMultipleAttachments = [
         {
           ...mockProposalAttachmentJoins[0],
-          attachment: { ...mockAttachment, id: 'attachment-1', storageObjectId: 'storage-1' },
+          attachment: {
+            ...mockAttachment,
+            id: 'attachment-1',
+            storageObjectId: 'storage-1',
+          },
         },
         {
           ...mockProposalAttachmentJoins[0],
-          attachment: { ...mockAttachment, id: 'attachment-2', storageObjectId: 'storage-2' },
+          attachment: {
+            ...mockAttachment,
+            id: 'attachment-2',
+            storageObjectId: 'storage-2',
+          },
         },
       ];
 
-      (db.query.proposalAttachments.findMany as any).mockResolvedValue(mockMultipleAttachments);
+      (db.query.proposalAttachments.findMany as any).mockResolvedValue(
+        mockMultipleAttachments,
+      );
 
       const urlMap = await getProposalAttachmentUrls('test-proposal-id');
 
@@ -226,7 +277,9 @@ describe('proposalContentProcessor with public URLs', () => {
         },
       ];
 
-      (db.query.proposalAttachments.findMany as any).mockResolvedValue(mockAttachmentsWithMissing);
+      (db.query.proposalAttachments.findMany as any).mockResolvedValue(
+        mockAttachmentsWithMissing,
+      );
 
       const urlMap = await getProposalAttachmentUrls('test-proposal-id');
 
@@ -244,10 +297,10 @@ describe('proposalContentProcessor with public URLs', () => {
 
       // Verify URL format matches Next.js rewrite expectation
       expect(publicUrl).toBe('/assets/profile/test-storage-id');
-      
+
       // Verify it's a relative URL (not absolute with domain)
       expect(publicUrl).not.toMatch(/^https?:\/\//);
-      
+
       // Verify it uses the assets path that Next.js will rewrite
       expect(publicUrl).toMatch(/^\/assets\//);
     });
@@ -265,7 +318,9 @@ describe('proposalContentProcessor with public URLs', () => {
           attachment: { ...mockAttachment, storageObjectId: storagePath },
         };
 
-        (db.query.proposalAttachments.findMany as any).mockResolvedValue([mockAttachmentWithPath]);
+        (db.query.proposalAttachments.findMany as any).mockResolvedValue([
+          mockAttachmentWithPath,
+        ]);
 
         const urlMap = await getProposalAttachmentUrls('test-proposal-id');
         const publicUrl = urlMap['test-attachment-id'];

@@ -1,12 +1,6 @@
 import { relations, sql } from 'drizzle-orm';
 import type { InferModel } from 'drizzle-orm';
-import {
-  index,
-  pgTable,
-  timestamp,
-  uuid,
-  varchar,
-} from 'drizzle-orm/pg-core';
+import { index, pgTable, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
 
 import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
 import { processInstances } from './processInstances.sql';

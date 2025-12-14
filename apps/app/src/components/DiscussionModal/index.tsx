@@ -72,7 +72,6 @@ export function DiscussionModal({
   const authorName =
     sourcePostProfile?.name ?? organization?.profile.name ?? '';
 
-
   return (
     <Modal
       isOpen={isOpen}

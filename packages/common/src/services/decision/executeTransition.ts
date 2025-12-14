@@ -1,4 +1,5 @@
 import { User } from '@op/supabase/lib';
+
 import { TransitionEngine } from './transitionEngine';
 
 export interface ExecuteTransitionInput {

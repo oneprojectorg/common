@@ -159,7 +159,7 @@ export const getPosts = async (input: GetPostsInput) => {
         orderBy: [desc(posts.createdAt)],
       });
       // Transform to match postsToProfiles format
-      postsData = directPosts.map(post => ({ post }));
+      postsData = directPosts.map((post) => ({ post }));
     }
 
     // Transform to match expected format and add reaction data

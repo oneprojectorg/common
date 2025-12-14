@@ -9,6 +9,7 @@
   },
   "main": "src/index.ts",
   "scripts": {
+    "format:check": "prettier --check \"**/*.{ts,tsx}\"",
     "typecheck": "tsgo --noEmit"
   },
   "dependencies": {

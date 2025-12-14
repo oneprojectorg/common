@@ -6,7 +6,7 @@ import { useTranslations } from '@/lib/i18n';
 
 export const DesktopIndividualTabs = () => {
   const t = useTranslations();
-  
+
   return (
     <>
       <Tab id="about">{t('About')}</Tab>
@@ -18,7 +18,7 @@ export const DesktopIndividualTabs = () => {
 
 export const DesktopOrganizationTabs = () => {
   const t = useTranslations();
-  
+
   return (
     <>
       <Tab id="home">{t('Updates')}</Tab>

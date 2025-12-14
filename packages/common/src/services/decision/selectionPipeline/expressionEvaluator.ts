@@ -201,7 +201,10 @@ function evaluateFunctionCall(
 
   switch (expr.function) {
     case 'sum':
-      return args.reduce((sum, val) => sum + (typeof val === 'number' ? val : 0), 0);
+      return args.reduce(
+        (sum, val) => sum + (typeof val === 'number' ? val : 0),
+        0,
+      );
 
     case 'avg':
       if (args.length === 0) {
@@ -277,7 +280,9 @@ function evaluateFunctionCall(
         : '';
 
     case 'trim':
-      return args.length > 0 && typeof args[0] === 'string' ? args[0].trim() : '';
+      return args.length > 0 && typeof args[0] === 'string'
+        ? args[0].trim()
+        : '';
 
     default:
       throw new Error(`Unknown function: ${expr.function}`);

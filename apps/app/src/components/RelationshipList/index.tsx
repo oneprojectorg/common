@@ -106,7 +106,9 @@ const RelationshipListContent = ({
                   ) : (
                     /* Show profile type if no relationships */
                     <div className="text-sm capitalize text-neutral-charcoal">
-                      {profile.type === 'org' ? t('Organization') : t('Individual')}
+                      {profile.type === 'org'
+                        ? t('Organization')
+                        : t('Individual')}
                     </div>
                   )}
                 </div>

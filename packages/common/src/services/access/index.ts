@@ -7,7 +7,7 @@ import type { NormalizedRole } from 'access-zones';
 import { z } from 'zod';
 
 import { UnauthorizedError } from '../../utils/error';
-import { getNormalizedRoles, type RoleJunction } from './utils';
+import { type RoleJunction, getNormalizedRoles } from './utils';
 
 type OrgUserWithNormalizedRoles = {
   id: string;

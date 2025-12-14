@@ -53,7 +53,9 @@ export const VoteSurveyStep = ({
       newErrors.likedAboutPPDecides = t('Please share what you liked');
     }
     if (!formData.improvementsPPDecides.trim()) {
-      newErrors.improvementsPPDecides = t('Please share what could be improved');
+      newErrors.improvementsPPDecides = t(
+        'Please share what could be improved',
+      );
     }
     if (!formData.satisfactionMembership) {
       newErrors.satisfactionMembership = t('Please rate your satisfaction');
@@ -65,7 +67,9 @@ export const VoteSurveyStep = ({
       newErrors.appliedNewPractices = t('Please select an option');
     }
     if (!formData.likelyToRecommendCommon) {
-      newErrors.likelyToRecommendCommon = t('Please rate how likely you are to recommend');
+      newErrors.likelyToRecommendCommon = t(
+        'Please rate how likely you are to recommend',
+      );
     }
     if (!formData.easeOfUse) {
       newErrors.easeOfUse = t('Please rate the ease of use');

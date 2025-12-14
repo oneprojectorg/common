@@ -1,17 +1,18 @@
 import {
-  trackProposalLiked as trackProposalLikedOriginal,
-  trackProposalFollowed as trackProposalFollowedOriginal,
-  trackProposalViewed as trackProposalViewedOriginal,
-  trackProposalCommented as trackProposalCommentedOriginal,
-  trackProposalSubmitted as trackProposalSubmittedOriginal,
-  trackProcessViewed as trackProcessViewedOriginal,
-  trackImageUpload as trackImageUploadOriginal,
-  trackUserPost as trackUserPostOriginal,
-  trackRelationshipAdded as trackRelationshipAddedOriginal,
-  trackRelationshipAccepted as trackRelationshipAcceptedOriginal,
-  trackFundingToggle as trackFundingToggleOriginal,
   trackEventWithContext,
+  trackFundingToggle as trackFundingToggleOriginal,
+  trackImageUpload as trackImageUploadOriginal,
+  trackProcessViewed as trackProcessViewedOriginal,
+  trackProposalCommented as trackProposalCommentedOriginal,
+  trackProposalFollowed as trackProposalFollowedOriginal,
+  trackProposalLiked as trackProposalLikedOriginal,
+  trackProposalSubmitted as trackProposalSubmittedOriginal,
+  trackProposalViewed as trackProposalViewedOriginal,
+  trackRelationshipAccepted as trackRelationshipAcceptedOriginal,
+  trackRelationshipAdded as trackRelationshipAddedOriginal,
+  trackUserPost as trackUserPostOriginal,
 } from '@op/analytics';
+
 import type { TContextWithUser } from '../types';
 
 /**
@@ -63,11 +64,7 @@ export const trackProcessViewed = (
   processId: string,
   additionalProps?: Record<string, any>,
 ) => {
-  return trackProcessViewedOriginal(
-    ctx.user.id,
-    processId,
-    additionalProps,
-  );
+  return trackProcessViewedOriginal(ctx.user.id, processId, additionalProps);
 };
 
 /**
@@ -129,11 +126,7 @@ export const trackImageUpload = (
   imageType: 'profile' | 'banner',
   isEdit: boolean,
 ) => {
-  return trackImageUploadOriginal(
-    ctx.user.id,
-    imageType,
-    isEdit,
-  );
+  return trackImageUploadOriginal(ctx.user.id, imageType, isEdit);
 };
 
 /**
@@ -144,11 +137,7 @@ export const trackUserPost = (
   content: string,
   attachments: Array<{ metadata: { mimetype: string } } | any>,
 ) => {
-  return trackUserPostOriginal(
-    ctx.user.id,
-    content,
-    attachments,
-  );
+  return trackUserPostOriginal(ctx.user.id, content, attachments);
 };
 
 /**
@@ -158,21 +147,14 @@ export const trackRelationshipAdded = (
   ctx: AnalyticsContext,
   relationships: string[],
 ) => {
-  return trackRelationshipAddedOriginal(
-    ctx.user.id,
-    relationships,
-  );
+  return trackRelationshipAddedOriginal(ctx.user.id, relationships);
 };
 
 /**
  * Track relationship accepted with automatic context injection
  */
-export const trackRelationshipAccepted = (
-  ctx: AnalyticsContext,
-) => {
-  return trackRelationshipAcceptedOriginal(
-    ctx.user.id,
-  );
+export const trackRelationshipAccepted = (ctx: AnalyticsContext) => {
+  return trackRelationshipAcceptedOriginal(ctx.user.id);
 };
 
 /**
@@ -185,10 +167,7 @@ export const trackFundingToggle = (
     isReceivingFunds?: boolean;
   },
 ) => {
-  return trackFundingToggleOriginal(
-    organizationContext,
-    fundingStatus,
-  );
+  return trackFundingToggleOriginal(organizationContext, fundingStatus);
 };
 
 /**
@@ -199,9 +178,5 @@ export const trackEvent = (
   event: string,
   properties?: Record<string, any>,
 ) => {
-  return trackEventWithContext(
-    ctx.user.id,
-    event,
-    properties,
-  );
+  return trackEventWithContext(ctx.user.id, event, properties);
 };

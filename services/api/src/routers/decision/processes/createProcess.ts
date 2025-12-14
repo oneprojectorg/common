@@ -6,8 +6,8 @@ import {
   createProcessInputSchema,
   decisionProcessEncoder,
 } from '../../../encoders/decision';
-import withAuthenticated from '../../../middlewares/withAuthenticated';
 import withAnalytics from '../../../middlewares/withAnalytics';
+import withAuthenticated from '../../../middlewares/withAuthenticated';
 import withRateLimited from '../../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../../trpcFactory';
 

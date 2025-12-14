@@ -92,10 +92,10 @@ export function createLinks(encryptedCookies?: string): TRPCLink<AppRouter>[] {
   return [
     ...(!envURL.IS_PRODUCTION
       ? [
-        loggerLink({
-          colorMode: 'none',
-        }),
-      ]
+          loggerLink({
+            colorMode: 'none',
+          }),
+        ]
       : []),
     splitLink({
       condition(op) {

@@ -277,7 +277,11 @@ export const profileRelationshipRouter = router({
 
         return groupedResults;
       } catch (error) {
-        logger.error('Error getting profile relationships', { error, targetProfileId, sourceProfileId });
+        logger.error('Error getting profile relationships', {
+          error,
+          targetProfileId,
+          sourceProfileId,
+        });
         throw new TRPCError({
           message: 'Failed to get profile relationships',
           code: 'INTERNAL_SERVER_ERROR',

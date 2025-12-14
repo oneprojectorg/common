@@ -39,7 +39,10 @@ export const getOrganizationsByProfileRouter = router({
           organizationsWithProfileEncoder.parse(org),
         );
       } catch (error) {
-        logger.error('Error getting organizations by profile', { error, profileId });
+        logger.error('Error getting organizations by profile', {
+          error,
+          profileId,
+        });
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to get organizations by profile',

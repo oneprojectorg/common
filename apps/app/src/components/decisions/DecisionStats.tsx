@@ -19,7 +19,6 @@ export function DecisionStats({
   proposalCount,
   daysRemaining,
 }: DecisionStatsProps) {
-
   return (
     <div className="space-y-6">
       {/* Current Phase */}
@@ -32,8 +31,10 @@ export function DecisionStats({
         </p>
         {currentPhase?.phase && (
           <p className="mt-1 text-sm text-neutral-gray3">
-            {formatDateRange(currentPhase.phase.startDate, currentPhase.phase.endDate) ||
-              'Timeline not set'}
+            {formatDateRange(
+              currentPhase.phase.startDate,
+              currentPhase.phase.endDate,
+            ) || 'Timeline not set'}
           </p>
         )}
       </div>
@@ -51,7 +52,9 @@ export function DecisionStats({
           </div>
         )}
         <div className="flex justify-between">
-          <span className="text-sm text-neutral-gray3">Proposals Submitted</span>
+          <span className="text-sm text-neutral-gray3">
+            Proposals Submitted
+          </span>
           <span className="text-sm font-medium text-neutral-charcoal">
             {proposalCount}
           </span>

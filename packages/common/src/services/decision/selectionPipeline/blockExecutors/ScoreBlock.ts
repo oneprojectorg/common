@@ -1,5 +1,6 @@
 import type { Proposal } from '@op/db/schema';
 
+import { evaluateExpression, setValueByPath } from '../expressionEvaluator';
 import type {
   BlockExecutionResult,
   BlockExecutor,
@@ -8,10 +9,12 @@ import type {
   ScoreBlock as ScoreBlockType,
   ScoringCriteria,
 } from '../types';
-import { evaluateExpression, setValueByPath } from '../expressionEvaluator';
 
 export class ScoreBlock implements BlockExecutor<ScoreBlockType> {
-  execute(block: ScoreBlockType, context: ExecutionContext): BlockExecutionResult {
+  execute(
+    block: ScoreBlockType,
+    context: ExecutionContext,
+  ): BlockExecutionResult {
     const scoredProposals = context.proposals.map((proposal) => {
       const proposalContext = {
         ...context,
@@ -65,7 +68,10 @@ export class ScoreBlock implements BlockExecutor<ScoreBlockType> {
         const result = evaluateExpression(fieldExpr, proposalContext);
         value = typeof result === 'number' ? result : 0;
       } else if (criterion.expression) {
-        const result = evaluateExpression(criterion.expression, proposalContext);
+        const result = evaluateExpression(
+          criterion.expression,
+          proposalContext,
+        );
         value = typeof result === 'number' ? result : 0;
       } else {
         continue;
@@ -104,8 +110,7 @@ export class ScoreBlock implements BlockExecutor<ScoreBlockType> {
     }
 
     // Get all values for this field
-    const fieldExpr =
-      typeof field === 'string' ? { field: field } : field;
+    const fieldExpr = typeof field === 'string' ? { field: field } : field;
     const values = allProposals
       .map((p) => {
         const ctx = { ...baseContext, proposal: p };
