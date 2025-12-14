@@ -13,7 +13,7 @@
     "disable-build": "email build",
     "export": "email export",
     "start": "email start",
-    "typecheck": "pnpm tsc --noEmit"
+    "typecheck": "tsgo --noEmit"
   },
   "dependencies": {
     "@op/core": "workspace:*",

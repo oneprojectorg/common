@@ -1,7 +1,6 @@
 {
   "extends": "@op/typescript-config/react-library.json",
   "compilerOptions": {
-    "baseUrl": ".",
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "types": ["unplugin-icons/types/react"]

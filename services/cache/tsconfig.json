@@ -6,11 +6,9 @@
         "name": "next"
       }
     ],
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./*"]
     }
-    // "noErrorTruncation": true
   },
   "include": [
     "next-env.d.ts",

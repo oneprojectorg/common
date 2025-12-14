@@ -2,7 +2,6 @@
   "extends": "@op/typescript-config/nextjs.json",
   "compilerOptions": {
     "esModuleInterop": true,
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./*"]
     }
