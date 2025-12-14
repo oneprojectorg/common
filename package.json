@@ -33,7 +33,6 @@
     "prettier-plugin-sql": "^0.18.1"
   },
   "devDependencies": {
-    "@anthropic-ai/claude-code": "^2.0.69",
     "@iconify/json": "2.2.311",
     "@op/core": "workspace:*",
     "@op/typescript-config": "workspace:*",
