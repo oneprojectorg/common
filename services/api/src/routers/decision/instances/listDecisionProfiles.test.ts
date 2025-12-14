@@ -3,11 +3,13 @@ import { appRouter } from 'src/routers';
 import { createCallerFactory } from 'src/trpcFactory';
 import { describe, expect, it } from 'vitest';
 
+import { appRouter } from '../..';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
   createIsolatedSession,
   createTestContextWithSession,
 } from '../../../test/supabase-utils';
+import { createCallerFactory } from '../../../trpcFactory';
 
 const createCaller = createCallerFactory(appRouter);
 

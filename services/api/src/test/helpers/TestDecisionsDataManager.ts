@@ -14,14 +14,14 @@ import { ROLES } from '@op/db/seedData/accessControl';
 import type { User } from '@op/supabase/lib';
 import { eq, inArray } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
-import { appRouter } from 'src/routers';
-import { createCallerFactory } from 'src/trpcFactory';
 import type { z } from 'zod';
 
 import type {
   decisionProcessEncoder,
   processInstanceEncoder,
 } from '../../encoders/decision';
+import { appRouter } from '../../routers';
+import { createCallerFactory } from '../../trpcFactory';
 import {
   createIsolatedSession,
   createTestContextWithSession,
