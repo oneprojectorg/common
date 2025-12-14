@@ -2,6 +2,7 @@ import { db } from '@op/db/client';
 import {
   DecisionProcess,
   ProcessInstance,
+  ProcessStatus,
   organizationUserToAccessRoles,
   organizationUsers,
   processInstances,
@@ -10,12 +11,17 @@ import {
   users,
 } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
-import { User } from '@op/supabase/lib';
-import { randomUUID } from 'crypto';
+import type { User } from '@op/supabase/lib';
 import { eq, inArray } from 'drizzle-orm';
+import { randomUUID } from 'node:crypto';
 import { appRouter } from 'src/routers';
 import { createCallerFactory } from 'src/trpcFactory';
+import type { z } from 'zod';
 
+import type {
+  decisionProcessEncoder,
+  processInstanceEncoder,
+} from '../../encoders/decision';
 import {
   createIsolatedSession,
   createTestContextWithSession,
@@ -33,17 +39,21 @@ interface CreateDecisionSetupOptions {
   grantAccess?: boolean;
 }
 
+type EncodedProcessInstance = z.infer<typeof processInstanceEncoder>;
+
 interface CreatedInstance {
-  instance: ProcessInstance;
+  instance: EncodedProcessInstance;
   profileId: string;
   slug: string;
 }
 
+type EncodedDecisionProcess = z.infer<typeof decisionProcessEncoder>;
+
 interface DecisionSetupOutput {
   user: User;
   userEmail: string;
-  organization: any;
-  process: DecisionProcess;
+  organization: Record<string, unknown> & { id: string; profileId: string };
+  process: EncodedDecisionProcess;
   instances: CreatedInstance[];
 }
 
@@ -190,7 +200,6 @@ export class TestDecisionsDataManager {
     const process = await caller.decision.createProcess({
       name: this.generateUniqueName(processName),
       description: processDescription,
-      ownerProfileId: orgProfileId,
       processSchema: {
         name: processName,
         states: [
@@ -254,23 +263,28 @@ export class TestDecisionsDataManager {
    * Creates a process instance for an existing process via router.
    * Accepts either a caller directly OR a process+user to create the caller internally.
    */
-  async createInstanceForProcess({
-    caller,
-    processId,
-    process,
-    user,
-    name,
-    budget = 50000,
-    status,
-  }: {
-    caller?: Awaited<ReturnType<typeof this.createAuthenticatedCaller>>;
-    processId?: string;
-    process?: DecisionProcess;
-    user?: User;
-    name: string;
-    budget?: number;
-    status?: ProcessInstanceStatus;
-  }): Promise<CreatedInstance> {
+  async createInstanceForProcess(
+    this: TestDecisionsDataManager,
+    {
+      caller,
+      processId,
+      process,
+      user,
+      name,
+      budget = 50000,
+      status,
+    }: {
+      caller?: Awaited<
+        ReturnType<TestDecisionsDataManager['createAuthenticatedCaller']>
+      >;
+      processId?: string;
+      process?: EncodedDecisionProcess;
+      user?: User;
+      name: string;
+      budget?: number;
+      status?: ProcessStatus;
+    },
+  ): Promise<CreatedInstance> {
     this.ensureCleanupRegistered();
 
     // Resolve caller - either use provided caller or create one from user

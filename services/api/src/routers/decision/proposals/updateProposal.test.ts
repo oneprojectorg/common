@@ -1,5 +1,4 @@
 import { Visibility } from '@op/db/schema';
-import { TRPCError } from '@trpc/server';
 import { appRouter } from 'src/routers';
 import { createCallerFactory } from 'src/trpcFactory';
 import { describe, expect, it } from 'vitest';

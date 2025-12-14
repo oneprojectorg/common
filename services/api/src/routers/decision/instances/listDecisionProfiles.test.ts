@@ -1,3 +1,4 @@
+import { ProcessStatus } from '@op/db/schema';
 import { appRouter } from 'src/routers';
 import { createCallerFactory } from 'src/trpcFactory';
 import { describe, expect, it } from 'vitest';
@@ -80,7 +81,7 @@ describe('List Decision Profiles Integration Tests', () => {
 
       const result = await caller.decision.listDecisionProfiles({
         limit: 10,
-        status: 'published',
+        status: ProcessStatus.PUBLISHED,
       });
 
       expect(result.items).toHaveLength(1);
