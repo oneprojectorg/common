@@ -10,6 +10,7 @@ import { assertAccess, permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
 import { getOrgAccessUser } from '../access';
+import { assertOrganizationUser } from '../assert';
 
 export interface UpdateOrganizationUserData {
   name?: string;
@@ -45,17 +46,7 @@ export async function updateOrganizationUser({
   assertAccess({ admin: permission.UPDATE }, orgUser?.roles || []);
 
   // Check if the organization user to update exists
-  const targetOrgUser = await db.query.organizationUsers.findFirst({
-    where: (table, { eq, and }) =>
-      and(
-        eq(table.id, organizationUserId),
-        eq(table.organizationId, organizationId),
-      ),
-  });
-
-  if (!targetOrgUser) {
-    throw new NotFoundError('Organization user not found');
-  }
+  await assertOrganizationUser({ id: organizationUserId, organizationId });
 
   // Update the organization user basic info
   const updateData: Partial<UpdateOrganizationUserData> = {};

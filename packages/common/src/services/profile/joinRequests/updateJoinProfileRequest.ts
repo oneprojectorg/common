@@ -5,12 +5,12 @@ import {
   joinProfileRequests,
   organizationUserToAccessRoles,
   organizationUsers,
-  profiles,
 } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 import { eq } from 'drizzle-orm';
 
 import { CommonError, ValidationError } from '../../../utils';
+import { assertProfile } from '../../assert';
 import { assertTargetProfileAdminAccess } from './assertTargetProfileAdminAccess';
 import type { JoinProfileRequestWithProfiles } from './createJoinProfileRequest';
 
@@ -49,13 +49,9 @@ export const updateJoinProfileRequest = async ({
   }
 
   // Fetch the request profile
-  const requestProfile = await db.query.profiles.findFirst({
-    where: eq(profiles.id, existingRequest.requestProfileId),
+  const requestProfile = await assertProfile({
+    id: existingRequest.requestProfileId,
   });
-
-  if (!requestProfile) {
-    throw new ValidationError('Request profile not found');
-  }
 
   // If status is unchanged, return the existing record with profiles
   if (existingRequest.status === status) {
