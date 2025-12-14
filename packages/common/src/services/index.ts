@@ -1,3 +1,4 @@
+export * from './assert';
 export * from './terms';
 export * from './access';
 export * from './email';
