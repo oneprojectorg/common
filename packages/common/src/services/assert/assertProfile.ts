@@ -8,13 +8,16 @@ import { NotFoundError } from '../../utils';
  *
  * @throws NotFoundError if profile is not found
  */
-export async function assertProfile(id: string): Promise<Profile> {
+export async function assertProfile(
+  id: string,
+  error: Error = new NotFoundError('Profile', id),
+): Promise<Profile> {
   const profile = await db.query.profiles.findFirst({
     where: (table, { eq }) => eq(table.id, id),
   });
 
   if (!profile) {
-    throw new NotFoundError('Profile', id);
+    throw error;
   }
 
   return profile;
@@ -25,13 +28,16 @@ export async function assertProfile(id: string): Promise<Profile> {
  *
  * @throws NotFoundError if profile is not found
  */
-export async function assertProfileBySlug(slug: string): Promise<Profile> {
+export async function assertProfileBySlug(
+  slug: string,
+  error: Error = new NotFoundError('Profile', slug),
+): Promise<Profile> {
   const profile = await db.query.profiles.findFirst({
     where: (table, { eq }) => eq(table.slug, slug),
   });
 
   if (!profile) {
-    throw new NotFoundError('Profile', slug);
+    throw error;
   }
 
   return profile;

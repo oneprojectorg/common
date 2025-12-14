@@ -8,13 +8,16 @@ import { NotFoundError } from '../../utils';
  *
  * @throws NotFoundError if user is not found
  */
-export async function assertUser(id: string): Promise<CommonUser> {
+export async function assertUser(
+  id: string,
+  error: Error = new NotFoundError('User', id),
+): Promise<CommonUser> {
   const user = await db.query.users.findFirst({
     where: (table, { eq }) => eq(table.id, id),
   });
 
   if (!user) {
-    throw new NotFoundError('User', id);
+    throw error;
   }
 
   return user;
@@ -27,13 +30,14 @@ export async function assertUser(id: string): Promise<CommonUser> {
  */
 export async function assertUserByAuthId(
   authUserId: string,
+  error: Error = new NotFoundError('User', authUserId),
 ): Promise<CommonUser> {
   const user = await db.query.users.findFirst({
     where: (table, { eq }) => eq(table.authUserId, authUserId),
   });
 
   if (!user) {
-    throw new NotFoundError('User', authUserId);
+    throw error;
   }
 
   return user;

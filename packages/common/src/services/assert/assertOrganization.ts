@@ -8,13 +8,16 @@ import { NotFoundError } from '../../utils';
  *
  * @throws NotFoundError if organization is not found
  */
-export async function assertOrganization(id: string): Promise<Organization> {
+export async function assertOrganization(
+  id: string,
+  error: Error = new NotFoundError('Organization', id),
+): Promise<Organization> {
   const organization = await db.query.organizations.findFirst({
     where: (table, { eq }) => eq(table.id, id),
   });
 
   if (!organization) {
-    throw new NotFoundError('Organization', id);
+    throw error;
   }
 
   return organization;
@@ -27,13 +30,14 @@ export async function assertOrganization(id: string): Promise<Organization> {
  */
 export async function assertOrganizationByProfileId(
   profileId: string,
+  error: Error = new NotFoundError('Organization', profileId),
 ): Promise<Organization> {
   const organization = await db.query.organizations.findFirst({
     where: (table, { eq }) => eq(table.profileId, profileId),
   });
 
   if (!organization) {
-    throw new NotFoundError('Organization', profileId);
+    throw error;
   }
 
   return organization;
