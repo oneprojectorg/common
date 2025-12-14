@@ -9,8 +9,7 @@
     "build:prod": "cd ../../services/db &&  pnpm run migrate && cd ../../apps/api && next build",
     "dev": "next dev -p 3300",
     "start": "next start",
-    "typecheck": "tsgo --noEmit",
-    "typecheck:ci": "tsc --noEmit"
+    "typecheck": "tsgo --noEmit"
   },
   "dependencies": {
     "@op/api": "workspace:*",

@@ -9,8 +9,7 @@
     "check:i18n": "tsx scripts/check-missing-intl-keys.ts",
     "dev": "next dev -p 3100",
     "start": "next start -p 3100",
-    "typecheck": "tsgo --noEmit",
-    "typecheck:ci": "tsc --noEmit"
+    "typecheck": "tsgo --noEmit"
   },
   "dependencies": {
     "@formity/react": "^1.0.0",

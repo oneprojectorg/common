@@ -12,7 +12,6 @@
   },
   "scripts": {
     "typecheck": "tsgo --noEmit",
-    "typecheck:ci": "tsc --noEmit",
     "typegen": "pnpx supabase gen types --workdir=\"../..\" --lang=typescript --local --schema public > ./src/types.ts && pnpm eslint --fix ./src/types.ts"
   },
   "dependencies": {

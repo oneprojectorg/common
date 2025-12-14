@@ -13,8 +13,7 @@
   "types": "./src/index.ts",
   "scripts": {
     "disable-build": "tsc",
-    "typecheck": "tsgo --noEmit",
-    "typecheck:ci": "tsc --noEmit"
+    "typecheck": "tsgo --noEmit"
   },
   "dependencies": {
     "@op/core": "workspace:^",

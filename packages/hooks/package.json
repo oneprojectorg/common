@@ -10,8 +10,7 @@
     "./utils": "./src/utils/index.ts"
   },
   "scripts": {
-    "typecheck": "tsgo --noEmit",
-    "typecheck:ci": "tsc --noEmit"
+    "typecheck": "tsgo --noEmit"
   },
   "dependencies": {
     "@op/api": "workspace:*",

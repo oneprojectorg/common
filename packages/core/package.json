@@ -11,8 +11,7 @@
   "types": "./src/config.ts",
   "scripts": {
     "disable-build": "tsc",
-    "typecheck": "tsgo --noEmit",
-    "typecheck:ci": "tsc --noEmit"
+    "typecheck": "tsgo --noEmit"
   },
   "dependencies": {
     "he": "^1.2.0",
