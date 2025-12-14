@@ -4,7 +4,6 @@ import {
   type VoteData,
   decisionsVoteProposals,
   decisionsVoteSubmissions,
-  organizations,
   processInstances,
   proposals,
 } from '@op/db/schema';
@@ -19,6 +18,7 @@ import {
   ValidationError,
 } from '../../utils';
 import { getIndividualProfileId, getOrgAccessUser } from '../access';
+import { assertOrganization } from '../assert';
 
 export type CustomData = Record<string, unknown>;
 
@@ -122,19 +122,14 @@ export const submitVote = async ({
     }
 
     // Get organization from owner profile
-    const org = await db.query.organizations.findFirst({
-      where: eq(organizations.profileId, processInstance.ownerProfileId),
+    const org = await assertOrganization({
+      profileId: processInstance.ownerProfileId,
     });
-
-    const organizationId = org?.id;
-    if (!organizationId) {
-      throw new NotFoundError('Organization not found');
-    }
 
     // Check user permissions
     const orgUser = await getOrgAccessUser({
       user: { id: authUserId },
-      organizationId,
+      organizationId: org.id,
     });
 
     assertAccess({ decisions: permission.UPDATE }, orgUser?.roles ?? []);
@@ -325,19 +320,14 @@ export const getVotingStatus = async ({
     }
 
     // Get organization from owner profile
-    const org = await db.query.organizations.findFirst({
-      where: eq(organizations.profileId, processInstance.ownerProfileId),
+    const org = await assertOrganization({
+      profileId: processInstance.ownerProfileId,
     });
-
-    const organizationId = org?.id;
-    if (!organizationId) {
-      throw new NotFoundError('Organization not found');
-    }
 
     // Check user permissions
     const orgUser = await getOrgAccessUser({
       user: { id: authUserId },
-      organizationId,
+      organizationId: org.id,
     });
 
     assertAccess({ decisions: permission.READ }, orgUser?.roles ?? []);
@@ -462,19 +452,14 @@ export const validateVoteSelectionService = async ({
     }
 
     // Get organization from owner profile
-    const org = await db.query.organizations.findFirst({
-      where: eq(organizations.profileId, processInstance.ownerProfileId),
+    const org = await assertOrganization({
+      profileId: processInstance.ownerProfileId,
     });
-
-    const organizationId = org?.id;
-    if (!organizationId) {
-      throw new NotFoundError('Organization not found');
-    }
 
     // Check user permissions
     const orgUser = await getOrgAccessUser({
       user: { id: authUserId },
-      organizationId,
+      organizationId: org.id,
     });
 
     assertAccess({ decisions: permission.READ }, orgUser?.roles ?? []);

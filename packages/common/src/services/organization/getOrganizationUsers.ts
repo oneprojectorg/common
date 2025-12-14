@@ -2,8 +2,9 @@ import { db } from '@op/db/client';
 import { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
-import { NotFoundError, UnauthorizedError } from '../../utils';
+import { UnauthorizedError } from '../../utils';
 import { getOrgAccessUser } from '../access';
+import { assertOrganization } from '../assert';
 
 export const getOrganizationUsers = async ({
   profileId,
@@ -17,17 +18,12 @@ export const getOrganizationUsers = async ({
   }
 
   // First, find the organization by profileId
-  const organization = await db.query.organizations.findFirst({
-    where: (table, { eq }) => eq(table.profileId, profileId),
+  const organization = await assertOrganization({ profileId });
+
+  const orgUser = await getOrgAccessUser({
+    user,
+    organizationId: organization.id,
   });
-
-  if (!organization) {
-    throw new NotFoundError('Organization not found');
-  }
-
-  const organizationId = organization.id;
-
-  const orgUser = await getOrgAccessUser({ user, organizationId });
 
   if (!orgUser) {
     throw new UnauthorizedError('You are not a member of this organization');
@@ -37,7 +33,7 @@ export const getOrganizationUsers = async ({
 
   // Fetch all users in the organization with their roles and avatar images
   const organizationUsers = await db.query.organizationUsers.findMany({
-    where: (table, { eq }) => eq(table.organizationId, organizationId),
+    where: (table, { eq }) => eq(table.organizationId, organization.id),
     with: {
       roles: {
         with: {

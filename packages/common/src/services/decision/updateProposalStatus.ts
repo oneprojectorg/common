@@ -1,11 +1,11 @@
 import { db, eq } from '@op/db/client';
-import { ProposalStatus, organizations, proposals } from '@op/db/schema';
+import { ProposalStatus, proposals } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { getOrgAccessUser } from '../access';
-import { assertUser } from '../assert';
+import { assertOrganization, assertUser } from '../assert';
 
 export const updateProposalStatus = async ({
   profileId,
@@ -46,13 +46,9 @@ export const updateProposalStatus = async ({
     }
 
     // Get organization from process instance owner profile
-    const organization = await db.query.organizations.findFirst({
-      where: eq(organizations.profileId, processInstance.ownerProfileId),
+    const organization = await assertOrganization({
+      profileId: processInstance.ownerProfileId,
     });
-
-    if (!organization) {
-      throw new UnauthorizedError('Process not owned by an organization');
-    }
 
     // Get user's organization membership and roles
     const orgUser = await getOrgAccessUser({

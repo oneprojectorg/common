@@ -1,5 +1,5 @@
 import { db, eq } from '@op/db/client';
-import { ProcessInstance, organizations, proposals } from '@op/db/schema';
+import { ProcessInstance, proposals } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 import { checkPermission, permission } from 'access-zones';
 
@@ -10,6 +10,7 @@ import {
   ValidationError,
 } from '../../utils';
 import { getOrgAccessUser, getUserSession } from '../access';
+import { assertOrganization } from '../assert';
 
 export const deleteProposal = async ({
   proposalId,
@@ -50,13 +51,9 @@ export const deleteProposal = async ({
     }
 
     // Get organization from process instance owner profile
-    const organization = await db.query.organizations.findFirst({
-      where: eq(organizations.profileId, processInstance.ownerProfileId),
+    const organization = await assertOrganization({
+      profileId: processInstance.ownerProfileId,
     });
-
-    if (!organization) {
-      throw new UnauthorizedError('Process not owned by an organization');
-    }
 
     // Get user's organization membership and roles
     const orgUser = await getOrgAccessUser({
