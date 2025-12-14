@@ -1,5 +1,9 @@
 import { get, set } from '@op/cache';
-import { assertUser, generateProposalsCsv, listProposals } from '@op/common';
+import {
+  assertUserByAuthId,
+  generateProposalsCsv,
+  listProposals,
+} from '@op/common';
 import { Events, inngest } from '@op/events';
 import { createSBServiceClient } from '@op/supabase/server';
 
@@ -46,7 +50,7 @@ export const exportProposals = inngest.createFunction(
     try {
       // Step 2: Fetch proposals
       const proposals = await step.run('fetch-proposals', async () => {
-        const userRecord = await assertUser({ authUserId: userId });
+        const userRecord = await assertUserByAuthId(userId);
 
         const result = await listProposals({
           input: {

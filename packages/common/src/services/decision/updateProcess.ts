@@ -3,7 +3,7 @@ import { decisionProcesses, taxonomies, taxonomyTerms } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
-import { assertUser } from '../assert';
+import { assertUserByAuthId } from '../assert';
 import type { ProcessSchema } from './types';
 
 /**
@@ -100,7 +100,7 @@ export const updateProcess = async ({
   }
 
   try {
-    const dbUser = await assertUser({ authUserId: user.id });
+    const dbUser = await assertUserByAuthId(user.id);
 
     if (!dbUser.currentProfileId) {
       throw new UnauthorizedError('User must have an active profile');

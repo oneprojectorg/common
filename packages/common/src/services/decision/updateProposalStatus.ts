@@ -5,7 +5,7 @@ import { assertAccess, permission } from 'access-zones';
 
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { getOrgAccessUser } from '../access';
-import { assertOrganizationByProfile, assertUser } from '../assert';
+import { assertOrganizationByProfileId, assertUserByAuthId } from '../assert';
 
 export const updateProposalStatus = async ({
   profileId,
@@ -23,7 +23,7 @@ export const updateProposalStatus = async ({
   try {
     // Fetch user and proposal in parallel for better performance
     const [dbUser, existingProposal] = await Promise.all([
-      assertUser({ authUserId: user.id }),
+      assertUserByAuthId(user.id),
       db.query.proposals.findFirst({
         where: eq(proposals.profileId, profileId),
         with: {
@@ -46,7 +46,7 @@ export const updateProposalStatus = async ({
     }
 
     // Get organization from process instance owner profile
-    const organization = await assertOrganizationByProfile(
+    const organization = await assertOrganizationByProfileId(
       processInstance.ownerProfileId,
     );
 

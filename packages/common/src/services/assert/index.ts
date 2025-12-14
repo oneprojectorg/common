@@ -1,6 +1,6 @@
 export {
   assertOrganization,
-  assertOrganizationByProfile,
+  assertOrganizationByProfileId,
 } from './assertOrganization';
 export { assertOrganizationUser } from './assertOrganizationUser';
 export {
@@ -8,4 +8,4 @@ export {
   assertProcessInstanceWithProcess,
 } from './assertProcessInstance';
 export { assertProfile } from './assertProfile';
-export { assertUser } from './assertUser';
+export { assertUser, assertUserByAuthId } from './assertUser';

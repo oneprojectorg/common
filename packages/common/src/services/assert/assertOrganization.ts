@@ -25,7 +25,7 @@ export async function assertOrganization(id: string): Promise<Organization> {
  *
  * @throws NotFoundError if organization is not found
  */
-export async function assertOrganizationByProfile(
+export async function assertOrganizationByProfileId(
   profileId: string,
 ): Promise<Organization> {
   const organization = await db.query.organizations.findFirst({

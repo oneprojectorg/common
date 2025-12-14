@@ -10,7 +10,7 @@ import {
   ValidationError,
 } from '../../utils';
 import { getOrgAccessUser, getUserSession } from '../access';
-import { assertOrganizationByProfile } from '../assert';
+import { assertOrganizationByProfileId } from '../assert';
 
 export const deleteProposal = async ({
   proposalId,
@@ -51,7 +51,7 @@ export const deleteProposal = async ({
     }
 
     // Get organization from process instance owner profile
-    const organization = await assertOrganizationByProfile(
+    const organization = await assertOrganizationByProfileId(
       processInstance.ownerProfileId,
     );
 

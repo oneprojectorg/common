@@ -20,7 +20,7 @@ import {
   ValidationError,
 } from '../../utils';
 import { getOrgAccessUser } from '../access';
-import { assertUser } from '../assert';
+import { assertUserByAuthId } from '../assert';
 import { schemaValidator } from './schemaValidator';
 import type { ProposalData } from './types';
 
@@ -96,7 +96,7 @@ export const updateProposal = async ({
   }
 
   try {
-    const dbUser = await assertUser({ authUserId: user.id });
+    const dbUser = await assertUserByAuthId(user.id);
 
     if (!dbUser.currentProfileId) {
       throw new UnauthorizedError('User must have an active profile');

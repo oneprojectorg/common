@@ -13,7 +13,7 @@ import { validateVoteSelection } from '../../lib/schema-validators';
 import { CommonError, UnauthorizedError, ValidationError } from '../../utils';
 import { getIndividualProfileId, getOrgAccessUser } from '../access';
 import {
-  assertOrganizationByProfile,
+  assertOrganizationByProfileId,
   assertProcessInstanceWithProcess,
 } from '../assert';
 
@@ -112,7 +112,7 @@ export const submitVote = async ({
     });
 
     // Get organization from owner profile
-    const org = await assertOrganizationByProfile(
+    const org = await assertOrganizationByProfileId(
       processInstance.ownerProfileId,
     );
 
@@ -303,7 +303,7 @@ export const getVotingStatus = async ({
     });
 
     // Get organization from owner profile
-    const org = await assertOrganizationByProfile(
+    const org = await assertOrganizationByProfileId(
       processInstance.ownerProfileId,
     );
 
@@ -428,7 +428,7 @@ export const validateVoteSelectionService = async ({
     });
 
     // Get organization from owner profile
-    const org = await assertOrganizationByProfile(
+    const org = await assertOrganizationByProfileId(
       processInstance.ownerProfileId,
     );
 

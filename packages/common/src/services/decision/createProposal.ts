@@ -17,7 +17,7 @@ import {
 } from '../../utils';
 import { getCurrentProfileId, getOrgAccessUser } from '../access';
 import {
-  assertOrganizationByProfile,
+  assertOrganizationByProfileId,
   assertProcessInstanceWithProcess,
 } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
@@ -49,7 +49,7 @@ export const createProposal = async ({
       id: data.processInstanceId,
     });
 
-    const org = await assertOrganizationByProfile(instance.ownerProfileId);
+    const org = await assertOrganizationByProfileId(instance.ownerProfileId);
     const organizationId = org.id;
 
     const orgUser = await getOrgAccessUser({

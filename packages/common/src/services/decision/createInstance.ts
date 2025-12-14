@@ -9,7 +9,7 @@ import {
 import { User } from '@op/supabase/lib';
 
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
-import { assertUser } from '../assert';
+import { assertUserByAuthId } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
 import { createTransitionsForProcess } from './createTransitionsForProcess';
 import type { InstanceData, ProcessSchema } from './types';
@@ -33,7 +33,7 @@ export const createInstance = async ({
   }
 
   try {
-    const dbUser = await assertUser({ authUserId: user.id });
+    const dbUser = await assertUserByAuthId(user.id);
 
     const ownerProfileId = dbUser.currentProfileId ?? dbUser.profileId;
 

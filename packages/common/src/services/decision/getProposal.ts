@@ -17,7 +17,7 @@ import { checkPermission, permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
 import { getOrgAccessUser } from '../access';
-import { assertUser } from '../assert';
+import { assertUserByAuthId } from '../assert';
 
 export const getProposal = async ({
   profileId,
@@ -43,7 +43,7 @@ export const getProposal = async ({
   }
 
   try {
-    const dbUser = await assertUser({ authUserId: user.id });
+    const dbUser = await assertUserByAuthId(user.id);
 
     if (!dbUser.currentProfileId) {
       throw new UnauthorizedError('User must have an active profile');
@@ -158,7 +158,7 @@ export const getPermissionsOnProposal = async ({
   user: User;
   proposal: Proposal & { processInstance: ProcessInstance };
 }) => {
-  const dbUser = await assertUser({ authUserId: user.id });
+  const dbUser = await assertUserByAuthId(user.id);
 
   if (!dbUser.currentProfileId) {
     throw new UnauthorizedError('User must have an active profile');

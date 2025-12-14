@@ -13,7 +13,10 @@ import {
   UnauthorizedError,
   ValidationError,
 } from '../../utils';
-import { assertProcessInstanceWithProcess, assertUser } from '../assert';
+import {
+  assertProcessInstanceWithProcess,
+  assertUserByAuthId,
+} from '../assert';
 import type {
   InstanceData,
   ProcessSchema,
@@ -141,7 +144,7 @@ export class TransitionEngine {
     }
 
     try {
-      const dbUser = await assertUser({ authUserId: user.id });
+      const dbUser = await assertUserByAuthId(user.id);
 
       if (!dbUser.currentProfileId) {
         throw new UnauthorizedError('User must have an active profile');

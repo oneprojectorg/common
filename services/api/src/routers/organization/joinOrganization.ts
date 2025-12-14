@@ -1,7 +1,7 @@
 import { invalidate } from '@op/cache';
 import {
   assertOrganization,
-  assertUser,
+  assertUserByAuthId,
   joinOrganization as joinOrganizationService,
 } from '@op/common';
 import { TRPCError } from '@trpc/server';
@@ -46,7 +46,7 @@ export const joinOrganization = router({
       try {
         const [organization, user] = await Promise.all([
           assertOrganization(input.organizationId),
-          assertUser({ authUserId: ctx.user.id }),
+          assertUserByAuthId(ctx.user.id),
         ]);
 
         const result = await joinOrganizationService({
