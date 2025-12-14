@@ -1,13 +1,10 @@
 /* eslint-disable antfu/no-top-level-await */
 import { adminEmails } from '@op/core';
-import type { User } from '@op/supabase';
 import { createServerClient } from '@supabase/ssr';
+import type { User } from '@supabase/supabase-js';
 import { randomUUID } from 'crypto';
 import dotenv from 'dotenv';
-import { eq, getTableName, sql } from 'drizzle-orm';
-import type { Table } from 'drizzle-orm';
-import { PgTable } from 'drizzle-orm/pg-core';
-import { authUsers } from 'drizzle-orm/supabase';
+import { eq, sql } from 'drizzle-orm';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -106,13 +103,17 @@ for (const email of adminEmails) {
 
     // Check if auth user already exists in Supabase
     const { data: existingAuthUsers } = await supabase.auth.admin.listUsers();
-    const existingAuthUser = existingAuthUsers.users?.find(user => user.email === email);
+    const existingAuthUser = existingAuthUsers.users?.find(
+      (user) => user.email === email,
+    );
 
     let authUser;
     if (existingAuthUser) {
       // Auth user exists, use it
       authUser = existingAuthUser;
-      console.log(`Auth user ${email} already exists, using existing auth user`);
+      console.log(
+        `Auth user ${email} already exists, using existing auth user`,
+      );
     } else {
       // Create new auth user
       const { data, error } = await supabase.auth.admin.createUser({
@@ -190,7 +191,7 @@ const headers = lines?.[0]?.split(',') ?? [];
 // Process each row (skip header)
 const taxonomyTermsData = lines.slice(1).map((line) => {
   // Handle CSV parsing with potential commas in quoted fields
-  const values = [];
+  const values: string[] = [];
   let currentValue = '';
   let inQuotes = false;
 
