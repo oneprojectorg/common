@@ -5,7 +5,7 @@ import { assertAccess, permission } from 'access-zones';
 
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { getOrgAccessUser } from '../access';
-import { assertOrganization, assertUser } from '../assert';
+import { assertOrganizationByProfile, assertUser } from '../assert';
 
 export const updateProposalStatus = async ({
   profileId,
@@ -46,9 +46,9 @@ export const updateProposalStatus = async ({
     }
 
     // Get organization from process instance owner profile
-    const organization = await assertOrganization({
-      profileId: processInstance.ownerProfileId,
-    });
+    const organization = await assertOrganizationByProfile(
+      processInstance.ownerProfileId,
+    );
 
     // Get user's organization membership and roles
     const orgUser = await getOrgAccessUser({

@@ -50,7 +50,7 @@ export const updateOrganization = async ({
   const { ...updateData } = data;
 
   // Check if user has permission to update this organization
-  const existingOrg = await assertOrganization({ id: organizationId });
+  const existingOrg = await assertOrganization(organizationId);
 
   const orgInputs = UpdateOrganizationInputParser.parse(updateData);
 

@@ -1,4 +1,7 @@
-export { assertOrganization } from './assertOrganization';
+export {
+  assertOrganization,
+  assertOrganizationByProfile,
+} from './assertOrganization';
 export { assertOrganizationUser } from './assertOrganizationUser';
 export {
   assertProcessInstance,

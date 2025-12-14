@@ -45,7 +45,7 @@ export const joinOrganization = router({
     .mutation(async ({ ctx, input }) => {
       try {
         const [organization, user] = await Promise.all([
-          assertOrganization({ id: input.organizationId }),
+          assertOrganization(input.organizationId),
           assertUser({ authUserId: ctx.user.id }),
         ]);
 

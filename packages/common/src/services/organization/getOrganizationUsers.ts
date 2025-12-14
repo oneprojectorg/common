@@ -4,7 +4,7 @@ import { assertAccess, permission } from 'access-zones';
 
 import { UnauthorizedError } from '../../utils';
 import { getOrgAccessUser } from '../access';
-import { assertOrganization } from '../assert';
+import { assertOrganizationByProfile } from '../assert';
 
 export const getOrganizationUsers = async ({
   profileId,
@@ -18,7 +18,7 @@ export const getOrganizationUsers = async ({
   }
 
   // First, find the organization by profileId
-  const organization = await assertOrganization({ profileId });
+  const organization = await assertOrganizationByProfile(profileId);
 
   const orgUser = await getOrgAccessUser({
     user,
