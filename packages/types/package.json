@@ -11,7 +11,7 @@
   "types": "./src/index.ts",
   "scripts": {
     "disable-build": "tsc",
-    "typecheck": "pnpm tsc --noEmit"
+    "typecheck": "tsgo --noEmit"
   },
   "dependencies": {
     "zod": "^4.1.12"

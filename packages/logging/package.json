@@ -9,7 +9,7 @@
   },
   "main": "src/index.ts",
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsgo --noEmit"
   },
   "dependencies": {
     "@opentelemetry/api": "^1.9.0",

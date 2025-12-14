@@ -10,10 +10,10 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "scripts": {
-    "check-types": "tsc --noEmit",
     "dev": "./start-centrifugo.sh",
     "down": "docker stop centrifugo",
-    "test": "vitest"
+    "test": "vitest",
+    "typecheck": "tsgo --noEmit"
   },
   "dependencies": {
     "centrifuge": "^5.5.2",

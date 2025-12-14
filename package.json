@@ -57,6 +57,7 @@
     "@types/react": "19.0.10",
     "@types/react-dom": "19.0.4",
     "@types/three": "^0.174.0",
+    "@typescript/native-preview": "7.0.0-dev.20251214.1",
     "@xyflow/react": "^12.5.2",
     "ai": "^4.2.2",
     "autoprefixer": "^10.4.20",

@@ -6,13 +6,11 @@
         "name": "next"
       }
     ],
-    "baseUrl": "./src", // Point baseUrl to the new src directory
     "paths": {
-      "@/*": ["./*"] // Alias will now resolve relative to ./src
+      "@/*": ["./src/*"]
     },
     "types": ["unplugin-icons/types/react"],
     "strict": true
-    // "noErrorTruncation": true
   },
   "include": [
     "next-env.d.ts",
