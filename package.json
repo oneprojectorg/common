@@ -20,6 +20,7 @@
     "format:check": "prettier --check \"**/*.{ts,tsx,md}\"",
     "tmux": "bash scripts/tmux.sh",
     "typecheck": "turbo typecheck",
+    "typecheck:ci": "turbo typecheck:ci",
     "w:api": "pnpm -C ./services/api",
     "w:app": "pnpm -C ./apps/app",
     "w:db": "pnpm -C ./services/db",

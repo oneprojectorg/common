@@ -26,7 +26,8 @@
     "test:supabase:stop": "tsx src/test/supabase-test.ts stop",
     "test:ui": "vitest --ui",
     "test:watch": "vitest --watch",
-    "typecheck": "tsgo --noEmit"
+    "typecheck": "tsgo --noEmit",
+    "typecheck:ci": "tsc --noEmit"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^1.2.1",

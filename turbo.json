@@ -17,6 +17,9 @@
     "typecheck": {
       "dependsOn": ["^typecheck"]
     },
+    "typecheck:ci": {
+      "dependsOn": ["^typecheck:ci"]
+    },
     "dev": {
       "cache": false,
       "persistent": true

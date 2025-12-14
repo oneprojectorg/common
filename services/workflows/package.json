@@ -9,7 +9,8 @@
   },
   "scripts": {
     "dev": "inngest-cli dev",
-    "typecheck": "tsgo --noEmit"
+    "typecheck": "tsgo --noEmit",
+    "typecheck:ci": "tsc --noEmit"
   },
   "dependencies": {
     "@op/cache": "workspace:*",

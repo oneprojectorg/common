@@ -68,7 +68,8 @@
   "scripts": {
     "build": "storybook build",
     "dev": "storybook dev -p 3600 --no-open",
-    "typecheck": "tsgo --noEmit"
+    "typecheck": "tsgo --noEmit",
+    "typecheck:ci": "tsc --noEmit"
   },
   "dependencies": {
     "@internationalized/date": "^3.8.2",

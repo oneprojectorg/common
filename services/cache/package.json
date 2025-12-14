@@ -5,7 +5,8 @@
   "license": "SEE LICENSE in /LICENSE",
   "type": "module",
   "scripts": {
-    "typecheck": "tsgo --noEmit"
+    "typecheck": "tsgo --noEmit",
+    "typecheck:ci": "tsc --noEmit"
   },
   "dependencies": {
     "@op/core": "workspace:*",
