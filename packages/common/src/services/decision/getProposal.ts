@@ -11,13 +11,13 @@ import {
   processInstances,
   profileRelationships,
   proposals,
-  users,
 } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 import { checkPermission, permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
 import { getOrgAccessUser } from '../access';
+import { assertUser } from '../assert';
 
 export const getProposal = async ({
   profileId,
@@ -43,12 +43,9 @@ export const getProposal = async ({
   }
 
   try {
-    // Get the database user record to access currentProfileId
-    const dbUser = await db.query.users.findFirst({
-      where: eq(users.authUserId, user.id),
-    });
+    const dbUser = await assertUser({ authUserId: user.id });
 
-    if (!dbUser || !dbUser.currentProfileId) {
+    if (!dbUser.currentProfileId) {
       throw new UnauthorizedError('User must have an active profile');
     }
 
@@ -161,11 +158,9 @@ export const getPermissionsOnProposal = async ({
   user: User;
   proposal: Proposal & { processInstance: ProcessInstance };
 }) => {
-  const dbUser = await db.query.users.findFirst({
-    where: eq(users.authUserId, user.id),
-  });
+  const dbUser = await assertUser({ authUserId: user.id });
 
-  if (!dbUser || !dbUser.currentProfileId) {
+  if (!dbUser.currentProfileId) {
     throw new UnauthorizedError('User must have an active profile');
   }
 

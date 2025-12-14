@@ -9,7 +9,6 @@ import {
   proposals,
   taxonomies,
   taxonomyTerms,
-  users,
 } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 import { checkPermission, permission } from 'access-zones';
@@ -21,6 +20,7 @@ import {
   ValidationError,
 } from '../../utils';
 import { getOrgAccessUser } from '../access';
+import { assertUser } from '../assert';
 import { schemaValidator } from './schemaValidator';
 import type { ProposalData } from './types';
 
@@ -96,12 +96,9 @@ export const updateProposal = async ({
   }
 
   try {
-    // Get the database user record to access currentProfileId
-    const dbUser = await db.query.users.findFirst({
-      where: eq(users.authUserId, user.id),
-    });
+    const dbUser = await assertUser({ authUserId: user.id });
 
-    if (!dbUser || !dbUser.currentProfileId) {
+    if (!dbUser.currentProfileId) {
       throw new UnauthorizedError('User must have an active profile');
     }
 

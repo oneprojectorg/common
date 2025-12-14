@@ -1,13 +1,9 @@
 import { db, eq } from '@op/db/client';
-import {
-  decisionProcesses,
-  taxonomies,
-  taxonomyTerms,
-  users,
-} from '@op/db/schema';
+import { decisionProcesses, taxonomies, taxonomyTerms } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
 import { CommonError, UnauthorizedError } from '../../utils';
+import { assertUser } from '../assert';
 import type { ProcessSchema } from './types';
 
 /**
@@ -102,12 +98,9 @@ export const createProcess = async ({
   }
 
   try {
-    // Get the database user record to access currentProfileId
-    const dbUser = await db.query.users.findFirst({
-      where: eq(users.authUserId, user.id),
-    });
+    const dbUser = await assertUser({ authUserId: user.id });
 
-    if (!dbUser || !dbUser.currentProfileId) {
+    if (!dbUser.currentProfileId) {
       throw new UnauthorizedError('User must have an active profile');
     }
 

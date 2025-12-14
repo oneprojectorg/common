@@ -1,9 +1,9 @@
 import { invalidate } from '@op/cache';
 import {
-  NotFoundError,
+  assertOrganization,
+  assertUser,
   joinOrganization as joinOrganizationService,
 } from '@op/common';
-import { db } from '@op/db/client';
 import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
@@ -44,23 +44,10 @@ export const joinOrganization = router({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        // Fetch organization
         const [organization, user] = await Promise.all([
-          db.query.organizations.findFirst({
-            where: (table, { eq }) => eq(table.id, input.organizationId),
-          }),
-          db.query.users.findFirst({
-            where: (table, { eq }) => eq(table.authUserId, ctx.user.id),
-          }),
+          assertOrganization({ id: input.organizationId }),
+          assertUser({ authUserId: ctx.user.id }),
         ]);
-
-        if (!organization) {
-          throw new NotFoundError('Organizaiton', input.organizationId);
-        }
-
-        if (!user) {
-          throw new NotFoundError('User', ctx.user.id);
-        }
 
         const result = await joinOrganizationService({
           user,
