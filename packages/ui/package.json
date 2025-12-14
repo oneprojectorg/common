@@ -68,7 +68,7 @@
   "scripts": {
     "build": "storybook build",
     "dev": "storybook dev -p 3600 --no-open",
-    "format:check": "prettier --check \"**/*.{ts,tsx}\"",
+    "format:check": "prettier --log-level=warn --check \"**/*.{ts,tsx}\"",
     "typecheck": "tsgo --noEmit"
   },
   "dependencies": {

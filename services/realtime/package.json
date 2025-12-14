@@ -12,7 +12,7 @@
   "scripts": {
     "dev": "./start-centrifugo.sh",
     "down": "docker stop centrifugo",
-    "format:check": "prettier --check \"**/*.{ts,tsx}\"",
+    "format:check": "prettier --log-level=warn --check \"**/*.{ts,tsx}\"",
     "test": "vitest",
     "typecheck": "tsgo --noEmit"
   },

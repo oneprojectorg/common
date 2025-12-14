@@ -5,7 +5,7 @@
   "license": "SEE LICENSE in /LICENSE",
   "type": "module",
   "scripts": {
-    "format:check": "prettier --check \"**/*.{ts,tsx}\"",
+    "format:check": "prettier --log-level=warn --check \"**/*.{ts,tsx}\"",
     "typecheck": "tsgo --noEmit"
   },
   "dependencies": {

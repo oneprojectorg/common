@@ -10,7 +10,7 @@
     "./utils": "./src/utils/index.ts"
   },
   "scripts": {
-    "format:check": "prettier --check \"**/*.{ts,tsx}\"",
+    "format:check": "prettier --log-level=warn --check \"**/*.{ts,tsx}\"",
     "typecheck": "tsgo --noEmit"
   },
   "dependencies": {

@@ -11,7 +11,7 @@
   "types": "./src/config.ts",
   "scripts": {
     "disable-build": "tsc",
-    "format:check": "prettier --check \"**/*.{ts,tsx}\"",
+    "format:check": "prettier --log-level=warn --check \"**/*.{ts,tsx}\"",
     "typecheck": "tsgo --noEmit"
   },
   "dependencies": {
