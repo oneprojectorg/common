@@ -7,5 +7,5 @@ export {
   assertProcessInstance,
   assertProcessInstanceWithProcess,
 } from './assertProcessInstance';
-export { assertProfile } from './assertProfile';
+export { assertProfile, assertProfileBySlug } from './assertProfile';
 export { assertUser, assertUserByAuthId } from './assertUser';

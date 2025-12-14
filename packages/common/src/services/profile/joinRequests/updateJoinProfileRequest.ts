@@ -49,9 +49,7 @@ export const updateJoinProfileRequest = async ({
   }
 
   // Fetch the request profile
-  const requestProfile = await assertProfile({
-    id: existingRequest.requestProfileId,
-  });
+  const requestProfile = await assertProfile(existingRequest.requestProfileId);
 
   // If status is unchanged, return the existing record with profiles
   if (existingRequest.status === status) {

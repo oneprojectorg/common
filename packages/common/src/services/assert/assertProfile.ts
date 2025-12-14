@@ -1,29 +1,37 @@
 import { db } from '@op/db/client';
-import { type Profile } from '@op/db/schema';
+import type { Profile } from '@op/db/schema';
 
 import { NotFoundError } from '../../utils';
 
-type AssertProfileParams =
-  | { id: string; slug?: never }
-  | { id?: never; slug: string };
-
 /**
- * Fetches a profile and throws if not found.
+ * Fetches a profile by ID and throws if not found.
  *
  * @throws NotFoundError if profile is not found
- * TODO: split in assertProfile and assertProfileBySlug
  */
-export async function assertProfile(
-  params: AssertProfileParams,
-): Promise<Profile> {
-  const { id, slug } = params;
-
+export async function assertProfile(id: string): Promise<Profile> {
   const profile = await db.query.profiles.findFirst({
-    where: (table, { eq }) => (id ? eq(table.id, id) : eq(table.slug, slug!)),
+    where: (table, { eq }) => eq(table.id, id),
   });
 
   if (!profile) {
-    throw new NotFoundError('Profile', id ?? slug);
+    throw new NotFoundError('Profile', id);
+  }
+
+  return profile;
+}
+
+/**
+ * Fetches a profile by slug and throws if not found.
+ *
+ * @throws NotFoundError if profile is not found
+ */
+export async function assertProfileBySlug(slug: string): Promise<Profile> {
+  const profile = await db.query.profiles.findFirst({
+    where: (table, { eq }) => eq(table.slug, slug),
+  });
+
+  if (!profile) {
+    throw new NotFoundError('Profile', slug);
   }
 
   return profile;

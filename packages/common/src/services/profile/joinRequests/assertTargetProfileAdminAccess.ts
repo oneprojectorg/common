@@ -28,7 +28,7 @@ export const assertTargetProfileAdminAccess = async ({
   targetProfileId: string;
 }): Promise<TargetProfileAdminContext> => {
   const [targetProfile, organization] = await Promise.all([
-    assertProfile({ id: targetProfileId }),
+    assertProfile(targetProfileId),
     db.query.organizations.findFirst({
       where: eq(organizations.profileId, targetProfileId),
     }),

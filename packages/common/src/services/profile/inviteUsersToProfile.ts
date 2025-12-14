@@ -50,7 +50,7 @@ export const inviteUsersToProfile = async (input: {
     profileUser,
   ] = await Promise.all([
     // Get the profile details for the invite
-    assertProfile({ id: requesterProfileId }),
+    assertProfile(requesterProfileId),
     // Get the target role
     db.query.accessRoles.findFirst({
       where: (table, { eq }) => eq(table.id, roleId),
