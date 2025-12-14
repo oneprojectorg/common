@@ -1,4 +1,4 @@
-import { count, db, eq, inArray } from '@op/db/client';
+import { db, eq, inArray, count } from '@op/db/client';
 import {
   ProposalStatus,
   decisionProcessResultSelections,
@@ -9,7 +9,7 @@ import {
 } from '@op/db/schema';
 import type { DecisionProcess } from '@op/db/schema';
 
-import { CommonError, NotFoundError } from '../../utils';
+import { CommonError } from '../../utils';
 import {
   aggregateVoteData,
   defaultSelectionPipeline,
@@ -45,8 +45,14 @@ export async function processResults({
       },
     });
 
-    if (!processInstance || !processInstance.process) {
-      throw new NotFoundError('ProcessInstance', processInstanceId);
+    if (!processInstance) {
+      throw new CommonError(`Process instance not found: ${processInstanceId}`);
+    }
+
+    if (!processInstance.process) {
+      throw new CommonError(
+        `Process not found for instance: ${processInstanceId}`,
+      );
     }
 
     // Get all proposals for this process instance

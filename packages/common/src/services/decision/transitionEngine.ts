@@ -70,7 +70,7 @@ export class TransitionEngine {
         throw new NotFoundError('ProcessInstance', instanceId);
       }
 
-      const process = instance.process;
+      const process = instance.process as any;
       const processSchema = process.processSchema as ProcessSchema;
       const instanceData = instance.instanceData as InstanceData;
       console.log(
@@ -184,7 +184,7 @@ export class TransitionEngine {
         throw new NotFoundError('ProcessInstance', data.instanceId);
       }
 
-      const process = instanceForUpdate.process;
+      const process = instanceForUpdate.process as any;
       const processSchema = process.processSchema as ProcessSchema;
       const instanceData = instanceForUpdate.instanceData as InstanceData;
       const currentStateId =
