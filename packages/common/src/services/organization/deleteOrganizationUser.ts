@@ -6,7 +6,6 @@ import { assertAccess, permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
 import { getOrgAccessUser } from '../access';
-import { assertOrganizationUser } from '../assert';
 
 export interface DeleteOrganizationUserParams {
   organizationUserId: string;
@@ -33,10 +32,17 @@ export async function deleteOrganizationUser({
   assertAccess({ admin: permission.UPDATE }, orgUser?.roles || []);
 
   // Check if the organization user to delete exists
-  const targetOrgUser = await assertOrganizationUser({
-    id: organizationUserId,
-    organizationId,
+  const targetOrgUser = await db.query.organizationUsers.findFirst({
+    where: (table, { eq, and }) =>
+      and(
+        eq(table.id, organizationUserId),
+        eq(table.organizationId, organizationId),
+      ),
   });
+
+  if (!targetOrgUser) {
+    throw new NotFoundError('OrganizationUser', organizationUserId);
+  }
 
   // Prevent users from deleting themselves
   if (targetOrgUser.authUserId === user.id) {

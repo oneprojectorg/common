@@ -4,12 +4,12 @@ import {
   decisionProcessResultSelections,
   decisionProcessResults,
   decisionsVoteSubmissions,
+  processInstances,
   proposals,
 } from '@op/db/schema';
 import type { DecisionProcess } from '@op/db/schema';
 
-import { CommonError } from '../../utils';
-import { assertProcessInstanceWithProcess } from '../assert';
+import { CommonError, NotFoundError } from '../../utils';
 import {
   aggregateVoteData,
   defaultSelectionPipeline,
@@ -38,9 +38,16 @@ export async function processResults({
 }: ProcessResultsInput): Promise<ProcessResultsOutput> {
   try {
     // Get the process instance
-    const processInstance = await assertProcessInstanceWithProcess({
-      id: processInstanceId,
+    const processInstance = await db.query.processInstances.findFirst({
+      where: eq(processInstances.id, processInstanceId),
+      with: {
+        process: true,
+      },
     });
+
+    if (!processInstance || !processInstance.process) {
+      throw new NotFoundError('ProcessInstance', processInstanceId);
+    }
 
     // Get all proposals for this process instance
     const processProposals = await db.query.proposals.findMany({

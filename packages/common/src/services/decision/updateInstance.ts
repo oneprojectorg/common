@@ -11,7 +11,6 @@ import { z } from 'zod';
 
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { getCurrentProfileId } from '../access';
-import { assertProcessInstance } from '../assert';
 import type { InstanceData } from './types';
 import { updateTransitionsForProcess } from './updateTransitionsForProcess';
 
@@ -132,10 +131,17 @@ export const updateInstance = async ({
     }
 
     // Verify the instance exists and user has permission (owner check)
-    const existingInstance = await assertProcessInstance({
-      id: data.instanceId,
-      ownerProfileId: currentProfileId,
+    const existingInstance = await db.query.processInstances.findFirst({
+      where: (table, { eq, and }) =>
+        and(
+          eq(table.id, data.instanceId),
+          eq(table.ownerProfileId, currentProfileId),
+        ),
     });
+
+    if (!existingInstance) {
+      throw new NotFoundError('ProcessInstance', data.instanceId);
+    }
 
     const updateData = updateDataSchema.parse(data);
 

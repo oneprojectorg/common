@@ -13,10 +13,7 @@ import {
   UnauthorizedError,
   ValidationError,
 } from '../../utils';
-import {
-  assertProcessInstanceWithProcess,
-  assertUserByAuthId,
-} from '../assert';
+import { assertUserByAuthId } from '../assert';
 import type {
   InstanceData,
   ProcessSchema,
@@ -62,9 +59,16 @@ export class TransitionEngine {
 
     try {
       // Get the process instance with related data
-      const instance = await assertProcessInstanceWithProcess({
-        id: instanceId,
+      const instance = await db.query.processInstances.findFirst({
+        where: eq(processInstances.id, instanceId),
+        with: {
+          process: true,
+        },
       });
+
+      if (!instance || !instance.process) {
+        throw new NotFoundError('ProcessInstance', instanceId);
+      }
 
       const process = instance.process;
       const processSchema = process.processSchema as ProcessSchema;
@@ -169,15 +173,22 @@ export class TransitionEngine {
       }
 
       // Get the instance again for updating
-      const instance = await assertProcessInstanceWithProcess({
-        id: data.instanceId,
+      const instanceForUpdate = await db.query.processInstances.findFirst({
+        where: eq(processInstances.id, data.instanceId),
+        with: {
+          process: true,
+        },
       });
 
-      const process = instance.process;
+      if (!instanceForUpdate || !instanceForUpdate.process) {
+        throw new NotFoundError('ProcessInstance', data.instanceId);
+      }
+
+      const process = instanceForUpdate.process;
       const processSchema = process.processSchema as ProcessSchema;
-      const instanceData = instance.instanceData as InstanceData;
+      const instanceData = instanceForUpdate.instanceData as InstanceData;
       const currentStateId =
-        instanceData.currentStateId || instance.currentStateId || '';
+        instanceData.currentStateId || instanceForUpdate.currentStateId || '';
 
       // Find the transition definition
       const transition = processSchema.transitions.find(

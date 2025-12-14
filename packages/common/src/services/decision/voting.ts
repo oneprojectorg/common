@@ -4,18 +4,21 @@ import {
   type VoteData,
   decisionsVoteProposals,
   decisionsVoteSubmissions,
+  processInstances,
   proposals,
 } from '@op/db/schema';
 import { assertAccess, permission } from 'access-zones';
 
 import { processDecisionProcessSchema } from '../../lib/schema-registry';
 import { validateVoteSelection } from '../../lib/schema-validators';
-import { CommonError, UnauthorizedError, ValidationError } from '../../utils';
-import { getIndividualProfileId, getOrgAccessUser } from '../access';
 import {
-  assertOrganizationByProfileId,
-  assertProcessInstanceWithProcess,
-} from '../assert';
+  CommonError,
+  NotFoundError,
+  UnauthorizedError,
+  ValidationError,
+} from '../../utils';
+import { getIndividualProfileId, getOrgAccessUser } from '../access';
+import { assertOrganizationByProfileId } from '../assert';
 
 export type CustomData = Record<string, unknown>;
 
@@ -107,9 +110,16 @@ export const submitVote = async ({
     const profileId = await getIndividualProfileId(authUserId);
 
     // Get process instance and schema
-    const processInstance = await assertProcessInstanceWithProcess({
-      id: data.processInstanceId,
+    const processInstance = await db.query.processInstances.findFirst({
+      where: eq(processInstances.id, data.processInstanceId),
+      with: {
+        process: true,
+      },
     });
+
+    if (!processInstance || !processInstance.process) {
+      throw new NotFoundError('ProcessInstance', data.processInstanceId);
+    }
 
     // Get organization from owner profile
     const org = await assertOrganizationByProfileId(
@@ -298,9 +308,16 @@ export const getVotingStatus = async ({
     const profileId = await getIndividualProfileId(authUserId);
 
     // Get process instance and schema
-    const processInstance = await assertProcessInstanceWithProcess({
-      id: data.processInstanceId,
+    const processInstance = await db.query.processInstances.findFirst({
+      where: eq(processInstances.id, data.processInstanceId),
+      with: {
+        process: true,
+      },
     });
+
+    if (!processInstance || !processInstance.process) {
+      throw new NotFoundError('ProcessInstance', data.processInstanceId);
+    }
 
     // Get organization from owner profile
     const org = await assertOrganizationByProfileId(
@@ -423,9 +440,16 @@ export const validateVoteSelectionService = async ({
 
   try {
     // Get process instance and schema
-    const processInstance = await assertProcessInstanceWithProcess({
-      id: data.processInstanceId,
+    const processInstance = await db.query.processInstances.findFirst({
+      where: eq(processInstances.id, data.processInstanceId),
+      with: {
+        process: true,
+      },
     });
+
+    if (!processInstance || !processInstance.process) {
+      throw new NotFoundError('ProcessInstance', data.processInstanceId);
+    }
 
     // Get organization from owner profile
     const org = await assertOrganizationByProfileId(

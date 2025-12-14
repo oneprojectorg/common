@@ -1,6 +1,7 @@
 import { db, eq } from '@op/db/client';
 import {
   EntityType,
+  processInstances,
   profiles,
   proposalAttachments,
   proposalCategories,
@@ -16,10 +17,7 @@ import {
   ValidationError,
 } from '../../utils';
 import { getCurrentProfileId, getOrgAccessUser } from '../access';
-import {
-  assertOrganizationByProfileId,
-  assertProcessInstanceWithProcess,
-} from '../assert';
+import { assertOrganizationByProfileId } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
 import { processProposalContent } from './proposalContentProcessor';
 import { schemaValidator } from './schemaValidator';
@@ -45,9 +43,16 @@ export const createProposal = async ({
 
   try {
     // Verify the process instance exists and get the process schema
-    const instance = await assertProcessInstanceWithProcess({
-      id: data.processInstanceId,
+    const instance = await db.query.processInstances.findFirst({
+      where: eq(processInstances.id, data.processInstanceId),
+      with: {
+        process: true,
+      },
     });
+
+    if (!instance || !instance.process) {
+      throw new NotFoundError('ProcessInstance', data.processInstanceId);
+    }
 
     const org = await assertOrganizationByProfileId(instance.ownerProfileId);
     const organizationId = org.id;
