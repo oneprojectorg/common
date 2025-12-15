@@ -9,10 +9,8 @@ import {
   getQueryKey as getQueryKeyTRPC,
 } from '@trpc/react-query';
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
-import React, { createContext, useState } from 'react';
+import { type ReactNode, createContext, useState } from 'react';
 
-// Should be update import when the TRPCProvider moves where we can import properly
-import { QueryInvalidationSubscriber } from '../../../apps/app/src/utils/QueryInvalidationSubscriber';
 import { createLinks } from './links';
 import type { AppRouter } from './routers';
 
@@ -60,7 +58,7 @@ export function TRPCProvider({
   children,
   ssrCookies,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   ssrCookies?: string;
 }) {
   const [trpcClient] = useState(() =>
@@ -95,7 +93,6 @@ export function TRPCProvider({
             },
           }}
         >
-          <QueryInvalidationSubscriber />
           {children}
         </PersistQueryClientProvider>
       </trpc.Provider>
