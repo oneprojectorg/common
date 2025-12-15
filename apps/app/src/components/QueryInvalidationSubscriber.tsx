@@ -1,3 +1,5 @@
+'use client';
+
 import { ChannelName, queryChannelRegistry } from '@op/common/realtime';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
