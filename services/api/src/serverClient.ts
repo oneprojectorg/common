@@ -4,12 +4,12 @@ import {
   loggerLink,
   unstable_httpBatchStreamLink,
 } from '@trpc/client';
-import { cookies, headers } from 'next/headers';
 import { customAlphabet } from 'nanoid';
+import { cookies, headers } from 'next/headers';
 import { cache } from 'react';
 import superjson from 'superjson';
 
-import { appRouter, type AppRouter } from './routers';
+import { type AppRouter, appRouter } from './routers';
 import { createCallerFactory } from './trpcFactory';
 import type { TContext } from './types';
 
@@ -96,6 +96,9 @@ const createServerContext = cache(async (): Promise<TContext> => {
         'Cannot set cookies in server-side caller context. Use a route handler with fetchRequestHandler instead.',
       );
     },
+    // Server-side calls don't need channel propagation via headers
+    setChannels: () => {},
+    getChannels: () => [],
     requestId,
     time: Date.now(),
     ip: headersList.get('x-forwarded-for') || null,

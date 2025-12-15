@@ -8,6 +8,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./validation": "./src/utils/validation.ts",
+    "./realtime": "./src/realtime/index.ts",
     "./src/services/access": "./src/services/access/index.ts",
     "./src/*": "./src/*"
   },

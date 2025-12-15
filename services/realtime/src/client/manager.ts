@@ -1,3 +1,4 @@
+import { type ChannelName } from '@op/common/realtime';
 import {
   Centrifuge,
   type ErrorContext,
@@ -5,7 +6,6 @@ import {
   type Subscription,
 } from 'centrifuge';
 
-import { type ChannelName } from '../channels';
 import { type RealtimeMessage, realtimeMessageSchema } from '../schemas';
 
 export interface RealtimeConfig {

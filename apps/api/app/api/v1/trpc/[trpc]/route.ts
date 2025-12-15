@@ -1,9 +1,16 @@
-import { appRouter, createContext } from '@op/api';
+import {
+  MUTATION_CHANNELS_HEADER,
+  SUBSCRIPTION_CHANNELS_HEADER,
+  appRouter,
+  createContext,
+} from '@op/api';
 import { API_TRPC_PTH } from '@op/core';
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import type { NextRequest } from 'next/server';
 
 export const maxDuration = 120;
+
+const EXPOSED_HEADERS = 'x-mutation-channels, x-subscription-channels';
 
 const allowedOrigins = [
   'https://api-dev.oneproject.tech',
@@ -23,6 +30,30 @@ const handler = async (req: NextRequest) => {
     onError({ error, path }) {
       console.error(`tRPC Error on ${path}:`, error);
     },
+    responseMeta({ ctx }) {
+      if (!ctx) {
+        return {};
+      }
+
+      const headers: Record<string, string> = {};
+      const mutationChannels = ctx.getChannels('mutation');
+      const subscriptionChannels = ctx.getChannels('subscription');
+
+      if (subscriptionChannels.length > 0) {
+        headers[SUBSCRIPTION_CHANNELS_HEADER] = subscriptionChannels.join(',');
+      }
+      if (mutationChannels.length > 0) {
+        headers[MUTATION_CHANNELS_HEADER] = mutationChannels.join(',');
+      }
+
+      if (Object.keys(headers).length > 0) {
+        return {
+          headers: new Headers(Object.entries(headers)),
+        };
+      }
+
+      return {};
+    },
   });
 
   const origin = req.headers.get('origin');
@@ -38,6 +69,7 @@ const handler = async (req: NextRequest) => {
     'Content-Type, Authorization, trpc-batch-mode',
   );
   response.headers.set('Access-Control-Allow-Credentials', 'true');
+  response.headers.set('Access-Control-Expose-Headers', EXPOSED_HEADERS);
 
   return response;
 };
@@ -50,6 +82,7 @@ const optionsHandler = async (req: NextRequest) => {
     'Access-Control-Allow-Headers':
       'Content-Type, Authorization, trpc-batch-mode',
     'Access-Control-Allow-Credentials': 'true',
+    'Access-Control-Expose-Headers': EXPOSED_HEADERS,
   };
 
   if (origin && allowedOrigins.includes(origin)) {

@@ -1,4 +1,5 @@
-import type { ChannelName } from '../channels';
+import type { ChannelName } from '@op/common/realtime';
+
 import type { RealtimeMessage } from '../schemas';
 import { RealtimeClient } from './client';
 

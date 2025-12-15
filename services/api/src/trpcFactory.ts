@@ -1,3 +1,4 @@
+import type { ChannelName } from '@op/common/realtime';
 import { initTRPC } from '@trpc/server';
 import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
 import { customAlphabet } from 'nanoid';
@@ -17,6 +18,8 @@ export const createContext = async ({
   req,
   resHeaders,
 }: FetchCreateContextFnOptions): Promise<TContext> => {
+  const mutationChannels = new Set<ChannelName>();
+  const subscriptionChannels = new Set<ChannelName>();
   const nanoid = customAlphabet('0123456789abcdefghijklmnopqrstuvwxyz', 24);
 
   // seperate in 4-8-8-4 xxxx-xxxxxxxx-xxxxxxxx-xxxx
@@ -29,22 +32,20 @@ export const createContext = async ({
 
   resHeaders.set('x-request-id', requestId);
 
-  const getCookies: TContext['getCookies'] = () => {
-    return _getCookies(req);
-  };
-
-  const getCookie: TContext['getCookie'] = (name) => {
-    return _getCookie(req, name);
-  };
-
-  const setCookie: TContext['setCookie'] = ({ name, value, options }) => {
-    return _setCookie({ resHeaders, name, value, options });
-  };
-
   return {
-    getCookies,
-    getCookie,
-    setCookie,
+    getCookies: () => _getCookies(req),
+    getCookie: (name) => _getCookie(req, name),
+    setCookie: ({ name, value, options }) =>
+      _setCookie({ resHeaders, name, value, options }),
+    setChannels: (type, channels) => {
+      const target =
+        type === 'mutation' ? mutationChannels : subscriptionChannels;
+      for (const channel of channels) {
+        target.add(channel);
+      }
+    },
+    getChannels: (type) =>
+      Array.from(type === 'mutation' ? mutationChannels : subscriptionChannels),
     requestId,
     time: Date.now(),
     ip: req.headers.get('X-Forwarded-For') || null,

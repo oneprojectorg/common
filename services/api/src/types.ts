@@ -1,4 +1,5 @@
 /* eslint-disable ts/no-empty-object-type */
+import type { ChannelName } from '@op/common/realtime';
 import type { db } from '@op/db/client';
 import type { tables } from '@op/db/tables';
 import type { User } from '@op/supabase/lib';
@@ -14,6 +15,13 @@ export interface TContext {
     value: string;
     options?: SerializeOptions;
   }) => void;
+  /** Sets channels for realtime operations. */
+  setChannels: (
+    type: 'mutation' | 'subscription',
+    channels: ChannelName[],
+  ) => void;
+  /** Gets all accumulated channels across batched procedures. */
+  getChannels: (type: 'mutation' | 'subscription') => ChannelName[];
   requestId: string;
   time: number;
   ip: string | null;
