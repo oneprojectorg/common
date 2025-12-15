@@ -4,9 +4,9 @@ import type { MiddlewareBuilderBase } from '../types';
 
 /**
  * Middleware that sets mutation channels for realtime subscriptions.
+ * Intended for use with mutation procedures only.
  *
  * @param channels - Array of channel names to set for this mutation
- * TODO: can I limit this to only mutation contexts?
  */
 const withMutationChannels = (channels: ChannelName[]) => {
   const withMutationChannelsInner: MiddlewareBuilderBase = async ({
