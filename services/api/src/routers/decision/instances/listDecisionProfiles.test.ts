@@ -1,6 +1,4 @@
 import { ProcessStatus } from '@op/db/schema';
-import { appRouter } from 'src/routers';
-import { createCallerFactory } from 'src/trpcFactory';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -44,7 +42,7 @@ describe('List Decision Profiles Integration Tests', () => {
       expect(result.hasMore).toBe(false);
 
       // Verify profiles have process instance data
-      result.items.forEach((profile) => {
+      for (const profile of result.items) {
         expect(profile.type).toBe('decision');
         expect(profile.processInstance).toBeDefined();
         expect(profile.processInstance.status).toBe('draft');
@@ -53,7 +51,7 @@ describe('List Decision Profiles Integration Tests', () => {
         expect(profile.processInstance.instanceData).toMatchObject({
           hideBudget: false,
         });
-      });
+      }
     });
 
     it('should filter by status', async ({ task, onTestFinished }) => {
@@ -70,7 +68,7 @@ describe('List Decision Profiles Integration Tests', () => {
         user: setup.user,
         name: 'Published Process',
         budget: 100000,
-        status: 'published',
+        status: ProcessStatus.PUBLISHED,
       });
 
       await testData.grantProfileAccess(
@@ -128,11 +126,11 @@ describe('List Decision Profiles Integration Tests', () => {
       });
 
       expect(result.items).toHaveLength(2);
-      result.items.forEach((item) => {
+      for (const item of result.items) {
         expect(item.processInstance.owner?.id).toBe(
           setup.organization.profileId,
         );
-      });
+      }
 
       // Also verify filtering by Org B works
       const otherResult = await caller.decision.listDecisionProfiles({
@@ -141,11 +139,11 @@ describe('List Decision Profiles Integration Tests', () => {
       });
 
       expect(otherResult.items).toHaveLength(3);
-      otherResult.items.forEach((item) => {
+      for (const item of otherResult.items) {
         expect(item.processInstance.owner?.id).toBe(
           otherSetup.organization.profileId,
         );
-      });
+      }
     });
 
     it('should filter by both owner and status', async ({
@@ -166,7 +164,7 @@ describe('List Decision Profiles Integration Tests', () => {
         user: setup.user,
         name: 'Published Process A',
         budget: 100000,
-        status: 'published',
+        status: ProcessStatus.PUBLISHED,
       });
 
       await testData.grantProfileAccess(
@@ -187,7 +185,7 @@ describe('List Decision Profiles Integration Tests', () => {
         user: otherSetup.user,
         name: 'Published Process B',
         budget: 100000,
-        status: 'published',
+        status: ProcessStatus.PUBLISHED,
       });
 
       // Grant access to User A (from first setup)
@@ -202,7 +200,7 @@ describe('List Decision Profiles Integration Tests', () => {
       const result = await caller.decision.listDecisionProfiles({
         limit: 10,
         ownerProfileId: setup.organization.profileId,
-        status: 'published',
+        status: ProcessStatus.PUBLISHED,
       });
 
       expect(result.items).toHaveLength(1);
