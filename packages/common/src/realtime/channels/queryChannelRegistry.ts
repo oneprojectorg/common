@@ -3,7 +3,7 @@ import mitt from 'mitt';
 import type { ChannelName } from './channels';
 
 type SubscriptionAddedEvent = {
-  queryKey: unknown[];
+  queryKey: unknown;
   channels: ChannelName[];
 };
 
@@ -32,9 +32,9 @@ class QueryChannelRegistry {
   /**
    * Get all query keys registered to a set of channels.
    */
-  getQueryKeysForChannels(channels: ChannelName[]): unknown[][] {
+  getQueryKeysForChannels(channels: ChannelName[]): unknown[] {
     const seen = new Set<string>();
-    const result: unknown[][] = [];
+    const result: unknown[] = [];
 
     for (const channel of channels) {
       const keys = this.channelToQueryKeys.get(channel);
@@ -42,7 +42,7 @@ class QueryChannelRegistry {
         for (const key of keys) {
           if (!seen.has(key)) {
             seen.add(key);
-            result.push(JSON.parse(key) as unknown[]);
+            result.push(JSON.parse(key));
           }
         }
       }
@@ -54,7 +54,7 @@ class QueryChannelRegistry {
    * Register a query's subscription to channels.
    * Emits 'subscription:added' event.
    */
-  registerSubscription(queryKey: unknown[], channels: ChannelName[]): void {
+  registerSubscription(queryKey: unknown, channels: ChannelName[]): void {
     const key = JSON.stringify(queryKey);
     for (const channel of channels) {
       let keys = this.channelToQueryKeys.get(channel);

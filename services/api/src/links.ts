@@ -1,4 +1,4 @@
-import { ChannelName, queryChannelRegistry } from '@op/common/realtime';
+import { type ChannelName, queryChannelRegistry } from '@op/common/realtime';
 import { OPURLConfig } from '@op/core';
 import { logger } from '@op/logging';
 import type { TRPCLink } from '@trpc/client';
@@ -12,6 +12,12 @@ import {
   SUBSCRIPTION_CHANNELS_HEADER,
 } from './constants';
 import type { AppRouter } from './routers';
+
+/** @see https://trpc.io/docs/v11/getQueryKey */
+type TRPCQueryKey = [
+  readonly string[],
+  { input?: unknown; type?: 'query' | 'infinite' }?,
+];
 
 const SSR_SECRETS_KEY_VAR = 'SSR_SECRETS_KEY';
 const isServer = typeof window === 'undefined';
@@ -91,10 +97,9 @@ function createChannelRegistrationLink(): TRPCLink<AppRouter> {
   return () => {
     return ({ next, op }) => {
       return observable((observer) => {
-        // Build the query key from the operation path and input
-        // tRPC query keys are [path, { input, type }] for queries
-        // and [path] for mutations
-        const queryKey =
+        // Build query key manually - getQueryKey() requires typed procedures, not raw op data
+        // @see https://trpc.io/docs/v11/getQueryKey
+        const queryKey: TRPCQueryKey =
           op.type === 'query'
             ? [op.path.split('.'), { input: op.input, type: op.type }]
             : [op.path.split('.')];
