@@ -32,10 +32,8 @@ export function QueryInvalidationSubscriber() {
  *
  * Listens to the queryChannelRegistry for mutation:added events, resolves
  * the affected query keys, and invalidates them.
- *
- * Should be used once at the root level of your app.
  */
-export function useInvalidateQueries(): void {
+function useInvalidateQueries(): void {
   const queryClient = useRequiredQueryClient();
 
   useEffect(() => {
