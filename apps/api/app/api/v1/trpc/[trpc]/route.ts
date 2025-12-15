@@ -19,9 +19,6 @@ const allowedOrigins = [
   'https://app.oneproject.tech',
   'https://common.oneproject.org',
   'https://api-common.oneproject.org',
-  // Local development
-  'http://localhost:3100',
-  'http://localhost:3300',
 ];
 
 const handler = async (req: NextRequest) => {

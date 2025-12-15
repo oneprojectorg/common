@@ -1,12 +1,7 @@
 import { OPURLConfig } from '@op/core';
 import { logger } from '@op/logging';
-import {
-  httpLink,
-  loggerLink,
-  splitLink,
-  unstable_httpBatchStreamLink,
-} from '@trpc/client';
 import type { TRPCLink } from '@trpc/client';
+import { httpBatchLink, httpLink, loggerLink, splitLink } from '@trpc/client';
 import { readSSROnlySecret } from 'ssr-only-secrets';
 import superjson from 'superjson';
 
@@ -92,10 +87,10 @@ export function createLinks(encryptedCookies?: string): TRPCLink<AppRouter>[] {
   return [
     ...(!envURL.IS_PRODUCTION
       ? [
-        loggerLink({
-          colorMode: 'none',
-        }),
-      ]
+          loggerLink({
+            colorMode: 'none',
+          }),
+        ]
       : []),
     splitLink({
       condition(op) {
@@ -108,11 +103,7 @@ export function createLinks(encryptedCookies?: string): TRPCLink<AppRouter>[] {
         transformer: superjson,
         fetch: fetchFn,
       }),
-      false: unstable_httpBatchStreamLink({
-        /**
-         * If you want to use SSR, you need to use the server's full URL
-         * @link https://trpc.io/docs/ssr
-         */
+      false: httpBatchLink({
         url: envURL.TRPC_URL,
         transformer: superjson,
         maxItems: 4,
