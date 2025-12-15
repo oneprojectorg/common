@@ -45,7 +45,7 @@ export async function updateOrganizationUser({
   assertAccess({ admin: permission.UPDATE }, orgUser?.roles || []);
 
   // Check if the organization user to update exists
-  const existingOrgUser = await db.query.organizationUsers.findFirst({
+  const targetOrgUser = await db.query.organizationUsers.findFirst({
     where: (table, { eq, and }) =>
       and(
         eq(table.id, organizationUserId),
@@ -53,8 +53,8 @@ export async function updateOrganizationUser({
       ),
   });
 
-  if (!existingOrgUser) {
-    throw new NotFoundError('OrganizationUser', organizationUserId);
+  if (!targetOrgUser) {
+    throw new NotFoundError('Organization user not found');
   }
 
   // Update the organization user basic info

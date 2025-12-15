@@ -6,7 +6,7 @@ import {
 } from '@op/db/schema';
 import pMap from 'p-map';
 
-import { CommonError, NotFoundError } from '../../utils';
+import { CommonError } from '../../utils';
 // import { processResults } from './processResults';
 import type { ProcessSchema, StateDefinition } from './types';
 
@@ -122,7 +122,9 @@ async function processTransition(transitionId: string): Promise<void> {
   });
 
   if (!processInstance) {
-    throw new NotFoundError('ProcessInstance', transition.processInstanceId);
+    throw new CommonError(
+      `Process instance not found: ${transition.processInstanceId}`,
+    );
   }
 
   // Get the process schema to check the state type
