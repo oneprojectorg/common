@@ -41,7 +41,10 @@ export const switchOrganization = router({
         });
         return userEncoder.parse(result);
       } catch (error) {
-        logger.error('Error switching organization', { error, organizationId: input.organizationId });
+        logger.error('Error switching organization', {
+          error,
+          organizationId: input.organizationId,
+        });
 
         if (error instanceof Error) {
           if (error.message === 'Organization not found') {

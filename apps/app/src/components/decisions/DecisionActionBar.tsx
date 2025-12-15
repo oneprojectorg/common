@@ -4,13 +4,13 @@ import { Button } from '@op/ui/Button';
 import { Dialog, DialogTrigger } from '@op/ui/Dialog';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Modal, ModalBody, ModalHeader } from '@op/ui/Modal';
+import { RichTextViewer } from '@op/ui/RichTextEditor';
 import he from 'he';
 import { useParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n/routing';
 
-import { RichTextViewer } from '@op/ui/RichTextEditor';
 import { getViewerExtensions } from '../RichTextEditor/editorConfig';
 
 export const DecisionActionBar = ({

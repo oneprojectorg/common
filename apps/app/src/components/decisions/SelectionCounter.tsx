@@ -6,7 +6,11 @@ interface SelectionCounterProps {
   className?: string;
 }
 
-export function SelectionCounter({ selectedCount, maxVotes, className = '' }: SelectionCounterProps) {
+export function SelectionCounter({
+  selectedCount,
+  maxVotes,
+  className = '',
+}: SelectionCounterProps) {
   const isAtLimit = selectedCount === maxVotes;
   const hasSelection = selectedCount > 0;
 
@@ -27,10 +31,11 @@ export function SelectionCounter({ selectedCount, maxVotes, className = '' }: Se
                 : 'text-neutral-charcoal'
           }`}
         >
-          {selectedCount} of {maxVotes} proposal{maxVotes === 1 ? '' : 's'} selected
+          {selectedCount} of {maxVotes} proposal{maxVotes === 1 ? '' : 's'}{' '}
+          selected
         </span>
         {isAtLimit && (
-          <span className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded">
+          <span className="rounded bg-amber-50 px-2 py-1 text-xs text-amber-600">
             Limit reached
           </span>
         )}

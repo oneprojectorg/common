@@ -1,22 +1,28 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { mockDb } from '../../../test/setup';
 import {
-  createProcess,
-  updateProcess,
-  getProcess,
-  listProcesses,
-  createInstance,
-  createProposal,
-  updateProposal,
-  deleteProposal,
-  getProposal,
-  listProposals,
+  CommonError,
+  NotFoundError,
+  UnauthorizedError,
+  ValidationError,
+} from '../../../utils';
+import {
   TransitionEngine,
   checkTransitions,
+  createInstance,
+  createProcess,
+  createProposal,
+  deleteProposal,
   executeTransition,
+  getProcess,
+  getProposal,
+  listProcesses,
+  listProposals,
+  updateProcess,
+  updateProposal,
 } from '../index';
-import { mockDb } from '../../../test/setup';
-import { UnauthorizedError, NotFoundError, ValidationError, CommonError } from '../../../utils';
-import type { ProcessSchema, InstanceData, ProposalData } from '../types';
+import type { InstanceData, ProcessSchema, ProposalData } from '../types';
 
 // Mock users
 const mockUser = {
@@ -102,7 +108,10 @@ const complexProcessSchema: ProcessSchema = {
   fields: {
     type: 'object',
     properties: {
-      department: { type: 'string', enum: ['engineering', 'marketing', 'sales'] },
+      department: {
+        type: 'string',
+        enum: ['engineering', 'marketing', 'sales'],
+      },
       priority: { type: 'string', enum: ['low', 'medium', 'high'] },
     },
   },
@@ -199,7 +208,10 @@ const complexProcessSchema: ProcessSchema = {
   decisionDefinition: {
     type: 'object',
     properties: {
-      decision: { type: 'string', enum: ['approve', 'reject', 'request_changes'] },
+      decision: {
+        type: 'string',
+        enum: ['approve', 'reject', 'request_changes'],
+      },
       comments: { type: 'string', minLength: 10 },
     },
     required: ['decision', 'comments'],
@@ -300,7 +312,9 @@ describe('Decision API Integration Tests', () => {
         };
 
         mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-        mockDb.query.decisionProcesses.findFirst.mockResolvedValueOnce(mockExistingProcess as any);
+        mockDb.query.decisionProcesses.findFirst.mockResolvedValueOnce(
+          mockExistingProcess as any,
+        );
         mockDb.update.mockReturnValueOnce({
           set: vi.fn().mockReturnValueOnce({
             where: vi.fn().mockReturnValueOnce({
@@ -329,7 +343,9 @@ describe('Decision API Integration Tests', () => {
         };
 
         mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-        mockDb.query.decisionProcesses.findFirst.mockResolvedValueOnce(mockExistingProcess as any);
+        mockDb.query.decisionProcesses.findFirst.mockResolvedValueOnce(
+          mockExistingProcess as any,
+        );
 
         await expect(
           updateProcess({
@@ -338,7 +354,7 @@ describe('Decision API Integration Tests', () => {
               name: 'Unauthorized Update',
             },
             user: mockUser,
-          })
+          }),
         ).rejects.toThrow(UnauthorizedError);
       });
     });
@@ -350,7 +366,9 @@ describe('Decision API Integration Tests', () => {
           { id: 'process-2', name: 'Process 2' },
         ];
 
-        mockDb.query.decisionProcesses.findMany.mockResolvedValueOnce(mockProcesses);
+        mockDb.query.decisionProcesses.findMany.mockResolvedValueOnce(
+          mockProcesses,
+        );
         mockDb.select.mockReturnValueOnce({
           from: vi.fn().mockReturnValueOnce({
             where: vi.fn().mockResolvedValueOnce([{ count: 2 }]),
@@ -369,10 +387,16 @@ describe('Decision API Integration Tests', () => {
 
       it('should filter processes by owner', async () => {
         const mockOwnedProcesses = [
-          { id: 'process-1', name: 'My Process', createdByProfileId: 'profile-id-123' },
+          {
+            id: 'process-1',
+            name: 'My Process',
+            createdByProfileId: 'profile-id-123',
+          },
         ];
 
-        mockDb.query.decisionProcesses.findMany.mockResolvedValueOnce(mockOwnedProcesses);
+        mockDb.query.decisionProcesses.findMany.mockResolvedValueOnce(
+          mockOwnedProcesses,
+        );
         mockDb.select.mockReturnValueOnce({
           from: vi.fn().mockReturnValueOnce({
             where: vi.fn().mockResolvedValueOnce([{ count: 1 }]),
@@ -414,7 +438,9 @@ describe('Decision API Integration Tests', () => {
         };
 
         mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-        mockDb.query.decisionProcesses.findFirst.mockResolvedValueOnce(mockProcess as any);
+        mockDb.query.decisionProcesses.findFirst.mockResolvedValueOnce(
+          mockProcess as any,
+        );
         mockDb.insert.mockReturnValueOnce({
           values: vi.fn().mockReturnValueOnce({
             returning: vi.fn().mockResolvedValueOnce([mockCreatedInstance]),
@@ -463,7 +489,9 @@ describe('Decision API Integration Tests', () => {
         };
 
         mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-        mockDb.query.decisionProcesses.findFirst.mockResolvedValueOnce(mockProcess as any);
+        mockDb.query.decisionProcesses.findFirst.mockResolvedValueOnce(
+          mockProcess as any,
+        );
         mockDb.insert.mockReturnValueOnce({
           values: vi.fn().mockReturnValueOnce({
             returning: vi.fn().mockResolvedValueOnce([mockCreatedInstance]),
@@ -510,7 +538,9 @@ describe('Decision API Integration Tests', () => {
         };
 
         mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-        mockDb.query.processInstances.findFirst.mockResolvedValueOnce(mockInstance as any);
+        mockDb.query.processInstances.findFirst.mockResolvedValueOnce(
+          mockInstance as any,
+        );
         mockDb.insert.mockReturnValueOnce({
           values: vi.fn().mockReturnValueOnce({
             returning: vi.fn().mockResolvedValueOnce([mockCreatedProposal]),
@@ -540,7 +570,9 @@ describe('Decision API Integration Tests', () => {
         };
 
         mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-        mockDb.query.processInstances.findFirst.mockResolvedValueOnce(mockInstance as any);
+        mockDb.query.processInstances.findFirst.mockResolvedValueOnce(
+          mockInstance as any,
+        );
 
         await expect(
           createProposal({
@@ -549,7 +581,7 @@ describe('Decision API Integration Tests', () => {
               proposalData: { title: 'Late Proposal', amount: 1000 },
             },
             user: mockUser,
-          })
+          }),
         ).rejects.toThrow(ValidationError);
       });
     });
@@ -570,7 +602,9 @@ describe('Decision API Integration Tests', () => {
         };
 
         mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-        mockDb.query.proposals.findFirst.mockResolvedValueOnce(mockProposal as any);
+        mockDb.query.proposals.findFirst.mockResolvedValueOnce(
+          mockProposal as any,
+        );
         mockDb.update.mockReturnValueOnce({
           set: vi.fn().mockReturnValueOnce({
             where: vi.fn().mockReturnValueOnce({
@@ -598,7 +632,9 @@ describe('Decision API Integration Tests', () => {
         };
 
         mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-        mockDb.query.proposals.findFirst.mockResolvedValueOnce(mockProposal as any);
+        mockDb.query.proposals.findFirst.mockResolvedValueOnce(
+          mockProposal as any,
+        );
 
         await expect(
           updateProposal({
@@ -607,7 +643,7 @@ describe('Decision API Integration Tests', () => {
               proposalData: { title: 'Unauthorized Update' },
             },
             user: mockUser,
-          })
+          }),
         ).rejects.toThrow(UnauthorizedError);
       });
     });
@@ -635,7 +671,9 @@ describe('Decision API Integration Tests', () => {
             where: vi.fn().mockResolvedValueOnce([{ count: 2 }]),
           }),
         } as any);
-        mockDb.query.proposals.findMany.mockResolvedValueOnce(mockProposals as any);
+        mockDb.query.proposals.findMany.mockResolvedValueOnce(
+          mockProposals as any,
+        );
 
         const result = await listProposals({
           input: {
@@ -664,7 +702,9 @@ describe('Decision API Integration Tests', () => {
         };
 
         mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-        mockDb.query.proposals.findFirst.mockResolvedValueOnce(mockProposal as any);
+        mockDb.query.proposals.findFirst.mockResolvedValueOnce(
+          mockProposal as any,
+        );
         mockDb.delete.mockReturnValueOnce({
           where: vi.fn().mockReturnValueOnce({
             returning: vi.fn().mockResolvedValueOnce([mockProposal]),
@@ -701,7 +741,9 @@ describe('Decision API Integration Tests', () => {
           },
         };
 
-        mockDb.query.processInstances.findFirst.mockResolvedValueOnce(mockInstance as any);
+        mockDb.query.processInstances.findFirst.mockResolvedValueOnce(
+          mockInstance as any,
+        );
         mockDb.$count.mockResolvedValueOnce(3); // 3 proposals
 
         const result = await checkTransitions({
@@ -728,7 +770,9 @@ describe('Decision API Integration Tests', () => {
           },
         };
 
-        mockDb.query.processInstances.findFirst.mockResolvedValueOnce(mockInstance as any);
+        mockDb.query.processInstances.findFirst.mockResolvedValueOnce(
+          mockInstance as any,
+        );
 
         const result = await checkTransitions({
           data: {
@@ -777,7 +821,7 @@ describe('Decision API Integration Tests', () => {
           .mockResolvedValueOnce(mockInstance as any)
           .mockResolvedValueOnce(mockInstance as any)
           .mockResolvedValueOnce(updatedInstance as any);
-        
+
         mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
 
         const mockTrx = {
@@ -819,7 +863,9 @@ describe('Decision API Integration Tests', () => {
           },
         };
 
-        mockDb.query.processInstances.findFirst.mockResolvedValueOnce(mockInstance as any);
+        mockDb.query.processInstances.findFirst.mockResolvedValueOnce(
+          mockInstance as any,
+        );
         mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
         mockDb.$count.mockResolvedValueOnce(0); // No proposals - condition fails
 
@@ -830,7 +876,7 @@ describe('Decision API Integration Tests', () => {
               toStateId: 'review',
             },
             user: mockUser,
-          })
+          }),
         ).rejects.toThrow(ValidationError);
       });
     });
@@ -868,7 +914,9 @@ describe('Decision API Integration Tests', () => {
       };
 
       mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-      mockDb.query.decisionProcesses.findFirst.mockResolvedValueOnce(mockProcess as any);
+      mockDb.query.decisionProcesses.findFirst.mockResolvedValueOnce(
+        mockProcess as any,
+      );
       mockDb.insert.mockReturnValueOnce({
         values: vi.fn().mockReturnValueOnce({
           returning: vi.fn().mockResolvedValueOnce([mockInstance]),
@@ -920,7 +968,7 @@ describe('Decision API Integration Tests', () => {
         .mockResolvedValueOnce({ ...mockInstance, process: mockProcess } as any)
         .mockResolvedValueOnce({ ...mockInstance, process: mockProcess } as any)
         .mockResolvedValueOnce(updatedInstance as any);
-      
+
       mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
 
       const mockTrx = {
@@ -960,13 +1008,17 @@ describe('Decision API Integration Tests', () => {
 
       // User 1 creates proposal
       mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-      mockDb.query.processInstances.findFirst.mockResolvedValueOnce(mockInstance as any);
+      mockDb.query.processInstances.findFirst.mockResolvedValueOnce(
+        mockInstance as any,
+      );
       mockDb.insert.mockReturnValueOnce({
         values: vi.fn().mockReturnValueOnce({
-          returning: vi.fn().mockResolvedValueOnce([{
-            id: 'proposal-user1',
-            submittedByProfileId: 'profile-id-123',
-          }]),
+          returning: vi.fn().mockResolvedValueOnce([
+            {
+              id: 'proposal-user1',
+              submittedByProfileId: 'profile-id-123',
+            },
+          ]),
         }),
       } as any);
 
@@ -980,13 +1032,17 @@ describe('Decision API Integration Tests', () => {
 
       // User 2 creates proposal
       mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser2);
-      mockDb.query.processInstances.findFirst.mockResolvedValueOnce(mockInstance as any);
+      mockDb.query.processInstances.findFirst.mockResolvedValueOnce(
+        mockInstance as any,
+      );
       mockDb.insert.mockReturnValueOnce({
         values: vi.fn().mockReturnValueOnce({
-          returning: vi.fn().mockResolvedValueOnce([{
-            id: 'proposal-user2',
-            submittedByProfileId: 'profile-id-456',
-          }]),
+          returning: vi.fn().mockResolvedValueOnce([
+            {
+              id: 'proposal-user2',
+              submittedByProfileId: 'profile-id-456',
+            },
+          ]),
         }),
       } as any);
 
@@ -998,7 +1054,9 @@ describe('Decision API Integration Tests', () => {
         user: mockUser2,
       });
 
-      expect(proposal1.submittedByProfileId).not.toBe(proposal2.submittedByProfileId);
+      expect(proposal1.submittedByProfileId).not.toBe(
+        proposal2.submittedByProfileId,
+      );
     });
   });
 });

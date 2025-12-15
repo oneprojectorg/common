@@ -1,8 +1,8 @@
 import { getRoles } from '@op/common';
 import { z } from 'zod';
 
-import withAuthenticated from '../../middlewares/withAuthenticated';
 import withAnalytics from '../../middlewares/withAnalytics';
+import withAuthenticated from '../../middlewares/withAuthenticated';
 import { loggedProcedure, router } from '../../trpcFactory';
 
 const outputSchema = z.object({

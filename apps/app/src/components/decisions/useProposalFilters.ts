@@ -63,7 +63,9 @@ export function useProposalFilters({
 
       case 'shortlisted':
         // Show only approved proposals
-        return proposals.filter((proposal) => proposal.status === ProposalStatus.APPROVED);
+        return proposals.filter(
+          (proposal) => proposal.status === ProposalStatus.APPROVED,
+        );
 
       case 'all':
       default:

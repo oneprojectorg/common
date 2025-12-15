@@ -332,9 +332,7 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
     name: string;
     avatarImage?: { name: string } | null;
   } | null>(null);
-  const previousProfileId = useRef<string | undefined>(
-    user.currentProfile?.id,
-  );
+  const previousProfileId = useRef<string | undefined>(user.currentProfile?.id);
 
   const handleProfileSwitch = (profile: {
     name: string;

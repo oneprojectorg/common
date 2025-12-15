@@ -1,4 +1,4 @@
-import type { Proposal, ProcessInstance } from '@op/db/schema';
+import type { ProcessInstance, Proposal } from '@op/db/schema';
 
 import type { InstanceData, ProcessSchema } from '../types';
 

@@ -1,10 +1,11 @@
 import { exec as execCallback } from 'child_process';
 import fs from 'fs/promises';
+import open from 'open';
 import os from 'os';
 import path from 'path';
 import util from 'util';
 
-import open from 'open'; // Make sure to install this: npm install open --save-dev OR pnpm add -D open
+// Make sure to install this: npm install open --save-dev OR pnpm add -D open
 
 const exec = util.promisify(execCallback);
 
@@ -19,9 +20,11 @@ async function runTurboGraph() {
 
     // console.log('DOT Output:\n', stdout); // Optional: log the raw output for debugging
     return stdout;
-  }
-  catch (error) {
-    console.error('Error running Turborepo command:', error.stderr || error.message);
+  } catch (error) {
+    console.error(
+      'Error running Turborepo command:',
+      error.stderr || error.message,
+    );
     throw error;
   }
 }
@@ -62,14 +65,10 @@ function parseDotGraph(dotString) {
   // --- Pass 2: Create node objects ---
   const getNodeType = (id, label) => {
     // Check for root first using the potentially replaced ID or explicit label
-    if (id === 'ROOT' || label === 'ROOT')
-      return 'root';
-    if (id.includes('config'))
-      return 'config';
-    if (id.startsWith('app') || id.startsWith('api'))
-      return 'app'; // Simpler check after #build removed
-    if (id.startsWith('@op/'))
-      return 'library';
+    if (id === 'ROOT' || label === 'ROOT') return 'root';
+    if (id.includes('config')) return 'config';
+    if (id.startsWith('app') || id.startsWith('api')) return 'app'; // Simpler check after #build removed
+    if (id.startsWith('@op/')) return 'library';
 
     return 'library'; // Default
   };
@@ -92,8 +91,7 @@ function parseDotGraph(dotString) {
   if (taskMap.ROOT) {
     taskMap.ROOT.type = 'root';
     taskMap.ROOT.name = 'ROOT'; // Ensure display name is ROOT
-  }
-  else if (allNodeIds.has('ROOT')) {
+  } else if (allNodeIds.has('ROOT')) {
     // If ROOT was only involved in edges but not defined explicitly
     const rootNode = { id: 'ROOT', name: 'ROOT', type: 'root' };
 
@@ -117,9 +115,10 @@ function parseDotGraph(dotString) {
           target: targetId,
         });
         internalDependencies.add(targetId);
-      }
-      else {
-        console.warn(`Skipping link due to missing node definition: ${sourceId} -> ${targetId}`);
+      } else {
+        console.warn(
+          `Skipping link due to missing node definition: ${sourceId} -> ${targetId}`,
+        );
       }
     }
   });
@@ -130,13 +129,12 @@ function parseDotGraph(dotString) {
 
     nodes.forEach((node) => {
       if (node.id !== rootId && !internalDependencies.has(node.id)) {
-        if (!links.some(l => l.source === node.id && l.target === rootId)) {
+        if (!links.some((l) => l.source === node.id && l.target === rootId)) {
           links.push({ source: node.id, target: rootId });
         }
       }
     });
-  }
-  else {
+  } else {
     console.warn('Root node "ROOT" not found in graph, cannot link orphans.');
   }
 
@@ -303,7 +301,10 @@ async function main() {
   try {
     console.log('Generating dependency graph...');
     const dotString = await runTurboGraph();
-    const cleanDotString = dotString.replaceAll('#build', '').replaceAll('[root] ', '').replaceAll('___ROOT___', 'ROOT');
+    const cleanDotString = dotString
+      .replaceAll('#build', '')
+      .replaceAll('[root] ', '')
+      .replaceAll('___ROOT___', 'ROOT');
 
     console.log('Parsing graph data...');
     const { nodes, links } = parseDotGraph(cleanDotString);
@@ -311,7 +312,10 @@ async function main() {
     console.log('Generating visualization HTML...');
     const htmlContent = generateHtml(nodes, links);
 
-    const tempHtmlPath = path.join(os.tmpdir(), `dependency-graph-${Date.now()}.html`);
+    const tempHtmlPath = path.join(
+      os.tmpdir(),
+      `dependency-graph-${Date.now()}.html`,
+    );
 
     console.log(`Writing HTML to: ${tempHtmlPath}`);
     await fs.writeFile(tempHtmlPath, htmlContent);
@@ -320,8 +324,7 @@ async function main() {
     await open(tempHtmlPath);
 
     console.log('Done!');
-  }
-  catch (error) {
+  } catch (error) {
     console.error('Error visualizing dependencies:', error);
     process.exit(1);
   }

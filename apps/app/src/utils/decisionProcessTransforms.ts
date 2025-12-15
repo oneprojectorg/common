@@ -181,7 +181,7 @@ export const transformFormDataToInstanceData = (
       stateId: 'results',
       plannedStartDate: (data.resultsAnnouncement as { resultsDate?: string })
         ?.resultsDate,
-    }
+    },
   );
 
   return {

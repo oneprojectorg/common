@@ -27,10 +27,10 @@ export const updateOrganization = async ({
 }: {
   id: string;
   data: UpdateOrganizationInput &
-  FundingLinksInput & {
-    orgAvatarImageId?: string;
-    orgBannerImageId?: string;
-  };
+    FundingLinksInput & {
+      orgAvatarImageId?: string;
+      orgBannerImageId?: string;
+    };
   user: User;
 }) => {
   const organizationId = id;
@@ -109,23 +109,23 @@ export const updateOrganization = async ({
             await Promise.all([
               ...(data.receivingFundsLink
                 ? [
-                  tx.insert(links).values({
-                    organizationId: orgToUpdate.id,
-                    href: data.receivingFundsLink,
-                    description: data.receivingFundsDescription,
-                    type: 'receiving',
-                  }),
-                ]
+                    tx.insert(links).values({
+                      organizationId: orgToUpdate.id,
+                      href: data.receivingFundsLink,
+                      description: data.receivingFundsDescription,
+                      type: 'receiving',
+                    }),
+                  ]
                 : []),
               ...(data.offeringFundsLink
                 ? [
-                  tx.insert(links).values({
-                    organizationId: orgToUpdate.id,
-                    href: data.offeringFundsLink,
-                    description: data.offeringFundsDescription,
-                    type: 'offering',
-                  }),
-                ]
+                    tx.insert(links).values({
+                      organizationId: orgToUpdate.id,
+                      href: data.offeringFundsLink,
+                      description: data.offeringFundsDescription,
+                      type: 'offering',
+                    }),
+                  ]
                 : []),
             ]);
           });

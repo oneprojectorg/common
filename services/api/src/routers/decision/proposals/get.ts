@@ -70,7 +70,10 @@ export const getProposalRouter = router({
             proposal,
           });
         } catch (error) {
-          logger.error('Error getting permissions on proposal', { error, profileId });
+          logger.error('Error getting permissions on proposal', {
+            error,
+            profileId,
+          });
         }
 
         // Track proposal viewed event

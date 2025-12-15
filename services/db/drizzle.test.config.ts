@@ -12,7 +12,8 @@ dotenv.config({
 });
 
 // Test database configuration - uses test instance port
-const TEST_DATABASE_URL = 'postgresql://postgres:postgres@127.0.0.1:55322/postgres';
+const TEST_DATABASE_URL =
+  'postgresql://postgres:postgres@127.0.0.1:55322/postgres';
 
 export default defineConfig({
   schema: './schema/publicTables.ts',

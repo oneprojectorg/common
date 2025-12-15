@@ -93,7 +93,10 @@ export const switchProfile = router({
           orgId: org?.organization?.id,
         });
       } catch (error) {
-        logger.error('Error switching profile', { error, profileId: input.profileId });
+        logger.error('Error switching profile', {
+          error,
+          profileId: input.profileId,
+        });
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to update current profile',

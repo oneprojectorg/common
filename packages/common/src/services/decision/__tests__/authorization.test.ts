@@ -1,7 +1,8 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { UnauthorizedError } from '../../../utils';
-import { listProposals, getProcessCategories } from '../index';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { mockDb } from '../../../test/setup';
+import { UnauthorizedError } from '../../../utils';
+import { getProcessCategories, listProposals } from '../index';
 
 // Mock the access control functions
 vi.mock('../../access', () => ({
@@ -34,19 +35,21 @@ describe('Decision Authorization', () => {
         listProposals({
           input: { processInstanceId: 'test-id', authUserId: mockAuthUserId },
           user: null as any,
-        })
+        }),
       ).rejects.toThrow(UnauthorizedError);
     });
 
     it('should call authorization check with decisions READ permission', async () => {
       const { assertAccess } = await import('access-zones');
-      const { getCurrentOrgId, getOrgAccessUser } = await import('../../access');
-      
+      const { getCurrentOrgId, getOrgAccessUser } = await import(
+        '../../access'
+      );
+
       // Mock the access control functions to pass authorization
       vi.mocked(getCurrentOrgId).mockResolvedValue('org-id');
       vi.mocked(getOrgAccessUser).mockResolvedValue({
         id: 'org-user-id',
-        roles: [{ access: { decisions: 1 } }] // READ permission
+        roles: [{ access: { decisions: 1 } }], // READ permission
       } as any);
 
       // Mock database queries to avoid actual DB calls
@@ -54,9 +57,9 @@ describe('Decision Authorization', () => {
         id: 'user-id',
         currentProfileId: 'profile-id',
       });
-      
+
       mockDb.execute = vi.fn().mockResolvedValue([]);
-      
+
       try {
         await listProposals({
           input: { processInstanceId: 'test-id', authUserId: mockAuthUserId },
@@ -68,7 +71,7 @@ describe('Decision Authorization', () => {
 
       expect(assertAccess).toHaveBeenCalledWith(
         { decisions: 1 }, // permission.READ
-        [{ access: { decisions: 1 } }] // user roles
+        [{ access: { decisions: 1 } }], // user roles
       );
     });
   });
@@ -80,27 +83,29 @@ describe('Decision Authorization', () => {
           processInstanceId: 'test-id',
           authUserId: mockAuthUserId,
           user: null as any,
-        })
+        }),
       ).rejects.toThrow(UnauthorizedError);
     });
 
     it('should call authorization check with decisions READ permission', async () => {
       const { assertAccess } = await import('access-zones');
-      const { getCurrentOrgId, getOrgAccessUser } = await import('../../access');
-      
+      const { getCurrentOrgId, getOrgAccessUser } = await import(
+        '../../access'
+      );
+
       // Mock the access control functions to pass authorization
       vi.mocked(getCurrentOrgId).mockResolvedValue('org-id');
       vi.mocked(getOrgAccessUser).mockResolvedValue({
         id: 'org-user-id',
-        roles: [{ access: { decisions: 1 } }] // READ permission
+        roles: [{ access: { decisions: 1 } }], // READ permission
       } as any);
 
       // Mock database queries to avoid actual DB calls
       mockDb.query.processInstances.findFirst = vi.fn().mockResolvedValue({
         id: 'instance-id',
-        process: { processSchema: { fields: { categories: [] } } }
+        process: { processSchema: { fields: { categories: [] } } },
       });
-      
+
       try {
         await getProcessCategories({
           processInstanceId: 'test-id',
@@ -113,7 +118,7 @@ describe('Decision Authorization', () => {
 
       expect(assertAccess).toHaveBeenCalledWith(
         { decisions: 1 }, // permission.READ
-        [{ access: { decisions: 1 } }] // user roles
+        [{ access: { decisions: 1 } }], // user roles
       );
     });
   });

@@ -1,8 +1,14 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { createProposal } from '../createProposal';
-import { UnauthorizedError, NotFoundError, ValidationError, CommonError } from '../../../utils';
-import type { ProcessSchema, InstanceData, ProposalData } from '../types';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { mockDb } from '../../../test/setup';
+import {
+  CommonError,
+  NotFoundError,
+  UnauthorizedError,
+  ValidationError,
+} from '../../../utils';
+import { createProposal } from '../createProposal';
+import type { InstanceData, ProcessSchema, ProposalData } from '../types';
 
 const mockUser = {
   id: 'auth-user-id',
@@ -81,7 +87,9 @@ describe('createProposal', () => {
     };
 
     mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-    mockDb.query.processInstances.findFirst.mockResolvedValueOnce(mockInstance as any);
+    mockDb.query.processInstances.findFirst.mockResolvedValueOnce(
+      mockInstance as any,
+    );
     mockDb.insert.mockReturnValueOnce({
       values: vi.fn().mockReturnValueOnce({
         returning: vi.fn().mockResolvedValueOnce([mockCreatedProposal]),
@@ -112,7 +120,7 @@ describe('createProposal', () => {
           authUserId: 'auth-user-id',
         },
         user: null as any,
-      })
+      }),
     ).rejects.toThrow(UnauthorizedError);
   });
 
@@ -128,7 +136,7 @@ describe('createProposal', () => {
           authUserId: 'auth-user-id',
         },
         user: mockUser,
-      })
+      }),
     ).rejects.toThrow(UnauthorizedError);
   });
 
@@ -144,7 +152,7 @@ describe('createProposal', () => {
           authUserId: 'auth-user-id',
         },
         user: mockUser,
-      })
+      }),
     ).rejects.toThrow(NotFoundError);
   });
 
@@ -152,7 +160,9 @@ describe('createProposal', () => {
     const instanceWithoutProcess = { ...mockInstance, process: null };
 
     mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-    mockDb.query.processInstances.findFirst.mockResolvedValueOnce(instanceWithoutProcess as any);
+    mockDb.query.processInstances.findFirst.mockResolvedValueOnce(
+      instanceWithoutProcess as any,
+    );
 
     await expect(
       createProposal({
@@ -162,7 +172,7 @@ describe('createProposal', () => {
           authUserId: 'auth-user-id',
         },
         user: mockUser,
-      })
+      }),
     ).rejects.toThrow(NotFoundError);
   });
 
@@ -173,7 +183,9 @@ describe('createProposal', () => {
     };
 
     mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-    mockDb.query.processInstances.findFirst.mockResolvedValueOnce(instanceWithInvalidState as any);
+    mockDb.query.processInstances.findFirst.mockResolvedValueOnce(
+      instanceWithInvalidState as any,
+    );
 
     await expect(
       createProposal({
@@ -183,7 +195,7 @@ describe('createProposal', () => {
           authUserId: 'auth-user-id',
         },
         user: mockUser,
-      })
+      }),
     ).rejects.toThrow(ValidationError);
   });
 
@@ -195,7 +207,9 @@ describe('createProposal', () => {
     };
 
     mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-    mockDb.query.processInstances.findFirst.mockResolvedValueOnce(instanceInReviewState as any);
+    mockDb.query.processInstances.findFirst.mockResolvedValueOnce(
+      instanceInReviewState as any,
+    );
 
     await expect(
       createProposal({
@@ -205,7 +219,7 @@ describe('createProposal', () => {
           authUserId: 'auth-user-id',
         },
         user: mockUser,
-      })
+      }),
     ).rejects.toThrow(ValidationError);
   });
 
@@ -241,7 +255,9 @@ describe('createProposal', () => {
     };
 
     mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-    mockDb.query.processInstances.findFirst.mockResolvedValueOnce(instanceWithoutConfig as any);
+    mockDb.query.processInstances.findFirst.mockResolvedValueOnce(
+      instanceWithoutConfig as any,
+    );
     mockDb.insert.mockReturnValueOnce({
       values: vi.fn().mockReturnValueOnce({
         returning: vi.fn().mockResolvedValueOnce([mockCreatedProposal]),
@@ -262,7 +278,9 @@ describe('createProposal', () => {
 
   it('should throw CommonError when database insert fails', async () => {
     mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-    mockDb.query.processInstances.findFirst.mockResolvedValueOnce(mockInstance as any);
+    mockDb.query.processInstances.findFirst.mockResolvedValueOnce(
+      mockInstance as any,
+    );
     mockDb.insert.mockReturnValueOnce({
       values: vi.fn().mockReturnValueOnce({
         returning: vi.fn().mockResolvedValueOnce([]), // Empty array = no result
@@ -277,13 +295,13 @@ describe('createProposal', () => {
           authUserId: 'auth-user-id',
         },
         user: mockUser,
-      })
+      }),
     ).rejects.toThrow(CommonError);
   });
 
   it('should handle database errors gracefully', async () => {
     mockDb.query.users.findFirst.mockRejectedValueOnce(
-      new Error('Database connection failed')
+      new Error('Database connection failed'),
     );
 
     await expect(
@@ -294,7 +312,7 @@ describe('createProposal', () => {
           authUserId: 'auth-user-id',
         },
         user: mockUser,
-      })
+      }),
     ).rejects.toThrow(CommonError);
   });
 

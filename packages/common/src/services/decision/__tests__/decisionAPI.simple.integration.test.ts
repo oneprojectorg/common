@@ -1,13 +1,14 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
-import {
-  createProcess,
-  createInstance,
-  createProposal,
-  TransitionEngine,
-} from '../index';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { mockDb } from '../../../test/setup';
 import { UnauthorizedError, ValidationError } from '../../../utils';
-import type { ProcessSchema, InstanceData, ProposalData } from '../types';
+import {
+  TransitionEngine,
+  createInstance,
+  createProcess,
+  createProposal,
+} from '../index';
+import type { InstanceData, ProcessSchema, ProposalData } from '../types';
 
 // Mock users
 const mockUser = {
@@ -145,7 +146,9 @@ describe('Decision API Simple Integration Tests', () => {
       };
 
       mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-      mockDb.query.decisionProcesses.findFirst.mockResolvedValueOnce(mockProcess as any);
+      mockDb.query.decisionProcesses.findFirst.mockResolvedValueOnce(
+        mockProcess as any,
+      );
       mockDb.insert.mockReturnValueOnce({
         values: vi.fn().mockReturnValueOnce({
           returning: vi.fn().mockResolvedValueOnce([mockInstance]),
@@ -212,7 +215,9 @@ describe('Decision API Simple Integration Tests', () => {
       };
 
       mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-      mockDb.query.processInstances.findFirst.mockResolvedValueOnce(mockInstanceInReview as any);
+      mockDb.query.processInstances.findFirst.mockResolvedValueOnce(
+        mockInstanceInReview as any,
+      );
 
       await expect(
         createProposal({
@@ -224,7 +229,7 @@ describe('Decision API Simple Integration Tests', () => {
             },
           },
           user: mockUser,
-        })
+        }),
       ).rejects.toThrow(ValidationError);
     });
 
@@ -240,7 +245,9 @@ describe('Decision API Simple Integration Tests', () => {
         },
       };
 
-      mockDb.query.processInstances.findFirst.mockResolvedValueOnce(mockInstance as any);
+      mockDb.query.processInstances.findFirst.mockResolvedValueOnce(
+        mockInstance as any,
+      );
 
       const result = await TransitionEngine.checkAvailableTransitions({
         instanceId: 'transition-test-instance',
@@ -318,7 +325,7 @@ describe('Decision API Simple Integration Tests', () => {
             processSchema: testProcessSchema,
           },
           user: null as any,
-        })
+        }),
       ).rejects.toThrow(UnauthorizedError);
     });
 
@@ -333,7 +340,7 @@ describe('Decision API Simple Integration Tests', () => {
             processSchema: testProcessSchema,
           },
           user: mockUser,
-        })
+        }),
       ).rejects.toThrow(UnauthorizedError);
     });
   });
@@ -348,10 +355,12 @@ describe('Decision API Simple Integration Tests', () => {
       mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
       mockDb.insert.mockReturnValueOnce({
         values: vi.fn().mockReturnValueOnce({
-          returning: vi.fn().mockResolvedValueOnce([{
-            id: 'invalid-process',
-            processSchema: invalidSchema,
-          }]),
+          returning: vi.fn().mockResolvedValueOnce([
+            {
+              id: 'invalid-process',
+              processSchema: invalidSchema,
+            },
+          ]),
         }),
       } as any);
 
@@ -383,14 +392,18 @@ describe('Decision API Simple Integration Tests', () => {
       };
 
       mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-      mockDb.query.decisionProcesses.findFirst.mockResolvedValueOnce(mockProcess as any);
+      mockDb.query.decisionProcesses.findFirst.mockResolvedValueOnce(
+        mockProcess as any,
+      );
       mockDb.insert.mockReturnValueOnce({
         values: vi.fn().mockReturnValueOnce({
-          returning: vi.fn().mockResolvedValueOnce([{
-            id: 'test-instance',
-            currentStateId: 'draft',
-            instanceData,
-          }]),
+          returning: vi.fn().mockResolvedValueOnce([
+            {
+              id: 'test-instance',
+              currentStateId: 'draft',
+              instanceData,
+            },
+          ]),
         }),
       } as any);
 
@@ -410,7 +423,7 @@ describe('Decision API Simple Integration Tests', () => {
   describe('Error Handling', () => {
     it('should handle database connection errors', async () => {
       mockDb.query.users.findFirst.mockRejectedValueOnce(
-        new Error('Database connection failed')
+        new Error('Database connection failed'),
       );
 
       await expect(
@@ -420,7 +433,7 @@ describe('Decision API Simple Integration Tests', () => {
             processSchema: testProcessSchema,
           },
           user: mockUser,
-        })
+        }),
       ).rejects.toThrow('Failed to create decision process');
     });
 
@@ -431,7 +444,7 @@ describe('Decision API Simple Integration Tests', () => {
         TransitionEngine.checkAvailableTransitions({
           instanceId: 'nonexistent-instance',
           user: mockUser,
-        })
+        }),
       ).rejects.toThrow('Process instance not found');
     });
   });

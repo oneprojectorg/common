@@ -1,13 +1,16 @@
+import { evaluateExpression } from '../expressionEvaluator';
 import type {
   BlockExecutionResult,
   BlockExecutor,
   ExecutionContext,
   LimitBlock as LimitBlockType,
 } from '../types';
-import { evaluateExpression } from '../expressionEvaluator';
 
 export class LimitBlock implements BlockExecutor<LimitBlockType> {
-  execute(block: LimitBlockType, context: ExecutionContext): BlockExecutionResult {
+  execute(
+    block: LimitBlockType,
+    context: ExecutionContext,
+  ): BlockExecutionResult {
     const count =
       typeof block.count === 'number'
         ? block.count

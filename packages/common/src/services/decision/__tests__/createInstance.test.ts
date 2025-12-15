@@ -1,8 +1,9 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { createInstance } from '../createInstance';
 import { db, eq } from '@op/db/client';
-import { UnauthorizedError, NotFoundError, CommonError } from '../../../utils';
-import type { ProcessSchema, InstanceData } from '../types';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { CommonError, NotFoundError, UnauthorizedError } from '../../../utils';
+import { createInstance } from '../createInstance';
+import type { InstanceData, ProcessSchema } from '../types';
 
 const mockUser = {
   id: 'auth-user-id',
@@ -72,7 +73,9 @@ describe('createInstance', () => {
 
     // Mock database queries
     vi.mocked(db.query.users.findFirst).mockResolvedValueOnce(mockDbUser);
-    vi.mocked(db.query.decisionProcesses.findFirst).mockResolvedValueOnce(mockProcess as any);
+    vi.mocked(db.query.decisionProcesses.findFirst).mockResolvedValueOnce(
+      mockProcess as any,
+    );
     vi.mocked(db.insert).mockReturnValueOnce({
       values: vi.fn().mockReturnValueOnce({
         returning: vi.fn().mockResolvedValueOnce([mockCreatedInstance]),
@@ -106,7 +109,9 @@ describe('createInstance', () => {
     };
 
     vi.mocked(db.query.users.findFirst).mockResolvedValueOnce(mockDbUser);
-    vi.mocked(db.query.decisionProcesses.findFirst).mockResolvedValueOnce(mockProcess as any);
+    vi.mocked(db.query.decisionProcesses.findFirst).mockResolvedValueOnce(
+      mockProcess as any,
+    );
     vi.mocked(db.insert).mockReturnValueOnce({
       values: vi.fn().mockReturnValueOnce({
         returning: vi.fn().mockResolvedValueOnce([mockCreatedInstance]),
@@ -128,7 +133,7 @@ describe('createInstance', () => {
     expect(vi.mocked(db.insert().values)).toHaveBeenCalledWith(
       expect.objectContaining({
         currentStateId: 'draft',
-      })
+      }),
     );
   });
 
@@ -147,7 +152,9 @@ describe('createInstance', () => {
     };
 
     vi.mocked(db.query.users.findFirst).mockResolvedValueOnce(mockDbUser);
-    vi.mocked(db.query.decisionProcesses.findFirst).mockResolvedValueOnce(processWithoutInitialState as any);
+    vi.mocked(db.query.decisionProcesses.findFirst).mockResolvedValueOnce(
+      processWithoutInitialState as any,
+    );
     vi.mocked(db.insert).mockReturnValueOnce({
       values: vi.fn().mockReturnValueOnce({
         returning: vi.fn().mockResolvedValueOnce([mockCreatedInstance]),
@@ -166,7 +173,7 @@ describe('createInstance', () => {
     expect(vi.mocked(db.insert().values)).toHaveBeenCalledWith(
       expect.objectContaining({
         currentStateId: 'draft', // Should default to first state
-      })
+      }),
     );
   });
 
@@ -179,13 +186,15 @@ describe('createInstance', () => {
           instanceData: mockInstanceData,
         },
         user: null as any,
-      })
+      }),
     ).rejects.toThrow(UnauthorizedError);
   });
 
   it('should throw UnauthorizedError when user has no active profile', async () => {
     const userWithoutProfile = { ...mockDbUser, currentProfileId: null };
-    vi.mocked(db.query.users.findFirst).mockResolvedValueOnce(userWithoutProfile);
+    vi.mocked(db.query.users.findFirst).mockResolvedValueOnce(
+      userWithoutProfile,
+    );
 
     await expect(
       createInstance({
@@ -195,7 +204,7 @@ describe('createInstance', () => {
           instanceData: mockInstanceData,
         },
         user: mockUser,
-      })
+      }),
     ).rejects.toThrow(UnauthorizedError);
   });
 
@@ -211,13 +220,15 @@ describe('createInstance', () => {
           instanceData: mockInstanceData,
         },
         user: mockUser,
-      })
+      }),
     ).rejects.toThrow(NotFoundError);
   });
 
   it('should throw CommonError when database insert fails', async () => {
     vi.mocked(db.query.users.findFirst).mockResolvedValueOnce(mockDbUser);
-    vi.mocked(db.query.decisionProcesses.findFirst).mockResolvedValueOnce(mockProcess as any);
+    vi.mocked(db.query.decisionProcesses.findFirst).mockResolvedValueOnce(
+      mockProcess as any,
+    );
     vi.mocked(db.insert).mockReturnValueOnce({
       values: vi.fn().mockReturnValueOnce({
         returning: vi.fn().mockResolvedValueOnce([]), // Empty array = no result
@@ -232,13 +243,13 @@ describe('createInstance', () => {
           instanceData: mockInstanceData,
         },
         user: mockUser,
-      })
+      }),
     ).rejects.toThrow(CommonError);
   });
 
   it('should handle database connection errors', async () => {
     vi.mocked(db.query.users.findFirst).mockRejectedValueOnce(
-      new Error('Database connection failed')
+      new Error('Database connection failed'),
     );
 
     await expect(
@@ -249,7 +260,7 @@ describe('createInstance', () => {
           instanceData: mockInstanceData,
         },
         user: mockUser,
-      })
+      }),
     ).rejects.toThrow(CommonError);
   });
 
@@ -260,7 +271,9 @@ describe('createInstance', () => {
     } as any;
 
     vi.mocked(db.query.users.findFirst).mockResolvedValueOnce(mockDbUser);
-    vi.mocked(db.query.decisionProcesses.findFirst).mockResolvedValueOnce(mockProcess as any);
+    vi.mocked(db.query.decisionProcesses.findFirst).mockResolvedValueOnce(
+      mockProcess as any,
+    );
 
     // This would typically be caught by TypeScript or validation at the API layer
     // but we test that the service handles it gracefully
@@ -272,7 +285,7 @@ describe('createInstance', () => {
           instanceData: invalidInstanceData,
         },
         user: mockUser,
-      })
+      }),
     ).rejects.toThrow(); // Should fail validation
   });
 });

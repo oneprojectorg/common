@@ -2,8 +2,8 @@
 
 import { Button } from '@op/ui/Button';
 import { Modal, ModalBody, ModalHeader } from '@op/ui/Modal';
-import { DialogTrigger } from 'react-aria-components';
 import he from 'he';
+import { DialogTrigger } from 'react-aria-components';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -39,7 +39,9 @@ export function ProposalInfoModal({
             <div
               className="prose prose-gray max-w-none"
               dangerouslySetInnerHTML={{
-                __html: translatedContent ? he.decode(t('INFOTRANSLATION')) : content,
+                __html: translatedContent
+                  ? he.decode(t('INFOTRANSLATION'))
+                  : content,
               }}
             />
           </ModalBody>

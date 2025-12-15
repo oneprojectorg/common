@@ -32,13 +32,15 @@ export const InviteSuccessModal = ({
         <p>
           {invitedCount && invitedCount > 1 ? (
             <>
-              You've invited <span className="font-semibold">{invitedCount} people</span>{' '}
-              to join <span className="font-semibold">{organizationName}</span>.
+              You've invited{' '}
+              <span className="font-semibold">{invitedCount} people</span> to
+              join <span className="font-semibold">{organizationName}</span>.
             </>
           ) : (
             <>
-              You've invited <span className="font-semibold">{invitedEmail}</span>{' '}
-              to join <span className="font-semibold">{organizationName}</span>.
+              You've invited{' '}
+              <span className="font-semibold">{invitedEmail}</span> to join{' '}
+              <span className="font-semibold">{organizationName}</span>.
             </>
           )}
         </p>

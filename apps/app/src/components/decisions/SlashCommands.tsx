@@ -15,8 +15,14 @@ import {
   Quote,
   Type,
 } from 'lucide-react';
-import React, { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
+import React, {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useState,
+} from 'react';
 import { createRoot } from 'react-dom/client';
+
 import { useTranslations } from '@/lib/i18n';
 
 export interface SlashCommandItem {
@@ -45,7 +51,9 @@ const SlashCommandsList = forwardRef<
   };
 
   const upHandler = () => {
-    setSelectedIndex((selectedIndex + props.items.length - 1) % props.items.length);
+    setSelectedIndex(
+      (selectedIndex + props.items.length - 1) % props.items.length,
+    );
   };
 
   const downHandler = () => {
@@ -85,7 +93,9 @@ const SlashCommandsList = forwardRef<
         props.items.map((item, index) => (
           <button
             className={`flex w-full items-center space-x-2 rounded-sm px-2 py-1 text-left hover:bg-neutral-gray1 ${
-              index === selectedIndex ? 'bg-neutral-gray1 text-neutral-black' : 'text-neutral-charcoal'
+              index === selectedIndex
+                ? 'bg-neutral-gray1 text-neutral-black'
+                : 'text-neutral-charcoal'
             }`}
             key={index}
             onClick={() => selectItem(index)}
@@ -277,7 +287,7 @@ const suggestionOptions: Partial<SuggestionOptions> = {
             }}
             items={props.items}
             command={props.command}
-          />
+          />,
         );
       },
 
@@ -296,7 +306,7 @@ const suggestionOptions: Partial<SuggestionOptions> = {
             }}
             items={props.items}
             command={props.command}
-          />
+          />,
         );
       },
 
@@ -330,7 +340,15 @@ export const SlashCommands = Extension.create({
       suggestion: {
         char: '/',
         pluginKey: new PluginKey('slash-commands'),
-        command: ({ editor, range, props }: { editor: any; range: any; props: SlashCommandItem }) => {
+        command: ({
+          editor,
+          range,
+          props,
+        }: {
+          editor: any;
+          range: any;
+          props: SlashCommandItem;
+        }) => {
           props.command({ editor, range });
         },
         ...suggestionOptions,

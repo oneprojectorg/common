@@ -11,7 +11,10 @@ export const QUERY_KEYS = {
 } as const;
 
 // Helper function to create consistent comment query parameters
-export const createCommentsQueryKey = (parentPostId: string, profileId?: string) => ({
+export const createCommentsQueryKey = (
+  parentPostId: string,
+  profileId?: string,
+) => ({
   parentPostId,
   profileId,
   limit: QUERY_KEYS.COMMENTS.LIMIT,
@@ -20,7 +23,10 @@ export const createCommentsQueryKey = (parentPostId: string, profileId?: string)
 });
 
 // Helper function to create consistent posts query parameters
-export const createPostsQueryKey = (slug: string, limit = QUERY_KEYS.POSTS.DEFAULT_LIMIT) => ({
+export const createPostsQueryKey = (
+  slug: string,
+  limit = QUERY_KEYS.POSTS.DEFAULT_LIMIT,
+) => ({
   slug,
   limit,
 });

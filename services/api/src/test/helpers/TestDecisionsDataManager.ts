@@ -2,12 +2,12 @@ import { db } from '@op/db/client';
 import {
   DecisionProcess,
   ProcessInstance,
-  processInstances,
-  profiles,
-  profileUsers,
-  users,
-  organizationUsers,
   organizationUserToAccessRoles,
+  organizationUsers,
+  processInstances,
+  profileUsers,
+  profiles,
+  users,
 } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { User } from '@op/supabase/lib';
@@ -232,7 +232,11 @@ export class TestDecisionsDataManager {
       instances.push(instance);
 
       if (grantAccess) {
-        await this.grantProfileAccess(instance.profileId, authUser.id, userEmail);
+        await this.grantProfileAccess(
+          instance.profileId,
+          authUser.id,
+          userEmail,
+        );
       }
     }
 
@@ -321,9 +325,7 @@ export class TestDecisionsDataManager {
 
     const profileId = instanceRecord?.profileId;
     if (!profileId) {
-      throw new Error(
-        `Could not find profileId for instance ${instance.id}`,
-      );
+      throw new Error(`Could not find profileId for instance ${instance.id}`);
     }
 
     this.createdProfileIds.push(profileId);

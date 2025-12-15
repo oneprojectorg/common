@@ -1,7 +1,7 @@
 import { and, db, eq } from '@op/db/client';
 import {
-  type VoteData,
   ProposalStatus,
+  type VoteData,
   decisionsVoteProposals,
   decisionsVoteSubmissions,
   organizations,

@@ -1,9 +1,16 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { db } from '@op/db/client';
-import { attachments, proposals, proposalAttachments, profiles, users } from '@op/db/schema';
+import {
+  attachments,
+  profiles,
+  proposalAttachments,
+  proposals,
+  users,
+} from '@op/db/schema';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { createProposal } from './createProposal';
-import { processProposalContent } from './proposalContentProcessor';
 import type { CreateProposalInput } from './createProposal';
+import { processProposalContent } from './proposalContentProcessor';
 
 // Mock dependencies
 vi.mock('@op/db/client', () => ({
@@ -65,7 +72,8 @@ describe('createProposal with attachments', () => {
     processInstanceId: 'test-process-instance-id',
     proposalData: {
       title: 'Test Proposal',
-      content: '<p>Test content with <img src="https://supabase.co/temp-url" alt="test" /></p>',
+      content:
+        '<p>Test content with <img src="https://supabase.co/temp-url" alt="test" /></p>',
     },
     submittedByProfileId: 'test-profile-id',
     profileId: 'test-proposal-profile-id',
@@ -84,7 +92,9 @@ describe('createProposal with attachments', () => {
 
     // Mock database queries
     (db.query.users.findFirst as any).mockResolvedValue(mockDbUser);
-    (db.query.processInstances.findFirst as any).mockResolvedValue(mockProcessInstance);
+    (db.query.processInstances.findFirst as any).mockResolvedValue(
+      mockProcessInstance,
+    );
     (db.query.taxonomyTerms.findFirst as any).mockResolvedValue(null);
 
     // Mock transaction
@@ -138,7 +148,8 @@ describe('createProposal with attachments', () => {
         processInstanceId: 'test-process-instance-id',
         proposalData: {
           title: 'Test Proposal with Images',
-          content: '<p>Test content with <img src="https://supabase.co/temp-url/image1.png" alt="test" /></p>',
+          content:
+            '<p>Test content with <img src="https://supabase.co/temp-url/image1.png" alt="test" /></p>',
         },
         authUserId: 'test-auth-user-id',
         attachmentIds: ['attachment-id-1', 'attachment-id-2'],
@@ -163,7 +174,10 @@ describe('createProposal with attachments', () => {
       expect(db.transaction).toHaveBeenCalled();
 
       // Verify processProposalContent was called with transaction context
-      expect(processProposalContent).toHaveBeenCalledWith({ conn: expect.any(Object), proposalId: 'test-proposal-id' });
+      expect(processProposalContent).toHaveBeenCalledWith({
+        conn: expect.any(Object),
+        proposalId: 'test-proposal-id',
+      });
     });
 
     it('should create proposal without attachments', async () => {
@@ -194,7 +208,9 @@ describe('createProposal with attachments', () => {
 
     it('should fail when content processing errors occur', async () => {
       // Mock processProposalContent to throw an error
-      (processProposalContent as any).mockRejectedValue(new Error('Content processing failed'));
+      (processProposalContent as any).mockRejectedValue(
+        new Error('Content processing failed'),
+      );
 
       const proposalInput: CreateProposalInput = {
         processInstanceId: 'test-process-instance-id',
@@ -207,12 +223,17 @@ describe('createProposal with attachments', () => {
       };
 
       // Should throw when content processing fails (transaction rollback)
-      await expect(createProposal({
-        data: proposalInput,
-        user: mockUser,
-      })).rejects.toThrow('Content processing failed');
+      await expect(
+        createProposal({
+          data: proposalInput,
+          user: mockUser,
+        }),
+      ).rejects.toThrow('Content processing failed');
 
-      expect(processProposalContent).toHaveBeenCalledWith({ conn: expect.any(Object), proposalId: 'test-proposal-id' });
+      expect(processProposalContent).toHaveBeenCalledWith({
+        conn: expect.any(Object),
+        proposalId: 'test-proposal-id',
+      });
     });
 
     it('should handle empty attachment list', async () => {
@@ -269,7 +290,11 @@ describe('createProposal with attachments', () => {
                   values: vi.fn().mockImplementation((values) => {
                     capturedTitle = values.name;
                     return {
-                      returning: vi.fn().mockResolvedValue([{ ...mockProposalProfile, name: values.name }]),
+                      returning: vi
+                        .fn()
+                        .mockResolvedValue([
+                          { ...mockProposalProfile, name: values.name },
+                        ]),
                     };
                   }),
                 };
@@ -321,7 +346,7 @@ describe('createProposal with attachments', () => {
         createProposal({
           data: proposalInput,
           user: mockUser,
-        })
+        }),
       ).rejects.toThrow('User must have an active profile');
     });
 
@@ -338,7 +363,7 @@ describe('createProposal with attachments', () => {
         createProposal({
           data: proposalInput,
           user: mockUser,
-        })
+        }),
       ).rejects.toThrow('Process instance not found');
     });
 
@@ -360,7 +385,9 @@ describe('createProposal with attachments', () => {
         },
       };
 
-      (db.query.processInstances.findFirst as any).mockResolvedValue(mockProcessInstanceWithRestrictedState);
+      (db.query.processInstances.findFirst as any).mockResolvedValue(
+        mockProcessInstanceWithRestrictedState,
+      );
 
       const proposalInput: CreateProposalInput = {
         processInstanceId: 'test-process-instance-id',
@@ -372,12 +399,16 @@ describe('createProposal with attachments', () => {
         createProposal({
           data: proposalInput,
           user: mockUser,
-        })
-      ).rejects.toThrow('Proposals are not allowed in the Restricted State state');
+        }),
+      ).rejects.toThrow(
+        'Proposals are not allowed in the Restricted State state',
+      );
     });
 
     it('should handle transaction failure gracefully', async () => {
-      (db.transaction as any).mockRejectedValue(new Error('Transaction failed'));
+      (db.transaction as any).mockRejectedValue(
+        new Error('Transaction failed'),
+      );
 
       const proposalInput: CreateProposalInput = {
         processInstanceId: 'test-process-instance-id',
@@ -389,7 +420,7 @@ describe('createProposal with attachments', () => {
         createProposal({
           data: proposalInput,
           user: mockUser,
-        })
+        }),
       ).rejects.toThrow('Failed to create proposal');
     });
   });
@@ -398,7 +429,7 @@ describe('createProposal with attachments', () => {
     it('should ensure attachment IDs exist before creating proposal-attachment links', async () => {
       // This test ensures that the attachments exist in the database
       // before we try to reference them in proposalAttachments
-      
+
       const proposalInput: CreateProposalInput = {
         processInstanceId: 'test-process-instance-id',
         proposalData: {
@@ -417,7 +448,9 @@ describe('createProposal with attachments', () => {
             if (table === proposalAttachments) {
               return {
                 values: vi.fn().mockImplementation((values) => {
-                  capturedAttachmentValues = Array.isArray(values) ? values : [values];
+                  capturedAttachmentValues = Array.isArray(values)
+                    ? values
+                    : [values];
                   return Promise.resolve();
                 }),
               };

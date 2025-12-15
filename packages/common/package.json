@@ -14,6 +14,7 @@
   },
   "main": "src/index.ts",
   "scripts": {
+    "format:check": "prettier --log-level=warn --check \"**/*.{ts,tsx}\"",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest"

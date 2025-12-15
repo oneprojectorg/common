@@ -1,10 +1,5 @@
 import { db, eq } from '@op/db/client';
-import {
-  organizations,
-  proposals,
-  ProposalStatus,
-  users,
-} from '@op/db/schema';
+import { ProposalStatus, organizations, proposals, users } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 

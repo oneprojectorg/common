@@ -4,7 +4,7 @@ import { parseDate } from '@internationalized/date';
 import { CalendarIcon } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { DateValue } from 'react-aria-components';
-import { DialogTrigger, Button as AriaButton } from 'react-aria-components';
+import { Button as AriaButton, DialogTrigger } from 'react-aria-components';
 
 import { cn } from '../lib/utils';
 import { Calendar } from './Calendar';
@@ -206,7 +206,7 @@ export const DatePicker = <T extends DateValue>({
               'h-10 w-10',
               'flex items-center justify-center',
               'text-neutral-black outline-none',
-              'hover:bg-neutral-gray1 focus:ring-2 focus:ring-primary-teal focus:ring-offset-2 rounded-sm',
+              'rounded-sm hover:bg-neutral-gray1 focus:ring-2 focus:ring-primary-teal focus:ring-offset-2',
               props.isDisabled && 'cursor-not-allowed text-lightGray',
             )}
           >

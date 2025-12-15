@@ -5,8 +5,8 @@ import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
 import { Suspense } from 'react';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
-import { OrganizationSummaryList } from '@/components/OrganizationList';
 import { OrganizationAvatarSkeleton } from '@/components/OrganizationAvatar';
+import { OrganizationSummaryList } from '@/components/OrganizationList';
 
 export const ProfileOrganizationsSuspense = ({
   profileId,

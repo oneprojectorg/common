@@ -1,10 +1,7 @@
 'use client';
 
 import { getPublicUrl } from '@/utils';
-import {
-  formatCurrency,
-  parseProposalData,
-} from '@/utils/proposalUtils';
+import { formatCurrency, parseProposalData } from '@/utils/proposalUtils';
 import {
   ProposalStatus,
   Visibility,

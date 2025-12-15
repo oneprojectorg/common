@@ -1,21 +1,21 @@
-import { beforeEach, describe, expect, it } from 'vitest';
 import { db, eq } from '@op/db/client';
-import { 
-  decisionProcesses, 
-  processInstances, 
-  proposals, 
+import {
+  decisionProcesses,
+  processInstances,
+  profiles,
   proposalCategories,
-  taxonomies, 
-  taxonomyTerms, 
-  users, 
-  profiles 
+  proposals,
+  taxonomies,
+  taxonomyTerms,
+  users,
 } from '@op/db/schema';
+import { beforeEach, describe, expect, it } from 'vitest';
 
-import { createProcess } from '../createProcess';
 import { createInstance } from '../createInstance';
+import { createProcess } from '../createProcess';
 import { createProposal } from '../createProposal';
-import { listProposals } from '../listProposals';
 import { getProcessCategories } from '../getProcessCategories';
+import { listProposals } from '../listProposals';
 
 describe('Category Flow Integration Tests', () => {
   let testUser: any;
@@ -102,7 +102,7 @@ describe('Category Flow Integration Tests', () => {
     expect(proposalTaxonomy).toBeDefined();
     expect(proposalTaxonomy!.taxonomyTerms).toHaveLength(3);
 
-    const termLabels = proposalTaxonomy!.taxonomyTerms.map(t => t.label);
+    const termLabels = proposalTaxonomy!.taxonomyTerms.map((t) => t.label);
     expect(termLabels).toContain('Infrastructure');
     expect(termLabels).toContain('Community Events');
     expect(termLabels).toContain('Education');
@@ -137,13 +137,15 @@ describe('Category Flow Integration Tests', () => {
     });
 
     expect(categories).toHaveLength(3);
-    expect(categories.map(c => c.name)).toContain('Infrastructure');
-    expect(categories.map(c => c.name)).toContain('Community Events');
-    expect(categories.map(c => c.name)).toContain('Education');
+    expect(categories.map((c) => c.name)).toContain('Infrastructure');
+    expect(categories.map((c) => c.name)).toContain('Community Events');
+    expect(categories.map((c) => c.name)).toContain('Education');
 
     // Get the Infrastructure category for testing
-    const infrastructureCategory = categories.find(c => c.name === 'Infrastructure')!;
-    const educationCategory = categories.find(c => c.name === 'Education')!;
+    const infrastructureCategory = categories.find(
+      (c) => c.name === 'Infrastructure',
+    )!;
+    const educationCategory = categories.find((c) => c.name === 'Education')!;
 
     // Step 4: Create proposals with different categories
     const proposal1 = await createProposal({
@@ -213,7 +215,9 @@ describe('Category Flow Integration Tests', () => {
     });
 
     expect(infrastructureProposals.proposals).toHaveLength(2);
-    const infrastructureTitles = infrastructureProposals.proposals.map(p => (p.proposalData as any).title);
+    const infrastructureTitles = infrastructureProposals.proposals.map(
+      (p) => (p.proposalData as any).title,
+    );
     expect(infrastructureTitles).toContain('Road Repairs');
     expect(infrastructureTitles).toContain('Another Road Project');
 
@@ -227,10 +231,14 @@ describe('Category Flow Integration Tests', () => {
     });
 
     expect(educationProposals.proposals).toHaveLength(1);
-    expect((educationProposals.proposals[0].proposalData as any).title).toBe('School Supplies');
+    expect((educationProposals.proposals[0].proposalData as any).title).toBe(
+      'School Supplies',
+    );
 
     // Step 9: Test filtering by non-existent category
-    const communityEventsCategory = categories.find(c => c.name === 'Community Events')!;
+    const communityEventsCategory = categories.find(
+      (c) => c.name === 'Community Events',
+    )!;
     const communityProposals = await listProposals({
       input: {
         processInstanceId: instance.id,

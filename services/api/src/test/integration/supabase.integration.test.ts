@@ -168,4 +168,3 @@ describe.skip('Supabase Integration Tests', () => {
     expect(authStateChanges).toContain('SIGNED_IN');
   });
 });
-

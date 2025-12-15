@@ -17,6 +17,7 @@
     "typecheck": {
       "dependsOn": ["^typecheck"]
     },
+    "format:check": {},
 
     "dev": {
       "cache": false,

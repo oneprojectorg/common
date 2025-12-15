@@ -106,7 +106,10 @@ export const AcceptedState = () => (
           <div className="flex h-full flex-col">
             <span className="font-bold">
               Green Earth Foundation
-              <span className="font-normal"> will now appear as a</span> Partner{' '}
+              <span className="font-normal">
+                {' '}
+                will now appear as a
+              </span> Partner{' '}
               <span className="font-normal">on your profile.</span>
             </span>
           </div>

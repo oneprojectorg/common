@@ -1,12 +1,14 @@
 import {
   DecisionProcessSchema,
   DecisionProcessSchemaBase,
-  VotingConfig,
   ProposalConfig,
-  SchemaValidationResult
+  SchemaValidationResult,
+  VotingConfig,
 } from '../types/schema';
 
-export function isValidDecisionProcessSchema(data: unknown): data is DecisionProcessSchema {
+export function isValidDecisionProcessSchema(
+  data: unknown,
+): data is DecisionProcessSchema {
   if (typeof data !== 'object' || data === null) {
     return false;
   }
@@ -21,9 +23,13 @@ export function isValidDecisionProcessSchema(data: unknown): data is DecisionPro
     'instanceData' in obj &&
     typeof obj.instanceData === 'object' &&
     obj.instanceData !== null &&
-    typeof (obj.instanceData as Record<string, unknown>).maxVotesPerMember === 'number' &&
-    Number.isInteger((obj.instanceData as Record<string, unknown>).maxVotesPerMember) &&
-    (obj.instanceData as Record<string, unknown>).maxVotesPerMember as number >= 0
+    typeof (obj.instanceData as Record<string, unknown>).maxVotesPerMember ===
+      'number' &&
+    Number.isInteger(
+      (obj.instanceData as Record<string, unknown>).maxVotesPerMember,
+    ) &&
+    ((obj.instanceData as Record<string, unknown>)
+      .maxVotesPerMember as number) >= 0
   );
 }
 
@@ -33,9 +39,10 @@ export function validateSchemaWithZod(data: unknown): SchemaValidationResult {
 
     return {
       isValid: true,
-      schemaType: typeof data === 'object' && data !== null && 'schemaType' in data
-        ? String((data as any).schemaType)
-        : 'unknown',
+      schemaType:
+        typeof data === 'object' && data !== null && 'schemaType' in data
+          ? String((data as any).schemaType)
+          : 'unknown',
       errors: [],
       supportedProperties: extractSupportedProperties(result),
     };
@@ -43,13 +50,18 @@ export function validateSchemaWithZod(data: unknown): SchemaValidationResult {
     return {
       isValid: false,
       schemaType: 'invalid',
-      errors: [error instanceof Error ? error.message : 'Unknown validation error'],
+      errors: [
+        error instanceof Error ? error.message : 'Unknown validation error',
+      ],
       supportedProperties: [],
     };
   }
 }
 
-export function extractVotingConfig(schema: DecisionProcessSchema, schemaType: string = 'unknown'): VotingConfig {
+export function extractVotingConfig(
+  schema: DecisionProcessSchema,
+  schemaType: string = 'unknown',
+): VotingConfig {
   const baseConfig: VotingConfig = {
     allowProposals: schema.allowProposals,
     allowDecisions: schema.allowDecisions,
@@ -71,7 +83,10 @@ export function extractVotingConfig(schema: DecisionProcessSchema, schemaType: s
   return baseConfig;
 }
 
-export function extractProposalConfig(schema: DecisionProcessSchema, schemaType: string = 'unknown'): ProposalConfig {
+export function extractProposalConfig(
+  schema: DecisionProcessSchema,
+  schemaType: string = 'unknown',
+): ProposalConfig {
   const baseConfig: ProposalConfig = {
     requiredFields: ['title', 'description'],
     optionalFields: ['amount', 'category', 'schemaSpecificData'],
@@ -102,24 +117,37 @@ export function extractProposalConfig(schema: DecisionProcessSchema, schemaType:
     const proposalConfig = schema.proposalConfig as any;
 
     if (Array.isArray(proposalConfig.requiredFields)) {
-      baseConfig.requiredFields = [...baseConfig.requiredFields, ...proposalConfig.requiredFields];
+      baseConfig.requiredFields = [
+        ...baseConfig.requiredFields,
+        ...proposalConfig.requiredFields,
+      ];
     }
 
     if (Array.isArray(proposalConfig.optionalFields)) {
-      baseConfig.optionalFields = [...baseConfig.optionalFields, ...proposalConfig.optionalFields];
+      baseConfig.optionalFields = [
+        ...baseConfig.optionalFields,
+        ...proposalConfig.optionalFields,
+      ];
     }
 
     if (typeof proposalConfig.fieldConstraints === 'object') {
-      baseConfig.fieldConstraints = { ...baseConfig.fieldConstraints, ...proposalConfig.fieldConstraints };
+      baseConfig.fieldConstraints = {
+        ...baseConfig.fieldConstraints,
+        ...proposalConfig.fieldConstraints,
+      };
     }
   }
 
   return baseConfig;
 }
 
-export function extractSupportedProperties(schema: DecisionProcessSchema): string[] {
+export function extractSupportedProperties(
+  schema: DecisionProcessSchema,
+): string[] {
   const baseProperties = ['allowProposals', 'allowDecisions', 'instanceData'];
-  const additionalProperties = Object.keys(schema).filter(key => !baseProperties.includes(key));
+  const additionalProperties = Object.keys(schema).filter(
+    (key) => !baseProperties.includes(key),
+  );
 
   return [...baseProperties, ...additionalProperties];
 }
@@ -127,7 +155,7 @@ export function extractSupportedProperties(schema: DecisionProcessSchema): strin
 export function validateVoteSelection(
   selectedProposalIds: string[],
   maxVotesPerMember: number,
-  availableProposalIds: string[]
+  availableProposalIds: string[],
 ): {
   isValid: boolean;
   errors: string[];
@@ -142,12 +170,16 @@ export function validateVoteSelection(
     errors.push(`Cannot select more than ${maxVotesPerMember} proposals`);
   }
 
-  const invalidProposals = selectedProposalIds.filter(id => !availableProposalIds.includes(id));
+  const invalidProposals = selectedProposalIds.filter(
+    (id) => !availableProposalIds.includes(id),
+  );
   if (invalidProposals.length > 0) {
     errors.push(`Invalid proposal IDs: ${invalidProposals.join(', ')}`);
   }
 
-  const duplicates = selectedProposalIds.filter((id, index) => selectedProposalIds.indexOf(id) !== index);
+  const duplicates = selectedProposalIds.filter(
+    (id, index) => selectedProposalIds.indexOf(id) !== index,
+  );
   if (duplicates.length > 0) {
     errors.push(`Duplicate proposal IDs: ${duplicates.join(', ')}`);
   }
@@ -170,13 +202,15 @@ export function createSchemaSignature(schema: DecisionProcessSchema): string {
 
 export function validateSchemaCompatibility(
   currentSchema: DecisionProcessSchema,
-  requiredProperties: string[]
+  requiredProperties: string[],
 ): {
   isCompatible: boolean;
   missingProperties: string[];
 } {
   const schemaKeys = Object.keys(currentSchema);
-  const missingProperties = requiredProperties.filter(prop => !schemaKeys.includes(prop));
+  const missingProperties = requiredProperties.filter(
+    (prop) => !schemaKeys.includes(prop),
+  );
 
   return {
     isCompatible: missingProperties.length === 0,

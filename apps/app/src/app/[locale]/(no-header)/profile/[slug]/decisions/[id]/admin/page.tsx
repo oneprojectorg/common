@@ -29,9 +29,7 @@ async function DecisionAdminPageContent({
       <div className="min-h-full bg-gray-50 px-6 py-12">
         <div className="mx-auto max-w-4xl">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">
-              Admin Controls
-            </h1>
+            <h1 className="text-3xl font-bold text-gray-900">Admin Controls</h1>
             <p className="mt-2 text-gray-600">
               Manage transitions for: {instance.process?.name || instance.name}
             </p>

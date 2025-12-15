@@ -13,7 +13,10 @@ import type {
  * is only used for condition evaluation.
  */
 export class BranchBlock implements BlockExecutor<BranchBlockType> {
-  execute(_block: BranchBlockType, context: ExecutionContext): BlockExecutionResult {
+  execute(
+    _block: BranchBlockType,
+    context: ExecutionContext,
+  ): BlockExecutionResult {
     // The pipeline engine handles the actual execution of branch.blocks
     // This executor is primarily for type safety and validation
     // See pipelineEngine.ts:executeBranchBlock for the full implementation

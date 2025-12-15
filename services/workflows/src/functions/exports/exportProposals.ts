@@ -80,7 +80,9 @@ export const exportProposals = inngest.createFunction(
         async () => {
           if (format === 'csv') {
             return {
-              content: await generateProposalsCsv(proposals as ProposalFromList[]),
+              content: await generateProposalsCsv(
+                proposals as ProposalFromList[],
+              ),
               extension: 'csv',
               mimeType: 'text/csv',
             };

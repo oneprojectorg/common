@@ -10,7 +10,9 @@ interface GetOrganizationPostsServiceInput extends GetOrganizationPostsInput {
   authUserId: string;
 }
 
-export const getOrganizationPosts = async (input: GetOrganizationPostsServiceInput) => {
+export const getOrganizationPosts = async (
+  input: GetOrganizationPostsServiceInput,
+) => {
   const {
     organizationId,
     parentPostId,

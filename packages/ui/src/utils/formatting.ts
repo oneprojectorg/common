@@ -13,7 +13,7 @@
 export function formatDate(
   dateString: string,
   options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' },
-  locale: string = 'en-US'
+  locale: string = 'en-US',
 ): string {
   // Parse YYYY-MM-DD format as local date to avoid timezone issues (NOT UTC).
   const parts = dateString.split('-').map(Number);

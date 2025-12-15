@@ -4,11 +4,7 @@ import { getPublicUrl } from '@/utils';
 import { OrganizationUser } from '@/utils/UserProvider';
 import { detectLinks, linkifyText } from '@/utils/linkDetection';
 import { trpc } from '@op/api/client';
-import type {
-  Organization,
-  Post,
-  PostAttachment,
-} from '@op/api/encoders';
+import type { Organization, Post, PostAttachment } from '@op/api/encoders';
 import { useRelativeTime } from '@op/hooks';
 import { REACTION_OPTIONS } from '@op/types';
 import { AvatarSkeleton } from '@op/ui/Avatar';
@@ -144,19 +140,19 @@ const PostReactions = ({
 
   const reactions = post.reactionCounts
     ? Object.entries(post.reactionCounts).map(([reactionType, count]) => {
-      const reactionOption = REACTION_OPTIONS.find(
-        (option) => option.key === reactionType,
-      );
-      const emoji = reactionOption?.emoji || reactionType;
-      const users = post.reactionUsers?.[reactionType] || [];
+        const reactionOption = REACTION_OPTIONS.find(
+          (option) => option.key === reactionType,
+        );
+        const emoji = reactionOption?.emoji || reactionType;
+        const users = post.reactionUsers?.[reactionType] || [];
 
-      return {
-        emoji,
-        count: count as number,
-        isActive: post.userReaction === reactionType,
-        users,
-      };
-    })
+        return {
+          emoji,
+          count: count as number,
+          isActive: post.userReaction === reactionType,
+          users,
+        };
+      })
     : [];
 
   return (

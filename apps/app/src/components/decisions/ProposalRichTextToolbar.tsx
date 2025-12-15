@@ -26,6 +26,7 @@ import {
   Undo,
 } from 'lucide-react';
 import { useCallback, useRef } from 'react';
+
 import { useTranslations } from '@/lib/i18n';
 
 export interface ProposalRichTextToolbarProps {

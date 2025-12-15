@@ -1,8 +1,17 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { TransitionEngine } from '../transitionEngine';
 import { db, eq } from '@op/db/client';
-import { UnauthorizedError, NotFoundError, ValidationError } from '../../../utils';
-import type { ProcessSchema, InstanceData, TransitionCondition } from '../types';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import {
+  NotFoundError,
+  UnauthorizedError,
+  ValidationError,
+} from '../../../utils';
+import { TransitionEngine } from '../transitionEngine';
+import type {
+  InstanceData,
+  ProcessSchema,
+  TransitionCondition,
+} from '../types';
 
 const mockUser = {
   id: 'auth-user-id',
@@ -104,7 +113,9 @@ describe('TransitionEngine', () => {
 
   describe('checkAvailableTransitions', () => {
     it('should return available transitions for current state', async () => {
-      vi.mocked(db.query.processInstances.findFirst).mockResolvedValueOnce(mockInstance as any);
+      vi.mocked(db.query.processInstances.findFirst).mockResolvedValueOnce(
+        mockInstance as any,
+      );
       vi.mocked(db.$count).mockResolvedValueOnce(5); // 5 proposals
 
       const result = await TransitionEngine.checkAvailableTransitions({
@@ -119,7 +130,9 @@ describe('TransitionEngine', () => {
     });
 
     it('should return false when conditions are not met', async () => {
-      vi.mocked(db.query.processInstances.findFirst).mockResolvedValueOnce(mockInstance as any);
+      vi.mocked(db.query.processInstances.findFirst).mockResolvedValueOnce(
+        mockInstance as any,
+      );
       vi.mocked(db.$count).mockResolvedValueOnce(0); // No proposals
 
       const result = await TransitionEngine.checkAvailableTransitions({
@@ -133,7 +146,9 @@ describe('TransitionEngine', () => {
     });
 
     it('should filter to specific transition when toStateId provided', async () => {
-      vi.mocked(db.query.processInstances.findFirst).mockResolvedValueOnce(mockInstance as any);
+      vi.mocked(db.query.processInstances.findFirst).mockResolvedValueOnce(
+        mockInstance as any,
+      );
       vi.mocked(db.$count).mockResolvedValueOnce(5);
 
       const result = await TransitionEngine.checkAvailableTransitions({
@@ -147,13 +162,15 @@ describe('TransitionEngine', () => {
     });
 
     it('should throw NotFoundError when instance not found', async () => {
-      vi.mocked(db.query.processInstances.findFirst).mockResolvedValueOnce(null);
+      vi.mocked(db.query.processInstances.findFirst).mockResolvedValueOnce(
+        null,
+      );
 
       await expect(
         TransitionEngine.checkAvailableTransitions({
           instanceId: 'nonexistent-id',
           user: mockUser,
-        })
+        }),
       ).rejects.toThrow(NotFoundError);
     });
 
@@ -162,7 +179,7 @@ describe('TransitionEngine', () => {
         TransitionEngine.checkAvailableTransitions({
           instanceId: 'instance-id-123',
           user: null as any,
-        })
+        }),
       ).rejects.toThrow(UnauthorizedError);
     });
   });
@@ -186,7 +203,7 @@ describe('TransitionEngine', () => {
 
       vi.mocked(db.query.users.findFirst).mockResolvedValueOnce(mockDbUser);
       vi.mocked(db.$count).mockResolvedValueOnce(5); // Proposals count
-      
+
       // Mock transaction
       vi.mocked(db.transaction).mockImplementationOnce(async (callback) => {
         await callback({
@@ -214,7 +231,9 @@ describe('TransitionEngine', () => {
     });
 
     it('should throw ValidationError when transition is not allowed', async () => {
-      vi.mocked(db.query.processInstances.findFirst).mockResolvedValueOnce(mockInstance as any);
+      vi.mocked(db.query.processInstances.findFirst).mockResolvedValueOnce(
+        mockInstance as any,
+      );
       vi.mocked(db.query.users.findFirst).mockResolvedValueOnce(mockDbUser);
       vi.mocked(db.$count).mockResolvedValueOnce(0); // No proposals - condition fails
 
@@ -225,7 +244,7 @@ describe('TransitionEngine', () => {
             toStateId: 'review',
           },
           user: mockUser,
-        })
+        }),
       ).rejects.toThrow(ValidationError);
     });
   });
@@ -249,7 +268,7 @@ describe('TransitionEngine', () => {
 
       const result = (TransitionEngine as any).evaluateTimeCondition(
         pastCondition,
-        instanceWithTime
+        instanceWithTime,
       );
 
       expect(result).toBe(true);
@@ -272,7 +291,7 @@ describe('TransitionEngine', () => {
 
       const result = (TransitionEngine as any).evaluateCustomFieldCondition(
         fieldCondition,
-        instanceWithField
+        instanceWithField,
       );
 
       expect(result).toBe(true);
@@ -292,7 +311,7 @@ describe('TransitionEngine', () => {
 
       const result = (TransitionEngine as any).evaluateTimeCondition(
         timeCondition,
-        instanceWithoutTime
+        instanceWithoutTime,
       );
 
       expect(result).toBe(false);
@@ -302,14 +321,14 @@ describe('TransitionEngine', () => {
   describe('error handling', () => {
     it('should handle database errors gracefully', async () => {
       vi.mocked(db.query.processInstances.findFirst).mockRejectedValueOnce(
-        new Error('Database connection failed')
+        new Error('Database connection failed'),
       );
 
       await expect(
         TransitionEngine.checkAvailableTransitions({
           instanceId: 'instance-id-123',
           user: mockUser,
-        })
+        }),
       ).rejects.toThrow('Failed to check transitions');
     });
 
@@ -320,7 +339,9 @@ describe('TransitionEngine', () => {
         value: 5,
       };
 
-      const errorMessage = (TransitionEngine as any).getConditionErrorMessage(condition);
+      const errorMessage = (TransitionEngine as any).getConditionErrorMessage(
+        condition,
+      );
       expect(errorMessage).toContain('Proposal count condition not met');
       expect(errorMessage).toContain('greaterThan 5');
     });

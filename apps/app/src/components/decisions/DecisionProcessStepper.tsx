@@ -1,6 +1,6 @@
 'use client';
 
-import { PhaseStepper, type Phase } from '@op/ui/PhaseStepper';
+import { type Phase, PhaseStepper } from '@op/ui/PhaseStepper';
 
 interface ProcessPhase {
   id: string;

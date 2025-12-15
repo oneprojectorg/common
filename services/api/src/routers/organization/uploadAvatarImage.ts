@@ -1,4 +1,3 @@
-import { trackImageUpload } from '../../utils/analytics';
 import { createServerClient } from '@op/supabase/lib';
 import { TRPCError } from '@trpc/server';
 import { waitUntil } from '@vercel/functions';
@@ -11,6 +10,7 @@ import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 import { MAX_FILE_SIZE, sanitizeS3Filename } from '../../utils';
+import { trackImageUpload } from '../../utils/analytics';
 
 const ALLOWED_MIME_TYPES = [
   'image/png',

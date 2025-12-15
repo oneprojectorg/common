@@ -1,11 +1,12 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { createProcess } from '../createProcess';
-import { createInstance } from '../createInstance';
-import { createProposal } from '../createProposal';
-import { TransitionEngine } from '../transitionEngine';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { mockDb } from '../../../test/setup';
 import { UnauthorizedError, ValidationError } from '../../../utils';
-import type { ProcessSchema, InstanceData, ProposalData } from '../types';
+import { createInstance } from '../createInstance';
+import { createProcess } from '../createProcess';
+import { createProposal } from '../createProposal';
+import { TransitionEngine } from '../transitionEngine';
+import type { InstanceData, ProcessSchema, ProposalData } from '../types';
 
 // Mock user object
 const mockUser = {
@@ -22,7 +23,8 @@ const mockDbUser = {
 // Define the 4-stage voting process schema
 const votingProcessSchema: ProcessSchema = {
   name: 'Community Voting Process',
-  description: 'A 4-stage voting process: proposals, voting, offline decision, final decision',
+  description:
+    'A 4-stage voting process: proposals, voting, offline decision, final decision',
   states: [
     {
       id: 'proposal_submission',
@@ -32,8 +34,8 @@ const votingProcessSchema: ProcessSchema = {
       config: {
         allowProposals: true,
         allowDecisions: false,
-        visibleComponents: ['proposal-form', 'proposal-list']
-      }
+        visibleComponents: ['proposal-form', 'proposal-list'],
+      },
     },
     {
       id: 'voting_phase',
@@ -43,8 +45,8 @@ const votingProcessSchema: ProcessSchema = {
       config: {
         allowProposals: false,
         allowDecisions: true,
-        visibleComponents: ['voting-form', 'proposal-list', 'voting-results']
-      }
+        visibleComponents: ['voting-form', 'proposal-list', 'voting-results'],
+      },
     },
     {
       id: 'offline_decision',
@@ -54,8 +56,8 @@ const votingProcessSchema: ProcessSchema = {
       config: {
         allowProposals: false,
         allowDecisions: false,
-        visibleComponents: ['voting-results', 'admin-notes']
-      }
+        visibleComponents: ['voting-results', 'admin-notes'],
+      },
     },
     {
       id: 'final_decision',
@@ -65,9 +67,9 @@ const votingProcessSchema: ProcessSchema = {
       config: {
         allowProposals: false,
         allowDecisions: false,
-        visibleComponents: ['final-results', 'decision-summary']
-      }
-    }
+        visibleComponents: ['final-results', 'decision-summary'],
+      },
+    },
   ],
   transitions: [
     {
@@ -81,16 +83,16 @@ const votingProcessSchema: ProcessSchema = {
           {
             type: 'time',
             operator: 'greaterThan',
-            value: 604800000 // 7 days in milliseconds
+            value: 604800000, // 7 days in milliseconds
           },
           {
             type: 'proposalCount',
             operator: 'greaterThan',
-            value: 2 // Minimum 3 proposals
-          }
+            value: 2, // Minimum 3 proposals
+          },
         ],
-        requireAll: true
-      }
+        requireAll: true,
+      },
     },
     {
       id: 'begin_offline_review',
@@ -103,16 +105,16 @@ const votingProcessSchema: ProcessSchema = {
           {
             type: 'time',
             operator: 'greaterThan',
-            value: 432000000 // 5 days in milliseconds
+            value: 432000000, // 5 days in milliseconds
           },
           {
             type: 'participationCount',
             operator: 'greaterThan',
-            value: 9 // Minimum 10 participants
-          }
+            value: 9, // Minimum 10 participants
+          },
         ],
-        requireAll: true
-      }
+        requireAll: true,
+      },
     },
     {
       id: 'finalize_decision',
@@ -126,27 +128,27 @@ const votingProcessSchema: ProcessSchema = {
             type: 'customField',
             operator: 'equals',
             field: 'adminDecisionComplete',
-            value: true
-          }
-        ]
+            value: true,
+          },
+        ],
       },
       actions: [
         {
           type: 'notify',
           config: {
             notificationType: 'decision_finalized',
-            recipients: 'all_participants'
-          }
+            recipients: 'all_participants',
+          },
         },
         {
           type: 'updateField',
           config: {
             field: 'finalizedAt',
-            value: 'current_timestamp'
-          }
-        }
-      ]
-    }
+            value: 'current_timestamp',
+          },
+        },
+      ],
+    },
   ],
   initialState: 'proposal_submission',
   // Users can select up to 5 proposals in voting phase
@@ -157,45 +159,51 @@ const votingProcessSchema: ProcessSchema = {
         type: 'array',
         maxItems: 5,
         minItems: 1,
-        items: { 
+        items: {
           type: 'string',
-          description: 'Proposal ID'
-        }
+          description: 'Proposal ID',
+        },
       },
       voterComments: {
         type: 'string',
         maxLength: 500,
-        description: 'Optional comments from the voter'
-      }
+        description: 'Optional comments from the voter',
+      },
     },
-    required: ['selectedProposals']
+    required: ['selectedProposals'],
   },
   // Proposal template
   proposalTemplate: {
     type: 'object',
     properties: {
-      title: { 
+      title: {
         type: 'string',
         minLength: 10,
-        maxLength: 100
+        maxLength: 100,
       },
-      description: { 
+      description: {
         type: 'string',
         minLength: 50,
-        maxLength: 2000
+        maxLength: 2000,
       },
       category: {
         type: 'string',
-        enum: ['infrastructure', 'community', 'education', 'sustainability', 'other']
+        enum: [
+          'infrastructure',
+          'community',
+          'education',
+          'sustainability',
+          'other',
+        ],
       },
       estimatedBudget: {
         type: 'number',
         minimum: 0,
-        maximum: 100000
-      }
+        maximum: 100000,
+      },
     },
-    required: ['title', 'description', 'category']
-  }
+    required: ['title', 'description', 'category'],
+  },
 };
 
 describe('Voting Process Integration Test', () => {
@@ -248,7 +256,9 @@ describe('Voting Process Integration Test', () => {
         currentStateId: 'proposal_submission',
         budget: 50000,
         fieldValues: {
-          votingDeadline: new Date(Date.now() + 12 * 24 * 60 * 60 * 1000).toISOString(), // 12 days from now
+          votingDeadline: new Date(
+            Date.now() + 12 * 24 * 60 * 60 * 1000,
+          ).toISOString(), // 12 days from now
         },
         stateData: {
           proposal_submission: {
@@ -268,7 +278,9 @@ describe('Voting Process Integration Test', () => {
       };
 
       mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-      mockDb.query.decisionProcesses.findFirst.mockResolvedValueOnce(mockProcess as any);
+      mockDb.query.decisionProcesses.findFirst.mockResolvedValueOnce(
+        mockProcess as any,
+      );
       mockDb.insert.mockReturnValueOnce({
         values: vi.fn().mockReturnValueOnce({
           returning: vi.fn().mockResolvedValueOnce([mockCreatedInstance]),
@@ -294,7 +306,8 @@ describe('Voting Process Integration Test', () => {
     it('should allow creating proposals in proposal_submission stage', async () => {
       const proposalData: ProposalData = {
         title: 'Build a Community Garden',
-        description: 'Create a sustainable community garden in the central park area to promote local food production and community engagement.',
+        description:
+          'Create a sustainable community garden in the central park area to promote local food production and community engagement.',
         category: 'sustainability',
         estimatedBudget: 15000,
       };
@@ -319,7 +332,9 @@ describe('Voting Process Integration Test', () => {
       };
 
       mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-      mockDb.query.processInstances.findFirst.mockResolvedValueOnce(mockInstance as any);
+      mockDb.query.processInstances.findFirst.mockResolvedValueOnce(
+        mockInstance as any,
+      );
       mockDb.insert.mockReturnValueOnce({
         values: vi.fn().mockReturnValueOnce({
           returning: vi.fn().mockResolvedValueOnce([mockCreatedProposal]),
@@ -352,7 +367,9 @@ describe('Voting Process Integration Test', () => {
       };
 
       mockDb.query.users.findFirst.mockResolvedValueOnce(mockDbUser);
-      mockDb.query.processInstances.findFirst.mockResolvedValueOnce(mockInstance as any);
+      mockDb.query.processInstances.findFirst.mockResolvedValueOnce(
+        mockInstance as any,
+      );
 
       await expect(
         createProposal({
@@ -365,7 +382,7 @@ describe('Voting Process Integration Test', () => {
             },
           },
           user: mockUser,
-        })
+        }),
       ).rejects.toThrow(ValidationError);
     });
   });
@@ -388,7 +405,9 @@ describe('Voting Process Integration Test', () => {
         },
       };
 
-      mockDb.query.processInstances.findFirst.mockResolvedValueOnce(mockInstance as any);
+      mockDb.query.processInstances.findFirst.mockResolvedValueOnce(
+        mockInstance as any,
+      );
       mockDb.$count.mockResolvedValueOnce(2); // Only 2 proposals (need 3+)
 
       const result = await TransitionEngine.checkAvailableTransitions({
@@ -404,7 +423,7 @@ describe('Voting Process Integration Test', () => {
 
     it('should allow transition to voting_phase when conditions are met', async () => {
       const sevenDaysAgo = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000);
-      
+
       const mockInstance = {
         id: instanceId,
         currentStateId: 'proposal_submission',
@@ -421,7 +440,9 @@ describe('Voting Process Integration Test', () => {
         },
       };
 
-      mockDb.query.processInstances.findFirst.mockResolvedValueOnce(mockInstance as any);
+      mockDb.query.processInstances.findFirst.mockResolvedValueOnce(
+        mockInstance as any,
+      );
       mockDb.$count.mockResolvedValueOnce(5); // 5 proposals (meets minimum)
 
       const result = await TransitionEngine.checkAvailableTransitions({
@@ -449,7 +470,7 @@ describe('Voting Process Integration Test', () => {
 
     it('should check transition to offline_decision requires participation', async () => {
       const fiveDaysAgo = new Date(Date.now() - 6 * 24 * 60 * 60 * 1000);
-      
+
       const mockInstance = {
         id: instanceId,
         currentStateId: 'voting_phase',
@@ -466,8 +487,10 @@ describe('Voting Process Integration Test', () => {
         },
       };
 
-      mockDb.query.processInstances.findFirst.mockResolvedValueOnce(mockInstance as any);
-      
+      mockDb.query.processInstances.findFirst.mockResolvedValueOnce(
+        mockInstance as any,
+      );
+
       // Mock low participation
       mockDb.selectDistinctOn.mockReturnValueOnce({
         from: vi.fn().mockReturnValueOnce({
@@ -485,7 +508,9 @@ describe('Voting Process Integration Test', () => {
       });
 
       expect(result.canTransition).toBe(false);
-      const transition = result.availableTransitions.find(t => t.toStateId === 'offline_decision');
+      const transition = result.availableTransitions.find(
+        (t) => t.toStateId === 'offline_decision',
+      );
       expect(transition?.canExecute).toBe(false);
     });
   });
@@ -506,14 +531,18 @@ describe('Voting Process Integration Test', () => {
         },
       };
 
-      mockDb.query.processInstances.findFirst.mockResolvedValueOnce(mockInstance as any);
+      mockDb.query.processInstances.findFirst.mockResolvedValueOnce(
+        mockInstance as any,
+      );
 
       const result = await TransitionEngine.checkAvailableTransitions({
         instanceId,
         user: mockUser,
       });
 
-      const finalTransition = result.availableTransitions.find(t => t.toStateId === 'final_decision');
+      const finalTransition = result.availableTransitions.find(
+        (t) => t.toStateId === 'final_decision',
+      );
       expect(finalTransition?.canExecute).toBe(false);
     });
 
@@ -532,14 +561,18 @@ describe('Voting Process Integration Test', () => {
         },
       };
 
-      mockDb.query.processInstances.findFirst.mockResolvedValueOnce(mockInstance as any);
+      mockDb.query.processInstances.findFirst.mockResolvedValueOnce(
+        mockInstance as any,
+      );
 
       const result = await TransitionEngine.checkAvailableTransitions({
         instanceId,
         user: mockUser,
       });
 
-      const finalTransition = result.availableTransitions.find(t => t.toStateId === 'final_decision');
+      const finalTransition = result.availableTransitions.find(
+        (t) => t.toStateId === 'final_decision',
+      );
       expect(finalTransition?.canExecute).toBe(true);
     });
 
@@ -562,7 +595,8 @@ describe('Voting Process Integration Test', () => {
       mockDb.query.processInstances.findFirst
         .mockResolvedValueOnce(mockInstance as any) // For check
         .mockResolvedValueOnce(mockInstance as any) // For execute
-        .mockResolvedValueOnce({ // Final result
+        .mockResolvedValueOnce({
+          // Final result
           ...mockInstance,
           currentStateId: 'final_decision',
           instanceData: {
@@ -619,7 +653,9 @@ describe('Voting Process Integration Test', () => {
         },
       };
 
-      mockDb.query.processInstances.findFirst.mockResolvedValueOnce(mockInstance as any);
+      mockDb.query.processInstances.findFirst.mockResolvedValueOnce(
+        mockInstance as any,
+      );
 
       const result = await TransitionEngine.checkAvailableTransitions({
         instanceId,
@@ -631,8 +667,10 @@ describe('Voting Process Integration Test', () => {
     });
 
     it('should not allow proposals or decisions in final state', async () => {
-      const finalStateConfig = votingProcessSchema.states.find(s => s.id === 'final_decision')?.config;
-      
+      const finalStateConfig = votingProcessSchema.states.find(
+        (s) => s.id === 'final_decision',
+      )?.config;
+
       expect(finalStateConfig?.allowProposals).toBe(false);
       expect(finalStateConfig?.allowDecisions).toBe(false);
     });
