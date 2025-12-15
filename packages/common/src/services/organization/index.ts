@@ -13,3 +13,4 @@ export * from './getOrganizationsByProfile';
 export * from './getOrganizationUsers';
 export * from './updateOrganizationUser';
 export * from './deleteOrganizationUser';
+export * from './deleteOrganization';

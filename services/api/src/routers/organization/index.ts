@@ -5,6 +5,7 @@ import { checkMembershipRouter } from './checkMembership';
 import { createOrganizationRouter } from './createOrganization';
 import { createPostInOrganizationRouter } from './createPostInOrganization';
 import { declineRelationshipRouter } from './declineRelationship';
+import { deleteOrganizationRouter } from './deleteOrganization';
 import { deleteOrganizationUserRouter } from './deleteOrganizationUser';
 import { deletePost } from './deletePost';
 import { getOrganizationRouter } from './getOrganization';
@@ -51,4 +52,5 @@ export const organizationRouter = mergeRouters(
   reactionsRouter,
   updateOrganizationUserRouter,
   deleteOrganizationUserRouter,
+  deleteOrganizationRouter,
 );
