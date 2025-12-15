@@ -82,12 +82,12 @@ function createFetchWithSSRCookies(encryptedCookies?: string) {
 }
 
 /**
- * Custom link that handles channel-based query invalidation.
+ * Custom link that registers queries and mutations with the channel registry.
  *
  * For queries: Registers the query key with subscription channels from x-subscription-channels header
- * For mutations: Looks up query keys for channels from x-mutation-channels header and invalidates them
+ * For mutations: Registers mutation channels from x-mutation-channels header (triggers invalidation via registry)
  */
-function createChannelInvalidationLink(): TRPCLink<AppRouter> {
+function createChannelRegistrationLink(): TRPCLink<AppRouter> {
   return () => {
     return ({ next, op }) => {
       return observable((observer) => {
@@ -165,8 +165,8 @@ export function createLinks(encryptedCookies?: string): TRPCLink<AppRouter>[] {
           }),
         ]
       : []),
-    // Channel invalidation link - processes response headers
-    createChannelInvalidationLink(),
+    // Channel registration link - processes response headers
+    createChannelRegistrationLink(),
     // HTTP transport link
     splitLink({
       condition(op) {
