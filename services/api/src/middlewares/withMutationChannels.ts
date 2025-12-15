@@ -1,4 +1,4 @@
-import type { ChannelName } from '@op/realtime';
+import type { ChannelName } from '@op/common/realtime';
 
 import type { MiddlewareBuilderBase } from '../types';
 

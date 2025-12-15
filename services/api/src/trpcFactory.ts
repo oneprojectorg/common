@@ -1,4 +1,4 @@
-import type { ChannelName } from '@op/realtime';
+import type { ChannelName } from '@op/common/realtime';
 import { initTRPC } from '@trpc/server';
 import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
 import { customAlphabet } from 'nanoid';

@@ -1,7 +1,7 @@
+import { Channels } from '@op/common/realtime';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import WebSocket from 'ws';
 
-import { Channels } from '../channels';
 import type { RealtimeMessage } from '../schemas';
 import { RealtimeClient } from '../server/client';
 import { generateConnectionToken } from '../server/token';

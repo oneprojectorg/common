@@ -1,4 +1,4 @@
-import { ChannelName } from '../channels';
+import type { ChannelName } from '@op/common/realtime';
 
 /**
  * Realtime backend client for interacting with the real-time messaging service

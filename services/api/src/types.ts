@@ -1,7 +1,7 @@
 /* eslint-disable ts/no-empty-object-type */
+import type { ChannelName } from '@op/common/realtime';
 import type { db } from '@op/db/client';
 import type { tables } from '@op/db/tables';
-import type { ChannelName } from '@op/realtime';
 import type { User } from '@op/supabase/lib';
 import type { MiddlewareFunction } from '@trpc/server/unstable-core-do-not-import';
 import type { SerializeOptions } from 'cookie';
