@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@op/api": "workspace:*",
+    "@op/common": "workspace:*",
     "@op/core": "workspace:*",
     "@op/supabase": "workspace:*",
     "@tanstack/react-query": "5.66.11",

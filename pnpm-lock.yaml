@@ -747,6 +747,9 @@ importers:
       '@op/api':
         specifier: workspace:*
         version: link:../../services/api
+      '@op/common':
+        specifier: workspace:*
+        version: link:../common
       '@op/core':
         specifier: workspace:*
         version: link:../core
