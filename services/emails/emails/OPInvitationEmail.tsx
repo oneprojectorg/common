@@ -1,5 +1,4 @@
 import { Button, Section, Text } from '@react-email/components';
-import * as React from 'react';
 
 import EmailTemplate from '../components/EmailTemplate';
 import { Header } from '../components/Header';

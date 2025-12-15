@@ -236,14 +236,15 @@ const ModalStepperExample = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 3;
 
-  const handleNext = (step: number) => {
-    setCurrentStep(step);
-    console.log(`Next step ${step}`);
+  const handleNext = () => {
+    setCurrentStep((prev) => Math.min(prev + 1, totalSteps));
+    console.log(`Next step`);
+    return true;
   };
 
-  const handlePrevious = (step: number) => {
-    setCurrentStep(step);
-    console.log(`Previous step ${step}`);
+  const handlePrevious = () => {
+    setCurrentStep((prev) => Math.max(prev - 1, 1));
+    console.log(`Previous step`);
   };
 
   const handleFinish = () => {
@@ -294,11 +295,11 @@ const ModalStepperExample = () => {
       <ModalHeader>{header}</ModalHeader>
       <ModalBody className="min-w-[400px]">{content}</ModalBody>
       <ModalStepper
+        currentStep={currentStep}
         totalSteps={totalSteps}
         onNext={handleNext}
         onPrevious={handlePrevious}
         onFinish={handleFinish}
-        initialStep={1}
       />
     </Modal>
   );
