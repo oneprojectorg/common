@@ -103,21 +103,21 @@ export const listDecisionProfiles = async ({
   const typeCondition = eq(profiles.type, EntityType.DECISION);
 
   // Build process instance filter conditions
-  const processInstanceFilters = [
+  const processInstanceConditions = [
     status ? eq(processInstances.status, status) : undefined,
     ownerProfileId
       ? eq(processInstances.ownerProfileId, ownerProfileId)
       : undefined,
   ].filter(Boolean);
 
-  const processInstanceCondition = inArray(
+  const processInstanceQuery = inArray(
     profiles.id,
     db
       .select({ profileId: processInstances.profileId })
       .from(processInstances)
       .where(
-        processInstanceFilters.length > 0
-          ? and(...processInstanceFilters)
+        processInstanceConditions.length > 0
+          ? and(...processInstanceConditions)
           : undefined, // This will still work correctly
       ),
   );
@@ -141,7 +141,7 @@ export const listDecisionProfiles = async ({
 
   const whereConditions = [
     cursorCondition,
-    processInstanceCondition,
+    processInstanceQuery,
     typeCondition,
     searchCondition,
     authorizationCondition,
