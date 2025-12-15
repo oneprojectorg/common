@@ -1,3 +1,5 @@
+import { Suspense } from 'react';
+
 import { UserProvider } from '@/utils/UserProvider';
 import { getUser } from '@/utils/getUser';
 import { SidebarLayout, SidebarProvider } from '@op/ui/Sidebar';
@@ -8,30 +10,42 @@ import { SidebarNav } from '@/components/SidebarNav';
 import { SiteHeader } from '@/components/SiteHeader';
 import { AppLayout } from '@/components/layout/split/AppLayout';
 
-export const dynamic = 'force-dynamic';
+// Enable Partial Prerendering - static shell with dynamic user content
+export const experimental_ppr = true;
 
 /**
- * Main app layout - checks for organization membership then renders shell.
- * User data fetch is cached so child components can reuse it without extra requests.
+ * Wrapper component that fetches user data and handles auth redirect.
+ * Wrapped in Suspense to allow the shell to be pre-rendered.
  */
-const AppRoot = async ({ children }: { children: React.ReactNode }) => {
+const UserWrapper = async ({ children }: { children: React.ReactNode }) => {
   const user = await getUser();
 
   if (user?.organizationUsers?.length === 0) {
     redirect('/en/start');
   }
 
+  return <UserProvider initialUser={user}>{children}</UserProvider>;
+};
+
+/**
+ * Main app layout with PPR enabled.
+ * The outer shell (sidebar structure, header skeleton) is pre-rendered.
+ * User-specific content streams in via Suspense boundaries.
+ */
+const AppRoot = async ({ children }: { children: React.ReactNode }) => {
   return (
     <div className="flex size-full max-h-full flex-col">
-      <UserProvider initialUser={user}>
-        <SidebarProvider>
-          <SiteHeader />
-          <SidebarLayout>
-            <SidebarNav />
-            <AppLayout>{children}</AppLayout>
-          </SidebarLayout>
-        </SidebarProvider>
-      </UserProvider>
+      <Suspense>
+        <UserWrapper>
+          <SidebarProvider>
+            <SiteHeader />
+            <SidebarLayout>
+              <SidebarNav />
+              <AppLayout>{children}</AppLayout>
+            </SidebarLayout>
+          </SidebarProvider>
+        </UserWrapper>
+      </Suspense>
       <Script async src="//cdn.iframe.ly/embed.js"></Script>
     </div>
   );

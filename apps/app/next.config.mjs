@@ -38,6 +38,7 @@ dotenv.config({
 /** @type {import('next').NextConfig} */
 const config = {
   experimental: {
+    ppr: 'incremental',
     // reactCompiler: true,
     serverComponentsExternalPackages: [
       'sharp',

@@ -7,8 +7,6 @@ import {
   ListPageLayoutHeader,
 } from '@/components/layout/ListPageLayout';
 
-export const dynamic = 'force-dynamic';
-
 const DecisionsListingPage = async () => {
   let decisions: DecisionProfileList = {
     items: [],
