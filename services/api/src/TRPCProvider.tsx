@@ -11,7 +11,7 @@ import {
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 import React, { createContext, useState } from 'react';
 
-// Should be update when TRP
+// Should be update import when the TRPCProvider moves where we can import properly
 import { QueryInvalidationSubscriber } from '../../../apps/app/src/utils/QueryInvalidationSubscriber';
 import { createLinks } from './links';
 import type { AppRouter } from './routers';
@@ -110,40 +110,3 @@ export const skipBatch = {
     },
   },
 };
-
-// /**
-//  * Component that sets up realtime subscriptions based on mutation channel headers.
-//  * Must be rendered inside QueryClientProvider.
-//  */
-// function QueryInvalidationSubscriber() {
-//   useInvalidateQueries();
-//   return null;
-// }
-//
-// /**
-//  * Hook that subscribes to channel mutation events and invalidates queries.
-//  *
-//  * Listens to the queryChannelRegistry for mutation:added events, resolves
-//  * the affected query keys, and invalidates them.
-//  *
-//  * Should be used once at the root level of your app.
-//  *
-//  * NOTE: This should be moved in apps/app
-//  */
-// export function useInvalidateQueries(): void {
-//   const queryClient = useQueryClient();
-//
-//   useEffect(() => {
-//     return queryChannelRegistry.on(
-//       'mutation:added',
-//       ({ channels }: { channels: ChannelName[] }) => {
-//         const queryKeys =
-//           queryChannelRegistry.getQueryKeysForChannels(channels);
-//
-//         for (const queryKey of queryKeys) {
-//           queryClient.invalidateQueries({ queryKey });
-//         }
-//       },
-//     );
-//   }, [queryClient]);
-// }
