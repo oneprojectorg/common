@@ -42,7 +42,11 @@ class QueryChannelRegistry {
         for (const key of keys) {
           if (!seen.has(key)) {
             seen.add(key);
-            result.push(JSON.parse(key));
+            try {
+              result.push(JSON.parse(key));
+            } catch {
+              // Skip malformed keys - shouldn't happen if stringify succeeded
+            }
           }
         }
       }
