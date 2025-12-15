@@ -9,7 +9,7 @@ import {
   getQueryKey as getQueryKeyTRPC,
 } from '@trpc/react-query';
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
-import { type ReactNode, createContext, useState } from 'react';
+import React, { createContext, useState } from 'react';
 
 import { createLinks } from './links';
 import type { AppRouter } from './routers';
@@ -58,7 +58,7 @@ export function TRPCProvider({
   children,
   ssrCookies,
 }: {
-  children: ReactNode;
+  children: React.ReactNode;
   ssrCookies?: string;
 }) {
   const [trpcClient] = useState(() =>
