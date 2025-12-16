@@ -60,7 +60,7 @@ export function processDecisionProcessSchema(data: unknown): {
     votingConfig: {
       allowProposals: data.allowProposals,
       allowDecisions: data.allowDecisions,
-      maxVotesPerMember: data.instanceData.maxVotesPerMember,
+      maxVotesPerElector: data.instanceData.maxVotesPerElector,
       schemaType,
     },
     proposalConfig: {

@@ -64,8 +64,8 @@ export const transformInstanceDataToFormData = (
     budgetCapAmount: instance.instanceData?.fieldValues?.budgetCapAmount || 0,
     descriptionGuidance:
       instance.instanceData?.fieldValues?.descriptionGuidance || '',
-    maxVotesPerMember:
-      instance.instanceData?.fieldValues?.maxVotesPerMember || 3,
+    maxVotesPerElector:
+      instance.instanceData?.fieldValues?.maxVotesPerElector || 3,
     proposalInfoTitle:
       instance.instanceData?.fieldValues?.proposalInfoTitle || '',
     proposalInfoContent:
@@ -192,7 +192,7 @@ export const transformFormDataToInstanceData = (
       categories: data.categories,
       budgetCapAmount: data.budgetCapAmount,
       descriptionGuidance: data.descriptionGuidance,
-      maxVotesPerMember: data.maxVotesPerMember,
+      maxVotesPerElector: data.maxVotesPerElector,
       proposalInfoTitle: data.proposalInfoTitle,
       proposalInfoContent: data.proposalInfoContent,
     },

@@ -51,8 +51,8 @@ export function StandardDecisionPage({
     ? t('PPDESCRIPTION')
     : (instance.description ?? instance.process?.description ?? undefined);
 
-  const maxVotesPerMember = instance?.instanceData?.fieldValues
-    ?.maxVotesPerMember as number;
+  const maxVotesPerElector = instance?.instanceData?.fieldValues
+    ?.maxVotesPerElector as number;
 
   // Organization-specific content
   const heroContent = match(slug, {
@@ -106,9 +106,9 @@ export function StandardDecisionPage({
               meg@oneproject.org
             </a>
           </p>
-          {currentState?.id === 'review' && maxVotesPerMember && (
+          {currentState?.id === 'review' && maxVotesPerElector && (
             <p>
-              Please select <strong>{maxVotesPerMember} proposals.</strong>
+              Please select <strong>{maxVotesPerElector} proposals.</strong>
             </p>
           )}
         </div>
