@@ -3,10 +3,10 @@
  *
  * Usage:
  * ```tsx
- * import { simpleSchema, votingSchemas } from '@op/common/lib/voting-schemas';
+ * import { simpleSchema } from '@op/common/lib/voting-schemas';
  *
  * <Form
- *   schema={simpleSchema.formSchema}
+ *   schema={simpleSchema.process}
  *   uiSchema={simpleSchema.uiSchema}
  *   formData={simpleSchema.defaults}
  *   validator={validator}

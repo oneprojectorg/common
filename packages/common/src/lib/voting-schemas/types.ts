@@ -5,6 +5,8 @@
 
 import type { JSONSchema7 } from 'json-schema';
 
+import type { SelectionPipeline } from '../../services/decision/selectionPipeline/types';
+
 /**
  * RJSF UI Schema
  */
@@ -17,7 +19,10 @@ export interface VotingSchemaDefinition {
   schemaType: string;
   name: string;
   description?: string;
-  formSchema: JSONSchema7;
+  process: JSONSchema7;
   uiSchema: UiSchema;
   defaults: Record<string, unknown>;
+
+  /** Default selection pipeline for phase transitions */
+  selectionPipeline?: SelectionPipeline;
 }
