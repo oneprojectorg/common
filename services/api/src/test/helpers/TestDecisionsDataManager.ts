@@ -1,7 +1,5 @@
 import { db } from '@op/db/client';
 import {
-  DecisionProcess,
-  ProcessInstance,
   ProcessStatus,
   organizationUserToAccessRoles,
   organizationUsers,

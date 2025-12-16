@@ -42,7 +42,7 @@ describe('List Decision Profiles Integration Tests', () => {
       expect(result.hasMore).toBe(false);
 
       // Verify profiles have process instance data
-      for (const profile of result.items) {
+      result.items.forEach((profile) => {
         expect(profile.type).toBe('decision');
         expect(profile.processInstance).toBeDefined();
         expect(profile.processInstance.status).toBe('draft');
@@ -51,7 +51,7 @@ describe('List Decision Profiles Integration Tests', () => {
         expect(profile.processInstance.instanceData).toMatchObject({
           hideBudget: false,
         });
-      }
+      });
     });
 
     it('should filter by status', async ({ task, onTestFinished }) => {
@@ -126,11 +126,11 @@ describe('List Decision Profiles Integration Tests', () => {
       });
 
       expect(result.items).toHaveLength(2);
-      for (const item of result.items) {
+      result.items.forEach((item) => {
         expect(item.processInstance.owner?.id).toBe(
           setup.organization.profileId,
         );
-      }
+      });
 
       // Also verify filtering by Org B works
       const otherResult = await caller.decision.listDecisionProfiles({
@@ -139,11 +139,11 @@ describe('List Decision Profiles Integration Tests', () => {
       });
 
       expect(otherResult.items).toHaveLength(3);
-      for (const item of otherResult.items) {
+      otherResult.items.forEach((item) => {
         expect(item.processInstance.owner?.id).toBe(
           otherSetup.organization.profileId,
         );
-      }
+      });
     });
 
     it('should filter by both owner and status', async ({
