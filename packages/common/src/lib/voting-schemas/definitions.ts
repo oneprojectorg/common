@@ -24,6 +24,24 @@ export const simpleSchema: VotingSchemaDefinition = {
         proposalSubmission: true,
         voting: false,
       },
+      settingsSchema: {
+        type: 'object',
+        properties: {
+          maxProposalsPerElector: {
+            type: 'number',
+            title: 'Maximum Proposals Per Elector',
+            description: 'How many proposals can each member submit?',
+            minimum: 1,
+            default: 3,
+          },
+        },
+      },
+      settingsUiSchema: {
+        maxProposalsPerElector: {
+          'ui:widget': 'number',
+          'ui:placeholder': '3',
+        },
+      },
     },
     {
       id: 'review',
