@@ -3,6 +3,7 @@
  * Each schema can be used directly with RJSF.
  */
 
+import type { SelectionPipeline } from '../../services/decision/selectionPipeline/types';
 import type { VotingSchemaDefinition } from './types';
 
 export const simpleSchema: VotingSchemaDefinition = {
@@ -10,7 +11,7 @@ export const simpleSchema: VotingSchemaDefinition = {
   name: 'Simple Voting',
   description: 'Basic approval voting where members vote for multiple proposals.',
 
-  formSchema: {
+  process: {
     type: 'object',
     required: ['maxVotesPerMember'],
     properties: {
@@ -33,6 +34,24 @@ export const simpleSchema: VotingSchemaDefinition = {
   defaults: {
     maxVotesPerMember: 3,
   },
+
+  selectionPipeline: {
+    version: '1.0.0',
+    blocks: [
+      {
+        id: 'sort-by-likes',
+        type: 'sort',
+        name: 'Sort by likes count',
+        sortBy: [{ field: 'voteData.likesCount', order: 'desc' }],
+      },
+      {
+        id: 'limit-by-votes',
+        type: 'limit',
+        name: 'Take top N (based on maxVotesPerMember config)',
+        count: { variable: '$maxVotesPerMember' },
+      },
+    ],
+  } satisfies SelectionPipeline,
 };
 
 export const advancedSchema: VotingSchemaDefinition = {
@@ -40,7 +59,7 @@ export const advancedSchema: VotingSchemaDefinition = {
   name: 'Advanced Voting',
   description: 'Voting with weights, delegation, and quorum.',
 
-  formSchema: {
+  process: {
     type: 'object',
     required: ['maxVotesPerMember'],
     properties: {
@@ -93,6 +112,45 @@ export const advancedSchema: VotingSchemaDefinition = {
     allowDelegation: false,
     quorumPercentage: null,
   },
+
+  selectionPipeline: {
+    version: '1.0.0',
+    blocks: [
+      {
+        id: 'check-quorum',
+        type: 'filter',
+        name: 'Filter proposals meeting quorum',
+        condition: {
+          operator: 'greaterThanOrEquals',
+          left: { field: 'voteData.participationRate' },
+          right: { variable: '$quorumPercentage' },
+        },
+      },
+      {
+        id: 'calculate-score',
+        type: 'score',
+        name: 'Calculate weighted score',
+        scoreField: 'metadata.finalScore',
+        formula: [
+          { field: 'voteData.likesCount', weight: 0.5, normalize: true },
+          { field: 'voteData.followsCount', weight: 0.3, normalize: true },
+          { field: 'voteData.approvalRate', weight: 0.2, normalize: true },
+        ],
+      },
+      {
+        id: 'sort-by-score',
+        type: 'sort',
+        name: 'Sort by weighted score',
+        sortBy: [{ field: 'metadata.finalScore', order: 'desc' }],
+      },
+      {
+        id: 'limit-results',
+        type: 'limit',
+        name: 'Take top N results',
+        count: { variable: '$maxVotesPerMember' },
+      },
+    ],
+  } satisfies SelectionPipeline,
 };
 
 export const votingSchemas: Record<string, VotingSchemaDefinition> = {
