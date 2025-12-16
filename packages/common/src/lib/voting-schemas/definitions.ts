@@ -20,10 +20,12 @@ export const simpleSchema: VotingSchemaDefinition = {
       id: 'submission',
       name: 'Proposal Submission',
       description: 'Members submit proposals for consideration.',
+      // Typed phase behavior flags
       config: {
         proposalSubmission: true,
         voting: false,
       },
+      // User-configurable settings, available as variables in selectionPipeline
       settingsSchema: {
         type: 'object',
         properties: {
