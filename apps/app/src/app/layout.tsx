@@ -5,9 +5,9 @@ import { Toast } from '@op/ui/Toast';
 import '@op/ui/tailwind-styles';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import type { Metadata, Viewport } from 'next';
+import { getLocale } from 'next-intl/server';
 import { Roboto, Roboto_Mono, Roboto_Serif } from 'next/font/google';
 import Script from 'next/script';
-import { getLocale } from 'next-intl/server';
 
 import { IconProvider } from '../components/IconProvider';
 import { PostHogProvider } from '../components/PostHogProvider';
