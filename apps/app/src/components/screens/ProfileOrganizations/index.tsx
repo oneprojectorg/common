@@ -4,7 +4,7 @@ import { pluralize } from '@/utils/pluralize';
 import { trpc } from '@op/api/client';
 import { Breadcrumb, Breadcrumbs } from '@op/ui/Breadcrumbs';
 import { ErrorBoundary } from 'next/dist/client/components/error-boundary';
-import { ReactNode, Suspense } from 'react';
+import { type ReactNode, Suspense } from 'react';
 import { LuArrowLeft } from 'react-icons/lu';
 
 import { Link } from '@/lib/i18n';
@@ -12,8 +12,7 @@ import { Link } from '@/lib/i18n';
 import { ErrorMessage } from '@/components/ErrorMessage';
 import { OrganizationAvatar } from '@/components/OrganizationAvatar';
 import { OrganizationCardList } from '@/components/OrganizationList';
-
-import { ProfileOrganizationsSkeleton } from '../ProfileRelationships/Skeleton';
+import { RelationshipTabSkeleton } from '@/components/skeletons/RelationshipTabSkeleton';
 
 export const ProfileOrganizationsSuspense = ({
   slug,
@@ -75,9 +74,7 @@ export const OrganizationNameSuspense = ({ slug }: { slug: string }) => {
 export const ProfileOrganizations = ({ children }: { children: ReactNode }) => (
   <div className="flex w-full flex-col gap-3 pt-4 sm:min-h-[calc(100vh-3.5rem)] sm:gap-8 sm:pt-8">
     <ErrorBoundary errorComponent={() => <ErrorMessage />}>
-      <Suspense fallback={<ProfileOrganizationsSkeleton />}>
-        {children}
-      </Suspense>
+      <Suspense fallback={<RelationshipTabSkeleton />}>{children}</Suspense>
     </ErrorBoundary>
   </div>
 );
