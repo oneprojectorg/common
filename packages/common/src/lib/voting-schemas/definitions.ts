@@ -15,14 +15,6 @@ export const simpleSchema: VotingSchemaDefinition = {
   name: 'Simple Voting',
   description: 'Basic approval voting where members vote for multiple proposals.',
 
-  // Process-level form schema (shared across all phases)
-  process: {
-    type: 'object',
-    properties: {},
-  },
-  uiSchema: {},
-  defaults: {},
-
   phases: [
     {
       id: 'submission',
@@ -110,14 +102,6 @@ export const advancedSchema: VotingSchemaDefinition = {
   schemaType: 'advanced',
   name: 'Advanced Voting',
   description: 'Voting with weights, delegation, and quorum.',
-
-  // Process-level form schema
-  process: {
-    type: 'object',
-    properties: {},
-  },
-  uiSchema: {},
-  defaults: {},
 
   phases: [
     {

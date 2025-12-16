@@ -44,18 +44,12 @@ export interface PhaseDefinition {
 }
 
 /**
- * A voting schema definition - everything needed to render a form with RJSF
- * and define the phases of a decision process.
+ * A voting schema definition - defines the phases of a decision process.
  */
 export interface VotingSchemaDefinition {
   schemaType: string;
   name: string;
   description?: string;
-
-  /** Process-level form schema */
-  process: JSONSchema7;
-  uiSchema: UiSchema;
-  defaults: Record<string, unknown>;
 
   /** Phase definitions */
   phases: PhaseDefinition[];
