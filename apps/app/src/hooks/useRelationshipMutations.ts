@@ -149,29 +149,30 @@ export function useRelationshipMutations({
       });
     },
     onSettled: async () => {
-      // Always refetch relationship data after error or success
-      // Await all invalidations to ensure they complete before proceeding
-      await Promise.all([
-        utils.profile.getRelationships.invalidate(relationshipQueryKey),
-        ...invalidateQueries.flatMap((query) => {
-          const promises = [];
-          if (query.profileId) {
-            promises.push(
-              utils.decision.getProposal.invalidate({
-                profileId: query.profileId,
-              }),
-            );
-          }
-          if (query.processInstanceId) {
-            promises.push(
-              utils.decision.listProposals.invalidate({
-                processInstanceId: query.processInstanceId,
-              }),
-            );
-          }
-          return promises;
-        }),
-      ]);
+      // Relationship queries are automatically invalidated via subscription channels.
+      // Only manually invalidate proposal queries if needed.
+      if (invalidateQueries.length > 0) {
+        await Promise.all(
+          invalidateQueries.flatMap((query) => {
+            const promises = [];
+            if (query.profileId) {
+              promises.push(
+                utils.decision.getProposal.invalidate({
+                  profileId: query.profileId,
+                }),
+              );
+            }
+            if (query.processInstanceId) {
+              promises.push(
+                utils.decision.listProposals.invalidate({
+                  processInstanceId: query.processInstanceId,
+                }),
+              );
+            }
+            return promises;
+          }),
+        );
+      }
     },
   });
 
@@ -235,29 +236,30 @@ export function useRelationshipMutations({
         });
       },
       onSettled: async () => {
-        // Always refetch relationship data after error or success
-        // Await all invalidations to ensure they complete before proceeding
-        await Promise.all([
-          utils.profile.getRelationships.invalidate(relationshipQueryKey),
-          ...invalidateQueries.flatMap((query) => {
-            const promises = [];
-            if (query.profileId) {
-              promises.push(
-                utils.decision.getProposal.invalidate({
-                  profileId: query.profileId,
-                }),
-              );
-            }
-            if (query.processInstanceId) {
-              promises.push(
-                utils.decision.listProposals.invalidate({
-                  processInstanceId: query.processInstanceId,
-                }),
-              );
-            }
-            return promises;
-          }),
-        ]);
+        // Relationship queries are automatically invalidated via subscription channels.
+        // Only manually invalidate proposal queries if needed.
+        if (invalidateQueries.length > 0) {
+          await Promise.all(
+            invalidateQueries.flatMap((query) => {
+              const promises = [];
+              if (query.profileId) {
+                promises.push(
+                  utils.decision.getProposal.invalidate({
+                    profileId: query.profileId,
+                  }),
+                );
+              }
+              if (query.processInstanceId) {
+                promises.push(
+                  utils.decision.listProposals.invalidate({
+                    processInstanceId: query.processInstanceId,
+                  }),
+                );
+              }
+              return promises;
+            }),
+          );
+        }
       },
     });
 

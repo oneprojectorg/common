@@ -1,22 +1,32 @@
 import type { ChannelName } from '@op/common/realtime';
 
-import type { MiddlewareBuilderBase } from '../types';
+import { middleware } from '../trpcFactory';
+import type { TContext, TContextWithUser } from '../types';
+
+type ChannelResolverOpts<TInput> = {
+  input: TInput;
+  ctx: TContext & TContextWithUser;
+};
+
+type ChannelResolver<TInput> = (
+  opts: ChannelResolverOpts<TInput>,
+) => ChannelName[] | Promise<ChannelName[]>;
 
 /**
  * Middleware that sets subscription channels for query invalidation.
  *
- * @param channels - Array of channel names to subscribe to
+ * @param resolver - Array of channel names or function that returns channels based on input/ctx
  */
-const withSubscriptionChannels = (channels: ChannelName[]) => {
-  const withSubscriptionChannelsInner: MiddlewareBuilderBase = async ({
-    ctx,
-    next,
-  }) => {
+function withSubscriptionChannels<TInput>(
+  resolver: ChannelResolver<TInput> | ChannelName[],
+) {
+  return middleware(async ({ ctx, input, next }) => {
+    const channels = Array.isArray(resolver)
+      ? resolver
+      : await resolver({ input: input as TInput, ctx: ctx as TContext & TContextWithUser });
     ctx.setChannels('subscription', channels);
     return next({ ctx });
-  };
-
-  return withSubscriptionChannelsInner;
-};
+  });
+}
 
 export default withSubscriptionChannels;
