@@ -159,7 +159,10 @@ export const AddRelationshipModalSuspense = ({
         />
       ) : relationships.length === 1 ? (
         relationships.map((relationship) => (
-          <TooltipTrigger isDisabled={!relationship.pending}>
+          <TooltipTrigger
+            key={relationship.id}
+            isDisabled={!relationship.pending}
+          >
             <DialogTrigger>
               <Button
                 className="w-full sm:w-auto"

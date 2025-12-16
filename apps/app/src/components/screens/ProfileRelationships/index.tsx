@@ -84,7 +84,7 @@ export const ProfileRelationshipsSuspense = ({
 
   return (
     <>
-      <div className="flex flex-col gap-4 px-4 sm:px-0">
+      <div className="flex flex-col gap-4 sm:px-0">
         {showBreadcrumb ? (
           <Breadcrumbs className="hidden sm:flex">
             <Breadcrumb href={`/org/${slug}`}>

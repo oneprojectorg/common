@@ -12,8 +12,7 @@ import {
   RelationshipList,
   type RelationshipListItem,
 } from '@/components/RelationshipList';
-
-import { ProfileRelationshipsSkeleton } from '../ProfileRelationships/Skeleton';
+import { RelationshipTabSkeleton } from '@/components/skeletons/RelationshipTabSkeleton';
 
 export const ProfileFollowersSuspense = ({
   profileId,
@@ -38,7 +37,7 @@ export const ProfileFollowersSuspense = ({
   }, [relationships]);
 
   return (
-    <div className="flex flex-col gap-4 text-base sm:gap-8 sm:py-8">
+    <div className="flex flex-col gap-4 text-base sm:gap-8">
       <RelationshipList
         profiles={followers}
         title={`${followers.length} ${pluralize(t('follower'), followers.length)}`}
@@ -49,10 +48,12 @@ export const ProfileFollowersSuspense = ({
 
 export const ProfileFollowers = ({ profileId }: { profileId: string }) => {
   return (
-    <ErrorBoundary fallback={null}>
-      <Suspense fallback={<ProfileRelationshipsSkeleton />}>
-        <ProfileFollowersSuspense profileId={profileId} />
-      </Suspense>
-    </ErrorBoundary>
+    <div className="pt-4 sm:pt-8">
+      <ErrorBoundary fallback={null}>
+        <Suspense fallback={<RelationshipTabSkeleton />}>
+          <ProfileFollowersSuspense profileId={profileId} />
+        </Suspense>
+      </ErrorBoundary>
+    </div>
   );
 };
