@@ -1,15 +1,20 @@
 import { invalidate } from '@op/cache';
 import { and, db, eq, inArray } from '@op/db/client';
-import {
-  ProfileRelationshipType,
-  objectsInStorage,
-  profileRelationships,
-  profiles,
-} from '@op/db/schema';
-import { alias } from 'drizzle-orm/pg-core';
+import type { ProfileRelationshipType } from '@op/db/schema';
+import { profileRelationships } from '@op/db/schema';
 
 import { ValidationError } from '../../utils/error';
 import { getCurrentProfileId } from '../access';
+
+/** Profile shape returned from relationship queries */
+type RelationshipProfile = {
+  id: string;
+  name: string;
+  slug: string;
+  bio: string | null;
+  type: string;
+  avatarImage: { id: string; name: string | null } | null;
+};
 
 export const addRelationship = async ({
   targetProfileId,
@@ -87,6 +92,10 @@ export const removeRelationship = async ({
   return { sourceProfileId: currentProfileId };
 };
 
+/**
+ * Retrieves profile relationships with full profile details using Drizzle relational queries.
+ * Both sourceProfile and targetProfile are guaranteed to exist in the return type.
+ */
 export const getRelationships = async ({
   targetProfileId,
   sourceProfileId,
@@ -104,7 +113,7 @@ export const getRelationships = async ({
     relationshipType: string;
     pending: boolean | null;
     createdAt: string | null;
-    targetProfile?: {
+    targetProfile: {
       id: string;
       name: string;
       slug: string;
@@ -112,7 +121,7 @@ export const getRelationships = async ({
       avatarImage: { id: string; name: string | null } | null;
       type: string;
     };
-    sourceProfile?: {
+    sourceProfile: {
       id: string;
       name: string;
       slug: string;
@@ -128,123 +137,98 @@ export const getRelationships = async ({
     throw new ValidationError('You must be logged in to view relationships');
   }
 
-  // Use aliases to distinguish between source and target profiles
-  const sourceProfiles = alias(profiles, 'sourceProfiles');
-  const targetProfiles = alias(profiles, 'targetProfiles');
-  const sourceAvatarStorage = alias(objectsInStorage, 'sourceAvatarStorage');
-  const targetAvatarStorage = alias(objectsInStorage, 'targetAvatarStorage');
+  // Determine the effective source profile ID for filtering
+  const effectiveSourceProfileId =
+    sourceProfileId ?? (!targetProfileId ? currentProfileId : undefined);
 
-  // Define the base query structure
-  const baseQuery = db
-    .select({
-      id: profileRelationships.id,
-      relationshipType: profileRelationships.relationshipType,
-      pending: profileRelationships.pending,
-      createdAt: profileRelationships.createdAt,
-      sourceProfileId: profileRelationships.sourceProfileId,
-      targetProfileId: profileRelationships.targetProfileId,
-      // Source profile fields
-      sourceProfileId2: sourceProfiles.id,
-      sourceProfileName: sourceProfiles.name,
-      sourceProfileSlug: sourceProfiles.slug,
-      sourceProfileBio: sourceProfiles.bio,
-      sourceProfileType: sourceProfiles.type,
-      sourceAvatarId: sourceAvatarStorage.id,
-      sourceAvatarName: sourceAvatarStorage.name,
-      // Target profile fields
-      targetProfileId2: targetProfiles.id,
-      targetProfileName: targetProfiles.name,
-      targetProfileSlug: targetProfiles.slug,
-      targetProfileBio: targetProfiles.bio,
-      targetProfileType: targetProfiles.type,
-      targetAvatarId: targetAvatarStorage.id,
-      targetAvatarName: targetAvatarStorage.name,
-    })
-    .from(profileRelationships)
-    .leftJoin(
-      sourceProfiles,
-      eq(profileRelationships.sourceProfileId, sourceProfiles.id),
-    )
-    .leftJoin(
-      targetProfiles,
-      eq(profileRelationships.targetProfileId, targetProfiles.id),
-    )
-    .leftJoin(
-      sourceAvatarStorage,
-      eq(sourceProfiles.avatarImageId, sourceAvatarStorage.id),
-    )
-    .leftJoin(
-      targetAvatarStorage,
-      eq(targetProfiles.avatarImageId, targetAvatarStorage.id),
-    );
+  const relationships = await db.query.profileRelationships.findMany({
+    where: and(
+      effectiveSourceProfileId
+        ? eq(profileRelationships.sourceProfileId, effectiveSourceProfileId)
+        : undefined,
+      targetProfileId
+        ? eq(profileRelationships.targetProfileId, targetProfileId)
+        : undefined,
+      relationshipTypes && relationshipTypes.length > 0
+        ? inArray(
+            profileRelationships.relationshipType,
+            relationshipTypes as ProfileRelationshipType[],
+          )
+        : undefined,
+    ),
+    with: {
+      sourceProfile: {
+        columns: {
+          id: true,
+          name: true,
+          slug: true,
+          bio: true,
+          type: true,
+        },
+        with: {
+          avatarImage: {
+            columns: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      },
+      targetProfile: {
+        columns: {
+          id: true,
+          name: true,
+          slug: true,
+          bio: true,
+          type: true,
+        },
+        with: {
+          avatarImage: {
+            columns: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      },
+    },
+  });
 
-  // Declaratively define all possible conditions
-  const conditions = [];
+  // Filter by profileType if specified (applied post-query since relational queries
+  // don't support filtering on nested relations)
+  const filtered = profileType
+    ? relationships.filter((rel) => {
+        const target = rel.targetProfile as RelationshipProfile;
+        return target.type === profileType;
+      })
+    : relationships;
 
-  // Only filter by sourceProfileId if explicitly provided
-  if (sourceProfileId) {
-    conditions.push(eq(profileRelationships.sourceProfileId, sourceProfileId));
-  } else if (!targetProfileId) {
-    // If no targetProfileId is provided, default to current user's relationships
-    conditions.push(eq(profileRelationships.sourceProfileId, currentProfileId));
-  }
+  return filtered.map((rel) => {
+    // Type assertions needed because Drizzle infers union types when the same table
+    // is referenced in multiple relations, even with relationName disambiguation
+    const source = rel.sourceProfile as RelationshipProfile;
+    const target = rel.targetProfile as RelationshipProfile;
 
-  if (targetProfileId) {
-    conditions.push(eq(profileRelationships.targetProfileId, targetProfileId));
-  }
-
-  if (relationshipTypes && relationshipTypes.length > 0) {
-    conditions.push(
-      inArray(
-        profileRelationships.relationshipType,
-        relationshipTypes as ProfileRelationshipType[],
-      ),
-    );
-  }
-
-  if (profileType) {
-    conditions.push(eq(targetProfiles.type, profileType));
-  }
-
-  // Execute the query with all applicable conditions
-  const relationships = await baseQuery.where(
-    conditions.length > 0 ? and(...conditions) : undefined,
-  );
-
-  // Transform the results to match the expected return type
-  return relationships.map((rel) => ({
-    relationshipType: rel.relationshipType as string,
-    pending: rel.pending as boolean | null,
-    createdAt: rel.createdAt as string | null,
-    sourceProfile: rel.sourceProfileId2
-      ? {
-          id: rel.sourceProfileId2 as string,
-          name: rel.sourceProfileName as string,
-          slug: rel.sourceProfileSlug as string,
-          bio: rel.sourceProfileBio as string | null,
-          avatarImage: rel.sourceAvatarId
-            ? {
-                id: rel.sourceAvatarId as string,
-                name: rel.sourceAvatarName as string | null,
-              }
-            : null,
-          type: rel.sourceProfileType as string,
-        }
-      : undefined,
-    targetProfile: rel.targetProfileId2
-      ? {
-          id: rel.targetProfileId2 as string,
-          name: rel.targetProfileName as string,
-          slug: rel.targetProfileSlug as string,
-          bio: rel.targetProfileBio as string | null,
-          avatarImage: rel.targetAvatarId
-            ? {
-                id: rel.targetAvatarId as string,
-                name: rel.targetAvatarName as string | null,
-              }
-            : null,
-          type: rel.targetProfileType as string,
-        }
-      : undefined,
-  }));
+    return {
+      relationshipType: rel.relationshipType,
+      pending: rel.pending,
+      createdAt: rel.createdAt,
+      sourceProfile: {
+        id: source.id,
+        name: source.name,
+        slug: source.slug,
+        bio: source.bio,
+        avatarImage: source.avatarImage,
+        type: source.type,
+      },
+      targetProfile: {
+        id: target.id,
+        name: target.name,
+        slug: target.slug,
+        bio: target.bio,
+        avatarImage: target.avatarImage,
+        type: target.type,
+      },
+    };
+  });
 };

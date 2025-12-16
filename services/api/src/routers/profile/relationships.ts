@@ -1,4 +1,5 @@
 import {
+  Channels,
   ValidationError,
   addProfileRelationship,
   getProfileRelationships,
@@ -127,8 +128,14 @@ export const profileRelationshipRouter = router({
 
         // Set mutation channels for query invalidation
         ctx.setChannels('mutation', [
-          Channels.profile(sourceProfileId),
-          Channels.profile(targetProfileId),
+          Channels.profileRelationship({
+            type: 'source',
+            profileId: sourceProfileId,
+          }),
+          Channels.profileRelationship({
+            type: 'target',
+            profileId: targetProfileId,
+          }),
         ]);
 
         // Track analytics if this is a proposal relationship (async in background)
@@ -195,8 +202,14 @@ export const profileRelationshipRouter = router({
 
         // Set mutation channels for query invalidation
         ctx.setChannels('mutation', [
-          Channels.profile(sourceProfileId),
-          Channels.profile(targetProfileId),
+          Channels.profileRelationship({
+            type: 'source',
+            profileId: sourceProfileId,
+          }),
+          Channels.profileRelationship({
+            type: 'target',
+            profileId: targetProfileId,
+          }),
         ]);
 
         return { success: true };
@@ -222,6 +235,7 @@ export const profileRelationshipRouter = router({
           ProfileRelationshipType.FOLLOWING,
           ProfileRelationshipType.LIKES,
         ]),
+        // TODO: encoder type
         z.array(
           z.object({
             relationshipType: z.string(),
@@ -298,12 +312,24 @@ export const profileRelationshipRouter = router({
             profileIds.add(relationship.targetProfile.id);
           }
         }
-        if (profileIds.size > 0) {
-          ctx.setChannels(
-            'subscription',
-            [...profileIds].map((id) => Channels.profile(id)),
+
+        // TODO: check if we can simplify this, no need for type. e.g profileRelationship:<sourceId|targetId>
+        // so we always subscribe to both
+        const targetProfielChannels = allRelationships
+          .map((relationship) => relationship.targetProfile.id)
+          .map((id) =>
+            Channels.profileRelationship({ type: 'target', profileId: id }),
           );
-        }
+        const sourceProfileChannels = allRelationships
+          .map((relationship) => relationship.sourceProfile.id)
+          .map((id) =>
+            Channels.profileRelationship({ type: 'source', profileId: id }),
+          );
+
+        ctx.setChannels('subscription', [
+          ...targetProfielChannels,
+          ...sourceProfileChannels,
+        ]);
 
         return groupedResults;
       } catch (error) {
