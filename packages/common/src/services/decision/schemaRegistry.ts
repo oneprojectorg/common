@@ -1,8 +1,8 @@
 /**
- * Schema registry - delegates to JSON-based voting schema system.
+ * Runtime schema processing for voting configuration.
  *
- * This file maintains backward compatibility with existing code while
- * the actual schema definitions are now in ./voting-schemas/definitions.ts
+ * This extracts voting config from process instance data at runtime.
+ * For RJSF form schemas, see ./voting-schemas/
  */
 
 import type {
@@ -30,25 +30,55 @@ export interface SchemaHandler<
 }
 
 /**
- * Adapter to convert JSON schema result to old format
+ * Process schema data and extract voting configuration.
  */
-function toOldFormat(result: SchemaProcessResult): {
+export function processDecisionProcessSchema(data: unknown): {
   schemaType: string;
   isValid: boolean;
   votingConfig?: VotingConfig;
   proposalConfig?: ProposalConfig;
   validationResult: SchemaValidationResult;
 } {
+  if (!isValidSchemaData(data)) {
+    return {
+      schemaType: 'invalid',
+      isValid: false,
+      validationResult: {
+        isValid: false,
+        schemaType: 'invalid',
+        errors: ['Invalid schema data'],
+        supportedProperties: [],
+      },
+    };
+  }
+
+  const schemaType = data.schemaType || 'simple';
+
   return {
-    schemaType: result.schemaType,
-    isValid: result.isValid,
-    votingConfig: result.votingConfig,
-    proposalConfig: result.proposalConfig,
+    schemaType,
+    isValid: true,
+    votingConfig: {
+      allowProposals: data.allowProposals,
+      allowDecisions: data.allowDecisions,
+      maxVotesPerMember: data.instanceData.maxVotesPerMember,
+      schemaType,
+    },
+    proposalConfig: {
+      requiredFields: ['title', 'description'],
+      optionalFields: ['amount', 'category'],
+      fieldConstraints: {
+        title: { type: 'string', minLength: 1, maxLength: 200 },
+        description: { type: 'string', minLength: 1, maxLength: 5000 },
+        amount: { type: 'number', min: 0 },
+      },
+      schemaType,
+      allowProposals: data.allowProposals,
+    },
     validationResult: {
-      isValid: result.isValid,
-      schemaType: result.schemaType,
-      errors: result.errors,
-      supportedProperties: [],
+      isValid: true,
+      schemaType,
+      errors: [],
+      supportedProperties: ['allowProposals', 'allowDecisions', 'instanceData'],
     },
   };
 }
