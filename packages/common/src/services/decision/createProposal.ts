@@ -50,8 +50,13 @@ export const createProposal = async ({
       },
     });
 
-    if (!instance || !instance.process) {
-      throw new NotFoundError('ProcessInstance', data.processInstanceId);
+    if (!instance) {
+      throw new NotFoundError('Process instance not found');
+    }
+
+    // Check if the current state allows proposals
+    if (!instance.process) {
+      throw new NotFoundError('Process definition not found');
     }
 
     const org = await assertOrganizationByProfileId(instance.ownerProfileId);

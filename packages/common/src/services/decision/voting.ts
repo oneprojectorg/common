@@ -117,8 +117,8 @@ export const submitVote = async ({
       },
     });
 
-    if (!processInstance || !processInstance.process) {
-      throw new NotFoundError('ProcessInstance', data.processInstanceId);
+    if (!processInstance) {
+      throw new NotFoundError('Process instance not found');
     }
 
     // Get organization from owner profile
@@ -315,8 +315,8 @@ export const getVotingStatus = async ({
       },
     });
 
-    if (!processInstance || !processInstance.process) {
-      throw new NotFoundError('ProcessInstance', data.processInstanceId);
+    if (!processInstance) {
+      throw new NotFoundError('Process instance not found');
     }
 
     // Get organization from owner profile
@@ -447,8 +447,8 @@ export const validateVoteSelectionService = async ({
       },
     });
 
-    if (!processInstance || !processInstance.process) {
-      throw new NotFoundError('ProcessInstance', data.processInstanceId);
+    if (!processInstance) {
+      throw new NotFoundError('Process instance not found');
     }
 
     // Get organization from owner profile

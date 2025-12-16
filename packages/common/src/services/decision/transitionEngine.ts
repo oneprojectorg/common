@@ -66,8 +66,12 @@ export class TransitionEngine {
         },
       });
 
-      if (!instance || !instance.process) {
-        throw new NotFoundError('ProcessInstance', instanceId);
+      if (!instance) {
+        throw new NotFoundError('Process instance not found');
+      }
+
+      if (!instance.process) {
+        throw new NotFoundError('Process definition not found');
       }
 
       const process = instance.process as any;
@@ -173,22 +177,26 @@ export class TransitionEngine {
       }
 
       // Get the instance again for updating
-      const instanceForUpdate = await db.query.processInstances.findFirst({
+      const instance = await db.query.processInstances.findFirst({
         where: eq(processInstances.id, data.instanceId),
         with: {
           process: true,
         },
       });
 
-      if (!instanceForUpdate || !instanceForUpdate.process) {
-        throw new NotFoundError('ProcessInstance', data.instanceId);
+      if (!instance) {
+        throw new NotFoundError('Process instance not found');
       }
 
-      const process = instanceForUpdate.process as any;
+      if (!instance.process) {
+        throw new NotFoundError('Process definition not found');
+      }
+
+      const process = instance.process as any;
       const processSchema = process.processSchema as ProcessSchema;
-      const instanceData = instanceForUpdate.instanceData as InstanceData;
+      const instanceData = instance.instanceData as InstanceData;
       const currentStateId =
-        instanceData.currentStateId || instanceForUpdate.currentStateId || '';
+        instanceData.currentStateId || instance.currentStateId || '';
 
       // Find the transition definition
       const transition = processSchema.transitions.find(
