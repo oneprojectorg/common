@@ -1,7 +1,7 @@
 'use client';
 
 import { IntlErrorCode, NextIntlClientProvider } from 'next-intl';
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
 
 type Props = {
   children: ReactNode;
@@ -21,6 +21,12 @@ type MessageFallbackParams = {
 // We wrap our i18n provider to not throw errors on missing keys. We want to build out translation ability using "natural keys" without
 // slowing down development so we can sweep back later and add the translations.
 export const I18nProvider = ({ children, messages, locale }: Props) => {
+  // Sync the lang attribute on client-side navigation since the root layout
+  // doesn't re-render when the locale changes
+  useEffect(() => {
+    document.documentElement.lang = locale;
+  }, [locale]);
+
   return (
     <NextIntlClientProvider
       locale={locale}

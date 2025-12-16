@@ -7,6 +7,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import type { Metadata, Viewport } from 'next';
 import { Roboto, Roboto_Mono, Roboto_Serif } from 'next/font/google';
 import Script from 'next/script';
+import { getLocale } from 'next-intl/server';
 
 import { IconProvider } from '../components/IconProvider';
 import { PostHogProvider } from '../components/PostHogProvider';
@@ -61,9 +62,10 @@ export const viewport: Viewport = {
 
 const RootLayout = async ({ children }: { children: React.ReactNode }) => {
   const ssrCookies = await getSSRCookies();
+  const locale = await getLocale();
 
   return (
-    <html className="h-full">
+    <html lang={locale} className="h-full">
       <head>
         <Script id="nfo-script" strategy="beforeInteractive">
           {printNFO()}
