@@ -13,16 +13,50 @@ import type { SelectionPipeline } from '../../services/decision/selectionPipelin
 export type UiSchema = Record<string, unknown>;
 
 /**
+ * Phase behavior configuration
+ */
+export interface PhaseConfig {
+  allowProposals?: boolean;
+  allowDecisions?: boolean;
+}
+
+/**
+ * A phase definition within a voting schema.
+ * Each phase is a self-contained unit with its own config and optional selection pipeline.
+ *
+ * Phase type is inferred from position: first = initial, last = final, others = intermediate.
+ */
+export interface PhaseDefinition {
+  id: string;
+  name: string;
+  description?: string;
+
+  /** Phase behavior configuration */
+  config: PhaseConfig;
+
+  /** Filter/reduce pipeline for advancing proposals to next phase */
+  selectionPipeline?: SelectionPipeline;
+
+  /** Optional per-phase configuration form */
+  configSchema?: JSONSchema7;
+  configUiSchema?: UiSchema;
+  configDefaults?: Record<string, unknown>;
+}
+
+/**
  * A voting schema definition - everything needed to render a form with RJSF
+ * and define the phases of a decision process.
  */
 export interface VotingSchemaDefinition {
   schemaType: string;
   name: string;
   description?: string;
+
+  /** Process-level form schema */
   process: JSONSchema7;
   uiSchema: UiSchema;
   defaults: Record<string, unknown>;
 
-  /** Default selection pipeline for phase transitions */
-  selectionPipeline?: SelectionPipeline;
+  /** Phase definitions */
+  phases: PhaseDefinition[];
 }

@@ -5,12 +5,19 @@
  * ```tsx
  * import { simpleSchema } from '@op/common/lib/voting-schemas';
  *
+ * // Access phases
+ * const votingPhase = simpleSchema.phases.find(p => p.id === 'voting');
+ *
+ * // Use phase-specific config schema
  * <Form
- *   schema={simpleSchema.process}
- *   uiSchema={simpleSchema.uiSchema}
- *   formData={simpleSchema.defaults}
+ *   schema={votingPhase.configSchema}
+ *   uiSchema={votingPhase.configUiSchema}
+ *   formData={votingPhase.configDefaults}
  *   validator={validator}
  * />
+ *
+ * // Access phase selection pipeline
+ * console.log(votingPhase.selectionPipeline);
  * ```
  */
 
