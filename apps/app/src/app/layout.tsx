@@ -10,6 +10,7 @@ import Script from 'next/script';
 
 import { IconProvider } from '../components/IconProvider';
 import { PostHogProvider } from '../components/PostHogProvider';
+import { QueryInvalidationSubscriber } from '../components/QueryInvalidationSubscriber';
 
 const roboto = Roboto({
   subsets: ['latin'],
@@ -69,6 +70,7 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
         </Script>
       </head>
       <TRPCProvider ssrCookies={ssrCookies}>
+        <QueryInvalidationSubscriber />
         <body
           className={`${roboto.variable} ${robotoMono.variable} ${robotoSerif.variable} h-full overflow-x-hidden text-base text-neutral-black antialiased`}
         >

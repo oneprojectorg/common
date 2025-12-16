@@ -1,11 +1,23 @@
+import { type ChannelName, queryChannelRegistry } from '@op/common/realtime';
 import { OPURLConfig } from '@op/core';
 import { logger } from '@op/logging';
 import type { TRPCLink } from '@trpc/client';
 import { httpBatchLink, httpLink, loggerLink, splitLink } from '@trpc/client';
+import { observable } from '@trpc/server/observable';
 import { readSSROnlySecret } from 'ssr-only-secrets';
 import superjson from 'superjson';
 
+import {
+  MUTATION_CHANNELS_HEADER,
+  SUBSCRIPTION_CHANNELS_HEADER,
+} from './constants';
 import type { AppRouter } from './routers';
+
+/** @see https://trpc.io/docs/v11/getQueryKey */
+type TRPCQueryKey = [
+  readonly string[],
+  { input?: unknown; type?: 'query' | 'infinite' }?,
+];
 
 const SSR_SECRETS_KEY_VAR = 'SSR_SECRETS_KEY';
 const isServer = typeof window === 'undefined';
@@ -76,6 +88,72 @@ function createFetchWithSSRCookies(encryptedCookies?: string) {
 }
 
 /**
+ * Custom link that registers queries and mutations with the channel registry.
+ *
+ * For queries: Registers the query key with subscription channels from x-subscription-channels header
+ * For mutations: Registers mutation channels from x-mutation-channels header (triggers invalidation via registry)
+ */
+function createChannelRegistrationLink(): TRPCLink<AppRouter> {
+  return () => {
+    return ({ next, op }) => {
+      return observable((observer) => {
+        // Build query key manually - getQueryKey() requires typed procedures, not raw op data
+        // @see https://trpc.io/docs/v11/getQueryKey
+        const queryKey: TRPCQueryKey =
+          op.type === 'query'
+            ? [op.path.split('.'), { input: op.input, type: op.type }]
+            : [op.path.split('.')];
+
+        const unsubscribe = next(op).subscribe({
+          next(value) {
+            // Process response headers for channel handling
+            // The value.context contains the response from httpLink
+            if (!isServer && value.context?.response) {
+              const response = value.context.response as Response;
+
+              if (op.type === 'query') {
+                // Register query's subscription channels
+                const subscriptionChannelsHeader = response.headers.get(
+                  SUBSCRIPTION_CHANNELS_HEADER,
+                );
+                if (subscriptionChannelsHeader) {
+                  const channels = subscriptionChannelsHeader
+                    .split(',')
+                    .filter(Boolean) as ChannelName[];
+                  queryChannelRegistry.registerSubscription(queryKey, channels);
+                }
+              } else if (op.type === 'mutation') {
+                // Look up and invalidate queries for mutation channels
+                const mutationChannelsHeader = response.headers.get(
+                  MUTATION_CHANNELS_HEADER,
+                );
+                if (mutationChannelsHeader) {
+                  // TODO: consider zod. needed?
+                  const channels = mutationChannelsHeader
+                    .split(',')
+                    .filter(Boolean) as ChannelName[];
+                  queryChannelRegistry.registerMutation(channels);
+                }
+              }
+            }
+
+            observer.next(value);
+          },
+          error(err) {
+            observer.error(err);
+          },
+          complete() {
+            observer.complete();
+          },
+        });
+
+        return unsubscribe;
+      });
+    };
+  };
+}
+
+/**
  * Create tRPC links with optional SSR cookie support
  *
  * @param encryptedCookies - Encrypted cookie string from Server Component
@@ -92,6 +170,9 @@ export function createLinks(encryptedCookies?: string): TRPCLink<AppRouter>[] {
           }),
         ]
       : []),
+    // Channel registration link - processes response headers
+    createChannelRegistrationLink(),
+    // HTTP transport link
     splitLink({
       condition(op) {
         // Check if skipBatch is set in the context

@@ -28,6 +28,7 @@
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
     "csv-stringify": "^6.6.0",
+    "mitt": "^3.0.1",
     "next": "catalog:",
     "p-map": "^7.0.3",
     "safe-regex2": "^5.0.0",
