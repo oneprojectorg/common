@@ -20,8 +20,8 @@ export const simpleSchema: VotingSchemaDefinition = {
       id: 'submission',
       name: 'Proposal Submission',
       description: 'Members submit proposals for consideration.',
-      // Typed phase behavior flags
-      config: {
+      // Typed phase behavior rules
+      rules: {
         proposalSubmission: true,
         voting: false,
       },
@@ -49,7 +49,7 @@ export const simpleSchema: VotingSchemaDefinition = {
       id: 'review',
       name: 'Review & Shortlist',
       description: 'Reviewers evaluate and shortlist proposals.',
-      config: {
+      rules: {
         proposalSubmission: false,
         voting: false,
       },
@@ -58,7 +58,7 @@ export const simpleSchema: VotingSchemaDefinition = {
       id: 'voting',
       name: 'Voting',
       description: 'Members vote on shortlisted proposals.',
-      config: {
+      rules: {
         proposalSubmission: false,
         voting: true,
       },
@@ -105,7 +105,7 @@ export const simpleSchema: VotingSchemaDefinition = {
       id: 'results',
       name: 'Results',
       description: 'View final results and winning proposals.',
-      config: {
+      rules: {
         proposalSubmission: false,
         voting: false,
       },
@@ -126,7 +126,7 @@ export const advancedSchema: VotingSchemaDefinition = {
       id: 'submission',
       name: 'Proposal Submission',
       description: 'Members submit proposals for consideration.',
-      config: {
+      rules: {
         proposalSubmission: true,
         voting: false,
       },
@@ -135,7 +135,7 @@ export const advancedSchema: VotingSchemaDefinition = {
       id: 'review',
       name: 'Review & Shortlist',
       description: 'Reviewers evaluate and shortlist proposals.',
-      config: {
+      rules: {
         proposalSubmission: false,
         voting: false,
       },
@@ -144,7 +144,7 @@ export const advancedSchema: VotingSchemaDefinition = {
       id: 'voting',
       name: 'Voting',
       description: 'Members vote on shortlisted proposals with advanced options.',
-      config: {
+      rules: {
         proposalSubmission: false,
         voting: true,
       },
@@ -241,7 +241,7 @@ export const advancedSchema: VotingSchemaDefinition = {
       id: 'results',
       name: 'Results',
       description: 'View final results and winning proposals.',
-      config: {
+      rules: {
         proposalSubmission: false,
         voting: false,
       },
