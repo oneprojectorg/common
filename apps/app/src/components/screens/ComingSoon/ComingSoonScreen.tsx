@@ -3,17 +3,17 @@ import * as motion from 'motion/react-client';
 
 import { WaitlistSignup } from './WaitlistSignup';
 
-const ComingSoonPage = () => {
+export const ComingSoonScreen = () => {
   const backgroundTransition = {
     duration: 2,
     ease: 'linear',
     delay: 1,
   };
   return (
-    <div className="fixed inset-0 overflow-x-hidden bg-[black]">
+    <div className="fixed inset-0 overflow-x-hidden bg-[black] motion-reduce:bg-orangePurple">
       <div className="pointer-events-none absolute inset-0 z-0">
         <motion.div
-          className="fixed inset-0 z-10 size-full"
+          className="fixed inset-0 z-10 size-full motion-reduce:hidden"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={backgroundTransition}
@@ -63,5 +63,3 @@ const ComingSoonPage = () => {
     </div>
   );
 };
-
-export default ComingSoonPage;
