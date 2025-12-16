@@ -37,10 +37,16 @@ export interface PhaseDefinition {
   /** Filter/reduce pipeline for advancing proposals to next phase */
   selectionPipeline?: SelectionPipeline;
 
-  /** Optional per-phase configuration form */
+  /** Optional per-phase configuration form (use `default` in schema properties) */
   configSchema?: JSONSchema7;
   configUiSchema?: UiSchema;
-  configDefaults?: Record<string, unknown>;
+}
+
+/**
+ * Process-level configuration that applies across all phases.
+ */
+export interface ProcessConfig {
+  hideBudget?: boolean;
 }
 
 /**
@@ -50,6 +56,9 @@ export interface VotingSchemaDefinition {
   schemaType: string;
   name: string;
   description?: string;
+
+  /** Process-level configuration */
+  config?: ProcessConfig;
 
   /** Phase definitions */
   phases: PhaseDefinition[];
