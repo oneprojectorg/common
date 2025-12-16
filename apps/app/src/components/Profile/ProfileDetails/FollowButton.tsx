@@ -13,7 +13,6 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 
 const FollowButtonSuspense = ({ profile }: { profile: Organization }) => {
   const { user } = useUser();
-  const utils = trpc.useUtils();
   const [isPending, startTransition] = useTransition();
 
   const currentProfileId = user.currentProfile?.id;
@@ -43,34 +42,19 @@ const FollowButtonSuspense = ({ profile }: { profile: Organization }) => {
           toast.success({
             message: `Unfollowed ${profile.profile.name}`,
           });
-        } else {
-          await addRelationship.mutateAsync({
-            targetProfileId: profile.profile.id,
-            relationshipType: ProfileRelationshipType.FOLLOWING,
-            pending: false,
-          });
 
-          toast.success({
-            message: `Now following ${profile.profile.name}`,
-          });
+          return;
         }
 
-        // Invalidate all relationship-related queries
-        await Promise.all([
-          // Invalidate the query that checks if we're following this profile
-          utils.profile.getRelationships.invalidate({
-            sourceProfileId: currentProfileId,
-            targetProfileId: profile.profile.id,
-            types: [ProfileRelationshipType.FOLLOWING],
-          }),
-          // Invalidate the current user's following list
-          utils.profile.getRelationships.invalidate({
-            types: [ProfileRelationshipType.FOLLOWING],
-            profileType: 'org',
-          }),
-          // Invalidate all relationship queries for this target profile
-          utils.profile.getRelationships.invalidate(),
-        ]);
+        await addRelationship.mutateAsync({
+          targetProfileId: profile.profile.id,
+          relationshipType: ProfileRelationshipType.FOLLOWING,
+          pending: false,
+        });
+
+        toast.success({
+          message: `Now following ${profile.profile.name}`,
+        });
       } catch (error) {
         toast.error({
           message: isFollowing ? 'Failed to unfollow' : 'Failed to follow',

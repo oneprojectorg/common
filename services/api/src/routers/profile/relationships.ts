@@ -1,4 +1,5 @@
 import {
+  ChannelName,
   Channels,
   ValidationError,
   addProfileRelationship,
@@ -203,12 +204,12 @@ export const profileRelationshipRouter = router({
         // Set mutation channels for query invalidation
         ctx.setChannels('mutation', [
           Channels.profileRelationship({
-            type: 'source',
-            profileId: sourceProfileId,
-          }),
-          Channels.profileRelationship({
             type: 'target',
             profileId: targetProfileId,
+          }),
+          Channels.profileRelationship({
+            type: 'source',
+            profileId: sourceProfileId,
           }),
         ]);
 
@@ -315,21 +316,27 @@ export const profileRelationshipRouter = router({
 
         // TODO: check if we can simplify this, no need for type. e.g profileRelationship:<sourceId|targetId>
         // so we always subscribe to both
-        const targetProfielChannels = allRelationships
-          .map((relationship) => relationship.targetProfile.id)
-          .map((id) =>
-            Channels.profileRelationship({ type: 'target', profileId: id }),
-          );
-        const sourceProfileChannels = allRelationships
-          .map((relationship) => relationship.sourceProfile.id)
-          .map((id) =>
-            Channels.profileRelationship({ type: 'source', profileId: id }),
-          );
 
-        ctx.setChannels('subscription', [
-          ...targetProfielChannels,
-          ...sourceProfileChannels,
-        ]);
+        // also add channels for input targetProfileId/sourceProfileId
+        const channels: ChannelName[] = [];
+        if (targetProfileId) {
+          channels.push(
+            Channels.profileRelationship({
+              type: 'target',
+              profileId: targetProfileId,
+            }),
+          );
+        }
+        if (sourceProfileId) {
+          channels.push(
+            Channels.profileRelationship({
+              type: 'source',
+              profileId: sourceProfileId,
+            }),
+          );
+        }
+
+        ctx.setChannels('subscription', channels);
 
         return groupedResults;
       } catch (error) {

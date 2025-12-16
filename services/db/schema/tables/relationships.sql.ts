@@ -122,3 +122,5 @@ export const profileRelationshipsRelations = relations(
     }),
   }),
 );
+
+export type ProfileRelationship = typeof profileRelationships.$inferSelect;

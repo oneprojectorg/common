@@ -15,7 +15,6 @@ import { organizations } from './organizations.sql';
 import { posts } from './posts.sql';
 import { processInstances } from './processInstances.sql';
 import { profileUsers } from './profileUsers.sql';
-import { profileRelationships } from './relationships.sql';
 import { objectsInStorage } from './storage.sql';
 
 export const profiles = pgTable(
@@ -90,14 +89,6 @@ export const profilesRelations = relations(profiles, ({ many, one }) => ({
   }),
   modules: many(profileModules),
   profileUsers: many(profileUsers),
-  // Relationships where this profile is the source (following others)
-  sourceProfileRelationships: many(profileRelationships, {
-    relationName: 'sourceProfileRelationships',
-  }),
-  // Relationships where this profile is the target (followed by others)
-  targetProfileRelationships: many(profileRelationships, {
-    relationName: 'targetProfileRelationships',
-  }),
 }));
 
 export type Profile = typeof profiles.$inferSelect;
