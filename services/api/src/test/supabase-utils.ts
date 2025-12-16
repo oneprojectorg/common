@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { type Session, createClient } from '@supabase/supabase-js';
-import { TContext } from 'src/types';
 
+import type { TContext } from '../types';
 import { supabaseTestAdminClient, supabaseTestClient } from './setup';
 
 export { supabaseTestClient, supabaseTestAdminClient } from './setup';
@@ -68,6 +68,8 @@ export async function createTestContextWithSession(
     setCookie: ({ name, value }: { name: string; value: string }) => {
       cookies[name] = value;
     },
+    setChannels: () => {},
+    getChannels: () => [],
     time: Date.now(),
     isServerSideCall: true,
   };

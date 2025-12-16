@@ -68,18 +68,20 @@ function showHelp() {
 }
 
 function main() {
-  const command = process.argv[2] as Command;
+  const rawCommand = process.argv[2];
 
-  if (!command || command === 'help') {
+  if (!rawCommand || rawCommand === 'help') {
     showHelp();
     return;
   }
 
-  if (!Object.keys(COMMANDS).includes(command)) {
-    console.error(`❌ Unknown command: ${command}`);
+  if (!Object.keys(COMMANDS).includes(rawCommand)) {
+    console.error(`❌ Unknown command: ${rawCommand}`);
     showHelp();
     process.exit(1);
   }
+
+  const command = rawCommand as Command;
 
   console.log(`🧪 Test Supabase - ${COMMANDS[command]}`);
   console.log(`📁 Config: ${TEST_CONFIG}\n`);

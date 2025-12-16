@@ -1,12 +1,13 @@
-import { appRouter } from 'src/routers';
-import { createCallerFactory } from 'src/trpcFactory';
+import { ProcessStatus } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
+import { appRouter } from '../..';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
   createIsolatedSession,
   createTestContextWithSession,
 } from '../../../test/supabase-utils';
+import { createCallerFactory } from '../../../trpcFactory';
 
 const createCaller = createCallerFactory(appRouter);
 
@@ -67,7 +68,7 @@ describe('List Decision Profiles Integration Tests', () => {
         user: setup.user,
         name: 'Published Process',
         budget: 100000,
-        status: 'published',
+        status: ProcessStatus.PUBLISHED,
       });
 
       await testData.grantProfileAccess(
@@ -80,7 +81,7 @@ describe('List Decision Profiles Integration Tests', () => {
 
       const result = await caller.decision.listDecisionProfiles({
         limit: 10,
-        status: 'published',
+        status: ProcessStatus.PUBLISHED,
       });
 
       expect(result.items).toHaveLength(1);
@@ -163,7 +164,7 @@ describe('List Decision Profiles Integration Tests', () => {
         user: setup.user,
         name: 'Published Process A',
         budget: 100000,
-        status: 'published',
+        status: ProcessStatus.PUBLISHED,
       });
 
       await testData.grantProfileAccess(
@@ -184,7 +185,7 @@ describe('List Decision Profiles Integration Tests', () => {
         user: otherSetup.user,
         name: 'Published Process B',
         budget: 100000,
-        status: 'published',
+        status: ProcessStatus.PUBLISHED,
       });
 
       // Grant access to User A (from first setup)
@@ -199,7 +200,7 @@ describe('List Decision Profiles Integration Tests', () => {
       const result = await caller.decision.listDecisionProfiles({
         limit: 10,
         ownerProfileId: setup.organization.profileId,
-        status: 'published',
+        status: ProcessStatus.PUBLISHED,
       });
 
       expect(result.items).toHaveLength(1);
