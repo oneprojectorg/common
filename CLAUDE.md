@@ -10,8 +10,9 @@ This file provides guidance to Claude Code (claude.ai/code) and other AI agents 
 
 - **Build all**: `pnpm build` (uses Turbo for optimized builds)
 - **Type checking**: `pnpm typecheck` (runs type checking across all workspaces via Turbo) or `pnpm w:app typecheck` (for main app only)
+- **Format checking**: `pnpm format:check` (verifies code formatting - required by CI)
 - Never run database migrations
-- NEVER run `pnpm format`
+- NEVER run `pnpm format` (auto-fix) - only use `pnpm format:check` to verify
 - Almost always prefer suspense queries over a query with useEffect
 - When using Suspense Queries, be careful to have proper error boundaries as well
 
@@ -121,8 +122,6 @@ Use `pnpm w:<workspace>` shortcuts:
 - Only use colors that are present in the tailwind.shared config
 
 ## Workflow Warnings
-
-- Don't run pnpm format unless specifically asked to do so
 
 - If you need to check interactions in the browser, you can use the Playwright MCP server and open http://localhost:3100 to open the dev server
 - Authorization checks are achieved by our access-zones library. We usually get the orgUser and pass the user's roles to `assertAccess`
