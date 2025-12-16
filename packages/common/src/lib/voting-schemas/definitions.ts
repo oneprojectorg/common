@@ -52,6 +52,7 @@ export const simpleSchema: VotingSchemaDefinition = {
             title: 'Maximum Votes Per Elector',
             description: 'How many proposals can each member vote for?',
             minimum: 1,
+            default: 3,
           },
         },
       },
@@ -60,9 +61,6 @@ export const simpleSchema: VotingSchemaDefinition = {
           'ui:widget': 'number',
           'ui:placeholder': '5',
         },
-      },
-      configDefaults: {
-        maxVotesPerElector: 3,
       },
       // Selection pipeline: sort by likes, take top N
       selectionPipeline: {
@@ -140,16 +138,19 @@ export const advancedSchema: VotingSchemaDefinition = {
             title: 'Maximum Votes Per Elector',
             description: 'How many proposals can each member vote for?',
             minimum: 1,
+            default: 5,
           },
           weightedVoting: {
             type: 'boolean',
             title: 'Enable Weighted Voting',
             description: 'Votes have different weights based on member roles.',
+            default: false,
           },
           allowDelegation: {
             type: 'boolean',
             title: 'Allow Vote Delegation',
             description: 'Members can delegate their votes to others.',
+            default: false,
           },
           quorumPercentage: {
             type: 'number',
@@ -175,12 +176,6 @@ export const advancedSchema: VotingSchemaDefinition = {
           'ui:widget': 'number',
           'ui:placeholder': '50',
         },
-      },
-      configDefaults: {
-        maxVotesPerElector: 5,
-        weightedVoting: false,
-        allowDelegation: false,
-        quorumPercentage: null,
       },
       // Selection pipeline: filter by quorum, score, sort, limit
       selectionPipeline: {
