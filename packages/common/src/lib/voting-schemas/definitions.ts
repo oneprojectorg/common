@@ -42,8 +42,8 @@ export const simpleSchema: VotingSchemaDefinition = {
         proposalSubmission: false,
         voting: true,
       },
-      // Phase-specific configuration
-      configSchema: {
+      // Phase-specific settings
+      settingsSchema: {
         type: 'object',
         required: ['maxVotesPerElector'],
         properties: {
@@ -56,7 +56,7 @@ export const simpleSchema: VotingSchemaDefinition = {
           },
         },
       },
-      configUiSchema: {
+      settingsUiSchema: {
         maxVotesPerElector: {
           'ui:widget': 'number',
           'ui:placeholder': '5',
@@ -128,8 +128,8 @@ export const advancedSchema: VotingSchemaDefinition = {
         proposalSubmission: false,
         voting: true,
       },
-      // Phase-specific configuration for advanced voting
-      configSchema: {
+      // Phase-specific settings for advanced voting
+      settingsSchema: {
         type: 'object',
         required: ['maxVotesPerElector'],
         properties: {
@@ -161,7 +161,7 @@ export const advancedSchema: VotingSchemaDefinition = {
           },
         },
       },
-      configUiSchema: {
+      settingsUiSchema: {
         maxVotesPerElector: {
           'ui:widget': 'number',
           'ui:placeholder': '5',

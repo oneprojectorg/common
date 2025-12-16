@@ -37,9 +37,9 @@ export interface PhaseDefinition {
   /** Filter/reduce pipeline for advancing proposals to next phase */
   selectionPipeline?: SelectionPipeline;
 
-  /** Optional per-phase configuration form (use `default` in schema properties) */
-  configSchema?: JSONSchema7;
-  configUiSchema?: UiSchema;
+  /** Optional per-phase settings form (use `default` in schema properties) */
+  settingsSchema?: JSONSchema7;
+  settingsUiSchema?: UiSchema;
 }
 
 /**
