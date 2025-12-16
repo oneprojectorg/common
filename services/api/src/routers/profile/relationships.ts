@@ -1,7 +1,6 @@
 import {
   ValidationError,
   addProfileRelationship,
-  getCurrentProfileId,
   getProfileRelationships,
   removeProfileRelationship,
 } from '@op/common';
@@ -16,9 +15,7 @@ import { z } from 'zod';
 
 import withAnalytics from '../../middlewares/withAnalytics';
 import withAuthenticated from '../../middlewares/withAuthenticated';
-import withMutationChannels from '../../middlewares/withMutationChannels';
 import withRateLimited from '../../middlewares/withRateLimited';
-import withSubscriptionChannels from '../../middlewares/withSubscriptionChannels';
 import { loggedProcedure, router } from '../../trpcFactory';
 import {
   trackProposalFollowed,
@@ -110,11 +107,6 @@ const getRelationshipsMeta: OpenApiMeta = {
   },
 };
 
-// Type aliases for input schemas
-type RelationshipInput = z.infer<typeof relationshipInputSchema>;
-type RemoveRelationshipInput = z.infer<typeof removeRelationshipInputSchema>;
-type GetRelationshipsInput = z.infer<typeof getRelationshipsInputSchema>;
-
 export const profileRelationshipRouter = router({
   addRelationship: loggedProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 20 }))
@@ -122,26 +114,23 @@ export const profileRelationshipRouter = router({
     .use(withAnalytics)
     .meta(addRelationshipMeta)
     .input(relationshipInputSchema)
-    .use(
-      withMutationChannels<RelationshipInput>(async ({ input, ctx }) => {
-        const sourceProfileId = await getCurrentProfileId(ctx.user.id);
-        return [
-          Channels.profile(sourceProfileId),
-          Channels.profile(input.targetProfileId),
-        ];
-      }),
-    )
     .output(z.object({ success: z.boolean() }))
     .mutation(async ({ input, ctx }) => {
       const { targetProfileId, relationshipType, pending } = input;
 
       try {
-        await addProfileRelationship({
+        const { sourceProfileId } = await addProfileRelationship({
           targetProfileId,
           relationshipType,
           authUserId: ctx.user.id,
           pending,
         });
+
+        // Set mutation channels for query invalidation
+        ctx.setChannels('mutation', [
+          Channels.profile(sourceProfileId),
+          Channels.profile(targetProfileId),
+        ]);
 
         // Track analytics if this is a proposal relationship (async in background)
         waitUntil(
@@ -194,25 +183,23 @@ export const profileRelationshipRouter = router({
     .use(withAnalytics)
     .meta(removeRelationshipMeta)
     .input(removeRelationshipInputSchema)
-    .use(
-      withMutationChannels<RemoveRelationshipInput>(async ({ input, ctx }) => {
-        const sourceProfileId = await getCurrentProfileId(ctx.user.id);
-        return [
-          Channels.profile(sourceProfileId),
-          Channels.profile(input.targetProfileId),
-        ];
-      }),
-    )
     .output(z.object({ success: z.boolean() }))
     .mutation(async ({ input, ctx }) => {
       const { targetProfileId, relationshipType } = input;
 
       try {
-        await removeProfileRelationship({
+        const { sourceProfileId } = await removeProfileRelationship({
           targetProfileId,
           relationshipType,
           authUserId: ctx.user.id,
         });
+
+        // Set mutation channels for query invalidation
+        ctx.setChannels('mutation', [
+          Channels.profile(sourceProfileId),
+          Channels.profile(targetProfileId),
+        ]);
+
         return { success: true };
       } catch (error) {
         logger.error('Error removing relationship', { error, targetProfileId });
@@ -229,27 +216,6 @@ export const profileRelationshipRouter = router({
     .use(withAnalytics)
     .meta(getRelationshipsMeta)
     .input(getRelationshipsInputSchema)
-    .use(
-      withSubscriptionChannels<GetRelationshipsInput>(async ({ input, ctx }) => {
-        const channels: ReturnType<typeof Channels.profile>[] = [];
-
-        // Subscribe to source profile channel
-        if (input.sourceProfileId) {
-          channels.push(Channels.profile(input.sourceProfileId));
-        } else if (!input.targetProfileId) {
-          // Default case: current user's outgoing relationships
-          const currentProfileId = await getCurrentProfileId(ctx.user.id);
-          channels.push(Channels.profile(currentProfileId));
-        }
-
-        // Subscribe to target profile channel if specified
-        if (input.targetProfileId) {
-          channels.push(Channels.profile(input.targetProfileId));
-        }
-
-        return channels;
-      }),
-    )
     .output(
       // Always return grouped format by relationship type
       z.partialRecord(
@@ -321,6 +287,23 @@ export const profileRelationshipRouter = router({
           if (groupedResults[type]) {
             groupedResults[type].push(relationship);
           }
+        }
+
+        // Set subscription channels based on returned data
+        const profileIds = new Set<string>();
+        for (const relationship of allRelationships) {
+          if (relationship.sourceProfile?.id) {
+            profileIds.add(relationship.sourceProfile.id);
+          }
+          if (relationship.targetProfile?.id) {
+            profileIds.add(relationship.targetProfile.id);
+          }
+        }
+        if (profileIds.size > 0) {
+          ctx.setChannels(
+            'subscription',
+            [...profileIds].map((id) => Channels.profile(id)),
+          );
         }
 
         return groupedResults;
