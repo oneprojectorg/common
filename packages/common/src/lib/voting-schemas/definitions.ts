@@ -21,8 +21,8 @@ export const simpleSchema: VotingSchemaDefinition = {
       name: 'Proposal Submission',
       description: 'Members submit proposals for consideration.',
       config: {
-        allowProposals: true,
-        allowDecisions: false,
+        proposalSubmission: true,
+        voting: false,
       },
     },
     {
@@ -30,8 +30,8 @@ export const simpleSchema: VotingSchemaDefinition = {
       name: 'Review & Shortlist',
       description: 'Reviewers evaluate and shortlist proposals.',
       config: {
-        allowProposals: false,
-        allowDecisions: false,
+        proposalSubmission: false,
+        voting: false,
       },
     },
     {
@@ -39,8 +39,8 @@ export const simpleSchema: VotingSchemaDefinition = {
       name: 'Voting',
       description: 'Members vote on shortlisted proposals.',
       config: {
-        allowProposals: false,
-        allowDecisions: true,
+        proposalSubmission: false,
+        voting: true,
       },
       // Phase-specific configuration
       configSchema: {
@@ -86,8 +86,8 @@ export const simpleSchema: VotingSchemaDefinition = {
       name: 'Results',
       description: 'View final results and winning proposals.',
       config: {
-        allowProposals: false,
-        allowDecisions: false,
+        proposalSubmission: false,
+        voting: false,
       },
     },
   ] satisfies PhaseDefinition[],
@@ -107,8 +107,8 @@ export const advancedSchema: VotingSchemaDefinition = {
       name: 'Proposal Submission',
       description: 'Members submit proposals for consideration.',
       config: {
-        allowProposals: true,
-        allowDecisions: false,
+        proposalSubmission: true,
+        voting: false,
       },
     },
     {
@@ -116,8 +116,8 @@ export const advancedSchema: VotingSchemaDefinition = {
       name: 'Review & Shortlist',
       description: 'Reviewers evaluate and shortlist proposals.',
       config: {
-        allowProposals: false,
-        allowDecisions: false,
+        proposalSubmission: false,
+        voting: false,
       },
     },
     {
@@ -125,8 +125,8 @@ export const advancedSchema: VotingSchemaDefinition = {
       name: 'Voting',
       description: 'Members vote on shortlisted proposals with advanced options.',
       config: {
-        allowProposals: false,
-        allowDecisions: true,
+        proposalSubmission: false,
+        voting: true,
       },
       // Phase-specific configuration for advanced voting
       configSchema: {
@@ -222,8 +222,8 @@ export const advancedSchema: VotingSchemaDefinition = {
       name: 'Results',
       description: 'View final results and winning proposals.',
       config: {
-        allowProposals: false,
-        allowDecisions: false,
+        proposalSubmission: false,
+        voting: false,
       },
     },
   ] satisfies PhaseDefinition[],

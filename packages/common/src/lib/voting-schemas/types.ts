@@ -16,8 +16,8 @@ export type UiSchema = Record<string, unknown>;
  * Phase behavior configuration
  */
 export interface PhaseConfig {
-  allowProposals?: boolean;
-  allowDecisions?: boolean;
+  proposalSubmission?: boolean;
+  voting?: boolean;
 }
 
 /**
