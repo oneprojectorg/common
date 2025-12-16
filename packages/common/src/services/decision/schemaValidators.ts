@@ -65,7 +65,7 @@ export function extractVotingConfig(
   const baseConfig: VotingConfig = {
     allowProposals: schema.allowProposals,
     allowDecisions: schema.allowDecisions,
-    maxVotesPerMember: schema.instanceData.maxVotesPerMember,
+    maxVotesPerElector: schema.instanceData.maxVotesPerElector,
     schemaType,
   };
 
@@ -166,8 +166,8 @@ export function validateVoteSelection(
     errors.push('At least one proposal must be selected');
   }
 
-  if (selectedProposalIds.length > maxVotesPerMember) {
-    errors.push(`Cannot select more than ${maxVotesPerMember} proposals`);
+  if (selectedProposalIds.length > maxVotesPerElector) {
+    errors.push(`Cannot select more than ${maxVotesPerElector} proposals`);
   }
 
   const invalidProposals = selectedProposalIds.filter(
@@ -194,7 +194,7 @@ export function createSchemaSignature(schema: DecisionProcessSchema): string {
   const normalizedSchema = {
     allowProposals: schema.allowProposals,
     allowDecisions: schema.allowDecisions,
-    maxVotesPerMember: schema.instanceData.maxVotesPerMember,
+    maxVotesPerElector: schema.instanceData.maxVotesPerElector,
   };
 
   return Buffer.from(JSON.stringify(normalizedSchema)).toString('base64');

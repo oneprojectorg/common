@@ -63,7 +63,7 @@ export interface VotingStatusResult {
   }> | null;
   votingConfiguration: {
     allowDecisions: boolean;
-    maxVotesPerMember: number;
+    maxVotesPerElector: number;
     schemaType: string;
     isReadOnly: boolean;
   };
@@ -146,17 +146,17 @@ export const submitVote = async ({
     }
 
     console.log(
-      'VOTING VALIDATION: maxVotesPerMember',
-      (processInstance.instanceData as any)?.fieldValues?.maxVotesPerMember,
+      'VOTING VALIDATION: maxVotesPerElector',
+      (processInstance.instanceData as any)?.fieldValues?.maxVotesPerElector,
     );
     // Build schema data for validation
     const schemaData = {
       allowProposals: currentState.config?.allowProposals || false,
       allowDecisions: currentState.config?.allowDecisions || false,
       instanceData: {
-        maxVotesPerMember:
+        maxVotesPerElector:
           (processInstance.instanceData as any)?.fieldValues
-            ?.maxVotesPerMember || 5,
+            ?.maxVotesPerElector || 5,
       },
       schemaType: 'simple',
     };
@@ -216,7 +216,7 @@ export const submitVote = async ({
     // Validate the vote selection
     const validation = validateVoteSelection(
       data.selectedProposalIds,
-      votingConfig.maxVotesPerMember,
+      votingConfig.maxVotesPerElector,
       approvedProposalIds,
     );
 
@@ -348,9 +348,9 @@ export const getVotingStatus = async ({
       allowProposals: currentState.config?.allowProposals || false,
       allowDecisions: currentState.config?.allowDecisions || false,
       instanceData: {
-        maxVotesPerMember:
+        maxVotesPerElector:
           (processInstance.instanceData as any)?.fieldValues
-            .maxVotesPerMember || 3,
+            .maxVotesPerElector || 3,
       },
       schemaType: 'simple',
     };
@@ -413,7 +413,7 @@ export const getVotingStatus = async ({
       selectedProposals,
       votingConfiguration: {
         allowDecisions: votingConfig.allowDecisions,
-        maxVotesPerMember: votingConfig.maxVotesPerMember,
+        maxVotesPerElector: votingConfig.maxVotesPerElector,
         schemaType: schemaResult.schemaType,
         isReadOnly: !!voteSubmission || !votingConfig.allowDecisions,
       },
@@ -489,8 +489,8 @@ export const validateVoteSelectionService = async ({
       allowProposals: currentState.config?.allowProposals || false,
       allowDecisions: currentState.config?.allowDecisions || false,
       instanceData: {
-        maxVotesPerMember:
-          (processInstance.instanceData as any)?.maxVotesPerMember || 3,
+        maxVotesPerElector:
+          (processInstance.instanceData as any)?.maxVotesPerElector || 3,
       },
       schemaType: 'simple',
     };
@@ -522,7 +522,7 @@ export const validateVoteSelectionService = async ({
     // Validate selection
     const validation = validateVoteSelection(
       data.selectedProposalIds,
-      votingConfig.maxVotesPerMember,
+      votingConfig.maxVotesPerElector,
       availableProposalIds,
     );
 
@@ -549,7 +549,7 @@ export const validateVoteSelectionService = async ({
     return {
       isValid: validation.isValid,
       errors: validation.errors,
-      maxVotesAllowed: votingConfig.maxVotesPerMember,
+      maxVotesAllowed: votingConfig.maxVotesPerElector,
       schemaConstraints: {
         schemaType: schemaResult.schemaType,
         allowDecisions: votingConfig.allowDecisions,

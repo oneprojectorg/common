@@ -13,9 +13,9 @@ export const simpleSchema: VotingSchemaDefinition = {
 
   process: {
     type: 'object',
-    required: ['maxVotesPerMember'],
+    required: ['maxVotesPerElector'],
     properties: {
-      maxVotesPerMember: {
+      maxVotesPerElector: {
         type: 'number',
         title: 'Maximum Votes Per Member',
         description: 'How many proposals can each member vote for?',
@@ -25,14 +25,14 @@ export const simpleSchema: VotingSchemaDefinition = {
   },
 
   uiSchema: {
-    maxVotesPerMember: {
+    maxVotesPerElector: {
       'ui:widget': 'number',
       'ui:placeholder': '5',
     },
   },
 
   defaults: {
-    maxVotesPerMember: 3,
+    maxVotesPerElector: 3,
   },
 
   selectionPipeline: {
@@ -47,8 +47,8 @@ export const simpleSchema: VotingSchemaDefinition = {
       {
         id: 'limit-by-votes',
         type: 'limit',
-        name: 'Take top N (based on maxVotesPerMember config)',
-        count: { variable: '$maxVotesPerMember' },
+        name: 'Take top N (based on maxVotesPerElector config)',
+        count: { variable: '$maxVotesPerElector' },
       },
     ],
   } satisfies SelectionPipeline,
@@ -61,9 +61,9 @@ export const advancedSchema: VotingSchemaDefinition = {
 
   process: {
     type: 'object',
-    required: ['maxVotesPerMember'],
+    required: ['maxVotesPerElector'],
     properties: {
-      maxVotesPerMember: {
+      maxVotesPerElector: {
         type: 'number',
         title: 'Maximum Votes Per Member',
         description: 'How many proposals can each member vote for?',
@@ -90,7 +90,7 @@ export const advancedSchema: VotingSchemaDefinition = {
   },
 
   uiSchema: {
-    maxVotesPerMember: {
+    maxVotesPerElector: {
       'ui:widget': 'number',
       'ui:placeholder': '5',
     },
@@ -107,7 +107,7 @@ export const advancedSchema: VotingSchemaDefinition = {
   },
 
   defaults: {
-    maxVotesPerMember: 5,
+    maxVotesPerElector: 5,
     weightedVoting: false,
     allowDelegation: false,
     quorumPercentage: null,
@@ -147,7 +147,7 @@ export const advancedSchema: VotingSchemaDefinition = {
         id: 'limit-results',
         type: 'limit',
         name: 'Take top N results',
-        count: { variable: '$maxVotesPerMember' },
+        count: { variable: '$maxVotesPerElector' },
       },
     ],
   } satisfies SelectionPipeline,

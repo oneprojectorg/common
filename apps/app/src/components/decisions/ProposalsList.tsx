@@ -155,8 +155,8 @@ const VotingProposalsList = ({
   // Determine voting state
   const hasVoted = voteStatus?.hasVoted || false;
   const isReadOnly = hasVoted;
-  const maxVotesPerMember =
-    voteStatus?.votingConfiguration?.maxVotesPerMember || 0;
+  const maxVotesPerElector =
+    voteStatus?.votingConfiguration?.maxVotesPerElector || 0;
 
   // Handle proposal selection
   const toggleProposal = (proposalId: string) => {
@@ -168,7 +168,7 @@ const VotingProposalsList = ({
         return prev.filter((id) => id !== proposalId);
       } else {
         // Add to selection if under limit
-        if (prev.length < maxVotesPerMember) {
+        if (prev.length < maxVotesPerElector) {
           return [...prev, proposalId];
         }
         return prev;
@@ -312,8 +312,8 @@ const VotingProposalsList = ({
         <div className="flex w-full items-center justify-between px-4 sm:max-w-6xl sm:px-8">
           <span className="text-neutral-black">
             <span className="text-primary-teal">{numSelected}</span> of{' '}
-            {maxVotesPerMember}{' '}
-            {maxVotesPerMember === 1 ? 'proposal' : 'proposals'} selected
+            {maxVotesPerElector}{' '}
+            {maxVotesPerElector === 1 ? 'proposal' : 'proposals'} selected
           </span>
 
           <DialogTrigger>
@@ -326,7 +326,7 @@ const VotingProposalsList = ({
                 <VoteSubmissionModal
                   selectedProposals={selectedProposals}
                   instanceId={instanceId}
-                  maxVotes={maxVotesPerMember}
+                  maxVotes={maxVotesPerElector}
                   onSuccess={handleVoteSuccess}
                 />
               </Dialog>

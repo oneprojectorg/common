@@ -203,9 +203,9 @@ export const stepSchemas: {
       type: 'object',
       title: 'Configure your voting settings',
       description: 'Set up how members will participate in the voting process.',
-      required: ['maxVotesPerMember'],
+      required: ['maxVotesPerElector'],
       properties: {
-        maxVotesPerMember: {
+        maxVotesPerElector: {
           type: 'number',
           title: 'Maximum Votes Per Member',
           minimum: 1,
@@ -217,7 +217,7 @@ export const stepSchemas: {
       },
     },
     uiSchema: {
-      maxVotesPerMember: {
+      maxVotesPerElector: {
         'ui:widget': 'number',
         'ui:placeholder': '5',
       },
@@ -361,7 +361,7 @@ export const schemaDefaults = {
   resultsAnnouncement: {
     resultsDate: '',
   },
-  maxVotesPerMember: null,
+  maxVotesPerElector: null,
   categories: [],
   proposalInfoTitle: '',
   proposalInfoContent: '',
@@ -492,7 +492,7 @@ export const transformFormDataToProcessSchema = (
       type: 'object',
       properties: {
         vote: { type: 'boolean' },
-        maxVotesPerMember: data.maxVotesPerMember,
+        maxVotesPerElector: data.maxVotesPerElector,
       },
     },
     proposalTemplate: {

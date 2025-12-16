@@ -536,7 +536,7 @@ export const ReviewSummaryWidget = (props: WidgetProps) => {
       title: 'Configuration',
       fields: [
         {
-          key: 'maxVotesPerMember',
+          key: 'maxVotesPerElector',
           label: 'Max votes per member',
           formatter: (value: any) =>
             value ? `${value} per member` : 'Not set',
