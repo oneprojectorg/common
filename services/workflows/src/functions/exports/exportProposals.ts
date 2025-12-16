@@ -1,10 +1,11 @@
 import { get, set } from '@op/cache';
-import { generateProposalsCsv, listProposals } from '@op/common';
-import { db } from '@op/db/client';
-import { users } from '@op/db/schema';
+import {
+  assertUserByAuthId,
+  generateProposalsCsv,
+  listProposals,
+} from '@op/common';
 import { Events, inngest } from '@op/events';
 import { createSBServiceClient } from '@op/supabase/server';
-import { eq } from 'drizzle-orm';
 
 type ProposalFromList = Awaited<
   ReturnType<typeof listProposals>
@@ -49,14 +50,7 @@ export const exportProposals = inngest.createFunction(
     try {
       // Step 2: Fetch proposals
       const proposals = await step.run('fetch-proposals', async () => {
-        // Get user from database by auth user ID
-        const userRecord = await db.query.users.findFirst({
-          where: eq(users.authUserId, userId),
-        });
-
-        if (!userRecord) {
-          throw new Error('User not found');
-        }
+        const userRecord = await assertUserByAuthId(userId);
 
         const result = await listProposals({
           input: {

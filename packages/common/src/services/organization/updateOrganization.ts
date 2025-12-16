@@ -14,6 +14,7 @@ import pMap from 'p-map';
 
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { getOrgAccessUser } from '../access';
+import { assertOrganization } from '../assert';
 import {
   type FundingLinksInput,
   type UpdateOrganizationInput,
@@ -49,13 +50,7 @@ export const updateOrganization = async ({
   const { ...updateData } = data;
 
   // Check if user has permission to update this organization
-  const existingOrg = await db.query.organizations.findFirst({
-    where: eq(organizations.id, organizationId),
-  });
-
-  if (!existingOrg) {
-    throw new NotFoundError('Organization not found');
-  }
+  const existingOrg = await assertOrganization(organizationId);
 
   const orgInputs = UpdateOrganizationInputParser.parse(updateData);
 

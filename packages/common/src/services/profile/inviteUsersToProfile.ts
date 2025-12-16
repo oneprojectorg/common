@@ -9,12 +9,9 @@ import { Events, event } from '@op/events';
 import { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
-import {
-  CommonError,
-  NotFoundError,
-  UnauthorizedError,
-} from '../../utils/error';
+import { CommonError, UnauthorizedError } from '../../utils/error';
 import { getProfileAccessUser } from '../access';
+import { assertProfile } from '../assert';
 import { AllowListMetadata } from '../user/validators';
 
 // Utility function to generate consistent result messages
@@ -53,9 +50,7 @@ export const inviteUsersToProfile = async (input: {
     profileUser,
   ] = await Promise.all([
     // Get the profile details for the invite
-    db.query.profiles.findFirst({
-      where: (table, { eq }) => eq(table.id, requesterProfileId),
-    }),
+    assertProfile(requesterProfileId),
     // Get the target role
     db.query.accessRoles.findFirst({
       where: (table, { eq }) => eq(table.id, roleId),
@@ -88,10 +83,6 @@ export const inviteUsersToProfile = async (input: {
   // If this is the inviter's profile, we let them through. Otherwise assert admin access
   if (profileUser.profileId !== requesterProfileId) {
     assertAccess({ profile: permission.ADMIN }, profileUser.roles || []);
-  }
-
-  if (!profile) {
-    throw new NotFoundError('Profile not found');
   }
 
   if (!targetRole) {

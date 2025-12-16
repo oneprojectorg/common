@@ -1,16 +1,12 @@
 import { db } from '@op/db/client';
-import {
-  type Organization,
-  type Profile,
-  organizations,
-  profiles,
-} from '@op/db/schema';
+import { type Organization, type Profile, organizations } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 import { eq } from 'drizzle-orm';
 
-import { UnauthorizedError, ValidationError } from '../../../utils';
+import { UnauthorizedError } from '../../../utils';
 import { getOrgAccessUser } from '../../access';
+import { assertProfile } from '../../assert';
 
 export type TargetProfileAdminContext = {
   targetProfile: Profile;
@@ -32,15 +28,11 @@ export const assertTargetProfileAdminAccess = async ({
   targetProfileId: string;
 }): Promise<TargetProfileAdminContext> => {
   const [targetProfile, organization] = await Promise.all([
-    db.query.profiles.findFirst({ where: eq(profiles.id, targetProfileId) }),
+    assertProfile(targetProfileId),
     db.query.organizations.findFirst({
       where: eq(organizations.profileId, targetProfileId),
     }),
   ]);
-
-  if (!targetProfile) {
-    throw new ValidationError('Target profile not found');
-  }
 
   if (!organization) {
     throw new UnauthorizedError('Target organization not found');

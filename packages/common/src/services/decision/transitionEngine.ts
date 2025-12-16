@@ -4,7 +4,6 @@ import {
   processInstances,
   proposals,
   stateTransitionHistory,
-  users,
 } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
@@ -14,6 +13,7 @@ import {
   UnauthorizedError,
   ValidationError,
 } from '../../utils';
+import { assertUserByAuthId } from '../assert';
 import type {
   InstanceData,
   ProcessSchema,
@@ -152,12 +152,9 @@ export class TransitionEngine {
     }
 
     try {
-      // Get the database user record
-      const dbUser = await db.query.users.findFirst({
-        where: eq(users.authUserId, user.id),
-      });
+      const dbUser = await assertUserByAuthId(user.id);
 
-      if (!dbUser || !dbUser.currentProfileId) {
+      if (!dbUser.currentProfileId) {
         throw new UnauthorizedError('User must have an active profile');
       }
 

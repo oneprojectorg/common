@@ -1,10 +1,11 @@
 import { db, eq } from '@op/db/client';
-import { ProposalStatus, organizations, proposals, users } from '@op/db/schema';
+import { ProposalStatus, proposals } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { getOrgAccessUser } from '../access';
+import { assertOrganizationByProfileId, assertUserByAuthId } from '../assert';
 
 export const updateProposalStatus = async ({
   profileId,
@@ -22,9 +23,7 @@ export const updateProposalStatus = async ({
   try {
     // Fetch user and proposal in parallel for better performance
     const [dbUser, existingProposal] = await Promise.all([
-      db.query.users.findFirst({
-        where: eq(users.authUserId, user.id),
-      }),
+      assertUserByAuthId(user.id),
       db.query.proposals.findFirst({
         where: eq(proposals.profileId, profileId),
         with: {
@@ -33,7 +32,7 @@ export const updateProposalStatus = async ({
       }),
     ]);
 
-    if (!dbUser || !dbUser.currentProfileId) {
+    if (!dbUser.currentProfileId) {
       throw new UnauthorizedError('User must have an active profile');
     }
 
@@ -47,13 +46,9 @@ export const updateProposalStatus = async ({
     }
 
     // Get organization from process instance owner profile
-    const organization = await db.query.organizations.findFirst({
-      where: eq(organizations.profileId, processInstance.ownerProfileId),
-    });
-
-    if (!organization) {
-      throw new UnauthorizedError('Process not owned by an organization');
-    }
+    const organization = await assertOrganizationByProfileId(
+      processInstance.ownerProfileId,
+    );
 
     // Get user's organization membership and roles
     const orgUser = await getOrgAccessUser({

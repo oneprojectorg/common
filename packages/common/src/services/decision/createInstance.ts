@@ -5,11 +5,11 @@ import {
   decisionProcesses,
   processInstances,
   profiles,
-  users,
 } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
+import { assertUserByAuthId } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
 import { createTransitionsForProcess } from './createTransitionsForProcess';
 import type { InstanceData, ProcessSchema } from './types';
@@ -33,14 +33,11 @@ export const createInstance = async ({
   }
 
   try {
-    // Get the database user record to access currentProfileId
-    const dbUser = await db.query.users.findFirst({
-      where: eq(users.authUserId, user.id),
-    });
+    const dbUser = await assertUserByAuthId(user.id);
 
-    const ownerProfileId = dbUser?.currentProfileId ?? dbUser?.profileId;
+    const ownerProfileId = dbUser.currentProfileId ?? dbUser.profileId;
 
-    if (!dbUser || !ownerProfileId) {
+    if (!ownerProfileId) {
       throw new UnauthorizedError('User must have an active profile');
     }
 
