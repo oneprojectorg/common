@@ -13,9 +13,9 @@ import type { SelectionPipeline } from '../../services/decision/selectionPipelin
 export type UiSchema = Record<string, unknown>;
 
 /**
- * Phase behavior configuration
+ * Phase behavior rules
  */
-export interface PhaseConfig {
+export interface PhaseRules {
   proposalSubmission?: boolean;
   voting?: boolean;
 }
@@ -31,8 +31,8 @@ export interface PhaseDefinition {
   name: string;
   description?: string;
 
-  /** Phase behavior configuration */
-  config: PhaseConfig;
+  /** Phase behavior rules */
+  rules: PhaseRules;
 
   /** Filter/reduce pipeline for advancing proposals to next phase */
   selectionPipeline?: SelectionPipeline;
