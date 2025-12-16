@@ -118,12 +118,18 @@ export const profileRelationshipRouter = router({
       const { targetProfileId, relationshipType, pending } = input;
 
       try {
-        await addProfileRelationship({
+        const { sourceProfileId } = await addProfileRelationship({
           targetProfileId,
           relationshipType,
           authUserId: ctx.user.id,
           pending,
         });
+
+        // Set mutation channels for query invalidation
+        ctx.setChannels('mutation', [
+          Channels.profile(sourceProfileId),
+          Channels.profile(targetProfileId),
+        ]);
 
         // Track analytics if this is a proposal relationship (async in background)
         waitUntil(
@@ -181,11 +187,18 @@ export const profileRelationshipRouter = router({
       const { targetProfileId, relationshipType } = input;
 
       try {
-        await removeProfileRelationship({
+        const { sourceProfileId } = await removeProfileRelationship({
           targetProfileId,
           relationshipType,
           authUserId: ctx.user.id,
         });
+
+        // Set mutation channels for query invalidation
+        ctx.setChannels('mutation', [
+          Channels.profile(sourceProfileId),
+          Channels.profile(targetProfileId),
+        ]);
+
         return { success: true };
       } catch (error) {
         logger.error('Error removing relationship', { error, targetProfileId });
@@ -273,6 +286,23 @@ export const profileRelationshipRouter = router({
           if (groupedResults[type]) {
             groupedResults[type].push(relationship);
           }
+        }
+
+        // Set subscription channels based on returned data
+        const profileIds = new Set<string>();
+        for (const relationship of allRelationships) {
+          if (relationship.sourceProfile?.id) {
+            profileIds.add(relationship.sourceProfile.id);
+          }
+          if (relationship.targetProfile?.id) {
+            profileIds.add(relationship.targetProfile.id);
+          }
+        }
+        if (profileIds.size > 0) {
+          ctx.setChannels(
+            'subscription',
+            [...profileIds].map((id) => Channels.profile(id)),
+          );
         }
 
         return groupedResults;
