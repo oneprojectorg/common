@@ -12,13 +12,13 @@ import { eq } from 'drizzle-orm';
 import { CommonError, ValidationError } from '../../../utils';
 import { assertProfile } from '../../assert';
 import { assertTargetProfileAdminAccess } from './assertTargetProfileAdminAccess';
-import type { JoinProfileRequestWithProfiles } from './createJoinRequest';
+import { JoinProfileRequestWithProfiles } from './types';
 
 /**
  * Updates the status of an existing join profile request to approved or rejected.
  * Only admin members of the target profile (or the owning organization) may perform this action.
  */
-export const updateJoinRequest = async ({
+export const updateProfileJoinRequest = async ({
   user,
   requestId,
   status,

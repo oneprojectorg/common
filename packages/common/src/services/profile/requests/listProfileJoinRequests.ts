@@ -5,7 +5,7 @@ import { and, eq } from 'drizzle-orm';
 
 import { decodeCursor, encodeCursor, getCursorCondition } from '../../../utils';
 import { assertTargetProfileAdminAccess } from './assertTargetProfileAdminAccess';
-import { JoinProfileRequestWithProfiles } from './createJoinRequest';
+import { JoinProfileRequestWithProfiles } from './types';
 
 type ListJoinProfileRequestsCursor = {
   value: string;
@@ -16,7 +16,7 @@ type ListJoinProfileRequestsCursor = {
  * Lists all join profile requests for a target profile.
  * Only admin members of the target organization can view these requests.
  */
-export const listJoinRequests = async ({
+export const listProfileJoinRequests = async ({
   user,
   targetProfileId,
   status,

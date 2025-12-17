@@ -1,4 +1,4 @@
-import { Channels, createJoinProfileRequest } from '@op/common';
+import { Channels, createProfileJoinRequest } from '@op/common';
 import { z } from 'zod';
 
 import { joinProfileRequestEncoder } from '../../../encoders/joinProfileRequests';
@@ -20,7 +20,7 @@ export const createJoinRequestRouter = router({
     .input(inputSchema)
     .output(joinProfileRequestEncoder)
     .mutation(async ({ input, ctx }) => {
-      const result = await createJoinProfileRequest({
+      const result = await createProfileJoinRequest({
         requestProfileId: input.requestProfileId,
         targetProfileId: input.targetProfileId,
         user: ctx.user,

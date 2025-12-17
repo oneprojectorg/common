@@ -1,15 +1,13 @@
 import { User } from '@op/supabase/lib';
 
-import {
-  JoinProfileRequestWithProfiles,
-  validateJoinProfileRequestContext,
-} from './validateJoinProfileRequestContext';
+import { JoinProfileRequestWithProfiles } from './types';
+import { validateJoinProfileRequestContext } from './validateJoinProfileRequestContext';
 
 /**
  * Gets an existing join profile request between two profiles.
  * Returns the join profile request with associated profiles, or null if no request exists.
  */
-export const getJoinRequest = async ({
+export const getProfileJoinRequest = async ({
   user,
   requestProfileId,
   targetProfileId,

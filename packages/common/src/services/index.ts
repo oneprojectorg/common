@@ -23,9 +23,9 @@ export {
   getRelationships as getProfileRelationships,
 } from './profile/profileRelationships';
 export {
-  createJoinRequest as createJoinProfileRequest,
-  getJoinRequest as getProfileJoinRequest,
-  listJoinRequests as listJoinProfileRequests,
-  updateJoinRequest as updateProfileJoinRequest,
-  deleteJoinRequest as deleteProfileJoinRequest,
+  createProfileJoinRequest,
+  getProfileJoinRequest,
+  listProfileJoinRequests,
+  updateProfileJoinRequest,
+  deleteProfileJoinRequest,
 } from './profile/requests';

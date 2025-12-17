@@ -4,14 +4,14 @@ import type { User } from '@op/supabase/lib';
 import { eq } from 'drizzle-orm';
 
 import { UnauthorizedError, ValidationError } from '../../../utils';
-import type { JoinProfileRequestWithProfiles } from './validateJoinProfileRequestContext';
+import { JoinProfileRequestWithProfiles } from './types';
 
 /**
  * Deletes (cancels) a pending join profile request.
  * Only the user who created the request can delete it, and only if it's still pending.
  * @returns The deleted join request with associated profiles.
  */
-export const deleteJoinRequest = async ({
+export const deleteProfileJoinRequest = async ({
   user,
   requestId,
 }: {
