@@ -94,7 +94,7 @@ const RequestMembershipButtonSuspense = ({
     });
   };
 
-  const handleCancelRequest = () => {
+  const handleCancelRequest = (close: () => void) => {
     if (!existingRequest?.id) {
       return;
     }
