@@ -39,12 +39,17 @@ describe.concurrent('profile.deleteJoinRequest', () => {
     const { session } = await createIsolatedSession(requester.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
-    // Delete the request
-    await caller.deleteJoinRequest({
+    // Delete the request and verify returned data
+    const result = await caller.deleteJoinRequest({
       requestId: joinRequest.id,
     });
 
-    // Verify the request was deleted
+    expect(result.id).toBe(joinRequest.id);
+    expect(result.requestProfile.id).toBe(requester.profileId);
+    expect(result.targetProfile.id).toBe(targetProfile.id);
+    expect(result.status).toBe(JoinProfileRequestStatus.PENDING);
+
+    // Verify the request was deleted from database
     const deletedRequest = await db.query.joinProfileRequests.findFirst({
       where: eq(joinProfileRequests.id, joinRequest.id),
     });
