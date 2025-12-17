@@ -58,7 +58,9 @@ export interface ProcessConfig {
  * A voting schema definition - defines the phases of a decision process.
  */
 export interface VotingSchemaDefinition {
-  type: string;
+  id: string;
+  /** Semantic version (e.g., "1.0.0") */
+  version: string;
   name: string;
   description?: string;
 
