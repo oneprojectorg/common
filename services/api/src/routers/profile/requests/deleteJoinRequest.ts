@@ -1,4 +1,4 @@
-import { deleteJoinRequest } from '@op/common';
+import { deleteProfileJoinRequest } from '@op/common';
 import { z } from 'zod';
 
 import withAuthenticated from '../../../middlewares/withAuthenticated';
@@ -16,7 +16,7 @@ export const deleteJoinRequestRouter = router({
     .use(withAuthenticated)
     .input(inputSchema)
     .mutation(async ({ input, ctx }) => {
-      await deleteJoinRequest({
+      await deleteProfileJoinRequest({
         user: ctx.user,
         requestId: input.requestId,
       });
