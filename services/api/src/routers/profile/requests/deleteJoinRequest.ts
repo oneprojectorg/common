@@ -1,6 +1,4 @@
 import { Channels, deleteProfileJoinRequest } from '@op/common';
-import { joinProfileRequests } from '@op/db/schema';
-import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
 import { joinProfileRequestEncoder } from '../../../encoders/joinProfileRequests';
@@ -10,7 +8,7 @@ import { loggedProcedure, router } from '../../../trpcFactory';
 
 const inputSchema = z.object({
   /** The ID of the join profile request to delete */
-  requestId: z.string().uuid(),
+  requestId: z.uuid(),
 });
 
 export const deleteJoinRequestRouter = router({

@@ -41,7 +41,7 @@ describe.concurrent('profile.deleteJoinRequest', () => {
 
     // Delete the request and verify returned data
     const result = await caller.deleteJoinRequest({
-      id: joinRequest.id,
+      requestId: joinRequest.id,
     });
 
     expect(result.id).toBe(joinRequest.id);
@@ -84,7 +84,7 @@ describe.concurrent('profile.deleteJoinRequest', () => {
     // Attempt to delete should fail
     await expect(
       caller.deleteJoinRequest({
-        id: joinRequest.id,
+        requestId: joinRequest.id,
       }),
     ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
   });
@@ -116,7 +116,7 @@ describe.concurrent('profile.deleteJoinRequest', () => {
     // Attempt to delete should fail
     await expect(
       caller.deleteJoinRequest({
-        id: joinRequest.id,
+        requestId: joinRequest.id,
       }),
     ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
   });
@@ -149,7 +149,7 @@ describe.concurrent('profile.deleteJoinRequest', () => {
 
     await expect(
       caller.deleteJoinRequest({
-        id: joinRequest.id,
+        requestId: joinRequest.id,
       }),
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
@@ -170,7 +170,7 @@ describe.concurrent('profile.deleteJoinRequest', () => {
 
     await expect(
       caller.deleteJoinRequest({
-        id: nonExistentRequestId,
+        requestId: nonExistentRequestId,
       }),
     ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
   });
@@ -202,7 +202,7 @@ describe.concurrent('profile.deleteJoinRequest', () => {
 
     await expect(
       caller.deleteJoinRequest({
-        id: joinRequest.id,
+        requestId: joinRequest.id,
       }),
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
