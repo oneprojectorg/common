@@ -7,10 +7,10 @@ import type { SelectionPipeline } from '../../services/decision/selectionPipelin
 import type { PhaseDefinition, VotingSchemaDefinition } from './types';
 
 /**
- * Simple voting schema with linear phases:
+ * Simple voting with linear phases:
  * submission → review → voting → results
  */
-export const simpleSchema: VotingSchemaDefinition = {
+export const simpleVoting: VotingSchemaDefinition = {
   schemaType: 'simple',
   name: 'Simple Voting',
   description: 'Basic approval voting where members vote for multiple proposals.',
@@ -113,143 +113,6 @@ export const simpleSchema: VotingSchemaDefinition = {
   ] satisfies PhaseDefinition[],
 };
 
-/**
- * Advanced voting schema with weighted scoring, quorum, and delegation.
- */
-export const advancedSchema: VotingSchemaDefinition = {
-  schemaType: 'advanced',
-  name: 'Advanced Voting',
-  description: 'Voting with weights, delegation, and quorum.',
-
-  phases: [
-    {
-      id: 'submission',
-      name: 'Proposal Submission',
-      description: 'Members submit proposals for consideration.',
-      rules: {
-        proposals: { submit: true },
-        voting: { submit: false },
-      },
-    },
-    {
-      id: 'review',
-      name: 'Review & Shortlist',
-      description: 'Reviewers evaluate and shortlist proposals.',
-      rules: {
-        proposals: { submit: false },
-        voting: { submit: false },
-      },
-    },
-    {
-      id: 'voting',
-      name: 'Voting',
-      description: 'Members vote on shortlisted proposals with advanced options.',
-      rules: {
-        proposals: { submit: false },
-        voting: { submit: true },
-      },
-      // Phase-specific settings for advanced voting
-      settingsSchema: {
-        type: 'object',
-        required: ['maxVotesPerElector'],
-        properties: {
-          maxVotesPerElector: {
-            type: 'number',
-            title: 'Maximum Votes Per Elector',
-            description: 'How many proposals can each member vote for?',
-            minimum: 1,
-            default: 5,
-          },
-          weightedVoting: {
-            type: 'boolean',
-            title: 'Enable Weighted Voting',
-            description: 'Votes have different weights based on member roles.',
-            default: false,
-          },
-          allowDelegation: {
-            type: 'boolean',
-            title: 'Allow Vote Delegation',
-            description: 'Members can delegate their votes to others.',
-            default: false,
-          },
-          quorumPercentage: {
-            type: 'number',
-            title: 'Quorum Percentage',
-            description: 'Minimum participation required for valid results.',
-            minimum: 0,
-            maximum: 100,
-          },
-        },
-      },
-      settingsUiSchema: {
-        maxVotesPerElector: {
-          'ui:widget': 'number',
-          'ui:placeholder': '5',
-        },
-        weightedVoting: {
-          'ui:widget': 'checkbox',
-        },
-        allowDelegation: {
-          'ui:widget': 'checkbox',
-        },
-        quorumPercentage: {
-          'ui:widget': 'number',
-          'ui:placeholder': '50',
-        },
-      },
-      // Selection pipeline: filter by quorum, score, sort, limit
-      selectionPipeline: {
-        version: '1.0.0',
-        blocks: [
-          {
-            id: 'check-quorum',
-            type: 'filter',
-            name: 'Filter proposals meeting quorum',
-            condition: {
-              operator: 'greaterThanOrEquals',
-              left: { field: 'voteData.participationRate' },
-              right: { variable: '$quorumPercentage' },
-            },
-          },
-          {
-            id: 'calculate-score',
-            type: 'score',
-            name: 'Calculate weighted score',
-            scoreField: 'metadata.finalScore',
-            formula: [
-              { field: 'voteData.likesCount', weight: 0.5, normalize: true },
-              { field: 'voteData.followsCount', weight: 0.3, normalize: true },
-              { field: 'voteData.approvalRate', weight: 0.2, normalize: true },
-            ],
-          },
-          {
-            id: 'sort-by-score',
-            type: 'sort',
-            name: 'Sort by weighted score',
-            sortBy: [{ field: 'metadata.finalScore', order: 'desc' }],
-          },
-          {
-            id: 'limit-results',
-            type: 'limit',
-            name: 'Take top N results',
-            count: { variable: '$maxVotesPerElector' },
-          },
-        ],
-      } satisfies SelectionPipeline,
-    },
-    {
-      id: 'results',
-      name: 'Results',
-      description: 'View final results and winning proposals.',
-      rules: {
-        proposals: { submit: false },
-        voting: { submit: false },
-      },
-    },
-  ] satisfies PhaseDefinition[],
-};
-
-export const votingSchemas: Record<string, VotingSchemaDefinition> = {
-  simple: simpleSchema,
-  advanced: advancedSchema,
+export const votingTemplates: Record<string, VotingSchemaDefinition> = {
+  simple: simpleVoting,
 };
