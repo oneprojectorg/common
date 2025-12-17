@@ -418,5 +418,9 @@
   "Your membership request has been sent to {orgName}": "Your membership request has been sent to {orgName}.",
   "Failed to send membership request": "Failed to send membership request",
   "Membership request cancelled": "Membership request cancelled",
-  "Failed to cancel membership request": "Failed to cancel membership request"
+  "Failed to cancel membership request": "Failed to cancel membership request",
+  "Cancel membership request": "Cancel membership request",
+  "Are you sure you want to cancel your membership request to {orgName}?": "Are you sure you want to cancel your membership request to {orgName}?",
+  "Keep request": "Keep request",
+  "Cancel request": "Cancel request"
 }

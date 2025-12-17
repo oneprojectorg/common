@@ -418,5 +418,9 @@
   "Your membership request has been sent to {orgName}": "আপনার সদস্যপদ অনুরোধ {orgName}-এ পাঠানো হয়েছে।",
   "Failed to send membership request": "সদস্যপদ অনুরোধ পাঠাতে ব্যর্থ",
   "Membership request cancelled": "সদস্যপদ অনুরোধ বাতিল হয়েছে",
-  "Failed to cancel membership request": "সদস্যপদ অনুরোধ বাতিল করতে ব্যর্থ"
+  "Failed to cancel membership request": "সদস্যপদ অনুরোধ বাতিল করতে ব্যর্থ",
+  "Cancel membership request": "সদস্যপদ অনুরোধ বাতিল করুন",
+  "Are you sure you want to cancel your membership request to {orgName}?": "আপনি কি নিশ্চিত যে আপনি {orgName}-এ আপনার সদস্যপদ অনুরোধ বাতিল করতে চান?",
+  "Keep request": "অনুরোধ রাখুন",
+  "Cancel request": "অনুরোধ বাতিল করুন"
 }
