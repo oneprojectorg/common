@@ -26,10 +26,6 @@ export const getJoinRequestRouter = router({
         targetProfileId: input.targetProfileId,
       });
 
-      if (!result) {
-        return null;
-      }
-
       ctx.setQueryChannels([
         Channels.profileJoinRequest({
           type: 'source',
@@ -40,6 +36,10 @@ export const getJoinRequestRouter = router({
           profileId: input.targetProfileId,
         }),
       ]);
+
+      if (!result) {
+        return null;
+      }
 
       return joinProfileRequestEncoder.parse(result);
     }),
