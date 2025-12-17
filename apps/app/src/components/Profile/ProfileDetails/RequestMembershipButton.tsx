@@ -48,14 +48,12 @@ const RequestMembershipButtonSuspense = ({
   const currentProfileId = user.currentProfile?.id;
 
   // Check if there's already a pending join request
-  const [existingRequest] = trpc.profile.getJoinProfileRequest.useSuspenseQuery(
-    {
-      requestProfileId: currentProfileId!,
-      targetProfileId: profile.profile.id,
-    },
-  );
+  const [existingRequest] = trpc.profile.getJoinRequest.useSuspenseQuery({
+    requestProfileId: currentProfileId!,
+    targetProfileId: profile.profile.id,
+  });
 
-  const createJoinRequest = trpc.profile.createJoinProfileRequest.useMutation();
+  const createJoinRequest = trpc.profile.createJoinRequest.useMutation();
 
   const hasPendingRequest =
     existingRequest?.status === JoinProfileRequestStatus.PENDING;
@@ -81,7 +79,7 @@ const RequestMembershipButtonSuspense = ({
           }),
         });
 
-        await utils.profile.getJoinProfileRequest.invalidate({
+        await utils.profile.getJoinRequest.invalidate({
           requestProfileId: currentProfileId,
           targetProfileId: profile.profile.id,
         });

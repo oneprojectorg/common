@@ -20,7 +20,6 @@ export function DecisionStateRouter({
 
   const { currentStateId } = instance;
 
-
   return match(currentStateId, {
     results: () => <ResultsPage instanceId={instanceId} slug={slug} />,
     voting: () => <VotingPage instanceId={instanceId} slug={slug} />,

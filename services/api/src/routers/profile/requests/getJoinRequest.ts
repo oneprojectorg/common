@@ -1,10 +1,10 @@
-import { getJoinProfileRequest } from '@op/common';
+import { getProfileJoinRequest } from '@op/common';
 import { z } from 'zod';
 
-import { joinProfileRequestEncoder } from '../../encoders/joinProfileRequests';
-import withAuthenticated from '../../middlewares/withAuthenticated';
-import withRateLimited from '../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../trpcFactory';
+import { joinProfileRequestEncoder } from '../../../encoders/joinProfileRequests';
+import withAuthenticated from '../../../middlewares/withAuthenticated';
+import withRateLimited from '../../../middlewares/withRateLimited';
+import { loggedProcedure, router } from '../../../trpcFactory';
 
 const inputSchema = z.object({
   /** The profile ID of the requester */
@@ -13,14 +13,14 @@ const inputSchema = z.object({
   targetProfileId: z.uuid(),
 });
 
-export const getJoinProfileRequestRouter = router({
-  getJoinProfileRequest: loggedProcedure
+export const getJoinRequestRouter = router({
+  getJoinRequest: loggedProcedure
     .use(withRateLimited({ windowSize: 60, maxRequests: 60 }))
     .use(withAuthenticated)
     .input(inputSchema)
     .output(joinProfileRequestEncoder.nullable())
     .query(async ({ input, ctx }) => {
-      const result = await getJoinProfileRequest({
+      const result = await getProfileJoinRequest({
         user: ctx.user,
         requestProfileId: input.requestProfileId,
         targetProfileId: input.targetProfileId,

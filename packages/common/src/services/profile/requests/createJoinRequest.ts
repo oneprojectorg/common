@@ -15,7 +15,7 @@ export type { JoinProfileRequestWithProfiles };
  * Creates a new request from one profile to join another profile.
  * Returns the join profile request with associated profiles.
  */
-export const createJoinProfileRequest = async ({
+export const createJoinRequest = async ({
   user,
   requestProfileId,
   targetProfileId,

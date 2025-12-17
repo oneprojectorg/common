@@ -23,8 +23,8 @@ export {
   getRelationships as getProfileRelationships,
 } from './profile/profileRelationships';
 export {
-  createJoinProfileRequest,
-  getJoinProfileRequest,
-  listJoinProfileRequests,
-  updateJoinProfileRequest,
-} from './profile/joinRequests';
+  createJoinRequest as createJoinProfileRequest,
+  getJoinRequest as getProfileJoinRequest,
+  listJoinRequests as listJoinProfileRequests,
+  updateJoinRequest as updateProfileJoinRequest,
+} from './profile/requests';

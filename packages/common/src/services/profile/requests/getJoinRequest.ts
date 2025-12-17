@@ -9,7 +9,7 @@ import {
  * Gets an existing join profile request between two profiles.
  * Returns the join profile request with associated profiles, or null if no request exists.
  */
-export const getJoinProfileRequest = async ({
+export const getJoinRequest = async ({
   user,
   requestProfileId,
   targetProfileId,

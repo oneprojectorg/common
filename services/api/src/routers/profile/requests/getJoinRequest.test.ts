@@ -1,17 +1,17 @@
 import { JoinProfileRequestStatus } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
-import { TestJoinProfileRequestDataManager } from '../../test/helpers/TestJoinProfileRequestDataManager';
-import { TestOrganizationDataManager } from '../../test/helpers/TestOrganizationDataManager';
+import { TestJoinProfileRequestDataManager } from '../../../test/helpers/TestJoinProfileRequestDataManager';
+import { TestOrganizationDataManager } from '../../../test/helpers/TestOrganizationDataManager';
 import {
   createIsolatedSession,
   createTestContextWithSession,
-} from '../../test/supabase-utils';
-import { createCallerFactory } from '../../trpcFactory';
-import { getJoinProfileRequestRouter } from './getJoinProfileRequest';
+} from '../../../test/supabase-utils';
+import { createCallerFactory } from '../../../trpcFactory';
+import { getJoinRequestRouter } from './getJoinRequest';
 
-describe.concurrent('profile.getJoinProfileRequest', () => {
-  const createCaller = createCallerFactory(getJoinProfileRequestRouter);
+describe.concurrent('profile.getJoinRequest', () => {
+  const createCaller = createCallerFactory(getJoinRequestRouter);
 
   it('should return null when no join request exists', async ({
     task,
@@ -26,7 +26,7 @@ describe.concurrent('profile.getJoinProfileRequest', () => {
     const { session } = await createIsolatedSession(requester.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
-    const result = await caller.getJoinProfileRequest({
+    const result = await caller.getJoinRequest({
       requestProfileId: requester.profileId,
       targetProfileId: targetProfile.id,
     });
@@ -58,7 +58,7 @@ describe.concurrent('profile.getJoinProfileRequest', () => {
     const { session } = await createIsolatedSession(requester.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
-    const result = await caller.getJoinProfileRequest({
+    const result = await caller.getJoinRequest({
       requestProfileId: requester.profileId,
       targetProfileId: targetProfile.id,
     });
@@ -93,7 +93,7 @@ describe.concurrent('profile.getJoinProfileRequest', () => {
     const { session } = await createIsolatedSession(requester.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
-    const result = await caller.getJoinProfileRequest({
+    const result = await caller.getJoinRequest({
       requestProfileId: requester.profileId,
       targetProfileId: targetProfile.id,
     });
@@ -126,7 +126,7 @@ describe.concurrent('profile.getJoinProfileRequest', () => {
     const { session } = await createIsolatedSession(requester.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
-    const result = await caller.getJoinProfileRequest({
+    const result = await caller.getJoinRequest({
       requestProfileId: requester.profileId,
       targetProfileId: targetProfile.id,
     });
@@ -147,7 +147,7 @@ describe.concurrent('profile.getJoinProfileRequest', () => {
     const caller = createCaller(await createTestContextWithSession(session));
 
     await expect(
-      caller.getJoinProfileRequest({
+      caller.getJoinRequest({
         requestProfileId: adminUser.profileId,
         targetProfileId: adminUser.profileId,
       }),
@@ -169,7 +169,7 @@ describe.concurrent('profile.getJoinProfileRequest', () => {
     const caller = createCaller(await createTestContextWithSession(session));
 
     await expect(
-      caller.getJoinProfileRequest({
+      caller.getJoinRequest({
         requestProfileId: requesterOrgProfile.id,
         targetProfileId: targetOrgProfile.id,
       }),
@@ -207,7 +207,7 @@ describe.concurrent('profile.getJoinProfileRequest', () => {
 
     // Unauthorized user tries to view another user's join request
     await expect(
-      caller.getJoinProfileRequest({
+      caller.getJoinRequest({
         requestProfileId: otherUser.profileId,
         targetProfileId: targetProfile.id,
       }),
