@@ -14,12 +14,14 @@ export function isValidDecisionProcessSchema(
   }
 
   const obj = data as Record<string, unknown>;
+  const proposals = obj.proposals as Record<string, unknown> | undefined;
+  const voting = obj.voting as Record<string, unknown> | undefined;
 
   return (
-    'allowProposals' in obj &&
-    typeof obj.allowProposals === 'boolean' &&
-    'allowDecisions' in obj &&
-    typeof obj.allowDecisions === 'boolean' &&
+    'proposals' in obj &&
+    typeof proposals?.submit === 'boolean' &&
+    'voting' in obj &&
+    typeof voting?.submit === 'boolean' &&
     'instanceData' in obj &&
     typeof obj.instanceData === 'object' &&
     obj.instanceData !== null &&
@@ -63,15 +65,15 @@ export function extractVotingConfig(
   schemaType: string = 'unknown',
 ): VotingConfig {
   const baseConfig: VotingConfig = {
-    allowProposals: schema.allowProposals,
-    allowDecisions: schema.allowDecisions,
+    proposals: schema.proposals,
+    voting: schema.voting,
     maxVotesPerElector: schema.instanceData.maxVotesPerElector,
     schemaType,
   };
 
   const additionalConfig: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(schema)) {
-    if (!['allowProposals', 'allowDecisions', 'instanceData'].includes(key)) {
+    if (!['proposals', 'voting', 'instanceData'].includes(key)) {
       additionalConfig[key] = value;
     }
   }
@@ -110,7 +112,7 @@ export function extractProposalConfig(
       },
     },
     schemaType,
-    allowProposals: schema.allowProposals,
+    proposals: schema.proposals,
   };
 
   if (schema.proposalConfig && typeof schema.proposalConfig === 'object') {
@@ -192,8 +194,8 @@ export function validateVoteSelection(
 
 export function createSchemaSignature(schema: DecisionProcessSchema): string {
   const normalizedSchema = {
-    allowProposals: schema.allowProposals,
-    allowDecisions: schema.allowDecisions,
+    proposals: schema.proposals,
+    voting: schema.voting,
     maxVotesPerElector: schema.instanceData.maxVotesPerElector,
   };
 
