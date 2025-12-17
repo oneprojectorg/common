@@ -54,6 +54,7 @@ const RequestMembershipButtonSuspense = ({
   });
 
   const createJoinRequest = trpc.profile.createJoinRequest.useMutation();
+  const deleteJoinRequest = trpc.profile.deleteJoinRequest.useMutation();
 
   const hasPendingRequest =
     existingRequest?.status === JoinProfileRequestStatus.PENDING;
@@ -91,17 +92,45 @@ const RequestMembershipButtonSuspense = ({
     });
   };
 
+  const handleCancelRequest = () => {
+    if (!existingRequest?.id) {
+      return;
+    }
+
+    startTransition(async () => {
+      try {
+        await deleteJoinRequest.mutateAsync({
+          requestId: existingRequest.id,
+        });
+
+        toast.success({
+          message: t('Membership request cancelled'),
+        });
+
+        await utils.profile.getJoinRequest.invalidate({
+          requestProfileId: currentProfileId,
+          targetProfileId: profile.profile.id,
+        });
+      } catch (error) {
+        toast.error({
+          message: t('Failed to cancel membership request'),
+        });
+      }
+    });
+  };
+
   if (hasPendingRequest) {
     return (
       <ButtonTooltip
         color="secondary"
-        isDisabled
+        onPress={handleCancelRequest}
+        isPending={isPending}
         className="min-w-full sm:min-w-fit"
         tooltipProps={{
           children: t('Your membership request is pending approval'),
         }}
       >
-        <LuClock className="size-4" />
+        {isPending ? <LoadingSpinner /> : <LuClock className="size-4" />}
         {t('Requested')}
       </ButtonTooltip>
     );

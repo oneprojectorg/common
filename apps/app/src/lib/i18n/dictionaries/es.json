@@ -415,5 +415,7 @@
   "Your membership request is pending approval": "Tu solicitud de membresía está pendiente de aprobación",
   "You must be logged in to request membership": "Debes iniciar sesión para solicitar membresía",
   "Your membership request has been sent to {orgName}": "Tu solicitud de membresía ha sido enviada a {orgName}.",
-  "Failed to send membership request": "No se pudo enviar la solicitud de membresía"
+  "Failed to send membership request": "No se pudo enviar la solicitud de membresía",
+  "Membership request cancelled": "Solicitud de membresía cancelada",
+  "Failed to cancel membership request": "No se pudo cancelar la solicitud de membresía"
 }
