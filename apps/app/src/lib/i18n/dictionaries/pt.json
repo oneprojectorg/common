@@ -416,5 +416,7 @@
   "Your membership request is pending approval": "Sua solicitação de adesão está pendente de aprovação",
   "You must be logged in to request membership": "Você precisa estar logado para solicitar adesão",
   "Your membership request has been sent to {orgName}": "Sua solicitação de adesão foi enviada para {orgName}.",
-  "Failed to send membership request": "Falha ao enviar solicitação de adesão"
+  "Failed to send membership request": "Falha ao enviar solicitação de adesão",
+  "Membership request cancelled": "Solicitação de adesão cancelada",
+  "Failed to cancel membership request": "Falha ao cancelar solicitação de adesão"
 }
