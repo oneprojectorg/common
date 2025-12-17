@@ -11,7 +11,8 @@ import type { PhaseDefinition, VotingSchemaDefinition } from './types';
  * submission → review → voting → results
  */
 export const simpleVoting: VotingSchemaDefinition = {
-  type: 'simple',
+  id: 'simple',
+  version: '1.0.0',
   name: 'Simple Voting',
   description: 'Basic approval voting where members vote for multiple proposals.',
 
