@@ -1,6 +1,7 @@
 import { deleteProfileJoinRequest } from '@op/common';
 import { z } from 'zod';
 
+import { joinProfileRequestEncoder } from '../../../encoders/joinProfileRequests';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
 import withRateLimited from '../../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../../trpcFactory';
@@ -15,10 +16,13 @@ export const deleteJoinRequestRouter = router({
     .use(withRateLimited({ windowSize: 60, maxRequests: 10 }))
     .use(withAuthenticated)
     .input(inputSchema)
+    .output(joinProfileRequestEncoder)
     .mutation(async ({ input, ctx }) => {
-      await deleteProfileJoinRequest({
+      const result = await deleteProfileJoinRequest({
         user: ctx.user,
         requestId: input.requestId,
       });
+
+      return joinProfileRequestEncoder.parse(result);
     }),
 });
