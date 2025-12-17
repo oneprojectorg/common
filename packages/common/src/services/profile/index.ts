@@ -4,4 +4,4 @@ export * from './searchProfiles';
 export * from './listProfiles';
 export * from './profileRelationships';
 export * from './inviteUsersToProfile';
-export * from './joinRequests';
+export * from './requests';

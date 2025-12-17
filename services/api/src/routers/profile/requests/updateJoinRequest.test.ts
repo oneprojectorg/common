@@ -3,17 +3,17 @@ import { JoinProfileRequestStatus, organizations } from '@op/db/schema';
 import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
-import { TestJoinProfileRequestDataManager } from '../../test/helpers/TestJoinProfileRequestDataManager';
-import { TestOrganizationDataManager } from '../../test/helpers/TestOrganizationDataManager';
+import { TestJoinProfileRequestDataManager } from '../../../test/helpers/TestJoinProfileRequestDataManager';
+import { TestOrganizationDataManager } from '../../../test/helpers/TestOrganizationDataManager';
 import {
   createIsolatedSession,
   createTestContextWithSession,
-} from '../../test/supabase-utils';
-import { createCallerFactory } from '../../trpcFactory';
-import { updateJoinProfileRequestRouter } from './updateJoinProfileRequest';
+} from '../../../test/supabase-utils';
+import { createCallerFactory } from '../../../trpcFactory';
+import { updateJoinRequestRouter } from './updateJoinRequest';
 
-describe.concurrent('profile.updateJoinProfileRequest', () => {
-  const createCaller = createCallerFactory(updateJoinProfileRequestRouter);
+describe.concurrent('profile.updateJoinRequest', () => {
+  const createCaller = createCallerFactory(updateJoinRequestRouter);
 
   it('should allow target profile admin to approve a pending request', async ({
     task,
@@ -39,7 +39,7 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
     const { session } = await createIsolatedSession(targetAdmin.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
-    const result = await caller.updateJoinProfileRequest({
+    const result = await caller.updateJoinRequest({
       requestId: joinRequest.id,
       status: JoinProfileRequestStatus.APPROVED,
     });
@@ -72,7 +72,7 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
     const { session } = await createIsolatedSession(targetAdmin.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
-    const result = await caller.updateJoinProfileRequest({
+    const result = await caller.updateJoinRequest({
       requestId: joinRequest.id,
       status: JoinProfileRequestStatus.REJECTED,
     });
@@ -106,7 +106,7 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
     const caller = createCaller(await createTestContextWithSession(session));
 
     await expect(
-      caller.updateJoinProfileRequest({
+      caller.updateJoinRequest({
         requestId: joinRequest.id,
         status: JoinProfileRequestStatus.APPROVED,
       }),
@@ -130,7 +130,7 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
     const nonExistentRequestId = '00000000-0000-0000-0000-000000000000';
 
     await expect(
-      caller.updateJoinProfileRequest({
+      caller.updateJoinRequest({
         requestId: nonExistentRequestId,
         status: JoinProfileRequestStatus.APPROVED,
       }),
@@ -161,7 +161,7 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
     const { session } = await createIsolatedSession(targetAdmin.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
-    const result = await caller.updateJoinProfileRequest({
+    const result = await caller.updateJoinRequest({
       requestId: joinRequest.id,
       status: JoinProfileRequestStatus.APPROVED,
     });
@@ -198,7 +198,7 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
     const { session } = await createIsolatedSession(targetAdmin.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
-    const result = await caller.updateJoinProfileRequest({
+    const result = await caller.updateJoinRequest({
       requestId: joinRequest.id,
       status: JoinProfileRequestStatus.APPROVED,
     });
@@ -248,7 +248,7 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
     const { session } = await createIsolatedSession(targetAdmin.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
-    await caller.updateJoinProfileRequest({
+    await caller.updateJoinRequest({
       requestId: joinRequest.id,
       status: JoinProfileRequestStatus.APPROVED,
     });
@@ -306,7 +306,7 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
     const { session } = await createIsolatedSession(targetAdmin.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
-    const result = await caller.updateJoinProfileRequest({
+    const result = await caller.updateJoinRequest({
       requestId: joinRequest.id,
       status: JoinProfileRequestStatus.REJECTED,
     });
@@ -361,7 +361,7 @@ describe.concurrent('profile.updateJoinProfileRequest', () => {
     const { session } = await createIsolatedSession(targetAdmin.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
-    const result = await caller.updateJoinProfileRequest({
+    const result = await caller.updateJoinRequest({
       requestId: joinRequest.id,
       status: JoinProfileRequestStatus.APPROVED,
     });

@@ -1,17 +1,17 @@
 import { JoinProfileRequestStatus } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
-import { TestJoinProfileRequestDataManager } from '../../test/helpers/TestJoinProfileRequestDataManager';
-import { TestOrganizationDataManager } from '../../test/helpers/TestOrganizationDataManager';
+import { TestJoinProfileRequestDataManager } from '../../../test/helpers/TestJoinProfileRequestDataManager';
+import { TestOrganizationDataManager } from '../../../test/helpers/TestOrganizationDataManager';
 import {
   createIsolatedSession,
   createTestContextWithSession,
-} from '../../test/supabase-utils';
-import { createCallerFactory } from '../../trpcFactory';
-import { listJoinProfileRequestsRouter } from './listJoinProfileRequests';
+} from '../../../test/supabase-utils';
+import { createCallerFactory } from '../../../trpcFactory';
+import { listJoinRequestsRouter } from './listJoinRequests';
 
-describe.concurrent('profile.listJoinProfileRequests', () => {
-  const createCaller = createCallerFactory(listJoinProfileRequestsRouter);
+describe.concurrent('profile.listJoinRequests', () => {
+  const createCaller = createCallerFactory(listJoinRequestsRouter);
 
   it('should return empty list when no join requests exist', async ({
     task,
@@ -25,7 +25,7 @@ describe.concurrent('profile.listJoinProfileRequests', () => {
     const { session } = await createIsolatedSession(adminUser.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
-    const result = await caller.listJoinProfileRequests({
+    const result = await caller.listJoinRequests({
       targetProfileId: targetProfile.id,
     });
 
@@ -67,7 +67,7 @@ describe.concurrent('profile.listJoinProfileRequests', () => {
     const { session } = await createIsolatedSession(targetAdmin.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
-    const result = await caller.listJoinProfileRequests({
+    const result = await caller.listJoinRequests({
       targetProfileId: targetProfile.id,
     });
 
@@ -128,7 +128,7 @@ describe.concurrent('profile.listJoinProfileRequests', () => {
     const caller = createCaller(await createTestContextWithSession(session));
 
     // First page with limit of 2
-    const firstPage = await caller.listJoinProfileRequests({
+    const firstPage = await caller.listJoinRequests({
       targetProfileId: targetProfile.id,
       limit: 2,
     });
@@ -141,7 +141,7 @@ describe.concurrent('profile.listJoinProfileRequests', () => {
     expect(firstPage.items).toHaveLength(2);
 
     // Second page using cursor
-    const secondPage = await caller.listJoinProfileRequests({
+    const secondPage = await caller.listJoinRequests({
       targetProfileId: targetProfile.id,
       limit: 2,
       cursor: firstPage.next,
@@ -180,7 +180,7 @@ describe.concurrent('profile.listJoinProfileRequests', () => {
     const caller = createCaller(await createTestContextWithSession(session));
 
     await expect(
-      caller.listJoinProfileRequests({
+      caller.listJoinRequests({
         targetProfileId: targetProfile.id,
       }),
     ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });
@@ -203,7 +203,7 @@ describe.concurrent('profile.listJoinProfileRequests', () => {
     const caller = createCaller(await createTestContextWithSession(session));
 
     await expect(
-      caller.listJoinProfileRequests({
+      caller.listJoinRequests({
         targetProfileId: targetProfile.id,
       }),
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
@@ -248,7 +248,7 @@ describe.concurrent('profile.listJoinProfileRequests', () => {
     const { session } = await createIsolatedSession(targetAdmin.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
-    const result = await caller.listJoinProfileRequests({
+    const result = await caller.listJoinRequests({
       targetProfileId: targetProfile.id,
     });
 
@@ -316,7 +316,7 @@ describe.concurrent('profile.listJoinProfileRequests', () => {
     const caller = createCaller(await createTestContextWithSession(session));
 
     // Filter by PENDING status
-    const pendingResult = await caller.listJoinProfileRequests({
+    const pendingResult = await caller.listJoinRequests({
       targetProfileId: targetProfile.id,
       status: JoinProfileRequestStatus.PENDING,
     });
@@ -328,7 +328,7 @@ describe.concurrent('profile.listJoinProfileRequests', () => {
     });
 
     // Filter by APPROVED status
-    const approvedResult = await caller.listJoinProfileRequests({
+    const approvedResult = await caller.listJoinRequests({
       targetProfileId: targetProfile.id,
       status: JoinProfileRequestStatus.APPROVED,
     });
@@ -340,7 +340,7 @@ describe.concurrent('profile.listJoinProfileRequests', () => {
     });
 
     // Filter by REJECTED status
-    const rejectedResult = await caller.listJoinProfileRequests({
+    const rejectedResult = await caller.listJoinRequests({
       targetProfileId: targetProfile.id,
       status: JoinProfileRequestStatus.REJECTED,
     });

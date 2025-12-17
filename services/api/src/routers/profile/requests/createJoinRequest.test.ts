@@ -3,17 +3,17 @@ import { JoinProfileRequestStatus, joinProfileRequests } from '@op/db/schema';
 import { and, eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
-import { TestJoinProfileRequestDataManager } from '../../test/helpers/TestJoinProfileRequestDataManager';
-import { TestOrganizationDataManager } from '../../test/helpers/TestOrganizationDataManager';
+import { TestJoinProfileRequestDataManager } from '../../../test/helpers/TestJoinProfileRequestDataManager';
+import { TestOrganizationDataManager } from '../../../test/helpers/TestOrganizationDataManager';
 import {
   createIsolatedSession,
   createTestContextWithSession,
-} from '../../test/supabase-utils';
-import { createCallerFactory } from '../../trpcFactory';
-import { createJoinProfileRequestRouter } from './createJoinProfileRequest';
+} from '../../../test/supabase-utils';
+import { createCallerFactory } from '../../../trpcFactory';
+import { createJoinRequestRouter } from './createJoinRequest';
 
-describe.concurrent('profile.createJoinProfileRequest', () => {
-  const createCaller = createCallerFactory(createJoinProfileRequestRouter);
+describe.concurrent('profile.createJoinRequest', () => {
+  const createCaller = createCallerFactory(createJoinRequestRouter);
 
   it('should create a new join profile request with pending status', async ({
     task,
@@ -35,7 +35,7 @@ describe.concurrent('profile.createJoinProfileRequest', () => {
     const caller = createCaller(await createTestContextWithSession(session));
 
     // Call the API endpoint
-    const result = await caller.createJoinProfileRequest({
+    const result = await caller.createJoinRequest({
       requestProfileId: requester.profileId,
       targetProfileId: targetProfile.id,
     });
@@ -75,7 +75,7 @@ describe.concurrent('profile.createJoinProfileRequest', () => {
     const caller = createCaller(await createTestContextWithSession(session));
 
     // Create first request
-    const result = await caller.createJoinProfileRequest({
+    const result = await caller.createJoinRequest({
       requestProfileId: requester.profileId,
       targetProfileId: targetProfile.id,
     });
@@ -85,7 +85,7 @@ describe.concurrent('profile.createJoinProfileRequest', () => {
 
     // Attempt to create duplicate request should throw
     await expect(
-      caller.createJoinProfileRequest({
+      caller.createJoinRequest({
         requestProfileId: requester.profileId,
         targetProfileId: targetProfile.id,
       }),
@@ -103,7 +103,7 @@ describe.concurrent('profile.createJoinProfileRequest', () => {
 
     // Attempting to request to join own profile should throw
     await expect(
-      caller.createJoinProfileRequest({
+      caller.createJoinRequest({
         requestProfileId: adminUser.profileId,
         targetProfileId: adminUser.profileId,
       }),
@@ -129,7 +129,7 @@ describe.concurrent('profile.createJoinProfileRequest', () => {
     const caller = createCaller(await createTestContextWithSession(session));
 
     // Create initial request
-    const initialResult = await caller.createJoinProfileRequest({
+    const initialResult = await caller.createJoinRequest({
       requestProfileId: requester.profileId,
       targetProfileId: targetProfile.id,
     });
@@ -149,7 +149,7 @@ describe.concurrent('profile.createJoinProfileRequest', () => {
       );
 
     // Create a new request - should reset to pending
-    const result = await caller.createJoinProfileRequest({
+    const result = await caller.createJoinRequest({
       requestProfileId: requester.profileId,
       targetProfileId: targetProfile.id,
     });
@@ -181,7 +181,7 @@ describe.concurrent('profile.createJoinProfileRequest', () => {
     // Attempting to create a request from an org profile should throw ValidationError
     // because only individual/user profiles can make join requests
     await expect(
-      caller.createJoinProfileRequest({
+      caller.createJoinRequest({
         requestProfileId: requesterOrgProfile.id,
         targetProfileId: targetOrgProfile.id,
       }),
@@ -208,7 +208,7 @@ describe.concurrent('profile.createJoinProfileRequest', () => {
 
     // Unauthorized user tries to create a join request on behalf of another user's profile
     await expect(
-      caller.createJoinProfileRequest({
+      caller.createJoinRequest({
         requestProfileId: otherUser.profileId,
         targetProfileId: targetProfile.id,
       }),
@@ -239,7 +239,7 @@ describe.concurrent('profile.createJoinProfileRequest', () => {
 
     // Attempting to create a join request should fail because user is already a member
     await expect(
-      caller.createJoinProfileRequest({
+      caller.createJoinRequest({
         requestProfileId: requester.profileId,
         targetProfileId: targetProfile.id,
       }),

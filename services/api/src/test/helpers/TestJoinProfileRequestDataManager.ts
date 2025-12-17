@@ -88,7 +88,7 @@ export class TestJoinProfileRequestDataManager {
    *
    * @example
    * ```ts
-   * const result = await caller.createJoinProfileRequest({
+   * const result = await caller.createJoinRequest({
    *   requestProfileId: requester.profileId,
    *   targetProfileId: targetProfile.id,
    * });

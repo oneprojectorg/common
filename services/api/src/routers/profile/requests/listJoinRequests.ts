@@ -1,12 +1,12 @@
-import { listJoinProfileRequests } from '@op/common';
+import { listJoinRequests } from '@op/common';
 import { JoinProfileRequestStatus } from '@op/db/schema';
 import { z } from 'zod';
 
-import { joinProfileRequestEncoder } from '../../encoders/joinProfileRequests';
-import withAuthenticated from '../../middlewares/withAuthenticated';
-import withRateLimited from '../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../trpcFactory';
-import { dbFilter } from '../../utils';
+import { joinProfileRequestEncoder } from '../../../encoders/joinProfileRequests';
+import withAuthenticated from '../../../middlewares/withAuthenticated';
+import withRateLimited from '../../../middlewares/withRateLimited';
+import { loggedProcedure, router } from '../../../trpcFactory';
+import { dbFilter } from '../../../utils';
 
 const inputSchema = dbFilter.extend({
   /** The profile ID of the target to view join requests for */
@@ -15,8 +15,8 @@ const inputSchema = dbFilter.extend({
   status: z.enum(JoinProfileRequestStatus).optional(),
 });
 
-export const listJoinProfileRequestsRouter = router({
-  listJoinProfileRequests: loggedProcedure
+export const listJoinRequestsRouter = router({
+  listJoinRequests: loggedProcedure
     .use(withRateLimited({ windowSize: 60, maxRequests: 60 }))
     .use(withAuthenticated)
     .input(inputSchema)
@@ -30,7 +30,7 @@ export const listJoinProfileRequestsRouter = router({
     .query(async ({ input, ctx }) => {
       const { limit = 10, cursor, dir } = input;
 
-      const { items, next, hasMore } = await listJoinProfileRequests({
+      const { items, next, hasMore } = await listJoinRequests({
         user: ctx.user,
         targetProfileId: input.targetProfileId,
         status: input.status,

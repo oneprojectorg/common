@@ -1,11 +1,11 @@
-import { updateJoinProfileRequest } from '@op/common';
+import { updateJoinRequest } from '@op/common';
 import { JoinProfileRequestStatus } from '@op/db/schema';
 import { z } from 'zod';
 
-import { joinProfileRequestEncoder } from '../../encoders/joinProfileRequests';
-import withAuthenticated from '../../middlewares/withAuthenticated';
-import withRateLimited from '../../middlewares/withRateLimited';
-import { loggedProcedure, router } from '../../trpcFactory';
+import { joinProfileRequestEncoder } from '../../../encoders/joinProfileRequests';
+import withAuthenticated from '../../../middlewares/withAuthenticated';
+import withRateLimited from '../../../middlewares/withRateLimited';
+import { loggedProcedure, router } from '../../../trpcFactory';
 
 const inputSchema = z.object({
   /** The ID of the join profile request to update */
@@ -17,14 +17,14 @@ const inputSchema = z.object({
   ]),
 });
 
-export const updateJoinProfileRequestRouter = router({
-  updateJoinProfileRequest: loggedProcedure
+export const updateJoinRequestRouter = router({
+  updateJoinRequest: loggedProcedure
     .use(withRateLimited({ windowSize: 60, maxRequests: 10 }))
     .use(withAuthenticated)
     .input(inputSchema)
     .output(joinProfileRequestEncoder)
     .mutation(async ({ input, ctx }) => {
-      const result = await updateJoinProfileRequest({
+      const result = await updateJoinRequest({
         user: ctx.user,
         requestId: input.requestId,
         status: input.status,

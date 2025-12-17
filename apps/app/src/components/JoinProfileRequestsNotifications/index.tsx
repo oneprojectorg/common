@@ -44,30 +44,28 @@ const JoinProfileRequestsNotificationsSuspense = ({
   const t = useTranslations();
   const utils = trpc.useUtils();
 
-  const [{ items: requests }] =
-    trpc.profile.listJoinProfileRequests.useSuspenseQuery({
-      targetProfileId,
-      status: JoinProfileRequestStatus.PENDING,
-      limit: 20,
-    });
+  const [{ items: requests }] = trpc.profile.listJoinRequests.useSuspenseQuery({
+    targetProfileId,
+    status: JoinProfileRequestStatus.PENDING,
+    limit: 20,
+  });
 
-  const updateRequestMutation =
-    trpc.profile.updateJoinProfileRequest.useMutation({
-      onSuccess: (_, variables) => {
-        toast.success({
-          title:
-            variables.status === JoinProfileRequestStatus.APPROVED
-              ? t('Request accepted')
-              : t('Request declined'),
-        });
-        utils.profile.listJoinProfileRequests.invalidate();
-      },
-      onError: () => {
-        toast.error({
-          title: t('Failed to update request'),
-        });
-      },
-    });
+  const updateRequestMutation = trpc.profile.updateJoinRequest.useMutation({
+    onSuccess: (_, variables) => {
+      toast.success({
+        title:
+          variables.status === JoinProfileRequestStatus.APPROVED
+            ? t('Request accepted')
+            : t('Request declined'),
+      });
+      utils.profile.listJoinRequests.invalidate();
+    },
+    onError: () => {
+      toast.error({
+        title: t('Failed to update request'),
+      });
+    },
+  });
 
   const handleUpdateRequest = (
     requestId: string,
