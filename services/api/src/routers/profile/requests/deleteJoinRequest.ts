@@ -1,14 +1,16 @@
 import { Channels, deleteProfileJoinRequest } from '@op/common';
 import { joinProfileRequests } from '@op/db/schema';
 import { createSelectSchema } from 'drizzle-zod';
+import { z } from 'zod';
 
 import { joinProfileRequestEncoder } from '../../../encoders/joinProfileRequests';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
 import withRateLimited from '../../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../../trpcFactory';
 
-const inputSchema = createSelectSchema(joinProfileRequests).pick({
-  id: true,
+const inputSchema = z.object({
+  /** The ID of the join profile request to delete */
+  requestId: z.string().uuid(),
 });
 
 export const deleteJoinRequestRouter = router({
@@ -20,7 +22,7 @@ export const deleteJoinRequestRouter = router({
     .mutation(async ({ input, ctx }) => {
       const result = await deleteProfileJoinRequest({
         user: ctx.user,
-        requestId: input.id,
+        requestId: input.requestId,
       });
 
       ctx.setChannels('mutation', [
