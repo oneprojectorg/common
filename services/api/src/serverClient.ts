@@ -97,8 +97,10 @@ const createServerContext = cache(async (): Promise<TContext> => {
       );
     },
     // Server-side calls don't need channel propagation via headers
-    setChannels: () => {},
-    getChannels: () => [],
+    setMutationChannels: () => {},
+    setQueryChannels: () => {},
+    getMutationChannels: () => [],
+    getQueryChannels: () => [],
     requestId,
     time: Date.now(),
     ip: headersList.get('x-forwarded-for') || null,

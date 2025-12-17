@@ -7,7 +7,7 @@ export * from './src/routers';
 export * from './src/trpcFactory';
 export {
   MUTATION_CHANNELS_HEADER,
-  SUBSCRIPTION_CHANNELS_HEADER,
+  QUERY_CHANNELS_HEADER,
 } from './src/constants';
 
 export type RouterInput = inferRouterInputs<AppRouter>;

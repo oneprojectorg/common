@@ -8,4 +8,4 @@ export const MUTATION_CHANNELS_HEADER = 'x-mutation-channels';
  * Header name used to pass channels that a query subscribes to.
  * The client registers the query for invalidation when mutations publish to these channels.
  */
-export const SUBSCRIPTION_CHANNELS_HEADER = 'x-subscription-channels';
+export const QUERY_CHANNELS_HEADER = 'x-query-channels';

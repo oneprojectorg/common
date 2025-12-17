@@ -19,7 +19,7 @@ export const createContext = async ({
   resHeaders,
 }: FetchCreateContextFnOptions): Promise<TContext> => {
   const mutationChannels = new Set<ChannelName>();
-  const subscriptionChannels = new Set<ChannelName>();
+  const queryChannels = new Set<ChannelName>();
   const nanoid = customAlphabet('0123456789abcdefghijklmnopqrstuvwxyz', 24);
 
   // seperate in 4-8-8-4 xxxx-xxxxxxxx-xxxxxxxx-xxxx
@@ -37,15 +37,18 @@ export const createContext = async ({
     getCookie: (name) => _getCookie(req, name),
     setCookie: ({ name, value, options }) =>
       _setCookie({ resHeaders, name, value, options }),
-    setChannels: (type, channels) => {
-      const target =
-        type === 'mutation' ? mutationChannels : subscriptionChannels;
+    setMutationChannels: (channels) => {
       for (const channel of channels) {
-        target.add(channel);
+        mutationChannels.add(channel);
       }
     },
-    getChannels: (type) =>
-      Array.from(type === 'mutation' ? mutationChannels : subscriptionChannels),
+    setQueryChannels: (channels) => {
+      for (const channel of channels) {
+        queryChannels.add(channel);
+      }
+    },
+    getMutationChannels: () => Array.from(mutationChannels),
+    getQueryChannels: () => Array.from(queryChannels),
     requestId,
     time: Date.now(),
     ip: req.headers.get('X-Forwarded-For') || null,

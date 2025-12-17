@@ -68,8 +68,10 @@ export async function createTestContextWithSession(
     setCookie: ({ name, value }: { name: string; value: string }) => {
       cookies[name] = value;
     },
-    setChannels: () => {},
-    getChannels: () => [],
+    setMutationChannels: () => {},
+    setQueryChannels: () => {},
+    getMutationChannels: () => [],
+    getQueryChannels: () => [],
     time: Date.now(),
     isServerSideCall: true,
   };

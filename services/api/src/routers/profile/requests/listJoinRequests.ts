@@ -39,7 +39,7 @@ export const listJoinRequestsRouter = router({
         dir,
       });
 
-      ctx.setChannels('subscription', [
+      ctx.setQueryChannels([
         Channels.profileJoinRequest({
           type: 'target',
           profileId: input.targetProfileId,

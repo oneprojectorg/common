@@ -30,7 +30,7 @@ export const getJoinRequestRouter = router({
         return null;
       }
 
-      ctx.setChannels('subscription', [
+      ctx.setQueryChannels([
         Channels.profileJoinRequest({
           type: 'source',
           profileId: input.requestProfileId,
