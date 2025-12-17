@@ -29,7 +29,7 @@ const mockProcessSchema: ProcessSchema = {
       name: 'Draft',
       type: 'initial',
       config: {
-        allowProposals: true,
+        proposals: { submit: true },
       },
     },
     {
@@ -37,7 +37,7 @@ const mockProcessSchema: ProcessSchema = {
       name: 'Review',
       type: 'intermediate',
       config: {
-        allowProposals: false,
+        proposals: { submit: false },
       },
     },
   ],
@@ -223,7 +223,7 @@ describe('createProposal', () => {
     ).rejects.toThrow(ValidationError);
   });
 
-  it('should allow proposals when allowProposals is not explicitly set to false', async () => {
+  it('should allow proposals when proposals.submit is not explicitly set to false', async () => {
     const processSchemaWithoutConfig = {
       ...mockProcessSchema,
       states: [
@@ -332,7 +332,7 @@ describe('createProposal', () => {
           name: 'Fallback State',
           type: 'intermediate' as const,
           config: {
-            allowProposals: true,
+            proposals: { submit: true },
           },
         },
       ],
