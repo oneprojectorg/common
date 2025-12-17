@@ -113,10 +113,14 @@ export const profileRelationshipsRelations = relations(
     sourceProfile: one(profiles, {
       fields: [profileRelationships.sourceProfileId],
       references: [profiles.id],
+      relationName: 'sourceProfileRelationships',
     }),
     targetProfile: one(profiles, {
       fields: [profileRelationships.targetProfileId],
       references: [profiles.id],
+      relationName: 'targetProfileRelationships',
     }),
   }),
 );
+
+export type ProfileRelationship = typeof profileRelationships.$inferSelect;

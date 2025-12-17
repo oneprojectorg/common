@@ -1,4 +1,6 @@
 import {
+  ChannelName,
+  Channels,
   ValidationError,
   addProfileRelationship,
   getProfileRelationships,
@@ -118,12 +120,24 @@ export const profileRelationshipRouter = router({
       const { targetProfileId, relationshipType, pending } = input;
 
       try {
-        await addProfileRelationship({
+        const { sourceProfileId } = await addProfileRelationship({
           targetProfileId,
           relationshipType,
           authUserId: ctx.user.id,
           pending,
         });
+
+        // Set mutation channels for query invalidation
+        ctx.setChannels('mutation', [
+          Channels.profileRelationship({
+            type: 'source',
+            profileId: sourceProfileId,
+          }),
+          Channels.profileRelationship({
+            type: 'target',
+            profileId: targetProfileId,
+          }),
+        ]);
 
         // Track analytics if this is a proposal relationship (async in background)
         waitUntil(
@@ -181,11 +195,24 @@ export const profileRelationshipRouter = router({
       const { targetProfileId, relationshipType } = input;
 
       try {
-        await removeProfileRelationship({
+        const { sourceProfileId } = await removeProfileRelationship({
           targetProfileId,
           relationshipType,
           authUserId: ctx.user.id,
         });
+
+        // Set mutation channels for query invalidation
+        ctx.setChannels('mutation', [
+          Channels.profileRelationship({
+            type: 'target',
+            profileId: targetProfileId,
+          }),
+          Channels.profileRelationship({
+            type: 'source',
+            profileId: sourceProfileId,
+          }),
+        ]);
+
         return { success: true };
       } catch (error) {
         logger.error('Error removing relationship', { error, targetProfileId });
@@ -209,6 +236,7 @@ export const profileRelationshipRouter = router({
           ProfileRelationshipType.FOLLOWING,
           ProfileRelationshipType.LIKES,
         ]),
+        // TODO: encoder type
         z.array(
           z.object({
             relationshipType: z.string(),
@@ -274,6 +302,41 @@ export const profileRelationshipRouter = router({
             groupedResults[type].push(relationship);
           }
         }
+
+        // Set subscription channels based on returned data
+        const profileIds = new Set<string>();
+        for (const relationship of allRelationships) {
+          if (relationship.sourceProfile?.id) {
+            profileIds.add(relationship.sourceProfile.id);
+          }
+          if (relationship.targetProfile?.id) {
+            profileIds.add(relationship.targetProfile.id);
+          }
+        }
+
+        // TODO: check if we can simplify this, no need for type. e.g profileRelationship:<sourceId|targetId>
+        // so we always subscribe to both
+
+        // also add channels for input targetProfileId/sourceProfileId
+        const channels: ChannelName[] = [];
+        if (targetProfileId) {
+          channels.push(
+            Channels.profileRelationship({
+              type: 'target',
+              profileId: targetProfileId,
+            }),
+          );
+        }
+        if (sourceProfileId) {
+          channels.push(
+            Channels.profileRelationship({
+              type: 'source',
+              profileId: sourceProfileId,
+            }),
+          );
+        }
+
+        ctx.setChannels('subscription', channels);
 
         return groupedResults;
       } catch (error) {

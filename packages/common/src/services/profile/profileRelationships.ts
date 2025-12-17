@@ -8,7 +8,8 @@ import {
 } from '@op/db/schema';
 import { alias } from 'drizzle-orm/pg-core';
 
-import { ValidationError } from '../../utils/error';
+import { ProfileRelationship } from '../../../../../services/db/schema/tables/relationships.sql';
+import { NotFoundError, ValidationError } from '../../utils/error';
 import { getCurrentProfileId } from '../access';
 
 export const addRelationship = async ({
@@ -21,7 +22,7 @@ export const addRelationship = async ({
   relationshipType: string;
   authUserId: string;
   pending?: boolean;
-}): Promise<void> => {
+}): Promise<ProfileRelationship> => {
   const currentProfileId = await getCurrentProfileId(authUserId);
 
   // Prevent self-relationships
@@ -30,7 +31,7 @@ export const addRelationship = async ({
   }
 
   // Try to create the relationship - unique constraint will prevent duplicates
-  await Promise.all([
+  const [[addedRelationship]] = await Promise.all([
     db
       .insert(profileRelationships)
       .values({
@@ -39,12 +40,38 @@ export const addRelationship = async ({
         relationshipType: relationshipType as ProfileRelationshipType,
         pending,
       })
-      .onConflictDoNothing(),
+      .onConflictDoNothing()
+      .returning(),
     invalidate({
       type: 'profile',
       params: [targetProfileId],
     }),
   ]);
+
+  // If conflict occurred, fetch the existing relationship
+  if (!addedRelationship) {
+    const [existingRelationship] = await db
+      .select()
+      .from(profileRelationships)
+      .where(
+        and(
+          eq(profileRelationships.sourceProfileId, currentProfileId),
+          eq(profileRelationships.targetProfileId, targetProfileId),
+          eq(
+            profileRelationships.relationshipType,
+            relationshipType as ProfileRelationshipType,
+          ),
+        ),
+      );
+
+    if (!existingRelationship) {
+      throw new NotFoundError('Profile relationship');
+    }
+
+    return existingRelationship;
+  }
+
+  return addedRelationship;
 };
 
 export const removeRelationship = async ({
@@ -55,7 +82,7 @@ export const removeRelationship = async ({
   targetProfileId: string;
   relationshipType: string;
   authUserId: string;
-}): Promise<void> => {
+}): Promise<ProfileRelationship> => {
   const currentProfileId = await getCurrentProfileId(authUserId);
 
   if (!currentProfileId) {
@@ -63,7 +90,7 @@ export const removeRelationship = async ({
   }
 
   // Delete the specific relationship
-  await Promise.all([
+  const [[deletedRelationShip]] = await Promise.all([
     db
       .delete(profileRelationships)
       .where(
@@ -75,12 +102,19 @@ export const removeRelationship = async ({
             relationshipType as ProfileRelationshipType,
           ),
         ),
-      ),
+      )
+      .returning(),
     invalidate({
       type: 'profile',
       params: [targetProfileId],
     }),
   ]);
+
+  if (!deletedRelationShip) {
+    throw new NotFoundError('Profile relationship');
+  }
+
+  return deletedRelationShip;
 };
 
 export const getRelationships = async ({
