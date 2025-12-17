@@ -418,5 +418,9 @@
   "Your membership request has been sent to {orgName}": "Sua solicitação de adesão foi enviada para {orgName}.",
   "Failed to send membership request": "Falha ao enviar solicitação de adesão",
   "Membership request cancelled": "Solicitação de adesão cancelada",
-  "Failed to cancel membership request": "Falha ao cancelar solicitação de adesão"
+  "Failed to cancel membership request": "Falha ao cancelar solicitação de adesão",
+  "Cancel membership request": "Cancelar solicitação de adesão",
+  "Are you sure you want to cancel your membership request to {orgName}?": "Tem certeza de que deseja cancelar sua solicitação de adesão a {orgName}?",
+  "Keep request": "Manter solicitação",
+  "Cancel request": "Cancelar solicitação"
 }
