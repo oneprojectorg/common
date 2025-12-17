@@ -117,7 +117,7 @@ function createChannelRegistrationLink(): TRPCLink<AppRouter> {
                   const channels = queryChannelsHeader
                     .split(',')
                     .filter(Boolean) as ChannelName[];
-                  queryChannelRegistry.registerSubscription(queryKey, channels);
+                  queryChannelRegistry.registerQuery(queryKey, channels);
                 }
               } else if (op.type === 'mutation') {
                 // Look up and invalidate queries for mutation channels
