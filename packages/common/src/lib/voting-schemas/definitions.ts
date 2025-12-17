@@ -11,7 +11,7 @@ import type { PhaseDefinition, VotingSchemaDefinition } from './types';
  * submission → review → voting → results
  */
 export const simpleVoting: VotingSchemaDefinition = {
-  schemaType: 'simple',
+  type: 'simple',
   name: 'Simple Voting',
   description: 'Basic approval voting where members vote for multiple proposals.',
 
@@ -26,7 +26,7 @@ export const simpleVoting: VotingSchemaDefinition = {
         voting: { submit: false },
       },
       // User-configurable settings, available as variables in selectionPipeline
-      settingsSchema: {
+      settings: {
         type: 'object',
         properties: {
           maxProposalsPerElector: {
@@ -37,11 +37,11 @@ export const simpleVoting: VotingSchemaDefinition = {
             default: 3,
           },
         },
-      },
-      settingsUiSchema: {
-        maxProposalsPerElector: {
-          'ui:widget': 'number',
-          'ui:placeholder': '3',
+        ui: {
+          maxProposalsPerElector: {
+            'ui:widget': 'number',
+            'ui:placeholder': '3',
+          },
         },
       },
     },
@@ -63,7 +63,7 @@ export const simpleVoting: VotingSchemaDefinition = {
         voting: { submit: true },
       },
       // Phase-specific settings
-      settingsSchema: {
+      settings: {
         type: 'object',
         required: ['maxVotesPerElector'],
         properties: {
@@ -75,11 +75,11 @@ export const simpleVoting: VotingSchemaDefinition = {
             default: 3,
           },
         },
-      },
-      settingsUiSchema: {
-        maxVotesPerElector: {
-          'ui:widget': 'number',
-          'ui:placeholder': '5',
+        ui: {
+          maxVotesPerElector: {
+            'ui:widget': 'number',
+            'ui:placeholder': '5',
+          },
         },
       },
       // Selection pipeline: sort by likes, take top N

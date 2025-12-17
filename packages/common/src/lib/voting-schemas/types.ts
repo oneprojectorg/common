@@ -44,8 +44,7 @@ export interface PhaseDefinition {
   selectionPipeline?: SelectionPipeline;
 
   /** Optional per-phase settings form (use `default` in schema properties) */
-  settingsSchema?: JSONSchema7;
-  settingsUiSchema?: UiSchema;
+  settings?: JSONSchema7 & { ui?: UiSchema };
 }
 
 /**
@@ -59,7 +58,7 @@ export interface ProcessConfig {
  * A voting schema definition - defines the phases of a decision process.
  */
 export interface VotingSchemaDefinition {
-  schemaType: string;
+  type: string;
   name: string;
   description?: string;
 

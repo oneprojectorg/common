@@ -12,7 +12,7 @@
  * console.log(votingPhase?.rules.voting?.submit); // true
  *
  * // Get phase-specific form schema (for RJSF)
- * console.log(votingPhase?.settingsSchema);
+ * console.log(votingPhase?.settings);
  *
  * // Get selection pipeline for phase transitions
  * console.log(votingPhase?.selectionPipeline);
