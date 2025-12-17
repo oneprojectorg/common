@@ -2,7 +2,12 @@ import { mergeRouters } from '../../trpcFactory';
 import { getProfileRouter } from './getProfile';
 import { inviteProfileUserRouter } from './invite';
 import { profileRelationshipRouter } from './relationships';
-import requestsRouter from './requests';
+import {
+  createJoinRequestRouter,
+  getJoinRequestRouter,
+  listJoinRequestsRouter,
+  updateJoinRequestRouter,
+} from './requests';
 import { searchProfilesRouter } from './searchProfiles';
 
 const profileRouter = mergeRouters(
@@ -10,7 +15,10 @@ const profileRouter = mergeRouters(
   searchProfilesRouter,
   profileRelationshipRouter,
   inviteProfileUserRouter,
-  requestsRouter,
+  createJoinRequestRouter,
+  getJoinRequestRouter,
+  listJoinRequestsRouter,
+  updateJoinRequestRouter,
 );
 
 export default profileRouter;
