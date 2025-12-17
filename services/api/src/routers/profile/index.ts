@@ -4,6 +4,7 @@ import { inviteProfileUserRouter } from './invite';
 import { profileRelationshipRouter } from './relationships';
 import {
   createJoinRequestRouter,
+  deleteJoinRequestRouter,
   getJoinRequestRouter,
   listJoinRequestsRouter,
   updateJoinRequestRouter,
@@ -16,6 +17,7 @@ const profileRouter = mergeRouters(
   profileRelationshipRouter,
   inviteProfileUserRouter,
   createJoinRequestRouter,
+  deleteJoinRequestRouter,
   getJoinRequestRouter,
   listJoinRequestsRouter,
   updateJoinRequestRouter,
