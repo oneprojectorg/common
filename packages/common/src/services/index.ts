@@ -27,4 +27,5 @@ export {
   getJoinRequest as getProfileJoinRequest,
   listJoinRequests as listJoinProfileRequests,
   updateJoinRequest as updateProfileJoinRequest,
+  deleteJoinRequest as deleteProfileJoinRequest,
 } from './profile/requests';

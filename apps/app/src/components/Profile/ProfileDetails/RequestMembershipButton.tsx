@@ -3,8 +3,10 @@
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { JoinProfileRequestStatus, type Organization } from '@op/api/encoders';
-import { ButtonTooltip } from '@op/ui/Button';
+import { Button, ButtonTooltip } from '@op/ui/Button';
+import { Dialog, DialogTrigger } from '@op/ui/Dialog';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
+import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Skeleton } from '@op/ui/Skeleton';
 import { toast } from '@op/ui/Toast';
 import { Suspense, useTransition } from 'react';
@@ -54,6 +56,7 @@ const RequestMembershipButtonSuspense = ({
   });
 
   const createJoinRequest = trpc.profile.createJoinRequest.useMutation();
+  const deleteJoinRequest = trpc.profile.deleteJoinRequest.useMutation();
 
   const hasPendingRequest =
     existingRequest?.status === JoinProfileRequestStatus.PENDING;
@@ -91,19 +94,83 @@ const RequestMembershipButtonSuspense = ({
     });
   };
 
+  const handleCancelRequest = (close: () => void) => {
+    if (!existingRequest?.id) {
+      return;
+    }
+
+    startTransition(async () => {
+      try {
+        await deleteJoinRequest.mutateAsync({
+          requestId: existingRequest.id,
+        });
+
+        toast.success({
+          message: t('Membership request cancelled'),
+        });
+
+        await utils.profile.getJoinRequest.invalidate({
+          requestProfileId: currentProfileId,
+          targetProfileId: profile.profile.id,
+        });
+      } catch (error) {
+        toast.error({
+          message: t('Failed to cancel membership request'),
+        });
+      }
+
+      close();
+    });
+  };
+
   if (hasPendingRequest) {
     return (
-      <ButtonTooltip
-        color="secondary"
-        isDisabled
-        className="min-w-full sm:min-w-fit"
-        tooltipProps={{
-          children: t('Your membership request is pending approval'),
-        }}
-      >
-        <LuClock className="size-4" />
-        {t('Requested')}
-      </ButtonTooltip>
+      <DialogTrigger>
+        <ButtonTooltip
+          color="secondary"
+          className="min-w-full sm:min-w-fit"
+          tooltipProps={{
+            children: t('Your membership request is pending approval'),
+          }}
+        >
+          <LuClock className="size-4" />
+          {t('Requested')}
+        </ButtonTooltip>
+        <Modal>
+          <Dialog>
+            {({ close }) => (
+              <>
+                <ModalHeader>{t('Cancel membership request')}</ModalHeader>
+                <ModalBody>
+                  <p>
+                    {t(
+                      'Are you sure you want to cancel your membership request to {orgName}?',
+                      { orgName: profile.profile.name },
+                    )}
+                  </p>
+                </ModalBody>
+                <ModalFooter>
+                  <Button
+                    onPress={close}
+                    color="neutral"
+                    className="w-full sm:w-fit"
+                  >
+                    {t('Keep request')}
+                  </Button>
+                  <Button
+                    color="destructive"
+                    onPress={() => handleCancelRequest(close)}
+                    isPending={isPending}
+                    className="w-full sm:w-fit"
+                  >
+                    {isPending ? <LoadingSpinner /> : t('Cancel request')}
+                  </Button>
+                </ModalFooter>
+              </>
+            )}
+          </Dialog>
+        </Modal>
+      </DialogTrigger>
     );
   }
 

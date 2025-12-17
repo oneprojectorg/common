@@ -416,5 +416,11 @@
   "Your membership request is pending approval": "Votre demande d'adhésion est en attente d'approbation",
   "You must be logged in to request membership": "Vous devez être connecté pour demander l'adhésion",
   "Your membership request has been sent to {orgName}": "Votre demande d'adhésion a été envoyée à {orgName}.",
-  "Failed to send membership request": "Échec de l'envoi de la demande d'adhésion"
+  "Failed to send membership request": "Échec de l'envoi de la demande d'adhésion",
+  "Membership request cancelled": "Demande d'adhésion annulée",
+  "Failed to cancel membership request": "Échec de l'annulation de la demande d'adhésion",
+  "Cancel membership request": "Annuler la demande d'adhésion",
+  "Are you sure you want to cancel your membership request to {orgName}?": "Êtes-vous sûr de vouloir annuler votre demande d'adhésion à {orgName} ?",
+  "Keep request": "Conserver la demande",
+  "Cancel request": "Annuler la demande"
 }
