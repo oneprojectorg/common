@@ -1,4 +1,4 @@
-import { getProfileJoinRequest } from '@op/common';
+import { Channels, getProfileJoinRequest } from '@op/common';
 import { z } from 'zod';
 
 import { joinProfileRequestEncoder } from '../../../encoders/joinProfileRequests';
@@ -20,6 +20,17 @@ export const getJoinRequestRouter = router({
     .input(inputSchema)
     .output(joinProfileRequestEncoder.nullable())
     .query(async ({ input, ctx }) => {
+      ctx.setChannels('subscription', [
+        Channels.profile.joinRequest({
+          profileId: input.requestProfileId,
+          type: 'source',
+        }),
+        Channels.profile.joinRequest({
+          profileId: input.targetProfileId,
+          type: 'target',
+        }),
+      ]);
+
       const result = await getProfileJoinRequest({
         user: ctx.user,
         requestProfileId: input.requestProfileId,

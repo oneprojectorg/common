@@ -1,4 +1,4 @@
-import { listJoinProfileRequests } from '@op/common';
+import { Channels, listJoinProfileRequests } from '@op/common';
 import { JoinProfileRequestStatus } from '@op/db/schema';
 import { z } from 'zod';
 
@@ -28,6 +28,13 @@ export const listJoinRequestsRouter = router({
       }),
     )
     .query(async ({ input, ctx }) => {
+      ctx.setChannels('subscription', [
+        Channels.profile.joinRequest({
+          profileId: input.targetProfileId,
+          type: 'target',
+        }),
+      ]);
+
       const { limit = 10, cursor, dir } = input;
 
       const { items, next, hasMore } = await listJoinProfileRequests({

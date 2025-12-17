@@ -1,4 +1,4 @@
-import { deleteProfileJoinRequest } from '@op/common';
+import { Channels, deleteProfileJoinRequest } from '@op/common';
 import { z } from 'zod';
 
 import { joinProfileRequestEncoder } from '../../../encoders/joinProfileRequests';
@@ -22,6 +22,17 @@ export const deleteJoinRequestRouter = router({
         user: ctx.user,
         requestId: input.requestId,
       });
+
+      ctx.setChannels('mutation', [
+        Channels.profile.joinRequest({
+          profileId: result.requestProfile.id,
+          type: 'source',
+        }),
+        Channels.profile.joinRequest({
+          profileId: result.targetProfile.id,
+          type: 'target',
+        }),
+      ]);
 
       return joinProfileRequestEncoder.parse(result);
     }),

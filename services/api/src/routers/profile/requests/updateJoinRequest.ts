@@ -1,4 +1,4 @@
-import { updateProfileJoinRequest } from '@op/common';
+import { Channels, updateProfileJoinRequest } from '@op/common';
 import { JoinProfileRequestStatus } from '@op/db/schema';
 import { z } from 'zod';
 
@@ -29,6 +29,17 @@ export const updateJoinRequestRouter = router({
         requestId: input.requestId,
         status: input.status,
       });
+
+      ctx.setChannels('mutation', [
+        Channels.profile.joinRequest({
+          profileId: result.requestProfileId,
+          type: 'source',
+        }),
+        Channels.profile.joinRequest({
+          profileId: result.targetProfileId,
+          type: 'target',
+        }),
+      ]);
 
       return joinProfileRequestEncoder.parse(result);
     }),
