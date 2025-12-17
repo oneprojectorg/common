@@ -1,4 +1,4 @@
-import { listJoinProfileRequests } from '@op/common';
+import { listJoinRequests } from '@op/common';
 import { JoinProfileRequestStatus } from '@op/db/schema';
 import { z } from 'zod';
 
@@ -30,7 +30,7 @@ export const listJoinRequestsRouter = router({
     .query(async ({ input, ctx }) => {
       const { limit = 10, cursor, dir } = input;
 
-      const { items, next, hasMore } = await listJoinProfileRequests({
+      const { items, next, hasMore } = await listJoinRequests({
         user: ctx.user,
         targetProfileId: input.targetProfileId,
         status: input.status,
