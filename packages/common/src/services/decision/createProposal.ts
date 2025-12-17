@@ -84,7 +84,7 @@ export const createProposal = async ({
     }
 
     // Check if proposals are allowed in current state
-    if (currentState.config?.allowProposals === false) {
+    if (currentState.config?.proposals?.submit === false) {
       throw new ValidationError(
         `Proposals are not allowed in the ${currentState.name} state`,
       );

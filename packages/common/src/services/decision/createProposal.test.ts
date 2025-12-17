@@ -56,7 +56,7 @@ describe('createProposal with attachments', () => {
             id: 'test-state-id',
             name: 'Test State',
             config: {
-              allowProposals: true,
+              proposals: { submit: true },
             },
           },
         ],
@@ -377,7 +377,7 @@ describe('createProposal with attachments', () => {
                 id: 'test-state-id',
                 name: 'Restricted State',
                 config: {
-                  allowProposals: false, // Proposals not allowed
+                  proposals: { submit: false }, // Proposals not allowed
                 },
               },
             ],
