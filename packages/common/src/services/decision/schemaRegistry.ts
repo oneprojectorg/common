@@ -58,8 +58,8 @@ export function processDecisionProcessSchema(data: unknown): {
     schemaType,
     isValid: true,
     votingConfig: {
-      allowProposals: data.allowProposals,
-      allowDecisions: data.allowDecisions,
+      proposals: data.proposals,
+      voting: data.voting,
       maxVotesPerElector: data.instanceData.maxVotesPerElector,
       schemaType,
     },
@@ -72,13 +72,13 @@ export function processDecisionProcessSchema(data: unknown): {
         amount: { type: 'number', min: 0 },
       },
       schemaType,
-      allowProposals: data.allowProposals,
+      proposals: data.proposals,
     },
     validationResult: {
       isValid: true,
       schemaType,
       errors: [],
-      supportedProperties: ['allowProposals', 'allowDecisions', 'instanceData'],
+      supportedProperties: ['proposals', 'voting', 'instanceData'],
     },
   };
 }

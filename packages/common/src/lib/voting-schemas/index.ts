@@ -8,11 +8,11 @@
  * // Access phases
  * const votingPhase = simpleSchema.phases.find(p => p.id === 'voting');
  *
- * // Check phase behavior
- * console.log(votingPhase?.config.allowDecisions); // true
+ * // Check phase behavior rules
+ * console.log(votingPhase?.rules.voting?.submit); // true
  *
  * // Get phase-specific form schema (for RJSF)
- * console.log(votingPhase?.configSchema);
+ * console.log(votingPhase?.settingsSchema);
  *
  * // Get selection pipeline for phase transitions
  * console.log(votingPhase?.selectionPipeline);
