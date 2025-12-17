@@ -1,4 +1,4 @@
-import { updateJoinRequest } from '@op/common';
+import { updateProfileJoinRequest } from '@op/common';
 import { JoinProfileRequestStatus } from '@op/db/schema';
 import { z } from 'zod';
 
@@ -24,7 +24,7 @@ export const updateJoinRequestRouter = router({
     .input(inputSchema)
     .output(joinProfileRequestEncoder)
     .mutation(async ({ input, ctx }) => {
-      const result = await updateJoinRequest({
+      const result = await updateProfileJoinRequest({
         user: ctx.user,
         requestId: input.requestId,
         status: input.status,
