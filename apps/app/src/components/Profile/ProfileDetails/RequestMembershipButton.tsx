@@ -4,10 +4,9 @@ import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { JoinProfileRequestStatus, type Organization } from '@op/api/encoders';
 import { Button, ButtonTooltip } from '@op/ui/Button';
-import { DialogTrigger } from '@op/ui/Dialog';
+import { Dialog, DialogTrigger } from '@op/ui/Dialog';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { Dialog } from '@op/ui/RAC';
 import { Skeleton } from '@op/ui/Skeleton';
 import { toast } from '@op/ui/Toast';
 import { Suspense, useTransition } from 'react';
@@ -137,7 +136,7 @@ const RequestMembershipButtonSuspense = ({
           <LuClock className="size-4" />
           {t('Requested')}
         </ButtonTooltip>
-        <Modal className="sm:min-w-[29rem]">
+        <Modal>
           <Dialog>
             {({ close }) => (
               <>
@@ -154,7 +153,6 @@ const RequestMembershipButtonSuspense = ({
                   <Button
                     onPress={close}
                     color="neutral"
-                    type="button"
                     className="w-full sm:w-fit"
                   >
                     {t('Keep request')}
