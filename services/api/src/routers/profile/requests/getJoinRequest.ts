@@ -20,17 +20,6 @@ export const getJoinRequestRouter = router({
     .input(inputSchema)
     .output(joinProfileRequestEncoder.nullable())
     .query(async ({ input, ctx }) => {
-      ctx.setChannels('subscription', [
-        Channels.profile.joinRequest({
-          profileId: input.requestProfileId,
-          type: 'source',
-        }),
-        Channels.profile.joinRequest({
-          profileId: input.targetProfileId,
-          type: 'target',
-        }),
-      ]);
-
       const result = await getProfileJoinRequest({
         user: ctx.user,
         requestProfileId: input.requestProfileId,
@@ -40,6 +29,17 @@ export const getJoinRequestRouter = router({
       if (!result) {
         return null;
       }
+
+      ctx.setChannels('subscription', [
+        Channels.profileJoinRequest({
+          type: 'source',
+          profileId: input.requestProfileId,
+        }),
+        Channels.profileJoinRequest({
+          type: 'target',
+          profileId: input.targetProfileId,
+        }),
+      ]);
 
       return joinProfileRequestEncoder.parse(result);
     }),

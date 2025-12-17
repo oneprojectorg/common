@@ -28,13 +28,6 @@ export const listJoinRequestsRouter = router({
       }),
     )
     .query(async ({ input, ctx }) => {
-      ctx.setChannels('subscription', [
-        Channels.profile.joinRequest({
-          profileId: input.targetProfileId,
-          type: 'target',
-        }),
-      ]);
-
       const { limit = 10, cursor, dir } = input;
 
       const { items, next, hasMore } = await listJoinProfileRequests({
@@ -45,6 +38,13 @@ export const listJoinRequestsRouter = router({
         limit,
         dir,
       });
+
+      ctx.setChannels('subscription', [
+        Channels.profileJoinRequest({
+          type: 'target',
+          profileId: input.targetProfileId,
+        }),
+      ]);
 
       return {
         items: items.map((item) => joinProfileRequestEncoder.parse(item)),

@@ -27,13 +27,13 @@ export const createJoinRequestRouter = router({
       });
 
       ctx.setChannels('mutation', [
-        Channels.profile.joinRequest({
-          profileId: result.requestProfileId,
+        Channels.profileJoinRequest({
           type: 'source',
+          profileId: result.requestProfileId,
         }),
-        Channels.profile.joinRequest({
-          profileId: result.targetProfileId,
+        Channels.profileJoinRequest({
           type: 'target',
+          profileId: result.targetProfileId,
         }),
       ]);
 
