@@ -11,7 +11,7 @@ import { waitUntil } from '@vercel/functions';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
-import { proposalEncoder } from '../../../encoders/decision';
+import { proposalEncoder } from '../../../encoders/legacyDecision';
 import withAnalytics from '../../../middlewares/withAnalytics';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
 import { loggedProcedure, router } from '../../../trpcFactory';

@@ -6,7 +6,7 @@ import type { OpenApiMeta } from 'trpc-to-openapi';
 import {
   getInstanceInputSchema,
   processInstanceEncoder,
-} from '../../../encoders/decision';
+} from '../../../encoders/legacyDecision';
 import withAnalytics from '../../../middlewares/withAnalytics';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
 import withRateLimited from '../../../middlewares/withRateLimited';

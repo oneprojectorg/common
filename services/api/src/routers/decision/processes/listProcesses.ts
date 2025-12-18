@@ -4,7 +4,7 @@ import type { OpenApiMeta } from 'trpc-to-openapi';
 import {
   decisionProcessListEncoder,
   processFilterSchema,
-} from '../../../encoders/decision';
+} from '../../../encoders/legacyDecision';
 import { loggedProcedure, router } from '../../../trpcFactory';
 
 const meta: OpenApiMeta = {

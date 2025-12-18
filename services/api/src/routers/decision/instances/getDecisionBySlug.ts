@@ -1,7 +1,7 @@
 import { getDecisionBySlug } from '@op/common';
 import { z } from 'zod';
 
-import { decisionProfileEncoder } from '../../../encoders/decision';
+import { decisionProfileEncoder } from '../../../encoders/legacyDecision';
 import withAnalytics from '../../../middlewares/withAnalytics';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
 import withRateLimited from '../../../middlewares/withRateLimited';

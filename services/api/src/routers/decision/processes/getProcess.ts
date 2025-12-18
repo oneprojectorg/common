@@ -3,7 +3,7 @@ import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
-import { decisionProcessEncoder } from '../../../encoders/decision';
+import { decisionProcessEncoder } from '../../../encoders/legacyDecision';
 import { loggedProcedure, router } from '../../../trpcFactory';
 
 const meta: OpenApiMeta = {

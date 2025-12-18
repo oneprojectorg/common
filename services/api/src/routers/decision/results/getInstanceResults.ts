@@ -6,7 +6,7 @@ import {
 import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 
-import { instanceResultsEncoder } from '../../../encoders/decision';
+import { instanceResultsEncoder } from '../../../encoders/legacyDecision';
 import { getInstanceResultsInputSchema } from '../../../encoders/results';
 import withAnalytics from '../../../middlewares/withAnalytics';
 import withAuthenticated from '../../../middlewares/withAuthenticated';

@@ -4,7 +4,7 @@ import type { OpenApiMeta } from 'trpc-to-openapi';
 import {
   decisionProfileFilterSchema,
   decisionProfileListEncoder,
-} from '../../../encoders/decision';
+} from '../../../encoders/legacyDecision';
 import withAnalytics from '../../../middlewares/withAnalytics';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
 import withRateLimited from '../../../middlewares/withRateLimited';
