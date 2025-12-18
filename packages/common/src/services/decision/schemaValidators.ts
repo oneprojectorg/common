@@ -14,14 +14,12 @@ export function isValidDecisionProcessSchema(
   }
 
   const obj = data as Record<string, unknown>;
-  const proposals = obj.proposals as Record<string, unknown> | undefined;
-  const voting = obj.voting as Record<string, unknown> | undefined;
 
   return (
-    'proposals' in obj &&
-    typeof proposals?.submit === 'boolean' &&
-    'voting' in obj &&
-    typeof voting?.submit === 'boolean' &&
+    'allowProposals' in obj &&
+    typeof obj.allowProposals === 'boolean' &&
+    'allowDecisions' in obj &&
+    typeof obj.allowDecisions === 'boolean' &&
     'instanceData' in obj &&
     typeof obj.instanceData === 'object' &&
     obj.instanceData !== null &&
@@ -65,15 +63,15 @@ export function extractVotingConfig(
   schemaType: string = 'unknown',
 ): VotingConfig {
   const baseConfig: VotingConfig = {
-    proposals: schema.proposals,
-    voting: schema.voting,
-    maxVotesPerElector: schema.instanceData.maxVotesPerElector,
+    allowProposals: schema.allowProposals,
+    allowDecisions: schema.allowDecisions,
+    maxVotesPerMember: schema.instanceData.maxVotesPerMember,
     schemaType,
   };
 
   const additionalConfig: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(schema)) {
-    if (!['proposals', 'voting', 'instanceData'].includes(key)) {
+    if (!['allowProposals', 'allowDecisions', 'instanceData'].includes(key)) {
       additionalConfig[key] = value;
     }
   }
@@ -112,7 +110,7 @@ export function extractProposalConfig(
       },
     },
     schemaType,
-    proposals: schema.proposals,
+    allowProposals: schema.allowProposals,
   };
 
   if (schema.proposalConfig && typeof schema.proposalConfig === 'object') {
@@ -168,8 +166,8 @@ export function validateVoteSelection(
     errors.push('At least one proposal must be selected');
   }
 
-  if (selectedProposalIds.length > maxVotesPerElector) {
-    errors.push(`Cannot select more than ${maxVotesPerElector} proposals`);
+  if (selectedProposalIds.length > maxVotesPerMember) {
+    errors.push(`Cannot select more than ${maxVotesPerMember} proposals`);
   }
 
   const invalidProposals = selectedProposalIds.filter(
@@ -194,9 +192,9 @@ export function validateVoteSelection(
 
 export function createSchemaSignature(schema: DecisionProcessSchema): string {
   const normalizedSchema = {
-    proposals: schema.proposals,
-    voting: schema.voting,
-    maxVotesPerElector: schema.instanceData.maxVotesPerElector,
+    allowProposals: schema.allowProposals,
+    allowDecisions: schema.allowDecisions,
+    maxVotesPerMember: schema.instanceData.maxVotesPerMember,
   };
 
   return Buffer.from(JSON.stringify(normalizedSchema)).toString('base64');

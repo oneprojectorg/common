@@ -54,8 +54,8 @@ export interface StateDefinition {
 
   // State-specific configuration
   config?: {
-    proposals?: { submit?: boolean };
-    voting?: { submit?: boolean };
+    allowProposals?: boolean;
+    allowDecisions?: boolean;
     visibleComponents?: string[];
   };
 }
