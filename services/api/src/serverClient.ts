@@ -97,8 +97,8 @@ const createServerContext = cache(async (): Promise<TContext> => {
       );
     },
     // Server-side calls don't need channel propagation via headers
-    setMutationChannels: () => {},
-    setQueryChannels: () => {},
+    registerMutationChannels: () => {},
+    registerQueryChannels: () => {},
     getMutationChannels: () => [],
     getQueryChannels: () => [],
     requestId,

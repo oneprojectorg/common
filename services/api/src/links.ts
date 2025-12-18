@@ -125,7 +125,6 @@ function createChannelRegistrationLink(): TRPCLink<AppRouter> {
                   MUTATION_CHANNELS_HEADER,
                 );
                 if (mutationChannelsHeader) {
-                  // TODO: consider zod. needed?
                   const channels = mutationChannelsHeader
                     .split(',')
                     .filter(Boolean) as ChannelName[];

@@ -37,12 +37,14 @@ export const createContext = async ({
     getCookie: (name) => _getCookie(req, name),
     setCookie: ({ name, value, options }) =>
       _setCookie({ resHeaders, name, value, options }),
-    setMutationChannels: (channels) => {
+    registerMutationChannels: (channels) => {
       for (const channel of channels) {
         mutationChannels.add(channel);
       }
+
+      // Here we'll publish a message to the realtime server to notify about the mutation
     },
-    setQueryChannels: (channels) => {
+    registerQueryChannels: (channels) => {
       for (const channel of channels) {
         queryChannels.add(channel);
       }

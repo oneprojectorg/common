@@ -26,7 +26,7 @@ export const getJoinRequestRouter = router({
         targetProfileId: input.targetProfileId,
       });
 
-      ctx.setQueryChannels([
+      ctx.registerQueryChannels([
         Channels.profileJoinRequest({
           type: 'source',
           profileId: input.requestProfileId,

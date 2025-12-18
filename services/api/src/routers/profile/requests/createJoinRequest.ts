@@ -26,7 +26,7 @@ export const createJoinRequestRouter = router({
         user: ctx.user,
       });
 
-      ctx.setMutationChannels([
+      ctx.registerMutationChannels([
         Channels.profileJoinRequest({
           type: 'source',
           profileId: result.requestProfileId,

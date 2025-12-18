@@ -23,7 +23,7 @@ export const deleteJoinRequestRouter = router({
         requestId: input.requestId,
       });
 
-      ctx.setMutationChannels([
+      ctx.registerMutationChannels([
         Channels.profileJoinRequest({
           profileId: result.requestProfile.id,
           type: 'source',

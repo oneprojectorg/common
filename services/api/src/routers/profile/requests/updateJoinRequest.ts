@@ -31,7 +31,7 @@ export const updateJoinRequestRouter = router({
       });
 
       // TODO: here we also need to add a channel mutation for the profile/organization membership update
-      ctx.setMutationChannels([
+      ctx.registerMutationChannels([
         Channels.profileJoinRequest({
           type: 'source',
           profileId: result.requestProfileId,

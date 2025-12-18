@@ -15,10 +15,10 @@ export interface TContext {
     value: string;
     options?: SerializeOptions;
   }) => void;
-  /** Sets channels that a mutation invalidates. */
-  setMutationChannels: (channels: ChannelName[]) => void;
-  /** Sets channels that a query subscribes to for invalidation. */
-  setQueryChannels: (channels: ChannelName[]) => void;
+  /** Registers channels that a mutation invalidates and publishes invalidation events. */
+  registerMutationChannels: (channels: ChannelName[]) => void;
+  /** Registers channels that a query subscribes to for invalidation. */
+  registerQueryChannels: (channels: ChannelName[]) => void;
   /** Gets all accumulated mutation channels across batched procedures. */
   getMutationChannels: () => ChannelName[];
   /** Gets all accumulated query channels across batched procedures. */
