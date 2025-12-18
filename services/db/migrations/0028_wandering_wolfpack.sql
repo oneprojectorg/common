@@ -1,0 +1,3 @@
+ALTER TABLE "decision_process_instances" ALTER COLUMN "name" DROP NOT NULL;--> statement-breakpoint
+ALTER TABLE "decision_process_instances" drop column "search";--> statement-breakpoint
+ALTER TABLE "decision_process_instances" ADD COLUMN "search" "tsvector" GENERATED ALWAYS AS (setweight(to_tsvector('simple', COALESCE("decision_process_instances"."name", '')), 'A') || ' ' || setweight(to_tsvector('english', COALESCE("decision_process_instances"."description", '')), 'B')::tsvector) STORED;

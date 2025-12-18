@@ -45,7 +45,7 @@ export const processInstances = pgTable(
         onDelete: 'cascade',
       }),
 
-    name: varchar({ length: 256 }).notNull(),
+    name: varchar({ length: 256 }),
     description: text(),
 
     // Instance configuration with filled values
@@ -80,7 +80,7 @@ export const processInstances = pgTable(
     status: processStatusEnum('status').default(ProcessStatus.DRAFT),
     search: tsvector('search').generatedAlwaysAs(
       (): SQL =>
-        sql`setweight(to_tsvector('simple', ${processInstances.name}), 'A') || ' ' || setweight(to_tsvector('english', COALESCE(${processInstances.description}, '')), 'B')::tsvector`,
+        sql`setweight(to_tsvector('simple', COALESCE(${processInstances.name}, '')), 'A') || ' ' || setweight(to_tsvector('english', COALESCE(${processInstances.description}, '')), 'B')::tsvector`,
     ),
 
     ...timestamps,
