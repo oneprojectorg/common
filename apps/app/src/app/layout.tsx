@@ -37,9 +37,15 @@ const robotoSerif = Roboto_Serif({
 
 export const metadata: Metadata = {
   title: APP_NAME,
-  description: 'Common.',
+  description:
+    'Connecting people, organizations, and resources to coordinate and grow economic democracy to global scale.',
   icons: {
     icon: [{ url: '/op.png', type: 'image/png' }],
+  },
+  openGraph: {
+    title: APP_NAME,
+    description:
+      'Connecting people, organizations, and resources to coordinate and grow economic democracy to global scale.',
   },
   robots: {
     googleBot: {
