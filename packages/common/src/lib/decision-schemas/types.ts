@@ -23,6 +23,10 @@ export interface PhaseRules {
     submit?: boolean;
     edit?: boolean;
   };
+  progression?: {
+    method: 'date' | 'manual';
+    start?: string;
+  };
 }
 
 /**
