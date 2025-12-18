@@ -46,7 +46,7 @@ export const metadata: Metadata = {
     title: APP_NAME,
     description:
       'Connecting people, organizations, and resources to coordinate and grow economic democracy to global scale.',
-    images: ['/LandingScreenPreview.png'],
+    images: ['/LinkPreview.png'],
   },
   robots: {
     googleBot: {
