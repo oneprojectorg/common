@@ -8,7 +8,7 @@ import { UnauthorizedError } from '../../../utils';
 import { getOrgAccessUser } from '../../access';
 import { assertProfile } from '../../assert';
 
-export type TargetProfileAdminContext = {
+type TargetProfileAdminContext = {
   targetProfile: Profile;
   organization: Organization | undefined;
 };

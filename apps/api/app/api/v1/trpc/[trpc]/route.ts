@@ -1,6 +1,6 @@
 import {
   MUTATION_CHANNELS_HEADER,
-  SUBSCRIPTION_CHANNELS_HEADER,
+  QUERY_CHANNELS_HEADER,
   appRouter,
   createContext,
 } from '@op/api';
@@ -10,7 +10,7 @@ import type { NextRequest } from 'next/server';
 
 export const maxDuration = 120;
 
-const EXPOSED_HEADERS = 'x-mutation-channels, x-subscription-channels';
+const EXPOSED_HEADERS = 'x-mutation-channels, x-query-channels';
 
 const allowedOrigins = [
   'https://api-dev.oneproject.tech',
@@ -36,11 +36,11 @@ const handler = async (req: NextRequest) => {
       }
 
       const headers: Record<string, string> = {};
-      const mutationChannels = ctx.getChannels('mutation');
-      const subscriptionChannels = ctx.getChannels('subscription');
+      const mutationChannels = ctx.getMutationChannels();
+      const queryChannels = ctx.getQueryChannels();
 
-      if (subscriptionChannels.length > 0) {
-        headers[SUBSCRIPTION_CHANNELS_HEADER] = subscriptionChannels.join(',');
+      if (queryChannels.length > 0) {
+        headers[QUERY_CHANNELS_HEADER] = queryChannels.join(',');
       }
       if (mutationChannels.length > 0) {
         headers[MUTATION_CHANNELS_HEADER] = mutationChannels.join(',');

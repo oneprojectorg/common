@@ -1,4 +1,4 @@
-import { updateProfileJoinRequest } from '@op/common';
+import { Channels, updateProfileJoinRequest } from '@op/common';
 import { JoinProfileRequestStatus } from '@op/db/schema';
 import { z } from 'zod';
 
@@ -29,6 +29,18 @@ export const updateJoinRequestRouter = router({
         requestId: input.requestId,
         status: input.status,
       });
+
+      // TODO: here we also need to add a channel mutation for the profile/organization membership update
+      ctx.registerMutationChannels([
+        Channels.profileJoinRequest({
+          type: 'source',
+          profileId: result.requestProfileId,
+        }),
+        Channels.profileJoinRequest({
+          type: 'target',
+          profileId: result.targetProfileId,
+        }),
+      ]);
 
       return joinProfileRequestEncoder.parse(result);
     }),

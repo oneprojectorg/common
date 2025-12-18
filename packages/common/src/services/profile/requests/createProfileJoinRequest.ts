@@ -4,18 +4,14 @@ import { User } from '@op/supabase/lib';
 import { eq } from 'drizzle-orm';
 
 import { CommonError, ConflictError, ValidationError } from '../../../utils';
-import {
-  JoinProfileRequestWithProfiles,
-  validateJoinProfileRequestContext,
-} from './validateJoinProfileRequestContext';
-
-export type { JoinProfileRequestWithProfiles };
+import { JoinProfileRequestWithProfiles } from './types';
+import { validateJoinProfileRequestContext } from './validateJoinProfileRequestContext';
 
 /**
  * Creates a new request from one profile to join another profile.
  * Returns the join profile request with associated profiles.
  */
-export const createJoinRequest = async ({
+export const createProfileJoinRequest = async ({
   user,
   requestProfileId,
   targetProfileId,

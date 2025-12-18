@@ -1,4 +1,4 @@
-import { getProfileJoinRequest } from '@op/common';
+import { Channels, getProfileJoinRequest } from '@op/common';
 import { z } from 'zod';
 
 import { joinProfileRequestEncoder } from '../../../encoders/joinProfileRequests';
@@ -25,6 +25,17 @@ export const getJoinRequestRouter = router({
         requestProfileId: input.requestProfileId,
         targetProfileId: input.targetProfileId,
       });
+
+      ctx.registerQueryChannels([
+        Channels.profileJoinRequest({
+          type: 'source',
+          profileId: input.requestProfileId,
+        }),
+        Channels.profileJoinRequest({
+          type: 'target',
+          profileId: input.targetProfileId,
+        }),
+      ]);
 
       if (!result) {
         return null;

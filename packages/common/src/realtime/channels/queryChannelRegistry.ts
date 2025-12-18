@@ -2,7 +2,7 @@ import mitt from 'mitt';
 
 import type { ChannelName } from './channels';
 
-type SubscriptionAddedEvent = {
+type QueryAddedEvent = {
   queryKey: unknown;
   channels: ChannelName[];
 };
@@ -12,16 +12,16 @@ type MutationAddedEvent = {
 };
 
 type RegistryEvents = {
-  'subscription:added': SubscriptionAddedEvent;
+  'query:added': QueryAddedEvent;
   'mutation:added': MutationAddedEvent;
 };
 
 /**
  * Registry for channel-based query tracking.
  *
- * - Tracks channel subscriptions (query → channels mapping)
+ * - Tracks channel queries (query → channels mapping)
  * - Tracks channel mutations
- * - Emits events via mitt when subscriptions/mutations are registered
+ * - Emits events via mitt when queries/mutations are registered
  *
  * Invalidation is handled by consumers subscribing to events.
  */
@@ -55,10 +55,10 @@ class QueryChannelRegistry {
   }
 
   /**
-   * Register a query's subscription to channels.
-   * Emits 'subscription:added' event.
+   * Register a query to channels.
+   * Emits 'query:added' event.
    */
-  registerSubscription(queryKey: unknown, channels: ChannelName[]): void {
+  registerQuery(queryKey: unknown, channels: ChannelName[]): void {
     const key = JSON.stringify(queryKey);
     for (const channel of channels) {
       let keys = this.channelToQueryKeys.get(channel);
@@ -68,7 +68,7 @@ class QueryChannelRegistry {
       }
       keys.add(key);
     }
-    this.emitter.emit('subscription:added', { queryKey, channels });
+    this.emitter.emit('query:added', { queryKey, channels });
   }
 
   /**
@@ -80,7 +80,7 @@ class QueryChannelRegistry {
   }
 
   /**
-   * Subscribe to registry events (subscription:added, mutation:added).
+   * Subscribe to registry events (query:added, mutation:added).
    */
   on<K extends keyof RegistryEvents>(
     event: K,
@@ -93,4 +93,4 @@ class QueryChannelRegistry {
 
 export const queryChannelRegistry = new QueryChannelRegistry();
 
-export type { MutationAddedEvent, RegistryEvents, SubscriptionAddedEvent };
+export type { MutationAddedEvent, QueryAddedEvent, RegistryEvents };

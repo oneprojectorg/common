@@ -15,13 +15,14 @@ export interface TContext {
     value: string;
     options?: SerializeOptions;
   }) => void;
-  /** Sets channels for realtime operations. */
-  setChannels: (
-    type: 'mutation' | 'subscription',
-    channels: ChannelName[],
-  ) => void;
-  /** Gets all accumulated channels across batched procedures. */
-  getChannels: (type: 'mutation' | 'subscription') => ChannelName[];
+  /** Registers channels that a mutation invalidates and publishes invalidation events. */
+  registerMutationChannels: (channels: ChannelName[]) => void;
+  /** Registers channels that a query subscribes to for invalidation. */
+  registerQueryChannels: (channels: ChannelName[]) => void;
+  /** Gets all accumulated mutation channels across batched procedures. */
+  getMutationChannels: () => ChannelName[];
+  /** Gets all accumulated query channels across batched procedures. */
+  getQueryChannels: () => ChannelName[];
   requestId: string;
   time: number;
   ip: string | null;

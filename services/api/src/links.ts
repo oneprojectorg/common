@@ -7,10 +7,7 @@ import { observable } from '@trpc/server/observable';
 import { readSSROnlySecret } from 'ssr-only-secrets';
 import superjson from 'superjson';
 
-import {
-  MUTATION_CHANNELS_HEADER,
-  SUBSCRIPTION_CHANNELS_HEADER,
-} from './constants';
+import { MUTATION_CHANNELS_HEADER, QUERY_CHANNELS_HEADER } from './constants';
 import type { AppRouter } from './routers';
 
 /** @see https://trpc.io/docs/v11/getQueryKey */
@@ -90,7 +87,7 @@ function createFetchWithSSRCookies(encryptedCookies?: string) {
 /**
  * Custom link that registers queries and mutations with the channel registry.
  *
- * For queries: Registers the query key with subscription channels from x-subscription-channels header
+ * For queries: Registers the query key with query channels from x-query-channels header
  * For mutations: Registers mutation channels from x-mutation-channels header (triggers invalidation via registry)
  */
 function createChannelRegistrationLink(): TRPCLink<AppRouter> {
@@ -112,15 +109,15 @@ function createChannelRegistrationLink(): TRPCLink<AppRouter> {
               const response = value.context.response as Response;
 
               if (op.type === 'query') {
-                // Register query's subscription channels
-                const subscriptionChannelsHeader = response.headers.get(
-                  SUBSCRIPTION_CHANNELS_HEADER,
+                // Register query's channels for invalidation
+                const queryChannelsHeader = response.headers.get(
+                  QUERY_CHANNELS_HEADER,
                 );
-                if (subscriptionChannelsHeader) {
-                  const channels = subscriptionChannelsHeader
+                if (queryChannelsHeader) {
+                  const channels = queryChannelsHeader
                     .split(',')
                     .filter(Boolean) as ChannelName[];
-                  queryChannelRegistry.registerSubscription(queryKey, channels);
+                  queryChannelRegistry.registerQuery(queryKey, channels);
                 }
               } else if (op.type === 'mutation') {
                 // Look up and invalidate queries for mutation channels
@@ -128,7 +125,6 @@ function createChannelRegistrationLink(): TRPCLink<AppRouter> {
                   MUTATION_CHANNELS_HEADER,
                 );
                 if (mutationChannelsHeader) {
-                  // TODO: consider zod. needed?
                   const channels = mutationChannelsHeader
                     .split(',')
                     .filter(Boolean) as ChannelName[];

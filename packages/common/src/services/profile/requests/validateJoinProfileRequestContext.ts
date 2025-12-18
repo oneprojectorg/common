@@ -1,8 +1,6 @@
 import { db } from '@op/db/client';
 import {
   EntityType,
-  type JoinProfileRequest,
-  type Profile,
   organizationUsers,
   organizations,
   profiles,
@@ -11,18 +9,7 @@ import { User } from '@op/supabase/lib';
 import { and, eq } from 'drizzle-orm';
 
 import { UnauthorizedError, ValidationError } from '../../../utils';
-
-export type JoinProfileRequestWithProfiles = JoinProfileRequest & {
-  requestProfile: Profile;
-  targetProfile: Profile;
-};
-
-export type JoinProfileRequestContext = {
-  requestProfile: Profile;
-  targetProfile: Profile;
-  existingRequest: JoinProfileRequest | undefined;
-  existingMembership: boolean;
-};
+import { JoinProfileRequestContext } from './types';
 
 /**
  * Fetches and validates the context needed for join profile request operations.

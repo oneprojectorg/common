@@ -44,7 +44,6 @@ const RequestMembershipButtonSuspense = ({
 }) => {
   const t = useTranslations();
   const { user } = useUser();
-  const utils = trpc.useUtils();
   const [isPending, startTransition] = useTransition();
 
   const currentProfileId = user.currentProfile?.id;
@@ -81,11 +80,6 @@ const RequestMembershipButtonSuspense = ({
             orgName: profile.profile.name,
           }),
         });
-
-        await utils.profile.getJoinRequest.invalidate({
-          requestProfileId: currentProfileId,
-          targetProfileId: profile.profile.id,
-        });
       } catch (error) {
         toast.error({
           message: t('Failed to send membership request'),
@@ -107,11 +101,6 @@ const RequestMembershipButtonSuspense = ({
 
         toast.success({
           message: t('Membership request cancelled'),
-        });
-
-        await utils.profile.getJoinRequest.invalidate({
-          requestProfileId: currentProfileId,
-          targetProfileId: profile.profile.id,
         });
       } catch (error) {
         toast.error({
