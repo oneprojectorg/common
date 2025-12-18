@@ -6,7 +6,6 @@
  *
  * Legacy format (states, stateId) is in legacyDecision.ts
  */
-
 import {
   ProcessStatus,
   ProposalStatus,

@@ -10,8 +10,8 @@ import {
 import type { User } from '@op/supabase/lib';
 
 import {
-  createInstanceDataFromTemplate,
   type PhaseSchedule,
+  createInstanceDataFromTemplate,
 } from '../../lib/voting-schemas/instanceData';
 import type { VotingSchemaDefinition } from '../../lib/voting-schemas/types';
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';

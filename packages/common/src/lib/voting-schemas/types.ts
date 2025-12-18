@@ -2,7 +2,6 @@
  * Voting schema definition types.
  * Designed to work directly with RJSF.
  */
-
 import type { JSONSchema7 } from 'json-schema';
 
 import type { SelectionPipeline } from '../../services/decision/selectionPipeline/types';

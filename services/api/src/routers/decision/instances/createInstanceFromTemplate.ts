@@ -39,7 +39,10 @@ export const createInstanceFromTemplateRouter = router({
       const { user, logger } = ctx;
 
       try {
-        const instance = await createInstanceFromTemplate({ data: input, user });
+        const instance = await createInstanceFromTemplate({
+          data: input,
+          user,
+        });
 
         logger.info('Process instance created from template', {
           userId: user.id,
@@ -59,8 +62,7 @@ export const createInstanceFromTemplateRouter = router({
 
         if (error instanceof UnauthorizedError) {
           throw new TRPCError({
-            message:
-              'You do not have permission to create process instances',
+            message: 'You do not have permission to create process instances',
             code: 'UNAUTHORIZED',
           });
         }

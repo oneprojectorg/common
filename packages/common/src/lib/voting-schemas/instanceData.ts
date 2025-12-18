@@ -1,7 +1,6 @@
 /**
  * Instance data creation helpers for VotingSchemaDefinition templates.
  */
-
 import type { VotingSchemaDefinition } from './types';
 
 export interface PhaseSchedule {
