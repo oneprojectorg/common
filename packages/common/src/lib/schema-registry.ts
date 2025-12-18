@@ -1,11 +1,4 @@
-/**
- * Runtime schema processing for voting configuration.
- *
- * This extracts voting config from process instance data at runtime.
- * For RJSF form schemas, see ./voting-schemas/
- */
-
-import type {
+import {
   DecisionProcessSchema,
   ProposalConfig,
   SchemaType,
@@ -28,6 +21,25 @@ export interface SchemaHandler<
   extractProposalConfig: (data: T) => ProposalConfig;
   validateSchema: (data: unknown) => SchemaValidationResult;
 }
+
+export class SchemaRegistry {
+  private handlers = new Map<string, SchemaHandler>();
+  private defaultHandler: SchemaHandler;
+
+  constructor() {
+    this.defaultHandler = this.createDefaultHandler();
+    this.registerHandler(this.defaultHandler);
+  }
+
+  registerHandler<T extends DecisionProcessSchema>(
+    handler: SchemaHandler<T>,
+  ): void {
+    this.handlers.set(handler.schemaType, handler as unknown as SchemaHandler);
+  }
+
+  getHandler(schemaType: string): SchemaHandler | null {
+    return this.handlers.get(schemaType) || null;
+  }
 
   getHandlerOrDefault(schemaType: string): SchemaHandler {
     return this.handlers.get(schemaType) || this.defaultHandler;
@@ -83,91 +95,6 @@ export interface SchemaHandler<
   }
 
   private createDefaultHandler(): SchemaHandler {
-    return {
-      schemaType: 'default',
-      validate: isValidDecisionProcessSchema,
-      extractVotingConfig: (data: DecisionProcessSchema) =>
-        extractVotingConfig(data, 'default'),
-      extractProposalConfig: (data: DecisionProcessSchema) =>
-        extractProposalConfig(data, 'default'),
-      validateSchema: validateSchemaWithZod,
-    };
-  }
-}
-
-/**
- * @deprecated Use VotingSchemaRegistry from './voting-schemas' instead
- */
-export class SchemaRegistry {
-  private handlers = new Map<string, SchemaHandler>();
-  private defaultHandler: SchemaHandler;
-
-  constructor() {
-    this.defaultHandler = this.createDefaultHandler();
-    this.registerHandler(this.defaultHandler);
-  }
-
-  registerHandler<T extends DecisionProcessSchema>(
-    handler: SchemaHandler<T>,
-  ): void {
-    this.handlers.set(handler.schemaType, handler as unknown as SchemaHandler);
-  }
-
-  getHandler(schemaType: string): SchemaHandler | null {
-    return this.handlers.get(schemaType) || null;
-  }
-
-  getHandlerOrDefault(schemaType: string): SchemaHandler {
-    return this.handlers.get(schemaType) || this.defaultHandler;
-  }
-
-  getAllSchemaTypes(): string[] {
-    return votingSchemaRegistry.getAllSchemaTypes();
-  }
-
-  detectSchemaType(data: unknown): string {
-    return votingSchemaRegistry.detectSchemaType(data);
-  }
-
-  processSchema(data: unknown): {
-    schemaType: string;
-    isValid: boolean;
-    votingConfig?: VotingConfig;
-    proposalConfig?: ProposalConfig;
-    validationResult: SchemaValidationResult;
-  } {
-    return toOldFormat(processVotingSchema(data));
-  }
-
-  /**
-   * @deprecated Use registerVotingSchema() with a VotingSchemaDefinition instead
-   */
-  registerHandler<T extends DecisionProcessSchema>(
-    _handler: SchemaHandler<T>,
-  ): void {
-    console.warn(
-      'SchemaRegistry.registerHandler() is deprecated. Use registerVotingSchema() with a JSON schema definition instead.',
-    );
-  }
-
-  /**
-   * @deprecated
-   */
-  getHandler(_schemaType: string): SchemaHandler | null {
-    console.warn(
-      'SchemaRegistry.getHandler() is deprecated. Use votingSchemaRegistry.getSchema() instead.',
-    );
-    return null;
-  }
-
-  /**
-   * @deprecated
-   */
-  getHandlerOrDefault(_schemaType: string): SchemaHandler {
-    console.warn(
-      'SchemaRegistry.getHandlerOrDefault() is deprecated. Use votingSchemaRegistry.getSchemaOrDefault() instead.',
-    );
-    // Return a minimal handler that won't break existing code
     return {
       schemaType: 'default',
       validate: isValidDecisionProcessSchema,
@@ -268,9 +195,9 @@ export const advancedSchemaHandler: SchemaHandler = {
 
 export const globalSchemaRegistry = new SchemaRegistry();
 
-/**
- * @deprecated Use votingSchemaRegistry from './voting-schemas' instead
- */
+globalSchemaRegistry.registerHandler(simpleSchemaHandler);
+globalSchemaRegistry.registerHandler(advancedSchemaHandler);
+
 export function getSchemaRegistry(): SchemaRegistry {
   return globalSchemaRegistry;
 }
@@ -281,10 +208,6 @@ export function registerCustomSchema<T extends DecisionProcessSchema>(
   globalSchemaRegistry.registerHandler(handler);
 }
 
-/**
- * Process a decision process schema.
- * This is the main entry point - delegates to the JSON-based system.
- */
 export function processDecisionProcessSchema(data: unknown) {
   return globalSchemaRegistry.processSchema(data);
 }
