@@ -23,7 +23,7 @@ const meta: OpenApiMeta = {
     path: '/decision/instance/from-template',
     protect: true,
     tags: ['decision'],
-    summary: 'Create process instance from a VotingSchemaDefinition template',
+    summary: 'Create process instance from a DecisionSchemaDefinition template',
   },
 };
 

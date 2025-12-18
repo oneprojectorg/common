@@ -1,15 +1,15 @@
 /**
- * Voting schema definitions.
+ * Decision schema definitions.
  * Each schema can be used directly with RJSF.
  */
 import type { SelectionPipeline } from '../../services/decision/selectionPipeline/types';
-import type { PhaseDefinition, VotingSchemaDefinition } from './types';
+import type { DecisionSchemaDefinition, PhaseDefinition } from './types';
 
 /**
  * Simple voting with linear phases:
  * submission → review → voting → results
  */
-export const simpleVoting: VotingSchemaDefinition = {
+export const simpleVoting: DecisionSchemaDefinition = {
   id: 'simple',
   version: '1.0.0',
   name: 'Simple Voting',
@@ -114,6 +114,6 @@ export const simpleVoting: VotingSchemaDefinition = {
   ] satisfies PhaseDefinition[],
 };
 
-export const votingTemplates: Record<string, VotingSchemaDefinition> = {
+export const decisionTemplates: Record<string, DecisionSchemaDefinition> = {
   simple: simpleVoting,
 };

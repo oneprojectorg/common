@@ -12,8 +12,8 @@ import type { User } from '@op/supabase/lib';
 import {
   type PhaseSchedule,
   createInstanceDataFromTemplate,
-} from '../../lib/voting-schemas/instanceData';
-import type { VotingSchemaDefinition } from '../../lib/voting-schemas/types';
+} from '../../lib/decision-schemas/instanceData';
+import type { DecisionSchemaDefinition } from '../../lib/decision-schemas/types';
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { generateUniqueProfileSlug } from '../profile/utils';
 
@@ -27,7 +27,7 @@ export interface CreateInstanceFromTemplateInput {
 }
 
 /**
- * Creates a decision process instance from a VotingSchemaDefinition template.
+ * Creates a decision process instance from a DecisionSchemaDefinition template.
  * This creates both a DECISION profile and the process instance.
  */
 export async function createInstanceFromTemplate({
@@ -58,12 +58,12 @@ export async function createInstanceFromTemplate({
     throw new NotFoundError('Template not found');
   }
 
-  const template = process.processSchema as VotingSchemaDefinition;
+  const template = process.processSchema as DecisionSchemaDefinition;
 
-  // Validate that this is a VotingSchemaDefinition (has phases)
+  // Validate that this is a DecisionSchemaDefinition (has phases)
   if (!template.phases || !Array.isArray(template.phases)) {
     throw new CommonError(
-      'Invalid template: expected VotingSchemaDefinition with phases',
+      'Invalid template: expected DecisionSchemaDefinition with phases',
     );
   }
 
