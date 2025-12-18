@@ -3,24 +3,24 @@
  */
 import type { DecisionSchemaDefinition } from './types';
 
-export interface PhaseSchedule {
+export interface PhaseInstanceData {
   phaseId: string;
-  plannedStartDate?: string;
-  plannedEndDate?: string;
-}
-
-export interface CreateInstanceDataInput {
-  template: DecisionSchemaDefinition;
-  budget?: number;
-  phases?: PhaseSchedule[];
+  rules: {
+    proposals?: { submit?: boolean; edit?: boolean };
+    voting?: { submit?: boolean; edit?: boolean };
+    progression?: { method: 'date' | 'manual'; start?: string };
+  };
 }
 
 /**
  * Creates instance data from a DecisionSchemaDefinition template.
  * This generates the instanceData object that will be stored in the processInstances table.
  */
-export function createInstanceDataFromTemplate(input: CreateInstanceDataInput) {
-  const { template, budget, phases } = input;
+export function createInstanceDataFromTemplate(input: {
+  template: DecisionSchemaDefinition;
+  budget?: number;
+}) {
+  const { template, budget } = input;
 
   const firstPhase = template.phases[0];
   if (!firstPhase) {
@@ -29,13 +29,12 @@ export function createInstanceDataFromTemplate(input: CreateInstanceDataInput) {
 
   return {
     budget,
-    hideBudget: template.config?.hideBudget ?? false,
     currentPhaseId: firstPhase.id,
     fieldValues: {},
-    phases: template.phases.map((phase, index) => ({
+    config: template.config,
+    phases: template.phases.map((phase) => ({
       phaseId: phase.id,
-      plannedStartDate: phases?.[index]?.plannedStartDate,
-      plannedEndDate: phases?.[index]?.plannedEndDate,
+      rules: phase.rules,
     })),
   };
 }
