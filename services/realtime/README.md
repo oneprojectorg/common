@@ -24,8 +24,7 @@ import { Channels, realtime } from '@op/realtime/server';
 
 // Publish to user channel
 await realtime.publish(Channels.user(userId), {
-  type: 'query-invalidation',
-  queryKey: ['user', 'notifications'],
+  mutationId: 'mutation-id',
 });
 ```
 

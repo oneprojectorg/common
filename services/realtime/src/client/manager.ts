@@ -8,6 +8,11 @@ import {
 
 import { type RealtimeMessage, realtimeMessageSchema } from '../schemas';
 
+export type RealtimeHandler = (event: {
+  channel: ChannelName;
+  data: RealtimeMessage;
+}) => void;
+
 export interface RealtimeConfig {
   wsUrl: string;
   getToken: () => Promise<string>;
@@ -20,10 +25,7 @@ export class RealtimeManager {
   private static instance: RealtimeManager | null = null;
   private centrifuge: Centrifuge | null = null;
   private subscriptions = new Map<ChannelName, Subscription>();
-  private channelListeners = new Map<
-    ChannelName,
-    Set<(data: RealtimeMessage) => void>
-  >();
+  private channelListeners = new Map<ChannelName, Set<RealtimeHandler>>();
   private connectionListeners = new Set<(isConnected: boolean) => void>();
   private config: RealtimeConfig | null = null;
 
@@ -88,10 +90,7 @@ export class RealtimeManager {
    * Subscribe to a channel with a message handler
    * Returns an unsubscribe function to clean up the subscription
    */
-  subscribe(
-    channel: ChannelName,
-    handler: (data: RealtimeMessage) => void,
-  ): () => void {
+  subscribe(channel: ChannelName, handler: RealtimeHandler): () => void {
     this.ensureConnected();
 
     if (!this.centrifuge) {
@@ -136,7 +135,9 @@ export class RealtimeManager {
         // Notify all listeners for this channel
         const channelListeners = this.channelListeners.get(channel);
         if (channelListeners) {
-          channelListeners.forEach((listener) => listener(data));
+          channelListeners.forEach((listener) =>
+            listener({ channel: ctx.channel as ChannelName, data }),
+          );
         }
       });
 
@@ -161,10 +162,7 @@ export class RealtimeManager {
   /**
    * Unsubscribe a specific handler from a channel
    */
-  private unsubscribe(
-    channel: ChannelName,
-    handler: (data: RealtimeMessage) => void,
-  ): void {
+  private unsubscribe(channel: ChannelName, handler: RealtimeHandler): void {
     const listeners = this.channelListeners.get(channel);
     if (!listeners) {
       return;
