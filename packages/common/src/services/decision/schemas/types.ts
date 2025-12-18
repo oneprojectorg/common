@@ -2,10 +2,14 @@
  * Decision schema definition types.
  * Designed to work directly with RJSF.
  */
-import type { UiSchema } from '@rjsf/utils';
 import type { JSONSchema7 } from 'json-schema';
 
 import type { SelectionPipeline } from '../selectionPipeline/types';
+
+/**
+ * RJSF UI Schema
+ */
+export type UiSchema = Record<string, unknown>;
 
 /**
  * Phase behavior rules
@@ -19,7 +23,7 @@ export interface PhaseRules {
     submit?: boolean;
     edit?: boolean;
   };
-  advancement?: {
+  progression?: {
     method: 'date' | 'manual';
     start?: string;
   };
@@ -67,5 +71,5 @@ export interface DecisionSchemaDefinition {
   config?: ProcessConfig;
 
   /** Phase definitions */
-  phases: [PhaseDefinition, ...PhaseDefinition[]];
+  phases: PhaseDefinition[];
 }

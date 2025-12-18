@@ -2,7 +2,8 @@
  * Decision schema definitions.
  * Each schema can be used directly with RJSF.
  */
-import type { DecisionSchemaDefinition } from './types';
+import type { SelectionPipeline } from '../../services/decision/selectionPipeline/types';
+import type { DecisionSchemaDefinition, PhaseDefinition } from './types';
 
 /**
  * Simple voting with linear phases:
@@ -24,22 +25,22 @@ export const simpleVoting: DecisionSchemaDefinition = {
       rules: {
         proposals: { submit: true },
         voting: { submit: false },
-        advancement: { method: 'date', start: '2026-01-01' },
+        progression: { method: 'date', start: '2026-01-01' },
       },
       // User-configurable settings, available as variables in selectionPipeline
       settings: {
         type: 'object',
         properties: {
-          maxProposalsPerMember: {
+          maxProposalsPerElector: {
             type: 'number',
-            title: 'Maximum Proposals Per Member',
+            title: 'Maximum Proposals Per Elector',
             description: 'How many proposals can each member submit?',
             minimum: 1,
             default: 3,
           },
         },
         ui: {
-          maxProposalsPerMember: {
+          maxProposalsPerElector: {
             'ui:widget': 'number',
             'ui:placeholder': '3',
           },
@@ -53,7 +54,7 @@ export const simpleVoting: DecisionSchemaDefinition = {
       rules: {
         proposals: { submit: false },
         voting: { submit: false },
-        advancement: { method: 'date', start: '2026-01-02' },
+        progression: { method: 'date', start: '2026-01-02' },
       },
     },
     {
@@ -63,7 +64,7 @@ export const simpleVoting: DecisionSchemaDefinition = {
       rules: {
         proposals: { submit: false },
         voting: { submit: true },
-        advancement: { method: 'date', start: '2026-01-03' },
+        progression: { method: 'date', start: '2026-01-03' },
       },
       // Phase-specific settings
       settings: {
@@ -99,10 +100,10 @@ export const simpleVoting: DecisionSchemaDefinition = {
             id: 'limit-by-votes',
             type: 'limit',
             name: 'Take top N (based on maxVotesPerMember config)',
-            count: { variable: 'maxVotesPerMember' },
+            count: { variable: '$maxVotesPerMember' },
           },
         ],
-      },
+      } satisfies SelectionPipeline,
     },
     {
       id: 'results',
@@ -111,10 +112,10 @@ export const simpleVoting: DecisionSchemaDefinition = {
       rules: {
         proposals: { submit: false },
         voting: { submit: false },
-        advancement: { method: 'date', start: '2026-01-04' },
+        progression: { method: 'date', start: '2026-01-04' },
       },
     },
-  ],
+  ] satisfies PhaseDefinition[],
 };
 
 export const decisionTemplates: Record<string, DecisionSchemaDefinition> = {
