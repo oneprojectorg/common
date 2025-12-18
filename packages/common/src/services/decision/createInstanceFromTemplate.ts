@@ -16,19 +16,20 @@ import { getTemplate } from './getTemplate';
 /**
  * Creates a decision process instance from a DecisionSchemaDefinition template.
  */
-export async function createInstanceFromTemplate({
-  data,
+export const createInstanceFromTemplate = async ({
+  templateId,
+  name,
+  description,
+  budget,
   user,
 }: {
-  data: {
-    /** ID of the seeded template in decisionProcesses */
-    templateId: string;
-    name: string;
-    description?: string;
-    budget?: number;
-  };
+  /** ID of the seeded template in decisionProcesses */
+  templateId: string;
+  name: string;
+  description?: string;
+  budget?: number;
   user: User;
-}) {
+}) => {
   const dbUser = await assertUserByAuthId(
     user.id,
     new UnauthorizedError('User must be authenticated'),
@@ -40,17 +41,17 @@ export async function createInstanceFromTemplate({
     throw new UnauthorizedError('User must have an active profile');
   }
 
-  const template = await getTemplate(data.templateId);
+  const template = await getTemplate(templateId);
 
   const instanceData = createInstanceDataFromTemplate({
     template,
-    budget: data.budget,
+    budget,
   });
 
   const instance = await db.transaction(async (tx) => {
     // Create a DECISION profile for the instance
     const slug = await generateUniqueProfileSlug({
-      name: `decision-${data.name}`,
+      name: `decision-${name}`,
       db: tx,
     });
 
@@ -58,7 +59,7 @@ export async function createInstanceFromTemplate({
       .insert(profiles)
       .values({
         type: EntityType.DECISION,
-        name: data.name,
+        name,
         slug,
       })
       .returning();
@@ -71,9 +72,9 @@ export async function createInstanceFromTemplate({
     const [newInstance] = await tx
       .insert(processInstances)
       .values({
-        processId: data.templateId, // this naming has shifted and might need to be changed in the DB eventually
+        processId: templateId, // this naming has shifted and might need to be changed in the DB eventually
         name: '', // TODO: we will remove this constraint shortly from the DB
-        description: data.description,
+        description,
         instanceData,
         currentStateId: template.phases[0].id,
         ownerProfileId,
@@ -90,4 +91,4 @@ export async function createInstanceFromTemplate({
   });
 
   return instance;
-}
+};

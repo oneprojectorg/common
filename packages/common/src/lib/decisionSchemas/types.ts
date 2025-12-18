@@ -3,13 +3,9 @@
  * Designed to work directly with RJSF.
  */
 import type { JSONSchema7 } from 'json-schema';
+import type { UiSchema } from '@rjsf/utils';
 
 import type { SelectionPipeline } from '../../services/decision/selectionPipeline/types';
-
-/**
- * RJSF UI Schema
- */
-export type UiSchema = Record<string, unknown>;
 
 /**
  * Phase behavior rules

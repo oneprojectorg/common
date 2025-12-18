@@ -6,6 +6,15 @@ settings:
 
 catalogs:
   default:
+    '@rjsf/core':
+      specifier: ^5.24.12
+      version: 5.24.12
+    '@rjsf/utils':
+      specifier: ^5.24.12
+      version: 5.24.12
+    '@rjsf/validator-ajv8':
+      specifier: ^5.24.12
+      version: 5.24.12
     next:
       specifier: 15.3.8
       version: 15.3.8
@@ -448,13 +457,13 @@ importers:
         specifier: ^1.0.0
         version: 1.0.0(next@15.3.8(@babel/core@7.26.0)(@opentelemetry/api@1.9.0)(babel-plugin-react-compiler@19.0.0-beta-e1e972c-20250221)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.85.1))
       '@rjsf/core':
-        specifier: ^5.24.12
+        specifier: 'catalog:'
         version: 5.24.12(@rjsf/utils@5.24.12(react@19.2.1))(react@19.2.1)
       '@rjsf/utils':
-        specifier: ^5.24.12
+        specifier: 'catalog:'
         version: 5.24.12(react@19.2.1)
       '@rjsf/validator-ajv8':
-        specifier: ^5.24.12
+        specifier: 'catalog:'
         version: 5.24.12(@rjsf/utils@5.24.12(react@19.2.1))
       '@svgr/plugin-jsx':
         specifier: ^8.1.0
@@ -661,6 +670,9 @@ importers:
       '@op/events':
         specifier: workspace:*
         version: link:../../services/events
+      '@rjsf/utils':
+        specifier: 'catalog:'
+        version: 5.24.12(react@19.2.1)
       '@vercel/functions':
         specifier: ^2.1.0
         version: 2.1.0

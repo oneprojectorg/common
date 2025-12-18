@@ -35,7 +35,7 @@ export const createInstanceFromTemplateRouter = router({
 
       try {
         const instance = await createInstanceFromTemplate({
-          data: input,
+          ...input,
           user,
         });
 
