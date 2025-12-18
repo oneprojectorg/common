@@ -128,7 +128,9 @@ const legacyInstanceDataEncoder = z.object({
 });
 
 // Decision Process Encoder
-export const legacyDecisionProcessEncoder = createSelectSchema(decisionProcesses)
+export const legacyDecisionProcessEncoder = createSelectSchema(
+  decisionProcesses,
+)
   .pick({
     id: true,
     name: true,
@@ -162,7 +164,9 @@ export const legacyProcessInstanceEncoder = createSelectSchema(processInstances)
   });
 
 // Proposal Attachment Join Table Encoder
-export const legacyProposalAttachmentEncoder = createSelectSchema(proposalAttachments)
+export const legacyProposalAttachmentEncoder = createSelectSchema(
+  proposalAttachments,
+)
   .pick({
     id: true,
     proposalId: true,
@@ -277,7 +281,8 @@ export const legacyCreateProcessInputSchema = z.object({
   processSchema: legacyProcessSchemaEncoder,
 });
 
-export const legacyUpdateProcessInputSchema = legacyCreateProcessInputSchema.partial();
+export const legacyUpdateProcessInputSchema =
+  legacyCreateProcessInputSchema.partial();
 
 export const legacyCreateInstanceInputSchema = z.object({
   processId: z.uuid(),
@@ -403,5 +408,9 @@ export const legacyDecisionProfileFilterSchema = z.object({
 });
 
 // Type exports
-export type LegacyDecisionProfile = z.infer<typeof legacyDecisionProfileEncoder>;
-export type LegacyDecisionProfileList = z.infer<typeof legacyDecisionProfileListEncoder>;
+export type LegacyDecisionProfile = z.infer<
+  typeof legacyDecisionProfileEncoder
+>;
+export type LegacyDecisionProfileList = z.infer<
+  typeof legacyDecisionProfileListEncoder
+>;
