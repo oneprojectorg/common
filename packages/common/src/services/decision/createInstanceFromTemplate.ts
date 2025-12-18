@@ -12,8 +12,8 @@ import type { User } from '@op/supabase/lib';
 import {
   type PhaseSchedule,
   createInstanceDataFromTemplate,
-} from '../../lib/decision-schemas/instanceData';
-import type { DecisionSchemaDefinition } from '../../lib/decision-schemas/types';
+} from '../../lib/decisionSchemas/instanceData';
+import type { DecisionSchemaDefinition } from '../../lib/decisionSchemas/types';
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { generateUniqueProfileSlug } from '../profile/utils';
 
