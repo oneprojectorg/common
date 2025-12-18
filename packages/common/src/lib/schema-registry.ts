@@ -29,58 +29,70 @@ export interface SchemaHandler<
   validateSchema: (data: unknown) => SchemaValidationResult;
 }
 
-/**
- * Process schema data and extract voting configuration.
- */
-export function processDecisionProcessSchema(data: unknown): {
-  schemaType: string;
-  isValid: boolean;
-  votingConfig?: VotingConfig;
-  proposalConfig?: ProposalConfig;
-  validationResult: SchemaValidationResult;
-} {
-  if (!isValidSchemaData(data)) {
-    return {
-      schemaType: 'invalid',
-      isValid: false,
-      validationResult: {
+  getHandlerOrDefault(schemaType: string): SchemaHandler {
+    return this.handlers.get(schemaType) || this.defaultHandler;
+  }
+
+  getAllSchemaTypes(): string[] {
+    return Array.from(this.handlers.keys());
+  }
+
+  detectSchemaType(data: unknown): string {
+    if (typeof data === 'object' && data !== null && 'schemaType' in data) {
+      return String((data as any).schemaType);
+    }
+
+    for (const [schemaType, handler] of this.handlers) {
+      if (handler.validate(data)) {
+        return schemaType;
+      }
+    }
+
+    return 'unknown';
+  }
+
+  processSchema(data: unknown): {
+    schemaType: string;
+    isValid: boolean;
+    votingConfig?: VotingConfig;
+    proposalConfig?: ProposalConfig;
+    validationResult: SchemaValidationResult;
+  } {
+    const schemaType = this.detectSchemaType(data);
+    const handler = this.getHandlerOrDefault(schemaType);
+
+    const validationResult = handler.validateSchema(data);
+
+    if (!validationResult.isValid || !handler.validate(data)) {
+      return {
+        schemaType,
         isValid: false,
-        schemaType: 'invalid',
-        errors: ['Invalid schema data'],
-        supportedProperties: [],
-      },
+        validationResult,
+      };
+    }
+
+    const typedData = data as DecisionProcessSchema;
+
+    return {
+      schemaType,
+      isValid: true,
+      votingConfig: handler.extractVotingConfig(typedData),
+      proposalConfig: handler.extractProposalConfig(typedData),
+      validationResult,
     };
   }
 
-  const schemaType = data.schemaType || 'simple';
-
-  return {
-    schemaType,
-    isValid: true,
-    votingConfig: {
-      proposals: data.proposals,
-      voting: data.voting,
-      maxVotesPerElector: data.instanceData.maxVotesPerElector,
-      schemaType,
-    },
-    proposalConfig: {
-      requiredFields: ['title', 'description'],
-      optionalFields: ['amount', 'category'],
-      fieldConstraints: {
-        title: { type: 'string', minLength: 1, maxLength: 200 },
-        description: { type: 'string', minLength: 1, maxLength: 5000 },
-        amount: { type: 'number', min: 0 },
-      },
-      schemaType,
-      proposals: data.proposals,
-    },
-    validationResult: {
-      isValid: true,
-      schemaType,
-      errors: [],
-      supportedProperties: ['proposals', 'voting', 'instanceData'],
-    },
-  };
+  private createDefaultHandler(): SchemaHandler {
+    return {
+      schemaType: 'default',
+      validate: isValidDecisionProcessSchema,
+      extractVotingConfig: (data: DecisionProcessSchema) =>
+        extractVotingConfig(data, 'default'),
+      extractProposalConfig: (data: DecisionProcessSchema) =>
+        extractProposalConfig(data, 'default'),
+      validateSchema: validateSchemaWithZod,
+    };
+  }
 }
 
 /**

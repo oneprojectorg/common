@@ -1,10 +1,10 @@
 import { z } from 'zod';
 
 export interface DecisionProcessSchema {
-  proposals: { submit: boolean };
-  voting: { submit: boolean };
+  allowProposals: boolean;
+  allowDecisions: boolean;
   instanceData: {
-    maxVotesPerElector: number;
+    maxVotesPerMember: number;
     [key: string]: unknown;
   };
   [key: string]: unknown;
@@ -12,20 +12,20 @@ export interface DecisionProcessSchema {
 
 export const DecisionProcessSchemaBase = z
   .object({
-    proposals: z.object({ submit: z.boolean() }),
-    voting: z.object({ submit: z.boolean() }),
+    allowProposals: z.boolean(),
+    allowDecisions: z.boolean(),
     instanceData: z
       .object({
-        maxVotesPerElector: z.int().min(0),
+        maxVotesPerMember: z.int().min(0),
       })
       .and(z.record(z.string(), z.unknown())),
   })
   .and(z.record(z.string(), z.unknown()));
 
 export interface VotingConfig {
-  proposals: { submit: boolean };
-  voting: { submit: boolean };
-  maxVotesPerElector: number;
+  allowProposals: boolean;
+  allowDecisions: boolean;
+  maxVotesPerMember: number;
   schemaType: string;
   additionalConfig?: Record<string, unknown>;
 }
@@ -45,7 +45,7 @@ export interface ProposalConfig {
     }
   >;
   schemaType: string;
-  proposals: { submit: boolean };
+  allowProposals: boolean;
 }
 
 export interface SchemaValidationResult {
