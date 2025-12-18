@@ -219,7 +219,7 @@ export const decisionListNewEncoder = z.object({
 // =============================================================================
 
 export const createInstanceFromTemplateInputSchema = z.object({
-  processId: z.string().uuid(),
+  templateId: z.string().uuid(),
   name: z.string().min(3).max(256),
   description: z.string().optional(),
   budget: z.number().optional(),

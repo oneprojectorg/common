@@ -71,5 +71,5 @@ export interface DecisionSchemaDefinition {
   config?: ProcessConfig;
 
   /** Phase definitions */
-  phases: PhaseDefinition[];
+  phases: [PhaseDefinition, ...PhaseDefinition[]];
 }
