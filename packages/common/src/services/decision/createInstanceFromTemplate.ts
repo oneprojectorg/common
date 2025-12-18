@@ -5,132 +5,108 @@ import {
   decisionProcesses,
   processInstances,
   profiles,
-  users,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
-import {
-  type PhaseSchedule,
-  createInstanceDataFromTemplate,
-} from '../../lib/decisionSchemas/instanceData';
+import { createInstanceDataFromTemplate } from '../../lib/decisionSchemas/instanceData';
 import type { DecisionSchemaDefinition } from '../../lib/decisionSchemas/types';
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
+import { assertUserByAuthId } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
-
-export interface CreateInstanceFromTemplateInput {
-  /** ID of the seeded template in decisionProcesses */
-  processId: string;
-  name: string;
-  description?: string;
-  budget?: number;
-  phases?: PhaseSchedule[];
-}
 
 /**
  * Creates a decision process instance from a DecisionSchemaDefinition template.
- * This creates both a DECISION profile and the process instance.
  */
 export async function createInstanceFromTemplate({
   data,
   user,
 }: {
-  data: CreateInstanceFromTemplateInput;
+  data: {
+    /** ID of the seeded template in decisionProcesses */
+    templateId: string;
+    name: string;
+    description?: string;
+    budget?: number;
+  };
   user: User;
 }) {
-  if (!user) {
-    throw new UnauthorizedError('User must be authenticated');
-  }
-
-  // Get user's profile
-  const dbUser = await db.query.users.findFirst({
-    where: eq(users.authUserId, user.id),
-  });
-  const ownerProfileId = dbUser?.currentProfileId ?? dbUser?.profileId;
-  if (!dbUser || !ownerProfileId) {
+  const dbUser = await assertUserByAuthId(
+    user.id,
+    new UnauthorizedError('User must be authenticated'),
+  );
+  const ownerProfileId = dbUser.currentProfileId ?? dbUser.profileId;
+  if (!ownerProfileId) {
     throw new UnauthorizedError('User must have an active profile');
   }
 
-  // Get the template/process
-  const process = await db.query.decisionProcesses.findFirst({
-    where: eq(decisionProcesses.id, data.processId),
+  // Get the template
+  const template = await db.query.decisionProcesses.findFirst({
+    where: eq(decisionProcesses.id, data.templateId),
   });
-  if (!process) {
+  if (!template) {
     throw new NotFoundError('Template not found');
   }
 
-  const template = process.processSchema as DecisionSchemaDefinition;
+  const templateSchema = template.processSchema as DecisionSchemaDefinition;
 
   // Validate that this is a DecisionSchemaDefinition (has phases)
-  if (!template.phases || !Array.isArray(template.phases)) {
+  if (!templateSchema.phases || !Array.isArray(templateSchema.phases)) {
     throw new CommonError(
       'Invalid template: expected DecisionSchemaDefinition with phases',
     );
   }
 
-  const firstPhase = template.phases[0];
+  const firstPhase = templateSchema.phases[0];
   if (!firstPhase) {
     throw new CommonError('Template must have at least one phase');
   }
 
   const instanceData = createInstanceDataFromTemplate({
-    template,
+    template: templateSchema,
     budget: data.budget,
-    phases: data.phases,
   });
 
-  try {
-    const instance = await db.transaction(async (tx) => {
-      // Create a DECISION profile for the instance
-      const slug = await generateUniqueProfileSlug({
-        name: `decision-${data.name}`,
-        db: tx,
-      });
-
-      const [instanceProfile] = await tx
-        .insert(profiles)
-        .values({
-          type: EntityType.DECISION,
-          name: data.name,
-          slug,
-        })
-        .returning();
-
-      if (!instanceProfile) {
-        throw new CommonError('Failed to create decision instance profile');
-      }
-
-      // Create the instance
-      const [newInstance] = await tx
-        .insert(processInstances)
-        .values({
-          processId: data.processId,
-          name: data.name,
-          description: data.description,
-          instanceData,
-          currentStateId: firstPhase.id, // Use first phase as initial state
-          ownerProfileId,
-          profileId: instanceProfile.id,
-          status: ProcessStatus.DRAFT,
-        })
-        .returning();
-
-      if (!newInstance) {
-        throw new CommonError('Failed to create decision process instance');
-      }
-
-      return newInstance;
+  const instance = await db.transaction(async (tx) => {
+    // Create a DECISION profile for the instance
+    const slug = await generateUniqueProfileSlug({
+      name: `decision-${data.name}`,
+      db: tx,
     });
 
-    return instance;
-  } catch (error) {
-    if (
-      error instanceof UnauthorizedError ||
-      error instanceof NotFoundError ||
-      error instanceof CommonError
-    ) {
-      throw error;
+    const [instanceProfile] = await tx
+      .insert(profiles)
+      .values({
+        type: EntityType.DECISION,
+        name: data.name,
+        slug,
+      })
+      .returning();
+
+    if (!instanceProfile) {
+      throw new CommonError('Failed to create decision instance profile');
     }
-    console.error('Error creating instance from template:', error);
-    throw new CommonError('Failed to create decision process instance');
-  }
+
+    // Create the instance
+    const [newInstance] = await tx
+      .insert(processInstances)
+      .values({
+        processId: data.templateId, // this naming has shifted and might need to be changed in the DB eventually
+        name: '', // TODO: we will remove this constraint shortly from the DB
+        description: data.description,
+        instanceData,
+        currentStateId: firstPhase.id, // Use first phase as initial state
+        ownerProfileId,
+        profileId: instanceProfile.id,
+        status: ProcessStatus.DRAFT,
+      })
+      .returning();
+
+    if (!newInstance) {
+      throw new CommonError('Failed to create decision process instance');
+    }
+
+    return newInstance;
+  });
+
+  return instance;
 }

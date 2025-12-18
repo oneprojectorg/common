@@ -31,16 +31,16 @@ export const simpleVoting: DecisionSchemaDefinition = {
       settings: {
         type: 'object',
         properties: {
-          maxProposalsPerElector: {
+          maxProposalsPerMember: {
             type: 'number',
-            title: 'Maximum Proposals Per Elector',
+            title: 'Maximum Proposals Per Member',
             description: 'How many proposals can each member submit?',
             minimum: 1,
             default: 3,
           },
         },
         ui: {
-          maxProposalsPerElector: {
+          maxProposalsPerMember: {
             'ui:widget': 'number',
             'ui:placeholder': '3',
           },
