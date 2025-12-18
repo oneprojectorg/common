@@ -2,8 +2,7 @@
  * Decision schema definitions.
  * Each schema can be used directly with RJSF.
  */
-import type { SelectionPipeline } from '../../services/decision/selectionPipeline/types';
-import type { DecisionSchemaDefinition, PhaseDefinition } from './types';
+import type { DecisionSchemaDefinition } from './types';
 
 /**
  * Simple voting with linear phases:
@@ -103,7 +102,7 @@ export const simpleVoting: DecisionSchemaDefinition = {
             count: { variable: '$maxVotesPerMember' },
           },
         ],
-      } satisfies SelectionPipeline,
+      },
     },
     {
       id: 'results',
@@ -115,7 +114,7 @@ export const simpleVoting: DecisionSchemaDefinition = {
         advancement: { method: 'date', start: '2026-01-04' },
       },
     },
-  ] satisfies PhaseDefinition[],
+  ],
 };
 
 export const decisionTemplates: Record<string, DecisionSchemaDefinition> = {
