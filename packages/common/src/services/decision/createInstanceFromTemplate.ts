@@ -1,11 +1,17 @@
 import { db } from '@op/db/client';
-import { EntityType, ProcessStatus, processInstances, profiles } from '@op/db/schema';
+import {
+  EntityType,
+  ProcessStatus,
+  processInstances,
+  profiles,
+} from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
 import { createInstanceDataFromTemplate } from '../../lib/decisionSchemas/instanceData';
 import { CommonError, UnauthorizedError } from '../../utils';
-import { assertDecisionTemplate, assertUserByAuthId } from '../assert';
+import { assertUserByAuthId } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
+import { getTemplate } from './getTemplate';
 
 /**
  * Creates a decision process instance from a DecisionSchemaDefinition template.
@@ -27,15 +33,17 @@ export async function createInstanceFromTemplate({
     user.id,
     new UnauthorizedError('User must be authenticated'),
   );
-  const ownerProfileId = dbUser.currentProfileId ?? dbUser.profileId;
+
+  const ownerProfileId = dbUser.currentProfileId ?? dbUser.profileId!;
+  // TODO: profileId should not be nullable
   if (!ownerProfileId) {
     throw new UnauthorizedError('User must have an active profile');
   }
 
-  const template = await assertDecisionTemplate(data.templateId);
+  const template = await getTemplate(data.templateId);
 
   const instanceData = createInstanceDataFromTemplate({
-    template: template.schema,
+    template,
     budget: data.budget,
   });
 
@@ -67,7 +75,7 @@ export async function createInstanceFromTemplate({
         name: '', // TODO: we will remove this constraint shortly from the DB
         description: data.description,
         instanceData,
-        currentStateId: template.firstPhase.id,
+        currentStateId: template.phases[0].id,
         ownerProfileId,
         profileId: instanceProfile.id,
         status: ProcessStatus.DRAFT,
