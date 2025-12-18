@@ -66,18 +66,18 @@ export const simpleVoting: VotingSchemaDefinition = {
       // Phase-specific settings
       settings: {
         type: 'object',
-        required: ['maxVotesPerElector'],
+        required: ['maxVotesPerMember'],
         properties: {
-          maxVotesPerElector: {
+          maxVotesPerMember: {
             type: 'number',
-            title: 'Maximum Votes Per Elector',
+            title: 'Maximum Votes Per Member',
             description: 'How many proposals can each member vote for?',
             minimum: 1,
             default: 3,
           },
         },
         ui: {
-          maxVotesPerElector: {
+          maxVotesPerMember: {
             'ui:widget': 'number',
             'ui:placeholder': '5',
           },
@@ -96,8 +96,8 @@ export const simpleVoting: VotingSchemaDefinition = {
           {
             id: 'limit-by-votes',
             type: 'limit',
-            name: 'Take top N (based on maxVotesPerElector config)',
-            count: { variable: '$maxVotesPerElector' },
+            name: 'Take top N (based on maxVotesPerMember config)',
+            count: { variable: '$maxVotesPerMember' },
           },
         ],
       } satisfies SelectionPipeline,
