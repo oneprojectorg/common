@@ -1,3 +1,4 @@
+export { assertDecisionTemplate } from './assertDecisionTemplate';
 export {
   assertOrganization,
   assertOrganizationByProfileId,
