@@ -32,8 +32,8 @@ const testProcessSchema: ProcessSchema = {
       name: 'Draft',
       type: 'initial',
       config: {
-        proposals: { submit: true },
-        voting: { submit: false },
+        allowProposals: true,
+        allowDecisions: false,
       },
     },
     {
@@ -41,8 +41,8 @@ const testProcessSchema: ProcessSchema = {
       name: 'Under Review',
       type: 'intermediate',
       config: {
-        proposals: { submit: false },
-        voting: { submit: true },
+        allowProposals: false,
+        allowDecisions: true,
       },
     },
     {
@@ -50,8 +50,8 @@ const testProcessSchema: ProcessSchema = {
       name: 'Approved',
       type: 'final',
       config: {
-        proposals: { submit: false },
-        voting: { submit: false },
+        allowProposals: false,
+        allowDecisions: false,
       },
     },
   ],

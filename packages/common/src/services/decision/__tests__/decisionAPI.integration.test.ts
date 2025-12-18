@@ -57,8 +57,8 @@ const simpleProcessSchema: ProcessSchema = {
       name: 'Pending',
       type: 'initial',
       config: {
-        proposals: { submit: true },
-        voting: { submit: false },
+        allowProposals: true,
+        allowDecisions: false,
       },
     },
     {
@@ -66,8 +66,8 @@ const simpleProcessSchema: ProcessSchema = {
       name: 'Approved',
       type: 'final',
       config: {
-        proposals: { submit: false },
-        voting: { submit: false },
+        allowProposals: false,
+        allowDecisions: false,
       },
     },
   ],
@@ -121,8 +121,8 @@ const complexProcessSchema: ProcessSchema = {
       name: 'Draft',
       type: 'initial',
       config: {
-        proposals: { submit: true },
-        voting: { submit: false },
+        allowProposals: true,
+        allowDecisions: false,
       },
     },
     {
@@ -130,8 +130,8 @@ const complexProcessSchema: ProcessSchema = {
       name: 'Under Review',
       type: 'intermediate',
       config: {
-        proposals: { submit: false },
-        voting: { submit: true },
+        allowProposals: false,
+        allowDecisions: true,
       },
       fields: {
         type: 'object',
