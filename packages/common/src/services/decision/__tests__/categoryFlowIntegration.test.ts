@@ -265,7 +265,10 @@ describe('Category Flow Integration Tests', () => {
               id: 'submission',
               name: 'Submission',
               type: 'initial' as const,
-              config: { proposals: { submit: true }, voting: { submit: false } },
+              config: {
+                proposals: { submit: true },
+                voting: { submit: false },
+              },
             },
           ],
           transitions: [],

@@ -2,7 +2,6 @@
  * Voting schema definitions.
  * Each schema can be used directly with RJSF.
  */
-
 import type { SelectionPipeline } from '../../services/decision/selectionPipeline/types';
 import type { PhaseDefinition, VotingSchemaDefinition } from './types';
 
@@ -14,7 +13,8 @@ export const simpleVoting: VotingSchemaDefinition = {
   id: 'simple',
   version: '1.0.0',
   name: 'Simple Voting',
-  description: 'Basic approval voting where members vote for multiple proposals.',
+  description:
+    'Basic approval voting where members vote for multiple proposals.',
 
   phases: [
     {
