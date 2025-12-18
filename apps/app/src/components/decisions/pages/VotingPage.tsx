@@ -45,8 +45,8 @@ export function VotingPage({
     : (instance.description ?? instance.process?.description ?? undefined);
   const aboutIsMarkup = !!instance?.description?.match('PPDESCRIPTION');
 
-  const maxVotesPerElector = instance?.instanceData?.fieldValues
-    ?.maxVotesPerElector as number;
+  const maxVotesPerMember = instance?.instanceData?.fieldValues
+    ?.maxVotesPerMember as number;
   const totalBudgetAmount = instance?.instanceData?.fieldValues
     ?.totalBudgetAmount as number;
 
@@ -71,11 +71,11 @@ export function VotingPage({
               'Click on "About the process" to learn more about the fund allocation.',
             )}
           </p>
-          {maxVotesPerElector && (
+          {maxVotesPerMember && (
             <p>
               <strong>
                 {t('Please select {count} proposals.', {
-                  count: maxVotesPerElector,
+                  count: maxVotesPerMember,
                 })}
               </strong>
             </p>
@@ -115,10 +115,10 @@ export function VotingPage({
       description: (
         <>
           <p>{t('Help determine how we invest our community budget.')}</p>
-          {maxVotesPerElector && (
+          {maxVotesPerMember && (
             <p>
               {t('Please select {count} proposals.', {
-                count: maxVotesPerElector,
+                count: maxVotesPerMember,
               })}
             </p>
           )}
