@@ -5,7 +5,7 @@ import {
 } from '@op/common';
 import { TRPCError } from '@trpc/server';
 
-import { executeTransitionInputSchema } from '../../../encoders/decision';
+import { executeTransitionInputSchema } from '../../../encoders/legacyDecision';
 import withAnalytics from '../../../middlewares/withAnalytics';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
 import withRateLimited from '../../../middlewares/withRateLimited';

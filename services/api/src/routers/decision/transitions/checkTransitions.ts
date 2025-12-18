@@ -4,7 +4,7 @@ import { TRPCError } from '@trpc/server';
 import {
   checkTransitionInputSchema,
   transitionCheckResultEncoder,
-} from '../../../encoders/decision';
+} from '../../../encoders/legacyDecision';
 import withAnalytics from '../../../middlewares/withAnalytics';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
 import withRateLimited from '../../../middlewares/withRateLimited';
