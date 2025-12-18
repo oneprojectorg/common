@@ -8,7 +8,7 @@ export interface PhaseInstanceData {
   rules: {
     proposals?: { submit?: boolean; edit?: boolean };
     voting?: { submit?: boolean; edit?: boolean };
-    progression?: { method: 'date' | 'manual'; start?: string };
+    advancement?: { method: 'date' | 'manual'; start?: string };
   };
 }
 

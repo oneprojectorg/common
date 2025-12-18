@@ -23,7 +23,7 @@ export interface PhaseRules {
     submit?: boolean;
     edit?: boolean;
   };
-  progression?: {
+  advancement?: {
     method: 'date' | 'manual';
     start?: string;
   };
