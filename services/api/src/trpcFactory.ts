@@ -1,4 +1,5 @@
 import type { ChannelName } from '@op/common/realtime';
+import { realtime } from '@op/realtime/server';
 import { initTRPC } from '@trpc/server';
 import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
 import { customAlphabet } from 'nanoid';
@@ -40,9 +41,13 @@ export const createContext = async ({
     registerMutationChannels: (channels) => {
       for (const channel of channels) {
         mutationChannels.add(channel);
-      }
 
-      // Here we'll publish a message to the realtime server to notify about the mutation
+        // waitUntil
+        realtime.publish(channel, {
+          type: 'query-invalidation',
+          mutationId: requestId,
+        });
+      }
     },
     registerQueryChannels: (channels) => {
       for (const channel of channels) {

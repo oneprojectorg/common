@@ -9,9 +9,10 @@ type QueryAddedEvent = {
 
 type MutationAddedEvent = {
   channels: ChannelName[];
+  mutationId?: string;
 };
 
-type RegistryEvents = {
+export type RegistryEvents = {
   'query:added': QueryAddedEvent;
   'mutation:added': MutationAddedEvent;
 };
@@ -58,7 +59,7 @@ class QueryChannelRegistry {
    * Register a query to channels.
    * Emits 'query:added' event.
    */
-  registerQuery(queryKey: unknown, channels: ChannelName[]): void {
+  registerQuery({ queryKey, channels }: QueryAddedEvent): void {
     const key = JSON.stringify(queryKey);
     for (const channel of channels) {
       let keys = this.channelToQueryKeys.get(channel);
@@ -75,8 +76,8 @@ class QueryChannelRegistry {
    * Register a mutation for channels.
    * Emits 'mutation:added' event.
    */
-  registerMutation(channels: ChannelName[]): void {
-    this.emitter.emit('mutation:added', { channels });
+  registerMutation({ channels, mutationId }: MutationAddedEvent): void {
+    this.emitter.emit('mutation:added', { channels, mutationId });
   }
 
   /**
@@ -92,5 +93,3 @@ class QueryChannelRegistry {
 }
 
 export const queryChannelRegistry = new QueryChannelRegistry();
-
-export type { MutationAddedEvent, QueryAddedEvent, RegistryEvents };

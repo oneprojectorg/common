@@ -18,13 +18,15 @@ export class RealtimeClient {
 
   /**
    * Publish a message to a single channel
-   * TODO: type channel with Channels
    */
-  async publish(options: {
+  async publish(input: {
     channel: ChannelName;
     data: unknown;
+    opts?: {
+      idempotentKey?: string;
+    };
   }): Promise<void> {
-    const { channel, data } = options;
+    const { channel, data, opts } = input;
 
     const response = await fetch(`${this.apiUrl}/publish`, {
       method: 'POST',
@@ -32,7 +34,15 @@ export class RealtimeClient {
         'Content-Type': 'application/json',
         'X-API-Key': this.apiKey,
       },
-      body: JSON.stringify({ channel, data }),
+      body: JSON.stringify({
+        channel,
+        data,
+        ...(opts?.idempotentKey
+          ? {
+              idempotent_key: opts.idempotentKey,
+            }
+          : {}),
+      }),
     });
 
     if (!response.ok) {

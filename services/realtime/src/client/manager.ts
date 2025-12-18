@@ -22,7 +22,15 @@ export class RealtimeManager {
   private subscriptions = new Map<ChannelName, Subscription>();
   private channelListeners = new Map<
     ChannelName,
-    Set<(data: RealtimeMessage) => void>
+    Set<
+      ({
+        channel,
+        data,
+      }: {
+        channel: ChannelName;
+        data: RealtimeMessage;
+      }) => void
+    >
   >();
   private connectionListeners = new Set<(isConnected: boolean) => void>();
   private config: RealtimeConfig | null = null;
@@ -90,7 +98,13 @@ export class RealtimeManager {
    */
   subscribe(
     channel: ChannelName,
-    handler: (data: RealtimeMessage) => void,
+    handler: ({
+      channel,
+      data,
+    }: {
+      channel: ChannelName;
+      data: RealtimeMessage;
+    }) => void,
   ): () => void {
     this.ensureConnected();
 
@@ -136,7 +150,9 @@ export class RealtimeManager {
         // Notify all listeners for this channel
         const channelListeners = this.channelListeners.get(channel);
         if (channelListeners) {
-          channelListeners.forEach((listener) => listener(data));
+          channelListeners.forEach((listener) =>
+            listener({ channel: ctx.channel as ChannelName, data }),
+          );
         }
       });
 
@@ -163,7 +179,13 @@ export class RealtimeManager {
    */
   private unsubscribe(
     channel: ChannelName,
-    handler: (data: RealtimeMessage) => void,
+    handler: ({
+      channel,
+      data,
+    }: {
+      channel: ChannelName;
+      data: RealtimeMessage;
+    }) => void,
   ): void {
     const listeners = this.channelListeners.get(channel);
     if (!listeners) {

@@ -414,6 +414,9 @@ importers:
       '@op/logging':
         specifier: workspace:*
         version: link:../../packages/logging
+      '@op/realtime':
+        specifier: workspace:^
+        version: link:../../services/realtime
       '@op/supabase':
         specifier: workspace:*
         version: link:../../services/supabase
@@ -1281,6 +1284,9 @@ importers:
       '@op/common':
         specifier: workspace:*
         version: link:../../packages/common
+      '@op/logging':
+        specifier: workspace:*
+        version: link:../../packages/logging
       centrifuge:
         specifier: ^5.5.2
         version: 5.5.2

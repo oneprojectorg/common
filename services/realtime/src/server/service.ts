@@ -41,13 +41,17 @@ class RealtimeService {
    * Note: Never query the database to determine channels. Channel selection should
    * be based on data you already have in the mutation context (orgId, userId, etc.)
    */
-  async publish(channel: ChannelName, message: RealtimeMessage): Promise<void> {
+  async publish(channel: ChannelName, data: RealtimeMessage): Promise<void> {
     const client = this.getClient();
 
     try {
-      await client.publish({ channel, data: message });
+      await client.publish({ channel, data });
     } catch (error) {
-      console.error('[Realtime] Publish failed:', error);
+      // TODO: logger.error
+      // logger.error('[Realtime] Publish error', {
+      //   error: error instanceof Error ? error.message : String(error),
+      //   channel,
+      // });
     }
   }
 }

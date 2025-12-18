@@ -50,7 +50,12 @@ describe.concurrent('RealtimeManager', () => {
 
     // Set up a promise to wait for the message
     const messagePromise = new Promise<RealtimeMessage>((resolve) => {
-      const handler = (data: RealtimeMessage) => {
+      const handler = ({
+        data,
+      }: {
+        channel: string;
+        data: RealtimeMessage;
+      }) => {
         resolve(data);
       };
 
@@ -64,7 +69,6 @@ describe.concurrent('RealtimeManager', () => {
     // Publish a test message using the server client
     const testMessage: RealtimeMessage = {
       type: 'query-invalidation',
-      queryKey: ['test', 'key'],
     };
 
     await realtimeClient.publish({
@@ -83,7 +87,6 @@ describe.concurrent('RealtimeManager', () => {
     // Verify the received message
     expect(receivedMessage).toEqual(testMessage);
     expect(receivedMessage.type).toBe('query-invalidation');
-    expect(receivedMessage.queryKey).toEqual(['test', 'key']);
   });
 
   it.each([
@@ -156,7 +159,6 @@ describe.concurrent('RealtimeManager', () => {
       // Publish a test message
       const testMessage: RealtimeMessage = {
         type: 'query-invalidation',
-        queryKey: ['test', 'unauthenticated'],
       };
 
       await realtimeClient.publish({
@@ -204,7 +206,12 @@ describe.concurrent('RealtimeManager', () => {
     const receivedMessages: RealtimeMessage[] = [];
 
     const handler1Promise = new Promise<RealtimeMessage>((resolve) => {
-      const handler = (data: RealtimeMessage) => {
+      const handler = ({
+        data,
+      }: {
+        channel: string;
+        data: RealtimeMessage;
+      }) => {
         receivedMessages.push(data);
         resolve(data);
       };
@@ -212,7 +219,12 @@ describe.concurrent('RealtimeManager', () => {
     });
 
     const handler2Promise = new Promise<RealtimeMessage>((resolve) => {
-      const handler = (data: RealtimeMessage) => {
+      const handler = ({
+        data,
+      }: {
+        channel: string;
+        data: RealtimeMessage;
+      }) => {
         receivedMessages.push(data);
         resolve(data);
       };
@@ -220,7 +232,12 @@ describe.concurrent('RealtimeManager', () => {
     });
 
     const handler3Promise = new Promise<RealtimeMessage>((resolve) => {
-      const handler = (data: RealtimeMessage) => {
+      const handler = ({
+        data,
+      }: {
+        channel: string;
+        data: RealtimeMessage;
+      }) => {
         receivedMessages.push(data);
         resolve(data);
       };
@@ -233,7 +250,6 @@ describe.concurrent('RealtimeManager', () => {
     // Publish a test message
     const testMessage: RealtimeMessage = {
       type: 'query-invalidation',
-      queryKey: ['test', 'multiple-subscribers'],
     };
 
     await realtimeClient.publish({
