@@ -3,7 +3,7 @@ import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
-import { decisionProcessEncoder } from '../../../encoders/legacyDecision';
+import { legacyDecisionProcessEncoder } from '../../../encoders/legacyDecision';
 import { loggedProcedure, router } from '../../../trpcFactory';
 
 const meta: OpenApiMeta = {
@@ -17,15 +17,16 @@ const meta: OpenApiMeta = {
   },
 };
 
+/** @deprecated Use the new decision system instead */
 export const getProcessRouter = router({
   getProcess: loggedProcedure
     .meta(meta)
     .input(z.object({ id: z.uuid() }))
-    .output(decisionProcessEncoder)
+    .output(legacyDecisionProcessEncoder)
     .query(async ({ input }) => {
       try {
         const process = await getProcess(input.id);
-        return decisionProcessEncoder.parse(process);
+        return legacyDecisionProcessEncoder.parse(process);
       } catch (error: unknown) {
         if (error instanceof NotFoundError) {
           throw new TRPCError({
