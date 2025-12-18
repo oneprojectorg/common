@@ -1,9 +1,9 @@
 /**
- * Voting templates - phase-based decision process definitions.
+ * Decision templates - phase-based decision process definitions.
  *
  * Usage:
  * ```tsx
- * import { simpleVoting } from '@op/common/lib/voting-schemas';
+ * import { simpleVoting } from '@op/common/lib/decision-schemas';
  *
  * // Access phases
  * const votingPhase = simpleVoting.phases.find(p => p.id === 'voting');

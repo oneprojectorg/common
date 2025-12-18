@@ -1,5 +1,5 @@
 /**
- * Voting schema definition types.
+ * Decision schema definition types.
  * Designed to work directly with RJSF.
  */
 import type { JSONSchema7 } from 'json-schema';
@@ -26,7 +26,7 @@ export interface PhaseRules {
 }
 
 /**
- * A phase definition within a voting schema.
+ * A phase definition within a decision schema.
  * Each phase is a self-contained unit with its own config and optional selection pipeline.
  *
  * Phase type is inferred from position: first = initial, last = final, others = intermediate.
@@ -54,9 +54,9 @@ export interface ProcessConfig {
 }
 
 /**
- * A voting schema definition - defines the phases of a decision process.
+ * A decision schema definition - defines the phases of a decision process.
  */
-export interface VotingSchemaDefinition {
+export interface DecisionSchemaDefinition {
   id: string;
   /** Semantic version (e.g., "1.0.0") */
   version: string;

@@ -1,7 +1,7 @@
 /**
- * Instance data creation helpers for VotingSchemaDefinition templates.
+ * Instance data creation helpers for DecisionSchemaDefinition templates.
  */
-import type { VotingSchemaDefinition } from './types';
+import type { DecisionSchemaDefinition } from './types';
 
 export interface PhaseSchedule {
   phaseId: string;
@@ -10,13 +10,13 @@ export interface PhaseSchedule {
 }
 
 export interface CreateInstanceDataInput {
-  template: VotingSchemaDefinition;
+  template: DecisionSchemaDefinition;
   budget?: number;
   phases?: PhaseSchedule[];
 }
 
 /**
- * Creates instance data from a VotingSchemaDefinition template.
+ * Creates instance data from a DecisionSchemaDefinition template.
  * This generates the instanceData object that will be stored in the processInstances table.
  */
 export function createInstanceDataFromTemplate(input: CreateInstanceDataInput) {

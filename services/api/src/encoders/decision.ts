@@ -1,7 +1,7 @@
 /**
  * Decision Encoders
  *
- * These encoders are for the new VotingSchemaDefinition format.
+ * These encoders are for the new DecisionSchemaDefinition format.
  * New instances use phases (not states) and phaseId (not stateId).
  *
  * Legacy format (states, stateId) is in legacyDecision.ts
@@ -23,7 +23,7 @@ import { attachmentWithUrlEncoder } from './attachments';
 import { baseProfileEncoder } from './profiles';
 
 // =============================================================================
-// Process Schema (VotingSchemaDefinition)
+// Process Schema (DecisionSchemaDefinition)
 // =============================================================================
 
 const phaseRulesEncoder = z.object({
