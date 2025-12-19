@@ -7,6 +7,7 @@
   "exports": {
     ".": "./index.ts",
     "./client": "./src/TRPCProvider.tsx",
+    "./server": "./src/TRPCProvider.server.ts",
     "./serverClient": "./src/serverClient.ts",
     "./ssrCookies": "./src/ssrCookies.ts",
     "./encoders": "./src/encoders/index.ts"
