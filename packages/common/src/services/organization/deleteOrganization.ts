@@ -5,13 +5,13 @@ import type { User } from '@supabase/supabase-js';
 import { assertAccess, permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
-import { getOrgAccessUser } from '../access';
+import { getProfileAccessUser } from '../access';
 
 export async function deleteOrganization({
-  organizationId,
+  organizationProfileId,
   user,
 }: {
-  organizationId: string;
+  organizationProfileId: string;
   user: User;
 }) {
   if (!user) {
@@ -19,7 +19,10 @@ export async function deleteOrganization({
   }
 
   // Get the org access user and assert admin DELETE permissions
-  const orgUser = await getOrgAccessUser({ user, organizationId });
+  const orgUser = await getProfileAccessUser({
+    user,
+    profileId: organizationProfileId,
+  });
 
   if (!orgUser) {
     throw new UnauthorizedError('You are not a member of this organization');
@@ -28,8 +31,8 @@ export async function deleteOrganization({
   assertAccess({ admin: permission.DELETE }, orgUser.roles || []);
 
   // Check if the organization to delete exists
-  const targetOrg = await db.query.organizations.findFirst({
-    where: (table, { eq }) => eq(table.id, organizationId),
+  const targetOrg = await db.query.profiles.findFirst({
+    where: (table, { eq }) => eq(table.id, organizationProfileId),
   });
 
   if (!targetOrg) {
@@ -40,14 +43,14 @@ export async function deleteOrganization({
   // The cascade delete will handle removing org data
   const [deletedOrganization] = await db
     .delete(organizations)
-    .where(eq(organizations.id, organizationId))
+    .where(eq(organizations.id, organizationProfileId))
     .returning();
 
   if (!deletedOrganization) {
     throw new NotFoundError('Failed to delete organization');
   }
 
-  await invalidate({ type: 'organization', params: [organizationId] });
+  await invalidate({ type: 'organization', params: [organizationProfileId] });
 
   return deletedOrganization;
 }

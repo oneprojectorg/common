@@ -11,14 +11,14 @@ import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
 const inputSchema = z.object({
-  organizationId: z.uuid(),
+  organizationProfileId: z.uuid(),
 });
 
 const meta: OpenApiMeta = {
   openapi: {
     enabled: true,
     method: 'DELETE',
-    path: '/organization/{organizationId}',
+    path: '/organization/{organizationProfileId}',
     protect: true,
     tags: ['organization'],
     summary: 'Delete organization',
@@ -36,12 +36,12 @@ export const deleteOrganizationRouter = router({
     .input(inputSchema)
     .output(organizationsEncoder)
     .mutation(async ({ ctx, input }) => {
-      const { organizationId } = input;
+      const { organizationProfileId } = input;
       const { user } = ctx;
 
       try {
         const deletedOrganization = await deleteOrganization({
-          organizationId,
+          organizationProfileId,
           user,
         });
 
@@ -49,7 +49,7 @@ export const deleteOrganizationRouter = router({
       } catch (error: unknown) {
         logger.error('Error deleting organization', {
           error,
-          organizationId,
+          organizationProfileId,
         });
 
         if (error instanceof Error) {
