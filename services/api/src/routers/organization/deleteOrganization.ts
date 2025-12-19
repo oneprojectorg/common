@@ -26,7 +26,7 @@ const meta: OpenApiMeta = {
 };
 
 export const deleteOrganizationRouter = router({
-  deleteOrganizationUser: loggedProcedure
+  deleteOrganization: loggedProcedure
     // Middlewares
     .use(withRateLimited({ windowSize: 60, maxRequests: 5 }))
     .use(withAuthenticated)
@@ -67,15 +67,14 @@ export const deleteOrganizationRouter = router({
           }
           if (error.name === 'AccessError') {
             throw new TRPCError({
-              message:
-                'You do not have permission to delete organization users',
+              message: 'You do not have permission to delete organizations',
               code: 'UNAUTHORIZED',
             });
           }
         }
 
         throw new TRPCError({
-          message: 'Failed to delete organization user',
+          message: 'Failed to delete organization',
           code: 'INTERNAL_SERVER_ERROR',
         });
       }
