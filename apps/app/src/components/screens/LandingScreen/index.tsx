@@ -1,9 +1,9 @@
 import { getUser } from '@/utils/getUser';
 import { Organization } from '@op/api/encoders';
 import {
+  HydrationBoundary,
   createServerUtils,
   dehydrate,
-  HydrationBoundary,
 } from '@op/api/server';
 import { Header1, Header3 } from '@op/ui/Header';
 import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
