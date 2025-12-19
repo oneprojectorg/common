@@ -1,9 +1,9 @@
 'use client';
 
-import type { ChannelName } from '@op/common/realtime';
+import type { RegistryEvents } from '@op/common/realtime';
 import { queryChannelRegistry } from '@op/common/realtime';
 import { QueryClientContext } from '@tanstack/react-query';
-import { useContext, useEffect } from 'react';
+import { useCallback, useContext, useEffect, useRef } from 'react';
 
 /**
  * Returns the QueryClient if inside a QueryClientProvider, throws a descriptive error otherwise.
@@ -31,22 +31,30 @@ export function QueryInvalidationSubscriber() {
  * Hook that subscribes to channel mutation events and invalidates queries.
  *
  * Listens to the queryChannelRegistry for mutation:added events, resolves
- * the affected query keys, and invalidates them.
+ * the affected query keys, and invalidates them. Tracks processed mutation IDs
+ * to prevent duplicate invalidations.
  */
 function useInvalidateQueries(): void {
   const queryClient = useRequiredQueryClient();
+  const invalidatedMutationIds = useRef(new Set<string>());
+
+  const handleMutationAdded = useCallback(
+    ({ channels, mutationId }: RegistryEvents['mutation:added']) => {
+      if (invalidatedMutationIds.current.has(mutationId)) {
+        return;
+      }
+      invalidatedMutationIds.current.add(mutationId);
+
+      const queryKeys = queryChannelRegistry.getQueryKeysForChannels(channels);
+
+      for (const queryKey of queryKeys) {
+        queryClient.invalidateQueries({ queryKey });
+      }
+    },
+    [queryClient],
+  );
 
   useEffect(() => {
-    return queryChannelRegistry.on(
-      'mutation:added',
-      ({ channels }: { channels: ChannelName[] }) => {
-        const queryKeys =
-          queryChannelRegistry.getQueryKeysForChannels(channels);
-
-        for (const queryKey of queryKeys) {
-          queryClient.invalidateQueries({ queryKey });
-        }
-      },
-    );
-  }, [queryClient]);
+    return queryChannelRegistry.on('mutation:added', handleMutationAdded);
+  }, [handleMutationAdded]);
 }

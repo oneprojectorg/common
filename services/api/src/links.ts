@@ -117,18 +117,27 @@ function createChannelRegistrationLink(): TRPCLink<AppRouter> {
                   const channels = queryChannelsHeader
                     .split(',')
                     .filter(Boolean) as ChannelName[];
-                  queryChannelRegistry.registerQuery(queryKey, channels);
+                  queryChannelRegistry.registerQuery({ queryKey, channels });
                 }
               } else if (op.type === 'mutation') {
                 // Look up and invalidate queries for mutation channels
                 const mutationChannelsHeader = response.headers.get(
                   MUTATION_CHANNELS_HEADER,
                 );
+
+                // We expect x-request-id to always be present, but if it's missing
+                // generate a random one to avoid ignoring the mutation completely
+                const requestId =
+                  response.headers.get('x-request-id') ?? crypto.randomUUID();
+
                 if (mutationChannelsHeader) {
                   const channels = mutationChannelsHeader
                     .split(',')
                     .filter(Boolean) as ChannelName[];
-                  queryChannelRegistry.registerMutation(channels);
+                  queryChannelRegistry.registerMutation({
+                    channels,
+                    mutationId: requestId,
+                  });
                 }
               }
             }
