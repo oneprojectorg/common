@@ -53,7 +53,7 @@ export const createTRPCVanillaClient = (headers?: Record<string, string>) => {
  * This is used with createCallerFactory for direct procedure calls
  * without HTTP overhead. Note: Cannot set cookies in this context.
  */
-const createServerContext = cache(async (): Promise<TContext> => {
+export const createServerContext = cache(async (): Promise<TContext> => {
   const headersList = await headers();
   const cookieStore = await cookies();
   const nanoid = customAlphabet('0123456789abcdefghijklmnopqrstuvwxyz', 24);
