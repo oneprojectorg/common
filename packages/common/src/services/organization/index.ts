@@ -2,6 +2,7 @@ export * from './getOrganization';
 export * from './listOrganizations';
 export * from './createOrganization';
 export * from './updateOrganization';
+export * from './deleteOrganization';
 export * from './getOrganizationTerms';
 export * from './relationships';
 export * from './searchOrganizations';
