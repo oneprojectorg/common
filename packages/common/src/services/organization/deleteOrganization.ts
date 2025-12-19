@@ -5,7 +5,7 @@ import type { User } from '@supabase/supabase-js';
 import { assertAccess, permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
-import { getOrgAccessUser } from '../access';
+import { getProfileAccessUser } from '../access';
 
 export async function deleteOrganization({
   organizationProfileId,
