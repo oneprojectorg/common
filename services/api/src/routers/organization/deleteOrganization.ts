@@ -25,7 +25,7 @@ const meta: OpenApiMeta = {
   },
 };
 
-export const deleteOrganizationUserRouter = router({
+export const deleteOrganizationRouter = router({
   deleteOrganizationUser: loggedProcedure
     // Middlewares
     .use(withRateLimited({ windowSize: 60, maxRequests: 5 }))
