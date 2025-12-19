@@ -45,7 +45,7 @@ export const deleteOrganizationRouter = router({
           user,
         });
 
-        return deletedOrganization;
+        return organizationsEncoder.parse(deletedOrganization);
       } catch (error: unknown) {
         logger.error('Error deleting organization', {
           error,
