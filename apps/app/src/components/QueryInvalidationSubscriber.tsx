@@ -60,9 +60,11 @@ function useInvalidateQueries(): void {
 
       const queryKeys = queryChannelRegistry.getQueryKeysForChannels(channels);
 
-      for (const queryKey of queryKeys) {
-        await queryClientRef.current.invalidateQueries({ queryKey });
-      }
+      await Promise.allSettled(
+        queryKeys.map((queryKey) =>
+          queryClientRef.current.invalidateQueries({ queryKey }),
+        ),
+      );
     },
     [],
   );
