@@ -1,5 +1,5 @@
 import { invalidate } from '@op/cache';
-import { and, db, eq } from '@op/db/client';
+import { db, eq } from '@op/db/client';
 import { organizations } from '@op/db/schema';
 import type { User } from '@supabase/supabase-js';
 import { assertAccess, permission } from 'access-zones';
@@ -29,7 +29,7 @@ export async function deleteOrganization({
 
   // Check if the organization user to delete exists
   const targetOrg = await db.query.organizations.findFirst({
-    where: (table, { eq, and }) => and(eq(table.id, organizationId)),
+    where: (table, { eq }) => eq(table.id, organizationId),
   });
 
   if (!targetOrg) {
