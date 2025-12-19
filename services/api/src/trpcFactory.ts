@@ -1,6 +1,8 @@
 import type { ChannelName } from '@op/common/realtime';
+import { realtime } from '@op/realtime/server';
 import { initTRPC } from '@trpc/server';
 import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
+import { waitUntil } from '@vercel/functions';
 import { customAlphabet } from 'nanoid';
 import superjson from 'superjson';
 import type { OpenApiMeta } from 'trpc-to-openapi';
@@ -40,9 +42,13 @@ export const createContext = async ({
     registerMutationChannels: (channels) => {
       for (const channel of channels) {
         mutationChannels.add(channel);
+        // Publish mutation event to channel
+        waitUntil(
+          realtime.publish(channel, {
+            mutationId: requestId,
+          }),
+        );
       }
-
-      // Here we'll publish a message to the realtime server to notify about the mutation
     },
     registerQueryChannels: (channels) => {
       for (const channel of channels) {
