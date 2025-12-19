@@ -1,6 +1,6 @@
 import { invalidate } from '@op/cache';
 import { db, eq } from '@op/db/client';
-import { organizations } from '@op/db/schema';
+import { profiles } from '@op/db/schema';
 import type { User } from '@supabase/supabase-js';
 import { assertAccess, permission } from 'access-zones';
 
@@ -42,8 +42,8 @@ export async function deleteOrganization({
   // Delete the organization
   // The cascade delete will handle removing org data
   const [deletedOrganization] = await db
-    .delete(organizations)
-    .where(eq(organizations.id, organizationProfileId))
+    .delete(profiles)
+    .where(eq(profiles.id, organizationProfileId))
     .returning();
 
   if (!deletedOrganization) {
