@@ -1,6 +1,6 @@
 import { invalidate } from '@op/cache';
 import { db, eq } from '@op/db/client';
-import { organizations } from '@op/db/schema';
+import { profiles } from '@op/db/schema';
 import type { User } from '@supabase/supabase-js';
 import { assertAccess, permission } from 'access-zones';
 
