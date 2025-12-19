@@ -18,16 +18,16 @@ export async function deleteOrganization({
     throw new UnauthorizedError();
   }
 
-  // Get the org access user and assert admin UPDATE permissions
+  // Get the org access user and assert admin DELETE permissions
   const orgUser = await getOrgAccessUser({ user, organizationId });
 
   if (!orgUser) {
     throw new UnauthorizedError('You are not a member of this organization');
   }
 
-  assertAccess({ admin: permission.DELETE }, orgUser?.roles || []);
+  assertAccess({ admin: permission.DELETE }, orgUser.roles || []);
 
-  // Check if the organization user to delete exists
+  // Check if the organization to delete exists
   const targetOrg = await db.query.organizations.findFirst({
     where: (table, { eq }) => eq(table.id, organizationId),
   });
