@@ -10,7 +10,7 @@ import type { NextRequest } from 'next/server';
 
 export const maxDuration = 120;
 
-const EXPOSED_HEADERS = 'x-mutation-channels, x-query-channels';
+const EXPOSED_HEADERS = 'x-mutation-channels, x-query-channels, x-request-id';
 
 const allowedOrigins = [
   'https://api-dev.oneproject.tech',
