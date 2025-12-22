@@ -1,34 +1,36 @@
 import type { ChannelName } from '@op/common/realtime';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 import type { RealtimeMessage } from '../schemas';
-import { RealtimeClient } from './client';
 
 /**
- * Service for communicating with the real-time messaging backend
+ * Service for publishing realtime messages via Supabase broadcast
  */
 class RealtimeService {
-  private client: RealtimeClient | null = null;
+  private client: SupabaseClient | null = null;
 
-  private getClient(): RealtimeClient {
+  private getClient(): SupabaseClient {
     if (!this.client) {
-      const apiUrl = process.env.CENTRIFUGO_API_URL;
-      const apiKey = process.env.CENTRIFUGO_API_KEY;
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE;
 
-      if (!apiUrl) {
+      if (!supabaseUrl) {
         throw new Error(
-          '[Realtime] CENTRIFUGO_API_URL is not set. Realtime publishing will be disabled.',
+          '[Realtime] NEXT_PUBLIC_SUPABASE_URL is not set. Realtime publishing will be disabled.',
         );
       }
 
-      if (!apiKey) {
+      if (!serviceRoleKey) {
         throw new Error(
-          '[Realtime] CENTRIFUGO_API_KEY is not set. Realtime publishing will be disabled.',
+          '[Realtime] SUPABASE_SERVICE_ROLE is not set. Realtime publishing will be disabled.',
         );
       }
 
-      this.client = new RealtimeClient({
-        apiUrl,
-        apiKey,
+      this.client = createClient(supabaseUrl, serviceRoleKey, {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
       });
     }
 
@@ -36,7 +38,7 @@ class RealtimeService {
   }
 
   /**
-   * Publish a message to a channel
+   * Publish a message to a channel via Supabase broadcast
    *
    * Note: Never query the database to determine channels. Channel selection should
    * be based on data you already have in the mutation context (orgId, userId, etc.)
@@ -45,7 +47,16 @@ class RealtimeService {
     const client = this.getClient();
 
     try {
-      await client.publish({ channel, data: message });
+      const realtimeChannel = client.channel(channel);
+
+      await realtimeChannel.send({
+        type: 'broadcast',
+        event: 'invalidation',
+        payload: message,
+      });
+
+      // Unsubscribe immediately after sending (server doesn't need to maintain connection)
+      await realtimeChannel.unsubscribe();
     } catch (error) {
       console.error('[Realtime] Publish failed:', error);
     }

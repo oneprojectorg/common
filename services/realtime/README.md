@@ -1,19 +1,20 @@
 # @op/realtime
 
-Real-time messaging service built on Centrifugo for bidirectional client-server communication.
+Real-time messaging service built on Supabase Realtime Broadcast for bidirectional client-server communication.
 
 ## Overview
 
 Provides WebSocket-based real-time messaging with channel-based pub/sub architecture:
 
-- **Server-side**: HTTP API for publishing messages to channels
-- **Client-side**: WebSocket manager for subscribing to channels and receiving messages
+- **Server-side**: Supabase service client for publishing messages to channels
+- **Client-side**: Supabase realtime client for subscribing to channels and receiving messages
 
 ## Channel Strategy
 
 - `global` - For data visible to all users (explore page, global feed)
 - `org:${orgId}` - For organization-scoped data (org feeds, org updates)
 - `user:${userId}` - For user-specific data (notifications, personal updates)
+- `profileJoinRequest:${type}:${profileId}` - For profile join request updates
 
 ## Usage
 
@@ -32,19 +33,11 @@ await realtime.publish(Channels.user(userId), {
 
 ```typescript
 import { RealtimeManager } from '@op/realtime/client';
+import { createSBBrowserClient } from '@op/supabase/client';
 
-import { trpc } from './trpc';
-
-// Your tRPC client
-
-// Initialize the manager with configuration (do this once at app startup)
-RealtimeManager.initialize({
-  wsUrl: process.env.NEXT_PUBLIC_CENTRIFUGO_WS_URL!,
-  getToken: async () => {
-    const result = await trpc.realtime.getToken.query();
-    return result.token;
-  },
-});
+// Initialize the manager with Supabase client (do this once at app startup)
+const supabase = createSBBrowserClient();
+RealtimeManager.initialize({ supabase });
 
 // Subscribe to channels
 const manager = RealtimeManager.getInstance();
@@ -57,41 +50,16 @@ const unsubscribe = manager.subscribe('user:123', (message) => {
 unsubscribe();
 ```
 
-**Note:** The `getToken` function is called automatically by Centrifuge when:
-
-- Initially connecting to the WebSocket server
-- The token is about to expire (tokens are valid for 24 hours)
-
-## Development
-
-### Running Centrifugo Locally
-
-Centrifugo runs as a Docker container for local development and testing. The configuration is managed entirely through environment variables in `.env.test`.
-
-**Start Centrifugo:**
-
-```bash
-pnpm w:realtime dev
-```
-
-This runs Centrifugo on `http://localhost:8000`.
-
-**Stop Centrifugo:**
-
-```bash
-pnpm w:realtime down
-```
-
 ## Environment Variables
+
+The realtime service uses your existing Supabase configuration:
 
 **Server:**
 
-- `CENTRIFUGO_API_URL` - Centrifugo HTTP API endpoint
-- `CENTRIFUGO_API_KEY` - API key for server publishing
-- `CENTRIFUGO_TOKEN_SECRET` - Secret key for signing JWT tokens
+- `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL
+- `SUPABASE_SERVICE_ROLE` - Service role key for server-side publishing
 
 **Client:**
 
-- `NEXT_PUBLIC_CENTRIFUGO_WS_URL` - WebSocket endpoint
-
-The `.env.test` file contains local configuration for Centrifugo (used for both development and testing).
+- `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Anonymous key for client-side subscriptions

@@ -1,10 +1,5 @@
 import { type ChannelName } from '@op/common/realtime';
-import {
-  Centrifuge,
-  type ErrorContext,
-  type PublicationContext,
-  type Subscription,
-} from 'centrifuge';
+import type { RealtimeChannel, SupabaseClient } from '@supabase/supabase-js';
 
 import { type RealtimeMessage, realtimeMessageSchema } from '../schemas';
 
@@ -14,17 +9,16 @@ export type RealtimeHandler = (event: {
 }) => void;
 
 export interface RealtimeConfig {
-  wsUrl: string;
-  getToken: () => Promise<string>;
+  supabase: SupabaseClient;
 }
 
 /**
- * Singleton realtime manager for WebSocket connections and channel subscriptions
+ * Singleton realtime manager for Supabase broadcast subscriptions
  */
 export class RealtimeManager {
   private static instance: RealtimeManager | null = null;
-  private centrifuge: Centrifuge | null = null;
-  private subscriptions = new Map<ChannelName, Subscription>();
+  private supabase: SupabaseClient | null = null;
+  private subscriptions = new Map<ChannelName, RealtimeChannel>();
   private channelListeners = new Map<ChannelName, Set<RealtimeHandler>>();
   private connectionListeners = new Set<(isConnected: boolean) => void>();
   private config: RealtimeConfig | null = null;
@@ -47,43 +41,7 @@ export class RealtimeManager {
   static initialize(config: RealtimeConfig): void {
     const instance = RealtimeManager.getInstance();
     instance.config = config;
-  }
-
-  private ensureConnected() {
-    if (this.centrifuge) {
-      return;
-    }
-
-    if (!this.config) {
-      throw new Error(
-        'RealtimeManager not initialized. Call RealtimeManager.initialize() first.',
-      );
-    }
-
-    this.centrifuge = new Centrifuge(this.config.wsUrl, {
-      // Centrifuge will automatically call getToken when connecting
-      // and when the token is about to expire for automatic refresh
-      getToken: async () => {
-        const token = await this.config!.getToken();
-        return token;
-      },
-    });
-
-    this.centrifuge.on('connected', () => {
-      console.log('[Realtime] Connected');
-      this.connectionListeners.forEach((listener) => listener(true));
-    });
-
-    this.centrifuge.on('disconnected', () => {
-      console.log('[Realtime] Disconnected');
-      this.connectionListeners.forEach((listener) => listener(false));
-    });
-
-    this.centrifuge.on('error', (ctx: ErrorContext) => {
-      console.error('[Realtime] Error:', ctx);
-    });
-
-    this.centrifuge.connect();
+    instance.supabase = config.supabase;
   }
 
   /**
@@ -91,10 +49,10 @@ export class RealtimeManager {
    * Returns an unsubscribe function to clean up the subscription
    */
   subscribe(channel: ChannelName, handler: RealtimeHandler): () => void {
-    this.ensureConnected();
-
-    if (!this.centrifuge) {
-      throw new Error('Centrifuge instance not initialized');
+    if (!this.config || !this.supabase) {
+      throw new Error(
+        'RealtimeManager not initialized. Call RealtimeManager.initialize() first.',
+      );
     }
 
     // Add handler to channel listeners
@@ -116,41 +74,41 @@ export class RealtimeManager {
 
     // Create subscription if it doesn't exist
     if (!this.subscriptions.has(channel)) {
-      const sub = this.centrifuge.newSubscription(channel);
+      const realtimeChannel = this.supabase
+        .channel(channel)
+        .on('broadcast', { event: 'invalidation' }, (payload) => {
+          // Validate the message with Zod schema
+          const parseResult = realtimeMessageSchema.safeParse(payload.payload);
 
-      sub.on('publication', (ctx: PublicationContext) => {
-        // Validate the message with Zod schema
-        const parseResult = realtimeMessageSchema.safeParse(ctx.data);
+          if (!parseResult.success) {
+            console.error(
+              '[Realtime] Invalid message format:',
+              parseResult.error,
+            );
+            return;
+          }
 
-        if (!parseResult.success) {
-          console.error(
-            '[Realtime] Invalid message format:',
-            parseResult.error,
-          );
-          return;
-        }
+          const data = parseResult.data;
 
-        const data = parseResult.data;
+          // Notify all listeners for this channel
+          const channelListeners = this.channelListeners.get(channel);
+          if (channelListeners) {
+            channelListeners.forEach((listener) =>
+              listener({ channel, data }),
+            );
+          }
+        })
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            console.log('[Realtime] Subscribed to channel:', channel);
+            this.connectionListeners.forEach((listener) => listener(true));
+          } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+            console.log('[Realtime] Disconnected from channel:', channel);
+            this.connectionListeners.forEach((listener) => listener(false));
+          }
+        });
 
-        // Notify all listeners for this channel
-        const channelListeners = this.channelListeners.get(channel);
-        if (channelListeners) {
-          channelListeners.forEach((listener) =>
-            listener({ channel: ctx.channel as ChannelName, data }),
-          );
-        }
-      });
-
-      sub.on('subscribed', () => {
-        console.log('[Realtime] Subscribed to channel:', channel);
-      });
-
-      sub.on('unsubscribed', () => {
-        console.log('[Realtime] Unsubscribed from channel:', channel);
-      });
-
-      sub.subscribe();
-      this.subscriptions.set(channel, sub);
+      this.subscriptions.set(channel, realtimeChannel);
     }
 
     // Return unsubscribe function
@@ -171,45 +129,36 @@ export class RealtimeManager {
     // Remove the handler
     listeners.delete(handler);
 
-    // If no more handlers for this channel, unsubscribe from Centrifuge
+    // If no more handlers for this channel, unsubscribe from Supabase
     if (listeners.size === 0) {
       this.channelListeners.delete(channel);
 
       const sub = this.subscriptions.get(channel);
       if (sub) {
         sub.unsubscribe();
-        sub.removeAllListeners();
         this.subscriptions.delete(channel);
       }
     }
 
-    // If no more active subscriptions, disconnect
+    // If no more active subscriptions, we can notify disconnection
     if (this.subscriptions.size === 0) {
-      this.disconnect();
+      this.connectionListeners.forEach((listener) => listener(false));
     }
   }
 
   /**
-   * Disconnect from the WebSocket server and clean up all subscriptions
+   * Disconnect from all channels and clean up
    */
-  private disconnect(): void {
-    if (!this.centrifuge) {
-      return;
-    }
-
+  disconnect(): void {
     console.log('[Realtime] Disconnecting...');
 
     // Clean up all subscriptions
     this.subscriptions.forEach((sub) => {
       sub.unsubscribe();
-      sub.removeAllListeners();
     });
     this.subscriptions.clear();
     this.channelListeners.clear();
-
-    // Disconnect and clean up centrifuge instance
-    this.centrifuge.disconnect();
-    this.centrifuge = null;
+    this.connectionListeners.forEach((listener) => listener(false));
   }
 
   /**
@@ -217,8 +166,8 @@ export class RealtimeManager {
    */
   addConnectionListener(listener: (isConnected: boolean) => void) {
     this.connectionListeners.add(listener);
-    // Immediately notify with current state if connected
-    if (this.centrifuge?.state === 'connected') {
+    // Immediately notify with current state if we have active subscriptions
+    if (this.subscriptions.size > 0) {
       listener(true);
     }
   }
