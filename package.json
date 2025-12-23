@@ -78,6 +78,7 @@
     "nanoid": "5.1.2",
     "next": "catalog:",
     "open": "^10.1.0",
+    "oxfmt": "^0.20.0",
     "postcss": "^8.5.3",
     "postgres": "^3.4.5",
     "prettier": "^3.5.2",

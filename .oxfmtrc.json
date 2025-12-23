@@ -1,0 +1,43 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "bracketSameLine": false,
+  "singleQuote": true,
+  "tabWidth": 2,
+  "semi": true,
+  "arrowParens": "always",
+  "printWidth": 80,
+  "trailingComma": "all",
+  "importOrder": [
+    "<THIRD_PARTY_MODULES>",
+    "^@/lib/(.*)$",
+    "^@/components/(.*)$",
+    "^[./]"
+  ],
+  "importOrderSeparation": true,
+  "importOrderSortSpecifiers": true,
+  "tailwindAttributes": [
+    "className",
+    "useClasses",
+    ".*ClassName",
+    "tw"
+  ],
+  "tailwindFunctions": [
+    "twMerge",
+    "clsx",
+    "tw",
+    "cva",
+    "cn",
+    "tv"
+  ],
+  "tailwindConfig": "./packages/ui/tailwind.shared.ts",
+  "ignorePatterns": [
+    ".next",
+    "dist",
+    "node_modules/",
+    "pnpm-lock.yaml",
+    "draco*.js",
+    "*.md",
+    "*.sql",
+    "migrations/"
+  ]
+}
