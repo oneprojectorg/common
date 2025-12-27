@@ -2,9 +2,9 @@ import { listInstances } from '@op/common';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 
 import {
-  instanceFilterSchema,
-  processInstanceListEncoder,
-} from '../../../encoders/decision';
+  legacyInstanceFilterSchema,
+  legacyProcessInstanceListEncoder,
+} from '../../../encoders/legacyDecision';
 import withAnalytics from '../../../middlewares/withAnalytics';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
 import withRateLimited from '../../../middlewares/withRateLimited';
@@ -27,8 +27,8 @@ export const listInstancesRouter = router({
     .use(withAuthenticated)
     .use(withAnalytics)
     .meta(meta)
-    .input(instanceFilterSchema)
-    .output(processInstanceListEncoder)
+    .input(legacyInstanceFilterSchema)
+    .output(legacyProcessInstanceListEncoder)
     .query(async ({ input, ctx }) => {
       const { user } = ctx;
 
@@ -38,7 +38,7 @@ export const listInstancesRouter = router({
         authUserId: ctx.user.id,
       });
 
-      return processInstanceListEncoder.parse({
+      return legacyProcessInstanceListEncoder.parse({
         instances: result.instances.map((instance) => ({
           ...instance,
           instanceData: instance.instanceData as Record<string, any>,

@@ -3,9 +3,9 @@ import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 
 import {
-  createInstanceInputSchema,
-  processInstanceEncoder,
-} from '../../../encoders/decision';
+  legacyCreateInstanceInputSchema,
+  legacyProcessInstanceEncoder,
+} from '../../../encoders/legacyDecision';
 import withAnalytics from '../../../middlewares/withAnalytics';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
 import withRateLimited from '../../../middlewares/withRateLimited';
@@ -22,14 +22,15 @@ const meta: OpenApiMeta = {
   },
 };
 
+/** @deprecated Use the new decision system instead */
 export const createInstanceRouter = router({
   createInstance: loggedProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticated)
     .use(withAnalytics)
     .meta(meta)
-    .input(createInstanceInputSchema)
-    .output(processInstanceEncoder)
+    .input(legacyCreateInstanceInputSchema)
+    .output(legacyProcessInstanceEncoder)
     .mutation(async ({ ctx, input }) => {
       const { user, logger } = ctx;
 
@@ -43,7 +44,7 @@ export const createInstanceRouter = router({
           processId: input.processId,
         });
 
-        return processInstanceEncoder.parse(instance);
+        return legacyProcessInstanceEncoder.parse(instance);
       } catch (error: unknown) {
         logger.error('Failed to create process instance', {
           userId: user.id,

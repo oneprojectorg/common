@@ -3,9 +3,9 @@ import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 
 import {
-  createProcessInputSchema,
-  decisionProcessEncoder,
-} from '../../../encoders/decision';
+  legacyCreateProcessInputSchema,
+  legacyDecisionProcessEncoder,
+} from '../../../encoders/legacyDecision';
 import withAnalytics from '../../../middlewares/withAnalytics';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
 import withRateLimited from '../../../middlewares/withRateLimited';
@@ -22,14 +22,15 @@ const meta: OpenApiMeta = {
   },
 };
 
+/** @deprecated Use the new decision system instead */
 export const createProcessRouter = router({
   createProcess: loggedProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 5 }))
     .use(withAuthenticated)
     .use(withAnalytics)
     .meta(meta)
-    .input(createProcessInputSchema)
-    .output(decisionProcessEncoder)
+    .input(legacyCreateProcessInputSchema)
+    .output(legacyDecisionProcessEncoder)
     .mutation(async ({ ctx, input }) => {
       const { user, logger } = ctx;
 
@@ -42,7 +43,7 @@ export const createProcessRouter = router({
           processName: process.name,
         });
 
-        return decisionProcessEncoder.parse(process);
+        return legacyDecisionProcessEncoder.parse(process);
       } catch (error: unknown) {
         logger.error('Failed to create decision process', {
           userId: user.id,

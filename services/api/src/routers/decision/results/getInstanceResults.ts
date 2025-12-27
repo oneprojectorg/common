@@ -6,7 +6,7 @@ import {
 import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 
-import { instanceResultsEncoder } from '../../../encoders/decision';
+import { legacyInstanceResultsEncoder } from '../../../encoders/legacyDecision';
 import { getInstanceResultsInputSchema } from '../../../encoders/results';
 import withAnalytics from '../../../middlewares/withAnalytics';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
@@ -31,7 +31,7 @@ export const getInstanceResultsRouter = router({
     .use(withAnalytics)
     .meta(meta)
     .input(getInstanceResultsInputSchema)
-    .output(instanceResultsEncoder)
+    .output(legacyInstanceResultsEncoder)
     .query(async ({ ctx, input }) => {
       const { user, logger } = ctx;
       const { limit = 20, cursor } = input ?? {};
