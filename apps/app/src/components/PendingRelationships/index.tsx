@@ -30,25 +30,14 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
     Set<string>
   >(new Set());
 
-  const utils = trpc.useUtils();
   const remove = trpc.organization.declineRelationship.useMutation({
-    onSuccess: () => {
-      utils.organization.invalidate();
-      utils.organization.listPendingRelationships.invalidate();
-    },
+    // Query invalidation is handled automatically via realtime channels
   });
   const approve = trpc.organization.approveRelationship.useMutation({
     onSuccess: (_, variables) => {
       const relationshipKey = `${variables.sourceOrganizationId}-${variables.targetOrganizationId}`;
       setAcceptedRelationships((prev) => new Set(prev).add(relationshipKey));
-
-      utils.organization.listPosts.invalidate();
-
-      // invalidate so we remove it from the list.
-      setTimeout(() => {
-        utils.organization.invalidate();
-        utils.organization.listPendingRelationships.invalidate();
-      }, 5_000);
+      // Query invalidation is handled automatically via realtime channels
     },
   });
 

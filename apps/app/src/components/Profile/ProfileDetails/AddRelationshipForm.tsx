@@ -19,10 +19,8 @@ import { FundingRole, FundingRoleModal } from './FundingRoleModal';
 
 export const AddRelationshipForm = ({
   profile,
-  onChange,
 }: {
   profile: Organization;
-  onChange: () => void;
 }) => {
   const t = useTranslations();
   const addRelationship = trpc.organization.addRelationship.useMutation();
@@ -70,7 +68,7 @@ export const AddRelationshipForm = ({
           relationships,
         });
 
-        onChange();
+        // Query invalidation is handled automatically via realtime channels
         toast.success({
           message: 'Relationship requested',
         });

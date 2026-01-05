@@ -9,10 +9,8 @@ import { FormEvent, useTransition } from 'react';
 
 export const RemoveRelationshipModal = ({
   relationship,
-  onChange,
 }: {
   relationship: Relationship;
-  onChange: () => void;
 }) => {
   const removeRelationship = trpc.organization.removeRelationship.useMutation();
 
@@ -27,7 +25,7 @@ export const RemoveRelationshipModal = ({
           id: relationship.id,
         });
 
-        onChange();
+        // Query invalidation is handled automatically via realtime channels
         toast.success({
           message: 'Relationship removed',
         });

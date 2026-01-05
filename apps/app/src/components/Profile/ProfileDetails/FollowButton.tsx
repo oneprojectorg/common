@@ -13,7 +13,6 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 
 const FollowButtonSuspense = ({ profile }: { profile: Organization }) => {
   const { user } = useUser();
-  const utils = trpc.useUtils();
   const [isPending, startTransition] = useTransition();
 
   const currentProfileId = user.currentProfile?.id;
@@ -54,23 +53,7 @@ const FollowButtonSuspense = ({ profile }: { profile: Organization }) => {
             message: `Now following ${profile.profile.name}`,
           });
         }
-
-        // Invalidate all relationship-related queries
-        await Promise.all([
-          // Invalidate the query that checks if we're following this profile
-          utils.profile.getRelationships.invalidate({
-            sourceProfileId: currentProfileId,
-            targetProfileId: profile.profile.id,
-            types: [ProfileRelationshipType.FOLLOWING],
-          }),
-          // Invalidate the current user's following list
-          utils.profile.getRelationships.invalidate({
-            types: [ProfileRelationshipType.FOLLOWING],
-            profileType: 'org',
-          }),
-          // Invalidate all relationship queries for this target profile
-          utils.profile.getRelationships.invalidate(),
-        ]);
+        // Query invalidation is handled automatically via realtime channels
       } catch (error) {
         toast.error({
           message: isFollowing ? 'Failed to unfollow' : 'Failed to follow',

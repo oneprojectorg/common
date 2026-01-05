@@ -1,9 +1,12 @@
 import {
+  Channels,
   ValidationError,
   addProfileRelationship,
+  getCurrentProfileId,
   getProfileRelationships,
   removeProfileRelationship,
 } from '@op/common';
+import type { ChannelName } from '@op/common/realtime';
 import { db, eq } from '@op/db/client';
 import { ProfileRelationshipType, proposals } from '@op/db/schema';
 import { logger } from '@op/logging';
@@ -118,12 +121,26 @@ export const profileRelationshipRouter = router({
       const { targetProfileId, relationshipType, pending } = input;
 
       try {
+        const sourceProfileId = await getCurrentProfileId(ctx.user.id);
+
         await addProfileRelationship({
           targetProfileId,
           relationshipType,
           authUserId: ctx.user.id,
           pending,
         });
+
+        // Register channels for query invalidation
+        ctx.registerMutationChannels([
+          Channels.profileRelationship({
+            type: 'source',
+            profileId: sourceProfileId,
+          }),
+          Channels.profileRelationship({
+            type: 'target',
+            profileId: targetProfileId,
+          }),
+        ]);
 
         // Track analytics if this is a proposal relationship (async in background)
         waitUntil(
@@ -181,11 +198,26 @@ export const profileRelationshipRouter = router({
       const { targetProfileId, relationshipType } = input;
 
       try {
+        const sourceProfileId = await getCurrentProfileId(ctx.user.id);
+
         await removeProfileRelationship({
           targetProfileId,
           relationshipType,
           authUserId: ctx.user.id,
         });
+
+        // Register channels for query invalidation
+        ctx.registerMutationChannels([
+          Channels.profileRelationship({
+            type: 'source',
+            profileId: sourceProfileId,
+          }),
+          Channels.profileRelationship({
+            type: 'target',
+            profileId: targetProfileId,
+          }),
+        ]);
+
         return { success: true };
       } catch (error) {
         logger.error('Error removing relationship', { error, targetProfileId });
@@ -258,6 +290,10 @@ export const profileRelationshipRouter = router({
           groupedResults[type] = [];
         }
 
+        // Get the effective source profile ID for channel registration
+        const effectiveSourceProfileId =
+          sourceProfileId || (await getCurrentProfileId(ctx.user.id));
+
         // Fetch all relationships in a single database query
         const allRelationships = await getProfileRelationships({
           targetProfileId,
@@ -266,6 +302,28 @@ export const profileRelationshipRouter = router({
           profileType,
           authUserId: ctx.user.id,
         });
+
+        // Register channels for query invalidation
+        const channels: ChannelName[] = [];
+        if (effectiveSourceProfileId) {
+          channels.push(
+            Channels.profileRelationship({
+              type: 'source',
+              profileId: effectiveSourceProfileId,
+            }),
+          );
+        }
+        if (targetProfileId) {
+          channels.push(
+            Channels.profileRelationship({
+              type: 'target',
+              profileId: targetProfileId,
+            }),
+          );
+        }
+        if (channels.length > 0) {
+          ctx.registerQueryChannels(channels);
+        }
 
         // Group results by relationship type
         for (const relationship of allRelationships) {

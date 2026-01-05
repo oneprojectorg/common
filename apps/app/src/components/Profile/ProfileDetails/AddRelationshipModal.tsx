@@ -26,13 +26,9 @@ import { RespondButton } from './RespondButton';
 
 const RemoveRelationshipModalContent = ({
   relationship,
-  utils,
-  profileId,
   onClose,
 }: {
   relationship: any;
-  utils: any;
-  profileId: string;
   onClose: () => void;
 }) => {
   const removeRelationship = trpc.organization.removeRelationship.useMutation();
@@ -47,13 +43,7 @@ const RemoveRelationshipModalContent = ({
           id: relationship.id,
         });
 
-        utils.organization.listRelationships.invalidate({
-          organizationId: profileId,
-        });
-        utils.organization.listDirectedRelationships.invalidate({
-          from: profileId,
-        });
-
+        // Query invalidation is handled automatically via realtime channels
         toast.success({
           message: 'Relationship removed',
         });
@@ -96,7 +86,6 @@ export const AddRelationshipModalSuspense = ({
 }) => {
   const { user } = useUser();
   const t = useTranslations();
-  const utils = trpc.useUtils();
   const [selectedRelationshipId, setSelectedRelationshipId] = useState<
     string | null
   >(null);
@@ -181,17 +170,7 @@ export const AddRelationshipModalSuspense = ({
                   Pending confirmation from {profile.profile.name}
                 </Tooltip>
               )}
-              <RemoveRelationshipModal
-                relationship={relationship}
-                onChange={() => {
-                  utils.organization.listRelationships.invalidate({
-                    organizationId: profile.id,
-                  });
-                  utils.organization.listDirectedRelationships.invalidate({
-                    from: profile.id,
-                  });
-                }}
-              />
+              <RemoveRelationshipModal relationship={relationship} />
             </DialogTrigger>
           </TooltipTrigger>
         ))
@@ -202,17 +181,7 @@ export const AddRelationshipModalSuspense = ({
             {t('Add relationship')}
           </Button>
           <Modal className="sm:min-w-[29rem]">
-            <AddRelationshipForm
-              profile={profile}
-              onChange={() => {
-                utils.organization.listRelationships.invalidate({
-                  organizationId: profile.id,
-                });
-                utils.organization.listDirectedRelationships.invalidate({
-                  from: profile.id,
-                });
-              }}
-            />
+            <AddRelationshipForm profile={profile} />
           </Modal>
         </DialogTrigger>
       )}
@@ -227,8 +196,6 @@ export const AddRelationshipModalSuspense = ({
             {({ close }) => (
               <RemoveRelationshipModalContent
                 relationship={selectedRelationship}
-                utils={utils}
-                profileId={profile.id}
                 onClose={() => {
                   setSelectedRelationshipId(null);
                   close();

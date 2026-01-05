@@ -1,4 +1,4 @@
-import { UnauthorizedError, approveRelationship } from '@op/common';
+import { Channels, UnauthorizedError, approveRelationship } from '@op/common';
 import { TRPCError } from '@trpc/server';
 import { waitUntil } from '@vercel/functions';
 import type { OpenApiMeta } from 'trpc-to-openapi';
@@ -48,6 +48,12 @@ export const approveRelationshipRouter = router({
           targetOrganizationId,
           sourceOrganizationId,
         });
+
+        // Register channels for query invalidation
+        ctx.registerMutationChannels([
+          Channels.orgRelationship({ type: 'from', orgId: sourceOrganizationId }),
+          Channels.orgRelationship({ type: 'to', orgId: targetOrganizationId }),
+        ]);
 
         // Track analytics (non-blocking)
         waitUntil(trackRelationshipAccepted(ctx));

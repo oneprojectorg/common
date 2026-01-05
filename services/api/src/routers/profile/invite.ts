@@ -1,5 +1,5 @@
 import { invalidateMultiple } from '@op/cache';
-import { CommonError, inviteUsersToProfile } from '@op/common';
+import { Channels, CommonError, inviteUsersToProfile } from '@op/common';
 import { db } from '@op/db/client';
 import { TRPCError } from '@trpc/server';
 import { waitUntil } from '@vercel/functions';
@@ -63,11 +63,18 @@ export const inviteProfileUserRouter = router({
 
           if (existingUsers.length > 0) {
             const userIds = existingUsers.map((u) => u.authUserId);
+
+            // Server-side cache invalidation
             waitUntil(
               invalidateMultiple({
                 type: 'user',
                 paramsList: userIds.map((id) => [id]),
               }),
+            );
+
+            // Client-side query invalidation via realtime channels
+            ctx.registerMutationChannels(
+              userIds.map((id) => Channels.user(id)),
             );
           }
         }

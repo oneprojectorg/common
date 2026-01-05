@@ -1,4 +1,6 @@
-import { UnauthorizedError, removeRelationship } from '@op/common';
+import { Channels, UnauthorizedError, removeRelationship } from '@op/common';
+import { db, eq } from '@op/db/client';
+import { organizationRelationships } from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
@@ -38,10 +40,34 @@ export const removeRelationshipRouter = router({
       const { id } = input;
 
       try {
-        await removeRelationship({
-          user,
-          id,
-        });
+        // Run lookup and remove in parallel - lookup is only for channel registration
+        const [relationship] = await Promise.all([
+          db.query.organizationRelationships.findFirst({
+            where: eq(organizationRelationships.id, id),
+            columns: {
+              sourceOrganizationId: true,
+              targetOrganizationId: true,
+            },
+          }),
+          removeRelationship({
+            user,
+            id,
+          }),
+        ]);
+
+        // Register channels for query invalidation
+        if (relationship) {
+          ctx.registerMutationChannels([
+            Channels.orgRelationship({
+              type: 'from',
+              orgId: relationship.sourceOrganizationId,
+            }),
+            Channels.orgRelationship({
+              type: 'to',
+              orgId: relationship.targetOrganizationId,
+            }),
+          ]);
+        }
 
         return { success: true };
       } catch (error: unknown) {

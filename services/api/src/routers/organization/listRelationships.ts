@@ -1,4 +1,5 @@
 import {
+  Channels,
   UnauthorizedError,
   getDirectedRelationships,
   getPendingRelationships,
@@ -76,6 +77,11 @@ export const listRelationshipsRouter = router({
           },
         );
 
+        // Register channels for query invalidation
+        ctx.registerQueryChannels([
+          Channels.orgRelationship({ type: 'to', orgId }),
+        ]);
+
         return { organizations, count };
       } catch (error: unknown) {
         if (error instanceof UnauthorizedError) {
@@ -102,13 +108,20 @@ export const listRelationshipsRouter = router({
 
       try {
         const defaultOrgId = await getCurrentOrgId({ authUserId: user.id });
+        const effectiveTo = to ?? defaultOrgId;
         const { records: relationships, count } =
           await getDirectedRelationships({
             user,
             from,
-            to: to ?? defaultOrgId,
+            to: effectiveTo,
             pending,
           });
+
+        // Register channels for query invalidation
+        ctx.registerQueryChannels([
+          Channels.orgRelationship({ type: 'from', orgId: from }),
+          Channels.orgRelationship({ type: 'to', orgId: effectiveTo }),
+        ]);
 
         return { relationships, count };
       } catch (error: unknown) {
@@ -142,6 +155,12 @@ export const listRelationshipsRouter = router({
             pending,
           },
         );
+
+        // Register channels for query invalidation (both directions since this is non-directed)
+        ctx.registerQueryChannels([
+          Channels.orgRelationship({ type: 'from', orgId: organizationId }),
+          Channels.orgRelationship({ type: 'to', orgId: organizationId }),
+        ]);
 
         return { organizations, count };
       } catch (error: unknown) {

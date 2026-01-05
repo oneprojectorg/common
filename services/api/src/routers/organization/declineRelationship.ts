@@ -1,4 +1,6 @@
-import { UnauthorizedError, declineRelationship } from '@op/common';
+import { Channels, UnauthorizedError, declineRelationship } from '@op/common';
+import { db, inArray } from '@op/db/client';
+import { organizationRelationships } from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
@@ -39,11 +41,35 @@ export const declineRelationshipRouter = router({
       const { ids, targetOrganizationId } = input;
 
       try {
-        await declineRelationship({
-          user,
-          targetOrganizationId,
-          ids,
-        });
+        // Run lookup and decline in parallel - lookup is only for channel registration
+        const [relationships] = await Promise.all([
+          db.query.organizationRelationships.findMany({
+            where: inArray(organizationRelationships.id, ids),
+            columns: {
+              sourceOrganizationId: true,
+            },
+          }),
+          declineRelationship({
+            user,
+            targetOrganizationId,
+            ids,
+          }),
+        ]);
+
+        // Register channels for query invalidation
+        const channels = [
+          Channels.orgRelationship({ type: 'to', orgId: targetOrganizationId }),
+        ];
+        // Add source org channels for all affected relationships
+        const sourceOrgIds = [
+          ...new Set(relationships.map((r) => r.sourceOrganizationId)),
+        ];
+        for (const sourceOrgId of sourceOrgIds) {
+          channels.push(
+            Channels.orgRelationship({ type: 'from', orgId: sourceOrgId }),
+          );
+        }
+        ctx.registerMutationChannels(channels);
 
         return true;
       } catch (error: unknown) {
