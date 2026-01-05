@@ -12,8 +12,6 @@ export interface PhaseInstanceData {
   rules: PhaseRules;
   plannedStartDate?: string;
   plannedEndDate?: string;
-  actualStartDate?: string;
-  actualEndDate?: string;
 }
 
 /**

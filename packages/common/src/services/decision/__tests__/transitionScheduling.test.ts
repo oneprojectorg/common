@@ -173,7 +173,6 @@ describe('Transition Scheduling', () => {
       const instanceData = createMockInstanceData();
       // Remove the start date from the review phase (which submission transitions to)
       instanceData.phases[1]!.plannedStartDate = undefined;
-      instanceData.phases[1]!.actualStartDate = undefined;
 
       const mockInstance = createMockProcessInstance({ instanceData });
 
@@ -194,37 +193,6 @@ describe('Transition Scheduling', () => {
       await expect(
         createTransitionsForProcess({ processInstance: mockInstance }),
       ).rejects.toThrow('at least one phase');
-    });
-
-    it('should use actualStartDate when plannedStartDate is not available', async () => {
-      const instanceData = createMockInstanceData();
-      // Use actualStartDate instead of plannedStartDate for review phase
-      const actualDate = createFutureDate(8);
-      instanceData.phases[1]!.plannedStartDate = undefined;
-      instanceData.phases[1]!.actualStartDate = actualDate;
-
-      const mockInstance = createMockProcessInstance({ instanceData });
-
-      vi.mocked(db.insert).mockReturnValueOnce({
-        values: vi.fn().mockReturnValue({
-          returning: vi.fn().mockResolvedValue([
-            {
-              id: 'trans-1',
-              processInstanceId: mockInstance.id,
-              fromStateId: 'submission',
-              toStateId: 'review',
-              scheduledDate: actualDate,
-              completedAt: null,
-            },
-          ]),
-        }),
-      } as never);
-
-      const result = await createTransitionsForProcess({
-        processInstance: mockInstance,
-      });
-
-      expect(result.transitions).toBeDefined();
     });
   });
 
