@@ -15,7 +15,11 @@ import { CommonError } from '../../utils';
  * - Deletes transitions for phases that no longer use date-based advancement
  * - Prevents updates to completed transitions (results phase is locked)
  */
-export async function updateTransitionsForProcess({ processInstance }: { processInstance: ProcessInstance }): Promise<{
+export async function updateTransitionsForProcess({
+  processInstance,
+}: {
+  processInstance: ProcessInstance;
+}): Promise<{
   updated: number;
   created: number;
   deleted: number;
@@ -100,7 +104,10 @@ export async function updateTransitionsForProcess({ processInstance }: { process
           }
 
           // Update the scheduled date if it changed (compare as timestamps to handle format differences)
-          if (new Date(existing.scheduledDate).getTime() !== new Date(expected.scheduledDate).getTime()) {
+          if (
+            new Date(existing.scheduledDate).getTime() !==
+            new Date(expected.scheduledDate).getTime()
+          ) {
             await db
               .update(decisionProcessTransitions)
               .set({
@@ -128,19 +135,26 @@ export async function updateTransitionsForProcess({ processInstance }: { process
     );
 
     // Aggregate results
-    result.updated = updateResults.filter((update) => update.action === 'updated').length;
-    result.created = updateResults.filter((update) => update.action === 'created').length;
+    result.updated = updateResults.filter(
+      (update) => update.action === 'updated',
+    ).length;
+    result.created = updateResults.filter(
+      (update) => update.action === 'created',
+    ).length;
 
     // Delete transitions that are no longer in the expected set
     // But only delete uncompleted transitions
     // Use composite key (fromStateId:toStateId) to match both fields
     const expectedTransitionKeys = new Set(
-      expectedTransitions.map((transition) => `${transition.fromStateId}:${transition.toStateId}`),
+      expectedTransitions.map(
+        (transition) => `${transition.fromStateId}:${transition.toStateId}`,
+      ),
     );
     const transitionsToDelete = existingTransitions.filter(
       (transition) =>
-        !expectedTransitionKeys.has(`${transition.fromStateId}:${transition.toStateId}`) &&
-        !transition.completedAt,
+        !expectedTransitionKeys.has(
+          `${transition.fromStateId}:${transition.toStateId}`,
+        ) && !transition.completedAt,
     );
 
     await pMap(

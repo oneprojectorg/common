@@ -9,7 +9,11 @@ import { CommonError } from '../../utils';
  * Creates scheduled transition records for phases with date-based advancement.
  * Each transition fires when the next phase's start date arrives.
  */
-export async function createTransitionsForProcess({ processInstance }: { processInstance: ProcessInstance }): Promise<{
+export async function createTransitionsForProcess({
+  processInstance,
+}: {
+  processInstance: ProcessInstance;
+}): Promise<{
   transitions: Array<{
     id: string;
     fromStateId: string | null;

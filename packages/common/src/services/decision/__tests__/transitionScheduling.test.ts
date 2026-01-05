@@ -1,14 +1,14 @@
 import { db } from '@op/db/client';
+import type { ProcessInstance } from '@op/db/schema';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type {
   DecisionInstanceData,
   PhaseInstanceData,
 } from '../../../lib/decisionSchemas/instanceData';
-import type { ProcessInstance } from '@op/db/schema';
 import { createTransitionsForProcess } from '../createTransitionsForProcess';
-import { updateTransitionsForProcess } from '../updateTransitionsForProcess';
 import { processDecisionsTransitions } from '../transitionMonitor';
+import { updateTransitionsForProcess } from '../updateTransitionsForProcess';
 
 // Helper to create mock dates
 const createFutureDate = (daysFromNow: number) => {
@@ -203,11 +203,14 @@ describe('Transition Scheduling', () => {
       const newDate = createFutureDate(10);
 
       // Update the instance data with new dates
-      (mockInstance.instanceData as DecisionInstanceData).phases[1]!.plannedStartDate =
-        newDate;
+      (
+        mockInstance.instanceData as DecisionInstanceData
+      ).phases[1]!.plannedStartDate = newDate;
 
       // Mock existing transitions
-      vi.mocked(db.query.decisionProcessTransitions.findMany).mockResolvedValueOnce([
+      vi.mocked(
+        db.query.decisionProcessTransitions.findMany,
+      ).mockResolvedValueOnce([
         {
           id: 'trans-1',
           processInstanceId: mockInstance.id,
@@ -248,7 +251,9 @@ describe('Transition Scheduling', () => {
       const mockInstance = createMockProcessInstance();
 
       // Mock existing completed transition
-      vi.mocked(db.query.decisionProcessTransitions.findMany).mockResolvedValueOnce([
+      vi.mocked(
+        db.query.decisionProcessTransitions.findMany,
+      ).mockResolvedValueOnce([
         {
           id: 'trans-1',
           processInstanceId: mockInstance.id,
@@ -287,7 +292,9 @@ describe('Transition Scheduling', () => {
       const mockInstance = createMockProcessInstance({ instanceData });
 
       // Mock existing transition for submission→review (should be deleted)
-      vi.mocked(db.query.decisionProcessTransitions.findMany).mockResolvedValueOnce([
+      vi.mocked(
+        db.query.decisionProcessTransitions.findMany,
+      ).mockResolvedValueOnce([
         {
           id: 'trans-1',
           processInstanceId: mockInstance.id,
@@ -321,9 +328,9 @@ describe('Transition Scheduling', () => {
       const mockInstance = createMockProcessInstance();
 
       // No existing transitions
-      vi.mocked(db.query.decisionProcessTransitions.findMany).mockResolvedValueOnce(
-        [],
-      );
+      vi.mocked(
+        db.query.decisionProcessTransitions.findMany,
+      ).mockResolvedValueOnce([]);
 
       // Mock insert
       vi.mocked(db.insert).mockReturnValue({
@@ -344,7 +351,9 @@ describe('Transition Scheduling', () => {
       const pastDate = createPastDate(1);
 
       // Mock due transitions
-      vi.mocked(db.query.decisionProcessTransitions.findMany).mockResolvedValueOnce([
+      vi.mocked(
+        db.query.decisionProcessTransitions.findMany,
+      ).mockResolvedValueOnce([
         {
           id: 'trans-1',
           processInstanceId: 'instance-123',
@@ -358,7 +367,9 @@ describe('Transition Scheduling', () => {
       ] as never);
 
       // Mock transition lookup
-      vi.mocked(db.query.decisionProcessTransitions.findFirst).mockResolvedValueOnce({
+      vi.mocked(
+        db.query.decisionProcessTransitions.findFirst,
+      ).mockResolvedValueOnce({
         id: 'trans-1',
         processInstanceId: 'instance-123',
         fromStateId: 'submission',
@@ -414,7 +425,9 @@ describe('Transition Scheduling', () => {
       const pastDate = createPastDate(1);
 
       // Initial query returns an uncompleted transition
-      vi.mocked(db.query.decisionProcessTransitions.findMany).mockResolvedValueOnce([
+      vi.mocked(
+        db.query.decisionProcessTransitions.findMany,
+      ).mockResolvedValueOnce([
         {
           id: 'trans-1',
           processInstanceId: 'instance-123',
@@ -426,7 +439,9 @@ describe('Transition Scheduling', () => {
       ] as never);
 
       // But when we look it up again, it's now completed (race condition)
-      vi.mocked(db.query.decisionProcessTransitions.findFirst).mockResolvedValueOnce({
+      vi.mocked(
+        db.query.decisionProcessTransitions.findFirst,
+      ).mockResolvedValueOnce({
         id: 'trans-1',
         processInstanceId: 'instance-123',
         fromStateId: 'submission',
@@ -449,7 +464,9 @@ describe('Transition Scheduling', () => {
       const pastDate = createPastDate(1);
 
       // Mock two due transitions
-      vi.mocked(db.query.decisionProcessTransitions.findMany).mockResolvedValueOnce([
+      vi.mocked(
+        db.query.decisionProcessTransitions.findMany,
+      ).mockResolvedValueOnce([
         {
           id: 'trans-1',
           processInstanceId: 'instance-123',
@@ -514,7 +531,9 @@ describe('Transition Scheduling', () => {
       const pastDate = createPastDate(1);
 
       // Mock transition to results (final phase)
-      vi.mocked(db.query.decisionProcessTransitions.findMany).mockResolvedValueOnce([
+      vi.mocked(
+        db.query.decisionProcessTransitions.findMany,
+      ).mockResolvedValueOnce([
         {
           id: 'trans-1',
           processInstanceId: 'instance-123',
@@ -525,7 +544,9 @@ describe('Transition Scheduling', () => {
         },
       ] as never);
 
-      vi.mocked(db.query.decisionProcessTransitions.findFirst).mockResolvedValueOnce({
+      vi.mocked(
+        db.query.decisionProcessTransitions.findFirst,
+      ).mockResolvedValueOnce({
         id: 'trans-1',
         processInstanceId: 'instance-123',
         fromStateId: 'voting',

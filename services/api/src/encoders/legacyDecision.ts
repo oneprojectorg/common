@@ -409,3 +409,33 @@ export type LegacyDecisionProfile = z.infer<
 export type LegacyDecisionProfileList = z.infer<
   typeof legacyDecisionProfileListEncoder
 >;
+
+// Export processPhaseSchema for frontend components
+export { legacyProcessPhaseSchema as processPhaseSchema };
+
+// Type aliases for API response types - these match what the legacy API returns
+export type DecisionProfile = LegacyDecisionProfile;
+export type DecisionProfileList = LegacyDecisionProfileList;
+export type ProcessInstance = z.infer<typeof legacyProcessInstanceEncoder>;
+export type DecisionProcess = z.infer<typeof legacyDecisionProcessEncoder>;
+export type Proposal = z.infer<typeof legacyProposalEncoder>;
+export type Decision = z.infer<typeof legacyDecisionEncoder>;
+export type ProposalAttachment = z.infer<typeof legacyProposalAttachmentEncoder>;
+
+// Encoder aliases for frontend components - these match what the API actually returns
+export { legacyProposalEncoder as proposalEncoder };
+export { legacyProcessInstanceEncoder as processInstanceEncoder };
+export { legacyDecisionProcessEncoder as decisionProcessEncoder };
+export { legacyDecisionEncoder as decisionEncoder };
+export { legacyProposalAttachmentEncoder as proposalAttachmentEncoder };
+export { legacyDecisionProfileEncoder as decisionProfileEncoder };
+export { legacyDecisionProfileListEncoder as decisionProfileListEncoder };
+export { legacyDecisionProfileFilterSchema as decisionProfileFilterSchema };
+export { legacyProposalListEncoder as proposalListEncoder };
+export { legacyInstanceResultsEncoder as instanceResultsEncoder };
+export { legacyDecisionListEncoder as decisionListEncoder };
+export { legacyProcessInstanceListEncoder as processInstanceListEncoder };
+export { legacyDecisionProcessListEncoder as decisionProcessListEncoder };
+export { legacyProposalFilterSchema as proposalFilterSchema };
+export { legacyInstanceFilterSchema as instanceFilterSchema };
+export { legacyPaginationInputSchema as paginationInputSchema };

@@ -326,14 +326,7 @@ export const decisionProfileFilterSchema = z.object({
 // Type Exports
 // =============================================================================
 
-export type DecisionProfile = z.infer<typeof decisionProfileEncoder>;
-export type DecisionProfileList = z.infer<typeof decisionProfileListEncoder>;
-export type ProcessInstance = z.infer<typeof processInstanceEncoder>;
 export type ProcessSchema = z.infer<typeof processSchemaEncoder>;
 export type InstanceData = z.infer<typeof instanceDataEncoder>;
-export type DecisionProcess = z.infer<typeof decisionProcessEncoder>;
-export type Proposal = z.infer<typeof proposalEncoder>;
-export type Decision = z.infer<typeof decisionEncoder>;
-export type ProposalAttachment = z.infer<typeof proposalAttachmentEncoder>;
 export type PhaseDefinition = z.infer<typeof phaseDefinitionEncoder>;
 export type PhaseRules = z.infer<typeof phaseRulesEncoder>;

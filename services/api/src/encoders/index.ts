@@ -1,5 +1,18 @@
 export * from './attachments';
-export * from './decision';
+// Only export specific items from decision.ts to avoid conflicts with legacyDecision.ts
+export {
+  // Input schemas for new template-based creation
+  createInstanceFromTemplateInputSchema,
+  updateInstanceInputSchema,
+  createProposalInputSchema,
+  updateProposalInputSchema,
+  submitDecisionInputSchema,
+  // Schema format types (for DecisionSchemaDefinition-based code)
+  type ProcessSchema,
+  type InstanceData,
+  type PhaseDefinition,
+  type PhaseRules,
+} from './decision';
 export * from './legacyDecision';
 export * from './joinProfileRequests';
 export * from './links';
