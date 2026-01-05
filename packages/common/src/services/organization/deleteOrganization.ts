@@ -50,7 +50,9 @@ export async function deleteOrganization({
     throw new NotFoundError('Failed to delete organization');
   }
 
-  await invalidate({ type: 'organization', params: [organizationProfileId] });
+  // Invalidate caches for the deleted organization
+  invalidate({ type: 'organization', params: [organizationProfileId] });
+  invalidate({ type: 'orgUser', params: [organization.id, user.id] });
 
   return deletedOrganization;
 }
