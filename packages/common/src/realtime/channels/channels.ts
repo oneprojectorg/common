@@ -34,13 +34,8 @@ export const Channels = {
    * @param orgId - The organization ID involved in the relationship
    * @param type - 'from' for relationships FROM this org, 'to' for relationships TO this org
    */
-  orgRelationship: ({
-    type,
-    orgId,
-  }: {
-    type: 'from' | 'to';
-    orgId: string;
-  }) => `orgRelationship:${type}:${orgId}` as const,
+  orgRelationship: ({ type, orgId }: { type: 'from' | 'to'; orgId: string }) =>
+    `orgRelationship:${type}:${orgId}` as const,
 } as const;
 
 export type GlobalChannel = ReturnType<typeof Channels.global>;
@@ -52,7 +47,9 @@ export type ProfileJoinRequestChannel = ReturnType<
 export type ProfileRelationshipChannel = ReturnType<
   typeof Channels.profileRelationship
 >;
-export type OrgRelationshipChannel = ReturnType<typeof Channels.orgRelationship>;
+export type OrgRelationshipChannel = ReturnType<
+  typeof Channels.orgRelationship
+>;
 
 /**
  * Union of all valid channel types

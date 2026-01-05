@@ -53,7 +53,6 @@ const FollowButtonSuspense = ({ profile }: { profile: Organization }) => {
             message: `Now following ${profile.profile.name}`,
           });
         }
-        // Query invalidation is handled automatically via realtime channels
       } catch (error) {
         toast.error({
           message: isFollowing ? 'Failed to unfollow' : 'Failed to follow',

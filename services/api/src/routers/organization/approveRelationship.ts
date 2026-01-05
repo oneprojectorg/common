@@ -51,7 +51,10 @@ export const approveRelationshipRouter = router({
 
         // Register channels for query invalidation
         ctx.registerMutationChannels([
-          Channels.orgRelationship({ type: 'from', orgId: sourceOrganizationId }),
+          Channels.orgRelationship({
+            type: 'from',
+            orgId: sourceOrganizationId,
+          }),
           Channels.orgRelationship({ type: 'to', orgId: targetOrganizationId }),
         ]);
 

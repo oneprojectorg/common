@@ -43,7 +43,6 @@ const RemoveRelationshipModalContent = ({
           id: relationship.id,
         });
 
-        // Query invalidation is handled automatically via realtime channels
         toast.success({
           message: 'Relationship removed',
         });

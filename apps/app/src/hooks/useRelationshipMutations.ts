@@ -149,7 +149,6 @@ export function useRelationshipMutations({
       });
     },
     onSettled: async () => {
-      // Profile relationship invalidation is handled automatically via realtime channels
       // Only invalidate additional decision-related queries if specified
       if (invalidateQueries.length > 0) {
         await Promise.all(
@@ -236,7 +235,6 @@ export function useRelationshipMutations({
         });
       },
       onSettled: async () => {
-        // Profile relationship invalidation is handled automatically via realtime channels
         // Only invalidate additional decision-related queries if specified
         if (invalidateQueries.length > 0) {
           await Promise.all(
