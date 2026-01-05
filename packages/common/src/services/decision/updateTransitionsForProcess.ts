@@ -3,32 +3,27 @@ import { decisionProcessTransitions } from '@op/db/schema';
 import type { ProcessInstance } from '@op/db/schema';
 import pMap from 'p-map';
 
+import type { DecisionInstanceData } from '../../lib/decisionSchemas/instanceData';
 import { CommonError } from '../../utils';
-import type { InstanceData, PhaseConfiguration } from './types';
-
-export interface UpdateTransitionsInput {
-  processInstance: ProcessInstance;
-}
-
-export interface UpdateTransitionsResult {
-  updated: number;
-  created: number;
-  deleted: number;
-}
 
 /**
  * Updates transition records for a process instance when phase dates change.
+ * Only handles phases with date-based advancement (rules.advancement.method === 'date').
  * This function:
  * - Updates existing transitions with new scheduled dates
- * - Creates new transitions for newly added phases
- * - Deletes transitions for removed phases
+ * - Creates new transitions for newly added date-based phases
+ * - Deletes transitions for phases that no longer use date-based advancement
  * - Prevents updates to completed transitions (results phase is locked)
  */
-export async function updateTransitionsForProcess({
-  processInstance,
-}: UpdateTransitionsInput): Promise<UpdateTransitionsResult> {
+export async function updateTransitionsForProcess({ processInstance }: { processInstance: ProcessInstance }): Promise<{
+  updated: number;
+  created: number;
+  deleted: number;
+}> {
   try {
-    const instanceData = processInstance.instanceData as InstanceData;
+    // Type assertion: instanceData is `unknown` in DB to support legacy formats for viewing,
+    // but this function is only called for new DecisionInstanceData processes
+    const instanceData = processInstance.instanceData as DecisionInstanceData;
     const phases = instanceData.phases;
 
     if (!phases || phases.length === 0) {
@@ -47,43 +42,55 @@ export async function updateTransitionsForProcess({
         orderBy: (transitions, { asc }) => [asc(transitions.scheduledDate)],
       });
 
-    const result: UpdateTransitionsResult = {
+    const result = {
       updated: 0,
       created: 0,
       deleted: 0,
     };
 
-    // Build a map of expected transitions from the current phases
-    const expectedTransitions = phases.map(
-      (phase: PhaseConfiguration, index: number) => {
-        const fromStateId = index > 0 ? phases[index - 1]?.stateId : null;
-        const toStateId = phase.stateId;
-        // For phases like 'results' that only have a start date (no end), use the start date
-        const scheduledEnd = phase.plannedEndDate || phase.actualEndDate;
-        const scheduledStart = phase.plannedStartDate || phase.actualStartDate;
-        const scheduledDate = scheduledEnd || scheduledStart;
+    // Build expected transitions for phases with date-based advancement
+    // A transition is created FROM a phase (when it ends) TO the next phase
+    const expectedTransitions: Array<{
+      fromStateId: string;
+      toStateId: string;
+      scheduledDate: string;
+    }> = [];
 
-        if (!scheduledDate) {
-          throw new CommonError(
-            `Phase ${index + 1} (${toStateId}) must have either a scheduled end date or start date`,
-          );
-        }
+    for (let index = 0; index < phases.length - 1; index++) {
+      const currentPhase = phases[index]!;
+      const nextPhase = phases[index + 1]!;
 
-        return {
-          fromStateId,
-          toStateId,
-          scheduledDate: new Date(scheduledDate).toISOString(),
-        };
-      },
-    );
+      // Only create transition if current phase uses date-based advancement
+      if (currentPhase.rules?.advancement?.method !== 'date') {
+        continue;
+      }
+
+      // Schedule transition when the next phase starts
+      const scheduledDate = nextPhase.plannedStartDate;
+
+      if (!scheduledDate) {
+        throw new CommonError(
+          `Phase "${nextPhase.phaseId}" must have a start date for date-based advancement from "${currentPhase.phaseId}" (instance: ${processInstance.id})`,
+        );
+      }
+
+      // DB columns are named fromStateId/toStateId but store phase IDs
+      expectedTransitions.push({
+        fromStateId: currentPhase.phaseId,
+        toStateId: nextPhase.phaseId,
+        scheduledDate: new Date(scheduledDate).toISOString(),
+      });
+    }
 
     // Process each expected transition in parallel
     const updateResults = await pMap(
       expectedTransitions,
       async (expected) => {
-        // Find matching existing transition by toStateId
+        // Find matching existing transition by both fromStateId and toStateId
         const existing = existingTransitions.find(
-          (t) => t.toStateId === expected.toStateId,
+          (transition) =>
+            transition.fromStateId === expected.fromStateId &&
+            transition.toStateId === expected.toStateId,
         );
 
         if (existing) {
@@ -92,8 +99,8 @@ export async function updateTransitionsForProcess({
             return { action: 'skipped' as const };
           }
 
-          // Update the scheduled date if it changed
-          if (existing.scheduledDate !== expected.scheduledDate) {
+          // Update the scheduled date if it changed (compare as timestamps to handle format differences)
+          if (new Date(existing.scheduledDate).getTime() !== new Date(expected.scheduledDate).getTime()) {
             await db
               .update(decisionProcessTransitions)
               .set({
@@ -121,16 +128,19 @@ export async function updateTransitionsForProcess({
     );
 
     // Aggregate results
-    result.updated = updateResults.filter((r) => r.action === 'updated').length;
-    result.created = updateResults.filter((r) => r.action === 'created').length;
+    result.updated = updateResults.filter((update) => update.action === 'updated').length;
+    result.created = updateResults.filter((update) => update.action === 'created').length;
 
-    // Delete transitions that are no longer in the phases list
+    // Delete transitions that are no longer in the expected set
     // But only delete uncompleted transitions
-    const expectedStateIds = new Set(
-      expectedTransitions.map((t) => t.toStateId),
+    // Use composite key (fromStateId:toStateId) to match both fields
+    const expectedTransitionKeys = new Set(
+      expectedTransitions.map((transition) => `${transition.fromStateId}:${transition.toStateId}`),
     );
     const transitionsToDelete = existingTransitions.filter(
-      (t) => !expectedStateIds.has(t.toStateId) && !t.completedAt,
+      (transition) =>
+        !expectedTransitionKeys.has(`${transition.fromStateId}:${transition.toStateId}`) &&
+        !transition.completedAt,
     );
 
     await pMap(
