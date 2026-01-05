@@ -438,28 +438,43 @@ describe('Transition Scheduling', () => {
     });
 
     it('should skip already completed transitions', async () => {
-      // Mock transition that's already completed
+      // In production, completed transitions are filtered out by the query
+      // (isNull(transitions.completedAt)), so they won't appear in results.
+      // This test verifies the safety check in processTransition handles
+      // race conditions where a transition completes between query and processing.
+
+      const pastDate = createPastDate(1);
+
+      // Initial query returns an uncompleted transition
       vi.mocked(db.query.decisionProcessTransitions.findMany).mockResolvedValueOnce([
         {
           id: 'trans-1',
           processInstanceId: 'instance-123',
           fromStateId: 'submission',
           toStateId: 'review',
-          scheduledDate: createPastDate(1),
-          completedAt: new Date().toISOString(), // Already completed
+          scheduledDate: pastDate,
+          completedAt: null,
         },
       ] as never);
 
-      // Mock transition lookup - returns completed
+      // But when we look it up again, it's now completed (race condition)
       vi.mocked(db.query.decisionProcessTransitions.findFirst).mockResolvedValueOnce({
         id: 'trans-1',
-        completedAt: new Date().toISOString(),
+        processInstanceId: 'instance-123',
+        fromStateId: 'submission',
+        toStateId: 'review',
+        scheduledDate: pastDate,
+        completedAt: new Date().toISOString(), // Completed by another process
       } as never);
 
       const result = await processDecisionsTransitions();
 
-      // Transaction should not be called since transition is already completed
-      expect(result.processed).toBe(0);
+      // The transition was skipped due to race condition check
+      // It counts as processed (the function handled it gracefully)
+      expect(result.processed).toBe(1);
+      expect(result.failed).toBe(0);
+      // Transaction should not be called since we detected it was already completed
+      expect(db.transaction).not.toHaveBeenCalled();
     });
 
     it('should handle errors gracefully and continue processing', async () => {
