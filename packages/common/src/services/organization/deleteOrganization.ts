@@ -37,7 +37,7 @@ export async function deleteOrganization({
     throw new UnauthorizedError('You are not a member of this organization');
   }
 
-  assertAccess({ admin: permission.UPDATE }, orgUser.roles || []);
+  assertAccess({ profile: permission.UPDATE }, orgUser.roles || []);
 
   // Delete the organization profile
   // The cascade delete will handle removing org data
