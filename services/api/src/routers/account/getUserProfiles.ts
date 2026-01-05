@@ -1,4 +1,4 @@
-import { UnauthorizedError, getUserWithProfiles } from '@op/common';
+import { Channels, UnauthorizedError, getUserWithProfiles } from '@op/common';
 import { EntityType, ObjectsInStorage, Profile } from '@op/db/schema';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
@@ -121,6 +121,9 @@ export const getUserProfiles = router({
           }
         }
       }
+
+      // Register channel for realtime invalidation
+      ctx.registerQueryChannels([Channels.user(authUserId)]);
 
       return userProfiles;
     }),

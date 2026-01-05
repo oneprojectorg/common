@@ -1,5 +1,6 @@
 import { invalidate } from '@op/cache';
 import {
+  Channels,
   getNormalizedRoles,
   getUserForProfileSwitch,
   updateUserCurrentProfile,
@@ -116,6 +117,9 @@ export const switchProfile = router({
         type: 'user',
         params: [id],
       });
+
+      // Register channel for realtime invalidation of user-related queries
+      ctx.registerMutationChannels([Channels.user(id)]);
 
       return userEncoder.parse(result[0]);
     }),

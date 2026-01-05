@@ -1,5 +1,6 @@
 import { cache } from '@op/cache';
 import {
+  Channels,
   CommonError,
   NotFoundError,
   createUserByAuthId,
@@ -67,8 +68,14 @@ export const getMyAccount = router({
           throw new CommonError('Could not create user');
         }
 
+        // Register channel for realtime invalidation
+        ctx.registerQueryChannels([Channels.user(id)]);
+
         return userEncoder.parse(newUserWithRelations);
       }
+
+      // Register channel for realtime invalidation
+      ctx.registerQueryChannels([Channels.user(id)]);
 
       return userEncoder.parse(user);
     }),
