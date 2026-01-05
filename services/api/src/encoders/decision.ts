@@ -1,3 +1,9 @@
+/**
+ * Decision Encoders
+ *
+ * These encoders are for the DecisionSchemaDefinition format.
+ * Instances use phases and phaseId.
+ */
 import {
   ProcessStatus,
   ProposalStatus,
@@ -7,7 +13,6 @@ import {
   processInstances,
   proposalAttachments,
   proposals,
-  stateTransitionHistory,
 } from '@op/db/schema';
 import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
@@ -15,117 +20,82 @@ import { z } from 'zod';
 import { attachmentWithUrlEncoder } from './attachments';
 import { baseProfileEncoder } from './profiles';
 
-// JSON Schema types
-const jsonSchemaEncoder = z.record(z.string(), z.unknown());
+// =============================================================================
+// Process Schema (DecisionSchemaDefinition)
+// =============================================================================
 
-// Shared process phase schema
-export const processPhaseSchema = z.object({
+export const phaseRulesEncoder = z.object({
+  proposals: z
+    .object({
+      submit: z.boolean().optional(),
+      edit: z.boolean().optional(),
+    })
+    .optional(),
+  voting: z
+    .object({
+      submit: z.boolean().optional(),
+      edit: z.boolean().optional(),
+    })
+    .optional(),
+  advancement: z
+    .object({
+      method: z.enum(['date', 'manual']),
+      start: z.string().optional(),
+    })
+    .optional(),
+});
+
+export const phaseDefinitionEncoder = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string().optional(),
-  phase: z
-    .object({
-      startDate: z.string().optional(),
-      endDate: z.string().optional(),
-      sortOrder: z.number().optional(),
-    })
-    .optional(),
-  type: z.enum(['initial', 'intermediate', 'final']).optional(),
+  rules: phaseRulesEncoder,
+  selectionPipeline: z.unknown().optional(),
+  settings: z.unknown().optional(),
 });
 
-// Process Schema Encoder
-const processSchemaEncoder = z.object({
+export const processSchemaEncoder = z.object({
+  id: z.string(),
+  version: z.string(),
   name: z.string(),
   description: z.string().optional(),
-  budget: z.number().optional(),
-  fields: jsonSchemaEncoder.optional(),
-  states: z.array(
-    processPhaseSchema.extend({
-      fields: jsonSchemaEncoder.optional(),
-      config: z
-        .object({
-          allowProposals: z.boolean().optional(),
-          allowDecisions: z.boolean().optional(),
-          visibleComponents: z.array(z.string()).optional(),
-        })
-        .optional(),
-    }),
-  ),
-  transitions: z.array(
-    z.object({
-      id: z.string(),
-      name: z.string(),
-      from: z.union([z.string(), z.array(z.string())]),
-      to: z.string(),
-      rules: z
-        .object({
-          type: z.enum(['manual', 'automatic']),
-          conditions: z
-            .array(
-              z.object({
-                type: z.enum([
-                  'time',
-                  'proposalCount',
-                  'participationCount',
-                  'approvalRate',
-                  'customField',
-                ]),
-                operator: z.enum([
-                  'equals',
-                  'greaterThan',
-                  'lessThan',
-                  'between',
-                ]),
-                value: z.unknown().optional(),
-                field: z.string().optional(),
-              }),
-            )
-            .optional(),
-          requireAll: z.boolean().optional(),
-        })
-        .optional(),
-      actions: z
-        .array(
-          z.object({
-            type: z.enum(['notify', 'updateField', 'createRecord']),
-            config: z.record(z.string(), z.unknown()),
-          }),
-        )
-        .optional(),
-    }),
-  ),
-  initialState: z.string(),
-  decisionDefinition: jsonSchemaEncoder,
-  proposalTemplate: jsonSchemaEncoder,
+  config: z
+    .object({
+      hideBudget: z.boolean().optional(),
+    })
+    .optional(),
+  phases: z.array(phaseDefinitionEncoder),
 });
 
-// Instance Data Encoder
-const instanceDataEncoder = z.object({
+// =============================================================================
+// Instance Data
+// =============================================================================
+
+export const instanceDataEncoder = z.object({
   budget: z.number().optional(),
   hideBudget: z.boolean().optional(),
   fieldValues: z.record(z.string(), z.unknown()).optional(),
-  currentStateId: z.string(),
-  stateData: z
-    .record(
-      z.string(),
-      z.object({
-        enteredAt: z.string().optional(),
-        metadata: z.record(z.string(), z.unknown()).optional(),
-      }),
-    )
+  currentPhaseId: z.string(),
+  config: z
+    .object({
+      hideBudget: z.boolean().optional(),
+    })
     .optional(),
   phases: z
     .array(
       z.object({
-        stateId: z.string(),
-        actualStartDate: z.string().optional(),
-        actualEndDate: z.string().optional(),
+        phaseId: z.string(),
+        rules: phaseRulesEncoder.optional(),
         plannedStartDate: z.string().optional(),
         plannedEndDate: z.string().optional(),
       }),
     )
     .optional(),
 });
+
+// =============================================================================
+// Main Encoders
+// =============================================================================
 
 // Decision Process Encoder
 export const decisionProcessEncoder = createSelectSchema(decisionProcesses)
@@ -161,8 +131,10 @@ export const processInstanceEncoder = createSelectSchema(processInstances)
     participantCount: z.number().optional(),
   });
 
-// Proposal Attachment Join Table Encoder
-export const proposalAttachmentEncoder = createSelectSchema(proposalAttachments)
+// Proposal Attachment Encoder
+export const proposalAttachmentEncoder = createSelectSchema(
+  proposalAttachments,
+)
   .pick({
     id: true,
     proposalId: true,
@@ -187,7 +159,7 @@ export const proposalEncoder = createSelectSchema(proposals)
     profileId: true,
   })
   .extend({
-    proposalData: z.unknown(), // Keep as unknown to match database schema
+    proposalData: z.unknown(),
     processInstance: processInstanceEncoder.optional(),
     submittedBy: baseProfileEncoder.optional(),
     profile: baseProfileEncoder.optional(),
@@ -195,18 +167,12 @@ export const proposalEncoder = createSelectSchema(proposals)
     likesCount: z.number().optional(),
     followersCount: z.number().optional(),
     commentsCount: z.number().optional(),
-    // User relationship status
     isLikedByUser: z.boolean().optional(),
     isFollowedByUser: z.boolean().optional(),
-    // User permissions
     isEditable: z.boolean().optional(),
-    // Attachments
     attachments: z.array(proposalAttachmentEncoder).optional(),
-    // Selection rank (for results)
     selectionRank: z.number().nullable().optional(),
-    // Vote count (for results)
     voteCount: z.number().optional(),
-    // Allocated amount (for results)
     allocated: z.string().nullable().optional(),
   });
 
@@ -223,22 +189,10 @@ export const decisionEncoder = createSelectSchema(decisions)
     decidedBy: baseProfileEncoder.optional(),
   });
 
-// State Transition History Encoder
-export const stateTransitionHistoryEncoder = createSelectSchema(
-  stateTransitionHistory,
-)
-  .pick({
-    id: true,
-    fromStateId: true,
-    toStateId: true,
-    transitionData: true,
-    transitionedAt: true,
-  })
-  .extend({
-    triggeredBy: baseProfileEncoder.optional(),
-  });
+// =============================================================================
+// List Encoders
+// =============================================================================
 
-// List Encoders (for paginated responses)
 export const decisionProcessListEncoder = z.object({
   processes: z.array(decisionProcessEncoder),
   total: z.number(),
@@ -270,38 +224,38 @@ export const decisionListEncoder = z.object({
   hasMore: z.boolean(),
 });
 
+// =============================================================================
 // Input Schemas
-export const createProcessInputSchema = z.object({
+// =============================================================================
+
+export const createInstanceFromTemplateInputSchema = z.object({
+  templateId: z.string().min(1),
   name: z.string().min(3).max(256),
   description: z.string().optional(),
-  processSchema: processSchemaEncoder,
+  budget: z.number().optional(),
+  phases: z
+    .array(
+      z.object({
+        phaseId: z.string(),
+        plannedStartDate: z.string().optional(),
+        plannedEndDate: z.string().optional(),
+      }),
+    )
+    .optional(),
 });
 
-export const updateProcessInputSchema = createProcessInputSchema.partial();
-
-export const createInstanceInputSchema = z.object({
-  processId: z.uuid(),
-  name: z.string().min(3).max(256),
-  description: z.string().optional(),
-  instanceData: instanceDataEncoder,
-});
-
-export const updateInstanceInputSchema = createInstanceInputSchema
-  .omit({ processId: true })
-  .partial()
-  .extend({
-    instanceId: z.uuid(),
-    status: z.enum(ProcessStatus).optional(),
-  });
-
-export const getInstanceInputSchema = z.object({
+export const updateInstanceInputSchema = z.object({
   instanceId: z.uuid(),
+  name: z.string().min(3).max(256).optional(),
+  description: z.string().optional(),
+  instanceData: instanceDataEncoder.partial().optional(),
+  status: z.enum(ProcessStatus).optional(),
 });
 
 export const createProposalInputSchema = z.object({
   processInstanceId: z.uuid(),
-  proposalData: z.record(z.string(), z.unknown()), // Proposal content matching template
-  attachmentIds: z.array(z.string()).optional(), // Array of attachment IDs to link to this proposal
+  proposalData: z.record(z.string(), z.unknown()),
+  attachmentIds: z.array(z.string()).optional(),
 });
 
 export const updateProposalInputSchema = createProposalInputSchema
@@ -313,51 +267,17 @@ export const updateProposalInputSchema = createProposalInputSchema
 
 export const submitDecisionInputSchema = z.object({
   proposalId: z.uuid(),
-  decisionData: z.record(z.string(), z.unknown()), // Decision data matching voting definition
+  decisionData: z.record(z.string(), z.unknown()),
 });
 
-// Transition Schemas
-export const executeTransitionInputSchema = z.object({
-  instanceId: z.uuid(),
-  toStateId: z.string(),
-  transitionData: z.record(z.string(), z.unknown()).optional(),
-});
+// =============================================================================
+// Pagination and Filter Schemas
+// =============================================================================
 
-export const checkTransitionInputSchema = z.object({
-  instanceId: z.uuid(),
-  toStateId: z.string().optional(), // If not provided, check all possible transitions
-});
-
-export const transitionCheckResultEncoder = z.object({
-  canTransition: z.boolean(),
-  availableTransitions: z.array(
-    z.object({
-      toStateId: z.string(),
-      transitionName: z.string(),
-      canExecute: z.boolean(),
-      failedRules: z.array(
-        z.object({
-          ruleId: z.string(),
-          errorMessage: z.string(),
-        }),
-      ),
-    }),
-  ),
-});
-
-// Pagination Schema
 export const paginationInputSchema = z.object({
   limit: z.number().min(1).max(100).prefault(20),
   offset: z.number().min(0).prefault(0),
 });
-
-// Filter Schemas
-export const processFilterSchema = z
-  .object({
-    createdByProfileId: z.uuid().optional(),
-    search: z.string().optional(),
-  })
-  .extend(paginationInputSchema.shape);
 
 export const instanceFilterSchema = z
   .object({
@@ -402,6 +322,18 @@ export const decisionProfileFilterSchema = z.object({
   ownerProfileId: z.uuid().optional(),
 });
 
-// Type exports
+// =============================================================================
+// Type Exports
+// =============================================================================
+
 export type DecisionProfile = z.infer<typeof decisionProfileEncoder>;
 export type DecisionProfileList = z.infer<typeof decisionProfileListEncoder>;
+export type ProcessInstance = z.infer<typeof processInstanceEncoder>;
+export type ProcessSchema = z.infer<typeof processSchemaEncoder>;
+export type InstanceData = z.infer<typeof instanceDataEncoder>;
+export type DecisionProcess = z.infer<typeof decisionProcessEncoder>;
+export type Proposal = z.infer<typeof proposalEncoder>;
+export type Decision = z.infer<typeof decisionEncoder>;
+export type ProposalAttachment = z.infer<typeof proposalAttachmentEncoder>;
+export type PhaseDefinition = z.infer<typeof phaseDefinitionEncoder>;
+export type PhaseRules = z.infer<typeof phaseRulesEncoder>;
