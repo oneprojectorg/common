@@ -1,14 +1,22 @@
 import { deleteOrganization } from '@op/common';
+import { profiles } from '@op/db/schema';
 import { logger } from '@op/logging';
 import { TRPCError } from '@trpc/server';
+import { createSelectSchema } from 'drizzle-zod';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
-import { organizationsEncoder } from '../../encoders';
 import withAnalytics from '../../middlewares/withAnalytics';
 import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
+
+const outputSchema = createSelectSchema(profiles).pick({
+  id: true,
+  type: true,
+  name: true,
+  slug: true,
+});
 
 const inputSchema = z.object({
   organizationProfileId: z.uuid(),
@@ -34,7 +42,7 @@ export const deleteOrganizationRouter = router({
     // Router
     .meta(meta)
     .input(inputSchema)
-    .output(organizationsEncoder)
+    .output(outputSchema)
     .mutation(async ({ ctx, input }) => {
       const { organizationProfileId } = input;
       const { user } = ctx;
@@ -45,7 +53,7 @@ export const deleteOrganizationRouter = router({
           user,
         });
 
-        return organizationsEncoder.parse(deletedOrganization);
+        return outputSchema.parse(deletedOrganization);
       } catch (error: unknown) {
         logger.error('Error deleting organization', {
           error,
