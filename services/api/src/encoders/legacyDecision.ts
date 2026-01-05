@@ -345,35 +345,6 @@ export const legacySubmitDecisionInputSchema = z.object({
   decisionData: z.record(z.string(), z.unknown()), // Decision data matching voting definition
 });
 
-// Transition Schemas
-export const legacyExecuteTransitionInputSchema = z.object({
-  instanceId: z.uuid(),
-  toStateId: z.string(),
-  transitionData: z.record(z.string(), z.unknown()).optional(),
-});
-
-export const legacyCheckTransitionInputSchema = z.object({
-  instanceId: z.uuid(),
-  toStateId: z.string().optional(), // If not provided, check all possible transitions
-});
-
-export const legacyTransitionCheckResultEncoder = z.object({
-  canTransition: z.boolean(),
-  availableTransitions: z.array(
-    z.object({
-      toStateId: z.string(),
-      transitionName: z.string(),
-      canExecute: z.boolean(),
-      failedRules: z.array(
-        z.object({
-          ruleId: z.string(),
-          errorMessage: z.string(),
-        }),
-      ),
-    }),
-  ),
-});
-
 // Pagination Schema
 export const legacyPaginationInputSchema = z.object({
   limit: z.number().min(1).max(100).prefault(20),
