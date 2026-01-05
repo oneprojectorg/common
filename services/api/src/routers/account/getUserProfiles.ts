@@ -74,6 +74,9 @@ export const getUserProfiles = router({
         avatarImage: { id: string; name: string | null } | null;
       }> = [];
 
+      // Track org IDs for channel registration
+      const orgIds: string[] = [];
+
       // Add user's personal profile if it exists
       if (user.profile) {
         const profile = user.profile as Profile & {
@@ -118,12 +121,18 @@ export const getUserProfiles = router({
                   }
                 : null,
             });
+            orgIds.push(orgUser.organization.id);
           }
         }
       }
 
-      // Register channel for realtime invalidation
-      ctx.registerQueryChannels([Channels.user(authUserId)]);
+      // Register channels for realtime invalidation
+      // - User channel: for user-level changes (e.g., profile switch)
+      // - Org channels: for org-level changes (e.g., org profile name/avatar updates)
+      ctx.registerQueryChannels([
+        Channels.user(authUserId),
+        ...orgIds.map((orgId) => Channels.org(orgId)),
+      ]);
 
       return userProfiles;
     }),
