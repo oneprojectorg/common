@@ -37,7 +37,7 @@ export async function deleteOrganization({
     throw new UnauthorizedError('You are not a member of this organization');
   }
 
-  assertAccess({ profile: permission.UPDATE }, orgUser.roles || []);
+  assertAccess({ profile: permission.DELETE }, orgUser.roles || []);
 
   // Delete the organization profile
   // The cascade delete will handle removing org data
@@ -52,6 +52,7 @@ export async function deleteOrganization({
 
   // Invalidate caches for the deleted organization
   invalidate({ type: 'organization', params: [organizationProfileId] });
+  invalidate({ type: 'organization', params: [deletedOrganization.slug] });
   invalidate({ type: 'orgUser', params: [organization.id, user.id] });
 
   return deletedOrganization;
