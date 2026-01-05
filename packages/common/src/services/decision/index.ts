@@ -6,11 +6,13 @@ export * from './listProcesses';
 
 // Instance management
 export * from './createInstance';
+export * from './createInstanceFromTemplate';
 export * from './updateInstance';
 export * from './listInstances';
 export * from './getInstance';
 export * from './listDecisionProfiles';
 export * from './getDecisionBySlug';
+export * from './getTemplate';
 
 // Transition management
 export { TransitionEngine } from './transitionEngine';
