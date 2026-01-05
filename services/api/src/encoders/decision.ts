@@ -26,7 +26,7 @@ import { baseProfileEncoder } from './profiles';
 // Process Schema (DecisionSchemaDefinition)
 // =============================================================================
 
-const phaseRulesEncoder = z.object({
+export const phaseRulesEncoder = z.object({
   proposals: z
     .object({
       submit: z.boolean().optional(),
@@ -39,9 +39,15 @@ const phaseRulesEncoder = z.object({
       edit: z.boolean().optional(),
     })
     .optional(),
+  advancement: z
+    .object({
+      method: z.enum(['date', 'manual']),
+      start: z.string().optional(),
+    })
+    .optional(),
 });
 
-const phaseDefinitionEncoder = z.object({
+export const phaseDefinitionEncoder = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string().optional(),
@@ -72,10 +78,16 @@ export const instanceDataNewEncoder = z.object({
   hideBudget: z.boolean().optional(),
   fieldValues: z.record(z.string(), z.unknown()).optional(),
   currentPhaseId: z.string(),
+  config: z
+    .object({
+      hideBudget: z.boolean().optional(),
+    })
+    .optional(),
   phases: z
     .array(
       z.object({
         phaseId: z.string(),
+        rules: phaseRulesEncoder.optional(),
         plannedStartDate: z.string().optional(),
         plannedEndDate: z.string().optional(),
       }),
@@ -219,7 +231,7 @@ export const decisionListNewEncoder = z.object({
 // =============================================================================
 
 export const createInstanceFromTemplateInputSchema = z.object({
-  templateId: z.string().uuid(),
+  templateId: z.string().min(1),
   name: z.string().min(3).max(256),
   description: z.string().optional(),
   budget: z.number().optional(),
@@ -323,3 +335,26 @@ export type DecisionProfileListNew = z.infer<
 export type ProcessInstanceNew = z.infer<typeof processInstanceNewEncoder>;
 export type ProcessSchemaNew = z.infer<typeof processSchemaNewEncoder>;
 export type InstanceDataNew = z.infer<typeof instanceDataNewEncoder>;
+export type DecisionProcessNew = z.infer<typeof decisionProcessNewEncoder>;
+export type ProposalNew = z.infer<typeof proposalNewEncoder>;
+export type DecisionNew = z.infer<typeof decisionNewEncoder>;
+export type ProposalAttachmentNew = z.infer<typeof proposalAttachmentNewEncoder>;
+export type PhaseDefinitionNew = z.infer<typeof phaseDefinitionEncoder>;
+export type PhaseRulesNew = z.infer<typeof phaseRulesEncoder>;
+
+// =============================================================================
+// Backwards Compatibility Re-exports
+// These re-export legacy encoders with old names for existing code
+// TODO: Remove after frontend migration to new encoders
+// =============================================================================
+
+export {
+  legacyDecisionProfileEncoder as decisionProfileEncoder,
+  legacyDecisionProfileListEncoder as decisionProfileListEncoder,
+  legacyProcessPhaseSchema as processPhaseSchema,
+  legacyProposalEncoder as proposalEncoder,
+  legacyDecisionProcessEncoder as decisionProcessEncoder,
+  legacyProcessInstanceEncoder as processInstanceEncoder,
+  type LegacyDecisionProfile as DecisionProfile,
+  type LegacyDecisionProfileList as DecisionProfileList,
+} from './legacyDecision';

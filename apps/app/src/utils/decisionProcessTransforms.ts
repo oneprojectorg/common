@@ -249,7 +249,7 @@ export const validatePhaseSequence = (
     { name: 'Voting Open', value: votingOpen, key: 'votingOpen' },
     { name: 'Voting Close', value: votingClose, key: 'votingClose' },
     { name: 'Results Date', value: resultsDate, key: 'resultsDate' },
-  ].filter((d) => d.value); // Only validate dates that are set
+  ].filter((dateEntry) => dateEntry.value); // Only validate dates that are set
 
   // Check chronological order
   for (let i = 0; i < dates.length - 1; i++) {

@@ -1,15 +1,31 @@
 /**
  * Instance data creation helpers for DecisionSchemaDefinition templates.
  */
-import type { DecisionSchemaDefinition } from './types';
+import type {
+  DecisionSchemaDefinition,
+  PhaseRules,
+  ProcessConfig,
+} from './types';
 
 export interface PhaseInstanceData {
   phaseId: string;
-  rules: {
-    proposals?: { submit?: boolean; edit?: boolean };
-    voting?: { submit?: boolean; edit?: boolean };
-    advancement?: { method: 'date' | 'manual'; start?: string };
-  };
+  rules: PhaseRules;
+  plannedStartDate?: string;
+  plannedEndDate?: string;
+  actualStartDate?: string;
+  actualEndDate?: string;
+}
+
+/**
+ * Instance data stored in processInstances table for new DecisionSchemaDefinition-based instances.
+ * This structure must match instanceDataNewEncoder in the API encoders.
+ */
+export interface DecisionInstanceData {
+  budget?: number;
+  currentPhaseId: string;
+  fieldValues: Record<string, unknown>;
+  config?: ProcessConfig;
+  phases: PhaseInstanceData[];
 }
 
 /**
@@ -19,22 +35,41 @@ export interface PhaseInstanceData {
 export function createInstanceDataFromTemplate(input: {
   template: DecisionSchemaDefinition;
   budget?: number;
-}) {
-  const { template, budget } = input;
+  phaseOverrides?: Array<{
+    phaseId: string;
+    plannedStartDate?: string;
+    plannedEndDate?: string;
+  }>;
+}): DecisionInstanceData {
+  const { template, budget, phaseOverrides } = input;
 
   const firstPhase = template.phases[0];
   if (!firstPhase) {
     throw new Error('Template must have at least one phase');
   }
 
+  // Create a map of phase overrides for quick lookup
+  const overrideMap = new Map(
+    phaseOverrides?.map((override) => [override.phaseId, override]) ?? [],
+  );
+
   return {
     budget,
     currentPhaseId: firstPhase.id,
     fieldValues: {},
     config: template.config,
-    phases: template.phases.map((phase) => ({
-      phaseId: phase.id,
-      rules: phase.rules,
-    })),
+    phases: template.phases.map((phase) => {
+      const override = overrideMap.get(phase.id);
+      return {
+        phaseId: phase.id,
+        rules: phase.rules,
+        ...(override?.plannedStartDate && {
+          plannedStartDate: override.plannedStartDate,
+        }),
+        ...(override?.plannedEndDate && {
+          plannedEndDate: override.plannedEndDate,
+        }),
+      };
+    }),
   };
 }

@@ -1,5 +1,6 @@
 export * from './attachments';
 export * from './decision';
+export * from './legacyDecision';
 export * from './joinProfileRequests';
 export * from './links';
 export * from './modules';
