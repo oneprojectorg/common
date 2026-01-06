@@ -5,7 +5,7 @@
 import type { UiSchema } from '@rjsf/utils';
 import type { JSONSchema7 } from 'json-schema';
 
-import type { SelectionPipeline } from '../../services/decision/selectionPipeline/types';
+import type { SelectionPipeline } from '../selectionPipeline/types';
 
 /**
  * Phase behavior rules

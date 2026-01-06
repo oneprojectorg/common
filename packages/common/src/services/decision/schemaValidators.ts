@@ -4,7 +4,7 @@ import {
   ProposalConfig,
   SchemaValidationResult,
   VotingConfig,
-} from '../types/schema';
+} from './schemaTypes';
 
 export function isValidDecisionProcessSchema(
   data: unknown,

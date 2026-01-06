@@ -9,8 +9,8 @@ import {
 } from '@op/db/schema';
 import { assertAccess, permission } from 'access-zones';
 
-import { processDecisionProcessSchema } from '../../lib/schema-registry';
-import { validateVoteSelection } from '../../lib/schema-validators';
+import { processDecisionProcessSchema } from './schemaRegistry';
+import { validateVoteSelection } from './schemaValidators';
 import {
   CommonError,
   NotFoundError,

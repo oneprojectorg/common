@@ -4,13 +4,13 @@ import {
   SchemaType,
   SchemaValidationResult,
   VotingConfig,
-} from '../types/schema';
+} from './schemaTypes';
 import {
   extractProposalConfig,
   extractVotingConfig,
   isValidDecisionProcessSchema,
   validateSchemaWithZod,
-} from './schema-validators';
+} from './schemaValidators';
 
 export interface SchemaHandler<
   T extends DecisionProcessSchema = DecisionProcessSchema,
