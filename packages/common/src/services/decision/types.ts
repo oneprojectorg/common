@@ -111,9 +111,7 @@ export interface StateData {
 }
 
 export interface PhaseConfiguration {
-  stateId: string;
-  actualStartDate?: string;
-  actualEndDate?: string;
+  phaseId: string;
   plannedStartDate?: string;
   plannedEndDate?: string;
 }

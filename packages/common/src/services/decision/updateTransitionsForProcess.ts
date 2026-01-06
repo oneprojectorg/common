@@ -56,12 +56,10 @@ export async function updateTransitionsForProcess({
     // Build a map of expected transitions from the current phases
     const expectedTransitions = phases.map(
       (phase: PhaseConfiguration, index: number) => {
-        const fromStateId = index > 0 ? phases[index - 1]?.stateId : null;
-        const toStateId = phase.stateId;
+        const fromStateId = index > 0 ? phases[index - 1]?.phaseId : null;
+        const toStateId = phase.phaseId;
         // For phases like 'results' that only have a start date (no end), use the start date
-        const scheduledEnd = phase.plannedEndDate || phase.actualEndDate;
-        const scheduledStart = phase.plannedStartDate || phase.actualStartDate;
-        const scheduledDate = scheduledEnd || scheduledStart;
+        const scheduledDate = phase.plannedEndDate || phase.plannedStartDate;
 
         if (!scheduledDate) {
           throw new CommonError(

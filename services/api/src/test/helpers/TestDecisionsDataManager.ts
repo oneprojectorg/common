@@ -310,14 +310,14 @@ export class TestDecisionsDataManager {
         currentStateId: 'initial',
         phases: [
           {
-            stateId: 'initial',
+            phaseId: 'initial',
             plannedStartDate: new Date().toISOString(),
             plannedEndDate: new Date(
               Date.now() + 7 * 24 * 60 * 60 * 1000,
             ).toISOString(),
           },
           {
-            stateId: 'final',
+            phaseId: 'final',
             plannedStartDate: new Date(
               Date.now() + 7 * 24 * 60 * 60 * 1000,
             ).toISOString(),
