@@ -3,9 +3,9 @@ import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 
 import {
-  legacyProposalFilterSchema,
-  legacyProposalListEncoder,
-} from '../../../encoders/legacyDecision';
+  proposalFilterSchema,
+  proposalListEncoder,
+} from '../../../encoders/decision';
 import withAnalytics from '../../../middlewares/withAnalytics';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
 import { loggedProcedure, router } from '../../../trpcFactory';
@@ -26,8 +26,8 @@ export const listProposalsRouter = router({
     .use(withAuthenticated)
     .use(withAnalytics)
     .meta(meta)
-    .input(legacyProposalFilterSchema)
-    .output(legacyProposalListEncoder)
+    .input(proposalFilterSchema)
+    .output(proposalListEncoder)
     .query(async ({ ctx, input }) => {
       const { user, logger } = ctx;
 
