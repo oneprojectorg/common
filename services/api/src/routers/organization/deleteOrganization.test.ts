@@ -19,7 +19,7 @@ describe.concurrent('organization.deleteOrganization', () => {
     onTestFinished,
   }) => {
     const testData = new TestOrganizationDataManager(task.id, onTestFinished);
-    const { organization, organizationProfile, adminUser } =
+    const { organizationProfile, adminUser } =
       await testData.createOrganization({
         users: { admin: 1 },
         organizationName: 'Delete Test Org',
@@ -39,6 +39,7 @@ describe.concurrent('organization.deleteOrganization', () => {
     expect(result.id).toBe(organizationProfile.id);
     expect(result.name).toBe(organizationProfile.name);
     expect(result.slug).toBe(organizationProfile.slug);
+    expect(result.type).toBe('org');
 
     // Verify the organization was actually deleted from the database
     const deletedProfile = await db.query.profiles.findFirst({
@@ -47,7 +48,21 @@ describe.concurrent('organization.deleteOrganization', () => {
     expect(deletedProfile).toBeUndefined();
   });
 
-  it('should throw error when non-member tries to delete organization', async ({
+  it('should reject requests from unauthenticated users', async () => {
+    const caller = createCaller(await createTestContextWithSession(null));
+
+    await expect(
+      caller.deleteOrganization({
+        organizationProfileId: '00000000-0000-0000-0000-000000000000',
+      }),
+    ).rejects.toMatchObject({
+      cause: {
+        name: 'UnauthorizedError',
+      },
+    });
+  });
+
+  it('should throw UNAUTHORIZED when non-member tries to delete organization', async ({
     task,
     onTestFinished,
   }) => {
@@ -73,10 +88,19 @@ describe.concurrent('organization.deleteOrganization', () => {
       caller.deleteOrganization({
         organizationProfileId: organizationProfile.id,
       }),
-    ).rejects.toThrow();
+    ).rejects.toMatchObject({
+      code: 'UNAUTHORIZED',
+    });
+
+    // Verify the organization was NOT deleted
+    const existingProfile = await db.query.profiles.findFirst({
+      where: eq(profiles.id, organizationProfile.id),
+    });
+    expect(existingProfile).toBeDefined();
+    expect(existingProfile?.id).toBe(organizationProfile.id);
   });
 
-  it('should throw error when member without admin role tries to delete organization', async ({
+  it('should throw UNAUTHORIZED when member without admin role tries to delete organization', async ({
     task,
     onTestFinished,
   }) => {
@@ -96,14 +120,24 @@ describe.concurrent('organization.deleteOrganization', () => {
     const { session } = await createIsolatedSession(memberUser.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
+    // Member without admin permissions should be rejected
+    // Note: The router currently returns INTERNAL_SERVER_ERROR for AccessError
+    // (this could be improved to return UNAUTHORIZED in the router)
     await expect(
       caller.deleteOrganization({
         organizationProfileId: organizationProfile.id,
       }),
     ).rejects.toThrow();
+
+    // Verify the organization was NOT deleted
+    const existingProfile = await db.query.profiles.findFirst({
+      where: eq(profiles.id, organizationProfile.id),
+    });
+    expect(existingProfile).toBeDefined();
+    expect(existingProfile?.id).toBe(organizationProfile.id);
   });
 
-  it('should throw error for non-existent organization', async ({
+  it('should throw NOT_FOUND for non-existent organization', async ({
     task,
     onTestFinished,
   }) => {
@@ -119,6 +153,29 @@ describe.concurrent('organization.deleteOrganization', () => {
       caller.deleteOrganization({
         organizationProfileId: '00000000-0000-0000-0000-000000000000',
       }),
-    ).rejects.toThrow();
+    ).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+    });
+  });
+
+  it('should throw BAD_REQUEST for invalid UUID format', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+    const { adminUser } = await testData.createOrganization({
+      users: { admin: 1 },
+    });
+
+    const { session } = await createIsolatedSession(adminUser.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    await expect(
+      caller.deleteOrganization({
+        organizationProfileId: 'invalid-uuid-format',
+      }),
+    ).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+    });
   });
 });
