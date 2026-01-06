@@ -36,10 +36,8 @@ describe.concurrent('organization.deleteOrganization', () => {
 
     // Verify the response contains expected profile fields
     expect(result).toBeDefined();
-    expect(result.id).toBe(organizationProfile.id);
-    expect(result.name).toBe(organizationProfile.name);
-    expect(result.slug).toBe(organizationProfile.slug);
-    expect(result.type).toBe('org');
+    expect(result.success).toBe(true);
+    expect(result.deletedId).toBe(organizationProfile.id);
 
     // Verify the organization was actually deleted from the database
     const deletedProfile = await db.query.profiles.findFirst({
