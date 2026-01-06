@@ -99,7 +99,7 @@ export const simpleVoting: DecisionSchemaDefinition = {
             id: 'limit-by-votes',
             type: 'limit',
             name: 'Take top N (based on maxVotesPerMember config)',
-            count: { variable: '$maxVotesPerMember' },
+            count: { variable: 'maxVotesPerMember' },
           },
         ],
       },
