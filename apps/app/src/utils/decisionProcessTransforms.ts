@@ -185,7 +185,7 @@ export const transformFormDataToInstanceData = (
   return {
     budget: data.totalBudget as number,
     hideBudget: data.hideBudget as boolean,
-    currentStateId: schemaType === 'horizon' ? 'submission' : 'ideaCollection',
+    currentPhaseId: schemaType === 'horizon' ? 'submission' : 'ideaCollection',
     fieldValues: {
       categories: data.categories,
       budgetCapAmount: data.budgetCapAmount,

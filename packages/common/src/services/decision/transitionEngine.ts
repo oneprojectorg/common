@@ -79,12 +79,12 @@ export class TransitionEngine {
       const instanceData = instance.instanceData as InstanceData;
       console.log(
         'TRANSITION',
-        instanceData.currentStateId,
+        instanceData.currentPhaseId,
         instance.currentStateId,
         instanceData,
       );
       const currentStateId =
-        instanceData.currentStateId || instance.currentStateId || '';
+        instanceData.currentPhaseId || instance.currentStateId || '';
 
       // Find applicable transitions
       const applicableTransitions = processSchema.transitions.filter(
@@ -196,7 +196,7 @@ export class TransitionEngine {
       const processSchema = process.processSchema as ProcessSchema;
       const instanceData = instance.instanceData as InstanceData;
       const currentStateId =
-        instanceData.currentStateId || instance.currentStateId || '';
+        instanceData.currentPhaseId || instance.currentStateId || '';
 
       // Find the transition definition
       const transition = processSchema.transitions.find(
@@ -214,7 +214,7 @@ export class TransitionEngine {
       // Update instance data with new state
       const updatedInstanceData: InstanceData = {
         ...instanceData,
-        currentStateId: data.toStateId,
+        currentPhaseId: data.toStateId,
         stateData: {
           ...instanceData.stateData,
           [data.toStateId]: {
@@ -390,7 +390,7 @@ export class TransitionEngine {
     instanceData: InstanceData,
   ): boolean {
     const now = new Date();
-    const currentState = instanceData.stateData?.[instanceData.currentStateId];
+    const currentState = instanceData.stateData?.[instanceData.currentPhaseId];
 
     if (!currentState?.enteredAt) {
       return false;

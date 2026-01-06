@@ -99,12 +99,13 @@ const processSchemaEncoder = z.object({
   proposalTemplate: jsonSchemaEncoder,
 });
 
-// Instance Data Encoder
+// Instance Data Encoder that supports both new (currentPhaseId) and legacy (currentStateId) formats
 const instanceDataEncoder = z.object({
   budget: z.number().optional(),
   hideBudget: z.boolean().optional(),
   fieldValues: z.record(z.string(), z.unknown()).optional(),
-  currentStateId: z.string(),
+  currentPhaseId: z.string(),
+  currentStateId: z.string().optional(),
   stateData: z
     .record(
       z.string(),

@@ -307,7 +307,7 @@ export class TestDecisionsDataManager {
       instanceData: {
         budget,
         hideBudget: false,
-        currentStateId: 'initial',
+        currentPhaseId: 'initial',
         phases: [
           {
             phaseId: 'initial',
