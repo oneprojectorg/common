@@ -9,8 +9,8 @@ import { waitUntil } from '@vercel/functions';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 
 import {
-  createProposalInputSchema,
-  proposalEncoder,
+  legacyCreateProposalInputSchema,
+  legacyProposalEncoder,
 } from '../../../encoders/legacyDecision';
 import withAnalytics from '../../../middlewares/withAnalytics';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
@@ -35,8 +35,8 @@ export const createProposalRouter = router({
     .use(withAuthenticated)
     .use(withAnalytics)
     .meta(meta)
-    .input(createProposalInputSchema)
-    .output(proposalEncoder)
+    .input(legacyCreateProposalInputSchema)
+    .output(legacyProposalEncoder)
     .mutation(async ({ ctx, input }) => {
       const { user, logger } = ctx;
       const { processInstanceId } = input;
@@ -54,7 +54,7 @@ export const createProposalRouter = router({
           }),
         );
 
-        return proposalEncoder.parse(proposal);
+        return legacyProposalEncoder.parse(proposal);
       } catch (error: unknown) {
         logger.error('Failed to create proposal', {
           userId: user.id,

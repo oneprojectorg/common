@@ -441,5 +441,3 @@ export { legacyDecisionProcessListEncoder as decisionProcessListEncoder };
 export { legacyProposalFilterSchema as proposalFilterSchema };
 export { legacyInstanceFilterSchema as instanceFilterSchema };
 export { legacyPaginationInputSchema as paginationInputSchema };
-export { legacyCreateProposalInputSchema as createProposalInputSchema };
-export { legacyUpdateProposalInputSchema as updateProposalInputSchema };

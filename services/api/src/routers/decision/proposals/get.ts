@@ -11,7 +11,7 @@ import { waitUntil } from '@vercel/functions';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
-import { proposalEncoder } from '../../../encoders/legacyDecision';
+import { legacyProposalEncoder } from '../../../encoders/legacyDecision';
 import withAnalytics from '../../../middlewares/withAnalytics';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
 import { loggedProcedure, router } from '../../../trpcFactory';
@@ -38,7 +38,7 @@ export const getProposalRouter = router({
         profileId: z.uuid(),
       }),
     )
-    .output(proposalEncoder)
+    .output(legacyProposalEncoder)
     .query(async ({ ctx, input }) => {
       const { user } = ctx;
       let { profileId } = input;
@@ -88,7 +88,7 @@ export const getProposalRouter = router({
           );
         }
 
-        return proposalEncoder.parse(proposal);
+        return legacyProposalEncoder.parse(proposal);
       } catch (error: unknown) {
         if (error instanceof UnauthorizedError) {
           throw new TRPCError({
