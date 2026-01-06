@@ -9,8 +9,6 @@ import {
 } from '@op/db/schema';
 import { assertAccess, permission } from 'access-zones';
 
-import { processDecisionProcessSchema } from './schemaRegistry';
-import { validateVoteSelection } from './schemaValidators';
 import {
   CommonError,
   NotFoundError,
@@ -19,6 +17,8 @@ import {
 } from '../../utils';
 import { getIndividualProfileId, getOrgAccessUser } from '../access';
 import { assertOrganizationByProfileId } from '../assert';
+import { processDecisionProcessSchema } from './schemaRegistry';
+import { validateVoteSelection } from './schemaValidators';
 
 export type CustomData = Record<string, unknown>;
 
