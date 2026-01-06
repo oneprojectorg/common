@@ -3,8 +3,8 @@ import { decisionProcessTransitions } from '@op/db/schema';
 import type { ProcessInstance } from '@op/db/schema';
 import pMap from 'p-map';
 
-import type { DecisionInstanceData } from './schemas/instanceData';
 import { CommonError } from '../../utils';
+import type { DecisionInstanceData } from './schemas/instanceData';
 
 /**
  * Updates transition records for a process instance when phase dates change.

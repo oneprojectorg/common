@@ -9,9 +9,9 @@ import {
 } from '@op/db/schema';
 import type { DecisionProcess } from '@op/db/schema';
 
+import { CommonError } from '../../utils';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import type { DecisionSchemaDefinition } from './schemas/types';
-import { CommonError } from '../../utils';
 import {
   aggregateVoteData,
   defaultSelectionPipeline,
