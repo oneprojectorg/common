@@ -88,7 +88,7 @@ export async function processResults({
         process: {
           instanceId: processInstance.id,
           processId: processInstance.processId,
-          currentStateId: processInstance.currentStateId,
+          currentPhaseId: instanceData.currentPhaseId,
           instanceData,
           processSchema: schema,
           processInstance,
