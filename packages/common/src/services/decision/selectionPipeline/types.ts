@@ -1,5 +1,7 @@
 import type { ProcessInstance, Proposal } from '@op/db/schema';
 
+import type { DecisionInstanceData } from '../../../lib/decisionSchemas/instanceData';
+import type { DecisionSchemaDefinition } from '../../../lib/decisionSchemas/types';
 import type { InstanceData, ProcessSchema } from '../types';
 
 /**
@@ -252,8 +254,8 @@ export interface ExecutionContext {
     instanceId: string;
     processId: string;
     currentStateId: string | null;
-    instanceData: InstanceData;
-    processSchema: ProcessSchema;
+    instanceData: InstanceData | DecisionInstanceData;
+    processSchema: ProcessSchema | DecisionSchemaDefinition;
     processInstance: ProcessInstance;
   };
 

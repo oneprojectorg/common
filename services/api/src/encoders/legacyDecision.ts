@@ -420,7 +420,9 @@ export type ProcessInstance = z.infer<typeof legacyProcessInstanceEncoder>;
 export type DecisionProcess = z.infer<typeof legacyDecisionProcessEncoder>;
 export type Proposal = z.infer<typeof legacyProposalEncoder>;
 export type Decision = z.infer<typeof legacyDecisionEncoder>;
-export type ProposalAttachment = z.infer<typeof legacyProposalAttachmentEncoder>;
+export type ProposalAttachment = z.infer<
+  typeof legacyProposalAttachmentEncoder
+>;
 
 // Encoder aliases for frontend components - these match what the API actually returns
 export { legacyProposalEncoder as proposalEncoder };

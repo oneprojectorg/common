@@ -9,6 +9,8 @@ import {
 } from '@op/db/schema';
 import type { DecisionProcess } from '@op/db/schema';
 
+import type { DecisionInstanceData } from '../../lib/decisionSchemas/instanceData';
+import type { DecisionSchemaDefinition } from '../../lib/decisionSchemas/types';
 import { CommonError } from '../../utils';
 import {
   aggregateVoteData,
@@ -16,7 +18,6 @@ import {
   executePipeline,
 } from './selectionPipeline';
 import type { ExecutionContext } from './selectionPipeline/types';
-import type { InstanceData, ProcessSchema } from './types';
 
 export interface ProcessResultsInput {
   processInstanceId: string;
@@ -60,19 +61,22 @@ export async function processResults({
       where: eq(proposals.processInstanceId, processInstanceId),
     });
 
-    // Get the process schema
+    // Get the process schema (new DecisionSchemaDefinition format only)
     const process = processInstance.process as DecisionProcess;
-    const processSchema = process.processSchema as ProcessSchema;
-    const instanceData = processInstance.instanceData as InstanceData;
+    const schema = process.processSchema as DecisionSchemaDefinition;
+    const instanceData = processInstance.instanceData as DecisionInstanceData;
 
     let selectedProposalIds: string[] = [];
     let error: string | undefined;
     let success = false;
 
+    // Get the final phase for selection pipeline
+    const finalPhase = schema.phases[schema.phases.length - 1];
+
     try {
-      // Use the defined pipeline or fall back to default
+      // Get the selection pipeline from the final phase, or fall back to default
       const pipeline =
-        processSchema.selectionPipeline || defaultSelectionPipeline;
+        finalPhase?.selectionPipeline || defaultSelectionPipeline;
 
       // Aggregate voting data
       const voteData = await aggregateVoteData(processInstanceId);
@@ -86,7 +90,7 @@ export async function processResults({
           processId: processInstance.processId,
           currentStateId: processInstance.currentStateId,
           instanceData,
-          processSchema,
+          processSchema: schema,
           processInstance,
         },
         variables: {
@@ -127,7 +131,7 @@ export async function processResults({
           errorMessage: error,
           selectedCount: selectedProposalIds.length,
           voterCount,
-          pipelineConfig: processSchema.selectionPipeline || null,
+          pipelineConfig: finalPhase?.selectionPipeline || null,
         })
         .returning();
 

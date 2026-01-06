@@ -132,9 +132,7 @@ export const processInstanceEncoder = createSelectSchema(processInstances)
   });
 
 // Proposal Attachment Encoder
-export const proposalAttachmentEncoder = createSelectSchema(
-  proposalAttachments,
-)
+export const proposalAttachmentEncoder = createSelectSchema(proposalAttachments)
   .pick({
     id: true,
     proposalId: true,
