@@ -1,8 +1,6 @@
 import { deleteOrganization } from '@op/common';
-import { profiles } from '@op/db/schema';
 import { logger } from '@op/logging';
 import { TRPCError } from '@trpc/server';
-import { createSelectSchema } from 'drizzle-zod';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
