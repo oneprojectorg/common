@@ -9,6 +9,8 @@ import {
 } from '@op/db/schema';
 import { assertAccess, permission } from 'access-zones';
 
+import { processDecisionProcessSchema } from './schemaRegistry';
+import { validateVoteSelection } from './schemaValidators';
 import {
   CommonError,
   NotFoundError,
@@ -400,15 +402,15 @@ export const getVotingStatus = async ({
       hasVoted: !!voteSubmission,
       voteSubmission: voteSubmission
         ? {
-            id: voteSubmission.id,
-            processInstanceId: voteSubmission.processInstanceId,
-            userId: voteSubmission.submittedByProfileId,
-            selectedProposalIds,
-            createdAt: new Date(voteSubmission.createdAt!),
-            signature: voteSubmission.signature,
-            schemaVersion: voteSubmission.voteData.schemaVersion,
-            schemaType: voteSubmission.voteData.schemaType,
-          }
+          id: voteSubmission.id,
+          processInstanceId: voteSubmission.processInstanceId,
+          userId: voteSubmission.submittedByProfileId,
+          selectedProposalIds,
+          createdAt: new Date(voteSubmission.createdAt!),
+          signature: voteSubmission.signature,
+          schemaVersion: voteSubmission.voteData.schemaVersion,
+          schemaType: voteSubmission.voteData.schemaType,
+        }
         : null,
       selectedProposals,
       votingConfiguration: {
