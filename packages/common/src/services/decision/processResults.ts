@@ -89,7 +89,14 @@ export async function processResults({
           processSchema,
           processInstance,
         },
-        variables: {},
+        variables: {
+          // Add budget first so fieldValues can override if needed
+          ...(instanceData.budget !== undefined && {
+            budget: instanceData.budget,
+          }),
+          // Spread instance field values as pipeline variables
+          ...(instanceData.fieldValues || {}),
+        },
         outputs: {},
       };
 

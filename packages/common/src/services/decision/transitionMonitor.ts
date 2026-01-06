@@ -8,6 +8,7 @@ import pMap from 'p-map';
 
 import type { DecisionSchemaDefinition } from '../../lib/decisionSchemas/types';
 import { CommonError } from '../../utils';
+import { processResults } from './processResults';
 
 export interface ProcessDecisionsTransitionsResult {
   processed: number;
@@ -177,9 +178,6 @@ async function processTransition(transitionId: string): Promise<void> {
       console.log(
         `Processing results for process instance ${transition.processInstanceId}`,
       );
-      console.log('RESULT PROCESSING DISABLED');
-      // Disabling for now as none are defined in production yet. We need to migrate current processes first.
-      /*
       const result = await processResults({
         processInstanceId: transition.processInstanceId,
       });
@@ -194,7 +192,6 @@ async function processTransition(transitionId: string): Promise<void> {
           `Results processed successfully for process instance ${transition.processInstanceId}. Selected ${result.selectedProposalIds.length} proposals.`,
         );
       }
-      */
     } catch (error) {
       // Log the error but don't fail the transition
       // The transition to the results phase has already been completed
