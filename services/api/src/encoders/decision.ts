@@ -71,11 +71,24 @@ export const processSchemaEncoder = z.object({
 // Instance Data
 // =============================================================================
 
+// Instance data encoder that supports both new (currentPhaseId) and legacy (currentStateId) formats
 export const instanceDataEncoder = z.object({
   budget: z.number().optional(),
   hideBudget: z.boolean().optional(),
   fieldValues: z.record(z.string(), z.unknown()).optional(),
-  currentPhaseId: z.string(),
+  // Support both new and legacy field names during migration
+  currentPhaseId: z.string().optional(),
+  currentStateId: z.string().optional(),
+  // Legacy state data
+  stateData: z
+    .record(
+      z.string(),
+      z.object({
+        enteredAt: z.string().optional(),
+        metadata: z.record(z.string(), z.unknown()).optional(),
+      }),
+    )
+    .optional(),
   config: z
     .object({
       hideBudget: z.boolean().optional(),
@@ -84,10 +97,13 @@ export const instanceDataEncoder = z.object({
   phases: z
     .array(
       z.object({
-        phaseId: z.string(),
+        phaseId: z.string().optional(),
+        stateId: z.string().optional(),
         rules: phaseRulesEncoder.optional(),
         plannedStartDate: z.string().optional(),
         plannedEndDate: z.string().optional(),
+        actualStartDate: z.string().optional(),
+        actualEndDate: z.string().optional(),
       }),
     )
     .optional(),

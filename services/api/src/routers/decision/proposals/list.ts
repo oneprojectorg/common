@@ -5,7 +5,7 @@ import type { OpenApiMeta } from 'trpc-to-openapi';
 import {
   proposalFilterSchema,
   proposalListEncoder,
-} from '../../../encoders/decision';
+} from '../../../encoders/legacyDecision';
 import withAnalytics from '../../../middlewares/withAnalytics';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
 import { loggedProcedure, router } from '../../../trpcFactory';
