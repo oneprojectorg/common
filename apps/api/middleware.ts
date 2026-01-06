@@ -7,7 +7,8 @@ const corsOptions = {
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
   //   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   'Access-Control-Allow-Credentials': 'true',
-  'Access-Control-Expose-Headers': 'x-mutation-channels, x-query-channels, x-request-id',
+  'Access-Control-Expose-Headers':
+    'x-mutation-channels, x-query-channels, x-request-id',
 };
 
 const { IS_DEVELOPMENT } = OPURLConfig('API');
