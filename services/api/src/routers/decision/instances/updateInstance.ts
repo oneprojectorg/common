@@ -3,9 +3,9 @@ import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 
 import {
-  processInstanceEncoder,
-  updateInstanceInputSchema,
-} from '../../../encoders/decision';
+  legacyProcessInstanceEncoder,
+  legacyUpdateInstanceInputSchema,
+} from '../../../encoders/legacyDecision';
 import withAnalytics from '../../../middlewares/withAnalytics';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
 import withRateLimited from '../../../middlewares/withRateLimited';
@@ -28,8 +28,8 @@ export const updateInstanceRouter = router({
     .use(withAuthenticated)
     .use(withAnalytics)
     .meta(meta)
-    .input(updateInstanceInputSchema)
-    .output(processInstanceEncoder)
+    .input(legacyUpdateInstanceInputSchema)
+    .output(legacyProcessInstanceEncoder)
     .mutation(async ({ ctx, input }) => {
       const { user, logger } = ctx;
 
@@ -59,7 +59,7 @@ export const updateInstanceRouter = router({
           instanceName: instance.name,
         });
 
-        return processInstanceEncoder.parse(instance);
+        return legacyProcessInstanceEncoder.parse(instance);
       } catch (error: unknown) {
         logger.error('Failed to update process instance', {
           userId: user.id,

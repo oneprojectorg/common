@@ -4,9 +4,9 @@ import { waitUntil } from '@vercel/functions';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 
 import {
-  getInstanceInputSchema,
-  processInstanceEncoder,
-} from '../../../encoders/decision';
+  legacyGetInstanceInputSchema,
+  legacyProcessInstanceEncoder,
+} from '../../../encoders/legacyDecision';
 import withAnalytics from '../../../middlewares/withAnalytics';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
 import withRateLimited from '../../../middlewares/withRateLimited';
@@ -30,8 +30,8 @@ export const getInstanceRouter = router({
     .use(withAuthenticated)
     .use(withAnalytics)
     .meta(meta)
-    .input(getInstanceInputSchema)
-    .output(processInstanceEncoder)
+    .input(legacyGetInstanceInputSchema)
+    .output(legacyProcessInstanceEncoder)
     .query(async ({ ctx, input }) => {
       const { user, logger } = ctx;
 
@@ -45,7 +45,7 @@ export const getInstanceRouter = router({
         // Track process viewed event
         waitUntil(trackProcessViewed(ctx, input.instanceId));
 
-        return processInstanceEncoder.parse({
+        return legacyProcessInstanceEncoder.parse({
           ...instance,
           instanceData: instance.instanceData as Record<string, any>,
           // Some typechecking since these are unknown

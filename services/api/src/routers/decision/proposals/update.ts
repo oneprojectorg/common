@@ -10,9 +10,9 @@ import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
 import {
-  proposalEncoder,
-  updateProposalInputSchema,
-} from '../../../encoders/decision';
+  legacyProposalEncoder,
+  legacyUpdateProposalInputSchema,
+} from '../../../encoders/legacyDecision';
 import withAnalytics from '../../../middlewares/withAnalytics';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
 import withRateLimited from '../../../middlewares/withRateLimited';
@@ -38,10 +38,10 @@ export const updateProposalRouter = router({
     .input(
       z.object({
         proposalId: z.uuid(),
-        data: updateProposalInputSchema,
+        data: legacyUpdateProposalInputSchema,
       }),
     )
-    .output(proposalEncoder)
+    .output(legacyProposalEncoder)
     .mutation(async ({ ctx, input }) => {
       const { user, logger } = ctx;
       const { proposalId } = input;
@@ -58,7 +58,7 @@ export const updateProposalRouter = router({
           params: [proposal.profileId],
         });
 
-        return proposalEncoder.parse(proposal);
+        return legacyProposalEncoder.parse(proposal);
       } catch (error: unknown) {
         logger.error('Failed to update proposal', {
           userId: user.id,

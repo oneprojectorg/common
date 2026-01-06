@@ -2,9 +2,9 @@ import { listDecisionProfiles } from '@op/common';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 
 import {
-  decisionProfileFilterSchema,
-  decisionProfileListEncoder,
-} from '../../../encoders/decision';
+  legacyDecisionProfileFilterSchema,
+  legacyDecisionProfileListEncoder,
+} from '../../../encoders/legacyDecision';
 import withAnalytics from '../../../middlewares/withAnalytics';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
 import withRateLimited from '../../../middlewares/withRateLimited';
@@ -27,8 +27,8 @@ export const listDecisionProfilesRouter = router({
     .use(withAuthenticated)
     .use(withAnalytics)
     .meta(meta)
-    .input(decisionProfileFilterSchema)
-    .output(decisionProfileListEncoder)
+    .input(legacyDecisionProfileFilterSchema)
+    .output(legacyDecisionProfileListEncoder)
     .query(async ({ input, ctx }) => {
       const { user } = ctx;
 
@@ -37,6 +37,6 @@ export const listDecisionProfilesRouter = router({
         user,
       });
 
-      return decisionProfileListEncoder.parse(result);
+      return legacyDecisionProfileListEncoder.parse(result);
     }),
 });

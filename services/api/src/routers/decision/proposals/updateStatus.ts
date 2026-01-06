@@ -11,7 +11,7 @@ import { TRPCError } from '@trpc/server';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
-import { proposalEncoder } from '../../../encoders/decision';
+import { legacyProposalEncoder } from '../../../encoders/legacyDecision';
 import withAnalytics from '../../../middlewares/withAnalytics';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
 import withRateLimited from '../../../middlewares/withRateLimited';
@@ -40,7 +40,7 @@ export const updateProposalStatusRouter = router({
     .use(withAnalytics)
     .meta(meta)
     .input(updateProposalStatusInput)
-    .output(proposalEncoder)
+    .output(legacyProposalEncoder)
     .mutation(async ({ ctx, input }) => {
       const { user } = ctx;
       const { profileId, status } = input;
@@ -57,7 +57,7 @@ export const updateProposalStatusRouter = router({
           params: [profileId],
         });
 
-        return proposalEncoder.parse(proposal);
+        return legacyProposalEncoder.parse(proposal);
       } catch (error: unknown) {
         logger.error('Failed to update proposal status', {
           userId: user.id,
