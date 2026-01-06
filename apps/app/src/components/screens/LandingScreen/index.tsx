@@ -128,8 +128,13 @@ const PostFeedSection = async ({
   showPostUpdate: boolean;
 }) => {
   // Prefetch posts data on server to prevent hydration mismatch
+  // If this fails, the client will fetch instead
   const { utils, queryClient } = await createServerUtils();
-  await utils.organization.listAllPosts.prefetchInfinite({ limit: 10 });
+  try {
+    await utils.organization.listAllPosts.prefetchInfinite({ limit: 10 });
+  } catch {
+    // Silently fail, client will still fetch
+  }
 
   return (
     <>
