@@ -40,7 +40,7 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
 
   // Get closing date from phases - find the current phase's end date
   const currentPhase = processInstance?.instanceData?.phases?.find(
-    (phase) => phase.stateId === processInstance.currentStateId,
+    (phase) => phase.phaseId === processInstance.currentStateId,
   );
   const closingDate = currentPhase?.plannedEndDate;
 
@@ -115,7 +115,7 @@ export const ProfileDecisionListItem = ({
 
   // Get closing date from phases - find the current phase's end date
   const currentPhase = processInstance?.instanceData?.phases?.find(
-    (phase) => phase.stateId === processInstance.currentStateId,
+    (phase) => phase.phaseId === processInstance.currentStateId,
   );
   const closingDate = currentPhase?.plannedEndDate;
 

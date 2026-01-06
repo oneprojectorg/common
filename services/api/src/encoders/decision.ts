@@ -117,9 +117,7 @@ const instanceDataEncoder = z.object({
   phases: z
     .array(
       z.object({
-        stateId: z.string(),
-        actualStartDate: z.string().optional(),
-        actualEndDate: z.string().optional(),
+        phaseId: z.string(),
         plannedStartDate: z.string().optional(),
         plannedEndDate: z.string().optional(),
       }),
