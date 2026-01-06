@@ -99,12 +99,12 @@ const legacyProcessSchemaEncoder = z.object({
   proposalTemplate: jsonSchemaEncoder,
 });
 
-// Instance Data Encoder (legacy format)
+// Instance Data Encoder (updated to use phaseId format)
 const legacyInstanceDataEncoder = z.object({
   budget: z.number().optional(),
   hideBudget: z.boolean().optional(),
   fieldValues: z.record(z.string(), z.unknown()).optional(),
-  currentStateId: z.string(),
+  currentPhaseId: z.string(),
   stateData: z
     .record(
       z.string(),
@@ -117,9 +117,7 @@ const legacyInstanceDataEncoder = z.object({
   phases: z
     .array(
       z.object({
-        stateId: z.string(),
-        actualStartDate: z.string().optional(),
-        actualEndDate: z.string().optional(),
+        phaseId: z.string(),
         plannedStartDate: z.string().optional(),
         plannedEndDate: z.string().optional(),
       }),

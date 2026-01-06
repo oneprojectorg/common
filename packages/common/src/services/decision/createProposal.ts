@@ -74,7 +74,7 @@ export const createProposal = async ({
     const processSchema = process.processSchema as ProcessSchema;
     const instanceData = instance.instanceData as InstanceData;
     const currentStateId =
-      instanceData.currentStateId || instance.currentStateId;
+      instanceData.currentPhaseId || instance.currentStateId;
 
     const currentState = processSchema.states.find(
       (s) => s.id === currentStateId,

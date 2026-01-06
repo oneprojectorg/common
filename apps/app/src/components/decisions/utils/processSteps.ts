@@ -12,7 +12,7 @@ export function getNextSteps(
   states: StateDefinition[],
   instanceData: InstanceData,
 ): NextStep[] {
-  const currentStateId = instanceData.currentStateId;
+  const currentStateId = instanceData.currentPhaseId;
 
   // Find current state index
   const currentStateIndex = states.findIndex(
