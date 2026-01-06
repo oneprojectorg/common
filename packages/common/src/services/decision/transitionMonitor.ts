@@ -6,7 +6,7 @@ import {
 } from '@op/db/schema';
 import pMap from 'p-map';
 
-import type { DecisionSchemaDefinition } from '../../lib/decisionSchemas/types';
+import type { DecisionSchemaDefinition } from './schemas/types';
 import { CommonError } from '../../utils';
 import { processResults } from './processResults';
 

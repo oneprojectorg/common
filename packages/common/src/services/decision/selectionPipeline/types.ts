@@ -1,7 +1,7 @@
 import type { ProcessInstance, Proposal } from '@op/db/schema';
 
-import type { DecisionInstanceData } from '../../../lib/decisionSchemas/instanceData';
-import type { DecisionSchemaDefinition } from '../../../lib/decisionSchemas/types';
+import type { DecisionInstanceData } from '../schemas/instanceData';
+import type { DecisionSchemaDefinition } from '../schemas/types';
 
 /**
  * Top-level selection pipeline definition

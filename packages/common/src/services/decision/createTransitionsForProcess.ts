@@ -2,7 +2,7 @@ import { db } from '@op/db/client';
 import { decisionProcessTransitions } from '@op/db/schema';
 import type { ProcessInstance } from '@op/db/schema';
 
-import type { DecisionInstanceData } from '../../lib/decisionSchemas/instanceData';
+import type { DecisionInstanceData } from './schemas/instanceData';
 import { CommonError } from '../../utils';
 
 /**

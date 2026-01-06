@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   DecisionInstanceData,
   PhaseInstanceData,
-} from '../../../lib/decisionSchemas/instanceData';
+} from '../schemas/instanceData';
 import { createTransitionsForProcess } from '../createTransitionsForProcess';
 import { processDecisionsTransitions } from '../transitionMonitor';
 import { updateTransitionsForProcess } from '../updateTransitionsForProcess';
