@@ -1,8 +1,6 @@
 import { deleteOrganization } from '@op/common';
-import { profiles } from '@op/db/schema';
 import { logger } from '@op/logging';
 import { TRPCError } from '@trpc/server';
-import { createSelectSchema } from 'drizzle-zod';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 import { z } from 'zod';
 
@@ -11,11 +9,9 @@ import withAuthenticated from '../../middlewares/withAuthenticated';
 import withRateLimited from '../../middlewares/withRateLimited';
 import { loggedProcedure, router } from '../../trpcFactory';
 
-const outputSchema = createSelectSchema(profiles).pick({
-  id: true,
-  type: true,
-  name: true,
-  slug: true,
+const outputSchema = z.object({
+  success: z.boolean(),
+  deletedId: z.string().uuid(),
 });
 
 const inputSchema = z.object({

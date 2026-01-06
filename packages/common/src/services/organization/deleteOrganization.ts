@@ -55,5 +55,5 @@ export async function deleteOrganization({
   invalidate({ type: 'organization', params: [deletedOrganization.slug] });
   invalidate({ type: 'orgUser', params: [organization.id, user.id] });
 
-  return deletedOrganization;
+  return { success: true, deletedId: organizationProfileId };
 }
