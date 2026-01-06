@@ -1,5 +1,10 @@
 import { getUser } from '@/utils/getUser';
 import { Organization } from '@op/api/encoders';
+import {
+  HydrationBoundary,
+  createServerUtils,
+  dehydrate,
+} from '@op/api/server';
 import { Header1, Header3 } from '@op/ui/Header';
 import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
@@ -117,7 +122,20 @@ const NewOrganizationsList = () => {
   );
 };
 
-const PostFeedSection = ({ showPostUpdate }: { showPostUpdate: boolean }) => {
+const PostFeedSection = async ({
+  showPostUpdate,
+}: {
+  showPostUpdate: boolean;
+}) => {
+  // Prefetch posts data on server to prevent hydration mismatch
+  // If this fails, the client will fetch instead
+  const { utils, queryClient } = await createServerUtils();
+  try {
+    await utils.organization.listAllPosts.prefetchInfinite({ limit: 10 });
+  } catch {
+    // Silently fail, client will still fetch
+  }
+
   return (
     <>
       {showPostUpdate ? (
@@ -140,9 +158,9 @@ const PostFeedSection = ({ showPostUpdate }: { showPostUpdate: boolean }) => {
             </div>
           }
         >
-          <Suspense fallback={<PostFeedSkeleton numPosts={3} />}>
+          <HydrationBoundary state={dehydrate(queryClient)}>
             <Feed />
-          </Suspense>
+          </HydrationBoundary>
         </ErrorBoundary>
       </div>
     </>
