@@ -14,7 +14,6 @@ const meta: OpenApiMeta = {
   openapi: {
     enabled: true,
     method: 'POST',
-    path: '/decision/instance/from-template',
     path: '/decision/instance',
     protect: true,
     tags: ['decision'],
