@@ -82,13 +82,16 @@ describe.concurrent('createInstanceFromTemplate', () => {
       budget: 100000,
     });
 
+    // result.id is now the profile ID
+    testData.trackProfileForCleanup(result.id);
+
     expect(result).toBeDefined();
     expect(result.id).toBeDefined();
-    expect(result.status).toBe('draft');
+    expect(result.processInstance.status).toBe('draft');
 
     // Verify instance data has phases
     const instance = await db.query.processInstances.findFirst({
-      where: eq(processInstances.id, result.id),
+      where: eq(processInstances.id, result.processInstance.id),
     });
 
     expect(instance).toBeDefined();
@@ -145,11 +148,17 @@ describe.concurrent('createInstanceFromTemplate', () => {
       ],
     });
 
-    expect(result.id).toBeDefined();
+    // result.id is now the profile ID
+    testData.trackProfileForCleanup(result.id);
+
+    expect(result.processInstance.id).toBeDefined();
 
     // Verify transitions were created
     const transitions = await db.query.decisionProcessTransitions.findMany({
-      where: eq(decisionProcessTransitions.processInstanceId, result.id),
+      where: eq(
+        decisionProcessTransitions.processInstanceId,
+        result.processInstance.id,
+      ),
       orderBy: (transitions, { asc }) => [asc(transitions.scheduledDate)],
     });
 
@@ -192,8 +201,11 @@ describe.concurrent('createInstanceFromTemplate', () => {
       budget: 250000,
     });
 
+    // result.id is now the profile ID
+    testData.trackProfileForCleanup(result.id);
+
     const instance = await db.query.processInstances.findFirst({
-      where: eq(processInstances.id, result.id),
+      where: eq(processInstances.id, result.processInstance.id),
     });
 
     const instanceData = instance!.instanceData as DecisionInstanceData;
@@ -272,18 +284,13 @@ describe.concurrent('createInstanceFromTemplate', () => {
       name: `Profile Test ${task.id}`,
     });
 
-    // Verify the instance has a profile
-    const instance = await db.query.processInstances.findFirst({
-      where: eq(processInstances.id, result.id),
-      with: {
-        profile: true,
-      },
-    });
+    // result.id is now the profile ID
+    testData.trackProfileForCleanup(result.id);
 
-    expect(instance?.profileId).toBeDefined();
-    expect(instance?.profile).toBeDefined();
-    // Profile is correctly typed as EntityType.DECISION
-    const profile = instance?.profile as { type: string } | undefined;
-    expect(profile?.type).toBe('decision');
+    // Profile data is now directly in the result
+    expect(result.id).toBeDefined();
+    expect(result.type).toBe('decision');
+    expect(result.processInstance).toBeDefined();
+    expect(result.processInstance.id).toBeDefined();
   });
 });

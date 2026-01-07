@@ -1,4 +1,4 @@
-import { db } from '@op/db/client';
+import { db, eq } from '@op/db/client';
 import {
   EntityType,
   ProcessStatus,
@@ -118,5 +118,18 @@ export const createInstanceFromTemplate = async ({
     }
   }
 
-  return instance;
+  // Fetch the profile with processInstance joined for the response
+  // profileId is guaranteed to be set since we just created it above
+  const profile = await db.query.profiles.findFirst({
+    where: eq(profiles.id, instance.profileId!),
+    with: {
+      processInstance: true,
+    },
+  });
+
+  if (!profile) {
+    throw new CommonError('Failed to fetch created decision profile');
+  }
+
+  return profile;
 };

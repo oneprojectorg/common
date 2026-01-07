@@ -3,7 +3,7 @@ import type { OpenApiMeta } from 'trpc-to-openapi';
 
 import {
   createInstanceFromTemplateInputSchema,
-  processInstanceEncoder,
+  decisionProfileEncoder,
 } from '../../../encoders/decision';
 import withAnalytics from '../../../middlewares/withAnalytics';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
@@ -28,15 +28,15 @@ export const createInstanceFromTemplateRouter = router({
     .use(withAnalytics)
     .meta(meta)
     .input(createInstanceFromTemplateInputSchema)
-    .output(processInstanceEncoder)
+    .output(decisionProfileEncoder)
     .mutation(async ({ ctx, input }) => {
       const { user } = ctx;
 
-      const instance = await createInstanceFromTemplate({
+      const profile = await createInstanceFromTemplate({
         ...input,
         user,
       });
 
-      return processInstanceEncoder.parse(instance);
+      return decisionProfileEncoder.parse(profile);
     }),
 });

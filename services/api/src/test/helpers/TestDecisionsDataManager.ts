@@ -382,6 +382,15 @@ export class TestDecisionsDataManager {
   }
 
   /**
+   * Tracks a profile ID for cleanup. Use this when creating profiles
+   * outside of the standard TestDecisionsDataManager methods.
+   */
+  trackProfileForCleanup(profileId: string): void {
+    this.ensureCleanupRegistered();
+    this.createdProfileIds.push(profileId);
+  }
+
+  /**
    * Creates a member user (non-admin) for an organization with proper setup.
    * This creates:
    * - An auth user via Supabase
