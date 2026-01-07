@@ -31,9 +31,9 @@ import { Link, useTranslations } from '@/lib/i18n';
 
 import { CoCModal } from '../CoCModal';
 import { CommonLogo } from '../CommonLogo';
+import { DeleteOrganizationModal } from '../DeleteOrganizationModal';
 import ErrorBoundary from '../ErrorBoundary';
 import { LocaleChooser } from '../LocaleChooser';
-import { OrgDeletionModal } from '../OrgDeletionModal';
 import { PrivacyPolicyModal } from '../PrivacyPolicyModal';
 import { UpdateProfileModal } from '../Profile/ProfileDetails/UpdateProfile';
 import { ProfileSwitchingModal } from '../ProfileSwitchingModal';
@@ -427,7 +427,7 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
           profileName={switchingToProfile?.name}
           onOpenChange={setIsSwitchingProfile}
         />
-        <OrgDeletionModal
+        <DeleteOrganizationModal
           isOpen={isOrgDeletionOpen}
           onOpenChange={setIsOrgDeletionOpen}
         />
@@ -457,7 +457,7 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
         profileName={switchingToProfile?.name}
         onOpenChange={setIsSwitchingProfile}
       />
-      <OrgDeletionModal
+      <DeleteOrganizationModal
         isOpen={isOrgDeletionOpen}
         onOpenChange={setIsOrgDeletionOpen}
       />
