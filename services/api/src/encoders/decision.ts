@@ -311,7 +311,7 @@ export const createInstanceInputSchema = z.object({
 });
 
 export const createInstanceFromTemplateInputSchema = z.object({
-  templateId: z.string().min(1),
+  templateId: z.uuid(),
   name: z.string().min(3).max(256),
   description: z.string().optional(),
   budget: z.number().optional(),
