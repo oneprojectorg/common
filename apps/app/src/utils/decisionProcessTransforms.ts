@@ -22,9 +22,7 @@ export interface ProcessInstance {
 }
 
 export interface PhaseConfiguration {
-  stateId: string;
-  actualStartDate?: string;
-  actualEndDate?: string;
+  phaseId: string;
   plannedStartDate?: string;
   plannedEndDate?: string;
 }
@@ -76,19 +74,19 @@ export const transformInstanceDataToFormData = (
   if (instance.instanceData?.phases) {
     const phases = instance.instanceData.phases;
     const ideaCollectionPhase = phases.find(
-      (p: PhaseConfiguration) => p.stateId === 'ideaCollection',
+      (phase: PhaseConfiguration) => phase.phaseId === 'ideaCollection',
     );
     const submissionPhase = phases.find(
-      (p: PhaseConfiguration) => p.stateId === 'submission',
+      (phase: PhaseConfiguration) => phase.phaseId === 'submission',
     );
     const reviewPhase = phases.find(
-      (p: PhaseConfiguration) => p.stateId === 'review',
+      (phase: PhaseConfiguration) => phase.phaseId === 'review',
     );
     const votingPhase = phases.find(
-      (p: PhaseConfiguration) => p.stateId === 'voting',
+      (phase: PhaseConfiguration) => phase.phaseId === 'voting',
     );
     const resultsPhase = phases.find(
-      (p: PhaseConfiguration) => p.stateId === 'results',
+      (phase: PhaseConfiguration) => phase.phaseId === 'results',
     );
 
     // Always populate phase objects, even if empty, to match schema defaults
@@ -129,7 +127,7 @@ export const transformFormDataToInstanceData = (
   // Only add ideaCollection phase for simple and cowop schemas
   if (schemaType === 'simple' || schemaType === 'cowop') {
     phases.push({
-      stateId: 'ideaCollection',
+      phaseId: 'ideaCollection',
       plannedStartDate: (
         data.ideaCollectionPhase as {
           ideaCollectionOpen?: string;
@@ -147,14 +145,14 @@ export const transformFormDataToInstanceData = (
 
   phases.push(
     {
-      stateId: 'submission',
+      phaseId: 'submission',
       plannedStartDate: (data.proposalSubmissionPhase as PhaseFormData)
         ?.submissionsOpen,
       plannedEndDate: (data.proposalSubmissionPhase as PhaseFormData)
         ?.submissionsClose,
     },
     {
-      stateId: 'review',
+      phaseId: 'review',
       plannedStartDate: (
         data.reviewShortlistingPhase as {
           reviewOpen?: string;
@@ -169,7 +167,7 @@ export const transformFormDataToInstanceData = (
       )?.reviewClose,
     },
     {
-      stateId: 'voting',
+      phaseId: 'voting',
       plannedStartDate: (
         data.votingPhase as { votingOpen?: string; votingClose?: string }
       )?.votingOpen,
@@ -178,7 +176,7 @@ export const transformFormDataToInstanceData = (
       )?.votingClose,
     },
     {
-      stateId: 'results',
+      phaseId: 'results',
       plannedStartDate: (data.resultsAnnouncement as { resultsDate?: string })
         ?.resultsDate,
     },
@@ -187,7 +185,7 @@ export const transformFormDataToInstanceData = (
   return {
     budget: data.totalBudget as number,
     hideBudget: data.hideBudget as boolean,
-    currentStateId: schemaType === 'horizon' ? 'submission' : 'ideaCollection',
+    currentPhaseId: schemaType === 'horizon' ? 'submission' : 'ideaCollection',
     fieldValues: {
       categories: data.categories,
       budgetCapAmount: data.budgetCapAmount,

@@ -38,7 +38,7 @@ export async function DecisionHeader({
   const phases: ProcessPhase[] = templateStates.map((templateState) => {
     // Find corresponding instance phase data
     const instancePhase = instancePhases.find(
-      (phase: any) => phase.stateId === templateState.id,
+      (phase: any) => phase.phaseId === templateState.id,
     );
 
     return {

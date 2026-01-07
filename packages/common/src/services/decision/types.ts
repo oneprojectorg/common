@@ -100,7 +100,7 @@ export interface InstanceData {
   budget?: number;
   hideBudget?: boolean; // Whether to hide the budget from non-owners
   fieldValues?: Record<string, unknown>; // Values for process fields schema
-  currentStateId: string;
+  currentPhaseId: string;
   stateData?: Record<string, StateData>; // State-specific runtime data
   phases?: PhaseConfiguration[];
 }
@@ -111,9 +111,7 @@ export interface StateData {
 }
 
 export interface PhaseConfiguration {
-  stateId: string;
-  actualStartDate?: string;
-  actualEndDate?: string;
+  phaseId: string;
   plannedStartDate?: string;
   plannedEndDate?: string;
 }
