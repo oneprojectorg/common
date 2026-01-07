@@ -2,10 +2,12 @@
 export * from './createProcess';
 export * from './updateProcess';
 export * from './getProcess';
+export * from './getTemplate';
 export * from './listProcesses';
 
 // Instance management
 export * from './createInstance';
+export * from './createInstanceFromTemplate';
 export * from './updateInstance';
 export * from './listInstances';
 export * from './getInstance';
