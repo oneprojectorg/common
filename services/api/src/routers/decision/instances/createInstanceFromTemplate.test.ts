@@ -80,7 +80,6 @@ describe.concurrent('createInstanceFromTemplate', () => {
       templateId,
       name: decisionName,
       description: 'A test decision from template',
-      budget: 100000,
     });
 
     // result.id is now the profile ID
@@ -126,7 +125,6 @@ describe.concurrent('createInstanceFromTemplate', () => {
     const result = await caller.decision.createInstanceFromTemplate({
       templateId,
       name: `Transition Test ${task.id}`,
-      budget: 50000,
       phases: [
         {
           phaseId: 'submission',
@@ -187,7 +185,7 @@ describe.concurrent('createInstanceFromTemplate', () => {
     expect(votingToResults).toBeDefined();
   });
 
-  it('should accept custom budget', async ({ task, onTestFinished }) => {
+  it('should accept phase settings', async ({ task, onTestFinished }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
 
     // Create the template and get authenticated user
@@ -199,8 +197,17 @@ describe.concurrent('createInstanceFromTemplate', () => {
 
     const result = await caller.decision.createInstanceFromTemplate({
       templateId,
-      name: `Budget Test ${task.id}`,
-      budget: 250000,
+      name: `Settings Test ${task.id}`,
+      phases: [
+        {
+          phaseId: 'submission',
+          settings: { maxProposalsPerMember: 5 },
+        },
+        {
+          phaseId: 'voting',
+          settings: { maxVotesPerMember: 3 },
+        },
+      ],
     });
 
     // result.id is now the profile ID
@@ -211,7 +218,16 @@ describe.concurrent('createInstanceFromTemplate', () => {
     });
 
     const instanceData = instance!.instanceData as DecisionInstanceData;
-    expect(instanceData.budget).toBe(250000);
+
+    // Find the voting phase and check its settings
+    const votingPhase = instanceData.phases.find((p) => p.phaseId === 'voting');
+    expect(votingPhase?.settings?.maxVotesPerMember).toBe(3);
+
+    // Find the submission phase and check its settings
+    const submissionPhase = instanceData.phases.find(
+      (p) => p.phaseId === 'submission',
+    );
+    expect(submissionPhase?.settings?.maxProposalsPerMember).toBe(5);
   });
 
   it('should require authentication', async ({ task }) => {

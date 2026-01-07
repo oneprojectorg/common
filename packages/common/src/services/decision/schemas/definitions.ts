@@ -30,6 +30,12 @@ export const simpleVoting: DecisionSchemaDefinition = {
       settings: {
         type: 'object',
         properties: {
+          budget: {
+            type: 'number',
+            title: 'Budget',
+            description: 'Total budget available for this decision process',
+            minimum: 0,
+          },
           maxProposalsPerMember: {
             type: 'number',
             title: 'Maximum Proposals Per Member',
@@ -39,6 +45,10 @@ export const simpleVoting: DecisionSchemaDefinition = {
           },
         },
         ui: {
+          budget: {
+            'ui:widget': 'number',
+            'ui:placeholder': '100000',
+          },
           maxProposalsPerMember: {
             'ui:widget': 'number',
             'ui:placeholder': '3',
@@ -55,6 +65,23 @@ export const simpleVoting: DecisionSchemaDefinition = {
         voting: { submit: false },
         advancement: { method: 'date', start: '2026-01-02' },
       },
+      settings: {
+        type: 'object',
+        properties: {
+          budget: {
+            type: 'number',
+            title: 'Budget',
+            description: 'Total budget available for this decision process',
+            minimum: 0,
+          },
+        },
+        ui: {
+          budget: {
+            'ui:widget': 'number',
+            'ui:placeholder': '100000',
+          },
+        },
+      },
     },
     {
       id: 'voting',
@@ -70,6 +97,12 @@ export const simpleVoting: DecisionSchemaDefinition = {
         type: 'object',
         required: ['maxVotesPerMember'],
         properties: {
+          budget: {
+            type: 'number',
+            title: 'Budget',
+            description: 'Total budget available for this decision process',
+            minimum: 0,
+          },
           maxVotesPerMember: {
             type: 'number',
             title: 'Maximum Votes Per Member',
@@ -79,6 +112,10 @@ export const simpleVoting: DecisionSchemaDefinition = {
           },
         },
         ui: {
+          budget: {
+            'ui:widget': 'number',
+            'ui:placeholder': '100000',
+          },
           maxVotesPerMember: {
             'ui:widget': 'number',
             'ui:placeholder': '5',
@@ -112,6 +149,23 @@ export const simpleVoting: DecisionSchemaDefinition = {
         proposals: { submit: false },
         voting: { submit: false },
         advancement: { method: 'date', start: '2026-01-04' },
+      },
+      settings: {
+        type: 'object',
+        properties: {
+          budget: {
+            type: 'number',
+            title: 'Budget',
+            description: 'Total budget available for this decision process',
+            minimum: 0,
+          },
+        },
+        ui: {
+          budget: {
+            'ui:widget': 'number',
+            'ui:placeholder': '100000',
+          },
+        },
       },
     },
   ],

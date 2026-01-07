@@ -319,13 +319,13 @@ export const createInstanceFromTemplateInputSchema = z.object({
   templateId: z.uuid(),
   name: z.string().min(3).max(256),
   description: z.string().optional(),
-  budget: z.number().optional(),
   phases: z
     .array(
       z.object({
         phaseId: z.string(),
         startDate: z.string().optional(),
         endDate: z.string().optional(),
+        settings: z.record(z.string(), z.unknown()).optional(),
       }),
     )
     .optional(),

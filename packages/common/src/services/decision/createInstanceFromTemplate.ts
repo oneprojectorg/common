@@ -21,7 +21,6 @@ export const createInstanceFromTemplate = async ({
   templateId,
   name,
   description,
-  budget,
   phases,
   user,
 }: {
@@ -29,12 +28,12 @@ export const createInstanceFromTemplate = async ({
   templateId: string;
   name: string;
   description?: string;
-  budget?: number;
-  /** Optional phase date overrides */
+  /** Optional phase overrides (dates and settings) */
   phases?: Array<{
     phaseId: string;
     startDate?: string;
     endDate?: string;
+    settings?: Record<string, unknown>;
   }>;
   user: User;
 }) => {
@@ -54,7 +53,6 @@ export const createInstanceFromTemplate = async ({
 
   const instanceData = createInstanceDataFromTemplate({
     template,
-    budget,
     phaseOverrides: phases,
   });
 
