@@ -15,6 +15,7 @@ const meta: OpenApiMeta = {
     enabled: true,
     method: 'POST',
     path: '/decision/instance/from-template',
+    path: '/decision/instance',
     protect: true,
     tags: ['decision'],
     summary: 'Create process instance from a DecisionSchemaDefinition template',
