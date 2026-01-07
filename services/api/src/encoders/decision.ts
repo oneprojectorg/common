@@ -310,6 +310,22 @@ export const createInstanceInputSchema = z.object({
   instanceData: instanceDataEncoder,
 });
 
+export const createInstanceFromTemplateInputSchema = z.object({
+  templateId: z.string().min(1),
+  name: z.string().min(3).max(256),
+  description: z.string().optional(),
+  budget: z.number().optional(),
+  phases: z
+    .array(
+      z.object({
+        phaseId: z.string(),
+        plannedStartDate: z.string().optional(),
+        plannedEndDate: z.string().optional(),
+      }),
+    )
+    .optional(),
+});
+
 export const updateInstanceInputSchema = createInstanceInputSchema
   .omit({ processId: true })
   .partial()
