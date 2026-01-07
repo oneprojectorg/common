@@ -1,10 +1,23 @@
-import { simpleVoting } from './schemas/definitions';
+import { db, eq } from '@op/db/client';
+import { decisionProcesses } from '@op/db/schema';
+
+import { NotFoundError } from '../../utils';
+import type { DecisionSchemaDefinition } from './schemas/types';
 
 /**
- * Fetches a decision template by ID and validates its schema.
- * Returns the hardcoded 'simple' template if requested, otherwise fetches from database.
+ * Fetches a decision template by ID from the database.
+ * @throws NotFoundError if the template doesn't exist
  */
-export const getTemplate = async (_templateId: string) => {
-  // TODO: this will query the DB but for now just returns the simple template. Returning an async function in prep
-  return simpleVoting;
+export const getTemplate = async (
+  templateId: string,
+): Promise<DecisionSchemaDefinition> => {
+  const templateRecord = await db.query.decisionProcesses.findFirst({
+    where: eq(decisionProcesses.id, templateId),
+  });
+
+  if (!templateRecord) {
+    throw new NotFoundError(`Template '${templateId}' not found`);
+  }
+
+  return templateRecord.processSchema as DecisionSchemaDefinition;
 };

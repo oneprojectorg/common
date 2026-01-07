@@ -1,5 +1,4 @@
-import { CommonError, createInstanceFromTemplate } from '@op/common';
-import { TRPCError } from '@trpc/server';
+import { createInstanceFromTemplate } from '@op/common';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 
 import {
