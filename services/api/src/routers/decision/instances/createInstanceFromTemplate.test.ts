@@ -75,9 +75,10 @@ describe.concurrent('createInstanceFromTemplate', () => {
     );
     const caller = await createAuthenticatedCaller(userEmail);
 
+    const decisionName = `Test Decision ${task.id}`;
     const result = await caller.decision.createInstanceFromTemplate({
       templateId,
-      name: `Test Decision ${task.id}`,
+      name: decisionName,
       description: 'A test decision from template',
       budget: 100000,
     });
@@ -87,6 +88,7 @@ describe.concurrent('createInstanceFromTemplate', () => {
 
     expect(result).toBeDefined();
     expect(result.id).toBeDefined();
+    expect(result.name).toBe(decisionName);
     expect(result.processInstance.status).toBe('draft');
 
     // Verify instance data has phases
@@ -279,9 +281,10 @@ describe.concurrent('createInstanceFromTemplate', () => {
     );
     const caller = await createAuthenticatedCaller(userEmail);
 
+    const decisionName = `Profile Test ${task.id}`;
     const result = await caller.decision.createInstanceFromTemplate({
       templateId,
-      name: `Profile Test ${task.id}`,
+      name: decisionName,
     });
 
     // result.id is now the profile ID
@@ -289,7 +292,9 @@ describe.concurrent('createInstanceFromTemplate', () => {
 
     // Profile data is now directly in the result
     expect(result.id).toBeDefined();
+    expect(result.name).toBe(decisionName);
     expect(result.type).toBe('decision');
+    expect(result.slug).toMatch(/^decision-/);
     expect(result.processInstance).toBeDefined();
     expect(result.processInstance.id).toBeDefined();
   });
