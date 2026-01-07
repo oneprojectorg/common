@@ -99,31 +99,57 @@ const legacyProcessSchemaEncoder = z.object({
   proposalTemplate: jsonSchemaEncoder,
 });
 
-// Instance Data Encoder (updated to use phaseId format)
-const legacyInstanceDataEncoder = z.object({
-  budget: z.number().optional(),
-  hideBudget: z.boolean().optional(),
-  fieldValues: z.record(z.string(), z.unknown()).optional(),
-  currentPhaseId: z.string(),
-  stateData: z
-    .record(
-      z.string(),
-      z.object({
-        enteredAt: z.string().optional(),
-        metadata: z.record(z.string(), z.unknown()).optional(),
-      }),
-    )
-    .optional(),
-  phases: z
-    .array(
-      z.object({
-        phaseId: z.string(),
-        plannedStartDate: z.string().optional(),
-        plannedEndDate: z.string().optional(),
-      }),
-    )
-    .optional(),
-});
+// Instance Data Encoder (updated to use phaseId format, with fallback from legacy currentStateId)
+const legacyInstanceDataEncoder = z.preprocess(
+  (data) => {
+    if (typeof data !== 'object' || data === null) {
+      return data;
+    }
+    const obj = data as Record<string, unknown>;
+    // Map phases[].stateId to phases[].phaseId for legacy data
+    const phases = Array.isArray(obj.phases)
+      ? obj.phases.map((phase) => {
+          if (typeof phase !== 'object' || phase === null) {
+            return phase;
+          }
+          const p = phase as Record<string, unknown>;
+          return {
+            ...p,
+            phaseId: p.phaseId ?? p.stateId,
+          };
+        })
+      : obj.phases;
+    return {
+      ...obj,
+      currentPhaseId: obj.currentPhaseId ?? obj.currentStateId,
+      phases,
+    };
+  },
+  z.object({
+    budget: z.number().optional(),
+    hideBudget: z.boolean().optional(),
+    fieldValues: z.record(z.string(), z.unknown()).optional(),
+    currentPhaseId: z.string(),
+    stateData: z
+      .record(
+        z.string(),
+        z.object({
+          enteredAt: z.string().optional(),
+          metadata: z.record(z.string(), z.unknown()).optional(),
+        }),
+      )
+      .optional(),
+    phases: z
+      .array(
+        z.object({
+          phaseId: z.string(),
+          plannedStartDate: z.string().optional(),
+          plannedEndDate: z.string().optional(),
+        }),
+      )
+      .optional(),
+  }),
+);
 
 // Decision Process Encoder
 export const legacyDecisionProcessEncoder = createSelectSchema(
