@@ -25,7 +25,7 @@ export const createInstanceFromTemplate = async ({
   phases,
   user,
 }: {
-  /** ID of the seeded template in decisionProcesses */
+  /** ID of the process template in the DB */
   templateId: string;
   name: string;
   description?: string;
