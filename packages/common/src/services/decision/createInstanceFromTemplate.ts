@@ -100,12 +100,13 @@ export const createInstanceFromTemplate = async ({
     return newInstance;
   });
 
-  // Create scheduled transitions for phases with date-based advancement
-  const hasDateBasedPhases = instanceData.phases.some(
-    (phase) => phase.rules?.advancement?.method === 'date',
+  // Create scheduled transitions for phases that have date-based advancement AND actual dates set
+  const hasScheduledDatePhases = instanceData.phases.some(
+    (phase) =>
+      phase.rules?.advancement?.method === 'date' && phase.plannedStartDate,
   );
 
-  if (hasDateBasedPhases) {
+  if (hasScheduledDatePhases) {
     try {
       await createTransitionsForProcess({ processInstance: instance });
     } catch (error) {
