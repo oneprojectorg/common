@@ -33,22 +33,11 @@ export const createInstanceFromTemplateRouter = router({
     .mutation(async ({ ctx, input }) => {
       const { user } = ctx;
 
-      try {
-        const instance = await createInstanceFromTemplate({
-          ...input,
-          user,
-        });
+      const instance = await createInstanceFromTemplate({
+        ...input,
+        user,
+      });
 
-        return processInstanceEncoder.parse(instance);
-      } catch (error: unknown) {
-        if (error instanceof CommonError) {
-          throw error;
-        }
-
-        throw new TRPCError({
-          message: 'Failed to create process instance',
-          code: 'INTERNAL_SERVER_ERROR',
-        });
-      }
+      return processInstanceEncoder.parse(instance);
     }),
 });
