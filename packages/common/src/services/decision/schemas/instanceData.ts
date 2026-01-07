@@ -68,7 +68,10 @@ export function createInstanceDataFromTemplate(input: {
         const { ui: _ui, ...settingsSchema } = phase.settings as JSONSchema7 & {
           ui?: unknown;
         };
-        const result = schemaValidator.validate(settingsSchema, override.settings);
+        const result = schemaValidator.validate(
+          settingsSchema,
+          override.settings,
+        );
         if (!result.valid) {
           throw new ValidationError(
             `Invalid settings for phase "${phase.id}"`,
