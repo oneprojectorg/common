@@ -33,8 +33,8 @@ export const createInstanceFromTemplate = async ({
   /** Optional phase date overrides */
   phases?: Array<{
     phaseId: string;
-    plannedStartDate?: string;
-    plannedEndDate?: string;
+    startDate?: string;
+    endDate?: string;
   }>;
   user: User;
 }) => {
@@ -102,8 +102,7 @@ export const createInstanceFromTemplate = async ({
 
   // Create scheduled transitions for phases that have date-based advancement AND actual dates set
   const hasScheduledDatePhases = instanceData.phases.some(
-    (phase) =>
-      phase.rules?.advancement?.method === 'date' && phase.plannedStartDate,
+    (phase) => phase.rules?.advancement?.method === 'date' && phase.startDate,
   );
 
   if (hasScheduledDatePhases) {

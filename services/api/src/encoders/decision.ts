@@ -143,8 +143,8 @@ const instanceDataEncoder = z.preprocess(
       .array(
         z.object({
           phaseId: z.string(),
-          plannedStartDate: z.string().optional(),
-          plannedEndDate: z.string().optional(),
+          startDate: z.string().optional(),
+          endDate: z.string().optional(),
         }),
       )
       .optional(),
@@ -319,8 +319,8 @@ export const createInstanceFromTemplateInputSchema = z.object({
     .array(
       z.object({
         phaseId: z.string(),
-        plannedStartDate: z.string().optional(),
-        plannedEndDate: z.string().optional(),
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
       }),
     )
     .optional(),

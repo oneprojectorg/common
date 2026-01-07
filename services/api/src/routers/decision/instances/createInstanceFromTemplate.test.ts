@@ -130,22 +130,22 @@ describe.concurrent('createInstanceFromTemplate', () => {
       phases: [
         {
           phaseId: 'submission',
-          plannedStartDate: now.toISOString(),
-          plannedEndDate: phase1End.toISOString(),
+          startDate: now.toISOString(),
+          endDate: phase1End.toISOString(),
         },
         {
           phaseId: 'review',
-          plannedStartDate: phase1End.toISOString(),
-          plannedEndDate: phase2End.toISOString(),
+          startDate: phase1End.toISOString(),
+          endDate: phase2End.toISOString(),
         },
         {
           phaseId: 'voting',
-          plannedStartDate: phase2End.toISOString(),
-          plannedEndDate: phase3End.toISOString(),
+          startDate: phase2End.toISOString(),
+          endDate: phase3End.toISOString(),
         },
         {
           phaseId: 'results',
-          plannedStartDate: phase4Start.toISOString(),
+          startDate: phase4Start.toISOString(),
         },
       ],
     });

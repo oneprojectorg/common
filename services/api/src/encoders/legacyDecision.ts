@@ -143,8 +143,8 @@ const legacyInstanceDataEncoder = z.preprocess(
       .array(
         z.object({
           phaseId: z.string(),
-          plannedStartDate: z.string().optional(),
-          plannedEndDate: z.string().optional(),
+          startDate: z.string().optional(),
+          endDate: z.string().optional(),
         }),
       )
       .optional(),

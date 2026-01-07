@@ -10,8 +10,8 @@ import type {
 export interface PhaseInstanceData {
   phaseId: string;
   rules: PhaseRules;
-  plannedStartDate?: string;
-  plannedEndDate?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 /**
@@ -35,8 +35,8 @@ export function createInstanceDataFromTemplate(input: {
   budget?: number;
   phaseOverrides?: Array<{
     phaseId: string;
-    plannedStartDate?: string;
-    plannedEndDate?: string;
+    startDate?: string;
+    endDate?: string;
   }>;
 }): DecisionInstanceData {
   const { template, budget, phaseOverrides } = input;
@@ -61,11 +61,11 @@ export function createInstanceDataFromTemplate(input: {
       return {
         phaseId: phase.id,
         rules: phase.rules,
-        ...(override?.plannedStartDate && {
-          plannedStartDate: override.plannedStartDate,
+        ...(override?.startDate && {
+          startDate: override.startDate,
         }),
-        ...(override?.plannedEndDate && {
-          plannedEndDate: override.plannedEndDate,
+        ...(override?.endDate && {
+          endDate: override.endDate,
         }),
       };
     }),
