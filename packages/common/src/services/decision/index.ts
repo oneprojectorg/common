@@ -13,9 +13,6 @@ export * from './listDecisionProfiles';
 export * from './getDecisionBySlug';
 
 // Transition management
-export * from './checkTransitions';
-export { executeTransition } from './executeTransition';
-export type { ExecuteTransitionInput } from './executeTransition';
 export { TransitionEngine } from './transitionEngine';
 export type { TransitionCheckResult } from './transitionEngine';
 export * from './createTransitionsForProcess';
