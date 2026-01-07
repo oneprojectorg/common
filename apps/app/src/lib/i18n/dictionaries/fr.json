@@ -424,5 +424,15 @@
   "Cancel membership request": "Annuler la demande d'adhésion",
   "Are you sure you want to cancel your membership request to {orgName}?": "Êtes-vous sûr de vouloir annuler votre demande d'adhésion à {orgName} ?",
   "Keep request": "Conserver la demande",
-  "Cancel request": "Annuler la demande"
+  "Cancel request": "Annuler la demande",
+  "Delete an Account": "Supprimer un compte",
+  "Delete account": "Supprimer le compte",
+  "Account Deleted": "Compte supprimé",
+  "Failed to delete account": "Échec de la suppression du compte",
+  "Removing...": "Suppression...",
+  "Please select the account you'd like to delete. This action cannot be undone.": "Veuillez sélectionner le compte que vous souhaitez supprimer. Cette action est irréversible.",
+  "You are about to delete this account. This action cannot be undone.": "Vous êtes sur le point de supprimer ce compte. Cette action est irréversible.",
+  "has been deleted. All associated data have been permanently removed.": "a été supprimé. Toutes les données associées ont été définitivement supprimées.",
+  "User avatar": "Avatar de l'utilisateur",
+  "Done": "Terminé"
 }

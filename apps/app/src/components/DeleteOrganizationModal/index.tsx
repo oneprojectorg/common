@@ -80,6 +80,7 @@ export const DeleteOrganizationModal = ({
 
   const steps = [
     <SelectProfileStep
+      key="select"
       allProfiles={userProfiles}
       selectedProfile={selectedProfileId}
       setSelectedProfile={setSelectedProfileId}
@@ -93,6 +94,7 @@ export const DeleteOrganizationModal = ({
     />,
     profileToDelete && (
       <ConfirmProfileStep
+        key="confirm"
         submitButtonAction={handleSubmit}
         backButtonAction={() => setCurrentStep(0)}
         profileToDelete={profileToDelete}
@@ -100,6 +102,7 @@ export const DeleteOrganizationModal = ({
       />
     ),
     <SuccessStep
+      key="success"
       submitButtonAction={closeModal}
       deletedProfileName={profileToDelete?.name}
     />,
@@ -153,7 +156,6 @@ const SelectProfileStep = ({
             return (
               <Radio
                 key={profile.id}
-                // size="small"
                 className="items-start py-2"
                 value={profile.id}
               >
@@ -226,7 +228,7 @@ const ConfirmProfileStep = ({
                 src={getPublicUrl(avatarUrl) ?? ''}
                 fill
                 className="object-cover"
-                alt={profileToDelete.name ?? 'User avatar'}
+                alt={profileToDelete.name ?? t('User avatar')}
               />
             ) : null}
           </Avatar>

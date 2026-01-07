@@ -424,5 +424,15 @@
   "Cancel membership request": "Cancel membership request",
   "Are you sure you want to cancel your membership request to {orgName}?": "Are you sure you want to cancel your membership request to {orgName}?",
   "Keep request": "Keep request",
-  "Cancel request": "Cancel request"
+  "Cancel request": "Cancel request",
+  "Delete an Account": "Delete an Account",
+  "Delete account": "Delete account",
+  "Account Deleted": "Account Deleted",
+  "Failed to delete account": "Failed to delete account",
+  "Removing...": "Removing...",
+  "Please select the account you'd like to delete. This action cannot be undone.": "Please select the account you'd like to delete. This action cannot be undone.",
+  "You are about to delete this account. This action cannot be undone.": "You are about to delete this account. This action cannot be undone.",
+  "has been deleted. All associated data have been permanently removed.": "has been deleted. All associated data have been permanently removed.",
+  "User avatar": "User avatar",
+  "Done": "Done"
 }
