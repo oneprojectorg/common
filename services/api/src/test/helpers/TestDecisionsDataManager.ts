@@ -311,17 +311,17 @@ export class TestDecisionsDataManager {
         phases: [
           {
             phaseId: 'initial',
-            plannedStartDate: new Date().toISOString(),
-            plannedEndDate: new Date(
+            startDate: new Date().toISOString(),
+            endDate: new Date(
               Date.now() + 7 * 24 * 60 * 60 * 1000,
             ).toISOString(),
           },
           {
             phaseId: 'final',
-            plannedStartDate: new Date(
+            startDate: new Date(
               Date.now() + 7 * 24 * 60 * 60 * 1000,
             ).toISOString(),
-            plannedEndDate: new Date(
+            endDate: new Date(
               Date.now() + 14 * 24 * 60 * 60 * 1000,
             ).toISOString(),
           },
@@ -379,6 +379,15 @@ export class TestDecisionsDataManager {
       authUserId,
       email,
     });
+  }
+
+  /**
+   * Tracks a profile ID for cleanup. Use this when creating profiles
+   * outside of the standard TestDecisionsDataManager methods.
+   */
+  trackProfileForCleanup(profileId: string): void {
+    this.ensureCleanupRegistered();
+    this.createdProfileIds.push(profileId);
   }
 
   /**

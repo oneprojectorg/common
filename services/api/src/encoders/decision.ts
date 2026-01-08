@@ -99,14 +99,17 @@ const processSchemaEncoder = z.object({
   proposalTemplate: jsonSchemaEncoder,
 });
 
-// Instance Data Encoder that supports both new (currentPhaseId) and legacy (currentStateId) formats
+// Instance Data Encoder that supports both new and legacy field names
 const instanceDataEncoder = z.preprocess(
   (data) => {
     if (typeof data !== 'object' || data === null) {
       return data;
     }
     const obj = data as Record<string, unknown>;
-    // Map phases[].stateId to phases[].phaseId for legacy data
+    // Map legacy field names to new names:
+    // - phases[].stateId → phases[].phaseId
+    // - phases[].plannedStartDate → phases[].startDate
+    // - phases[].plannedEndDate → phases[].endDate
     const phases = Array.isArray(obj.phases)
       ? obj.phases.map((phase) => {
           if (typeof phase !== 'object' || phase === null) {
@@ -116,6 +119,8 @@ const instanceDataEncoder = z.preprocess(
           return {
             ...p,
             phaseId: p.phaseId ?? p.stateId,
+            startDate: p.startDate ?? p.plannedStartDate,
+            endDate: p.endDate ?? p.plannedEndDate,
           };
         })
       : obj.phases;
@@ -143,8 +148,8 @@ const instanceDataEncoder = z.preprocess(
       .array(
         z.object({
           phaseId: z.string(),
-          plannedStartDate: z.string().optional(),
-          plannedEndDate: z.string().optional(),
+          startDate: z.string().optional(),
+          endDate: z.string().optional(),
         }),
       )
       .optional(),
@@ -308,6 +313,22 @@ export const createInstanceInputSchema = z.object({
   name: z.string().min(3).max(256),
   description: z.string().optional(),
   instanceData: instanceDataEncoder,
+});
+
+export const createInstanceFromTemplateInputSchema = z.object({
+  templateId: z.uuid(),
+  name: z.string().min(3).max(256),
+  description: z.string().optional(),
+  phases: z
+    .array(
+      z.object({
+        phaseId: z.string(),
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
+        settings: z.record(z.string(), z.unknown()).optional(),
+      }),
+    )
+    .optional(),
 });
 
 export const updateInstanceInputSchema = createInstanceInputSchema

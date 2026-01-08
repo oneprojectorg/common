@@ -1,6 +1,10 @@
 /**
  * Instance data creation helpers for DecisionSchemaDefinition templates.
  */
+import type { JSONSchema7 } from 'json-schema';
+
+import { CommonError, ValidationError } from '../../../utils';
+import { schemaValidator } from '../schemaValidator';
 import type {
   DecisionSchemaDefinition,
   PhaseRules,
@@ -10,8 +14,9 @@ import type {
 export interface PhaseInstanceData {
   phaseId: string;
   rules: PhaseRules;
-  plannedStartDate?: string;
-  plannedEndDate?: string;
+  startDate?: string;
+  endDate?: string;
+  settings?: Record<string, unknown>;
 }
 
 /**
@@ -19,11 +24,16 @@ export interface PhaseInstanceData {
  * This structure must match instanceDataNewEncoder in the API encoders.
  */
 export interface DecisionInstanceData {
-  budget?: number;
   currentPhaseId: string;
-  fieldValues: Record<string, unknown>;
   config?: ProcessConfig;
   phases: PhaseInstanceData[];
+}
+
+export interface PhaseOverride {
+  phaseId: string;
+  startDate?: string;
+  endDate?: string;
+  settings?: Record<string, unknown>;
 }
 
 /**
@@ -32,18 +42,13 @@ export interface DecisionInstanceData {
  */
 export function createInstanceDataFromTemplate(input: {
   template: DecisionSchemaDefinition;
-  budget?: number;
-  phaseOverrides?: Array<{
-    phaseId: string;
-    plannedStartDate?: string;
-    plannedEndDate?: string;
-  }>;
+  phaseOverrides?: PhaseOverride[];
 }): DecisionInstanceData {
-  const { template, budget, phaseOverrides } = input;
+  const { template, phaseOverrides } = input;
 
   const firstPhase = template.phases[0];
   if (!firstPhase) {
-    throw new Error('Template must have at least one phase');
+    throw new CommonError('Template must have at least one phase');
   }
 
   // Create a map of phase overrides for quick lookup
@@ -52,20 +57,40 @@ export function createInstanceDataFromTemplate(input: {
   );
 
   return {
-    budget,
     currentPhaseId: firstPhase.id,
-    fieldValues: {},
     config: template.config,
     phases: template.phases.map((phase) => {
       const override = overrideMap.get(phase.id);
+
+      // Validate settings against phase's settings schema if provided
+      if (override?.settings && phase.settings) {
+        // Strip RJSF-specific 'ui' property before AJV validation
+        const { ui: _ui, ...settingsSchema } = phase.settings as JSONSchema7 & {
+          ui?: unknown;
+        };
+        const result = schemaValidator.validate(
+          settingsSchema,
+          override.settings,
+        );
+        if (!result.valid) {
+          throw new ValidationError(
+            `Invalid settings for phase "${phase.id}"`,
+            result.errors,
+          );
+        }
+      }
+
       return {
         phaseId: phase.id,
         rules: phase.rules,
-        ...(override?.plannedStartDate && {
-          plannedStartDate: override.plannedStartDate,
+        ...(override?.startDate && {
+          startDate: override.startDate,
         }),
-        ...(override?.plannedEndDate && {
-          plannedEndDate: override.plannedEndDate,
+        ...(override?.endDate && {
+          endDate: override.endDate,
+        }),
+        ...(override?.settings && {
+          settings: override.settings,
         }),
       };
     }),

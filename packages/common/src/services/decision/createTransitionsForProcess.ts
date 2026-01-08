@@ -40,7 +40,7 @@ export async function createTransitionsForProcess({
         const fromStateId = index > 0 ? phases[index - 1]?.phaseId : null;
         const toStateId = phase.phaseId;
         // For phases like 'results' that only have a start date (no end), use the start date
-        const scheduledDate = phase.plannedEndDate || phase.plannedStartDate;
+        const scheduledDate = phase.startDate;
 
         if (!scheduledDate) {
           throw new CommonError(

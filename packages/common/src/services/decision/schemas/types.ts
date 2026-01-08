@@ -21,7 +21,7 @@ export interface PhaseRules {
   };
   advancement?: {
     method: 'date' | 'manual';
-    start?: string;
+    endDate?: string;
   };
 }
 

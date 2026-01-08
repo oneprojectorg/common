@@ -45,8 +45,8 @@ export async function DecisionHeader({
       ...templateState,
       phase: instancePhase
         ? {
-            startDate: instancePhase.plannedStartDate,
-            endDate: instancePhase.plannedEndDate,
+            startDate: instancePhase.startDate,
+            endDate: instancePhase.endDate,
             sortOrder: templateState.phase?.sortOrder,
           }
         : templateState.phase,

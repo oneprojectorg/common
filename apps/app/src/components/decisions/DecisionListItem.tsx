@@ -42,7 +42,7 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
   const currentPhase = processInstance?.instanceData?.phases?.find(
     (phase) => phase.phaseId === processInstance.currentStateId,
   );
-  const closingDate = currentPhase?.plannedEndDate;
+  const closingDate = currentPhase?.endDate;
 
   // Owner organization info
   const owner = processInstance?.owner;
@@ -117,7 +117,7 @@ export const ProfileDecisionListItem = ({
   const currentPhase = processInstance?.instanceData?.phases?.find(
     (phase) => phase.phaseId === processInstance.currentStateId,
   );
-  const closingDate = currentPhase?.plannedEndDate;
+  const closingDate = currentPhase?.endDate;
 
   return (
     <Link
