@@ -24,7 +24,7 @@ export const simpleVoting: DecisionSchemaDefinition = {
       rules: {
         proposals: { submit: true },
         voting: { submit: false },
-        advancement: { method: 'date', start: '2026-01-01' },
+        advancement: { method: 'date', endDate: '2026-01-01' },
       },
       // User-configurable settings, available as variables in selectionPipeline
       settings: {
@@ -63,7 +63,7 @@ export const simpleVoting: DecisionSchemaDefinition = {
       rules: {
         proposals: { submit: false },
         voting: { submit: false },
-        advancement: { method: 'date', start: '2026-01-02' },
+        advancement: { method: 'date', endDate: '2026-01-02' },
       },
       settings: {
         type: 'object',
@@ -90,7 +90,7 @@ export const simpleVoting: DecisionSchemaDefinition = {
       rules: {
         proposals: { submit: false },
         voting: { submit: true },
-        advancement: { method: 'date', start: '2026-01-03' },
+        advancement: { method: 'date', endDate: '2026-01-03' },
       },
       // Phase-specific settings
       settings: {
@@ -148,7 +148,7 @@ export const simpleVoting: DecisionSchemaDefinition = {
       rules: {
         proposals: { submit: false },
         voting: { submit: false },
-        advancement: { method: 'date', start: '2026-01-04' },
+        advancement: { method: 'date', endDate: '2026-01-04' },
       },
       settings: {
         type: 'object',
