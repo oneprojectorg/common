@@ -37,19 +37,20 @@ export const createInstanceFromTemplate = async ({
   }>;
   user: User;
 }) => {
-  const dbUser = await assertUserByAuthId(
-    user.id,
-    new UnauthorizedError('User must be authenticated'),
-  );
+  // Fetch user and template in parallel (they're independent)
+  const [dbUser, template] = await Promise.all([
+    assertUserByAuthId(
+      user.id,
+      new UnauthorizedError('User must be authenticated'),
+    ),
+    getTemplate(templateId),
+  ]);
 
   const ownerProfileId = dbUser.currentProfileId ?? dbUser.profileId;
   if (!ownerProfileId) {
     // TODO: profileId should not be nullable in the schema
     throw new UnauthorizedError('User must have an active profile');
   }
-
-  // Fetch template from database (throws NotFoundError if not found)
-  const template = await getTemplate(templateId);
 
   const instanceData = createInstanceDataFromTemplate({
     template,
