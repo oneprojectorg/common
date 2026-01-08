@@ -6,7 +6,6 @@ import {
   taxonomies,
   taxonomyTerms,
 } from '@op/db/schema';
-import { User } from '@op/supabase/lib';
 import { z } from 'zod';
 
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
@@ -112,17 +111,7 @@ const updateDataSchema = z
     );
   });
 
-export const updateInstance = async ({
-  data,
-  user,
-}: {
-  data: UpdateInstanceInput;
-  user: User;
-}) => {
-  if (!user) {
-    throw new UnauthorizedError('User must be authenticated');
-  }
-
+export const updateInstance = async (data: UpdateInstanceInput) => {
   try {
     const currentProfileId = await getCurrentProfileId(data.authUserId);
 

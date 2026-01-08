@@ -91,10 +91,6 @@ export const updateProposal = async ({
   data: UpdateProposalInput;
   user: User;
 }) => {
-  if (!user) {
-    throw new UnauthorizedError('User must be authenticated');
-  }
-
   try {
     const dbUser = await assertUserByAuthId(user.id);
 

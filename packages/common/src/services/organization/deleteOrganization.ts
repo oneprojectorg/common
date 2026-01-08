@@ -14,10 +14,6 @@ export async function deleteOrganization({
   organizationProfileId: string;
   user: User;
 }) {
-  if (!user) {
-    throw new UnauthorizedError();
-  }
-
   // First, find the organization by its profile ID to get the organization ID
   const organization = await db.query.organizations.findFirst({
     where: (table, { eq }) => eq(table.profileId, organizationProfileId),

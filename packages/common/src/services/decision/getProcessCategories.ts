@@ -20,10 +20,6 @@ export const getProcessCategories = async ({
   authUserId: string;
   user: User;
 }): Promise<ProcessCategory[]> => {
-  if (!user) {
-    throw new UnauthorizedError('User must be authenticated');
-  }
-
   try {
     // Get the process instance with its process schema
     const instance = await db.query.processInstances.findFirst({

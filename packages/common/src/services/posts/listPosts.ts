@@ -5,11 +5,9 @@ import {
   postsToOrganizations,
   profiles,
 } from '@op/db/schema';
-import { User } from '@op/supabase/lib';
 
 import {
   NotFoundError,
-  UnauthorizedError,
   decodeCursor,
   encodeCursor,
   getGenericCursorCondition,
@@ -17,22 +15,16 @@ import {
 import { getCurrentProfileId } from '../access';
 
 export const listPosts = async ({
-  user,
   authUserId,
   slug,
   limit = 20,
   cursor,
 }: {
-  user: User;
   authUserId: string;
   slug: string;
   limit?: number;
   cursor?: string | null;
 }) => {
-  if (!user) {
-    throw new UnauthorizedError();
-  }
-
   try {
     // Build cursor condition for pagination
     const cursorCondition = cursor

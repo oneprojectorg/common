@@ -1,11 +1,9 @@
 import { match } from '@op/core';
 import { and, db, inArray, sql } from '@op/db/client';
 import { type EntityType, locations, profiles } from '@op/db/schema';
-import { User } from '@op/supabase/lib';
 
 import {
   NotFoundError,
-  UnauthorizedError,
   decodeCursor,
   encodeCursor,
   getCursorCondition,
@@ -13,23 +11,17 @@ import {
 
 export const listProfiles = async ({
   cursor,
-  user,
   limit = 10,
   orderBy = 'updatedAt',
   dir = 'desc',
   types,
 }: {
-  user: User;
   cursor?: string | null;
   limit?: number;
   orderBy?: 'createdAt' | 'updatedAt' | 'name';
   dir?: 'asc' | 'desc';
   types?: EntityType[];
 }) => {
-  if (!user) {
-    throw new UnauthorizedError();
-  }
-
   try {
     const orderByColumn = match(orderBy, {
       name: profiles.name,

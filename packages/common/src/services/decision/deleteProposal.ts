@@ -19,10 +19,6 @@ export const deleteProposal = async ({
   proposalId: string;
   user: User;
 }) => {
-  if (!user) {
-    throw new UnauthorizedError('User must be authenticated');
-  }
-
   try {
     const [sessionUser, existingProposal] = await Promise.all([
       getUserSession({ authUserId: user.id }),
