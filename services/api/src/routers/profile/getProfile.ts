@@ -61,14 +61,11 @@ export const getProfileRouter = router({
         hasMore: z.boolean(),
       }),
     )
-    .query(async ({ ctx, input }) => {
+    .query(async ({ input }) => {
       const { limit = 10, cursor, orderBy, dir, types } = input ?? {};
-      const { user } = ctx;
-
       try {
         const { items, next, hasMore } = await listProfiles({
           cursor,
-          user,
           limit,
           orderBy,
           dir,

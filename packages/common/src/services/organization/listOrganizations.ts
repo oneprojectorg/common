@@ -1,10 +1,8 @@
 import { db, sql } from '@op/db/client';
 import { locations, organizations } from '@op/db/schema';
-import { User } from '@op/supabase/lib';
 
 import {
   NotFoundError,
-  UnauthorizedError,
   decodeCursor,
   encodeCursor,
   getCursorCondition,
@@ -12,21 +10,15 @@ import {
 
 export const listOrganizations = async ({
   cursor,
-  user,
   limit = 10,
   orderBy = 'updatedAt',
   dir = 'desc',
 }: {
-  user: User;
   cursor?: string | null;
   limit?: number;
   orderBy?: 'createdAt' | 'updatedAt';
   dir?: 'asc' | 'desc';
 }) => {
-  if (!user) {
-    throw new UnauthorizedError();
-  }
-
   try {
     const orderByColumn =
       orderBy === 'createdAt'

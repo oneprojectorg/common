@@ -14,7 +14,7 @@ import {
 import { User } from '@op/supabase/lib';
 import { randomUUID } from 'crypto';
 
-import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
+import { CommonError, NotFoundError } from '../../utils';
 import { generateUniqueProfileSlug } from '../profile/utils';
 import {
   type FundingLinksInput,
@@ -96,9 +96,6 @@ export const createOrganization = async ({
     };
   user: User;
 }) => {
-  if (!user) {
-    throw new UnauthorizedError();
-  }
   const orgInputs = OrganizationInputParser.parse({
     ...data,
     profileId: null,

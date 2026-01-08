@@ -13,10 +13,6 @@ export const getOrganizationUsers = async ({
   profileId: string;
   user: User;
 }) => {
-  if (!user) {
-    throw new UnauthorizedError();
-  }
-
   // First, find the organization by profileId
   const organization = await assertOrganizationByProfileId(profileId);
 

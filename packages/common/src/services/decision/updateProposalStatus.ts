@@ -16,10 +16,6 @@ export const updateProposalStatus = async ({
   status: ProposalStatus.APPROVED | ProposalStatus.REJECTED;
   user: User;
 }) => {
-  if (!user) {
-    throw new UnauthorizedError('User must be authenticated');
-  }
-
   try {
     // Fetch user and proposal in parallel for better performance
     const [dbUser, existingProposal] = await Promise.all([

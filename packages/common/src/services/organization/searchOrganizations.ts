@@ -1,19 +1,13 @@
 import { aliasedTable, db, eq, getTableColumns, sql } from '@op/db/client';
 import { objectsInStorage, organizations, profiles } from '@op/db/schema';
-import { User } from '@op/supabase/lib';
 
 export const searchOrganizations = async ({
-  user,
   query = '',
   limit = 10,
 }: {
-  user: User;
   query?: string;
   limit?: number;
 }) => {
-  if (!user) {
-    return [];
-  }
   // TODO: assert authorization
 
   if (query.length < 2) {

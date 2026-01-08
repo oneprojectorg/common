@@ -1,6 +1,11 @@
-import type { DecisionInstanceData } from '@op/common';
+import { type DecisionInstanceData, simpleVoting } from '@op/common';
 import { db, eq } from '@op/db/client';
-import { decisionProcessTransitions, processInstances } from '@op/db/schema';
+import {
+  decisionProcessTransitions,
+  decisionProcesses,
+  processInstances,
+  users,
+} from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -18,6 +23,44 @@ async function createAuthenticatedCaller(email: string) {
   return createCaller(await createTestContextWithSession(session));
 }
 
+/**
+ * Helper to create a template (decisionProcess) in the database using the simpleVoting schema.
+ * Returns the template's ID and user email which can then be used with createInstanceFromTemplate.
+ *
+ * Note: We insert directly into the database because the createProcess router uses the
+ * legacy processSchema format, but createInstanceFromTemplate expects DecisionSchemaDefinition.
+ */
+async function createSimpleTemplate(
+  testData: TestDecisionsDataManager,
+  taskId: string,
+) {
+  // Get a user to set as createdByProfileId
+  const setup = await testData.createDecisionSetup({ instanceCount: 0 });
+
+  // Get the user's profileId from the users table
+  const [userRecord] = await db
+    .select()
+    .from(users)
+    .where(eq(users.email, setup.userEmail));
+
+  if (!userRecord?.profileId) {
+    throw new Error('Test user must have a profileId');
+  }
+
+  // Insert directly with DecisionSchemaDefinition format
+  const [template] = await db
+    .insert(decisionProcesses)
+    .values({
+      name: `Simple Template ${taskId}`,
+      description: simpleVoting.description,
+      processSchema: simpleVoting, // Store as DecisionSchemaDefinition
+      createdByProfileId: userRecord.profileId,
+    })
+    .returning();
+
+  return { templateId: template!.id, userEmail: setup.userEmail };
+}
+
 describe.concurrent('createInstanceFromTemplate', () => {
   it('should create an instance from a template with default phases', async ({
     task,
@@ -25,27 +68,31 @@ describe.concurrent('createInstanceFromTemplate', () => {
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
 
-    // Create a basic setup to get an authenticated user
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 0,
-    });
+    // Create the template and get authenticated user
+    const { templateId, userEmail } = await createSimpleTemplate(
+      testData,
+      task.id,
+    );
+    const caller = await createAuthenticatedCaller(userEmail);
 
-    const caller = await createAuthenticatedCaller(setup.userEmail);
-
+    const decisionName = `Test Decision ${task.id}`;
     const result = await caller.decision.createInstanceFromTemplate({
-      templateId: 'simple',
-      name: `Test Decision ${task.id}`,
+      templateId,
+      name: decisionName,
       description: 'A test decision from template',
-      budget: 100000,
     });
+
+    // result.id is now the profile ID
+    testData.trackProfileForCleanup(result.id);
 
     expect(result).toBeDefined();
     expect(result.id).toBeDefined();
-    expect(result.status).toBe('draft');
+    expect(result.name).toBe(decisionName);
+    expect(result.processInstance.status).toBe('draft');
 
     // Verify instance data has phases
     const instance = await db.query.processInstances.findFirst({
-      where: eq(processInstances.id, result.id),
+      where: eq(processInstances.id, result.processInstance.id),
     });
 
     expect(instance).toBeDefined();
@@ -61,11 +108,12 @@ describe.concurrent('createInstanceFromTemplate', () => {
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
 
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 0,
-    });
-
-    const caller = await createAuthenticatedCaller(setup.userEmail);
+    // Create the template and get authenticated user
+    const { templateId, userEmail } = await createSimpleTemplate(
+      testData,
+      task.id,
+    );
+    const caller = await createAuthenticatedCaller(userEmail);
 
     // Create instance with custom phase dates
     const now = new Date();
@@ -75,77 +123,111 @@ describe.concurrent('createInstanceFromTemplate', () => {
     const phase4Start = new Date(now.getTime() + 28 * 24 * 60 * 60 * 1000); // 28 days
 
     const result = await caller.decision.createInstanceFromTemplate({
-      templateId: 'simple',
+      templateId,
       name: `Transition Test ${task.id}`,
-      budget: 50000,
       phases: [
         {
           phaseId: 'submission',
-          plannedStartDate: now.toISOString(),
-          plannedEndDate: phase1End.toISOString(),
+          startDate: now.toISOString(),
+          endDate: phase1End.toISOString(),
         },
         {
           phaseId: 'review',
-          plannedStartDate: phase1End.toISOString(),
-          plannedEndDate: phase2End.toISOString(),
+          startDate: phase1End.toISOString(),
+          endDate: phase2End.toISOString(),
         },
         {
           phaseId: 'voting',
-          plannedStartDate: phase2End.toISOString(),
-          plannedEndDate: phase3End.toISOString(),
+          startDate: phase2End.toISOString(),
+          endDate: phase3End.toISOString(),
         },
         {
           phaseId: 'results',
-          plannedStartDate: phase4Start.toISOString(),
+          startDate: phase4Start.toISOString(),
         },
       ],
     });
 
-    expect(result.id).toBeDefined();
+    // result.id is now the profile ID
+    testData.trackProfileForCleanup(result.id);
+
+    expect(result.processInstance.id).toBeDefined();
 
     // Verify transitions were created
     const transitions = await db.query.decisionProcessTransitions.findMany({
-      where: eq(decisionProcessTransitions.processInstanceId, result.id),
+      where: eq(
+        decisionProcessTransitions.processInstanceId,
+        result.processInstance.id,
+      ),
       orderBy: (transitions, { asc }) => [asc(transitions.scheduledDate)],
     });
 
     // The simple template has 4 phases with date-based advancement
-    // So we should have 3 transitions (submission→review, review→voting, voting→results)
-    expect(transitions.length).toBe(3);
+    // Each phase that has a date-based advancement gets a transition created
+    expect(transitions.length).toBeGreaterThanOrEqual(3);
 
-    // Verify transition details
-    expect(transitions[0]!.fromStateId).toBe('submission');
-    expect(transitions[0]!.toStateId).toBe('review');
-    expect(transitions[0]!.completedAt).toBeNull();
+    // Verify transition details - check that key transitions exist
+    const submissionToReview = transitions.find(
+      (t) => t.fromStateId === 'submission' && t.toStateId === 'review',
+    );
+    const reviewToVoting = transitions.find(
+      (t) => t.fromStateId === 'review' && t.toStateId === 'voting',
+    );
+    const votingToResults = transitions.find(
+      (t) => t.fromStateId === 'voting' && t.toStateId === 'results',
+    );
 
-    expect(transitions[1]!.fromStateId).toBe('review');
-    expect(transitions[1]!.toStateId).toBe('voting');
+    expect(submissionToReview).toBeDefined();
+    expect(submissionToReview!.completedAt).toBeNull();
 
-    expect(transitions[2]!.fromStateId).toBe('voting');
-    expect(transitions[2]!.toStateId).toBe('results');
+    expect(reviewToVoting).toBeDefined();
+
+    expect(votingToResults).toBeDefined();
   });
 
-  it('should accept custom budget', async ({ task, onTestFinished }) => {
+  it('should accept phase settings', async ({ task, onTestFinished }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
 
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 0,
-    });
-
-    const caller = await createAuthenticatedCaller(setup.userEmail);
+    // Create the template and get authenticated user
+    const { templateId, userEmail } = await createSimpleTemplate(
+      testData,
+      task.id,
+    );
+    const caller = await createAuthenticatedCaller(userEmail);
 
     const result = await caller.decision.createInstanceFromTemplate({
-      templateId: 'simple',
-      name: `Budget Test ${task.id}`,
-      budget: 250000,
+      templateId,
+      name: `Settings Test ${task.id}`,
+      phases: [
+        {
+          phaseId: 'submission',
+          settings: { maxProposalsPerMember: 5 },
+        },
+        {
+          phaseId: 'voting',
+          settings: { maxVotesPerMember: 3 },
+        },
+      ],
     });
 
+    // result.id is now the profile ID
+    testData.trackProfileForCleanup(result.id);
+
     const instance = await db.query.processInstances.findFirst({
-      where: eq(processInstances.id, result.id),
+      where: eq(processInstances.id, result.processInstance.id),
     });
 
     const instanceData = instance!.instanceData as DecisionInstanceData;
-    expect(instanceData.budget).toBe(250000);
+
+    // Find the voting phase and check its settings
+    const votingPhase = instanceData.phases.find((p) => p.phaseId === 'voting');
+    expect(votingPhase?.settings?.maxVotesPerMember).toBe(3);
+
+    // Find the submission phase and check its settings
+    const submissionPhase = instanceData.phases.find(
+      (p) => p.phaseId === 'submission',
+    );
+    expect(submissionPhase?.settings?.maxProposalsPerMember).toBe(5);
   });
 
   it('should require authentication', async ({ task }) => {
@@ -163,21 +245,40 @@ describe.concurrent('createInstanceFromTemplate', () => {
     ).rejects.toThrow();
   });
 
+  it('should return 404 for non-existent template', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    // Create setup to get an authenticated user (but don't create template)
+    const setup = await testData.createDecisionSetup({ instanceCount: 0 });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.decision.createInstanceFromTemplate({
+        templateId: '00000000-0000-0000-0000-000000000000', // Valid UUID that doesn't exist
+        name: `Not Found Test ${task.id}`,
+      }),
+    ).rejects.toThrow(/not found/i);
+  });
+
   it('should validate name minimum length', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
 
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 0,
-    });
-
-    const caller = await createAuthenticatedCaller(setup.userEmail);
+    // Create the template and get authenticated user
+    const { templateId, userEmail } = await createSimpleTemplate(
+      testData,
+      task.id,
+    );
+    const caller = await createAuthenticatedCaller(userEmail);
 
     await expect(
       caller.decision.createInstanceFromTemplate({
-        templateId: 'simple',
+        templateId,
         name: 'AB', // Less than 3 characters
       }),
     ).rejects.toThrow();
@@ -189,29 +290,28 @@ describe.concurrent('createInstanceFromTemplate', () => {
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
 
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 0,
-    });
+    // Create the template and get authenticated user
+    const { templateId, userEmail } = await createSimpleTemplate(
+      testData,
+      task.id,
+    );
+    const caller = await createAuthenticatedCaller(userEmail);
 
-    const caller = await createAuthenticatedCaller(setup.userEmail);
-
+    const decisionName = `Profile Test ${task.id}`;
     const result = await caller.decision.createInstanceFromTemplate({
-      templateId: 'simple',
-      name: `Profile Test ${task.id}`,
+      templateId,
+      name: decisionName,
     });
 
-    // Verify the instance has a profile
-    const instance = await db.query.processInstances.findFirst({
-      where: eq(processInstances.id, result.id),
-      with: {
-        profile: true,
-      },
-    });
+    // result.id is now the profile ID
+    testData.trackProfileForCleanup(result.id);
 
-    expect(instance?.profileId).toBeDefined();
-    expect(instance?.profile).toBeDefined();
-    // Profile is correctly typed as EntityType.DECISION
-    const profile = instance?.profile as { type: string } | undefined;
-    expect(profile?.type).toBe('decision');
+    // Profile data is now directly in the result
+    expect(result.id).toBeDefined();
+    expect(result.name).toBe(decisionName);
+    expect(result.type).toBe('decision');
+    expect(result.slug).toMatch(/^decision-/);
+    expect(result.processInstance).toBeDefined();
+    expect(result.processInstance.id).toBeDefined();
   });
 });

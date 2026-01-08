@@ -13,10 +13,6 @@ export interface GetInstanceInput {
 }
 
 export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
-  if (!user) {
-    throw new UnauthorizedError('User must be authenticated');
-  }
-
   try {
     const instance = await db.query.processInstances.findFirst({
       where: eq(processInstances.id, instanceId),

@@ -23,8 +23,8 @@ export interface ProcessInstance {
 
 export interface PhaseConfiguration {
   phaseId: string;
-  plannedStartDate?: string;
-  plannedEndDate?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 interface PhaseFormData {
@@ -91,23 +91,23 @@ export const transformInstanceDataToFormData = (
 
     // Always populate phase objects, even if empty, to match schema defaults
     formData.ideaCollectionPhase = {
-      ideaCollectionOpen: ideaCollectionPhase?.plannedStartDate || '',
-      ideaCollectionClose: ideaCollectionPhase?.plannedEndDate || '',
+      ideaCollectionOpen: ideaCollectionPhase?.startDate || '',
+      ideaCollectionClose: ideaCollectionPhase?.endDate || '',
     };
     formData.proposalSubmissionPhase = {
-      submissionsOpen: submissionPhase?.plannedStartDate || '',
-      submissionsClose: submissionPhase?.plannedEndDate || '',
+      submissionsOpen: submissionPhase?.startDate || '',
+      submissionsClose: submissionPhase?.endDate || '',
     };
     formData.reviewShortlistingPhase = {
-      reviewOpen: reviewPhase?.plannedStartDate || '',
-      reviewClose: reviewPhase?.plannedEndDate || '',
+      reviewOpen: reviewPhase?.startDate || '',
+      reviewClose: reviewPhase?.endDate || '',
     };
     formData.votingPhase = {
-      votingOpen: votingPhase?.plannedStartDate || '',
-      votingClose: votingPhase?.plannedEndDate || '',
+      votingOpen: votingPhase?.startDate || '',
+      votingClose: votingPhase?.endDate || '',
     };
     formData.resultsAnnouncement = {
-      resultsDate: resultsPhase?.plannedStartDate || '',
+      resultsDate: resultsPhase?.startDate || '',
     };
   }
 
@@ -128,13 +128,13 @@ export const transformFormDataToInstanceData = (
   if (schemaType === 'simple' || schemaType === 'cowop') {
     phases.push({
       phaseId: 'ideaCollection',
-      plannedStartDate: (
+      startDate: (
         data.ideaCollectionPhase as {
           ideaCollectionOpen?: string;
           ideaCollectionClose?: string;
         }
       )?.ideaCollectionOpen,
-      plannedEndDate: (
+      endDate: (
         data.ideaCollectionPhase as {
           ideaCollectionOpen?: string;
           ideaCollectionClose?: string;
@@ -146,20 +146,20 @@ export const transformFormDataToInstanceData = (
   phases.push(
     {
       phaseId: 'submission',
-      plannedStartDate: (data.proposalSubmissionPhase as PhaseFormData)
+      startDate: (data.proposalSubmissionPhase as PhaseFormData)
         ?.submissionsOpen,
-      plannedEndDate: (data.proposalSubmissionPhase as PhaseFormData)
+      endDate: (data.proposalSubmissionPhase as PhaseFormData)
         ?.submissionsClose,
     },
     {
       phaseId: 'review',
-      plannedStartDate: (
+      startDate: (
         data.reviewShortlistingPhase as {
           reviewOpen?: string;
           reviewClose?: string;
         }
       )?.reviewOpen,
-      plannedEndDate: (
+      endDate: (
         data.reviewShortlistingPhase as {
           reviewOpen?: string;
           reviewClose?: string;
@@ -168,16 +168,16 @@ export const transformFormDataToInstanceData = (
     },
     {
       phaseId: 'voting',
-      plannedStartDate: (
+      startDate: (
         data.votingPhase as { votingOpen?: string; votingClose?: string }
       )?.votingOpen,
-      plannedEndDate: (
+      endDate: (
         data.votingPhase as { votingOpen?: string; votingClose?: string }
       )?.votingClose,
     },
     {
       phaseId: 'results',
-      plannedStartDate: (data.resultsAnnouncement as { resultsDate?: string })
+      startDate: (data.resultsAnnouncement as { resultsDate?: string })
         ?.resultsDate,
     },
   );

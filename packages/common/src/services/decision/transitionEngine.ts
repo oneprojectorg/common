@@ -53,10 +53,6 @@ export class TransitionEngine {
     toStateId?: string;
     user: User;
   }): Promise<TransitionCheckResult> {
-    if (!user) {
-      throw new UnauthorizedError('User must be authenticated');
-    }
-
     try {
       // Get the process instance with related data
       const instance = await db.query.processInstances.findFirst({
@@ -147,10 +143,6 @@ export class TransitionEngine {
     data: ExecuteTransitionInput;
     user: User;
   }) {
-    if (!user) {
-      throw new UnauthorizedError('User must be authenticated');
-    }
-
     try {
       const dbUser = await assertUserByAuthId(user.id);
 

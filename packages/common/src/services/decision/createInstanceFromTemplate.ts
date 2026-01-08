@@ -1,4 +1,4 @@
-import { db } from '@op/db/client';
+import { db, eq } from '@op/db/client';
 import {
   EntityType,
   ProcessStatus,
@@ -21,27 +21,30 @@ export const createInstanceFromTemplate = async ({
   templateId,
   name,
   description,
-  budget,
   phases,
   user,
 }: {
-  /** ID of the seeded template in decisionProcesses */
+  /** ID of the process template in the DB */
   templateId: string;
   name: string;
   description?: string;
-  budget?: number;
-  /** Optional phase date overrides */
+  /** Optional phase overrides (dates and settings) */
   phases?: Array<{
     phaseId: string;
-    plannedStartDate?: string;
-    plannedEndDate?: string;
+    startDate?: string;
+    endDate?: string;
+    settings?: Record<string, unknown>;
   }>;
   user: User;
 }) => {
-  const dbUser = await assertUserByAuthId(
-    user.id,
-    new UnauthorizedError('User must be authenticated'),
-  );
+  // Fetch user and template in parallel (they're independent)
+  const [dbUser, template] = await Promise.all([
+    assertUserByAuthId(
+      user.id,
+      new UnauthorizedError('User must be authenticated'),
+    ),
+    getTemplate(templateId),
+  ]);
 
   const ownerProfileId = dbUser.currentProfileId ?? dbUser.profileId;
   if (!ownerProfileId) {
@@ -49,11 +52,8 @@ export const createInstanceFromTemplate = async ({
     throw new UnauthorizedError('User must have an active profile');
   }
 
-  const template = await getTemplate(templateId);
-
   const instanceData = createInstanceDataFromTemplate({
     template,
-    budget,
     phaseOverrides: phases,
   });
 
@@ -99,12 +99,12 @@ export const createInstanceFromTemplate = async ({
     return newInstance;
   });
 
-  // Create scheduled transitions for phases with date-based advancement
-  const hasDateBasedPhases = instanceData.phases.some(
-    (phase) => phase.rules?.advancement?.method === 'date',
+  // Create scheduled transitions for phases that have date-based advancement AND actual dates set
+  const hasScheduledDatePhases = instanceData.phases.some(
+    (phase) => phase.rules?.advancement?.method === 'date' && phase.startDate,
   );
 
-  if (hasDateBasedPhases) {
+  if (hasScheduledDatePhases) {
     try {
       await createTransitionsForProcess({ processInstance: instance });
     } catch (error) {
@@ -116,5 +116,18 @@ export const createInstanceFromTemplate = async ({
     }
   }
 
-  return instance;
+  // Fetch the profile with processInstance joined for the response
+  // profileId is guaranteed to be set since we just created it above
+  const profile = await db.query.profiles.findFirst({
+    where: eq(profiles.id, instance.profileId!),
+    with: {
+      processInstance: true,
+    },
+  });
+
+  if (!profile) {
+    throw new CommonError('Failed to fetch created decision profile');
+  }
+
+  return profile;
 };

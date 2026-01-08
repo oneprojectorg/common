@@ -48,7 +48,6 @@ export const listOrganizationPostsRouter = router({
       const { slug, limit = 20, cursor } = input;
 
       const { items, next, hasMore } = await listPosts({
-        user: ctx.user,
         authUserId: ctx.user.id,
         slug,
         limit,

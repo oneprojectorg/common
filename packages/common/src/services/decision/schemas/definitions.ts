@@ -24,12 +24,18 @@ export const simpleVoting: DecisionSchemaDefinition = {
       rules: {
         proposals: { submit: true },
         voting: { submit: false },
-        advancement: { method: 'date', start: '2026-01-01' },
+        advancement: { method: 'date', endDate: '2026-01-01' },
       },
       // User-configurable settings, available as variables in selectionPipeline
       settings: {
         type: 'object',
         properties: {
+          budget: {
+            type: 'number',
+            title: 'Budget',
+            description: 'Total budget available for this decision process',
+            minimum: 0,
+          },
           maxProposalsPerMember: {
             type: 'number',
             title: 'Maximum Proposals Per Member',
@@ -39,6 +45,10 @@ export const simpleVoting: DecisionSchemaDefinition = {
           },
         },
         ui: {
+          budget: {
+            'ui:widget': 'number',
+            'ui:placeholder': '100000',
+          },
           maxProposalsPerMember: {
             'ui:widget': 'number',
             'ui:placeholder': '3',
@@ -53,7 +63,24 @@ export const simpleVoting: DecisionSchemaDefinition = {
       rules: {
         proposals: { submit: false },
         voting: { submit: false },
-        advancement: { method: 'date', start: '2026-01-02' },
+        advancement: { method: 'date', endDate: '2026-01-02' },
+      },
+      settings: {
+        type: 'object',
+        properties: {
+          budget: {
+            type: 'number',
+            title: 'Budget',
+            description: 'Total budget available for this decision process',
+            minimum: 0,
+          },
+        },
+        ui: {
+          budget: {
+            'ui:widget': 'number',
+            'ui:placeholder': '100000',
+          },
+        },
       },
     },
     {
@@ -63,13 +90,19 @@ export const simpleVoting: DecisionSchemaDefinition = {
       rules: {
         proposals: { submit: false },
         voting: { submit: true },
-        advancement: { method: 'date', start: '2026-01-03' },
+        advancement: { method: 'date', endDate: '2026-01-03' },
       },
       // Phase-specific settings
       settings: {
         type: 'object',
         required: ['maxVotesPerMember'],
         properties: {
+          budget: {
+            type: 'number',
+            title: 'Budget',
+            description: 'Total budget available for this decision process',
+            minimum: 0,
+          },
           maxVotesPerMember: {
             type: 'number',
             title: 'Maximum Votes Per Member',
@@ -79,6 +112,10 @@ export const simpleVoting: DecisionSchemaDefinition = {
           },
         },
         ui: {
+          budget: {
+            'ui:widget': 'number',
+            'ui:placeholder': '100000',
+          },
           maxVotesPerMember: {
             'ui:widget': 'number',
             'ui:placeholder': '5',
@@ -111,7 +148,24 @@ export const simpleVoting: DecisionSchemaDefinition = {
       rules: {
         proposals: { submit: false },
         voting: { submit: false },
-        advancement: { method: 'date', start: '2026-01-04' },
+        advancement: { method: 'date', endDate: '2026-01-04' },
+      },
+      settings: {
+        type: 'object',
+        properties: {
+          budget: {
+            type: 'number',
+            title: 'Budget',
+            description: 'Total budget available for this decision process',
+            minimum: 0,
+          },
+        },
+        ui: {
+          budget: {
+            'ui:widget': 'number',
+            'ui:placeholder': '100000',
+          },
+        },
       },
     },
   ],

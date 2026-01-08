@@ -31,10 +31,6 @@ export const exportProposals = async ({
   input: ExportProposalsInput;
   user: User;
 }): Promise<{ exportId: string; organizationId: string }> => {
-  if (!user) {
-    throw new UnauthorizedError('User must be authenticated');
-  }
-
   const { processInstanceId } = input;
 
   // Get organization AND verify user membership

@@ -1,21 +1,14 @@
 import { db, eq } from '@op/db/client';
 import { organizationsTerms, taxonomies, taxonomyTerms } from '@op/db/schema';
-import { User } from '@op/supabase/lib';
 
-import { NotFoundError, UnauthorizedError } from '../../utils';
+import { NotFoundError } from '../../utils';
 
 export const getOrganizationTerms = async ({
   organizationId,
-  user,
 }: {
-  user: User;
   termUri?: string;
   organizationId: string;
 }) => {
-  if (!user) {
-    throw new UnauthorizedError();
-  }
-
   try {
     const orgTerms = await db
       .select({

@@ -1,10 +1,9 @@
-import { CommonError, createInstanceFromTemplate } from '@op/common';
-import { TRPCError } from '@trpc/server';
+import { createInstanceFromTemplate } from '@op/common';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 
 import {
   createInstanceFromTemplateInputSchema,
-  processInstanceEncoder,
+  decisionProfileEncoder,
 } from '../../../encoders/decision';
 import withAnalytics from '../../../middlewares/withAnalytics';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
@@ -15,7 +14,7 @@ const meta: OpenApiMeta = {
   openapi: {
     enabled: true,
     method: 'POST',
-    path: '/decision/instance/from-template',
+    path: '/decision/instance',
     protect: true,
     tags: ['decision'],
     summary: 'Create process instance from a DecisionSchemaDefinition template',
@@ -29,26 +28,15 @@ export const createInstanceFromTemplateRouter = router({
     .use(withAnalytics)
     .meta(meta)
     .input(createInstanceFromTemplateInputSchema)
-    .output(processInstanceEncoder)
+    .output(decisionProfileEncoder)
     .mutation(async ({ ctx, input }) => {
       const { user } = ctx;
 
-      try {
-        const instance = await createInstanceFromTemplate({
-          ...input,
-          user,
-        });
+      const profile = await createInstanceFromTemplate({
+        ...input,
+        user,
+      });
 
-        return processInstanceEncoder.parse(instance);
-      } catch (error: unknown) {
-        if (error instanceof CommonError) {
-          throw error;
-        }
-
-        throw new TRPCError({
-          message: 'Failed to create process instance',
-          code: 'INTERNAL_SERVER_ERROR',
-        });
-      }
+      return decisionProfileEncoder.parse(profile);
     }),
 });

@@ -71,43 +71,69 @@ export const processSchemaEncoder = z.object({
 // Instance Data
 // =============================================================================
 
-// Instance data encoder that supports both new (currentPhaseId) and legacy (currentStateId) formats
-export const instanceDataEncoder = z.object({
-  budget: z.number().optional(),
-  hideBudget: z.boolean().optional(),
-  fieldValues: z.record(z.string(), z.unknown()).optional(),
-  // Support both new and legacy field names during migration
-  currentPhaseId: z.string().optional(),
-  currentStateId: z.string().optional(),
-  // Legacy state data
-  stateData: z
-    .record(
-      z.string(),
-      z.object({
-        enteredAt: z.string().optional(),
-        metadata: z.record(z.string(), z.unknown()).optional(),
-      }),
-    )
-    .optional(),
-  config: z
-    .object({
-      hideBudget: z.boolean().optional(),
-    })
-    .optional(),
-  phases: z
-    .array(
-      z.object({
-        phaseId: z.string().optional(),
-        stateId: z.string().optional(),
-        rules: phaseRulesEncoder.optional(),
-        plannedStartDate: z.string().optional(),
-        plannedEndDate: z.string().optional(),
-        actualStartDate: z.string().optional(),
-        actualEndDate: z.string().optional(),
-      }),
-    )
-    .optional(),
-});
+// Instance Data Encoder that supports both new and legacy field names
+export const instanceDataEncoder = z.preprocess(
+  (data) => {
+    if (typeof data !== 'object' || data === null) {
+      return data;
+    }
+    const obj = data as Record<string, unknown>;
+    // Map legacy field names to new names:
+    // - phases[].stateId → phases[].phaseId
+    // - phases[].plannedStartDate → phases[].startDate
+    // - phases[].plannedEndDate → phases[].endDate
+    const phases = Array.isArray(obj.phases)
+      ? obj.phases.map((phase) => {
+          if (typeof phase !== 'object' || phase === null) {
+            return phase;
+          }
+          const p = phase as Record<string, unknown>;
+          return {
+            ...p,
+            phaseId: p.phaseId ?? p.stateId,
+            startDate: p.startDate ?? p.plannedStartDate,
+            endDate: p.endDate ?? p.plannedEndDate,
+          };
+        })
+      : obj.phases;
+    return {
+      ...obj,
+      currentPhaseId: obj.currentPhaseId ?? obj.currentStateId,
+      phases,
+    };
+  },
+  z.object({
+    budget: z.number().optional(),
+    hideBudget: z.boolean().optional(),
+    fieldValues: z.record(z.string(), z.unknown()).optional(),
+    currentPhaseId: z.string(),
+    stateData: z
+      .record(
+        z.string(),
+        z.object({
+          enteredAt: z.string().optional(),
+          metadata: z.record(z.string(), z.unknown()).optional(),
+        }),
+      )
+      .optional(),
+    config: z
+      .object({
+        hideBudget: z.boolean().optional(),
+      })
+      .optional(),
+    phases: z
+      .array(
+        z.object({
+          phaseId: z.string(),
+          rules: phaseRulesEncoder.optional(),
+          startDate: z.string().optional(),
+          endDate: z.string().optional(),
+          settings: z.record(z.string(), z.unknown()).optional(),
+        }),
+      )
+      .optional(),
+  }),
+);
 
 // =============================================================================
 // Main Encoders
@@ -243,16 +269,16 @@ export const decisionListEncoder = z.object({
 // =============================================================================
 
 export const createInstanceFromTemplateInputSchema = z.object({
-  templateId: z.string().min(1),
+  templateId: z.uuid(),
   name: z.string().min(3).max(256),
   description: z.string().optional(),
-  budget: z.number().optional(),
   phases: z
     .array(
       z.object({
         phaseId: z.string(),
-        plannedStartDate: z.string().optional(),
-        plannedEndDate: z.string().optional(),
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
+        settings: z.record(z.string(), z.unknown()).optional(),
       }),
     )
     .optional(),

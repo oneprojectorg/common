@@ -32,10 +32,6 @@ export const getExportStatus = async ({
   user: User;
   logger: { info: (message: string, meta?: any) => void };
 }): Promise<ExportStatusData | { status: 'not_found' }> => {
-  if (!user) {
-    throw new UnauthorizedError('User must be authenticated');
-  }
-
   // Get export data from cache
   const key = `export:proposal:${exportId}`;
   const exportStatus = (await get(key)) as ExportStatusData | null;

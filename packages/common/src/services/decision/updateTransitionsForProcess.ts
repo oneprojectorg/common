@@ -70,7 +70,7 @@ export async function updateTransitionsForProcess({
       }
 
       // Schedule transition when the next phase starts
-      const scheduledDate = nextPhase.plannedStartDate;
+      const scheduledDate = nextPhase.startDate;
 
       if (!scheduledDate) {
         throw new CommonError(

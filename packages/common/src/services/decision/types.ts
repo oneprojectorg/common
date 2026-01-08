@@ -112,8 +112,8 @@ export interface StateData {
 
 export interface PhaseConfiguration {
   phaseId: string;
-  plannedStartDate?: string;
-  plannedEndDate?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 // Phase Transition Rules

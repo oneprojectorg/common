@@ -99,14 +99,17 @@ const legacyProcessSchemaEncoder = z.object({
   proposalTemplate: jsonSchemaEncoder,
 });
 
-// Instance Data Encoder (updated to use phaseId format, with fallback from legacy currentStateId)
+// Instance Data Encoder (updated to use phaseId format, with fallback from legacy field names)
 const legacyInstanceDataEncoder = z.preprocess(
   (data) => {
     if (typeof data !== 'object' || data === null) {
       return data;
     }
     const obj = data as Record<string, unknown>;
-    // Map phases[].stateId to phases[].phaseId for legacy data
+    // Map legacy field names to new names:
+    // - phases[].stateId → phases[].phaseId
+    // - phases[].plannedStartDate → phases[].startDate
+    // - phases[].plannedEndDate → phases[].endDate
     const phases = Array.isArray(obj.phases)
       ? obj.phases.map((phase) => {
           if (typeof phase !== 'object' || phase === null) {
@@ -116,6 +119,8 @@ const legacyInstanceDataEncoder = z.preprocess(
           return {
             ...p,
             phaseId: p.phaseId ?? p.stateId,
+            startDate: p.startDate ?? p.plannedStartDate,
+            endDate: p.endDate ?? p.plannedEndDate,
           };
         })
       : obj.phases;
@@ -143,8 +148,8 @@ const legacyInstanceDataEncoder = z.preprocess(
       .array(
         z.object({
           phaseId: z.string(),
-          plannedStartDate: z.string().optional(),
-          plannedEndDate: z.string().optional(),
+          startDate: z.string().optional(),
+          endDate: z.string().optional(),
         }),
       )
       .optional(),

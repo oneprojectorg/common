@@ -43,12 +43,11 @@ export const listOrganizationsRouter = router({
         hasMore: z.boolean(),
       }),
     )
-    .query(async ({ ctx, input }) => {
+    .query(async ({ input }) => {
       const { limit = 10, cursor, orderBy, dir } = input ?? {};
 
       const { items, next, hasMore } = await listOrganizations({
         cursor,
-        user: ctx.user,
         limit,
         orderBy,
         dir,
