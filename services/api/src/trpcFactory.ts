@@ -13,6 +13,7 @@ import {
   setCookie as _setCookie,
 } from './lib/cookies';
 import { errorFormatter } from './lib/error';
+import withChannelMeta from './middlewares/withChannelMeta';
 import withLogger from './middlewares/withLogger';
 import type { TContext } from './types';
 
@@ -80,4 +81,4 @@ export const { router } = t;
 export const { middleware } = t;
 export const { mergeRouters } = t;
 export const createCallerFactory = t.createCallerFactory;
-export const loggedProcedure = t.procedure.use(withLogger);
+export const loggedProcedure = t.procedure.use(withChannelMeta).use(withLogger);

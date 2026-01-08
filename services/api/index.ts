@@ -6,9 +6,10 @@ import type { AppRouter } from './src/routers';
 export * from './src/routers';
 export * from './src/trpcFactory';
 export {
-  MUTATION_CHANNELS_HEADER,
-  QUERY_CHANNELS_HEADER,
-} from './src/constants';
+  isWrappedResponse,
+  unwrapResponse,
+  type WrappedResponse,
+} from './src/channelTransformer';
 
 export type RouterInput = inferRouterInputs<AppRouter>;
 export type RouterOutput = inferRouterOutputs<AppRouter>;
