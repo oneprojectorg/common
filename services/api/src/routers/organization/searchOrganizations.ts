@@ -49,7 +49,6 @@ export const searchOrganizationsRouter = router({
           searchOrganizations({
             query: q,
             limit,
-            user: ctx.user,
           }),
       });
 

@@ -94,14 +94,11 @@ export const getOrganizationRouter = router({
     // .meta(meta)
     .input(z.object({ id: z.string(), termUri: z.string().optional() }))
     .output(organizationsTermsEncoder)
-    .query(async ({ ctx, input }) => {
+    .query(async ({ input }) => {
       const { id } = input;
-      const { user } = ctx;
-
       try {
         const result = await getOrganizationTerms({
           organizationId: id,
-          user,
         });
 
         if (!result) {

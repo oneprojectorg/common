@@ -42,15 +42,12 @@ export const updateInstanceRouter = router({
 
       try {
         const instance = await updateInstance({
-          data: {
-            instanceId: input.instanceId,
-            authUserId: user.id,
-            name: input.name,
-            description: input.description,
-            instanceData: input.instanceData,
-            status: input.status,
-          },
-          user,
+          instanceId: input.instanceId,
+          authUserId: user.id,
+          name: input.name,
+          description: input.description,
+          instanceData: input.instanceData,
+          status: input.status,
         });
 
         logger.info('Process instance updated', {

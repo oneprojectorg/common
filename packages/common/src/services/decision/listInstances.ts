@@ -30,10 +30,6 @@ export const listInstances = async ({
   orderDirection = 'desc',
   user,
 }: ListInstancesInput) => {
-  if (!user) {
-    throw new UnauthorizedError('User must be authenticated');
-  }
-
   // ASSERT VIEW ACCESS ON ORGUSER
   const org = await db
     .select({ id: organizations.id })

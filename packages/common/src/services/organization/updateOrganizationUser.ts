@@ -31,10 +31,6 @@ export async function updateOrganizationUser({
   data,
   user,
 }: UpdateOrganizationUserParams) {
-  if (!user) {
-    throw new UnauthorizedError();
-  }
-
   // Get the org access user and assert admin UPDATE permissions
   const orgUser = await getOrgAccessUser({ user, organizationId });
 
