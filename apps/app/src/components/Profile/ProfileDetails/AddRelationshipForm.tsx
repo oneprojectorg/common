@@ -143,7 +143,7 @@ export const AddRelationshipForm = ({
                   <span className="font-semibold">{profile.profile.name}:</span>
                   <ul>
                     {filteredRelationshipOptions.map((option) => (
-                      <li key={option.key} className="flex gap-3 py-2">
+                      <li key={option.key} className="gap-3 py-2 flex">
                         <Checkbox
                           isSelected={Array.from(selectedRelations).includes(
                             option.key as RelationshipType,
@@ -178,7 +178,7 @@ export const AddRelationshipForm = ({
               <ModalFooter>
                 <Button
                   onPress={close}
-                  className="w-full sm:w-fit"
+                  className="sm:w-fit w-full"
                   color="secondary"
                   type="button"
                 >
@@ -187,7 +187,7 @@ export const AddRelationshipForm = ({
                 <Button
                   color="primary"
                   type="submit"
-                  className="w-full sm:w-fit"
+                  className="sm:w-fit w-full"
                   isPending={isSubmitting}
                 >
                   {isSubmitting ? <LoadingSpinner /> : t('Add')}

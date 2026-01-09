@@ -50,9 +50,9 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
   return (
     <Link
       href={`/decisions/${item.slug}`}
-      className="flex flex-col gap-4 rounded-lg border border-neutral-gray1 p-4 hover:bg-primary-tealWhite hover:no-underline sm:flex-row sm:items-center sm:justify-between sm:rounded-none sm:border-0 sm:border-b"
+      className="gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:rounded-none sm:border-0 sm:border-b sm:border-b-neutral-gray1 flex flex-col rounded-lg border border-neutral-gray1 hover:bg-primary-tealWhite hover:no-underline"
     >
-      <div className="flex flex-col gap-2">
+      <div className="gap-2 flex flex-col">
         {/* Process name and status chip */}
         <DecisionProcessHeader
           name={processInstance?.name || item.name}
@@ -60,9 +60,9 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
         />
 
         {/* Organization and closing date */}
-        <div className="flex flex-wrap items-center gap-2 py-1 text-xs sm:gap-6">
+        <div className="gap-2 py-1 sm:gap-6 flex flex-wrap items-center text-xs">
           {owner && (
-            <div className="flex items-center gap-1">
+            <div className="gap-1 flex items-center">
               <Avatar
                 placeholder={owner.name}
                 className="size-4 border border-neutral-gray1"
@@ -84,7 +84,7 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
         </div>
       </div>
 
-      <div className="flex items-end gap-4 text-neutral-black sm:items-center sm:gap-12">
+      <div className="gap-4 sm:items-center sm:gap-12 flex items-end text-neutral-black">
         <DecisionStat
           number={processInstance?.participantCount ?? 0}
           label="Participants"
@@ -122,9 +122,9 @@ export const ProfileDecisionListItem = ({
   return (
     <Link
       href={`/decisions/${item.slug}`}
-      className={cn('flex flex-col gap-4 pb-4 hover:no-underline', className)}
+      className={cn('gap-4 pb-4 flex flex-col hover:no-underline', className)}
     >
-      <div className="flex flex-col gap-2">
+      <div className="gap-2 flex flex-col">
         {/* Process name and status chip */}
         <DecisionProcessHeader
           name={processInstance?.name || item.name}
@@ -132,9 +132,9 @@ export const ProfileDecisionListItem = ({
         />
 
         {/* Organization and closing date */}
-        <div className="flex flex-col flex-wrap gap-2 py-1 text-xs sm:flex-row sm:items-center sm:justify-between">
+        <div className="gap-2 py-1 sm:flex-row sm:items-center sm:justify-between flex flex-col flex-wrap text-xs">
           {closingDate && <DecisionClosingDate closingDate={closingDate} />}
-          <div className="flex items-end gap-4 text-neutral-black">
+          <div className="gap-4 flex items-end text-neutral-black">
             <DecisionStat
               number={processInstance?.participantCount ?? 0}
               label="Participants"
@@ -163,7 +163,7 @@ const DecisionStat = ({
 }) => (
   <div
     className={cn(
-      'flex items-end gap-1 sm:flex-col sm:items-center sm:gap-0',
+      'gap-1 sm:flex-col sm:items-center sm:gap-0 flex items-end',
       className,
     )}
   >
@@ -176,7 +176,7 @@ const DecisionStat = ({
 
 const DecisionClosingDate = ({ closingDate }: { closingDate: string }) => {
   return (
-    <div className="flex items-center gap-1">
+    <div className="gap-1 flex items-center">
       <LuCalendar
         className={`size-4 ${isClosingSoon(closingDate) ? 'text-functional-red' : 'text-neutral-charcoal'}`}
       />
@@ -201,7 +201,7 @@ const DecisionProcessHeader = ({
   name: string;
   currentState?: string;
 }) => (
-  <div className="flex items-start justify-between gap-2 sm:items-center sm:justify-start">
+  <div className="gap-2 sm:items-center sm:justify-start flex items-start justify-between">
     <Header3 className="font-serif !text-title-base text-neutral-black">
       {name}
     </Header3>

@@ -87,7 +87,7 @@ export const FundingRoleModal = ({
               }}
               color="secondary"
               type="button"
-              className="w-full sm:w-fit"
+              className="sm:w-fit w-full"
             >
               Cancel
             </Button>
@@ -97,7 +97,7 @@ export const FundingRoleModal = ({
               isPending={isSubmitting}
               isDisabled={!selectedRole}
               onPress={handleSave}
-              className="w-full sm:w-fit"
+              className="sm:w-fit w-full"
             >
               {isSubmitting ? <LoadingSpinner /> : 'Save'}
             </Button>

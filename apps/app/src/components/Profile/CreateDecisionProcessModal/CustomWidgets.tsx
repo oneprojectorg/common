@@ -37,7 +37,7 @@ const withWidgetErrorBoundary = <P extends WidgetProps>(
     render() {
       if (this.state.hasError) {
         return (
-          <div className="rounded border border-functional-red/20 bg-functional-red/5 p-3">
+          <div className="p-3 rounded border border-functional-red/20 bg-functional-red/5">
             <p className="text-sm text-functional-red">
               Error rendering {widgetName} widget
             </p>
@@ -234,7 +234,7 @@ export const DateWidget = (props: WidgetProps) => {
       dateValue,
     );
     return (
-      <div className="rounded border border-functional-red/20 bg-functional-red/5 p-3">
+      <div className="p-3 rounded border border-functional-red/20 bg-functional-red/5">
         <p className="text-sm text-functional-red">
           Date widget error:{' '}
           {error instanceof Error ? error.message : 'Unknown error'}
@@ -271,8 +271,8 @@ export const RadioWidget = (props: WidgetProps) => {
   const customClassName = uiSchema?.['ui:options']?.className as string;
 
   return (
-    <div className={cn('flex flex-col gap-2', customClassName)}>
-      <label className="text-sm font-medium text-neutral-charcoal">
+    <div className={cn('gap-2 flex flex-col', customClassName)}>
+      <label className="font-medium text-sm text-neutral-charcoal">
         {schema.title}
       </label>
       <RadioGroup
@@ -354,8 +354,8 @@ export const CategoryListWidget = (props: WidgetProps) => {
   };
 
   return (
-    <div className={cn('flex flex-col gap-2', customClassName)}>
-      <label className="text-sm font-medium text-neutral-charcoal">
+    <div className={cn('gap-2 flex flex-col', customClassName)}>
+      <label className="font-medium text-sm text-neutral-charcoal">
         {schema.title}
       </label>
       {schema.description && (
@@ -384,12 +384,12 @@ export const RichTextEditorWidget = (props: WidgetProps) => {
     (uiSchema?.['ui:options']?.showToolbar as boolean) ?? true;
 
   return (
-    <div className="flex flex-col gap-2">
-      <label className="text-sm font-medium text-neutral-charcoal">
+    <div className="gap-2 flex flex-col">
+      <label className="font-medium text-sm text-neutral-charcoal">
         {schema.title}
         {required && <span className="ml-1 text-functional-red">*</span>}
       </label>
-      <div className="flex flex-col rounded-md border">
+      <div className="flex flex-col rounded-md border border-neutral-gray1">
         <RichTextEditorWithToolbar
           content={value || ''}
           placeholder={uiSchema?.['ui:placeholder']}
@@ -397,7 +397,7 @@ export const RichTextEditorWidget = (props: WidgetProps) => {
           onUpdate={handleChange}
           className="flex flex-1 flex-col"
           editorClassName={cn(
-            'min-h-52 max-w-none flex-1 p-4 focus:outline-none',
+            'min-h-52 p-4 max-w-none flex-1 focus:outline-hidden',
             customClassName,
           )}
           showToolbar={showToolbar}
@@ -561,7 +561,7 @@ export const ReviewSummaryWidget = (props: WidgetProps) => {
     children: React.ReactNode;
   }) => (
     <div className="space-y-3">
-      <h3 className="text-base font-semibold text-neutral-charcoal">{title}</h3>
+      <h3 className="font-semibold text-base text-neutral-charcoal">{title}</h3>
       <div className="space-y-2">{children}</div>
     </div>
   );
@@ -574,7 +574,7 @@ export const ReviewSummaryWidget = (props: WidgetProps) => {
     value: string | React.ReactNode;
   }) => (
     <div className="flex items-start justify-between">
-      <span className="text-sm font-medium text-neutral-charcoal">{label}</span>
+      <span className="font-medium text-sm text-neutral-charcoal">{label}</span>
       <span className="ml-4 flex-1 text-right text-sm text-neutral-charcoal">
         {value}
       </span>

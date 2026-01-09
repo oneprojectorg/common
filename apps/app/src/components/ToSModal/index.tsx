@@ -16,7 +16,7 @@ export const ToSModal = () => {
       </Button>
 
       <Modal
-        className="h-screen max-h-none w-screen max-w-none overflow-y-auto sm:h-auto sm:max-h-[75vh] sm:w-[36rem] sm:max-w-[36rem]"
+        className="sm:h-auto sm:max-h-[75vh] sm:w-[36rem] sm:max-w-[36rem] h-screen max-h-none w-screen max-w-none overflow-y-auto"
         isDismissable
       >
         <Dialog>

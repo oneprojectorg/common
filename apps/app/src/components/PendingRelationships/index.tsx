@@ -78,7 +78,7 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
               key={org.id}
               className={isAccepted ? 'bg-primary-tealWhite' : ''}
             >
-              <div className="flex items-center gap-3">
+              <div className="gap-3 flex items-center">
                 <OrganizationAvatar profile={org.profile} />
                 <div className="flex h-full flex-col">
                   <span className="font-bold">
@@ -107,7 +107,7 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
                     <Button
                       color="secondary"
                       size="small"
-                      className="w-full sm:w-auto"
+                      className="sm:w-auto w-full"
                       onPress={() => {
                         remove.mutate({
                           targetOrganizationId: organization.id,
@@ -120,7 +120,7 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
                     </Button>
                     <Button
                       size="small"
-                      className="w-full sm:w-auto"
+                      className="sm:w-auto w-full"
                       onPress={() =>
                         approve.mutate({
                           sourceOrganizationId: org.id,

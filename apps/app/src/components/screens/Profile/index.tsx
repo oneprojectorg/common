@@ -169,12 +169,12 @@ export const Profile = ({
   return (
     <>
       {/* nav arrow */}
-      <header className="absolute left-0 top-0 z-50 px-4 py-3 sm:hidden">
+      <header className="left-0 top-0 px-4 py-3 sm:hidden absolute z-50">
         <Link href="/">
           <LuArrowLeft className="size-6 text-neutral-offWhite" />
         </Link>
       </header>
-      <div className="-mt-[3.05rem] flex w-full flex-col gap-3 border-offWhite border-b-transparent sm:mt-0 sm:min-h-[calc(100vh-3.5rem)] sm:gap-4 sm:border">
+      <div className="gap-3 sm:mt-0 sm:min-h-[calc(100vh-3.5rem)] sm:gap-4 sm:border sm:border-offWhite -mt-[3.05rem] flex w-full flex-col border-offWhite border-b-transparent">
         <ProfileWithData slug={slug} initialTab={initialTab} />
       </div>
     </>

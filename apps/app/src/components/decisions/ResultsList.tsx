@@ -19,7 +19,7 @@ const NoProposalsFound = () => {
   const t = useTranslations();
   return (
     <EmptyProposalsState>
-      <Header3 className="font-serif !text-title-base font-light text-neutral-black">
+      <Header3 className="font-light font-serif !text-title-base text-neutral-black">
         {t('No results yet for this decision.')}
       </Header3>
       <p className="text-base text-neutral-charcoal">
@@ -54,17 +54,17 @@ export const ResultsList = ({
   }
 
   return (
-    <div className="flex flex-col gap-4 pb-12">
-      <div className="flex items-center gap-4">
+    <div className="gap-4 pb-12 flex flex-col">
+      <div className="gap-4 flex items-center">
         <Header3 className="font-serif !text-title-base">
           {t('Funded Proposals')}
         </Header3>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="gap-6 md:grid-cols-2 lg:grid-cols-3 grid grid-cols-1">
         {proposals.map((proposal) => (
           <ProposalCard key={proposal.id}>
-            <div className="flex h-full flex-col justify-between gap-3 space-y-3">
+            <div className="gap-3 space-y-3 flex h-full flex-col justify-between">
               <ProposalCardContent>
                 <ProposalCardHeader
                   proposal={proposal}
@@ -79,12 +79,12 @@ export const ResultsList = ({
             </div>
             <ProposalCardContent>
               {slug !== 'cowop' && resultStats?.membersVoted ? (
-                <div className="flex flex-col gap-3">
+                <div className="gap-3 flex flex-col">
                   <div className="border-neutral-silver h-0 w-full border-b" />
 
                   {/* Footer - Total Votes */}
                   <ProposalCardFooter>
-                    <div className="flex items-start gap-1 text-base text-neutral-charcoal">
+                    <div className="gap-1 flex items-start text-base text-neutral-charcoal">
                       <span className="font-bold">
                         {proposal.voteCount ?? 0}
                       </span>

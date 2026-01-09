@@ -400,9 +400,9 @@ export function ProposalEditor({
       isEditMode={isEditMode}
     >
       {/* Content */}
-      <div className="flex flex-1 flex-col gap-12">
+      <div className="gap-12 flex flex-1 flex-col">
         {editorInstance && <RichTextEditorToolbar editor={editorInstance} />}
-        <div className="mx-auto flex max-w-4xl flex-col gap-4">
+        <div className="max-w-4xl gap-4 mx-auto flex flex-col">
           {/* Title input */}
           <TextField
             type="text"
@@ -415,7 +415,7 @@ export function ProposalEditor({
           />
 
           {/* Category and Budget selectors */}
-          <div className="flex gap-6">
+          <div className="gap-6 flex">
             {categories && categories.length > 0 ? (
               <Select
                 variant="pill"
@@ -423,7 +423,7 @@ export function ProposalEditor({
                 placeholder={t('Select category')}
                 selectedKey={selectedCategory}
                 onSelectionChange={(key) => setSelectedCategory(key as string)}
-                className="w-auto max-w-36 overflow-hidden sm:max-w-96"
+                className="max-w-36 sm:max-w-96 w-auto overflow-hidden"
                 popoverProps={{ className: 'sm:min-w-fit sm:max-w-2xl' }}
               >
                 {categories.map((category) => (

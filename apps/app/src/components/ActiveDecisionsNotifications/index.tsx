@@ -56,7 +56,7 @@ const ActiveDecisionsNotificationsSuspense = () => {
               <NotificationPanelActions>
                 <ButtonLink
                   size="small"
-                  className="w-full sm:w-auto"
+                  className="sm:w-auto w-full"
                   href={`/profile/${decision.slug}/decisions/${instance?.id}`}
                   onPress={() => setNavigatingId(decision.id)}
                 >

@@ -35,7 +35,7 @@ export const RecentSearches = ({
           className="py-2"
         >
           <Link
-            className="flex w-full items-center gap-2"
+            className="gap-2 flex w-full items-center"
             href={`/search/?q=${recentQuery}`}
             onClick={() => onSearch(query)}
           >

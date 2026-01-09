@@ -26,7 +26,7 @@ export const MemberParticipationFacePile = ({
   }
 
   return (
-    <div className="flex items-center justify-center gap-2">
+    <div className="gap-2 flex items-center justify-center">
       <GrowingFacePile
         maxItems={20}
         items={submitters.map((submitter) => (
@@ -46,7 +46,7 @@ export const MemberParticipationFacePile = ({
                 />
               ) : null}
             </Avatar>
-            <div className="absolute left-0 top-0 h-full w-full cursor-pointer rounded-full bg-white opacity-0 transition-opacity duration-100 ease-in-out active:bg-black hover:opacity-15" />
+            <div className="left-0 top-0 absolute h-full w-full cursor-pointer rounded-full bg-white opacity-0 transition-opacity duration-100 ease-in-out hover:opacity-15 active:bg-black" />
           </Link>
         ))}
       >

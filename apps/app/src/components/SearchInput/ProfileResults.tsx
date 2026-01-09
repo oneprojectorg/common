@@ -77,7 +77,7 @@ export const ProfileResults = ({
             selected={selectedIndex === index + 1}
           >
             <Link
-              className="group/result flex w-full items-center gap-4 hover:no-underline"
+              className="group/result gap-4 flex w-full items-center hover:no-underline"
               href={
                 isIndividual
                   ? `/profile/${profile.slug}`
@@ -87,7 +87,7 @@ export const ProfileResults = ({
             >
               <Avatar
                 placeholder={profile.name}
-                className="aspect-square size-8 shrink-0 group-hover/result:no-underline"
+                className="size-8 aspect-square shrink-0 group-hover/result:no-underline"
               >
                 {profile.avatarImage?.name ? (
                   <Image
@@ -99,9 +99,9 @@ export const ProfileResults = ({
                 ) : null}
               </Avatar>
 
-              <div className="flex flex-col font-semibold text-neutral-charcoal group-hover/result:underline">
+              <div className="font-semibold flex flex-col text-neutral-charcoal group-hover/result:underline">
                 {styledName}
-                <span className="text-sm capitalize text-neutral-gray4">
+                <span className="text-sm text-neutral-gray4 capitalize">
                   {subtitle}
                 </span>
               </div>

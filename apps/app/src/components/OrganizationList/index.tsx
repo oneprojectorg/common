@@ -24,13 +24,13 @@ export const OrganizationList = ({
 }) => {
   return (
     <>
-      <div className="hidden flex-col gap-6 sm:flex">
+      <div className="gap-6 sm:flex hidden flex-col">
         {organizations?.map((org) => {
           return (
-            <div key={org.id} className="flex items-center gap-2">
+            <div key={org.id} className="gap-2 flex items-center">
               <OrganizationAvatar profile={org.profile} className="size-8" />
 
-              <div className="flex min-w-0 flex-col text-sm sm:text-base">
+              <div className="min-w-0 sm:text-base flex flex-col text-sm">
                 <Link
                   className="max-w-full truncate text-nowrap hover:underline"
                   href={`/org/${org.profile.slug}`}
@@ -45,7 +45,7 @@ export const OrganizationList = ({
       </div>
 
       {/* mobile */}
-      <div className="flex flex-col gap-6 sm:hidden">
+      <div className="gap-6 sm:hidden flex flex-col">
         <HorizontalList className="scroll-px-8">
           {organizations?.map((org) => {
             const { avatarImage, headerImage } = org.profile;
@@ -62,13 +62,13 @@ export const OrganizationList = ({
             return (
               <HorizontalListItem
                 key={org.id}
-                className="snap-start first:ml-8 last:mr-8"
+                className="first:ml-8 last:mr-8 snap-start"
               >
                 <Link
-                  className="flex size-48"
+                  className="size-48 flex"
                   href={`/org/${org.profile.slug}`}
                 >
-                  <Surface className="flex size-full flex-col gap-3">
+                  <Surface className="gap-3 flex size-full flex-col">
                     <ImageHeader
                       headerImage={
                         headerUrl ? (
@@ -97,7 +97,7 @@ export const OrganizationList = ({
                         )
                       }
                     />
-                    <div className="flex flex-col p-4 pt-0 text-left">
+                    <div className="p-4 pt-0 flex flex-col text-left">
                       <span>{org.profile.name}</span>
                     </div>
                   </Surface>
@@ -117,23 +117,23 @@ export const OrganizationCardList = ({
   organizations: Array<Organization>;
 }) => {
   return (
-    <div className="grid grid-cols-1 gap-8 pb-6 md:grid-cols-2">
+    <div className="gap-8 pb-6 md:grid-cols-2 grid grid-cols-1">
       {organizations.map((relationshipOrg) => (
         <div
           key={relationshipOrg.id}
-          className="flex w-full gap-4 rounded border border-neutral-gray1 p-6"
+          className="gap-4 p-6 flex w-full rounded border border-neutral-gray1"
         >
-          <div className="flex-shrink-0">
+          <div className="shrink-0">
             <OrganizationAvatar
               profile={relationshipOrg.profile}
               className="size-20"
             />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="flex flex-col gap-2">
-              <div className="flex flex-col gap-2">
+            <div className="gap-2 flex flex-col">
+              <div className="gap-2 flex flex-col">
                 <Link
-                  className="truncate font-semibold text-neutral-black"
+                  className="font-semibold truncate text-neutral-black"
                   href={`/org/${relationshipOrg.profile.slug}`}
                 >
                   {relationshipOrg.profile.name}
@@ -160,7 +160,7 @@ export const OrganizationSummaryList = ({
   organizations: Array<Organization>;
 }) => {
   return (
-    <div className="flex flex-col gap-6">
+    <div className="gap-6 flex flex-col">
       {organizations?.map((org) => {
         const whereWeWork =
           org.whereWeWork?.map((location: any) => location.name).join(' • ') ??
@@ -173,13 +173,13 @@ export const OrganizationSummaryList = ({
 
         return (
           <div key={org.id}>
-            <div className="flex items-start gap-2 py-2 sm:gap-6">
+            <div className="gap-2 py-2 sm:gap-6 flex items-start">
               <Link
                 href={`/org/${org.profile.slug}`}
                 className="hover:no-underline"
               >
                 <Avatar
-                  className="size-8 hover:opacity-80 sm:size-12"
+                  className="size-8 sm:size-12 hover:opacity-80"
                   placeholder={org.profile.name ?? ''}
                 >
                   {org.profile?.name ? (
@@ -198,8 +198,8 @@ export const OrganizationSummaryList = ({
                 </Avatar>
               </Link>
 
-              <div className="flex flex-col gap-3 text-neutral-black">
-                <div className="flex flex-col gap-2">
+              <div className="gap-3 flex flex-col text-neutral-black">
+                <div className="gap-2 flex flex-col">
                   <Link
                     href={`/org/${org.profile.slug}`}
                     className="font-semibold leading-base"
@@ -207,7 +207,7 @@ export const OrganizationSummaryList = ({
                     {org.profile.name}
                   </Link>
                   {org.whereWeWork?.length > 0 ? (
-                    <span className="text-sm text-neutral-gray4 sm:text-base">
+                    <span className="sm:text-base text-sm text-neutral-gray4">
                       {whereWeWork}
                     </span>
                   ) : null}
@@ -224,10 +224,10 @@ export const OrganizationSummaryList = ({
 
 export const OrganizationListSkeleton = () => {
   return (
-    <div className="hidden flex-col gap-6 sm:flex">
+    <div className="gap-6 sm:flex hidden flex-col">
       {Array.from({ length: 5 }).map((_, i) => (
         <div key={i}>
-          <div className="flex items-center gap-4">
+          <div className="gap-4 flex items-center">
             <OrganizationAvatarSkeleton className="size-8" />
 
             <div className="flex w-full flex-col text-sm">
@@ -242,18 +242,18 @@ export const OrganizationListSkeleton = () => {
 
 export const OrganizationCardListSkeleton = () => {
   return (
-    <div className="grid grid-cols-1 gap-8 pb-6 md:grid-cols-2">
+    <div className="gap-8 pb-6 md:grid-cols-2 grid grid-cols-1">
       {Array.from({ length: 6 }).map((_, index) => (
         <div
           key={index}
-          className="flex w-full gap-4 rounded border border-neutral-gray1 p-6"
+          className="gap-4 p-6 flex w-full rounded border border-neutral-gray1"
         >
-          <div className="flex-shrink-0">
+          <div className="shrink-0">
             <OrganizationAvatarSkeleton className="size-20" />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="flex flex-col gap-2">
-              <div className="flex flex-col gap-2">
+            <div className="gap-2 flex flex-col">
+              <div className="gap-2 flex flex-col">
                 <Skeleton className="h-6 w-3/4" />
               </div>
               <SkeletonLine lines={3} randomWidth={true} className="w-full" />

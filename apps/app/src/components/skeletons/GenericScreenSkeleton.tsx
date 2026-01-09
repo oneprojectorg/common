@@ -12,8 +12,8 @@ export const GenericScreenSkeleton = () => {
   return (
     <div className="flex min-h-screen flex-col">
       <HeaderSkeleton />
-      <div className="flex-1 p-6">
-        <div className="mx-auto max-w-4xl space-y-6">
+      <div className="p-6 flex-1">
+        <div className="max-w-4xl space-y-6 mx-auto">
           <Skeleton className="h-10 w-64" />
           <Skeleton className="h-48 w-full" />
           <Skeleton className="h-48 w-full" />

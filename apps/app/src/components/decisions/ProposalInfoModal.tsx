@@ -32,7 +32,7 @@ export function ProposalInfoModal({
         isOpen={isOpen}
         onOpenChange={(open) => !open && onClose()}
       >
-        <div className="flex h-full max-h-[80vh] w-full max-w-2xl flex-col">
+        <div className="max-w-2xl flex h-full max-h-[80vh] w-full flex-col">
           <ModalHeader>{title}</ModalHeader>
 
           <ModalBody className="flex-1 overflow-y-auto">
@@ -46,7 +46,7 @@ export function ProposalInfoModal({
             />
           </ModalBody>
 
-          <div className="border-neutral-lightgray flex justify-end border-t bg-white px-6 py-4">
+          <div className="px-6 py-4 flex justify-end border-t border-neutral-gray1 bg-white">
             <Button variant="primary" onPress={onClose}>
               OK
             </Button>

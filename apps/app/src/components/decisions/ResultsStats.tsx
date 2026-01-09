@@ -36,7 +36,7 @@ const StatLabel = ({ children }: { children?: ReactNode }) => {
 
 const Stat = ({ children }: { children?: ReactNode }) => {
   return (
-    <div className="flex min-w-24 flex-col items-center gap-2">{children}</div>
+    <div className="min-w-24 gap-2 flex flex-col items-center">{children}</div>
   );
 };
 
@@ -56,22 +56,22 @@ export function ResultsStats({ instanceId }: ResultsStatsProps) {
   }
 
   return (
-    <div className="flex w-full flex-col gap-2">
-      <div className="flex flex-col items-center justify-center gap-2 xxs:flex-row sm:gap-6">
+    <div className="gap-2 flex w-full flex-col">
+      <div className="gap-2 sm:gap-6 flex flex-col items-center justify-center xxs:flex-row">
         {stats.membersVoted > 0 && (
           <>
             <Stat>
               <StatNumber>{stats.membersVoted}</StatNumber>
               <StatLabel>{t('Members Voted')}</StatLabel>
             </Stat>
-            <hr className="hidden h-8 w-0.5 bg-white/50 xxs:block" />
+            <hr className="h-8 w-0.5 hidden border-0 bg-white/50 xxs:block" />
           </>
         )}
         <Stat>
           <StatNumber>{stats.proposalsFunded}</StatNumber>
           <StatLabel>{t('Proposals Funded')}</StatLabel>
         </Stat>
-        <hr className="hidden h-8 w-0.5 bg-white/50 xxs:block" />
+        <hr className="h-8 w-0.5 hidden border-0 bg-white/50 xxs:block" />
         <Stat>
           <StatNumber>{formatCurrency(stats.totalAllocated)}</StatNumber>
           <StatLabel>{t('Total Allocated')}</StatLabel>

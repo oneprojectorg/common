@@ -33,13 +33,13 @@ export function CurrentPhaseSurface({
   const remainingDays = calculateDaysRemaining(currentPhase?.phase?.endDate);
 
   return (
-    <Surface variant="filled" className="flex flex-col gap-4 p-4">
+    <Surface variant="filled" className="gap-4 p-4 flex flex-col">
       {/* Header section */}
-      <div className="flex flex-col gap-2">
-        <div className="text-xs font-normal uppercase tracking-[0.96px] text-neutral-gray4">
+      <div className="gap-2 flex flex-col">
+        <div className="font-normal text-xs tracking-[0.96px] text-neutral-gray4 uppercase">
           {t('Current Phase')}
         </div>
-        <div className="text-base font-bold text-neutral-black">
+        <div className="font-bold text-base text-neutral-black">
           {currentPhase?.name || t('Proposal Submissions')}
         </div>
         {(currentPhase?.phase?.startDate || currentPhase?.phase?.endDate) && (
@@ -57,7 +57,7 @@ export function CurrentPhaseSurface({
       <div className="h-px w-full bg-neutral-gray1" />
 
       {/* Stats section */}
-      <div className="flex flex-col gap-2">
+      <div className="gap-2 flex flex-col">
         {budget && !hideBudget && (
           <div className="flex items-start justify-between">
             <span className="text-neutral-charcoal">{t('Total Budget')}</span>

@@ -81,9 +81,9 @@ export function DiscussionModal({
     >
       <ModalHeader>{authorName}'s Post</ModalHeader>
 
-      <div className="flex flex-col gap-4">
+      <div className="gap-4 flex flex-col">
         <div
-          className="flex-1 overflow-y-auto px-4 pt-6"
+          className="px-4 pt-6 flex-1 overflow-y-auto"
           ref={commentsContainerRef}
         >
           {/* Original Post Display */}
@@ -95,7 +95,7 @@ export function DiscussionModal({
               withLinks={false}
               onReactionClick={handleReactionClick}
             />
-            <hr className="bg-neutral-gray1" />
+            <hr />
           </PostFeed>
           {/* Comments Display */}
           {isLoading ? (
@@ -122,16 +122,14 @@ export function DiscussionModal({
                         className="sm:px-0"
                       />
                     </div>
-                    {comments.length !== i + 1 && (
-                      <hr className="bg-neutral-gray1" />
-                    )}
+                    {comments.length !== i + 1 && <hr />}
                   </React.Fragment>
                 ))}
               </PostFeed>
             </div>
           ) : (
             <div
-              className="py-8 text-center text-gray-500"
+              className="py-8 text-gray-500 text-center"
               role="status"
               aria-label="No comments"
             >
@@ -142,7 +140,7 @@ export function DiscussionModal({
 
         {/* Comment Input using PostUpdate */}
         <ModalFooter className="sticky">
-          <Surface className="w-full border-0 p-0 pt-5 sm:border sm:p-4">
+          <Surface className="p-0 pt-5 sm:border sm:border-neutral-gray1 sm:p-4 w-full border-0">
             <PostUpdate
               parentPostId={post.id}
               placeholder={`Comment${user.currentProfile?.name ? ` as ${user.currentProfile?.name}` : ''}...`}

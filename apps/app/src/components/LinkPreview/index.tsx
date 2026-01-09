@@ -42,7 +42,7 @@ export const LinkPreview = memo(({ url, className }: LinkPreviewProps) => {
     return (
       <Skeleton className={className}>
         <Skeleton className="mb-2 h-4" />
-        <Skeleton className="mb-2 h-3 w-3/4 bg-gray-200" />
+        <Skeleton className="mb-2 h-3 bg-gray-200 w-3/4" />
         <Skeleton className="h-20 bg-gray-200" />
       </Skeleton>
     );
@@ -78,8 +78,8 @@ export const LinkPreview = memo(({ url, className }: LinkPreviewProps) => {
                 : previewData.meta.description}
             </p>
           )}
-          <hr className="my-2 bg-neutral-gray1 text-sm" />
-          <div className="flex items-center gap-2 text-xs text-neutral-gray4">
+          <hr className="my-2" />
+          <div className="gap-2 flex items-center text-xs text-neutral-gray4">
             <LuGlobe className="size-4" /> <span>{url}</span>
           </div>
         </div>

@@ -84,7 +84,7 @@ const ProfileMenuItem = ({
   return (
     <MenuItem
       key={profile.id}
-      className="min-h-[60px] w-72"
+      className="w-72 min-h-[60px]"
       selected={user.currentProfile?.id === profile.id}
       onAction={() => {
         if (user.currentProfile?.id === profile.id) {
@@ -173,7 +173,7 @@ const AvatarMenuContent = ({
     <>
       <MenuItemSimple
         isDisabled
-        className="flex cursor-default items-center gap-2 p-0 px-0 pb-4 text-neutral-charcoal hover:bg-transparent"
+        className="gap-2 p-0 px-0 pb-4 flex cursor-default items-center text-neutral-charcoal hover:bg-transparent"
       >
         <Avatar className="size-6" placeholder={user.name ?? ''}>
           {avatarUrl ? (
@@ -199,7 +199,7 @@ const AvatarMenuContent = ({
             </Button>
             )
           </span>
-          <span className="max-w-72 text-sm text-neutral-gray4 sm:text-xs">
+          <span className="max-w-72 sm:text-xs text-sm text-neutral-gray4">
             {user.currentOrganization ? (
               <>
                 {t('Admin for')}{' '}
@@ -220,14 +220,14 @@ const AvatarMenuContent = ({
           onClose={onClose}
           onProfileSwitch={onProfileSwitch}
         >
-          <div className="flex max-w-52 flex-col">
-            <div className="flex items-center gap-1">
-              <span className="overflow-hidden truncate">{profile.name} </span>
+          <div className="max-w-52 flex flex-col">
+            <div className="gap-1 flex items-center">
+              <span className="truncate overflow-hidden">{profile.name} </span>
               {user.currentProfile?.id === profile.id ? (
                 <Chip>Active</Chip>
               ) : null}
             </div>
-            <div className="relative overflow-hidden truncate text-sm text-neutral-gray4">
+            <div className="relative truncate overflow-hidden text-sm text-neutral-gray4">
               {profile.bio}
             </div>
           </div>
@@ -242,14 +242,14 @@ const AvatarMenuContent = ({
           onClose={onClose}
           onProfileSwitch={onProfileSwitch}
         >
-          <div className="flex max-w-52 flex-col">
-            <div className="relative flex items-center gap-1">
-              <span className="overflow-hidden truncate">{profile.name} </span>
+          <div className="max-w-52 flex flex-col">
+            <div className="gap-1 relative flex items-center">
+              <span className="truncate overflow-hidden">{profile.name} </span>
               {user.currentProfile?.id === profile.id ? (
                 <Chip>Active</Chip>
               ) : null}
             </div>
-            <div className="relative overflow-hidden truncate text-sm capitalize text-neutral-gray4">
+            <div className="relative truncate overflow-hidden text-sm text-neutral-gray4 capitalize">
               {t('Organization')}
             </div>
           </div>
@@ -269,7 +269,7 @@ const AvatarMenuContent = ({
           onClose?.();
         }}
       >
-        <LuCircleHelp className="size-8 rounded-full bg-neutral-offWhite p-2" />{' '}
+        <LuCircleHelp className="size-8 p-2 rounded-full bg-neutral-offWhite" />{' '}
         {t('Feature Requests & Support')}
       </MenuItem>
       <MenuItem
@@ -280,13 +280,13 @@ const AvatarMenuContent = ({
           onClose?.();
         }}
       >
-        <LuLogOut className="size-8 rounded-full bg-neutral-offWhite p-2" />{' '}
+        <LuLogOut className="size-8 p-2 rounded-full bg-neutral-offWhite" />{' '}
         {t('Log out')}
       </MenuItem>
 
       <MenuItemSimple
         isDisabled
-        className="flex flex-col items-start justify-start gap-2 px-0 pt-4 text-neutral-gray4 hover:bg-transparent sm:text-sm"
+        className="gap-2 px-0 pt-4 sm:text-sm flex flex-col items-start justify-start text-neutral-gray4 hover:bg-transparent"
       >
         <div>
           <PrivacyPolicyModal />
@@ -298,9 +298,9 @@ const AvatarMenuContent = ({
       </MenuItemSimple>
       <MenuItemSimple
         isDisabled
-        className="flex flex-col items-start justify-start gap-2 px-0 text-sm text-neutral-gray4 hover:bg-transparent"
+        className="gap-2 px-0 flex flex-col items-start justify-start text-sm text-neutral-gray4 hover:bg-transparent"
       >
-        <div className="text-sm sm:text-xs">
+        <div className="sm:text-xs text-sm">
           <span
             className="pointer text-primary-teal hover:underline"
             onClick={() => {
@@ -372,7 +372,7 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
           />
         ) : null}
       </Avatar>
-      <div className="absolute -bottom-1 -right-1 flex size-4 items-center justify-center rounded-full bg-neutral-offWhite outline -outline-offset-1 outline-white">
+      <div className="-bottom-1 -right-1 size-4 absolute flex items-center justify-center rounded-full bg-neutral-offWhite outline -outline-offset-1 outline-white">
         <LuChevronDown className="size-3" />{' '}
       </div>
     </Button>
@@ -388,10 +388,10 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
           isDismissable={true}
           isKeyboardDismissDisabled={false}
           overlayClassName="p-0 items-end justify-center animate-in fade-in-0 duration-300"
-          className="m-0 h-auto w-screen max-w-none rounded-b-none rounded-t border-0 outline-0 duration-300 ease-out animate-in slide-in-from-bottom-full"
+          className="m-0 h-auto w-screen max-w-none rounded-t rounded-b-none border-0 outline-0 duration-300 animate-in ease-out slide-in-from-bottom-full"
         >
           <ModalBody className="pb-safe p-0">
-            <Menu className="flex min-w-full flex-col border-t-0 p-4 pb-8">
+            <Menu className="p-4 pb-8 flex min-w-full flex-col border-t-0">
               <AvatarMenuContent
                 setIsProfileOpen={setIsProfileOpen}
                 onClose={() => setIsDrawerOpen(false)}
@@ -419,7 +419,7 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
       <MenuTrigger>
         {avatarButton}
         <Popover className="min-w-[150px]" placement="bottom end">
-          <Menu className="flex min-w-72 flex-col p-4 pb-6">
+          <Menu className="min-w-72 p-4 pb-6 flex flex-col">
             <AvatarMenuContent
               setIsProfileOpen={setIsProfileOpen}
               onClose={() => setIsProfileOpen(false)}
@@ -444,10 +444,10 @@ export const SiteHeader = () => {
 
   return (
     <>
-      <header className="gridCentered hidden h-auto w-full items-center justify-between border-b border-offWhite px-4 py-3 sm:grid">
-        <div className="flex items-center gap-3">
+      <header className="gridCentered px-4 py-3 sm:grid relative z-40 hidden h-auto w-full items-center justify-between border-b border-offWhite">
+        <div className="gap-3 flex items-center">
           <SidebarTrigger />
-          <Link href="/" className="flex gap-1">
+          <Link href="/" className="gap-1 flex">
             <CommonLogo />
           </Link>
         </div>
@@ -456,18 +456,18 @@ export const SiteHeader = () => {
             <SearchInput />
           </ErrorBoundary>
         </span>
-        <div className="flex items-center gap-3">
+        <div className="gap-3 flex items-center">
           <ClientOnly>
             <CreateMenu />
             <LocaleChooser />
             <ErrorBoundary
               fallback={
-                <div className="size-8 rounded-full border bg-white shadow" />
+                <div className="size-8 rounded-full border border-neutral-gray1 bg-white shadow" />
               }
             >
               <Suspense
                 fallback={
-                  <Skeleton className="size-8 rounded-full border bg-white shadow" />
+                  <Skeleton className="size-8 rounded-full border border-neutral-gray1 bg-white shadow" />
                 }
               >
                 <UserAvatarMenu />
@@ -478,11 +478,11 @@ export const SiteHeader = () => {
       </header>
 
       {/* Mobile */}
-      <header className="flex h-auto w-full items-center justify-between px-4 py-2 sm:hidden">
+      <header className="px-4 py-2 sm:hidden relative z-40 flex h-auto w-full items-center justify-between">
         {!isMobileSearchExpanded && (
-          <div className="flex items-center gap-3">
+          <div className="gap-3 flex items-center">
             <SidebarTrigger className="p-1" size="small" />
-            <Link href="/" className="flex gap-1">
+            <Link href="/" className="gap-1 flex">
               <CommonLogo />
             </Link>
           </div>
@@ -518,18 +518,18 @@ export const SiteHeader = () => {
                 <LuSearch className="size-4 text-neutral-gray4" />
               </Button>
 
-              <div className="flex items-center gap-3">
+              <div className="gap-3 flex items-center">
                 <ClientOnly>
                   <CreateMenu />
                   <LocaleChooser />
                   <ErrorBoundary
                     fallback={
-                      <div className="size-8 rounded-full border bg-white shadow" />
+                      <div className="size-8 rounded-full border border-neutral-gray1 bg-white shadow" />
                     }
                   >
                     <Suspense
                       fallback={
-                        <Skeleton className="size-8 rounded-full border bg-white shadow" />
+                        <Skeleton className="size-8 rounded-full border border-neutral-gray1 bg-white shadow" />
                       }
                     >
                       <UserAvatarMenu />

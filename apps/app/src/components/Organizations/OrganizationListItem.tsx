@@ -46,7 +46,7 @@ export const OrganizationListItem = ({
 
   const description =
     whereWeWork && whereWeWork.length > 0 ? (
-      <div className="mt-1 truncate text-sm text-neutral-gray4 sm:text-base">
+      <div className="mt-1 sm:text-base truncate text-sm text-neutral-gray4">
         {whereWeWork}
       </div>
     ) : null;

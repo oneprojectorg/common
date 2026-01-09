@@ -125,13 +125,13 @@ export function ProposalRichTextToolbar({
   }
 
   return (
-    <div className={`border-b border-neutral-gray1 px-6 py-2 ${className}`}>
-      <div className="flex w-full flex-wrap items-center justify-center gap-1">
+    <div className={`px-6 py-2 border-b border-neutral-gray1 ${className}`}>
+      <div className="gap-1 flex w-full flex-wrap items-center justify-center">
         {/* Undo/Redo */}
         <button
           onClick={() => editor.chain().focus().undo().run()}
           disabled={!editor.can().undo()}
-          className="rounded p-2 hover:bg-gray-100 disabled:opacity-50"
+          className="p-2 hover:bg-gray-100 rounded disabled:opacity-50"
           title={t('Undo')}
         >
           <Undo className="size-4" />
@@ -139,20 +139,20 @@ export function ProposalRichTextToolbar({
         <button
           onClick={() => editor.chain().focus().redo().run()}
           disabled={!editor.can().redo()}
-          className="rounded p-2 hover:bg-gray-100 disabled:opacity-50"
+          className="p-2 hover:bg-gray-100 rounded disabled:opacity-50"
           title={t('Redo')}
         >
           <Redo className="h-4 w-4" />
         </button>
 
-        <div className="mx-2 h-6 w-px bg-gray-300" />
+        <div className="mx-2 h-6 bg-gray-300 w-px" />
 
         {/* Headings */}
         <button
           onClick={() =>
             editor.chain().focus().toggleHeading({ level: 1 }).run()
           }
-          className={`rounded p-2 hover:bg-gray-100 ${editor.isActive('heading', { level: 1 }) ? 'bg-gray-200' : ''}`}
+          className={`p-2 hover:bg-gray-100 rounded ${editor.isActive('heading', { level: 1 }) ? 'bg-gray-200' : ''}`}
           title={t('Heading 1')}
         >
           <Heading1 className="h-4 w-4" />
@@ -161,7 +161,7 @@ export function ProposalRichTextToolbar({
           onClick={() =>
             editor.chain().focus().toggleHeading({ level: 2 }).run()
           }
-          className={`rounded p-2 hover:bg-gray-100 ${editor.isActive('heading', { level: 2 }) ? 'bg-gray-200' : ''}`}
+          className={`p-2 hover:bg-gray-100 rounded ${editor.isActive('heading', { level: 2 }) ? 'bg-gray-200' : ''}`}
           title={t('Heading 2')}
         >
           <Heading2 className="h-4 w-4" />
@@ -170,128 +170,128 @@ export function ProposalRichTextToolbar({
           onClick={() =>
             editor.chain().focus().toggleHeading({ level: 3 }).run()
           }
-          className={`rounded p-2 hover:bg-gray-100 ${editor.isActive('heading', { level: 3 }) ? 'bg-gray-200' : ''}`}
+          className={`p-2 hover:bg-gray-100 rounded ${editor.isActive('heading', { level: 3 }) ? 'bg-gray-200' : ''}`}
           title={t('Heading 3')}
         >
           <Heading3 className="h-4 w-4" />
         </button>
 
-        <div className="mx-2 h-6 w-px bg-gray-300" />
+        <div className="mx-2 h-6 bg-gray-300 w-px" />
 
         {/* Text Formatting */}
         <button
           onClick={() => editor.chain().focus().toggleBold().run()}
-          className={`rounded p-2 hover:bg-gray-100 ${editor.isActive('bold') ? 'bg-gray-200' : ''}`}
+          className={`p-2 hover:bg-gray-100 rounded ${editor.isActive('bold') ? 'bg-gray-200' : ''}`}
           title={t('Bold')}
         >
           <Bold className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor.chain().focus().toggleItalic().run()}
-          className={`rounded p-2 hover:bg-gray-100 ${editor.isActive('italic') ? 'bg-gray-200' : ''}`}
+          className={`p-2 hover:bg-gray-100 rounded ${editor.isActive('italic') ? 'bg-gray-200' : ''}`}
           title={t('Italic')}
         >
           <Italic className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor.chain().focus().toggleUnderline().run()}
-          className={`rounded p-2 hover:bg-gray-100 ${editor.isActive('underline') ? 'bg-gray-200' : ''}`}
+          className={`p-2 hover:bg-gray-100 rounded ${editor.isActive('underline') ? 'bg-gray-200' : ''}`}
           title={t('Underline')}
         >
           <UnderlineIcon className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor.chain().focus().toggleStrike().run()}
-          className={`rounded p-2 hover:bg-gray-100 ${editor.isActive('strike') ? 'bg-gray-200' : ''}`}
+          className={`p-2 hover:bg-gray-100 rounded ${editor.isActive('strike') ? 'bg-gray-200' : ''}`}
           title={t('Strikethrough')}
         >
           <Strikethrough className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor.chain().focus().toggleCode().run()}
-          className={`rounded p-2 hover:bg-gray-100 ${editor.isActive('code') ? 'bg-gray-200' : ''}`}
+          className={`p-2 hover:bg-gray-100 rounded ${editor.isActive('code') ? 'bg-gray-200' : ''}`}
           title={t('Code')}
         >
           <Code className="h-4 w-4" />
         </button>
 
-        <div className="mx-2 h-6 w-px bg-gray-300" />
+        <div className="mx-2 h-6 bg-gray-300 w-px" />
 
         {/* Lists */}
         <button
           onClick={() => editor.chain().focus().toggleBulletList().run()}
-          className={`rounded p-2 hover:bg-gray-100 ${editor.isActive('bulletList') ? 'bg-gray-200' : ''}`}
+          className={`p-2 hover:bg-gray-100 rounded ${editor.isActive('bulletList') ? 'bg-gray-200' : ''}`}
           title={t('Bullet List')}
         >
           <List className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor.chain().focus().toggleOrderedList().run()}
-          className={`rounded p-2 hover:bg-gray-100 ${editor.isActive('orderedList') ? 'bg-gray-200' : ''}`}
+          className={`p-2 hover:bg-gray-100 rounded ${editor.isActive('orderedList') ? 'bg-gray-200' : ''}`}
           title={t('Numbered List')}
         >
           <ListOrdered className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor.chain().focus().toggleBlockquote().run()}
-          className={`rounded p-2 hover:bg-gray-100 ${editor.isActive('blockquote') ? 'bg-gray-200' : ''}`}
+          className={`p-2 hover:bg-gray-100 rounded ${editor.isActive('blockquote') ? 'bg-gray-200' : ''}`}
           title={t('Blockquote')}
         >
           <Quote className="h-4 w-4" />
         </button>
 
-        <div className="mx-2 h-6 w-px bg-gray-300" />
+        <div className="mx-2 h-6 bg-gray-300 w-px" />
 
         {/* Text Alignment */}
         <button
           onClick={() => editor.chain().focus().setTextAlign('left').run()}
-          className={`rounded p-2 hover:bg-gray-100 ${editor.isActive({ textAlign: 'left' }) ? 'bg-gray-200' : ''}`}
+          className={`p-2 hover:bg-gray-100 rounded ${editor.isActive({ textAlign: 'left' }) ? 'bg-gray-200' : ''}`}
           title={t('Align Left')}
         >
           <AlignLeft className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor.chain().focus().setTextAlign('center').run()}
-          className={`rounded p-2 hover:bg-gray-100 ${editor.isActive({ textAlign: 'center' }) ? 'bg-gray-200' : ''}`}
+          className={`p-2 hover:bg-gray-100 rounded ${editor.isActive({ textAlign: 'center' }) ? 'bg-gray-200' : ''}`}
           title={t('Align Center')}
         >
           <AlignCenter className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor.chain().focus().setTextAlign('right').run()}
-          className={`rounded p-2 hover:bg-gray-100 ${editor.isActive({ textAlign: 'right' }) ? 'bg-gray-200' : ''}`}
+          className={`p-2 hover:bg-gray-100 rounded ${editor.isActive({ textAlign: 'right' }) ? 'bg-gray-200' : ''}`}
           title={t('Align Right')}
         >
           <AlignRight className="h-4 w-4" />
         </button>
 
-        <div className="mx-2 h-6 w-px bg-gray-300" />
+        <div className="mx-2 h-6 bg-gray-300 w-px" />
 
         {/* Insert Elements */}
         <button
           onClick={addLink}
-          className={`rounded p-2 hover:bg-gray-100 ${editor.isActive('link') ? 'bg-gray-200' : ''}`}
+          className={`p-2 hover:bg-gray-100 rounded ${editor.isActive('link') ? 'bg-gray-200' : ''}`}
           title={t('Add Link')}
         >
           <LinkIcon className="h-4 w-4" />
         </button>
         <button
           onClick={addEmbedLink}
-          className="rounded p-2 hover:bg-gray-100"
+          className="p-2 hover:bg-gray-100 rounded"
           title={t('Embed Link Preview')}
         >
           <Link2 className="h-4 w-4" />
         </button>
         <button
           onClick={handleImageUpload}
-          className="rounded p-2 hover:bg-gray-100"
+          className="p-2 hover:bg-gray-100 rounded"
           title={t('Add Image')}
         >
           <ImageIcon className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor.chain().focus().setHorizontalRule().run()}
-          className="rounded p-2 hover:bg-gray-100"
+          className="p-2 hover:bg-gray-100 rounded"
           title={t('Add Horizontal Rule')}
         >
           <Minus className="h-4 w-4" />

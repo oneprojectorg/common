@@ -20,7 +20,7 @@ export function CommentSkeleton() {
       <AvatarSkeleton className="!size-8 max-h-8 max-w-8" />
       <FeedMain>
         <FeedHeader className="relative w-full justify-between">
-          <div className="flex items-baseline gap-2">
+          <div className="gap-2 flex items-baseline">
             <Skeleton className="h-4 w-24" />
             <Skeleton className="h-3 w-16" />
           </div>
@@ -78,7 +78,7 @@ export function Comments({
               onReactionClick={onReactionClick}
               className="sm:px-0"
             />
-            <hr className="mt-4 bg-neutral-gray1" />
+            <hr className="mt-4" />
           </div>
         ))}
       </PostFeed>

@@ -122,7 +122,7 @@ export const ProfileFeedCards = ({
     <>
       <HorizontalList
         className={cn(
-          'w-full scroll-px-4 items-start',
+          'scroll-px-4 w-full items-start',
           posts.length === 0 && 'overflow-x-hidden',
           className,
         )}
@@ -131,7 +131,7 @@ export const ProfileFeedCards = ({
           posts.map((postToOrg) => (
             <HorizontalListItem
               key={postToOrg.postId}
-              className="w-11/12 max-w-96 shrink-0 snap-start rounded border p-3 first:ml-4 last:mr-4"
+              className="max-w-96 p-3 first:ml-4 last:mr-4 w-11/12 shrink-0 snap-start rounded border border-neutral-gray1"
             >
               <PostItem
                 post={postToOrg.post}
@@ -144,7 +144,7 @@ export const ProfileFeedCards = ({
             </HorizontalListItem>
           ))
         ) : (
-          <HorizontalListItem className="w-11/12 max-w-96 shrink-0 snap-start rounded border p-3 first:ml-4 last:mr-4">
+          <HorizontalListItem className="max-w-96 p-3 first:ml-4 last:mr-4 w-11/12 shrink-0 snap-start rounded border border-neutral-gray1">
             <EmptyPostsState />
           </HorizontalListItem>
         )}
@@ -194,7 +194,7 @@ export const ProfileFeedList = ({
                 onReactionClick={onReactionClick}
                 onCommentClick={onCommentClick}
               />
-              <hr className="bg-neutral-gray1" />
+              <hr />
             </Fragment>
           ))
         ) : (
@@ -209,7 +209,7 @@ export const ProfileFeedList = ({
       {shouldShowTrigger && (
         <div
           ref={infiniteScrollRef as React.RefObject<HTMLDivElement>}
-          className="flex justify-center py-4"
+          className="py-4 flex justify-center"
         >
           {isFetchingNextPage ? (
             <div className="text-sm text-neutral-gray4">

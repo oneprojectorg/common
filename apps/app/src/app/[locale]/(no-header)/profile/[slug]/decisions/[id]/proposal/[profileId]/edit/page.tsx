@@ -40,21 +40,21 @@ function ProposalEditPageSkeleton() {
   return (
     <div className="flex min-h-screen flex-col">
       {/* Header loading */}
-      <div className="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-4">
-        <div className="h-6 w-32 animate-pulse rounded bg-gray-200" />
-        <div className="h-6 w-48 animate-pulse rounded bg-gray-200" />
-        <div className="h-10 w-24 animate-pulse rounded bg-gray-200" />
+      <div className="px-6 py-4 flex items-center justify-between border-b border-neutral-gray1 bg-white">
+        <div className="h-6 w-32 bg-gray-200 animate-pulse rounded" />
+        <div className="h-6 w-48 bg-gray-200 animate-pulse rounded" />
+        <div className="h-10 w-24 bg-gray-200 animate-pulse rounded" />
       </div>
 
       {/* Content loading */}
-      <div className="flex-1 bg-white px-6 py-8">
-        <div className="mx-auto max-w-4xl space-y-6">
-          <div className="h-12 w-96 animate-pulse rounded bg-gray-200" />
-          <div className="flex gap-4">
-            <div className="h-8 w-32 animate-pulse rounded bg-gray-200" />
-            <div className="h-8 w-28 animate-pulse rounded bg-gray-200" />
+      <div className="px-6 py-8 flex-1 bg-white">
+        <div className="max-w-4xl space-y-6 mx-auto">
+          <div className="h-12 w-96 bg-gray-200 animate-pulse rounded" />
+          <div className="gap-4 flex">
+            <div className="h-8 w-32 bg-gray-200 animate-pulse rounded" />
+            <div className="h-8 w-28 bg-gray-200 animate-pulse rounded" />
           </div>
-          <div className="h-96 w-full animate-pulse rounded bg-gray-200" />
+          <div className="h-96 bg-gray-200 w-full animate-pulse rounded" />
         </div>
       </div>
     </div>

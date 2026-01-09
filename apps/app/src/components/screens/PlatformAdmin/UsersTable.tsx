@@ -91,11 +91,11 @@ export const UsersTable = () => {
 
   return (
     <div className="mt-8">
-      <div className="mb-4 flex items-center justify-between gap-4">
+      <div className="mb-4 gap-4 flex items-center justify-between">
         <h2 className="text-md font-serif text-neutral-black">
           {t('platformAdmin_allUsers')}
         </h2>
-        <div className="flex items-center gap-2">
+        <div className="gap-2 flex items-center">
           <div className="w-64">
             <SearchField
               aria-label={t('platformAdmin_searchUsersPlaceholder')}
@@ -146,7 +146,7 @@ const UsersTableHeader = () => {
   return (
     <div
       className={cn(
-        'bg-neutral-gray0 border-b border-neutral-gray1 py-3',
+        'bg-neutral-gray0 py-3 border-b border-neutral-gray1',
         USERS_TABLE_GRID,
       )}
     >
@@ -154,7 +154,7 @@ const UsersTableHeader = () => {
         <div
           key={heading}
           className={cn(
-            'text-sm font-normal text-neutral-charcoal',
+            'font-normal text-sm text-neutral-charcoal',
             idx === columnHeadings.length - 1 && 'text-right',
           )}
         >

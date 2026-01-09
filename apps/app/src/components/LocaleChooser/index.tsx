@@ -48,7 +48,7 @@ export const LocaleChooser = ({ onClose }: LocaleChooserProps) => {
           <IconButton
             variant="outline"
             size="medium"
-            className="hidden text-primary-teal sm:flex"
+            className="sm:flex hidden text-primary-teal"
           >
             <LuGlobe className="size-4" />
           </IconButton>
@@ -57,7 +57,7 @@ export const LocaleChooser = ({ onClose }: LocaleChooserProps) => {
               color="neutral"
               unstyled
               variant="icon"
-              className="flex size-8 items-center justify-center rounded-full bg-neutral-offWhite sm:hidden"
+              className="size-8 sm:hidden flex items-center justify-center rounded-full bg-neutral-offWhite"
             >
               <LuGlobe className="size-4" />
             </Button>

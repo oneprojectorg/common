@@ -39,7 +39,7 @@ export const ProfileSummary = ({ profile }: { profile: Organization }) => {
     .join(' • ');
 
   return (
-    <div className="flex flex-col gap-2 py-2">
+    <div className="gap-2 py-2 flex flex-col">
       <Header1>{profile.profile.name}</Header1>
 
       {whereWeWork.length ? (
@@ -51,8 +51,8 @@ export const ProfileSummary = ({ profile }: { profile: Organization }) => {
       </div>
 
       <ErrorBoundary fallback={null}>
-        <div className="flex flex-col-reverse gap-6 sm:flex-col">
-          <div className="flex gap-1 text-base text-neutral-gray4">
+        <div className="gap-6 sm:flex-col flex flex-col-reverse">
+          <div className="gap-1 flex text-base text-neutral-gray4">
             <Suspense fallback={<Skeleton>482 relationships</Skeleton>}>
               <RelationshipCount profile={profile} />
             </Suspense>

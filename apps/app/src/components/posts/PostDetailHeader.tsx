@@ -17,14 +17,14 @@ import { CreateMenu } from '../SiteHeader/CreateMenu';
 export const PostDetailHeader = () => {
   const t = useTranslations();
   return (
-    <header className="grid grid-cols-[auto_1fr_auto] items-center border-b border-neutral-gray1 bg-white p-2 px-6 sm:grid-cols-3 md:py-3">
-      <div className="flex items-center gap-3">
+    <header className="p-2 px-6 sm:grid-cols-3 md:py-3 grid grid-cols-[auto_1fr_auto] items-center border-b border-neutral-gray1 bg-white">
+      <div className="gap-3 flex items-center">
         <Link
           href="/"
-          className="flex items-center gap-2 text-base text-neutral-black hover:text-primary-tealBlack md:text-primary-teal"
+          className="gap-2 md:text-primary-teal flex items-center text-base text-neutral-black hover:text-primary-tealBlack"
         >
           <LuArrowLeft className="size-6 md:size-4" />
-          <span className="hidden md:flex">{t('Home')}</span>
+          <span className="md:flex hidden">{t('Home')}</span>
         </Link>
       </div>
 
@@ -36,18 +36,18 @@ export const PostDetailHeader = () => {
         </ErrorBoundary>
       </div>
 
-      <div className="flex items-center justify-end gap-2">
+      <div className="gap-2 flex items-center justify-end">
         <ClientOnly>
           <CreateMenu />
           <LocaleChooser />
           <ErrorBoundary
             fallback={
-              <div className="size-8 rounded-full border bg-white shadow" />
+              <div className="size-8 rounded-full border border-neutral-gray1 bg-white shadow" />
             }
           >
             <Suspense
               fallback={
-                <Skeleton className="size-8 rounded-full border bg-white shadow" />
+                <Skeleton className="size-8 rounded-full border border-neutral-gray1 bg-white shadow" />
               }
             >
               <UserAvatarMenu />

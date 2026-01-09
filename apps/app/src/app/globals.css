@@ -1,5 +1,8 @@
-/* Import shared Tailwind v4 styles from @op/brand */
-@import '@op/ui/tailwind-styles';
+/* Import Tailwind CSS v4 */
+@import 'tailwindcss';
+
+/* Import shared brand theme configuration */
+@import '@op/brand';
 
 /* App-specific keyframes */
 @keyframes wiggle {

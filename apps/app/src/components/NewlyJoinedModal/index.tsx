@@ -33,16 +33,16 @@ export const NewlyJoinedModal = () => {
 
   return (
     <Modal
-      className="inset-shadow-none shadow-green"
+      className="shadow-green inset-shadow-none"
       isOpen={modalOpen}
       onOpenChange={handleModalChange}
       confetti={false}
     >
-      <div className="z-10 p-12 text-center">
-        <div className="flex flex-col gap-6">
-          <div className="flex flex-col items-center justify-center gap-4">
+      <div className="p-12 z-10 text-center">
+        <div className="gap-6 flex flex-col">
+          <div className="gap-4 flex flex-col items-center justify-center">
             <CheckIcon />
-            <div className="flex flex-col gap-2">
+            <div className="gap-2 flex flex-col">
               <Header1 className="sm:text-title-lg">You're all set!</Header1>
               You've successfully joined Common. Your organization's profile is
               now visible to aligned collaborators and funders.

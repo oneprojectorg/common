@@ -19,14 +19,14 @@ export const PlatformHighlights = () => {
 
   return (
     <Surface className="shadow-light">
-      <div className="flex flex-col items-center justify-between gap-6 px-10 py-6 sm:flex-row sm:gap-4">
+      <div className="gap-6 px-10 py-6 sm:flex-row sm:gap-4 flex flex-col items-center justify-between">
         <Highlight>
           <HighlightNumber className="bg-tealGreen">
             {stats.newOrganizations}
           </HighlightNumber>
           <HighlightLabel>{t('new organizations to explore')}</HighlightLabel>
         </Highlight>
-        <hr className="hidden h-20 w-0.5 bg-neutral-gray1 sm:block" />
+        <hr className="h-20 w-0.5 sm:block hidden border-0 bg-neutral-gray1" />
         <Highlight>
           <HighlightNumber className="bg-orange">
             {stats.totalRelationships}
@@ -35,14 +35,14 @@ export const PlatformHighlights = () => {
             {t('active')} {pluralize('relationship', stats.totalRelationships)}
           </HighlightLabel>
         </Highlight>
-        <hr className="hidden h-20 w-0.5 bg-neutral-gray1 sm:block" />
+        <hr className="h-20 w-0.5 sm:block hidden border-0 bg-neutral-gray1" />
         <Highlight>
           <HighlightNumber className="bg-redTeal">
             {stats.totalOrganizations}
           </HighlightNumber>
           <HighlightLabel>{t('organizations on Common')}</HighlightLabel>
         </Highlight>
-        <hr className="hidden h-20 w-0.5 bg-neutral-gray1 sm:block" />
+        <hr className="h-20 w-0.5 sm:block hidden border-0 bg-neutral-gray1" />
         <Highlight>
           <HighlightNumber className="bg-redPurple">
             {stats.totalUsers}
@@ -50,9 +50,9 @@ export const PlatformHighlights = () => {
           <HighlightLabel>{t('people on Common')}</HighlightLabel>
         </Highlight>
       </div>
-      <div className="flex flex-col justify-center gap-2 border-0 border-t bg-neutral-offWhite p-6 text-sm text-neutral-charcoal sm:flex-row sm:items-center">
+      <div className="gap-2 p-6 sm:flex-row sm:items-center flex flex-col justify-center border-0 border-t border-neutral-gray1 bg-neutral-offWhite text-sm text-neutral-charcoal">
         <Suspense>
-          <div className="flex max-w-full items-center gap-2">
+          <div className="gap-2 flex max-w-full items-center">
             <OrganizationFacePile>
               <span className="whitespace-nowrap">
                 {t('are collaborating on Common')}
@@ -88,7 +88,7 @@ const HighlightNumber = ({
 
 const HighlightLabel = ({ children }: { children?: ReactNode }) => {
   return (
-    <div className="col-span-2 flex h-12 max-w-32 items-center text-neutral-charcoal xxs:col-span-3">
+    <div className="h-12 max-w-32 col-span-2 flex items-center text-neutral-charcoal xxs:col-span-3">
       {children}
     </div>
   );
@@ -96,7 +96,7 @@ const HighlightLabel = ({ children }: { children?: ReactNode }) => {
 
 const Highlight = ({ children }: { children?: ReactNode }) => {
   return (
-    <div className="grid w-full grid-cols-5 items-center gap-4 xxs:flex sm:flex">
+    <div className="gap-4 sm:flex grid w-full grid-cols-5 items-center xxs:flex">
       {children}
     </div>
   );
@@ -149,7 +149,7 @@ const OrganizationFacePile = ({ children }: { children?: ReactNode }) => {
               />
             ) : null}
           </Avatar>
-          <div className="absolute left-0 top-0 h-full w-full cursor-pointer rounded-full bg-white opacity-0 transition-opacity duration-100 ease-in-out active:bg-black hover:opacity-15" />
+          <div className="left-0 top-0 absolute h-full w-full cursor-pointer rounded-full bg-white opacity-0 transition-opacity duration-100 ease-in-out hover:opacity-15 active:bg-black" />
         </Link>
       );
     })
