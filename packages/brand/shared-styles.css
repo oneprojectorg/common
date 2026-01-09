@@ -1,0 +1,506 @@
+@import 'tailwindcss';
+@import './tokens.css';
+
+/*
+ * Shared Tailwind v4 theme configuration
+ * Migrated from packages/ui/tailwind.shared.ts
+ *
+ * Plugins (install separately):
+ * - @tailwindcss/container-queries
+ * - @tailwindcss/typography
+ * - tailwind-scrollbar
+ * - tailwindcss-animate
+ * - tailwindcss-react-aria-components
+ *
+ * Safelist (for dynamic classes):
+ * - [&_.scroller]:!overflow-hidden (ScreenCapturer.tsx)
+ * - [&_textarea]:!overflow-hidden (ScreenCapturer.tsx)
+ * - bg-gradient, bg-tealGreen, bg-redTeal, bg-blueGreen, bg-orangePurple, bg-yellowOrange (Avatar gradients)
+ */
+
+@theme {
+  /* ============================================
+   * Breakpoints (screens)
+   * ============================================ */
+  --breakpoint-xxs: 320px;
+  --breakpoint-xs: 480px;
+  /* sm, md, lg, xl, 2xl use Tailwind defaults */
+
+  /* ============================================
+   * Container
+   * Note: Container config requires plugin or custom CSS
+   * center: true, padding: 2rem, screens: { '2xl': '1400px' }
+   * ============================================ */
+
+  /* ============================================
+   * Font Families
+   * ============================================ */
+  --font-accent: var(--font-accent), ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-serif: var(--font-serif), ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  --font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-mono: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+  /* ============================================
+   * Line Height
+   * ============================================ */
+  --leading-base: 0.875rem;
+
+  /* ============================================
+   * Font Sizes with line-height, font-weight, letter-spacing
+   * ============================================ */
+
+  /* Title sizes */
+  --text-title-xxl: 3rem;
+  --text-title-xxl--line-height: 110%;
+  --text-title-xxl--font-weight: 300;
+  --text-title-xxl--letter-spacing: -0.075rem;
+
+  --text-title-xl: 2.5rem;
+  --text-title-xl--line-height: 110%;
+  --text-title-xl--font-weight: 300;
+  --text-title-xl--letter-spacing: -0.0625rem;
+
+  --text-title-lg: 1.75rem;
+  --text-title-lg--line-height: 110%;
+  --text-title-lg--font-weight: 300;
+  --text-title-lg--letter-spacing: -0.02625rem;
+
+  --text-title-md: 1.5rem;
+  --text-title-md--line-height: 110%;
+  --text-title-md--font-weight: 300;
+  --text-title-md--letter-spacing: -0.0225rem;
+
+  --text-title-base: 1.25rem;
+  --text-title-base--line-height: 110%;
+  --text-title-base--font-weight: 300;
+  --text-title-base--letter-spacing: -0.01875rem;
+
+  --text-title-sm: 1rem;
+  --text-title-sm--line-height: 130%;
+  --text-title-sm--font-weight: 300;
+  --text-title-sm--letter-spacing: -0.015rem;
+
+  --text-title-xs: 0.875rem;
+  --text-title-xs--line-height: 130%;
+  --text-title-xs--font-weight: 300;
+  --text-title-xs--letter-spacing: -0.01313rem;
+
+  --text-title-xxs: 0.75rem;
+  --text-title-xxs--line-height: 130%;
+  --text-title-xxs--font-weight: 300;
+  --text-title-xxs--letter-spacing: -0.01125rem;
+
+  --text-title-sm12: 0.75rem;
+  --text-title-sm12--line-height: 130%;
+  --text-title-sm12--font-weight: 300;
+  --text-title-sm12--letter-spacing: -0.01125rem;
+
+  /* Body sizes (override defaults with custom weights) */
+  --text-xs: 0.625rem;
+  --text-xs--line-height: 150%;
+  --text-xs--font-weight: 400;
+
+  --text-sm: 0.75rem;
+  --text-sm--line-height: 150%;
+  --text-sm--font-weight: 400;
+
+  --text-base: 0.875rem;
+  --text-base--line-height: 150%;
+  --text-base--font-weight: 400;
+
+  --text-lg: 1rem;
+  --text-lg--line-height: 150%;
+  --text-lg--font-weight: 400;
+
+  /* ============================================
+   * Spacing
+   * ============================================ */
+  --spacing-18: 4.5rem;
+
+  /* ============================================
+   * Colors - Teal
+   * ============================================ */
+  --color-teal-50: hsl(var(--op-teal-50));
+  --color-teal-100: hsl(var(--op-teal-100));
+  --color-teal-200: hsl(var(--op-teal-200));
+  --color-teal-300: hsl(var(--op-teal-300));
+  --color-teal-400: hsl(var(--op-teal-400));
+  --color-teal-500: hsl(var(--op-teal-500));
+  --color-teal-600: hsl(var(--op-teal-600));
+  --color-teal-700: hsl(var(--op-teal-700));
+  --color-teal-800: hsl(var(--op-teal-800));
+  --color-teal-900: hsl(var(--op-teal-900));
+  --color-teal-950: hsl(var(--op-teal-950));
+
+  /* ============================================
+   * Colors - Yellow
+   * ============================================ */
+  --color-yellow-50: hsl(var(--op-yellow-50));
+  --color-yellow-100: hsl(var(--op-yellow-100));
+  --color-yellow-200: hsl(var(--op-yellow-200));
+  --color-yellow-300: hsl(var(--op-yellow-300));
+  --color-yellow-400: hsl(var(--op-yellow-400));
+  --color-yellow-500: hsl(var(--op-yellow-500));
+  --color-yellow-600: hsl(var(--op-yellow-600));
+  --color-yellow-700: hsl(var(--op-yellow-700));
+  --color-yellow-800: hsl(var(--op-yellow-800));
+  --color-yellow-900: hsl(var(--op-yellow-900));
+  --color-yellow-950: hsl(var(--op-yellow-950));
+
+  /* ============================================
+   * Colors - Orange1
+   * ============================================ */
+  --color-orange1-50: hsl(var(--op-orange1-50));
+  --color-orange1-100: hsl(var(--op-orange1-100));
+  --color-orange1-200: hsl(var(--op-orange1-200));
+  --color-orange1-300: hsl(var(--op-orange1-300));
+  --color-orange1-400: hsl(var(--op-orange1-400));
+  --color-orange1-500: hsl(var(--op-orange1-500));
+  --color-orange1-600: hsl(var(--op-orange1-600));
+  --color-orange1-700: hsl(var(--op-orange1-700));
+  --color-orange1-800: hsl(var(--op-orange1-800));
+  --color-orange1-900: hsl(var(--op-orange1-900));
+  --color-orange1-950: hsl(var(--op-orange1-950));
+
+  /* ============================================
+   * Colors - Orange2
+   * ============================================ */
+  --color-orange2-50: hsl(var(--op-orange2-50));
+  --color-orange2-100: hsl(var(--op-orange2-100));
+  --color-orange2-200: hsl(var(--op-orange2-200));
+  --color-orange2-300: hsl(var(--op-orange2-300));
+  --color-orange2-400: hsl(var(--op-orange2-400));
+  --color-orange2-500: hsl(var(--op-orange2-500));
+  --color-orange2-600: hsl(var(--op-orange2-600));
+  --color-orange2-700: hsl(var(--op-orange2-700));
+  --color-orange2-800: hsl(var(--op-orange2-800));
+  --color-orange2-900: hsl(var(--op-orange2-900));
+  --color-orange2-950: hsl(var(--op-orange2-950));
+
+  /* ============================================
+   * Colors - Red
+   * ============================================ */
+  --color-red-50: hsl(var(--op-red-50));
+  --color-red-100: hsl(var(--op-red-100));
+  --color-red-200: hsl(var(--op-red-200));
+  --color-red-300: hsl(var(--op-red-300));
+  --color-red-400: hsl(var(--op-red-400));
+  --color-red-500: hsl(var(--op-red-500));
+  --color-red-600: hsl(var(--op-red-600));
+  --color-red-700: hsl(var(--op-red-700));
+  --color-red-800: hsl(var(--op-red-800));
+  --color-red-900: hsl(var(--op-red-900));
+  --color-red-950: hsl(var(--op-red-950));
+
+  /* ============================================
+   * Colors - Green
+   * ============================================ */
+  --color-green-50: hsl(var(--op-green-50));
+  --color-green-100: hsl(var(--op-green-100));
+  --color-green-200: hsl(var(--op-green-200));
+  --color-green-300: hsl(var(--op-green-300));
+  --color-green-400: hsl(var(--op-green-400));
+  --color-green-500: hsl(var(--op-green-500));
+  --color-green-600: hsl(var(--op-green-600));
+  --color-green-700: hsl(var(--op-green-700));
+  --color-green-800: hsl(var(--op-green-800));
+  --color-green-900: hsl(var(--op-green-900));
+  --color-green-950: hsl(var(--op-green-950));
+
+  /* ============================================
+   * Colors - Semantic Neutrals
+   * ============================================ */
+  --color-black: hsl(var(--op-neutral-950));
+  --color-charcoal: hsl(var(--op-neutral-900));
+  --color-darkGray: hsl(var(--op-neutral-700));
+  --color-midGray: hsl(var(--op-neutral-500));
+  --color-lightGray: hsl(var(--op-neutral-400));
+  --color-offWhite: hsl(var(--op-neutral-200));
+  --color-whiteish: hsl(var(--op-neutral-50));
+  --color-white: hsl(var(--op-white));
+
+  /* ============================================
+   * Colors - Border
+   * ============================================ */
+  --color-border: hsl(var(--op-offWhite));
+
+  /* ============================================
+   * Colors - Primary
+   * ============================================ */
+  --color-primary: hsl(var(--op-teal-500));
+  --color-primary-teal: hsl(var(--op-teal-500));
+  --color-primary-tealWhite: hsl(var(--op-teal-white));
+  --color-primary-tealBlack: hsl(var(--op-teal-600));
+  --color-primary-yellow: hsl(var(--op-yellow-500));
+  --color-primary-orange1: hsl(var(--op-orange1-500));
+  --color-primary-orange2: hsl(var(--op-orange2-500));
+
+  /* ============================================
+   * Colors - Neutral (semantic aliases)
+   * ============================================ */
+  --color-neutral-offWhite: hsl(var(--op-neutral-50));
+  --color-neutral-gray1: hsl(var(--op-neutral-200));
+  --color-neutral-gray2: hsl(var(--op-neutral-400));
+  --color-neutral-gray3: hsl(var(--op-neutral-500));
+  --color-neutral-gray4: hsl(var(--op-neutral-700));
+  --color-neutral-charcoal: hsl(var(--op-neutral-900));
+  --color-neutral-black: hsl(var(--op-neutral-950));
+
+  /* ============================================
+   * Colors - Functional
+   * ============================================ */
+  --color-functional-red: hsl(var(--op-red-500));
+  --color-functional-redBlack: hsl(var(--op-red-600));
+  --color-functional-redWhite: hsl(var(--op-red-50));
+  --color-functional-green: hsl(var(--op-green-500));
+  --color-functional-greenWhite: hsl(var(--op-green-50));
+
+  /* ============================================
+   * Colors - Data Visualization
+   * ============================================ */
+  --color-data-purple: hsl(var(--op-purple-500));
+  --color-data-blue: hsl(var(--op-blue-500));
+
+  /* ============================================
+   * Colors - Accent (from tailwindcss/colors.neutral)
+   * These are the default Tailwind neutral palette
+   * ============================================ */
+  --color-accent-50: #fafafa;
+  --color-accent-100: #f5f5f5;
+  --color-accent-200: #e5e5e5;
+  --color-accent-300: #d4d4d4;
+  --color-accent-400: #a3a3a3;
+  --color-accent-500: #737373;
+  --color-accent-600: #525252;
+  --color-accent-700: #404040;
+  --color-accent-800: #262626;
+  --color-accent-900: #171717;
+  --color-accent-950: #0a0a0a;
+
+  /* ============================================
+   * Border Radius
+   * ============================================ */
+  --radius: 0.5rem;
+  --radius-lg: 0.5rem;
+  --radius-md: 0.5rem;
+  --radius-sm: 0.25rem;
+
+  /* ============================================
+   * Box Shadows
+   * ============================================ */
+  --shadow: 0px 0px 48px 0px rgba(20, 35, 38, 0.08);
+  --shadow-light: 0px 0px 16px 0px rgba(20, 35, 38, 0.04);
+  --shadow-md: 0px 0px 48px 0px rgba(20, 35, 38, 0.08);
+  --shadow-green: 0px 0px 48px 0px rgba(193, 255, 173, 0.88);
+  --shadow-orange: 0px 0px 48px 0px rgba(242, 183, 5, 0.64);
+
+  /* ============================================
+   * Backdrop Blur
+   * ============================================ */
+  --blur-sm: 1px;
+
+  /* ============================================
+   * Grid Template Columns
+   * Note: Custom grid columns require @utility or inline
+   * --grid-cols-15 is not a standard theme namespace
+   * ============================================ */
+}
+
+/* ============================================
+ * Custom Utilities
+ * ============================================ */
+
+/* Grid columns 15 */
+@utility grid-cols-15 {
+  grid-template-columns: repeat(15, minmax(0, 1fr));
+}
+
+/* Background gradients */
+@utility bg-gradient {
+  background-image: radial-gradient(154% 99.31% at 0% 0%, #3EC300 0%, #0396A6 51.56%);
+}
+
+@utility bg-tealGreen {
+  background-image: radial-gradient(154% 99.31% at 0% 0%, #3EC300 0%, #0396A6 51.56%);
+}
+
+@utility bg-redTeal {
+  background-image: radial-gradient(96.92% 140.1% at 72.02% 100%, #0396A6 0%, #FF613D 92.19%, #FFFBFA 99.99%);
+}
+
+@utility bg-redPurple {
+  background-image: radial-gradient(70.56% 70.56% at 72.75% 33.21%, #6200C3 0%, #FF613D 100%);
+}
+
+@utility bg-orange {
+  background-image: radial-gradient(96.92% 140.1% at 72.02% 100%, #E35F00 0%, #DE8D00 48.44%, #FF9739 99.99%);
+}
+
+@utility bg-blueGreen {
+  background-image: radial-gradient(91.78% 91.78% at 89.17% 4.38%, #3EC300 0%, #0046C2 100%);
+}
+
+@utility bg-orangePurple {
+  background-image: radial-gradient(70.56% 70.56% at 72.75% 33.21%, #6200C3 0%, #FF613D 100%);
+}
+
+@utility bg-yellowOrange {
+  background-image: radial-gradient(74.88% 74.88% at 42.58% 76.89%, #F29F05 0%, #F2B705 100%);
+}
+
+/* ============================================
+ * Dark Mode Configuration
+ * Tailwind v4 uses @variant for custom dark mode selectors
+ * Original: darkMode: ['class', 'data-theme']
+ * ============================================ */
+@custom-variant dark (&:where(.dark, [data-theme="dark"] *));
+
+/* ============================================
+ * Container Configuration
+ * Original: center: true, padding: 2rem, screens: { '2xl': '1400px' }
+ * ============================================ */
+@utility container {
+  margin-inline: auto;
+  padding-inline: 2rem;
+  max-width: 1400px;
+}
+
+/* ============================================
+ * Base Layer Styles
+ * ============================================ */
+
+/* Root element configuration */
+:root {
+  touch-action: pan-x pan-y;
+  height: 100%;
+  overflow-x: hidden;
+}
+
+/* Prevent horizontal overscroll */
+html,
+body {
+  overscroll-behavior-x: none;
+}
+
+html {
+  font-size: 16px;
+}
+
+/* Base body styles */
+@layer base {
+  body {
+    background-color: hsl(var(--op-white));
+    font-family: var(--font-sans);
+    color: hsl(var(--op-neutral-900));
+  }
+}
+
+/* Placeholder styles */
+input::placeholder {
+  color: hsl(var(--op-neutral-500));
+}
+
+textarea::placeholder {
+  color: hsl(var(--op-neutral-500));
+}
+
+/* Hide Google extension bubble */
+#gdx-bubble-host {
+  display: none !important;
+}
+
+/* Hide Video Speed Controller extension */
+.vsc-controller {
+  display: none !important;
+}
+
+/* ============================================
+ * Additional Custom Utilities
+ * ============================================ */
+
+/* Scrollbar utilities - requires tailwind-scrollbar plugin */
+@utility better-scrollbar {
+  overflow-y: scroll;
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--op-neutral-600)) transparent;
+}
+
+@utility scrollable-hidden-scrollbar {
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+@utility scrollable-hidden-scrollbar::-webkit-scrollbar {
+  width: 0;
+}
+
+/* Inset shadow utilities */
+@utility inset-shadow {
+  box-shadow:
+    0px 1px 3px rgba(0, 0, 0, 0.4),
+    0px 0px 4px rgba(0, 0, 0, 0.5),
+    inset 0px 0px 2px rgba(255, 255, 255, 0.3),
+    inset 0px 1px 0px rgba(255, 255, 255, 0.1);
+}
+
+@utility inset-shadow-sm {
+  box-shadow:
+    0px 1px 3px rgba(0, 0, 0, 0.4),
+    0px 0px 4px rgba(0, 0, 0, 0.5),
+    inset 0px 0px 2px rgba(255, 255, 255, 0.3),
+    inset 0px 0px 2px rgba(255, 255, 255, 0.1);
+}
+
+/* Border glow utility */
+@utility border-glow {
+  border: 1px solid hsl(var(--op-neutral-500) / 0.5);
+  background-clip: padding-box;
+  backdrop-filter: blur(40px) contrast(1.5) saturate(3);
+  box-shadow:
+    0px 1px 3px rgba(0, 0, 0, 0.4),
+    0px 0px 8px rgba(0, 0, 0, 0.5);
+}
+
+/* ============================================
+ * Component-specific styles
+ * ============================================ */
+
+/* Grid centered layout */
+.gridCentered {
+  grid-template-columns: min-content 1fr min-content;
+}
+
+/* Menu item grid layout */
+.op-ui-MenuItem {
+  grid-template-areas: 'label kbd' 'desc kbd';
+}
+
+.op-ui-MenuItem [slot='label'] {
+  grid-area: label;
+}
+
+.op-ui-MenuItem [slot='description'] {
+  grid-area: desc;
+}
+
+.op-ui-MenuItem [slot='kbd'] {
+  grid-area: kbd;
+}
+
+/* Tooltip grid layout */
+.op-ui-Tooltip {
+  grid-template-areas: 'label kbd' 'desc kbd';
+}
+
+.op-ui-Tooltip [slot='label'] {
+  grid-area: label;
+}
+
+.op-ui-Tooltip [slot='description'] {
+  grid-area: desc;
+}
+
+.op-ui-Tooltip [slot='kbd'] {
+  grid-area: kbd;
+  transform: translateY(0.135em);
+}

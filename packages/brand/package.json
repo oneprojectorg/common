@@ -1,0 +1,17 @@
+{
+  "name": "@op/brand",
+  "version": "0.0.0",
+  "private": true,
+  "license": "SEE LICENSE in /LICENSE",
+  "type": "module",
+  "exports": {
+    ".": "./shared-styles.css",
+    "./tokens": "./tokens.css",
+    "./postcss": "./postcss.config.js"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.5",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^4.1.5"
+  }
+}
