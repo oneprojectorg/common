@@ -1,11 +1,10 @@
-import sharedConfig from '@op/ui/tailwind-config';
-// @ts-ignore ignore undeclared types
-import { withUITailwindPreset } from '@op/ui/tailwind-utils';
-import type { Config } from 'tailwindcss';
+/**
+ * @deprecated This file is deprecated. Tailwind v4 uses CSS-based configuration.
+ * Theme configuration is in @op/brand/shared-styles.css
+ *
+ * This file is kept for backwards compatibility only.
+ */
 
-const config: Pick<Config, 'content' | 'theme' | 'presets'> = {
+export default {
   content: ['./app/**/*.tsx', './components/**/*.tsx'],
-  presets: [sharedConfig],
 };
-
-export default withUITailwindPreset(config);

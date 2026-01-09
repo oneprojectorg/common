@@ -3,7 +3,7 @@ import type { Preview } from '@storybook/react-vite';
 import { themes } from 'storybook/theming';
 
 import '../stories/index.css';
-import '../tailwind.styles.scss';
+import '../styles.css';
 
 const preview: Preview = {
   decorators: [

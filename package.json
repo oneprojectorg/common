@@ -97,8 +97,7 @@
     "superjson": "^2.2.2",
     "tailwind-scrollbar": "^3.1.0",
     "tailwind-variants": "^0.3.0",
-    "tailwindcss": "3.4.17",
-    "tailwindcss-animate": "1.0.7",
+    "tailwindcss": "4.1.8",
     "three": "^0.174.0",
     "trpc-to-openapi": "^3.1.0",
     "tsx": "^4.19.3",
@@ -168,8 +167,6 @@
       "superjson": "$superjson",
       "tailwind-scrollbar": "$tailwind-scrollbar",
       "tailwind-variants": "$tailwind-variants",
-      "tailwindcss": "$tailwindcss",
-      "tailwindcss-animate": "$tailwindcss-animate",
       "three": "$three",
       "trpc-to-openapi": "$trpc-to-openapi",
       "tsx": "$tsx",
@@ -180,9 +177,6 @@
       "use-error-boundary": "$use-error-boundary",
       "zod": "$zod",
       "zustand": "$zustand"
-    },
-    "patchedDependencies": {
-      "tailwindcss-animate@1.0.7": "patches/tailwindcss-animate@1.0.7.patch"
     }
   }
 }

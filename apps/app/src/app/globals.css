@@ -1,0 +1,30 @@
+/* Import shared Tailwind v4 styles from @op/brand */
+@import '@op/ui/tailwind-styles';
+
+/* App-specific keyframes */
+@keyframes wiggle {
+  0%, 100% {
+    transform: rotate(-5deg);
+  }
+  50% {
+    transform: rotate(5deg);
+  }
+}
+
+@keyframes sweep {
+  0%, 100% {
+    background-position: 0% 0%;
+  }
+  50% {
+    background-position: 100% 100%;
+  }
+}
+
+/* App-specific animation utilities */
+@utility animate-wiggle {
+  animation: wiggle 1s ease-in-out infinite;
+}
+
+@utility animate-sweep {
+  animation: sweep 2s ease-in-out infinite;
+}

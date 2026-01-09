@@ -428,10 +428,10 @@ textarea::placeholder {
 @utility scrollable-hidden-scrollbar {
   overflow-y: auto;
   scrollbar-width: none;
-}
 
-@utility scrollable-hidden-scrollbar::-webkit-scrollbar {
-  width: 0;
+  &::-webkit-scrollbar {
+    width: 0;
+  }
 }
 
 /* Inset shadow utilities */
@@ -503,4 +503,907 @@ textarea::placeholder {
 .op-ui-Tooltip [slot='kbd'] {
   grid-area: kbd;
   transform: translateY(0.135em);
+}
+
+/* ============================================
+ * Animation Utilities (replaces tailwindcss-animate)
+ * ============================================ */
+
+/* Animation duration CSS variables */
+:root {
+  --animate-duration: 1s;
+  --animate-delay: 0s;
+  --animate-repeat: 1;
+}
+
+/* Keyframe definitions */
+@keyframes enter {
+  from {
+    opacity: var(--tw-enter-opacity, 1);
+    transform: translate3d(var(--tw-enter-translate-x, 0), var(--tw-enter-translate-y, 0), 0)
+      scale3d(var(--tw-enter-scale, 1), var(--tw-enter-scale, 1), var(--tw-enter-scale, 1))
+      rotate(var(--tw-enter-rotate, 0));
+  }
+}
+
+@keyframes exit {
+  to {
+    opacity: var(--tw-exit-opacity, 1);
+    transform: translate3d(var(--tw-exit-translate-x, 0), var(--tw-exit-translate-y, 0), 0)
+      scale3d(var(--tw-exit-scale, 1), var(--tw-exit-scale, 1), var(--tw-exit-scale, 1))
+      rotate(var(--tw-exit-rotate, 0));
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes ping {
+  75%, 100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(-25%);
+    animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+  }
+  50% {
+    transform: none;
+    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  }
+}
+
+@keyframes accordion-down {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+  }
+}
+
+@keyframes accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+  to {
+    height: 0;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes slideInFromTop {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInFromBottom {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInFromLeft {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInFromRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes zoomIn {
+  from {
+    opacity: 0;
+    transform: scale3d(0.3, 0.3, 0.3);
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes zoomOut {
+  from {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+    transform: scale3d(0.3, 0.3, 0.3);
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* Animation utilities */
+@utility animate-in {
+  animation-name: enter;
+  animation-duration: var(--animate-duration);
+  --tw-enter-opacity: initial;
+  --tw-enter-scale: initial;
+  --tw-enter-rotate: initial;
+  --tw-enter-translate-x: initial;
+  --tw-enter-translate-y: initial;
+}
+
+@utility animate-out {
+  animation-name: exit;
+  animation-duration: var(--animate-duration);
+  --tw-exit-opacity: initial;
+  --tw-exit-scale: initial;
+  --tw-exit-rotate: initial;
+  --tw-exit-translate-x: initial;
+  --tw-exit-translate-y: initial;
+}
+
+@utility animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@utility animate-ping {
+  animation: ping 1s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@utility animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@utility animate-bounce {
+  animation: bounce 1s infinite;
+}
+
+@utility animate-accordion-down {
+  animation: accordion-down 0.2s ease-out;
+}
+
+@utility animate-accordion-up {
+  animation: accordion-up 0.2s ease-out;
+}
+
+/* Fade animation modifiers */
+@utility fade-in {
+  --tw-enter-opacity: 0;
+}
+
+@utility fade-in-0 {
+  --tw-enter-opacity: 0;
+}
+
+@utility fade-in-5 {
+  --tw-enter-opacity: 0.05;
+}
+
+@utility fade-in-10 {
+  --tw-enter-opacity: 0.1;
+}
+
+@utility fade-in-20 {
+  --tw-enter-opacity: 0.2;
+}
+
+@utility fade-in-25 {
+  --tw-enter-opacity: 0.25;
+}
+
+@utility fade-in-30 {
+  --tw-enter-opacity: 0.3;
+}
+
+@utility fade-in-40 {
+  --tw-enter-opacity: 0.4;
+}
+
+@utility fade-in-50 {
+  --tw-enter-opacity: 0.5;
+}
+
+@utility fade-in-60 {
+  --tw-enter-opacity: 0.6;
+}
+
+@utility fade-in-70 {
+  --tw-enter-opacity: 0.7;
+}
+
+@utility fade-in-75 {
+  --tw-enter-opacity: 0.75;
+}
+
+@utility fade-in-80 {
+  --tw-enter-opacity: 0.8;
+}
+
+@utility fade-in-90 {
+  --tw-enter-opacity: 0.9;
+}
+
+@utility fade-in-95 {
+  --tw-enter-opacity: 0.95;
+}
+
+@utility fade-in-100 {
+  --tw-enter-opacity: 1;
+}
+
+@utility fade-out {
+  --tw-exit-opacity: 0;
+}
+
+@utility fade-out-0 {
+  --tw-exit-opacity: 0;
+}
+
+@utility fade-out-5 {
+  --tw-exit-opacity: 0.05;
+}
+
+@utility fade-out-10 {
+  --tw-exit-opacity: 0.1;
+}
+
+@utility fade-out-20 {
+  --tw-exit-opacity: 0.2;
+}
+
+@utility fade-out-25 {
+  --tw-exit-opacity: 0.25;
+}
+
+@utility fade-out-30 {
+  --tw-exit-opacity: 0.3;
+}
+
+@utility fade-out-40 {
+  --tw-exit-opacity: 0.4;
+}
+
+@utility fade-out-50 {
+  --tw-exit-opacity: 0.5;
+}
+
+@utility fade-out-60 {
+  --tw-exit-opacity: 0.6;
+}
+
+@utility fade-out-70 {
+  --tw-exit-opacity: 0.7;
+}
+
+@utility fade-out-75 {
+  --tw-exit-opacity: 0.75;
+}
+
+@utility fade-out-80 {
+  --tw-exit-opacity: 0.8;
+}
+
+@utility fade-out-90 {
+  --tw-exit-opacity: 0.9;
+}
+
+@utility fade-out-95 {
+  --tw-exit-opacity: 0.95;
+}
+
+@utility fade-out-100 {
+  --tw-exit-opacity: 1;
+}
+
+/* Zoom animation modifiers */
+@utility zoom-in {
+  --tw-enter-scale: 0;
+}
+
+@utility zoom-in-0 {
+  --tw-enter-scale: 0;
+}
+
+@utility zoom-in-50 {
+  --tw-enter-scale: 0.5;
+}
+
+@utility zoom-in-75 {
+  --tw-enter-scale: 0.75;
+}
+
+@utility zoom-in-90 {
+  --tw-enter-scale: 0.9;
+}
+
+@utility zoom-in-95 {
+  --tw-enter-scale: 0.95;
+}
+
+@utility zoom-in-100 {
+  --tw-enter-scale: 1;
+}
+
+@utility zoom-out {
+  --tw-exit-scale: 0;
+}
+
+@utility zoom-out-0 {
+  --tw-exit-scale: 0;
+}
+
+@utility zoom-out-50 {
+  --tw-exit-scale: 0.5;
+}
+
+@utility zoom-out-75 {
+  --tw-exit-scale: 0.75;
+}
+
+@utility zoom-out-90 {
+  --tw-exit-scale: 0.9;
+}
+
+@utility zoom-out-95 {
+  --tw-exit-scale: 0.95;
+}
+
+@utility zoom-out-100 {
+  --tw-exit-scale: 1;
+}
+
+/* Slide animation modifiers */
+@utility slide-in-from-top {
+  --tw-enter-translate-y: -100%;
+}
+
+@utility slide-in-from-top-0 {
+  --tw-enter-translate-y: 0;
+}
+
+@utility slide-in-from-top-1 {
+  --tw-enter-translate-y: -0.25rem;
+}
+
+@utility slide-in-from-top-2 {
+  --tw-enter-translate-y: -0.5rem;
+}
+
+@utility slide-in-from-top-3 {
+  --tw-enter-translate-y: -0.75rem;
+}
+
+@utility slide-in-from-top-4 {
+  --tw-enter-translate-y: -1rem;
+}
+
+@utility slide-in-from-top-5 {
+  --tw-enter-translate-y: -1.25rem;
+}
+
+@utility slide-in-from-top-6 {
+  --tw-enter-translate-y: -1.5rem;
+}
+
+@utility slide-in-from-top-8 {
+  --tw-enter-translate-y: -2rem;
+}
+
+@utility slide-in-from-top-10 {
+  --tw-enter-translate-y: -2.5rem;
+}
+
+@utility slide-in-from-top-12 {
+  --tw-enter-translate-y: -3rem;
+}
+
+@utility slide-in-from-top-16 {
+  --tw-enter-translate-y: -4rem;
+}
+
+@utility slide-in-from-top-full {
+  --tw-enter-translate-y: -100%;
+}
+
+@utility slide-in-from-bottom {
+  --tw-enter-translate-y: 100%;
+}
+
+@utility slide-in-from-bottom-0 {
+  --tw-enter-translate-y: 0;
+}
+
+@utility slide-in-from-bottom-1 {
+  --tw-enter-translate-y: 0.25rem;
+}
+
+@utility slide-in-from-bottom-2 {
+  --tw-enter-translate-y: 0.5rem;
+}
+
+@utility slide-in-from-bottom-3 {
+  --tw-enter-translate-y: 0.75rem;
+}
+
+@utility slide-in-from-bottom-4 {
+  --tw-enter-translate-y: 1rem;
+}
+
+@utility slide-in-from-bottom-5 {
+  --tw-enter-translate-y: 1.25rem;
+}
+
+@utility slide-in-from-bottom-6 {
+  --tw-enter-translate-y: 1.5rem;
+}
+
+@utility slide-in-from-bottom-8 {
+  --tw-enter-translate-y: 2rem;
+}
+
+@utility slide-in-from-bottom-10 {
+  --tw-enter-translate-y: 2.5rem;
+}
+
+@utility slide-in-from-bottom-12 {
+  --tw-enter-translate-y: 3rem;
+}
+
+@utility slide-in-from-bottom-16 {
+  --tw-enter-translate-y: 4rem;
+}
+
+@utility slide-in-from-bottom-full {
+  --tw-enter-translate-y: 100%;
+}
+
+@utility slide-in-from-left {
+  --tw-enter-translate-x: -100%;
+}
+
+@utility slide-in-from-left-0 {
+  --tw-enter-translate-x: 0;
+}
+
+@utility slide-in-from-left-1 {
+  --tw-enter-translate-x: -0.25rem;
+}
+
+@utility slide-in-from-left-2 {
+  --tw-enter-translate-x: -0.5rem;
+}
+
+@utility slide-in-from-left-3 {
+  --tw-enter-translate-x: -0.75rem;
+}
+
+@utility slide-in-from-left-4 {
+  --tw-enter-translate-x: -1rem;
+}
+
+@utility slide-in-from-left-5 {
+  --tw-enter-translate-x: -1.25rem;
+}
+
+@utility slide-in-from-left-6 {
+  --tw-enter-translate-x: -1.5rem;
+}
+
+@utility slide-in-from-left-8 {
+  --tw-enter-translate-x: -2rem;
+}
+
+@utility slide-in-from-left-10 {
+  --tw-enter-translate-x: -2.5rem;
+}
+
+@utility slide-in-from-left-12 {
+  --tw-enter-translate-x: -3rem;
+}
+
+@utility slide-in-from-left-16 {
+  --tw-enter-translate-x: -4rem;
+}
+
+@utility slide-in-from-left-full {
+  --tw-enter-translate-x: -100%;
+}
+
+@utility slide-in-from-right {
+  --tw-enter-translate-x: 100%;
+}
+
+@utility slide-in-from-right-0 {
+  --tw-enter-translate-x: 0;
+}
+
+@utility slide-in-from-right-1 {
+  --tw-enter-translate-x: 0.25rem;
+}
+
+@utility slide-in-from-right-2 {
+  --tw-enter-translate-x: 0.5rem;
+}
+
+@utility slide-in-from-right-3 {
+  --tw-enter-translate-x: 0.75rem;
+}
+
+@utility slide-in-from-right-4 {
+  --tw-enter-translate-x: 1rem;
+}
+
+@utility slide-in-from-right-5 {
+  --tw-enter-translate-x: 1.25rem;
+}
+
+@utility slide-in-from-right-6 {
+  --tw-enter-translate-x: 1.5rem;
+}
+
+@utility slide-in-from-right-8 {
+  --tw-enter-translate-x: 2rem;
+}
+
+@utility slide-in-from-right-10 {
+  --tw-enter-translate-x: 2.5rem;
+}
+
+@utility slide-in-from-right-12 {
+  --tw-enter-translate-x: 3rem;
+}
+
+@utility slide-in-from-right-16 {
+  --tw-enter-translate-x: 4rem;
+}
+
+@utility slide-in-from-right-full {
+  --tw-enter-translate-x: 100%;
+}
+
+/* Slide out modifiers */
+@utility slide-out-to-top {
+  --tw-exit-translate-y: -100%;
+}
+
+@utility slide-out-to-top-0 {
+  --tw-exit-translate-y: 0;
+}
+
+@utility slide-out-to-top-1 {
+  --tw-exit-translate-y: -0.25rem;
+}
+
+@utility slide-out-to-top-2 {
+  --tw-exit-translate-y: -0.5rem;
+}
+
+@utility slide-out-to-top-3 {
+  --tw-exit-translate-y: -0.75rem;
+}
+
+@utility slide-out-to-top-4 {
+  --tw-exit-translate-y: -1rem;
+}
+
+@utility slide-out-to-top-5 {
+  --tw-exit-translate-y: -1.25rem;
+}
+
+@utility slide-out-to-top-6 {
+  --tw-exit-translate-y: -1.5rem;
+}
+
+@utility slide-out-to-top-8 {
+  --tw-exit-translate-y: -2rem;
+}
+
+@utility slide-out-to-top-full {
+  --tw-exit-translate-y: -100%;
+}
+
+@utility slide-out-to-bottom {
+  --tw-exit-translate-y: 100%;
+}
+
+@utility slide-out-to-bottom-0 {
+  --tw-exit-translate-y: 0;
+}
+
+@utility slide-out-to-bottom-1 {
+  --tw-exit-translate-y: 0.25rem;
+}
+
+@utility slide-out-to-bottom-2 {
+  --tw-exit-translate-y: 0.5rem;
+}
+
+@utility slide-out-to-bottom-3 {
+  --tw-exit-translate-y: 0.75rem;
+}
+
+@utility slide-out-to-bottom-4 {
+  --tw-exit-translate-y: 1rem;
+}
+
+@utility slide-out-to-bottom-5 {
+  --tw-exit-translate-y: 1.25rem;
+}
+
+@utility slide-out-to-bottom-6 {
+  --tw-exit-translate-y: 1.5rem;
+}
+
+@utility slide-out-to-bottom-8 {
+  --tw-exit-translate-y: 2rem;
+}
+
+@utility slide-out-to-bottom-full {
+  --tw-exit-translate-y: 100%;
+}
+
+@utility slide-out-to-left {
+  --tw-exit-translate-x: -100%;
+}
+
+@utility slide-out-to-left-0 {
+  --tw-exit-translate-x: 0;
+}
+
+@utility slide-out-to-left-1 {
+  --tw-exit-translate-x: -0.25rem;
+}
+
+@utility slide-out-to-left-2 {
+  --tw-exit-translate-x: -0.5rem;
+}
+
+@utility slide-out-to-left-3 {
+  --tw-exit-translate-x: -0.75rem;
+}
+
+@utility slide-out-to-left-4 {
+  --tw-exit-translate-x: -1rem;
+}
+
+@utility slide-out-to-left-5 {
+  --tw-exit-translate-x: -1.25rem;
+}
+
+@utility slide-out-to-left-6 {
+  --tw-exit-translate-x: -1.5rem;
+}
+
+@utility slide-out-to-left-8 {
+  --tw-exit-translate-x: -2rem;
+}
+
+@utility slide-out-to-left-full {
+  --tw-exit-translate-x: -100%;
+}
+
+@utility slide-out-to-right {
+  --tw-exit-translate-x: 100%;
+}
+
+@utility slide-out-to-right-0 {
+  --tw-exit-translate-x: 0;
+}
+
+@utility slide-out-to-right-1 {
+  --tw-exit-translate-x: 0.25rem;
+}
+
+@utility slide-out-to-right-2 {
+  --tw-exit-translate-x: 0.5rem;
+}
+
+@utility slide-out-to-right-3 {
+  --tw-exit-translate-x: 0.75rem;
+}
+
+@utility slide-out-to-right-4 {
+  --tw-exit-translate-x: 1rem;
+}
+
+@utility slide-out-to-right-5 {
+  --tw-exit-translate-x: 1.25rem;
+}
+
+@utility slide-out-to-right-6 {
+  --tw-exit-translate-x: 1.5rem;
+}
+
+@utility slide-out-to-right-8 {
+  --tw-exit-translate-x: 2rem;
+}
+
+@utility slide-out-to-right-full {
+  --tw-exit-translate-x: 100%;
+}
+
+/* Animation duration utilities */
+@utility duration-0 {
+  animation-duration: 0s;
+}
+
+@utility duration-75 {
+  animation-duration: 75ms;
+}
+
+@utility duration-100 {
+  animation-duration: 100ms;
+}
+
+@utility duration-150 {
+  animation-duration: 150ms;
+}
+
+@utility duration-200 {
+  animation-duration: 200ms;
+}
+
+@utility duration-300 {
+  animation-duration: 300ms;
+}
+
+@utility duration-500 {
+  animation-duration: 500ms;
+}
+
+@utility duration-700 {
+  animation-duration: 700ms;
+}
+
+@utility duration-1000 {
+  animation-duration: 1000ms;
+}
+
+/* Animation delay utilities */
+@utility delay-0 {
+  animation-delay: 0s;
+}
+
+@utility delay-75 {
+  animation-delay: 75ms;
+}
+
+@utility delay-100 {
+  animation-delay: 100ms;
+}
+
+@utility delay-150 {
+  animation-delay: 150ms;
+}
+
+@utility delay-200 {
+  animation-delay: 200ms;
+}
+
+@utility delay-300 {
+  animation-delay: 300ms;
+}
+
+@utility delay-500 {
+  animation-delay: 500ms;
+}
+
+@utility delay-700 {
+  animation-delay: 700ms;
+}
+
+@utility delay-1000 {
+  animation-delay: 1000ms;
+}
+
+/* Animation fill mode utilities */
+@utility fill-none {
+  animation-fill-mode: none;
+}
+
+@utility fill-forwards {
+  animation-fill-mode: forwards;
+}
+
+@utility fill-backwards {
+  animation-fill-mode: backwards;
+}
+
+@utility fill-both {
+  animation-fill-mode: both;
+}
+
+/* Animation direction utilities */
+@utility direction-normal {
+  animation-direction: normal;
+}
+
+@utility direction-reverse {
+  animation-direction: reverse;
+}
+
+@utility direction-alternate {
+  animation-direction: alternate;
+}
+
+@utility direction-alternate-reverse {
+  animation-direction: alternate-reverse;
+}
+
+/* Animation timing function utilities */
+@utility ease-linear {
+  animation-timing-function: linear;
+}
+
+@utility ease-in {
+  animation-timing-function: cubic-bezier(0.4, 0, 1, 1);
+}
+
+@utility ease-out {
+  animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+}
+
+@utility ease-in-out {
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Animation iteration count utilities */
+@utility repeat-0 {
+  animation-iteration-count: 0;
+}
+
+@utility repeat-1 {
+  animation-iteration-count: 1;
+}
+
+@utility repeat-infinite {
+  animation-iteration-count: infinite;
+}
+
+/* Animation play state utilities */
+@utility running {
+  animation-play-state: running;
+}
+
+@utility paused {
+  animation-play-state: paused;
 }

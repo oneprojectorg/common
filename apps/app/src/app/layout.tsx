@@ -2,8 +2,9 @@ import { TRPCProvider } from '@op/api/client';
 import { getSSRCookies } from '@op/api/ssrCookies';
 import { APP_NAME, printNFO } from '@op/core';
 import { Toast } from '@op/ui/Toast';
-import '@op/ui/tailwind-styles';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+
+import './globals.css';
 import type { Metadata, Viewport } from 'next';
 import { getLocale } from 'next-intl/server';
 import { Roboto, Roboto_Mono, Roboto_Serif } from 'next/font/google';

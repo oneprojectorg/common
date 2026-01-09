@@ -23,5 +23,5 @@
   "importOrderSortSpecifiers": true,
   "tailwindAttributes": ["className", "useClasses", ".*ClassName", "tw"],
   "tailwindFunctions": ["twMerge", "clsx", "tw", "cva", "cn", "tv"],
-  "tailwindConfig": "./packages/ui/tailwind.shared.ts"
+  "tailwindStylesheet": "./packages/brand/shared-styles.css"
 }

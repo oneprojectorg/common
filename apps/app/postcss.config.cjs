@@ -1,9 +1,8 @@
-// If you want to use other PostCSS plugins, see the following:
-// https://tailwindcss.com/docs/using-with-preprocessors
+// PostCSS config for Tailwind CSS v4
+// https://tailwindcss.com/docs/installation/using-postcss
 
 module.exports = {
   plugins: {
-    tailwindcss: {},
-    autoprefixer: {},
+    '@tailwindcss/postcss': {},
   },
 };
