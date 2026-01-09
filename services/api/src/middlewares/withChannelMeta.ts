@@ -60,7 +60,7 @@ const withChannelMeta: MiddlewareBuilderBase = async ({ ctx, next, type }) => {
   });
 
   // If procedure succeeded and has channels, wrap the response
-  if (result.ok && channels.size > 0) {
+  if (result.ok && channels.size > 0 && !ctx.isServerSideCall) {
     return {
       ...result,
       data: {
