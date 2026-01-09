@@ -1,4 +1,5 @@
 import type { ChannelName } from '@op/common/realtime';
+import { z } from 'zod';
 
 /**
  * Shape of a response wrapped with channel metadata.
@@ -12,23 +13,12 @@ export type WrappedResponse<T> = {
   };
 };
 
-/**
- * Type guard to check if a value is a wrapped response with channel metadata.
- * Used by the client link to detect wrapped responses and extract channels.
- */
-export function isWrappedResponse<T>(
-  value: unknown,
-): value is WrappedResponse<T> {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    '_data' in value &&
-    '_meta' in value &&
-    typeof (value as WrappedResponse<T>)._meta === 'object' &&
-    (value as WrappedResponse<T>)._meta !== null &&
-    Array.isArray((value as WrappedResponse<T>)._meta.channels)
-  );
-}
+const WrappedResponseSchema = z.object({
+  _data: z.unknown(),
+  _meta: z.object({
+    channels: z.array(z.string()),
+  }),
+});
 
 /**
  * Wraps response data with channel metadata.
@@ -44,14 +34,18 @@ export function wrapResponseWithChannels<T>(
 }
 
 /**
- * Extracts data and channels from a wrapped response.
+ * Attempts to extract data and channels from a wrapped response.
+ * Returns null if the value is not a valid wrapped response.
  */
-export function unwrapResponseWithChannels<T>(value: WrappedResponse<T>): {
-  data: T;
-  channels: ChannelName[];
-} {
+export function unwrapResponseWithChannels<T>(
+  value: unknown,
+): { data: T; channels: ChannelName[] } | null {
+  const parsed = WrappedResponseSchema.safeParse(value);
+  if (!parsed.success) {
+    return null;
+  }
   return {
-    data: value._data,
-    channels: value._meta.channels,
+    data: parsed.data._data as T,
+    channels: parsed.data._meta.channels as ChannelName[],
   };
 }

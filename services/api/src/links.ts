@@ -12,10 +12,7 @@ import { observable } from '@trpc/server/observable';
 import { readSSROnlySecret } from 'ssr-only-secrets';
 import superjson from 'superjson';
 
-import {
-  isWrappedResponse,
-  unwrapResponseWithChannels,
-} from './channelTransformer';
+import { unwrapResponseWithChannels } from './channelTransformer';
 import type { AppRouter } from './routers';
 
 /** @see https://trpc.io/docs/v11/getQueryKey */
@@ -116,18 +113,11 @@ function createChannelRegistrationLink(): TRPCLink<AppRouter> {
           next(value) {
             // Handle channel registration from response body (both queries and mutations)
             if (!isServer && value.result?.data !== undefined) {
-              if (isWrappedResponse(value.result.data)) {
-                const { data, channels } = unwrapResponseWithChannels(
-                  value.result.data,
-                );
+              const unwrapped = unwrapResponseWithChannels(value.result.data);
+              if (unwrapped) {
+                const { data, channels } = unwrapped;
                 if (channels.length > 0) {
                   if (op.type === 'query') {
-                    console.log('Registering query channels', {
-                      queryKey,
-                      channels,
-                      opId: op.id,
-                      data,
-                    });
                     // Register query's channels for future invalidation
                     queryChannelRegistry.registerQuery({ queryKey, channels });
                   } else if (op.type === 'mutation') {
@@ -148,7 +138,15 @@ function createChannelRegistrationLink(): TRPCLink<AppRouter> {
                 }
 
                 // Unwrap data before passing to application
-                value.result.data = data;
+                observer.next({
+                  ...value,
+                  result: {
+                    ...value.result,
+                    data,
+                  },
+                });
+
+                return;
               }
             }
 
@@ -202,7 +200,7 @@ export function createLinks(encryptedCookies?: string): TRPCLink<AppRouter>[] {
       false: httpBatchStreamLink({
         url: envURL.TRPC_URL,
         transformer: superjson,
-        maxItems: 10,
+        maxItems: 4,
         fetch: fetchFn,
       }),
     }),
