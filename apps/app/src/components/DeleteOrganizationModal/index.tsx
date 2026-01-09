@@ -1,6 +1,7 @@
 'use client';
 
 import { getPublicUrl } from '@/utils';
+import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { Profile } from '@op/api/encoders';
 import { EntityType } from '@op/api/encoders';
@@ -11,6 +12,7 @@ import { Modal, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Radio, RadioGroup } from '@op/ui/RadioGroup';
 import { toast } from '@op/ui/Toast';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState, useTransition } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -30,9 +32,13 @@ export const DeleteOrganizationModal = ({
   const [profileToDelete, setProfileToDelete] = useState<Profile>();
   const [currentStep, setCurrentStep] = useState(0);
 
-  const deleteProfile = trpc.organization.deleteOrganization.useMutation();
   const [isSubmitting, startTransition] = useTransition();
   const utils = trpc.useUtils();
+  const { user } = useUser();
+  const deleteProfile = trpc.organization.deleteOrganization.useMutation();
+  const switchProfile = trpc.account.switchProfile.useMutation();
+
+  const router = useRouter();
 
   const userProfiles =
     profiles?.reduce<Profile[]>((acc, profile) => {
@@ -61,7 +67,22 @@ export const DeleteOrganizationModal = ({
           organizationProfileId: selectedProfileId,
         });
 
+        // Check if the deletedProfile was the active profile
+        // if so, switch to the user's individual profile
+        if (user.currentProfile?.id === selectedProfileId) {
+          const personalProfile = profiles?.find(
+            (profile) => profile.type === EntityType.INDIVIDUAL,
+          );
+          if (personalProfile) {
+            await switchProfile.mutateAsync({ profileId: personalProfile.id });
+          }
+        }
+
         await utils.account.getUserProfiles.invalidate();
+        await utils.account.getMyAccount.invalidate();
+        await utils.organization.listAllPosts.invalidate();
+
+        router.refresh();
         setCurrentStep(2);
       } catch (error) {
         toast.error({ message: t('Failed to delete account') });
