@@ -2,13 +2,13 @@ import { db } from '@op/db/client';
 import type { ProcessInstance } from '@op/db/schema';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { createTransitionsForProcess } from '../createTransitionsForProcess';
+import { createTransitionsForProcess } from './createTransitionsForProcess';
 import type {
   DecisionInstanceData,
   PhaseInstanceData,
-} from '../schemas/instanceData';
-import { processDecisionsTransitions } from '../transitionMonitor';
-import { updateTransitionsForProcess } from '../updateTransitionsForProcess';
+} from './schemas/instanceData';
+import { processDecisionsTransitions } from './transitionMonitor';
+import { updateTransitionsForProcess } from './updateTransitionsForProcess';
 
 // Helper to create mock dates
 const createFutureDate = (daysFromNow: number) => {
