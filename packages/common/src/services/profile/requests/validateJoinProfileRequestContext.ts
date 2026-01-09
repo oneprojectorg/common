@@ -67,10 +67,10 @@ export const validateJoinProfileRequestContext = async ({
   ]);
 
   const requestProfileRow = profilesWithJoins.find(
-    (p) => p.id === requestProfileId,
+    (profile) => profile.id === requestProfileId,
   );
   const targetProfileRow = profilesWithJoins.find(
-    (p) => p.id === targetProfileId,
+    (profile) => profile.id === targetProfileId,
   );
 
   if (!requestProfileRow || !targetProfileRow) {
@@ -82,13 +82,13 @@ export const validateJoinProfileRequestContext = async ({
 
   // Extract profile data (excluding join columns)
   const {
-    requestingUserId: _,
-    membershipId: __,
+    requestingUserId: _requestProfileRequestingUserId,
+    membershipId: _requestProfileMembershipId,
     ...requestProfile
   } = requestProfileRow;
   const {
-    requestingUserId: ___,
-    membershipId: ____,
+    requestingUserId: _targetProfileRequestingUserId,
+    membershipId: _targetProfileMembershipId,
     ...targetProfile
   } = targetProfileRow;
 
