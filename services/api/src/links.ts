@@ -115,9 +115,14 @@ function createChannelRegistrationLink(): TRPCLink<AppRouter> {
             if (!isServer && value.result?.data !== undefined) {
               if (isWrappedResponse(value.result.data)) {
                 const { data, channels } = unwrapResponse(value.result.data);
-
                 if (channels.length > 0) {
                   if (op.type === 'query') {
+                    console.log('Registering query channels', {
+                      queryKey,
+                      channels,
+                      opId: op.id,
+                      data,
+                    });
                     // Register query's channels for future invalidation
                     queryChannelRegistry.registerQuery({ queryKey, channels });
                   } else if (op.type === 'mutation') {
@@ -192,7 +197,7 @@ export function createLinks(encryptedCookies?: string): TRPCLink<AppRouter>[] {
       false: httpBatchStreamLink({
         url: envURL.TRPC_URL,
         transformer: superjson,
-        maxItems: 4,
+        maxItems: 10,
         fetch: fetchFn,
       }),
     }),

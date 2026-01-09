@@ -70,8 +70,6 @@ export async function createTestContextWithSession(
     },
     registerMutationChannels: () => {},
     registerQueryChannels: () => {},
-    getMutationChannels: () => [],
-    getQueryChannels: () => [],
     time: Date.now(),
     isServerSideCall: true,
   };
