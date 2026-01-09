@@ -331,6 +331,23 @@ export const createInstanceFromTemplateInputSchema = z.object({
     .optional(),
 });
 
+export const updateInstanceFromTemplateInputSchema = z.object({
+  instanceId: z.uuid(),
+  name: z.string().min(3).max(256).optional(),
+  description: z.string().optional(),
+  status: z.enum(ProcessStatus).optional(),
+  phases: z
+    .array(
+      z.object({
+        phaseId: z.string(),
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
+        settings: z.record(z.string(), z.unknown()).optional(),
+      }),
+    )
+    .optional(),
+});
+
 export const updateInstanceInputSchema = createInstanceInputSchema
   .omit({ processId: true })
   .partial()
