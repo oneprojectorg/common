@@ -67,7 +67,7 @@ export const DeleteOrganizationModal = ({
           organizationProfileId: selectedProfileId,
         });
 
-        // Check if the deletedProfile was the active profile
+        // Check if the deletedProfile is the user's current profile
         // if so, switch to the user's individual profile
         if (user.currentProfile?.id === selectedProfileId) {
           const personalProfile = profiles?.find(
