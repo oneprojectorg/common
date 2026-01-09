@@ -54,7 +54,7 @@ const ToastWrapper = ({
   return (
     <div
       className={cn(
-        'flex w-full items-start gap-2',
+        'gap-2 flex w-full items-start',
         isSingleLine && 'items-center',
       )}
     >
@@ -81,14 +81,14 @@ const ToastBody = ({
 }) => {
   if (isSingleLine) {
     return (
-      <div className="flex w-full min-w-0 items-center gap-2 text-base text-neutral-charcoal">
+      <div className="min-w-0 gap-2 flex w-full items-center text-base text-neutral-charcoal">
         {children}
       </div>
     );
   }
 
   return (
-    <div className="flex w-full flex-col gap-2 px-1 pt-1 text-base text-neutral-charcoal">
+    <div className="gap-2 px-1 pt-1 flex w-full flex-col text-base text-neutral-charcoal">
       {children}
     </div>
   );
@@ -112,13 +112,13 @@ const ToastActions = ({
 
   if (isSingleLine) {
     return (
-      <div className="ml-auto flex shrink-0 items-center gap-2">
+      <div className="gap-2 ml-auto flex shrink-0 items-center">
         {renderActions()}
       </div>
     );
   }
 
-  return <div className="mt-2 flex gap-4">{renderActions()}</div>;
+  return <div className="mt-2 gap-4 flex">{renderActions()}</div>;
 };
 
 const ToastTitle = ({

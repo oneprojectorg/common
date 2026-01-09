@@ -54,7 +54,7 @@ export const Pagination = React.forwardRef<HTMLDivElement, PaginationProps>(
     return (
       <div
         ref={ref}
-        className={clsx('flex items-center justify-end gap-4', className)}
+        className={clsx('gap-4 flex items-center justify-end', className)}
       >
         {range.totalItems > 1 ? <PaginationRange {...range} /> : null}
         <PaginationNavigation {...actionProps} />
@@ -73,7 +73,7 @@ const PaginationNavigation = React.forwardRef<
     <nav
       ref={ref}
       aria-label="Pagination Navigation"
-      className={clsx('flex justify-end gap-2', className)}
+      className={clsx('gap-2 flex justify-end', className)}
     >
       <Button
         color="neutral"

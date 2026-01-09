@@ -19,7 +19,7 @@ const meta: Meta<typeof NumberField> = {
 export default meta;
 
 export const Example = () => (
-  <div className="flex w-96 flex-col gap-8">
+  <div className="w-96 gap-8 flex flex-col">
     <NumberField
       inputProps={{ placeholder: 'Enter your age' }}
       description="Helper text"
@@ -48,7 +48,7 @@ export const Example = () => (
 );
 
 export const Validation = (args: any) => (
-  <Form className="flex flex-col items-start gap-2">
+  <Form className="gap-2 flex flex-col items-start">
     <NumberField {...args} />
     <Button type="submit">Submit</Button>
   </Form>

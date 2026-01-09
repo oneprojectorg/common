@@ -26,9 +26,9 @@ export default {
 };
 
 export const Example = () => (
-  <div className="flex flex-col gap-8">
+  <div className="gap-8 flex flex-col">
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold">Organizations</h3>
+      <h3 className="font-semibold text-lg">Organizations</h3>
       <div className="space-y-4">
         <ProfileItem
           avatar={<Avatar placeholder="Tech Innovation Hub" />}
@@ -45,7 +45,7 @@ export const Example = () => (
           title="OpenSource Collective"
           description="Supporting open source projects and communities"
         >
-          <div className="mt-3 flex gap-2">
+          <div className="mt-3 gap-2 flex">
             <Button size="small">Join</Button>
             <Button size="small" color="secondary">
               Learn More
@@ -56,7 +56,7 @@ export const Example = () => (
     </div>
 
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold">Users</h3>
+      <h3 className="font-semibold text-lg">Users</h3>
       <div className="space-y-4">
         <ProfileItem
           avatar={<Avatar placeholder="Sarah Chen" />}
@@ -68,7 +68,7 @@ export const Example = () => (
           title="Marcus Rodriguez"
           description="Full-stack developer and open source contributor"
         >
-          <div className="mt-3 flex gap-2">
+          <div className="mt-3 gap-2 flex">
             <Button size="small">Follow</Button>
             <Button size="small" color="secondary">
               Message
@@ -84,7 +84,7 @@ export const Example = () => (
     </div>
 
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold">Proposals</h3>
+      <h3 className="font-semibold text-lg">Proposals</h3>
       <div className="space-y-4">
         <ProfileItem
           avatar={<Avatar placeholder="Community Garden Initiative" />}
@@ -109,7 +109,7 @@ export const Example = () => (
             <div className="text-sm text-neutral-charcoal">
               <strong>Timeline:</strong> 12 months
             </div>
-            <div className="mt-3 flex gap-2">
+            <div className="mt-3 gap-2 flex">
               <Button size="small">Support</Button>
               <Button size="small" color="secondary">
                 View Details
@@ -128,7 +128,7 @@ export const OrganizationWithActions = {
     title: 'Green Earth Foundation',
     description: 'Environmental conservation and sustainability initiatives',
     children: (
-      <div className="mt-3 flex gap-2">
+      <div className="mt-3 gap-2 flex">
         <Button size="small">Join</Button>
         <Button size="small" color="secondary">
           Learn More
@@ -161,7 +161,7 @@ export const ProposalWithDetails = {
         <div className="text-sm text-neutral-charcoal">
           <strong>Timeline:</strong> 12 months
         </div>
-        <div className="mt-3 flex gap-2">
+        <div className="mt-3 gap-2 flex">
           <Button size="small">Support</Button>
           <Button size="small" color="secondary">
             View Details

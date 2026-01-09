@@ -24,7 +24,7 @@ import { Button } from './Button';
 
 const cellStyles = tv({
   extend: focusRing,
-  base: 'focus-within:outline-blueGreen flex size-8 cursor-default items-center justify-center text-base outline-offset-2 outline-transparent forced-color-adjust-none hover:bg-neutral-offWhite',
+  base: 'focus-within:outline-blueGreen size-8 flex cursor-default items-center justify-center text-base outline-offset-2 outline-transparent forced-color-adjust-none hover:bg-neutral-offWhite',
   variants: {
     isSelected: {
       false: 'text-neutral-charcoal',
@@ -48,11 +48,11 @@ export const CalendarHeader = () => {
   const { direction } = useLocale();
 
   return (
-    <header className="flex w-full items-center justify-between gap-2 px-1 pb-4">
+    <header className="gap-2 px-1 pb-4 flex w-full items-center justify-between">
       <Button
         variant="icon"
         slot="previous"
-        className="h-8 w-8 rounded-none bg-white p-0 text-neutral-charcoal shadow-none hover:bg-neutral-offWhite pressed:bg-neutral-offWhite pressed:shadow-none"
+        className="h-8 w-8 p-0 pressed:bg-neutral-offWhite pressed:shadow-none rounded-none bg-white text-neutral-charcoal shadow-none hover:bg-neutral-offWhite"
       >
         {direction === 'rtl' ? (
           <ChevronRight className="size-4" aria-hidden />
@@ -64,7 +64,7 @@ export const CalendarHeader = () => {
       <Button
         variant="icon"
         slot="next"
-        className="h-8 w-8 rounded-none bg-white p-0 text-neutral-charcoal shadow-none hover:bg-neutral-offWhite pressed:bg-neutral-offWhite pressed:shadow-none"
+        className="h-8 w-8 p-0 pressed:bg-neutral-offWhite pressed:shadow-none rounded-none bg-white text-neutral-charcoal shadow-none hover:bg-neutral-offWhite"
       >
         {direction === 'rtl' ? (
           <ChevronLeft className="size-4" aria-hidden />
@@ -95,7 +95,7 @@ export const Calendar = <T extends DateValue>({
   return (
     <AriaCalendar
       {...props}
-      className="rounded-md border border-solid border-neutral-gray1 bg-white p-1"
+      className="p-1 rounded-md border border-solid border-neutral-gray1 bg-white"
     >
       <CalendarHeader />
       <CalendarGrid>
@@ -109,7 +109,7 @@ export const Calendar = <T extends DateValue>({
               return (
                 <span className="relative flex flex-col">
                   {cell}
-                  <span className="absolute bottom-1 left-0 right-0 m-auto size-1 rounded-full bg-primary-teal"></span>
+                  <span className="bottom-1 left-0 right-0 size-1 absolute m-auto rounded-full bg-primary-teal"></span>
                 </span>
               );
             }

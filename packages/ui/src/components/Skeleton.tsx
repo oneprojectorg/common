@@ -39,7 +39,7 @@ export const SkeletonLine: React.FC<SkeletonProps> = memo(
         {Array.from({ length: lines }).map((_, index) => (
           <div
             key={`${index + 1}`}
-            className="h-[1em] animate-pulse rounded-[0.25em] bg-gradient-to-br from-neutral-300 to-neutral-200"
+            className="from-neutral-300 to-neutral-200 h-[1em] animate-pulse rounded-[0.25em] bg-gradient-to-br"
             style={{
               backgroundSize: '200% 200%',
               width: randomWidth

@@ -79,7 +79,7 @@ Sections.args = {
 };
 
 export const Validation = (args: any) => (
-  <Form className="flex flex-col items-start gap-2">
+  <Form className="gap-2 flex flex-col items-start">
     <Example {...args} />
     <Button type="submit">Submit</Button>
   </Form>
@@ -90,7 +90,7 @@ Validation.args = {
 };
 
 export const PillVariant = (args: any) => (
-  <div className="flex flex-col gap-4">
+  <div className="gap-4 flex flex-col">
     <Select {...args} variant="pill" placeholder="Select category">
       <SelectItem>Planning</SelectItem>
       <SelectItem>Design</SelectItem>
@@ -109,7 +109,7 @@ export const PillVariant = (args: any) => (
 );
 
 export const SmallVariant = (args: any) => (
-  <div className="flex flex-col gap-4">
+  <div className="gap-4 flex flex-col">
     <Select {...args} size="small" placeholder="Select category">
       <SelectItem id="chocolate">All proposals</SelectItem>
       <SelectItem id="mint">Mint</SelectItem>

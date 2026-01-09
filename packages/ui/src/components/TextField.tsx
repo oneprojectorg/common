@@ -57,7 +57,7 @@ export const TextField = ({
       isInvalid={!!errorMessage && errorMessage.length > 0}
       className={composeTailwindRenderProps(
         props.className,
-        'group flex flex-col gap-1',
+        'group gap-1 flex flex-col',
       )}
     >
       {label && (

@@ -19,7 +19,7 @@ export const Breadcrumbs = <T extends object>(props: BreadcrumbsProps<T>) => {
   return (
     <AriaBreadcrumbs
       {...props}
-      className={twMerge('flex gap-1', props.className)}
+      className={twMerge('gap-1 flex', props.className)}
     />
   );
 };
@@ -32,7 +32,7 @@ export const Breadcrumb = (
       {...props}
       className={composeTailwindRenderProps(
         props.className,
-        'flex items-center gap-1',
+        'gap-1 flex items-center',
       )}
     >
       <Link variant={props.href ? 'primary' : 'neutral'} {...props} />

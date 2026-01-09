@@ -59,8 +59,6 @@
     "./Tooltip": "./src/components/Tooltip.tsx",
     "./LoadingSpinner": "./src/components/LoadingSpinner.tsx",
     "./tailwind-styles": "./styles.css",
-    "./tailwind-config": "./tailwind.shared.ts",
-    "./tailwind-utils": "./tailwind.utils.mjs",
     "./useGesture": "./src/useGesture.ts",
     "./utils": "./src/lib/utils.ts",
     "./utils/formatting": "./src/utils/formatting.ts"

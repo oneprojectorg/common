@@ -29,7 +29,7 @@ export const Label = (props: LabelProps) => {
     <RACLabel
       {...props}
       className={twMerge(
-        'w-fit cursor-default text-sm font-normal text-neutral-black',
+        'font-normal w-fit cursor-default text-sm text-neutral-black',
         props.className,
       )}
     />
@@ -78,7 +78,7 @@ export const fieldBorderStyles = tv({
 
 export const fieldGroupStyles = tv({
   extend: focusRing,
-  base: 'group flex items-center bg-white placeholder:text-teal disabled:placeholder:text-lightGray',
+  base: 'group placeholder:text-teal flex items-center bg-white disabled:placeholder:text-lightGray',
   variants: fieldBorderStyles.variants,
 });
 
@@ -94,7 +94,7 @@ export const FieldGroup = (props: GroupProps) => {
 };
 
 export const inputStyles = tv({
-  base: 'h-10 min-w-0 flex-1 rounded-md border border-neutral-gray1 p-4 text-base leading-[0.5rem] text-neutral-black outline outline-0 placeholder:text-neutral-gray4 active:border-neutral-gray4 active:outline hover:border-neutral-gray2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue disabled:border-neutral-gray2 disabled:bg-neutral-gray1 disabled:text-lightGray',
+  base: 'h-10 min-w-0 p-4 flex-1 rounded-md border border-neutral-gray1 text-base leading-[0.5rem] text-neutral-black outline outline-0 placeholder:text-neutral-gray4 hover:border-neutral-gray2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue active:border-neutral-gray4 active:outline disabled:border-neutral-gray2 disabled:bg-neutral-gray1 disabled:text-lightGray',
   variants: {
     color: {
       primary: '',
@@ -105,7 +105,7 @@ export const inputStyles = tv({
       small: 'px-4 py-2',
     },
     hasIcon: {
-      true: 'w-full pl-8',
+      true: 'pl-8 w-full',
       false: 'outline-functional-red',
     },
   },
@@ -154,7 +154,7 @@ export const InputWithIcon = ({
           hasIcon: true,
         } as InputVariantsProps)}
       />
-      <span className="absolute left-3 top-1/2 -translate-y-1/2">
+      <span className="left-3 absolute top-1/2 -translate-y-1/2">
         {props.icon}
       </span>
     </span>
@@ -163,7 +163,7 @@ export const InputWithIcon = ({
 
 const textAreaStyles = tv({
   base: [
-    'w-full min-w-0 resize-none rounded-md border border-neutral-gray1 p-3 text-base text-neutral-black',
+    'min-w-0 p-3 w-full resize-none rounded-md border border-neutral-gray1 text-base text-neutral-black',
     'outline outline-0 placeholder:text-base placeholder:text-neutral-gray4',
     'active:border-neutral-gray4 active:outline',
     'hover:border-neutral-gray2',
@@ -173,7 +173,7 @@ const textAreaStyles = tv({
   variants: {
     variant: {
       default: '',
-      borderless: 'border-none p-0',
+      borderless: 'p-0 border-none',
     },
   },
   defaultVariants: {

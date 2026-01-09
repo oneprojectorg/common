@@ -54,7 +54,7 @@ export const BannerUploader = ({
           <button
             {...buttonProps}
             ref={buttonRef}
-            className="z-10 rounded-full bg-black/50 p-2 text-white hover:bg-neutral-800"
+            className="p-2 hover:bg-neutral-800 z-10 rounded-full bg-black/50 text-white"
             disabled={uploading}
           >
             {uploading ? (

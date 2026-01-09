@@ -16,12 +16,12 @@ export const FacePile = forwardRef<
   ) => {
     return (
       <div
-        className="flex w-full max-w-fit flex-wrap items-center gap-2"
+        className="gap-2 flex w-full max-w-fit flex-wrap items-center"
         ref={ref}
       >
         <ul className={cn('-gap-2 flex', className)}>
           {items.map((node, i) => (
-            <li key={i} className="relative -ml-2">
+            <li key={i} className="-ml-2 relative">
               {node}
             </li>
           ))}

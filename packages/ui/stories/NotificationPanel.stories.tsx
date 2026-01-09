@@ -19,7 +19,7 @@ export default {
 };
 
 export const Example = () => (
-  <div className="flex flex-col gap-8">
+  <div className="gap-8 flex flex-col">
     <NotificationPanel>
       <NotificationPanelHeader title="Active Decisions" count={3} />
       <NotificationPanelList>
@@ -63,7 +63,7 @@ export const RelationshipRequests = () => (
     <NotificationPanelHeader title="Relationship Requests" count={2} />
     <NotificationPanelList>
       <NotificationPanelItem>
-        <div className="flex items-center gap-3">
+        <div className="gap-3 flex items-center">
           <Avatar placeholder="Green Earth Foundation" />
           <div className="flex h-full flex-col">
             <span className="font-bold">Green Earth Foundation</span>
@@ -78,7 +78,7 @@ export const RelationshipRequests = () => (
         </NotificationPanelActions>
       </NotificationPanelItem>
       <NotificationPanelItem>
-        <div className="flex items-center gap-3">
+        <div className="gap-3 flex items-center">
           <Avatar placeholder="Tech Innovation Hub" />
           <div className="flex h-full flex-col">
             <span className="font-bold">Tech Innovation Hub</span>
@@ -101,7 +101,7 @@ export const AcceptedState = () => (
     <NotificationPanelHeader title="Relationship Requests" count={1} />
     <NotificationPanelList>
       <NotificationPanelItem className="bg-primary-tealWhite">
-        <div className="flex items-center gap-3">
+        <div className="gap-3 flex items-center">
           <Avatar placeholder="Green Earth Foundation" />
           <div className="flex h-full flex-col">
             <span className="font-bold">

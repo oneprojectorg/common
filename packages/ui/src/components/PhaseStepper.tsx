@@ -30,10 +30,10 @@ const Step = ({
   phase: Phase;
 }) => {
   return (
-    <div className="flex flex-col items-center gap-1 text-title-xs">
+    <div className="gap-1 flex flex-col items-center text-title-xs">
       <div
         className={cn(
-          'flex size-6 items-center justify-center rounded-full font-serif',
+          'size-6 flex items-center justify-center rounded-full font-serif',
           stepState === 'completed' &&
             'bg-functional-greenWhite text-functional-green',
           stepState === 'current' &&
@@ -44,7 +44,7 @@ const Step = ({
       >
         {stepState === 'completed' ? <Check className="size-4" /> : index + 1}
       </div>
-      <div className="flex max-w-6 flex-col items-center justify-center text-nowrap text-sm text-neutral-black">
+      <div className="max-w-6 flex flex-col items-center justify-center text-sm text-nowrap text-neutral-black">
         <div>{phase.name}</div>
         {(phase.startDate || phase.endDate) && (
           <div className="text-xs text-neutral-gray4">
@@ -77,18 +77,18 @@ export function PhaseStepper({
 
   return (
     <div className={cn('w-full', className)}>
-      <div className="flex justify-center gap-2">
+      <div className="gap-2 flex justify-center">
         {sortedPhases.map((phase, index) => {
           const stepState = getStepState(index);
 
           return (
-            <div key={phase.id} className="flex items-start gap-2">
+            <div key={phase.id} className="gap-2 flex items-start">
               <Step stepState={stepState} index={index} phase={phase} />
               {/* divider line */}
               {index < sortedPhases.length - 1 && (
                 <div className="flex flex-col items-center">
-                  <div className="flex h-6 items-center">
-                    <div className="h-[1px] w-28 bg-neutral-gray2" />
+                  <div className="h-6 flex items-center">
+                    <div className="w-28 h-[1px] bg-neutral-gray2" />
                   </div>
                 </div>
               )}

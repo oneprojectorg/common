@@ -7,7 +7,7 @@ const spinnerVariants = tv({
   variants: {
     color: {
       gray: 'fill-offWhite text-neutral-gray4',
-      teal: 'fill-teal-200 text-teal',
+      teal: 'text-teal fill-teal-200',
     },
     size: {
       md: 'size-6',

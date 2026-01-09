@@ -5,7 +5,7 @@ export function RichTextEditorSkeleton({
 }) {
   return (
     <div className={className}>
-      <div className="animate-pulse space-y-4">
+      <div className="space-y-4 animate-pulse">
         {/* Title/heading line */}
         <div className="h-8 w-3/4 rounded bg-neutral-gray1" />
 

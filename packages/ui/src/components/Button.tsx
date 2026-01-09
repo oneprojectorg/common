@@ -8,33 +8,33 @@ import { Tooltip, TooltipTrigger } from './Tooltip';
 import type { TooltipProps, TooltipTriggerProps } from './Tooltip';
 
 const buttonStyle = tv({
-  base: 'flex w-fit items-center justify-center gap-1 text-nowrap rounded-md text-center text-base font-normal leading-3 shadow-md sm:text-base',
+  base: 'gap-1 font-normal leading-3 sm:text-base flex w-fit cursor-pointer items-center justify-center rounded-md text-center text-base text-nowrap shadow-md',
   variants: {
     variant: {
       primary: '',
-      icon: 'flex gap-2 text-sm sm:text-base',
-      pill: 'h-auto border-0 bg-primary-tealWhite p-2 text-primary-teal active:bg-teal-50 active:text-primary-tealBlack hover:bg-teal-50 hover:text-primary-tealBlack focus-visible:outline-data-blue',
+      icon: 'gap-2 sm:text-base flex text-sm',
+      pill: 'p-2 h-auto border-0 bg-primary-tealWhite text-primary-teal hover:bg-teal-50 hover:text-primary-tealBlack focus-visible:outline-data-blue active:bg-teal-50 active:text-primary-tealBlack',
     },
     color: {
       primary:
-        'bg-primary-teal text-neutral-offWhite hover:bg-primary-tealBlack pressed:bg-primary-tealBlack pressed:text-neutral-gray2',
+        'pressed:bg-primary-tealBlack pressed:text-neutral-gray2 bg-primary-teal text-neutral-offWhite hover:bg-primary-tealBlack',
       secondary:
-        'border border-offWhite bg-white text-teal hover:bg-neutral-50 pressed:bg-white',
+        'text-teal hover:bg-neutral-50 pressed:bg-white border border-offWhite bg-white',
       gradient: '',
       unverified:
-        'border border-primary-teal bg-primary-tealWhite text-teal hover:bg-neutral-50 pressed:bg-white',
+        'text-teal hover:bg-neutral-50 pressed:bg-white border border-primary-teal bg-primary-tealWhite',
       verified:
-        'border border-primary-teal bg-primary-tealWhite text-teal hover:bg-neutral-50 pressed:bg-white',
+        'text-teal hover:bg-neutral-50 pressed:bg-white border border-primary-teal bg-primary-tealWhite',
       neutral:
-        'border border-neutral-gray1 bg-white text-neutral-charcoal shadow-light hover:bg-neutral-50 pressed:bg-white',
+        'hover:bg-neutral-50 pressed:bg-white border border-neutral-gray1 bg-white text-neutral-charcoal shadow-light',
       destructive:
         'border-functional-red bg-functional-red text-neutral-offWhite hover:bg-functional-redBlack',
       ghost:
-        'border-0 bg-transparent text-midGray shadow-none hover:text-darkGray pressed:text-darkGray pressed:shadow-none',
+        'pressed:text-darkGray pressed:shadow-none border-0 bg-transparent text-midGray shadow-none hover:text-darkGray',
       pill: '',
     },
     size: {
-      small: 'h-8 rounded-sm p-3',
+      small: 'h-8 p-3 rounded-sm',
       medium: 'h-10 p-4',
     },
     surface: {
@@ -49,7 +49,7 @@ const buttonStyle = tv({
     unstyled: {
       true: '',
       false:
-        'appearance-noned outline-none duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lightGray pressed:shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)]',
+        'appearance-noned pressed:shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)] outline-hidden duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lightGray',
     },
 
     isDisabled: {
@@ -61,7 +61,7 @@ const buttonStyle = tv({
       false: '',
     },
     backglow: {
-      true: 'relative *:z-0 before:absolute before:inset-0 before:z-[-1] before:bg-gradient-to-r before:from-neutral-200 before:to-neutral-500 before:opacity-60 before:blur-md before:transition-all before:duration-300 before:content-[""] hover:text-neutral-950 hover:before:opacity-100 hover:before:blur-lg',
+      true: 'before:inset-0 before:from-neutral-200 before:to-neutral-500 before:blur-md hover:text-neutral-950 hover:before:blur-lg relative *:z-0 before:absolute before:z-[-1] before:bg-gradient-to-r before:opacity-60 before:transition-all before:duration-300 before:content-[""] hover:before:opacity-100',
       false: '',
     },
   },

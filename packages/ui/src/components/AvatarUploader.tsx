@@ -43,7 +43,7 @@ export const AvatarUploader = ({
   return (
     <div
       className={cn(
-        'flex flex-col items-center justify-center gap-2',
+        'gap-2 flex flex-col items-center justify-center',
         uploading && 'opacity-20',
         className,
       )}
@@ -60,7 +60,7 @@ export const AvatarUploader = ({
           <button
             {...buttonProps}
             ref={buttonRef}
-            className="z-10 rounded-full bg-black/50 p-2 text-white hover:bg-neutral-800"
+            className="p-2 hover:bg-neutral-800 z-10 rounded-full bg-black/50 text-white"
             disabled={uploading}
           >
             {uploading ? (

@@ -31,7 +31,7 @@ export const Default = {
 };
 
 export const Validation = (args: any) => (
-  <Form className="flex flex-col items-start gap-2">
+  <Form className="gap-2 flex flex-col items-start">
     <RadioGroup {...args} />
     <Button type="submit">Submit</Button>
   </Form>

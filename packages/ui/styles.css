@@ -1,2 +1,5 @@
-/* Import brand styles which include Tailwind v4 */
+/* Import Tailwind CSS v4 */
+@import 'tailwindcss';
+
+/* Import shared brand theme configuration */
 @import '@op/brand';

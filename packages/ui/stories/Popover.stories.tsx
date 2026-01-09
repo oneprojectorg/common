@@ -26,7 +26,7 @@ export const Example = (args: any) => (
     </Button>
     <Popover {...args} className="max-w-[250px]">
       <Dialog>
-        <Heading slot="title" className="mb-2 text-lg font-semibold">
+        <Heading slot="title" className="mb-2 font-semibold text-lg">
           Help
         </Heading>
         <p className="text-sm">

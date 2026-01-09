@@ -25,7 +25,7 @@ export const ProfileItem = ({
   return (
     <div
       className={cn(
-        'flex gap-3',
+        'gap-3 flex',
         hasAdditionalContent ? 'items-start' : 'items-center',
         className,
       )}

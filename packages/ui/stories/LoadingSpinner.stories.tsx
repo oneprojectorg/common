@@ -27,20 +27,20 @@ export default {
 };
 
 export const Example = () => (
-  <div className="flex flex-col gap-8">
-    <div className="flex items-center gap-4">
+  <div className="gap-8 flex flex-col">
+    <div className="gap-4 flex items-center">
       <LoadingSpinner />
       <LoadingSpinner color="gray" />
     </div>
 
-    <div className="flex items-center gap-4">
+    <div className="gap-4 flex items-center">
       <LoadingSpinner className="size-4" />
       <LoadingSpinner className="size-8" />
       <LoadingSpinner className="size-12" />
       <LoadingSpinner className="size-16" />
     </div>
 
-    <div className="flex items-center gap-4">
+    <div className="gap-4 flex items-center">
       <LoadingSpinner color="gray" className="size-4" />
       <LoadingSpinner color="gray" className="size-8" />
       <LoadingSpinner color="gray" className="size-12" />
@@ -75,28 +75,28 @@ export const Large = {
 
 export const InContext = () => (
   <div className="space-y-8">
-    <div className="rounded-lg border border-neutral-gray3 p-6">
-      <div className="flex items-center gap-3">
+    <div className="p-6 rounded-lg border border-neutral-gray3">
+      <div className="gap-3 flex items-center">
         <LoadingSpinner className="size-4" />
         <span className="text-sm">Loading...</span>
       </div>
     </div>
 
-    <div className="rounded-lg border border-neutral-gray3 p-6">
-      <div className="flex flex-col items-center gap-3">
+    <div className="p-6 rounded-lg border border-neutral-gray3">
+      <div className="gap-3 flex flex-col items-center">
         <LoadingSpinner className="size-8" />
-        <span className="text-sm text-neutral-600">
+        <span className="text-neutral-600 text-sm">
           Please wait while we process your request
         </span>
       </div>
     </div>
 
-    <div className="rounded-lg border border-neutral-gray3 p-6">
+    <div className="p-6 rounded-lg border border-neutral-gray3">
       <div className="flex min-h-[200px] items-center justify-center">
         <div className="text-center">
-          <LoadingSpinner className="mx-auto mb-4 size-12" />
+          <LoadingSpinner className="mb-4 size-12 mx-auto" />
           <h3 className="font-medium">Loading content</h3>
-          <p className="text-sm text-neutral-600">
+          <p className="text-neutral-600 text-sm">
             This may take a few moments
           </p>
         </div>

@@ -1,5 +1,7 @@
-@import 'tailwindcss';
 @import './tokens.css';
+
+/* Tell Tailwind where to scan for classes in the UI package */
+@source "../ui/src/**/*.{js,ts,jsx,tsx}";
 
 /*
  * Shared Tailwind v4 theme configuration
@@ -35,10 +37,18 @@
   /* ============================================
    * Font Families
    * ============================================ */
-  --font-accent: var(--font-accent), ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-  --font-serif: var(--font-serif), ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
-  --font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-  --font-mono: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --font-accent:
+    var(--font-accent), ui-sans-serif, system-ui, sans-serif,
+    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  --font-serif:
+    var(--font-serif), ui-serif, Georgia, Cambria, 'Times New Roman', Times,
+    serif;
+  --font-sans:
+    var(--font-sans), ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+    'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  --font-mono:
+    var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    'Liberation Mono', 'Courier New', monospace;
 
   /* ============================================
    * Line Height
@@ -284,6 +294,7 @@
   --radius-lg: 0.5rem;
   --radius-md: 0.5rem;
   --radius-sm: 0.25rem;
+  --radius-xs: 0.125rem;
 
   /* ============================================
    * Box Shadows
@@ -317,35 +328,69 @@
 
 /* Background gradients */
 @utility bg-gradient {
-  background-image: radial-gradient(154% 99.31% at 0% 0%, #3EC300 0%, #0396A6 51.56%);
+  background-image: radial-gradient(
+    154% 99.31% at 0% 0%,
+    #3ec300 0%,
+    #0396a6 51.56%
+  );
 }
 
 @utility bg-tealGreen {
-  background-image: radial-gradient(154% 99.31% at 0% 0%, #3EC300 0%, #0396A6 51.56%);
+  background-image: radial-gradient(
+    154% 99.31% at 0% 0%,
+    #3ec300 0%,
+    #0396a6 51.56%
+  );
 }
 
 @utility bg-redTeal {
-  background-image: radial-gradient(96.92% 140.1% at 72.02% 100%, #0396A6 0%, #FF613D 92.19%, #FFFBFA 99.99%);
+  background-image: radial-gradient(
+    96.92% 140.1% at 72.02% 100%,
+    #0396a6 0%,
+    #ff613d 92.19%,
+    #fffbfa 99.99%
+  );
 }
 
 @utility bg-redPurple {
-  background-image: radial-gradient(70.56% 70.56% at 72.75% 33.21%, #6200C3 0%, #FF613D 100%);
+  background-image: radial-gradient(
+    70.56% 70.56% at 72.75% 33.21%,
+    #6200c3 0%,
+    #ff613d 100%
+  );
 }
 
 @utility bg-orange {
-  background-image: radial-gradient(96.92% 140.1% at 72.02% 100%, #E35F00 0%, #DE8D00 48.44%, #FF9739 99.99%);
+  background-image: radial-gradient(
+    96.92% 140.1% at 72.02% 100%,
+    #e35f00 0%,
+    #de8d00 48.44%,
+    #ff9739 99.99%
+  );
 }
 
 @utility bg-blueGreen {
-  background-image: radial-gradient(91.78% 91.78% at 89.17% 4.38%, #3EC300 0%, #0046C2 100%);
+  background-image: radial-gradient(
+    91.78% 91.78% at 89.17% 4.38%,
+    #3ec300 0%,
+    #0046c2 100%
+  );
 }
 
 @utility bg-orangePurple {
-  background-image: radial-gradient(70.56% 70.56% at 72.75% 33.21%, #6200C3 0%, #FF613D 100%);
+  background-image: radial-gradient(
+    70.56% 70.56% at 72.75% 33.21%,
+    #6200c3 0%,
+    #ff613d 100%
+  );
 }
 
 @utility bg-yellowOrange {
-  background-image: radial-gradient(74.88% 74.88% at 42.58% 76.89%, #F29F05 0%, #F2B705 100%);
+  background-image: radial-gradient(
+    74.88% 74.88% at 42.58% 76.89%,
+    #f29f05 0%,
+    #f2b705 100%
+  );
 }
 
 /* ============================================
@@ -369,56 +414,62 @@
  * Base Layer Styles
  * ============================================ */
 
-/* Root element configuration */
-:root {
-  touch-action: pan-x pan-y;
-  height: 100%;
-  overflow-x: hidden;
-}
-
-/* Prevent horizontal overscroll */
-html,
-body {
-  overscroll-behavior-x: none;
-}
-
-html {
-  font-size: 16px;
-}
-
-/* Base body styles */
 @layer base {
+  /* Root element configuration */
+  :root {
+    touch-action: pan-x pan-y;
+    height: 100%;
+    overflow-x: hidden;
+  }
+
+  /* Prevent horizontal overscroll */
+  html,
+  body {
+    overscroll-behavior-x: none;
+  }
+
+  html {
+    font-size: 16px;
+  }
+
+  /* Base body styles */
   body {
     background-color: hsl(var(--op-white));
     font-family: var(--font-sans);
     color: hsl(var(--op-neutral-900));
   }
-}
 
-/* Placeholder styles */
-input::placeholder {
-  color: hsl(var(--op-neutral-500));
-}
+  /* Placeholder styles */
+  input::placeholder {
+    color: hsl(var(--op-neutral-500));
+  }
 
-textarea::placeholder {
-  color: hsl(var(--op-neutral-500));
-}
+  textarea::placeholder {
+    color: hsl(var(--op-neutral-500));
+  }
 
-/* Hide Google extension bubble */
-#gdx-bubble-host {
-  display: none !important;
-}
+  /* Hide Google extension bubble */
+  #gdx-bubble-host {
+    display: none !important;
+  }
 
-/* Hide Video Speed Controller extension */
-.vsc-controller {
-  display: none !important;
+  /* Hide Video Speed Controller extension */
+  .vsc-controller {
+    display: none !important;
+  }
+
+  /* Default hr styling - Tailwind v4 reset removes borders */
+  hr {
+    border-top-width: 1px;
+    border-color: hsl(var(--op-neutral-200));
+  }
 }
 
 /* ============================================
  * Additional Custom Utilities
  * ============================================ */
 
-/* Scrollbar utilities - requires tailwind-scrollbar plugin */
+/* Scrollbar utilities */
 @utility better-scrollbar {
   overflow-y: scroll;
   scrollbar-width: thin;
@@ -431,6 +482,22 @@ textarea::placeholder {
 
   &::-webkit-scrollbar {
     width: 0;
+  }
+}
+
+@utility scrollbar-hide {
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@utility scrollbar-none {
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
   }
 }
 
@@ -465,44 +532,46 @@ textarea::placeholder {
  * Component-specific styles
  * ============================================ */
 
-/* Grid centered layout */
-.gridCentered {
-  grid-template-columns: min-content 1fr min-content;
-}
+@layer components {
+  /* Grid centered layout */
+  .gridCentered {
+    grid-template-columns: min-content 1fr min-content;
+  }
 
-/* Menu item grid layout */
-.op-ui-MenuItem {
-  grid-template-areas: 'label kbd' 'desc kbd';
-}
+  /* Menu item grid layout */
+  .op-ui-MenuItem {
+    grid-template-areas: 'label kbd' 'desc kbd';
+  }
 
-.op-ui-MenuItem [slot='label'] {
-  grid-area: label;
-}
+  .op-ui-MenuItem [slot='label'] {
+    grid-area: label;
+  }
 
-.op-ui-MenuItem [slot='description'] {
-  grid-area: desc;
-}
+  .op-ui-MenuItem [slot='description'] {
+    grid-area: desc;
+  }
 
-.op-ui-MenuItem [slot='kbd'] {
-  grid-area: kbd;
-}
+  .op-ui-MenuItem [slot='kbd'] {
+    grid-area: kbd;
+  }
 
-/* Tooltip grid layout */
-.op-ui-Tooltip {
-  grid-template-areas: 'label kbd' 'desc kbd';
-}
+  /* Tooltip grid layout */
+  .op-ui-Tooltip {
+    grid-template-areas: 'label kbd' 'desc kbd';
+  }
 
-.op-ui-Tooltip [slot='label'] {
-  grid-area: label;
-}
+  .op-ui-Tooltip [slot='label'] {
+    grid-area: label;
+  }
 
-.op-ui-Tooltip [slot='description'] {
-  grid-area: desc;
-}
+  .op-ui-Tooltip [slot='description'] {
+    grid-area: desc;
+  }
 
-.op-ui-Tooltip [slot='kbd'] {
-  grid-area: kbd;
-  transform: translateY(0.135em);
+  .op-ui-Tooltip [slot='kbd'] {
+    grid-area: kbd;
+    transform: translateY(0.135em);
+  }
 }
 
 /* ============================================
@@ -510,18 +579,28 @@ textarea::placeholder {
  * ============================================ */
 
 /* Animation duration CSS variables */
-:root {
-  --animate-duration: 1s;
-  --animate-delay: 0s;
-  --animate-repeat: 1;
+@layer base {
+  :root {
+    --animate-duration: 1s;
+    --animate-delay: 0s;
+    --animate-repeat: 1;
+  }
 }
 
 /* Keyframe definitions */
 @keyframes enter {
   from {
     opacity: var(--tw-enter-opacity, 1);
-    transform: translate3d(var(--tw-enter-translate-x, 0), var(--tw-enter-translate-y, 0), 0)
-      scale3d(var(--tw-enter-scale, 1), var(--tw-enter-scale, 1), var(--tw-enter-scale, 1))
+    transform: translate3d(
+        var(--tw-enter-translate-x, 0),
+        var(--tw-enter-translate-y, 0),
+        0
+      )
+      scale3d(
+        var(--tw-enter-scale, 1),
+        var(--tw-enter-scale, 1),
+        var(--tw-enter-scale, 1)
+      )
       rotate(var(--tw-enter-rotate, 0));
   }
 }
@@ -529,8 +608,16 @@ textarea::placeholder {
 @keyframes exit {
   to {
     opacity: var(--tw-exit-opacity, 1);
-    transform: translate3d(var(--tw-exit-translate-x, 0), var(--tw-exit-translate-y, 0), 0)
-      scale3d(var(--tw-exit-scale, 1), var(--tw-exit-scale, 1), var(--tw-exit-scale, 1))
+    transform: translate3d(
+        var(--tw-exit-translate-x, 0),
+        var(--tw-exit-translate-y, 0),
+        0
+      )
+      scale3d(
+        var(--tw-exit-scale, 1),
+        var(--tw-exit-scale, 1),
+        var(--tw-exit-scale, 1)
+      )
       rotate(var(--tw-exit-rotate, 0));
   }
 }
@@ -542,7 +629,8 @@ textarea::placeholder {
 }
 
 @keyframes ping {
-  75%, 100% {
+  75%,
+  100% {
     transform: scale(2);
     opacity: 0;
   }
@@ -555,7 +643,8 @@ textarea::placeholder {
 }
 
 @keyframes bounce {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(-25%);
     animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
   }
