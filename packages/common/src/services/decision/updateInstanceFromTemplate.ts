@@ -5,6 +5,7 @@ import type { User } from '@op/supabase/lib';
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { assertUserByAuthId } from '../assert';
 import type { DecisionInstanceData, PhaseOverride } from './schemas/instanceData';
+import type { ProcessConfig } from './schemas/types';
 import { updateTransitionsForProcess } from './updateTransitionsForProcess';
 
 /**
@@ -15,6 +16,7 @@ export const updateInstanceFromTemplate = async ({
   name,
   description,
   status,
+  config,
   phases,
   user,
 }: {
@@ -22,6 +24,8 @@ export const updateInstanceFromTemplate = async ({
   name?: string;
   description?: string;
   status?: ProcessStatus;
+  /** Process-level configuration (e.g., hideBudget) */
+  config?: ProcessConfig;
   /** Optional phase overrides (dates and settings) */
   phases?: PhaseOverride[];
   user: User;
@@ -67,37 +71,53 @@ export const updateInstanceFromTemplate = async ({
     updateData.status = status;
   }
 
-  // Apply phase overrides to existing instanceData
-  if (phases && phases.length > 0) {
+  // Apply config and/or phase overrides to existing instanceData
+  const hasConfigUpdate = config !== undefined;
+  const hasPhaseUpdates = phases && phases.length > 0;
+
+  if (hasConfigUpdate || hasPhaseUpdates) {
     const existingInstanceData =
       existingInstance.instanceData as DecisionInstanceData;
 
-    // Create a map of phase overrides for quick lookup
-    const overrideMap = new Map(
-      phases.map((override) => [override.phaseId, override]),
-    );
+    let updatedInstanceData: DecisionInstanceData = { ...existingInstanceData };
 
-    // Apply overrides to existing phases
-    const updatedPhases = existingInstanceData.phases.map((phase) => {
-      const override = overrideMap.get(phase.phaseId);
-      if (!override) {
-        return phase;
-      }
-
-      return {
-        ...phase,
-        ...(override.startDate !== undefined && {
-          startDate: override.startDate,
-        }),
-        ...(override.endDate !== undefined && { endDate: override.endDate }),
-        ...(override.settings !== undefined && { settings: override.settings }),
+    // Apply config updates (merge with existing config)
+    if (hasConfigUpdate) {
+      updatedInstanceData.config = {
+        ...existingInstanceData.config,
+        ...config,
       };
-    });
+    }
 
-    const updatedInstanceData: DecisionInstanceData = {
-      ...existingInstanceData,
-      phases: updatedPhases,
-    };
+    // Apply phase overrides
+    if (hasPhaseUpdates) {
+      // Create a map of phase overrides for quick lookup
+      const overrideMap = new Map(
+        phases.map((override) => [override.phaseId, override]),
+      );
+
+      // Apply overrides to existing phases (merge settings, don't replace)
+      updatedInstanceData.phases = existingInstanceData.phases.map((phase) => {
+        const override = overrideMap.get(phase.phaseId);
+        if (!override) {
+          return phase;
+        }
+
+        return {
+          ...phase,
+          ...(override.startDate !== undefined && {
+            startDate: override.startDate,
+          }),
+          ...(override.endDate !== undefined && { endDate: override.endDate }),
+          ...(override.settings !== undefined && {
+            settings: {
+              ...phase.settings,
+              ...override.settings,
+            },
+          }),
+        };
+      });
+    }
 
     updateData.instanceData = updatedInstanceData;
   }
