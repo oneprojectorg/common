@@ -25,8 +25,6 @@ const handler = async (req: NextRequest) => {
     onError({ error, path }) {
       console.error(`tRPC Error on ${path}:`, error);
     },
-    // Channel information is now embedded in response body via withChannelMeta middleware
-    // No need for responseMeta - x-request-id is set in createContext
   });
 
   const origin = req.headers.get('origin');
