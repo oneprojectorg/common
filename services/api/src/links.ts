@@ -2,7 +2,12 @@ import { queryChannelRegistry } from '@op/common/realtime';
 import { OPURLConfig } from '@op/core';
 import { logger } from '@op/logging';
 import type { TRPCLink } from '@trpc/client';
-import { httpBatchLink, httpLink, loggerLink, splitLink } from '@trpc/client';
+import {
+  httpBatchStreamLink,
+  httpLink,
+  loggerLink,
+  splitLink,
+} from '@trpc/client';
 import { observable } from '@trpc/server/observable';
 import { readSSROnlySecret } from 'ssr-only-secrets';
 import superjson from 'superjson';
@@ -184,7 +189,7 @@ export function createLinks(encryptedCookies?: string): TRPCLink<AppRouter>[] {
         transformer: superjson,
         fetch: fetchFn,
       }),
-      false: httpBatchLink({
+      false: httpBatchStreamLink({
         url: envURL.TRPC_URL,
         transformer: superjson,
         maxItems: 4,
