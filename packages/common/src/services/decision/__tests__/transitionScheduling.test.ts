@@ -28,13 +28,11 @@ const createMockInstanceData = (
   overrides?: Partial<DecisionInstanceData>,
 ): DecisionInstanceData => ({
   currentPhaseId: 'submission',
-  budget: 100000,
-  fieldValues: {},
   phases: [
     {
       phaseId: 'submission',
-      plannedStartDate: createFutureDate(0),
-      plannedEndDate: createFutureDate(7),
+      startDate: createFutureDate(0),
+      endDate: createFutureDate(7),
       rules: {
         proposals: { submit: true },
         voting: { submit: false },
@@ -43,8 +41,8 @@ const createMockInstanceData = (
     },
     {
       phaseId: 'review',
-      plannedStartDate: createFutureDate(7),
-      plannedEndDate: createFutureDate(14),
+      startDate: createFutureDate(7),
+      endDate: createFutureDate(14),
       rules: {
         proposals: { submit: false },
         voting: { submit: false },
@@ -53,8 +51,8 @@ const createMockInstanceData = (
     },
     {
       phaseId: 'voting',
-      plannedStartDate: createFutureDate(14),
-      plannedEndDate: createFutureDate(21),
+      startDate: createFutureDate(14),
+      endDate: createFutureDate(21),
       rules: {
         proposals: { submit: false },
         voting: { submit: true },
@@ -63,7 +61,8 @@ const createMockInstanceData = (
     },
     {
       phaseId: 'results',
-      plannedStartDate: createFutureDate(21),
+      startDate: createFutureDate(21),
+      // No endDate for results phase - it's the final phase
       rules: {
         proposals: { submit: false },
         voting: { submit: false },
@@ -169,23 +168,22 @@ describe('Transition Scheduling', () => {
       expect(db.insert).not.toHaveBeenCalled();
     });
 
-    it('should throw error when phase is missing start date', async () => {
+    it('should throw error when phase is missing end date', async () => {
       const instanceData = createMockInstanceData();
-      // Remove the start date from the review phase (which submission transitions to)
-      instanceData.phases[1]!.plannedStartDate = undefined;
+      // Remove the end date from the submission phase (which triggers the transition)
+      instanceData.phases[0]!.endDate = undefined;
 
       const mockInstance = createMockProcessInstance({ instanceData });
 
       await expect(
         createTransitionsForProcess({ processInstance: mockInstance }),
-      ).rejects.toThrow('must have a start date');
+      ).rejects.toThrow('must have an end date');
     });
 
     it('should throw error when instance has no phases', async () => {
       const mockInstance = createMockProcessInstance({
         instanceData: {
           currentPhaseId: 'submission',
-          fieldValues: {},
           phases: [],
         },
       });
@@ -202,10 +200,9 @@ describe('Transition Scheduling', () => {
       const oldDate = createFutureDate(7);
       const newDate = createFutureDate(10);
 
-      // Update the instance data with new dates
-      (
-        mockInstance.instanceData as DecisionInstanceData
-      ).phases[1]!.plannedStartDate = newDate;
+      // Update the instance data with new end date (triggers transition update)
+      (mockInstance.instanceData as DecisionInstanceData).phases[0]!.endDate =
+        newDate;
 
       // Mock existing transitions
       vi.mocked(

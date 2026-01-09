@@ -69,12 +69,12 @@ export async function updateTransitionsForProcess({
         continue;
       }
 
-      // Schedule transition when the next phase starts
-      const scheduledDate = nextPhase.startDate;
+      // Schedule transition when the current phase ends
+      const scheduledDate = currentPhase.endDate;
 
       if (!scheduledDate) {
         throw new CommonError(
-          `Phase "${nextPhase.phaseId}" must have a start date for date-based advancement from "${currentPhase.phaseId}" (instance: ${processInstance.id})`,
+          `Phase "${currentPhase.phaseId}" must have an end date for date-based advancement (instance: ${processInstance.id})`,
         );
       }
 

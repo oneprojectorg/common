@@ -7,7 +7,7 @@ import type { DecisionInstanceData } from './schemas/instanceData';
 
 /**
  * Creates scheduled transition records for phases with date-based advancement.
- * Each transition fires when the next phase's start date arrives.
+ * Each transition fires when the current phase's end date arrives.
  */
 export async function createTransitionsForProcess({
   processInstance,
@@ -51,12 +51,12 @@ export async function createTransitionsForProcess({
         continue;
       }
 
-      // Schedule transition when the next phase starts
-      const scheduledDate = nextPhase.startDate;
+      // Schedule transition when the current phase ends
+      const scheduledDate = currentPhase.endDate;
 
       if (!scheduledDate) {
         throw new CommonError(
-          `Phase "${nextPhase.phaseId}" must have a start date for date-based advancement from "${currentPhase.phaseId}" (instance: ${processInstance.id})`,
+          `Phase "${currentPhase.phaseId}" must have an end date for date-based advancement (instance: ${processInstance.id})`,
         );
       }
 
