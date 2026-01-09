@@ -331,7 +331,7 @@ export const createInstanceFromTemplateInputSchema = z.object({
     .optional(),
 });
 
-export const updateInstanceFromTemplateInputSchema = z.object({
+export const updateDecisionInstanceInputSchema = z.object({
   instanceId: z.uuid(),
   name: z.string().min(3).max(256).optional(),
   description: z.string().optional(),

@@ -6,14 +6,14 @@ import { getDecisionBySlugRouter } from './getDecisionBySlug';
 import { getInstanceRouter } from './getInstance';
 import { listDecisionProfilesRouter } from './listDecisionProfiles';
 import { listInstancesRouter } from './listInstances';
+import { updateDecisionInstanceRouter } from './updateDecisionInstance';
 import { updateInstanceRouter } from './updateInstance';
-import { updateInstanceFromTemplateRouter } from './updateInstanceFromTemplate';
 
 export const instancesRouter = mergeRouters(
   createInstanceRouter,
   createInstanceFromTemplateRouter,
   updateInstanceRouter,
-  updateInstanceFromTemplateRouter,
+  updateDecisionInstanceRouter,
   listInstancesRouter,
   getInstanceRouter,
   getCategoriesRouter,

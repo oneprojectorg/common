@@ -1,17 +1,18 @@
 import { db, eq } from '@op/db/client';
 import { ProcessStatus, processInstances, profiles } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
+import { assertAccess, permission } from 'access-zones';
 
-import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
-import { assertUserByAuthId } from '../assert';
+import { CommonError, NotFoundError } from '../../utils';
+import { getProfileAccessUser } from '../access';
 import type { DecisionInstanceData, PhaseOverride } from './schemas/instanceData';
 import type { ProcessConfig } from './schemas/types';
 import { updateTransitionsForProcess } from './updateTransitionsForProcess';
 
 /**
- * Updates a decision process instance created from a DecisionSchemaDefinition template.
+ * Updates a decision process instance.
  */
-export const updateInstanceFromTemplate = async ({
+export const updateDecisionInstance = async ({
   instanceId,
   name,
   description,
@@ -30,16 +31,6 @@ export const updateInstanceFromTemplate = async ({
   phases?: PhaseOverride[];
   user: User;
 }) => {
-  const dbUser = await assertUserByAuthId(
-    user.id,
-    new UnauthorizedError('User must be authenticated'),
-  );
-
-  const ownerProfileId = dbUser.currentProfileId ?? dbUser.profileId;
-  if (!ownerProfileId) {
-    throw new UnauthorizedError('User must have an active profile');
-  }
-
   // Fetch existing instance
   const existingInstance = await db.query.processInstances.findFirst({
     where: eq(processInstances.id, instanceId),
@@ -49,12 +40,17 @@ export const updateInstanceFromTemplate = async ({
     throw new NotFoundError('Process instance not found');
   }
 
-  // Verify ownership
-  if (existingInstance.ownerProfileId !== ownerProfileId) {
-    throw new UnauthorizedError(
-      'You do not have permission to update this process instance',
-    );
+  if (!existingInstance.profileId) {
+    throw new CommonError('Decision instance does not have an associated profile');
   }
+
+  // Check if user has admin access on the decision instance's profile
+  const profileUser = await getProfileAccessUser({
+    user,
+    profileId: existingInstance.profileId,
+  });
+
+  assertAccess({ profile: permission.ADMIN }, profileUser?.roles ?? []);
 
   // Build update data
   const updateData: Record<string, unknown> = {};

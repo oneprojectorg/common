@@ -1,9 +1,9 @@
-import { updateInstanceFromTemplate } from '@op/common';
+import { updateDecisionInstance } from '@op/common';
 import type { OpenApiMeta } from 'trpc-to-openapi';
 
 import {
   decisionProfileEncoder,
-  updateInstanceFromTemplateInputSchema,
+  updateDecisionInstanceInputSchema,
 } from '../../../encoders/decision';
 import withAnalytics from '../../../middlewares/withAnalytics';
 import withAuthenticated from '../../../middlewares/withAuthenticated';
@@ -17,22 +17,22 @@ const meta: OpenApiMeta = {
     path: '/decision/instance/{instanceId}',
     protect: true,
     tags: ['decision'],
-    summary: 'Update process instance created from a DecisionSchemaDefinition template',
+    summary: 'Update a decision process instance',
   },
 };
 
-export const updateInstanceFromTemplateRouter = router({
-  updateInstanceFromTemplate: loggedProcedure
+export const updateDecisionInstanceRouter = router({
+  updateDecisionInstance: loggedProcedure
     .use(withRateLimited({ windowSize: 10, maxRequests: 10 }))
     .use(withAuthenticated)
     .use(withAnalytics)
     .meta(meta)
-    .input(updateInstanceFromTemplateInputSchema)
+    .input(updateDecisionInstanceInputSchema)
     .output(decisionProfileEncoder)
     .mutation(async ({ ctx, input }) => {
       const { user } = ctx;
 
-      const profile = await updateInstanceFromTemplate({
+      const profile = await updateDecisionInstance({
         ...input,
         user,
       });
