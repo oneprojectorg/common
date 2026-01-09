@@ -3,8 +3,7 @@
 import { getPublicUrl } from '@/utils';
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import { Profile } from '@op/api/encoders';
-import { EntityType } from '@op/api/encoders';
+import { EntityType, Profile } from '@op/api/encoders';
 import { match } from '@op/core';
 import { Avatar } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
@@ -122,11 +121,13 @@ export const DeleteOrganizationModal = ({
         isSubmitting={isSubmitting}
       />
     ),
-    <SuccessStep
-      key="success"
-      submitButtonAction={closeModal}
-      deletedProfileName={profileToDelete?.name}
-    />,
+    profileToDelete && (
+      <SuccessStep
+        key="success"
+        submitButtonAction={closeModal}
+        deletedProfileName={profileToDelete.name}
+      />
+    ),
   ];
 
   return (
@@ -286,7 +287,7 @@ const SuccessStep = ({
   deletedProfileName,
   submitButtonAction,
 }: {
-  deletedProfileName?: string;
+  deletedProfileName: string;
   submitButtonAction: () => void;
 }) => {
   const t = useTranslations();
@@ -297,7 +298,8 @@ const SuccessStep = ({
         <p>
           <strong>{deletedProfileName}</strong>{' '}
           {t(
-            'has been deleted. All associated data have been permanently removed.',
+            '{profileName} has been deleted. All associated data have been permanently removed.',
+            { profileName: deletedProfileName },
           )}
         </p>
       </div>
