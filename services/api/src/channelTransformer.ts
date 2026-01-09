@@ -31,10 +31,22 @@ export function isWrappedResponse<T>(
 }
 
 /**
- * Extracts data and channels from a wrapped response.
- * Returns the unwrapped data and channel array separately.
+ * Wraps response data with channel metadata.
  */
-export function unwrapResponse<T>(value: WrappedResponse<T>): {
+export function wrapResponseWithChannels<T>(
+  data: T,
+  channels: ChannelName[],
+): WrappedResponse<T> {
+  return {
+    _data: data,
+    _meta: { channels },
+  };
+}
+
+/**
+ * Extracts data and channels from a wrapped response.
+ */
+export function unwrapResponseWithChannels<T>(value: WrappedResponse<T>): {
   data: T;
   channels: ChannelName[];
 } {

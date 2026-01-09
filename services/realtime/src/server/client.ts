@@ -18,7 +18,6 @@ export class RealtimeClient {
 
   /**
    * Publish a message to a single channel
-   * TODO: type channel with Channels
    */
   async publish(options: {
     channel: ChannelName;

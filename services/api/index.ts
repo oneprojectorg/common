@@ -7,7 +7,8 @@ export * from './src/routers';
 export * from './src/trpcFactory';
 export {
   isWrappedResponse,
-  unwrapResponse,
+  unwrapResponseWithChannels,
+  wrapResponseWithChannels,
   type WrappedResponse,
 } from './src/channelTransformer';
 
