@@ -1,16 +1,11 @@
-import {
-  MUTATION_CHANNELS_HEADER,
-  QUERY_CHANNELS_HEADER,
-  appRouter,
-  createContext,
-} from '@op/api';
+import { appRouter, createContext } from '@op/api';
 import { API_TRPC_PTH } from '@op/core';
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import type { NextRequest } from 'next/server';
 
 export const maxDuration = 120;
 
-const EXPOSED_HEADERS = 'x-mutation-channels, x-query-channels, x-request-id';
+const EXPOSED_HEADERS = 'x-request-id';
 
 const allowedOrigins = [
   'https://api-dev.oneproject.tech',
@@ -29,30 +24,6 @@ const handler = async (req: NextRequest) => {
     createContext,
     onError({ error, path }) {
       console.error(`tRPC Error on ${path}:`, error);
-    },
-    responseMeta({ ctx }) {
-      if (!ctx) {
-        return {};
-      }
-
-      const headers: Record<string, string> = {};
-      const mutationChannels = ctx.getMutationChannels();
-      const queryChannels = ctx.getQueryChannels();
-
-      if (queryChannels.length > 0) {
-        headers[QUERY_CHANNELS_HEADER] = queryChannels.join(',');
-      }
-      if (mutationChannels.length > 0) {
-        headers[MUTATION_CHANNELS_HEADER] = mutationChannels.join(',');
-      }
-
-      if (Object.keys(headers).length > 0) {
-        return {
-          headers: new Headers(Object.entries(headers)),
-        };
-      }
-
-      return {};
     },
   });
 

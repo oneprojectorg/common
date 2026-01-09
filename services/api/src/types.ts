@@ -19,10 +19,6 @@ export interface TContext {
   registerMutationChannels: (channels: ChannelName[]) => void;
   /** Registers channels that a query subscribes to for invalidation. */
   registerQueryChannels: (channels: ChannelName[]) => void;
-  /** Gets all accumulated mutation channels across batched procedures. */
-  getMutationChannels: () => ChannelName[];
-  /** Gets all accumulated query channels across batched procedures. */
-  getQueryChannels: () => ChannelName[];
   requestId: string;
   time: number;
   ip: string | null;

@@ -1,13 +1,18 @@
-import { type ChannelName, queryChannelRegistry } from '@op/common/realtime';
+import { queryChannelRegistry } from '@op/common/realtime';
 import { OPURLConfig } from '@op/core';
 import { logger } from '@op/logging';
 import type { TRPCLink } from '@trpc/client';
-import { httpBatchLink, httpLink, loggerLink, splitLink } from '@trpc/client';
+import {
+  httpBatchStreamLink,
+  httpLink,
+  loggerLink,
+  splitLink,
+} from '@trpc/client';
 import { observable } from '@trpc/server/observable';
 import { readSSROnlySecret } from 'ssr-only-secrets';
 import superjson from 'superjson';
 
-import { MUTATION_CHANNELS_HEADER, QUERY_CHANNELS_HEADER } from './constants';
+import { unwrapResponseWithChannels } from './channelTransformer';
 import type { AppRouter } from './routers';
 
 /** @see https://trpc.io/docs/v11/getQueryKey */
@@ -87,8 +92,11 @@ function createFetchWithSSRCookies(encryptedCookies?: string) {
 /**
  * Custom link that registers queries and mutations with the channel registry.
  *
- * For queries: Registers the query key with query channels from x-query-channels header
- * For mutations: Registers mutation channels from x-mutation-channels header (triggers invalidation via registry)
+ * Extracts channels from wrapped response body (_meta.channels) and unwraps
+ * data before passing to application.
+ *
+ * For queries: Registers channels for future invalidation lookup
+ * For mutations: Triggers invalidation of queries registered on matching channels
  */
 function createChannelRegistrationLink(): TRPCLink<AppRouter> {
   return () => {
@@ -103,42 +111,42 @@ function createChannelRegistrationLink(): TRPCLink<AppRouter> {
 
         const unsubscribe = next(op).subscribe({
           next(value) {
-            // Process response headers for channel handling
-            // The value.context contains the response from httpLink
-            if (!isServer && value.context?.response) {
-              const response = value.context.response as Response;
+            // Handle channel registration from response body (both queries and mutations)
+            if (!isServer && value.result?.data !== undefined) {
+              const unwrapped = unwrapResponseWithChannels(value.result.data);
+              if (unwrapped) {
+                const { data, channels } = unwrapped;
+                if (channels.length > 0) {
+                  if (op.type === 'query') {
+                    // Register query's channels for future invalidation
+                    queryChannelRegistry.registerQuery({ queryKey, channels });
+                  } else if (op.type === 'mutation') {
+                    // Get request ID from response headers, fallback to random UUID
+                    const response = value.context?.response as
+                      | Response
+                      | undefined;
+                    const requestId =
+                      response?.headers.get('x-request-id') ??
+                      crypto.randomUUID();
 
-              if (op.type === 'query') {
-                // Register query's channels for invalidation
-                const queryChannelsHeader = response.headers.get(
-                  QUERY_CHANNELS_HEADER,
-                );
-                if (queryChannelsHeader) {
-                  const channels = queryChannelsHeader
-                    .split(',')
-                    .filter(Boolean) as ChannelName[];
-                  queryChannelRegistry.registerQuery({ queryKey, channels });
+                    // Register mutation to trigger invalidation of matching queries
+                    queryChannelRegistry.registerMutation({
+                      channels,
+                      mutationId: requestId,
+                    });
+                  }
                 }
-              } else if (op.type === 'mutation') {
-                // Look up and invalidate queries for mutation channels
-                const mutationChannelsHeader = response.headers.get(
-                  MUTATION_CHANNELS_HEADER,
-                );
 
-                // We expect x-request-id to always be present, but if it's missing
-                // generate a random one to avoid ignoring the mutation completely
-                const requestId =
-                  response.headers.get('x-request-id') ?? crypto.randomUUID();
+                // Unwrap data before passing to application
+                observer.next({
+                  ...value,
+                  result: {
+                    ...value.result,
+                    data,
+                  },
+                });
 
-                if (mutationChannelsHeader) {
-                  const channels = mutationChannelsHeader
-                    .split(',')
-                    .filter(Boolean) as ChannelName[];
-                  queryChannelRegistry.registerMutation({
-                    channels,
-                    mutationId: requestId,
-                  });
-                }
+                return;
               }
             }
 
@@ -189,7 +197,7 @@ export function createLinks(encryptedCookies?: string): TRPCLink<AppRouter>[] {
         transformer: superjson,
         fetch: fetchFn,
       }),
-      false: httpBatchLink({
+      false: httpBatchStreamLink({
         url: envURL.TRPC_URL,
         transformer: superjson,
         maxItems: 4,
