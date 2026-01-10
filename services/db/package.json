@@ -41,7 +41,6 @@
   "devDependencies": {
     "@op/typescript-config": "workspace:*",
     "@supabase/ssr": "0.5.2",
-    "autoprefixer": "^10.4.20",
     "cross-env": "^7.0.3",
     "dotenv": "^16.4.5",
     "drizzle-kit": "^0.30.5",
