@@ -11,13 +11,13 @@
   },
   "iconLibrary": "lucide",
   "aliases": {
-    "components": "@op/ui/components",
-    "utils": "@op/ui/lib/utils",
-    "ui": "@op/ui/components",
-    "lib": "@op/ui/lib",
-    "hooks": "@op/ui/hooks"
+    "components": "@/components",
+    "utils": "@/lib/utils",
+    "ui": "@/components",
+    "lib": "@/lib",
+    "hooks": "@/hooks"
   },
   "registries": {
-    "@intentui": "https://intentui.com/r"
+    "@intentui": "https://intentui.com/r/{name}"
   }
 }

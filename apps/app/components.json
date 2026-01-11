@@ -18,6 +18,6 @@
     "hooks": "@op/ui/hooks"
   },
   "registries": {
-    "@intentui": "https://intentui.com/r"
+    "@intentui": "https://intentui.com/r/{name}"
   }
 }

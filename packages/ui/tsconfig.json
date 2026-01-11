@@ -3,7 +3,10 @@
   "compilerOptions": {
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "types": ["unplugin-icons/types/react"]
+    "types": ["unplugin-icons/types/react"],
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
   "include": [
     "**/*.ts",

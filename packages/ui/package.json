@@ -62,7 +62,8 @@
     "./utils": "./src/lib/utils.ts",
     "./utils/formatting": "./src/utils/formatting.ts",
     "./lib/primitive": "./src/lib/primitive.ts",
-    "./hooks/use-media-query": "./src/hooks/use-media-query.ts"
+    "./hooks/use-media-query": "./src/hooks/use-media-query.ts",
+    "./ui/table": "./src/components/ui/table.tsx"
   },
   "module": "./src/index.ts",
   "scripts": {
@@ -72,6 +73,7 @@
     "typecheck": "tsgo --noEmit"
   },
   "dependencies": {
+    "@heroicons/react": "^2.2.0",
     "@internationalized/date": "^3.8.2",
     "@op/core": "workspace:*",
     "@op/hooks": "workspace:*",
