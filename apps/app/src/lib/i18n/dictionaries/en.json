@@ -432,7 +432,7 @@
   "Removing...": "Removing...",
   "Please select the account you'd like to delete. This action cannot be undone.": "Please select the account you'd like to delete. This action cannot be undone.",
   "You are about to delete this account. This action cannot be undone.": "You are about to delete this account. This action cannot be undone.",
-  "has been deleted. All associated data have been permanently removed.": "has been deleted. All associated data have been permanently removed.",
+  "{profileName} has been deleted. All associated data have been permanently removed.": "{profileName} has been deleted. All associated data have been permanently removed.",
   "User avatar": "User avatar",
   "Done": "Done"
 }

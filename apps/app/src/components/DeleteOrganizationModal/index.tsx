@@ -57,8 +57,7 @@ export const DeleteOrganizationModal = ({
 
   const handleSubmit = () => {
     if (!selectedProfileId) {
-      console.error('handleSubmit called without selectedProfileId');
-      return;
+      throw new Error('handleSubmit called without selectedProfileId');
     }
     startTransition(async () => {
       try {
@@ -296,7 +295,6 @@ const SuccessStep = ({
       <ModalHeader>{t('Account Deleted')}</ModalHeader>
       <div className="flex flex-col gap-2 px-6 py-4">
         <p>
-          <strong>{deletedProfileName}</strong>{' '}
           {t(
             '{profileName} has been deleted. All associated data have been permanently removed.',
             { profileName: deletedProfileName },

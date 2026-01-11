@@ -432,7 +432,7 @@
   "Removing...": "মুছে ফেলা হচ্ছে...",
   "Please select the account you'd like to delete. This action cannot be undone.": "আপনি যে অ্যাকাউন্টটি মুছতে চান সেটি নির্বাচন করুন। এই কাজটি পূর্বাবস্থায় ফেরানো যাবে না।",
   "You are about to delete this account. This action cannot be undone.": "আপনি এই অ্যাকাউন্টটি মুছতে যাচ্ছেন। এই কাজটি পূর্বাবস্থায় ফেরানো যাবে না।",
-  "has been deleted. All associated data have been permanently removed.": "মুছে ফেলা হয়েছে। সমস্ত সম্পর্কিত ডেটা স্থায়ীভাবে সরানো হয়েছে।",
+  "{profileName} has been deleted. All associated data have been permanently removed.": "{profileName} মুছে ফেলা হয়েছে। সমস্ত সম্পর্কিত ডেটা স্থায়ীভাবে সরানো হয়েছে।",
   "User avatar": "ব্যবহারকারীর অবতার",
   "Done": "সম্পন্ন"
 }
