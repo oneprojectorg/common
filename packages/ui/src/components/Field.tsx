@@ -94,7 +94,7 @@ export const FieldGroup = (props: GroupProps) => {
 };
 
 export const inputStyles = tv({
-  base: 'h-10 min-w-0 p-4 flex-1 rounded-md border border-neutral-gray1 text-base leading-[0.5rem] text-neutral-black outline outline-0 placeholder:text-neutral-gray4 hover:border-neutral-gray2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue active:border-neutral-gray4 active:outline disabled:border-neutral-gray2 disabled:bg-neutral-gray1 disabled:text-lightGray',
+  base: 'h-10 min-w-0 p-4 flex-1 rounded-md border border-neutral-gray1 text-base leading-[0.5rem] text-neutral-black outline outline-0 placeholder:text-neutral-gray4 hover:border-neutral-gray2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue active:border-neutral-gray4 disabled:border-neutral-gray2 disabled:bg-neutral-gray1 disabled:text-lightGray',
   variants: {
     color: {
       primary: '',
@@ -106,7 +106,6 @@ export const inputStyles = tv({
     },
     hasIcon: {
       true: 'pl-8 w-full',
-      false: 'outline-functional-red',
     },
   },
   defaultVariants: {

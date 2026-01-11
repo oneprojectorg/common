@@ -68,7 +68,7 @@ export const DropDownButton = (props: DropdownButtonProps) => {
       </Button>
       <Popover
         placement="bottom start"
-        className={matchTriggerWidth ? 'min-w-[--trigger-width]' : undefined}
+        className={matchTriggerWidth ? 'min-w-(--trigger-width)' : undefined}
       >
         <Menu>
           {items.map((item) => (

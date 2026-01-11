@@ -134,7 +134,7 @@ export const Select = <T extends object>({
       <FieldError>{errorMessage}</FieldError>
       <Popover
         className={cn(
-          '!max-h-60 max-w-56 p-2 absolute z-10 min-w-[--trigger-width] overflow-hidden rounded border border-neutral-gray1 bg-white shadow',
+          '!max-h-60 max-w-56 p-2 absolute z-10 min-w-(--trigger-width) overflow-hidden rounded border border-neutral-gray1 bg-white shadow',
           popoverClassName,
         )}
         {...popoverProps}

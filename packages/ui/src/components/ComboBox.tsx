@@ -68,7 +68,7 @@ export const ComboBox = <T extends object>({
       <Popover
         {...props.popoverProps}
         className={cn(
-          'min-w-[--trigger-width] bg-white',
+          'min-w-(--trigger-width) bg-white',
           props.popoverProps?.className,
         )}
       >
