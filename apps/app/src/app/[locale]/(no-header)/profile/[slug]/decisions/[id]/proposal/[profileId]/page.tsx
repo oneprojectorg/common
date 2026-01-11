@@ -64,13 +64,13 @@ function ProposalViewPageSkeleton() {
           <div className="gap-6 pb-4 flex border-b border-neutral-gray1">
             <div className="h-4 w-16 bg-gray-200 animate-pulse rounded" />
             <div className="h-4 w-20 bg-gray-200 animate-pulse rounded" />
-            <div className="h-4 bg-gray-200 w-18 animate-pulse rounded" />
+            <div className="h-4 bg-gray-200 animate-pulse w-18 rounded" />
           </div>
           <div className="mt-6 space-y-4">
-            <div className="h-4 bg-gray-200 w-full animate-pulse rounded" />
-            <div className="h-4 bg-gray-200 w-3/4 animate-pulse rounded" />
-            <div className="h-4 bg-gray-200 w-5/6 animate-pulse rounded" />
-            <div className="h-4 bg-gray-200 w-1/2 animate-pulse rounded" />
+            <div className="h-4 bg-gray-200 animate-pulse w-full rounded" />
+            <div className="h-4 bg-gray-200 animate-pulse w-3/4 rounded" />
+            <div className="h-4 bg-gray-200 animate-pulse w-5/6 rounded" />
+            <div className="h-4 bg-gray-200 animate-pulse w-1/2 rounded" />
           </div>
         </div>
       </div>

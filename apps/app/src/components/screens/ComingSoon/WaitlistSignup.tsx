@@ -108,7 +108,7 @@ const WaitlistSignupForm = ({ onSuccess }: { onSuccess: () => void }) => {
 };
 
 const WaitlistSignupSuccess = () => (
-  <div className="p-4 sm:h-16 sm:rounded-xl sm:px-6 sm:py-4 flex w-max items-center rounded bg-white/85 animate-in">
+  <div className="p-4 sm:h-16 sm:rounded-xl sm:px-6 sm:py-4 flex w-max animate-in items-center rounded bg-white/85">
     <p className="sm:text-xl w-max bg-orangePurple bg-clip-text text-transparent">
       You're signed up! We'll be in touch.
     </p>

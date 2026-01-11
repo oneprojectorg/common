@@ -321,7 +321,7 @@ export const LoginPanel = () => {
                       }}
                     >
                       {isRefetchingUser ? (
-                        <div className="m-0.5 w-5 border-neutral-500 aspect-square animate-spin rounded-full border-2 border-b-0" />
+                        <div className="m-0.5 w-5 border-neutral-500 animate-spin aspect-square rounded-full border-2 border-b-0" />
                       ) : (
                         'Try again'
                       )}

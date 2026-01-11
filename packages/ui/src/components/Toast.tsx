@@ -11,7 +11,7 @@ export const Toast = () => {
   return (
     <Sonner
       position="bottom-left"
-      className="toaster group w-full sm:w-[27rem]"
+      className="toaster group sm:w-[27rem] w-full"
       pauseWhenPageIsHidden
       visibleToasts={3}
       duration={3000}

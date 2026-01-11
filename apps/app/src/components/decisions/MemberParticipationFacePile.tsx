@@ -46,7 +46,7 @@ export const MemberParticipationFacePile = ({
                 />
               ) : null}
             </Avatar>
-            <div className="left-0 top-0 absolute h-full w-full cursor-pointer rounded-full bg-white opacity-0 transition-opacity duration-100 ease-in-out hover:opacity-15 active:bg-black" />
+            <div className="left-0 top-0 ease-in-out absolute h-full w-full cursor-pointer rounded-full bg-white opacity-0 transition-opacity duration-100 hover:opacity-15 active:bg-black" />
           </Link>
         ))}
       >

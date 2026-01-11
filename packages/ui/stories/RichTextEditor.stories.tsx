@@ -127,7 +127,7 @@ export const WithRefAPI = () => {
 export const WithCustomStyling = () => (
   <div className="p-4 w-[800px] border border-dotted">
     <RichTextEditor
-      className="border-teal p-4 rounded-lg border-2 bg-white"
+      className="p-4 rounded-lg border-2 border-teal bg-white"
       editorClassName="min-h-64"
     />
   </div>

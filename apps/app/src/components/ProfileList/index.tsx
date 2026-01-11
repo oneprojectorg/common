@@ -93,12 +93,12 @@ export const ProfileListSkeleton = () => {
           className="shadow-xs p-4 rounded-lg border border-neutral-gray1 bg-white"
         >
           <div className="gap-4 flex items-start">
-            <div className="size-12 bg-gray-200 shrink-0 animate-pulse rounded-full" />
+            <div className="size-12 bg-gray-200 animate-pulse shrink-0 rounded-full" />
             <div className="min-w-0 flex-1">
               <div className="mb-2 h-4 bg-gray-200 animate-pulse rounded" />
-              <div className="mb-2 h-3 bg-gray-200 w-2/3 animate-pulse rounded" />
-              <div className="mb-1 h-3 bg-gray-200 w-full animate-pulse rounded" />
-              <div className="h-3 bg-gray-200 w-3/4 animate-pulse rounded" />
+              <div className="mb-2 h-3 bg-gray-200 animate-pulse w-2/3 rounded" />
+              <div className="mb-1 h-3 bg-gray-200 animate-pulse w-full rounded" />
+              <div className="h-3 bg-gray-200 animate-pulse w-3/4 rounded" />
             </div>
           </div>
         </div>

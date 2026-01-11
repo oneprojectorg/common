@@ -54,7 +54,7 @@ function ProposalEditPageSkeleton() {
             <div className="h-8 w-32 bg-gray-200 animate-pulse rounded" />
             <div className="h-8 w-28 bg-gray-200 animate-pulse rounded" />
           </div>
-          <div className="h-96 bg-gray-200 w-full animate-pulse rounded" />
+          <div className="h-96 bg-gray-200 animate-pulse w-full rounded" />
         </div>
       </div>
     </div>

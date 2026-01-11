@@ -130,7 +130,7 @@ const ProfileAbout = ({
         {email || website ? (
           <section className="gap-2 flex flex-col">
             <Header3>{t('Contact')}</Header3>
-            <div className="text-teal flex flex-col">
+            <div className="flex flex-col text-teal">
               {website ? (
                 <ContactLink>
                   <LuGlobe />

@@ -52,7 +52,7 @@ export const CalendarHeader = () => {
       <Button
         variant="icon"
         slot="previous"
-        className="pressed:bg-neutral-offWhite pressed:shadow-none h-8 w-8 p-0 rounded-none bg-white text-neutral-charcoal shadow-none hover:bg-neutral-offWhite"
+        className="h-8 w-8 p-0 rounded-none bg-white text-neutral-charcoal shadow-none hover:bg-neutral-offWhite pressed:bg-neutral-offWhite pressed:shadow-none"
       >
         {direction === 'rtl' ? (
           <ChevronRight className="size-4" aria-hidden />
@@ -64,7 +64,7 @@ export const CalendarHeader = () => {
       <Button
         variant="icon"
         slot="next"
-        className="pressed:bg-neutral-offWhite pressed:shadow-none h-8 w-8 p-0 rounded-none bg-white text-neutral-charcoal shadow-none hover:bg-neutral-offWhite"
+        className="h-8 w-8 p-0 rounded-none bg-white text-neutral-charcoal shadow-none hover:bg-neutral-offWhite pressed:bg-neutral-offWhite pressed:shadow-none"
       >
         {direction === 'rtl' ? (
           <ChevronLeft className="size-4" aria-hidden />

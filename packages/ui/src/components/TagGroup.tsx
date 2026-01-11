@@ -116,7 +116,7 @@ export const TagGroup = <T extends object>({
 
 const removeButtonStyles = tv({
   extend: focusRing,
-  base: 'pressed:bg-white/20 p-0.5 flex cursor-default items-center justify-center rounded-full transition-[background-color] hover:bg-white/10',
+  base: 'p-0.5 flex cursor-default items-center justify-center rounded-full transition-[background-color] hover:bg-white/10 pressed:bg-white/20',
 });
 
 export const Tag = ({ children, color, ...props }: TagProps) => {

@@ -78,7 +78,7 @@ export const fieldBorderStyles = tv({
 
 export const fieldGroupStyles = tv({
   extend: focusRing,
-  base: 'placeholder:text-teal group flex items-center bg-white disabled:placeholder:text-lightGray',
+  base: 'group flex items-center bg-white placeholder:text-teal disabled:placeholder:text-lightGray',
   variants: fieldBorderStyles.variants,
 });
 

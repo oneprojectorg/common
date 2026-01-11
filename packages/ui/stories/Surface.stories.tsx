@@ -68,7 +68,7 @@ export const Example = () => (
       <Surface>
         <div className="p-6">
           <div className="mb-4 gap-4 flex items-center">
-            <div className="bg-teal size-12 font-medium flex items-center justify-center rounded-full text-white">
+            <div className="size-12 font-medium flex items-center justify-center rounded-full bg-teal text-white">
               JS
             </div>
             <div>
@@ -90,7 +90,7 @@ export const Example = () => (
               <div className="text-neutral-600 text-xs">Following</div>
             </div>
           </div>
-          <button className="bg-teal px-4 py-2 font-medium w-full rounded-md text-sm text-white">
+          <button className="px-4 py-2 font-medium w-full rounded-md bg-teal text-sm text-white">
             Follow
           </button>
         </div>
@@ -158,7 +158,7 @@ export const List = () => (
               Description for item {i + 1}
             </p>
           </div>
-          <button className="text-teal text-sm">Edit</button>
+          <button className="text-sm text-teal">Edit</button>
         </div>
       </Surface>
     ))}

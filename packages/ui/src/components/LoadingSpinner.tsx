@@ -3,11 +3,11 @@ import { tv } from 'tailwind-variants';
 import { cn } from '../lib/utils';
 
 const spinnerVariants = tv({
-  base: 'aspect-square h-full w-auto animate-spin',
+  base: 'animate-spin aspect-square h-full w-auto',
   variants: {
     color: {
       gray: 'fill-offWhite text-neutral-gray4',
-      teal: 'text-teal fill-teal-200',
+      teal: 'fill-teal-200 text-teal',
     },
     size: {
       md: 'size-6',

@@ -25,7 +25,7 @@ const RelationshipCount = ({ profile }: { profile: Organization }) => {
   return (
     count > 0 && (
       <Link href={`/org/${profile.profile.slug}/relationships`}>
-        <span className="text-teal font-bold">
+        <span className="font-bold text-teal">
           {count} {pluralize(t('relationship'), count)}
         </span>
       </Link>

@@ -150,7 +150,7 @@ export const MatchingOrganizationsForm = ({
                   <Header3 className="text-base text-neutral-charcoal">
                     {org.profile?.name}
                   </Header3>
-                  <div className="text-teal gap-1 flex flex-col">
+                  <div className="gap-1 flex flex-col text-teal">
                     {org.profile?.website ? (
                       <ContactLink className="h-auto">
                         <LuGlobe className="size-4" />
@@ -254,7 +254,7 @@ export const MatchingOrganizationsForm = ({
             </Description>
           </div>
           <a
-            className="text-teal text-center hover:underline"
+            className="text-center text-teal hover:underline"
             href="mailto:support@oneproject.org"
             rel="noopener noreferrer"
           >

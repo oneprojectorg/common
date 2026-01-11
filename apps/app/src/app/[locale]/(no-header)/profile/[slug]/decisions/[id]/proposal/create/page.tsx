@@ -70,9 +70,9 @@ function CreateProposalPageSkeleton() {
             <div className="h-8 w-28 bg-gray-200 animate-pulse rounded" />
           </div>
           <div className="space-y-4">
-            <div className="h-4 bg-gray-200 w-full animate-pulse rounded" />
-            <div className="h-4 bg-gray-200 w-3/4 animate-pulse rounded" />
-            <div className="h-4 bg-gray-200 w-1/2 animate-pulse rounded" />
+            <div className="h-4 bg-gray-200 animate-pulse w-full rounded" />
+            <div className="h-4 bg-gray-200 animate-pulse w-3/4 rounded" />
+            <div className="h-4 bg-gray-200 animate-pulse w-1/2 rounded" />
           </div>
         </div>
       </div>

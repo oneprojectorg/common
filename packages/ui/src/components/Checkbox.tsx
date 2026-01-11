@@ -63,10 +63,10 @@ const boxStyles = tv({
   variants: {
     isSelected: {
       false: '',
-      true: 'bg-teal border-none text-neutral-offWhite',
+      true: 'border-none bg-teal text-neutral-offWhite',
     },
     isInvalid: {
-      true: 'group-pressed:[--color:var(--color-red-700)] [--color:var(--color-red-600)]',
+      true: '[--color:var(--color-red-600)] group-pressed:[--color:var(--color-red-700)]',
     },
     isDisabled: {
       true: '[--color:var(--color-neutral-700)]',

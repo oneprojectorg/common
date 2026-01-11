@@ -388,7 +388,7 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
           isDismissable={true}
           isKeyboardDismissDisabled={false}
           overlayClassName="p-0 items-end justify-center animate-in fade-in-0 duration-300"
-          className="m-0 h-auto w-screen max-w-none rounded-t rounded-b-none border-0 outline-0 duration-300 animate-in ease-out slide-in-from-bottom-full"
+          className="m-0 ease-out h-auto w-screen max-w-none animate-in rounded-t rounded-b-none border-0 outline-0 duration-300 slide-in-from-bottom-full"
         >
           <ModalBody className="pb-safe p-0">
             <Menu className="p-4 pb-8 flex min-w-full flex-col border-t-0">

@@ -10,7 +10,7 @@ import { Popover } from './Popover';
 import { ReactionTooltip } from './ReactionTooltip';
 
 const reactionButtonStyle = tv({
-  base: 'pressed:bg-neutral-gray2 gap-1 p-1 font-normal leading-6 flex items-center justify-center rounded-full border-0 bg-neutral-offWhite text-xs outline-hidden transition-colors duration-200 hover:bg-neutral-gray1 focus-visible:outline-1 focus-visible:-outline-offset-1 focus-visible:outline-data-blue',
+  base: 'gap-1 p-1 font-normal leading-6 flex items-center justify-center rounded-full border-0 bg-neutral-offWhite text-xs outline-hidden transition-colors duration-200 hover:bg-neutral-gray1 focus-visible:outline-1 focus-visible:-outline-offset-1 focus-visible:outline-data-blue pressed:bg-neutral-gray2',
   variants: {
     size: {
       small: 'h-8 min-w-8 px-2',
