@@ -244,10 +244,7 @@ export const OrganizationCardListSkeleton = () => {
   return (
     <div className="gap-8 pb-6 md:grid-cols-2 grid grid-cols-1">
       {Array.from({ length: 6 }).map((_, index) => (
-        <div
-          key={index}
-          className="gap-4 p-6 flex w-full rounded border"
-        >
+        <div key={index} className="gap-4 p-6 flex w-full rounded border">
           <div className="shrink-0">
             <OrganizationAvatarSkeleton className="size-20" />
           </div>

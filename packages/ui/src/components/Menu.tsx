@@ -120,10 +120,7 @@ export const MenuItemSimple = (
 
 export const MenuSeparator = (props: SeparatorProps) => {
   return (
-    <Separator
-      {...props}
-      className={cn('my-1 border-b', props.className)}
-    />
+    <Separator {...props} className={cn('my-1 border-b', props.className)} />
   );
 };
 

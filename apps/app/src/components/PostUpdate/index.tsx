@@ -679,8 +679,7 @@ const PostUpdateWithUser = ({
           <div
             className={cn(
               'gap-2 flex w-full items-center justify-between',
-              (content || fileUpload.filePreviews?.length) &&
-                'py-2 border-t',
+              (content || fileUpload.filePreviews?.length) && 'py-2 border-t',
             )}
           >
             <button

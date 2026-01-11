@@ -222,8 +222,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
                   selected={selectedIndex === 0}
                   className={cn(
                     'py-2',
-                    mergedProfileResults?.length &&
-                      'border-b',
+                    mergedProfileResults?.length && 'border-b',
                   )}
                 >
                   <Link
@@ -269,8 +268,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
                 selected={selectedIndex === 0}
                 className={cn(
                   'py-2',
-                  mergedProfileResults?.length &&
-                    'border-b',
+                  mergedProfileResults?.length && 'border-b',
                 )}
               >
                 <Link

@@ -63,10 +63,7 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
         <div className="gap-2 py-1 sm:gap-6 flex flex-wrap items-center text-xs">
           {owner && (
             <div className="gap-1 flex items-center">
-              <Avatar
-                placeholder={owner.name}
-                className="size-4 border"
-              >
+              <Avatar placeholder={owner.name} className="size-4 border">
                 {owner.avatarImage?.name ? (
                   <Image
                     src={getPublicUrl(owner.avatarImage.name) ?? ''}
