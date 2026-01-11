@@ -34,22 +34,22 @@ export function ProposalEditorLayout({
   return (
     <div className="flex min-h-screen flex-col bg-white">
       {/* Header */}
-      <div className="border-neutral-gray1 grid grid-cols-3 items-center gap-2 border-b px-4 py-4 sm:px-6">
+      <div className="gap-2 px-4 py-4 sm:px-6 grid grid-cols-3 items-center border-b border-neutral-gray1">
         <button
           onClick={() => router.push(backHref)}
-          className="text-primary-teal hover:text-primary-tealBlack flex items-center gap-2"
+          className="gap-2 flex items-center text-primary-teal hover:text-primary-tealBlack"
         >
-          <LuArrowLeft className="sm:text-primary-teal text-neutral-charcoal size-6 sm:size-4" />
-          <span className="hidden sm:block">Back</span>
+          <LuArrowLeft className="sm:text-primary-teal size-6 sm:size-4 text-neutral-charcoal" />
+          <span className="sm:block hidden">Back</span>
         </button>
 
-        <div className="text-neutral-black flex justify-center text-lg font-medium">
-          <span className="hidden sm:block">
+        <div className="font-medium flex justify-center text-lg text-neutral-black">
+          <span className="sm:block hidden">
             {title ? title : 'Untitled Proposal'}
           </span>
         </div>
 
-        <div className="flex items-center justify-end gap-8">
+        <div className="gap-8 flex items-center justify-end">
           <Button
             color="primary"
             variant="icon"
@@ -61,18 +61,18 @@ export function ProposalEditorLayout({
             {isSubmitting ? <LoadingSpinner /> : <LuCheck />}
             {isEditMode ? (
               <>
-                <span className="inline lg:hidden">{t('Update')}</span>
-                <span className="hidden lg:inline">{t('Update Proposal')}</span>
+                <span className="lg:hidden inline">{t('Update')}</span>
+                <span className="lg:inline hidden">{t('Update Proposal')}</span>
               </>
             ) : (
               <>
-                <span className="hidden sm:block">{t('Submit Proposal')}</span>
+                <span className="sm:block hidden">{t('Submit Proposal')}</span>
                 <span className="sm:hidden">{t('Submit')}</span>{' '}
               </>
             )}
           </Button>
           <LocaleChooser />
-          <UserAvatarMenu className="hidden sm:block" />
+          <UserAvatarMenu className="sm:block hidden" />
         </div>
       </div>
 

@@ -4,7 +4,7 @@ import { FormalSection } from '../FormalSection';
 
 export const PrivacyPolicyContentShort = () => {
   return (
-    <div className="relative flex w-full flex-col gap-8 sm:pb-20">
+    <div className="gap-8 sm:pb-20 relative flex w-full flex-col">
       <FormalSection>
         <p className="italic">
           This is a summarized version of our Privacy Policy. Please read the
@@ -37,7 +37,7 @@ export const PrivacyPolicyContentShort = () => {
           platform. We aim to collect the bare minimum to run the platform. The
           following are the categories of information that we collect:
         </p>
-        <ul className="mb-4 list-disc pl-6">
+        <ul className="mb-4 pl-6 list-disc">
           <li className="mb-4">
             Basic Information - Profile information including name, username,
             email, organization details (mission, focus areas, preferred
@@ -77,7 +77,7 @@ export const PrivacyPolicyContentShort = () => {
           All of the data we collect is in service of running the platform and
           improving the offerings and functionality.
         </p>
-        <ul className="mb-4 list-disc pl-6">
+        <ul className="mb-4 pl-6 list-disc">
           <li className="mb-2">To improve the Common Platform tools</li>
           <li className="mb-2">
             To help you collaborate and connect with other organizations in the
@@ -96,7 +96,7 @@ export const PrivacyPolicyContentShort = () => {
         <p className="mb-4">
           You have full control over your personal information on Common.
         </p>
-        <ul className="mb-4 list-disc pl-6">
+        <ul className="mb-4 pl-6 list-disc">
           <li className="mb-2">You always own your data</li>
           <li className="mb-2">
             You can access, correct, or delete your information
@@ -115,7 +115,7 @@ export const PrivacyPolicyContentShort = () => {
           data collected on the platform is a top priority. Here are some of the
           practices and mechanisms we are putting in place to protect your data:
         </p>
-        <ul className="mb-4 list-disc pl-6">
+        <ul className="mb-4 pl-6 list-disc">
           <li className="mb-2">
             Common will only be accessible to invited partners and will remain a
             closed network for the foreseeable future.
@@ -148,7 +148,7 @@ export const PrivacyPolicyContentShort = () => {
           We take a strict approach to sharing your personal information and
           only do so with your consent.
         </p>
-        <ul className="mb-4 list-disc pl-6">
+        <ul className="mb-4 pl-6 list-disc">
           <li className="mb-2">We never sell, rent, or monetize your data</li>
           <li className="mb-2">
             We only share your data with your explicit opt-in consent.
@@ -171,7 +171,7 @@ export const PrivacyPolicyContentShort = () => {
 
       <FormalSection>
         <Header3 className="font-serif">Changes to This Policy</Header3>
-        <ul className="mb-4 list-disc pl-6">
+        <ul className="mb-4 pl-6 list-disc">
           <li className="mb-2">
             We'll notify you 30 days before any significant changes
           </li>

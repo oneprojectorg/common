@@ -20,14 +20,14 @@ export const ProfileOrganizationsSuspense = ({
 
   if (!organizations || organizations.length === 0) {
     return (
-      <div className="text-neutral-gray4 flex flex-col items-center py-8 text-center">
+      <div className="py-8 flex flex-col items-center text-center text-neutral-gray4">
         <p>No organizations found for this profile</p>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="gap-6 flex flex-col">
       <OrganizationSummaryList organizations={organizations} />
     </div>
   );
@@ -35,20 +35,20 @@ export const ProfileOrganizationsSuspense = ({
 
 const OrganizationSummarySkeleton = () => {
   return (
-    <div className="flex flex-col gap-6">
+    <div className="gap-6 flex flex-col">
       {Array.from({ length: 3 }).map((_, index) => (
         <div key={index}>
-          <div className="flex items-start gap-2 py-2 sm:gap-6">
+          <div className="gap-2 py-2 sm:gap-6 flex items-start">
             <OrganizationAvatarSkeleton className="size-8 sm:size-12" />
-            <div className="flex flex-col gap-3">
-              <div className="flex flex-col gap-2">
+            <div className="gap-3 flex flex-col">
+              <div className="gap-2 flex flex-col">
                 <Skeleton className="h-5 w-40" />
                 <Skeleton className="h-4 w-32" />
               </div>
               <SkeletonLine
                 lines={2}
                 randomWidth={true}
-                className="w-full max-w-md"
+                className="max-w-md w-full"
               />
             </div>
           </div>

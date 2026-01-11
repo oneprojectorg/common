@@ -15,7 +15,7 @@ const Dialog = ({ className, ...props }: DialogProps) => {
     <RACDialog
       {...props}
       className={cn(
-        'relative max-h-[inherit] overflow-auto p-0 outline outline-0 [[data-placement]>&]:p-4',
+        'p-0 [[data-placement]>&]:p-4 relative max-h-[inherit] overflow-auto outline outline-0',
         className,
       )}
     />
@@ -33,7 +33,7 @@ const DialogHeader = ({
     <Heading
       slot="title"
       className={cn(
-        'my-0 text-lg font-medium leading-6 text-neutral-800',
+        'my-0 font-medium leading-6 text-neutral-800 text-lg',
         className,
       )}
     >
@@ -50,7 +50,7 @@ const DialogDescription = ({
   className?: string;
 }) => {
   return (
-    <p className={cn('mt-3 text-sm text-neutral-600', className)}>{children}</p>
+    <p className={cn('mt-3 text-neutral-600 text-sm', className)}>{children}</p>
   );
 };
 
@@ -62,7 +62,7 @@ const DialogFooter = ({
   className?: string;
 }) => {
   return (
-    <div className={cn('mt-6 flex justify-end gap-2', className)}>
+    <div className={cn('mt-6 gap-2 flex justify-end', className)}>
       {children}
     </div>
   );

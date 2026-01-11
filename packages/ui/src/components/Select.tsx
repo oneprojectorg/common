@@ -23,7 +23,7 @@ import { Popover } from './Popover';
 import type { PopoverProps } from './Popover';
 
 const selectStyles = tv({
-  base: 'border-neutral-gray1 text-neutral-black group-data-[invalid=true]:outline-functional-red placeholder:text-neutral-gray4 hover:border-neutral-gray2 focus-visible:outline-data-blue active:border-neutral-gray4 disabled:border-neutral-gray2 flex min-w-0 flex-row justify-between rounded-md border text-base leading-3 outline outline-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 active:outline group-data-[invalid=true]:outline-1',
+  base: 'min-w-0 leading-3 flex flex-row justify-between rounded-md border border-neutral-gray1 text-base text-neutral-black outline outline-0 group-data-[invalid=true]:outline-1 group-data-[invalid=true]:outline-functional-red placeholder:text-neutral-gray4 hover:border-neutral-gray2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue active:border-neutral-gray4 active:outline disabled:border-neutral-gray2',
   variants: {
     isDisabled: {
       true: 'bg-neutral-gray1 text-neutral-gray4',
@@ -31,10 +31,10 @@ const selectStyles = tv({
     },
     variant: {
       default: '',
-      pill: 'bg-primary-tealWhite text-primary-teal hover:text-primary-tealBlack focus-visible:outline-data-blue active:text-primary-tealBlack h-auto border-0 hover:bg-teal-50 active:bg-teal-50',
+      pill: 'h-auto border-0 bg-primary-tealWhite text-primary-teal hover:bg-teal-50 hover:text-primary-tealBlack focus-visible:outline-data-blue active:bg-teal-50 active:text-primary-tealBlack',
     },
     size: {
-      small: 'h-8 rounded-sm p-2 px-3',
+      small: 'h-8 p-2 px-3 rounded-sm',
       medium: 'h-10 p-3',
     },
   },
@@ -99,7 +99,7 @@ export const Select = <T extends object>({
     <AriaSelect
       {...props}
       isInvalid={!!errorMessage && errorMessage.length > 0}
-      className={cn('flex flex-col gap-1', props.className)}
+      className={cn('gap-1 flex flex-col', props.className)}
     >
       {label && (
         <Label className="group-data-[invalid=true]:text-functional-red">
@@ -117,11 +117,11 @@ export const Select = <T extends object>({
             props.buttonClassName,
           )}
         >
-          <span className="flex h-full w-full flex-1 items-center justify-between gap-1">
+          <span className="gap-1 flex h-full w-full flex-1 items-center justify-between">
             <SelectValue
               className={cn(
                 props.selectValueClassName,
-                'text-neutral-gray4 flex h-full min-w-0 flex-1 items-center text-ellipsis',
+                'min-w-0 flex h-full flex-1 items-center text-ellipsis text-neutral-gray4',
               )}
             />
             {icon ?? (
@@ -134,7 +134,7 @@ export const Select = <T extends object>({
       <FieldError>{errorMessage}</FieldError>
       <Popover
         className={cn(
-          'border-neutral-gray1 absolute z-10 !max-h-60 min-w-[--trigger-width] max-w-56 overflow-hidden rounded border bg-white p-2 shadow',
+          '!max-h-60 max-w-56 p-2 absolute z-10 min-w-[--trigger-width] overflow-hidden rounded border border-neutral-gray1 bg-white shadow',
           popoverClassName,
         )}
         {...popoverProps}
@@ -142,7 +142,7 @@ export const Select = <T extends object>({
         <ListBox
           items={items}
           className={cn(
-            'outline-hidden max-h-60 overflow-auto py-1',
+            'max-h-60 py-1 overflow-auto outline-hidden',
             props.listBoxClassName,
           )}
           selectionMode={selectionMode}

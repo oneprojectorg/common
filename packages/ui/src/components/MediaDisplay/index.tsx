@@ -31,7 +31,7 @@ export const MediaDisplay = ({
 
   if (title && mimeType?.match(/application\/pdf/)) {
     detailComponents.push(
-      <Header3 key="title" className="text-neutral-black text-base">
+      <Header3 key="title" className="text-base text-neutral-black">
         {title}
       </Header3>,
     );
@@ -42,7 +42,7 @@ export const MediaDisplay = ({
   }
   if (site) {
     detailComponents.push(
-      <div key="site" className="text-neutral-gray4 flex flex-col text-xs">
+      <div key="site" className="flex flex-col text-xs text-neutral-gray4">
         {site}
       </div>,
     );
@@ -50,7 +50,7 @@ export const MediaDisplay = ({
 
   if (description) {
     detailComponents.push(
-      <p key="description" className="text-neutral-gray4 text-sm">
+      <p key="description" className="text-sm text-neutral-gray4">
         {description.length > 200
           ? description.slice(0, 200) + '...'
           : description}
@@ -65,7 +65,7 @@ export const MediaDisplay = ({
         <hr key="link-hr" className="my-2" />
         <div
           key="link"
-          className="text-neutral-gray4 flex items-center gap-2 text-xs"
+          className="gap-2 flex items-center text-xs text-neutral-gray4"
         >
           <LuGlobe className="size-4" /> <span>{url}</span>
         </div>
@@ -76,8 +76,8 @@ export const MediaDisplay = ({
   if (mimeType?.match(/application\/pdf/)) {
     detailComponents.push(
       <hr key="format-hr" className="my-2" />,
-      <div key="format" className="text-neutral-gray4 flex gap-1 text-sm">
-        <LuFileText className="text-neutral-gray4 size-4" />
+      <div key="format" className="gap-1 flex text-sm text-neutral-gray4">
+        <LuFileText className="size-4 text-neutral-gray4" />
         <span>{size ? `${formatFileSize(size)} • PDF` : 'PDF'}</span>
       </div>,
     );

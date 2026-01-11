@@ -60,7 +60,7 @@ export const RemoveRelationshipModal = ({
                 onPress={close}
                 color="neutral"
                 type="button"
-                className="w-full sm:w-fit"
+                className="sm:w-fit w-full"
               >
                 Cancel
               </Button>
@@ -68,7 +68,7 @@ export const RemoveRelationshipModal = ({
                 color="destructive"
                 type="submit"
                 isPending={isSubmitting}
-                className="w-full sm:w-fit"
+                className="sm:w-fit w-full"
               >
                 {isSubmitting ? <LoadingSpinner /> : 'Remove'}
               </Button>

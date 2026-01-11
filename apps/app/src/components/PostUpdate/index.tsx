@@ -594,7 +594,7 @@ const PostUpdateWithUser = ({
   }
 
   return (
-    <div className={cn('flex flex-col gap-2 sm:flex', className)}>
+    <div className={cn('gap-2 sm:flex flex flex-col', className)}>
       <FeedItem>
         {organization ? (
           <OrganizationAvatar
@@ -607,12 +607,12 @@ const PostUpdateWithUser = ({
             className="size-8 bg-white"
           />
         ) : (
-          <div className="bg-neutral-gray1 size-8 rounded-full" />
+          <div className="size-8 rounded-full bg-neutral-gray1" />
         )}
         <FeedMain className="relative">
-          <Form onSubmit={handleSubmit} className="flex w-full flex-col gap-2">
+          <Form onSubmit={handleSubmit} className="gap-2 flex w-full flex-col">
             <TextArea
-              className="size-full h-6 overflow-y-hidden"
+              className="h-6 size-full overflow-y-hidden"
               variant="borderless"
               ref={textareaRef as RefObject<HTMLTextAreaElement>}
               placeholder={placeholder || t('Post an update…')}
@@ -626,9 +626,9 @@ const PostUpdateWithUser = ({
               {fileUpload.filePreviews.map((filePreview) => (
                 <div key={filePreview.id} className="relative">
                   {filePreview.uploading ? (
-                    <Skeleton className="relative flex aspect-video w-full items-center justify-center rounded text-white" />
+                    <Skeleton className="aspect-video relative flex w-full items-center justify-center rounded text-white" />
                   ) : filePreview.file.type.startsWith('image/') ? (
-                    <div className="bg-neutral-gray1 relative flex aspect-video w-full items-center justify-center rounded text-white">
+                    <div className="aspect-video relative flex w-full items-center justify-center rounded bg-neutral-gray1 text-white">
                       {filePreview.error ? (
                         <p className="text-sm">{filePreview.error}</p>
                       ) : (
@@ -640,7 +640,7 @@ const PostUpdateWithUser = ({
                       )}
                       <Button
                         onPress={() => fileUpload.removeFile(filePreview.id)}
-                        className="absolute right-2 top-2 size-6 rounded-full p-0 opacity-80 hover:opacity-100 focus:outline-1"
+                        className="right-2 top-2 size-6 p-0 absolute rounded-full opacity-80 hover:opacity-100 focus:outline-1"
                         size="small"
                         color="neutral"
                       >
@@ -657,7 +657,7 @@ const PostUpdateWithUser = ({
                       />
                       <Button
                         onPress={() => fileUpload.removeFile(filePreview.id)}
-                        className="absolute right-2 top-2 size-6 rounded-full p-0 opacity-80 hover:opacity-100 focus:outline-1"
+                        className="right-2 top-2 size-6 p-0 absolute rounded-full opacity-80 hover:opacity-100 focus:outline-1"
                         size="small"
                         color="neutral"
                       >
@@ -678,9 +678,9 @@ const PostUpdateWithUser = ({
           )}
           <div
             className={cn(
-              'flex w-full items-center justify-between gap-2',
+              'gap-2 flex w-full items-center justify-between',
               (content || fileUpload.filePreviews?.length) &&
-                'border-neutral-gray1 border-t py-2',
+                'py-2 border-t border-neutral-gray1',
             )}
           >
             <button
@@ -702,13 +702,13 @@ const PostUpdateWithUser = ({
                 };
                 input.click();
               }}
-              className="text-neutral-charcoal flex items-center gap-2 text-base transition-colors hover:text-black"
+              className="gap-2 flex items-center text-base text-neutral-charcoal transition-colors hover:text-black"
               disabled={fileUpload.filePreviews.length >= 1}
             >
               <LuImage className="size-4" />
               {t('Media')}
             </button>
-            <div className="text-neutral-charcoal flex items-center gap-2">
+            <div className="gap-2 flex items-center text-neutral-charcoal">
               <TextCounter text={content} max={characterLimit} />
               {lastFailedPost && (
                 <Button
@@ -793,7 +793,7 @@ export const PostUpdate = ({
     !(currentProfileId && !organization) &&
     (!currentProfileId || organization?.profile?.id !== currentProfileId)
   ) {
-    return <div className={cn(className, 'border-none p-0')} />;
+    return <div className={cn(className, 'p-0 border-none')} />;
   }
 
   // TODO: Ugly! Still a stopgap until we migrate off of organizationId

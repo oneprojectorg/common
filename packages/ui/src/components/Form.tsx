@@ -8,7 +8,7 @@ export const Form = (props: FormProps) => {
   return (
     <RACForm
       {...props}
-      className={twMerge('flex flex-col gap-4', props.className)}
+      className={twMerge('gap-4 flex flex-col', props.className)}
     />
   );
 };

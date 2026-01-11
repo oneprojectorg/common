@@ -128,7 +128,7 @@ const AddUserToOrgModalContent = ({
       {/* Body */}
       <ModalBody className="space-y-4">
         {/* User Info */}
-        <div className="bg-neutral-gray0 rounded-lg p-4">
+        <div className="bg-neutral-gray0 p-4 rounded-lg">
           <ProfileItem
             avatar={
               <Avatar
@@ -155,7 +155,7 @@ const AddUserToOrgModalContent = ({
         {user.organizationUsers && user.organizationUsers.length > 0 ? (
           <>
             <div>
-              <div className="text-neutral-black mb-2 text-sm font-medium">
+              <div className="mb-2 font-medium text-sm text-neutral-black">
                 {t('platformAdmin_addUserToOrg_currentOrganizations')}
               </div>
               <div className="space-y-2">
@@ -172,7 +172,7 @@ const AddUserToOrgModalContent = ({
                   return (
                     <Surface
                       key={orgUser.organizationId}
-                      className="flex flex-col gap-2 p-3"
+                      className="gap-2 p-3 flex flex-col"
                     >
                       <OrganizationListItem
                         organization={{
@@ -182,7 +182,7 @@ const AddUserToOrgModalContent = ({
                           whereWeWork: orgUser.organization.whereWeWork ?? [],
                         }}
                       >
-                        <div className="mt-2 flex gap-2">
+                        <div className="mt-2 gap-2 flex">
                           {roles.map((role) => (
                             <Chip key={role}>{role}</Chip>
                           ))}
@@ -217,7 +217,7 @@ const AddUserToOrgModalContent = ({
           isPending={isSubmitting}
           isDisabled={!selectedOrgId || !selectedRoleId || isSubmitting}
         >
-          <div className="flex gap-2">
+          <div className="gap-2 flex">
             {isSubmitting ? <LoadingSpinner /> : null}
             {t('platformAdmin_addUserToOrg_submitButton')}
           </div>
@@ -323,7 +323,7 @@ const OrganizationAndRoleSelection = ({
             <div>
               <div className="leading-base text-neutral-black">{role.name}</div>
               {role.description && (
-                <div className="text-neutral-charcoal text-xs">
+                <div className="text-xs text-neutral-charcoal">
                   {role.description}
                 </div>
               )}

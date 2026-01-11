@@ -42,7 +42,7 @@ export function ProposalCard({
   return (
     <Surface
       className={cn(
-        'relative flex w-full min-w-80 flex-col justify-between gap-4 p-6',
+        'min-w-80 gap-4 p-6 relative flex w-full flex-col justify-between',
         className,
       )}
       {...props}
@@ -81,8 +81,8 @@ export function ProposalCardHeader({
   className?: string;
 }) {
   return (
-    <div className={cn('flex flex-col gap-2', className)}>
-      <div className="flex max-w-full items-start justify-between gap-2">
+    <div className={cn('gap-2 flex flex-col', className)}>
+      <div className="gap-2 flex max-w-full items-start justify-between">
         <ProposalCardTitle proposal={proposal} viewHref={viewHref} />
         {menu}
       </div>
@@ -118,7 +118,7 @@ export function ProposalCardTitle({
         className={cn(
           titleClasses,
           className,
-          'hover:text-primary-teal transition-colors',
+          'transition-colors hover:text-primary-teal',
         )}
       >
         {titleText}
@@ -152,7 +152,7 @@ export function ProposalCardBudget({
   return (
     <span
       className={cn(
-        'text-title-base text-neutral-charcoal font-serif',
+        'font-serif text-title-base text-neutral-charcoal',
         className,
       )}
     >
@@ -172,7 +172,7 @@ export function ProposalCardMeta({
   className?: string;
 }) {
   return (
-    <div className={cn('flex items-center gap-2', className)}>
+    <div className={cn('gap-2 flex items-center', className)}>
       <ProposalCardAuthor proposal={proposal} withLink={withLink} />
       <ProposalCardCategory proposal={proposal} />
       <ProposalCardStatus proposal={proposal} />
@@ -212,12 +212,12 @@ export function ProposalCardAuthor({
       {withLink ? (
         <Link
           href={`/profile/${proposal.submittedBy.slug}`}
-          className="text-neutral-charcoal max-w-32 truncate text-nowrap text-base"
+          className="max-w-32 truncate text-base text-nowrap text-neutral-charcoal"
         >
           {proposal.submittedBy.name}
         </Link>
       ) : (
-        <div className="text-neutral-charcoal max-w-32 truncate text-nowrap text-base">
+        <div className="max-w-32 truncate text-base text-nowrap text-neutral-charcoal">
           {proposal.submittedBy.name}
         </div>
       )}
@@ -245,7 +245,7 @@ export function ProposalCardCategory({
       <Bullet />
       <Chip
         className={cn(
-          'min-w-6 max-w-96 overflow-hidden overflow-ellipsis text-nowrap',
+          'min-w-6 max-w-96 overflow-hidden text-nowrap overflow-ellipsis',
           className,
         )}
       >
@@ -273,7 +273,7 @@ export function ProposalCardStatus({
       <>
         <Bullet />
         <span
-          className={cn('text-primary-orange2 text-nowrap text-sm', className)}
+          className={cn('text-sm text-nowrap text-primary-orange2', className)}
         >
           {t('Hidden')}
         </span>
@@ -302,7 +302,7 @@ export function ProposalCardStatus({
       <>
         <Bullet />
         <span
-          className={cn('text-neutral-charcoal text-nowrap text-sm', className)}
+          className={cn('text-sm text-nowrap text-neutral-charcoal', className)}
         >
           {t('Not shortlisted')}
         </span>
@@ -330,7 +330,7 @@ export function ProposalCardDescription({
   return (
     <p
       className={cn(
-        'text-neutral-charcoal mb-4 line-clamp-3 text-base',
+        'mb-4 line-clamp-3 text-base text-neutral-charcoal',
         className,
       )}
     >
@@ -353,19 +353,19 @@ export function ProposalCardMetrics({
   return (
     <div
       className={cn(
-        'text-neutral-gray4 flex w-full items-center justify-between gap-4 text-base',
+        'gap-4 flex w-full items-center justify-between text-base text-neutral-gray4',
         className,
       )}
     >
-      <span className="flex items-center gap-1 truncate">
+      <span className="gap-1 flex items-center truncate">
         <Heart className="size-4" />
         {proposal.likesCount || 0} {t('Likes')}
       </span>
-      <span className="flex items-center gap-1 truncate">
+      <span className="gap-1 flex items-center truncate">
         <MessageCircle className="size-4" />
         {proposal.commentsCount || 0} {t('Comments')}
       </span>
-      <span className="flex items-center gap-1 truncate">
+      <span className="gap-1 flex items-center truncate">
         <LuBookmark className="size-4" />
         {proposal.followersCount || 0} {t('Followers')}
       </span>
@@ -384,7 +384,7 @@ export function ProposalCardFooter({
   className?: string;
 }) {
   return (
-    <div className={cn('flex flex-col justify-between gap-4', className)}>
+    <div className={cn('gap-4 flex flex-col justify-between', className)}>
       {children}
     </div>
   );

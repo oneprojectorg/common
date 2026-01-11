@@ -91,11 +91,11 @@ export const UsersTable = () => {
 
   return (
     <div className="mt-8">
-      <div className="mb-4 flex items-center justify-between gap-4">
-        <h2 className="text-md text-neutral-black font-serif">
+      <div className="mb-4 gap-4 flex items-center justify-between">
+        <h2 className="text-md font-serif text-neutral-black">
           {t('platformAdmin_allUsers')}
         </h2>
-        <div className="flex items-center gap-2">
+        <div className="gap-2 flex items-center">
           <div className="w-64">
             <SearchField
               aria-label={t('platformAdmin_searchUsersPlaceholder')}
@@ -146,7 +146,7 @@ const UsersTableHeader = () => {
   return (
     <div
       className={cn(
-        'bg-neutral-gray0 border-neutral-gray1 border-b py-3',
+        'bg-neutral-gray0 py-3 border-b border-neutral-gray1',
         USERS_TABLE_GRID,
       )}
     >
@@ -154,7 +154,7 @@ const UsersTableHeader = () => {
         <div
           key={heading}
           className={cn(
-            'text-neutral-charcoal text-sm font-normal',
+            'font-normal text-sm text-neutral-charcoal',
             idx === columnHeadings.length - 1 && 'text-right',
           )}
         >
@@ -201,7 +201,7 @@ const UsersTableContent = ({ searchQuery }: { searchQuery: string }) => {
 
   return (
     <>
-      <div className="divide-neutral-gray1 divide-y">
+      <div className="divide-y divide-neutral-gray1">
         {users.map((user) => (
           <UsersRow key={user.id} user={user} />
         ))}
@@ -225,7 +225,7 @@ const UsersTableContent = ({ searchQuery }: { searchQuery: string }) => {
 /** Loading skeleton for table content only */
 const UsersTableContentSkeleton = () => {
   return (
-    <div className="divide-neutral-gray1 divide-y">
+    <div className="divide-y divide-neutral-gray1">
       {[...Array(5)].map((_, i) => (
         <div key={i} className={cn('py-4', USERS_TABLE_GRID)}>
           {[...Array(7)].map((_, j) => (

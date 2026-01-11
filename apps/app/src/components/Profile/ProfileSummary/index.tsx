@@ -39,20 +39,20 @@ export const ProfileSummary = ({ profile }: { profile: Organization }) => {
     .join(' • ');
 
   return (
-    <div className="flex flex-col gap-2 py-2">
+    <div className="gap-2 py-2 flex flex-col">
       <Header1>{profile.profile.name}</Header1>
 
       {whereWeWork.length ? (
-        <div className="text-neutral-gray4 text-base">{whereWeWork}</div>
+        <div className="text-base text-neutral-gray4">{whereWeWork}</div>
       ) : null}
 
-      <div className="text-neutral-charcoal max-w-xl text-base">
+      <div className="max-w-xl text-base text-neutral-charcoal">
         {profile.profile.bio}
       </div>
 
       <ErrorBoundary fallback={null}>
-        <div className="flex flex-col-reverse gap-6 sm:flex-col">
-          <div className="text-neutral-gray4 flex gap-1 text-base">
+        <div className="gap-6 sm:flex-col flex flex-col-reverse">
+          <div className="gap-1 flex text-base text-neutral-gray4">
             <Suspense fallback={<Skeleton>482 relationships</Skeleton>}>
               <RelationshipCount profile={profile} />
             </Suspense>

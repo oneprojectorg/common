@@ -1,6 +1,6 @@
 export const FormalSection = ({ children }: { children: React.ReactNode }) => {
   return (
-    <section className="text-neutral-charcoal flex flex-col gap-6">
+    <section className="gap-6 flex flex-col text-neutral-charcoal">
       {children}
     </section>
   );

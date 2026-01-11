@@ -23,14 +23,14 @@ export function DecisionStats({
     <div className="space-y-6">
       {/* Current Phase */}
       <div>
-        <h3 className="text-neutral-gray2 text-xs font-semibold uppercase tracking-wider">
+        <h3 className="font-semibold tracking-wider text-xs text-neutral-gray2 uppercase">
           CURRENT PHASE
         </h3>
-        <p className="text-neutral-charcoal mt-1 text-lg font-medium">
+        <p className="mt-1 font-medium text-lg text-neutral-charcoal">
           {currentPhase?.name || 'Proposal Submissions'}
         </p>
         {currentPhase?.phase && (
-          <p className="text-neutral-gray3 mt-1 text-sm">
+          <p className="mt-1 text-sm text-neutral-gray3">
             {formatDateRange(
               currentPhase.phase.startDate,
               currentPhase.phase.endDate,
@@ -39,29 +39,29 @@ export function DecisionStats({
         )}
       </div>
 
-      <div className="bg-neutral-gray1 h-px w-full" />
+      <div className="h-px w-full bg-neutral-gray1" />
 
       {/* Stats */}
       <div className="space-y-3">
         {budget && (
           <div className="flex justify-between">
-            <span className="text-neutral-gray3 text-sm">Total Budget</span>
-            <span className="text-neutral-charcoal text-sm font-medium">
+            <span className="text-sm text-neutral-gray3">Total Budget</span>
+            <span className="font-medium text-sm text-neutral-charcoal">
               {formatCurrency(budget)}
             </span>
           </div>
         )}
         <div className="flex justify-between">
-          <span className="text-neutral-gray3 text-sm">
+          <span className="text-sm text-neutral-gray3">
             Proposals Submitted
           </span>
-          <span className="text-neutral-charcoal text-sm font-medium">
+          <span className="font-medium text-sm text-neutral-charcoal">
             {proposalCount}
           </span>
         </div>
         <div className="flex justify-between">
-          <span className="text-neutral-gray3 text-sm">Days Remaining</span>
-          <span className="text-neutral-charcoal text-sm font-medium">
+          <span className="text-sm text-neutral-gray3">Days Remaining</span>
+          <span className="font-medium text-sm text-neutral-charcoal">
             {daysRemaining !== null ? daysRemaining : '14'}
           </span>
         </div>

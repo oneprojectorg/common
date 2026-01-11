@@ -24,7 +24,7 @@ export const NewOrganizationsSuspense = async ({
     });
 
     return (
-      <div className="flex flex-col gap-4">
+      <div className="gap-4 flex flex-col">
         <OrganizationList organizations={organizations} />
         <div className="px-8 sm:px-0">
           <Link href="/org" className="text-teal">

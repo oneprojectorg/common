@@ -37,11 +37,11 @@ const withWidgetErrorBoundary = <P extends WidgetProps>(
     render() {
       if (this.state.hasError) {
         return (
-          <div className="border-functional-red/20 bg-functional-red/5 rounded border p-3">
-            <p className="text-functional-red text-sm">
+          <div className="p-3 rounded border border-functional-red/20 bg-functional-red/5">
+            <p className="text-sm text-functional-red">
               Error rendering {widgetName} widget
             </p>
-            <p className="text-neutral-gray4 mt-1 text-xs">
+            <p className="mt-1 text-xs text-neutral-gray4">
               Field: {this.props.schema?.title || 'Unknown'}
             </p>
           </div>
@@ -234,12 +234,12 @@ export const DateWidget = (props: WidgetProps) => {
       dateValue,
     );
     return (
-      <div className="border-functional-red/20 bg-functional-red/5 rounded border p-3">
-        <p className="text-functional-red text-sm">
+      <div className="p-3 rounded border border-functional-red/20 bg-functional-red/5">
+        <p className="text-sm text-functional-red">
           Date widget error:{' '}
           {error instanceof Error ? error.message : 'Unknown error'}
         </p>
-        <p className="text-neutral-gray4 mt-1 text-xs">
+        <p className="mt-1 text-xs text-neutral-gray4">
           Value: {JSON.stringify(value)} | Parsed: {JSON.stringify(dateValue)}
         </p>
       </div>
@@ -271,8 +271,8 @@ export const RadioWidget = (props: WidgetProps) => {
   const customClassName = uiSchema?.['ui:options']?.className as string;
 
   return (
-    <div className={cn('flex flex-col gap-2', customClassName)}>
-      <label className="text-neutral-charcoal text-sm font-medium">
+    <div className={cn('gap-2 flex flex-col', customClassName)}>
+      <label className="font-medium text-sm text-neutral-charcoal">
         {schema.title}
       </label>
       <RadioGroup
@@ -287,7 +287,7 @@ export const RadioWidget = (props: WidgetProps) => {
         ))}
       </RadioGroup>
       {schema.description && (
-        <p className="text-neutral-gray4 text-xs">{schema.description}</p>
+        <p className="text-xs text-neutral-gray4">{schema.description}</p>
       )}
     </div>
   );
@@ -354,12 +354,12 @@ export const CategoryListWidget = (props: WidgetProps) => {
   };
 
   return (
-    <div className={cn('flex flex-col gap-2', customClassName)}>
-      <label className="text-neutral-charcoal text-sm font-medium">
+    <div className={cn('gap-2 flex flex-col', customClassName)}>
+      <label className="font-medium text-sm text-neutral-charcoal">
         {schema.title}
       </label>
       {schema.description && (
-        <p className="text-neutral-charcoal text-sm">{schema.description}</p>
+        <p className="text-sm text-neutral-charcoal">{schema.description}</p>
       )}
       <CategoryList
         initialCategories={categoryItems}
@@ -384,12 +384,12 @@ export const RichTextEditorWidget = (props: WidgetProps) => {
     (uiSchema?.['ui:options']?.showToolbar as boolean) ?? true;
 
   return (
-    <div className="flex flex-col gap-2">
-      <label className="text-neutral-charcoal text-sm font-medium">
+    <div className="gap-2 flex flex-col">
+      <label className="font-medium text-sm text-neutral-charcoal">
         {schema.title}
-        {required && <span className="text-functional-red ml-1">*</span>}
+        {required && <span className="ml-1 text-functional-red">*</span>}
       </label>
-      <div className="border-neutral-gray1 flex flex-col rounded-md border">
+      <div className="flex flex-col rounded-md border border-neutral-gray1">
         <RichTextEditorWithToolbar
           content={value || ''}
           placeholder={uiSchema?.['ui:placeholder']}
@@ -397,7 +397,7 @@ export const RichTextEditorWidget = (props: WidgetProps) => {
           onUpdate={handleChange}
           className="flex flex-1 flex-col"
           editorClassName={cn(
-            'focus:outline-hidden min-h-52 max-w-none flex-1 p-4',
+            'min-h-52 p-4 max-w-none flex-1 focus:outline-hidden',
             customClassName,
           )}
           showToolbar={showToolbar}
@@ -406,7 +406,7 @@ export const RichTextEditorWidget = (props: WidgetProps) => {
       </div>
       {schema.description && <Description>{schema.description}</Description>}
       {rawErrors && rawErrors.length > 0 && (
-        <div className="text-functional-red text-sm">
+        <div className="text-sm text-functional-red">
           {rawErrors.join(', ')}
         </div>
       )}
@@ -561,7 +561,7 @@ export const ReviewSummaryWidget = (props: WidgetProps) => {
     children: React.ReactNode;
   }) => (
     <div className="space-y-3">
-      <h3 className="text-neutral-charcoal text-base font-semibold">{title}</h3>
+      <h3 className="font-semibold text-base text-neutral-charcoal">{title}</h3>
       <div className="space-y-2">{children}</div>
     </div>
   );
@@ -574,8 +574,8 @@ export const ReviewSummaryWidget = (props: WidgetProps) => {
     value: string | React.ReactNode;
   }) => (
     <div className="flex items-start justify-between">
-      <span className="text-neutral-charcoal text-sm font-medium">{label}</span>
-      <span className="text-neutral-charcoal ml-4 flex-1 text-right text-sm">
+      <span className="font-medium text-sm text-neutral-charcoal">{label}</span>
+      <span className="ml-4 flex-1 text-right text-sm text-neutral-charcoal">
         {value}
       </span>
     </div>

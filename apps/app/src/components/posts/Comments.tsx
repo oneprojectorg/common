@@ -20,7 +20,7 @@ export function CommentSkeleton() {
       <AvatarSkeleton className="!size-8 max-h-8 max-w-8" />
       <FeedMain>
         <FeedHeader className="relative w-full justify-between">
-          <div className="flex items-baseline gap-2">
+          <div className="gap-2 flex items-baseline">
             <Skeleton className="h-4 w-24" />
             <Skeleton className="h-3 w-16" />
           </div>
@@ -56,7 +56,7 @@ export function Comments({
   if (comments.length === 0) {
     return (
       <div
-        className="text-neutral-gray4 py-8 text-center"
+        className="py-8 text-center text-neutral-gray4"
         role="status"
         aria-label={t('No comments yet. Be the first to comment!')}
       >

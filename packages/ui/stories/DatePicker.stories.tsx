@@ -19,14 +19,14 @@ export const Example = () => {
   const [value, setValue] = useState<DateValue | undefined>(undefined);
 
   return (
-    <div className="flex w-96 flex-col gap-2">
+    <div className="w-96 gap-2 flex flex-col">
       <DatePicker
         label="Event date"
         placeholder="08/06/2025"
         value={value}
         onChange={setValue}
       />
-      <div className="text-neutral-gray4 text-sm">
+      <div className="text-sm text-neutral-gray4">
         Selected date:{' '}
         {value ? `${value.year}-${value.month}-${value.day}` : 'None'}
       </div>
@@ -40,14 +40,14 @@ export const InitialValue = () => {
   );
 
   return (
-    <div className="flex w-96 flex-col gap-2">
+    <div className="w-96 gap-2 flex flex-col">
       <DatePicker
         label="Event date"
         placeholder="08/06/2025"
         value={value}
         onChange={setValue}
       />
-      <div className="text-neutral-gray4 text-sm">
+      <div className="text-sm text-neutral-gray4">
         Selected date:{' '}
         {value ? `${value.year}-${value.month}-${value.day}` : 'None'}
       </div>
@@ -57,7 +57,7 @@ export const InitialValue = () => {
 
 export const Disabled = () => {
   return (
-    <div className="flex w-96 flex-col gap-2">
+    <div className="w-96 gap-2 flex flex-col">
       <DatePicker label="Event date" placeholder="08/06/2025" isDisabled />
     </div>
   );
@@ -65,7 +65,7 @@ export const Disabled = () => {
 
 export const ErrorState = () => {
   return (
-    <div className="flex w-96 flex-col gap-2">
+    <div className="w-96 gap-2 flex flex-col">
       <DatePicker
         label="Event date"
         placeholder="08/06/2025"

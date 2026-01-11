@@ -51,7 +51,7 @@ const FocusAreas = ({
   const t = useTranslations();
 
   return (
-    <section className="text-neutral-charcoal flex flex-col gap-2">
+    <section className="gap-2 flex flex-col text-neutral-charcoal">
       <Header3>{t('Focus Areas')}</Header3>
       <TagGroup>
         {focusAreas.map((term) => (
@@ -97,7 +97,7 @@ const CommunitiesServed = ({ profileId }: { profileId: string }) => {
   if (!communitiesServed?.length) return null;
 
   return (
-    <section className="text-neutral-charcoal flex flex-col gap-2">
+    <section className="gap-2 flex flex-col text-neutral-charcoal">
       <Header3>{t('Communities We Serve')}</Header3>
       <TagGroup>
         {communitiesServed.map((term) => (
@@ -120,15 +120,15 @@ const ProfileAbout = ({
   const t = useTranslations();
 
   return (
-    <div className={cn('flex flex-col gap-2 sm:gap-6', className)}>
+    <div className={cn('gap-2 sm:gap-6 flex flex-col', className)}>
       {orgType ? (
-        <Header2 className="text-title-sm font-serif leading-normal">
+        <Header2 className="leading-normal font-serif text-title-sm">
           {t('About')}
         </Header2>
       ) : null}
-      <div className="border-neutral-gray1 flex flex-col gap-4 rounded border p-4 sm:rounded-none sm:border-none sm:p-0">
+      <div className="gap-4 p-4 sm:rounded-none sm:border-none sm:p-0 flex flex-col rounded border border-neutral-gray1">
         {email || website ? (
-          <section className="flex flex-col gap-2">
+          <section className="gap-2 flex flex-col">
             <Header3>{t('Contact')}</Header3>
             <div className="text-teal flex flex-col">
               {website ? (
@@ -137,7 +137,7 @@ const ProfileAbout = ({
                   <Link
                     href={formatToUrl(website)}
                     target="_blank"
-                    className="max-w-full overflow-hidden overflow-ellipsis text-nowrap"
+                    className="max-w-full overflow-hidden text-nowrap overflow-ellipsis"
                   >
                     {website}
                   </Link>
@@ -166,7 +166,7 @@ const ProfileAbout = ({
                   <LuMail className="min-w-4" />
                   <Link
                     href={`mailto:${email}`}
-                    className="max-w-full overflow-hidden overflow-ellipsis text-nowrap"
+                    className="max-w-full overflow-hidden text-nowrap overflow-ellipsis"
                   >
                     {email}
                   </Link>
@@ -177,7 +177,7 @@ const ProfileAbout = ({
         ) : null}
 
         {orgType ? (
-          <section className="text-neutral-charcoal flex flex-col gap-2">
+          <section className="gap-2 flex flex-col text-neutral-charcoal">
             <Header3>{t('Organizational Status')}</Header3>
             <TagGroup>
               <Tag className="capitalize">{orgType}</Tag>
@@ -186,14 +186,14 @@ const ProfileAbout = ({
         ) : null}
 
         {mission ? (
-          <section className="text-neutral-charcoal flex flex-col gap-2">
+          <section className="gap-2 flex flex-col text-neutral-charcoal">
             <Header3>{t('Mission Statement')}</Header3>
             <p>{mission}</p>
           </section>
         ) : null}
 
         {strategies?.length > 0 ? (
-          <section className="text-neutral-charcoal flex flex-col gap-2">
+          <section className="gap-2 flex flex-col text-neutral-charcoal">
             <Header3>{t('Strategies')}</Header3>
             <TagGroup>
               {strategies.map((strategy) =>
@@ -211,9 +211,9 @@ const ProfileAbout = ({
         <ErrorBoundary fallback={null}>
           <Suspense
             fallback={
-              <section className="text-neutral-charcoal flex flex-col gap-2">
+              <section className="gap-2 flex flex-col text-neutral-charcoal">
                 <Header3>{t('Focus Areas')}</Header3>
-                <div className="flex flex-wrap gap-2">
+                <div className="gap-2 flex flex-wrap">
                   <Skeleton className="h-6 w-16" />
                   <Skeleton className="h-6 w-20" />
                   <Skeleton className="h-6 w-14" />
@@ -232,10 +232,10 @@ const ProfileAbout = ({
         <ErrorBoundary fallback={null}>
           <Suspense
             fallback={
-              <section className="text-neutral-charcoal flex flex-col gap-2">
+              <section className="gap-2 flex flex-col text-neutral-charcoal">
                 <Header3>{t('Communities We Serve')}</Header3>
-                <div className="flex flex-wrap gap-2">
-                  <Skeleton className="w-18 h-6" />
+                <div className="gap-2 flex flex-wrap">
+                  <Skeleton className="h-6 w-18" />
                   <Skeleton className="h-6 w-24" />
                   <Skeleton className="h-6 w-16" />
                 </div>
@@ -264,15 +264,15 @@ const ProfileDecisions = ({ profileId }: { profileId: string }) => {
   }
 
   return (
-    <div className="sm:border-neutral-gray1 flex flex-col gap-2 px-4 pb-2 pt-0 sm:gap-0 sm:border-b sm:p-0 sm:pt-4">
-      <Header2 className="text-title-sm px-6 font-serif leading-normal">
+    <div className="sm:border-neutral-gray1 gap-2 px-4 pb-2 pt-0 sm:gap-0 sm:border-b sm:p-0 sm:pt-4 flex flex-col">
+      <Header2 className="px-6 leading-normal font-serif text-title-sm">
         {t('Decisions')}
       </Header2>
       {data.items.map((item, index) => (
         <Fragment key={item.id}>
           <ProfileDecisionListItem
             item={item}
-            className="hover:sm:bg-primary-tealWhite border-neutral-gray1 rounded border p-4 transition-colors sm:rounded-none sm:border-none sm:px-6"
+            className="hover:sm:bg-primary-tealWhite p-4 sm:rounded-none sm:border-none sm:px-6 rounded border border-neutral-gray1 transition-colors"
           />
           {index < data.items.length - 1 && <hr />}
         </Fragment>
@@ -283,14 +283,14 @@ const ProfileDecisions = ({ profileId }: { profileId: string }) => {
 
 export const ProfileGridWrapper = ({ children }: { children: ReactNode }) => {
   return (
-    <div className="grid-cols-15 hidden h-full grow sm:grid">{children}</div>
+    <div className="sm:grid hidden h-full grow grid-cols-15">{children}</div>
   );
 };
 
 export const ProfileGrid = ({ profile }: { profile: Organization }) => {
   return (
     <ProfileGridWrapper>
-      <div className="col-span-6 p-6">
+      <div className="p-6 col-span-6">
         <ProfileAbout profile={profile} />
       </div>
     </ProfileGridWrapper>
@@ -308,13 +308,13 @@ export const OrganizationProfileGrid = ({
 
   return (
     <ProfileGridWrapper>
-      <div className="col-span-9 flex flex-col gap-8">
+      <div className="gap-8 col-span-9 flex flex-col">
         {isOrg ? (
           <Suspense fallback={null}>
             <PostUpdate
               organization={profile}
               label={t('Post')}
-              className="border-neutral-gray1 border-b px-4 pb-8 pt-6"
+              className="px-4 pb-8 pt-6 border-b border-neutral-gray1"
             />
           </Suspense>
         ) : (
@@ -326,11 +326,11 @@ export const OrganizationProfileGrid = ({
           </ProfileFeedProvider>
         </Suspense>
       </div>
-      <div className="border-neutral-gray1 col-span-6 h-full border-l">
+      <div className="col-span-6 h-full border-l border-neutral-gray1">
         <Suspense fallback={null}>
           <ProfileDecisions profileId={profile.profile.id} />
         </Suspense>
-        <div className="flex flex-col gap-4 px-6 py-4">
+        <div className="gap-4 px-6 py-4 flex flex-col">
           <ProfileAbout profile={profile} />
         </div>
       </div>
@@ -339,7 +339,7 @@ export const OrganizationProfileGrid = ({
 };
 
 export const ProfileTabList = ({ children }: { children: React.ReactNode }) => (
-  <TabList className="shrink-0 px-4 sm:px-6">{children}</TabList>
+  <TabList className="px-4 sm:px-6 shrink-0">{children}</TabList>
 );
 
 export const ProfileTabs = ({
@@ -366,7 +366,7 @@ export const ProfileTabs = ({
 
   return (
     <ProfileTabsWithQuery
-      className="hidden grow gap-0 px-0 sm:flex sm:h-full sm:flex-col"
+      className="gap-0 px-0 sm:flex sm:h-full sm:flex-col hidden grow"
       initialTab={initialTab}
       defaultTab={defaultTab}
       validTabs={validTabs}
@@ -418,7 +418,7 @@ export const ProfileTabsMobile = ({
       defaultTab={defaultTab}
       validTabs={validTabs}
     >
-      <TabList className="overflow-x-auto px-4">
+      <TabList className="px-4 overflow-x-auto">
         {!isIndividual && <Tab id="home">{t('Home')}</Tab>}
         {!isIndividual ? (
           <>
@@ -446,7 +446,7 @@ export const ProfileTabsMobile = ({
             <ProfileAbout profile={profile} className="px-4 py-2" />
             <Suspense fallback={<Skeleton className="min-h-20 w-full" />}>
               <div>
-                <Header2 className="text-title-sm px-4 py-2 font-serif leading-normal">
+                <Header2 className="px-4 py-2 leading-normal font-serif text-title-sm">
                   {t('Posts')}
                 </Header2>
                 <ProfileFeedProvider profile={profile}>
@@ -460,7 +460,7 @@ export const ProfileTabsMobile = ({
               <PostUpdate
                 organization={profile}
                 label={t('Post')}
-                className="border-neutral-gray1 border-b px-4 pb-6 pt-2"
+                className="px-4 pb-6 pt-2 border-b border-neutral-gray1"
               />
             </Suspense>
             <Suspense fallback={<Skeleton className="min-h-20 w-full" />}>
@@ -480,7 +480,7 @@ export const ProfileTabsMobile = ({
             <ProfileAbout profile={profile} className="px-4 py-2" />
           </TabPanel>
           <TabPanel id="organizations" className="px-4 py-2">
-            <div className="flex flex-col gap-4">{children}</div>
+            <div className="gap-4 flex flex-col">{children}</div>
           </TabPanel>
           <TabPanel id="following" className="px-4 py-2">
             {followingContent}

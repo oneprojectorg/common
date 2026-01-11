@@ -25,7 +25,7 @@ export const OptionMenu = ({
         variant={variant}
         size={size}
         className={cn(
-          'aria-expanded:bg-neutral-gray1 aspect-square',
+          'aspect-square aria-expanded:bg-neutral-gray1',
           className,
         )}
       >

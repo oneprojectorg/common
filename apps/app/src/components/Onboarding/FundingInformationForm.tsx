@@ -93,7 +93,7 @@ export const FundingInformationForm = ({
                 />
               </ToggleRow>
               {field.state.value ? (
-                <div className="flex flex-col gap-4">
+                <div className="gap-4 flex flex-col">
                   <form.AppField
                     name="receivingFundsTerms"
                     children={(field) => (
@@ -110,7 +110,7 @@ export const FundingInformationForm = ({
                   <form.AppField
                     name="receivingFundsLink"
                     children={(field) => (
-                      <div className="flex flex-col gap-2">
+                      <div className="gap-2 flex flex-col">
                         <field.TextField
                           label={t(
                             'Where can people contribute to your organization?',
@@ -121,12 +121,12 @@ export const FundingInformationForm = ({
                           errorMessage={getFieldErrorMessage(field)}
                           inputProps={{
                             icon: (
-                              <LuLink className="text-neutral-black size-4" />
+                              <LuLink className="size-4 text-neutral-black" />
                             ),
                             placeholder: t('Add your contribution page here'),
                           }}
                         />
-                        <span className="text-neutral-gray4 text-sm">
+                        <span className="text-sm text-neutral-gray4">
                           {t(
                             'Add a link to your donation page, Open Collective, GoFundMe or any platform where supporters can contribute or learn more about how.',
                           )}
@@ -159,7 +159,7 @@ export const FundingInformationForm = ({
                   name="acceptingApplications"
                   children={(acceptingApplicationsField) => (
                     <>
-                      <div className="flex flex-col gap-4">
+                      <div className="gap-4 flex flex-col">
                         <form.AppField
                           name="offeringFundsTerms"
                           children={(field) => (
@@ -178,7 +178,7 @@ export const FundingInformationForm = ({
                         <form.AppField
                           name="offeringFundsLink"
                           children={(field) => (
-                            <div className="flex flex-col gap-2">
+                            <div className="gap-2 flex flex-col">
                               <field.TextField
                                 label={
                                   acceptingApplicationsField.state.value
@@ -199,11 +199,11 @@ export const FundingInformationForm = ({
                                         'Add a link to learn more about your funding process',
                                       ),
                                   icon: (
-                                    <LuLink className="text-neutral-black size-4" />
+                                    <LuLink className="size-4 text-neutral-black" />
                                   ),
                                 }}
                               />
-                              <span className="text-neutral-gray4 text-sm">
+                              <span className="text-sm text-neutral-gray4">
                                 {acceptingApplicationsField.state.value
                                   ? null
                                   : t(
@@ -222,7 +222,7 @@ export const FundingInformationForm = ({
           )}
         />
 
-        <div className="flex flex-col-reverse justify-between gap-4 sm:flex-row sm:gap-2">
+        <div className="gap-4 sm:flex-row sm:gap-2 flex flex-col-reverse justify-between">
           <form.Button color="secondary" onPress={onBack}>
             {t('Back')}
           </form.Button>

@@ -15,9 +15,9 @@ export const WaitlistSignup = () => {
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-2">
-        <h2 className="font-serif text-2xl font-light tracking-tight sm:text-4xl">
+    <div className="gap-6 flex flex-col">
+      <div className="gap-2 flex flex-col">
+        <h2 className="text-2xl font-light tracking-tight sm:text-4xl font-serif">
           Join the waitlist
         </h2>
         <p className="sm:text-xl">We'll email you when we launch publicly.</p>
@@ -65,7 +65,7 @@ const WaitlistSignupForm = ({ onSuccess }: { onSuccess: () => void }) => {
 
   return (
     <form
-      className="flex flex-col gap-3 md:flex-row"
+      className="gap-3 md:flex-row flex flex-col"
       onSubmit={(e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -97,7 +97,7 @@ const WaitlistSignupForm = ({ onSuccess }: { onSuccess: () => void }) => {
         {([isSubmitting]) => (
           <form.SubmitButton
             isDisabled={isSubmitting}
-            className="w-full md:h-16 md:w-44 md:rounded-xl md:p-7 md:text-xl"
+            className="md:h-16 md:w-44 md:rounded-xl md:p-7 md:text-xl w-full"
           >
             {isSubmitting ? <LoadingSpinner /> : 'Join waitlist'}
           </form.SubmitButton>
@@ -108,8 +108,8 @@ const WaitlistSignupForm = ({ onSuccess }: { onSuccess: () => void }) => {
 };
 
 const WaitlistSignupSuccess = () => (
-  <div className="animate-in flex w-max items-center rounded bg-white/85 p-4 sm:h-16 sm:rounded-xl sm:px-6 sm:py-4">
-    <p className="bg-orangePurple w-max bg-clip-text text-transparent sm:text-xl">
+  <div className="p-4 sm:h-16 sm:rounded-xl sm:px-6 sm:py-4 flex w-max items-center rounded bg-white/85 animate-in">
+    <p className="sm:text-xl w-max bg-orangePurple bg-clip-text text-transparent">
       You're signed up! We'll be in touch.
     </p>
   </div>

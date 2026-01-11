@@ -9,6 +9,6 @@ export const FormContainer = ({
   className?: string;
 }) => {
   return (
-    <div className={cn('flex flex-col gap-8 pb-8', className)}>{children}</div>
+    <div className={cn('gap-8 pb-8 flex flex-col', className)}>{children}</div>
   );
 };

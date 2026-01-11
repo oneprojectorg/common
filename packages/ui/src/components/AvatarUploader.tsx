@@ -43,13 +43,13 @@ export const AvatarUploader = ({
   return (
     <div
       className={cn(
-        'flex flex-col items-center justify-center gap-2',
+        'gap-2 flex flex-col items-center justify-center',
         uploading && 'opacity-20',
         className,
       )}
     >
       <div className="size-full">
-        <div className="bg-redPurple relative flex aspect-square size-full items-center justify-center rounded-full border-4 border-white">
+        <div className="relative flex aspect-square size-full items-center justify-center rounded-full border-4 border-white bg-redPurple">
           {value ? (
             <img
               src={value}
@@ -60,7 +60,7 @@ export const AvatarUploader = ({
           <button
             {...buttonProps}
             ref={buttonRef}
-            className="z-10 rounded-full bg-black/50 p-2 text-white hover:bg-neutral-800"
+            className="p-2 hover:bg-neutral-800 z-10 rounded-full bg-black/50 text-white"
             disabled={uploading}
           >
             {uploading ? (

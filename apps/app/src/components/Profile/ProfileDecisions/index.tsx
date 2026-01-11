@@ -44,18 +44,18 @@ const DecisionProcessList = ({
 
   if (!data.instances || data.instances.length === 0) {
     return (
-      <div className="flex min-h-[400px] flex-col items-center justify-center gap-6 px-6 py-16 text-center">
+      <div className="gap-6 px-6 py-16 flex min-h-[400px] flex-col items-center justify-center text-center">
         {isProcessAdmin ? (
           <>
-            <div className="bg-neutral-gray1 flex size-10 items-center justify-center rounded-full">
-              <LuLeaf className="text-neutral-gray4 size-6" />
+            <div className="size-10 flex items-center justify-center rounded-full bg-neutral-gray1">
+              <LuLeaf className="size-6 text-neutral-gray4" />
             </div>
 
-            <div className="flex max-w-md flex-col gap-2">
-              <h2 className="text-title-base text-neutral-black font-serif">
+            <div className="max-w-md gap-2 flex flex-col">
+              <h2 className="font-serif text-title-base text-neutral-black">
                 {t('Set up your decision-making process')}
               </h2>
-              <p className="text-neutral-charcoal text-base">
+              <p className="text-base text-neutral-charcoal">
                 {t(
                   'Create your first participatory budgeting or grantmaking process to start collecting proposals from your community.',
                 )}
@@ -64,12 +64,12 @@ const DecisionProcessList = ({
           </>
         ) : (
           <>
-            <div className="bg-neutral-gray1 flex size-10 items-center justify-center rounded-full">
-              <LuLeaf className="text-neutral-gray4 size-6" />
+            <div className="size-10 flex items-center justify-center rounded-full bg-neutral-gray1">
+              <LuLeaf className="size-6 text-neutral-gray4" />
             </div>
 
-            <div className="flex max-w-md flex-col gap-2">
-              <h2 className="text-title-base text-neutral-black font-serif">
+            <div className="max-w-md gap-2 flex flex-col">
+              <h2 className="font-serif text-title-base text-neutral-black">
                 {t('There are no current decision-making processes')}
               </h2>
             </div>
@@ -80,14 +80,14 @@ const DecisionProcessList = ({
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="gap-4 flex flex-col">
       <div className="flex items-center justify-between">
-        <Header2 className="text-title-sm font-serif">
+        <Header2 className="font-serif text-title-sm">
           {t('Active processes')}
         </Header2>
       </div>
 
-      <div className="flex flex-col gap-4">
+      <div className="gap-4 flex flex-col">
         {data.instances.map((instance) => {
           // TODO: special key for People powered translations as a stop-gap
           const description = instance?.description?.match('PPDESCRIPTION')
@@ -97,14 +97,14 @@ const DecisionProcessList = ({
           return (
             <div
               key={instance.id}
-              className="border-neutral-gray1 flex flex-col items-center justify-between gap-4 border-b px-0 py-6 sm:flex-row"
+              className="gap-4 px-0 py-6 sm:flex-row flex flex-col items-center justify-between border-b border-neutral-gray1"
             >
-              <div className="flex w-full flex-col gap-2">
-                <div className="flex flex-col gap-1">
-                  <Header3 className="text-base font-bold">
+              <div className="gap-2 flex w-full flex-col">
+                <div className="gap-1 flex flex-col">
+                  <Header3 className="font-bold text-base">
                     {instance.name}
                   </Header3>
-                  <div className="text-neutral-charcoal flex items-start gap-1 text-sm">
+                  <div className="gap-1 flex items-start text-sm text-neutral-charcoal">
                     {instance.instanceData?.budget &&
                       !instance.instanceData?.hideBudget && (
                         <>
@@ -125,13 +125,13 @@ const DecisionProcessList = ({
                   </div>
                 </div>
                 {description && (
-                  <p className="text-neutral-charcoal max-w-2xl overflow-hidden text-ellipsis text-base sm:text-nowrap">
+                  <p className="max-w-2xl sm:text-nowrap overflow-hidden text-base text-ellipsis text-neutral-charcoal">
                     {getTextPreview({ content: description })}
                   </p>
                 )}
               </div>
 
-              <div className="flex w-full flex-col gap-2.5 sm:max-w-36">
+              <div className="gap-2.5 sm:max-w-36 flex w-full flex-col">
                 {isProcessAdmin ? (
                   <Button
                     color="secondary"
@@ -209,8 +209,8 @@ export const ProfileDecisionsSuspense = ({
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-96 items-center justify-center">
-          <div className="text-neutral-charcoal animate-pulse text-base">
+        <div className="min-h-96 flex items-center justify-center">
+          <div className="animate-pulse text-base text-neutral-charcoal">
             {t('Loading...')}
           </div>
         </div>

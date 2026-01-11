@@ -26,10 +26,10 @@ export const StepperProgressIndicator = ({
   const progress = numItems > 1 ? (currentStep + 1) * segmentSize : 0;
 
   return (
-    <div className="bg-gradient relative z-40 flex h-1 w-full gap-0">
-      <div className="absolute inset-0 bg-white/65" />
+    <div className="h-1 gap-0 relative z-40 flex w-full bg-gradient">
+      <div className="inset-0 absolute bg-white/65" />
       <motion.div
-        className="bg-gradient absolute left-0 top-0 h-full"
+        className="left-0 top-0 absolute h-full bg-gradient"
         animate={{ width: `${progress}%` }}
         transition={{ duration: 0.5 }}
       />

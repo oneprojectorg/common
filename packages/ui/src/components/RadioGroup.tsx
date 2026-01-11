@@ -28,14 +28,14 @@ export const RadioGroup = (props: RadioGroupProps) => {
       {...props}
       className={composeTailwindRenderProps(
         props.className,
-        'group flex flex-col gap-2',
+        'group gap-2 flex flex-col',
       )}
     >
       <Label className="text-neutral-charcoal">
         {props.label}
         {props.isRequired && <span className="text-functional-red"> *</span>}
       </Label>
-      <div className="group-orientation-horizontal:gap-4 group-orientation-vertical:flex-col flex gap-2">
+      <div className="group-orientation-horizontal:gap-4 group-orientation-vertical:flex-col gap-2 flex">
         {props.children}
       </div>
       {props.description && <Description>{props.description}</Description>}
@@ -46,18 +46,18 @@ export const RadioGroup = (props: RadioGroupProps) => {
 
 const styles = tv({
   // extend: focusRing,
-  base: 'bg-neutral-white border-neutral-gray3 aspect-square size-4 shrink-0 rounded-full border transition-all',
+  base: 'bg-neutral-white size-4 aspect-square shrink-0 rounded-full border border-neutral-gray3 transition-all',
   variants: {
     isSelected: {
       false:
-        'group-pressed:border group-pressed:border-neutral-gray3 border-neutral-gray3 border',
-      true: 'group-pressed:border group-pressed:border-primary-tealBlack border-primary-tealBlack outline-primary-teal border-[0.31rem] outline outline-1 -outline-offset-1',
+        'group-pressed:border group-pressed:border-neutral-gray3 border border-neutral-gray3',
+      true: 'group-pressed:border group-pressed:border-primary-tealBlack border-[0.31rem] border-primary-tealBlack outline outline-1 -outline-offset-1 outline-primary-teal',
     },
     isInvalid: {
       true: 'group-pressed:border-red-700 border-red-600',
     },
     isDisabled: {
-      true: 'border-neutral-gray3 border',
+      true: 'border border-neutral-gray3',
     },
   },
 });
@@ -78,8 +78,8 @@ export const Radio = ({
       className={composeTailwindRenderProps(
         props.className,
         isBottomLabel
-          ? 'text-neutral-charcoal group flex flex-col items-center gap-1 py-2 text-base transition'
-          : 'text-neutral-charcoal group flex items-start gap-2 py-2 text-base transition',
+          ? 'group gap-1 py-2 flex flex-col items-center text-base text-neutral-charcoal transition'
+          : 'group gap-2 py-2 flex items-start text-base text-neutral-charcoal transition',
       )}
     >
       {(renderProps) => {

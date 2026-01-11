@@ -101,7 +101,7 @@ export const Confetti: React.FC = () => {
   }, []);
 
   return (
-    <div className="-z-10 size-0">
+    <div className="size-0 -z-10">
       {confetti.map((piece, index) => (
         <div
           key={index}

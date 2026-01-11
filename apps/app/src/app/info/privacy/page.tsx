@@ -8,7 +8,7 @@ import { FormHeader } from '@/components/form/FormHeader';
 const PrivacyPage = () => {
   const t = useTranslations();
   return (
-    <FormContainer className="max-w-[100vw] px-4 sm:max-w-[32rem]">
+    <FormContainer className="px-4 sm:max-w-[32rem] max-w-[100vw]">
       <FormHeader text={t('Privacy Policy Overview')}></FormHeader>
       <PrivacyPolicyContentShort />
 

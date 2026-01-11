@@ -87,7 +87,7 @@ export const VoteSurveyStep = ({
 
   return (
     <div className="space-y-6">
-      <p className="text-neutral-charcoal text-base">
+      <p className="text-base text-neutral-charcoal">
         {t(
           'To submit your ballot, please fill out the following brief survey.',
         )}
@@ -139,7 +139,7 @@ export const VoteSurveyStep = ({
         isInvalid={!!errors.region}
         orientation="vertical"
       >
-        <span className="flex flex-col gap-3">
+        <span className="gap-3 flex flex-col">
           <Radio value="africa" className="p-0">
             {t('Africa')}
           </Radio>
@@ -175,7 +175,7 @@ export const VoteSurveyStep = ({
         }}
         placeholder={t('Enter your country')}
         isRequired
-        icon={<LuSearch className="text-neutral-gray4 size-4" />}
+        icon={<LuSearch className="size-4 text-neutral-gray4" />}
       >
         {Object.entries(countries).map(([code, name]) => (
           <SelectItem key={code} id={code}>
@@ -198,7 +198,7 @@ export const VoteSurveyStep = ({
         isInvalid={!!errors.gender}
         orientation="vertical"
       >
-        <span className="flex flex-col gap-3">
+        <span className="gap-3 flex flex-col">
           <Radio value="female" className="p-0">
             {t('Female')}
           </Radio>
@@ -350,7 +350,7 @@ export const VoteSurveyStep = ({
         isInvalid={!!errors.increasedUnderstanding}
         orientation="vertical"
       >
-        <span className="flex flex-col gap-3">
+        <span className="gap-3 flex flex-col">
           <Radio value="yes" className="p-0">
             {t('Yes')}
           </Radio>
@@ -382,7 +382,7 @@ export const VoteSurveyStep = ({
         isInvalid={!!errors.appliedNewPractices}
         orientation="vertical"
       >
-        <span className="flex flex-col gap-3">
+        <span className="gap-3 flex flex-col">
           <Radio value="yes" className="p-0">
             {t('Yes')}
           </Radio>

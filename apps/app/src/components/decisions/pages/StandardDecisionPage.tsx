@@ -92,7 +92,7 @@ export function StandardDecisionPage({
         _: () => t('SHARE YOUR IDEAS.'),
       }),
       description: (
-        <div className="flex flex-col gap-2">
+        <div className="gap-2 flex flex-col">
           <p>
             The Horizon Fund Committee is deliberating based on their reviews
             and your votes. Results coming soon!
@@ -123,8 +123,8 @@ export function StandardDecisionPage({
   });
 
   return (
-    <div className="min-h-full pt-8">
-      <div className="mx-auto flex max-w-3xl flex-col justify-center gap-4 px-4">
+    <div className="pt-8 min-h-full">
+      <div className="max-w-3xl gap-4 px-4 mx-auto flex flex-col justify-center">
         <DecisionHero
           title={heroContent.title}
           description={heroContent.description}
@@ -140,15 +140,15 @@ export function StandardDecisionPage({
         />
       </div>
 
-      <div className="border-neutral-gray1 mt-8 flex w-full justify-center border-t bg-white">
-        <div className="w-full gap-8 p-4 sm:max-w-6xl sm:p-8">
+      <div className="mt-8 flex w-full justify-center border-t border-neutral-gray1 bg-white">
+        <div className="gap-8 p-4 sm:max-w-6xl sm:p-8 w-full">
           <div className="lg:col-span-3">
             {proposals.length === 0 ? (
               <EmptyProposalsState>
-                <Header3 className="!text-title-base text-neutral-black font-serif font-light">
+                <Header3 className="font-light font-serif !text-title-base text-neutral-black">
                   {t('No proposals yet')}
                 </Header3>
-                <p className="text-neutral-charcoal text-base">
+                <p className="text-base text-neutral-charcoal">
                   {t('You could be the first one to submit a proposal')}
                 </p>
               </EmptyProposalsState>

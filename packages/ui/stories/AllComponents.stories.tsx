@@ -46,7 +46,7 @@ const meta: Meta = {
 export default meta;
 
 export const AllComponents = () => (
-  <div className="flex flex-col gap-8 p-8">
+  <div className="gap-8 p-8 flex flex-col">
     {/*
     <section>
       <h2 className="mb-4 text-xl font-bold">Alert Dialog</h2>

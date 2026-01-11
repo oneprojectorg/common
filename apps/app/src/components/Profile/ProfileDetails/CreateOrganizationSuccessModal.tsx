@@ -16,7 +16,7 @@ export const CreateOrganizationSuccessModal = ({
 
   return (
     <Modal isOpen={isOpen}>
-      <ModalBody className="flex h-full flex-col items-center justify-center gap-6 p-12 text-center">
+      <ModalBody className="gap-6 p-12 flex h-full flex-col items-center justify-center text-center">
         <p>
           {t('Setting up')}{' '}
           <span className="font-semibold">

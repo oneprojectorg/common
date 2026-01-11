@@ -28,7 +28,7 @@ export default {
 };
 
 export const Example = () => (
-  <div className="flex flex-col gap-4">
+  <div className="gap-4 flex flex-col">
     <DialogTrigger>
       <Button>Open Basic Modal</Button>
       <Modal>
@@ -63,17 +63,17 @@ export const Example = () => (
         <ModalBody>
           <div className="space-y-4">
             <p>This is a larger modal with more content.</p>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="gap-4 grid grid-cols-2">
               <div className="space-y-2">
                 <h4 className="font-medium">Section 1</h4>
-                <p className="text-sm text-neutral-600">
+                <p className="text-neutral-600 text-sm">
                   Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed
                   do eiusmod tempor incididunt ut labore et dolore magna aliqua.
                 </p>
               </div>
               <div className="space-y-2">
                 <h4 className="font-medium">Section 2</h4>
-                <p className="text-sm text-neutral-600">
+                <p className="text-neutral-600 text-sm">
                   Ut enim ad minim veniam, quis nostrud exercitation ullamco
                   laboris nisi ut aliquip ex ea commodo consequat.
                 </p>
@@ -81,7 +81,7 @@ export const Example = () => (
             </div>
             <div className="space-y-2">
               <h4 className="font-medium">Additional Content</h4>
-              <p className="text-sm text-neutral-600">
+              <p className="text-neutral-600 text-sm">
                 Duis aute irure dolor in reprehenderit in voluptate velit esse
                 cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat
                 cupidatat non proident, sunt in culpa qui officia deserunt
@@ -159,28 +159,28 @@ export const WithForm = () => (
       <ModalBody>
         <form className="space-y-4">
           <div>
-            <label className="mb-1 block text-sm font-medium">
+            <label className="mb-1 font-medium block text-sm">
               Project Name
             </label>
             <input
               type="text"
-              className="border-neutral-gray3 w-full rounded-md border px-3 py-2"
+              className="px-3 py-2 w-full rounded-md border border-neutral-gray3"
               placeholder="Enter project name"
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium">
+            <label className="mb-1 font-medium block text-sm">
               Description
             </label>
             <textarea
-              className="border-neutral-gray3 w-full rounded-md border px-3 py-2"
+              className="px-3 py-2 w-full rounded-md border border-neutral-gray3"
               rows={3}
               placeholder="Enter project description"
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium">Category</label>
-            <select className="border-neutral-gray3 w-full rounded-md border px-3 py-2">
+            <label className="mb-1 font-medium block text-sm">Category</label>
+            <select className="px-3 py-2 w-full rounded-md border border-neutral-gray3">
               <option>Select category</option>
               <option>Web Development</option>
               <option>Mobile App</option>
@@ -205,11 +205,11 @@ export const LargeModal = () => (
       <ModalHeader>Large Modal with Lots of Content</ModalHeader>
       <ModalBody>
         <div className="space-y-6">
-          <div className="grid grid-cols-3 gap-4">
+          <div className="gap-4 grid grid-cols-3">
             {Array.from({ length: 6 }, (_, i) => (
-              <div key={i} className="border-neutral-gray3 rounded border p-4">
+              <div key={i} className="p-4 rounded border border-neutral-gray3">
                 <h4 className="font-medium">Item {i + 1}</h4>
-                <p className="text-sm text-neutral-600">
+                <p className="text-neutral-600 text-sm">
                   This is item {i + 1} with some sample content.
                 </p>
               </div>
@@ -217,7 +217,7 @@ export const LargeModal = () => (
           </div>
           <div>
             <h3 className="mb-2 font-medium">Additional Information</h3>
-            <p className="text-sm text-neutral-600">
+            <p className="text-neutral-600 text-sm">
               This modal demonstrates how content can be organized in a larger
               modal with multiple sections and complex layouts.
             </p>
@@ -281,7 +281,7 @@ const ModalStepperExample = () => {
         </h3>
       ),
       content: (
-        <p className="text-neutral-charcoal text-base">
+        <p className="text-base text-neutral-charcoal">
           {currentStep.description}
         </p>
       ),

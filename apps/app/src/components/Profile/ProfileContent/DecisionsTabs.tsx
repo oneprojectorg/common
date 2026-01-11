@@ -31,7 +31,7 @@ export const DecisionsTabPanel = ({
   return (
     <TabPanel
       id="decisions"
-      className={cn('grow px-4 pt-2 sm:px-6 sm:py-8', className)}
+      className={cn('px-4 pt-2 sm:px-6 sm:py-8 grow', className)}
     >
       {children}
     </TabPanel>
@@ -48,7 +48,7 @@ export const MembersTab = ({ profileId }: { profileId: string }) => {
 
 export const MembersTabPanel = ({ profileId }: { profileId: string }) => {
   return (
-    <TabPanel id="members" className="grow px-4 sm:px-6 sm:py-0">
+    <TabPanel id="members" className="px-4 sm:px-6 sm:py-0 grow">
       <ProfileOrganizations>
         <MembersList profileId={profileId} />
       </ProfileOrganizations>

@@ -4,7 +4,7 @@ import { Button as RACButton } from 'react-aria-components';
 import { tv } from 'tailwind-variants';
 
 const commentButtonStyle = tv({
-  base: 'pressed:bg-neutral-gray2 pressed:text-neutral-black bg-neutral-offWhite text-neutral-gray4 outline-hidden hover:bg-neutral-gray1 hover:text-neutral-charcoal focus-visible:bg-neutral-offWhite focus-visible:outline-data-blue flex h-8 items-center justify-center gap-1 text-nowrap rounded-sm px-2 py-1 text-sm transition-colors focus-visible:outline-1 focus-visible:-outline-offset-1',
+  base: 'pressed:bg-neutral-gray2 pressed:text-neutral-black h-8 gap-1 px-2 py-1 flex items-center justify-center rounded-sm bg-neutral-offWhite text-sm text-nowrap text-neutral-gray4 outline-hidden transition-colors hover:bg-neutral-gray1 hover:text-neutral-charcoal focus-visible:bg-neutral-offWhite focus-visible:outline-1 focus-visible:-outline-offset-1 focus-visible:outline-data-blue',
 });
 
 const iconStyle = tv({

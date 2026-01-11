@@ -39,7 +39,7 @@ export const VotingProposalCard = ({
   return (
     <ProposalCard
       className={cn(
-        'relative w-full min-w-80 justify-between',
+        'min-w-80 relative w-full justify-between',
         canInteract && 'cursor-pointer hover:shadow-md',
         canInteract && !isHighlighted && 'hover:border-neutral-gray2',
         isHighlighted && 'border-primary-teal bg-primary-tealWhite',

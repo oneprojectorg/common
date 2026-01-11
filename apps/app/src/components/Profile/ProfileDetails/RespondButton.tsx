@@ -97,7 +97,7 @@ const RespondButtonSuspense = ({ profile }: { profile: Organization }) => {
     {
       id: 'decline',
       label: 'Decline',
-      icon: <LuX className="text-functional-red size-4" />,
+      icon: <LuX className="size-4 text-functional-red" />,
       onAction: handleDecline,
     },
   ];
@@ -118,7 +118,7 @@ const RespondButtonSuspense = ({ profile }: { profile: Organization }) => {
         )
       }
       items={dropdownItems}
-      className="bg-primary-teal text-neutral-offWhite min-w-full sm:min-w-fit"
+      className="sm:min-w-fit min-w-full bg-primary-teal text-neutral-offWhite"
       isDisabled={isPending}
     />
   );

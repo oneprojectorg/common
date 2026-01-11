@@ -127,13 +127,13 @@ export const InviteToExistingOrganization = ({
   };
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="gap-6 flex flex-col">
       <p>{t('Expand your network and collaborate with others on Common.')}</p>
 
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium">{t('Send to')}</label>
-          <div className="border-neutral-gray2 flex min-h-[80px] flex-wrap gap-2 rounded-md border p-2">
+      <div className="gap-4 flex flex-col">
+        <div className="gap-2 flex flex-col">
+          <label className="font-medium text-sm">{t('Send to')}</label>
+          <div className="gap-2 p-2 flex min-h-[80px] flex-wrap rounded-md border border-neutral-gray2">
             <TagGroup aria-label={t('Selected emails')}>
               {emailBadges.map((email, index) => (
                 <Tag className="sm:rounded-sm" key={index}>
@@ -154,7 +154,7 @@ export const InviteToExistingOrganization = ({
                   ? `name1@${user.currentOrganization?.domain || 'example.org'}, name2@${user.currentOrganization?.domain || 'example.org'}, ...`
                   : t('Type emails followed by a comma or line break...')
               }
-              className="outline-hidden min-w-[200px] flex-1 resize-none border-none pt-1"
+              className="pt-1 min-w-[200px] flex-1 resize-none border-none outline-hidden"
               rows={1}
             />
           </div>

@@ -4,7 +4,7 @@ import { FormalSection } from '../FormalSection';
 
 export const ToSContent = () => {
   return (
-    <div className="relative flex w-full flex-col gap-8 sm:pb-20">
+    <div className="gap-8 sm:pb-20 relative flex w-full flex-col">
       <FormalSection>
         <Header3 className="font-serif">
           Introduction and Acceptance of Terms
@@ -113,7 +113,7 @@ export const ToSContent = () => {
           users of the Platform must comply with our Code of Conduct, available
           here, including these core community principles:
         </p>
-        <ul className="mb-4 list-disc pl-6">
+        <ul className="mb-4 pl-6 list-disc">
           <li className="mb-2">
             <strong>Treat Everyone with Respect and Consideration</strong>{' '}
             (adopted from DisCO Caring Community Guidelines): Be kind,
@@ -239,7 +239,7 @@ export const ToSContent = () => {
           (including the Platform other than the Code) are subject to the
           following restrictions:
         </p>
-        <ul className="mb-4 list-disc pl-6">
+        <ul className="mb-4 pl-6 list-disc">
           <li className="mb-2">
             You may not copy, modify, adapt, translate into any language,
             distribute, or create derivative works based on the Services or any
@@ -389,7 +389,7 @@ export const ToSContent = () => {
           You agree not to upload information, content or any other material
           that:
         </p>
-        <ul className="mb-4 list-disc pl-6">
+        <ul className="mb-4 pl-6 list-disc">
           <li className="mb-2">
             is abusive, insulting, threatening, discriminatory, or that promotes
             or encourages hatred, racism, sexism, or bigotry towards any group;
@@ -443,7 +443,7 @@ export const ToSContent = () => {
           effective, the notification must be in writing and contain the
           following information:
         </p>
-        <ul className="mb-4 list-disc pl-6">
+        <ul className="mb-4 pl-6 list-disc">
           <li className="mb-2">
             an electronic or physical signature of the person authorized to act
             on behalf of the owner of the copyright or other intellectual
@@ -482,7 +482,7 @@ export const ToSContent = () => {
           written counter-notice containing the following information to One
           Project's Copyright Agent:
         </p>
-        <ul className="mb-4 list-disc pl-6">
+        <ul className="mb-4 pl-6 list-disc">
           <li className="mb-2">your physical or electronic signature;</li>
           <li className="mb-2">
             identification of the content that has been removed or to which

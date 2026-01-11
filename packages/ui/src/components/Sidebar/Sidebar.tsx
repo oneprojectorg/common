@@ -120,7 +120,7 @@ const Sidebar = ({
           <MotionModalOverlay
             // force open state to ensure exit animation fires
             isOpen
-            className={'bg-neutral-black/20 fixed inset-0 z-50 backdrop-blur'}
+            className={'inset-0 backdrop-blur fixed z-50 bg-neutral-black/20'}
             onOpenChange={setOpen}
             isDismissable
             initial={{ opacity: 0 }}
@@ -129,7 +129,7 @@ const Sidebar = ({
             transition={transition}
           >
             <MotionModal
-              className="fixed top-0 z-50 h-full w-64 bg-white"
+              className="top-0 w-64 fixed z-50 h-full bg-white"
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
@@ -148,7 +148,7 @@ const Sidebar = ({
       data-state={state}
       data-side={side}
       data-slot="sidebar"
-      className="group peer relative z-30 hidden min-w-fit overflow-hidden bg-white sm:block"
+      className="group peer sm:block relative z-30 hidden min-w-fit overflow-hidden bg-white"
     >
       <div
         data-slot="sidebar-gap"
@@ -161,7 +161,7 @@ const Sidebar = ({
       <div
         data-slot="sidebar-inner"
         className={cn(
-          'absolute inset-0 flex size-full flex-col',
+          'inset-0 absolute flex size-full flex-col',
           'w-64 transition-[left,right,width] duration-200',
           side === 'left'
             ? 'left-0 data-[state=collapsed]:-left-64'

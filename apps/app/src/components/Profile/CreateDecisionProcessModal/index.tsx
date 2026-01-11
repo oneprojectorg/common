@@ -467,8 +467,8 @@ export const CreateDecisionProcessModal = ({
     // If we're on the final review step (step 6 when there are 5 schema steps)
     if (currentStep === stepSchemas.length + 1) {
       return (
-        <div className="flex flex-col gap-6">
-          <p className="text-neutral-charcoal text-base">
+        <div className="gap-6 flex flex-col">
+          <p className="text-base text-neutral-charcoal">
             Confirm your settings before creating the process.
           </p>
           <CustomWidgets.ReviewSummary
@@ -499,21 +499,21 @@ export const CreateDecisionProcessModal = ({
     const currentLiveValidate = validationMode === 'live';
 
     return (
-      <div className="flex flex-col gap-6">
+      <div className="gap-6 flex flex-col">
         {stepConfig.schema.description && (
-          <p className="text-neutral-charcoal text-base">
+          <p className="text-base text-neutral-charcoal">
             {stepConfig.schema.description}
           </p>
         )}
 
         <ErrorBoundary
           fallback={
-            <div className="border-functional-orange/20 bg-functional-orange/5 border-functional-orange/20 flex flex-col items-center gap-4 rounded-lg border p-6 text-center">
-              <div className="flex flex-col gap-2">
-                <h3 className="text-functional-orange text-lg font-medium">
+            <div className="border-functional-orange/20 bg-functional-orange/5 border-functional-orange/20 gap-4 p-6 flex flex-col items-center rounded-lg border text-center">
+              <div className="gap-2 flex flex-col">
+                <h3 className="text-functional-orange font-medium text-lg">
                   Step {currentStep} Error
                 </h3>
-                <p className="text-neutral-charcoal text-sm">
+                <p className="text-sm text-neutral-charcoal">
                   Unable to render this form step. Please try going back and
                   forward again, or restart the form.
                 </p>
@@ -562,7 +562,7 @@ export const CreateDecisionProcessModal = ({
 
   return (
     <Modal isDismissable {...modalProps}>
-      <div className="flex h-full max-h-[90vh] w-full max-w-lg flex-col">
+      <div className="max-w-lg flex h-full max-h-[90vh] w-full flex-col">
         <ModalHeader>{getCurrentStepTitle()}</ModalHeader>
 
         <ModalBody className="flex-1 overflow-y-auto">

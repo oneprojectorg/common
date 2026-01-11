@@ -10,8 +10,8 @@ export const ContactLink = ({
   children: React.ReactNode;
 }) => {
   return (
-    <div className={cn('flex h-8 items-center gap-2', className)}>
-      <div className="flex items-center gap-1 overflow-hidden">{children}</div>
+    <div className={cn('h-8 gap-2 flex items-center', className)}>
+      <div className="gap-1 flex items-center overflow-hidden">{children}</div>
       {button}
     </div>
   );

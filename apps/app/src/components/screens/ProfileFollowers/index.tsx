@@ -37,7 +37,7 @@ export const ProfileFollowersSuspense = ({
   }, [relationships]);
 
   return (
-    <div className="flex flex-col gap-4 text-base sm:gap-8">
+    <div className="gap-4 sm:gap-8 flex flex-col text-base">
       <RelationshipList
         profiles={followers}
         title={`${followers.length} ${pluralize(t('follower'), followers.length)}`}

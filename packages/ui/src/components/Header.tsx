@@ -8,7 +8,7 @@ export const Header1 = ({
   className?: string;
 }) => {
   return (
-    <h1 className={cn('sm:text-title-lg text-title-sm font-serif', className)}>
+    <h1 className={cn('sm:text-title-lg font-serif text-title-sm', className)}>
       {children}
     </h1>
   );
@@ -53,7 +53,7 @@ export const GradientHeader = ({
     <div className="flex w-full items-center justify-center text-transparent">
       <div
         className={cn(
-          'bg-gradient text-title-xxl flex items-center bg-clip-text font-serif',
+          'flex items-center bg-gradient bg-clip-text font-serif text-title-xxl',
           className,
         )}
       >

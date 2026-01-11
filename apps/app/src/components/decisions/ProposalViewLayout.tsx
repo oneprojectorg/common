@@ -40,20 +40,20 @@ export function ProposalViewLayout({
   return (
     <div className="flex min-h-screen flex-col bg-white">
       {/* Header */}
-      <div className="border-neutral-gray1 grid grid-cols-3 items-center border-b px-6 py-4">
+      <div className="px-6 py-4 grid grid-cols-3 items-center border-b border-neutral-gray1">
         <button
           onClick={() => router.push(backHref)}
-          className="text-primary-teal hover:text-primary-tealBlack flex items-center gap-2 text-base"
+          className="gap-2 flex items-center text-base text-primary-teal hover:text-primary-tealBlack"
         >
-          <LuArrowLeft className="sm:text-primary-teal text-neutral-charcoal size-6 sm:size-4" />
-          <span className="hidden sm:block">{t('Back to Proposals')}</span>
+          <LuArrowLeft className="sm:text-primary-teal size-6 sm:size-4 text-neutral-charcoal" />
+          <span className="sm:block hidden">{t('Back to Proposals')}</span>
         </button>
 
-        <div className="text-neutral-black flex justify-center text-lg font-medium">
+        <div className="font-medium flex justify-center text-lg text-neutral-black">
           {title ?? null}
         </div>
 
-        <div className="flex items-center justify-end gap-4">
+        <div className="gap-4 flex items-center justify-end">
           {canEdit && editHref && (
             <Button
               color="secondary"
@@ -86,7 +86,7 @@ export function ProposalViewLayout({
 
             {isFollowing ? t('Following') : t('Follow')}
           </Button>
-          <div className="hidden gap-4 sm:flex">
+          <div className="gap-4 sm:flex hidden">
             <LocaleChooser />
             <UserAvatarMenu />
           </div>

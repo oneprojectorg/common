@@ -242,7 +242,7 @@ export const PersonalDetailsForm = ({
         </FormHeader>
 
         {/* Header Images */}
-        <div className="relative w-full pb-12 sm:pb-20">
+        <div className="pb-12 sm:pb-20 relative w-full">
           <BannerUploader
             value={bannerImageUrl ?? undefined}
             onChange={(file: File) =>
@@ -253,7 +253,7 @@ export const PersonalDetailsForm = ({
           />
           <AvatarUploader
             label={t('Profile Picture')}
-            className="absolute bottom-0 left-4 aspect-square size-20 sm:size-28"
+            className="bottom-0 left-4 size-20 sm:size-28 absolute aspect-square"
             value={profileImageUrl ?? undefined}
             onChange={(file: File) =>
               handleImageUpload(file, setProfileImageUrl, uploadImage)

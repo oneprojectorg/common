@@ -13,7 +13,7 @@ export default {
 export const Example = () => (
   <div className="space-y-4">
     <Toast />
-    <div className="flex flex-wrap gap-4">
+    <div className="gap-4 flex flex-wrap">
       <Button
         onPress={() =>
           toast.success({
@@ -63,7 +63,7 @@ export const Example = () => (
       </Button>
     </div>
 
-    <div className="flex flex-wrap gap-4">
+    <div className="gap-4 flex flex-wrap">
       <Button
         onPress={() =>
           toast.status({
@@ -107,7 +107,7 @@ export const Example = () => (
 export const SuccessToast = () => (
   <div className="space-y-4">
     <Toast />
-    <div className="flex gap-4">
+    <div className="gap-4 flex">
       <Button
         onPress={() =>
           toast.success({
@@ -147,7 +147,7 @@ export const SuccessToast = () => (
 export const ErrorToast = () => (
   <div className="space-y-4">
     <Toast />
-    <div className="flex gap-4">
+    <div className="gap-4 flex">
       <Button
         color="destructive"
         onPress={() =>
@@ -191,10 +191,10 @@ export const ErrorToast = () => (
 export const StatusToasts = () => (
   <div className="space-y-4">
     <Toast />
-    <div className="grid grid-cols-2 gap-4">
+    <div className="gap-4 grid grid-cols-2">
       <div className="space-y-2">
         <h4 className="font-medium">HTTP Status Codes</h4>
-        <div className="flex flex-col gap-2">
+        <div className="gap-2 flex flex-col">
           <Button size="small" onPress={() => toast.status({ code: 200 })}>
             200 OK
           </Button>
@@ -215,7 +215,7 @@ export const StatusToasts = () => (
 
       <div className="space-y-2">
         <h4 className="font-medium">Custom Messages</h4>
-        <div className="flex flex-col gap-2">
+        <div className="gap-2 flex flex-col">
           <Button
             size="small"
             onPress={() =>
@@ -260,7 +260,7 @@ export const StatusToasts = () => (
 export const MultipleToasts = () => (
   <div className="space-y-4">
     <Toast />
-    <div className="flex gap-4">
+    <div className="gap-4 flex">
       <Button
         onPress={() => {
           toast.success({ title: 'Toast 1', message: 'First toast' });
@@ -298,7 +298,7 @@ export const MultipleToasts = () => (
 export const ToastWithActions = () => (
   <div className="space-y-4">
     <Toast />
-    <div className="flex flex-wrap gap-4">
+    <div className="gap-4 flex flex-wrap">
       <Button
         onPress={() =>
           toast.success({
@@ -333,7 +333,7 @@ export const ToastWithActions = () => (
 export const SingleLineToasts = () => (
   <div className="space-y-4">
     <Toast />
-    <div className="flex flex-wrap gap-4">
+    <div className="gap-4 flex flex-wrap">
       <Button
         onPress={() =>
           toast.success({

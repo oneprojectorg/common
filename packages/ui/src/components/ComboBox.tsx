@@ -45,7 +45,7 @@ export const ComboBox = <T extends object>({
       {...props}
       className={composeTailwindRenderProps(
         props.className,
-        'group flex flex-col gap-1',
+        'group gap-1 flex flex-col',
       )}
     >
       <Label className={props.labelClassName}>{label}</Label>
@@ -56,7 +56,7 @@ export const ComboBox = <T extends object>({
           color="ghost"
           {...props.buttonProps}
           className={cn(
-            'absolute right-1 top-1/2 aspect-square w-6 -translate-y-1/2 p-0',
+            'right-1 w-6 p-0 absolute top-1/2 aspect-square -translate-y-1/2',
             props.buttonProps?.className,
           )}
         >
@@ -75,7 +75,7 @@ export const ComboBox = <T extends object>({
         <ListBox
           items={items}
           className={cn(
-            'max-h-[inherit] overflow-auto p-1 outline-0 [clip-path:inset(0_0_0_0_round_.75rem)]',
+            'p-1 max-h-[inherit] overflow-auto outline-0 [clip-path:inset(0_0_0_0_round_.75rem)]',
             props.listBoxClassName,
           )}
         >

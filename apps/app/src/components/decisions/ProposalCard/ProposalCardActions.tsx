@@ -46,7 +46,7 @@ export function ProposalCardActions({
   });
 
   return (
-    <div className="flex w-full items-center gap-4 sm:w-auto">
+    <div className="gap-4 sm:w-auto flex w-full items-center">
       <Button
         onPress={handleLikeClick}
         size="small"

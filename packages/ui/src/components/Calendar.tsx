@@ -24,11 +24,11 @@ import { Button } from './Button';
 
 const cellStyles = tv({
   extend: focusRing,
-  base: 'focus-within:outline-blueGreen hover:bg-neutral-offWhite flex size-8 cursor-default items-center justify-center text-base outline-offset-2 outline-transparent forced-color-adjust-none',
+  base: 'focus-within:outline-blueGreen size-8 flex cursor-default items-center justify-center text-base outline-offset-2 outline-transparent forced-color-adjust-none hover:bg-neutral-offWhite',
   variants: {
     isSelected: {
       false: 'text-neutral-charcoal',
-      true: 'bg-primary-teal hover:bg-primary-teal text-white',
+      true: 'bg-primary-teal text-white hover:bg-primary-teal',
     },
     isDisabled: {
       true: 'text-neutral-gray3',
@@ -48,11 +48,11 @@ export const CalendarHeader = () => {
   const { direction } = useLocale();
 
   return (
-    <header className="flex w-full items-center justify-between gap-2 px-1 pb-4">
+    <header className="gap-2 px-1 pb-4 flex w-full items-center justify-between">
       <Button
         variant="icon"
         slot="previous"
-        className="pressed:bg-neutral-offWhite pressed:shadow-none text-neutral-charcoal hover:bg-neutral-offWhite h-8 w-8 rounded-none bg-white p-0 shadow-none"
+        className="pressed:bg-neutral-offWhite pressed:shadow-none h-8 w-8 p-0 rounded-none bg-white text-neutral-charcoal shadow-none hover:bg-neutral-offWhite"
       >
         {direction === 'rtl' ? (
           <ChevronRight className="size-4" aria-hidden />
@@ -60,11 +60,11 @@ export const CalendarHeader = () => {
           <ChevronLeft className="size-4" aria-hidden />
         )}
       </Button>
-      <Heading className="text-neutral-charcoal text-center text-base" />
+      <Heading className="text-center text-base text-neutral-charcoal" />
       <Button
         variant="icon"
         slot="next"
-        className="pressed:bg-neutral-offWhite pressed:shadow-none text-neutral-charcoal hover:bg-neutral-offWhite h-8 w-8 rounded-none bg-white p-0 shadow-none"
+        className="pressed:bg-neutral-offWhite pressed:shadow-none h-8 w-8 p-0 rounded-none bg-white text-neutral-charcoal shadow-none hover:bg-neutral-offWhite"
       >
         {direction === 'rtl' ? (
           <ChevronLeft className="size-4" aria-hidden />
@@ -80,7 +80,7 @@ export const CalendarGridHeader = () => {
   return (
     <AriaCalendarGridHeader>
       {(day) => (
-        <CalendarHeaderCell className="text-neutral-charcoal text-base">
+        <CalendarHeaderCell className="text-base text-neutral-charcoal">
           {day}
         </CalendarHeaderCell>
       )}
@@ -95,7 +95,7 @@ export const Calendar = <T extends DateValue>({
   return (
     <AriaCalendar
       {...props}
-      className="border-neutral-gray1 rounded-md border border-solid bg-white p-1"
+      className="p-1 rounded-md border border-solid border-neutral-gray1 bg-white"
     >
       <CalendarHeader />
       <CalendarGrid>
@@ -109,7 +109,7 @@ export const Calendar = <T extends DateValue>({
               return (
                 <span className="relative flex flex-col">
                   {cell}
-                  <span className="bg-primary-teal absolute bottom-1 left-0 right-0 m-auto size-1 rounded-full"></span>
+                  <span className="bottom-1 left-0 right-0 size-1 absolute m-auto rounded-full bg-primary-teal"></span>
                 </span>
               );
             }

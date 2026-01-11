@@ -5,7 +5,7 @@ export const FullScreenSplitLayout = ({
 }) => {
   return (
     <div className="relative flex h-svh w-full flex-col items-center justify-center font-sans">
-      <div className="relative flex size-full md:grid md:grid-cols-2 lg:grid-cols-3">
+      <div className="md:grid md:grid-cols-2 lg:grid-cols-3 relative flex size-full">
         {children}
       </div>
     </div>

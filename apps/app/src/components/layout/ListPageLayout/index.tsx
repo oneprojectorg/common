@@ -11,7 +11,7 @@ export const ListPageLayout = ({
   return (
     <div
       className={cn(
-        'flex w-full flex-col gap-5 px-4 pb-12 pt-5 sm:min-h-[calc(100vh-3.5rem)] sm:gap-8 sm:pt-8',
+        'gap-5 px-4 pb-12 pt-5 sm:min-h-[calc(100vh-3.5rem)] sm:gap-8 sm:pt-8 flex w-full flex-col',
         className,
       )}
     >
@@ -28,10 +28,10 @@ export const ListPageLayoutHeader = ({
   children?: ReactNode;
 }) => {
   return (
-    <div className="flex flex-col px-0">
+    <div className="px-0 flex flex-col">
       <div
         className={cn(
-          'sm:!text-title-lg !text-title-md text-neutral-black font-serif',
+          'sm:!text-title-lg font-serif !text-title-md text-neutral-black',
           className,
         )}
       >

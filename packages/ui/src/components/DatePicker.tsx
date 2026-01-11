@@ -202,18 +202,18 @@ export const DatePicker = <T extends DateValue>({
           <AriaButton
             isDisabled={props.isDisabled}
             className={cn(
-              'absolute right-0 top-1/2 -translate-y-1/2',
+              'right-0 absolute top-1/2 -translate-y-1/2',
               'h-10 w-10',
               'flex items-center justify-center',
               'text-neutral-black outline-hidden',
-              'hover:bg-neutral-gray1 focus:ring-primary-teal rounded-sm focus:ring-2 focus:ring-offset-2',
-              props.isDisabled && 'text-lightGray cursor-not-allowed',
+              'rounded-sm hover:bg-neutral-gray1 focus:ring-2 focus:ring-primary-teal focus:ring-offset-2',
+              props.isDisabled && 'cursor-not-allowed text-lightGray',
             )}
           >
             <CalendarIcon className="size-4" />
           </AriaButton>
         </TextField>
-        <Popover className="w-[15.5rem] p-0" placement="bottom start">
+        <Popover className="p-0 w-[15.5rem]" placement="bottom start">
           <Calendar
             value={props.value}
             onChange={handleCalendarChange}

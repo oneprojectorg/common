@@ -11,9 +11,9 @@ export const FormHeader = ({
   className?: string;
   children?: ReactNode;
 }) => (
-  <div className={cn('flex flex-col gap-4', className)}>
+  <div className={cn('gap-4 flex flex-col', className)}>
     <Header1 className="text-center">{text}</Header1>
 
-    <p className="text-darkGray px-6 text-center">{children}</p>
+    <p className="px-6 text-center text-darkGray">{children}</p>
   </div>
 );

@@ -21,27 +21,27 @@ export default {
 };
 
 export const Example = () => (
-  <div className="flex flex-col gap-4">
-    <div className="flex items-center gap-4">
+  <div className="gap-4 flex flex-col">
+    <div className="gap-4 flex items-center">
       <Avatar placeholder="John Doe" />
       <Avatar placeholder="Jane Smith" />
       <Avatar placeholder="Bob Johnson" />
       <Avatar placeholder="Alice Brown" />
     </div>
 
-    <div className="flex items-center gap-4">
+    <div className="gap-4 flex items-center">
       <Avatar placeholder="Single" />
       <Avatar placeholder="" />
       <Avatar />
     </div>
 
-    <div className="flex items-center gap-4">
+    <div className="gap-4 flex items-center">
       <Avatar placeholder="John Doe" className="size-12" />
       <Avatar placeholder="Jane Smith" className="size-16" />
       <Avatar placeholder="Bob Johnson" className="size-20" />
     </div>
 
-    <div className="flex items-center gap-4">
+    <div className="gap-4 flex items-center">
       <Avatar placeholder="John Doe">
         <img
           src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
@@ -87,7 +87,7 @@ export const CustomSize = {
 };
 
 export const Skeleton = () => (
-  <div className="flex items-center gap-4">
+  <div className="gap-4 flex items-center">
     <AvatarSkeleton />
     <AvatarSkeleton className="size-12" />
     <AvatarSkeleton className="size-16" />

@@ -61,7 +61,7 @@ export function RichTextEditorFloatingToolbar({
   return (
     <div
       data-floating-toolbar
-      className="border-neutral-gray1 fixed z-[9999999] flex items-center gap-1 overflow-x-auto whitespace-nowrap rounded-lg border bg-white p-1.5 shadow-lg"
+      className="gap-1 p-1.5 shadow-lg fixed z-[9999999] flex items-center overflow-x-auto rounded-lg border border-neutral-gray1 bg-white whitespace-nowrap"
       style={{
         top: `${position.top}px`,
         left: `${position.left}px`,
@@ -74,7 +74,7 @@ export function RichTextEditorFloatingToolbar({
           editor.chain().focus().toggleHeading({ level: 1 }).run();
           onSelectionChange();
         }}
-        className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive('heading', { level: 1 }) ? 'text-neutral-black bg-gray-200' : 'text-neutral-charcoal'}`}
+        className={`p-1.5 hover:bg-gray-100 rounded ${editor.isActive('heading', { level: 1 }) ? 'bg-gray-200 text-neutral-black' : 'text-neutral-charcoal'}`}
         title="Heading 1"
       >
         <Heading1 className="size-4" />
@@ -84,7 +84,7 @@ export function RichTextEditorFloatingToolbar({
           editor.chain().focus().toggleHeading({ level: 2 }).run();
           onSelectionChange();
         }}
-        className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive('heading', { level: 2 }) ? 'text-neutral-black bg-gray-200' : 'text-neutral-charcoal'}`}
+        className={`p-1.5 hover:bg-gray-100 rounded ${editor.isActive('heading', { level: 2 }) ? 'bg-gray-200 text-neutral-black' : 'text-neutral-charcoal'}`}
         title="Heading 2"
       >
         <Heading2 className="size-4" />
@@ -94,13 +94,13 @@ export function RichTextEditorFloatingToolbar({
           editor.chain().focus().toggleHeading({ level: 3 }).run();
           onSelectionChange();
         }}
-        className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive('heading', { level: 3 }) ? 'text-neutral-black bg-gray-200' : 'text-neutral-charcoal'}`}
+        className={`p-1.5 hover:bg-gray-100 rounded ${editor.isActive('heading', { level: 3 }) ? 'bg-gray-200 text-neutral-black' : 'text-neutral-charcoal'}`}
         title="Heading 3"
       >
         <Heading3 className="size-4" />
       </button>
 
-      <div className="mx-1 h-4 w-px bg-gray-300" />
+      <div className="mx-1 h-4 bg-gray-300 w-px" />
 
       {/* Text Formatting */}
       <button
@@ -108,7 +108,7 @@ export function RichTextEditorFloatingToolbar({
           editor.chain().focus().toggleBold().run();
           onSelectionChange();
         }}
-        className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive('bold') ? 'text-neutral-black bg-gray-200' : 'text-neutral-charcoal'}`}
+        className={`p-1.5 hover:bg-gray-100 rounded ${editor.isActive('bold') ? 'bg-gray-200 text-neutral-black' : 'text-neutral-charcoal'}`}
         title="Bold"
       >
         <Bold className="size-4" />
@@ -118,7 +118,7 @@ export function RichTextEditorFloatingToolbar({
           editor.chain().focus().toggleItalic().run();
           onSelectionChange();
         }}
-        className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive('italic') ? 'text-neutral-black bg-gray-200' : 'text-neutral-charcoal'}`}
+        className={`p-1.5 hover:bg-gray-100 rounded ${editor.isActive('italic') ? 'bg-gray-200 text-neutral-black' : 'text-neutral-charcoal'}`}
         title="Italic"
       >
         <Italic className="size-4" />
@@ -128,7 +128,7 @@ export function RichTextEditorFloatingToolbar({
           editor.chain().focus().toggleUnderline().run();
           onSelectionChange();
         }}
-        className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive('underline') ? 'text-neutral-black bg-gray-200' : 'text-neutral-charcoal'}`}
+        className={`p-1.5 hover:bg-gray-100 rounded ${editor.isActive('underline') ? 'bg-gray-200 text-neutral-black' : 'text-neutral-charcoal'}`}
         title="Underline"
       >
         <UnderlineIcon className="size-4" />
@@ -138,7 +138,7 @@ export function RichTextEditorFloatingToolbar({
           editor.chain().focus().toggleStrike().run();
           onSelectionChange();
         }}
-        className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive('strike') ? 'text-neutral-black bg-gray-200' : 'text-neutral-charcoal'}`}
+        className={`p-1.5 hover:bg-gray-100 rounded ${editor.isActive('strike') ? 'bg-gray-200 text-neutral-black' : 'text-neutral-charcoal'}`}
         title="Strikethrough"
       >
         <Strikethrough className="size-4" />
@@ -148,13 +148,13 @@ export function RichTextEditorFloatingToolbar({
           editor.chain().focus().toggleCode().run();
           onSelectionChange();
         }}
-        className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive('code') ? 'text-neutral-black bg-gray-200' : 'text-neutral-charcoal'}`}
+        className={`p-1.5 hover:bg-gray-100 rounded ${editor.isActive('code') ? 'bg-gray-200 text-neutral-black' : 'text-neutral-charcoal'}`}
         title="Code"
       >
         <Code className="size-4" />
       </button>
 
-      <div className="mx-1 h-4 w-px bg-gray-300" />
+      <div className="mx-1 h-4 bg-gray-300 w-px" />
 
       {/* Lists and Blockquote */}
       <button
@@ -162,7 +162,7 @@ export function RichTextEditorFloatingToolbar({
           editor.chain().focus().toggleBulletList().run();
           onSelectionChange();
         }}
-        className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive('bulletList') ? 'text-neutral-black bg-gray-200' : 'text-neutral-charcoal'}`}
+        className={`p-1.5 hover:bg-gray-100 rounded ${editor.isActive('bulletList') ? 'bg-gray-200 text-neutral-black' : 'text-neutral-charcoal'}`}
         title="Bullet List"
       >
         <List className="size-4" />
@@ -172,7 +172,7 @@ export function RichTextEditorFloatingToolbar({
           editor.chain().focus().toggleOrderedList().run();
           onSelectionChange();
         }}
-        className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive('orderedList') ? 'text-neutral-black bg-gray-200' : 'text-neutral-charcoal'}`}
+        className={`p-1.5 hover:bg-gray-100 rounded ${editor.isActive('orderedList') ? 'bg-gray-200 text-neutral-black' : 'text-neutral-charcoal'}`}
         title="Numbered List"
       >
         <ListOrdered className="size-4" />
@@ -182,13 +182,13 @@ export function RichTextEditorFloatingToolbar({
           editor.chain().focus().toggleBlockquote().run();
           onSelectionChange();
         }}
-        className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive('blockquote') ? 'text-neutral-black bg-gray-200' : 'text-neutral-charcoal'}`}
+        className={`p-1.5 hover:bg-gray-100 rounded ${editor.isActive('blockquote') ? 'bg-gray-200 text-neutral-black' : 'text-neutral-charcoal'}`}
         title="Blockquote"
       >
         <Quote className="size-4" />
       </button>
 
-      <div className="mx-1 h-4 w-px bg-gray-300" />
+      <div className="mx-1 h-4 bg-gray-300 w-px" />
 
       {/* Text Alignment */}
       <button
@@ -196,7 +196,7 @@ export function RichTextEditorFloatingToolbar({
           editor.chain().focus().setTextAlign('left').run();
           onSelectionChange();
         }}
-        className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive({ textAlign: 'left' }) ? 'text-neutral-black bg-gray-200' : 'text-neutral-charcoal'}`}
+        className={`p-1.5 hover:bg-gray-100 rounded ${editor.isActive({ textAlign: 'left' }) ? 'bg-gray-200 text-neutral-black' : 'text-neutral-charcoal'}`}
         title="Align Left"
       >
         <AlignLeft className="size-4" />
@@ -206,7 +206,7 @@ export function RichTextEditorFloatingToolbar({
           editor.chain().focus().setTextAlign('center').run();
           onSelectionChange();
         }}
-        className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive({ textAlign: 'center' }) ? 'text-neutral-black bg-gray-200' : 'text-neutral-charcoal'}`}
+        className={`p-1.5 hover:bg-gray-100 rounded ${editor.isActive({ textAlign: 'center' }) ? 'bg-gray-200 text-neutral-black' : 'text-neutral-charcoal'}`}
         title="Align Center"
       >
         <AlignCenter className="size-4" />
@@ -216,13 +216,13 @@ export function RichTextEditorFloatingToolbar({
           editor.chain().focus().setTextAlign('right').run();
           onSelectionChange();
         }}
-        className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive({ textAlign: 'right' }) ? 'text-neutral-black bg-gray-200' : 'text-neutral-charcoal'}`}
+        className={`p-1.5 hover:bg-gray-100 rounded ${editor.isActive({ textAlign: 'right' }) ? 'bg-gray-200 text-neutral-black' : 'text-neutral-charcoal'}`}
         title="Align Right"
       >
         <AlignRight className="size-4" />
       </button>
 
-      <div className="mx-1 h-4 w-px bg-gray-300" />
+      <div className="mx-1 h-4 bg-gray-300 w-px" />
 
       {/* Link */}
       <button
@@ -230,7 +230,7 @@ export function RichTextEditorFloatingToolbar({
           addLink();
           onSelectionChange();
         }}
-        className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive('link') ? 'text-neutral-black bg-gray-200' : 'text-neutral-charcoal'}`}
+        className={`p-1.5 hover:bg-gray-100 rounded ${editor.isActive('link') ? 'bg-gray-200 text-neutral-black' : 'text-neutral-charcoal'}`}
         title="Add Link"
       >
         <LinkIcon className="size-4" />

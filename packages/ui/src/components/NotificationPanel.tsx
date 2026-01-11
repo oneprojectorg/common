@@ -12,9 +12,9 @@ export const NotificationPanelHeader = ({
   count: number;
 }) => {
   return (
-    <Header2 className="text-title-sm text-neutral-black flex items-center gap-1 p-6 font-serif">
+    <Header2 className="gap-1 p-6 flex items-center font-serif text-title-sm text-neutral-black">
       {title}{' '}
-      <span className="bg-functional-red text-neutral-offWhite flex size-4 items-center justify-center rounded-full font-sans text-xs">
+      <span className="size-4 flex items-center justify-center rounded-full bg-functional-red font-sans text-xs text-neutral-offWhite">
         {count}
       </span>
     </Header2>
@@ -39,7 +39,7 @@ export const NotificationPanelItem = ({
   return (
     <li
       className={cn(
-        'border-neutral-gray1 flex flex-col justify-between gap-6 border-t p-6 transition-colors sm:flex-row sm:items-center sm:gap-2',
+        'gap-6 p-6 sm:flex-row sm:items-center sm:gap-2 flex flex-col justify-between border-t border-neutral-gray1 transition-colors',
         className,
       )}
     >
@@ -53,12 +53,12 @@ export const NotificationPanelActions = ({
 }: {
   children: ReactNode;
 }) => {
-  return <div className="flex items-center gap-4">{children}</div>;
+  return <div className="gap-4 flex items-center">{children}</div>;
 };
 
 export const NotificationPanel = ({ children }: { children: ReactNode }) => {
   return (
-    <Surface className="border-neutral-gray1 flex flex-col gap-0 border-b">
+    <Surface className="gap-0 flex flex-col border-b border-neutral-gray1">
       {children}
     </Surface>
   );

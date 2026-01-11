@@ -17,7 +17,7 @@ export const Skeleton = ({
   return (
     <div
       className={cn(
-        'bg-neutral-gray1 min-h-4 rounded-sm',
+        'min-h-4 rounded-sm bg-neutral-gray1',
         'animate-pulse',
         className,
       )}
@@ -39,7 +39,7 @@ export const SkeletonLine: React.FC<SkeletonProps> = memo(
         {Array.from({ length: lines }).map((_, index) => (
           <div
             key={`${index + 1}`}
-            className="h-[1em] animate-pulse rounded-[0.25em] bg-gradient-to-br from-neutral-300 to-neutral-200"
+            className="from-neutral-300 to-neutral-200 h-[1em] animate-pulse rounded-[0.25em] bg-gradient-to-br"
             style={{
               backgroundSize: '200% 200%',
               width: randomWidth

@@ -151,7 +151,7 @@ export const AddRelationshipModalSuspense = ({
           items={dropdownItems}
           chevronIcon={<LuChevronDown className="size-4" />}
           className={cn(
-            'min-w-full sm:min-w-fit',
+            'sm:min-w-fit min-w-full',
             relationships.some((r) => r.pending)
               ? 'bg-transparent'
               : 'bg-primary-tealWhite',
@@ -165,7 +165,7 @@ export const AddRelationshipModalSuspense = ({
           >
             <DialogTrigger>
               <Button
-                className="w-full sm:w-auto"
+                className="sm:w-auto w-full"
                 color={relationship.pending ? 'unverified' : 'verified'}
               >
                 {relationship.pending ? (
@@ -197,7 +197,7 @@ export const AddRelationshipModalSuspense = ({
         ))
       ) : (
         <DialogTrigger>
-          <Button className="min-w-full text-nowrap sm:min-w-fit">
+          <Button className="sm:min-w-fit min-w-full text-nowrap">
             <LuPlus className="size-4" />
             {t('Add relationship')}
           </Button>

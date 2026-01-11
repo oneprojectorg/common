@@ -42,7 +42,7 @@ export const LinkPreview = memo(({ url, className }: LinkPreviewProps) => {
     return (
       <Skeleton className={className}>
         <Skeleton className="mb-2 h-4" />
-        <Skeleton className="mb-2 h-3 w-3/4 bg-gray-200" />
+        <Skeleton className="mb-2 h-3 bg-gray-200 w-3/4" />
         <Skeleton className="h-20 bg-gray-200" />
       </Skeleton>
     );
@@ -63,23 +63,23 @@ export const LinkPreview = memo(({ url, className }: LinkPreviewProps) => {
         )}
         <div className="p-4">
           {previewData.meta?.title && (
-            <Header3 className="text-neutral-black text-base">
+            <Header3 className="text-base text-neutral-black">
               {previewData.meta.title}
             </Header3>
           )}
           {previewData.meta?.author && <span>{previewData.meta.author}</span>}
-          <div className="text-neutral-gray4 flex flex-col text-xs">
+          <div className="flex flex-col text-xs text-neutral-gray4">
             {previewData.meta?.site && <span>{previewData.meta.site}</span>}
           </div>
           {previewData.meta?.description && (
-            <p className="text-neutral-gray4 text-sm">
+            <p className="text-sm text-neutral-gray4">
               {previewData.meta.description.length > 200
                 ? previewData.meta.description.slice(0, 200) + '...'
                 : previewData.meta.description}
             </p>
           )}
           <hr className="my-2" />
-          <div className="text-neutral-gray4 flex items-center gap-2 text-xs">
+          <div className="gap-2 flex items-center text-xs text-neutral-gray4">
             <LuGlobe className="size-4" /> <span>{url}</span>
           </div>
         </div>

@@ -23,7 +23,7 @@ export default {
 };
 
 export const Example = () => (
-  <div className="flex flex-col gap-8">
+  <div className="gap-8 flex flex-col">
     Medium:
     <Button>Button</Button>
     <Button color="secondary">Button</Button>

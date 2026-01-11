@@ -43,15 +43,15 @@ type Proposal = z.infer<typeof proposalEncoder>;
 
 const ProposalCardSkeleton = () => {
   return (
-    <Surface className="relative w-full min-w-80 space-y-3 p-4 pb-4">
+    <Surface className="min-w-80 space-y-3 p-4 pb-4 relative w-full">
       {/* Header with title and budget skeleton */}
-      <div className="flex flex-col gap-2">
+      <div className="gap-2 flex flex-col">
         <Skeleton className="h-6 w-3/4" />
         <Skeleton className="h-5 w-1/2" />
       </div>
 
       {/* Author and category skeleton */}
-      <div className="flex items-center gap-2">
+      <div className="gap-2 flex items-center">
         <Skeleton className="size-6 rounded-full" />
         <Skeleton className="h-4 w-24" />
         <Skeleton className="size-1 rounded-full" />
@@ -66,8 +66,8 @@ const ProposalCardSkeleton = () => {
       </div>
 
       {/* Footer with engagement skeleton */}
-      <div className="flex flex-col justify-between gap-4">
-        <div className="flex w-full items-center justify-between gap-4">
+      <div className="gap-4 flex flex-col justify-between">
+        <div className="gap-4 flex w-full items-center justify-between">
           <Skeleton className="h-4 w-12" />
           <Skeleton className="h-4 w-16" />
           <Skeleton className="h-4 w-16" />
@@ -82,7 +82,7 @@ const ProposalCardSkeleton = () => {
   /* Proposals Grid Skeleton */
 }
 export const ProposalListSkeletonGrid = () => (
-  <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+  <div className="gap-6 md:grid-cols-2 lg:grid-cols-3 grid grid-cols-1">
     {Array.from({ length: 6 }).map((_, index) => (
       <ProposalCardSkeleton key={index} />
     ))}
@@ -91,13 +91,13 @@ export const ProposalListSkeletonGrid = () => (
 
 export const ProposalListSkeleton = () => {
   return (
-    <div className="flex flex-col gap-6">
+    <div className="gap-6 flex flex-col">
       {/* Filters Bar Skeleton */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
+      <div className="gap-4 flex flex-wrap items-center justify-between">
+        <div className="gap-4 flex items-center">
           <Skeleton className="h-6 w-40" />
         </div>
-        <div className="grid max-w-fit grid-cols-2 justify-end gap-4 sm:flex sm:flex-1 sm:flex-wrap sm:items-center">
+        <div className="gap-4 sm:flex sm:flex-1 sm:flex-wrap sm:items-center grid max-w-fit grid-cols-2 justify-end">
           <Skeleton className="h-10 w-32" />
           <Skeleton className="h-10 w-32" />
           <Skeleton className="h-10 w-32" />
@@ -113,10 +113,10 @@ const NoProposalsFound = () => {
   const t = useTranslations();
   return (
     <EmptyProposalsState>
-      <Header3 className="!text-title-base text-neutral-black font-serif font-light">
+      <Header3 className="font-light font-serif !text-title-base text-neutral-black">
         {t('No proposals found matching the current filters.')}
       </Header3>
-      <p className="text-neutral-charcoal text-base">
+      <p className="text-base text-neutral-charcoal">
         {t('Try adjusting your filter selection above.')}
       </p>
     </EmptyProposalsState>
@@ -198,7 +198,7 @@ const VotingProposalsList = ({
 
   return (
     <>
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="gap-6 md:grid-cols-2 lg:grid-cols-3 grid grid-cols-1">
         {proposals.map((proposal) => {
           const isSelected = isProposalSelected(proposal.id);
           const isApproved = proposal.status === ProposalStatus.APPROVED;
@@ -224,7 +224,7 @@ const VotingProposalsList = ({
                       (canManageProposals ||
                         proposal.isEditable ||
                         showCheckbox) && (
-                        <div className="flex items-center gap-2">
+                        <div className="gap-2 flex items-center">
                           {(canManageProposals || proposal.isEditable) && (
                             <ProposalCardMenu
                               proposal={proposal}
@@ -274,7 +274,7 @@ const VotingProposalsList = ({
           } else {
             return (
               <ProposalCard key={proposal.id}>
-                <div className="flex h-full flex-col justify-between gap-3 space-y-3">
+                <div className="gap-3 space-y-3 flex h-full flex-col justify-between">
                   <ProposalCardContent>
                     <ProposalCardHeader
                       proposal={proposal}
@@ -309,7 +309,7 @@ const VotingProposalsList = ({
       </div>
 
       <VotingSubmitFooter isVisible={!isReadOnly}>
-        <div className="flex w-full items-center justify-between px-4 sm:max-w-6xl sm:px-8">
+        <div className="px-4 sm:max-w-6xl sm:px-8 flex w-full items-center justify-between">
           <span className="text-neutral-black">
             <span className="text-primary-teal">{numSelected}</span> of{' '}
             {maxVotesPerMember}{' '}
@@ -355,10 +355,10 @@ const ViewProposalsList = ({
   }
 
   return (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+    <div className="gap-6 md:grid-cols-2 lg:grid-cols-3 grid grid-cols-1">
       {proposals.map((proposal) => (
         <ProposalCard key={proposal.id}>
-          <div className="flex h-full flex-col justify-between gap-3 space-y-3">
+          <div className="gap-3 space-y-3 flex h-full flex-col justify-between">
             <ProposalCardContent>
               <ProposalCardHeader
                 proposal={proposal}
@@ -544,11 +544,11 @@ export const ProposalsList = ({
   };
 
   return (
-    <div className="flex flex-col gap-6 pb-12">
+    <div className="gap-6 pb-12 flex flex-col">
       {/* Filters Bar */}
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <span className="text-title-base text-neutral-black font-serif">
+      <div className="gap-4 flex flex-wrap items-start justify-between">
+        <div className="gap-4 flex items-center">
+          <span className="font-serif text-title-base text-neutral-black">
             {proposalFilter === 'my-ballot'
               ? t('My ballot')
               : proposalFilter === 'my'
@@ -559,7 +559,7 @@ export const ProposalsList = ({
             <Bullet /> {proposals?.length ?? 0}
           </span>
         </div>
-        <div className="grid max-w-fit grid-cols-2 justify-end gap-4 sm:flex sm:flex-1 sm:flex-wrap sm:items-center">
+        <div className="gap-4 sm:flex sm:flex-1 sm:flex-wrap sm:items-center grid max-w-fit grid-cols-2 justify-end">
           <Select
             size="small"
             className="min-w-36"

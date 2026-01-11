@@ -18,7 +18,7 @@ const meta: Meta<typeof RichTextEditor> = {
 export default meta;
 
 export const Example = () => (
-  <div className="w-[800px] border border-dotted p-4">
+  <div className="p-4 w-[800px] border border-dotted">
     <RichTextEditor />
   </div>
 );
@@ -41,7 +41,7 @@ export const WithInitialContent = () => {
   `;
 
   return (
-    <div className="w-[800px] border border-dotted p-4">
+    <div className="p-4 w-[800px] border border-dotted">
       <RichTextEditor content={initialContent} />
     </div>
   );
@@ -52,8 +52,8 @@ export const WithChangeHandlers = () => {
   const [updateCount, setUpdateCount] = useState(0);
 
   return (
-    <div className="flex w-[800px] flex-col gap-4">
-      <div className="border border-dotted p-4">
+    <div className="gap-4 flex w-[800px] flex-col">
+      <div className="p-4 border border-dotted">
         <RichTextEditor
           onUpdate={(html) => {
             setContent(html);
@@ -61,10 +61,10 @@ export const WithChangeHandlers = () => {
           }}
         />
       </div>
-      <div className="bg-neutral-gray4 rounded-md p-4">
+      <div className="p-4 rounded-md bg-neutral-gray4">
         <p className="mb-2 font-semibold">Update count: {updateCount}</p>
-        <p className="text-neutral-gray1 mb-2 text-sm">Current content:</p>
-        <pre className="max-h-40 overflow-auto rounded bg-white p-2 text-xs">
+        <p className="mb-2 text-sm text-neutral-gray1">Current content:</p>
+        <pre className="max-h-40 p-2 overflow-auto rounded bg-white text-xs">
           {content || '<empty>'}
         </pre>
       </div>
@@ -104,11 +104,11 @@ export const WithRefAPI = () => {
   };
 
   return (
-    <div className="flex w-[800px] flex-col gap-4 border border-dotted">
+    <div className="gap-4 flex w-[800px] flex-col border border-dotted">
       <div className="p-4">
         <RichTextEditor ref={editorRef} />
       </div>
-      <div className="flex flex-wrap gap-2">
+      <div className="gap-2 flex flex-wrap">
         <Button onPress={handleGetHTML}>Get HTML</Button>
         <Button onPress={handleSetContent}>Set Content</Button>
         <Button onPress={handleClear}>Clear</Button>
@@ -116,7 +116,7 @@ export const WithRefAPI = () => {
         <Button onPress={handleCheckEmpty}>Check Empty</Button>
       </div>
       {status && (
-        <div className="bg-neutral-gray4 rounded-md p-3 text-sm">
+        <div className="p-3 rounded-md bg-neutral-gray4 text-sm">
           <strong>Status:</strong> {status}
         </div>
       )}
@@ -125,9 +125,9 @@ export const WithRefAPI = () => {
 };
 
 export const WithCustomStyling = () => (
-  <div className="w-[800px] border border-dotted p-4">
+  <div className="p-4 w-[800px] border border-dotted">
     <RichTextEditor
-      className="border-teal rounded-lg border-2 bg-white p-4"
+      className="border-teal p-4 rounded-lg border-2 bg-white"
       editorClassName="min-h-64"
     />
   </div>
