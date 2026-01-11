@@ -1,6 +1,7 @@
 @import 'tailwindcss';
 @import './tokens.css';
 @import './tw-animate.css';
+@import './intent-ui-theme.css';
 
 /* Tell Tailwind where to scan for classes in the UI package */
 @source "../ui/src/**/*.{js,ts,jsx,tsx}";

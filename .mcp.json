@@ -13,6 +13,11 @@
     "asana": {
       "type": "sse",
       "url": "https://mcp.asana.com/sse"
+    },
+    "shadcn": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["shadcn@latest", "mcp"]
     }
   }
 }
