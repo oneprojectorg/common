@@ -46,7 +46,7 @@ export function ProposalInfoModal({
             />
           </ModalBody>
 
-          <div className="px-6 py-4 flex justify-end border-t border-neutral-gray1 bg-white">
+          <div className="px-6 py-4 flex justify-end border-t bg-white">
             <Button variant="primary" onPress={onClose}>
               OK
             </Button>

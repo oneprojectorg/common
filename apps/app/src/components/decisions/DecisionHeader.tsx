@@ -72,7 +72,7 @@ export async function DecisionHeader({
       />
 
       <div className="sm:items-center flex flex-col overflow-x-auto">
-        <div className="px-12 py-4 sm:px-32 w-fit rounded-b border border-t-0 border-neutral-gray1 bg-white">
+        <div className="px-12 py-4 sm:px-32 w-fit rounded-b border border-t-0 bg-white">
           <DecisionProcessStepper
             phases={phases}
             currentStateId={instance.currentStateId || ''}

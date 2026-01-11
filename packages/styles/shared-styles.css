@@ -26,6 +26,17 @@
  * - bg-gradient, bg-tealGreen, bg-redTeal, bg-blueGreen, bg-orangePurple, bg-yellowOrange (Avatar gradients)
  */
 
+/* Default border color - in Tailwind v4, `border` no longer defaults to currentColor */
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-neutral-gray1, currentColor);
+  }
+}
+
 @theme {
   /* ============================================
    * Breakpoints (screens)

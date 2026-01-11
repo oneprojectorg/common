@@ -74,7 +74,7 @@ export const ProfileRelationshipsSkeletonWithLines = () => {
         <BreadcrumbsSkeleton />
         <TitleSkeleton />
       </div>
-      <div className="rounded-md border border-neutral-gray1">
+      <div className="rounded-md border">
         <TabListSkeleton />
         <div className="px-6 py-4">
           <ul className="gap-12 flex flex-col">

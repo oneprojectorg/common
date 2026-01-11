@@ -140,7 +140,7 @@ export function DiscussionModal({
 
         {/* Comment Input using PostUpdate */}
         <ModalFooter className="sticky">
-          <Surface className="sm:border-neutral-gray1 p-0 pt-5 sm:border sm:p-4 w-full border-0">
+          <Surface className="p-0 pt-5 sm:border sm:p-4 w-full border-0">
             <PostUpdate
               parentPostId={post.id}
               placeholder={`Comment${user.currentProfile?.name ? ` as ${user.currentProfile?.name}` : ''}...`}

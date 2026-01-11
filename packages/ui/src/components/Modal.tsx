@@ -21,7 +21,7 @@ const overlayStyles = tv({
 });
 
 const modalStyles = tv({
-  base: 'entering:ease-out exiting:ease-in max-w-md backdrop-blur-lg sm:h-auto sm:max-h-[calc(100svh-2rem)] sm:max-w-[32rem] sm:rounded-md isolate z-[999999] h-svh max-h-svh w-screen overflow-hidden overflow-y-auto rounded-none border border-neutral-gray1 bg-white bg-clip-padding backdrop-brightness-50 backdrop-saturate-50 focus-visible:outline-hidden entering:animate-in entering:duration-500 entering:fade-in exiting:animate-out exiting:duration-500 exiting:fade-out',
+  base: 'entering:ease-out exiting:ease-in max-w-md backdrop-blur-lg sm:h-auto sm:max-h-[calc(100svh-2rem)] sm:max-w-[32rem] sm:rounded-md isolate z-[999999] h-svh max-h-svh w-screen overflow-hidden overflow-y-auto rounded-none border bg-white bg-clip-padding backdrop-brightness-50 backdrop-saturate-50 focus-visible:outline-hidden entering:animate-in entering:duration-500 entering:fade-in exiting:animate-out exiting:duration-500 exiting:fade-out',
 });
 
 type ModalContextType = {
@@ -50,7 +50,7 @@ export const ModalHeader = ({
   };
 
   return (
-    <div className="top-0 min-h-16 sticky z-30 flex w-full items-center border-b border-neutral-gray1 bg-white">
+    <div className="top-0 min-h-16 sticky z-30 flex w-full items-center border-b bg-white">
       <div className="relative flex w-full items-center justify-center">
         {isDismissable && (
           <button
@@ -110,7 +110,7 @@ export const ModalFooter = ({
   return (
     <div
       className={cn(
-        'bottom-0 gap-4 px-6 py-3 sm:sticky sm:flex-row absolute flex w-full flex-col-reverse justify-end border-t border-neutral-gray1 bg-white',
+        'bottom-0 gap-4 px-6 py-3 sm:sticky sm:flex-row absolute flex w-full flex-col-reverse justify-end border-t bg-white',
         className,
       )}
     >
@@ -157,7 +157,7 @@ export const ModalStepper = memo(
           'bottom-0 sticky',
           'flex w-full items-center justify-between',
           'px-6 py-3',
-          'border-t border-neutral-gray1 bg-white',
+          'border-t bg-white',
         )}
       >
         <span className="flex-1">

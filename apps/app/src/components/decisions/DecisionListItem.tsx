@@ -50,7 +50,7 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
   return (
     <Link
       href={`/decisions/${item.slug}`}
-      className="sm:border-b-neutral-gray1 gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:rounded-none sm:border-0 sm:border-b flex flex-col rounded-lg border border-neutral-gray1 hover:bg-primary-tealWhite hover:no-underline"
+      className="sm:border-b-neutral-gray1 gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:rounded-none sm:border-0 sm:border-b flex flex-col rounded-lg border hover:bg-primary-tealWhite hover:no-underline"
     >
       <div className="gap-2 flex flex-col">
         {/* Process name and status chip */}
@@ -65,7 +65,7 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
             <div className="gap-1 flex items-center">
               <Avatar
                 placeholder={owner.name}
-                className="size-4 border border-neutral-gray1"
+                className="size-4 border"
               >
                 {owner.avatarImage?.name ? (
                   <Image

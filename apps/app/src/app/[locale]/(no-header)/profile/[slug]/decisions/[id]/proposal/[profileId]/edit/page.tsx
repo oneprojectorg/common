@@ -40,7 +40,7 @@ function ProposalEditPageSkeleton() {
   return (
     <div className="flex min-h-screen flex-col">
       {/* Header loading */}
-      <div className="px-6 py-4 flex items-center justify-between border-b border-neutral-gray1 bg-white">
+      <div className="px-6 py-4 flex items-center justify-between border-b bg-white">
         <div className="h-6 w-32 bg-gray-200 animate-pulse rounded" />
         <div className="h-6 w-48 bg-gray-200 animate-pulse rounded" />
         <div className="h-10 w-24 bg-gray-200 animate-pulse rounded" />

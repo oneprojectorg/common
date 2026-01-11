@@ -95,7 +95,7 @@ export const Calendar = <T extends DateValue>({
   return (
     <AriaCalendar
       {...props}
-      className="p-1 rounded-md border border-solid border-neutral-gray1 bg-white"
+      className="p-1 rounded-md border border-solid bg-white"
     >
       <CalendarHeader />
       <CalendarGrid>

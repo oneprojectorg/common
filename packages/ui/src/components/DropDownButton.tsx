@@ -9,7 +9,7 @@ import { Menu, MenuItem, MenuTrigger } from './Menu';
 import { Popover } from './Popover';
 
 const dropdownButtonStyle = tv({
-  base: 'h-10 gap-1 p-4 font-normal leading-6 flex w-fit items-center justify-center rounded-lg border border-solid border-neutral-gray1 text-center text-sm shadow-md outline-hidden duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lightGray',
+  base: 'h-10 gap-1 p-4 font-normal leading-6 flex w-fit items-center justify-center rounded-lg border border-solid text-center text-sm shadow-md outline-hidden duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lightGray',
   variants: {
     color: {
       primary:

@@ -43,7 +43,7 @@ export const ListBox = <T extends object>({
         {...props}
         className={composeTailwindRenderProps(
           props.className,
-          'p-1 rounded border border-neutral-gray1 outline-0',
+          'p-1 rounded border outline-0',
         )}
       >
         {children}

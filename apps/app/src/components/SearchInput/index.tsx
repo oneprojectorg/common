@@ -212,7 +212,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
       >
         {dropdownShowing ? (
           <div
-            className="top-10 !max-h-80 min-w-96 sm:block absolute z-10 hidden w-(--trigger-width) overflow-y-auto rounded-b border border-t-0 border-neutral-gray1 bg-white group-hover:border-neutral-gray2"
+            className="top-10 !max-h-80 min-w-96 sm:block absolute z-10 hidden w-(--trigger-width) overflow-y-auto rounded-b border border-t-0 bg-white group-hover:border-neutral-gray2"
             role="listbox"
             aria-label={t('Search results')}
           >
@@ -223,7 +223,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
                   className={cn(
                     'py-2',
                     mergedProfileResults?.length &&
-                      'border-b border-neutral-gray1',
+                      'border-b',
                   )}
                 >
                   <Link
@@ -270,7 +270,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
                 className={cn(
                   'py-2',
                   mergedProfileResults?.length &&
-                    'border-b border-neutral-gray1',
+                    'border-b',
                 )}
               >
                 <Link

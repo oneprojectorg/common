@@ -126,7 +126,7 @@ const ProfileAbout = ({
           {t('About')}
         </Header2>
       ) : null}
-      <div className="gap-4 p-4 sm:rounded-none sm:border-none sm:p-0 flex flex-col rounded border border-neutral-gray1">
+      <div className="gap-4 p-4 sm:rounded-none sm:border-none sm:p-0 flex flex-col rounded border">
         {email || website ? (
           <section className="gap-2 flex flex-col">
             <Header3>{t('Contact')}</Header3>
@@ -264,7 +264,7 @@ const ProfileDecisions = ({ profileId }: { profileId: string }) => {
   }
 
   return (
-    <div className="sm:border-neutral-gray1 gap-2 px-4 pb-2 pt-0 sm:gap-0 sm:border-b sm:p-0 sm:pt-4 flex flex-col">
+    <div className="gap-2 px-4 pb-2 pt-0 sm:gap-0 sm:border-b sm:p-0 sm:pt-4 flex flex-col">
       <Header2 className="px-6 leading-normal font-serif text-title-sm">
         {t('Decisions')}
       </Header2>
@@ -272,7 +272,7 @@ const ProfileDecisions = ({ profileId }: { profileId: string }) => {
         <Fragment key={item.id}>
           <ProfileDecisionListItem
             item={item}
-            className="hover:sm:bg-primary-tealWhite p-4 sm:rounded-none sm:border-none sm:px-6 rounded border border-neutral-gray1 transition-colors"
+            className="hover:sm:bg-primary-tealWhite p-4 sm:rounded-none sm:border-none sm:px-6 rounded border transition-colors"
           />
           {index < data.items.length - 1 && <hr />}
         </Fragment>
@@ -314,7 +314,7 @@ export const OrganizationProfileGrid = ({
             <PostUpdate
               organization={profile}
               label={t('Post')}
-              className="px-4 pb-8 pt-6 border-b border-neutral-gray1"
+              className="px-4 pb-8 pt-6 border-b"
             />
           </Suspense>
         ) : (
@@ -326,7 +326,7 @@ export const OrganizationProfileGrid = ({
           </ProfileFeedProvider>
         </Suspense>
       </div>
-      <div className="col-span-6 h-full border-l border-neutral-gray1">
+      <div className="col-span-6 h-full border-l">
         <Suspense fallback={null}>
           <ProfileDecisions profileId={profile.profile.id} />
         </Suspense>
@@ -460,7 +460,7 @@ export const ProfileTabsMobile = ({
               <PostUpdate
                 organization={profile}
                 label={t('Post')}
-                className="px-4 pb-6 pt-2 border-b border-neutral-gray1"
+                className="px-4 pb-6 pt-2 border-b"
               />
             </Suspense>
             <Suspense fallback={<Skeleton className="min-h-20 w-full" />}>

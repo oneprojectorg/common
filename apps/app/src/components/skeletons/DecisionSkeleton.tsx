@@ -8,7 +8,7 @@ export const DecisionHeaderSkeleton = () => {
   return (
     <div className="bg-neutral-offWhite">
       {/* Header skeleton */}
-      <div className="px-6 py-4 flex items-center justify-between border-b border-neutral-gray1 bg-white">
+      <div className="px-6 py-4 flex items-center justify-between border-b bg-white">
         <Skeleton className="h-6 w-32" />
         <Skeleton className="h-6 w-48" />
         <Skeleton className="h-8 w-8 rounded-full" />
@@ -16,7 +16,7 @@ export const DecisionHeaderSkeleton = () => {
 
       {/* Stepper skeleton */}
       <div className="sm:items-center flex flex-col overflow-x-auto">
-        <div className="px-12 py-4 sm:px-32 w-fit rounded-b border border-t-0 border-neutral-gray1 bg-white">
+        <div className="px-12 py-4 sm:px-32 w-fit rounded-b border border-t-0 bg-white">
           <div className="space-x-8 mx-auto flex items-center justify-center">
             {[1, 2, 3, 4].map((i) => (
               <div key={i} className="flex flex-col items-center">
@@ -68,7 +68,7 @@ export const DecisionPageSkeleton = () => {
         </div>
 
         {/* Proposals section skeleton */}
-        <div className="mt-8 flex w-full justify-center border-t border-neutral-gray1 bg-white">
+        <div className="mt-8 flex w-full justify-center border-t bg-white">
           <div className="gap-8 p-4 sm:max-w-6xl sm:p-8 w-full">
             <div className="gap-4 flex flex-col">
               {[1, 2, 3].map((i) => (

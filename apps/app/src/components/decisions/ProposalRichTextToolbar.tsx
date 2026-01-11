@@ -125,7 +125,7 @@ export function ProposalRichTextToolbar({
   }
 
   return (
-    <div className={`px-6 py-2 border-b border-neutral-gray1 ${className}`}>
+    <div className={`px-6 py-2 border-b ${className}`}>
       <div className="gap-1 flex w-full flex-wrap items-center justify-center">
         {/* Undo/Redo */}
         <button

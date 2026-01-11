@@ -90,7 +90,7 @@ export const ProfileListSkeleton = () => {
       {Array.from({ length: 6 }).map((_, index) => (
         <div
           key={index}
-          className="shadow-xs p-4 rounded-lg border border-neutral-gray1 bg-white"
+          className="shadow-xs p-4 rounded-lg border bg-white"
         >
           <div className="gap-4 flex items-start">
             <div className="size-12 bg-gray-200 animate-pulse shrink-0 rounded-full" />

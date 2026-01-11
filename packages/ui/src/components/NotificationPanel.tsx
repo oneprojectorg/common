@@ -39,7 +39,7 @@ export const NotificationPanelItem = ({
   return (
     <li
       className={cn(
-        'gap-6 p-6 sm:flex-row sm:items-center sm:gap-2 flex flex-col justify-between border-t border-neutral-gray1 transition-colors',
+        'gap-6 p-6 sm:flex-row sm:items-center sm:gap-2 flex flex-col justify-between border-t transition-colors',
         className,
       )}
     >
@@ -58,7 +58,7 @@ export const NotificationPanelActions = ({
 
 export const NotificationPanel = ({ children }: { children: ReactNode }) => {
   return (
-    <Surface className="gap-0 flex flex-col border-b border-neutral-gray1">
+    <Surface className="gap-0 flex flex-col border-b">
       {children}
     </Surface>
   );

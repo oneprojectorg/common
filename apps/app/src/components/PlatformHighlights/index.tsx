@@ -50,7 +50,7 @@ export const PlatformHighlights = () => {
           <HighlightLabel>{t('people on Common')}</HighlightLabel>
         </Highlight>
       </div>
-      <div className="gap-2 p-6 sm:flex-row sm:items-center flex flex-col justify-center border-0 border-t border-neutral-gray1 bg-neutral-offWhite text-sm text-neutral-charcoal">
+      <div className="gap-2 p-6 sm:flex-row sm:items-center flex flex-col justify-center border-0 border-t bg-neutral-offWhite text-sm text-neutral-charcoal">
         <Suspense>
           <div className="gap-2 flex max-w-full items-center">
             <OrganizationFacePile>

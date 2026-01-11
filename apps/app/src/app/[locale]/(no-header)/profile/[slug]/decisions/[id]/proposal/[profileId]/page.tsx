@@ -36,7 +36,7 @@ function ProposalViewPageSkeleton() {
   return (
     <div className="flex min-h-screen flex-col">
       {/* Header loading */}
-      <div className="px-6 py-4 flex items-center justify-between border-b border-neutral-gray1 bg-white">
+      <div className="px-6 py-4 flex items-center justify-between border-b bg-white">
         <div className="h-6 w-32 bg-gray-200 animate-pulse rounded" />
         <div className="h-6 w-48 bg-gray-200 animate-pulse rounded" />
         <div className="gap-3 flex items-center">
@@ -61,7 +61,7 @@ function ProposalViewPageSkeleton() {
               <div className="h-3 w-24 bg-gray-200 animate-pulse rounded" />
             </div>
           </div>
-          <div className="gap-6 pb-4 flex border-b border-neutral-gray1">
+          <div className="gap-6 pb-4 flex border-b">
             <div className="h-4 w-16 bg-gray-200 animate-pulse rounded" />
             <div className="h-4 w-20 bg-gray-200 animate-pulse rounded" />
             <div className="h-4 bg-gray-200 animate-pulse w-18 rounded" />

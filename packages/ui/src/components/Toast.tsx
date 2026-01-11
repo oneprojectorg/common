@@ -27,7 +27,7 @@ export const Toast = () => {
       toastOptions={{
         classNames: {
           toast:
-            'group relative text-5 toast w-full bg-neutral-offWhite rounded-lg backdrop-blur-md border border-neutral-gray1 text-neutral-black p-3 flex gap-3',
+            'group relative text-5 toast w-full bg-neutral-offWhite rounded-lg backdrop-blur-md border text-neutral-black p-3 flex gap-3',
           description: 'text-neutral-charcoal',
           actionButton:
             'group-[.toast]:bg-primary group-[.toast]:text-primary-foreground',

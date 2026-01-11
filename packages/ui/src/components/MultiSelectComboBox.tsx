@@ -386,7 +386,7 @@ export const MultiSelectComboBox = ({
 
         {/* Dropdown menu - always below input and selected options */}
         {isOpen && filteredItems.length > 0 && (
-          <div className="mt-1 shadow-lg absolute z-10 w-full rounded-md border border-neutral-gray1 bg-white">
+          <div className="mt-1 shadow-lg absolute z-10 w-full rounded-md border bg-white">
             <ul ref={listRef} className="max-h-60 py-1 overflow-auto">
               {filteredItems.map((option, idx) => {
                 const isParent = disableParentSelection && option.hasChildren;

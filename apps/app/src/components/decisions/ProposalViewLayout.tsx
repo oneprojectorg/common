@@ -40,7 +40,7 @@ export function ProposalViewLayout({
   return (
     <div className="flex min-h-screen flex-col bg-white">
       {/* Header */}
-      <div className="px-6 py-4 grid grid-cols-3 items-center border-b border-neutral-gray1">
+      <div className="px-6 py-4 grid grid-cols-3 items-center border-b">
         <button
           onClick={() => router.push(backHref)}
           className="gap-2 flex items-center text-base text-primary-teal hover:text-primary-tealBlack"

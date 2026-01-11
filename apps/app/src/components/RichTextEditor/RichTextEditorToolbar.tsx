@@ -107,7 +107,7 @@ export function RichTextEditorToolbar({
 
   return (
     <div
-      className={`px-6 py-2 justify-between border-b border-neutral-gray1 ${className}`}
+      className={`px-6 py-2 justify-between border-b ${className}`}
     >
       <div className="min-w-0 gap-1 mx-auto scrollbar-hide flex max-w-fit items-center overflow-x-auto">
         {/* Undo/Redo */}

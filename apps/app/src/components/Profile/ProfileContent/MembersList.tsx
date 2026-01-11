@@ -226,7 +226,7 @@ const MembersListContent = ({
         return (
           <div
             key={member.id}
-            className="gap-4 p-6 relative flex w-full rounded border border-neutral-gray1"
+            className="gap-4 p-6 relative flex w-full rounded border"
           >
             <div className="right-4 top-4 absolute">
               <MemberMenu

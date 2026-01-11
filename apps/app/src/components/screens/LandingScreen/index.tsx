@@ -79,7 +79,7 @@ export const LandingScreenSkeleton: React.FC = async () => {
         </div>
         <span />
         <div className="col-span-5">
-          <Surface className="sm:border-neutral-gray1 gap-6 sm:border sm:p-6 flex flex-col border-0">
+          <Surface className="gap-6 sm:border sm:p-6 flex flex-col border-0">
             <Skeleton className="text-title-sm">
               <TranslatedText text="New Organizations" />
             </Skeleton>
@@ -99,7 +99,7 @@ export const LandingScreenSkeleton: React.FC = async () => {
         </TabList>
 
         <TabPanel id="discover" className="p-0">
-          <Surface className="sm:border-neutral-gray1 gap-6 sm:border sm:p-6 flex flex-col border-0">
+          <Surface className="gap-6 sm:border sm:p-6 flex flex-col border-0">
             <Skeleton className="text-title-sm">
               <TranslatedText text="New Organizations" />
             </Skeleton>
@@ -113,7 +113,7 @@ export const LandingScreenSkeleton: React.FC = async () => {
 
 const NewOrganizationsList = () => {
   return (
-    <Surface className="sm:border-neutral-gray1 -mx-8 gap-6 sm:mx-0 sm:border sm:p-6 flex flex-col border-0">
+    <Surface className="-mx-8 gap-6 sm:mx-0 sm:border sm:p-6 flex flex-col border-0">
       <Header3 className="px-8 sm:px-0 font-serif text-title-sm">
         <TranslatedText text="New Organizations" />
       </Header3>
@@ -141,7 +141,7 @@ const PostFeedSection = async ({
       {showPostUpdate ? (
         <>
           <Suspense fallback={<Skeleton className="h-full w-full" />}>
-            <Surface className="sm:border-neutral-gray1 mb-8 p-0 pt-5 sm:mb-4 sm:border sm:p-4 border-0">
+            <Surface className="mb-8 p-0 pt-5 sm:mb-4 sm:border sm:p-4 border-0">
               <PostUpdate label="Post" />
             </Surface>
           </Suspense>
@@ -278,7 +278,7 @@ const UserContentSkeleton = () => {
         </div>
         <span />
         <div className="col-span-5">
-          <Surface className="sm:border-neutral-gray1 gap-6 sm:border sm:p-6 flex flex-col border-0">
+          <Surface className="gap-6 sm:border sm:p-6 flex flex-col border-0">
             <Skeleton className="text-title-sm">
               <TranslatedText text="New Organizations" />
             </Skeleton>

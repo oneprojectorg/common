@@ -389,7 +389,7 @@ export const RichTextEditorWidget = (props: WidgetProps) => {
         {schema.title}
         {required && <span className="ml-1 text-functional-red">*</span>}
       </label>
-      <div className="flex flex-col rounded-md border border-neutral-gray1">
+      <div className="flex flex-col rounded-md border">
         <RichTextEditorWithToolbar
           content={value || ''}
           placeholder={uiSchema?.['ui:placeholder']}

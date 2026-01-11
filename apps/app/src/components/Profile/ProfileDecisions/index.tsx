@@ -97,7 +97,7 @@ const DecisionProcessList = ({
           return (
             <div
               key={instance.id}
-              className="gap-4 px-0 py-6 sm:flex-row flex flex-col items-center justify-between border-b border-neutral-gray1"
+              className="gap-4 px-0 py-6 sm:flex-row flex flex-col items-center justify-between border-b"
             >
               <div className="gap-2 flex w-full flex-col">
                 <div className="gap-1 flex flex-col">

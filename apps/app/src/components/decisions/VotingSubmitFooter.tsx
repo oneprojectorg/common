@@ -12,7 +12,7 @@ export const VotingSubmitFooter = ({
   }
 
   return (
-    <div className="bottom-0 left-0 h-14 py-2 fixed z-50 flex w-full items-center justify-center border-t border-neutral-gray1 bg-white">
+    <div className="bottom-0 left-0 h-14 py-2 fixed z-50 flex w-full items-center justify-center border-t bg-white">
       {children}
     </div>
   );

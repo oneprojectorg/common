@@ -186,7 +186,7 @@ export function ProposalView({
               </div>
 
               {/* Engagement Stats */}
-              <div className="gap-4 py-4 flex items-center border-t border-b border-neutral-gray1 text-sm text-neutral-gray4">
+              <div className="gap-4 py-4 flex items-center border-t border-b text-sm text-neutral-gray4">
                 <div className="gap-1 flex items-center">
                   <Heart className="h-4 w-4" />
                   <span>
@@ -224,14 +224,14 @@ export function ProposalView({
 
           {/* Comments Section */}
           <div className="mt-12" ref={commentsContainerRef}>
-            <div className="pt-8 border-t border-neutral-gray1">
+            <div className="pt-8 border-t">
               <h3 className="mb-6 font-semibold text-lg text-neutral-charcoal">
                 {t('Comments')} ({comments.length})
               </h3>
 
               {/* Comment Input */}
               <div className="mb-8">
-                <Surface className="sm:border-neutral-gray1 p-0 sm:border sm:p-4 border-0">
+                <Surface className="p-0 sm:border sm:p-4 border-0">
                   <PostUpdate
                     profileId={currentProposal.profileId || undefined}
                     placeholder={`${t('Comment')}${user.currentProfile?.name ? ` as ${user.currentProfile?.name}` : ''}...`}

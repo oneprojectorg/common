@@ -23,7 +23,7 @@ import { Popover } from './Popover';
 import type { PopoverProps } from './Popover';
 
 const selectStyles = tv({
-  base: 'min-w-0 leading-3 flex flex-row justify-between rounded-md border border-neutral-gray1 text-base text-neutral-black outline outline-0 group-data-[invalid=true]:outline-1 group-data-[invalid=true]:outline-functional-red placeholder:text-neutral-gray4 hover:border-neutral-gray2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue active:border-neutral-gray4 active:outline disabled:border-neutral-gray2',
+  base: 'min-w-0 leading-3 flex flex-row justify-between rounded-md border text-base text-neutral-black outline outline-0 group-data-[invalid=true]:outline-1 group-data-[invalid=true]:outline-functional-red placeholder:text-neutral-gray4 hover:border-neutral-gray2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue active:border-neutral-gray4 active:outline disabled:border-neutral-gray2',
   variants: {
     isDisabled: {
       true: 'bg-neutral-gray1 text-neutral-gray4',
@@ -134,7 +134,7 @@ export const Select = <T extends object>({
       <FieldError>{errorMessage}</FieldError>
       <Popover
         className={cn(
-          '!max-h-60 max-w-56 p-2 absolute z-10 min-w-(--trigger-width) overflow-hidden rounded border border-neutral-gray1 bg-white shadow',
+          '!max-h-60 max-w-56 p-2 absolute z-10 min-w-(--trigger-width) overflow-hidden rounded border bg-white shadow',
           popoverClassName,
         )}
         {...popoverProps}

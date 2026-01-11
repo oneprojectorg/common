@@ -140,7 +140,7 @@ export function StandardDecisionPage({
         />
       </div>
 
-      <div className="mt-8 flex w-full justify-center border-t border-neutral-gray1 bg-white">
+      <div className="mt-8 flex w-full justify-center border-t bg-white">
         <div className="gap-8 p-4 sm:max-w-6xl sm:p-8 w-full">
           <div className="lg:col-span-3">
             {proposals.length === 0 ? (

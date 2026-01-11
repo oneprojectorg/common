@@ -61,7 +61,7 @@ export function RichTextEditorFloatingToolbar({
   return (
     <div
       data-floating-toolbar
-      className="gap-1 p-1.5 shadow-lg fixed z-[9999999] flex items-center overflow-x-auto rounded-lg border border-neutral-gray1 bg-white whitespace-nowrap"
+      className="gap-1 p-1.5 shadow-lg fixed z-[9999999] flex items-center overflow-x-auto rounded-lg border bg-white whitespace-nowrap"
       style={{
         top: `${position.top}px`,
         left: `${position.left}px`,

@@ -30,7 +30,7 @@ export const Menu = <T extends object>(props: MenuProps<T>) => {
     <AriaMenu
       {...props}
       className={cn(
-        'p-2 max-h-[inherit] overflow-auto rounded-sm border border-neutral-gray1 bg-white text-neutral-charcoal shadow-light outline outline-0',
+        'p-2 max-h-[inherit] overflow-auto rounded-sm border bg-white text-neutral-charcoal shadow-light outline outline-0',
         props.className,
       )}
     />
@@ -122,7 +122,7 @@ export const MenuSeparator = (props: SeparatorProps) => {
   return (
     <Separator
       {...props}
-      className={cn('my-1 border-b border-neutral-gray1', props.className)}
+      className={cn('my-1 border-b', props.className)}
     />
   );
 };

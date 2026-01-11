@@ -462,12 +462,12 @@ export const SiteHeader = () => {
             <LocaleChooser />
             <ErrorBoundary
               fallback={
-                <div className="size-8 rounded-full border border-neutral-gray1 bg-white shadow" />
+                <div className="size-8 rounded-full border bg-white shadow" />
               }
             >
               <Suspense
                 fallback={
-                  <Skeleton className="size-8 rounded-full border border-neutral-gray1 bg-white shadow" />
+                  <Skeleton className="size-8 rounded-full border bg-white shadow" />
                 }
               >
                 <UserAvatarMenu />
@@ -524,12 +524,12 @@ export const SiteHeader = () => {
                   <LocaleChooser />
                   <ErrorBoundary
                     fallback={
-                      <div className="size-8 rounded-full border border-neutral-gray1 bg-white shadow" />
+                      <div className="size-8 rounded-full border bg-white shadow" />
                     }
                   >
                     <Suspense
                       fallback={
-                        <Skeleton className="size-8 rounded-full border border-neutral-gray1 bg-white shadow" />
+                        <Skeleton className="size-8 rounded-full border bg-white shadow" />
                       }
                     >
                       <UserAvatarMenu />

@@ -90,7 +90,7 @@ export function ResultsPage({
         </div>
       </div>
 
-      <div className="flex w-full justify-center border-t border-neutral-gray1 bg-white">
+      <div className="flex w-full justify-center border-t bg-white">
         <div className="gap-8 p-4 sm:max-w-6xl w-full">
           <DecisionResultsTabs>
             <DecisionResultsTabPanel id="funded">

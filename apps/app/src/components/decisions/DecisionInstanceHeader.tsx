@@ -21,7 +21,7 @@ export const DecisionInstanceHeader = ({
 }) => {
   const t = useTranslations();
   return (
-    <header className="p-2 px-6 sm:grid-cols-3 md:py-3 grid grid-cols-[auto_1fr_auto] items-center border-b border-neutral-gray1 bg-white">
+    <header className="p-2 px-6 sm:grid-cols-3 md:py-3 grid grid-cols-[auto_1fr_auto] items-center border-b bg-white">
       <div className="gap-3 flex items-center">
         <Link
           href={backTo.href}

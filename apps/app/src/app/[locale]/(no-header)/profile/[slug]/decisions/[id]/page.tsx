@@ -6,9 +6,9 @@ import { DecisionStateRouter } from '@/components/decisions/DecisionStateRouter'
 
 function DecisionHeaderSkeleton() {
   return (
-    <div className="border-b border-neutral-gray1 bg-neutral-offWhite">
+    <div className="border-b bg-neutral-offWhite">
       {/* Header skeleton */}
-      <div className="px-6 py-4 flex items-center justify-between border-b border-neutral-gray1 bg-white">
+      <div className="px-6 py-4 flex items-center justify-between border-b bg-white">
         <Skeleton className="h-6 w-32" />
         <Skeleton className="h-6 w-48" />
         <Skeleton className="h-8 w-8 rounded-full" />
@@ -16,7 +16,7 @@ function DecisionHeaderSkeleton() {
 
       {/* Stepper skeleton */}
       <div className="sm:items-center flex flex-col overflow-x-auto">
-        <div className="px-12 py-4 sm:px-32 w-fit rounded-b border border-t-0 border-neutral-gray1 bg-white">
+        <div className="px-12 py-4 sm:px-32 w-fit rounded-b border border-t-0 bg-white">
           <div className="space-x-8 mx-auto flex items-center justify-center">
             {[1, 2, 3, 4].map((i) => (
               <div key={i} className="flex flex-col items-center">

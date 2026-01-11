@@ -64,7 +64,7 @@ const RelationshipListContent = ({
         profiles.map((profile) => (
           <div
             key={profile.id}
-            className="gap-4 p-6 flex w-full rounded border border-neutral-gray1"
+            className="gap-4 p-6 flex w-full rounded border"
           >
             <div className="shrink-0">
               <ProfileAvatar profile={profile} className="size-20" />

@@ -131,7 +131,7 @@ export const ProfileFeedCards = ({
           posts.map((postToOrg) => (
             <HorizontalListItem
               key={postToOrg.postId}
-              className="max-w-96 p-3 first:ml-4 last:mr-4 w-11/12 shrink-0 snap-start rounded border border-neutral-gray1"
+              className="max-w-96 p-3 first:ml-4 last:mr-4 w-11/12 shrink-0 snap-start rounded border"
             >
               <PostItem
                 post={postToOrg.post}
@@ -144,7 +144,7 @@ export const ProfileFeedCards = ({
             </HorizontalListItem>
           ))
         ) : (
-          <HorizontalListItem className="max-w-96 p-3 first:ml-4 last:mr-4 w-11/12 shrink-0 snap-start rounded border border-neutral-gray1">
+          <HorizontalListItem className="max-w-96 p-3 first:ml-4 last:mr-4 w-11/12 shrink-0 snap-start rounded border">
             <EmptyPostsState />
           </HorizontalListItem>
         )}

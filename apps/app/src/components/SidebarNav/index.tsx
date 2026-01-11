@@ -13,7 +13,7 @@ export const SidebarNav = () => {
   const pathname = usePathname();
 
   return (
-    <Sidebar className="border-r border-neutral-gray1" label="Navigation">
+    <Sidebar className="border-r" label="Navigation">
       <nav className="gap-1 p-4 flex flex-col">
         <NavLink href="/" active={pathname === '/'}>
           <LuHouse className="size-4" /> {t('Home')}
