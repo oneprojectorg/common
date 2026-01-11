@@ -384,9 +384,6 @@ importers:
       '@op/api':
         specifier: workspace:*
         version: link:../../services/api
-      '@op/brand':
-        specifier: workspace:^
-        version: link:../../packages/brand
       '@op/cache':
         specifier: workspace:*
         version: link:../../services/cache
@@ -405,6 +402,9 @@ importers:
       '@op/realtime':
         specifier: workspace:*
         version: link:../../services/realtime
+      '@op/styles':
+        specifier: workspace:^
+        version: link:../../packages/styles
       '@op/supabase':
         specifier: workspace:*
         version: link:../../services/supabase
@@ -641,18 +641,6 @@ importers:
         specifier: 5.7.3
         version: 5.7.3
 
-  packages/brand:
-    devDependencies:
-      '@tailwindcss/postcss':
-        specifier: 4.1.8
-        version: 4.1.8
-      postcss:
-        specifier: ^8.5.3
-        version: 8.5.3
-      tailwindcss:
-        specifier: 4.1.8
-        version: 4.1.8
-
   packages/common:
     dependencies:
       '@op/cache':
@@ -813,6 +801,18 @@ importers:
         specifier: 5.7.3
         version: 5.7.3
 
+  packages/styles:
+    devDependencies:
+      '@tailwindcss/postcss':
+        specifier: 4.1.8
+        version: 4.1.8
+      postcss:
+        specifier: ^8.5.3
+        version: 8.5.3
+      tailwindcss:
+        specifier: 4.1.8
+        version: 4.1.8
+
   packages/types:
     dependencies:
       zod:
@@ -834,15 +834,15 @@ importers:
       '@internationalized/date':
         specifier: ^3.8.2
         version: 3.8.2
-      '@op/brand':
-        specifier: workspace:*
-        version: link:../brand
       '@op/core':
         specifier: workspace:*
         version: link:../core
       '@op/hooks':
         specifier: workspace:*
         version: link:../hooks
+      '@op/styles':
+        specifier: workspace:*
+        version: link:../styles
       '@tiptap/core':
         specifier: ^3.2.0
         version: 3.2.0(@tiptap/pm@3.2.0)

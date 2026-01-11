@@ -19,7 +19,7 @@
     "@next/bundle-analyzer": "^15.3.0",
     "@op/analytics": "workspace:^",
     "@op/api": "workspace:*",
-    "@op/brand": "workspace:^",
+    "@op/styles": "workspace:^",
     "@op/cache": "workspace:*",
     "@op/common": "workspace:*",
     "@op/core": "workspace:*",
